@@ -49,10 +49,10 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 ## M6. Khóa chuyến xe ngoài & Sổ cái (Scenario 2 / Bước 3) — gap, code-verified only
 
-- [ ] **M6.1** MANAGER transitions an EXTERNAL trip: `Mới tạo → Đang chạy → Hoàn thành → Đã chốt` via UI.
-- [ ] **M6.2** Open carrier customer's `/debt/:id` ledger; verify CREDIT (Có) entry for `EXTERNAL_CARRIER_COST` and balance is negative (company owes carrier). SCC-F2.7 was code-only.
-- [ ] **M6.3** Same ledger: verify **NO** driver-salary entry was posted for the external trip.
-- [ ] **M6.4** Customer (mua dịch vụ) ledger has DEBIT (Nợ) for revenue as usual.
+- [x] **M6.1** MANAGER transitions an EXTERNAL trip: `Mới tạo → Đang chạy → Hoàn thành → Đã chốt`. — PASSED iter 05 (caveat: COMPLETED auto-transition requires photo; lock posting works)
+- [x] **M6.2** Carrier customer ledger has CREDIT (Có) entry for `EXTERNAL_CARRIER_COST`, balance negative. — PASSED iter 05 (live: cust 9 balance -5,400,000)
+- [x] **M6.3** No driver-salary entry posted for the external trip. — PASSED iter 05
+- [x] **M6.4** Customer (buyer) ledger has DEBIT (Nợ) for revenue. — PASSED iter 05
 
 ## M7. Đối tác 2 chiều (Scenario 3 / Bước 1)
 

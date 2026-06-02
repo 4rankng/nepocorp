@@ -352,6 +352,7 @@ export const supplierSchema = z.object({
   taxCode: z.string().optional(),
   note: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+  linkedCustomerId: z.number().int().positive().optional().nullable(),
 });
 
 export const expenseCategorySchema = z.object({

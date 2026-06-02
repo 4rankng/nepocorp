@@ -732,6 +732,8 @@ export async function getTrips(filters: TripListFilters) {
         sql`${s.customers.name} ILIKE ${term}`,
         sql`${s.trucks.licensePlate} ILIKE ${term}`,
         sql`${s.routes.name} ILIKE ${term}`,
+        sql`${s.trips.customerReference} ILIKE ${term}`,
+        sql`EXISTS (SELECT 1 FROM ${s.tripContainers} WHERE ${s.tripContainers.tripId} = ${s.trips.id} AND ${s.tripContainers.containerNumber} ILIKE ${term})`,
       )!
     );
   }

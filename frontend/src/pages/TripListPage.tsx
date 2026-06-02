@@ -572,7 +572,7 @@ export default function TripListPage() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Tìm theo mã chuyến, KH, biển số"
+              placeholder="Tìm theo mã chuyến, KH, biển số, số cont"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

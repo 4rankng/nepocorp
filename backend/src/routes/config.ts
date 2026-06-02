@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, sql, and, desc } from 'drizzle-orm';
+import { eq, isNull, sql, and, desc, ne } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import {
   customerSchema, truckSchema, trailerSchema, routeSchema,
@@ -27,6 +27,50 @@ import {
 } from '../services/salary-period.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { queryAuditLogs } from '../services/audit-query.service';
+
+// Keep customer.linkedSupplierId ↔ supplier.linkedCustomerId mirrored.
+// Called after a customer create/update. Clears any stale inverse pointer
+// to this customer and sets the new inverse when a linkedSupplierId is set.
+async function mirrorCustomerLink(customer: any) {
+  if (customer == null || customer.id == null) return;
+  if (!('linkedSupplierId' in customer)) return; // partial update untouched
+  const customerId = customer.id as number;
+  const newSupplierId = customer.linkedSupplierId as number | null;
+
+  // Clear any other supplier still pointing back at this customer
+  const staleCond = newSupplierId == null
+    ? eq(s.suppliers.linkedCustomerId, customerId)
+    : and(eq(s.suppliers.linkedCustomerId, customerId), ne(s.suppliers.id, newSupplierId));
+  await db.update(s.suppliers)
+    .set({ linkedCustomerId: null, updatedAt: new Date() })
+    .where(staleCond);
+
+  if (newSupplierId != null) {
+    await db.update(s.suppliers)
+      .set({ linkedCustomerId: customerId, updatedAt: new Date() })
+      .where(eq(s.suppliers.id, newSupplierId));
+  }
+}
+
+async function mirrorSupplierLink(supplier: any) {
+  if (supplier == null || supplier.id == null) return;
+  if (!('linkedCustomerId' in supplier)) return;
+  const supplierId = supplier.id as number;
+  const newCustomerId = supplier.linkedCustomerId as number | null;
+
+  const staleCond = newCustomerId == null
+    ? eq(s.customers.linkedSupplierId, supplierId)
+    : and(eq(s.customers.linkedSupplierId, supplierId), ne(s.customers.id, newCustomerId));
+  await db.update(s.customers)
+    .set({ linkedSupplierId: null, updatedAt: new Date() })
+    .where(staleCond);
+
+  if (newCustomerId != null) {
+    await db.update(s.customers)
+      .set({ linkedSupplierId: supplierId, updatedAt: new Date() })
+      .where(eq(s.customers.id, newCustomerId));
+  }
+}
 
 async function syncTrailerFields(data: Record<string, any>) {
   if (data.currentTrailerId != null && data.currentTrailerId !== '') {
@@ -68,7 +112,11 @@ router.get('/pricing', asyncHandler(async (req: Request, res: Response) => {
 
 // ─── CRUD routes ─────────────────────────────────────────────────────────────
 
-router.use('/customers', createCrudRouter(s.customers, customerSchema, { searchableField: 'name' }));
+router.use('/customers', createCrudRouter(s.customers, customerSchema, {
+  searchableField: 'name',
+  afterCreate: mirrorCustomerLink,
+  afterUpdate: mirrorCustomerLink,
+}));
 router.use('/trucks', createCrudRouter(s.trucks, truckSchema, {
   searchableField: 'licensePlate',
   beforeCreate: async (data, _req) => {
@@ -99,7 +147,11 @@ router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeS
 // contribution_amount / sum(contribution_amount) per snapshot, so totals are
 // always 100% by construction and there's no separate over-allocation check.
 router.use('/cap-table', createCrudRouter(s.capTableHistory, capTableSchema));
-router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, { searchableField: 'name' }));
+router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, {
+  searchableField: 'name',
+  afterCreate: mirrorSupplierLink,
+  afterUpdate: mirrorSupplierLink,
+}));
 router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseCategorySchema, { searchableField: 'name' }));
 
 // Drivers — special handling (includes user_id)

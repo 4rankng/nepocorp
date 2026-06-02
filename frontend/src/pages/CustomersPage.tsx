@@ -378,6 +378,11 @@ export default function CustomersPage() {
                   <span className="m-card__title">
                     <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                     {c.name}
+                    {((c as any).linkedSupplierId || c.linkedSupplierId) && (
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                        2 chiều
+                      </span>
+                    )}
                   </span>
                   <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
                     {STATUS_LABELS[c.status] || c.status}
@@ -453,6 +458,11 @@ export default function CustomersPage() {
                       <div style={{ fontWeight: 600 }}>
                          <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
                         {c.name}
+                        {((c as any).linkedSupplierId || c.linkedSupplierId) && (
+                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                            2 chiều
+                          </span>
+                        )}
                       </div>
                       {((c as any).taxCode || c.taxCode) && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {(c as any).taxCode || c.taxCode}</div>}
                     </td>

@@ -8,6 +8,7 @@ import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
+import { InputWithPrefix } from './InputWithPrefix';
 
 interface AncillaryFeesCardProps {
   tripId: number;
@@ -376,32 +377,43 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                 )}
 
                 <div className="field">
-                  <label style={{ fontSize: 12 }}>Mua vào (đ) *</label>
-                  <input
-                    className="input mono"
-                    type="number"
-                    min={0}
-                    placeholder="0"
+                  <label style={{ fontSize: 12 }}>Mua vào *</label>
+                  <InputWithPrefix
                     value={form.buyAmount}
-                    onChange={(e) => handleBuyAmountChange(e.target.value)}
+                    onChange={handleBuyAmountChange}
+                    placeholder="0"
+                    prefix="đ"
+                    mono
+                    type="money"
                   />
                 </div>
 
                 <div className="field">
                   <label style={{ fontSize: 12 }}>
-                    Bán ra (đ) {hasMarkup ? '' : '(= mua vào)'}
+                    Bán ra {hasMarkup ? '' : '(= mua vào)'}
                   </label>
-                  <input
-                    className="input mono"
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={form.sellAmount}
-                    readOnly={!hasMarkup}
-                    disabled={!hasMarkup}
-                    style={!hasMarkup ? { background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed' } : {}}
-                    onChange={(e) => setForm(f => ({ ...f, sellAmount: e.target.value }))}
-                  />
+                  {hasMarkup ? (
+                    <InputWithPrefix
+                      value={form.sellAmount}
+                      onChange={(val) => setForm(f => ({ ...f, sellAmount: val }))}
+                      placeholder="0"
+                      prefix="đ"
+                      mono
+                      type="money"
+                    />
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        className="input mono"
+                        type="text"
+                        value={form.buyAmount ? Number(form.buyAmount).toLocaleString('vi-VN') : '0'}
+                        readOnly
+                        disabled
+                        style={{ background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed', paddingRight: 32 }}
+                      />
+                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--fg-3)' }}>đ</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
