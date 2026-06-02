@@ -42,7 +42,16 @@ export default function DriverEarningsPage() {
   );
 
   if (error) return (
-    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
+    <div>
+      <PageHeader title="Thu nhập" description="Tổng hợp thu nhập và khấu trừ" />
+      <div className="empty-state">
+        <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
+        <h3 className="empty-state-title">{error}</h3>
+        <p className="empty-state-desc">
+          Hệ thống tạm thời không phản hồi. Vui lòng kéo xuống để làm mới, hoặc thử lại sau ít phút.
+        </p>
+      </div>
+    </div>
   );
 
   if (!earnings) return null;

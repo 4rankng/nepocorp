@@ -63,6 +63,36 @@ async function seed() {
     console.log('✅ Drivers already exist, skipping.');
   }
 
+  // ─── Backfill drivers.user_id by phone ─────────────────────────────────
+  // The block above is a no-op against prod-like DBs where drivers were
+  // seeded with real Vietnamese names (Nguyễn Văn Thụ, etc.) — the
+  // `existingDriverNames.has(driver.name)` guard prevents inserts, so the
+  // user_id link never gets written. Backfill explicitly by phone, which
+  // is the de-facto identity for DRIVER users (their username, e.g. 'thu',
+  // doesn't appear on the drivers row but the phone does).
+  const driverUsers = await db.select({ id: schema.users.id, phone: schema.users.phone })
+    .from(schema.users)
+    .where(and(eq(schema.users.role, Role.DRIVER), isNull(schema.users.deletedAt)));
+
+  let linkedCount = 0;
+  for (const u of driverUsers) {
+    if (!u.phone) continue;
+    const updated = await db.update(schema.drivers)
+      .set({ userId: u.id })
+      .where(and(
+        eq(schema.drivers.phone, u.phone),
+        isNull(schema.drivers.userId),
+        isNull(schema.drivers.deletedAt),
+      ))
+      .returning({ id: schema.drivers.id });
+    linkedCount += updated.length;
+  }
+  if (linkedCount > 0) {
+    console.log(`✅ Drivers linked to user accounts! (${linkedCount} linked by phone)`);
+  } else {
+    console.log('✅ Driver↔user links already in place.');
+  }
+
   const categories = [
     { name: 'Sửa chữa', isRenewable: false, status: 'ACTIVE' },
     { name: 'Phụ tùng', isRenewable: false, status: 'ACTIVE' },

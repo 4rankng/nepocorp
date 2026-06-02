@@ -634,7 +634,10 @@
 
 /* ── Responsive ── */
 @media (max-width: 1280px) {
-  .tc-content { grid-template-columns: 1fr; }
+  /* `minmax(0, 1fr)` lets the form column shrink below its widest option
+   * (the Tuyến đường <select> can have very long route names) instead of
+   * pushing the card past the viewport. */
+  .tc-content { grid-template-columns: minmax(0, 1fr); }
   .tc-rail { position: static; }
 }
 /* Match Layout.css: sidebar becomes an overlay at ≤1023px, so action bar must span full width too */
@@ -643,7 +646,14 @@
 }
 @media (max-width: 880px) {
   .tc-form-row,
-  .tc-form-row--three { grid-template-columns: 1fr; }
+  .tc-form-row--three { grid-template-columns: minmax(0, 1fr); }
+  /* Same min-width:0 trick on the form rows — selects with long option
+   * text would otherwise expand the column. */
+  .tc-form-col, .tc-form-row > * { min-width: 0; }
+  .tc-form-col select.input,
+  .tc-form-col input.input,
+  .tc-form-row select.input,
+  .tc-form-row input.input { max-width: 100%; width: 100%; }
 }
 @media (max-width: 640px) {
   .tc-action-bar {

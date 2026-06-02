@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Truck, Calendar, ArrowRight, Loader2, MapPin } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@nepocorp/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
@@ -40,7 +40,16 @@ export default function DriverTripsPage() {
   );
 
   if (error) return (
-    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
+    <div>
+      <PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />
+      <div className="empty-state">
+        <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
+        <h3 className="empty-state-title">{error}</h3>
+        <p className="empty-state-desc">
+          Hệ thống tạm thời không phản hồi. Vui lòng kéo xuống để làm mới, hoặc thử lại sau ít phút.
+        </p>
+      </div>
+    </div>
   );
 
   if (trips.length === 0) return (

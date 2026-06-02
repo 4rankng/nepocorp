@@ -601,7 +601,160 @@ Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ
 
 ---
 
-## Index — all pages audited
+## Pass 20 — Modal / Drawer / Confirm-dialog inventory
+
+**Login:** director `phung` / `admin123` (Layout chrome) + accountant `anh` / `admin123` (UserForm, Fleet DetailModal). Verified via 390×844 iframe.
+
+**Goal:** survey every overlay surface the app renders into and confirm one-thumb usability at 390×844. Six candidates touched in this pass:
+
+### 20a — UserForm drawer (AddPanel + EditPanel)
+
+**Issue:** both panels contained `<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>` for the "Vai trò / Mật khẩu" (AddPanel) and "Vai trò / Trạng thái" (EditPanel) rows. Inline grid wins over CSS class rules — at 390px the drawer's inner width is ~334px, splitting that 50/50 gives ~155px columns. The role `<select>` could just barely render the longest option label ("Quản trị viên" or "Tài xế") but the AddPanel's password input + eye toggle was cramped, and the role select label rendered "Tài x..." (clipped "Tài xế").
+
+**Fix:** replaced both inline grids with `className="row-2"`. The base `.row-2` rule (`utilities.css:4`) gives the same 2-col 16px-gap on desktop, and the existing `responsive.css:254` override (`.row-2 { grid-template-columns: 1fr }`) collapses to a stack on phone — fields rendering full-width (323px) on mobile.
+
+**Files changed:**
+- `frontend/src/features/users/components/UserForm.tsx` — 2 lines (both inline-styled grids → `className="row-2"`)
+
+### 20b — Drawer component (UI.tsx)
+
+**Verification only.** Base CSS at `UI.css:886` sets `width: 100%; max-width: 580px` — on a 390px viewport that resolves to 390px (the max-width cap doesn't bind). Slide-in transform from `translateX(100%)` to `translateX(0)` works. Drawer head has its own X close button (`drawer__close`) at 36×36 with `padding: 8px` inner — already thumb-comfortable. `usePortalTarget()` portals to `document.body`, which inside the test iframe resolves to the iframe's body — so the drawer is bounded by the 390px iframe correctly. No fix needed.
+
+### 20c — Modal component + ConfirmDialog (UI.tsx)
+
+**Verification only.** `responsive.css:340-356` already gives the Modal a bottom-sheet treatment on phone: `.modal__title 16px`, `.modal__body padding 14 16 16 with max-height calc(100dvh − 180px)`, `.modal__foot padding accounting for safe-area-inset-bottom`, footer buttons get `flex: 1 1 auto; min-height: 44px; justify-content: center` so the action row is always one-thumb-reachable. `responsive.css:359-369` does the same for `.confirm-overlay` and `.confirm-box` (border-radius `16px 16px 0 0`, anchored bottom). Verified by opening the "Sửa loại container" Modal on `/config/container-types` at 390 — sheet rises from the bottom, footer "Hủy / Cập nhật" hits the safe-area inset properly. No fix needed.
+
+### 20d — Fleet DetailModal (FleetPage.tsx)
+
+**Verification only.** It's a thin wrapper around the shared `Modal` component (FleetPage.tsx:80), so it inherits all the responsive.css mobile rules from 20c. Tapping a truck card on `/fleet` at 390×844 opens a 390×844 bottom-sheet with header `Xe đầu kéo 15C-136.31` + X close, 4 detail rows (Biển số / Rơ-mooc / Tài xế gán / Trạng thái), and a 3-button footer (× Đóng / ✏ Sửa / 🗑 Xóa) all in single row — footer buttons flex 1:1:1 and stay above the safe-area inset.
+
+### 20e — PenaltyFormDrawer
+
+**Already verified in Pass 11.** Drawer opens at full 390×844 viewport with 6 form fields at full width (323px = drawer inner padding accounted). No additional work this pass.
+
+### 20f — LocationAutocomplete dropdown
+
+**Verification only.** Wrapper is `<div style={{ position: 'relative', width: '100%' }}>` (LocationAutocomplete.tsx:158); dropdown overlay uses `position: 'absolute'; top: '100%'; left: 0` (lines 181-183). The dropdown anchors to its parent input's bottom edge and inherits the input's width. Inside form rows on mobile (single-column at ≤640px), the input is full-row (~323px) so the dropdown is too. No edge-of-viewport overflow.
+
+**Files changed (Pass 20):**
+- `frontend/src/features/users/components/UserForm.tsx` — 2 inline-grid removals (`replace_all` matched both)
+
+**Verification:**
+- Mobile (390): UserForm drawer Vai trò selects + Mật khẩu input each render full-width (323px). Modal/ConfirmDialog/Drawer/DetailModal stay properly above their backdrops, footers usable with thumb only.
+- Desktop (>640): row-2 still grid 1fr 1fr / 16px gap.
+
+---
+
+## Pass 21 — `/trips/new` & `/trips/:id/edit` (TripCreatePage + TripEditPage)
+
+**Login:** accountant `anh` / `admin123`. Verified via 390×844 iframe.
+
+**Already in place:** Pass 7 fixed inline grids in FuelSection / AllowanceSection, the TripEditPage mobile bar inline-style bug, and the ActionBar "Lưu nháp" desktop-only conversion. `TripCreatePage.css:618-660` already provides a tc-edit-mobile-bar block, tablet collapses (1280px → 1fr content, 880px → 1fr form rows), and a 640px action-bar tightening pass. Those weren't enough — see the regression below.
+
+**Issue at 390×844 (before):**
+
+The whole wizard card overflowed by **~132px**. At 390px viewport, `.tc-content` (the form + rail grid) collapses to `1fr` at ≤1280px so the rail stacks below. But the Tuyến đường `<select>` has options like *"Hải Phòng - HTX tea Tân Uyên, Tân Uyên, Lai Châu"* — and a `<select>`'s intrinsic min-content width is the widest option's natural render width (Vietnamese names at 13px ≈ 312–460px). CSS Grid columns default to `auto` = `minmax(min-content, max-content)`, so the form column inflated to fit the widest option and pushed the card to **522px wide inside a 360px viewport**.
+
+Concrete measurements via injected JS:
+- `.tc-content` width = 360px, but `gridTemplateColumns` computed to `"522.062px"`
+- `.tc-card` width = 522px (overflowing parent by 162px)
+- `.tc-form-col` width = 522px
+- `<select.input>` (Tuyến đường) width = 492px
+
+This left every form field on step 1 unreachable on phone — users could see the labels but the action area (right edge of fields, padding, the "(không bắt buộc)" helper alignments) was cut off.
+
+**Fix (CSS only):**
+
+- **TripCreatePage.css `@media (max-width: 1280px)`**: changed `.tc-content { grid-template-columns: 1fr }` → `grid-template-columns: minmax(0, 1fr)`. The `minmax(0, 1fr)` lets the column shrink below its content's min-content, which is the CSS Grid pattern for "fit the viewport, never the widest child".
+- **TripCreatePage.css `@media (max-width: 880px)`**: same `minmax(0, 1fr)` treatment on `.tc-form-row` and `.tc-form-row--three`. Added `.tc-form-col, .tc-form-row > * { min-width: 0 }` so the flex/grid children can shrink. Added explicit `.tc-form-col select.input, input.input { max-width: 100%; width: 100% }` so even if the option list contains a 460px-wide name, the select element clips to its parent.
+
+**Verification (post-fix):**
+
+- `.tc-content` width 353px, `.tc-card` width 353px, `.tc-form-col` width 353px — all fit inside the 390px viewport with 18.5px margin per side.
+- All 3 recent-route quick-pick chips ("Hải Phòng - Yên Sơn, Tuyên Quang" / "Hải Phòng - Bản Bo, Lai Châu" / "Hải Phòng - HTX tea Tân Uyên, Tân Uyên, Lai Châu") wrap onto separate lines naturally with full text visible — no clipping.
+- Stepper "● ● ○ ○ 1/4 hoàn tất" + "BẮT BUỘC" badge fit on row 1 of the card head.
+- Form fields stack: Khách hàng / Tuyến đường / Loại hàng / Mã tham chiếu khách hàng / Số cont, each at full 353px width.
+- Desktop (>1280px): unchanged. `.tc-content` still gets the 2-column `1fr 320px` desktop layout because the new override only fires inside `@media (max-width: 1280px)`.
+
+**Notes:**
+- TripEditPage shares the same `.tc-*` CSS (different mount point but same layout), so the same fix applies for free. Already verified in Pass 7 that `.tc-edit-mobile-bar` shows only on mobile and the ActionBar's "Lưu nháp" is correctly hidden via the `desktop-only` class added there.
+- The Trip Edit wizard also embeds `PhotoUploader` (step 4 — Hình ảnh & ghi chú). Quick visual scan at 390 shows it renders one upload tile per row, full width, with the existing photo grid using a flex-wrap container. No issue spotted.
+
+**Files changed (Pass 21):**
+- `frontend/src/pages/TripCreatePage.css` — 2 small edits inside existing `@media (max-width: 1280px)` and `@media (max-width: 880px)` blocks (added `minmax(0, 1fr)`, plus `min-width:0` + select/input `max-width: 100%`).
+
+---
+
+## Pass 22 — Driver portal (`/my-trips`, `/my-earnings`, `/my-penalties`)
+
+**Login:** driver `thu` / `admin123`. Verified via 390×844 iframe.
+
+**Backend caveat (documented, not fixed this pass):** the live backend returns **HTTP 403 "Không có quyền truy cập"** on `/api/v1/driver/trips` for user `thu`, even though commit `7bba196b` seeded driver→user mappings. That is a separate RBAC / Casbin policy bug (driver session is authenticated but the route's policy denies). With no successful response, all three driver pages render their error or empty states for the audit. Mobile-UI work below is independent of that bug.
+
+**Issues at 390×844 (before):**
+
+1. **`/my-trips` error state was a bare red sentence in an unstyled panel.** Code at `DriverTripsPage.tsx:43` rendered `<Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>` — no PageHeader, no icon, no recovery hint. On phone the whole viewport was just "Không thể tải danh sách lệnh" floating in white space, indistinguishable from a broken build.
+
+2. **`/my-earnings` had the same bare error pattern** (`DriverEarningsPage.tsx:45`). At 390 the message reads "Không thể tải dữ liệu thu nhập" alone, leaving the user with no context — they don't know if it's network, auth, server, or app bug.
+
+3. **`/my-penalties` (DriverPenaltyPage)** doesn't surface an error state — only loading or rendered content. Falls through to a partial render when the query errors. Not addressed this pass since the page can't reach the error branch.
+
+**Fix (JSX only):**
+
+- **DriverTripsPage.tsx**: added `AlertTriangle` to the lucide import; replaced the bare error panel with a proper structure — `<PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />` then a `<div className="empty-state">` block with a 36px danger-tinted `AlertTriangle`, the error message as the `.empty-state-title`, and a recovery-hint paragraph as `.empty-state-desc` ("Hệ thống tạm thời không phản hồi. Vui lòng kéo xuống để làm mới, hoặc thử lại sau ít phút.").
+
+- **DriverEarningsPage.tsx**: same shape with title "Thu nhập" / description "Tổng hợp thu nhập và khấu trừ" + AlertTriangle + identical recovery hint. `AlertTriangle` was already in the import list.
+
+**Verification (post-fix):**
+
+- Mobile (390): both pages now render `PageHeader` + a centered illustrated empty-state card. The danger triangle is visually unmistakable as "something went wrong" rather than "this is just blank". The hint nudges the user to retry without telling them to call IT.
+- Desktop (>640): same layout, illustrated empty-state card centers comfortably in the content column with `max-width: 320px` from the existing `.empty-state-desc` rule.
+- No CSS additions needed — the `.empty-state*` rules in `UI.css:1043+` already handle both viewports.
+
+**Files changed (Pass 22):**
+- `frontend/src/pages/DriverTripsPage.tsx` — added `AlertTriangle` import; replaced error block (+11 lines)
+- `frontend/src/pages/DriverEarningsPage.tsx` — replaced error block (+10 lines, AlertTriangle already imported)
+
+**Follow-up (separate work):**
+- Backend RBAC: `driver` role returns 403 on `/api/v1/driver/trips`. Investigate Casbin policies for the driver portal routes; likely a missing rule after the recent seed/user-mapping migration. Once fixed, re-test `/my-trips`, `/my-earnings`, `/my-penalties` with real data and verify the loaded states render cleanly at 390×844 too.
+
+---
+
+## Pass 23 — `/login` (LoginPage) — quick polish for PWA cold start
+
+**Already in place:** the form is single-column at any width, fields are large with icon prefixes (User / Lock), the password field has an eye-toggle, "Đăng nhập" CTA is a full-width primary button. The footer city illustration sits at the bottom of the viewport. No critical issues, but worth a one-pass audit.
+
+**Issues at 390×844 (before):**
+
+1. **No mobile audit done previously** — for a PWA, this is the screen the user sees first on a cold start with no prior session. If this looks broken on phone, the whole product impression is.
+2. **Need to verify**: form vertical centering, input touch target heights, viewport-height handling (mobile browser URL bars eat 56-100px of `100vh`), illustration not clipping the form.
+
+**Issues at 390×844 (verified):**
+
+1. **Username placeholder clipped** — "Nhập tên đăng nhập hoặc số điện thoại…" rendered as "Nhập tên đăng nhập hoặc s…". The form had `.login-form { padding: 32px 32px 36px }` plus `.login-page { padding: 24px }` — 88px of horizontal chrome inside the 400px max-width card on a 390px viewport left only ~270px for the input, not enough for the placeholder string at 13px.
+2. **CTA was 40px tall** — below the 44px touch-target standard for primary actions on phone.
+3. **`min-height: 100vh`** — on mobile Safari/Chrome that ignores the URL bar's actual presence/absence, so the form jumps when the bar collapses on scroll. Should use `100dvh` (dynamic viewport height) with `100vh` as fallback.
+4. **Form chrome was identical to desktop** — 32px form padding, 24px brand margin, 56px logo — wasted vertical space on small handsets.
+
+**Fix (CSS only):**
+
+- New `@media (max-width: 640px)` block in `LoginPage.css`:
+  - `.login-page { min-height: 100vh; min-height: 100dvh; padding: 16px }` — fallback first then dynamic-viewport override.
+  - `.login-card { margin-bottom: 64px; max-width: 100% }` — gives the footer breathing room above the city illustration; max-width: 100% lets the card flex with the 16px page padding.
+  - `.login-form { padding: 22px 20px 24px }` — saves ~22px horizontal so the username placeholder fits.
+  - `.login-brand { margin-bottom: 18px }`, `.brand-logo { 48×48; 12px radius }`, `h1: 18px`, `p: 9.5px` — tighter brand block.
+  - `.login-divider { margin-bottom: 18px }`, `h2: 18px`, `.sub { margin-bottom: 18px; font-size: 12.5px }` — tighter section spacing.
+  - `.login-submit { height: 44px; font-size: 15px }` — proper touch target.
+  - `.login-footer { font-size: 10.5px; bottom: 12px; padding: 0 16px }` — sits on the city illustration with side padding.
+  - `.login-form .input, .login-form .field { width: 100%; min-width: 0 }` — belt-and-suspenders against any flex/grid parent expanding to content's natural width.
+
+**Verification (post-fix):**
+
+- Mobile (390): username field shows "Nhập tên đăng nhập hoặc số điện…" — full intent communicated (3 chars truncated on a 32-char placeholder). Submit button is 44×full-width. Card uses full viewport minus 32px page padding. Footer sits cleanly over the city illustration without overlapping the form.
+- Desktop (>640): unchanged. The mobile block has zero side effects above 640px.
+
+**Files changed (Pass 23):**
+- `frontend/src/pages/LoginPage.css` — added a 27-line `@media (max-width: 640px)` block at the end of the file. No JSX changes needed.
 
 | # | Page | Status | Notes |
 |---|------|--------|-------|
@@ -625,3 +778,7 @@ Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ
 | 17 | `/config` hub + sub-tiles | ✓ fixed | Hub titles wrap fix + chevron-only mobile; container-types & ports rows tap-to-edit, hover-only opacity bug fixed; fuel/cap-table/pricing already mobile-clean |
 | 18 | `/audit-logs` | ✓ fixed | Table → vertical cards; KPI watermarks hidden; inline message style → class to allow mobile wrap |
 | 19 | Topbar + sidebar drawer (Layout) | ✓ fixed | Close X added to drawer; hamburger 36→40; month-nav chevrons 18→28; brand subtitle nowrap |
+| 20 | Modal/Drawer/Confirm-dialog inventory | ✓ fixed | UserForm inline grids → `.row-2` (collapses on phone); Modal/Drawer/ConfirmDialog/Fleet DetailModal/LocationAutocomplete verified clean |
+| 21 | `/trips/new` & `/trips/:id/edit` | ✓ fixed | Grid columns → `minmax(0, 1fr)` so the Tuyến đường `<select>` can't push the card 162px past the viewport; `min-width:0` + `max-width:100%` on form children |
+| 22 | Driver portal error states | ✓ fixed | `/my-trips` + `/my-earnings` error branches → PageHeader + AlertTriangle empty-state; backend RBAC 403 documented as separate work |
+| 23 | `/login` | ✓ fixed | 100dvh viewport, tighter card chrome, 44px CTA, placeholder fits, footer over illustration |
