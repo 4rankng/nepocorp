@@ -219,7 +219,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .panel__body {
   padding: 14px 20px 20px;
 }
-.panel__body--flush { padding: 0; }
+.panel__body--flush { padding: 0 !important; }
 
 /* Legacy card-shell — match panel styling for visual consistency */
 .card-shell {

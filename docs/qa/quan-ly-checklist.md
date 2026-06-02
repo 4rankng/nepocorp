@@ -111,7 +111,12 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 | # | Date | Item(s) | Bugs Found | Status |
 |---|------|---------|------------|--------|
-| 01 | 2026-06-02 | M1.1 + M1.2 (catalog & VAT) | 0 | Passed |
+| 10 | 2026-06-02 | Visual pass M1+M2 (catalog + fees grid) | 1 (patched: fees-table overflow → density + column merge) | Passed |
+| 11 | 2026-06-02 | Visual pass M3–M5 + bonus M8/M9.2/M16.2 | 0 | Passed |
+| 12 | 2026-06-02 | Visual pass dispatch + EXTERNAL trip KPI | 1 (patched: EXTERNAL trip showed 100% margin) | Passed |
+| 13 | 2026-06-02 | Visual deepening M9–M10 (offset flow + ledger) | 0 | Passed |
+| 14 | 2026-06-02 | Visual pass M11–M16 + /finance + /trips search | 1 (patched: trip list count SQL 500 when search active) | Passed |
+| 01 | 2026-06-02 | M1.1 + M1.2 (catalog & VAT) | 0 | Passed (code-level; UI confirmed iter 10) |
 | 02 | 2026-06-02 | M2.1–M2.5 (fee creation) | 1 (patched: catalog code=NA → LIFTING + code locked on edit) | Passed |
 | 03 | 2026-06-02 | M3.1 + M3.2 (forwarder PENDING → MANAGER approves) | 0 | Passed |
 | 04 | 2026-06-02 | M4.1, M4.2, M5.1–M5.4 (carrier customer + ext-trip form) | 0 | Passed |
