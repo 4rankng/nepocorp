@@ -182,9 +182,9 @@
   --tracking-wider:  0.08em;
   --tracking-eyebrow: 0.08em;
 
-  /* Hero display numbers (28-32px, used for revenue / profit metrics) */
-  --fs-display: 28px;
-  --fs-display-lg: 32px;
+  /* Hero display numbers (24-28px, used for revenue / profit metrics) */
+  --fs-display: 24px;
+  --fs-display-lg: 28px;
 
   /* --- Z-index scale --- */
   --z-base: 0;

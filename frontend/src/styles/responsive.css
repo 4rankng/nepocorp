@@ -146,10 +146,10 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
-  font-size: var(--fs-display);
+  font-size: 22px;
   font-weight: var(--fw-semibold);
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--ink);
 }
 .metric-strip__value--success { color: var(--accent); }
@@ -239,8 +239,6 @@
   letter-spacing: var(--tracking-eyebrow);
   font-family: var(--font-mono);
 }
-.trip-hero__crumb-id { color: var(--ink); }
-.trip-hero__crumb-sep { color: var(--ink-4); margin: 0 4px; }
 .trip-hero__title-row {
   display: flex;
   align-items: center;
@@ -249,10 +247,10 @@
 }
 .trip-hero__title {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: var(--fw-bold);
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--ink);
   margin: 0;
 }

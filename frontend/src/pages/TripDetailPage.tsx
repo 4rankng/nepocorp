@@ -16,7 +16,7 @@ import {
   parseThreshold, Role,
 } from '@nepocorp/shared';
 import { useAuth } from '../hooks/useAuth';
-import { Panel, StatusPill, useConfirm, Drawer, Modal } from '../components/UI';
+import { Panel, useConfirm, Drawer, Modal } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/shared/Spinner';
@@ -222,37 +222,71 @@ export default function TripDetailPage() {
 
   return (
     <div className="fade-up">
-      {/* Header */}
-      <div className="page-header trip-detail-header" style={{ alignItems: 'flex-start' }}>
-        <div className="page-header-main" style={{ minWidth: 0 }}>
-          <h1 className="page-title trip-detail-title">
-            <button className="btn btn--ghost btn--icon btn--sm" onClick={() => navigate('/trips')} aria-label="Quay lại">
-              <ArrowLeft size={16} />
-            </button>
-            <span>Lệnh vận chuyển</span>
-            <StatusPill variant={
-              trip.status === TripStatus.CANCELED ? 'danger' :
-              trip.status === TripStatus.LOCKED ? 'success' :
-              trip.status === TripStatus.COMPLETED ? 'warn' :
-              trip.status === TripStatus.IN_TRANSIT ? 'info' : 'neutral'
-            }>
-              {TRIP_STATUS_LABELS[trip.status]}
-            </StatusPill>
-          </h1>
-          <div className="trip-detail-subtitle" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', alignItems: 'center', lineHeight: 1.4 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 500, color: 'var(--fg-2)' }}>
-              <User size={14} style={{ color: 'var(--fg-3)' }} />
-              {trip.customer?.name ?? '—'}
-            </span>
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--border-2)', flexShrink: 0 }} />
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <RouteIcon size={14} style={{ color: 'var(--fg-3)' }} />
-              {trip.route?.name ?? '—'}
-            </span>
+      <div className="trip-hero">
+        <div className="trip-hero__top">
+          <button className="trip-hero__back" onClick={() => navigate('/trips')} aria-label="Quay lại">
+            <ArrowLeft size={16} />
+          </button>
+          <div className="trip-hero__crumb">
+            <span>LỆNH VẬN CHUYỂN</span>
+            <span className="trip-hero__crumb-sep">·</span>
+            <span className="trip-hero__crumb-id">#{trip.id}</span>
           </div>
         </div>
 
-        <div className="page-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div className="trip-hero__title-row">
+          <h1 className="trip-hero__title">Lệnh vận chuyển</h1>
+          <span className={`pill pill--${
+            trip.status === TripStatus.CANCELED ? 'danger' :
+            trip.status === TripStatus.LOCKED ? 'success' :
+            trip.status === TripStatus.COMPLETED ? 'warn' :
+            trip.status === TripStatus.IN_TRANSIT ? 'info' : 'neutral'
+          } pill--md pill--solid`}>
+            <span className="dot" />
+            {TRIP_STATUS_LABELS[trip.status]}
+          </span>
+        </div>
+
+        <div className="trip-hero__meta">
+          {trip.customer?.name && (
+            <span className="trip-hero__chip">
+              <User size={14} />
+              <span>{trip.customer.name}</span>
+            </span>
+          )}
+          {trip.route?.name && (
+            <span className="trip-hero__chip trip-hero__chip--route">
+              <RouteIcon size={14} />
+              <span>{trip.route.name}</span>
+            </span>
+          )}
+          {trip.truck?.licensePlate && (
+            <span className="trip-hero__chip">
+              <Truck size={14} />
+              <strong>{trip.truck.licensePlate}</strong>
+            </span>
+          )}
+          {trip.driver?.name && (
+            <span className="trip-hero__chip">
+              <User size={14} />
+              <span>{trip.driver.name}</span>
+            </span>
+          )}
+          {trip.departureDate && (
+            <span className="trip-hero__chip">
+              <Calendar size={14} />
+              <span>{formatDate(trip.departureDate)}</span>
+            </span>
+          )}
+          {(trip.containerCount ?? 1) > 1 && (
+            <span className="trip-hero__chip">
+              <Package size={14} />
+              <span>{trip.containerCount} cont</span>
+            </span>
+          )}
+        </div>
+
+        <div className="trip-hero__actions">
           {canDispatch && (
             <button
               className="btn btn--primary btn--sm"
@@ -273,22 +307,15 @@ export default function TripDetailPage() {
             </button>
           )}
           {canLock && (
-            <>
-              <button
-                className="btn btn--primary btn--sm"
-                disabled={actionLoading || needsPhotos}
-                title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
-                onClick={handleLockClick}
-              >
-                {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
-                Khóa chuyến
-              </button>
-              {needsPhotos && (
-                <span style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  Chưa có ảnh — cần ít nhất 1 ảnh để khóa
-                </span>
-              )}
-            </>
+            <button
+              className="btn btn--primary btn--sm"
+              disabled={actionLoading || needsPhotos}
+              title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
+              onClick={handleLockClick}
+            >
+              {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
+              Khóa chuyến
+            </button>
           )}
           {canEdit && (
             <button
@@ -311,6 +338,13 @@ export default function TripDetailPage() {
               Điều chỉnh
             </button>
           )}
+          {needsPhotos && canLock && (
+            <span className="trip-hero__warn">
+              <AlertCircle size={13} />
+              Cần ít nhất 1 ảnh để khóa
+            </span>
+          )}
+          <span className="trip-hero__actions-spacer" />
           {canCancel && (
             <button
               className="btn btn--danger btn--sm"
@@ -328,7 +362,6 @@ export default function TripDetailPage() {
         </div>
       </div>
 
-      {/* Error bar */}
       {displayError && (
         <div style={{
           padding: '10px 14px',
@@ -343,167 +376,207 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {/* Info grid */}
       <div className="row-2 section-gap">
         <Panel title="Thông tin cơ bản">
-          {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.licensePlate)}
-          {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name)}
-          {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.licensePlate} (${trip.trailer.type || trip.trailerType})` : trip.trailerType ?? null)}
-          {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate))}
-          {infoRow(<FileText size={16} />, 'Số cont', String(trip.containerCount ?? 1))}
-          {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference)}
+          <div className="detail-grid">
+            {infoRow(<Truck size={16} />, 'Xe đầu', trip.truck?.licensePlate, 'accent')}
+            {infoRow(<User size={16} />, 'Tài xế', trip.driver?.name, 'info')}
+            {infoRow(<RouteIcon size={16} />, 'Rơ moóc', trip.trailer ? `${trip.trailer.licensePlate} (${trip.trailer.type || trip.trailerType})` : trip.trailerType, 'neutral')}
+            {infoRow(<Calendar size={16} />, 'Ngày khởi hành', formatDate(trip.departureDate), 'neutral')}
+            {infoRow(<FileText size={16} />, 'Số cont', String(trip.containerCount ?? 1), 'neutral')}
+            {infoRow(<FileText size={16} />, 'Mã tham chiếu', trip.customerReference, 'neutral')}
+          </div>
         </Panel>
 
-        <Panel title="Tài chính">
-          <div className="grid gap-x-8 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-            <div>
-              {infoRow(<Banknote size={16} />, 'Doanh thu', formatCurrency(trip.revenue))}
-              {(trip.containerCount ?? 1) > 1 && trip.revenue && (() => {
-                const count = trip.containerCount ?? 1;
-                const unitPrice = Math.floor(Number(trip.revenue) / count);
-                const remainder = Number(trip.revenue) - unitPrice * count;
-                return infoRow(<Banknote size={16} />, 'Đơn giá/cont', `${formatCurrency(String(unitPrice))} × ${count} cont${remainder > 0 ? ` (+${formatCurrency(String(remainder))})` : ''}`);
-              })()}
-              {trip.revenueOriginal && trip.revenue && Number(trip.revenue) !== Number(trip.revenueOriginal) && (
-                infoRow(
-                  <Banknote size={16} />,
-                  'Giá gốc',
-                  <span style={{ textDecoration: 'line-through', color: 'var(--fg-3)' }}>
-                    {formatCurrency(trip.revenueOriginal)}
-                  </span>,
-                )
-              )}
-              {infoRow(<Banknote size={16} />, 'Tổng chi phí', formatCurrency(trip.totalCost))}
-              {infoRow(
-                <Banknote size={16} />,
-                'Lợi nhuận gộp',
-                <span style={{ color: trip.grossProfit && Number(trip.grossProfit) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-                  {formatCurrency(trip.grossProfit)}
-                </span>,
-              )}
-              {infoRow(<MapPin size={16} />, 'Tiền đi đường', formatCurrency(trip.totalRoadAllowance))}
-              {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
-                <div style={{ padding: '6px 0 10px', borderBottom: '1px solid var(--border-1)' }}>
-                  <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Chi tiết tiền đường
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg-2)', display: 'flex', flexDirection: 'column', gap: 3, paddingLeft: 12 }}>
-                    {Number(trip.tollsDiscount) > 0 && (
-                      <span>Giảm vé QL5: <strong style={{ color: 'var(--danger)' }}>-{formatCurrency(trip.tollsDiscount)}</strong></span>
-                    )}
-                    {Number(trip.tollsAddition) > 0 && (
-                      <span>Tăng vé theo lệnh: <strong style={{ color: 'var(--success)' }}>+{formatCurrency(trip.tollsAddition)}</strong></span>
-                    )}
-                    {Number(trip.tollsStations) > 0 && (() => {
-                      const rate = Number(trip.tollPerStationApplied || 0);
-                      return <span>Số trạm (trừ): {trip.tollsStations} trạm × {rate.toLocaleString('vi-VN')} = <strong>{formatCurrency(Number(trip.tollsStations) * rate)}</strong></span>;
+        <Panel title="Tài chính" subtitle="Tổng quan doanh thu, chi phí và lợi nhuận">
+          {(() => {
+            const rev = Number(trip.revenue || 0);
+            const cost = Number(trip.totalCost || 0);
+            const profit = Number(trip.grossProfit || 0);
+            const profitClass = profit >= 0 ? 'metric-strip__value--success' : 'metric-strip__value--danger';
+            const marginPct = rev > 0 ? `${((profit / rev) * 100).toFixed(1)}%` : null;
+            const showRevOriginal = trip.revenueOriginal
+              && Number(trip.revenueOriginal) > 0
+              && Number(trip.revenue) !== Number(trip.revenueOriginal);
+            return (
+              <>
+                <div className="metric-strip">
+                  <div className="metric-strip__cell">
+                    <div className="metric-strip__label"><Banknote size={13} /> Doanh thu</div>
+                    <div className="metric-strip__value">{formatCurrency(trip.revenue)}</div>
+                    {(trip.containerCount ?? 1) > 1 && rev > 0 && (() => {
+                      const count = trip.containerCount ?? 1;
+                      const unitPrice = Math.floor(rev / count);
+                      const remainder = rev - unitPrice * count;
+                      return (
+                        <div className="metric-strip__sub">
+                          Đơn giá <strong>{formatCurrency(String(unitPrice))}</strong> × {count} cont
+                          {remainder > 0 && <> · dư <strong>{formatCurrency(String(remainder))}</strong></>}
+                        </div>
+                      );
                     })()}
-                    {trip.hasReturnCargo && (
-                      <span>Chuyến về có hàng: <strong style={{ color: 'var(--success)' }}>+300.000 ₫</strong></span>
+                    {showRevOriginal && (
+                      <div className="metric-strip__sub">
+                        Giá gốc: <span style={{ textDecoration: 'line-through' }}>{formatCurrency(trip.revenueOriginal)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="metric-strip__cell">
+                    <div className="metric-strip__label"><Receipt size={13} /> Tổng chi phí</div>
+                    <div className="metric-strip__value metric-strip__value--muted">{formatCurrency(trip.totalCost)}</div>
+                    {cost > 0 && rev > 0 && (
+                      <div className="metric-strip__sub">
+                        Chiếm <strong>{((cost / rev) * 100).toFixed(1)}%</strong> doanh thu
+                      </div>
+                    )}
+                  </div>
+                  <div className="metric-strip__cell">
+                    <div className="metric-strip__label"><TrendingUp size={13} /> Lợi nhuận gộp</div>
+                    <div className={`metric-strip__value ${profitClass}`}>{formatCurrency(trip.grossProfit)}</div>
+                    {marginPct && (
+                      <div className="metric-strip__sub">
+                        Biên lợi nhuận: <strong>{marginPct}</strong>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
-              {infoRow(<User size={16} />, 'Tiền kết hợp', formatCurrency(trip.driverSalary))}
-              {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus))}
-              {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
-            </div>
 
-            <div>
-              {infoRow(<Fuel size={16} />, 'Chế độ nhiên liệu', FUEL_MODE_LABELS[trip.fuelMode])}
-              {infoRow(<Fuel size={16} />, 'Số lít nhiên liệu', trip.fuelLiters ? `${Number(trip.fuelLiters).toLocaleString('vi-VN')} lít` : '—')}
-              {(() => {
-                const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
-                const totalLiters = Number(trip.fuelLiters) || 0;
-                if (totalKm > 0 && totalLiters > 0) {
-                  const ttbq = (totalLiters / totalKm) * 100;
-                  const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warningThreshold, 0) : 0;
-                  const critThreshold = fuelConfig ? parseThreshold(fuelConfig.criticalThreshold, 0) : 0;
-                  let badge: React.ReactNode = null;
-                  if (critThreshold > 0 && ttbq > critThreshold) {
-                    badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger)', fontWeight: 600 }}>🔴 Vượt ngưỡng nghiêm trọng ({critThreshold.toFixed(1)})</span>;
-                  } else if (warnThreshold > 0 && ttbq > warnThreshold) {
-                    const overPct = Math.round(((ttbq - warnThreshold) / warnThreshold) * 100);
-                    badge = <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warning)', fontWeight: 600 }}>⚠️ Vượt ngưỡng {overPct}%</span>;
-                  }
-                  return infoRow(<Fuel size={16} />, 'TTBQ (L/100km)', <>{ttbq.toFixed(1).replace('.', ',')} L/100km{badge}</>);
-                }
-                return null;
-              })()}
-              {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} ₫/lít` : '—')}
-              {trip.fuelActualUnitPrice != null && Number(trip.fuelActualUnitPrice) > 0 && (() => {
-                const actualPrice = Number(trip.fuelActualUnitPrice);
-                const configPrice = Number(trip.fuelPriceApplied || 0);
-                const liters = Number(trip.fuelLiters || 0);
-                const variance = Math.round(liters * actualPrice) - Math.round(liters * configPrice);
-                return (
-                  <>
-                    {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} ₫/lít`)}
-                    {variance !== 0 && infoRow(
-                      <Fuel size={16} />,
-                      'Chênh lệch giá nhiên liệu',
-                      <span style={{ color: variance < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
-                        {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} ₫ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
-                      </span>,
-                    )}
-                  </>
-                );
-              })()}
-              {(() => {
-                const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
-                const issuedLiters = Number(trip.fuelLiters) || 0;
-                if (computedLiters > 0 && issuedLiters > 0 && Math.abs(issuedLiters - computedLiters) > 0.5) {
-                  const diff = issuedLiters - computedLiters;
-                  const isOver = diff > 0;
-                  return infoRow(
-                    <Fuel size={16} />,
-                    'So sánh nhiên liệu',
-                    <span>
-                      <span style={{ color: 'var(--fg-2)' }}>Phát hành {issuedLiters.toLocaleString('vi-VN')}L</span>
-                      {' · '}
-                      <span style={{ color: 'var(--fg-2)' }}>Tính theo định mức {computedLiters.toLocaleString('vi-VN')}L</span>
-                      {' · '}
-                      <strong style={{ color: isOver ? 'var(--danger)' : 'var(--success)' }}>
-                        {isOver ? '+' : ''}{diff.toLocaleString('vi-VN')}L ({isOver ? 'vượt' : 'tiết kiệm'})
-                      </strong>
-                    </span>,
-                  );
-                }
-                return null;
-              })()}
-            </div>
-          </div>
+                {(Number(trip.totalRoadAllowance) > 0
+                  || Number(trip.driverSalary) > 0
+                  || Number(trip.twoPointDeliveryBonus) > 0
+                  || Number(trip.vehicleShiftAllowance) > 0) && (
+                  <div className="subsection-card">
+                    <div className="subsection-card__title"><User size={13} /> Phụ cấp tài xế & tiền đường</div>
+                    <div className="detail-grid">
+                      {Number(trip.totalRoadAllowance) > 0 && infoRow(<MapPin size={16} />, 'Tiền đi đường', formatCurrency(trip.totalRoadAllowance), 'accent')}
+                      {Number(trip.driverSalary) > 0 && infoRow(<User size={16} />, 'Tiền kết hợp', formatCurrency(trip.driverSalary), 'info')}
+                      {Number(trip.twoPointDeliveryBonus) > 0 && infoRow(<MapPin size={16} />, 'Trả hàng 2 điểm', formatCurrency(trip.twoPointDeliveryBonus), 'info')}
+                      {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance), 'info')}
+                    </div>
+                  </div>
+                )}
+
+                {(Number(trip.tollsDiscount) > 0 || Number(trip.tollsAddition) > 0 || Number(trip.tollsStations) > 0 || trip.hasReturnCargo) && (
+                  <div className="subsection-card subsection-card--accent" style={{ marginTop: 10 }}>
+                    <div className="subsection-card__title"><MapPin size={13} /> Chi tiết tiền đường</div>
+                    <div className="detail-grid">
+                      {Number(trip.tollsDiscount) > 0 && infoRow(<Minus size={16} />, 'Giảm vé QL5', `-${formatCurrency(trip.tollsDiscount)}`, 'danger')}
+                      {Number(trip.tollsAddition) > 0 && infoRow(<Plus size={16} />, 'Tăng vé theo lệnh', `+${formatCurrency(trip.tollsAddition)}`, 'accent')}
+                      {Number(trip.tollsStations) > 0 && (() => {
+                        const rate = Number(trip.tollPerStationApplied || 0);
+                        const total = Number(trip.tollsStations) * rate;
+                        return infoRow(<Hash size={16} />, 'Số trạm (trừ)', `${trip.tollsStations} × ${rate.toLocaleString('vi-VN')} = ${formatCurrency(total)}`, 'warn');
+                      })()}
+                      {trip.hasReturnCargo && infoRow(<Package size={16} />, 'Chuyến về có hàng', '+300.000 ₫', 'accent')}
+                    </div>
+                  </div>
+                )}
+
+                <div className="subsection-card subsection-card--info" style={{ marginTop: 10 }}>
+                  <div className="subsection-card__title"><Fuel size={13} /> Nhiên liệu</div>
+                  <div className="detail-grid">
+                    {infoRow(<Fuel size={16} />, 'Chế độ', FUEL_MODE_LABELS[trip.fuelMode], 'info')}
+                    {infoRow(<Fuel size={16} />, 'Số lít', trip.fuelLiters ? `${Number(trip.fuelLiters).toLocaleString('vi-VN')} lít` : '—', 'info')}
+                    {(() => {
+                      const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
+                      const totalLiters = Number(trip.fuelLiters) || 0;
+                      if (totalKm > 0 && totalLiters > 0) {
+                        const ttbq = (totalLiters / totalKm) * 100;
+                        const warnThreshold = fuelConfig ? parseThreshold(fuelConfig.warningThreshold, 0) : 0;
+                        const critThreshold = fuelConfig ? parseThreshold(fuelConfig.criticalThreshold, 0) : 0;
+                        let alert: React.ReactNode = null;
+                        if (critThreshold > 0 && ttbq > critThreshold) {
+                          alert = <span className="fuel-alert fuel-alert--danger"><AlertTriangle size={12} /> Vượt nghiêm trọng ({critThreshold.toFixed(1)})</span>;
+                        } else if (warnThreshold > 0 && ttbq > warnThreshold) {
+                          const overPct = Math.round(((ttbq - warnThreshold) / warnThreshold) * 100);
+                          alert = <span className="fuel-alert fuel-alert--warn"><AlertTriangle size={12} /> Vượt {overPct}%</span>;
+                        } else if (warnThreshold > 0) {
+                          alert = <span className="fuel-alert fuel-alert--ok"><Check size={12} /> Ổn</span>;
+                        }
+                        return infoRow(
+                          <Fuel size={16} />,
+                          'TTBQ (L/100km)',
+                          <span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                            <span>{ttbq.toFixed(1).replace('.', ',')} L/100km</span>
+                            {alert}
+                          </span>,
+                          'info',
+                        );
+                      }
+                      return null;
+                    })()}
+                    {infoRow(<Fuel size={16} />, 'Đơn giá cấu hình', trip.fuelPriceApplied ? `${Number(trip.fuelPriceApplied).toLocaleString('vi-VN')} ₫/lít` : '—', 'info')}
+                    {trip.fuelActualUnitPrice != null && Number(trip.fuelActualUnitPrice) > 0 && (() => {
+                      const actualPrice = Number(trip.fuelActualUnitPrice);
+                      const liters = Number(trip.fuelLiters || 0);
+                      const variance = Math.round(liters * actualPrice) - Math.round(liters * Number(trip.fuelPriceApplied || 0));
+                      return (
+                        <>
+                          {infoRow(<Fuel size={16} />, 'Đơn giá thực tế', `${actualPrice.toLocaleString('vi-VN')} ₫/lít`, 'info')}
+                          {variance !== 0 && infoRow(
+                            <Fuel size={16} />,
+                            'Chênh lệch',
+                            <span className={variance < 0 ? 'ms-pos' : 'ms-neg'}>
+                              {variance > 0 ? '+' : ''}{variance.toLocaleString('vi-VN')} ₫ ({variance < 0 ? 'tiết kiệm' : 'thêm chi phí'})
+                            </span>,
+                            variance < 0 ? 'accent' : 'danger',
+                          )}
+                        </>
+                      );
+                    })()}
+                    {(() => {
+                      const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
+                      const issuedLiters = Number(trip.fuelLiters) || 0;
+                      if (computedLiters > 0 && issuedLiters > 0 && Math.abs(issuedLiters - computedLiters) > 0.5) {
+                        const diff = issuedLiters - computedLiters;
+                        const isOver = diff > 0;
+                        return infoRow(
+                          <Fuel size={16} />,
+                          'So sánh',
+                          <span className="metric-strip__sub" style={{ marginTop: 0 }}>
+                            <span>Phát hành <strong>{issuedLiters.toLocaleString('vi-VN')}L</strong></span>
+                            <span>Định mức <strong>{computedLiters.toLocaleString('vi-VN')}L</strong></span>
+                            <span className={isOver ? 'ms-neg' : 'ms-pos'}>
+                              {isOver ? '+' : ''}{diff.toLocaleString('vi-VN')}L ({isOver ? 'vượt' : 'tiết kiệm'})
+                            </span>
+                          </span>,
+                          isOver ? 'warn' : 'accent',
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </Panel>
       </div>
 
-      {/* External carrier section */}
       {trip.carrierType === 'EXTERNAL' && (
-        <Panel title="Xe ngoài" style={{ marginTop: 20 }}>
-          <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', fontSize: 14, margin: 0 }}>
-            <dt style={{ color: 'var(--fg-3)' }}>Đối tác vận chuyển</dt>
-            <dd style={{ margin: 0, fontWeight: 500 }}>{externalCarrierName}</dd>
-            <dt style={{ color: 'var(--fg-3)' }}>Biển số xe</dt>
-            <dd style={{ margin: 0 }}>{trip.externalPlateNumber ?? '—'}</dd>
-            <dt style={{ color: 'var(--fg-3)' }}>Lái xe</dt>
-            <dd style={{ margin: 0 }}>
-              {trip.externalDriverName ?? '—'}
-              {trip.externalDriverPhone ? ` (${trip.externalDriverPhone})` : ''}
-            </dd>
-            <dt style={{ color: 'var(--fg-3)' }}>Cước thuê ngoài</dt>
-            <dd style={{ margin: 0 }}>{formatCurrency(Number(trip.externalFreightCost ?? 0))}</dd>
-            {externalMargin !== null && (
+        <Panel title="Xe ngoài" subtitle="Chuyến xe sử dụng đối tác vận chuyển bên ngoài" style={{ marginTop: 20 }}>
+          <div className="detail-grid">
+            {infoRow(<User size={16} />, 'Đối tác vận chuyển', externalCarrierName, 'accent')}
+            {infoRow(<Truck size={16} />, 'Biển số xe', trip.externalPlateNumber, 'neutral')}
+            {infoRow(<User size={16} />, 'Lái xe', (
               <>
-                <dt style={{ color: 'var(--fg-3)', fontWeight: 600 }}>Lãi điều xe ngoài</dt>
-                <dd style={{ margin: 0, fontWeight: 700, color: externalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                  {formatCurrency(externalMargin)}
-                </dd>
+                {trip.externalDriverName ?? '—'}
+                {trip.externalDriverPhone ? ` (${trip.externalDriverPhone})` : ''}
               </>
+            ), 'neutral')}
+            {infoRow(<Banknote size={16} />, 'Cước thuê ngoài', formatCurrency(Number(trip.externalFreightCost ?? 0)), 'neutral')}
+            {externalMargin !== null && infoRow(
+              <TrendingUp size={16} />,
+              'Lãi điều xe ngoài',
+              <strong style={{ color: externalMargin >= 0 ? 'var(--accent)' : 'var(--danger)' }}>
+                {formatCurrency(externalMargin)}
+              </strong>,
+              externalMargin >= 0 ? 'accent' : 'danger',
             )}
-          </dl>
+          </div>
         </Panel>
       )}
 
-      {/* Ancillary fees (read-only) */}
       <Panel
         title="Chi phí dịch vụ đi kèm"
         subtitle="Phí nâng/hạ, hải quan, cân hàng…"
@@ -512,7 +585,6 @@ export default function TripDetailPage() {
         <AncillaryFeesCard tripId={trip.id} readOnly={trip.status === 'LOCKED' || trip.status === 'CANCELED'} />
       </Panel>
 
-      {/* Trip legs */}
       {trip.legs && trip.legs.length > 0 && (
         <Panel
           title="Hành trình"
@@ -555,16 +627,12 @@ export default function TripDetailPage() {
         </Panel>
       )}
 
-      {/* Notes */}
       {trip.notes && (
         <Panel title="Ghi chú" style={{ marginTop: 20 }}>
           <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: 'var(--fg-2)', margin: 0 }}>{trip.notes}</p>
         </Panel>
       )}
 
-      {/* Photos — filter out empty/invalid URLs so we never render a broken
-          <img>. Seed data sometimes inserts empty placeholders; without this
-          guard the user sees a blank panel with a broken-image icon. */}
       {(() => {
         const validPhotos = (trip.photoUrls ?? []).filter(
           (u): u is string => typeof u === 'string' && u.trim().length > 0 && u.trim() !== '#'
@@ -644,7 +712,6 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {/* Adjustments history */}
       {canAdjust && adjustments.length > 0 && (
         <Panel title="Lịch sử điều chỉnh" style={{ marginTop: 20 }} flush>
           <div className="table-scroll">
@@ -686,7 +753,6 @@ export default function TripDetailPage() {
         </Panel>
       )}
 
-      {/* Reassign Modal */}
       <Modal
         isOpen={showReassign}
         title="Phân xe lại"
@@ -730,7 +796,6 @@ export default function TripDetailPage() {
         </div>
       </Modal>
 
-      {/* Adjustment Drawer */}
       <Drawer isOpen={showAdjust} onClose={() => setShowAdjust(false)} title="Hóa đơn điều chỉnh">
         <p style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 16, lineHeight: 1.5 }}>
           Số âm = Giảm doanh thu (Credit Note) · Số dương = Tăng doanh thu (Debit Note)

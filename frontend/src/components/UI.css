@@ -614,6 +614,13 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 }
 .table-scroll { overflow-x: auto; overflow-y: hidden; }
 
+/* Ancillary-fees grid: 10 columns, density-tuned so the full row (incl. Trạng thái)
+   fits a typical trip-detail card width without horizontal scroll on 1280+ desktops. */
+.ancillary-fees__table { min-width: 0; }
+.ancillary-fees__table thead th { padding: 9px 8px; font-size: 10px; }
+.ancillary-fees__table tbody td { padding: 8px; font-size: 12.5px; }
+.ancillary-fees__table tbody td.num { font-size: 12.5px; }
+
 table {
   width: 100%;
   border-collapse: collapse;

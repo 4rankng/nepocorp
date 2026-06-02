@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Receipt, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES } from '@nepocorp/shared';
 import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
@@ -10,8 +10,29 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
-import { EmptyState } from '../../components/shared';
 import { StatusPill } from '../UI';
+
+function AncillaryEmptyState() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 24px', gap: 12, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="5" y="3" width="18" height="22" rx="2.5" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          <line x1="9" y1="10" x2="19" y2="10" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="9" y1="15" x2="19" y2="15" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="9" y1="20" x2="15" y2="20" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="22" cy="23" r="6" fill="#dcfce7" stroke="#16a34a" strokeWidth="1.5"/>
+          <line x1="22" y1="20" x2="22" y2="26" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="19" y1="23" x2="25" y2="23" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#14532d' }}>Chưa có chi phí dịch vụ</div>
+      <div style={{ fontSize: 13, color: '#4b7a5a', maxWidth: 320, lineHeight: 1.5 }}>
+        Thêm phí nâng/hạ, hải quan, cân hàng… để theo dõi lãi dịch vụ cho chuyến này.
+      </div>
+    </div>
+  );
+}
 
 interface AncillaryFeesCardProps {
   tripId: number;
@@ -194,19 +215,17 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       ) : (
         <>
           {expenses.length > 0 ? (
-            <div className="table-scroll" style={{ marginBottom: 12 }}>
-              <table>
+            <div className="table-scroll ancillary-fees__scroll" style={{ marginBottom: 12 }}>
+              <table className="ancillary-fees__table">
                 <thead>
                   <tr>
-                    <th>Loại phí</th>
-                    <th>Số Cont</th>
+                    <th>Loại phí / Cont</th>
                     <th className="num">Mua vào</th>
                     <th className="num">Bán ra</th>
                     <th className="num">Lãi DV</th>
                     <th>Hình thức</th>
                     <th>Nhà cung cấp</th>
-                    <th>Số HĐ</th>
-                    <th>Ngày HĐ</th>
+                    <th>Chứng từ</th>
                     <th>Trạng thái</th>
                     {!readOnly && <th style={{ width: 64 }}></th>}
                   </tr>
@@ -216,8 +235,14 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     const margin = Number(fee.sellAmount) - Number(fee.buyAmount);
                     return (
                       <tr key={fee.id ?? i}>
-                        <td>{feeTypeLabel(fee.expenseType)}</td>
-                        <td className="mono" style={{ fontSize: 12 }}>{fee.containerNumber ?? '—'}</td>
+                        <td>
+                          <div style={{ lineHeight: 1.25 }}>
+                            <div>{feeTypeLabel(fee.expenseType)}</div>
+                            {fee.containerNumber && (
+                              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{fee.containerNumber}</div>
+                            )}
+                          </div>
+                        </td>
                         <td className="num">{formatCurrency(Number(fee.buyAmount))}</td>
                         <td className="num">{formatCurrency(Number(fee.sellAmount))}</td>
                         <td
@@ -229,23 +254,30 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         >
                           {formatCurrency(margin)}
                         </td>
-                        <td style={{ fontSize: 12 }}>
-                          {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Công ty trả' : 'Chi hộ tạm ứng'}
+                        <td style={{ fontSize: 12, whiteSpace: 'nowrap' }} title={fee.settlementMethod === 'COMPANY_DIRECT' ? 'Công ty trả trực tiếp' : 'Chi hộ tạm ứng'}>
+                          {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
                         </td>
-                        <td style={{ fontSize: 12, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
+                        <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
                           {fee.supplierName ?? '—'}
                         </td>
-                        <td style={{ fontSize: 12, color: 'var(--fg-3)' }}>{fee.invoiceNumber ?? '—'}</td>
-                        <td style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
-                          {fee.invoiceDate ?? '—'}
+                        <td
+                          style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          title={[fee.invoiceNumber && `HĐ ${fee.invoiceNumber}`, fee.invoiceDate && `Ngày ${fee.invoiceDate}`, fee.declarationNumber && `TK ${fee.declarationNumber}`].filter(Boolean).join(' · ') || '—'}
+                        >
+                          {fee.invoiceNumber || fee.declarationNumber ? (
+                            <>
+                              <span style={{ color: 'var(--fg-1)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
+                              {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 11 }}>· {fee.invoiceDate.slice(5)}</span>}
+                            </>
+                          ) : '—'}
                         </td>
                         <td>
                           {fee.approvalStatus === 'APPROVED' ? (
-                            <StatusPill variant="success">Đã duyệt</StatusPill>
+                            <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
                           ) : fee.approvalStatus === 'REJECTED' ? (
-                            <StatusPill variant="danger">Từ chối</StatusPill>
+                            <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
                           ) : (
-                            <StatusPill variant="warn">Chờ duyệt</StatusPill>
+                            <span title="Chờ duyệt"><StatusPill variant="warn">Chờ</StatusPill></span>
                           )}
                         </td>
                         {!readOnly && (
@@ -295,17 +327,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={readOnly ? 5 : 6}></td>
+                    <td colSpan={readOnly ? 3 : 4}></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           ) : (
-            <EmptyState
-              icon={Receipt}
-              title="Chưa có chi phí dịch vụ"
-              description="Thêm phí nâng/hạ, hải quan, cân hàng… để theo dõi lãi dịch vụ cho chuyến này."
-            />
+            <AncillaryEmptyState />
           )}
 
           {!readOnly && !showForm && !hideAddButton && (
