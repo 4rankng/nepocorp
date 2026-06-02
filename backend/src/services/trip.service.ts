@@ -523,8 +523,31 @@ export async function transitionTripStatus(
         throw new ApiError(409, 'Chuyến đi không thể chốt hoặc đã bị thay đổi. Vui lòng tải lại.');
       }
 
+      // Load ancillary fees for ledger posting
+      const ancillaryFees = await tx.select().from(s.tripExpenses)
+        .where(eq(s.tripExpenses.tripId, trip.id));
+
       // Post transaction financial ledger entries via service seam
-      await LedgerService.postTripLock(tx, lockedTrip);
+      await LedgerService.postTripLock(tx, {
+        id: lockedTrip.id,
+        tripCode: lockedTrip.tripCode,
+        customerId: lockedTrip.customerId,
+        driverId: lockedTrip.driverId ?? null,
+        revenue: lockedTrip.revenue,
+        driverSalary: lockedTrip.driverSalary,
+        carrierType: lockedTrip.carrierType ?? 'OWN',
+        externalCarrierId: lockedTrip.externalCarrierId ?? null,
+        externalFreightCost: lockedTrip.externalFreightCost ?? null,
+        ancillaryFees: ancillaryFees.map(fee => ({
+          id: fee.id,
+          buyAmount: fee.buyAmount,
+          sellAmount: fee.sellAmount,
+          settlementMethod: fee.settlementMethod,
+          supplierId: fee.supplierId ?? null,
+          forwarderId: fee.forwarderId ?? null,
+          approvalStatus: fee.approvalStatus,
+        })),
+      });
 
 
       // Audit row is written by the auditLogMiddleware for the POST /lock

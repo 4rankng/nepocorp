@@ -99,24 +99,58 @@ export class LedgerService {
   static async postTripLock(tx: any, trip: {
     id: number;
     customerId: number;
-    driverId: number | null;
+    driverId: number | null;       // null for EXTERNAL trips
     tripCode: string | null;
-    revenue: string | null;
+    revenue: string | null;        // incl-VAT customer freight
     driverSalary: string | null;
+    carrierType?: string;          // 'OWN' | 'EXTERNAL', default 'OWN'
+    externalCarrierId?: number | null;
+    externalFreightCost?: string | null;  // incl-VAT
+    ancillaryFees?: Array<{
+      id: number;
+      buyAmount: string;
+      sellAmount: string;
+      settlementMethod: string;
+      supplierId: number | null;
+      forwarderId: number | null;
+      approvalStatus: string;
+    }>;
   }) {
     const revenue = Number(trip.revenue || 0);
     const driverSalary = Number(trip.driverSalary || 0);
+    const carrierType = trip.carrierType ?? 'OWN';
+    const fees = trip.ancillaryFees ?? [];
+    const label = trip.tripCode || '';
 
-    // Sorted advisory locking to prevent deadlocks
-    const lockEntities: Array<{ entityType: 'DRIVER' | 'FORWARDER' | 'CUSTOMER' | 'VENDOR'; entityId: number }> = [
-      { entityType: 'CUSTOMER', entityId: trip.customerId },
-    ];
-    if (trip.driverId) lockEntities.push({ entityType: 'DRIVER', entityId: trip.driverId });
-    await this.lockEntities(tx, lockEntities);
+    // ── 1. Collect all entities to lock (sorted globally to prevent deadlocks) ──
+    const entitiesToLock: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
 
-    const lockTripLabel = trip.tripCode || '';
+    entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
 
-    // 1. Post Customer Revenue entry
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
+      entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
+    }
+
+    if (carrierType === 'OWN' && trip.driverId) {
+      entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    }
+
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
+        if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
+          entitiesToLock.push({ entityType: 'VENDOR', entityId: fee.supplierId });
+        }
+      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
+        if (!entitiesToLock.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
+          entitiesToLock.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
+        }
+      }
+    }
+
+    await this.lockEntities(tx, entitiesToLock);
+
+    // ── 2. Customer freight revenue (always incl-VAT, unchanged) ──
     await this.postEntry(tx, {
       txnType: TxnType.TRIP_REVENUE,
       txnId: trip.id,
@@ -124,11 +158,11 @@ export class LedgerService {
       entityId: trip.customerId,
       debit: revenue,
       credit: 0,
-      note: lockTripLabel ? `Doanh thu chuyến ${lockTripLabel}` : 'Doanh thu chuyến',
+      note: label ? `Doanh thu chuyến ${label}` : 'Doanh thu chuyến',
     });
 
-    // 2. Post Driver Salary entry (if applicable — EXTERNAL trips have no driverId)
-    if (driverSalary > 0 && trip.driverId) {
+    // ── 3. OWN: driver salary ──
+    if (carrierType === 'OWN' && trip.driverId && driverSalary > 0) {
       await this.postEntry(tx, {
         txnType: TxnType.DRIVER_SALARY,
         txnId: trip.id,
@@ -136,8 +170,52 @@ export class LedgerService {
         entityId: trip.driverId,
         debit: 0,
         credit: driverSalary,
-        note: lockTripLabel ? `Lương sản lượng chuyến ${lockTripLabel}` : 'Lương sản lượng chuyến',
+        note: label ? `Lương sản lượng chuyến ${label}` : 'Lương sản lượng chuyến',
       });
+    }
+
+    // ── 4. EXTERNAL: carrier payable on their CUSTOMER ledger (D-F) ──
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && Number(trip.externalFreightCost || 0) > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.EXTERNAL_CARRIER_COST,
+        txnId: trip.id,
+        entityType: 'CUSTOMER',   // D-F: carrier is in customers catalog
+        entityId: trip.externalCarrierId,
+        debit: 0,
+        credit: Number(trip.externalFreightCost),  // credit → negative balance = we owe them
+        note: label ? `Cước thuê ngoài chuyến ${label}` : 'Cước thuê ngoài',
+      });
+    }
+
+    // ── 5. Ancillary fees — buy side (only APPROVED fees) ──
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      const buyAmt = Number(fee.buyAmount);
+      if (buyAmt <= 0) continue;
+
+      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
+        // Company pays supplier → AP
+        await this.postEntry(tx, {
+          txnType: TxnType.VENDOR_EXPENSE,
+          txnId: fee.id,
+          entityType: 'VENDOR',
+          entityId: fee.supplierId,
+          debit: 0,
+          credit: buyAmt,
+          note: label ? `Chi phí DV chuyến ${label}` : 'Chi phí dịch vụ',
+        });
+      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
+        // Forwarder paid from advance → debit reduces their advance balance
+        await this.postEntry(tx, {
+          txnType: TxnType.FORWARDER_ADVANCE,
+          txnId: fee.id,
+          entityType: 'FORWARDER',
+          entityId: fee.forwarderId,
+          debit: buyAmt,   // FORWARDER balance += credit − debit; debit reduces it
+          credit: 0,
+          note: label ? `Chi hộ DV chuyến ${label}` : 'Chi hộ dịch vụ',
+        });
+      }
     }
   }
 
