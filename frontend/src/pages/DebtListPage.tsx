@@ -13,6 +13,8 @@ interface CustomerDebtInfo {
   customerName: string;
   contactInfo: string | null;
   linkedSupplierId: number | null;
+  linkedSupplierApBalance: number;
+  netBalance: number;
   totalOutstanding: number;
   aging: {
     current: number;
@@ -53,6 +55,8 @@ export default function DebtListPage() {
       customerName: c.customerName,
       contactInfo: c.contactInfo,
       linkedSupplierId: c.linkedSupplierId ?? null,
+      linkedSupplierApBalance: (c as any).linkedSupplierApBalance ?? 0,
+      netBalance: (c as any).netBalance ?? c.totalOutstanding,
       totalOutstanding: c.totalOutstanding,
       aging: c.aging,
       maxOverdueDays: c.maxOverdueDays,
@@ -288,6 +292,7 @@ export default function DebtListPage() {
                 <tr>
                   <th>Khách hàng</th>
                   <th className="num">Tổng nợ</th>
+                  <th className="num">Net công nợ</th>
                   <th>Thông tin liên hệ</th>
                   <th>Phân bổ tuổi nợ</th>
                   <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
@@ -330,6 +335,17 @@ export default function DebtListPage() {
                         color: d.totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)'
                       }}>
                         {formatCurrency(d.totalOutstanding)}
+                      </td>
+
+                      <td className="num typo-mono" style={{
+                        fontWeight: 600,
+                        color: d.linkedSupplierId == null
+                          ? 'var(--fg-3)'
+                          : (d.netBalance > 0 ? 'var(--danger)' : d.netBalance < 0 ? 'var(--success)' : 'var(--fg-3)')
+                      }}>
+                        {d.linkedSupplierId == null
+                          ? <span style={{ color: 'var(--fg-3)' }}>—</span>
+                          : formatCurrency(d.netBalance)}
                       </td>
 
                       <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>

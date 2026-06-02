@@ -181,15 +181,35 @@ export async function getCustomerAgingList() {
   const contactMap = new Map(customers.map(c => [c.id, c.contactInfo]));
   const linkedSupplierMap = new Map(customers.map(c => [c.id, c.linkedSupplierId]));
 
-  const mapped = results.map(r => ({
-    customerId: r.entityId,
-    customerName: nameMap.get(r.entityId) || `Khách hàng #${r.entityId}`,
-    contactInfo: contactMap.get(r.entityId) || null,
-    linkedSupplierId: linkedSupplierMap.get(r.entityId) ?? null,
-    totalOutstanding: r.totalOutstanding,
-    aging: r.aging,
-    maxOverdueDays: r.maxOverdueDays,
-  }));
+  // For dual-role partners (customer with linked supplier), look up the linked
+  // supplier's outstanding AP so the list page can show a Net column.
+  const linkedSupplierIds = [...new Set(customers.map(c => c.linkedSupplierId).filter((v): v is number => v != null))];
+  const apByVendor = new Map<number, number>();
+  if (linkedSupplierIds.length > 0) {
+    const apGrouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true });
+    const apResults = computeEntityResults(apGrouped, { entityType: 'VENDOR', invertSigns: true });
+    for (const r of apResults) {
+      if (linkedSupplierIds.includes(r.entityId)) {
+        apByVendor.set(r.entityId, r.totalOutstanding);
+      }
+    }
+  }
+
+  const mapped = results.map(r => {
+    const linkedSupplierId = linkedSupplierMap.get(r.entityId) ?? null;
+    const linkedSupplierApBalance = linkedSupplierId != null ? (apByVendor.get(linkedSupplierId) ?? 0) : 0;
+    return {
+      customerId: r.entityId,
+      customerName: nameMap.get(r.entityId) || `Khách hàng #${r.entityId}`,
+      contactInfo: contactMap.get(r.entityId) || null,
+      linkedSupplierId,
+      linkedSupplierApBalance,
+      netBalance: r.totalOutstanding - linkedSupplierApBalance,
+      totalOutstanding: r.totalOutstanding,
+      aging: r.aging,
+      maxOverdueDays: r.maxOverdueDays,
+    };
+  });
 
   mapped.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
   return { customers: mapped };

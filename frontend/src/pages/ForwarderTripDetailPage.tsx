@@ -9,6 +9,8 @@ import { StatusPill, Panel, FormGroup } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { useQuery } from '@tanstack/react-query';
+import { forwarderClient } from '../api/forwarderClient';
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
@@ -35,6 +37,13 @@ export default function ForwarderTripDetailPage() {
   const containerTypeOptions = catalogs?.containerTypes ?? [];
   const forwarderExpenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
+  const { data: suppliersResp } = useQuery({
+    queryKey: ['forwarder-suppliers'],
+    queryFn: () => forwarderClient.listSuppliers(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const supplierOptions = suppliersResp?.items ?? [];
+
   const [showContainerForm, setShowContainerForm] = useState(false);
   const [containerForm, setContainerForm] = useState({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' });
 
@@ -44,12 +53,14 @@ export default function ForwarderTripDetailPage() {
     buyAmount: '',
     sellAmount: '',
     settlementMethod: 'FORWARDER_ADVANCE' as 'FORWARDER_ADVANCE' | 'COMPANY_DIRECT',
+    supplierId: '',
+    containerNumber: '',
     invoiceNumber: '',
     invoiceDate: '',
     declarationNumber: '',
     note: '',
   });
-  const [expenseErrors, setExpenseErrors] = useState<{ buyAmount?: string; declarationNumber?: string }>({});
+  const [expenseErrors, setExpenseErrors] = useState<{ buyAmount?: string; declarationNumber?: string; supplierId?: string }>({});
 
   // Expense photo state: maps expenseId → photo URLs
   const [expensePhotos, setExpensePhotos] = useState<Record<number, string[]>>({});
@@ -134,14 +145,18 @@ export default function ForwarderTripDetailPage() {
 
   const handleAddExpense = () => {
     const buyAmount = parseFloat(expenseForm.buyAmount);
-    const errors: { buyAmount?: string; declarationNumber?: string } = {};
+    const errors: { buyAmount?: string; declarationNumber?: string; supplierId?: string } = {};
     if (!buyAmount || buyAmount <= 0) errors.buyAmount = 'Giá mua vào phải lớn hơn 0';
     if (expenseForm.expenseType === 'CUSTOMS' && !expenseForm.declarationNumber.trim()) {
       errors.declarationNumber = 'Số tờ khai hải quan là bắt buộc cho phí hải quan';
     }
+    if (expenseForm.settlementMethod === 'COMPANY_DIRECT' && !expenseForm.supplierId) {
+      errors.supplierId = 'Cần chọn NCC khi công ty trả trực tiếp';
+    }
     if (Object.keys(errors).length > 0) { setExpenseErrors(errors); return; }
 
     const sellAmount = parseFloat(expenseForm.sellAmount) || 0;
+    const supplierIdNum = expenseForm.supplierId ? parseInt(expenseForm.supplierId, 10) : undefined;
     createExpenseMut.mutate(
       {
         tripId,
@@ -149,9 +164,11 @@ export default function ForwarderTripDetailPage() {
         buyAmount,
         sellAmount: sellAmount >= 0 ? sellAmount : 0,
         settlementMethod: expenseForm.settlementMethod,
+        supplierId: supplierIdNum,
         invoiceNumber: expenseForm.invoiceNumber.trim() || undefined,
         invoiceDate: expenseForm.invoiceDate || undefined,
         declarationNumber: expenseForm.declarationNumber.trim() || undefined,
+        containerNumber: expenseForm.containerNumber.trim().toUpperCase() || undefined,
         note: expenseForm.note.trim() || undefined,
       },
       {
@@ -161,6 +178,8 @@ export default function ForwarderTripDetailPage() {
             buyAmount: '',
             sellAmount: '',
             settlementMethod: 'FORWARDER_ADVANCE',
+            supplierId: '',
+            containerNumber: '',
             invoiceNumber: '',
             invoiceDate: '',
             declarationNumber: '',
@@ -431,7 +450,11 @@ export default function ForwarderTripDetailPage() {
                 <select
                   className="input"
                   value={expenseForm.settlementMethod}
-                  onChange={e => setExpenseForm(f => ({ ...f, settlementMethod: e.target.value as 'FORWARDER_ADVANCE' | 'COMPANY_DIRECT' }))}
+                  onChange={e => {
+                    const v = e.target.value as 'FORWARDER_ADVANCE' | 'COMPANY_DIRECT';
+                    setExpenseForm(f => ({ ...f, settlementMethod: v, supplierId: v === 'FORWARDER_ADVANCE' ? '' : f.supplierId }));
+                    if (expenseErrors.supplierId) setExpenseErrors(e => ({ ...e, supplierId: undefined }));
+                  }}
                 >
                   <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
                   <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
@@ -439,7 +462,43 @@ export default function ForwarderTripDetailPage() {
               </FormGroup>
             </div>
 
-            {/* Row 2: invoice + declaration + note */}
+            {/* Row 2: supplier (when company-direct) + container number */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 10 }}>
+              {expenseForm.settlementMethod === 'COMPANY_DIRECT' && (
+                <FormGroup label="Nhà cung cấp *" style={{ flex: '1 1 200px', minWidth: 180 }}>
+                  <select
+                    className={`input${expenseErrors.supplierId ? ' input--error' : ''}`}
+                    value={expenseForm.supplierId}
+                    onChange={e => {
+                      setExpenseForm(f => ({ ...f, supplierId: e.target.value }));
+                      if (expenseErrors.supplierId) setExpenseErrors(err => ({ ...err, supplierId: undefined }));
+                    }}
+                  >
+                    <option value="">-- Chọn NCC --</option>
+                    {supplierOptions.map(s => (
+                      <option key={s.id} value={String(s.id)}>{s.name}</option>
+                    ))}
+                  </select>
+                  {expenseErrors.supplierId && (
+                    <span style={{ fontSize: 11, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                      {expenseErrors.supplierId}
+                    </span>
+                  )}
+                </FormGroup>
+              )}
+
+              <FormGroup label="Số container" style={{ flex: '1 1 160px', minWidth: 140 }}>
+                <input
+                  className="input"
+                  value={expenseForm.containerNumber}
+                  onChange={e => setExpenseForm(f => ({ ...f, containerNumber: e.target.value }))}
+                  placeholder="MSKU1234567"
+                  style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}
+                />
+              </FormGroup>
+            </div>
+
+            {/* Row 3: invoice + declaration + note */}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 10 }}>
               {expenseForm.expenseType !== 'INFRASTRUCTURE' && (
                 <>

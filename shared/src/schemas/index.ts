@@ -88,6 +88,15 @@ export const createTripSchema = z.object({
     if (!data.externalFreightCost) {
       ctx.addIssue({ code: 'custom', path: ['externalFreightCost'], message: 'Cước xe ngoài là bắt buộc cho chuyến xe ngoài' });
     }
+    if (!data.externalPlateNumber || data.externalPlateNumber.trim() === '') {
+      ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe ngoài là bắt buộc cho chuyến xe ngoài' });
+    }
+    if (!data.externalDriverName || data.externalDriverName.trim() === '') {
+      ctx.addIssue({ code: 'custom', path: ['externalDriverName'], message: 'Tên lái xe ngoài là bắt buộc cho chuyến xe ngoài' });
+    }
+    if (!data.externalDriverPhone || data.externalDriverPhone.trim() === '') {
+      ctx.addIssue({ code: 'custom', path: ['externalDriverPhone'], message: 'SĐT lái xe ngoài là bắt buộc cho chuyến xe ngoài' });
+    }
   }
 });
 
@@ -461,6 +470,9 @@ export const forwarderExpenseTypeSchema = z.object({
   code: z.string().min(1).max(50),
   name: z.string().min(1, 'Tên loại chi phí không được để trống').max(100),
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  defaultMarkup: z.boolean().optional(),
+  billingLabel: z.string().max(120).nullable().optional(),
+  vatRate: z.union([z.string(), z.number()]).optional(),
 });
 
 export const debtOffsetSchema = z.object({

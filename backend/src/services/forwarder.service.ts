@@ -96,6 +96,9 @@ export async function getForwarderTripDetail(tripId: number, forwarderId: number
     buyAmount: s.tripExpenses.buyAmount,
     sellAmount: s.tripExpenses.sellAmount,
     settlementMethod: s.tripExpenses.settlementMethod,
+    supplierId: s.tripExpenses.supplierId,
+    supplierName: s.suppliers.name,
+    containerNumber: s.tripExpenses.containerNumber,
     invoiceNumber: s.tripExpenses.invoiceNumber,
     invoiceDate: s.tripExpenses.invoiceDate,
     declarationNumber: s.tripExpenses.declarationNumber,
@@ -105,6 +108,7 @@ export async function getForwarderTripDetail(tripId: number, forwarderId: number
     forwarderName: s.users.fullName,
   }).from(s.tripExpenses)
     .leftJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
+    .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
     .where(and(eq(s.tripExpenses.tripId, tripId)))
     .orderBy(desc(s.tripExpenses.createdAt));
 
@@ -424,4 +428,11 @@ export async function deleteExpensePhoto(photoId: number, forwarderId: number) {
   if (photo.forwarderId !== forwarderId) return 'FORBIDDEN';
   await db.delete(s.tripExpensePhotos).where(eq(s.tripExpensePhotos.id, photoId));
   return { deleted: true, storageKey: photo.storageKey };
+}
+
+export async function listActiveSuppliersForForwarder() {
+  return db
+    .select({ id: s.suppliers.id, name: s.suppliers.name, contactPerson: s.suppliers.contactPerson, phone: s.suppliers.phone })
+    .from(s.suppliers)
+    .where(and(isNull(s.suppliers.deletedAt), eq(s.suppliers.status, 'ACTIVE')));
 }

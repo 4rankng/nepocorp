@@ -893,6 +893,12 @@ export async function getTripById(id: number) {
     revenueOriginal: s.trips.revenueOriginal, revenueOverriddenBy: s.trips.revenueOverriddenBy,
     revenueOverriddenAt: s.trips.revenueOverriddenAt, hasReturnCargo: s.trips.hasReturnCargo,
     driverSalary: s.trips.driverSalary, notes: s.trips.notes,
+    vatRate: s.trips.vatRate,
+    carrierType: s.trips.carrierType, externalCarrierId: s.trips.externalCarrierId,
+    externalFreightCost: s.trips.externalFreightCost,
+    externalPlateNumber: s.trips.externalPlateNumber,
+    externalDriverName: s.trips.externalDriverName,
+    externalDriverPhone: s.trips.externalDriverPhone,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))

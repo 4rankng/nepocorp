@@ -23,6 +23,10 @@ export const forwarderClient = {
     return api.get<any>(FORWARDER.TRIP_DETAIL(id));
   },
 
+  listSuppliers: async () => {
+    return api.get<{ items: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }> }>('/forwarder/me/suppliers');
+  },
+
   createContainer: async (tripId: number, data: { containerTypeId?: number; containerNumber: string; sealNumber?: string; notes?: string }) => {
     return api.post(FORWARDER.CONTAINERS(tripId), data);
   },
@@ -33,9 +37,11 @@ export const forwarderClient = {
     buyAmount: number;
     sellAmount?: number;
     settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+    supplierId?: number;
     invoiceNumber?: string;
     invoiceDate?: string;
     declarationNumber?: string;
+    containerNumber?: string;
     note?: string;
   }) => {
     return api.post(FORWARDER.EXPENSES, data);

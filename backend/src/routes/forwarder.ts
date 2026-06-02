@@ -12,6 +12,7 @@ import {
   addExpensePhoto,
   getExpensePhotos,
   deleteExpensePhoto,
+  listActiveSuppliersForForwarder,
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../db';
@@ -61,6 +62,11 @@ router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: 
     createdBy: forwarder.id,
   });
   res.status(201).json(container);
+}));
+
+router.get('/suppliers', asyncHandler(async (_req: Request, res: Response) => {
+  const items = await listActiveSuppliersForForwarder();
+  res.json({ items });
 }));
 
 router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {

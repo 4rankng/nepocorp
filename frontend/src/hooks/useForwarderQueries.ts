@@ -36,9 +36,11 @@ export function useCreateForwarderExpense() {
       buyAmount: number;
       sellAmount?: number;
       settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+      supplierId?: number;
       invoiceNumber?: string;
       invoiceDate?: string;
       declarationNumber?: string;
+      containerNumber?: string;
       note?: string;
     }) =>
       forwarderClient.createExpense(data),
