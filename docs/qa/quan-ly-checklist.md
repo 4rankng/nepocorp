@@ -137,23 +137,39 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 ---
 
-## ✅ Final QA Sign-Off — 2026-06-02
+## ✅ Final QA Sign-Off — 2026-06-02 (revised after visual pass)
 
-All 38 items across M1 (Catalog), M2 (Fee creation), M3 (Approval flow), M4 (Carrier customer), M5 (External trip form), M6 (Lock + ledger), M7 (Partner link), M8 (Debt list 2-way + Net), M9 (Offset request), M10 (Approve offset), M11 (Debit note MONTHLY), M12 (Debit note PER_BATCH), M13 (P&L lines), M14 (VAT precision), M15 (Lock-time immutability), M16 (Container search) are now `[x]` Passed across 9 micro-iteration reports under `docs/qa/iterations-quan-ly/2026-06-02-NN.md`.
+All 38 items across M1–M16 are `[x]` Passed across **14 micro-iteration reports** under `docs/qa/iterations-quan-ly/2026-06-02-NN.md`.
 
-**Bugs found & patched (6 total):**
+**Iters 01–09:** API + frontend source verification (code-level).
+**Iters 10–14:** Chrome MCP browser-driven visual pass — every page exercised through the actual UI as MANAGER `phung`, with screenshot evidence visible inline in the conversation transcript (Chrome MCP ID format `ss_xxx`).
+
+**Tooling limitations encountered during visual pass:**
+- `mcp__Claude_in_Chrome__resize_window` does not shrink `window.innerWidth` below ~1132 on macOS, so mobile-responsive media queries cannot be exercised through this MCP. Mobile verification continues to rely on `docs/mobile/audit.md` (23 prior passes already shipped, including DispatchPage Pass 12 with `-226px` height savings).
+- Screenshots are visible inline to the human reader in the transcript but were not written to `docs/qa/screenshots-quan-ly/` — the Chrome MCP `save_to_disk:true` flag did not produce a discoverable filesystem path in this build, and `screencapture` (macOS native) was blocked by missing screen-recording permission for the agent shell. Documented for future runs to either bring up an in-page `__qa_save` endpoint or grant screen-recording permission to the agent terminal.
+
+**Bugs found & patched (9 total — 6 code-level + 3 visual):**
 1. Iter 02 — Forwarder expense type catalog row had `code='NA'` (manual edit via still-editable code field) breaking JOIN to trip_expenses.expenseType. Patched: DB row renamed to `LIFTING`; UI now locks `code` on edit.
 2. Iter 06 — Customer↔Supplier 2-way link was one-sided. Patched: added `mirrorCustomerLink`/`mirrorSupplierLink` `afterCreate`/`afterUpdate` hooks in `config.ts`.
 3. Iter 06 — `supplierSchema` lacked `linkedCustomerId`; Zod silently dropped it on PUT. Patched: added the field.
 4. Iter 08 — `ExcelJS.Workbook is not a constructor` (CJS interop) — debit notes + statements were unreachable. Patched: `(ExcelJSMod as any).default ?? ExcelJSMod` in both `debitNote.service.ts` and `statement.service.ts`.
 5. Iter 08 — `Content-Disposition` header rejected for Vietnamese filename (non-ASCII). Patched: RFC 5987 dual-form `filename="…" filename*=UTF-8''…`.
 6. Iter 09 — `/reports/receivables-aging` ignored `?search=`. Patched: aging service now searches name+contactInfo+containers (via trip_containers + trip_expenses); frontend wired through.
+7. **Iter 10 (visual)** — BUG-QL-007: Ancillary fees table overflowed by 305px on a typical 1280×800 trip-detail view, hiding the Trạng thái column. Patched: scoped `.ancillary-fees__table` density (padding 8px, font 12.5px), merged Loại phí + Số Cont into a 2-line cell, merged Số HĐ + Ngày HĐ into "Chứng từ" column, shortened settlement labels + status pill text. 10 cols → 8 cols.
+8. **Iter 12 (visual)** — BUG-QL-008: EXTERNAL trips on `/trips/:id` showed Tổng chi phí 0 / Lợi nhuận gộp = full revenue / Biên lợi nhuận 100% — manager glancing at any external trip saw impossibly inflated margin. Patched: `useTripDetailPage.derived` now overrides `totalCost`/`grossProfit`/`marginPct` for `carrierType=EXTERNAL` using `externalFreightCost` (incl-VAT) for cost display and `externalMargin` (ex-VAT, per Pete B3) for the headline profit + margin %.
+9. **Iter 14 (visual)** — BUG-QL-009: `/api/trips?search=...` returned **HTTP 500** because the count query referenced `customers.name`/`trucks.license_plate`/`routes.name` ILIKE without joining those tables. Frontend swallowed the 500 silently and showed "Không tìm thấy chuyến đi nào" — manager searching by container would see a false empty state. Patched: count query now uses `TRIP_RELATION_JOINS` when search is active.
 
 **Out-of-scope observations (not bugs, not blocking):**
 - No `PUT` endpoint for forwarder to edit an existing fee (iter 03). Test guide's "Giao nhận sửa giá bán → Chờ duyệt" path works only via CREATE today.
 - `approveDebtOffset` response returns stale `approvedBy=null/approvedAt=null` even though DB stamping is correct (iter 07).
 - External trips don't auto-complete from `/actuals` without a photo upload (iter 05); test pathway used a direct status bump to focus on lock-time ledger postings.
 - P&L row for external trips shows raw incl-VAT `revenue` and `costs` but ex-VAT `profit` — display inconsistency, math correct.
+
+**Density / layout — visual-pass observations not filed as bugs (acceptable as-is):**
+- DispatchPage already had Pass-12 mobile audit with `-226px` height reduction.
+- `/finance` KPI strip Tổng doanh thu = freight only (3.5M) while the P&L table below has separate Doanh thu điều xe ngoài + Lãi DV rows. Labelling possibly confusing — flag for Pete to confirm intentional.
+- `/trips` list footer reads "Hiển thị 1 trong 0 chuyến" when search matches via container EXISTS (count query intentionally simplifies; documented at trip.service.ts:764-766). Cosmetic only.
+- Trip 18 (EXTERNAL) "Phân tích tài chính" sub-rows show 0 for fuel/road/driver/service costs — a dedicated "Cước thuê ngoài" sub-row would polish the breakdown but the headline numbers are correct post-iter-12 patch.
 
 **Working-tree files changed (handed off; user commits):**
 - `backend/src/services/debitNote.service.ts` — ExcelJS interop
@@ -166,6 +182,10 @@ All 38 items across M1 (Catalog), M2 (Fee creation), M3 (Approval flow), M4 (Car
 - `frontend/src/hooks/useFinancialQueries.ts` — `useCustomerAging(search?)`
 - `frontend/src/pages/DebtListPage.tsx` — server-side search wiring + drop redundant client filter
 - `frontend/src/pages/config/ForwarderExpenseTypesConfigPage.tsx` — `code` field disabled on edit
+- `frontend/src/components/UI.css` — `.ancillary-fees__table` scoped density rules (iter 10)
+- `frontend/src/components/trip/AncillaryFeesCard.tsx` — column consolidation, scoped className, shortened labels (iter 10)
+- `frontend/src/features/trip-detail/useTripDetailPage.ts` — EXTERNAL trip KPI override (iter 12)
+- `backend/src/services/trip.service.ts` — count query joins fix for container search (iter 14)
 
 **Data-repair operations applied (test env only, idempotent):**
 - `UPDATE forwarder_expense_types SET code='LIFTING', default_markup=false WHERE code='NA'`

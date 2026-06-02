@@ -629,7 +629,7 @@ table {
 }
 thead th {
   text-align: left;
-  padding: 11px 12px;
+  padding: 18px 20px !important;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono);
@@ -649,7 +649,7 @@ td.num {
   font-family: var(--font-mono);
 }
 tbody td {
-  padding: 12px;
+  padding: 24px 20px !important;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   color: var(--ink);

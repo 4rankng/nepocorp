@@ -747,7 +747,7 @@
 
 .penalty-two-col {
   display: grid;
-  grid-template-columns: 1.55fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
 

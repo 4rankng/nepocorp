@@ -278,7 +278,7 @@ export function PenaltyTable({
               const gc = getGradeClass(d.grade);
               const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
               return (
-                <div key={d.id} className="m-card">
+                <div key={d.id} className="m-card" onClick={() => onOpenDrawer(d.id)} style={{ cursor: 'pointer' }}>
                   <div className="m-card__top">
                     <span className="m-card__title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg, width: 28, height: 28, fontSize: 11 }}>{getInitials(d.name)}</span>
@@ -303,14 +303,6 @@ export function PenaltyTable({
                       <span className="m-card__row-value m-card__row-value--danger">{formatCurrency(d.fineYTD)} đ</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 8 }}>
-                    <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
-                      <Eye size={14} />
-                    </button>
-                    <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => onOpenDrawer(d.id)}>
-                      <FileText size={14} />
-                    </button>
-                  </div>
                 </div>
               );
             })}
@@ -335,7 +327,6 @@ export function PenaltyTable({
                     <th>Vi phạm {scoreFilter === '90d' ? '90N' : scoreFilter.toUpperCase()}</th>
                     <th>Phạt YTD</th>
                     <th style={{ textAlign: 'center' }}>Mức</th>
-                    <th style={{ textAlign: 'right', width: 100 }}>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -347,7 +338,7 @@ export function PenaltyTable({
                     const moneyClass = d.fineYTD === 0 ? 'zero' : '';
                     const gc = getGradeClass(d.grade);
                     return (
-                      <tr key={d.id}>
+                      <tr key={d.id} onClick={() => onOpenDrawer(d.id)} style={{ cursor: 'pointer' }}>
                         <td style={{ textAlign: 'center' }}>
                           <span className={`penalty-rank ${rankClass}`}>{idx + 1}</span>
                         </td>
@@ -390,14 +381,6 @@ export function PenaltyTable({
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <span className={`penalty-grade ${gc}`}>{d.grade}</span>
-                        </td>
-                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <button className="penalty-row-act" aria-label="Xem chi tiết" onClick={() => setLogDriverFilter(d.id)}>
-                            <Eye size={14} />
-                          </button>
-                          <button className="penalty-row-act primary" aria-label="Lập biên bản" onClick={() => onOpenDrawer(d.id)}>
-                            <FileText size={14} />
-                          </button>
                         </td>
                       </tr>
                     );
