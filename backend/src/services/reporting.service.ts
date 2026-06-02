@@ -123,9 +123,34 @@ export async function getPnlReport(month: number, year: number) {
       ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
       : gte(s.trips.departureDate, tripStart);
 
-    const trips = await db.select().from(s.trips).where(
+    const monthTrips = await db.select().from(s.trips).where(
       and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), dateFilter)
     );
+
+    // Separate OWN vs EXTERNAL carrier trips
+    const ownTrips = monthTrips.filter(t => (t.carrierType ?? 'OWN') === 'OWN');
+    const extTrips = monthTrips.filter(t => t.carrierType === 'EXTERNAL');
+
+    // For P&L totals, only OWN trips contribute to freight revenue/costs
+    const trips = ownTrips;
+
+    // Fetch all approved ancillary fees for trips in this period (one query)
+    const tripIds = monthTrips.map(t => t.id);
+    type TripExpenseRow = typeof s.tripExpenses.$inferSelect;
+    let allFees: TripExpenseRow[] = [];
+    if (tripIds.length > 0) {
+      allFees = await db.select().from(s.tripExpenses)
+        .where(and(
+          inArray(s.tripExpenses.tripId, tripIds),
+          eq(s.tripExpenses.approvalStatus, 'APPROVED'),
+        ));
+    }
+    // Build a map: tripId → fees[]
+    const tripFeeMap = new Map<number, TripExpenseRow[]>();
+    for (const fee of allFees) {
+      if (!tripFeeMap.has(fee.tripId)) tripFeeMap.set(fee.tripId, []);
+      tripFeeMap.get(fee.tripId)!.push(fee);
+    }
 
     const totalRevenue = trips.reduce((sum, t) => sum + parseFloat(t.revenue || '0'), 0);
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
@@ -206,14 +231,17 @@ export async function getPnlReport(month: number, year: number) {
     }));
 
     let totalMaintenanceExpenses = 0;
-    const byTruck = new Map<number, { id: number; plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number }>();
+    const byTruck = new Map<number, { id: number; plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number; serviceMargin: number }>();
     for (const trip of trips) {
       if (!trip.truckId) continue; // EXTERNAL trips have no truck
-      const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0 };
+      const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0, serviceMargin: 0 };
       existing.revenue += parseFloat(trip.revenue || '0');
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
       existing.trips++;
+      // Accumulate service margin from approved ancillary fees (sell - buy)
+      const tripFees = tripFeeMap.get(trip.id) ?? [];
+      existing.serviceMargin += tripFees.reduce((sum, f) => sum + (Number(f.sellAmount) - Number(f.buyAmount)), 0);
       byTruck.set(trip.truckId, existing);
     }
     for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {
@@ -235,6 +263,54 @@ export async function getPnlReport(month: number, year: number) {
       maintenanceExpensesByTruckResult[truckId] = String(mtnExp);
     }
 
+    // Build truck breakdown array — own trucks first
+    const truckBreakdown: Array<{
+      id: number;
+      plate: string;
+      revenue: number;
+      costs: number;
+      profit: number;
+      trips: number;
+      maintenanceExpenses: number;
+      serviceMargin?: number;
+      externalMargin?: number;
+    }> = Array.from(byTruck.values());
+
+    // Add "Xe ngoài" bucket for external carrier trips
+    if (extTrips.length > 0) {
+      const extServiceMargin = extTrips.reduce((sum, t) => {
+        const fees = tripFeeMap.get(t.id) ?? [];
+        return sum + fees.reduce((s, f) => s + (Number(f.sellAmount) - Number(f.buyAmount)), 0);
+      }, 0);
+
+      const extMgmtMargin = extTrips.reduce((sum, t) => {
+        const vat = Number(t.vatRate ?? 0);
+        const rev = Number(t.revenue ?? 0);
+        const cost = Number(t.externalFreightCost ?? 0);
+        const revExVat = vat > 0 ? Math.round(rev / (1 + vat)) : rev;
+        const costExVat = vat > 0 ? Math.round(cost / (1 + vat)) : cost;
+        return sum + (revExVat - costExVat);
+      }, 0);
+
+      const extRevenue = extTrips.reduce((s, t) => s + Number(t.revenue ?? 0), 0);
+      const extCosts = extTrips.reduce((s, t) => s + Number(t.externalFreightCost ?? 0), 0);
+
+      truckBreakdown.push({
+        id: 0,
+        plate: 'Xe ngoài',
+        trips: extTrips.length,
+        revenue: extRevenue,
+        costs: extCosts,
+        profit: extMgmtMargin + extServiceMargin,
+        serviceMargin: extServiceMargin,
+        externalMargin: extMgmtMargin,
+        maintenanceExpenses: 0,
+      });
+    }
+
+    const serviceMarginTotal = truckBreakdown.reduce((s, t) => s + (t.serviceMargin ?? 0), 0);
+    const externalMarginTotal = truckBreakdown.reduce((s, t) => s + (t.externalMargin ?? 0), 0);
+
     return {
       period: { month, year },
       totalRevenue,
@@ -244,12 +320,15 @@ export async function getPnlReport(month: number, year: number) {
       otherIncome,
       companyExpenses,
       netProfit,
-      tripCount: trips.length,
+      tripCount: monthTrips.length,
       maintenanceExpensesTotal: totalMaintenanceExpenses,
       maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
       maintenanceByComponent: Object.fromEntries(maintenanceByComponent),
       categoryBreakdown,
-      trucks: Array.from(byTruck.values()),
+      trucks: truckBreakdown,
+      serviceMarginTotal,
+      externalMarginTotal,
+      externalTripsCount: extTrips.length,
     };
   });
 }
