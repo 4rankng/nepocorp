@@ -3,6 +3,7 @@ import { TRIPS, CATALOGS } from "@nepocorp/shared";
 import type {
   Trip,
   TripDetail,
+  TripExpense,
   CreateTripRequest,
   UpdateTripFiguresRequest,
   PaginatedResponse,
@@ -89,4 +90,13 @@ export const tripClient = {
   getBootstrap: async () => {
     return api.get<any>(CATALOGS.BOOTSTRAP);
   },
+
+  listTripExpenses: (tripId: number) =>
+    api.get<{ items: TripExpense[] }>(`/trips/${tripId}/expenses`),
+
+  createTripExpense: (tripId: number, data: object) =>
+    api.post<TripExpense>(`/trips/${tripId}/expenses`, data),
+
+  deleteTripExpense: (tripId: number, eid: number) =>
+    api.delete<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}`),
 };

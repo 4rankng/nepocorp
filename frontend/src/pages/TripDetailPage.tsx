@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Play, Pencil, Lock, XCircle,
   Truck, User, MapPin, Calendar, FileText, Fuel, Banknote,
   Route as RouteIcon, Image as ImageIcon, Shuffle, FilePen, X, Clock,
+  Package,
 } from 'lucide-react';
 import { api, ApiError, getAuthenticatedPhotoUrl } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -16,9 +17,12 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { Panel, StatusPill, useConfirm, Drawer, Modal } from '../components/UI';
 import { useTripDetail, useTripAdjustments, useTrucksAndDrivers, useFuelConfig } from '../hooks/useQueries';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Spinner } from '../components/shared/Spinner';
 import { LeafletMap } from '../components/shared/LeafletMap';
+import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
+import { tripClient } from '../api/tripClient';
+import { useCatalogs } from '../hooks/useCatalogs';
 
 function infoRow(icon: React.ReactNode, label: string, value: React.ReactNode) {
   return (
@@ -43,6 +47,13 @@ export default function TripDetailPage() {
   const error = queryError ? 'Không thể tải thông tin lệnh vận chuyển.' : '';
   const { data: adjustments = [] } = useTripAdjustments(trip?.id ?? 0);
   const { data: fuelConfig } = useFuelConfig();
+  const { data: catalogData } = useCatalogs();
+  const externalCarrierName = trip?.externalCarrierId
+    ? (catalogData?.customers.find(c => c.id === trip.externalCarrierId)?.name ?? `ID ${trip.externalCarrierId}`)
+    : '—';
+  const externalMargin = trip?.carrierType === 'EXTERNAL' && trip.revenue && trip.externalFreightCost
+    ? Math.round(Number(trip.revenue) / (1 + Number(trip.vatRate ?? 0.08))) - Math.round(Number(trip.externalFreightCost) / (1 + Number(trip.vatRate ?? 0.08)))
+    : null;
 
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -449,6 +460,42 @@ export default function TripDetailPage() {
           {Number(trip.vehicleShiftAllowance) > 0 && infoRow(<Clock size={16} />, 'Lưu ca xe', formatCurrency(trip.vehicleShiftAllowance))}
         </Panel>
       </div>
+
+      {/* External carrier section */}
+      {trip.carrierType === 'EXTERNAL' && (
+        <Panel title="Xe ngoài" style={{ marginTop: 20 }}>
+          <dl style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', fontSize: 14, margin: 0 }}>
+            <dt style={{ color: 'var(--fg-3)' }}>Đối tác vận chuyển</dt>
+            <dd style={{ margin: 0, fontWeight: 500 }}>{externalCarrierName}</dd>
+            <dt style={{ color: 'var(--fg-3)' }}>Biển số xe</dt>
+            <dd style={{ margin: 0 }}>{trip.externalPlateNumber ?? '—'}</dd>
+            <dt style={{ color: 'var(--fg-3)' }}>Lái xe</dt>
+            <dd style={{ margin: 0 }}>
+              {trip.externalDriverName ?? '—'}
+              {trip.externalDriverPhone ? ` (${trip.externalDriverPhone})` : ''}
+            </dd>
+            <dt style={{ color: 'var(--fg-3)' }}>Cước thuê ngoài</dt>
+            <dd style={{ margin: 0 }}>{formatCurrency(Number(trip.externalFreightCost ?? 0))}</dd>
+            {externalMargin !== null && (
+              <>
+                <dt style={{ color: 'var(--fg-3)', fontWeight: 600 }}>Lãi điều xe ngoài</dt>
+                <dd style={{ margin: 0, fontWeight: 700, color: externalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {formatCurrency(externalMargin)}
+                </dd>
+              </>
+            )}
+          </dl>
+        </Panel>
+      )}
+
+      {/* Ancillary fees (read-only) */}
+      <Panel
+        title="Chi phí dịch vụ đi kèm"
+        subtitle="Phí nâng/hạ, hải quan, cân hàng…"
+        style={{ marginTop: 20 }}
+      >
+        <AncillaryFeesCard tripId={trip.id} readOnly />
+      </Panel>
 
       {/* Trip legs */}
       {trip.legs && trip.legs.length > 0 && (

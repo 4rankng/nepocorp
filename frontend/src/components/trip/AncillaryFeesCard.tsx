@@ -1,0 +1,335 @@
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES } from '@nepocorp/shared';
+import type { AncillaryExpenseType } from '@nepocorp/shared';
+import type { TripExpense } from '@nepocorp/shared';
+import { tripClient } from '../../api/tripClient';
+import { formatCurrency } from '../../lib/format';
+
+interface AncillaryFeesCardProps {
+  tripId: number;
+  readOnly?: boolean;
+}
+
+const EXPENSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([k, v]) => [k, v.name])
+);
+
+function feeTypeLabel(code: string): string {
+  return EXPENSE_TYPE_LABELS[code] ?? code;
+}
+
+const EMPTY_FORM = {
+  expenseType: ANCILLARY_EXPENSE_TYPES[0] as AncillaryExpenseType,
+  buyAmount: '',
+  sellAmount: '',
+  settlementMethod: 'FORWARDER_ADVANCE' as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
+  invoiceNumber: '',
+  invoiceDate: '',
+  declarationNumber: '',
+  note: '',
+};
+
+export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCardProps) {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['trip-expenses', tripId],
+    queryFn: async () => {
+      const res = await tripClient.listTripExpenses(tripId);
+      return res.items ?? [];
+    },
+    enabled: !!tripId,
+  });
+
+  const expenses: TripExpense[] = data ?? [];
+
+  const handleAdd = async () => {
+    setFormError('');
+    if (!form.buyAmount || Number(form.buyAmount) <= 0) {
+      setFormError('Vui lòng nhập số tiền mua vào hợp lệ.');
+      return;
+    }
+    if (form.expenseType === 'CUSTOMS' && !form.declarationNumber.trim()) {
+      setFormError('Số tờ khai là bắt buộc cho phí hải quan.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await tripClient.createTripExpense(tripId, {
+        expenseType: form.expenseType,
+        buyAmount: Number(form.buyAmount),
+        sellAmount: form.sellAmount ? Number(form.sellAmount) : 0,
+        settlementMethod: form.settlementMethod,
+        invoiceNumber: form.invoiceNumber.trim() || undefined,
+        invoiceDate: form.invoiceDate || undefined,
+        declarationNumber: form.declarationNumber.trim() || undefined,
+        note: form.note.trim() || undefined,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    } catch (e: any) {
+      setFormError(e.message || 'Lỗi khi thêm phí.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (eid: number) => {
+    try {
+      await tripClient.deleteTripExpense(tripId, eid);
+      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
+    } catch {
+      // silently ignore — UI will refresh on next load
+    }
+  };
+
+  const totalBuy = expenses.reduce((s, e) => s + Number(e.buyAmount), 0);
+  const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
+  const totalMargin = totalSell - totalBuy;
+
+  return (
+    <div>
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg-3)', fontSize: 13 }}>
+          <Loader2 size={14} className="spin" /> Đang tải chi phí…
+        </div>
+      ) : (
+        <>
+          {expenses.length > 0 ? (
+            <div className="table-scroll" style={{ marginBottom: 12 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Loại phí</th>
+                    <th className="num">Mua vào</th>
+                    <th className="num">Bán ra</th>
+                    <th className="num">Lãi DV</th>
+                    <th>Hình thức</th>
+                    <th>Số HĐ</th>
+                    <th>Ngày HĐ</th>
+                    {!readOnly && <th style={{ width: 36 }}></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.map((fee, i) => {
+                    const margin = Number(fee.sellAmount) - Number(fee.buyAmount);
+                    return (
+                      <tr key={fee.id ?? i}>
+                        <td>{feeTypeLabel(fee.expenseType)}</td>
+                        <td className="num">{formatCurrency(Number(fee.buyAmount))}</td>
+                        <td className="num">{formatCurrency(Number(fee.sellAmount))}</td>
+                        <td
+                          className="num"
+                          style={{
+                            color: margin >= 0 ? 'var(--success)' : 'var(--danger)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatCurrency(margin)}
+                        </td>
+                        <td style={{ fontSize: 12 }}>
+                          {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Công ty trả' : 'Chi hộ tạm ứng'}
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--fg-3)' }}>{fee.invoiceNumber ?? '—'}</td>
+                        <td style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
+                          {fee.invoiceDate ?? '—'}
+                        </td>
+                        {!readOnly && (
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--icon btn--sm"
+                              onClick={() => handleDelete(fee.id)}
+                              title="Xóa phí này"
+                            >
+                              <Trash2 size={13} style={{ color: 'var(--danger)' }} />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ fontWeight: 600, borderTop: '2px solid var(--border-1)' }}>
+                    <td>Tổng</td>
+                    <td className="num">{formatCurrency(totalBuy)}</td>
+                    <td className="num">{formatCurrency(totalSell)}</td>
+                    <td
+                      className="num"
+                      style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}
+                    >
+                      {formatCurrency(totalMargin)}
+                    </td>
+                    <td colSpan={readOnly ? 3 : 4}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 12 }}>
+              Chưa có chi phí dịch vụ nào.
+            </p>
+          )}
+
+          {!readOnly && !showForm && (
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+            >
+              <Plus size={14} /> Thêm phí
+            </button>
+          )}
+
+          {!readOnly && showForm && (
+            <div
+              style={{
+                padding: 14,
+                border: '1px solid var(--border-1)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--bg-3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 2 }}>
+                Thêm chi phí dịch vụ
+              </div>
+
+              {formError && (
+                <div style={{ padding: '6px 10px', background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 12 }}>
+                  {formError}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Loại phí *</label>
+                  <select
+                    className="input"
+                    value={form.expenseType}
+                    onChange={(e) => setForm(f => ({ ...f, expenseType: e.target.value as AncillaryExpenseType }))}
+                  >
+                    {ANCILLARY_EXPENSE_TYPES.map(t => (
+                      <option key={t} value={t}>{feeTypeLabel(t)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Hình thức thanh toán</label>
+                  <select
+                    className="input"
+                    value={form.settlementMethod}
+                    onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE' }))}
+                  >
+                    <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
+                    <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Mua vào (đ) *</label>
+                  <input
+                    className="input mono"
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={form.buyAmount}
+                    onChange={(e) => setForm(f => ({ ...f, buyAmount: e.target.value }))}
+                  />
+                </div>
+
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Bán ra (đ)</label>
+                  <input
+                    className="input mono"
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={form.sellAmount}
+                    onChange={(e) => setForm(f => ({ ...f, sellAmount: e.target.value }))}
+                  />
+                </div>
+
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Số hóa đơn</label>
+                  <input
+                    className="input mono"
+                    type="text"
+                    placeholder="VD: HD-001"
+                    value={form.invoiceNumber}
+                    onChange={(e) => setForm(f => ({ ...f, invoiceNumber: e.target.value }))}
+                  />
+                </div>
+
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Ngày hóa đơn</label>
+                  <input
+                    className="input mono"
+                    type="date"
+                    value={form.invoiceDate}
+                    onChange={(e) => setForm(f => ({ ...f, invoiceDate: e.target.value }))}
+                  />
+                </div>
+
+                {form.expenseType === 'CUSTOMS' && (
+                  <div className="field" style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 12 }}>Số tờ khai hải quan *</label>
+                    <input
+                      className="input mono"
+                      type="text"
+                      placeholder="VD: TK-2024-001"
+                      value={form.declarationNumber}
+                      onChange={(e) => setForm(f => ({ ...f, declarationNumber: e.target.value }))}
+                    />
+                  </div>
+                )}
+
+                <div className="field" style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 12 }}>Ghi chú</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Ghi chú thêm…"
+                    value={form.note}
+                    onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  disabled={submitting}
+                  onClick={handleAdd}
+                >
+                  {submitting ? <Loader2 size={13} className="spin" /> : <Plus size={13} />}
+                  Lưu phí
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  disabled={submitting}
+                  onClick={() => { setShowForm(false); setFormError(''); }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

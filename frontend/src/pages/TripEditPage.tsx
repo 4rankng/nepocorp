@@ -15,6 +15,7 @@ import { TotalsPanel } from '../components/trip/TotalsPanel';
 import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
+import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import type { TripOptions } from '../hooks/useTripOptions';
 
 export default function TripEditPage() {
@@ -26,6 +27,7 @@ export default function TripEditPage() {
 
   const editOptions: TripOptions = useMemo(() => ({
     customers: [],
+    carrierCustomers: [],
     routes: catalogData?.routes.map(r => ({
       id: r.id,
       label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ''}`,
@@ -213,6 +215,19 @@ export default function TripEditPage() {
                       onChange={e => setNotes(e.target.value)}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="tc-card">
+                <div className="tc-card-head">
+                  <div className="tc-card-num">6</div>
+                  <div className="tc-card-text">
+                    <div className="tc-card-title">Chi phí dịch vụ đi kèm</div>
+                    <div className="tc-card-sub">Phí nâng/hạ, hải quan, cân hàng, kiểm hóa…</div>
+                  </div>
+                </div>
+                <div className="tc-card-body">
+                  <AncillaryFeesCard tripId={trip.id} />
                 </div>
               </div>
             </div>

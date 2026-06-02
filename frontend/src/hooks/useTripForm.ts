@@ -61,6 +61,21 @@ export interface UseTripFormReturn {
   containerCount: string;
   setContainerCount: (v: string) => void;
 
+  carrierType: 'OWN' | 'EXTERNAL';
+  setCarrierType: (v: 'OWN' | 'EXTERNAL') => void;
+  vatRate: number;
+  setVatRate: (v: number) => void;
+  externalCarrierId: number | null;
+  setExternalCarrierId: (v: number | null) => void;
+  externalFreightCost: string;
+  setExternalFreightCost: (v: string) => void;
+  externalPlateNumber: string;
+  setExternalPlateNumber: (v: string) => void;
+  externalDriverName: string;
+  setExternalDriverName: (v: string) => void;
+  externalDriverPhone: string;
+  setExternalDriverPhone: (v: string) => void;
+
   legs: FormLeg[];
   addLeg: () => void;
   removeLeg: (idx: number) => void;
@@ -302,6 +317,28 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [customerReference, setCustomerReference] = useState(isEditMode && existingTrip?.customerReference ? existingTrip.customerReference : "");
   const [containerCount, setContainerCount] = useState(isEditMode && existingTrip?.containerCount ? String(existingTrip.containerCount) : "1");
 
+  const [carrierType, setCarrierType] = useState<'OWN' | 'EXTERNAL'>(
+    isEditMode && existingTrip ? existingTrip.carrierType : 'OWN'
+  );
+  const [vatRate, setVatRate] = useState<number>(
+    isEditMode && existingTrip ? Number(existingTrip.vatRate) : 0.08
+  );
+  const [externalCarrierId, setExternalCarrierId] = useState<number | null>(
+    isEditMode && existingTrip ? existingTrip.externalCarrierId : null
+  );
+  const [externalFreightCost, setExternalFreightCost] = useState(
+    isEditMode && existingTrip?.externalFreightCost ? String(existingTrip.externalFreightCost) : ""
+  );
+  const [externalPlateNumber, setExternalPlateNumber] = useState(
+    isEditMode && existingTrip?.externalPlateNumber ? existingTrip.externalPlateNumber : ""
+  );
+  const [externalDriverName, setExternalDriverName] = useState(
+    isEditMode && existingTrip?.externalDriverName ? existingTrip.externalDriverName : ""
+  );
+  const [externalDriverPhone, setExternalDriverPhone] = useState(
+    isEditMode && existingTrip?.externalDriverPhone ? existingTrip.externalDriverPhone : ""
+  );
+
   const [fuelMode, setFuelMode] = useState<FuelMode>(isEditMode && existingTrip ? existingTrip.fuelMode : FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState(isEditMode && existingTrip?.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : "");
   const [fuelSupplementLiters, setFuelSupplementLiters] = useState(isEditMode && existingTrip?.fuelSupplementLiters ? String(existingTrip.fuelSupplementLiters) : "");
@@ -378,6 +415,13 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     setNotes(existingTrip.notes || '');
     setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     setPhotoUrls(existingTrip.photoUrls || []);
+    setCarrierType(existingTrip.carrierType ?? 'OWN');
+    setVatRate(existingTrip.vatRate != null ? Number(existingTrip.vatRate) : 0.08);
+    setExternalCarrierId(existingTrip.externalCarrierId ?? null);
+    setExternalFreightCost(existingTrip.externalFreightCost ? String(existingTrip.externalFreightCost) : '');
+    setExternalPlateNumber(existingTrip.externalPlateNumber ?? '');
+    setExternalDriverName(existingTrip.externalDriverName ?? '');
+    setExternalDriverPhone(existingTrip.externalDriverPhone ?? '');
 
     if (existingTrip.legs && existingTrip.legs.length > 0) {
       setLegs(existingTrip.legs.map((leg: any) => ({
@@ -526,13 +570,18 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     let count = 0;
     if (customerId) count++;
     if (routeId) count++;
-    if (truckId) count++;
-    if (trailerType) count++;
-    if (driverId) count++;
+    if (carrierType === 'EXTERNAL') {
+      // For external trips, truck/trailer/driver slots are replaced by external fields
+      count += 3; // truckId + trailerType + driverId equivalents always satisfied
+    } else {
+      if (truckId) count++;
+      if (trailerType) count++;
+      if (driverId) count++;
+    }
     if (cargoTypeId) count++;
     if (departureDate) count++;
     return count;
-  }, [customerId, routeId, truckId, trailerType, driverId, cargoTypeId, departureDate]);
+  }, [customerId, routeId, carrierType, truckId, trailerType, driverId, cargoTypeId, departureDate]);
 
   const completionStatus = useMemo((): CompletionStatus => {
     let fuelRevenue = 0;
@@ -683,13 +732,25 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
         const createPayload: Record<string, unknown> = {
           customerId: Number(customerId),
           routeId: Number(routeId),
-          truckId: Number(truckId),
-          trailerType: trailerType || undefined,
-          driverId: Number(driverId),
           cargoTypeId: Number(cargoTypeId),
           departureDate: departureDate,
           fuelMode,
+          carrierType,
+          vatRate,
         };
+        if (carrierType === 'OWN') {
+          createPayload.truckId = Number(truckId);
+          createPayload.trailerType = trailerType || undefined;
+          createPayload.driverId = Number(driverId);
+        } else {
+          createPayload.truckId = null;
+          createPayload.driverId = null;
+          createPayload.externalCarrierId = externalCarrierId ?? undefined;
+          createPayload.externalFreightCost = externalFreightCost ? Number(externalFreightCost) : undefined;
+          createPayload.externalPlateNumber = externalPlateNumber.trim() || undefined;
+          createPayload.externalDriverName = externalDriverName.trim() || undefined;
+          createPayload.externalDriverPhone = externalDriverPhone.trim() || undefined;
+        }
         if (customerReference.trim()) {
           createPayload.customerReference = customerReference.trim();
         }
@@ -792,6 +853,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       roadAllowanceOverride,
       fuelActualUnitPrice,
       revenue, revenueEmptyReturn, revenueCombine, notes, photoUrls,
+      carrierType, vatRate, externalCarrierId, externalFreightCost,
+      externalPlateNumber, externalDriverName, externalDriverPhone,
       queryClient,
     ],
   );
@@ -806,6 +869,13 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     departureDate, setDepartureDate,
     customerReference, setCustomerReference,
     containerCount, setContainerCount,
+    carrierType, setCarrierType,
+    vatRate, setVatRate,
+    externalCarrierId, setExternalCarrierId,
+    externalFreightCost, setExternalFreightCost,
+    externalPlateNumber, setExternalPlateNumber,
+    externalDriverName, setExternalDriverName,
+    externalDriverPhone, setExternalDriverPhone,
     legs, addLeg, removeLeg, updateLeg,
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,

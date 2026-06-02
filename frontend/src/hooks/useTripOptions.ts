@@ -34,6 +34,7 @@ export interface TrailerTypeOption {
 
 export interface TripOptions {
   customers: SelectOption[];
+  carrierCustomers: SelectOption[];
   routes: RouteOption[];
   trucks: TruckOption[];
   trailerTypes: TrailerTypeOption[];
@@ -45,7 +46,7 @@ export interface TripOptions {
 }
 
 interface CatalogData {
-  customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }>;
+  customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean }>;
   trucks: Array<{ id: number; licensePlate: string; currentTrailerId: number | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: any[] | null }>;
@@ -73,6 +74,7 @@ export function useTripOptions(): TripOptions {
 
   return {
     customers: catalog?.customers.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    carrierCustomers: catalog?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
     routes:
       catalog?.routes.map((r) => ({
         id: r.id,

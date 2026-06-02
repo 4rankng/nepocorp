@@ -47,6 +47,7 @@ export default function TripCreatePage() {
           <div className="tc-form-col">
             <TripInfoCard
               customers={options.customers}
+              carrierCustomers={options.carrierCustomers}
               routes={options.routes}
               trucks={options.trucks}
               trailerTypes={options.trailerTypes}
