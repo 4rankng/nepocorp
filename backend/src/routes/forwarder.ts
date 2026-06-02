@@ -14,6 +14,7 @@ import {
   deleteExpensePhoto,
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { db } from '../db';
 import { tripContainerSchema, tripExpenseSchema } from '@nepocorp/shared';
 import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@nepocorp/shared';
@@ -66,11 +67,18 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = await getForwarderByUserId(req.user!.userId);
   const parsed = tripExpenseSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
-  const expense = await createTripExpense({
-    ...parsed.data,
-    forwarderId: forwarder.id,
+  const expense = await createTripExpense(db, {
+    tripId: parsed.data.tripId,
+    forwarderId: forwarder.id,  // forwarder-created → PENDING
+    expenseType: parsed.data.expenseType,
     buyAmount: String(parsed.data.buyAmount),
     sellAmount: String(parsed.data.sellAmount ?? 0),
+    settlementMethod: parsed.data.settlementMethod,
+    supplierId: parsed.data.supplierId ?? null,
+    invoiceNumber: parsed.data.invoiceNumber ?? null,
+    invoiceDate: parsed.data.invoiceDate ?? null,
+    declarationNumber: parsed.data.declarationNumber ?? null,
+    containerNumber: parsed.data.containerNumber ?? null,
     note: parsed.data.note ?? null,
   });
   res.status(201).json(expense);

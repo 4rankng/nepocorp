@@ -338,19 +338,31 @@ async function seed() {
   }
 
   // ─── Forwarder expense types (user-configurable) ─────────────────────────
-  const fetSeeds = Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([code, meta]) => ({ code, name: meta.name }));
-  const existingFets = await db.select({ code: schema.forwarderExpenseTypes.code })
-    .from(schema.forwarderExpenseTypes);
-  const existingFetCodes = new Set(existingFets.map(f => f.code));
-  const newFets = fetSeeds.filter(f => !existingFetCodes.has(f.code));
-  if (newFets.length > 0) {
-    for (const fet of newFets) {
-      await db.insert(schema.forwarderExpenseTypes).values(fet).onConflictDoNothing();
-    }
-    console.log(`✅ Forwarder expense types seeded! (${newFets.length} new)`);
-  } else {
-    console.log('✅ Forwarder expense types already exist, skipping.');
+  // Upsert all 8 fee types with defaultMarkup, billingLabel, vatRate so that
+  // re-running seed is safe and always brings the table up to date.
+  let fetUpsertCount = 0;
+  for (const [code, meta] of Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS)) {
+    await db.insert(schema.forwarderExpenseTypes)
+      .values({
+        code,
+        name: meta.name,
+        defaultMarkup: meta.defaultMarkup,
+        billingLabel: meta.billingLabel,
+        vatRate: '0.080',
+      })
+      .onConflictDoUpdate({
+        target: schema.forwarderExpenseTypes.code,
+        set: {
+          name: meta.name,
+          defaultMarkup: meta.defaultMarkup,
+          billingLabel: meta.billingLabel,
+          vatRate: '0.080',
+          updatedAt: new Date(),
+        },
+      });
+    fetUpsertCount++;
   }
+  console.log(`✅ Forwarder expense types upserted! (${fetUpsertCount} codes)`);
 
   process.exit(0);
 }

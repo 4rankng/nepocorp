@@ -211,21 +211,28 @@ export async function batchUpsertTripContainers(
   });
 }
 
-export async function createTripExpense(data: {
-  tripId: number;
-  forwarderId: number | null;
-  expenseType: string;
-  buyAmount: string;
-  sellAmount?: string;
-  settlementMethod?: string;
-  supplierId?: number;
-  invoiceNumber?: string;
-  invoiceDate?: string;
-  declarationNumber?: string;
-  containerNumber?: string;
-  note: string | null;
-}) {
-  const [inserted] = await db.insert(s.tripExpenses).values({
+export async function createTripExpense(
+  txOrDb: typeof db | Tx,
+  data: {
+    tripId: number;
+    forwarderId: number | null;
+    expenseType: string;
+    buyAmount: string;
+    sellAmount?: string;
+    settlementMethod?: string;
+    supplierId?: number | null;
+    invoiceNumber?: string | null;
+    invoiceDate?: string | null;
+    declarationNumber?: string | null;
+    containerNumber?: string | null;
+    note: string | null;
+  },
+) {
+  // forwarderId=null means accountant/manager-created → auto-approve.
+  // forwarderId set means forwarder-created → requires manager approval.
+  const approvalStatus = data.forwarderId == null ? 'APPROVED' : 'PENDING';
+
+  const [inserted] = await (txOrDb as any).insert(s.tripExpenses).values({
     tripId: data.tripId,
     forwarderId: data.forwarderId,
     expenseType: data.expenseType,
@@ -237,9 +244,77 @@ export async function createTripExpense(data: {
     invoiceDate: data.invoiceDate ?? null,
     declarationNumber: data.declarationNumber ?? null,
     containerNumber: data.containerNumber ?? null,
+    approvalStatus,
     note: data.note,
   }).returning();
   return inserted;
+}
+
+export async function updateTripExpense(
+  txOrDb: typeof db | Tx,
+  id: number,
+  patch: {
+    expenseType?: string;
+    buyAmount?: string;
+    sellAmount?: string;
+    settlementMethod?: string;
+    supplierId?: number | null;
+    invoiceNumber?: string | null;
+    invoiceDate?: string | null;
+    declarationNumber?: string | null;
+    containerNumber?: string | null;
+    note?: string | null;
+  },
+) {
+  // Fetch existing to check forwarderId — if forwarder-owned and sellAmount
+  // is being updated, re-pend for manager review.
+  const [existing] = await (txOrDb as any)
+    .select({ forwarderId: s.tripExpenses.forwarderId })
+    .from(s.tripExpenses)
+    .where(eq(s.tripExpenses.id, id))
+    .limit(1);
+
+  if (!existing) return null;
+
+  const setPatch: Record<string, unknown> = { ...patch, updatedAt: new Date() };
+
+  if (patch.sellAmount !== undefined && existing.forwarderId != null) {
+    setPatch.approvalStatus = 'PENDING';
+  }
+
+  const [updated] = await (txOrDb as any)
+    .update(s.tripExpenses)
+    .set(setPatch)
+    .where(eq(s.tripExpenses.id, id))
+    .returning();
+  return updated;
+}
+
+export async function getTripExpenses(txOrDb: typeof db | Tx, tripId: number) {
+  return (txOrDb as any).select({
+    id: s.tripExpenses.id,
+    tripId: s.tripExpenses.tripId,
+    forwarderId: s.tripExpenses.forwarderId,
+    expenseType: s.tripExpenses.expenseType,
+    buyAmount: s.tripExpenses.buyAmount,
+    sellAmount: s.tripExpenses.sellAmount,
+    settlementMethod: s.tripExpenses.settlementMethod,
+    supplierId: s.tripExpenses.supplierId,
+    invoiceNumber: s.tripExpenses.invoiceNumber,
+    invoiceDate: s.tripExpenses.invoiceDate,
+    declarationNumber: s.tripExpenses.declarationNumber,
+    containerNumber: s.tripExpenses.containerNumber,
+    approvalStatus: s.tripExpenses.approvalStatus,
+    note: s.tripExpenses.note,
+    createdAt: s.tripExpenses.createdAt,
+    updatedAt: s.tripExpenses.updatedAt,
+    forwarderName: s.users.fullName,
+    expenseTypeName: s.forwarderExpenseTypes.name,
+  }).from(s.tripExpenses)
+    .leftJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
+    .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+    .where(eq(s.tripExpenses.tripId, tripId))
+    .orderBy(desc(s.tripExpenses.createdAt));
 }
 
 export async function deleteTripExpense(expenseId: number, forwarderId: number) {

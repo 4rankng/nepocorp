@@ -1,9 +1,13 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType } from '@nepocorp/shared';
-import { createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema } from '@nepocorp/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
-import { listTripContainers, batchUpsertTripContainers } from '../services/forwarder.service';
+import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses } from '../services/forwarder.service';
+import { transitionApproval } from '../services/approval.service';
+import { requireRoles } from '../middleware/casbin';
+import { db } from '../db';
+import * as dbSchema from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
@@ -226,5 +230,104 @@ router.put('/:id/containers', asyncHandler(async (req: Request, res: Response) =
   await invalidateReportCaches();
   res.json({ items });
 }));
+
+// ─── Trip Expenses (ancillary fees) ──────────────────────────────────────────
+
+// GET /api/trips/:id/expenses — list all expenses for a trip
+router.get('/:id/expenses', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  const items = await getTripExpenses(db, tripId);
+  res.json({ items });
+}));
+
+// POST /api/trips/:id/expenses — accountant/manager creates expense (auto-APPROVED)
+router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  const parsed = tripExpenseSchema.safeParse({ ...req.body, tripId });
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  const item = await db.transaction(async (tx) =>
+    createTripExpense(tx, {
+      tripId,
+      forwarderId: null,  // accountant/manager-created → APPROVED
+      expenseType: parsed.data.expenseType,
+      buyAmount: String(parsed.data.buyAmount),
+      sellAmount: String(parsed.data.sellAmount ?? 0),
+      settlementMethod: parsed.data.settlementMethod,
+      supplierId: parsed.data.supplierId ?? null,
+      invoiceNumber: parsed.data.invoiceNumber ?? null,
+      invoiceDate: parsed.data.invoiceDate ?? null,
+      declarationNumber: parsed.data.declarationNumber ?? null,
+      containerNumber: parsed.data.containerNumber ?? null,
+      note: parsed.data.note ?? null,
+    }),
+  );
+  res.status(201).json(item);
+}));
+
+// Partial update schema for expense (tripId not required on update)
+import { z } from 'zod';
+const tripExpensePatchSchema = z.object({
+  expenseType: z.string().min(1).optional(),
+  buyAmount: z.number().positive().optional(),
+  sellAmount: z.number().min(0).optional(),
+  settlementMethod: z.enum(['COMPANY_DIRECT', 'FORWARDER_ADVANCE']).optional(),
+  supplierId: z.number().int().positive().optional().nullable(),
+  invoiceNumber: z.string().max(50).optional().nullable(),
+  invoiceDate: z.string().optional().nullable(),
+  declarationNumber: z.string().max(50).optional().nullable(),
+  containerNumber: z.string().max(20).optional().nullable(),
+  note: z.string().optional().nullable(),
+});
+
+// PUT /api/trips/:id/expenses/:eid — update expense
+router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
+  const eid = parseInt(req.params.eid as string, 10);
+  const parsed = tripExpensePatchSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  const item = await db.transaction(async (tx) =>
+    updateTripExpense(tx, eid, {
+      expenseType: parsed.data.expenseType,
+      buyAmount: parsed.data.buyAmount !== undefined ? String(parsed.data.buyAmount) : undefined,
+      sellAmount: parsed.data.sellAmount !== undefined ? String(parsed.data.sellAmount) : undefined,
+      settlementMethod: parsed.data.settlementMethod,
+      supplierId: parsed.data.supplierId ?? null,
+      invoiceNumber: parsed.data.invoiceNumber ?? null,
+      invoiceDate: parsed.data.invoiceDate ?? null,
+      declarationNumber: parsed.data.declarationNumber ?? null,
+      containerNumber: parsed.data.containerNumber ?? null,
+      note: parsed.data.note ?? null,
+    }),
+  );
+  if (!item) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
+  res.json(item);
+}));
+
+// DELETE /api/trips/:id/expenses/:eid — hard delete
+router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
+  const eid = parseInt(req.params.eid as string, 10);
+  await db.transaction(async (tx) => {
+    await tx.delete(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid));
+  });
+  res.json({ ok: true });
+}));
+
+// POST /api/trips/:id/expenses/:eid/approve — MANAGER/ADMIN only
+router.post(
+  '/:id/expenses/:eid/approve',
+  requireRoles(Role.ADMIN, Role.MANAGER),
+  asyncHandler(async (req: Request, res: Response) => {
+    const eid = parseInt(req.params.eid as string, 10);
+    await db.transaction(async (tx) =>
+      transitionApproval(tx, {
+        table: 'trip_expenses',
+        id: eid,
+        toStatus: 'APPROVED',
+        actorId: req.user!.userId,
+        actorRole: req.user!.role,
+      }),
+    );
+    res.json({ ok: true });
+  }),
+);
 
 export default router;
