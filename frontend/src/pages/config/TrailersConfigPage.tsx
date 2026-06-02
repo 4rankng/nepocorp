@@ -40,8 +40,12 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
 export default function TrailersConfigPage() {
   return (
     <CrudTable<Trailer>
-      title="Rơ-moóc" description="Danh sách rơ-moóc và trạng thái hoạt động"
+      title="Rơ-moóc" description="Danh sách rơ-moóc — phân loại theo kích thước và trạng thái đăng kiểm"
       endpoint="/trailers" colSpan={5}
+      pageSlug="trailers"
+      emptyIllustration="empty-fleet.svg"
+      emptyTitle="Chưa có rơ-moóc"
+      emptyHint="Thêm rơ-moóc đầu tiên để bắt đầu phân chuyến."
       columns={[
         { header: 'Biển số', render: (t) => <span style={{ fontWeight: 600, color: 'var(--fg-1)', fontFamily: 'var(--font-mono)' }}>{t.licensePlate}</span> },
         { header: 'Loại', render: (t) => <span style={{ color: 'var(--fg-2)' }}>{TRAILER_TYPE_LABELS[t.type] || t.type}</span> },

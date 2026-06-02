@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Loader2, Package, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { ContainerType } from '@nepocorp/shared';
 import type { PaginatedResponse } from '@nepocorp/shared';
 import './config-list.css';
+import './config-page.css';
 
 /* ─── Modal form ────────────────────────────────────────────────────── */
 
@@ -142,34 +143,11 @@ function ContainerRow({ ct, deleting, onEdit, onDelete }: {
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '56px 24px',
-      gap: 12,
-    }}>
-      <div style={{
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        background: 'var(--surface-3)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <Package size={20} color="var(--ink-4)" />
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink-2)', marginBottom: 4 }}>
-          Chưa có loại container
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-          Thêm các loại như 20&apos;DC, 40&apos;HC để dùng khi tạo chuyến đi
-        </div>
-      </div>
-      <button className="btn btn--primary btn--sm" onClick={onAdd}>
+    <div className="cfg-empty" style={{ padding: '40px 24px' }}>
+      <img src="/assets/illustrations/empty-config.svg" alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      <div className="cfg-empty__title">Chưa có loại container</div>
+      <div className="cfg-empty__hint">Thêm các loại như 20&apos;DC, 40&apos;HC để dùng khi tạo chuyến đi.</div>
+      <button className="btn btn--primary btn--sm" onClick={onAdd} style={{ marginTop: 4 }}>
         <Plus size={13} /> Thêm loại đầu tiên
       </button>
     </div>
@@ -217,10 +195,10 @@ export default function ContainerTypesConfigPage() {
   };
 
   return (
-    <div className="fade-up">
+    <div className="fade-up cfg-page cfg-page--container-types">
       <PageHeader
         title="Loại container"
-        description="Danh mục các loại container dùng trong chuyến đi: 20'DC, 20'OT, 40'HC…"
+        description="Danh mục các loại container dùng trong chuyến đi: 20'DC, 20'OT, 40'HC, 40'DC, 40'HC…"
         onBack={() => navigate('/config')}
         action={
           <button className="btn btn--primary btn--sm" onClick={openAdd}>
@@ -229,26 +207,14 @@ export default function ContainerTypesConfigPage() {
         }
       />
 
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 12,
-        overflow: 'hidden',
-      }}>
+      <div className="cfg-list-panel">
         {/* Column headers */}
         {items.length > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '8px 16px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface-2)',
-          }}>
-            <span style={{ width: 56, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mã</span>
-            <span style={{ width: 100, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Tên</span>
-            <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Ghi chú</span>
-            <span style={{ width: 56, flexShrink: 0 }} />
+          <div className="cfg-list-header">
+            <span className="cfg-list-header__col cfg-list-header__col--code">Mã</span>
+            <span className="cfg-list-header__col cfg-list-header__col--name">Tên</span>
+            <span className="cfg-list-header__col cfg-list-header__col--notes">Ghi chú</span>
+            <span className="cfg-list-header__col cfg-list-header__col--spacer" />
           </div>
         )}
 
@@ -265,24 +231,14 @@ export default function ContainerTypesConfigPage() {
             />
           ))
         )}
-
-        {/* Add row at bottom */}
-        {items.length > 0 && (
-          <div style={{ padding: '10px 16px' }}>
-            <button
-              className="btn btn--ghost btn--sm"
-              onClick={openAdd}
-              style={{ color: 'var(--ink-3)', fontSize: 13 }}
-            >
-              <Plus size={13} /> Thêm loại mới
-            </button>
-          </div>
-        )}
       </div>
 
       {items.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-4)', paddingLeft: 4 }}>
-          {items.length} loại container
+        <div className="cfg-list-footer">
+          <span className="cfg-page__summary"><strong>{items.length}</strong> loại container</span>
+          <button className="btn btn--ghost btn--sm cfg-list-footer__add" onClick={openAdd}>
+            <Plus size={13} /> Thêm loại mới
+          </button>
         </div>
       )}
 

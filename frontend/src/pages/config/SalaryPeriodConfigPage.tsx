@@ -119,6 +119,10 @@ export default function SalaryPeriodConfigPage() {
         description="Thiết lập kỳ lương riêng cho tháng cần điều chỉnh (VD: Tết, cuối năm)"
         endpoint="/salary-periods"
         colSpan={6}
+        pageSlug="salary-periods"
+        emptyIllustration="empty-earnings.svg"
+        emptyTitle="Chưa có ghi đè"
+        emptyHint="Mặc định áp dụng cho mọi tháng. Thêm ghi đè cho tháng đặc biệt nếu cần."
         columns={[
           { header: 'Tháng', render: (r) => <span style={{ fontWeight: 600 }}>Tháng {r.month}</span> },
           { header: 'Năm', render: (r) => r.year },

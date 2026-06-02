@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { PageHeader, Panel } from '../../components/UI';
 import type { FuelConfig, FuelPriceHistory } from '@nepocorp/shared';
+import './config-page.css';
 
 export default function FuelConfigPage() {
   const navigate = useNavigate();
@@ -60,10 +61,10 @@ export default function FuelConfigPage() {
   };
 
   return (
-    <div className="fade-up">
-      <PageHeader title="Định mức dầu" description="Tham số định mức tiêu hao nhiên liệu & đơn giá dầu" onBack={() => navigate('/config')} />
-      <Panel title="Cấu hình tính nhiên liệu" subtitle="Thông số dùng để tính toán chi phí nhiên liệu cho mỗi chuyến">
-        <div className="row-2" style={{ marginBottom: 16 }}>
+    <div className="fade-up cfg-page cfg-page--fuel">
+      <PageHeader title="Định mức nhiên liệu" description="Định mức tiêu hao theo xe và loại tải · đơn giá dầu hiện hành · ngưỡng cảnh báo TTBQ" onBack={() => navigate('/config')} />
+      <Panel title="Cấu hình tính nhiên liệu" subtitle="Thông số dùng để tính chi phí nhiên liệu cho mỗi chuyến">
+        <div className="cfg-form-grid">
           <div className="field">
             <label>Định mức có tải (lít/100km)</label>
             <input className="input" type="number" step="0.1" value={form.loadedNorm} onChange={e => setForm(f => ({ ...f, loadedNorm: e.target.value }))} placeholder="VD: 35" />
@@ -73,11 +74,11 @@ export default function FuelConfigPage() {
             <input className="input" type="number" step="0.1" value={form.emptyNorm} onChange={e => setForm(f => ({ ...f, emptyNorm: e.target.value }))} placeholder="VD: 22" />
           </div>
         </div>
-        <div className="row-2" style={{ marginBottom: 16 }}>
+        <div className="cfg-form-grid">
           <div className="field">
             <label>Bổ sung mặc định (lít)</label>
             <input className="input" type="number" step="0.1" value={form.supplement} onChange={e => setForm(f => ({ ...f, supplement: e.target.value }))} placeholder="VD: 3" />
-            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Số lít bổ sung thêm mặc định cho mỗi chuyến</p>
+            <p className="cfg-field-hint">Số lít bổ sung thêm mặc định cho mỗi chuyến.</p>
           </div>
           <div className="field">
             <label>Đơn giá nhiên liệu hiện hành (đ/lít)</label>
@@ -85,39 +86,45 @@ export default function FuelConfigPage() {
           </div>
         </div>
 
-        {/* Threshold configuration */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8, marginBottom: 16 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: 'var(--fg-1)' }}>Ngưỡng cảnh báo tiêu hao (TTBQ)</h4>
-          <div className="row-2">
+        <div className="cfg-section">
+          <h4 className="cfg-section__heading">
+            Ngưỡng cảnh báo tiêu hao
+            <span className="cfg-section__heading-pill">TTBQ</span>
+          </h4>
+          <div className="cfg-form-grid">
             <div className="field">
-              <label>⚠️ Ngưỡng cảnh báo (lít/100km)</label>
+              <label>Ngưỡng cảnh báo (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.warningThreshold} onChange={e => setForm(f => ({ ...f, warningThreshold: e.target.value }))} placeholder="VD: 37" />
-              <p style={{ fontSize: 11, color: 'var(--warning)', marginTop: 4 }}>TTBQ vượt ngưỡng này → cảnh báo vàng</p>
+              <p className="cfg-field-hint cfg-field-hint--warn">TTBQ vượt ngưỡng này → cảnh báo vàng.</p>
             </div>
             <div className="field">
-              <label>🔴 Ngưỡng nghiêm trọng (lít/100km)</label>
+              <label>Ngưỡng nghiêm trọng (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.criticalThreshold} onChange={e => setForm(f => ({ ...f, criticalThreshold: e.target.value }))} placeholder="VD: 40" />
-              <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>TTBQ vượt ngưỡng này → cảnh báo đỏ</p>
+              <p className="cfg-field-hint cfg-field-hint--danger">TTBQ vượt ngưỡng này → cảnh báo đỏ.</p>
             </div>
           </div>
         </div>
 
-        <div style={{ marginTop: 8 }}>
+        <div className="cfg-form-actions">
           <button className="btn btn--primary" disabled={saving || !(Number(form.loadedNorm) > 0) || !(Number(form.emptyNorm) > 0) || !(Number(form.unitPrice) > 0)} onClick={handleSave}>
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             Lưu cấu hình
           </button>
+          {error && <span style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
         </div>
-        {error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{error}</div>}
       </Panel>
       <Panel title="Lịch sử giá nhiên liệu" subtitle="Theo dõi các lần thay đổi đơn giá nhiên liệu" style={{ marginTop: 20 }}>
         {historyLoading ? (
-          <div style={{ textAlign: 'center', padding: 20, color: 'var(--fg-3)' }}>Đang tải…</div>
+          <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink-3)' }}>Đang tải…</div>
         ) : history.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 20, color: 'var(--fg-3)', fontSize: 13 }}>Chưa có lịch sử thay đổi giá</div>
+          <div className="cfg-empty" style={{ padding: '24px 16px' }}>
+            <img src="/assets/illustrations/empty-config.svg" alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <div className="cfg-empty__title">Chưa có lịch sử</div>
+            <div className="cfg-empty__hint">Lịch sử thay đổi giá sẽ hiển thị sau lần lưu đầu tiên.</div>
+          </div>
         ) : (
           <div className="table-scroll">
-            <table>
+            <table className="tt-table">
               <thead>
                 <tr>
                   <th>Ngày hiệu lực</th>
@@ -131,8 +138,8 @@ export default function FuelConfigPage() {
                   <tr key={row.id}>
                     <td style={{ whiteSpace: 'nowrap' }}>{new Date(row.effectiveDate).toLocaleDateString('vi-VN')}</td>
                     <td className="num" style={{ fontWeight: 600 }}>{Number(row.unitPrice).toLocaleString('vi-VN')}</td>
-                    <td style={{ color: 'var(--fg-3)' }}>—</td>
-                    <td style={{ color: 'var(--fg-3)', fontSize: 12 }}>{row.note || '—'}</td>
+                    <td style={{ color: 'var(--ink-3)' }}>—</td>
+                    <td style={{ color: 'var(--ink-3)', fontSize: 12 }}>{row.note || '—'}</td>
                   </tr>
                 ))}
               </tbody>

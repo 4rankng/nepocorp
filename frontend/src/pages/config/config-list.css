@@ -81,6 +81,57 @@
 .cfg-row__delete { color: var(--ink-3); }
 .cfg-row__delete:hover { color: var(--danger); }
 
+/* ── Panel wrapper for cfg-row lists (container-types, ports) ── */
+.cfg-list-panel {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+}
+
+.cfg-list-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.cfg-list-header__col {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cfg-list-header__col--code { width: 56px; flex-shrink: 0; text-align: center; }
+.cfg-list-header__col--name { width: 100px; flex-shrink: 0; }
+.cfg-list-header__col--name-wide { width: 220px; flex-shrink: 0; }
+.cfg-list-header__col--city { width: 100px; flex-shrink: 0; }
+.cfg-list-header__col--notes { flex: 1; min-width: 0; }
+.cfg-list-header__col--spacer { width: 56px; flex-shrink: 0; }
+
+.cfg-list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 4px;
+}
+.cfg-list-footer__add {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.cfg-list-footer__add:hover { color: var(--accent); }
+
+@media (max-width: 640px) {
+  .cfg-list-header { display: none; }
+  .cfg-list-footer { flex-direction: column; align-items: stretch; gap: 8px; }
+}
+
 /* ── Mobile (≤640px): always show actions, tighten layout ── */
 @media (max-width: 640px) {
   .cfg-row {

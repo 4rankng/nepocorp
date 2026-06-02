@@ -68,8 +68,12 @@ export default function DriversConfigPage() {
 
   return (
     <CrudTable<Driver>
-      title="Tài xế" description="Danh sách tài xế, lương cơ bản và xe phụ trách"
+      title="Người dùng & tài xế" description="Quản lý tài khoản lái xe — lương cơ bản, xe phụ trách và thông tin liên hệ"
       endpoint="/drivers" colSpan={6}
+      pageSlug="drivers"
+      emptyIllustration="empty-users.svg"
+      emptyTitle="Chưa có tài xế"
+      emptyHint="Thêm tài xế đầu tiên để bắt đầu phân xe và ghi nhận lương."
       columns={[
         { header: 'Tên tài xế', render: (d) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</span> },
         { header: 'SĐT', render: (d) => d.phone || '—' },

@@ -7,6 +7,7 @@ import { PageHeader, Panel, Modal, useConfirm } from '../UI';
 import { ActionBtns } from './ActionBtns';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { PaginatedResponse } from '@nepocorp/shared';
+import '../../pages/config/config-page.css';
 
 interface CrudColumn<T> {
   header: string;
@@ -37,12 +38,20 @@ interface CrudTableProps<T extends { id: number }> {
   rowStyle?: (item: T, isActive: boolean) => React.CSSProperties | undefined;
   toolbarLeft?: (ctx: { totalItems: number; activeCount: number }) => React.ReactNode;
   backTo?: string;
+  emptyIllustration?: string;
+  emptyTitle?: string;
+  emptyHint?: string;
+  pageSlug?: string;
 }
 
 export function CrudTable<T extends { id: number }>({
   title, description, endpoint, columns, renderForm, colSpan,
   showDelete = true, onDelete, sortFn, computeActiveIds, rowStyle,
   toolbarLeft, backTo = '/config',
+  emptyIllustration = 'empty-config.svg',
+  emptyTitle = 'Chưa có dữ liệu',
+  emptyHint,
+  pageSlug,
 }: CrudTableProps<T>) {
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
@@ -83,13 +92,21 @@ export function CrudTable<T extends { id: number }>({
   const handleDelete = onDelete ?? ((id: number) => crud.doDelete(id));
   const actionWidth = showDelete ? 100 : 80;
 
+  const wrapperClass = ['fade-up', 'cfg-page', pageSlug ? `cfg-page--${pageSlug}` : ''].filter(Boolean).join(' ');
+
   return (
-    <div className="fade-up">
+    <div className={wrapperClass}>
       <PageHeader title={title} description={description} onBack={() => navigate(backTo)} />
       <Panel flush>
-        <div className="toolbar" style={{ borderBottom: 'none', padding: '16px 20px 8px' }}>
-          <div style={{ flex: 1 }}>
-            {toolbarLeft?.({ totalItems: items.length, activeCount: activeIds.size })}
+        <div className="toolbar">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {toolbarLeft
+              ? toolbarLeft({ totalItems: items.length, activeCount: activeIds.size })
+              : items.length > 0 && (
+                  <span className="cfg-page__summary">
+                    <strong>{items.length}</strong> mục
+                  </span>
+                )}
           </div>
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
             <Plus size={14} /> Thêm mới
@@ -110,10 +127,16 @@ export function CrudTable<T extends { id: number }>({
             <tbody>
               {items.length === 0 && !crud.showAddForm && (
                 <tr>
-                  <td colSpan={colSpan + 1} style={{ textAlign: 'center', padding: '24px 32px', color: 'var(--fg-3)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                      <img src="/assets/illustrations/empty-config.svg" alt="" aria-hidden="true" style={{ width: 120, height: 100, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      Chưa có dữ liệu
+                  <td colSpan={colSpan + 1} style={{ textAlign: 'center' }}>
+                    <div className="cfg-empty">
+                      <img
+                        src={`/assets/illustrations/${emptyIllustration}`}
+                        alt=""
+                        aria-hidden="true"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      <div className="cfg-empty__title">{emptyTitle}</div>
+                      {emptyHint && <div className="cfg-empty__hint">{emptyHint}</div>}
                     </div>
                   </td>
                 </tr>

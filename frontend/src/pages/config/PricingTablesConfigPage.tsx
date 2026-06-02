@@ -61,8 +61,12 @@ export default function PricingTablesConfigPage() {
 
   return (
     <CrudTable<PricingTable>
-      title="Bảng giá cước" description="Đơn giá thỏa thuận theo Khách hàng × Tuyến đường"
+      title="Bảng giá cước" description="Đơn giá thỏa thuận theo Khách hàng × Tuyến đường — dùng khi tạo chuyến mới"
       endpoint="/pricing-tables" colSpan={5}
+      pageSlug="pricing-tables"
+      emptyIllustration="empty-pricing.svg"
+      emptyTitle="Chưa có bảng giá"
+      emptyHint="Thêm đơn giá đầu tiên (Khách hàng × Tuyến) để hệ thống áp dụng tự động."
       columns={[
         { header: 'Khách hàng', render: (pt) => customerMap.get(pt.customerId) || '—' },
         { header: 'Tuyến đường', render: (pt) => routeMap.get(pt.routeId) || '—' },

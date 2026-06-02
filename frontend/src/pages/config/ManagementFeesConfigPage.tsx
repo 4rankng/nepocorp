@@ -36,9 +36,13 @@ function ManagementFeeForm({ saving, item, onsave, oncancel }: {
 export default function ManagementFeesConfigPage() {
   return (
     <CrudTable<ManagementFee>
-      title="Phí quản lý" description="Cấu hình phí quản lý vận hành theo tháng/năm"
+      title="Phí quản lý" description="Cấu hình phí quản lý vận hành theo tháng/năm — dùng cho báo cáo lãi lỗ"
       endpoint="/management-fees" colSpan={5}
       onDelete={() => {}}
+      pageSlug="management-fees"
+      emptyIllustration="empty-pie.svg"
+      emptyTitle="Chưa có khoản phí"
+      emptyHint="Thêm phí quản lý đầu tiên để tính vào báo cáo lãi lỗ."
       columns={[
         { header: 'Tháng', render: (f) => <span style={{ fontWeight: 600 }}>Tháng {f.month}</span> },
         { header: 'Năm', render: (f) => f.year },

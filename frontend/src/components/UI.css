@@ -659,7 +659,7 @@ td.num {
   font-family: var(--font-mono);
 }
 tbody td {
-  padding: 24px 20px !important;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   color: var(--ink);

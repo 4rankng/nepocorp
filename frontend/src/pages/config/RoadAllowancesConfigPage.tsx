@@ -57,8 +57,12 @@ export default function RoadAllowancesConfigPage() {
 
   return (
     <CrudTable<RoadAllowance>
-      title="Tiền đi đường" description="Định mức tiền dọc đường theo Tuyến × Loại rơ-moóc"
+      title="Tiền đi đường" description="Định mức tiền chuẩn theo Tuyến × Loại rơ-moóc — quy tắc: − vé QL5, + chuyến về có hàng, − phí trạm"
       endpoint="/road-allowances" colSpan={5}
+      pageSlug="road-allowances"
+      emptyIllustration="empty-routes.svg"
+      emptyTitle="Chưa có định mức"
+      emptyHint="Thêm tiền đi đường cho từng tuyến để hệ thống tính lương tài xế."
       columns={[
         { header: 'Tuyến đường', render: (ra) => routeMap.get(ra.routeId) || '—' },
         { header: 'Loại rơ-moóc', render: (ra) => <span className="badge badge-outline">{TRAILER_TYPE_LABELS[ra.trailerType] || ra.trailerType}</span> },

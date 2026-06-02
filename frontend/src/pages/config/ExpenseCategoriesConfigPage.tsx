@@ -63,9 +63,13 @@ export default function ExpenseCategoriesConfigPage() {
   return (
     <CrudTable<ExpenseCategory>
       title="Hạng mục chi phí"
-      description="Phân loại chi phí vận hành — bật định kỳ để theo dõi gia hạn"
+      description="Phân loại chi phí vận hành — bật định kỳ để theo dõi gia hạn bảo hiểm, đăng kiểm, bảo dưỡng"
       endpoint="/expense-categories"
       colSpan={5}
+      pageSlug="expense-categories"
+      emptyIllustration="empty-expenses.svg"
+      emptyTitle="Chưa có hạng mục"
+      emptyHint="Thêm hạng mục để phân loại chi phí khi ghi nhận."
       columns={[
         {
           header: 'Tên',

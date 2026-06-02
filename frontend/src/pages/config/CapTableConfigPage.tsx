@@ -61,9 +61,13 @@ function computePercentages(items: CapTableHistory[]): Map<number, number> {
 export default function CapTableConfigPage() {
   return (
     <CrudTable<CapTableHistory>
-      title="Tỷ lệ cổ phần" description="Lịch sử vốn góp cổ đông công ty — tỷ lệ tự động tính từ số vốn"
+      title="Thông tin công ty & Cổ phần" description="Lịch sử vốn góp cổ đông — tỷ lệ tự động tính từ số vốn góp đang hiệu lực"
       endpoint="/cap-table" colSpan={5}
       showDelete={false}
+      pageSlug="cap-table"
+      emptyIllustration="empty-pie.svg"
+      emptyTitle="Chưa có cổ đông"
+      emptyHint="Thêm thông tin vốn góp để hệ thống tự động tính tỷ lệ cổ phần."
       computeActiveIds={computeCapTableActiveIds}
       sortFn={(a, b) => {
         if (a.effectiveDate !== b.effectiveDate) return a.effectiveDate < b.effectiveDate ? 1 : -1;

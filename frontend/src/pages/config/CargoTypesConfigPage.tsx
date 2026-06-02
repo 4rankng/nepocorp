@@ -22,8 +22,11 @@ function CargoTypeForm({ saving, item, onsave, oncancel }: {
 export default function CargoTypesConfigPage() {
   return (
     <CrudTable<CargoType>
-      title="Loại hàng hóa" description="Phân loại hàng hóa (Chè, nông sản, vỏ rỗng...)"
+      title="Loại hàng hóa" description="Bảng quy chuẩn loại hàng hóa vận chuyển — ảnh hưởng đến việc phân xe theo chặng"
       endpoint="/cargo-types" colSpan={3}
+      pageSlug="cargo-types"
+      emptyTitle="Chưa có loại hàng hóa"
+      emptyHint="Thêm loại hàng hóa đầu tiên để bắt đầu phân loại chuyến."
       columns={[
         { header: 'Tên loại hàng', render: (ct) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{ct.name}</span> },
       ]}

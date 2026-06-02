@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Loader2, Anchor, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { Port } from '@nepocorp/shared';
 import type { PaginatedResponse } from '@nepocorp/shared';
 import './config-list.css';
+import './config-page.css';
 
 /* ─── Modal form ────────────────────────────────────────────────────── */
 
@@ -167,34 +168,11 @@ function PortRow({ port, deleting, onEdit, onDelete }: {
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '56px 24px',
-      gap: 12,
-    }}>
-      <div style={{
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        background: 'var(--surface-3)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <Anchor size={20} color="var(--ink-4)" />
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink-2)', marginBottom: 4 }}>
-          Chưa có cảng / bãi nào
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-          Thêm các cảng và bãi container để dùng khi tạo chuyến đi
-        </div>
-      </div>
-      <button className="btn btn--primary btn--sm" onClick={onAdd}>
+    <div className="cfg-empty" style={{ padding: '40px 24px' }}>
+      <img src="/assets/illustrations/empty-routes.svg" alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      <div className="cfg-empty__title">Chưa có cảng / bãi</div>
+      <div className="cfg-empty__hint">Thêm các cảng và bãi container Hải Phòng để dùng khi tạo chuyến đi.</div>
+      <button className="btn btn--primary btn--sm" onClick={onAdd} style={{ marginTop: 4 }}>
         <Plus size={13} /> Thêm cảng đầu tiên
       </button>
     </div>
@@ -242,10 +220,10 @@ export default function PortsConfigPage() {
   };
 
   return (
-    <div className="fade-up">
+    <div className="fade-up cfg-page cfg-page--ports">
       <PageHeader
-        title="Cảng / Bãi tại Hải Phòng"
-        description="Danh mục các cảng và bãi container tại khu vực Hải Phòng"
+        title="Cảng / Bãi Hải Phòng"
+        description="Danh mục các cảng và bãi container tại khu vực Hải Phòng — điểm đi / điểm đến trong chuyến hàng"
         onBack={() => navigate('/config')}
         action={
           <button className="btn btn--primary btn--sm" onClick={openAdd}>
@@ -254,27 +232,15 @@ export default function PortsConfigPage() {
         }
       />
 
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 12,
-        overflow: 'hidden',
-      }}>
+      <div className="cfg-list-panel">
         {/* Column headers */}
         {items.length > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '8px 16px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface-2)',
-          }}>
-            <span style={{ width: 52, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mã</span>
-            <span style={{ width: 220, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Tên cảng / bãi</span>
-            <span style={{ width: 100, flexShrink: 0, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Thành phố</span>
-            <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Địa chỉ</span>
-            <span style={{ width: 56, flexShrink: 0 }} />
+          <div className="cfg-list-header">
+            <span className="cfg-list-header__col cfg-list-header__col--code">Mã</span>
+            <span className="cfg-list-header__col cfg-list-header__col--name-wide">Tên cảng / bãi</span>
+            <span className="cfg-list-header__col cfg-list-header__col--city">Thành phố</span>
+            <span className="cfg-list-header__col cfg-list-header__col--notes">Địa chỉ</span>
+            <span className="cfg-list-header__col cfg-list-header__col--spacer" />
           </div>
         )}
 
@@ -291,23 +257,14 @@ export default function PortsConfigPage() {
             />
           ))
         )}
-
-        {items.length > 0 && (
-          <div style={{ padding: '10px 16px' }}>
-            <button
-              className="btn btn--ghost btn--sm"
-              onClick={openAdd}
-              style={{ color: 'var(--ink-3)', fontSize: 13 }}
-            >
-              <Plus size={13} /> Thêm cảng mới
-            </button>
-          </div>
-        )}
       </div>
 
       {items.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-4)', paddingLeft: 4 }}>
-          {items.length} cảng / bãi
+        <div className="cfg-list-footer">
+          <span className="cfg-page__summary"><strong>{items.length}</strong> cảng / bãi</span>
+          <button className="btn btn--ghost btn--sm cfg-list-footer__add" onClick={openAdd}>
+            <Plus size={13} /> Thêm cảng mới
+          </button>
         </div>
       )}
 

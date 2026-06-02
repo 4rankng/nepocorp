@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useConfirm, Modal } from '../../components/UI';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
@@ -8,6 +9,7 @@ import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
+import './config-page.css';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="field"><label>{label} {children}</label></div>;
