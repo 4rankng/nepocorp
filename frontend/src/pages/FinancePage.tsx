@@ -416,6 +416,30 @@ export default function FinancePage() {
               <div className={`pnl-row__pct ${prevReport ? yoyClass(transRevenue, transRevenueLY) : ''}`}>{prevReport ? yoyPct(transRevenue, transRevenueLY) : '—'}</div>
             </div>
 
+            {(report?.externalMarginTotal ?? 0) > 0 && (
+            <div className="pnl-row">
+              <div className="pnl-row__label">
+                Doanh thu điều xe ngoài
+                <div className="pnl-row__label-sub">Lãi quản lý từ {report?.externalTripsCount ?? 0} chuyến ngoài</div>
+              </div>
+              <div className="pnl-row__amount">{formatRawNumber(report?.externalMarginTotal ?? 0)}</div>
+              <div className="pnl-row__yoy">—</div>
+              <div className="pnl-row__pct">—</div>
+            </div>
+            )}
+
+            {(report?.serviceMarginTotal ?? 0) !== 0 && (
+            <div className="pnl-row">
+              <div className="pnl-row__label">
+                Lãi dịch vụ đi kèm
+                <div className="pnl-row__label-sub">Lãi từ dịch vụ phụ trợ</div>
+              </div>
+              <div className="pnl-row__amount">{formatRawNumber(report?.serviceMarginTotal ?? 0)}</div>
+              <div className="pnl-row__yoy">—</div>
+              <div className="pnl-row__pct">—</div>
+            </div>
+            )}
+
             <div className="pnl-row">
               <div className="pnl-row__label">
                 Thu nhập phạt vi phạm
@@ -579,8 +603,10 @@ export default function FinancePage() {
                   </thead>
                   <tbody>
                     {report.trucks.map(t => (
-                        <tr key={t.plate}>
-                          <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{t.plate}</td>
+                        <tr key={t.id}>
+                          <td style={{ fontWeight: 600, color: t.id === 0 ? 'var(--fg-3)' : 'var(--fg-1)', fontStyle: t.id === 0 ? 'italic' : 'normal' }}>
+                            {t.id === 0 ? 'Xe ngoài' : t.plate}
+                          </td>
                           <td className="num">{t.trips}</td>
                           <td className="num">{formatRawNumber(t.revenue)}</td>
                           <td className="num">{formatRawNumber(t.costs)}</td>
