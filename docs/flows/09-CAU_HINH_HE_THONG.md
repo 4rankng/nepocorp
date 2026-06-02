@@ -1,7 +1,7 @@
 # Cấu hình hệ thống
 
 > Tài liệu QA testing & Hướng dẫn sử dụng — Quản lý cấu hình toàn hệ thống
-> **Route:** `/config` (hub) + 13 sub-pages
+> **Route:** `/config` (hub) + 18 sub-pages
 > **Roles:** ADMIN (CRUD), MANAGER (view + limited edit), ACCOUNTANT (view only), DRIVER (no access)
 
 ---
@@ -10,9 +10,9 @@
 
 ### 1.1 Mô tả
 
-Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 13 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 18 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
 
-### 1.2 13 Sub-pages
+### 1.2 18 Sub-pages
 
 | # | Tên | Route | Mô tả |
 |---|-----|-------|-------|

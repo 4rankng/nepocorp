@@ -24,13 +24,18 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 
 ### 1.3 Loại chi phí phát sinh
 
-| Mã (Enum) | Tên tiếng Việt | Mô tả |
-|-----------|---------------|-------|
-| `LIFTING` | Nâng hạ | Chi phí nâng/hạ container |
-| `CUSTOMS` | Hải quan | Chi phí hải quan, thủ tục |
-| `WEIGHING` | Cân xe | Chi phí cân xe |
-| `INSPECTION` | Kiểm tra | Chi phí kiểm tra hàng hóa |
-| `OTHER` | Khác | Chi phí khác |
+| Mã (Enum) | Tên tiếng Việt | Trường bổ sung | Giá bán ra mặc định |
+|-----------|---------------|----------------|---------------------|
+| `LIFTING` | Phí nâng container | Số HĐ, Ngày HĐ | Bằng giá mua (at cost) |
+| `LOWERING` | Phí hạ container | Số HĐ, Ngày HĐ | Bằng giá mua |
+| `WEIGHING` | Phí cân hàng | Số HĐ, Ngày HĐ | Bằng giá mua |
+| `CUSTOMS` | Phí làm tờ khai hải quan | Số tờ khai, Số container | Cộng thêm phí quản lý (markup) |
+| `INFRASTRUCTURE` | Phí kết cấu hạ tầng (nộp hộ) | Số container | Bằng giá mua |
+| `INSPECTION` | Phí kiểm hóa tại cảng | Số HĐ, Ngày HĐ | Bằng giá mua |
+| `INSPECTION_SVC` | Phí phục vụ kiểm hóa | Diễn giải chi tiết | Cộng thêm phí quản lý |
+| `OTHER` | Phí chi hộ khác | Diễn giải chi tiết, Số container | Theo từng trường hợp (có thể = 0) |
+
+> Tất cả mặc định là `FORWARDER_ADVANCE`. Giá bán ra được gợi ý tự động theo loại phí nhưng luôn có thể sửa. Một số khoản có thể đặt giá bán = 0 (phí nội bộ không báo khách). Xem PRODUCT-SPECS §4.6.1 để biết quy tắc đầy đủ.
 
 ### 1.4 API Endpoints
 
@@ -74,7 +79,7 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 - **Phần Container/Seal:** Danh sách số container đã nhập + nút "Thêm" để mở form nhập mới
   - Form nhập: Số container (bắt buộc), Số seal (tuỳ chọn), Ghi chú (tuỳ chọn)
 - **Phần Chi phí phát sinh:** Danh sách chi phí đã ghi + nút "Thêm" để mở form
-  - Form nhập: Loại chi phí (dropdown), Số tiền VNĐ, Ghi chú (tuỳ chọn)
+  - Form nhập: Loại chi phí (dropdown), Giá mua vào (VNĐ), Giá bán ra (VNĐ, mặc định tính theo markup cấu hình), Đối tác cung cấp (dropdown), Hình thức chi (COMPANY_DIRECT / FORWARDER_ADVANCE), Số hóa đơn, Ngày hóa đơn, Số tờ khai (hải quan), Ghi chú.
   - Mỗi chi phí có nút xóa (chỉ hiển thị với chi phí do mình tạo)
 - **Chân tuyến:** Legs numbered, origin → destination, km, badge Hàng/Vô
 - **Ghi chú:** Nội dung ghi chú của chuyến
@@ -93,11 +98,14 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 
 1. Mở chi tiết chuyến `/my-forwarder-trips/:id`
 2. Click nút **"Thêm"** ở phần Chi phí phát sinh
-3. Chọn **Loại chi phí** từ dropdown (Nâng hạ / Hải quan / Cân xe / Kiểm tra / Khác)
-4. Nhập **Số tiền VNĐ** (số dương)
-5. Nhập **Ghi chú** (tuỳ chọn)
-6. Click **"Lưu"**
-7. Chi phí mới xuất hiện trong danh sách
+3. Chọn **Loại chi phí** từ dropdown (Nâng container / Hạ container / Cân hàng / Hải quan / Hạ tầng / Kiểm hóa / Phục vụ kiểm hóa / Khác)
+4. Nhập **Giá mua vào VNĐ** (số dương)
+5. Nhập/Sửa **Giá bán ra VNĐ** (mặc định gợi ý tự động)
+6. Nhập các thông tin hóa đơn (nếu có): Số hóa đơn, Ngày hóa đơn, Số tờ khai hải quan.
+7. Chọn **Hình thức chi**: COMPANY_DIRECT hoặc FORWARDER_ADVANCE.
+8. Nhập **Ghi chú** (tuỳ chọn)
+9. Click **"Lưu"**
+10. Chi phí mới xuất hiện trong danh sách
 
 ### 2.5 Xóa chi phí
 
@@ -134,10 +142,11 @@ FORWARDER click "Thêm" ở phần Container/Seal
 
 ```
 FORWARDER click "Thêm" ở phần Chi phí phát sinh
-→ Điền form (expenseType, amount, note)
+→ Điền form (expenseType, buyAmount, sellAmount, settlementMethod, invoiceNumber, invoiceDate, declarationNumber, supplierId, note)
 → POST /api/forwarder/me/expenses
-→ Schema validation: tripExpenseSchema (tripId + expenseType + amount > 0)
+→ Schema validation: tripExpenseSchema (tripId + expenseType + buyAmount > 0)
 → Insert vào trip_expenses, forwarderId = forwarder user.id
+→ Nếu settlementMethod = COMPANY_DIRECT → Xử lý công nợ NCC lúc khóa chuyến
 → 201 Created, chi phí xuất hiện trong danh sách
 ```
 
@@ -281,8 +290,14 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | Trường | Kiểu | Bắt buộc | Ràng buộc |
 |---------|------|-----------|-----------|
 | `tripId` | number | ✅ | Số nguyên dương |
-| `expenseType` | enum | ✅ | LIFTING \| CUSTOMS \| WEIGHING \| INSPECTION \| OTHER |
-| `amount` | number | ✅ | Số dương (> 0) |
+| `expenseType` | enum | ✅ | LIFTING \| LOWERING \| WEIGHING \| CUSTOMS \| INFRASTRUCTURE \| INSPECTION \| INSPECTION_SVC \| OTHER |
+| `buyAmount` | number | ✅ | Số dương (> 0) |
+| `sellAmount`| number | — | Giá bán ra (>= 0) |
+| `settlementMethod` | enum | ✅ | COMPANY_DIRECT \| FORWARDER_ADVANCE |
+| `invoiceNumber` | string | — | |
+| `invoiceDate` | date | — | |
+| `declarationNumber`| string | — | |
+| `supplierId` | number | — | |
 | `note` | string | — | Tuỳ chọn, nullable |
 
 ### 4.7 Error Responses
@@ -301,7 +316,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-GN-001 | FORWARDER truy cập portal | FORWARDER | Mở /my-forwarder-trips | Hiển thị danh sách chuyến, sidebar đúng 1 menu "Chuyến đi" | High |
+| TC-GN-001 | FORWARDER truy cập portal | FORWARDER | Mở /my-forwarder-trips | Hiển thị danh sách chuyến, sidebar có 3 menu "Chuyến đi", "Tạm ứng", "Phiếu thanh toán" | High |
 | TC-GN-002 | ADMIN không vào forwarder portal | ADMIN | Mở /my-forwarder-trips | Redirect /dashboard | High |
 | TC-GN-003 | DRIVER không vào forwarder portal | DRIVER | Mở /my-forwarder-trips | Redirect /my-trips | High |
 | TC-GN-004 | FORWARDER không vào trang admin | FORWARDER | Mở /finance | Redirect /my-forwarder-trips | High |
@@ -348,7 +363,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | TC-GN-041 | Tạo chi phí hải quan | Đang xem chi tiết | Chọn loại: "Hải quan", nhập 300000 | Chi phí hiển thị "Hải quan" + 300,000 ₫ | High |
 | TC-GN-042 | Tạo chi phí với ghi chú | Đang xem chi tiết | Nhập loại, tiền, ghi chú: "Cân tại trạm A" | Chi phí hiển thị đầy đủ loại + tiền + ghi chú | Medium |
 | TC-GN-043 | Số tiền không hợp lệ | Đang xem chi tiết | Nhập số tiền: 0 hoặc âm | Nút "Lưu" bị disabled hoặc lỗi validation | High |
-| TC-GN-044 | Dropdown đủ 5 loại | Đang xem chi tiết | Click dropdown loại chi phí | Hiển thị: Nâng hạ, Hải quan, Cân xe, Kiểm tra, Khác | Medium |
+| TC-GN-044 | Dropdown đủ 8 loại | Đang xem chi tiết | Click dropdown loại chi phí | Hiển thị: Nâng container, Hạ container, Cân hàng, Hải quan, Hạ tầng, Kiểm hóa, Phục vụ kiểm hóa, Khác | Medium |
 | TC-GN-045 | Tạo nhiều chi phí khác loại | Chưa có chi phí | Tạo 3 chi phí: LIFTING, CUSTOMS, WEIGHING | Cả 3 hiển thị đúng loại và số tiền | High |
 
 ### 5.6 Xóa chi phí (Ownership Check)
@@ -376,7 +391,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | TC-GN-070 | Layout mobile 375px | iPhone | Mở /my-forwarder-trips | Cards full width, text không cắt | Medium |
 | TC-GN-071 | Touch target card | Mobile | Nhấn card | Vùng nhấn ≥ 44px | Medium |
 | TC-GN-072 | Form nhập container mobile | Mobile | Mở form nhập container | Các trường nhập hiển thị đúng, dropdown/keyboard phù hợp | Medium |
-| TC-GN-073 | Sidebar mobile | Mobile | Toggle sidebar | 1 menu item "Chuyến đi" đúng | Medium |
+| TC-GN-073 | Sidebar mobile | Mobile | Toggle sidebar | 3 menu item "Chuyến đi", "Tạm ứng", "Phiếu thanh toán" đúng | Medium |
 
 ---
 

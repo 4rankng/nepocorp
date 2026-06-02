@@ -61,9 +61,20 @@ Module Công nợ & Thanh toán cho phép theo dõi công nợ khách hàng, ghi
 
 **Bảng Ledger (Sao kê):** Ngày, Loại GD (badge màu), Nợ (Debit), Có (Credit), Số dư (Balance), Ghi chú.
 
-**Hành động:** Ghi thanh toán (modal), Xuất sao kê (CSV), Quay lại /debt.
+**Hành động:** 
+- Ghi thanh toán (modal)
+- Xuất sao kê (CSV)
+- Xuất Giấy báo nợ (PDF/Excel): Hỗ trợ xuất theo Tháng (MONTHLY) hoặc Lô (PER_BATCH), chi tiết từng khoản phụ phí dịch vụ.
+- Đối trừ công nợ (Debt Netting): Khả dụng nếu khách hàng có liên kết với Nhà cung cấp.
 
-### 2.3 Ghi nhận Thanh toán (Modal)
+### 2.3 Đối trừ công nợ (Debt Netting)
+Dành cho thực thể vừa là khách hàng (phải thu) vừa là đối tác (phải trả).
+1. Tại trang Chi tiết Công nợ, nếu có liên kết, hiển thị thêm thẻ "Công nợ phải trả" và nút "Đối trừ".
+2. Nhấn "Đối trừ", hệ thống tự động tính số tiền = `min(Nợ phải thu, Nợ phải trả)`. (Không cho phép nhập số khác).
+3. Nhập Ngày đối trừ và Ghi chú.
+4. Gửi yêu cầu (trạng thái PENDING). Quản lý/Giám đốc duyệt để chính thức tạo 2 dòng ADJUSTMENT giảm cả 2 đầu nợ.
+
+### 2.4 Ghi nhận Thanh toán (Modal)
 
 1. Nhấn "Ghi nhận thanh toán" → mở modal
 2. Nhập **Mã phiếu thu** (receipt_id, bắt buộc)
@@ -87,14 +98,26 @@ Nhấn "Ghi thanh toán" → Modal mở
   → Response 200 → Refresh ledger
 ```
 
-### 3.2 Điều chỉnh (Adjustment)
+### 3.2 Điều chỉnh (Adjustment) & Đối trừ (Debt Netting)
 
+**Điều chỉnh thường:**
 ```
 POST /api/adjustments
   { trip_id, amount, note, signed_agreement_ref }
   → amount > 0: Debit (tăng nợ)
   → amount < 0: Credit (giảm nợ)
   → Advisory lock → INSERT ADJUSTMENT ledger row
+```
+
+**Đối trừ công nợ:**
+```
+POST /api/finance/debt-offsets
+  { customerId, supplierId, offsetDate, note }
+  → Tính amount = min(arBalance, apBalance)
+  → Trạng thái PENDING
+
+POST /api/finance/debt-offsets/:id/approve (Manager)
+  → Tạo 2 dòng ADJUSTMENT (giảm AR, giảm AP)
 ```
 
 ### 3.3 Xem sao kê

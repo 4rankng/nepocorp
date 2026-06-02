@@ -57,16 +57,20 @@ export function getActiveCapTable(
 
   if (total > 0) {
     // Calculate from contribution amounts
-    return partners.map(p => ({
-      ...p,
-      percentage: Math.round((p.contributionAmount / total) * 10000) / 100,
-    }));
+    return partners
+      .filter(p => p.contributionAmount > 0)
+      .map(p => ({
+        ...p,
+        percentage: Math.round((p.contributionAmount / total) * 10000) / 100,
+      }));
   }
 
   // Fall back to stored percentage field when contributionAmount is not set
-  return Array.from(byName.values()).map(c => ({
-    partnerName: c.partnerName,
-    contributionAmount: 0,
-    percentage: parseFloat(c.percentage ?? '0') || 0,
-  }));
+  return Array.from(byName.values())
+    .map(c => ({
+      partnerName: c.partnerName,
+      contributionAmount: 0,
+      percentage: parseFloat(c.percentage ?? '0') || 0,
+    }))
+    .filter(p => p.percentage > 0);
 }

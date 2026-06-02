@@ -140,7 +140,7 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-TS-001 | Trang tải đầy đủ | MANAGER, 5+ chuyến | Mở `/trips` | Header + 4 KPI + Search + 6 Pills + Bảng + Pagination | High |
-| TC-TS-002 | Đúng 9 cột bảng | MANAGER | Kiểm tra header | Mã chuyến, Tuyến, KH, Xe, Tài xế, Trạng thái, Tổng tiền, Ngày tạo, Actions | High |
+| TC-TS-002 | Đúng 7 cột bảng | MANAGER | Kiểm tra header | Các cột gộp theo thiết kế | High |
 | TC-TS-003 | Tổng chuyến đúng | 15 chuyến DB | Xem KPI | Hiển thị 15, màu xanh dương | High |
 | TC-TS-004 | Đang chạy đúng | 3 IN_TRANSIT | Xem KPI | Hiển thị 3, màu vàng | High |
 | TC-TS-005 | Hoàn thành đúng | 7 COMPLETED | Xem KPI | Hiển thị 7, màu xanh lá | High |

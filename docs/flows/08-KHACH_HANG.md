@@ -44,7 +44,7 @@ Trang Quản lý Khách hàng cho phép CRUD khách hàng vận tải, hiển th
 ### 2.2 Thêm khách hàng
 
 1. Nhấn "Thêm" → inline form row xuất hiện
-2. Nhập: **Tên** (bắt buộc), MST, Người liên hệ, ĐT, Hạn mức TD, Trạng thái
+2. Nhập: **Tên** (bắt buộc), MST, Người liên hệ, ĐT, Hạn mức TD, Trạng thái, **Phương thức Giấy báo nợ** (Tháng/Lô), **Khách hàng liên kết** (Chọn NCC nếu có).
 3. Nhấn "Lưu"
 
 ### 2.3 Sửa khách hàng
@@ -67,10 +67,10 @@ Trang Quản lý Khách hàng cho phép CRUD khách hàng vận tải, hiển th
 ## 3. Luồng nghiệp vụ
 
 ```
-THÊM: POST /api/customers { name (required), tax_code?, contact_person?, phone?, credit_limit?, status? }
+THÊM: POST /api/customers { name (required), tax_code?, contact_person?, phone?, credit_limit?, status?, debit_note_mode?, linked_supplier_id? }
 → 201 Created → Refresh danh sách
 
-SỬA: PUT /api/customers/:id { name?, tax_code?, contact_person?, phone?, credit_limit?, status? }
+SỬA: PUT /api/customers/:id { name?, tax_code?, contact_person?, phone?, credit_limit?, status?, debit_note_mode?, linked_supplier_id? }
 → 200 OK → Refresh
 
 XÓA: DELETE /api/customers/:id → Soft delete → 200 { ok: true }
@@ -91,6 +91,8 @@ XÓA: DELETE /api/customers/:id → Soft delete → 200 { ok: true }
 | contact_info | text | Nullable |
 | credit_limit | numeric(15,0) | Nullable |
 | status | ACTIVE/LOCKED | Default ACTIVE |
+| debit_note_mode | enum | 'MONTHLY' \| 'PER_BATCH', Default 'MONTHLY' |
+| linked_supplier_id | integer | Nullable, references suppliers(id) |
 
 ### 4.2 Risk Dot Indicators
 

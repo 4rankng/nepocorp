@@ -18,6 +18,7 @@ Sản phẩm là một nền tảng web thống nhất nhằm thay thế quy tr�
 | :--- | :--- | :--- |
 | **Quản lý / Đối tác** | Điều hành toàn bộ quy trình, nhận đơn, phân xe, theo dõi tài chính, công nợ, quản lý kỷ luật và xem phân chia lợi nhuận. | Desktop-first (Dashboard, Báo cáo) |
 | **Kế toán** | Nhập liệu/kiểm tra thông tin chuyến đi, kiểm soát nhiên liệu, tính toán tiền đi đường và đôn đốc công nợ phải thu. | Desktop-first (Bảng dữ liệu, Cấu hình) |
+| **Giao nhận** | Nhập chi phí dịch vụ đi kèm (nâng/hạ, hải quan, cân hàng, hạ tầng...) và số container/seal theo từng chuyến, kèm số hóa đơn/tờ khai. Sử dụng tiền tạm ứng để chi hộ và lập phiếu thanh toán hoàn ứng. **Không xem dữ liệu tài chính.** | Mobile-first (Danh sách chuyến, Form nhập phí) |
 | **Lái xe** | Xem lịch trình, kiểm tra số dầu được cấp, xem thu nhập và kỷ luật cá nhân. **Chỉ xem, không nhập liệu.** | Mobile-first (Nút bấm lớn, Tối giản) |
 
 ---
@@ -45,12 +46,28 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Trip (Chuyến xe)** là đơn vị vận hành cốt lõi — mỗi chuyến là một lần xe chạy độc lập. Khách hàng và tuyến đường được chọn trực tiếp trên Trip.
 * **Customer Reference (Tham chiếu KH):** Trường tùy chọn trên Trip để nhóm các chuyến phục vụ cùng một yêu cầu của khách hàng. Khái niệm Order/Đơn hàng chính thức được hoãn sang hậu MVP.
 * **Trạng thái chuyến đi (5 trạng thái):**
-    1. **Mới tạo**: Quản lý tạo thông tin cơ bản. Kế toán nhập các số liệu dự kiến (km, dầu, vé).
+    1. **Mới tạo**: Quản lý tạo thông tin cơ bản (chọn Xe nhà hoặc Xe ngoài, điền thuế VAT). Kế toán nhập các số liệu dự kiến (km, dầu, vé).
     2. **Đang chạy**: Tài xế đã xuất phát. Kế toán có thể cập nhật số liệu bất kỳ lúc nào.
     3. **Hoàn thành**: Xe đã về. Kế toán nhập/đối chiếu số liệu thực tế cuối cùng (đăng ảnh chuyến chè nếu có). Vẫn có thể sửa nếu gõ sai.
     4. **Đã chốt**: Khóa sổ, hệ thống tạo bản ghi Sổ cái (Ledger). Cấm sửa đổi.
     5. **Đã hủy**: Chuyến xe bị hủy bỏ giữa chừng, lưu lại lịch sử.
 * **Quy trình nhập liệu:** Quản lý tạo chuyến -> Kế toán điền số dự kiến -> Xe chạy -> Xe về, kế toán chốt số thực tế -> Quản lý/Kế toán khóa chuyến (Đã chốt).
+
+### 4.1.1 Thuế VAT & Doanh thu vận tải
+* Giá cước bán cho khách hàng luôn được nhập **bao gồm VAT** (INCL VAT). 
+* Hệ thống ghi nhận **Tỷ lệ VAT** (VD: 8% hoặc 10%) cho từng chuyến đi (mặc định cấu hình theo khách hàng).
+* Doanh thu ghi nhận trên giấy báo nợ (phải thu) là giá gồm VAT. 
+* Doanh thu ghi nhận vào Báo cáo Lãi lỗ nội bộ (P&L, DT xe) là doanh thu **chưa VAT** (= Giá bán / (1 + VAT)).
+
+### 4.1.2 Điều động Xe ngoài (External Carrier)
+* Một chuyến đi có thể được thực hiện bởi **Xe nhà** (OWN) hoặc **Xe ngoài** (EXTERNAL).
+* **Xe nhà**: Sử dụng đầu kéo, tài xế, nhiên liệu, và tiền đi đường của công ty.
+* **Xe ngoài**: Công ty thuê đối tác vận chuyển. Khi chọn xe ngoài:
+    * Không nhập xe đầu kéo, tài xế công ty.
+    * Nhập **Đối tác vận chuyển** (Nhà cung cấp).
+    * Nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe ngoài**, **Tên lái xe ngoài**, **SĐT lái xe ngoài**.
+    * Chi phí chuyến đi = Giá cước thuê ngoài (không có dầu, vé, lương).
+    * **Lãi điều xe ngoài (Management Margin)** = Doanh thu chưa VAT - Giá cước thuê ngoài chưa VAT. Lãi này cộng vào P&L của công ty.
 
 ### 4.2 Doanh thu & Bảng giá
 
@@ -103,13 +120,41 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.6 Tổng chi phí (Total Cost)
 
-* **Công thức (theo chuyến):** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương sản lượng`.
+* **Công thức đối với Xe nhà:** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương sản lượng + Chi phí dịch vụ đi kèm (nếu công ty trả trực tiếp)`.
+* **Công thức đối với Xe ngoài:** `Tổng chi phí = Giá cước thuê ngoài`.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
 * **Hai tầng:** thẻ **từng chuyến** giữ nguyên công thức trên (`computeTripTotals` không đổi). Ở **báo cáo lãi lỗ theo tháng**, Tổng chi phí bao gồm **TẤT CẢ chi phí** = Σ chi phí các chuyến + Σ chi phí vận hành/bảo dưỡng theo xe (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — xem §4.14). Chi phí bảo dưỡng là theo xe/tháng, không tính vào từng chuyến.
 
+### 4.6.1 Chi phí dịch vụ đi kèm (Ancillary Fees)
+* Các chi phí phát sinh tại cảng/bãi (Nâng container, Hạ container, Cân hàng, Kiểm hóa, Hải quan, Hạ tầng, Phục vụ kiểm hóa, Phí chi hộ khác).
+* Mỗi chi phí có **Giá mua vào** (Công ty/Giao nhận trả cảng/NCC) và **Giá bán ra** (Thu của khách hàng, luôn gồm VAT).
+* **Thuế GTGT dịch vụ đi kèm:** Tất cả phí đi kèm chịu VAT **8%** (mức hiện hành; có thể điều chỉnh lên 10%). Mức thuế lưu dạng **cấu hình được**, không gán cứng.
+* Giá bán ra do kế toán/giao nhận nhập/sửa tự do — hệ thống gợi ý theo loại phí (xem bảng dưới). Lãi dịch vụ (Service Margin) = Bán ra − Mua vào.
+* **Phí nội bộ:** Giá bán ra có thể bằng 0 (khoản chi nội bộ không báo khách, hoặc báo dưới hạng mục khác). Mỗi loại phí có thể cấu hình nhãn hiển thị riêng trên Giấy báo nợ (`billing_label`) khác với tên nội bộ.
+
+**Danh mục phí và quy tắc mặc định:**
+
+| Mã | Tên tiếng Việt | Trường bổ sung | Hình thức chi mặc định | Giá bán ra mặc định |
+| :--- | :--- | :--- | :--- | :--- |
+| `LIFTING` | Phí nâng container | Số HĐ, Ngày HĐ | FORWARDER_ADVANCE | Bằng giá mua (at cost) |
+| `LOWERING` | Phí hạ container | Số HĐ, Ngày HĐ | FORWARDER_ADVANCE | Bằng giá mua |
+| `WEIGHING` | Phí cân hàng | Số HĐ, Ngày HĐ | FORWARDER_ADVANCE | Bằng giá mua |
+| `CUSTOMS` | Phí làm tờ khai hải quan | Số tờ khai, Số container | FORWARDER_ADVANCE | Cộng thêm phí quản lý (markup) |
+| `INFRASTRUCTURE` | Phí kết cấu hạ tầng (nộp hộ) | Số container | FORWARDER_ADVANCE | Bằng giá mua |
+| `INSPECTION` | Phí kiểm hóa tại cảng | Số HĐ, Ngày HĐ | FORWARDER_ADVANCE | Bằng giá mua |
+| `INSPECTION_SVC` | Phí phục vụ kiểm hóa | Diễn giải chi tiết | FORWARDER_ADVANCE | Cộng thêm phí quản lý |
+| `OTHER` | Phí chi hộ khác | Diễn giải chi tiết, Số container | FORWARDER_ADVANCE | Theo từng trường hợp (có thể = 0) |
+
+> Mặc định FORWARDER_ADVANCE cho tất cả. Chuyển sang COMPANY_DIRECT khi: phí nộp hộ tại hãng tàu có HĐ xuất tên NePO, **hoặc** khoản **> 5.000.000 VNĐ** (NePO chuyển khoản trực tiếp). Đây là gợi ý — người dùng luôn có thể ghi đè.
+
+* **Đường dẫn thanh toán (Settlement Method):**
+    * **COMPANY_DIRECT**: Công ty trả trực tiếp cho NCC/Cảng → Tạo công nợ phải trả NCC.
+    * **FORWARDER_ADVANCE**: Giao nhận trả hộ bằng tiền tạm ứng → Trừ vào số dư tạm ứng của giao nhận; không tạo công nợ NCC. (Mặc định).
+* Các khoản phí cần lưu trữ: Số hóa đơn, Ngày hóa đơn, Số tờ khai (hải quan), và Số container.
+
 ### 4.7 Lợi nhuận
 
-* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu các chuyến − **Tổng chi phí xe**, tính theo từng **xe đầu kéo**, theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
+* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu (Vận tải + Lãi xe ngoài + Lãi dịch vụ đi kèm) − **Tổng chi phí xe**, tính theo từng **xe đầu kéo** (hoặc gộp riêng thành mục Xe ngoài), theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
 * **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
@@ -134,6 +179,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Ghi nhận thanh toán:** Thanh toán được khớp (match) với từng chuyến đi cụ thể. Một khoản chuyển khoản ngân hàng (có `receipt_id` chung) sẽ tạo ra nhiều dòng ghi có (mỗi dòng tương ứng với số tiền trả cho một `txn_id` cụ thể). Hệ thống cho phép thanh toán một phần (partial payment).
 * **Tính nợ động:** Số dư nợ hiện tại là cột `balance` ở dòng cuối cùng của thực thể đó. Tình trạng nợ của từng chuyến đi được tính bằng tổng debit trừ tổng credit của chuyến đó.
 * Kế toán xuất sao kê cho khách hàng ghi tổng công nợ. Cảnh báo: Quá hạn 30/60/90 ngày.
+* **Giấy báo nợ (Debit Note):** Bản xuất ra PDF/Excel gửi cho khách hàng, bao gồm Cước vận tải + Chi phí dịch vụ đi kèm. Tùy chọn xuất theo tháng (MONTHLY) hoặc theo từng lô (PER_BATCH) cấu hình theo khách hàng.
+* **Đối trừ công nợ (Debt Netting):** Đối với khách hàng đồng thời là đối tác/nhà cung cấp. Kế toán lập Bảng đối chiếu công nợ hàng tháng, lấy min(Công nợ phải thu, Công nợ phải trả) để cấn trừ (Full offset). Giám đốc duyệt mới ghi nhận vào Sổ cái.
 
 ### 4.11 Kỷ luật (Penalty)
 
@@ -244,7 +291,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 | # | Bảng | Mô tả | Dữ liệu mẫu |
 | :--- | :--- | :--- | :--- |
-| 1 | **Khách hàng** | Tên, liên hệ, thông tin công nợ | 44+ khách hàng |
+| 1 | **Khách hàng** | Tên, liên hệ, thông tin công nợ, phương thức Giấy báo nợ, Đối tác liên kết | 44+ khách hàng |
 | 2 | **Tuyến đường** | Tên tuyến, khoảng cách, định mức đèo đốc (nếu có) | 38+ tuyến |
 | 3 | **Bảng giá** | Giá cố định theo Khách hàng × Tuyến đường | ~44×38 = 1.672 dòng |
 | 4 | **Xe đầu kéo** | Biển số, biển số rơ-mooc ghép cặp, loại rơ-mooc (20FT/40FT), trạng thái | 4 xe (rơ-mooc không có bảng riêng) |
@@ -256,11 +303,12 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 10 | **Cổ đông & Tỷ lệ vốn** | Tên, tỷ lệ %, ngày hiệu lực | Ông Thương 29.55%, Ông Phụng 70.45% |
 | 11 | **Danh mục kỷ luật** | Lý do vi phạm + số tiền phạt mặc định | VD: "Thiếu hóa đơn dầu - 100.000đ" |
 | 12 | **Sổ cái (Ledger)** | Ghi nhận tập trung toàn bộ giao dịch (Công nợ KH, Lương/Phạt, Thanh toán, Công nợ NCC) | Các cột: ID, date, txn_type, credit, debit, balance |
-| 13 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
+| 13 | **Nhà cung cấp** | Tên, người liên hệ, SĐT, mã số thuế, ghi chú, trạng thái, Khách hàng liên kết | Gara, trạm lốp, phụ tùng, bảo hiểm, đăng kiểm... |
 | 14 | **Hạng mục chi phí** | Tên, một lần/định kỳ (is_renewable), số ngày nhắc trước (mặc định 30) | Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ |
 | 15 | **Loại container** | Mã loại, tên hiển thị, kích thước nhóm (20FT/40FT), trạng thái | 20'DC, 20'OT, 20'RF, 40'DC, 40'HC... |
 | 16 | **Cảng / Bãi** | Tên, địa chỉ, ghi chú, trạng thái | Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL... |
 | 17 | **Lịch sử giá nhiên liệu** | Đơn giá, ngày hiệu lực, người thay đổi, ghi chú — append-only | Tự ghi khi cập nhật đơn giá cấu hình |
+| 18 | **Danh mục Chi phí Giao nhận** | Cấu hình các loại phí tại cảng, cờ mặc định xuất hóa đơn, cờ mặc định tính lãi | Nâng hạ, Cân xe, Kiểm hóa... |
 
 ---
 
@@ -272,8 +320,15 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | :--- | :--- | :--- | :--- |
 | Khách hàng | Select | Có | Từ danh mục |
 | Tuyến đường | Select | Có | Từ danh mục |
-| Xe đầu kéo | Select | Có | Từ danh mục; loại rơ-mooc (20FT/40FT) tự động tra từ xe ghép cặp → dùng để tính tiền đi đường chuẩn |
-| Lái xe | Select | Có | Theo xe được phân công |
+| VAT Rate | Number | Có | Tỷ lệ thuế VAT (VD: 0.08) cho doanh thu vận tải |
+| Chế độ điều xe | Toggle | Có | Xe nhà (OWN) hoặc Xe ngoài (EXTERNAL) |
+| Xe đầu kéo | Select | Có (OWN) | Từ danh mục; loại rơ-mooc (20FT/40FT) tự động tra |
+| Lái xe | Select | Có (OWN) | Theo xe được phân công |
+| Đối tác vận chuyển | Select | Có (EXT) | Nhập NCC (dành cho Xe ngoài) |
+| Giá cước thuê ngoài | Number | Có (EXT) | Giá thuê xe ngoài gồm VAT |
+| Biển số xe ngoài | Text | Có (EXT) | |
+| Tên tài xế ngoài | Text | Có (EXT) | |
+| SĐT tài xế ngoài | Text | Có (EXT) | |
 | Loại hàng hóa | Select | Có | Từ danh mục (VD: Chè, Container rỗng, Hàng tổng hợp...) |
 | Ngày xuất phát | Date | Có | |
 | **Các container** | Dynamic rows | Không | Mỗi dòng: Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng. VD: 2×20'DC hoặc 1×40'HC. |
@@ -291,11 +346,12 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Tăng vé theo lệnh | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
-| Lương sản lượng | Number | Có | Thu nhập lái xe cho chuyến này |
-| Doanh thu trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container (tra từ bảng giá khi tạo chuyến, có thể ghi đè; hệ thống ghi nhận giá gốc, giá ghi đè, người thay đổi và thời điểm). |
+| Lương sản lượng | Number | Có (OWN) | Thu nhập lái xe cho chuyến này (chỉ Xe nhà) |
+| Doanh thu trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container, INCL VAT |
 | Doanh thu kết hợp đóng hàng | Number | Không | Doanh thu bổ sung từ kết hợp đóng hàng trong chuyến (mặc định 0). |
 | Ghi chú/diễn giải | Text | Không | |
-| **Các container** | Dynamic rows | Không | Cập nhật/bổ sung: Loại container (dropdown), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng. |
+| **Các container** | Dynamic rows | Không | Cập nhật/bổ sung: Loại container, Số container, Số seal. |
+| **Chi phí DV đi kèm**| Dynamic rows | Không | Mỗi dòng: Loại phí, Giá mua, Giá bán, NCC, Hình thức chi (COMPANY_DIRECT/FORWARDER_ADVANCE), Số hóa đơn/ngày, Tờ khai. |
 | Ảnh xác nhận hàng hóa | Upload + Text | Có (tất cả) | Bắt buộc upload ảnh cho tất cả loại hàng khi hoàn thành. Chuyến chè bắt buộc có ảnh Container **và** Seal. Bên cạnh ảnh, có thể nhập số container/seal bằng text. |
 
 ### Tự động tính toán (read-only)
@@ -306,6 +362,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Chi phí dầu | Tổng L dầu × Đơn giá thực tế (nếu có) hoặc Đơn giá cấu hình |
 | Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
 | Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
-| Tổng chi phí | Chi phí dầu + Tiền đi đường + Lương sản lượng |
-| Doanh thu chuyến | Doanh thu trả hàng + Doanh thu kết hợp đóng hàng |
-| Lợi nhuận gộp | Doanh thu chuyến - Tổng chi phí |
+| Tổng chi phí (Xe nhà) | Chi phí dầu + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT) |
+| Doanh thu chuyến | (Doanh thu trả hàng + Doanh thu kết hợp đóng hàng) / (1 + VAT) |
+| Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) quy về ex-VAT |
+| Lợi nhuận xe ngoài | Doanh thu ex-VAT - Chi phí xe ngoài ex-VAT |
+| Lợi nhuận gộp | Doanh thu vận tải ex-VAT - Tổng chi phí (Xe nhà) + LN dịch vụ + LN xe ngoài |

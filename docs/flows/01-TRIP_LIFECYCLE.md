@@ -54,8 +54,10 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 2. Điền form:
    - **Khách hàng** (dropdown từ danh sách KH active)
    - **Tuyến đường** (dropdown từ danh sách tuyến)
-   - **Xe đầu kéo** (dropdown từ danh sách xe ACTIVE)
-   - **Tài xế** (dropdown từ danh sách tài xế active)
+   - **VAT Rate** (tỷ lệ thuế, mặc định 8% hoặc 10%)
+   - **Chế độ điều xe**: Chọn **Xe nhà** (OWN) hoặc **Xe ngoài** (EXTERNAL)
+     - *Nếu Xe nhà*: Chọn **Xe đầu kéo** (ACTIVE) và **Tài xế**.
+     - *Nếu Xe ngoài*: Chọn **Đối tác vận chuyển** (NCC), nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe**, **Tên tài xế**, **SĐT tài xế**.
    - **Ngày xuất phát** (date picker)
    - **Ngày dự kiến đến** (date picker)
    - **Loại hàng** (tùy chọn)
@@ -145,10 +147,17 @@ DRIVER đăng nhập → Xem chuyến mình →
 
 ```
 computeTripTotals(trip):
-  revenue = Σ items.totalPrice || customerRate × distance
-  totalExpenses = fuelAmount + tollFees + loadingFee + unloadingFee
-                  + otherExpenses + driverAllowance + assistantAllowance
-  grandTotal = revenue − totalExpenses
+  customerFreightExVat = customerFreightInclVat / (1 + vatRate)
+  
+  Nếu Xe nhà:
+    totalExpenses = fuelAmount + tollFees + driverAllowance + ...
+    grandTotal = customerFreightExVat − totalExpenses + serviceMargin
+  
+  Nếu Xe ngoài:
+    externalFreightExVat = externalFreightCost / (1 + vatRate)
+    externalMargin = customerFreightExVat - externalFreightExVat
+    grandTotal = externalMargin + serviceMargin
+
   → Mọi giá trị dùng round2dp()
 ```
 

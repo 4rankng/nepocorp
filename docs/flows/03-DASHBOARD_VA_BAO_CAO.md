@@ -68,18 +68,21 @@
 
 | Mục | Nguồn |
 |-----|-------|
-| I. Doanh thu vận tải | Σ customer_price |
+| I. Doanh thu vận tải | Σ customer_price (ex-VAT) |
+| Doanh thu điều xe ngoài (lãi quản lý) | Σ externalMargin (ex-VAT) |
+| Lãi dịch vụ đi kèm | Σ serviceMargin (ex-VAT) |
 | II. Chi phí nhiên liệu | Σ fuel_cost (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
 | Chi phí cầu đường | Σ toll_cost |
 | Công lương tài xế | Σ driver_pay |
 | Chi phí bốc xếp | Σ loading_cost |
 | Chi phí dỡ hàng | Σ unloading_cost |
+| Chi phí thuê xe ngoài | Σ externalFreightCost (chỉ cho báo cáo gộp, thường lấy margin trực tiếp) |
 | Chi phí khác | Σ other_cost |
-| **Tổng chi phí** | Tổng các khoản trên |
+| **Tổng chi phí** | Tổng các khoản chi phí trên |
 | III. Lợi nhuận gộp | Doanh thu − Tổng chi phí |
 | Biên lợi nhuận | LN / Doanh thu × 100% |
 
-**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bảng con phân tách chi phí bảo dưỡng theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí).
+**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bảng con phân tách chi phí bảo dưỡng theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, sẽ được nhóm dưới mục "Xe ngoài" (hoặc tên đối tác).
 
 ---
 
