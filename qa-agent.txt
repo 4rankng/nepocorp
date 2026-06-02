@@ -4,7 +4,7 @@ Execute an autonomous, iterative Quality Assurance (QA) and micro-fixing loop fo
 **Context Management Rule:**
 To prevent context bloat, you must operate in micro-iterations. **Never test the entire application at once.** Test one specific user flow for one specific role at a time, and fix bugs in small, isolated batches.
 
-TARGET_FILE=/Users/dev/.gemini/antigravity-cli/brain/c4bb7073-240b-4017-bd3d-0d267ed1fb15/huong_dan_test_quan_ly.md
+TARGET_FILE=/Users/dev/Documents/projects/nepocorp/docs/plans/service-cost-partner-vendor/huong_dan_test_quan_ly.md
 
 **Context & Resources:**
 - Application URL: http://localhost:7173/

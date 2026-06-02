@@ -19,8 +19,8 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 ## M1. Cấu hình & Loại phí (Scenario 1 / Bước 1)
 
-- [ ] **M1.1** MANAGER `/config` shows "Loại chi phí giao nhận" card. Verify **8** entries with the exact Vietnamese names from the guide.
-- [ ] **M1.2** Default VAT for entries is **8%** (or system VAT rate); each row exposes `defaultMarkup` + `billingLabel` + `vatRate` columns (depth of SCC-F1.8 needs UI confirmation as MANAGER, not ACCOUNTANT).
+- [x] **M1.1** MANAGER `/config` shows "Loại chi phí giao nhận" card. Verify **8** entries with the exact Vietnamese names from the guide. — PASSED iter 01
+- [x] **M1.2** Default VAT for entries is **8%** (or system VAT rate); each row exposes `defaultMarkup` + `billingLabel` + `vatRate` columns (depth of SCC-F1.8 needs UI confirmation as MANAGER, not ACCOUNTANT). — PASSED iter 01
 
 ## M2. Tạo phí dịch vụ đi kèm (Scenario 1 / Bước 2)
 

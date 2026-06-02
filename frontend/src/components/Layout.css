@@ -592,7 +592,7 @@
   color: var(--ink-3);
   pointer-events: none;
 }
-.topbar__search input {
+.topbar__search > input {
   width: 100%;
   padding: 9px 48px 9px 38px;
   background: var(--surface);
@@ -603,12 +603,12 @@
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.topbar__search input::placeholder { color: var(--ink-3); }
-.topbar__search input:focus {
+.topbar__search > input::placeholder { color: var(--ink-3); }
+.topbar__search > input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
-.topbar__search kbd {
+.topbar__search > kbd {
   position: absolute;
   right: 10px;
   top: 50%;
