@@ -219,11 +219,10 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
               <table className="ancillary-fees__table">
                 <thead>
                   <tr>
-                    <th>Loại phí / Cont</th>
+                    <th>Loại phí / Cont / Hình thức</th>
                     <th className="num">Mua vào</th>
                     <th className="num">Bán ra</th>
                     <th className="num">Lãi DV</th>
-                    <th>Hình thức</th>
                     <th>Nhà cung cấp</th>
                     <th>Chứng từ</th>
                     <th>Trạng thái</th>
@@ -238,9 +237,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         <td>
                           <div style={{ lineHeight: 1.25 }}>
                             <div>{feeTypeLabel(fee.expenseType)}</div>
-                            {fee.containerNumber && (
-                              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{fee.containerNumber}</div>
-                            )}
+                            <div style={{ fontSize: 11, color: 'var(--fg-3)', display: 'flex', gap: 6 }}>
+                              {fee.containerNumber && <span className="mono">{fee.containerNumber}</span>}
+                              {fee.containerNumber && <span>·</span>}
+                              <span>{fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="num">{formatCurrency(Number(fee.buyAmount))}</td>
@@ -253,9 +254,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                           }}
                         >
                           {formatCurrency(margin)}
-                        </td>
-                        <td style={{ fontSize: 12, whiteSpace: 'nowrap' }} title={fee.settlementMethod === 'COMPANY_DIRECT' ? 'Công ty trả trực tiếp' : 'Chi hộ tạm ứng'}>
-                          {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
                         </td>
                         <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
                           {fee.supplierName ?? '—'}
@@ -327,7 +325,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={readOnly ? 3 : 4}></td>
+                    <td colSpan={readOnly ? 2 : 3}></td>
                   </tr>
                 </tfoot>
               </table>

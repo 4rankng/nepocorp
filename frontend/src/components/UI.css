@@ -614,12 +614,22 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 }
 .table-scroll { overflow-x: auto; overflow-y: hidden; }
 
-/* Ancillary-fees grid: 10 columns, density-tuned so the full row (incl. Trạng thái)
-   fits a typical trip-detail card width without horizontal scroll on 1280+ desktops. */
-.ancillary-fees__table { min-width: 0; }
-.ancillary-fees__table thead th { padding: 9px 8px; font-size: 10px; }
-.ancillary-fees__table tbody td { padding: 8px; font-size: 12.5px; }
-.ancillary-fees__table tbody td.num { font-size: 12.5px; }
+/* Ancillary-fees grid: 7 cols total (Loại phí/Cont/Hình thức · Mua · Bán · Lãi DV
+   · Nhà CC · Chứng từ · Trạng thái). Density-tuned for the trip-detail panel at
+   ~1190px viewport (real desktop window with sidebar), no horizontal scroll. */
+.ancillary-fees__table { min-width: 0; table-layout: fixed; width: 100%; }
+.ancillary-fees__table thead th { padding: 8px 5px; font-size: 10px; }
+.ancillary-fees__table tbody td { padding: 7px 5px; font-size: 12px; vertical-align: top; }
+.ancillary-fees__table tbody td.num { font-size: 12px; }
+/* Column widths: total = 100%, summing to ~7 logical units. */
+.ancillary-fees__table thead th:nth-child(1) { width: 22%; }   /* Loại phí / Cont / Hình thức */
+.ancillary-fees__table thead th:nth-child(2),
+.ancillary-fees__table thead th:nth-child(3),
+.ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* num columns */
+.ancillary-fees__table thead th:nth-child(5) { width: 14%; }   /* Nhà cung cấp */
+.ancillary-fees__table thead th:nth-child(6) { width: 15%; }   /* Chứng từ */
+.ancillary-fees__table thead th:nth-child(7) { width: 12%; }   /* Trạng thái */
+.ancillary-fees__table thead th:nth-child(8) { width: 4%; }    /* actions (when not readOnly) */
 
 table {
   width: 100%;

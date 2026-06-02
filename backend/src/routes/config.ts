@@ -27,6 +27,7 @@ import {
 } from '../services/salary-period.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { queryAuditLogs } from '../services/audit-query.service';
+import { getPenaltyStats } from '../services/reporting.service';
 
 // Keep customer.linkedSupplierId ↔ supplier.linkedCustomerId mirrored.
 // Called after a customer/supplier create/update. Inspects the *request patch*
@@ -138,6 +139,10 @@ router.use('/ports', createCrudRouter(s.ports, portSchema, { searchableField: 'n
 router.use('/forwarder-expense-types', createCrudRouter(s.forwarderExpenseTypes, forwarderExpenseTypeSchema, { searchableField: 'name' }));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));
 router.use('/road-allowances', createCrudRouter(s.roadAllowances, roadAllowanceSchema));
+
+router.get('/penalty-reasons/stats', asyncHandler(async (req: Request, res: Response) => {
+  res.json(await getPenaltyStats());
+}));
 router.use('/penalty-reasons', createCrudRouter(s.penaltyReasons, penaltyReasonSchema));
 router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeSchema, {
   afterCreate: async () => { cacheInvalidatePattern('reports:pnl:*'); },

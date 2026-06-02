@@ -498,3 +498,42 @@ function addDay(dateStr: string): string {
   const dd = String(date.getDate()).padStart(2, '0');
   return `${yy}-${mm}-${dd}`;
 }
+
+/**
+ * Get penalty statistics for the current month
+ */
+export async function getPenaltyStats() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(month, year);
+
+  const activePenalties = await db.select({
+    reasonId: s.penalties.reasonId,
+    amount: s.penalties.amount,
+  }).from(s.penalties).where(and(
+    isNull(s.penalties.deletedAt),
+    eq(s.penalties.status, 'ACTIVE'),
+    gte(s.penalties.date, monthStart),
+    sql`${s.penalties.date} < ${monthEnd}`
+  ));
+
+  let totalCount = 0;
+  let totalAmount = 0;
+  const countsByReason: Record<number, number> = {};
+
+  for (const p of activePenalties) {
+    if (p.reasonId) {
+      countsByReason[p.reasonId] = (countsByReason[p.reasonId] || 0) + 1;
+    }
+    totalCount++;
+    totalAmount += parseFloat(p.amount || '0');
+  }
+
+  return {
+    totalCount,
+    totalAmount,
+    countsByReason,
+    period: { month, year }
+  };
+}

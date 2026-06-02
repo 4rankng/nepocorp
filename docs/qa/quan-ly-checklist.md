@@ -146,7 +146,7 @@ All 38 items across M1–M16 are `[x]` Passed across **14 micro-iteration report
 
 **Tooling limitations encountered during visual pass:**
 - `mcp__Claude_in_Chrome__resize_window` does not shrink `window.innerWidth` below ~1132 on macOS, so mobile-responsive media queries cannot be exercised through this MCP. Mobile verification continues to rely on `docs/mobile/audit.md` (23 prior passes already shipped, including DispatchPage Pass 12 with `-226px` height savings).
-- Screenshots are visible inline to the human reader in the transcript but were not written to `docs/qa/screenshots-quan-ly/` — the Chrome MCP `save_to_disk:true` flag did not produce a discoverable filesystem path in this build, and `screencapture` (macOS native) was blocked by missing screen-recording permission for the agent shell. Documented for future runs to either bring up an in-page `__qa_save` endpoint or grant screen-recording permission to the agent terminal.
+- Initial visual pass relied on inline screenshots in the chat transcript only. A second pass added **12 native PNGs to `docs/qa/screenshots-quan-ly/`** using macOS `screencapture -R<x,y,w,h>` against the foreground Chrome window (after foregrounding via AppleScript). The Chrome MCP's `save_to_disk:true` flag did not surface a discoverable path, and `screencapture` initially failed with "could not create image from display" until Chrome was AppleScript-activated — after that the permission grant held for the rest of the run. Documented for future runs.
 
 **Bugs found & patched (9 total — 6 code-level + 3 visual):**
 1. Iter 02 — Forwarder expense type catalog row had `code='NA'` (manual edit via still-editable code field) breaking JOIN to trip_expenses.expenseType. Patched: DB row renamed to `LIFTING`; UI now locks `code` on edit.
@@ -164,6 +164,20 @@ All 38 items across M1–M16 are `[x]` Passed across **14 micro-iteration report
 - `approveDebtOffset` response returns stale `approvedBy=null/approvedAt=null` even though DB stamping is correct (iter 07).
 - External trips don't auto-complete from `/actuals` without a photo upload (iter 05); test pathway used a direct status bump to focus on lock-time ledger postings.
 - P&L row for external trips shows raw incl-VAT `revenue` and `costs` but ex-VAT `profit` — display inconsistency, math correct.
+
+**Screenshot evidence (12 native PNGs under `docs/qa/screenshots-quan-ly/`):**
+- `M1-config-catalog-8rows.png` — all 8 forwarder expense types with VAT 8% + markup policy
+- `M1-config-edit-LIFTING-code-disabled.png` — iter 02 patch: `Mã (code)` greyed/disabled + helper text
+- `M2-trip12-fees-table-after-density-fix.png` — iter 10 patch in real 1190px desktop window (8 cols visible, ~50px residual clip at narrow widths)
+- `M4-customer-edit-modal-NITODA.png` — debitNoteMode + isCarrier + linkedSupplierId fields all visible
+- `M5-trip-new-XenhaXengoai-toggle.png` — Xe nhà / Xe ngoài toggle on `/trips/new`
+- `M8-debt-list-2chieu-Net.png` — "2 chiều" badge + Net column populated for NITODA
+- `M9-debt-detail-AP-card.png` — orange AP card + Đối trừ button
+- `M9-debt-offset-modal.png` — read-only Số tiền đối trừ + warning chip
+- `M12-trip18-external-KPI-FIXED.png` — iter 12 patch: 10.8M / 5.4M / 5.0M / 50% (was 10.8M / 0 / 10.8M / 100%)
+- `M13-finance-PL-rows.png` — Doanh thu điều xe ngoài 5M + Lãi DV 300K rows + own-fleet 0 costs
+- `M16-trips-container-search-result.png` — `/trips` search returning trip 12 by container after BUG-QL-009 fix
+- `M-dispatch-page.png` — DispatchPage current state (Pass-12 audit holds)
 
 **Density / layout — visual-pass observations not filed as bugs (acceptable as-is):**
 - DispatchPage already had Pass-12 mobile audit with `-226px` height reduction.
