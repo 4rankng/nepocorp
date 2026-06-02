@@ -27,7 +27,17 @@ export const forwarderClient = {
     return api.post(FORWARDER.CONTAINERS(tripId), data);
   },
 
-  createExpense: async (data: { tripId: number; expenseType: string; amount: number; note?: string }) => {
+  createExpense: async (data: {
+    tripId: number;
+    expenseType: string;
+    buyAmount: number;
+    sellAmount?: number;
+    settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    declarationNumber?: string;
+    note?: string;
+  }) => {
     return api.post(FORWARDER.EXPENSES, data);
   },
 

@@ -30,7 +30,17 @@ export function useCreateForwarderContainer() {
 export function useCreateForwarderExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { tripId: number; expenseType: string; amount: number; note?: string }) =>
+    mutationFn: (data: {
+      tripId: number;
+      expenseType: string;
+      buyAmount: number;
+      sellAmount?: number;
+      settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+      invoiceNumber?: string;
+      invoiceDate?: string;
+      declarationNumber?: string;
+      note?: string;
+    }) =>
       forwarderClient.createExpense(data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['forwarder-trip-detail', variables.tripId] });
