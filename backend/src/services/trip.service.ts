@@ -796,9 +796,12 @@ export async function getTrips(filters: TripListFilters) {
   // Count uses the simpler ILIKE-only conditions (no relation joins needed
   // since none of the simple ILIKE columns are in joined tables). Falls back
   // to the full conditions if the search term is empty.
+  // The simplified count predicates reference joined-table columns
+  // (customers.name, trucks.license_plate, routes.name), so the count query
+  // needs the same JOINs as the list query — otherwise the SQL fails with
+  // "missing FROM-clause entry" the moment a search term is present.
   const [countRow] = filters.search
-    ? await db.select({ count: sql<number>`count(*)` })
-        .from(s.trips)
+    ? await TRIP_RELATION_JOINS(db.select({ count: sql<number>`count(*)` }).from(s.trips))
         .where(and(...countConditions))
     : await db.select({ count: sql<number>`count(*)` })
         .from(s.trips)

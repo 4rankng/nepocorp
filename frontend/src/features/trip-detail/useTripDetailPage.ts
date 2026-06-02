@@ -84,10 +84,24 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       };
     }
 
-    const revenue = Number(trip.revenue || 0);
-    const totalCost = Number(trip.totalCost || 0);
-    const grossProfit = Number(trip.grossProfit || 0);
-    const marginPct = revenue > 0 ? ((grossProfit / revenue) * 100).toFixed(1) : null;
+    const isExternal = trip.carrierType === 'EXTERNAL';
+    const vatRate = Number(trip.vatRate ?? 0.08);
+    const revenueRaw = Number(trip.revenue || 0);
+    const externalFreightInclVat = Number(trip.externalFreightCost || 0);
+
+    // For EXTERNAL trips, Pete B3 + the test guide require ex-VAT profit math:
+    //   profit = round(revenue / (1+vat)) − round(externalFreightCost / (1+vat))
+    // The persisted trip.totalCost / trip.grossProfit are 0 for these trips
+    // (no fleet operating costs apply), which previously made the KPI strip
+    // render "Lợi nhuận gộp = doanh thu" (100% margin). Override here so the
+    // single-trip KPI matches the /finance "Doanh thu điều xe ngoài" line.
+    const externalMargin = isExternal && revenueRaw && externalFreightInclVat
+      ? Math.round(revenueRaw / (1 + vatRate)) - Math.round(externalFreightInclVat / (1 + vatRate))
+      : null;
+    const revenue = revenueRaw;
+    const totalCost = isExternal ? externalFreightInclVat : Number(trip.totalCost || 0);
+    const grossProfit = isExternal && externalMargin != null ? externalMargin : Number(trip.grossProfit || 0);
+    const marginPct = revenue > 0 ? ((grossProfit / (isExternal ? Math.round(revenue / (1 + vatRate)) : revenue)) * 100).toFixed(1) : null;
     const fuelCost = Number(trip.totalFuelCost || 0);
     const roadAllowance = Number(trip.totalRoadAllowance || 0);
     const driverSalary = Number(trip.driverSalary || 0);
@@ -102,11 +116,6 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     const externalCarrierName = trip.externalCarrierId
       ? (catalogData?.customers.find(c => c.id === trip.externalCarrierId)?.name ?? `ID ${trip.externalCarrierId}`)
       : '—';
-
-    const externalMargin = trip.carrierType === 'EXTERNAL' && trip.revenue && trip.externalFreightCost
-      ? Math.round(Number(trip.revenue) / (1 + Number(trip.vatRate ?? 0.08)))
-        - Math.round(Number(trip.externalFreightCost) / (1 + Number(trip.vatRate ?? 0.08)))
-      : null;
 
     return {
       revenue, totalCost, grossProfit, marginPct,
