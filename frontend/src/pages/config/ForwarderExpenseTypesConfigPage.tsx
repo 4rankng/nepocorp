@@ -55,13 +55,20 @@ function ExpenseTypeForm({
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: 13,
-                ...(isDuplicate ? { borderColor: 'var(--danger)' } : {})
+                ...(isDuplicate ? { borderColor: 'var(--danger)' } : {}),
+                ...(item ? { background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed' } : {})
               }}
-              disabled={false}
+              disabled={!!item}
+              title={item ? 'Mã liên kết với mã hệ thống — không sửa được sau khi tạo.' : undefined}
             />
             {isDuplicate && (
               <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
                 Mã này đã tồn tại.
+              </span>
+            )}
+            {item && (
+              <span style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2, display: 'block' }}>
+                Mã liên kết với mã hệ thống — không sửa được sau khi tạo.
               </span>
             )}
           </Field>

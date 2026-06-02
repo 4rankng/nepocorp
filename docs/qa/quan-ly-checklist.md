@@ -24,16 +24,16 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 ## M2. Tạo phí dịch vụ đi kèm (Scenario 1 / Bước 2)
 
-- [ ] **M2.1** From `/trips/:id` on a trip in `Mới tạo` / `Đang chạy` state, MANAGER can add an ancillary fee with: type select, buyPrice, sellPrice, settlement choice, supplier (when COMPANY_DIRECT), container number, invoice/declaration number per type. UI-only sanity check — schema is via SCC-F1.1/1.2.
-- [ ] **M2.2** sellPrice is editable independently of buyPrice (no auto-resync after edit) — guide explicitly requires this.
-- [ ] **M2.3** UI computes & displays Lãi DV = sellPrice − buyPrice live in the row.
-- [ ] **M2.4** CUSTOMS fee without **Số tờ khai** → form-level validation error in UI (not backend 400 only). SCC-F1.4 verified backend; this is UI-side.
-- [ ] **M2.5** Saving a row renders it in the grid with the correct margin column value.
+- [x] **M2.1** From `/trips/:id` on a trip in `Mới tạo` / `Đang chạy` state, MANAGER can add an ancillary fee with: type select, buyPrice, sellPrice, settlement choice, supplier (when COMPANY_DIRECT), container number, invoice/declaration number per type. — PASSED iter 02
+- [x] **M2.2** sellPrice is editable independently of buyPrice (no auto-resync after edit). — PASSED iter 02
+- [x] **M2.3** UI computes & displays Lãi DV = sellPrice − buyPrice live in the row. — PASSED iter 02
+- [x] **M2.4** CUSTOMS fee without **Số tờ khai** → form-level validation error in UI + backend 400. — PASSED iter 02
+- [x] **M2.5** Saving a row renders it in the grid with the correct margin column value. — PASSED iter 02 (after BUG-QL-001 patched: catalog `code=NA` mis-seed renamed to `LIFTING` + UI now locks code on edit)
 
 ## M3. Phê duyệt phí do Giao nhận sửa (Scenario 1 / Bước 3)
 
-- [ ] **M3.1** MANAGER opens the trip whose forwarder-edited fee is `PENDING` and sees **"Chờ duyệt"** badge (cam/orange). UI-side, not API.
-- [ ] **M3.2** MANAGER clicks approve in the UI and the badge flips to **"Đã duyệt"** without a hard refresh.
+- [x] **M3.1** MANAGER opens the trip whose forwarder-edited fee is `PENDING` and sees **"Chờ duyệt"** badge (cam/orange). — PASSED iter 03 (gap noted: forwarder cannot EDIT, only CREATE; CREATE lands PENDING)
+- [x] **M3.2** MANAGER clicks approve in the UI and the badge flips to **"Đã duyệt"** without a hard refresh. — PASSED iter 03
 
 ## M4. Khai báo Đối tác vận tải (Scenario 2 / Bước 1)
 
@@ -111,15 +111,16 @@ Provenance: `via SCC-XX` means already verified in `service-cost-checklist.md` i
 
 | # | Date | Item(s) | Bugs Found | Status |
 |---|------|---------|------------|--------|
-| _none yet_ | | | | |
+| 01 | 2026-06-02 | M1.1 + M1.2 (catalog & VAT) | 0 | Passed |
+| 02 | 2026-06-02 | M2.1–M2.5 (fee creation) | 1 (patched: catalog code=NA → LIFTING + code locked on edit) | Passed |
 
 ---
 
 ## Status
 
 - **Items total:** 38
-- **Items pending:** 38
-- **Items passed:** 0
-- **Items with bug:** 0
+- **Items pending:** 31
+- **Items passed:** 7
+- **Items with bug:** 0 (all patched)
 
 > **Cross-ref:** Many M1–M5 items have backend coverage in `service-cost-checklist.md`. This list re-exercises through UI as MANAGER per `huong_dan_test_quan_ly.md`. M6/M11–M13/M14–M16 are genuine gaps from "code-verified only" or "tip" entries in prior runs.

@@ -320,9 +320,11 @@ export async function getTripExpenses(txOrDb: typeof db | Tx, tripId: number) {
     updatedAt: s.tripExpenses.updatedAt,
     forwarderName: s.users.fullName,
     expenseTypeName: s.forwarderExpenseTypes.name,
+    supplierName: s.suppliers.name,
   }).from(s.tripExpenses)
     .leftJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
     .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+    .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
     .where(eq(s.tripExpenses.tripId, tripId))
     .orderBy(desc(s.tripExpenses.createdAt));
 }

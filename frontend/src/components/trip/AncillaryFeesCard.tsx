@@ -7,6 +7,7 @@ import type { TripExpense } from '@nepocorp/shared';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
+import { useCatalogs } from '../../hooks/useCatalogs';
 
 interface AncillaryFeesCardProps {
   tripId: number;
@@ -22,10 +23,12 @@ function feeTypeLabel(code: string): string {
 }
 
 const EMPTY_FORM = {
-  expenseType: ANCILLARY_EXPENSE_TYPES[0] as AncillaryExpenseType,
+  expenseType: 'LIFTING' as AncillaryExpenseType,
   buyAmount: '',
   sellAmount: '',
   settlementMethod: 'FORWARDER_ADVANCE' as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
+  supplierId: '',
+  containerNumber: '',
   invoiceNumber: '',
   invoiceDate: '',
   declarationNumber: '',
@@ -35,6 +38,8 @@ const EMPTY_FORM = {
 export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: catalogData } = useCatalogs();
+  
   const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -50,7 +55,48 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
     enabled: !!tripId,
   });
 
-  const expenses: TripExpense[] = data ?? [];
+  const expenses: (TripExpense & { supplierName?: string | null })[] = data ?? [];
+
+  const handleExpenseTypeChange = (newType: string) => {
+    const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === newType);
+    const hasMarkup = currentConfig 
+      ? !!currentConfig.defaultMarkup 
+      : (FORWARDER_EXPENSE_TYPE_DEFAULTS[newType]?.defaultMarkup ?? false);
+    
+    setForm(f => {
+      const buyNum = Number(f.buyAmount);
+      const newSell = hasMarkup
+        ? (buyNum ? String(Math.round(buyNum * 1.2)) : '')
+        : f.buyAmount;
+      return {
+        ...f,
+        expenseType: newType as AncillaryExpenseType,
+        sellAmount: newSell,
+      };
+    });
+  };
+
+  const handleBuyAmountChange = (val: string) => {
+    const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === form.expenseType);
+    const hasMarkup = currentConfig 
+      ? !!currentConfig.defaultMarkup 
+      : (FORWARDER_EXPENSE_TYPE_DEFAULTS[form.expenseType]?.defaultMarkup ?? false);
+    
+    setForm(f => {
+      const buyNum = Number(val);
+      const oldBuyNum = Number(f.buyAmount);
+      // Auto-suggest only if sell amount matches the old prefill or is empty
+      const isPrefilledOrEmpty = !f.sellAmount || Number(f.sellAmount) === Math.round(oldBuyNum * 1.2) || Number(f.sellAmount) === oldBuyNum;
+      const newSell = hasMarkup
+        ? (isPrefilledOrEmpty ? (buyNum ? String(Math.round(buyNum * 1.2)) : '') : f.sellAmount)
+        : val;
+      return {
+        ...f,
+        buyAmount: val,
+        sellAmount: newSell,
+      };
+    });
+  };
 
   const handleAdd = async () => {
     setFormError('');
@@ -62,6 +108,10 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
       setFormError('Số tờ khai là bắt buộc cho phí hải quan.');
       return;
     }
+    if (form.settlementMethod === 'COMPANY_DIRECT' && !form.supplierId) {
+      setFormError('Vui lòng chọn nhà cung cấp khi công ty trả trực tiếp.');
+      return;
+    }
     setSubmitting(true);
     try {
       await tripClient.createTripExpense(tripId, {
@@ -69,6 +119,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
         buyAmount: Number(form.buyAmount),
         sellAmount: form.sellAmount ? Number(form.sellAmount) : 0,
         settlementMethod: form.settlementMethod,
+        supplierId: form.settlementMethod === 'COMPANY_DIRECT' && form.supplierId ? Number(form.supplierId) : undefined,
+        containerNumber: form.containerNumber.trim() || undefined,
         invoiceNumber: form.invoiceNumber.trim() || undefined,
         invoiceDate: form.invoiceDate || undefined,
         declarationNumber: form.declarationNumber.trim() || undefined,
@@ -107,6 +159,15 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
   const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
   const totalMargin = totalSell - totalBuy;
 
+  const currentConfig = catalogData?.forwarderExpenseTypes?.find(t => t.code === form.expenseType);
+  const hasMarkup = currentConfig 
+    ? !!currentConfig.defaultMarkup 
+    : (FORWARDER_EXPENSE_TYPE_DEFAULTS[form.expenseType]?.defaultMarkup ?? false);
+
+  const buyVal = Number(form.buyAmount) || 0;
+  const sellVal = Number(form.sellAmount) || 0;
+  const liveMargin = sellVal - buyVal;
+
   return (
     <div>
       {isLoading ? (
@@ -121,10 +182,12 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                 <thead>
                   <tr>
                     <th>Loại phí</th>
+                    <th>Số Cont</th>
                     <th className="num">Mua vào</th>
                     <th className="num">Bán ra</th>
                     <th className="num">Lãi DV</th>
                     <th>Hình thức</th>
+                    <th>Nhà cung cấp</th>
                     <th>Số HĐ</th>
                     <th>Ngày HĐ</th>
                     <th>Trạng thái</th>
@@ -137,6 +200,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                     return (
                       <tr key={fee.id ?? i}>
                         <td>{feeTypeLabel(fee.expenseType)}</td>
+                        <td className="mono" style={{ fontSize: 12 }}>{fee.containerNumber ?? '—'}</td>
                         <td className="num">{formatCurrency(Number(fee.buyAmount))}</td>
                         <td className="num">{formatCurrency(Number(fee.sellAmount))}</td>
                         <td
@@ -150,6 +214,9 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                         </td>
                         <td style={{ fontSize: 12 }}>
                           {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Công ty trả' : 'Chi hộ tạm ứng'}
+                        </td>
+                        <td style={{ fontSize: 12, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
+                          {fee.supplierName ?? '—'}
                         </td>
                         <td style={{ fontSize: 12, color: 'var(--fg-3)' }}>{fee.invoiceNumber ?? '—'}</td>
                         <td style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
@@ -211,6 +278,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                 <tfoot>
                   <tr style={{ fontWeight: 600, borderTop: '2px solid var(--border-1)' }}>
                     <td>Tổng</td>
+                    <td></td>
                     <td className="num">{formatCurrency(totalBuy)}</td>
                     <td className="num">{formatCurrency(totalSell)}</td>
                     <td
@@ -219,7 +287,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={readOnly ? 4 : 5}></td>
+                    <td colSpan={readOnly ? 5 : 6}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -268,10 +336,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                   <select
                     className="input"
                     value={form.expenseType}
-                    onChange={(e) => setForm(f => ({ ...f, expenseType: e.target.value as AncillaryExpenseType }))}
+                    onChange={(e) => handleExpenseTypeChange(e.target.value)}
                   >
-                    {ANCILLARY_EXPENSE_TYPES.map(t => (
-                      <option key={t} value={t}>{feeTypeLabel(t)}</option>
+                    {(catalogData?.forwarderExpenseTypes && catalogData.forwarderExpenseTypes.length > 0
+                      ? catalogData.forwarderExpenseTypes
+                      : ANCILLARY_EXPENSE_TYPES.map(t => ({ code: t, name: feeTypeLabel(t) }))
+                    ).map(t => (
+                      <option key={t.code} value={t.code}>{t.name}</option>
                     ))}
                   </select>
                 </div>
@@ -281,12 +352,28 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                   <select
                     className="input"
                     value={form.settlementMethod}
-                    onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE' }))}
+                    onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE', supplierId: '' }))}
                   >
                     <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
                     <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
                   </select>
                 </div>
+
+                {form.settlementMethod === 'COMPANY_DIRECT' && (
+                  <div className="field" style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 12 }}>Nhà cung cấp *</label>
+                    <select
+                      className="input"
+                      value={form.supplierId}
+                      onChange={(e) => setForm(f => ({ ...f, supplierId: e.target.value }))}
+                    >
+                      <option value="">-- Chọn nhà cung cấp --</option>
+                      {catalogData?.suppliers?.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="field">
                   <label style={{ fontSize: 12 }}>Mua vào (đ) *</label>
@@ -296,20 +383,31 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                     min={0}
                     placeholder="0"
                     value={form.buyAmount}
-                    onChange={(e) => setForm(f => ({ ...f, buyAmount: e.target.value }))}
+                    onChange={(e) => handleBuyAmountChange(e.target.value)}
                   />
                 </div>
 
                 <div className="field">
-                  <label style={{ fontSize: 12 }}>Bán ra (đ)</label>
+                  <label style={{ fontSize: 12 }}>
+                    Bán ra (đ) {hasMarkup ? '' : '(= mua vào)'}
+                  </label>
                   <input
                     className="input mono"
                     type="number"
                     min={0}
                     placeholder="0"
                     value={form.sellAmount}
+                    readOnly={!hasMarkup}
+                    disabled={!hasMarkup}
+                    style={!hasMarkup ? { background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed' } : {}}
                     onChange={(e) => setForm(f => ({ ...f, sellAmount: e.target.value }))}
                   />
+                </div>
+
+                <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: liveMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    Lãi DV gợi ý: <span className="mono">{formatCurrency(liveMargin)}</span>
+                  </div>
                 </div>
 
                 <div className="field">
@@ -333,8 +431,19 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                   />
                 </div>
 
+                <div className="field">
+                  <label style={{ fontSize: 12 }}>Số công-te-nơ</label>
+                  <input
+                    className="input mono"
+                    type="text"
+                    placeholder="VD: HDMU1234567"
+                    value={form.containerNumber}
+                    onChange={(e) => setForm(f => ({ ...f, containerNumber: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+
                 {form.expenseType === 'CUSTOMS' && (
-                  <div className="field" style={{ gridColumn: '1 / -1' }}>
+                  <div className="field">
                     <label style={{ fontSize: 12 }}>Số tờ khai hải quan *</label>
                     <input
                       className="input mono"
