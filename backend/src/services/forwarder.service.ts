@@ -233,7 +233,8 @@ export async function deleteTripExpense(expenseId: number, forwarderId: number) 
     .where(eq(s.tripExpenses.id, expenseId))
     .limit(1);
   if (!existing) return null;
-  if (existing.forwarderId !== forwarderId) return 'FORBIDDEN';
+  // null forwarderId = accountant-created; cannot be deleted via forwarder portal
+  if (existing.forwarderId == null || existing.forwarderId !== forwarderId) return 'FORBIDDEN';
   await db.delete(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId));
   return 'DELETED';
 }
@@ -260,6 +261,9 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     tripCode: s.trips.tripCode,
   }).from(s.tripExpenses)
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    // Intentionally scoped to forwarder-owned expenses only (forwarderId IS NOT NULL).
+    // Accountant-created expenses (forwarderId = null) are excluded by design —
+    // they are not eligible for forwarder advance settlement.
     .where(eq(s.tripExpenses.forwarderId, forwarderId))
     .orderBy(desc(s.tripExpenses.createdAt));
 
