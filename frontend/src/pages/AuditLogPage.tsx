@@ -467,8 +467,11 @@ fontSize: 13,
                   </tr>
                 ) : entries.length === 0 ? (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: 48, color: 'var(--ink-3)' }}>
-                      Không tìm thấy bản ghi nào khớp bộ lọc hiện tại.
+                    <td colSpan={4} style={{ textAlign: 'center', padding: '24px 48px', color: 'var(--ink-3)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                        <img src="/assets/illustrations/empty-audit.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        Không tìm thấy bản ghi nào khớp bộ lọc hiện tại.
+                      </div>
                     </td>
                   </tr>
                 ) : (

@@ -110,8 +110,11 @@ export function CrudTable<T extends { id: number }>({
             <tbody>
               {items.length === 0 && !crud.showAddForm && (
                 <tr>
-                  <td colSpan={colSpan + 1} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
-                    Chưa có dữ liệu
+                  <td colSpan={colSpan + 1} style={{ textAlign: 'center', padding: '24px 32px', color: 'var(--fg-3)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                      <img src="/assets/illustrations/empty-config.svg" alt="" aria-hidden="true" style={{ width: 120, height: 100, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      Chưa có dữ liệu
+                    </div>
                   </td>
                 </tr>
               )}

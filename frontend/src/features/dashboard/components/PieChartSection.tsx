@@ -161,10 +161,7 @@ export function PieChartSection({ derived, yearlySeries, currentMonth, currentYe
             </div>
             <div className="aging__list">
               <div style={{ ...styles.noDataMsg, flexDirection: 'column', gap: 6 }}>
-                <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                  <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                </svg>
+                <img src="/assets/illustrations/empty-pie.svg" alt="" aria-hidden="true" style={{ width: 120, height: 100, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 Chưa có dữ liệu chi phí
               </div>
             </div>

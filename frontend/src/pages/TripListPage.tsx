@@ -630,7 +630,10 @@ export default function TripListPage() {
           {loading ? (
             <div className="table-empty">Đang tải danh sách chuyến đi…</div>
           ) : trips.length === 0 ? (
-            <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
+            <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
+              <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              Không tìm thấy chuyến đi nào.
+            </div>
           ) : (
             tableInstance.getRowModel().rows.map(row => (
               <div
@@ -660,7 +663,10 @@ export default function TripListPage() {
           {loading ? (
             <div className="table-empty">Đang tải…</div>
           ) : trips.length === 0 ? (
-            <div className="table-empty">Không tìm thấy chuyến đi nào.</div>
+            <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
+              <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              Không tìm thấy chuyến đi nào.
+            </div>
           ) : (
             trips.map((trip) => {
               const cons = calcConsumption(trip);

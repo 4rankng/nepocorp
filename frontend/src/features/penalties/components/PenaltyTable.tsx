@@ -475,9 +475,7 @@ export function PenaltyTable({
             </div>
           ) : filteredPenalties.length === 0 ? (
             <div className="penalty-empty-log">
-              <div className="penalty-empty-shield">
-                <ShieldCheck size={30} />
-              </div>
+              <img src="/assets/illustrations/empty-penalties.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 4 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div className="penalty-empty-title">Toàn đội đang giữ chuẩn nghiệp vụ</div>
               <div className="penalty-empty-desc">
                 Chưa có biên bản vi phạm nào trong tháng này. Hệ thống sẽ tự động khấu trừ vào bảng lương khi biên bản được duyệt.

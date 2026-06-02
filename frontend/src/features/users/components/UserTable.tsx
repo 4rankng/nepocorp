@@ -352,7 +352,7 @@ function DesktopTable({
               <tr>
                 <td colSpan={canManage ? 6 : 5}>
                   <div className="users-empty">
-                    <div className="users-empty__icon"><UserX size={24} /></div>
+                    <img src="/assets/illustrations/empty-users.svg" alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
                     <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
                   </div>

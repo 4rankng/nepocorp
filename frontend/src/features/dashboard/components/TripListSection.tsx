@@ -29,12 +29,7 @@ export function TripListSection({ derived, stats, currentMonth, currentYear }: T
         <div className="stack" style={styles.gap6}>
           {displayTrucks.length === 0 ? (
             <div style={{ ...styles.noDataMsg, flexDirection: 'column', gap: 6 }}>
-              <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                <rect x="1" y="3" width="15" height="13" rx="2"/>
-                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-                <circle cx="5.5" cy="18.5" r="2.5"/>
-                <circle cx="18.5" cy="18.5" r="2.5"/>
-              </svg>
+              <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 120, height: 100, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               Chưa có dữ liệu xe tháng này
             </div>
           ) : displayTrucks.map((t: any, idx: number) => {
@@ -67,11 +62,7 @@ export function TripListSection({ derived, stats, currentMonth, currentYear }: T
         <div className="toplist">
           {displayRoutes.length === 0 ? (
             <div style={{ ...styles.noDataMsg, flexDirection: 'column', gap: 6 }}>
-              <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="2" y1="12" x2="22" y2="12"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
+              <img src="/assets/illustrations/empty-routes.svg" alt="" aria-hidden="true" style={{ width: 120, height: 100, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               Chưa có dữ liệu tuyến đường tháng này
             </div>
           ) : displayRoutes.map((r: any, idx: number) => (

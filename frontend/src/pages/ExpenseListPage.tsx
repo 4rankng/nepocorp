@@ -120,9 +120,7 @@ export default function ExpenseListPage() {
 
   const renderEmptyState = () => (
     <div className="expense-empty">
-      <div className="expense-empty__icon">
-        <Receipt size={28} />
-      </div>
+      <img src="/assets/illustrations/empty-expenses.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
     </div>
   );

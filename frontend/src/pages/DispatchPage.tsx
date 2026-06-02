@@ -90,7 +90,11 @@ export default function DispatchPage() {
         </div>
         {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Tài xế</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
-          <div className="orders-empty"><div className="ico"><CheckCircle2 size={32} /></div><div className="title">Không có đơn hàng nào chờ khởi hành</div><div>Tất cả các chuyến đi đã xuất phát hoặc chưa tạo.</div></div>
+          <div className="orders-empty">
+            <img src="/assets/illustrations/empty-dispatch.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <div className="title">Không có đơn hàng nào chờ khởi hành</div>
+            <div>Tất cả các chuyến đi đã xuất phát hoặc chưa tạo.</div>
+          </div>
         ) : pendingTrips.map((trip) => (
           <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
         ))}

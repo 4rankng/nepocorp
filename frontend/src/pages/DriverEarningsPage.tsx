@@ -134,9 +134,9 @@ export default function DriverEarningsPage() {
         flush
       >
         {penalties.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-            <AlertTriangle size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-            <p>Chưa có khoản khấu trừ nào</p>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <img src="/assets/illustrations/empty-earnings.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <p style={{ margin: 0 }}>Chưa có khoản khấu trừ nào</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>

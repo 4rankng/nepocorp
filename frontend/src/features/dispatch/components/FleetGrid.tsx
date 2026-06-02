@@ -23,7 +23,8 @@ function getDefaultDriverForTruck(truckId: number, drivers: Driver[]) {
 export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGridProps) {
   if (trucks.length === 0) {
     return (
-      <div style={{ gridColumn: '1 / -1', padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+      <div style={{ gridColumn: '1 / -1', padding: '32px 40px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <img src="/assets/illustrations/empty-fleet.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         Không có xe nào trong nhóm này.
       </div>
     );

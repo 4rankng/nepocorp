@@ -1,31 +1,23 @@
 import React from 'react';
 import { Fuel, AlertTriangle } from 'lucide-react';
 import { FUEL_MODE_LABELS } from '@nepocorp/shared';
-import { formatCurrency } from '../../lib/format';
+import { fmtVND } from '../formatters';
 import type { TripDetail } from '@nepocorp/shared';
+import type { TripDerivedData } from '../types';
 
-interface TripDetailFuelCardProps {
+interface FuelCardProps {
   trip: TripDetail;
+  derived: TripDerivedData;
   fuelPriceConfig: number | null;
 }
 
-export function TripDetailFuelCard({ trip, fuelPriceConfig }: TripDetailFuelCardProps) {
-  const fuelLiters = Number(trip.fuelLiters) || 0;
-  const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
-  const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
-  const ttbq = totalKm > 0 && fuelLiters > 0 ? (fuelLiters / totalKm) * 100 : 0;
-  const diff = fuelLiters - computedLiters;
-  const isOver = diff > 0;
+export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
+  const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
 
   return (
     <div className="card">
       <div className="card-head">
-        <h2>
-          <span className="hicon">
-            <Fuel size={15} />
-          </span>
-          Nhiên liệu
-        </h2>
+        <h2><span className="hicon"><Fuel size={15} /></span>Nhiên liệu</h2>
       </div>
       <div className="card-body">
         <div className="fuel-list">
@@ -35,17 +27,11 @@ export function TripDetailFuelCard({ trip, fuelPriceConfig }: TripDetailFuelCard
           </div>
           <div className="pl-row">
             <span className="k">Đơn giá cấu hình</span>
-            <span className="v">
-              {fuelPriceConfig != null
-                ? `${fuelPriceConfig.toLocaleString('vi-VN')} đ/lít`
-                : '—'}
-            </span>
+            <span className="v">{fuelPriceConfig != null ? `${fmtVND(fuelPriceConfig)} đ/lít` : '—'}</span>
           </div>
           <div className="pl-row">
             <span className="k">Tiêu thụ bình quân</span>
-            <span className="v">
-              {ttbq > 0 ? `${ttbq.toFixed(1)} L/100km` : '—'}
-            </span>
+            <span className="v">{ttbq > 0 ? `${ttbq.toFixed(1)} L/100km` : '—'}</span>
           </div>
         </div>
 
@@ -58,10 +44,7 @@ export function TripDetailFuelCard({ trip, fuelPriceConfig }: TripDetailFuelCard
                 <span className="bv">{fuelLiters.toFixed(1)} L</span>
               </div>
               <div className="track">
-                <div
-                  className="fill actual"
-                  style={{ width: `${Math.min((fuelLiters / (computedLiters || 1)) * 100, 100)}%` }}
-                />
+                <div className="fill actual" style={{ width: `${Math.min((fuelLiters / (computedLiters || 1)) * 100, 100)}%` }} />
               </div>
             </div>
             {computedLiters > 0 && (
@@ -75,12 +58,12 @@ export function TripDetailFuelCard({ trip, fuelPriceConfig }: TripDetailFuelCard
                 </div>
               </div>
             )}
-            {Math.abs(diff) > 0.5 && (
+            {Math.abs(fuelVarianceLiters) > 0.5 && (
               <div className="fc-flag">
                 <AlertTriangle size={15} />
-                {isOver
-                  ? `Vượt định mức +${diff.toFixed(1)} L`
-                  : `Tiết kiệm ${Math.abs(diff).toFixed(1)} L`}
+                {fuelVarianceOver
+                  ? `Vượt định mức +${fuelVarianceLiters.toFixed(1)} L`
+                  : `Tiết kiệm ${Math.abs(fuelVarianceLiters).toFixed(1)} L`}
               </div>
             )}
           </div>

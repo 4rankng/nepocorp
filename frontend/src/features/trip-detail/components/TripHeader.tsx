@@ -1,26 +1,19 @@
 import React from 'react';
 import {
   ArrowLeft, Play, Pencil, Lock, XCircle, Shuffle, FilePen,
-  Truck, User, MapPin, Calendar, Package, Building2, Ruler,
+  Building2, Loader2,
 } from 'lucide-react';
-import { formatDate } from '../../lib/format';
 import type { TripDetail } from '@nepocorp/shared';
-import { TripStatus, TRIP_STATUS_LABELS, FUEL_MODE_LABELS } from '@nepocorp/shared';
-import { Loader2 } from 'lucide-react';
+import { TripStatus } from '@nepocorp/shared';
+import type { TripPermissions } from '../types';
 
-interface TripDetailHeaderProps {
+interface TripHeaderProps {
   trip: TripDetail;
-  onBack: () => void;
-  canEdit: boolean;
-  canCancel: boolean;
-  canDispatch: boolean;
-  canLock: boolean;
-  canReassign: boolean;
-  canAdjust: boolean;
-  needsPhotos: boolean;
+  permissions: TripPermissions;
   actionLoading: boolean;
-  onDispatch: () => void;
+  onBack: () => void;
   onEdit: () => void;
+  onDispatch: () => void;
   onLock: () => void;
   onCancel: () => void;
   onReassign: () => void;
@@ -44,24 +37,12 @@ function StatusBadge({ status }: { status: TripStatus }) {
   );
 }
 
-export function TripDetailHeader({
-  trip,
-  onBack,
-  canEdit,
-  canCancel,
-  canDispatch,
-  canLock,
-  canReassign,
-  canAdjust,
-  needsPhotos,
-  actionLoading,
-  onDispatch,
-  onEdit,
-  onLock,
-  onCancel,
-  onReassign,
-  onAdjust,
-}: TripDetailHeaderProps) {
+export function TripHeader({
+  trip, permissions, actionLoading,
+  onBack, onEdit, onDispatch, onLock, onCancel, onReassign, onAdjust,
+}: TripHeaderProps) {
+  const { canEdit, canCancel, canDispatch, canLock, canReassign, canAdjust, needsPhotos } = permissions;
+
   return (
     <header className="page-header anim d1">
       <div className="header-left">
@@ -83,20 +64,17 @@ export function TripDetailHeader({
       <div className="header-actions">
         {canEdit && (
           <button className="btn btn-ghost" onClick={onEdit}>
-            <Pencil size={15} />
-            Chỉnh sửa
+            <Pencil size={15} />Chỉnh sửa
           </button>
         )}
         {canReassign && (
           <button className="btn btn-ghost" onClick={onReassign}>
-            <Shuffle size={15} />
-            Phân xe lại
+            <Shuffle size={15} />Phân xe lại
           </button>
         )}
         {canCancel && (
           <button className="btn btn-danger" onClick={onCancel}>
-            <XCircle size={15} />
-            Hủy chuyến
+            <XCircle size={15} />Hủy chuyến
           </button>
         )}
         {canDispatch && (
@@ -107,8 +85,7 @@ export function TripDetailHeader({
         )}
         {trip.status === TripStatus.IN_TRANSIT && (
           <button className="btn btn-primary" onClick={onEdit}>
-            <Pencil size={14} />
-            Nhập số liệu
+            <Pencil size={14} />Nhập số liệu
           </button>
         )}
         {canLock && (
@@ -124,8 +101,7 @@ export function TripDetailHeader({
         )}
         {canAdjust && (
           <button className="btn btn-ghost" onClick={onAdjust}>
-            <FilePen size={15} />
-            Điều chỉnh
+            <FilePen size={15} />Điều chỉnh
           </button>
         )}
       </div>

@@ -1,20 +1,15 @@
 import React from 'react';
 import { Wallet, Receipt, Tag, Gauge } from 'lucide-react';
-import { formatCurrency } from '../../lib/format';
+import { fmtCurrency } from '../formatters';
 
-interface TripDetailKPIStripProps {
+interface KpiStripProps {
   revenue: number;
   totalCost: number;
   grossProfit: number;
   marginPct: string | null;
 }
 
-export function TripDetailKPIStrip({
-  revenue,
-  totalCost,
-  grossProfit,
-  marginPct,
-}: TripDetailKPIStripProps) {
+export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStripProps) {
   return (
     <section className="kpi-strip anim d2">
       <div className="kpi">
@@ -23,7 +18,7 @@ export function TripDetailKPIStrip({
           Doanh thu
         </div>
         <div className="kpi-value">
-          {formatCurrency(revenue).replace('₫', '').trim()}
+          {fmtCurrency(revenue).replace('₫', '').trim()}
           <span className="u">đ</span>
         </div>
         <div className="kpi-sub">Cước vận chuyển hợp đồng</div>
@@ -35,7 +30,7 @@ export function TripDetailKPIStrip({
           Tổng chi phí
         </div>
         <div className="kpi-value">
-          {formatCurrency(totalCost).replace('₫', '').trim()}
+          {fmtCurrency(totalCost).replace('₫', '').trim()}
           <span className="u">đ</span>
         </div>
         <div className="kpi-sub">100% từ nhiên liệu</div>
@@ -47,7 +42,7 @@ export function TripDetailKPIStrip({
           Lợi nhuận gộp
         </div>
         <div className="kpi-value">
-          {formatCurrency(grossProfit).replace('₫', '').trim()}
+          {fmtCurrency(grossProfit).replace('₫', '').trim()}
           <span className="u">đ</span>
         </div>
         <div className="kpi-sub">Doanh thu − Tổng chi phí</div>

@@ -1,0 +1,81 @@
+import type { TripDetail } from '@nepocorp/shared';
+import type { TripStatus, Role } from '@nepocorp/shared';
+
+/** Derived financial & operational data computed from a TripDetail. */
+export interface TripDerivedData {
+  revenue: number;
+  totalCost: number;
+  grossProfit: number;
+  marginPct: string | null;
+  fuelCost: number;
+  roadAllowance: number;
+  driverSalary: number;
+  serviceCost: number;
+  totalKm: number;
+  fuelLiters: number;
+  computedLiters: number;
+  ttbq: number;
+  fuelVarianceLiters: number;
+  fuelVarianceOver: boolean;
+  externalCarrierName: string;
+  externalMargin: number | null;
+}
+
+/** Role-based permission flags for trip actions. */
+export interface TripPermissions {
+  isManagerOrAdmin: boolean;
+  canEdit: boolean;
+  canCancel: boolean;
+  canDispatch: boolean;
+  canLock: boolean;
+  canReassign: boolean;
+  canAdjust: boolean;
+  needsPhotos: boolean;
+  readOnly: boolean;
+}
+
+/** UI state for modals and action feedback. */
+export interface TripUIState {
+  actionLoading: boolean;
+  actionError: string;
+  showReassign: boolean;
+  reassignTruckId: string;
+  reassignDriverId: string;
+  reassignLoading: boolean;
+  reassignError: string;
+  showAdjust: boolean;
+  adjustAmount: string;
+  adjustNote: string;
+  adjustRef: string;
+  adjustSubmitting: boolean;
+  adjustError: string;
+}
+
+/** All data returned by the useTripDetailPage hook. */
+export interface TripDetailPageData {
+  trip: TripDetail | undefined;
+  loading: boolean;
+  error: string;
+  refetchTrip: () => void;
+  derived: TripDerivedData;
+  permissions: TripPermissions;
+  ui: TripUIState;
+  fuelPriceConfig: number | null;
+  adjustments: unknown[];
+  reassignTrucks: { id: number; licensePlate: string }[];
+  reassignDrivers: { id: number; name: string }[];
+  /** Action handlers — call from UI components. */
+  handleAction: (action: string, method: () => Promise<unknown>) => Promise<void>;
+  handleLockClick: () => Promise<void>;
+  openReassign: () => void;
+  handleReassign: () => Promise<void>;
+  openAdjust: () => void;
+  handleAdjustSubmit: () => Promise<void>;
+  setReassignTruckId: (v: string) => void;
+  setReassignDriverId: (v: string) => void;
+  setShowReassign: (v: boolean) => void;
+  setShowAdjust: (v: boolean) => void;
+  setAdjustAmount: (v: string) => void;
+  setAdjustNote: (v: string) => void;
+  setAdjustRef: (v: string) => void;
+}

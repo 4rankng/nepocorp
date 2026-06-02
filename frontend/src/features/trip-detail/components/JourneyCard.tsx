@@ -1,29 +1,31 @@
 import React from 'react';
 import { Route, Ruler, Image as ImageIcon, Plus, ArrowRight, Fuel } from 'lucide-react';
 import type { TripDetail } from '@nepocorp/shared';
-import { LoadingType, LOADING_TYPE_LABELS } from '@nepocorp/shared';
-import { LeafletMap } from '../shared/LeafletMap';
+import { LoadingType } from '@nepocorp/shared';
+import { LeafletMap } from '../../../components/shared/LeafletMap';
+import type { TripDerivedData } from '../types';
 
-interface TripDetailJourneyCardProps {
+interface JourneyCardProps {
   trip: TripDetail;
-  totalKm: number;
+  derived: TripDerivedData;
 }
 
-export function TripDetailJourneyCard({ trip, totalKm }: TripDetailJourneyCardProps) {
+export function JourneyCard({ trip, derived }: JourneyCardProps) {
+  const { totalKm } = derived;
   const hasPolyline = trip.legs?.some(leg => leg.polylinePath);
   const legCount = trip.legs?.length ?? 0;
 
   return (
     <section className="card journey-card anim d5">
       <div className="card-head">
-        <div>
-          <h2>
-            <span className="hicon">
-              <Route size={15} />
-            </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ gap: '8px', margin: 0 }}>
+            <span className="hicon" style={{ width: 24, height: 24 }}><Route size={14} /></span>
             Hành trình
+            <span className="sub" style={{ margin: 0, marginLeft: '4px', fontSize: '13px', fontWeight: 500, color: 'var(--ink-3)' }}>
+              • {legCount} chặng đường
+            </span>
           </h2>
-          <p className="sub">{legCount} chặng đường</p>
         </div>
         <div className="journey-pills">
           <span className="jp jp--km">
@@ -47,24 +49,12 @@ export function TripDetailJourneyCard({ trip, totalKm }: TripDetailJourneyCardPr
               <div className="leg-route">
                 <div className="leg-stops">
                   <span className="st">{leg.origin}</span>
-                  <span className="ar">
-                    <ArrowRight size={14} />
-                  </span>
+                  <span className="ar"><ArrowRight size={14} /></span>
                   <span className="st">{leg.destination}</span>
                 </div>
                 <div className="leg-meta">
-                  <span>
-                    <Ruler size={13} />
-                    <span className="mono">{Number(leg.km).toLocaleString('vi-VN')} km</span>
-                  </span>
-                  <span>
-                    <Fuel size={13} />
-                    <span className="mono">
-                      {leg.calculatedLiters
-                        ? `${Number(leg.calculatedLiters).toLocaleString('vi-VN')} L`
-                        : '—'}
-                    </span>
-                  </span>
+                  <span><Ruler size={13} /><span className="mono">{Number(leg.km).toLocaleString('vi-VN')} km</span></span>
+                  <span><Fuel size={13} /><span className="mono">{leg.calculatedLiters ? `${Number(leg.calculatedLiters).toLocaleString('vi-VN')} L` : '—'}</span></span>
                 </div>
               </div>
               <div className="leg-right">
