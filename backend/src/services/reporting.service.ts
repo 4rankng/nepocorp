@@ -148,7 +148,7 @@ export async function getPnlReport(month: number, year: number) {
       ? and(gte(s.expenses.expenseDate, tripStart), sql`${s.expenses.expenseDate} < ${tripEnd}`)
       : gte(s.expenses.expenseDate, tripStart);
 
-    const truckIds = [...new Set(trips.map(t => t.truckId).filter(Boolean))];
+    const truckIds = [...new Set(trips.map(t => t.truckId).filter((id): id is number => id != null))];
     const truckRows = truckIds.length > 0
       ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks)
           .where(sql`${s.trucks.id} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`)
@@ -208,6 +208,7 @@ export async function getPnlReport(month: number, year: number) {
     let totalMaintenanceExpenses = 0;
     const byTruck = new Map<number, { id: number; plate: string; revenue: number; costs: number; profit: number; trips: number; maintenanceExpenses: number }>();
     for (const trip of trips) {
+      if (!trip.truckId) continue; // EXTERNAL trips have no truck
       const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0 };
       existing.revenue += parseFloat(trip.revenue || '0');
       existing.costs += parseFloat(trip.totalCost || '0');

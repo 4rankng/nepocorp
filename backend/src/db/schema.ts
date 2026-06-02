@@ -8,7 +8,7 @@ export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'C
 export const fuelModeEnum = pgEnum('fuel_mode', ['AUTO', 'FLAT_RATE']);
 export const loadingTypeEnum = pgEnum('loading_type', ['HANG', 'VO']);
 export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER']);
-export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT']);
+export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT', 'EXTERNAL_CARRIER_COST']);
 export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
@@ -82,6 +82,23 @@ export const drivers = pgTable('drivers', {
   deletedAt: timestamp('deleted_at'),
 });
 
+// Defined before customers to allow customers.linkedSupplierId to reference suppliers.id directly.
+// suppliers.linkedCustomerId intentionally omits .references() to break the mutual circular
+// forward-reference that causes TS7022. The FK constraint is enforced at the DB level via migration.
+export const suppliers = pgTable('suppliers', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  contactPerson: varchar('contact_person', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
+  taxCode: varchar('tax_code', { length: 20 }),
+  note: text('note'),
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  linkedCustomerId: integer('linked_customer_id'), // FK → customers(id), enforced at DB level
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -91,6 +108,9 @@ export const customers = pgTable('customers', {
   contactInfo: text('contact_info'),
   creditLimit: numeric('credit_limit', { precision: 15, scale: 0 }),
   status: customerStatusEnum('status').default('ACTIVE'),
+  isCarrier: boolean('is_carrier').notNull().default(false),
+  debitNoteMode: varchar('debit_note_mode', { length: 20 }).notNull().default('MONTHLY'),
+  linkedSupplierId: integer('linked_supplier_id').references(() => suppliers.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -184,8 +204,8 @@ export const trips = pgTable('trips', {
   createdBy: integer('created_by').references(() => users.id),
   customerId: integer('customer_id').references(() => customers.id).notNull(),
   customerReference: text('customer_reference'),
-  truckId: integer('truck_id').references(() => trucks.id).notNull(),
-  driverId: integer('driver_id').references(() => drivers.id).notNull(),
+  truckId: integer('truck_id').references(() => trucks.id),
+  driverId: integer('driver_id').references(() => drivers.id),
   routeId: integer('route_id').references(() => routes.id).notNull(),
   trailerId: integer('trailer_id').references(() => trailers.id),
   trailerType: trailerTypeEnum('trailer_type'),
@@ -228,6 +248,14 @@ export const trips = pgTable('trips', {
   revenueOverriddenBy: integer('revenue_overridden_by'),
   revenueOverriddenAt: timestamp('revenue_overridden_at'),
   notes: text('notes'),
+  vatRate: numeric('vat_rate', { precision: 5, scale: 3 }).notNull().default('0.000'),
+  carrierType: varchar('carrier_type', { length: 20 }).notNull().default('OWN'),
+  // D-E decision: external carrier references customers table, NOT suppliers
+  externalCarrierId: integer('external_carrier_id').references(() => customers.id),
+  externalFreightCost: numeric('external_freight_cost', { precision: 15, scale: 0 }),
+  externalPlateNumber: varchar('external_plate_number', { length: 20 }),
+  externalDriverName: varchar('external_driver_name', { length: 100 }),
+  externalDriverPhone: varchar('external_driver_phone', { length: 20 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -305,6 +333,23 @@ export const distributions = pgTable('distributions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const debtOffsets = pgTable('debt_offsets', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id').references(() => customers.id).notNull(),
+  supplierId: integer('supplier_id').references(() => suppliers.id).notNull(),
+  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  offsetDate: date('offset_date').notNull(),
+  note: text('note'),
+  approvalStatus: varchar('approval_status', { length: 20 }).notNull().default('PENDING'),
+  createdBy: integer('created_by').references(() => users.id),
+  approvedBy: integer('approved_by').references(() => users.id),
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('debt_offsets_customer_idx').on(table.customerId),
+  index('debt_offsets_supplier_idx').on(table.supplierId),
+]);
+
 export const managementFees = pgTable('management_fees', {
   id: serial('id').primaryKey(),
   month: integer('month').notNull(),
@@ -333,19 +378,7 @@ export const salaryPeriods = pgTable('salary_periods', {
 });
 
 // ─── Vendor & Expense ────────────────────────────────────────────────────────────
-
-export const suppliers = pgTable('suppliers', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  contactPerson: varchar('contact_person', { length: 255 }),
-  phone: varchar('phone', { length: 20 }),
-  taxCode: varchar('tax_code', { length: 20 }),
-  note: text('note'),
-  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  deletedAt: timestamp('deleted_at'),
-});
+// suppliers is declared above customers (before routes) to avoid circular forward-ref.
 
 export const expenseCategories = pgTable('expense_categories', {
   id: serial('id').primaryKey(),
@@ -418,6 +451,9 @@ export const forwarderExpenseTypes = pgTable('forwarder_expense_types', {
   code: varchar('code', { length: 50 }).notNull().unique(), // e.g. "LIFTING", "CUSTOMS"
   name: varchar('name', { length: 100 }).notNull(),         // Vietnamese label e.g. "Nâng hạ"
   status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  defaultMarkup: boolean('default_markup').notNull().default(false),
+  billingLabel: varchar('billing_label', { length: 120 }),
+  vatRate: numeric('vat_rate', { precision: 5, scale: 3 }).notNull().default('0.080'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -447,13 +483,23 @@ export const tripContainers = pgTable('trip_containers', {
 export const tripExpenses = pgTable('trip_expenses', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),
-  forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
-  expenseType: varchar('expense_type', { length: 50 }).notNull(),
-  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  forwarderId: integer('forwarder_id').references(() => users.id),  // nullable — accountants also create
+  expenseType: varchar('expense_type', { length: 50 }).notNull(),   // FK to forwarder_expense_types.code
+  buyAmount: numeric('buy_amount', { precision: 15, scale: 0 }).notNull(),
+  sellAmount: numeric('sell_amount', { precision: 15, scale: 0 }).notNull().default('0'),
+  settlementMethod: varchar('settlement_method', { length: 20 }).notNull().default('FORWARDER_ADVANCE'),
+  supplierId: integer('supplier_id').references(() => suppliers.id),
+  invoiceNumber: varchar('invoice_number', { length: 50 }),
+  invoiceDate: date('invoice_date'),
+  declarationNumber: varchar('declaration_number', { length: 50 }),
+  containerNumber: varchar('container_number', { length: 20 }),
+  approvalStatus: varchar('approval_status', { length: 20 }).notNull().default('APPROVED'),
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_expenses_trip_id_idx').on(table.tripId),
+  index('trip_expenses_container_idx').on(table.containerNumber),
 ]);
 
 export const tripExpensePhotos = pgTable('trip_expense_photos', {

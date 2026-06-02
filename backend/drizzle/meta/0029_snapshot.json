@@ -1,6 +1,6 @@
 {
-  "id": "e0a8d398-7cd7-4507-b66c-59f28dfb07a9",
-  "prevId": "5d752076-29ab-40af-8a34-c4f2cdc19fbb",
+  "id": "68246787-bff6-4fb8-b3f3-167c1fff781d",
+  "prevId": "e0a8d398-7cd7-4507-b66c-59f28dfb07a9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -617,6 +617,26 @@
           "notNull": false,
           "default": "'ACTIVE'"
         },
+        "is_carrier": {
+          "name": "is_carrier",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "debit_note_mode": {
+          "name": "debit_note_mode",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'MONTHLY'"
+        },
+        "linked_supplier_id": {
+          "name": "linked_supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -639,7 +659,186 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "customers_linked_supplier_id_suppliers_id_fk": {
+          "name": "customers_linked_supplier_id_suppliers_id_fk",
+          "tableFrom": "customers",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "linked_supplier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.debt_offsets": {
+      "name": "debt_offsets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "offset_date": {
+          "name": "offset_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_status": {
+          "name": "approval_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "debt_offsets_customer_idx": {
+          "name": "debt_offsets_customer_idx",
+          "columns": [
+            {
+              "expression": "customer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "debt_offsets_supplier_idx": {
+          "name": "debt_offsets_supplier_idx",
+          "columns": [
+            {
+              "expression": "supplier_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "debt_offsets_customer_id_customers_id_fk": {
+          "name": "debt_offsets_customer_id_customers_id_fk",
+          "tableFrom": "debt_offsets",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "debt_offsets_supplier_id_suppliers_id_fk": {
+          "name": "debt_offsets_supplier_id_suppliers_id_fk",
+          "tableFrom": "debt_offsets",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "supplier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "debt_offsets_created_by_users_id_fk": {
+          "name": "debt_offsets_created_by_users_id_fk",
+          "tableFrom": "debt_offsets",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "debt_offsets_approved_by_users_id_fk": {
+          "name": "debt_offsets_approved_by_users_id_fk",
+          "tableFrom": "debt_offsets",
+          "tableTo": "users",
+          "columnsFrom": [
+            "approved_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1112,6 +1311,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'ACTIVE'"
+        },
+        "default_markup": {
+          "name": "default_markup",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "billing_label": {
+          "name": "billing_label",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vat_rate": {
+          "name": "vat_rate",
+          "type": "numeric(5, 3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.080'"
         },
         "created_at": {
           "name": "created_at",
@@ -1783,7 +2002,7 @@
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false,
-          "default": "'H\u1ea3i Ph\u00f2ng'"
+          "default": "'Hải Phòng'"
         },
         "notes": {
           "name": "notes",
@@ -2497,6 +2716,12 @@
           "notNull": true,
           "default": "'ACTIVE'"
         },
+        "linked_customer_id": {
+          "name": "linked_customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -2519,7 +2744,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "suppliers_linked_customer_id_customers_id_fk": {
+          "name": "suppliers_linked_customer_id_customers_id_fk",
+          "tableFrom": "suppliers",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "linked_customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2836,6 +3075,63 @@
           "primaryKey": false,
           "notNull": true
         },
+        "buy_amount": {
+          "name": "buy_amount",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sell_amount": {
+          "name": "sell_amount",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "settlement_method": {
+          "name": "settlement_method",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'FORWARDER_ADVANCE'"
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invoice_number": {
+          "name": "invoice_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invoice_date": {
+          "name": "invoice_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "declaration_number": {
+          "name": "declaration_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "container_number": {
+          "name": "container_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_status": {
+          "name": "approval_status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'APPROVED'"
+        },
         "note": {
           "name": "note",
           "type": "text",
@@ -2849,11 +3145,12 @@
           "notNull": true,
           "default": "now()"
         },
-        "buy_amount": {
-          "name": "buy_amount",
-          "type": "numeric(15, 0)",
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -2862,6 +3159,21 @@
           "columns": [
             {
               "expression": "trip_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "trip_expenses_container_idx": {
+          "name": "trip_expenses_container_idx",
+          "columns": [
+            {
+              "expression": "container_number",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2893,6 +3205,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "forwarder_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trip_expenses_supplier_id_suppliers_id_fk": {
+          "name": "trip_expenses_supplier_id_suppliers_id_fk",
+          "tableFrom": "trip_expenses",
+          "tableTo": "suppliers",
+          "columnsFrom": [
+            "supplier_id"
           ],
           "columnsTo": [
             "id"
@@ -3383,6 +3708,50 @@
           "primaryKey": false,
           "notNull": false
         },
+        "vat_rate": {
+          "name": "vat_rate",
+          "type": "numeric(5, 3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.000'"
+        },
+        "carrier_type": {
+          "name": "carrier_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'OWN'"
+        },
+        "external_carrier_id": {
+          "name": "external_carrier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_freight_cost": {
+          "name": "external_freight_cost",
+          "type": "numeric(15, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_plate_number": {
+          "name": "external_plate_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_driver_name": {
+          "name": "external_driver_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_driver_phone": {
+          "name": "external_driver_phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -3506,6 +3875,19 @@
           "tableTo": "cargo_types",
           "columnsFrom": [
             "cargo_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trips_external_carrier_id_customers_id_fk": {
+          "name": "trips_external_carrier_id_customers_id_fk",
+          "tableFrom": "trips",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "external_carrier_id"
           ],
           "columnsTo": [
             "id"
@@ -3877,7 +4259,8 @@
         "VENDOR_EXPENSE",
         "VENDOR_PAYMENT",
         "FORWARDER_ADVANCE",
-        "FORWARDER_SETTLEMENT"
+        "FORWARDER_SETTLEMENT",
+        "EXTERNAL_CARRIER_COST"
       ]
     },
     "public.vehicle_component": {

@@ -65,7 +65,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     message: `Chuyến ${trip.tripCode} đã được tạo`,
     relatedEntityType: 'trips',
     relatedEntityId: trip.id,
-    targetDriverId: trip.driverId,
+    targetDriverId: trip.driverId ?? undefined,
   });
   res.status(201).json(trip);
 }));
@@ -123,7 +123,7 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
     message: `Chuyến ${trip.tripCode} đã được điều phối`,
     relatedEntityType: 'trips',
     relatedEntityId: trip.id,
-    targetDriverId: trip.driverId,
+    targetDriverId: trip.driverId ?? undefined,
   });
   res.json(trip);
 }));
@@ -166,7 +166,7 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
     message: `Chuyến ${trip.tripCode} đã bị hủy`,
     relatedEntityType: 'trips',
     relatedEntityId: id,
-    targetDriverId: trip.driverId,
+    targetDriverId: trip.driverId ?? undefined,
   });
   res.json(trip);
 }));

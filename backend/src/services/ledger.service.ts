@@ -99,7 +99,7 @@ export class LedgerService {
   static async postTripLock(tx: any, trip: {
     id: number;
     customerId: number;
-    driverId: number;
+    driverId: number | null;
     tripCode: string | null;
     revenue: string | null;
     driverSalary: string | null;
@@ -108,10 +108,11 @@ export class LedgerService {
     const driverSalary = Number(trip.driverSalary || 0);
 
     // Sorted advisory locking to prevent deadlocks
-    await this.lockEntities(tx, [
+    const lockEntities: Array<{ entityType: 'DRIVER' | 'FORWARDER' | 'CUSTOMER' | 'VENDOR'; entityId: number }> = [
       { entityType: 'CUSTOMER', entityId: trip.customerId },
-      { entityType: 'DRIVER', entityId: trip.driverId }
-    ]);
+    ];
+    if (trip.driverId) lockEntities.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    await this.lockEntities(tx, lockEntities);
 
     const lockTripLabel = trip.tripCode || '';
 
@@ -126,8 +127,8 @@ export class LedgerService {
       note: lockTripLabel ? `Doanh thu chuyến ${lockTripLabel}` : 'Doanh thu chuyến',
     });
 
-    // 2. Post Driver Salary entry (if applicable)
-    if (driverSalary > 0) {
+    // 2. Post Driver Salary entry (if applicable — EXTERNAL trips have no driverId)
+    if (driverSalary > 0 && trip.driverId) {
       await this.postEntry(tx, {
         txnType: TxnType.DRIVER_SALARY,
         txnId: trip.id,

@@ -455,15 +455,17 @@ export async function transitionTripStatus(
       // Advisory lock serializes concurrent dispatches for the same truck —
       // without it, two READ COMMITTED transactions could both see 0 IN_TRANSIT
       // rows and both proceed (phantom-read race).
-      await tx.execute(sql`SELECT pg_advisory_xact_lock(${trip.truckId})`);
-      const [busyTruck] = await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode })
+      if (trip.truckId) {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${trip.truckId})`);
+      }
+      const [busyTruck] = trip.truckId ? await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode })
         .from(s.trips)
         .where(and(
-          eq(s.trips.truckId, trip.truckId),
+          eq(s.trips.truckId, trip.truckId!),
           eq(s.trips.status, TripStatus.IN_TRANSIT),
           isNull(s.trips.deletedAt),
         ))
-        .limit(1);
+        .limit(1) : [];
       if (busyTruck && busyTruck.id !== tripId) {
         // Never leak the numeric id — show the trip code or fall back to a
         // generic phrase rather than "#17" which reads like a debug log.

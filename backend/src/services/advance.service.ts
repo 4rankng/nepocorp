@@ -56,7 +56,7 @@ async function enrichSettlementWithRequests(settlement: any): Promise<any> {
       id: s.tripExpenses.id,
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
-      amount: s.tripExpenses.amount,
+      amount: s.tripExpenses.buyAmount,
       note: s.tripExpenses.note,
       createdAt: s.tripExpenses.createdAt,
       tripCode: s.trips.tripCode,
