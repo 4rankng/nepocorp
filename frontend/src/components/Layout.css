@@ -581,11 +581,10 @@
 
 .topbar__search {
   flex: 1;
-  max-width: 420px;
-  margin-left: 8px;
+  margin-left: 0;
   position: relative;
 }
-.topbar__search svg {
+.topbar__search > svg {
   position: absolute;
   left: 13px;
   top: 50%;

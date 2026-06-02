@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { useConfirm } from '../../components/UI';
+import { useConfirm, Modal } from '../../components/UI';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
-import { InlineForm } from '../../components/config/InlineForm';
-import { FormActions } from '../../components/config/FormActions';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
@@ -19,17 +17,68 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Customer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || '');
+  const [taxCode, setTaxCode] = useState(item?.taxCode || '');
+  const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
+  const [phone, setPhone] = useState(item?.phone || '');
   const [contactInfo, setContactInfo] = useState(item?.contactInfo || '');
+  const [creditLimit, setCreditLimit] = useState(item?.creditLimit || '');
+  const [status, setStatus] = useState(item?.status || 'ACTIVE');
+
   return (
-    <InlineForm colSpan={7}>
-      <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên khách hàng"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên…" /></Field>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <Field label="Tên khách hàng *">
+          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên…" required />
+        </Field>
+        <Field label="Mã số thuế">
+          <input className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="Nhập MST…" />
+        </Field>
       </div>
-      <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Liên hệ"><input className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email…" /></Field>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <Field label="Người liên hệ">
+          <input className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Tên người liên hệ…" />
+        </Field>
+        <Field label="Số điện thoại">
+          <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="SĐT liên hệ…" />
+        </Field>
       </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => onsave({ name: name.trim(), contactInfo: contactInfo.trim() || undefined })} />
-    </InlineForm>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <Field label="Hạn mức tín dụng">
+          <input className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
+        </Field>
+        <Field label="Trạng thái">
+          <select className="input" value={status} onChange={e => setStatus(e.target.value as any)}>
+            <option value="ACTIVE">Hoạt động</option>
+            <option value="LOCKED">Tạm khoá</option>
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Thông tin liên hệ khác / Địa chỉ">
+        <textarea className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email, địa chỉ khác…" rows={3} style={{ resize: 'vertical' }} />
+      </Field>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+        <button type="button" className="btn btn--secondary" onClick={oncancel} disabled={saving}>Hủy</button>
+        <button type="button" className="btn btn--primary" onClick={() => {
+          if (!name.trim()) return;
+          onsave({
+            name: name.trim(),
+            taxCode: taxCode.trim() || null,
+            contactPerson: contactPerson.trim() || null,
+            phone: phone.trim() || null,
+            contactInfo: contactInfo.trim() || null,
+            creditLimit: creditLimit ? String(creditLimit) : null,
+            status,
+          });
+        }} disabled={saving}>
+          {saving && <Loader2 size={14} className="spin" style={{ marginRight: 6 }} />}
+          {item ? 'Cập nhật' : 'Thêm mới'}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -174,31 +223,31 @@ export default function CustomersConfigPage() {
             <input type="text" placeholder="Tìm theo tên, MST…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
+        <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Nhấn vào một hàng để xem chi tiết và chỉnh sửa khách hàng
+        </div>
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
                 <th>Khách hàng</th><th>Liên hệ</th><th className="num">Chuyến {monthLabel}</th>
-                <th className="num">Doanh thu {monthLabel}</th><th className="num">Hạn mức TD</th><th>Trạng thái</th><th style={{ width: 80 }}></th>
+                <th className="num">Doanh thu {monthLabel}</th><th className="num">Hạn mức TD</th><th>Trạng thái</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
               {filtered.map(c => {
-                if (crud.editingId === c.id) {
-                  return (
-                    <tr key={`edit-${c.id}`}>
-                      <td colSpan={7} style={{ padding: 0 }}>
-                        <CustomerForm saving={crud.saving} item={c} onsave={d => crud.doUpdate(c.id, d)} oncancel={crud.cancelForm} />
-                      </td>
-                    </tr>
-                  );
-                }
                 const risk = getRiskLevel(c);
                 const stats = customerTripStats.get(c.id);
                 const creditLimit = parseFloat(c.creditLimit || '0');
                 return (
-                  <tr key={c.id}>
+                  <tr
+                    key={c.id}
+                    onClick={() => crud.setEditingId(c.id)}
+                    style={{ cursor: 'pointer' }}
+                    title="Nhấp để chỉnh sửa hoặc xóa"
+                  >
                     <td>
                       <div className="row-strong"><span className={`risk-dot risk-dot--${risk}`} />{c.name}</div>
                       {c.taxCode && <div className="row-meta">MST {c.taxCode}</div>}
@@ -215,14 +264,6 @@ export default function CustomersConfigPage() {
                         ? <span className="pill pill--danger"><span className="dot" />Tạm khoá</span>
                         : <span className="pill pill--success"><span className="dot" />Hoạt động</span>}
                     </td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="row-action" title="Sửa" onClick={() => crud.setEditingId(c.id)}><Pencil size={13} /></button>
-                        <button className="row-action" title="Xóa" disabled={crud.deleting === c.id} onClick={() => crud.doDelete(c.id)}>
-                          {crud.deleting === c.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} style={{ color: 'var(--danger)' }} />}
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}
@@ -234,7 +275,72 @@ export default function CustomersConfigPage() {
         </div>
       </div>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
-    {confirmDialog}
+
+      {/* Modal for adding a new customer */}
+      <Modal
+        isOpen={crud.showAddForm && !crud.editingId}
+        title="Thêm khách hàng mới"
+        onClose={crud.cancelForm}
+        maxWidth={600}
+      >
+        <div style={{ padding: '8px 4px' }}>
+          <CustomerForm
+            saving={crud.saving}
+            onsave={(d) => {
+              crud.doCreate(d);
+            }}
+            oncancel={crud.cancelForm}
+          />
+        </div>
+      </Modal>
+
+      {/* Modal for editing/deleting an existing customer */}
+      {(() => {
+        const item = customers.find(x => x.id === crud.editingId);
+        if (!item) return null;
+        return (
+          <Modal
+            isOpen={true}
+            title="Chỉnh sửa thông tin khách hàng"
+            onClose={crud.cancelForm}
+            maxWidth={600}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 4px' }}>
+              <CustomerForm
+                item={item}
+                saving={crud.saving}
+                onsave={(d) => {
+                  crud.doUpdate(item.id, d);
+                }}
+                oncancel={crud.cancelForm}
+              />
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={{ color: 'var(--danger)', borderColor: 'var(--danger-soft)', cursor: 'pointer' }}
+                  disabled={crud.deleting === item.id || crud.saving}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const ok = await confirm(`Bạn có chắc chắn muốn xóa khách hàng "${item.name}" này?`, {
+                      confirmLabel: 'Xóa',
+                      variant: 'danger',
+                    });
+                    if (ok) {
+                      await crud.doDelete(item.id);
+                      crud.cancelForm();
+                    }
+                  }}
+                >
+                  {crud.deleting === item.id ? 'Đang xóa...' : 'Xóa khách hàng này'}
+                </button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
+
+      {confirmDialog}
     </div>
   );
 }

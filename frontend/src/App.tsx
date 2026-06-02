@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, type ReactElement } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { SearchProvider } from './context/SearchContext';
 import { Role } from '@nepocorp/shared';
 import Layout from './components/Layout';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
@@ -182,7 +183,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <SearchProvider>
+        <AppRoutes />
+      </SearchProvider>
     </AuthProvider>
   );
 }

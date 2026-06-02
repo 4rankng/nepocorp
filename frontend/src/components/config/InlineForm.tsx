@@ -1,11 +1,9 @@
-export function InlineForm({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {
+import React from 'react';
+
+export function InlineForm({ children }: { colSpan?: number; children: React.ReactNode }) {
   return (
-    <tr>
-      <td colSpan={colSpan} style={{ background: 'var(--brand-soft)', padding: '12px 16px' }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          {children}
-        </div>
-      </td>
-    </tr>
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap', width: '100%', padding: '8px 0' }}>
+      {children}
+    </div>
   );
 }

@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
-import {
-  Users, Truck, MapPin, Package, DollarSign, Route,
-  AlertTriangle, UserCheck, Fuel, Building, Calendar, Tags, Container, Anchor, Settings,
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { api } from '../lib/api';
+import { useSearch } from '../context/SearchContext';
+import { CONFIG_ITEMS } from '../data/searchRegistry';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
 
@@ -16,8 +15,17 @@ function countLabel(n: number | undefined, unit: string): string {
   return `${n} ${unit}`;
 }
 
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
 export default function ConfigPage() {
   const navigate = useNavigate();
+  const { searchQuery } = useSearch();
 
   const [
     penaltyReasons,
@@ -71,6 +79,53 @@ export default function ConfigPage() {
     return fuelConfig.data ? 'Đã cấu hình' : 'Chưa cấu hình';
   }
 
+  const statusInfo: Record<string, { status: string; statusColor?: string }> = {
+    'fuel':                     { status: fuelStatus() },
+    'road-allowances':          { status: countLabel(roadAllowances.data?.total, 'tuyến') },
+    'trip-expense':             { status: '5 mục', statusColor: '#10B981' },
+    'penalty-reasons':          { status: countLabel(penaltyReasons.data?.total, 'quy tắc') },
+    'drivers':                  { status: countLabel(drivers.data?.total, 'tài xế') },
+    'cap-table':                { status: countLabel(capTable.data?.total, 'cổ đông') },
+    'customers':                { status: countLabel(customers.data?.total, 'khách hàng') },
+    'routes':                   { status: countLabel(routes.data?.total, 'tuyến chặng') },
+    'trucks':                   { status: countLabel(trucks.data?.total, 'xe') },
+    'trailers':                 { status: countLabel(trailers.data?.total, 'rơ-moóc') },
+    'cargo-types':              { status: countLabel(cargoTypes.data?.total, 'loại hàng') },
+    'pricing-tables':           { status: countLabel(pricingTables.data?.total, 'đơn giá') },
+    'management-fees':          { status: countLabel(managementFees.data?.total, 'khoản phí') },
+    'salary-periods':           { status: salaryStatus() },
+    'expense-categories':       { status: countLabel(expenseCategories.data?.total, 'hạng mục') },
+    'container-types':          { status: countLabel(containerTypes.data?.total, 'loại') },
+    'ports':                    { status: countLabel(ports.data?.total, 'cảng/bãi') },
+    'forwarder-expense-types':  { status: countLabel(forwarderExpenseTypes.data?.total, 'loại') },
+  };
+
+  const cards = CONFIG_ITEMS.map(item => {
+    const Icon = item.icon;
+    return {
+      title: item.label,
+      desc: item.description ?? '',
+      icon: <Icon size={20} />,
+      path: item.path,
+      action: item.action ?? 'Sửa',
+      ...(statusInfo[item.id] ?? { status: '—' }),
+    };
+  });
+
+  const filteredCards = cards.filter(card => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    const queryNormalized = removeVietnameseTones(query);
+    const titleNormalized = removeVietnameseTones(card.title.toLowerCase());
+    const descNormalized = removeVietnameseTones(card.desc.toLowerCase());
+
+    return (
+      titleNormalized.includes(queryNormalized) ||
+      descNormalized.includes(queryNormalized)
+    );
+  });
+
   return (
     <div className="fade-up">
       <PageHeader
@@ -78,187 +133,37 @@ export default function ConfigPage() {
         description="Quản lý định mức, quy tắc tính toán, người dùng & tích hợp hệ thống"
       />
 
-      <div className="settings-grid">
-        <button className="setting-card" onClick={() => navigate('/config/fuel')}>
-          <div className="setting-card__icon"><Fuel size={20} /></div>
-          <h3 className="setting-card__title">Định mức nhiên liệu</h3>
-          <p className="setting-card__desc">Định mức tiêu hao theo xe, loại tải (vỏ rỗng, &lt;20t, &gt;20t) và loại tuyến (đồng bằng / núi).</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{fuelStatus()}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
+      {searchQuery.trim() && (
+        <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Search size={14} />
+          Tìm thấy <strong>{filteredCards.length}</strong> kết quả phù hợp cho từ khóa "{searchQuery}"
+        </div>
+      )}
 
-        <button className="setting-card" onClick={() => navigate('/config/road-allowances')}>
-          <div className="setting-card__icon"><Route size={20} /></div>
-          <h3 className="setting-card__title">Tiền đi đường</h3>
-          <p className="setting-card__desc">Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng, − phí/trạm.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(roadAllowances.data?.total, 'tuyến')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/trip-expense')}>
-          <div className="setting-card__icon"><Settings size={20} /></div>
-          <h3 className="setting-card__title">Chi phí chuyến đi</h3>
-          <p className="setting-card__desc">Tiền kết hợp, trả hàng 2 điểm, lưu ca xe, tiền trạm BOT, thưởng chuyến về có hàng.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot" style={{ background: '#10B981' }}></span>5 mục</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/penalty-reasons')}>
-          <div className="setting-card__icon"><AlertTriangle size={20} /></div>
-          <h3 className="setting-card__title">Quy tắc kỷ luật &amp; phạt</h3>
-          <p className="setting-card__desc">Thiếu hoá đơn dầu (100K), vi phạm ATGT (500K / sa thải).</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(penaltyReasons.data?.total, 'quy tắc')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/drivers')}>
-          <div className="setting-card__icon"><UserCheck size={20} /></div>
-          <h3 className="setting-card__title">Người dùng &amp; tài xế</h3>
-          <p className="setting-card__desc">Quản lý tài khoản lái xe, lương cơ bản, xe phụ trách và thông tin hồ sơ liên hệ.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(drivers.data?.total, 'tài xế')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/cap-table')}>
-          <div className="setting-card__icon"><Building size={20} /></div>
-          <h3 className="setting-card__title">Thông tin công ty &amp; Cổ phần</h3>
-          <p className="setting-card__desc">Mã số thuế, địa chỉ, người đại diện và tỷ lệ vốn góp giữa các đối tác cổ đông.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(capTable.data?.total, 'cổ đông')}</span>
-            <span className="setting-card__action">Xem {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/customers')}>
-          <div className="setting-card__icon"><Users size={20} /></div>
-          <h3 className="setting-card__title">Khách hàng &amp; Đối tác</h3>
-          <p className="setting-card__desc">Danh mục đối tác vận chuyển hàng hóa, thông tin liên hệ và mã số thuế phục vụ công nợ.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(customers.data?.total, 'khách hàng')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/routes')}>
-          <div className="setting-card__icon"><MapPin size={20} /></div>
-          <h3 className="setting-card__title">Tuyến đường &amp; Cự ly</h3>
-          <p className="setting-card__desc">Danh sách các tuyến chặng, số trạm thu phí BOT, quãng đường di chuyển chuẩn.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(routes.data?.total, 'tuyến chặng')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/trucks')}>
-          <div className="setting-card__icon"><Truck size={20} /></div>
-          <h3 className="setting-card__title">Xe đầu kéo</h3>
-          <p className="setting-card__desc">Biển số các đầu kéo kéo container đang vận hành, định mức mặc định và lịch bảo dưỡng đầu xe.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(trucks.data?.total, 'xe')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/trailers')}>
-          <div className="setting-card__icon"><Truck size={20} /></div>
-          <h3 className="setting-card__title">Rơ-moóc</h3>
-          <p className="setting-card__desc">Danh sách rơ-moóc, loại rơ-moóc và thông tin đăng kiểm.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(trailers.data?.total, 'rơ-moóc')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/cargo-types')}>
-          <div className="setting-card__icon"><Package size={20} /></div>
-          <h3 className="setting-card__title">Loại hàng hóa</h3>
-          <p className="setting-card__desc">Bảng quy chuẩn loại hàng hóa vận chuyển ảnh hưởng đến việc phân xe chặng.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(cargoTypes.data?.total, 'loại hàng')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/pricing-tables')}>
-          <div className="setting-card__icon"><DollarSign size={20} /></div>
-          <h3 className="setting-card__title">Bảng giá cước</h3>
-          <p className="setting-card__desc">Bảng giá cước chi tiết thỏa thuận với từng đối tác khách hàng trên mỗi tuyến.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(pricingTables.data?.total, 'đơn giá')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/management-fees')}>
-          <div className="setting-card__icon"><Building size={20} /></div>
-          <h3 className="setting-card__title">Phí quản lý</h3>
-          <p className="setting-card__desc">Cấu hình phí quản lý vận hành theo tháng/năm dùng cho báo cáo lãi lỗ.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(managementFees.data?.total, 'khoản phí')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/salary-periods')}>
-          <div className="setting-card__icon"><Calendar size={20} /></div>
-          <h3 className="setting-card__title">Kỳ lương</h3>
-          <p className="setting-card__desc">Cấu hình kỳ lương hàng tháng. Mặc định: ngày 26 tháng trước đến ngày 25 tháng này. Có thể ghi đè từng tháng.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{salaryStatus()}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/expense-categories')}>
-          <div className="setting-card__icon"><Tags size={20} /></div>
-          <h3 className="setting-card__title">Hạng mục chi phí</h3>
-          <p className="setting-card__desc">Phân loại chi phí vận hành. Bật định kỳ để theo dõi ngày gia hạn bảo hiểm, đăng kiểm, bảo dưỡng.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(expenseCategories.data?.total, 'hạng mục')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/container-types')}>
-          <div className="setting-card__icon"><Container size={20} /></div>
-          <h3 className="setting-card__title">Loại container</h3>
-          <p className="setting-card__desc">Danh mục các loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC…) dùng khi ghi nhận số container / seal.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(containerTypes.data?.total, 'loại')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/ports')}>
-          <div className="setting-card__icon"><Anchor size={20} /></div>
-          <h3 className="setting-card__title">Cảng / Bãi Hải Phòng</h3>
-          <p className="setting-card__desc">Danh mục các cảng và bãi container tại khu vực Hải Phòng, dùng làm điểm đi / điểm đến trong chuyến hàng.</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(ports.data?.total, 'cảng/bãi')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-
-        <button className="setting-card" onClick={() => navigate('/config/forwarder-expense-types')}>
-          <div className="setting-card__icon"><Tags size={20} /></div>
-          <h3 className="setting-card__title">Loại chi phí giao nhận</h3>
-          <p className="setting-card__desc">Danh mục các khoản chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe, kiểm tra…).</p>
-          <div className="setting-card__foot">
-            <span className="setting-card__status"><span className="dot"></span>{countLabel(forwarderExpenseTypes.data?.total, 'loại')}</span>
-            <span className="setting-card__action">Sửa {CHEVRON}</span>
-          </div>
-        </button>
-      </div>
+      {filteredCards.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '64px 32px', border: '1px dashed var(--line)', borderRadius: 12, background: 'var(--bg-2)', color: 'var(--fg-3)' }}>
+          <Search size={32} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>Không tìm thấy cấu hình</h3>
+          <p style={{ fontSize: 13 }}>Hãy thử tìm kiếm với từ khóa khác.</p>
+        </div>
+      ) : (
+        <div className="settings-grid">
+          {filteredCards.map((card, idx) => (
+            <button key={idx} className="setting-card" onClick={() => navigate(card.path)}>
+              <div className="setting-card__icon">{card.icon}</div>
+              <h3 className="setting-card__title">{card.title}</h3>
+              <p className="setting-card__desc">{card.desc}</p>
+              <div className="setting-card__foot">
+                <span className="setting-card__status">
+                  <span className="dot" style={card.statusColor ? { background: card.statusColor } : undefined}></span>
+                  {card.status}
+                </span>
+                <span className="setting-card__action">{card.action} {CHEVRON}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

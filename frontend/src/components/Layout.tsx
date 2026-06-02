@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -36,6 +36,10 @@ import { useUnreadCount } from '../hooks/useNotificationQueries';
 import { MonthProvider, useMonth } from '../hooks/useMonth';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 import { NotificationDrawer } from './NotificationDrawer';
+import { useSearch } from '../context/SearchContext';
+import { getSearchItems, filterItems } from '../data/searchRegistry';
+import type { SearchItem } from '../data/searchRegistry';
+import { SearchDropdown } from './SearchDropdown';
 
 interface NavItem {
   key: string;
@@ -63,7 +67,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'profit', label: 'Phân chia lợi nhuận', path: '/profit', icon: DollarSign, section: 'financials' },
         { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
         { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
-        { key: 'expenses', label: 'Chi phí vận hành', path: '/expenses', icon: FileText, section: 'financials' },
+        { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
         { key: 'settlements', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText, section: 'financials' },
 
@@ -171,6 +175,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { searchQuery, setSearchQuery } = useSearch();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -192,6 +200,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
 
   useClickOutside(userMenuRef, closeUserMenu, { escapeKey: true, enabled: userMenuOpen });
+  useClickOutside(searchContainerRef, () => setSearchQuery(''), { enabled: searchQuery.length > 0 });
 
   const openProfileModal = () => {
     if (!user) return;
@@ -262,11 +271,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         e.preventDefault();
         setSidebarOpen(v => !v);
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [location.pathname, setSearchQuery]);
 
   const { data: badgeData } = useBadgeCounts();
   const dispatchCount = badgeData?.dispatchCount;
@@ -280,6 +297,38 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const pageTitle = getPageTitle(location.pathname);
   const activeSection = navItems.find(i => i.key === activeKey)?.section;
+
+  const roleItems = useMemo(() => (user ? getSearchItems(user.role) : []), [user?.role]);
+  const matchedItems = useMemo(() => filterItems(roleItems, searchQuery), [roleItems, searchQuery]);
+
+  useEffect(() => { setActiveIndex(0); }, [searchQuery]);
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(i => Math.min(i + 1, matchedItems.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const item = matchedItems[activeIndex];
+      if (item) {
+        navigate(item.path);
+        setSearchQuery('');
+        searchInputRef.current?.blur();
+      }
+    } else if (e.key === 'Escape') {
+      setSearchQuery('');
+      searchInputRef.current?.blur();
+    }
+  }
+
+  function handleSearchSelect(item: SearchItem) {
+    navigate(item.path);
+    setSearchQuery('');
+    searchInputRef.current?.blur();
+  }
 
   // Update browser tab title on route change
   useEffect(() => {
@@ -602,16 +651,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
 
-          <nav className="topbar__breadcrumb" aria-label="Breadcrumb">
-            <span>NEPO</span>
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-            <strong>{pageTitle}</strong>
-          </nav>
-
-          <div className="topbar__search">
+          <div ref={searchContainerRef} className="topbar__search" style={{ position: 'relative' }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm chuyến đi, khách hàng, xe…" />
-            <kbd>⌘ K</kbd>
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Tìm trang, cấu hình, thao tác…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+            />
+            {!searchQuery && <kbd>⌘ K</kbd>}
+            {searchQuery.length > 0 && (
+              <SearchDropdown
+                items={matchedItems}
+                query={searchQuery}
+                activeIndex={activeIndex}
+                onSelect={handleSearchSelect}
+                onHover={setActiveIndex}
+              />
+            )}
           </div>
 
           <div className="topbar__actions">

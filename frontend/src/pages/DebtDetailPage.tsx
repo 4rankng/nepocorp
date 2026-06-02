@@ -10,6 +10,7 @@ import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
 import { DebtOffsetModal } from '../components/DebtOffsetModal';
+import { useAuth } from '../hooks/useAuth';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
 
@@ -76,6 +77,20 @@ export default function DebtDetailPage() {
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isManagerOrAdmin = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+
+  const handleApproveOffset = async (oid: number) => {
+    try {
+      await api.post(`/finance/debt-offsets/${oid}/approve`, {});
+      queryClient.invalidateQueries({ queryKey: ['debt-offsets', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-statement', String(customerId)] });
+      queryClient.invalidateQueries({ queryKey: ['customer-aging'] });
+      refetch();
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi duyệt đối trừ.');
+    }
+  };
 
   // ── Linked supplier data (dual-entity customers) ─────────────────────────
   // The customer statement doesn't expose linkedSupplierId directly, so we
@@ -424,6 +439,7 @@ export default function DebtDetailPage() {
                         <th style={{ padding: '6px 12px', textAlign: 'right', fontWeight: 600, color: 'var(--fg-3)' }}>Số tiền</th>
                         <th style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--fg-3)' }}>Trạng thái</th>
                         <th style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--fg-3)' }}>Ghi chú</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--fg-3)' }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -437,6 +453,26 @@ export default function DebtDetailPage() {
                             <OffsetStatusBadge status={o.approvalStatus} />
                           </td>
                           <td style={{ padding: '7px 12px', color: 'var(--fg-3)' }}>{o.note || '—'}</td>
+                          <td style={{ padding: '7px 12px', textAlign: 'center' }}>
+                            {isManagerOrAdmin && o.approvalStatus === 'PENDING' && (
+                              <button
+                                className="btn btn--sm btn--primary"
+                                style={{
+                                  padding: '2px 8px',
+                                  fontSize: 11,
+                                  background: '#16a34a',
+                                  borderColor: '#16a34a',
+                                  color: '#fff',
+                                  borderRadius: 4,
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => handleApproveOffset(o.id)}
+                              >
+                                Duyệt
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

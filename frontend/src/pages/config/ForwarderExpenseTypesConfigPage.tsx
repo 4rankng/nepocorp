@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { InlineForm } from '../../components/config/InlineForm';
-import { FormActions } from '../../components/config/FormActions';
+import { Save, Loader2, Trash2 } from 'lucide-react';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
 
@@ -14,87 +13,223 @@ interface ForwarderExpenseType {
   vatRate?: string | null;
 }
 
-function ExpenseTypeForm({ saving, item, onsave, oncancel, existingItems }: {
-  saving: boolean; item?: ForwarderExpenseType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
+function ExpenseTypeForm({
+  saving,
+  item,
+  onsave,
+  oncancel,
+  existingItems,
+  onDelete,
+  deleting,
+}: {
+  saving: boolean;
+  item?: ForwarderExpenseType;
+  onsave: (d: Record<string, unknown>) => void;
+  oncancel: () => void;
   existingItems: ForwarderExpenseType[];
+  onDelete?: () => Promise<void>;
+  deleting?: boolean;
 }) {
   const [code, setCode] = useState(item?.code || '');
   const [name, setName] = useState(item?.name || '');
   const [defaultMarkup, setDefaultMarkup] = useState<boolean>(item?.defaultMarkup ?? false);
   const [billingLabel, setBillingLabel] = useState(item?.billingLabel || '');
   const [vatRate, setVatRate] = useState(item?.vatRate ? String(parseFloat(item.vatRate) * 100) : '8');
+
   const isDuplicate = code.trim().length > 0 && existingItems.some(t =>
     t.id !== item?.id &&
     t.code.trim().toUpperCase() === code.trim().toUpperCase()
   );
+
   return (
-    <InlineForm colSpan={5}>
-      <div style={{ flex: 1, minWidth: 120 }}>
-        <Field label="Mã (code)">
-          <input
-            className="input"
-            value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder="LIFTING"
-            style={{ fontFamily: 'var(--font-mono)', ...(isDuplicate ? { borderColor: 'var(--danger)' } : {}) }}
-            disabled={!!item}
-          />
-          {isDuplicate && <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>Mã này đã tồn tại.</span>}
-        </Field>
-      </div>
-      <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên tiếng Việt">
-          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nâng hạ" />
-        </Field>
-      </div>
-      <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Nhãn trên giấy báo nợ">
-          <input className="input" value={billingLabel} onChange={e => setBillingLabel(e.target.value)} placeholder="(mặc định: dùng Tên)" />
-        </Field>
-      </div>
-      <div style={{ flex: 1, minWidth: 110 }}>
-        <Field label="VAT (%)">
-          <input
-            className="input"
-            type="number"
-            value={vatRate}
-            onChange={e => setVatRate(e.target.value)}
-            placeholder="8"
-            min="0"
-            max="100"
-            step="0.1"
-          />
-        </Field>
-      </div>
-      <div style={{ flex: 1, minWidth: 140 }}>
-        <Field label="Cho phép cộng lãi">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 38 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
+      {/* Row 1: Mã (Code) (Left, 30% width) and Tên tiếng Việt (Right, 70% width) */}
+      <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ width: '30%', minWidth: 120 }}>
+          <Field label="Mã (code)">
             <input
-              type="checkbox"
-              checked={defaultMarkup}
-              onChange={e => setDefaultMarkup(e.target.checked)}
+              className="input"
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase())}
+              placeholder="LIFTING"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 13,
+                ...(isDuplicate ? { borderColor: 'var(--danger)' } : {})
+              }}
+              disabled={false}
             />
-            <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>Bán ra ≠ Mua vào</span>
-          </label>
+            {isDuplicate && (
+              <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
+                Mã này đã tồn tại.
+              </span>
+            )}
+          </Field>
+        </div>
+        <div style={{ width: '70%', minWidth: 180 }}>
+          <Field label="Tên tiếng Việt">
+            <input
+              className="input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nâng hạ"
+              style={{ fontSize: 13 }}
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* Row 2: Nhãn trên giấy báo nợ (Full width) */}
+      <div style={{ width: '100%' }}>
+        <Field label="Nhãn trên giấy báo nợ">
+          <input
+            className="input"
+            value={billingLabel}
+            onChange={e => setBillingLabel(e.target.value)}
+            placeholder="(mặc định: dùng Tên)"
+            style={{ fontSize: 13 }}
+          />
         </Field>
       </div>
-      <FormActions
-        saving={saving}
-        isedit={!!item}
-        oncancel={oncancel}
-        onsave={() => {
-          if (!code.trim() || !name.trim() || isDuplicate) return;
-          const rate = parseFloat(vatRate);
-          onsave({
-            code: code.trim().toUpperCase(),
-            name: name.trim(),
-            defaultMarkup,
-            billingLabel: billingLabel.trim() || null,
-            vatRate: isFinite(rate) ? (rate / 100).toFixed(3) : '0.080',
-          });
-        }}
-      />
-    </InlineForm>
+
+      {/* Row 3: VAT (%) (Left, 50%) and the Checkbox area (Right, 50%) */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+        <div style={{ width: '50%', minWidth: 110 }}>
+          <Field label="VAT (%)">
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                className="input"
+                type="number"
+                value={vatRate}
+                onChange={e => setVatRate(e.target.value)}
+                placeholder="8"
+                min="0"
+                max="100"
+                step="0.1"
+                style={{ paddingRight: 32, fontSize: 13 }}
+              />
+              <span style={{
+                position: 'absolute',
+                right: 12,
+                color: 'var(--ink-3)',
+                fontSize: 13,
+                fontWeight: 500,
+                pointerEvents: 'none'
+              }}>
+                %
+              </span>
+            </div>
+          </Field>
+        </div>
+        <div style={{ width: '50%', minWidth: 140, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, color: 'var(--ink-2)', fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={defaultMarkup}
+                onChange={e => setDefaultMarkup(e.target.checked)}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <span>Cho phép cộng lãi</span>
+            </label>
+            <span style={{ fontSize: 11, color: 'var(--ink-3)', paddingLeft: 24 }}>
+              (Bán ra ≠ Mua vào)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialog Footer Section */}
+      <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0 4px' }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: 4 }}>
+        {/* Destructive Xóa cấu hình này (Delete) button on the bottom left (only in edit mode) */}
+        <div>
+          {item && onDelete && (
+            <button
+              type="button"
+              className="btn btn--danger"
+              style={{
+                borderColor: 'var(--danger-soft)',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+              disabled={deleting || saving}
+              onClick={async (e) => {
+                e.stopPropagation();
+                await onDelete();
+              }}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 size={14} className="spin" /> Đang xóa...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} /> Xóa cấu hình này
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Cancel and Save buttons next to each other on the bottom right */}
+        <div style={{ display: 'flex', gap: 12 }}>
+          {/* Hủy (Cancel) button styled as standard secondary button (grey text with light grey background/subtle outline, no icon) */}
+          <button
+            type="button"
+            className="btn btn--secondary"
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+            disabled={saving}
+            onClick={oncancel}
+          >
+            Hủy
+          </button>
+
+          {/* Cập nhật (Update) / Thêm button (flat style, no heavy shadow/glow) */}
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+            disabled={saving || isDuplicate || !code.trim() || !name.trim()}
+            onClick={() => {
+              if (!code.trim() || !name.trim() || isDuplicate) return;
+              const rate = parseFloat(vatRate);
+              onsave({
+                code: code.trim().toUpperCase(),
+                name: name.trim(),
+                defaultMarkup,
+                billingLabel: billingLabel.trim() || null,
+                vatRate: isFinite(rate) ? (rate / 100).toFixed(3) : '0.080',
+              });
+            }}
+          >
+            {saving ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <Save size={14} />
+            )}
+            {item ? 'Cập nhật' : 'Thêm'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -112,6 +247,7 @@ export default function ForwarderExpenseTypesConfigPage() {
       description="Danh mục các loại chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe…)"
       endpoint="/forwarder-expense-types"
       colSpan={5}
+      showDelete={false}
       columns={[
         {
           header: 'Mã',
@@ -150,6 +286,8 @@ export default function ForwarderExpenseTypesConfigPage() {
           onsave={p.onSave}
           oncancel={p.onCancel}
           existingItems={p.items as ForwarderExpenseType[]}
+          onDelete={p.onDelete}
+          deleting={p.deleting}
         />
       )}
     />

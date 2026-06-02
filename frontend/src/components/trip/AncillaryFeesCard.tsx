@@ -6,6 +6,7 @@ import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
+import { useAuth } from '../../hooks/useAuth';
 
 interface AncillaryFeesCardProps {
   tripId: number;
@@ -33,6 +34,8 @@ const EMPTY_FORM = {
 
 export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -90,6 +93,16 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
     }
   };
 
+  const handleApprove = async (eid: number) => {
+    try {
+      await tripClient.approveTripExpense(tripId, eid);
+      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
+      await queryClient.invalidateQueries({ queryKey: ['trip-detail', String(tripId)] });
+    } catch {
+      // silently ignore
+    }
+  };
+
   const totalBuy = expenses.reduce((s, e) => s + Number(e.buyAmount), 0);
   const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
   const totalMargin = totalSell - totalBuy;
@@ -114,7 +127,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                     <th>Hình thức</th>
                     <th>Số HĐ</th>
                     <th>Ngày HĐ</th>
-                    {!readOnly && <th style={{ width: 36 }}></th>}
+                    <th>Trạng thái</th>
+                    {!readOnly && <th style={{ width: 64 }}></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -141,8 +155,45 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                         <td style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>
                           {fee.invoiceDate ?? '—'}
                         </td>
+                        <td>
+                          <span
+                            className="pill pill--sm"
+                            style={
+                              fee.approvalStatus === 'APPROVED'
+                                ? { background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                                : fee.approvalStatus === 'REJECTED'
+                                ? { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                                : { background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600 }
+                            }
+                          >
+                            {fee.approvalStatus === 'APPROVED'
+                              ? 'Đã duyệt'
+                              : fee.approvalStatus === 'REJECTED'
+                              ? 'Từ chối'
+                              : 'Chờ duyệt'}
+                          </span>
+                        </td>
                         {!readOnly && (
-                          <td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            {isManager && fee.approvalStatus === 'PENDING' && (
+                              <button
+                                type="button"
+                                className="btn btn--sm btn--primary"
+                                style={{
+                                  padding: '2px 8px',
+                                  fontSize: 11,
+                                  background: '#16a34a',
+                                  borderColor: '#16a34a',
+                                  marginRight: 6,
+                                  borderRadius: 4,
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => handleApprove(fee.id)}
+                              >
+                                Duyệt
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="btn btn--ghost btn--icon btn--sm"
@@ -168,7 +219,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false }: AncillaryFeesCar
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={readOnly ? 3 : 4}></td>
+                    <td colSpan={readOnly ? 4 : 5}></td>
                   </tr>
                 </tfoot>
               </table>

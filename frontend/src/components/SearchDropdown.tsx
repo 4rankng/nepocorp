@@ -1,0 +1,143 @@
+import React, { useEffect, useRef } from 'react';
+import type { SearchItem, SearchItemType } from '../data/searchRegistry';
+
+interface Props {
+  items: SearchItem[];
+  query: string;
+  activeIndex: number;
+  onSelect: (item: SearchItem) => void;
+  onHover: (index: number) => void;
+}
+
+const GROUP_LABELS: Record<SearchItemType, string> = {
+  page: 'TRANG',
+  config: 'CẤU HÌNH',
+  action: 'THAO TÁC',
+};
+
+function highlightText(text: string, query: string): React.ReactNode {
+  const lowerQ = query.toLowerCase().trim();
+  if (!lowerQ) return text;
+  const idx = text.toLowerCase().indexOf(lowerQ);
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark style={{ background: 'transparent', color: 'var(--accent, #818cf8)', fontWeight: 700 }}>
+        {text.slice(idx, idx + lowerQ.length)}
+      </mark>
+      {text.slice(idx + lowerQ.length)}
+    </>
+  );
+}
+
+export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }: Props) {
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    itemRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
+
+  if (items.length === 0) {
+    return (
+      <div style={dropdownStyle}>
+        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+          Không có kết quả
+        </div>
+      </div>
+    );
+  }
+
+  const itemsWithIndex = items.map((item, flatIdx) => ({ item, flatIdx }));
+  const typeOrder: SearchItemType[] = ['page', 'config', 'action'];
+  const groups = typeOrder
+    .map(type => ({
+      type,
+      label: GROUP_LABELS[type],
+      entries: itemsWithIndex.filter(({ item }) => item.type === type),
+    }))
+    .filter(g => g.entries.length > 0);
+
+  return (
+    <div style={dropdownStyle}>
+      {groups.map(group => (
+        <div key={group.type}>
+          <div style={groupHeaderStyle}>{group.label}</div>
+          {group.entries.map(({ item, flatIdx }) => {
+            const Icon = item.icon;
+            const isActive = flatIdx === activeIndex;
+            return (
+              <button
+                key={`${item.type}-${item.id}`}
+                ref={el => { itemRefs.current[flatIdx] = el; }}
+                style={{
+                  ...itemStyle,
+                  background: isActive ? 'var(--bg-3, rgba(255,255,255,0.07))' : 'transparent',
+                }}
+                onMouseEnter={() => onHover(flatIdx)}
+                onClick={() => onSelect(item)}
+              >
+                <Icon size={15} style={{ flexShrink: 0, color: 'var(--fg-2)' }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-1)', lineHeight: 1.3 }}>
+                    {highlightText(item.label, query)}
+                  </div>
+                  {item.description && (
+                    <div style={{
+                      fontSize: 11,
+                      color: 'var(--fg-3)',
+                      marginTop: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const dropdownStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: 'calc(100% + 6px)',
+  left: 0,
+  minWidth: 340,
+  maxWidth: 480,
+  maxHeight: 360,
+  overflowY: 'auto',
+  background: 'var(--bg-1)',
+  border: '1px solid var(--line)',
+  borderRadius: 12,
+  boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+  zIndex: 999,
+  padding: '6px',
+};
+
+const groupHeaderStyle: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: 'var(--fg-3)',
+  padding: '8px 10px 4px',
+};
+
+const itemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  width: '100%',
+  padding: '7px 10px',
+  border: 'none',
+  borderRadius: 7,
+  cursor: 'pointer',
+  textAlign: 'left',
+  transition: 'background 80ms',
+};

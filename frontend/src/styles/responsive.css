@@ -151,7 +151,6 @@
 
   /* ── Topbar ── */
   .topbar-search { width: 180px; }
-  .topbar__search { max-width: 200px; }
 
   /* ── Layouts ── */
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }

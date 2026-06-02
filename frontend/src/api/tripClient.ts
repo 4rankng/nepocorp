@@ -99,4 +99,7 @@ export const tripClient = {
 
   deleteTripExpense: (tripId: number, eid: number) =>
     api.delete<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}`),
+
+  approveTripExpense: (tripId: number, eid: number) =>
+    api.post<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}/approve`, {}),
 };

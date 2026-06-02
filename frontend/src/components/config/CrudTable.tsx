@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { PageHeader, Panel } from '../UI';
+import { PageHeader, Panel, Modal, useConfirm } from '../UI';
 import { ActionBtns } from './ActionBtns';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { PaginatedResponse } from '@nepocorp/shared';
@@ -26,6 +26,8 @@ interface CrudTableProps<T extends { id: number }> {
     saving: boolean;
     onSave: (data: Record<string, unknown>) => void;
     onCancel: () => void;
+    onDelete?: () => Promise<void>;
+    deleting?: boolean;
   }) => React.ReactNode;
   colSpan: number;
   showDelete?: boolean;
@@ -43,6 +45,7 @@ export function CrudTable<T extends { id: number }>({
   toolbarLeft, backTo = '/config',
 }: CrudTableProps<T>) {
   const navigate = useNavigate();
+  const { confirm, dialog } = useConfirm();
 
   // NOTE: fetches with no page/limit params — backend defaults to limit=50.
   // Config tables are small (< 50 rows) so this is fine for now.
@@ -102,54 +105,31 @@ export function CrudTable<T extends { id: number }>({
                     {col.header}
                   </th>
                 ))}
-                <th style={{ width: actionWidth }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {crud.showAddForm && !crud.editingId && renderForm({
-                saving: crud.saving, onSave: crud.doCreate, onCancel: crud.cancelForm, items,
-              })}
               {items.length === 0 && !crud.showAddForm && (
                 <tr>
-                  <td colSpan={colSpan} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
+                  <td colSpan={colSpan + 1} style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
                     Chưa có dữ liệu
                   </td>
                 </tr>
               )}
               {items.map((item, i) => {
                 const isActive = activeIds.has(item.id);
-                if (crud.editingId === item.id) {
-                  return (
-                    <Fragment key={`edit-${item.id}`}>
-                      {renderForm({
-                        item, saving: crud.saving,
-                        onSave: (d) => crud.doUpdate(item.id, d),
-                        onCancel: crud.cancelForm, items,
-                      })}
-                    </Fragment>
-                  );
-                }
                 return (
-                  <tr key={item.id} style={rowStyle?.(item, isActive)}>
+                  <tr
+                    key={item.id}
+                    style={{ cursor: 'pointer', ...rowStyle?.(item, isActive) }}
+                    onClick={() => crud.setEditingId(item.id)}
+                    title="Nhấp để chỉnh sửa hoặc xóa"
+                  >
                     <td className="num">{i + 1}</td>
                     {columns.map(col => (
                       <td key={col.header} className={col.className}>
                         {col.render(item, i, isActive, items)}
                       </td>
                     ))}
-                    <td>
-                      {showDelete ? (
-                        <ActionBtns
-                          id={item.id} deleting={crud.deleting}
-                          onedit={() => crud.setEditingId(item.id)}
-                          ondelete={() => handleDelete(item.id)}
-                        />
-                      ) : (
-                        <button className="btn btn--ghost btn--sm btn--icon" title="Sửa" onClick={() => crud.setEditingId(item.id)}>
-                          <Pencil size={14} />
-                        </button>
-                      )}
-                    </td>
                   </tr>
                 );
               })}
@@ -158,6 +138,84 @@ export function CrudTable<T extends { id: number }>({
         </div>
       </Panel>
       {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
+
+      {/* Modal for adding a new item */}
+      <Modal
+        isOpen={crud.showAddForm && !crud.editingId}
+        title={`Thêm ${title.toLowerCase()}`}
+        onClose={crud.cancelForm}
+        maxWidth={600}
+      >
+        <div style={{ padding: '8px 4px' }}>
+          {renderForm({
+            saving: crud.saving,
+            onSave: crud.doCreate,
+            onCancel: crud.cancelForm,
+            items,
+          })}
+        </div>
+      </Modal>
+
+      {/* Modal for editing/deleting an existing item */}
+      {(() => {
+        const item = items.find(x => x.id === crud.editingId);
+        if (!item) return null;
+        return (
+          <Modal
+            isOpen={true}
+            title={`Chỉnh sửa ${title.toLowerCase()}`}
+            onClose={crud.cancelForm}
+            maxWidth={600}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 4px' }}>
+              <div>
+                {renderForm({
+                  item,
+                  saving: crud.saving,
+                  onSave: (d) => crud.doUpdate(item.id, d),
+                  onCancel: crud.cancelForm,
+                  items,
+                  onDelete: async () => {
+                    const ok = await confirm(`Bạn có chắc chắn muốn xóa ${title.toLowerCase()} này?`, {
+                      variant: 'danger',
+                      confirmLabel: 'Xóa'
+                    });
+                    if (ok) {
+                      await handleDelete(item.id);
+                      crud.cancelForm();
+                    }
+                  },
+                  deleting: crud.deleting === item.id,
+                })}
+              </div>
+              {showDelete && (
+                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    style={{ color: 'var(--danger)', borderColor: 'var(--danger-soft)', cursor: 'pointer' }}
+                    disabled={crud.deleting === item.id || crud.saving}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const ok = await confirm(`Bạn có chắc chắn muốn xóa ${title.toLowerCase()} này?`, {
+                        variant: 'danger',
+                        confirmLabel: 'Xóa'
+                      });
+                      if (ok) {
+                        await handleDelete(item.id);
+                        crud.cancelForm();
+                      }
+                    }}
+                  >
+                    {crud.deleting === item.id ? 'Đang xóa...' : 'Xóa cấu hình này'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
+      {dialog}
     </div>
   );
 }
