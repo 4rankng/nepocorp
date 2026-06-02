@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema } from '@nepocorp/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema } from '@nepocorp/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses } from '../services/forwarder.service';
@@ -266,7 +266,7 @@ router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) =>
 
 // Partial update schema for expense — derived from shared tripExpenseSchema
 import { z } from 'zod';
-const tripExpensePatchSchema = tripExpenseSchema.omit({ tripId: true }).partial();
+const tripExpensePatchSchema = baseTripExpenseSchema.omit({ tripId: true }).partial();
 
 // PUT /api/trips/:id/expenses/:eid — update expense
 router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {

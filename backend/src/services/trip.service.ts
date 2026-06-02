@@ -29,14 +29,21 @@ async function resolveTrailer(
 export async function createTrip(data: {
   customerId: number;
   routeId: number;
-  truckId: number;
-  driverId: number;
+  truckId?: number | null;
+  driverId?: number | null;
   cargoTypeId: number;
   departureDate: string;
   customerReference?: string;
   containerCount?: number;
   fuelMode?: FuelMode;
   createdBy?: number;
+  vatRate?: number;
+  carrierType?: 'OWN' | 'EXTERNAL';
+  externalCarrierId?: number | null;
+  externalFreightCost?: number | null;
+  externalPlateNumber?: string | null;
+  externalDriverName?: string | null;
+  externalDriverPhone?: string | null;
 }) {
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
@@ -70,24 +77,32 @@ export async function createTrip(data: {
 
     const [roadCfg] = await tx.select().from(s.roadConfig).limit(1);
 
-    const [truck] = await tx.select().from(s.trucks).where(eq(s.trucks.id, data.truckId)).limit(1);
-    if (!truck) {
-      throw new ApiError(400, 'Xe đầu kéo không tồn tại');
+    let trailerId: number | null = null;
+    let trailerType: '20FT' | '40FT' | null = null;
+
+    if ((data.carrierType ?? 'OWN') === 'OWN' && data.truckId) {
+      const [truck] = await tx.select().from(s.trucks).where(eq(s.trucks.id, data.truckId)).limit(1);
+      if (!truck) {
+        throw new ApiError(400, 'Xe đầu kéo không tồn tại');
+      }
+      const resolved = await resolveTrailer(tx, truck.currentTrailerId);
+      trailerId = resolved.trailerId;
+      trailerType = (resolved.trailerType || truck.trailerType || '40FT') as '20FT' | '40FT';
     }
-    const resolved = await resolveTrailer(tx, truck.currentTrailerId);
-    const trailerId = resolved.trailerId;
-    const trailerType = (resolved.trailerType || truck.trailerType || '40FT') as '20FT' | '40FT';
 
     // Look up road allowance base for snapshotted column
-    const [allowance] = await tx.select().from(s.roadAllowances).where(
-      and(
-        eq(s.roadAllowances.routeId, data.routeId),
-        eq(s.roadAllowances.trailerType, trailerType),
-        isNull(s.roadAllowances.deletedAt)
-      )
-    ).limit(1);
+    let roadAllowanceBase = 0;
+    if (trailerType) {
+      const [allowance] = await tx.select().from(s.roadAllowances).where(
+        and(
+          eq(s.roadAllowances.routeId, data.routeId),
+          eq(s.roadAllowances.trailerType, trailerType),
+          isNull(s.roadAllowances.deletedAt)
+        )
+      ).limit(1);
+      roadAllowanceBase = allowance ? Number(allowance.baseAmount) : 0;
+    }
 
-    const roadAllowanceBase = allowance ? Number(allowance.baseAmount) : 0;
     const fuelPriceApplied = fuelCfg ? Number(fuelCfg.unitPrice) : 0;
     const fuelLoadedNormApplied = fuelCfg ? Number(fuelCfg.loadedNorm) : 0;
     const fuelEmptyNormApplied = fuelCfg ? Number(fuelCfg.emptyNorm) : 0;
@@ -123,18 +138,14 @@ export async function createTrip(data: {
       routeId: data.routeId,
       trailerId,
       trailerType,
-      truckId: data.truckId,
-      driverId: data.driverId,
+      truckId: data.truckId ?? null,
+      driverId: data.driverId ?? null,
       cargoTypeId: data.cargoTypeId,
       containerCount,
       departureDate: data.departureDate,
       customerReference: data.customerReference ?? null,
       status: TripStatus.CREATED,
       // Persist the chosen fuel mode (defaults to AUTO at the DB layer).
-      // Previously this was dropped on the floor so a user picking
-      // FLAT_RATE on the create form still got AUTO saved, then the
-      // pre-departure update would fail with "Chưa cấu hình định mức
-      // nhiên liệu" even when liters were entered manually.
       fuelMode: data.fuelMode ?? FuelMode.AUTO,
       revenue: String(revenue),
       revenueEmptyReturn: String(revenue),
@@ -152,6 +163,15 @@ export async function createTrip(data: {
       fuelSupplementNormApplied: String(fuelSupplementNormApplied),
       tollPerStationApplied: String(tollPerStationApplied),
       returnCargoBonusApplied: String(returnCargoBonusApplied),
+
+      // External fields
+      vatRate: data.vatRate !== undefined ? String(data.vatRate) : '0.000',
+      carrierType: data.carrierType ?? 'OWN',
+      externalCarrierId: data.externalCarrierId ?? null,
+      externalFreightCost: data.externalFreightCost !== undefined && data.externalFreightCost !== null ? String(data.externalFreightCost) : null,
+      externalPlateNumber: data.externalPlateNumber ?? null,
+      externalDriverName: data.externalDriverName ?? null,
+      externalDriverPhone: data.externalDriverPhone ?? null,
     }).returning();
 
     // Audit row is produced by auditLogMiddleware on POST /api/trips as

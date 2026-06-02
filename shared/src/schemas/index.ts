@@ -426,7 +426,7 @@ export const ANCILLARY_EXPENSE_TYPES = [
 
 export type AncillaryExpenseType = typeof ANCILLARY_EXPENSE_TYPES[number];
 
-export const tripExpenseSchema = z.object({
+export const baseTripExpenseSchema = z.object({
   tripId: z.coerce.number().int().positive(),
   expenseType: z.enum(ANCILLARY_EXPENSE_TYPES),
   buyAmount: z.number().positive(),
@@ -438,7 +438,9 @@ export const tripExpenseSchema = z.object({
   declarationNumber: z.string().max(50).optional(),
   containerNumber: z.string().max(20).optional(),
   note: z.string().optional(),
-}).superRefine((data, ctx) => {
+});
+
+export const tripExpenseSchema = baseTripExpenseSchema.superRefine((data, ctx) => {
   if (data.expenseType === 'CUSTOMS' && !data.declarationNumber) {
     ctx.addIssue({
       code: 'custom',

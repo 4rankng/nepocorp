@@ -39,7 +39,7 @@ export {
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
-  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, forwarderExpenseTypeSchema,
+  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
   containerTypeSchema, portSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
