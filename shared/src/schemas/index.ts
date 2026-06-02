@@ -58,8 +58,8 @@ export const tripLegSchema = z.object({
 export const createTripSchema = z.object({
   customerId: z.coerce.number().int().positive(),
   routeId: z.coerce.number().int().positive(),
-  truckId: z.coerce.number().int().positive(),
-  driverId: z.coerce.number().int().positive(),
+  truckId: z.coerce.number().int().positive().optional().nullable(),
+  driverId: z.coerce.number().int().positive().optional().nullable(),
   cargoTypeId: z.coerce.number().int().positive(),
   departureDate: z.string().min(1),
   customerReference: z.string().optional(),
@@ -72,6 +72,23 @@ export const createTripSchema = z.object({
   externalPlateNumber: z.string().max(20).optional(),
   externalDriverName: z.string().max(100).optional(),
   externalDriverPhone: z.string().max(20).optional(),
+}).superRefine((data, ctx) => {
+  // OWN carrier trips require truckId and driverId; EXTERNAL trips require external fields
+  if ((data.carrierType ?? 'OWN') === 'OWN') {
+    if (!data.truckId) {
+      ctx.addIssue({ code: 'custom', path: ['truckId'], message: 'Xe đầu kéo là bắt buộc cho chuyến xe nội bộ' });
+    }
+    if (!data.driverId) {
+      ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Tài xế là bắt buộc cho chuyến xe nội bộ' });
+    }
+  } else {
+    if (!data.externalCarrierId) {
+      ctx.addIssue({ code: 'custom', path: ['externalCarrierId'], message: 'Nhà xe ngoài là bắt buộc cho chuyến xe ngoài' });
+    }
+    if (!data.externalFreightCost) {
+      ctx.addIssue({ code: 'custom', path: ['externalFreightCost'], message: 'Cước xe ngoài là bắt buộc cho chuyến xe ngoài' });
+    }
+  }
 });
 
 export const updateTripFiguresSchema = z.object({
@@ -200,6 +217,9 @@ export const customerSchema = z.object({
   contactInfo: z.string().optional(),
   creditLimit: nonNegNumeric.optional(),
   status: z.nativeEnum(CustomerStatus).optional().default(CustomerStatus.ACTIVE),
+  isCarrier: z.boolean().optional().default(false),
+  debitNoteMode: z.enum(['MONTHLY', 'PER_BATCH']).optional().default('MONTHLY'),
+  linkedSupplierId: z.number().int().positive().optional().nullable(),
 });
 
 export const truckSchema = z.object({

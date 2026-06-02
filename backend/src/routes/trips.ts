@@ -264,20 +264,9 @@ router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) =>
   res.status(201).json(item);
 }));
 
-// Partial update schema for expense (tripId not required on update)
+// Partial update schema for expense — derived from shared tripExpenseSchema
 import { z } from 'zod';
-const tripExpensePatchSchema = z.object({
-  expenseType: z.string().min(1).optional(),
-  buyAmount: z.number().positive().optional(),
-  sellAmount: z.number().min(0).optional(),
-  settlementMethod: z.enum(['COMPANY_DIRECT', 'FORWARDER_ADVANCE']).optional(),
-  supplierId: z.number().int().positive().optional().nullable(),
-  invoiceNumber: z.string().max(50).optional().nullable(),
-  invoiceDate: z.string().optional().nullable(),
-  declarationNumber: z.string().max(50).optional().nullable(),
-  containerNumber: z.string().max(20).optional().nullable(),
-  note: z.string().optional().nullable(),
-});
+const tripExpensePatchSchema = tripExpenseSchema.omit({ tripId: true }).partial();
 
 // PUT /api/trips/:id/expenses/:eid — update expense
 router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
@@ -290,22 +279,38 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
       buyAmount: parsed.data.buyAmount !== undefined ? String(parsed.data.buyAmount) : undefined,
       sellAmount: parsed.data.sellAmount !== undefined ? String(parsed.data.sellAmount) : undefined,
       settlementMethod: parsed.data.settlementMethod,
-      supplierId: parsed.data.supplierId ?? null,
-      invoiceNumber: parsed.data.invoiceNumber ?? null,
-      invoiceDate: parsed.data.invoiceDate ?? null,
-      declarationNumber: parsed.data.declarationNumber ?? null,
-      containerNumber: parsed.data.containerNumber ?? null,
-      note: parsed.data.note ?? null,
+      // Only include nullable fields when explicitly provided (undefined = don't touch)
+      ...(parsed.data.supplierId !== undefined ? { supplierId: parsed.data.supplierId ?? null } : {}),
+      ...(parsed.data.invoiceNumber !== undefined ? { invoiceNumber: parsed.data.invoiceNumber ?? null } : {}),
+      ...(parsed.data.invoiceDate !== undefined ? { invoiceDate: parsed.data.invoiceDate ?? null } : {}),
+      ...(parsed.data.declarationNumber !== undefined ? { declarationNumber: parsed.data.declarationNumber ?? null } : {}),
+      ...(parsed.data.containerNumber !== undefined ? { containerNumber: parsed.data.containerNumber ?? null } : {}),
+      ...(parsed.data.note !== undefined ? { note: parsed.data.note ?? null } : {}),
     }),
   );
   if (!item) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
   res.json(item);
 }));
 
-// DELETE /api/trips/:id/expenses/:eid — hard delete
+// DELETE /api/trips/:id/expenses/:eid — hard delete (only if trip not locked)
 router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
   const eid = parseInt(req.params.eid as string, 10);
   await db.transaction(async (tx) => {
+    // Guard: trip must not be locked
+    const [trip] = await tx.select({ status: dbSchema.trips.status })
+      .from(dbSchema.trips).where(eq(dbSchema.trips.id, tripId)).limit(1);
+    if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến xe' });
+    if (trip.status === 'LOCKED') {
+      return res.status(400).json({ error: 'Không thể xóa chi phí trên chuyến đã khóa' });
+    }
+    // Guard: expense must not be linked to any settlement
+    const [link] = await tx.select({ id: dbSchema.settlementExpenses.id })
+      .from(dbSchema.settlementExpenses)
+      .where(eq(dbSchema.settlementExpenses.tripExpenseId, eid)).limit(1);
+    if (link) {
+      return res.status(400).json({ error: 'Không thể xóa chi phí đã được thanh toán' });
+    }
     await tx.delete(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid));
   });
   res.json({ ok: true });
@@ -316,16 +321,23 @@ router.post(
   '/:id/expenses/:eid/approve',
   requireRoles(Role.ADMIN, Role.MANAGER),
   asyncHandler(async (req: Request, res: Response) => {
+    const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    await db.transaction(async (tx) =>
-      transitionApproval(tx, {
+    await db.transaction(async (tx) => {
+      // Verify expense belongs to the specified trip
+      const [expense] = await tx.select({ tripId: dbSchema.tripExpenses.tripId })
+        .from(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid)).limit(1);
+      if (!expense) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
+      if (expense.tripId !== tripId) return res.status(400).json({ error: 'Chi phí không thuộc chuyến xe này' });
+
+      return transitionApproval(tx, {
         table: 'trip_expenses',
         id: eid,
         toStatus: 'APPROVED',
         actorId: req.user!.userId,
         actorRole: req.user!.role,
-      }),
-    );
+      });
+    });
     res.json({ ok: true });
   }),
 );

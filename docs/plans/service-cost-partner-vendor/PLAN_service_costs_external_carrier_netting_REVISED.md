@@ -1,329 +1,338 @@
-# Implementation Plan (Revised): Service Costs, External Carrier & Debt Netting
-
-**Source documents reconciled:**
-1. Customer requirements from Pete (01/06/2026) — the three requested features.
-2. *Quy trình vận hành và quản lý vận chuyển tại Công ty TNHH NePO* — the formal operating procedure (authoritative).
-3. Business-flow sketch (Kế hoạch O/C → DT xe / Phải thu KH / Chi phí xe / Phải trả đối tác → Báo cáo DT/CP xe).
-
-**Status:** Revised draft — supersedes `PLAN_service_costs_external_carrier_netting.md`. **All open questions resolved by customer (NePoQA, 02/06/2026)** — see §8. Ready for build.
-
----
-
-## 0. What changed vs the original draft (read this first)
-
-The original plan scoped the three features correctly but treated them as if the only new data were buy/sell amounts and a carrier toggle. The operating procedure shows the features sit inside a richer process. These are the substantive deltas folded into this revision:
-
-| # | Change | Evidence | Where |
-|---|--------|----------|-------|
-| D1 | **VAT must be modelled.** Sell freight is entered *incl. VAT*; internal accounting revenue = sell ÷ (1 + rate) (1.08 @ 8%, 1.10 @ 10%); external freight is entered *incl. VAT*. P&L (DT xe) must use the ex-VAT figure. | Procedure §1 | §2.1, §4 |
-| D2 | **Ancillary fees carry invoice metadata.** Each fee needs invoice no. + invoice date; customs needs declaration no.; all linked to container no. The draft schema only added buy/sell/supplier. | Procedure §2 | §3 |
-| D3 | **Buy-side settlement has two paths**, not one. Some fees are paid *by the company directly to the supplier* (→ AP), others are *paid by the forwarder from an advance* (chi hộ → reconciled via phiếu thanh toán). The draft only models AP-to-supplier. | Procedure §2 | §3, §8 Q-A |
-| D4 | **Sell-side output is a formal debit note (giấy báo nợ)**, not just a P&L line — freight + selected ancillary services, exported in company form. | Procedure §3 (monthly) | §3 |
-| D5 | **Reporting is per-vehicle and container-centric.** Service margin + external margin must roll into *Báo cáo doanh thu/chi phí theo từng xe*; container number is the central retrieval key. | Procedure §5, sketch | §6 |
-| D6 | **Approval states are pervasive**, not just a netting question — manager approves accountant entries; forwarder edits to yellow fields need approval. Offsets should fit the same pattern. | Procedure §2, §3 | §2.3, §5 |
-
-Everything in §3–§5 below is the original plan's structure, corrected for the above.
-
----
-
-## 1. The three features in their process context
-
-```mermaid
-flowchart TD
-    KH["Kế hoạch O/C<br/>(trip plan, incl-VAT sell rate)"]
-    KH --> SELL["Giá bán incl VAT"]
-    KH --> CARRIER{"Phương tiện?"}
-    CARRIER -->|Xe nhà| OWN["truck + driver<br/>fuel, toll, allowance, salary"]
-    CARRIER -->|Xe ngoài<br/>**Req 2**| EXT["external_freight_cost incl VAT"]
-
-    SELL --> EXVAT["Internal revenue ex-VAT<br/>= sell ÷ 1.0x"]
-    FEES["Ancillary fees **Req 1**<br/>nâng/hạ/cân/tờ khai/<br/>hạ tầng/kiểm hóa/chi hộ"]
-    FEES -->|buy| AP1["AP to supplier<br/>OR forwarder advance"]
-    FEES -->|sell| AR1["adds to customer AR"]
-
-    EXVAT --> DTXE["DT xe"]
-    AR1 --> ARC["Phải thu KH / Giấy báo nợ"]
-    OWN --> CPXE["Chi phí xe"]
-    EXT --> AP2["Phải trả đối tác"]
-    AP1 --> AP2
-
-    DTXE --> RPT["Báo cáo DT/CP xe<br/>per-vehicle P&L"]
-    CPXE --> RPT
-    ARC --> NET{"Đối trừ? **Req 3**<br/>partner is also customer"}
-    AP2 --> NET
-    NET --> RECON["Bảng đối chiếu công nợ"]
-```
-
-- **Req 1 (Chi phí dịch vụ đi kèm)** lives in the forwarder data-entry step (§2 of the procedure) and feeds both the giấy báo nợ (sell) and advance reconciliation / supplier AP (buy).
-- **Req 2 (Điều động xe ngoài)** lives in the planning step (§1) — the internal-vs-external assignment, with VAT-aware rate entry.
-- **Req 3 (Đối trừ công nợ)** lives in the monthly reconciliation step (§5) — net AR against AP for dual-role partners.
-
----
-
-## 2. Cross-cutting prerequisites (land before / alongside P1)
-
-### 2.1 VAT model (new — required by D1)
-
-Add VAT to the trip so internal P&L is ex-VAT while AR is incl-VAT.
-
-```sql
-ALTER TABLE trips
-  ADD COLUMN vat_rate NUMERIC(4,3) NOT NULL DEFAULT 0.080;  -- 0.080 | 0.100
--- customer_freight is stored INCL VAT (as entered).
--- ex-VAT revenue is derived: customer_freight / (1 + vat_rate)
-```
-
-Decide once: store `vat_rate` per trip (flexible, matches procedure wording) vs derive from customer/route defaults. Recommend per-trip with a customer-level default to prefill.
-
-`shared/src/calculations/tripTotals.ts` — add a single source of truth:
-```ts
-const freightExVat = round0(customerFreightInclVat / (1 + vatRate));
-// freightExVat feeds DT xe and per-vehicle P&L; customerFreightInclVat feeds AR.
-```
-
-### 2.2 Container-number-centric retrieval (D5)
-
-Procedure §5 makes container number the primary lookup key. You don't need to re-key the schema, but ensure: `containerNumber` is indexed on trips/expenses, and the global search + every list filter accepts it. Add `CREATE INDEX trips_container_idx ON trips(container_number);` if absent.
-
-### 2.3 Approval state (D6)
-
-All three features post to the ledger; the procedure gates accountant/forwarder edits behind manager/director approval. Reuse one mechanism rather than inventing per-feature flows. If a generic `approval_status` (`DRAFT | PENDING | APPROVED | REJECTED`) + `approved_by` pattern doesn't already exist on financial records, introduce it now and apply it to: ancillary-fee edits to "yellow" fields, the phiếu thanh toán, and debt offsets (§5).
-
----
-
-## 3. Requirement 1 — Chi phí dịch vụ đi kèm (revised)
-
-### Business logic
-Each ancillary fee has a **buy** (mua vào — company pays port/supplier) and a **sell** (bán ra — billed to customer on the giấy báo nợ); margin = sell − buy. **Two corrections vs the draft:**
-
-- **D2 — metadata:** every fee needs invoice no. + invoice date; customs needs a declaration no.; "chi hộ khác" needs a free-text detail. These are required by §2 and used on the giấy báo nợ and for advance reconciliation.
-- **D3 — settlement path:** the buy side is *not always* an AP to a named supplier. Per §2 the forwarder frequently pays at the port from a cash advance (chi hộ), then files a phiếu thanh toán. So a fee is settled either **COMPANY_DIRECT** (→ supplier AP) or **FORWARDER_ADVANCE** (→ reduces the forwarder's advance balance, no supplier AP). The ledger posting must branch on this.
-
-### Fee taxonomy (from procedure §2 + NePoQA markup rules)
-| Code | Vietnamese | Required extra fields | Settlement default | Sell default |
-|------|-----------|------------------------|--------------------|--------------|
-| `LIFTING` | Phí nâng container | invoice no., invoice date | advance (or direct if >5M / shipping-line invoice) | **at cost** |
-| `LOWERING` | Phí hạ container | invoice no., invoice date | advance / direct | **at cost** |
-| `WEIGHING` | Phí cân hàng | invoice no., invoice date | advance / direct | **at cost** |
-| `CUSTOMS` | Phí làm tờ khai hải quan | declaration no., container no. | advance / direct | **markup** (mgmt fee/tax added) |
-| `INFRASTRUCTURE` | Phí kết cấu hạ tầng (nộp hộ) | per container | advance (state, no vendor) | **at cost** |
-| `INSPECTION` | Phí kiểm hóa tại cảng | invoice no., invoice date | advance / direct | **at cost** |
-| `INSPECTION_SVC` | Phí phục vụ kiểm hóa | detail text | advance / direct | **markup** |
-| `OTHER` | Phí chi hộ khác | detail text, container no. | advance / direct | per case (may be internal-only) |
-
-> Settlement rule (NePoQA): default `FORWARDER_ADVANCE`; switch to `COMPANY_DIRECT` when the fee is **paid to the shipping line with a NePO invoice** or **> 5,000,000 VND** (NePO bank transfer). "At cost" vs "markup" drives the **sell-price prefill only** — the accountant can always edit. Some fees are **internal-only** (not billed, or billed under a different label) → sell may be 0 with an optional billing label. Consider a `default_markup` flag + optional `billing_label` on `forwarder_expense_types` to drive prefills.
-
-### DB changes (expanded vs draft)
-```sql
-ALTER TABLE trip_expenses
-  ADD COLUMN buy_amount        NUMERIC(15,0),               -- migrate from existing `amount`
-  ADD COLUMN sell_amount       NUMERIC(15,0) DEFAULT 0,
-  ADD COLUMN supplier_id       INTEGER REFERENCES suppliers(id),   -- nullable
-  ADD COLUMN settlement_method VARCHAR(20) NOT NULL DEFAULT 'COMPANY_DIRECT', -- 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE'
-  ADD COLUMN invoice_number    VARCHAR(50),
-  ADD COLUMN invoice_date      DATE,
-  ADD COLUMN declaration_number VARCHAR(50),                -- customs
-  ADD COLUMN container_number  VARCHAR(20);                 -- redundant-but-indexed for §5 lookup
--- Migration: amount -> buy_amount; sell_amount = 0; settlement_method defaulted; backfill container_number from trip.
-```
-`forwarder_expense_types` — no change to existing codes; confirm all seven taxonomy codes above exist.
-
-### Backend
-- `TripExpense` type: add `buyCost`, `sellPrice`, `supplierId`, `settlementMethod`, `invoiceNumber`, `invoiceDate`, `declarationNumber`.
-- `computeTripTotals()`: `totalServiceBuy`, `totalServiceSell`, `serviceMargin = sell − buy`; include `totalServiceSell` in gross revenue, `totalServiceBuy` in costs.
-- `lockTrip()` — branch per expense:
-  - `COMPANY_DIRECT` + `supplierId` → `VENDOR_EXPENSE` debit on that supplier's ledger (AP).
-  - `FORWARDER_ADVANCE` → post against the forwarder advance account (reduces remaining advance); **do not** create supplier AP. *(This is the integration point with the tạm ứng/hoàn ứng subsystem — see §8 Q-A.)*
-  - sell side always increases customer AR.
-- Validation: customs requires `declarationNumber`; invoice-bearing types require `invoiceNumber` + `invoiceDate` before the fee can be locked / put on a giấy báo nợ.
-
-### Frontend
-- Trip expenses grid: columns **Mua vào**, **Bán ra**, **Lãi DV** (sell − buy), **Nhà cung cấp** (dropdown, optional), **Hình thức chi** (COMPANY_DIRECT / FORWARDER_ADVANCE toggle), plus invoice no./date and declaration no. fields shown conditionally by fee type.
-- `TripDetailPage`: read-only grid with buy/sell/margin; add `totalServiceSell` to the revenue card.
-- **Giấy báo nợ (D4):** an accountant action that selects freight + ancillary *sell* lines for a customer and exports the company-form debit note. **Two modes, selected per customer** (add `debit_note_mode = 'MONTHLY' | 'PER_BATCH'` on the customer): **monthly** for customers doing only road + ancillary; **per-shipment (theo lô)** for customers doing road + sea + ancillary. The note is **itemized** — freight and each ancillary fee on its own line, never consolidated. This is the primary sell-side deliverable of Req 1 — build the selection + export for both modes.
-
----
-
-## 4. Requirement 2 — Điều động xe ngoài (revised)
-
-### Business logic
-A trip is fulfilled by **xe nhà** (own truck) or **xe ngoài** (external partner). Customer pays the normal incl-VAT freight either way; for xe ngoài, NePO pays the partner the external freight and keeps the management margin.
-
-**Correction (D1):** the procedure §1 ties VAT handling to this step. For **xe nhà**, capture/derive the *internal accounting rate ex-VAT* (= sell ÷ 1.0x) — that's the revenue for the vehicle P&L. For **xe ngoài**, the external freight is entered *incl VAT* and becomes the partner AP.
-
-### DB changes
-```sql
-ALTER TABLE trips
-  ADD COLUMN carrier_type          VARCHAR(20) NOT NULL DEFAULT 'OWN',  -- 'OWN' | 'EXTERNAL'
-  ADD COLUMN external_carrier_id   INTEGER REFERENCES suppliers(id),    -- nullable
-  ADD COLUMN external_freight_cost NUMERIC(15,0),                       -- giá cước thuê ngoài, INCL VAT
-  ADD COLUMN external_plate_number VARCHAR(20),    -- biển số xe ngoài (needed to issue freight invoice)
-  ADD COLUMN external_driver_name  VARCHAR(100),   -- tên lái xe (given to customer)
-  ADD COLUMN external_driver_phone VARCHAR(20);    -- SĐT lái xe (given to customer)
--- vat_rate already added in §2.1 — used to derive ex-VAT revenue for OWN trips.
-```
-Constraints: `OWN` → `truck_id` + `driver_id` required (existing). `EXTERNAL` → `external_carrier_id` + `external_freight_cost` + `external_plate_number` required; `external_driver_name` / `external_driver_phone` strongly recommended (given to customer); `truck_id`/`driver_id` nullable. Migration defaults existing rows to `OWN`.
-
-`txn_type` enum: add `EXTERNAL_CARRIER_COST` (or reuse `VENDOR_EXPENSE`).
-
-### Backend
-- `Trip` type + Zod schema: add `carrierType`, `externalCarrierId`, `externalFreightCost`; conditional validation as above.
-- `lockTrip()` (EXTERNAL): post `VENDOR_EXPENSE` against `externalCarrierId` for `externalFreightCost` (AP); `externalMargin = freightExVat − externalFreightCostExVat` flows to P&L as management-fee income. *(Note: if you compare incl-VAT customer freight to incl-VAT external cost the margin is overstated by the VAT delta — compare like-for-like. Decide the convention in §8 Q-B.)*
-- `computeTripTotals()` (EXTERNAL): `totalCost` = `externalFreightCost` only (no fuel/allowance/driver salary); add `externalMargin`.
-
-### Frontend
-- Trip form: **carrier-type toggle** (Xe nhà | Xe ngoài). Xe nhà → existing Truck/Driver dropdowns. Xe ngoài → hide them; show **Đối tác vận chuyển** (supplier dropdown, ideally filtered to `category='CARRIER'`) + **Giá cước mua vào (gồm VAT)** + **Biển số xe** + **Tên lái xe** + **SĐT lái xe** (plate/driver captured for invoicing & to pass to customer) + read-only **Lãi điều xe ngoài** preview.
-- `TripDetailPage`: "Xe ngoài" section (partner, plate, driver name/phone, external cost, management margin) when `carrierType='EXTERNAL'`.
-- Dispatch board: badge/icon to distinguish xe ngoài.
-- External-carrier AP appears on the Công nợ phải trả page automatically via the ledger.
-
----
-
-## 5. Requirement 3 — Đối trừ công nợ (revised)
-
-### Business logic
-Entity X can be both a `customer` (AR) and a `supplier/carrier` (AP) because partners ship for each other. **Đối trừ** records a mutual offset that reduces both AR and AP with no cash movement; net = AR − AP after offset. The procedure §5 calls the output a **bảng đối chiếu công nợ**.
-
-**Customer rules (NePoQA):** offset is **monthly**, prepared by the accountant, **approved by manager before issuing**, and **always done in full, once** — the entire smaller of the two balances is cleared in a single entry. **There is no partial offset and no free-entry amount**: the offset amount is fixed at `min(arBalance, apBalance)`. How the two parties settle the remaining cash is out of scope.
-
-### DB changes
-```sql
-ALTER TABLE suppliers ADD COLUMN linked_customer_id INTEGER REFERENCES customers(id);
-ALTER TABLE customers ADD COLUMN linked_supplier_id INTEGER REFERENCES suppliers(id);
-
-CREATE TABLE debt_offsets (
-  id          SERIAL PRIMARY KEY,
-  customer_id INTEGER NOT NULL REFERENCES customers(id),
-  supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
-  amount      NUMERIC(15,0) NOT NULL,
-  offset_date DATE NOT NULL,
-  note        TEXT,
-  approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- D6: reuse §2.3 states
-  created_by  INTEGER REFERENCES users(id),
-  approved_by INTEGER REFERENCES users(id),
-  created_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
-CREATE INDEX debt_offsets_customer_idx ON debt_offsets(customer_id);
-CREATE INDEX debt_offsets_supplier_idx ON debt_offsets(supplier_id);
-```
-Ledger on **approval** (not creation, per D6): `ADJUSTMENT` debit on customer ledger (reduces AR), `ADJUSTMENT` credit on supplier ledger (reduces AP).
-
-### Backend
-- `GET /finance/dual-entities` → customers with `linked_supplier_id` (and vice-versa) with `arBalance`, `apBalance`, `netBalance`.
-- `POST /finance/debt-offsets` → amount is **server-computed** as `min(arBalance, apBalance)` (client does not send a free amount); insert row (`PENDING`); ledger posts only on approval. One offset per customer–supplier pair per month.
-- `POST /finance/debt-offsets/:id/approve` → posts the two ledger entries (manager/director).
-- `GET /finance/debt-offsets?customerId&supplierId` → history.
-- `customers/:id/ledger` → include `offsetAmount` so AR aging reflects net.
-
-### Frontend
-- Supplier management: "Liên kết khách hàng" dropdown → `linked_customer_id`.
-- `DebtListPage`: "Đối tác 2 chiều" badge + "Net công nợ" column for dual-role entities; link to offset modal.
-- `DebtDetailPage`: when linked, show a "Công nợ phải trả" card for the linked supplier + "Đối trừ" button.
-- **Offset modal:** shows phải thu / phải trả / **the computed full-offset amount** = `min(AR, AP)` (read-only, not an editable input); inputs date + note only; submits `PENDING`; on success refreshes both balances and shows pending-approval state.
-- **Bảng đối chiếu công nợ:** a reconciliation view/export per pair (or per period) listing AR, AP, offsets, and net — this is the §5 deliverable.
-
----
-
-## 6. How it rolls up — per-vehicle P&L (Báo cáo DT/CP xe)
-
-The sketch's endpoint and procedure §5 both demand revenue/cost **per vehicle, per period**. Ensure both new margins feed it:
-
-- Revenue (per vehicle): `freightExVat` (own trips) **+** `serviceMargin` (Req 1) **+** `externalMargin` (Req 2, management fee).
-- Cost (per vehicle): fuel + toll + road allowance + combined salary + repairs/parts + `totalServiceBuy` (when company-direct) — and for external trips, the external freight in place of own-truck costs.
-- Add report lines: **"Lãi dịch vụ đi kèm"** and **"Doanh thu điều xe ngoài (lãi quản lý)"** so the P&L explains the new numbers.
-- Group by `truck_id`; for xe ngoài, group under the external partner (or a dedicated "Xe ngoài" bucket) since there's no own `truck_id`.
-
----
-
-## 7. Implementation order (revised)
-
-| Phase | Work | Notes |
-|-------|------|-------|
-| **P0** | §2 prerequisites: VAT model, container index, approval-status mechanism | Unblocks correct numbers everywhere; cheap, do first |
-| **P1** | DB migrations for all three features (incl. D2/D3 columns) | Schema-first; parallelizes backend/frontend |
-| **P2a** | Req 1 backend: buy/sell + invoice metadata + **settlement-method branch** in `lockTrip` | Highest daily impact; depends on §8 Q-A |
-| **P2b** | Req 2 backend: external carrier + VAT-aware margin | Needed before next external dispatch |
-| **P2c** | Req 3 backend: dual-entities, offsets, **approve endpoint** | Less urgent |
-| **P3a** | Req 1 frontend: expenses grid (metadata + settlement toggle) | Paired with P2a |
-| **P3b** | Req 2 frontend: carrier toggle | Paired with P2b |
-| **P3c** | Req 3 frontend: offset modal + dual badges + đối chiếu view | Paired with P2c |
-| **P4** | **Giấy báo nợ** export (freight + ancillary sell) | D4 — the sell-side deliverable |
-| **P5** | Per-vehicle P&L lines (service margin, external margin) | §6 — ties it together |
-| **P6** | Integration tests + migration rollback plan | Before production |
-
-(Advance/hoàn-ứng tracking from §2 of the procedure is its own subsystem; Req 1's buy side *interfaces* with it via `FORWARDER_ADVANCE`. **NePoQA confirms forwarder advances are real and used for most ancillary fees**, so this posting path is required — if the advance subsystem doesn't exist yet, P2a needs at minimum a forwarder-advance account to post against.)
-
----
-
-## 8. Decisions — RESOLVED by customer (NePoQA, 02/06/2026)
-
-All open questions are now answered. Decisions and their implementation impact:
-
-**Req 1 — Ancillary services**
-- **Settlement path** → *Mostly* `FORWARDER_ADVANCE` (forwarder pays from advance, reconciles later). Exception → `COMPANY_DIRECT` when the fee is **paid to the shipping line with an invoice issued to NePO** *or* **the amount is over 5,000,000 VND** (paid by NePO bank transfer). **Implementation:** keep both settlement methods; default to `FORWARDER_ADVANCE`; the >5M / shipping-line-invoice cases switch to `COMPANY_DIRECT`. This is a *suggestion/default*, not a hard rule — the user can override per fee.
-- **Sell price** → Based on NePO's quote: some fees rebilled at cost, some with markup. **The accountant must be able to type/edit the sell price**, pre-filled from buy cost but freely editable. (Confirms the editable "Bán ra" column — it is not auto-computed.)
-- **Markup rules (which fees keep cost vs add margin):**
-  | Fee | Sell rule |
-  |-----|-----------|
-  | Phí kết cấu hạ tầng | **At cost** (no markup) |
-  | Phí nâng/hạ container | **At cost** |
-  | Phí kiểm hóa tại cảng | **At cost** |
-  | Phí cân hàng | **At cost** |
-  | Phí thủ tục hải quan | **Markup** (management fee / tax added) |
-  | Phí phục vụ kiểm hóa | **Markup** |
-  This is guidance for a *default/prefill*, not a lock — the user can still edit. Consider a per-fee-type `default_markup` flag in `forwarder_expense_types` to drive the prefill (cost vs editable-with-margin), but always allow override.
-- **Internal-only fees** → Yes, some fees are real costs to the forwarder that are **not billed to the customer, or billed under a different line item.** **Implementation:** sell price may be 0 (internal cost only), and the fee's billed *category/label* on the giấy báo nợ can differ from its internal type. Add an optional "billing label / không xuất cho khách" treatment on the sell side.
-- **VAT on ancillary sell** → Yes — **all fees bear VAT 8%** (current rate; may rise to 10% later). VAT must be a configurable rate, not hard-coded.
-
-**Req 2 — External carrier**
-- **External driver/vehicle info** → *Resolved (richer than assumed):* NePO **does** need, for xe ngoài: **vehicle plate number** (for issuing the freight invoice), **driver name**, and **driver phone** (to give to the customer). **Implementation:** add `external_plate_number`, `external_driver_name`, `external_driver_phone` to the trip when `carrier_type='EXTERNAL'`. *(This supersedes the earlier "partner company only" assumption.)*
-- **Management fee** → Natural margin only (sell − buy); **varies per trip**, no fixed %, no formula, differs by customer/partner. **Implementation:** do **not** build a configurable %; just compute the difference. (Closes carried Q2.)
-- **Margin VAT convention** → **Compute the margin ex-VAT** ("quy về mức chưa gồm thuế VAT"). **Implementation:** `externalMargin = (customerFreight / (1+vat)) − (externalFreightCost / (1+vat))`. Resolves Q-B in favour of the ex-VAT approach already noted in §4.
-
-**Req 3 — Debt netting**
-- **Cadence & owner** → Monthly, performed by NePO accountant.
-- **Approval** → Accountant prepares; **manager reviews and approves before issuing.** Confirms the `PENDING → APPROVED` flow in §5 (closes Q4 = yes).
-- **Partial netting** → **No.** The offset is done **in full, once per month** — the entire smaller balance is cleared in a single entry; how the two parties then settle cash is out of scope. **Implementation:** *simplifies* §5 — the offset amount is fixed at `min(arBalance, apBalance)`, **not** a free-entry amount. Drop the editable-amount input; show the computed full-offset amount. (Reverses the earlier "assumed partial allowed" — Q5 resolved as full-only.)
-
-**VAT (general)**
-- Current rate **8%**, may become **10%** by tax-authority change. **Implementation:** store as a configurable rate (a system/company default that can change over time), applied per trip. Confirms §2.1.
-
-**Giấy báo nợ (debit note)**
-- **Granularity** → Depends on the customer: **monthly** for customers doing only road transport + ancillary services; **per-shipment (theo lô)** for customers doing road + sea + ancillary. **Implementation:** the debit-note generator must support **both modes**, selectable per customer (add a `debit_note_mode` = `MONTHLY | PER_BATCH` on the customer).
-- **Line detail** → **Itemized** — each service on its own line, not consolidated. **Implementation:** debit note renders freight + each ancillary fee as separate lines.
-
-> **Net effect on the plan:** Req 1 and Req 2 gain a few fields (external plate/driver/phone; per-fee markup default; billing label); the VAT-ex-VAT margin and editable sell price were already in the design. Req 3 gets **simpler** (full-offset only, fixed amount). The giấy báo nợ needs **two granularity modes**. Nothing is blocked anymore — the advance subsystem question (old Q-A) is also answered: forwarder advances are real and used for most fees, so the `FORWARDER_ADVANCE` posting path **must** exist (see §3 / §10).
-
----
-
-## 9. Affected files
-
-```
-DB migrations
-  backend/src/db/migrations/XXXX_vat_container_approval.sql            (P0)
-  backend/src/db/migrations/XXXX_service_costs_external_carrier_netting.sql  (P1)
-
-Schema
-  backend/src/db/schema.ts          (trips +vat_rate +carrier fields +external_plate/driver/phone; trip_expenses +buy/sell/supplier/settlement/invoice/declaration/container; forwarder_expense_types +default_markup +billing_label; customers +debit_note_mode +linked_supplier_id; suppliers +linked_customer_id; debt_offsets)
-
-Shared
-  shared/src/types/index.ts         (Trip, TripExpense, DebtOffset)
-  shared/src/schemas/index.ts       (trip create/update w/ conditional carrier + VAT; expense schema w/ metadata)
-  shared/src/calculations/tripTotals.ts   (freightExVat, serviceMargin, externalMargin)
-
-Backend
-  backend/src/services/trip.service.ts     (lockTrip branch by settlement_method & carrier_type, createExpense, updateExpense)
-  backend/src/routes/trips.ts              (expense endpoints + metadata)
-  backend/src/routes/financial.ts          (dual-entities, debt-offsets, offset approve, giấy báo nợ export)
-
-Frontend
-  frontend/src/pages/TripCreatePage.tsx
-  frontend/src/pages/TripEditPage.tsx
-  frontend/src/pages/TripDetailPage.tsx
-  frontend/src/pages/DebtListPage.tsx
-  frontend/src/pages/DebtDetailPage.tsx
-  frontend/src/pages/FinancePage.tsx               (per-vehicle P&L lines; bảng đối chiếu)
-  frontend/src/components/DebtOffsetModal.tsx       (new)
-  frontend/src/components/DebitNoteExport.tsx       (new — giấy báo nợ)
-  frontend/src/api/tripClient.ts                    (new API calls)
-```
+Implementation Plan — Service Costs, External Carrier & Debt Netting
+
+ ▎ Deliverable: this content will be written to docs/plans/service-cost-partner-vendor/pending-tasks.md after
+ ▎ approval, so independent agents can pick up each task without misaligning with the big picture.
+
+ Context
+
+ The Nepocorp TMS today only records core freight + own-truck (xe nhà) costs. Three capabilities are missing and cause
+ per-trip / per-vehicle P&L to be wrong and AR/AP to be overstated:
+
+ 1. Chi phí dịch vụ đi kèm (ancillary service costs) — port/depot fees with a buy (mua vào) and sell (bán ra) side;
+ service margin; goes on the giấy báo nợ.
+ 2. Điều động xe ngoài (external carrier dispatch) — a trip fulfilled by a hired partner; we owe them freight, keep
+ the management margin.
+ 3. Đối trừ công nợ (debt netting) — dual-role partners that are both customer (AR) and party we owe (AP).
+
+ Exploration verdict: clean slate — none of the three features exist in code yet. The flow docs (PRODUCT-SPECS.md,
+ docs/flows/) were written ahead of implementation. What already exists and we build on: forwarder_expense_types
+ config table, suppliers/expense_categories, AP/payables (VENDOR_EXPENSE/VENDOR_PAYMENT), LedgerService
+ (postEntry/lockEntity/postTripLock with CUSTOMER/DRIVER/VENDOR/FORWARDER sign conventions), basic trip_expenses
+ (single amount), forwarder portal Phase 1, Drizzle Kit migrations (latest 0029_*).
+
+ Authoritative business source: docs/plans/service-cost-partner-vendor/BOI_CANH_va_MUC_TIEU_tinh_nang_NePO.md +
+ PLAN_service_costs_external_carrier_netting_REVISED.md.
+
+ Customer-confirmed decisions (Pete, 02/06/2026) — these override the REVISED plan where they differ
+
+ - D-A — Advance buy-side (long-term): Ancillary fees settled FORWARDER_ADVANCE post a FORWARDER_ADVANCE ledger entry
+ against the forwarder's advance balance at lock (entity_type='FORWARDER', which already exists). This is the
+ foundation the Phase-2/3 advance top-up + settlement subsystem layers onto. COMPANY_DIRECT fees post supplier AP
+ (VENDOR_EXPENSE). Sell side always increases the customer AR.
+ - D-B — Giấy báo nợ: Formal PDF company-form template (not just Excel). Blocker: needs the company's real giấy báo nợ
+ sample/form — flag for the user before building the PDF layout.
+ - D-C — Approval (long-term): Build a generic reusable approval mechanism (approval_status + an approvals audit
+ table). BOI_CANH §7: "mọi bút toán tài chính cần được duyệt". This batch applies it to debt offsets and
+ forwarder-entered ancillary-fee edits; phiếu thanh toán hooks in later.
+ - D-D — External carrier P&L line: New txn_type EXTERNAL_CARRIER_COST ("cước vận chuyển thuê ngoài") so reports
+ separate it from ordinary vendor expenses. Pete: a carrier only supplies freight, not parts/materials/fuel — it
+ deserves its own line.
+ - D-E — Carrier master lives in Customers, NOT Suppliers: trips.external_carrier_id references customers(id).
+ Carriers are flagged customers (customers.is_carrier). Keep the Suppliers catalog free of carriers.
+ - D-F — Carrier payable on the customer ledger: What we owe a carrier posts as a CREDIT on that carrier's CUSTOMER
+ ledger (EXTERNAL_CARRIER_COST, entity_type='CUSTOMER', credit = external freight incl-VAT). Existing CUSTOMER sign
+ rule balance += debit − credit makes a negative balance = we owe them; netting is automatic via running balance.
+ Aging reports must treat negative customer balances as "we owe them," not overdue receivable.
+
+ ▎ Note the split: carrier-as-customer nets automatically on one ledger (D-F). The explicit debt_offsets mechanism
+ ▎ (Feature 3) is still needed for the other dual-role case — an NCC/supplier that is also a customer (e.g. a garage),
+ ▎ where AR sits on a CUSTOMER entity and AP on a separate VENDOR entity.
+
+ Cross-cutting model rules (apply in every task)
+
+ - VAT: trips.vat_rate (NUMERIC, default 0.000; prefilled from customer default). Entered customer freight is
+ incl-VAT; ex-VAT = freight / (1 + vat_rate). AR uses incl-VAT; P&L (DT xe) uses ex-VAT. Existing rows default
+ vat_rate=0 → behavior unchanged. Fee VAT is also configurable (8%, may rise to 10%).
+ - Ledger is append-only. All posting via LedgerService.postEntry inside db.transaction; corrections via compensating
+ ADJUSTMENT. Never UPDATE/DELETE ledger rows.
+ - camelCase API ↔ snake_case DB handled by Drizzle field defs; keep request/response bodies camelCase.
+ - Conventions: routes wrap handlers in asyncHandler, validate with Zod (shared/src/schemas), call services inside
+ db.transaction(async tx => …); mount with authMiddleware + casbinAuthz('<resource>'); add Casbin rules in
+ backend/src/casbin/policy.csv. Migrations: edit backend/src/db/schema.ts then npm run db:generate + npm run
+ db:migrate. Financial precision via round2dp() / computeTripTotals() in shared/src/calculations.
+
+ Dependency graph
+
+ Phase A (foundation, mostly sequential)
+   A1 schema+migration ─┬─> A2 shared types/schemas/enums ─┬─> A4 computeTripTotals calc+tests
+                        └─> A3 generic approval mechanism  │
+ Phase B (backend services; parallel after A)
+   B1 ancillary fee service + config(default_markup/billing_label/seed)
+   B2 lockTrip branching (settlement + external carrier posting)   [needs A4,B1]
+   B3 debt-offset endpoints + approval wiring                       [needs A3]
+   B4 per-vehicle P&L (serviceMargin/externalMargin/carrier bucket) [needs A4]
+ Phase C (frontend; parallel after the B endpoint contracts exist)
+   C1 trip form: carrier toggle + external fields + VAT + ancillary grid; TripDetail display
+   C2 forwarder portal expense form upgrade (buy/sell/settlement/invoice/declaration)
+   C3 customers (is_carrier, debit_note_mode, linked_supplier_id) + suppliers (linked_customer_id)
+   C4 debt-netting UI (dual badge, DebtOffsetModal, bảng đối chiếu)
+   C5 FinancePage P&L lines
+ Phase D
+   D1 giấy báo nợ PDF (company form)  [needs company sample form]
+   D2 integration + unit tests
+
+ ---
+ Phase A — Foundation
+
+ A1 — DB schema + migration
+
+ Goal: add every column/table the three features need in one schema pass.
+ Files: backend/src/db/schema.ts; generate migration in backend/drizzle/ (npm run db:generate → review → npm run
+ db:migrate).
+ Changes:
+ - trips: vat_rate NUMERIC(5,3) NOT NULL DEFAULT 0.000; carrier_type VARCHAR(20) NOT NULL DEFAULT 'OWN'
+ ('OWN'|'EXTERNAL'); external_carrier_id INTEGER REFERENCES customers(id) (nullable — customers, per D-E);
+ external_freight_cost NUMERIC(15,0) (incl-VAT); external_plate_number VARCHAR(20); external_driver_name VARCHAR(100);
+ external_driver_phone VARCHAR(20).
+ - trip_expenses: migrate amount → buy_amount NUMERIC(15,0); add sell_amount NUMERIC(15,0) DEFAULT 0; supplier_id
+ INTEGER REFERENCES suppliers(id) (nullable); settlement_method VARCHAR(20) NOT NULL DEFAULT 'FORWARDER_ADVANCE'
+ ('COMPANY_DIRECT'|'FORWARDER_ADVANCE'); invoice_number VARCHAR(50); invoice_date DATE; declaration_number
+ VARCHAR(50); container_number VARCHAR(20); approval_status VARCHAR(20) NOT NULL DEFAULT 'APPROVED' (see A3). Keep
+ expense_type FK to forwarder_expense_types.code.
+ - forwarder_expense_types: add default_markup BOOLEAN DEFAULT false; billing_label VARCHAR(120) (label shown on giấy
+ báo nợ, may differ from internal name); vat_rate NUMERIC(5,3) DEFAULT 0.080.
+ - customers: is_carrier BOOLEAN NOT NULL DEFAULT false; debit_note_mode VARCHAR(20) NOT NULL DEFAULT 'MONTHLY'
+ ('MONTHLY'|'PER_BATCH'); linked_supplier_id INTEGER REFERENCES suppliers(id) (nullable).
+ - suppliers: linked_customer_id INTEGER REFERENCES customers(id) (nullable).
+ - debt_offsets table: id, customer_id FK, supplier_id FK, amount NUMERIC(15,0), offset_date DATE, note TEXT,
+ approval_status VARCHAR(20) DEFAULT 'PENDING', created_by, approved_by, created_at. Indexes on customer_id,
+ supplier_id.
+ - txn_type enum: add EXTERNAL_CARRIER_COST (Drizzle: ALTER TYPE "txn_type" ADD VALUE … like migration 0001).
+ - Index: CREATE INDEX trips_container_idx ON trip_expenses(container_number); (container-centric retrieval, REVISED
+ §2.2).
+ Migration care: amount → buy_amount rename + backfill sell_amount=0, settlement_method='FORWARDER_ADVANCE', backfill
+ container_number from trip where possible. Existing trips default carrier_type='OWN', vat_rate=0.
+ Acceptance: npm run db:migrate clean; npm run db:studio shows all columns; existing seed still loads.
+
+ A2 — Shared types, Zod schemas, enums
+
+ Goal: mirror A1 in the shared package so backend + frontend share one contract.
+ Files: shared/src/types/index.ts (Trip ~160-212, TripExpense ~445-453, PnlTruck ~628-636),
+ shared/src/schemas/index.ts (tripExpenseSchema ~388-393, updateTripFiguresSchema ~70-102), shared constants (txn
+ types, route consts).
+ Changes:
+ - Trip: add vatRate, carrierType, externalCarrierId, externalFreightCost, externalPlateNumber, externalDriverName,
+ externalDriverPhone.
+ - TripExpense: add buyAmount, sellAmount, supplierId, settlementMethod, invoiceNumber, invoiceDate,
+ declarationNumber, containerNumber, approvalStatus. Keep expenseType.
+ - New DebtOffset type; ApprovalStatus union; SettlementMethod union; CarrierType union.
+ - Expand ancillary fee enum to the 8 codes (LIFTING, LOWERING, WEIGHING, CUSTOMS, INFRASTRUCTURE, INSPECTION,
+ INSPECTION_SVC, OTHER) — matches docs/flows/13 §1.3.
+ - tripExpenseSchema: tripId, expenseType (8-enum), buyAmount>0, sellAmount>=0 optional, settlementMethod enum,
+ supplierId?, invoiceNumber?, invoiceDate?, declarationNumber?, containerNumber?, note?. Conditional: CUSTOMS requires
+ declarationNumber; invoice-bearing types require invoiceNumber+invoiceDate before lock.
+ - Trip create/update schema: add vatRate, carrierType, and conditional external-carrier fields (EXTERNAL ⇒
+ externalCarrierId+externalFreightCost+externalPlateNumber required, truckId/driverId optional; OWN ⇒ existing rules).
+ - New debtOffsetSchema (customerId, supplierId, offsetDate, note — no client amount, server computes).
+ - Add EXTERNAL_CARRIER_COST to txn-type constant/enum.
+ Acceptance: tsc builds shared, backend, frontend with no any.
+
+ A3 — Generic approval mechanism (D-C)
+
+ Goal: one reusable PENDING→APPROVED→REJECTED pattern for financial records.
+ Files: backend/src/db/schema.ts (covered by A1 for the approval_status columns; add an approvals audit table here if
+ not already), new backend/src/services/approval.service.ts, backend/src/casbin/policy.csv.
+ Changes:
+ - approval_status enum/string (DRAFT|PENDING|APPROVED|REJECTED) reused on debt_offsets and trip_expenses. Default for
+ normal records = APPROVED (no behavior change); records that require review default PENDING.
+ - approvals audit table: id, entity_table, entity_id, from_status, to_status, actor_id, note, created_at (append-only
+ trail).
+ - ApprovalService.transition(tx, {table, id, toStatus, actorId, note}) — validates allowed transitions, writes the
+ audit row, flips the record's approval_status. Manager/director only for APPROVED.
+ - Casbin: ensure financial:write covers approval endpoints; approvals restricted to MANAGER/ADMIN (and ACCOUNTANT may
+ create/prepare but not approve).
+ Apply this batch to: debt offsets (B3) and forwarder-entered ancillary-fee sell-side edits (B1/C2) —
+ accountant/forwarder edits land PENDING, manager approves. Phiếu thanh toán wires in later (out of scope).
+ Acceptance: unit test of transition rules; non-financial records keep APPROVED default and behave unchanged.
+
+ A4 — computeTripTotals extension + unit tests
+
+ Goal: one source of truth for VAT-aware revenue, service margin, external margin.
+ Files: shared/src/calculations/tripTotals.ts (current fn 58-125), shared/src/calculations/tripTotals.test.ts
+ (node:test).
+ Changes:
+ - Inputs: add vatRate, carrierType, externalFreightCost, and an ancillaryFees: {buyAmount, sellAmount, vatRate}[] (or
+ pre-summed totalServiceBuy/Sell).
+ - freightExVat = round0(revenue / (1 + vatRate)). OWN: grossProfit = freightExVat − totalCost(own) + serviceMargin.
+ EXTERNAL: externalFreightExVat = externalFreightCost/(1+vatRate); externalMargin = freightExVat −
+ externalFreightExVat; totalCost = externalFreightCost (no fuel/allowance/salary); grossProfit = externalMargin +
+ serviceMargin.
+ - serviceMargin = Σ(sellExVat − buyExVat) across fees (ex-VAT, per-fee vat rate); also expose totalServiceBuy,
+ totalServiceSell.
+ - Backward-compat: vatRate=0 ⇒ ex-VAT = incl; carrierType absent ⇒ OWN; no fees ⇒ margins 0. Existing tests must
+ still pass.
+ Acceptance: new tests cover OWN+VAT, EXTERNAL margin ex-VAT, service margin, and the existing AUTO/FLAT_RATE/mountain
+ cases unchanged.
+
+ ---
+ Phase B — Backend services
+
+ B1 — Ancillary fee service + fee-type config/seed
+
+ Goal: CRUD ancillary fees with buy/sell + metadata + markup prefill; seed the 8 fee types.
+ Files: backend/src/services/trip.service.ts (or a tripExpense.service.ts), backend/src/routes/trips.ts +
+ backend/src/routes/forwarder.ts (expense create ~65-76), backend/src/seed.ts, follow backend/src/routes/expense.ts
+ CRUD+asyncHandler+transaction pattern.
+ Changes:
+ - create/update accept buyAmount, sellAmount, supplierId, settlementMethod, invoiceNumber, invoiceDate,
+ declarationNumber, containerNumber. Validate per A2 (customs⇒declaration; invoice types⇒invoice no/date before lock).
+ - Sell-price prefill from forwarder_expense_types.default_markup (true ⇒ editable-with-margin; false ⇒ at-cost) —
+ prefill only, always editable.
+ - Forwarder/accountant edits to sell-side land approval_status='PENDING' (A3); manager approves before the fee can
+ appear on a giấy báo nợ.
+ - Seed forwarder_expense_types with the 8 codes + Vietnamese names + default_markup (CUSTOMS, INSPECTION_SVC = true;
+ rest false) + billing_label + vat_rate=0.080, per PRODUCT-SPECS §4.6.1.
+ Acceptance: create fee with buy/sell persists margin; customs without declaration → 400; seed idempotent.
+
+ B2 — lockTrip settlement + external-carrier posting
+
+ Goal: post the right ledger entries at lock for fees and external carrier.
+ Files: backend/src/services/trip.service.ts (lockTrip ~496-534), backend/src/services/ledger.service.ts (extend
+ postTripLock).
+ Changes (all inside the existing tx, reuse LedgerService.postEntry/lockEntities):
+ - Recompute trip totals via A4 before posting; store freightExVat-derived figures as needed.
+ - Customer revenue: unchanged TRIP_REVENUE debit on customer (incl-VAT).
+ - Ancillary fees — buy side branch (D-A): COMPANY_DIRECT+supplierId ⇒ VENDOR_EXPENSE credit on entity_type='VENDOR'
+ (AP). FORWARDER_ADVANCE ⇒ FORWARDER_ADVANCE debit on entity_type='FORWARDER' reducing advance balance; no supplier
+ AP. Only APPROVED fees post.
+ - Ancillary fees — sell side: increases customer AR (fold into trip revenue or a distinct line; itemized for giấy báo
+ nợ).
+ - External carrier (D-D/D-F): EXTERNAL_CARRIER_COST credit on entity_type='CUSTOMER', entityId=external_carrier_id,
+ amount = external freight incl-VAT. Negative balance = we owe them. Lock both the trip's customer and the
+ carrier-customer (sorted lockEntities). For EXTERNAL trips, do not post driver salary.
+ Acceptance: integration test — own trip with one COMPANY_DIRECT + one FORWARDER_ADVANCE fee posts VENDOR AP +
+ FORWARDER advance reduction + customer AR; external trip posts EXTERNAL_CARRIER_COST credit on the carrier-customer
+ and no driver salary.
+
+ B3 — Debt-offset endpoints + approval (Feature 3, supplier↔customer case)
+
+ Goal: dual-entity listing + full-offset create + approve, posting compensating ADJUSTMENTs.
+ Files: backend/src/routes/financial.ts, new backend/src/services/debtOffset.service.ts, uses A3 + LedgerService.
+ Endpoints (camelCase, asyncHandler, transaction):
+ - GET /api/finance/dual-entities — customers with linked_supplier_id (and vice-versa) + arBalance, apBalance,
+ netBalance (via LedgerService.getBalance).
+ - POST /api/finance/debt-offsets — body {customerId, supplierId, offsetDate, note}; server computes amount =
+ min(arBalance, apBalance) (client sends no amount, REVISED §5); insert PENDING; one per pair per month.
+ - POST /api/finance/debt-offsets/:id/approve — manager/director; via ApprovalService.transition; on approve post
+ ADJUSTMENT debit on customer (↓AR) + ADJUSTMENT credit on supplier (↓AP).
+ - GET /api/finance/debt-offsets?customerId&supplierId — history.
+ Note: this is for NCC-that-is-also-a-customer. Carrier-as-customer (D-F) needs no offset — it nets on one ledger
+ automatically.
+ Acceptance: offset amount fixed at min(AR,AP); ledger only moves on approve; AR/AP both drop by the offset.
+
+ B4 — Per-vehicle P&L: service + external margins
+
+ Goal: roll the two new margins into reporting.
+ Files: backend/src/services/reporting.service.ts (getPnlReport ~119-200), shared/src/types/index.ts (PnlTruck
+ ~628-636).
+ Changes:
+ - Per-vehicle revenue: freightExVat (own) + serviceMargin + externalMargin. Cost: existing own-truck costs +
+ totalServiceBuy (COMPANY_DIRECT) + maintenance; external trips contribute the external bucket instead of own-truck
+ costs.
+ - Add report lines "Lãi dịch vụ đi kèm" and "Doanh thu điều xe ngoài (lãi quản lý)"; group external trips under a
+ dedicated "Xe ngoài" bucket (no own truck_id) or under the carrier-customer name.
+ - Aging/AR: treat negative customer balance as "we owe them", exclude from overdue receivable buckets (D-F
+ consequence).
+ Acceptance: P&L for a month with own+external+fee trips shows both margin lines and the Xe ngoài bucket; a
+ carrier-customer with net-negative balance does not appear as overdue AR.
+
+ ---
+ Phase C — Frontend (TanStack Query; client pattern frontend/src/api/*, frontend/src/lib/api.ts; no useCRUD)
+
+ C1 — Trip form + detail: carrier toggle, VAT, ancillary grid
+
+ Files: frontend/src/hooks/useTripForm.ts, frontend/src/pages/TripCreatePage.tsx, TripEditPage.tsx,
+ TripDetailPage.tsx, frontend/src/api/tripClient.ts.
+ Changes:
+ - Carrier toggle Xe nhà | Xe ngoài. Xe nhà ⇒ existing Truck/Driver dropdowns. Xe ngoài ⇒ hide them; show Đối tác vận
+ chuyển (dropdown from customers where is_carrier=true, allow marking a customer as carrier inline) + Giá cước thuê
+ ngoài (gồm VAT) + Biển số xe + Tên lái xe + SĐT lái xe + read-only Lãi điều xe ngoài preview.
+ - VAT rate field (default from customer; 8%/10%).
+ - Ancillary fee grid (Chi phí DV đi kèm): rows with Loại phí (8), Mua vào, Bán ra (prefill by markup), Lãi DV, NCC
+ (optional), Hình thức chi (COMPANY_DIRECT/FORWARDER_ADVANCE), invoice no/date, tờ khai — conditional by fee type. Số
+ container per row.
+ - TripDetail: "Xe ngoài" section (partner, plate, driver, external cost, management margin) when EXTERNAL; service
+ buy/sell/margin grid; add totalServiceSell to revenue card. Respect DRIVER/FORWARDER financial-field exclusion.
+ Acceptance: create both OWN and EXTERNAL trips; ancillary rows persist; margins preview correctly.
+
+ C2 — Forwarder portal expense form upgrade
+
+ Files: frontend/src/pages/ForwarderTripDetailPage.tsx (expense form ~40-114), forwarder expense hooks.
+ Changes: replace single amount with Giá mua vào / Giá bán ra (auto-prefill) / NCC / Hình thức chi / Số hóa đơn / Ngày
+ hóa đơn / Số tờ khai. Forwarder edits land PENDING (A3). Keep ownership-based delete. Already partly documented in
+ docs/flows/13 §2.2/§2.4 — align UI to it.
+ Acceptance: forwarder creates a fee with buy/sell + metadata; sell edit shows pending-approval state.
+
+ C3 — Customer & supplier linking fields
+
+ Files: frontend/src/pages/CustomersPage.tsx, frontend/src/pages/SupplierListPage.tsx.
+ Changes: Customers form — is_carrier (Đối tác vận tải), debit_note_mode (Tháng/Lô), linked_supplier_id (Liên kết
+ NCC). Suppliers form — linked_customer_id (Liên kết khách hàng). Matches docs/flows/08 §2.2 / docs/flows/12 §2.1.
+ Acceptance: fields save and round-trip; carrier customers appear in the trip-form carrier dropdown.
+
+ C4 — Debt-netting UI
+
+ Files: frontend/src/pages/DebtListPage.tsx, DebtDetailPage.tsx, new frontend/src/components/DebtOffsetModal.tsx,
+ finance client.
+ Changes: DebtList — "Đối tác 2 chiều" badge + "Net công nợ" column for linked entities. DebtDetail — when linked,
+ show a "Công nợ phải trả" card + "Đối trừ" button. DebtOffsetModal — shows phải thu / phải trả / computed full-offset
+ = min(AR,AP) (read-only, not editable), inputs date+note, submits PENDING, then pending-approval state. Bảng đối
+ chiếu công nợ view/export per pair/period (AR, AP, offsets, net). Matches docs/flows/04 §2.3.
+ Acceptance: offset modal shows fixed amount; after manager approve both balances drop.
+
+ C5 — FinancePage P&L lines
+
+ Files: frontend/src/pages/FinancePage.tsx (per-truck ~556-589, maintenanceByComponent).
+ Changes: add income-statement rows "Lãi dịch vụ đi kèm" and "Doanh thu điều xe ngoài (lãi quản lý)"; show the Xe
+ ngoài bucket in per-vehicle breakdown. Matches docs/flows/03 §2.2.
+ Acceptance: lines render from B4 data; totals reconcile with per-vehicle sum.
+
+ ---
+ Phase D — Document & tests
+
+ D1 — Giấy báo nợ PDF (company form) — needs company sample
+
+ Files: new backend/src/services/debitNote.service.ts + route in financial.ts; new
+ frontend/src/components/DebitNoteExport.tsx; reuse existing export infra on DebtDetailPage.
+ Changes: data endpoint selects freight + itemized ancillary sell lines (each fee its own line, never consolidated)
+ for a customer, by MONTHLY or PER_BATCH per customers.debit_note_mode. Render a formal PDF matching the company's
+ paper form (D-B). Only APPROVED fee lines are eligible.
+ Blocker: obtain the real giấy báo nợ form/sample from the customer before finalizing layout. Until then, build
+ endpoint + itemized data + a faithful draft template.
+ Acceptance: both modes export; lines itemized; numbers match the ledger/AR.
+
+ D2 — Tests
+
+ Files: backend/src/tests/comprehensive.test.ts (node:test pattern), shared/src/calculations/*.test.ts.
+ Coverage: A4 calc cases (done in A4); lock-posting for fees (both settlement paths) + external carrier
+ credit-on-customer; debt-offset full-offset + approval ledger; P&L margins; negative-customer-balance aging. Use
+ existing dev DB + seed + JWT helper.
+ Acceptance: npm test green.
+
+ ---
+ Verification (end-to-end)
+
+ 1. npm run db:migrate (backend) → schema present; npm run seed idempotent.
+ 2. Backend npm test green (D2). Shared tsc/tests green (A4).
+ 3. Manual via running app (frontend 5173 / backend 3090):
+   - Create an EXTERNAL trip picking a carrier from Customers; lock it → that carrier-customer's ledger shows a CREDIT
+ (negative balance = we owe them); P&L shows "Doanh thu điều xe ngoài".
+   - Add ancillary fees (one COMPANY_DIRECT, one FORWARDER_ADVANCE) as forwarder → PENDING; manager approves; lock →
+ supplier AP + forwarder advance reduction + customer AR; fee lines itemized on giấy báo nợ.
+   - For an NCC-that-is-also-a-customer, run a monthly đối trừ → amount fixed at min(AR,AP), approve → both balances
+ drop.
+ 4. Confirm DRIVER/FORWARDER still cannot see financial fields (Casbin + API field exclusion).
+
+ Open dependency to surface to the user
+
+ - D1 blocker: need the company's real giấy báo nợ sample/form before building the final PDF layout.

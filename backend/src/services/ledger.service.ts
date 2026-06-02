@@ -268,4 +268,17 @@ export class LedgerService {
       .limit(1);
     return last ? Number(last.balance) : 0;
   }
+
+  /**
+   * Transaction-scoped balance read — use inside a db.transaction() callback
+   * to see uncommitted entries from the current transaction.
+   */
+  static async getBalanceTx(tx: any, entityType: string, entityId: number): Promise<number> {
+    const [last] = await tx.select({ balance: s.ledger.balance })
+      .from(s.ledger)
+      .where(and(eq(s.ledger.entityType, entityType), eq(s.ledger.entityId, entityId)))
+      .orderBy(desc(s.ledger.id))
+      .limit(1);
+    return last ? Number(last.balance) : 0;
+  }
 }

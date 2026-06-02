@@ -50,30 +50,38 @@ export async function createDebtOffset(input: {
   note?: string;
   createdBy: number;
 }) {
-  const arBalance = await LedgerService.getBalance('CUSTOMER', input.customerId);
-  const apBalance = await LedgerService.getBalance('VENDOR', input.supplierId);
-  const amount = Math.min(arBalance, apBalance);
+  return db.transaction(async (tx) => {
+    // Lock both entities to prevent TOCTOU race
+    await LedgerService.lockEntities(tx, [
+      { entityType: 'CUSTOMER', entityId: input.customerId },
+      { entityType: 'VENDOR',   entityId: input.supplierId },
+    ]);
 
-  if (amount <= 0) {
-    throw Object.assign(
-      new Error('Không có số dư để đối trừ (số tiền đối trừ phải > 0)'),
-      { status: 400 },
-    );
-  }
+    const arBalance = await LedgerService.getBalanceTx(tx, 'CUSTOMER', input.customerId);
+    const apBalance = await LedgerService.getBalanceTx(tx, 'VENDOR', input.supplierId);
+    const amount = Math.min(arBalance, apBalance);
 
-  const [row] = await db
-    .insert(s.debtOffsets)
-    .values({
-      customerId: input.customerId,
-      supplierId: input.supplierId,
-      amount: String(amount),
-      offsetDate: input.offsetDate,
-      note: input.note ?? null,
-      approvalStatus: 'PENDING',
-      createdBy: input.createdBy,
-    })
-    .returning();
-  return row;
+    if (amount <= 0) {
+      throw Object.assign(
+        new Error('Không có số dư để đối trừ (số tiền đối trừ phải > 0)'),
+        { status: 400 },
+      );
+    }
+
+    const [row] = await tx
+      .insert(s.debtOffsets)
+      .values({
+        customerId: input.customerId,
+        supplierId: input.supplierId,
+        amount: String(amount),
+        offsetDate: input.offsetDate,
+        note: input.note ?? null,
+        approvalStatus: 'PENDING',
+        createdBy: input.createdBy,
+      })
+      .returning();
+    return row;
+  });
 }
 
 /**
@@ -113,6 +121,16 @@ export async function approveDebtOffset(
       { entityType: 'CUSTOMER', entityId: offset.customerId },
       { entityType: 'VENDOR',   entityId: offset.supplierId },
     ]);
+
+    // Re-validate amount against current balances (may have changed since creation)
+    const currentAr = await LedgerService.getBalanceTx(tx, 'CUSTOMER', offset.customerId);
+    const currentAp = await LedgerService.getBalanceTx(tx, 'VENDOR', offset.supplierId);
+    if (amount > currentAr || amount > currentAp) {
+      throw Object.assign(
+        new Error(`Số dư hiện tại không đủ để đối trừ ${amount} (AR=${currentAr}, AP=${currentAp})`),
+        { status: 400 },
+      );
+    }
 
     // CREDIT on customer: reduces AR (CUSTOMER balance += debit − credit)
     await LedgerService.postEntry(tx, {

@@ -296,7 +296,13 @@ router.get('/finance/dual-entities', asyncHandler(async (_req: Request, res: Res
 
 router.get('/finance/debt-offsets', asyncHandler(async (req: Request, res: Response) => {
   const customerId = req.query.customerId ? Number(req.query.customerId) : undefined;
+  if (customerId !== undefined && Number.isNaN(customerId)) {
+    return res.status(400).json({ error: 'customerId không hợp lệ' });
+  }
   const supplierId = req.query.supplierId ? Number(req.query.supplierId) : undefined;
+  if (supplierId !== undefined && Number.isNaN(supplierId)) {
+    return res.status(400).json({ error: 'supplierId không hợp lệ' });
+  }
   res.json(await listDebtOffsets({ customerId, supplierId }));
 }));
 

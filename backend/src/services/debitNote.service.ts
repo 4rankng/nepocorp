@@ -47,14 +47,20 @@ export async function getDebitNoteData(
     isNull(s.trips.deletedAt),
   ];
 
-  if (opts.mode === 'MONTHLY' && opts.month && opts.year) {
+  if (opts.mode === 'MONTHLY') {
+    if (!opts.month || !opts.year) {
+      throw Object.assign(new Error('MONTHLY mode requires month and year'), { status: 400 });
+    }
     const monthStr = String(opts.month).padStart(2, '0');
     const from = `${opts.year}-${monthStr}-01`;
     const lastDay = new Date(opts.year, opts.month, 0).getDate();
     const to = `${opts.year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
     tripConditions.push(gte(s.trips.departureDate, from) as any);
     tripConditions.push(lte(s.trips.departureDate, to) as any);
-  } else if (opts.mode === 'PER_BATCH' && opts.tripIds?.length) {
+  } else if (opts.mode === 'PER_BATCH') {
+    if (!opts.tripIds?.length) {
+      throw Object.assign(new Error('PER_BATCH mode requires at least one trip ID'), { status: 400 });
+    }
     tripConditions.push(inArray(s.trips.id, opts.tripIds) as any);
   }
 

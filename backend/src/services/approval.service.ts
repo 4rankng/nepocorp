@@ -24,8 +24,8 @@ export async function transitionApproval(
     actorRole: string;
   },
 ): Promise<void> {
-  if (opts.toStatus === 'APPROVED' && !['ADMIN', 'MANAGER'].includes(opts.actorRole)) {
-    throw Object.assign(new Error('Chỉ quản lý mới có thể phê duyệt'), { status: 403 });
+  if (!['ADMIN', 'MANAGER'].includes(opts.actorRole)) {
+    throw Object.assign(new Error('Chỉ quản lý mới có thể phê duyệt hoặc từ chối'), { status: 403 });
   }
 
   const table = APPROVABLE_TABLES[opts.table];
