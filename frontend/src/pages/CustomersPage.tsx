@@ -7,9 +7,9 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import { formatCurrency, formatCompact } from '../lib/format';
-import type { Customer, PaginatedResponse } from '@nepocorp/shared';
+import type { Customer, Supplier, PaginatedResponse } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
-import { useCustomers, useCustomerLedgerEntries } from '../hooks/useQueries';
+import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -32,8 +32,8 @@ function riskDot(debt: number | null, limit: number | null) {
 // looked cramped (5 fields squeezed into one table cell) and made it easy to
 // miss that edit mode had even opened. Modal gives proper breathing room.
 
-function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
-  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
+function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }: {
+  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; suppliers: Supplier[];
 }) {
   const [name, setName] = useState(item?.name || '');
   const [taxCode, setTaxCode] = useState((item as any)?.taxCode || (item as any)?.tax_code || '');
@@ -41,6 +41,9 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
   const [phone, setPhone] = useState(item?.phone || '');
   const [creditLimit, setCreditLimit] = useState((item as any)?.creditLimit || (item as any)?.credit_limit || '');
   const [status, setStatus] = useState<string>(item?.status || CustomerStatus.ACTIVE);
+  const [isCarrier, setIsCarrier] = useState(item?.isCarrier ?? false);
+  const [debitNoteMode, setDebitNoteMode] = useState<string>(item?.debitNoteMode ?? 'MONTHLY');
+  const [linkedSupplierId, setLinkedSupplierId] = useState<number | null>(item?.linkedSupplierId ?? null);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +53,9 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
       setPhone(item?.phone || '');
       setCreditLimit((item as any)?.creditLimit || (item as any)?.credit_limit || '');
       setStatus(item?.status || CustomerStatus.ACTIVE);
+      setIsCarrier(item?.isCarrier ?? false);
+      setDebitNoteMode(item?.debitNoteMode ?? 'MONTHLY');
+      setLinkedSupplierId(item?.linkedSupplierId ?? null);
     }
   }, [isOpen, item?.id]);
 
@@ -62,6 +68,9 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
       phone: phone.trim() || undefined,
       creditLimit: creditLimit ? Number(creditLimit) : undefined,
       status,
+      isCarrier,
+      debitNoteMode,
+      linkedSupplierId: linkedSupplierId ?? null,
     });
   };
 
@@ -118,6 +127,40 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen }: {
           <label htmlFor="cust-credit" style={labelStyle}>Hạn mức tín dụng (đ)</label>
           <input id="cust-credit" className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="cust-debit-mode" style={labelStyle}>Giấy báo nợ</label>
+            <select id="cust-debit-mode" className="input" value={debitNoteMode} onChange={e => setDebitNoteMode(e.target.value)}>
+              <option value="MONTHLY">Theo tháng</option>
+              <option value="PER_BATCH">Theo lô</option>
+            </select>
+          </div>
+          <div className="field" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 4 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={isCarrier}
+                onChange={e => setIsCarrier(e.target.checked)}
+                style={{ width: 14, height: 14 }}
+              />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Đối tác vận tải (xe ngoài)</span>
+            </label>
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="cust-linked-supplier" style={labelStyle}>Liên kết nhà cung cấp (bù trừ nợ)</label>
+          <select
+            id="cust-linked-supplier"
+            className="input"
+            value={linkedSupplierId ?? ''}
+            onChange={e => setLinkedSupplierId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">-- Không liên kết --</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </Modal>
   );
@@ -140,6 +183,8 @@ export default function CustomersPage() {
 
   const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
   const { data: ledgerEntries } = useCustomerLedgerEntries();
+  const { data: suppliersData } = useSuppliers(1, '');
+  const allSuppliers = suppliersData?.items ?? [];
   const customers = customersData?.items ?? [];
   const total = customersData?.total ?? 0;
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -478,6 +523,7 @@ export default function CustomersPage() {
         isOpen={showAddForm || editingId != null}
         saving={saving}
         item={editingId != null ? customers.find(c => c.id === editingId) : undefined}
+        suppliers={allSuppliers}
         onsave={d => {
           if (editingId != null) doUpdate(editingId, d);
           else doCreate(d);

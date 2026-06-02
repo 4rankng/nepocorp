@@ -333,6 +333,7 @@ export interface Supplier {
   taxCode: string | null;
   note: string | null;
   status: string;
+  linkedCustomerId: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

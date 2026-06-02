@@ -7,9 +7,9 @@ import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
-import type { Supplier, PaginatedResponse } from '@nepocorp/shared';
+import type { Supplier, Customer, PaginatedResponse } from '@nepocorp/shared';
 import { CONFIG } from '@nepocorp/shared';
-import { useSuppliers } from '../hooks/useQueries';
+import { useSuppliers, useCustomers } from '../hooks/useQueries';
 
 type FilterKey = 'all' | 'active' | 'inactive';
 
@@ -18,8 +18,8 @@ const STATUS_LABELS: Record<string, string> = {
   INACTIVE: 'Ngừng hoạt động',
 };
 
-function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
-  item?: Supplier; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
+function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }: {
+  item?: Supplier; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; customers: Customer[];
 }) {
   const [name, setName] = useState(item?.name || '');
   const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
@@ -27,6 +27,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
   const [taxCode, setTaxCode] = useState(item?.taxCode || '');
   const [note, setNote] = useState(item?.note || '');
   const [status, setStatus] = useState<string>(item?.status || 'ACTIVE');
+  const [linkedCustomerId, setLinkedCustomerId] = useState<number | null>(item?.linkedCustomerId ?? null);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,6 +37,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
       setTaxCode(item?.taxCode || '');
       setNote(item?.note || '');
       setStatus(item?.status || 'ACTIVE');
+      setLinkedCustomerId(item?.linkedCustomerId ?? null);
     }
   }, [isOpen, item?.id]);
 
@@ -48,6 +50,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
       taxCode: taxCode.trim() || undefined,
       note: note.trim() || undefined,
       status,
+      linkedCustomerId: linkedCustomerId ?? null,
     });
   };
   const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 } as const;
@@ -103,6 +106,20 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen }: {
           <label htmlFor="supp-note" style={labelStyle}>Ghi chú</label>
           <input id="supp-note" className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú thêm…" />
         </div>
+        <div className="field">
+          <label htmlFor="supp-linked-customer" style={labelStyle}>Liên kết khách hàng (bù trừ nợ)</label>
+          <select
+            id="supp-linked-customer"
+            className="input"
+            value={linkedCustomerId ?? ''}
+            onChange={e => setLinkedCustomerId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">-- Không liên kết --</option>
+            {customers.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </Modal>
   );
@@ -125,6 +142,8 @@ export default function SupplierListPage() {
   const { data: suppliersData, isLoading: loading, error: queryError, refetch: refetchSuppliers } = useSuppliers(page, search);
   const suppliers = suppliersData?.items ?? [];
   const total = suppliersData?.total ?? 0;
+  const { data: customersData } = useCustomers(1, '');
+  const allCustomers = customersData?.items ?? [];
   const [mutationError, setMutationError] = useState<string | null>(null);
   const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
 
@@ -378,6 +397,7 @@ export default function SupplierListPage() {
         isOpen={showAddForm || editingId != null}
         saving={saving}
         item={editingId != null ? suppliers.find(s => s.id === editingId) : undefined}
+        customers={allCustomers}
         onsave={d => {
           if (editingId != null) doUpdate(editingId, d);
           else doCreate(d);
