@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@nepocorp/shared';
-import type { CustomerStatement, LedgerEntry, AgingBucket } from '@nepocorp/shared';
-import { AlertTriangle, Download, FileSpreadsheet, FileText, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save } from 'lucide-react';
-import { useCustomerStatement } from '../hooks/useQueries';
+import type { CustomerStatement, LedgerEntry, AgingBucket, DebtOffset } from '@nepocorp/shared';
+import { AlertTriangle, Download, FileSpreadsheet, FileText, Receipt, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react';
+import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
+import { DebtOffsetModal } from '../components/DebtOffsetModal';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
 
@@ -254,6 +255,25 @@ export default function DebtDetailPage() {
                 >
                   <FileText size={14} style={{ color: '#dc2626' }} />
                   PDF (In)
+                </button>
+                <div style={{ borderTop: '1px solid var(--line)', margin: '4px 0' }} />
+                <button
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    const now = new Date();
+                    const params = new URLSearchParams({
+                      mode: 'MONTHLY',
+                      month: String(now.getMonth() + 1),
+                      year: String(now.getFullYear()),
+                    });
+                    window.open(`/api/finance/debit-note/${id}/export?${params}`, '_blank');
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Receipt size={14} style={{ color: '#7c3aed' }} />
+                  Giấy báo nợ (.xlsx)
                 </button>
               </div>
             )}

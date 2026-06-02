@@ -15,6 +15,7 @@ import { getPayablesSummary } from '../services/payables.service';
 import { getCustomerAgingList } from '../services/receivables.service';
 import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../services/advance.service';
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../services/debtOffset.service';
+import { getDebitNoteData, buildDebitNoteXlsx } from '../services/debitNote.service';
 import { debtOffsetSchema } from '@nepocorp/shared';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
@@ -316,5 +317,25 @@ router.post('/finance/debt-offsets/:id/approve',
     res.json(result);
   }),
 );
+
+// ─── Debit Note export (XLSX) ─────────────────────────────────────────────────
+
+// GET /api/finance/debit-note/:customerId/export
+router.get('/finance/debit-note/:customerId/export', asyncHandler(async (req: Request, res: Response) => {
+  const customerId = parseInt(req.params.customerId as string, 10);
+  const mode = req.query.mode === 'PER_BATCH' ? 'PER_BATCH' : 'MONTHLY';
+  const month = req.query.month ? parseInt(req.query.month as string, 10) : new Date().getMonth() + 1;
+  const year = req.query.year ? parseInt(req.query.year as string, 10) : new Date().getFullYear();
+  const tripIdsRaw = req.query.tripIds as string | undefined;
+  const tripIds = tripIdsRaw ? tripIdsRaw.split(',').map(Number).filter(n => !isNaN(n)) : undefined;
+
+  const data = await getDebitNoteData(customerId, { mode, month, year, tripIds });
+  const buffer = await buildDebitNoteXlsx(data);
+
+  const safeName = data.customer.name.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').trim().replace(/\s+/g, '-');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="giay-bao-no-${safeName}-T${month}-${year}.xlsx"`);
+  res.send(buffer);
+}));
 
 export default router;
