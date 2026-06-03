@@ -533,6 +533,50 @@ export async function transitionTripStatus(
           `Xe đang chạy chuyến ${busyLabel}. Vui lòng hoàn thành chuyến đó trước.`,
         );
       }
+    } else if (targetStatus === TripStatus.COMPLETED && currentStatus === TripStatus.LOCKED) {
+      // UNLOCK: LOCKED → COMPLETED — reverse ledger entries so the trip can be
+      // edited, then re-locked with updated figures.
+      if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
+        throw new ApiError(403, 'Chỉ Quản lý hoặc Quản trị viên mới có quyền mở khóa chuyến đi');
+      }
+
+      // Conditional guard status update
+      const [unlockedTrip] = await tx.update(s.trips).set({
+        status: TripStatus.COMPLETED,
+        updatedAt: new Date(),
+      }).where(and(eq(s.trips.id, tripId), eq(s.trips.status, TripStatus.LOCKED))).returning();
+
+      if (!unlockedTrip) {
+        throw new ApiError(409, 'Chuyến đi không thể mở khóa hoặc đã bị thay đổi. Vui lòng tải lại.');
+      }
+
+      // Load ancillary fees for ledger reversal
+      const ancillaryFees = await tx.select().from(s.tripExpenses)
+        .where(eq(s.tripExpenses.tripId, trip.id));
+
+      // Post reversal ledger entries (swap debit↔credit via UNLOCK_REVERSAL)
+      await LedgerService.postTripUnlock(tx, {
+        id: unlockedTrip.id,
+        tripCode: unlockedTrip.tripCode,
+        customerId: unlockedTrip.customerId,
+        driverId: unlockedTrip.driverId ?? null,
+        revenue: unlockedTrip.revenue,
+        driverSalary: unlockedTrip.driverSalary,
+        carrierType: unlockedTrip.carrierType ?? 'OWN',
+        externalCarrierId: unlockedTrip.externalCarrierId ?? null,
+        externalFreightCost: unlockedTrip.externalFreightCost ?? null,
+        ancillaryFees: ancillaryFees.map(fee => ({
+          id: fee.id,
+          buyAmount: fee.buyAmount,
+          sellAmount: fee.sellAmount,
+          settlementMethod: fee.settlementMethod,
+          supplierId: fee.supplierId ?? null,
+          forwarderId: fee.forwarderId ?? null,
+          approvalStatus: fee.approvalStatus,
+        })),
+      });
+
+      return unlockedTrip;
     } else if (targetStatus === TripStatus.COMPLETED) {
       if (currentStatus !== TripStatus.IN_TRANSIT) {
         throw new ApiError(409, 'Chỉ có thể hoàn thành chuyến đi đang chạy');
@@ -659,6 +703,33 @@ export async function transitionTripStatus(
     // thái từ <enum> sang <enum>" row — that previously leaked DB enum values
     // like CREATED / IN_TRANSIT into the audit log and read like a debug log
     // rather than a user-facing activity record.
+
+    return updated;
+  });
+}
+
+export async function updateDepartureDate(
+  tripId: number,
+  newDepartureDate: string,
+  userId: number,
+  userRole: string,
+) {
+  if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
+    throw new ApiError(403, 'Chỉ Quản lý hoặc Quản trị viên mới có quyền thay đổi ngày khởi hành');
+  }
+
+  return await db.transaction(async (tx) => {
+    const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+    if (trip.status === TripStatus.CANCELED) {
+      throw new ApiError(400, 'Không thể thay đổi ngày khởi hành của chuyến đã hủy');
+    }
+    if (trip.departureDate === newDepartureDate) return trip; // Idempotent
+
+    const [updated] = await tx.update(s.trips).set({
+      departureDate: newDepartureDate,
+      updatedAt: new Date(),
+    }).where(eq(s.trips.id, tripId)).returning();
 
     return updated;
   });

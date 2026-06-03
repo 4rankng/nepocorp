@@ -65,6 +65,7 @@ export default function TripDetailPage() {
         }}
         onReassign={page.openReassign}
         onAdjust={page.openAdjust}
+        onUnlock={page.handleUnlock}
       />
 
       {displayError && (
@@ -85,7 +86,12 @@ export default function TripDetailPage() {
       />
 
       <section className="detail-grid anim d3">
-        <BasicInfoCard trip={trip} />
+        <BasicInfoCard
+          trip={trip}
+          canChangeDate={permissions.canChangeDate}
+          onChangeDepartureDate={page.handleChangeDepartureDate}
+          actionLoading={ui.actionLoading}
+        />
         <FinancialCard derived={derived} />
         <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
       </section>

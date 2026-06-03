@@ -24,6 +24,8 @@ registerAuditEvent('POST', '/api/trips/', '/lock', AuditEvent.TRIP_LOCKED);
 registerAuditEvent('POST', '/api/trips/', '/cancel', AuditEvent.TRIP_CANCELED);
 registerAuditEvent('POST', '/api/trips/', '/adjustment', AuditEvent.ADJUSTMENT_CREATED);
 registerAuditEvent('POST', '/api/trips/', '/approve', AuditEvent.ENTITY_UPDATED);
+registerAuditEvent('POST', '/api/trips/', '/unlock', AuditEvent.TRIP_UNLOCKED);
+registerAuditEvent('PATCH', '/api/trips/', '/departure-date', AuditEvent.TRIP_DEPARTURE_DATE_CHANGED);
 
 const router = Router();
 
@@ -185,6 +187,40 @@ router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) =
   }
   const trip = await tripService.reassignTrip(id, { truckId: Number(truckId), driverId: Number(driverId) });
   await invalidateReportCaches();
+  res.json(trip);
+}));
+
+// Unlock trip (LOCKED → COMPLETED, reverses ledger entries)
+router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const trip = await tripService.transitionTripStatus(
+    id,
+    TripStatus.COMPLETED,
+    req.user!.userId,
+    req.user!.role,
+  );
+  await invalidateReportCaches(true);
+  res.json(trip);
+}));
+
+// Change departure date (any status except CANCELED)
+router.patch('/:id/departure-date', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const { departureDate } = req.body;
+  if (!departureDate || typeof departureDate !== 'string') {
+    return res.status(400).json({ error: 'Ngày khởi hành không hợp lệ' });
+  }
+  const parsed = Date.parse(departureDate);
+  if (isNaN(parsed)) {
+    return res.status(400).json({ error: 'Định dạng ngày không hợp lệ' });
+  }
+  const trip = await tripService.updateDepartureDate(
+    id,
+    departureDate,
+    req.user!.userId,
+    req.user!.role,
+  );
+  await invalidateReportCaches(true);
   res.json(trip);
 }));
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  ArrowLeft, Play, Pencil, Lock, XCircle, Shuffle, FilePen,
+  ArrowLeft, Play, Pencil, Lock, LockOpen, XCircle, Shuffle, FilePen,
   Building2, Loader2,
 } from 'lucide-react';
 import type { TripDetail } from '@nepocorp/shared';
@@ -18,6 +18,7 @@ interface TripHeaderProps {
   onCancel: () => void;
   onReassign: () => void;
   onAdjust: () => void;
+  onUnlock: () => void;
 }
 
 function StatusBadge({ status }: { status: TripStatus }) {
@@ -39,9 +40,9 @@ function StatusBadge({ status }: { status: TripStatus }) {
 
 export function TripHeader({
   trip, permissions, actionLoading,
-  onBack, onEdit, onDispatch, onLock, onCancel, onReassign, onAdjust,
+  onBack, onEdit, onDispatch, onLock, onCancel, onReassign, onAdjust, onUnlock,
 }: TripHeaderProps) {
-  const { canEdit, canEditActuals, canCancel, canDispatch, canLock, canReassign, canAdjust, needsPhotos } = permissions;
+  const { canEdit, canEditActuals, canCancel, canDispatch, canLock, canReassign, canAdjust, canUnlock, needsPhotos } = permissions;
 
   return (
     <header className="page-header anim d1">
@@ -95,6 +96,12 @@ export function TripHeader({
         {canEditActuals && !canEdit && (
           <button className="btn btn-primary" onClick={onEdit}>
             <Pencil size={14} />Nhập số liệu
+          </button>
+        )}
+        {canUnlock && (
+          <button className="btn btn-ghost" onClick={onUnlock} disabled={actionLoading}>
+            {actionLoading ? <Loader2 size={14} className="spin" /> : <LockOpen size={15} />}
+            Mở khóa
           </button>
         )}
         {canLock && (

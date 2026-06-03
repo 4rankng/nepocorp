@@ -155,6 +155,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       canLock: s === TripStatus.COMPLETED && isManagerOrAdmin,
       canReassign: s === TripStatus.CREATED && isManagerOrAdmin,
       canAdjust: s === TripStatus.LOCKED && isManagerOrAdmin,
+      canUnlock: s === TripStatus.LOCKED && isManagerOrAdmin,
+      canChangeDate: s !== TripStatus.CANCELED && isManagerOrAdmin,
       needsPhotos: !trip?.photoUrls || trip.photoUrls.length === 0,
       readOnly: s === 'LOCKED' || s === 'CANCELED',
     };
@@ -206,6 +208,42 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       } else {
         setActionError(err.message || 'Có lỗi xảy ra khi khóa chuyến đi.');
       }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!trip) return;
+    const confirmed = window.confirm(
+      'Mở khóa chuyến này sẽ hoàn tác các bút toán tài chính đã ghi nhận. Tiếp tục?'
+    );
+    if (!confirmed) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await api.post(`/trips/${trip.id}/unlock`, {});
+      await refetchTrip();
+    } catch (err: any) {
+      setActionError(err.message || 'Lỗi khi mở khóa chuyến đi.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleChangeDepartureDate = async (newDate: string) => {
+    if (!trip) return;
+    const confirmed = window.confirm(
+      `Thay đổi ngày khởi hành thành ${newDate}?`
+    );
+    if (!confirmed) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await api.patch(`/trips/${trip.id}/departure-date`, { departureDate: newDate });
+      await refetchTrip();
+    } catch (err: any) {
+      setActionError(err.message || 'Lỗi khi thay đổi ngày khởi hành.');
     } finally {
       setActionLoading(false);
     }
@@ -280,6 +318,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     reassignDrivers,
     handleAction,
     handleLockClick,
+    handleUnlock,
+    handleChangeDepartureDate,
     openReassign,
     handleReassign,
     openAdjust,

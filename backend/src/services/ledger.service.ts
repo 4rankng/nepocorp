@@ -219,6 +219,129 @@ export class LedgerService {
     }
   }
 
+  /**
+   * Reverse the ledger entries posted during postTripLock().
+   * Posts compensating entries (swap debit↔credit) with UNLOCK_REVERSAL txnType.
+   * The ledger is append-only — this does not modify existing rows.
+   */
+  static async postTripUnlock(tx: any, trip: {
+    id: number;
+    customerId: number;
+    driverId: number | null;
+    tripCode: string | null;
+    revenue: string | null;
+    driverSalary: string | null;
+    carrierType?: string;
+    externalCarrierId?: number | null;
+    externalFreightCost?: string | null;
+    ancillaryFees?: Array<{
+      id: number;
+      buyAmount: string;
+      sellAmount: string;
+      settlementMethod: string;
+      supplierId: number | null;
+      forwarderId: number | null;
+      approvalStatus: string;
+    }>;
+  }) {
+    const revenue = Number(trip.revenue || 0);
+    const driverSalary = Number(trip.driverSalary || 0);
+    const carrierType = trip.carrierType ?? 'OWN';
+    const fees = trip.ancillaryFees ?? [];
+    const label = trip.tripCode || '';
+
+    // ── 1. Collect entities to lock (same as postTripLock) ──
+    const entitiesToLock: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
+    entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
+      entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
+    }
+    if (carrierType === 'OWN' && trip.driverId) {
+      entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    }
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
+        if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
+          entitiesToLock.push({ entityType: 'VENDOR', entityId: fee.supplierId });
+        }
+      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
+        if (!entitiesToLock.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
+          entitiesToLock.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
+        }
+      }
+    }
+    await this.lockEntities(tx, entitiesToLock);
+
+    // ── 2. Reverse customer freight revenue (swap debit↔credit) ──
+    if (revenue > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: trip.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: 0,
+        credit: revenue,
+        note: label ? `Doanh thu chuyến ${label} (Hoàn tác)` : 'Doanh thu chuyến (Hoàn tác)',
+      });
+    }
+
+    // ── 3. Reverse OWN: driver salary ──
+    if (carrierType === 'OWN' && trip.driverId && driverSalary > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: trip.id,
+        entityType: 'DRIVER',
+        entityId: trip.driverId,
+        debit: driverSalary,
+        credit: 0,
+        note: label ? `Lương sản lượng chuyến ${label} (Hoàn tác)` : 'Lương sản lượng chuyến (Hoàn tác)',
+      });
+    }
+
+    // ── 4. Reverse EXTERNAL: carrier payable ──
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && Number(trip.externalFreightCost || 0) > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: trip.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.externalCarrierId,
+        debit: Number(trip.externalFreightCost),
+        credit: 0,
+        note: label ? `Cước thuê ngoài chuyến ${label} (Hoàn tác)` : 'Cước thuê ngoài (Hoàn tác)',
+      });
+    }
+
+    // ── 5. Reverse ancillary fees (only APPROVED, swap debit↔credit) ──
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      const buyAmt = Number(fee.buyAmount);
+      if (buyAmt <= 0) continue;
+
+      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
+        await this.postEntry(tx, {
+          txnType: TxnType.UNLOCK_REVERSAL,
+          txnId: fee.id,
+          entityType: 'VENDOR',
+          entityId: fee.supplierId,
+          debit: buyAmt,
+          credit: 0,
+          note: label ? `Chi phí DV chuyến ${label} (Hoàn tác)` : 'Chi phí dịch vụ (Hoàn tác)',
+        });
+      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
+        await this.postEntry(tx, {
+          txnType: TxnType.UNLOCK_REVERSAL,
+          txnId: fee.id,
+          entityType: 'FORWARDER',
+          entityId: fee.forwarderId,
+          debit: 0,
+          credit: buyAmt,
+          note: label ? `Chi hộ DV chuyến ${label} (Hoàn tác)` : 'Chi hộ dịch vụ (Hoàn tác)',
+        });
+      }
+    }
+  }
+
   // ─── Read methods ────────────────────────────────────────────────────────────
 
   /**

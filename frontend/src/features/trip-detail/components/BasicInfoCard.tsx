@@ -1,13 +1,18 @@
-import React from 'react';
-import { Truck, User, Calendar, Package, Hash } from 'lucide-react';
+import React, { useState } from 'react';
+import { Truck, User, Calendar, Package, Hash, Pencil } from 'lucide-react';
 import { fmtDate } from '../formatters';
 import type { TripDetail } from '@nepocorp/shared';
 
 interface BasicInfoCardProps {
   trip: TripDetail;
+  canChangeDate?: boolean;
+  onChangeDepartureDate?: (newDate: string) => Promise<void>;
+  actionLoading?: boolean;
 }
 
-export function BasicInfoCard({ trip }: BasicInfoCardProps) {
+export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, actionLoading }: BasicInfoCardProps) {
+  const [editingDate, setEditingDate] = useState(false);
+  const [pendingDate, setPendingDate] = useState(trip.departureDate);
   const rows = [
     { icon: <Truck size={17} />, label: 'Xe đầu', value: trip.truck?.licensePlate ?? '—', mono: true },
     { icon: <User size={17} />, label: 'Tài xế', value: trip.driver?.name ?? '—' },
@@ -21,7 +26,7 @@ export function BasicInfoCard({ trip }: BasicInfoCardProps) {
       value: trip.trailer ? `${trip.trailer.licensePlate} · ${trip.trailer.type || (trip.trailerType ?? '—')}` : (trip.trailerType ?? '—'),
       mono: true,
     },
-    { icon: <Calendar size={17} />, label: 'Ngày khởi hành', value: fmtDate(trip.departureDate), mono: true },
+    { icon: <Calendar size={17} />, label: 'Ngày khởi hành', value: fmtDate(trip.departureDate), mono: true, isDate: true },
     { icon: <Package size={17} />, label: 'Số container', value: String(trip.containerCount ?? 1), mono: true },
     { icon: <Hash size={17} />, label: 'Mã tham chiếu', value: trip.customerReference ?? 'Chưa có', muted: !trip.customerReference },
   ];
@@ -38,7 +43,53 @@ export function BasicInfoCard({ trip }: BasicInfoCardProps) {
               <span className="ri">{row.icon}</span>
               <div className="info-meta">
                 <div className="lbl">{row.label}</div>
-                <div className={`val ${row.mono ? 'mono' : ''} ${row.muted ? 'muted' : ''}`}>{row.value}</div>
+                <div className={`val ${row.mono ? 'mono' : ''} ${row.muted ? 'muted' : ''}`}>
+                  {row.isDate && canChangeDate && !editingDate ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {row.value}
+                      <button
+                        className="btn-icon"
+                        title="Thay đổi ngày khởi hành"
+                        onClick={() => { setPendingDate(trip.departureDate); setEditingDate(true); }}
+                        style={{ padding: 2 }}
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </span>
+                  ) : row.isDate && editingDate ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <input
+                        className="input mono"
+                        type="date"
+                        value={pendingDate}
+                        onChange={(e) => setPendingDate(e.target.value)}
+                        style={{ width: 150, padding: '2px 6px', fontSize: 13 }}
+                      />
+                      <button
+                        className="btn btn-sm btn-primary"
+                        disabled={actionLoading || pendingDate === trip.departureDate}
+                        onClick={async () => {
+                          if (onChangeDepartureDate) {
+                            await onChangeDepartureDate(pendingDate);
+                          }
+                          setEditingDate(false);
+                        }}
+                        style={{ padding: '2px 8px', fontSize: 12 }}
+                      >
+                        {actionLoading ? '...' : 'Lưu'}
+                      </button>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setEditingDate(false)}
+                        style={{ padding: '2px 8px', fontSize: 12 }}
+                      >
+                        Hủy
+                      </button>
+                    </span>
+                  ) : (
+                    row.value
+                  )}
+                </div>
               </div>
             </div>
           ))}

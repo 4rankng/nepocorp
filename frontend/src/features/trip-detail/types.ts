@@ -42,6 +42,8 @@ export interface TripPermissions {
   canLock: boolean;
   canReassign: boolean;
   canAdjust: boolean;
+  canUnlock: boolean;
+  canChangeDate: boolean;
   needsPhotos: boolean;
   readOnly: boolean;
 }
@@ -79,6 +81,8 @@ export interface TripDetailPageData {
   /** Action handlers — call from UI components. */
   handleAction: (action: string, method: () => Promise<unknown>) => Promise<void>;
   handleLockClick: () => Promise<void>;
+  handleUnlock: () => Promise<void>;
+  handleChangeDepartureDate: (newDate: string) => Promise<void>;
   openReassign: () => void;
   handleReassign: () => Promise<void>;
   openAdjust: () => void;
