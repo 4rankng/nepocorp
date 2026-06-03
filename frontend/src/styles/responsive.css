@@ -509,8 +509,11 @@
   .page-subtitle { font-size: 12px; line-height: 1.4; }
   .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .page-header .page-actions,
-  .page-actions { flex-wrap: wrap; width: 100%; gap: 8px; }
+  .page-actions,
+  .page-header .header-actions,
+  .header-actions { flex-wrap: wrap; width: 100%; gap: 8px; }
   .page-actions .btn,
+  .header-actions .btn,
   .page-header .btn,
   .page-header .btn-primary { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 40px; }
   .trip-detail-title { font-size: 19px; gap: 8px; line-height: 1.2; }

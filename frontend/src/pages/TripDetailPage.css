@@ -3,6 +3,12 @@
  * ========================================================================== */
 
 /* ── Page Header ─────────────────────────────────────────────────────────── */
+/* Desktop defaults. The mobile overrides live in @media (max-width: 640px)
+   at the bottom of this file. We use explicit media queries (rather than
+   relying on the global responsive.css @media rule) so the cascade is
+   unambiguous regardless of import order — both rules target .page-header
+   with the same selector specificity, but only one of them can match the
+   current viewport at a time. */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -954,13 +960,39 @@
 @media (max-width: 720px) {
   .page-header {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
   }
 
+  /* Action buttons wrap onto their own row below the title and reflow
+     into a multi-row grid. The desktop .header-actions is `flex` (single
+     row) — on phones we want the buttons to fill the width and not get
+     clipped at the right edge. */
   .header-actions {
     flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 12.5px;
   }
 
   .kpi-strip {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Very narrow phones (≤ 360px) — three buttons per row get cramped, so
+   drop to 2 per row by giving each button a slightly larger basis. */
+@media (max-width: 360px) {
+  .header-actions .btn {
+    flex: 1 1 100%;
   }
 }
