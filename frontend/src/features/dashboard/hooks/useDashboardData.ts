@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { formatCompact } from '../../../lib/format';
 import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
-import { TripStatus, parseThreshold, Role } from '@nepocorp/shared';
+import { Role, FINANCIAL_ROLES, TripStatus, parseThreshold } from '@nepocorp/shared';
 import { useAuth } from '../../../hooks/useAuth';
 import {
   useDashboardStats,
@@ -87,7 +87,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   // Only ADMIN/MANAGER/ACCOUNTANT can access audit logs — skip the query entirely
   // for DRIVER/FORWARDER to avoid wasted 403s.
   const { user } = useAuth();
-  const canSeeAudit = user?.role && [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT].includes(user.role);
+  const canSeeAudit = user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
   const { data: recentAudit = [] } = useQuery<DashboardAuditEntry[]>({
     queryKey: ['dashboard-audit-recent'],
     queryFn: async () => {

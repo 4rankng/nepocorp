@@ -90,7 +90,7 @@ export async function createDebtOffset(input: {
  * 2. Posts compensating ADJUSTMENT ledger entries:
  *    - CREDIT on customer ledger (reduces AR)
  *    - DEBIT on supplier ledger (reduces AP)
- * Only MANAGER/ADMIN can approve.
+ * Only ADMIN/MANAGER can approve (delegated to transitionApproval).
  */
 export async function approveDebtOffset(
   id: number,

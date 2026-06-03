@@ -3,7 +3,7 @@ import { db } from '../db';
 import { notifications } from '../db/schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as s from '../db/schema';
-import { Role, NotificationType } from '@nepocorp/shared';
+import { Role, NotificationType, FINANCIAL_ROLES } from '@nepocorp/shared';
 
 const eventBus = new EventEmitter();
 eventBus.setMaxListeners(50);
@@ -98,7 +98,7 @@ async function resolveTargetUsers(payload: NotificationPayload): Promise<number[
     userIds.add(payload.targetUserId);
   }
 
-  const roles = payload.targetRoles ?? [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
+  const roles = payload.targetRoles ?? [...FINANCIAL_ROLES];
   const roleUsers = await db.select({ id: s.users.id })
     .from(s.users)
     .where(and(inArray(s.users.role, roles as any[]), eq(s.users.status, 'ACTIVE')));

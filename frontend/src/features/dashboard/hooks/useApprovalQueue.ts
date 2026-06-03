@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
-import { Role, type ApprovalItemType } from '@nepocorp/shared';
+import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@nepocorp/shared';
 
 export { type ApprovalItemType };
 
@@ -33,10 +33,8 @@ const EMPTY: ApprovalQueueResponse = {
   items: [],
 };
 
-const APPROVER_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
-
 export function canSeeApprovalQueue(role: Role | undefined): boolean {
-  return !!role && APPROVER_ROLES.includes(role);
+  return !!role && (FINANCIAL_ROLES as readonly Role[]).includes(role);
 }
 
 export function useApprovalQueue(role: Role | undefined, userId?: number) {

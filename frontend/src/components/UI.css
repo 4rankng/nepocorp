@@ -731,6 +731,11 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   padding: 10px 5px;
   font-weight: 700;
   font-size: 12.5px;
+  /* Match body .num cells: clip long totals (e.g. "4.558.600 đ") so they
+     never bleed into the next column on narrow viewports. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Dashed "Thêm phí" row ─────────────────────────────────────────────── */
@@ -750,14 +755,72 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 }
 
 /* ── Responsive: hide low-priority columns on narrow viewports ─────────── */
-/* 8 columns: 1.Loại phí  2.Hình thức  3.Mua  4.Bán  5.Lãi  6.Nhà CC  7.Chứng từ  8.Trạng thái */
-
-/* Tablet ≤ 1023px — drop Chứng từ (col 7) */
+/* Tablet ≤ 1023px — drop Chứng từ (invoice/date numbers; rarely needed in field) */
 @media (max-width: 1023px) {
+  .ancillary-fees__table thead th:nth-child(6),
+  .ancillary-fees__table tbody td:nth-child(6),
+  .ancillary-fees__table tfoot td:nth-child(6) { display: none; }
+  /* Re-distribute freed width: give it to the fee-name column (col 1) */
+  .ancillary-fees__table thead th:nth-child(1),
+  .ancillary-fees__table tbody td:nth-child(1) { width: 34%; }
+  .ancillary-fees__table thead th:nth-child(2),
+  .ancillary-fees__table thead th:nth-child(3),
+  .ancillary-fees__table thead th:nth-child(4),
+  .ancillary-fees__table thead th:nth-child(5) { width: 13%; }
+}
+
+/* Phone ≤ 640px — also drop Nhà cung cấp, make name + status sticky
+   to give users a stable row identity while scrolling the numbers. */
+@media (max-width: 640px) {
+  .ancillary-fees__table { font-size: 11px; }
+  .ancillary-fees__table thead th:nth-child(1),
+  .ancillary-fees__table tbody td:nth-child(1),
+  .ancillary-fees__table tfoot td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    z-index: 1;
+    width: 34%;
+    box-shadow: 4px 0 8px -4px rgba(14, 31, 22, 0.06);
+  }
+  .ancillary-fees__table thead th:nth-child(1) { z-index: 3; }
+  .ancillary-fees__table tbody tr:hover td:nth-child(1) { background: var(--surface-2); }
+  .ancillary-fees__table tfoot td:nth-child(1) { background: var(--surface-2); }
+
+  .ancillary-fees__table thead th:nth-child(5),
+  .ancillary-fees__table tbody td:nth-child(5),
+  .ancillary-fees__table tfoot td:nth-child(5) { display: none; }
+
+  /* Money columns — give them more room so "1.000.000 đ" doesn't truncate */
+  .ancillary-fees__table thead th:nth-child(2),
+  .ancillary-fees__table thead th:nth-child(3),
+  .ancillary-fees__table thead th:nth-child(4) { width: 18%; }
+
+  /* Tighter cell padding on phones */
+  .ancillary-fees__table thead th { padding: 8px 3px !important; }
+  .ancillary-fees__table tbody td { padding: 7px 3px; }
+  .ancillary-fees__table tfoot td { padding: 10px 3px; }
+
+  /* Allow wrapping in col 1 (name + container stack), but keep ellipsis
+     fallback if it still overflows. */
+  .ancillary-fees__table tbody td:nth-child(1) {
+    white-space: normal;
+    overflow: hidden;
+  }
+}
+
+/* Narrow phone ≤ 420px — even tighter */
+@media (max-width: 420px) {
+  .ancillary-fees__table { font-size: 10px; }
+  .ancillary-fees__table thead th:nth-child(1),
+  .ancillary-fees__table tbody td:nth-child(1),
+  .ancillary-fees__table tfoot td:nth-child(1) { width: 36%; }
+  .ancillary-fees__table thead th:nth-child(2),
+  .ancillary-fees__table thead th:nth-child(3),
+  .ancillary-fees__table thead th:nth-child(4) { width: 17%; }
   .ancillary-fees__table thead th:nth-child(7),
-  .ancillary-fees__table tbody td:nth-child(7) { display: none; }
-  /* Widen fee-name col to absorb freed space */
-  .ancillary-fees__table thead th:nth-child(1) { width: 22%; }
+  .ancillary-fees__table tbody td:nth-child(7),
+  .ancillary-fees__table tfoot td:nth-child(7) { width: 13%; }
 }
 
 /* Phone ≤ 640px — also drop Nhà CC (col 6) + Hình thức (col 2) */
@@ -783,7 +846,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   /* Tighter padding */
   .ancillary-fees__table thead th { padding: 8px 4px; }
   .ancillary-fees__table tbody td { padding: 7px 4px; }
-  .ancillary-fees__table tfoot td { padding: 10px 4px; }
+  .ancillary-fees__table tfoot td { padding: 10px 4px; font-size: 11px; }
   /* Remaining numeric cols: Mua(3) Bán(4) Lãi(5) */
   .ancillary-fees__table thead th:nth-child(3),
   .ancillary-fees__table thead th:nth-child(4),

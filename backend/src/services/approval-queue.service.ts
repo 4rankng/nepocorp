@@ -28,16 +28,17 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
   const isAdmin = role === Role.ADMIN;
   const isManager = role === Role.MANAGER;
   const isAccountant = role === Role.ACCOUNTANT;
+  const isFinancial = (FINANCIAL_ROLES as readonly string[]).includes(role);
 
-  if (!isAdmin && !isManager && !isAccountant) {
+  if (!isFinancial) {
     return { total: 0, byType: emptyByType(), items: [] };
   }
 
   // Build query promises conditionally, then fire them all in parallel
   const queryPromises: Promise<ApprovalQueueItem[]>[] = [];
 
-  // Ancillary fees — ADMIN, MANAGER, and ACCOUNTANT can approve
-  if (isAdmin || isManager || isAccountant) {
+  // Ancillary fees — FINANCIAL_ROLES can approve
+  if (isFinancial) {
     queryPromises.push(
       db
         .select({

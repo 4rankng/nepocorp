@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X } from 'lucide-react';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES } from '@nepocorp/shared';
+import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@nepocorp/shared';
 import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
 import { tripClient } from '../../api/tripClient';
@@ -87,7 +87,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const { data: catalogData } = useCatalogs();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
-  const canApprove = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
+  const canApprove = !!user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
