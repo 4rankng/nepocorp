@@ -41,6 +41,7 @@ export function LocationAutocomplete({
   const [, setLoading] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => Math.random().toString(36).substring(2, 15));
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const skipNextOpenRef = useRef(false);
   const closeDropdown = useCallback(() => setIsOpen(false), []);
 
   const [isFocused, setIsFocused] = useState(false);
@@ -67,10 +68,12 @@ export function LocationAutocomplete({
   // Behaviour:
   //   • Empty query → show top 8 ports (browse the whole catalog)
   //   • Query that matches at least 1 port → show matching ports (up to 6)
-  //   • Query that matches no port → STILL show the top 8 ports as
-  //     "browse catalog" fallback, so destination fields with prefilled
-  //     non-port values like "Chè Ngọc Thanh, Phù Ninh, Phú Thọ" still
-  //     give the user a one-tap way to switch to a catalog entry.
+  //   • Query that matches no port → show nothing. The earlier code fell back
+  //     to the top 8 catalog here, but that meant typing "Ha Noi" would keep
+  //     showing the 8 Hải Phòng ports and never reach Google Places — see
+  //     the bug report at /trips/new. Google Places results come in via the
+  //     debounced fetch below; the user can also clear the field to browse
+  //     the full port catalog.
   const portMatches = useMemo<MergedSuggestion[]>(() => {
     const q = value.trim().toLowerCase();
     const allAsSuggestions = (rows: PortRow[]) => rows.map((p) => ({
@@ -82,18 +85,13 @@ export function LocationAutocomplete({
     if (!q) {
       return allAsSuggestions(ports.slice(0, 8));
     }
+    // Match on name + code only — address matching caused city-name queries
+    // (e.g. "Hà Nội") to surface unrelated industrial ports located in that city.
     const matched = ports.filter((p) =>
       p.name.toLowerCase().includes(q) ||
-      (p.code ?? '').toLowerCase().includes(q) ||
-      (p.address ?? '').toLowerCase().includes(q),
+      (p.code ?? '').toLowerCase().includes(q)
     );
-    if (matched.length > 0) {
-      return allAsSuggestions(matched.slice(0, 6));
-    }
-    // Nothing in the catalog matches — fall back to top 8 so user can still
-    // browse and pick a canonical port instead of being stuck with the
-    // prefilled free-text value.
-    return allAsSuggestions(ports.slice(0, 8));
+    return allAsSuggestions(matched.slice(0, 6));
   }, [ports, value]);
 
   // Fetch place suggestions with debounce (only for queries ≥3 chars)
@@ -142,12 +140,19 @@ export function LocationAutocomplete({
   }, [portMatches, placeSuggestions]);
 
   // Open/close the dropdown whenever the merged list changes and we have focus.
+  // skipNextOpenRef is set by handleSelect to prevent the dropdown from
+  // reopening when onChange causes portMatches to recompute with the new value.
   useEffect(() => {
     if (!isFocused) return;
+    if (skipNextOpenRef.current) {
+      skipNextOpenRef.current = false;
+      return;
+    }
     setIsOpen(allSuggestions.length > 0);
   }, [allSuggestions, isFocused]);
 
   const handleSelect = (suggestion: MergedSuggestion) => {
+    skipNextOpenRef.current = true;
     onChange(suggestion.description);
     setIsOpen(false);
     setPlaceSuggestions([]);
