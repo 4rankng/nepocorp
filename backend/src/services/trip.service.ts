@@ -334,13 +334,15 @@ export async function updateTripFigures(
     const tripFees = await tx.select({
       buyAmount: s.tripExpenses.buyAmount,
       sellAmount: s.tripExpenses.sellAmount,
-      vatRate: s.tripExpenses.vatRate,
-    }).from(s.tripExpenses).where(
-      and(
-        eq(s.tripExpenses.tripId, tripId),
-        ne(s.tripExpenses.approvalStatus, 'REJECTED'),
-      )
-    );
+      vatRate: s.forwarderExpenseTypes.vatRate,
+    }).from(s.tripExpenses)
+      .innerJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+      .where(
+        and(
+          eq(s.tripExpenses.tripId, tripId),
+          ne(s.tripExpenses.approvalStatus, 'REJECTED'),
+        )
+      );
 
     const totalsInput = {
       legs: normalizedLegs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),

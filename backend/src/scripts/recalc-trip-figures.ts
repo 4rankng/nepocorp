@@ -47,12 +47,19 @@ async function main() {
   const BATCH = 100;
   for (let i = 0; i < tripIds.length; i += BATCH) {
     const batch = tripIds.slice(i, i + BATCH);
-    const fees = await db.select().from(s.tripExpenses).where(
-      and(
-        inArray(s.tripExpenses.tripId, batch),
-        ne(s.tripExpenses.approvalStatus, 'REJECTED'),
-      )
-    );
+    const fees = await db.select({
+      tripId: s.tripExpenses.tripId,
+      buyAmount: s.tripExpenses.buyAmount,
+      sellAmount: s.tripExpenses.sellAmount,
+      vatRate: s.forwarderExpenseTypes.vatRate,
+    }).from(s.tripExpenses)
+      .innerJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+      .where(
+        and(
+          inArray(s.tripExpenses.tripId, batch),
+          ne(s.tripExpenses.approvalStatus, 'REJECTED'),
+        )
+      );
     for (const fee of fees) {
       if (!feesMap.has(fee.tripId)) feesMap.set(fee.tripId, []);
       feesMap.get(fee.tripId)!.push({

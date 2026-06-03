@@ -136,14 +136,19 @@ export async function getPnlReport(month: number, year: number) {
 
     // Fetch all approved ancillary fees for trips in this period (one query)
     const tripIds = monthTrips.map(t => t.id);
-    type TripExpenseRow = typeof s.tripExpenses.$inferSelect;
+    type TripExpenseRow = typeof s.tripExpenses.$inferSelect & { vatRate: string };
     let allFees: TripExpenseRow[] = [];
     if (tripIds.length > 0) {
-      allFees = await db.select().from(s.tripExpenses)
+      const rows = await db.select({
+        fee: s.tripExpenses,
+        vatRate: s.forwarderExpenseTypes.vatRate,
+      }).from(s.tripExpenses)
+        .innerJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
         .where(and(
           inArray(s.tripExpenses.tripId, tripIds),
           eq(s.tripExpenses.approvalStatus, 'APPROVED'),
         ));
+      allFees = rows.map(r => ({ ...r.fee, vatRate: r.vatRate }));
     }
     // Build a map: tripId → fees[]
     const tripFeeMap = new Map<number, TripExpenseRow[]>();

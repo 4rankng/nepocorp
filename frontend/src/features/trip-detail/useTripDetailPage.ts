@@ -10,6 +10,7 @@ import {
 } from '../../hooks/useQueries';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import { TripStatus, Role } from '@nepocorp/shared';
+import { useConfirm } from '../../components/UI';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
 
 /**
@@ -20,6 +21,7 @@ import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState 
 export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   /* ── Data fetching ──────────────────────────────────────────────────── */
   const {
@@ -189,7 +191,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       await refetchTrip();
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 422) {
-        const confirmed = window.confirm(
+        const confirmed = await confirm(
           'Doanh thu chuyến đi này bằng 0 đ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?'
         );
         if (confirmed) {
@@ -215,7 +217,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
 
   const handleUnlock = async () => {
     if (!trip) return;
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       'Mở khóa chuyến này sẽ hoàn tác các bút toán tài chính đã ghi nhận. Tiếp tục?'
     );
     if (!confirmed) return;
@@ -233,7 +235,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
 
   const handleChangeDepartureDate = async (newDate: string) => {
     if (!trip) return;
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       `Thay đổi ngày khởi hành thành ${newDate}?`
     );
     if (!confirmed) return;
@@ -316,6 +318,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     adjustments,
     reassignTrucks,
     reassignDrivers,
+    confirm,
+    confirmDialog,
     handleAction,
     handleLockClick,
     handleUnlock,

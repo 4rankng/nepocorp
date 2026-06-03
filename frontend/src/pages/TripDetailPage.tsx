@@ -59,7 +59,7 @@ export default function TripDetailPage() {
         onDispatch={() => page.handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
         onLock={page.handleLockClick}
         onCancel={async () => {
-          if (window.confirm('Bạn có chắc muốn hủy chuyến này?')) {
+          if (await page.confirm('Bạn có chắc muốn hủy chuyến này?', { variant: 'danger', confirmLabel: 'Hủy chuyến' })) {
             page.handleAction('cancel', () => api.post(`/trips/${trip.id}/cancel`, {}));
           }
         }}
@@ -217,6 +217,7 @@ export default function TripDetailPage() {
           </div>
         )}
       </Drawer>
+      {page.confirmDialog}
     </div>
   );
 }

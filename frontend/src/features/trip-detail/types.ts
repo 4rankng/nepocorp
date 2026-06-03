@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { TripDetail } from '@nepocorp/shared';
 import type { TripStatus, Role } from '@nepocorp/shared';
 
@@ -78,6 +79,9 @@ export interface TripDetailPageData {
   adjustments: unknown[];
   reassignTrucks: { id: number; licensePlate: string }[];
   reassignDrivers: { id: number; name: string }[];
+  /** React Confirm dialog instance & trigger */
+  confirm: (message: string, options?: { variant?: 'danger' | 'primary' | 'warning'; confirmLabel?: string; cancelLabel?: string }) => Promise<boolean>;
+  confirmDialog: ReactNode;
   /** Action handlers — call from UI components. */
   handleAction: (action: string, method: () => Promise<unknown>) => Promise<void>;
   handleLockClick: () => Promise<void>;

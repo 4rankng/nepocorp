@@ -116,13 +116,6 @@ export default function TripEditPage() {
                   </div>
                 </div>
                 <div className="tc-card-body">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '8px 12px', background: 'var(--bg-3)', borderRadius: 'var(--radius-md)' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Số cont:</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)' }}>{trip.containerCount ?? 1}</span>
-                    {(trip.containerCount ?? 1) > 1 && (
-                      <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>({trip.containerCount ?? 1} cont × đơn giá)</span>
-                    )}
-                  </div>
 
                   <div className="field" style={{ marginBottom: 20 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Ngày khởi hành</label>
