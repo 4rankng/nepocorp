@@ -18,7 +18,7 @@ export const styles = {
   chartOverflow: { overflow: 'visible' },
   gap18: { gap: 18 },
   gap6: { gap: 6 },
-  noDataMsg: { padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 },
+  noDataMsg: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 },
   smallUnit: { fontSize: '0.75em', opacity: 0.7 },
   smallUnitLg: { fontSize: '0.8em', opacity: 0.7 },
   linkAction: { fontSize: 12, color: 'var(--brand)', fontWeight: 600 },

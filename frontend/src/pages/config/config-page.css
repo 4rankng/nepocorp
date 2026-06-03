@@ -71,7 +71,7 @@
 .cfg-pill--neutral { background: var(--surface-3); color: var(--ink-3); }
 
 /* ── Empty state inside the table — bring more breathing room + larger illo ── */
-.cfg-page .tt-table tbody td .cfg-empty {
+.cfg-page .cfg-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -80,19 +80,19 @@
   color: var(--ink-3);
   font-size: 13px;
 }
-.cfg-page .tt-table tbody td .cfg-empty img {
+.cfg-page .cfg-empty img {
   width: 132px;
   height: 110px;
   object-fit: contain;
   opacity: 0.95;
 }
-.cfg-page .tt-table tbody td .cfg-empty__title {
+.cfg-page .cfg-empty__title {
   font-weight: 600;
   color: var(--ink-2);
   font-size: 14px;
   margin-top: 2px;
 }
-.cfg-page .tt-table tbody td .cfg-empty__hint {
+.cfg-page .cfg-empty__hint {
   font-size: 12px;
   color: var(--ink-3);
 }
