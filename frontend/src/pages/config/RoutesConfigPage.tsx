@@ -52,8 +52,8 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
           polylinePath: null as string | null
         }));
         setDefaultLegs(mapped);
-        
-        // Fetch polylines dynamically
+
+        // Fetch polylines for map visualization only
         mapped.forEach(async (leg) => {
           if (leg.origin && leg.destination && leg.origin !== leg.destination) {
             try {
@@ -61,7 +61,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               if (res.polylinePath) {
                 setDefaultLegs(prev => prev.map(l => l.id === leg.id ? { ...l, polylinePath: res.polylinePath } : l));
               }
-            } catch (e) {}
+            } catch {}
           }
         });
       } else {
@@ -94,8 +94,8 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
   
   const updateLeg = async (id: string, field: keyof DefaultLeg, val: string) => {
     setDefaultLegs(prev => prev.map(l => l.id === id ? { ...l, [field]: val } : l));
-    
-    // Auto-calculate distance & route polyline
+
+    // Fetch polyline for map visualization only — km is manual
     if (field === 'origin' || field === 'destination') {
       const legToUpdate = defaultLegs.find(l => l.id === id);
       if (legToUpdate) {
@@ -104,14 +104,13 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
         if (origin && destination && origin !== destination) {
           try {
             const result = await calculateRoute(origin, destination);
-            if (result.km !== null) {
+            if (result.polylinePath) {
               setDefaultLegs(prev => prev.map(l => l.id === id ? {
                 ...l,
-                km: String(result.km),
                 polylinePath: result.polylinePath
               } : l));
             }
-          } catch (e) {}
+          } catch {}
         }
       }
     }

@@ -48,12 +48,15 @@ const TXN_LABELS: Record<string, string> = {
   MANAGEMENT_FEE: 'Phí quản lý',
   ADJUSTMENT: 'Điều chỉnh',
   DRIVER_SALARY: 'Lương tài xế',
+  UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
+  EXTERNAL_CARRIER_COST: 'Cước thuê ngoài',
 };
 
 const VENDOR_TXN_LABELS: Record<string, string> = {
   VENDOR_EXPENSE: 'Ghi nhận chi phí',
   VENDOR_PAYMENT: 'Thanh toán công nợ',
   ADJUSTMENT: 'Điều chỉnh',
+  UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
 };
 
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }

@@ -216,45 +216,4 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
   res.json(distResponse);
 }));
 
-// ── Persist user's preferred alternative for an existing cache row ─────────
-
-router.put('/route-preference', asyncHandler(async (req: Request, res: Response) => {
-  const { origin, destination, km, polylinePath, summary } = req.body ?? {};
-
-  if (
-    typeof origin !== 'string' ||
-    typeof destination !== 'string' ||
-    typeof km !== 'number' ||
-    !Number.isFinite(km) ||
-    km <= 0
-  ) {
-    res.status(400).json({ error: 'origin, destination and a positive numeric km are required' });
-    return;
-  }
-
-  const originCleaned = origin.trim().toLowerCase();
-  const destCleaned = destination.trim().toLowerCase();
-
-  // Upsert only the selected columns. Intentionally leave allRoutesJson
-  // untouched so the picker still shows every alternative next time.
-  await db.insert(s.routeDistanceCache)
-    .values({
-      originCleaned,
-      destinationCleaned: destCleaned,
-      distanceKm: String(km),
-      polylinePath: typeof polylinePath === 'string' ? polylinePath : null,
-      routeSummary: typeof summary === 'string' ? summary : null,
-    })
-    .onConflictDoUpdate({
-      target: [s.routeDistanceCache.originCleaned, s.routeDistanceCache.destinationCleaned],
-      set: {
-        distanceKm: String(km),
-        polylinePath: typeof polylinePath === 'string' ? polylinePath : null,
-        routeSummary: typeof summary === 'string' ? summary : null,
-      },
-    });
-
-  res.json({ ok: true });
-}));
-
 export default router;

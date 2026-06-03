@@ -2,7 +2,6 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { JourneyLegRow } from './JourneyLegRow';
-import { RoutePickerModal } from './RoutePickerModal';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 interface JourneyLegsCardProps {
@@ -22,7 +21,6 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
   const form = useTripFormContext();
   const {
     legs, addLeg, removeLeg, updateLeg,
-    routePickerState, onRoutePicked, dismissRoutePicker, onKmManualBlur,
   } = form;
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
@@ -47,7 +45,7 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
           <div className="tc-journey-empty__text">
             <h4 style={{ margin: '0 0 4px', fontSize: '14.5px', fontWeight: 700, color: 'var(--fg-1)' }}>Chưa có chặng nào</h4>
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--fg-3)' }}>
-              Khai báo từng chặng để tự động tính nhiên liệu theo định mức × Km. Bạn cũng có thể bỏ qua và nhập thủ công.
+              Nhập địa điểm và cự ly (Km) cho từng chặng để tính nhiên liệu theo định mức. Bạn cũng có thể bỏ qua và nhập thủ công.
             </p>
           </div>
           <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg}>
@@ -65,7 +63,6 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
                 onRemove={() => removeLeg(idx)}
                 onUpdate={(field, value) => updateLeg(idx, field, value)}
                 canRemove={legs.length > 1}
-                onKmBlur={() => { void onKmManualBlur(idx); }}
               />
             ))}
           </div>
@@ -83,15 +80,6 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
               <Plus size={14} /> Thêm chặng
             </button>
           </div>
-          {routePickerState && (
-            <RoutePickerModal
-              origin={routePickerState.origin}
-              destination={routePickerState.destination}
-              routes={routePickerState.routes}
-              onSelect={onRoutePicked}
-              onDismiss={dismissRoutePicker}
-            />
-          )}
         </>
       )}
     </CardSection>

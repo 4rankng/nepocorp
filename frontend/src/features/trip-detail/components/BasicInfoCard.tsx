@@ -70,9 +70,13 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
                         disabled={actionLoading || pendingDate === trip.departureDate}
                         onClick={async () => {
                           if (onChangeDepartureDate) {
-                            await onChangeDepartureDate(pendingDate);
+                            try {
+                              await onChangeDepartureDate(pendingDate);
+                              setEditingDate(false);
+                            } catch {
+                              // Parent hook handles error display; keep editor open
+                            }
                           }
-                          setEditingDate(false);
                         }}
                         style={{ padding: '2px 8px', fontSize: 12 }}
                       >

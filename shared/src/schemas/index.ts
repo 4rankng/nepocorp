@@ -102,6 +102,7 @@ export const createTripSchema = z.object({
 
 export const updateTripFiguresSchema = z.object({
   legs: z.array(tripLegSchema).min(1),
+  departureDate: z.string().optional(),
   fuelMode: z.nativeEnum(FuelMode),
   fuelLitersOverride: nonNegNumeric.nullable().optional(),
   fuelSupplementLiters: nonNegNumeric.optional(),

@@ -86,35 +86,6 @@ export async function calculateRoute(origin: string, destination: string): Promi
   }
 }
 
-/**
- * Persist the user's preferred alternative for a given (origin, destination)
- * pair on the backend. Non-fatal on error — never blocks the trip form on a
- * background persistence call.
- */
-export async function saveRoutePreference(
-  origin: string,
-  destination: string,
-  km: number,
-  polylinePath?: string | null,
-  summary?: string,
-): Promise<void> {
-  try {
-    await api.put('/maps/route-preference', {
-      origin,
-      destination,
-      km,
-      polylinePath: polylinePath ?? null,
-      summary: summary ?? null,
-    });
-  } catch {
-    /* non-fatal — preference save is best-effort */
-  }
-}
-
-export async function calculateDistanceKm(origin: string, destination: string): Promise<number | null> {
-  const result = await calculateRoute(origin, destination);
-  return result.km;
-}
 
 export function decodePolyline(encoded: string): [number, number][] {
   const points: [number, number][] = [];

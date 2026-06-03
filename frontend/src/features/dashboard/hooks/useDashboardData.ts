@@ -148,12 +148,16 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   const derived = useMemo((): DerivedData | null => {
     if (!stats) return null;
 
-    const revenue = stats.revenue ?? 0;
-    const costs = stats.costs ?? 0;
-    const grossProfit = stats.grossProfit ?? 0;
+    // Use P&L report as single source of truth for all 4 KPIs when available,
+    // so net profit is always consistent with revenue/costs/gross.
+    // Falls back to dashboard stats (which lack otherIncome/managementFee).
+    const revenue = pnlReport?.totalRevenue ?? stats.revenue ?? 0;
+    const costs = pnlReport?.totalCosts ?? stats.costs ?? 0;
+    const grossProfit = pnlReport?.grossProfit ?? stats.grossProfit ?? 0;
     const managementFee = pnlReport?.managementFee ?? 0;
     const otherIncome = pnlReport?.otherIncome ?? 0;
-    const netProfit = pnlReport?.netProfit ?? (grossProfit - managementFee + otherIncome);
+    const companyExpenses = pnlReport?.companyExpenses ?? 0;
+    const netProfit = pnlReport?.netProfit ?? (grossProfit - managementFee - companyExpenses + otherIncome);
 
     const sortedTrucks = pnlReport?.trucks
       ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)

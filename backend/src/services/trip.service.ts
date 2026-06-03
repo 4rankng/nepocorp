@@ -188,6 +188,7 @@ export async function updateTripFigures(
   tripId: number,
   data: {
     legs: TripLegInput[];
+    departureDate?: string;
     fuelMode: FuelMode;
     fuelLitersOverride?: number | null;
     fuelSupplementLiters?: number;
@@ -410,6 +411,7 @@ export async function updateTripFigures(
     const nextVersion = trip.version + 1;
     const [updated] = await tx.update(s.trips).set({
       version: nextVersion,
+      departureDate: data.departureDate ?? trip.departureDate,
       routeId: finalRouteId,
       fuelFixedAllowanceApplied: String(fuelFixedAllowanceApplied),
       roadAllowanceBaseApplied: String(roadAllowanceBaseApplied),
@@ -543,6 +545,7 @@ export async function transitionTripStatus(
       // Conditional guard status update
       const [unlockedTrip] = await tx.update(s.trips).set({
         status: TripStatus.COMPLETED,
+        version: sql`${s.trips.version} + 1`,
         updatedAt: new Date(),
       }).where(and(eq(s.trips.id, tripId), eq(s.trips.status, TripStatus.LOCKED))).returning();
 
@@ -728,6 +731,7 @@ export async function updateDepartureDate(
 
     const [updated] = await tx.update(s.trips).set({
       departureDate: newDepartureDate,
+      version: sql`${s.trips.version} + 1`,
       updatedAt: new Date(),
     }).where(eq(s.trips.id, tripId)).returning();
 

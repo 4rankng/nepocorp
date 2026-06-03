@@ -200,6 +200,13 @@ router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
     req.user!.role,
   );
   await invalidateReportCaches(true);
+  emitNotification({
+    type: NotificationType.TRIP_UNLOCKED,
+    title: 'Chuyến đã mở khóa',
+    message: `Chuyến ${trip.tripCode} đã được mở khóa`,
+    relatedEntityType: 'trips',
+    relatedEntityId: id,
+  });
   res.json(trip);
 }));
 
@@ -210,9 +217,12 @@ router.patch('/:id/departure-date', asyncHandler(async (req: Request, res: Respo
   if (!departureDate || typeof departureDate !== 'string') {
     return res.status(400).json({ error: 'Ngày khởi hành không hợp lệ' });
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(departureDate)) {
+    return res.status(400).json({ error: 'Định dạng ngày không hợp lệ (YYYY-MM-DD)' });
+  }
   const parsed = Date.parse(departureDate);
   if (isNaN(parsed)) {
-    return res.status(400).json({ error: 'Định dạng ngày không hợp lệ' });
+    return res.status(400).json({ error: 'Giá trị ngày không hợp lệ' });
   }
   const trip = await tripService.updateDepartureDate(
     id,

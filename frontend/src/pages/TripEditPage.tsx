@@ -46,7 +46,7 @@ export default function TripEditPage() {
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
-  const { error, setError, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, tripId: formTripId, isEditMode } = form;
+  const { error, setError, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, tripId: formTripId, isEditMode } = form;
 
   const onSubmit = async (e: React.FormEvent) => {
     try {
@@ -122,6 +122,17 @@ export default function TripEditPage() {
                     {(trip.containerCount ?? 1) > 1 && (
                       <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>({trip.containerCount ?? 1} cont × đơn giá)</span>
                     )}
+                  </div>
+
+                  <div className="field" style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Ngày khởi hành</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={departureDate}
+                      onChange={(e) => setDepartureDate(e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div className="field" style={{ marginBottom: 20 }}>
