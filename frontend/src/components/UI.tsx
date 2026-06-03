@@ -555,14 +555,15 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel });
+  const portalTarget = usePortalTarget();
 
-  if (!isOpen) return null;
+  if (!isOpen || !portalTarget) return null;
 
   const Icon = variant === 'danger' || variant === 'warning' ? AlertTriangle : HelpCircle;
   const iconColor = variant === 'danger' ? 'var(--danger)' : variant === 'warning' ? 'var(--warning)' : 'var(--accent)';
   const iconBg = variant === 'danger' ? 'confirm-icon--danger' : variant === 'warning' ? 'confirm-icon--warning' : 'confirm-icon--primary';
 
-  return (
+  return createPortal(
     <div className="confirm-overlay" onClick={onCancel}>
       <div
         role="alertdialog"
@@ -591,7 +592,8 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget
   );
 }
 
