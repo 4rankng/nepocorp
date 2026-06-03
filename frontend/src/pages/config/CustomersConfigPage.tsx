@@ -85,6 +85,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function CustomersConfigPage() {
+  const navigate = useNavigate();
   const [customerFilter, setCustomerFilter] = useState<'all' | 'high-risk' | 'active' | 'locked'>('all');
   const [search, setSearch] = useState('');
 
@@ -150,12 +151,21 @@ export default function CustomersConfigPage() {
   }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.taxCode || '').includes(search)), [customers, customerFilter, search]);
 
   return (
-    <div className="fade-up">
+    <div className="fade-up cfg-page cfg-page--customers">
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Khách hàng</h1>
+        <button
+          type="button"
+          onClick={() => navigate('/config')}
+          aria-label="Quay lại danh sách cấu hình"
+          className="page-header__back-btn"
+          style={{ marginRight: 4 }}
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div className="page-header-main">
+          <h1 className="page-title">Khách hàng & Đối tác</h1>
           <p className="page-subtitle">
-            {totalCount} khách hàng đang quản lý
+            <strong>{totalCount}</strong> khách hàng đang quản lý
             {top4Pct > 0 && <> · <strong style={{ color: 'var(--danger)' }}>{top4Pct}%</strong> doanh thu tập trung ở 4 KH lớn nhất</>}
           </p>
         </div>

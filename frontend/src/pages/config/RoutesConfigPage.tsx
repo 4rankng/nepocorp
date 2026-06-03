@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain } from 'lucide-react';
+import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { PageHeader, useConfirm, Modal } from '../../components/UI';
@@ -11,6 +11,7 @@ import { LeafletMap } from '../../components/shared/LeafletMap';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
 import { LoadingType } from '@nepocorp/shared';
+import './config-page.css';
 
 /**
  * RouteFormModal — replaces the tr-based inline add form, which was visually
@@ -424,11 +425,20 @@ export default function RoutesConfigPage() {
   }).filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="fade-up routes-config-page">
+    <div className="fade-up cfg-page cfg-page--routes routes-config-page">
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Tuyến đường</h1>
-          <p className="page-subtitle">{totalCount} tuyến đang quản lý · {mountainCount} tuyến núi · {usedThisMonth} tuyến chạy trong {monthLabel}</p>
+        <button
+          type="button"
+          onClick={() => navigate('/config')}
+          aria-label="Quay lại danh sách cấu hình"
+          className="page-header__back-btn"
+          style={{ marginRight: 4 }}
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div className="page-header-main">
+          <h1 className="page-title">Tuyến đường & Cự ly</h1>
+          <p className="page-subtitle"><strong>{totalCount}</strong> tuyến đang quản lý · {mountainCount} tuyến núi · {usedThisMonth} tuyến chạy trong {monthLabel}</p>
         </div>
         <div className="page-actions">
           <button className="btn btn--primary" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm tuyến</button>
