@@ -24,7 +24,19 @@ export interface TripDerivedData {
 /** Role-based permission flags for trip actions. */
 export interface TripPermissions {
   isManagerOrAdmin: boolean;
+  /**
+   * Manager/admin may edit any trip field on CREATED + COMPLETED trips
+   * (structural changes such as route, customer, truck, driver). The trip
+   * edit form is shared, so this also implicitly covers actuals.
+   */
   canEdit: boolean;
+  /**
+   * Manager/admin AND accountant may edit the financial-figures side of a
+   * trip on IN_TRANSIT + COMPLETED. Backend contract:
+   * `PUT /api/trips/:id/actuals` is open to any role with `trips:write`
+   * and is blocked only when the trip is LOCKED or CANCELED.
+   */
+  canEditActuals: boolean;
   canCancel: boolean;
   canDispatch: boolean;
   canLock: boolean;

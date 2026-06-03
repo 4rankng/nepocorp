@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
@@ -13,6 +12,7 @@ import {
   useRejectAdvanceRequest,
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
+import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -235,7 +235,6 @@ function AdvanceMobileCard({
 
 export default function AdminAdvancesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
-  const [searchParams, setSearchParams] = useSearchParams();
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
   const { data, isLoading } = useAdminAdvanceRequests();
@@ -245,18 +244,7 @@ export default function AdminAdvancesPage() {
   const allRequests: AdvanceRequest[] = (data?.items ?? []) as AdvanceRequest[];
 
   /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
-  const focusId = searchParams.get('focus');
-  useEffect(() => {
-    if (!focusId || isLoading) return;
-    const el = document.getElementById(`adv-${focusId}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.animate?.([
-      { boxShadow: 'inset 0 0 0 2px var(--accent), 0 0 0 2px rgba(59,130,246,0.25)' },
-      { boxShadow: 'none' },
-    ], { duration: 2000, easing: 'ease-out' });
-    setSearchParams({}, { replace: true });
-  }, [focusId, isLoading, setSearchParams]);
+  const focusId = useFocusDeepLink('adv');
 
   /* ── Derived counts & totals ─────────────────────────────────────────── */
   const stats = useMemo(() => {

@@ -621,15 +621,116 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .ancillary-fees__table thead th { padding: 8px 5px; font-size: 10px; }
 .ancillary-fees__table tbody td { padding: 7px 5px; font-size: 12px; vertical-align: top; }
 .ancillary-fees__table tbody td.num { font-size: 12px; }
-/* Column widths: total = 100%, summing to ~7 logical units. */
-.ancillary-fees__table thead th:nth-child(1) { width: 22%; }   /* Loại phí / Cont / Hình thức */
+/* Column widths: 7 columns now (removed the separate actions column).
+   Decision cell (status + hover icons) lives in col 7, which is sticky. */
+.ancillary-fees__table thead th:nth-child(1) { width: 18%; }   /* Loại phí / Cont / Hình thức */
 .ancillary-fees__table thead th:nth-child(2),
 .ancillary-fees__table thead th:nth-child(3),
 .ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* num columns */
-.ancillary-fees__table thead th:nth-child(5) { width: 14%; }   /* Nhà cung cấp */
-.ancillary-fees__table thead th:nth-child(6) { width: 15%; }   /* Chứng từ */
-.ancillary-fees__table thead th:nth-child(7) { width: 12%; }   /* Trạng thái */
-.ancillary-fees__table thead th:nth-child(8) { width: 4%; }    /* actions (when not readOnly) */
+.ancillary-fees__table thead th:nth-child(5) { width: 13%; }   /* Nhà cung cấp */
+.ancillary-fees__table thead th:nth-child(6) { width: 13%; }   /* Chứng từ */
+.ancillary-fees__table thead th:nth-child(7) { width: 11%; }   /* Trạng thái (sticky) */
+
+/* Sticky last column (col 7 — status + decision icons). Same technique as
+   before: opaque bg + left shadow so it pins cleanly during horizontal scroll. */
+.ancillary-fees__table thead th:nth-child(7),
+.ancillary-fees__table tbody td:nth-child(7) {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  z-index: 1;
+}
+.ancillary-fees__table thead th:nth-child(7) { z-index: 2; }
+.ancillary-fees__table tbody tr:hover td:nth-child(7) {
+  background: var(--surface-2);
+}
+.ancillary-fees__table thead th:nth-child(7),
+.ancillary-fees__table tbody td:nth-child(7) {
+  box-shadow: -4px 0 8px -4px rgba(14, 31, 22, 0.06);
+}
+/* ── Decision cell: status pill + hover action icons ─────────────────────── */
+/* The status cell now contains the pill + inline action buttons that reveal
+   on row hover. This keeps the design compact — no separate actions column. */
+.ancillary-fees__table thead th:nth-child(7),
+.ancillary-fees__table tbody td:nth-child(7) {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  z-index: 1;
+}
+.ancillary-fees__table thead th:nth-child(7) { z-index: 2; }
+.ancillary-fees__table tbody tr:hover td:nth-child(7) {
+  background: var(--surface-2);
+}
+.ancillary-fees__table thead th:nth-child(7),
+.ancillary-fees__table tbody td:nth-child(7) {
+  box-shadow: -4px 0 8px -4px rgba(14, 31, 22, 0.06);
+}
+/* Flex row: pill stays left, action buttons group to the right and only
+   appear on row hover — keeping the table clean when no action is needed. */
+.fee-decision-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.fee-decision-cell__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+/* Reveal on row hover — the tr:hover selector drives the visibility.
+   Keyboard focus on the row also reveals so the actions are keyboard-accessible. */
+.ancillary-fees__table tbody tr:hover .fee-decision-cell__actions,
+.ancillary-fees__table tbody tr:focus-within .fee-decision-cell__actions,
+.ancillary-fees__table tbody tr:focus .fee-decision-cell__actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* Icon-only action buttons — small, subtle, hover to confirm. */
+.fee-decision-cell__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+.fee-decision-cell__btn:active:not(:disabled) {
+  transform: scale(0.88);
+}
+.fee-decision-cell__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Approve: subtle green bg, appears on hover */
+.fee-decision-cell__btn--approve {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+.fee-decision-cell__btn--approve:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+/* Reject: same treatment, warm gray — softer than red */
+.fee-decision-cell__btn--reject {
+  background: #fafaf9;
+  border-color: #e7e5e4;
+  color: #78716c;
+}
+.fee-decision-cell__btn--reject:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
 
 table {
   width: 100%;

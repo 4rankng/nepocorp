@@ -1,13 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
-import { Role } from '@nepocorp/shared';
+import { Role, type ApprovalItemType } from '@nepocorp/shared';
 
-export type ApprovalItemType =
-  | 'ancillaryFees'
-  | 'debtOffsets'
-  | 'advances'
-  | 'advanceSettlementsCheck'
-  | 'advanceSettlementsApprove';
+export { type ApprovalItemType };
 
 export interface ApprovalQueueItem {
   id: string;

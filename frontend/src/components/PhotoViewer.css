@@ -1,0 +1,189 @@
+/* ============================================================================
+ * PhotoViewer — full-screen lightbox with zoom/pan/navigation
+ * Scoped with .pv- prefix, uses app design tokens from tokens.css
+ * ========================================================================== */
+
+.pv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pv-fade-in 0.2s var(--ease) forwards;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@keyframes pv-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* --- Backdrop --- */
+.pv-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* --- Top bar --- */
+.pv-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
+}
+
+.pv-counter {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: var(--tracking-wide);
+  min-width: 52px;
+}
+
+.pv-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+
+.pv-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.pv-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.pv-btn--close:hover {
+  background: rgba(227, 36, 52, 0.25);
+  color: #ff6b6b;
+}
+
+.pv-zoom-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 38px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.pv-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 6px;
+}
+
+/* --- Stage (image area) --- */
+.pv-stage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.pv-image {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* --- Navigation arrows --- */
+.pv-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--r);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: background 150ms var(--ease), color 150ms var(--ease),
+              transform 150ms var(--ease);
+}
+
+.pv-nav:hover {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.pv-nav:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.pv-nav--prev { left: 16px; }
+.pv-nav--next { right: 16px; }
+
+/* --- Mobile adjustments --- */
+@media (max-width: 640px) {
+  .pv-topbar {
+    padding: 8px 10px;
+  }
+
+  .pv-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pv-zoom-label {
+    display: none;
+  }
+
+  .pv-nav {
+    width: 40px;
+    height: 60px;
+    border-radius: var(--r-sm);
+  }
+
+  .pv-nav--prev { left: 6px; }
+  .pv-nav--next { right: 6px; }
+
+  .pv-image {
+    max-width: 100vw;
+    max-height: 85vh;
+  }
+}

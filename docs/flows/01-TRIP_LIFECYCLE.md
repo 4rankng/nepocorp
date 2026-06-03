@@ -29,9 +29,12 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 |-----------|:-----:|:-------:|:----------:|:------:|
 | Xem tất cả chuyến | ✅ | ✅ | ✅ | ❌ (chỉ mình) |
 | Tạo chuyến | ✅ | ✅ | ❌ | ❌ |
-| Sửa trước khi LOCK | ✅ | ✅ | ❌ | Giới hạn |
+| Sửa thông tin cấu trúc (khách hàng, tuyến, xe, tài xế) trên CREATED | ✅ | ✅ | ❌ | ❌ |
+| Sửa số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương tài xế) trên IN_TRANSIT/COMPLETED | ✅ | ✅ | ✅ | ❌ |
 | Xóa (chỉ CREATED) | ✅ | ✅ | ❌ | ❌ |
 | Xem tài chính | ✅ | ✅ | ✅ | ❌ |
+
+> Phân biệt rõ "sửa thông tin cấu trúc" (chỉ manager/admin, chỉ trên CREATED) và "sửa số liệu tài chính" (manager/admin + kế toán, trên IN_TRANSIT/COMPLETED). Backend đã luôn cho phép kế toán ghi số liệu tài chính (RBAC `trips:write` + `updateTripFigures` chỉ chặn LOCKED/CANCELED) — chi tiết xem `CONTEXT.md` Phase 2–4 và use case test `T4.10` trong `backend/src/tests/integration.test.ts`.
 
 ### 1.4 API Endpoints
 
@@ -67,9 +70,9 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 
 ### 2.2 Chỉnh sửa chuyến (PUT /api/trips/:id)
 
-**Trước khi xuất phát (CREATED):** Sửa được mọi trường.
-**Đang chạy (IN_TRANSIT):** Sửa được chi phí thực tế, giờ đến thực tế.
-**Hoàn thành (COMPLETED):** Sửa được chi phí, không đổi trạng thái bằng tay.
+**Trước khi xuất phát (CREATED):** Manager/Admin sửa được mọi trường. Kế toán không sửa (chỉ manager/admin tạo + chỉnh cấu trúc).
+**Đang chạy (IN_TRANSIT):** Manager/Admin + Kế toán sửa được số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương tài xế). Nút "Nhập số liệu" hiển thị cho cả hai role.
+**Hoàn thành (COMPLETED):** Manager/Admin + Kế toán sửa được số liệu tài chính. Manager/Admin thấy nút "Chỉnh sửa", kế toán thấy nút "Nhập số liệu" (cùng form, cùng endpoint `PUT /actuals`).
 **Đã khóa (LOCKED):** KHÔNG sửa được — nút Sửa bị ẩn.
 
 **DRIVER chỉ sửa được:** status, actualArrival trên chuyến của mình.
@@ -167,13 +170,13 @@ computeTripTotals(trip):
 
 ### 4.1 Trạng thái chuyến
 
-| Status | Label | Màu | Sửa? | Xóa? |
-|--------|-------|-----|------|------|
-| CREATED | Đã tạo | Xanh dương | ✅ | ✅ |
-| IN_TRANSIT | Đang chạy | Vàng | ✅ (chi phí) | ❌ |
-| COMPLETED | Hoàn thành | Xanh lá | ✅ (chi phí) | ❌ |
-| LOCKED | Đã khóa | Xám | ❌ | ❌ |
-| CANCELLED | Đã hủy | Đỏ | ❌ | ❌ |
+| Status | Label | Màu | Sửa cấu trúc? (manager/admin) | Sửa tài chính? (manager/admin + kế toán) | Xóa? |
+|--------|-------|-----|:------------------------------:|:----------------------------------------:|:----:|
+| CREATED | Đã tạo | Xanh dương | ✅ | ❌ (kế toán chưa nhập ở trạng thái này) | ✅ |
+| IN_TRANSIT | Đang chạy | Vàng | ❌ | ✅ | ❌ |
+| COMPLETED | Hoàn thành | Xanh lá | ✅ (manager/admin) | ✅ | ❌ |
+| LOCKED | Đã khóa | Xám | ❌ | ❌ | ❌ |
+| CANCELLED | Đã hủy | Đỏ | ❌ | ❌ | ❌ |
 
 ### 4.2 Chuyển trạng thái hợp lệ
 

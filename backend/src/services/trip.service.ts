@@ -3,6 +3,8 @@ import * as s from '../db/schema';
 import { eq, and, or, isNull, sql, desc, lte, gte, inArray } from 'drizzle-orm';
 import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
 import type { TripLegInput } from '@nepocorp/shared';
+import { emitAudit } from './audit.service';
+import { AuditEvent } from './audit-types';
 import { computeTripTotals } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -365,6 +367,21 @@ export async function updateTripFigures(
         await tx.update(s.trips)
           .set({ status: TripStatus.COMPLETED, updatedAt: new Date() })
           .where(eq(s.trips.id, tripId));
+
+        // Emit a dedicated audit event for the auto-completion.
+        // The middleware already records TRIP_UPDATED_ACTUALS for the PUT request;
+        // this supplements it with the specific status change.
+        emitAudit({
+          event: AuditEvent.TRIP_COMPLETED,
+          entityType: 'trips',
+          entityId: tripId,
+          entityKey: trip.tripCode || undefined,
+          userId: data.userId,
+          metadata: {
+            source: 'auto-complete',
+            triggeredBy: 'updateTripFigures',
+          },
+        });
       }
     }
 

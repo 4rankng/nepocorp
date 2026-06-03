@@ -38,6 +38,7 @@ let baseUrl: string;
 // Cached seed records for test cases
 let adminToken: string;
 let driverToken: string;
+let accountantToken: string;
 let customerId: number;
 let driverId: number;
 let truckId: number;
@@ -163,6 +164,19 @@ before(async () => {
   // Generate tokens
   adminToken = jwt.sign({ userId: adm.id, username: adm.username, role: Role.ADMIN }, config.jwtSecret);
   driverToken = jwt.sign({ userId: drvUser.id, username: drvUser.username, role: Role.DRIVER }, config.jwtSecret);
+
+  // Resolve the seeded accountant user (ketoan). The seed script may not have
+  // created it on a fresh DB; fall back to a just-in-time insert so this test
+  // file is self-sufficient.
+  const [actExisting] = await db.select().from(s.users).where(eq(s.users.username, 'ketoan')).limit(1);
+  const actUser = actExisting ?? (await db.insert(s.users).values({
+    username: 'ketoan',
+    email: 'ketoan@nepo.vn',
+    fullName: 'Kế toán E2E',
+    passwordHash: 'x',
+    role: Role.ACCOUNTANT,
+  }).returning())[0];
+  accountantToken = jwt.sign({ userId: actUser.id, username: actUser.username, role: Role.ACCOUNTANT }, config.jwtSecret);
 });
 
 after(async () => {
@@ -595,5 +609,134 @@ test('T4.9 — Expense Category: Create and update recurring and non-recurring c
     }),
   });
   assert.strictEqual(catRes2.status, 400, 'Should fail to create a category with non-positive reminderLeadDays');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T4.10 — ACCOUNTANT can enter financial figures on IN_TRANSIT + COMPLETED
+//         trips, and is blocked from doing so on LOCKED trips.
+//
+// Regression test for the screenshot bug ("những chuyến ghi hoàn thành này kế
+// toán là không nhập được số liệu"). The fix lives in the frontend header /
+// canEdit permission, but the backend has always allowed it (RBAC grants
+// `trips:write` to ACCOUNTANT, and `updateTripFigures` only blocks LOCKED/
+// CANCELED). This test pins that contract so a future refactor can't silently
+// tighten it.
+// ─────────────────────────────────────────────────────────────────────────────
+test('T4.10 — ACCOUNTANT: enter figures on IN_TRANSIT and COMPLETED trips, blocked on LOCKED', async () => {
+  // Cancel any stale IN_TRANSIT trips blocking a free truck/driver.
+  await db.update(s.trips)
+    .set({ status: TripStatus.CANCELED })
+    .where(and(
+      eq(s.trips.status, TripStatus.IN_TRANSIT),
+      sql`${s.trips.departureDate} >= '2026-06-01'`,
+    ));
+
+  const allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
+  const allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
+  const busyActive = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
+    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
+  const busyTrucks = new Set(busyActive.map(t => t.truckId));
+  const busyDrivers = new Set(busyActive.map(t => t.driverId));
+  const tTruck = allTrucks.find(t => !busyTrucks.has(t.id))?.id ?? truckId;
+  const tDriver = allDrivers.find(d => !busyDrivers.has(d.id))?.id ?? driverId;
+
+  // 1. Create + dispatch a trip so it is IN_TRANSIT.
+  const trip = await tripService.createTrip({
+    customerId,
+    routeId,
+    truckId: tTruck,
+    driverId: tDriver,
+    cargoTypeId,
+    departureDate: '2026-06-05',
+  });
+  await tripService.transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, adminUserId, Role.ADMIN);
+
+  // 2. ACCOUNTANT enters figures on IN_TRANSIT — must succeed (200).
+  const inTransitUpdate = await testFetch(`/api/trips/${trip.id}/actuals`, {
+    method: 'PUT',
+    token: accountantToken,
+    body: JSON.stringify({
+      version: trip.version,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 2,
+      hasReturnCargo: false,
+      driverSalary: 500000,
+      revenue: 4500000,
+      // The fields the user complained about — road money + ticket/vé inputs.
+      roadAllowanceOverride: 1300000,
+    }),
+  });
+  assert.strictEqual(inTransitUpdate.status, 200, 'ACCOUNTANT must be able to enter figures on IN_TRANSIT trips');
+  assert.strictEqual(inTransitUpdate.data.totalRoadAllowance, '1300000', 'Road allowance override must be persisted by accountant update');
+  const completedVersion = inTransitUpdate.data.version;
+
+  // 3. Upload a photo and complete the trip.
+  await db.insert(s.tripPhotos).values({
+    tripId: trip.id,
+    type: 'CONTAINER',
+    storageKey: 'mock-e2e-t4-10.jpg',
+    uploadedBy: adminUserId,
+  });
+  await tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN);
+
+  // 4. ACCOUNTANT enters figures on COMPLETED — must succeed (200).
+  //    This is the exact scenario from the user's screenshot bug.
+  const completedUpdate = await testFetch(`/api/trips/${trip.id}/actuals`, {
+    method: 'PUT',
+    token: accountantToken,
+    body: JSON.stringify({
+      version: completedVersion,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 2,
+      hasReturnCargo: false,
+      driverSalary: 550000,
+      revenue: 4500000,
+      roadAllowanceOverride: 1450000,
+    }),
+  });
+  assert.strictEqual(completedUpdate.status, 200, 'ACCOUNTANT must be able to enter figures on COMPLETED trips (the reported bug)');
+  assert.strictEqual(completedUpdate.data.driverSalary, '550000', 'Accountant-edited driver salary must persist');
+  assert.strictEqual(completedUpdate.data.totalRoadAllowance, '1450000', 'Accountant-edited road allowance must persist');
+
+  // 5. ACCOUNTANT cannot change the trip status — dispatch endpoint must 403.
+  const dispatchRes = await testFetch(`/api/trips/${trip.id}/dispatch`, {
+    method: 'POST',
+    token: accountantToken,
+  });
+  assert.strictEqual(dispatchRes.status, 403, 'ACCOUNTANT must NOT be able to dispatch trips (manager-only lifecycle transition)');
+
+  // 6. Lock the trip, then verify ACCOUNTANT is blocked from editing it.
+  await testFetch(`/api/trips/${trip.id}/lock`, {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({ confirmZeroRevenue: false }),
+  });
+  const lockedUpdate = await testFetch(`/api/trips/${trip.id}/actuals`, {
+    method: 'PUT',
+    token: accountantToken,
+    body: JSON.stringify({
+      version: completedUpdate.data.version,
+      fuelMode: FuelMode.AUTO,
+      legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 2,
+      hasReturnCargo: false,
+      driverSalary: 600000,
+      revenue: 4500000,
+    }),
+  });
+  assert.strictEqual(lockedUpdate.status, 400, 'ACCOUNTANT (or anyone) must NOT be able to edit a LOCKED trip');
+  assert.ok(lockedUpdate.data.error.includes('chốt') || lockedUpdate.data.error.includes('khóa'),
+    'Lock-guard error message should be returned');
 });
 

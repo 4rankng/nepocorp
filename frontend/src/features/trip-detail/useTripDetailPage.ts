@@ -131,10 +131,25 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   /* ── Permissions ────────────────────────────────────────────────────── */
   const permissions: TripPermissions = useMemo(() => {
     const isManagerOrAdmin = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
+    const isAccountant = user?.role === Role.ACCOUNTANT;
     const s = trip?.status;
+    // Lifecycle / structural edits (route, customer, truck, driver, status
+    // transitions) stay with manager/admin only — see trip.service.ts comments
+    // and docs/flows/01-TRIP_LIFECYCLE.md §1.3.
+    //
+    // Financial-figures edits on IN_TRANSIT + COMPLETED are ACCOUNTANT's job
+    // (CONTEXT.md Phase 3 + Phase 4: "Accountant finalizes these numbers and
+    // moves it to Hoàn thành"). The backend has always allowed it (RBAC
+    // `trips:write` for ACCOUNTANT + `updateTripFigures` only blocks LOCKED/
+    // CANCELED). The fix below closes the frontend gap surfaced by the bug
+    // report "những chuyến ghi hoàn thành này kế toán là không nhập được số
+    // liệu" — accountants previously had no entry point to the edit form on
+    // completed trips, so road money / ticket / fuel fields looked uneditable.
     return {
       isManagerOrAdmin,
       canEdit: (s === TripStatus.CREATED || s === TripStatus.COMPLETED) && isManagerOrAdmin,
+      canEditActuals: (s === TripStatus.IN_TRANSIT || s === TripStatus.COMPLETED)
+        && (isManagerOrAdmin || isAccountant),
       canCancel: s !== TripStatus.LOCKED && s !== TripStatus.CANCELED && isManagerOrAdmin,
       canDispatch: s === TripStatus.CREATED && isManagerOrAdmin,
       canLock: s === TripStatus.COMPLETED && isManagerOrAdmin,

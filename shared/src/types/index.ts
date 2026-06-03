@@ -723,6 +723,15 @@ export interface SalaryPeriod {
   deletedAt: string | null;
 }
 
+// ─── Approval Queue ────────────────────────────────────────────────────────────
+
+export type ApprovalItemType =
+  | 'ancillaryFees'
+  | 'debtOffsets'
+  | 'advances'
+  | 'advanceSettlementsCheck'
+  | 'advanceSettlementsApprove';
+
 /** Resolved salary period date range returned by the resolve endpoint */
 export interface SalaryPeriodRange {
   month: number;

@@ -221,7 +221,7 @@ export default function DashboardPage() {
   } = useDashboardData(currentMonth, currentYear);
 
   const showApprovalQueue = canSeeApprovalQueue(user?.role);
-  const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role);
+  const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
 
   // ── Derived values (non-hook computations) ──────────────────────────────
   const d = derived ?? null;

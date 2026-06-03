@@ -41,7 +41,7 @@ export function TripHeader({
   trip, permissions, actionLoading,
   onBack, onEdit, onDispatch, onLock, onCancel, onReassign, onAdjust,
 }: TripHeaderProps) {
-  const { canEdit, canCancel, canDispatch, canLock, canReassign, canAdjust, needsPhotos } = permissions;
+  const { canEdit, canEditActuals, canCancel, canDispatch, canLock, canReassign, canAdjust, needsPhotos } = permissions;
 
   return (
     <header className="page-header anim d1">
@@ -83,7 +83,16 @@ export function TripHeader({
             Xuất phát
           </button>
         )}
-        {trip.status === TripStatus.IN_TRANSIT && (
+        {/*
+          Accountant + manager may both enter financial figures (fuel, road
+          allowance, tiền đi đường, vé, driver salary, etc.) on IN_TRANSIT +
+          COMPLETED trips. `canEdit` already shows the manager-only "Chỉnh
+          sửa" button on COMPLETED, so the "Nhập số liệu" variant is
+          suppressed there to avoid showing two buttons that lead to the
+          same place. This is the fix for the bug where accountant had no
+          entry point to the actuals form on completed trips.
+        */}
+        {canEditActuals && !canEdit && (
           <button className="btn btn-primary" onClick={onEdit}>
             <Pencil size={14} />Nhập số liệu
           </button>

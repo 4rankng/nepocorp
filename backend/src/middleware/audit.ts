@@ -161,6 +161,23 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
           failed: true,
         },
       });
+    } else if (res.statusCode === 403 && req.user) {
+      emitAudit({
+        event: AuditEvent.ACCESS_DENIED,
+        entityType: extractEntityType(fullPath) || 'unknown',
+        entityKey: undefined,
+        userId: req.user.userId,
+        actorRole: req.user.role,
+        actorEmail: req.user.email ?? undefined,
+        actorName: req.user.fullName ?? req.user.username ?? undefined,
+        ipAddress: req.ip,
+        metadata: {
+          method: req.method,
+          path: fullPath,
+          statusCode: res.statusCode,
+          failed: true,
+        },
+      });
     }
   });
 

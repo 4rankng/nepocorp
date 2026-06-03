@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Check, X } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES } from '@nepocorp/shared';
 import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
-import { StatusPill } from '../UI';
+import { StatusPill, useConfirm } from '../UI';
 
 function AncillaryEmptyState() {
   return (
@@ -85,12 +85,16 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: catalogData } = useCatalogs();
-  
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
   const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  // Per-row in-flight flag — disables the buttons while a request is pending
+  // so a double click can't fire approve + reject on the same row.
+  const [pendingId, setPendingId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['trip-expenses', tripId],
@@ -177,22 +181,35 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
     }
   };
 
-  const handleDelete = async (eid: number) => {
+  // Wraps an approve/reject call with a confirm dialog. Returns true if the
+  // user confirmed AND the action succeeded; false otherwise. Single entry
+  // point so the message format stays consistent.
+  const confirmAndRun = async (fee: TripExpense, action: 'approve' | 'reject') => {
+    const label = feeTypeLabel(fee.expenseType);
+    const amount = formatCurrency(Number(fee.buyAmount));
+    const message = action === 'approve'
+      ? `Duyệt khoản phí "${label}" (${amount})?`
+      : `Từ chối khoản phí "${label}" (${amount})?`;
+    const options = action === 'reject'
+      ? { variant: 'danger' as const, confirmLabel: 'Từ chối' }
+      : { confirmLabel: 'Duyệt' };
+    const ok = await confirm(message, options);
+    if (!ok) return false;
+    setPendingId(fee.id);
     try {
-      await tripClient.deleteTripExpense(tripId, eid);
-      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
-    } catch {
-      // silently ignore — UI will refresh on next load
-    }
-  };
-
-  const handleApprove = async (eid: number) => {
-    try {
-      await tripClient.approveTripExpense(tripId, eid);
+      if (action === 'approve') {
+        await tripClient.approveTripExpense(tripId, fee.id);
+      } else {
+        await tripClient.rejectTripExpense(tripId, fee.id);
+      }
       await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
       await queryClient.invalidateQueries({ queryKey: ['trip-detail', String(tripId)] });
+      return true;
     } catch {
-      // silently ignore
+      // silently ignore — toast wiring lives outside this card
+      return false;
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -226,12 +243,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     <th>Nhà cung cấp</th>
                     <th>Chứng từ</th>
                     <th>Trạng thái</th>
-                    {!readOnly && <th style={{ width: 64 }}></th>}
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.map((fee, i) => {
                     const margin = Number(fee.sellAmount) - Number(fee.buyAmount);
+                    const canDecide = isManager && fee.approvalStatus === 'PENDING';
+                    const isBusy = pendingId === fee.id;
                     return (
                       <tr key={fee.id ?? i}>
                         <td>
@@ -270,45 +288,42 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                           ) : '—'}
                         </td>
                         <td>
-                          {fee.approvalStatus === 'APPROVED' ? (
-                            <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
-                          ) : fee.approvalStatus === 'REJECTED' ? (
-                            <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
-                          ) : (
-                            <span title="Chờ duyệt"><StatusPill variant="warn">Chờ</StatusPill></span>
-                          )}
-                        </td>
-                        {!readOnly && (
-                          <td style={{ whiteSpace: 'nowrap' }}>
-                            {isManager && fee.approvalStatus === 'PENDING' && (
-                              <button
-                                type="button"
-                                className="btn btn--sm btn--primary"
-                                style={{
-                                  padding: '2px 8px',
-                                  fontSize: 11,
-                                  background: '#16a34a',
-                                  borderColor: '#16a34a',
-                                  marginRight: 6,
-                                  borderRadius: 4,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                }}
-                                onClick={() => handleApprove(fee.id)}
-                              >
-                                Duyệt
-                              </button>
+                          {/* Decision cell: status pill always visible, action icons
+                              appear on row hover when the row is pending a decision. */}
+                          <div className="fee-decision-cell">
+                            {fee.approvalStatus === 'APPROVED' ? (
+                              <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
+                            ) : fee.approvalStatus === 'REJECTED' ? (
+                              <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
+                            ) : (
+                              <span title="Chờ duyệt"><StatusPill variant="warn">Chờ</StatusPill></span>
                             )}
-                            <button
-                              type="button"
-                              className="btn btn--ghost btn--icon btn--sm"
-                              onClick={() => handleDelete(fee.id)}
-                              title="Xóa phí này"
-                            >
-                              <Trash2 size={13} style={{ color: 'var(--danger)' }} />
-                            </button>
-                          </td>
-                        )}
+                            {canDecide && !readOnly && (
+                              <div className="fee-decision-cell__actions">
+                                <button
+                                  type="button"
+                                  className="fee-decision-cell__btn fee-decision-cell__btn--approve"
+                                  onClick={() => confirmAndRun(fee, 'approve')}
+                                  disabled={isBusy}
+                                  title="Duyệt khoản phí này"
+                                  aria-label="Duyệt"
+                                >
+                                  {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} strokeWidth={2.6} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="fee-decision-cell__btn fee-decision-cell__btn--reject"
+                                  onClick={() => confirmAndRun(fee, 'reject')}
+                                  disabled={isBusy}
+                                  title="Từ chối khoản phí này"
+                                  aria-label="Từ chối"
+                                >
+                                  {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} strokeWidth={2.6} />}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -325,7 +340,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={readOnly ? 2 : 3}></td>
+                    <td colSpan={2}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -537,6 +552,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
           )}
         </>
       )}
+      {confirmDialog}
     </div>
   );
 }

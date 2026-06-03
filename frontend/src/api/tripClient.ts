@@ -102,4 +102,7 @@ export const tripClient = {
 
   approveTripExpense: (tripId: number, eid: number) =>
     api.post<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}/approve`, {}),
+
+  rejectTripExpense: (tripId: number, eid: number) =>
+    api.post<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}/reject`, {}),
 };

@@ -1,14 +1,9 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { Role } from '@nepocorp/shared';
+import { Role, type ApprovalItemType } from '@nepocorp/shared';
 import { and, asc, eq, ne } from 'drizzle-orm';
 
-export type ApprovalItemType =
-  | 'ancillaryFees'
-  | 'debtOffsets'
-  | 'advances'
-  | 'advanceSettlementsCheck'
-  | 'advanceSettlementsApprove';
+export { type ApprovalItemType };
 
 export interface ApprovalQueueItem {
   id: string;

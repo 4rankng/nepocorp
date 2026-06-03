@@ -25,6 +25,7 @@ export type {
   AdvanceRequest, AdvanceRequestWithRefs, AdvanceSettlement, AdvanceSettlementWithRefs,
   ContainerType, Port,
   DebtOffset,
+  ApprovalItemType,
 } from './types';
 
 export { parseThreshold } from './types';
