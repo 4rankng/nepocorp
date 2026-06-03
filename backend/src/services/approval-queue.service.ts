@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { Role, type ApprovalItemType } from '@nepocorp/shared';
+import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@nepocorp/shared';
 import { and, asc, eq, ne } from 'drizzle-orm';
 
 export { type ApprovalItemType };
@@ -36,7 +36,8 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
   // Build query promises conditionally, then fire them all in parallel
   const queryPromises: Promise<ApprovalQueueItem[]>[] = [];
 
-  if (isAdmin || isManager) {
+  // Ancillary fees — ADMIN, MANAGER, and ACCOUNTANT can approve
+  if (isAdmin || isManager || isAccountant) {
     queryPromises.push(
       db
         .select({
@@ -71,7 +72,10 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           };
         })),
     );
+  }
 
+  // Debt offsets & advances — only ADMIN and MANAGER can approve
+  if (isAdmin || isManager) {
     queryPromises.push(
       db
         .select({

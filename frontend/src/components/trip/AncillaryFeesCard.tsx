@@ -87,7 +87,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const { data: catalogData } = useCatalogs();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
-  const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+  const canApprove = user?.role === 'MANAGER' || user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -236,67 +236,75 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
               <table className="ancillary-fees__table">
                 <thead>
                   <tr>
-                    <th>Loại phí / Cont / Hình thức</th>
-                    <th className="num">Mua vào</th>
-                    <th className="num">Bán ra</th>
-                    <th className="num">Lãi DV</th>
-                    <th>Nhà cung cấp</th>
+                    <th>Loại phí</th>
+                    <th>Hình thức</th>
+                    <th className="num" style={{ color: 'var(--ink-3)' }}>Mua vào</th>
+                    <th className="num" style={{ color: 'var(--ink-3)' }}>Bán ra</th>
+                    <th className="num" style={{ fontWeight: 700, color: 'var(--ink)' }}>Lãi DV</th>
+                    <th>Nhà CC</th>
                     <th>Chứng từ</th>
                     <th>Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
                   {expenses.map((fee, i) => {
-                    const margin = Number(fee.sellAmount) - Number(fee.buyAmount);
-                    const canDecide = isManager && fee.approvalStatus === 'PENDING';
+                    const buy = Number(fee.buyAmount);
+                    const sell = Number(fee.sellAmount);
+                    const margin = sell - buy;
+                    const canDecide = canApprove && fee.approvalStatus === 'PENDING';
                     const isBusy = pendingId === fee.id;
                     return (
                       <tr key={fee.id ?? i}>
                         <td>
                           <div style={{ lineHeight: 1.25 }}>
                             <div>{feeTypeLabel(fee.expenseType)}</div>
-                            <div style={{ fontSize: 11, color: 'var(--fg-3)', display: 'flex', gap: 6 }}>
-                              {fee.containerNumber && <span className="mono">{fee.containerNumber}</span>}
-                              {fee.containerNumber && <span>·</span>}
-                              <span>{fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}</span>
-                            </div>
+                            {fee.containerNumber && (
+                              <div style={{ fontSize: 11, color: 'var(--ink-3)' }} className="mono">{fee.containerNumber}</div>
+                            )}
                           </div>
                         </td>
-                        <td className="num">{formatCurrency(Number(fee.buyAmount))}</td>
-                        <td className="num">{formatCurrency(Number(fee.sellAmount))}</td>
+                        <td>
+                          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                            {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
+                          </span>
+                        </td>
+                        <td className="num" style={{ color: 'var(--ink-2)' }}>
+                          {buy > 0 ? formatCurrency(buy) : ''}
+                        </td>
+                        <td className="num" style={{ color: 'var(--ink-2)' }}>
+                          {sell > 0 ? formatCurrency(sell) : ''}
+                        </td>
                         <td
                           className="num"
                           style={{
-                            color: margin >= 0 ? 'var(--success)' : 'var(--danger)',
-                            fontWeight: 600,
+                            color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)',
+                            fontWeight: 700,
                           }}
                         >
-                          {formatCurrency(margin)}
+                          {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : ''}
                         </td>
                         <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
-                          {fee.supplierName ?? '—'}
+                          {fee.supplierName ?? ''}
                         </td>
                         <td
-                          style={{ fontSize: 12, color: 'var(--fg-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                          title={[fee.invoiceNumber && `HĐ ${fee.invoiceNumber}`, fee.invoiceDate && `Ngày ${fee.invoiceDate}`, fee.declarationNumber && `TK ${fee.declarationNumber}`].filter(Boolean).join(' · ') || '—'}
+                          style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          title={[fee.invoiceNumber && `HĐ ${fee.invoiceNumber}`, fee.invoiceDate && `Ngày ${fee.invoiceDate}`, fee.declarationNumber && `TK ${fee.declarationNumber}`].filter(Boolean).join(' · ') || undefined}
                         >
                           {fee.invoiceNumber || fee.declarationNumber ? (
                             <>
-                              <span style={{ color: 'var(--fg-1)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
+                              <span style={{ color: 'var(--ink)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
                               {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 11 }}>· {fee.invoiceDate.slice(5)}</span>}
                             </>
-                          ) : '—'}
+                          ) : ''}
                         </td>
                         <td>
-                          {/* Decision cell: status pill always visible, action icons
-                              appear on row hover when the row is pending a decision. */}
                           <div className="fee-decision-cell">
                             {fee.approvalStatus === 'APPROVED' ? (
                               <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
                             ) : fee.approvalStatus === 'REJECTED' ? (
                               <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
                             ) : (
-                              <span title="Chờ duyệt"><StatusPill variant="warn">Chờ</StatusPill></span>
+                              <span title="Chờ duyệt"><StatusPill variant="neutral">Chờ</StatusPill></span>
                             )}
                             {canDecide && !readOnly && (
                               <div className="fee-decision-cell__actions">
@@ -327,11 +335,20 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                       </tr>
                     );
                   })}
+                  {!readOnly && !hideAddButton && !showForm && (
+                    <tr
+                      className="ancillary-fees__add-row"
+                      onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+                    >
+                      <td colSpan={7}>
+                        <Plus size={13} /> Thêm phí
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 600, borderTop: '2px solid var(--border-1)' }}>
-                    <td>Tổng</td>
-                    <td></td>
+                  <tr>
+                    <td colSpan={2}>Tổng</td>
                     <td className="num">{formatCurrency(totalBuy)}</td>
                     <td className="num">{formatCurrency(totalSell)}</td>
                     <td
@@ -340,23 +357,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     >
                       {formatCurrency(totalMargin)}
                     </td>
-                    <td colSpan={2}></td>
+                    <td colSpan={3}></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           ) : (
             <AncillaryEmptyState />
-          )}
-
-          {!readOnly && !showForm && !hideAddButton && (
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
-            >
-              <Plus size={14} /> Thêm phí
-            </button>
           )}
 
           {!readOnly && showForm && (

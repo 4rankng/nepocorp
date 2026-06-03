@@ -1,5 +1,6 @@
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { FINANCIAL_ROLES } from '@nepocorp/shared';
 
 export type ApprovableTable = 'trip_expenses' | 'debt_offsets';
 export type ApprovalTransition = 'APPROVED' | 'REJECTED';
@@ -12,7 +13,7 @@ const APPROVABLE_TABLES = {
 /**
  * Transitions an approvable record from PENDING → APPROVED or REJECTED.
  * Must be called inside a db.transaction().
- * Only MANAGER and ADMIN may approve.
+ * ADMIN, MANAGER, and ACCOUNTANT may approve.
  */
 export async function transitionApproval(
   tx: any,
@@ -24,8 +25,8 @@ export async function transitionApproval(
     actorRole: string;
   },
 ): Promise<void> {
-  if (!['ADMIN', 'MANAGER'].includes(opts.actorRole)) {
-    throw Object.assign(new Error('Chỉ quản lý mới có thể phê duyệt hoặc từ chối'), { status: 403 });
+  if (!(FINANCIAL_ROLES as readonly string[]).includes(opts.actorRole)) {
+    throw Object.assign(new Error('Bạn không có quyền phê duyệt hoặc từ chối'), { status: 403 });
   }
 
   const table = APPROVABLE_TABLES[opts.table];

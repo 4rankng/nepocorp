@@ -24,6 +24,14 @@ export enum Role {
   FORWARDER = 'FORWARDER',
 }
 
+/** Roles that can approve expense approvals and access financial reports. */
+export const FINANCIAL_ROLES: readonly Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT] as const;
+
+/** Check whether a role belongs to the financial/approval group. */
+export function isFinancialRole(role: Role | string | undefined): boolean {
+  return !!role && (FINANCIAL_ROLES as readonly string[]).includes(role);
+}
+
 export enum TxnType {
   TRIP_REVENUE = 'TRIP_REVENUE',
   PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',

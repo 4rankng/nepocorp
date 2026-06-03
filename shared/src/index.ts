@@ -9,6 +9,7 @@ export {
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
+  FINANCIAL_ROLES, isFinancialRole,
 } from './constants';
 
 export type {

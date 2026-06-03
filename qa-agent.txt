@@ -4,7 +4,7 @@ Execute an autonomous, iterative Quality Assurance (QA) and micro-fixing loop fo
 **Context Management Rule:**
 To prevent context bloat, you must operate in micro-iterations. **Never test the entire application at once.** Test one specific user flow for one specific role at a time, and fix bugs in small, isolated batches.
 
-TARGET_FILE=/Users/dev/Documents/projects/nepocorp/docs/plans/service-cost-partner-vendor/huong_dan_test_quan_ly.md
+OBJECTIVE="please go through page by page , subpages, components to ensure they looks elegant in mobile view"
 
 **Context & Resources:**
 - Application URL: http://localhost:7173/
@@ -25,7 +25,7 @@ TARGET_FILE=/Users/dev/Documents/projects/nepocorp/docs/plans/service-cost-partn
 **Execution Workflow (The Micro-Iteration Loop):**
 
 **Phase 0: Scope Definition (Lead QA Engineer - Run Once)**
-1. Read $TARGET_FILE
+1. Read $OBJECTIVE
 2. Generate a lightweight "Test Execution Checklist" breaking down the application into granular, single-role flows (e.g., "Dispatcher: Create Transport Manifest," "Accountant: Generate Invoice").
 3. Select the first incomplete item on this checklist to begin Phase 1.
 

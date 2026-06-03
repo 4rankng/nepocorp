@@ -316,10 +316,10 @@ router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Respo
   res.json({ ok: true });
 }));
 
-// POST /api/trips/:id/expenses/:eid/approve — MANAGER/ADMIN only
+// POST /api/trips/:id/expenses/:eid/approve — ADMIN/MANAGER/ACCOUNTANT
 router.post(
   '/:id/expenses/:eid/approve',
-  requireRoles(Role.ADMIN, Role.MANAGER),
+  requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT),
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
@@ -345,10 +345,10 @@ router.post(
   }),
 );
 
-// POST /api/trips/:id/expenses/:eid/reject — MANAGER/ADMIN only
+// POST /api/trips/:id/expenses/:eid/reject — ADMIN/MANAGER/ACCOUNTANT
 router.post(
   '/:id/expenses/:eid/reject',
-  requireRoles(Role.ADMIN, Role.MANAGER),
+  requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT),
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
