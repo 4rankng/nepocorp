@@ -65,6 +65,45 @@ router.get('/autocomplete', asyncHandler(async (req: Request, res: Response) => 
   res.json({ suggestions });
 }));
 
+// ── Types for route alternatives ──────────────────────────────────────────
+
+interface RouteSuggestion {
+  km: number;
+  durationSeconds: number | null;
+  polylinePath: string | null;
+  summary: string;
+}
+
+interface DistanceResponse {
+  routes: RouteSuggestion[];
+  selected: RouteSuggestion | null;
+}
+
+interface GoogleDirectionsRoute {
+  summary?: string;
+  legs?: Array<{
+    distance?: { value: number }; // meters
+    duration?: { value: number }; // seconds
+  }>;
+  overview_polyline?: { points: string };
+}
+
+interface GoogleDirectionsResponse {
+  status: string;
+  routes?: GoogleDirectionsRoute[];
+}
+
+function routeToSuggestion(route: GoogleDirectionsRoute): RouteSuggestion | null {
+  const leg = route.legs?.[0];
+  if (!leg || !leg.distance) return null;
+  return {
+    km: Math.round(leg.distance.value / 100) / 10, // meters → km, 1 decimal
+    durationSeconds: leg.duration?.value ?? null,
+    polylinePath: route.overview_polyline?.points ?? null,
+    summary: route.summary ?? '',
+  };
+}
+
 // ── Google Directions with Local Cache ─────────────────────────────────────
 
 router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
@@ -72,7 +111,7 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
   const destination = (req.query.destination as string || '').trim();
 
   if (!origin || !destination) {
-    res.json({ km: null, polylinePath: null });
+    res.json({ routes: [], selected: null } satisfies DistanceResponse);
     return;
   }
 
@@ -92,10 +131,35 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
     .limit(1);
 
   if (cached) {
-    res.json({ 
-      km: Number(cached.distanceKm), 
-      polylinePath: cached.polylinePath 
-    });
+    let routes: RouteSuggestion[] = [];
+    if (cached.allRoutesJson) {
+      try {
+        const parsed = JSON.parse(cached.allRoutesJson) as RouteSuggestion[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          routes = parsed;
+        }
+      } catch (err) {
+        console.warn('[maps] Failed to parse cached allRoutesJson, falling back to single route');
+      }
+    }
+    if (routes.length === 0) {
+      // Legacy cache entry from before this feature: synthesize a single
+      // element from the stored fields so callers always get the new shape.
+      routes = [{
+        km: Number(cached.distanceKm),
+        durationSeconds: cached.durationSeconds ?? null,
+        polylinePath: cached.polylinePath ?? null,
+        summary: cached.routeSummary ?? '',
+      }];
+    }
+    const selected: RouteSuggestion = {
+      km: Number(cached.distanceKm),
+      durationSeconds: cached.durationSeconds ?? null,
+      polylinePath: cached.polylinePath ?? null,
+      summary: cached.routeSummary ?? '',
+    };
+    const response: DistanceResponse = { routes, selected };
+    res.json(response);
     return;
   }
 
@@ -104,60 +168,96 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // 2. Fallback to Google Directions API
+  // 2. Fallback to Google Directions API — request alternatives so users
+  //    can pick e.g. QL5 vs. Hà Nội–Hải Phòng expressway for the same pair.
   const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
   url.searchParams.set('origin', origin);
   url.searchParams.set('destination', destination);
   url.searchParams.set('key', config.googleMapsApiKey);
   url.searchParams.set('mode', 'driving');
+  url.searchParams.set('alternatives', 'true');
 
   const response = await fetch(url.toString());
   if (!response.ok) {
     console.error(`[maps] Directions API returned ${response.status}`);
-    res.json({ km: null, polylinePath: null });
+    res.json({ routes: [], selected: null } satisfies DistanceResponse);
     return;
   }
 
-  const data = await response.json() as {
-    status: string;
-    routes?: Array<{
-      legs?: Array<{
-        distance?: { value: number }; // meters
-        duration?: { value: number }; // seconds
-      }>;
-      overview_polyline?: {
-        points: string;
-      };
-    }>;
-  };
+  const data = await response.json() as GoogleDirectionsResponse;
 
   if (data.status !== 'OK' || !data.routes || data.routes.length === 0) {
     console.error(`[maps] Directions status: ${data.status}`);
-    res.json({ km: null, polylinePath: null });
+    res.json({ routes: [], selected: null } satisfies DistanceResponse);
     return;
   }
 
-  const route = data.routes[0];
-  const leg = route.legs?.[0];
-  if (!leg || !leg.distance) {
-    res.json({ km: null, polylinePath: null });
+  const suggestions = data.routes
+    .map(routeToSuggestion)
+    .filter((r): r is RouteSuggestion => r !== null);
+
+  if (suggestions.length === 0) {
+    res.json({ routes: [], selected: null } satisfies DistanceResponse);
     return;
   }
 
-  const km = Math.round(leg.distance.value / 100) / 10; // meters → km, 1 decimal
-  const durationSeconds = leg.duration?.value || null;
-  const polylinePath = route.overview_polyline?.points || null;
+  const selected = suggestions[0];
 
-  // 3. Save into cache table
+  // 3. Save into cache table. We always persist the full list so the
+  //    picker can show every alternative on the next request for this pair.
   await db.insert(s.routeDistanceCache).values({
     originCleaned,
     destinationCleaned: destCleaned,
-    distanceKm: String(km),
-    durationSeconds,
-    polylinePath,
+    distanceKm: String(selected.km),
+    durationSeconds: selected.durationSeconds,
+    polylinePath: selected.polylinePath,
+    allRoutesJson: JSON.stringify(suggestions),
+    routeSummary: selected.summary || null,
   }).onConflictDoNothing();
 
-  res.json({ km, polylinePath });
+  const distResponse: DistanceResponse = { routes: suggestions, selected };
+  res.json(distResponse);
+}));
+
+// ── Persist user's preferred alternative for an existing cache row ─────────
+
+router.put('/route-preference', asyncHandler(async (req: Request, res: Response) => {
+  const { origin, destination, km, polylinePath, summary } = req.body ?? {};
+
+  if (
+    typeof origin !== 'string' ||
+    typeof destination !== 'string' ||
+    typeof km !== 'number' ||
+    !Number.isFinite(km) ||
+    km <= 0
+  ) {
+    res.status(400).json({ error: 'origin, destination and a positive numeric km are required' });
+    return;
+  }
+
+  const originCleaned = origin.trim().toLowerCase();
+  const destCleaned = destination.trim().toLowerCase();
+
+  // Upsert only the selected columns. Intentionally leave allRoutesJson
+  // untouched so the picker still shows every alternative next time.
+  await db.insert(s.routeDistanceCache)
+    .values({
+      originCleaned,
+      destinationCleaned: destCleaned,
+      distanceKm: String(km),
+      polylinePath: typeof polylinePath === 'string' ? polylinePath : null,
+      routeSummary: typeof summary === 'string' ? summary : null,
+    })
+    .onConflictDoUpdate({
+      target: [s.routeDistanceCache.originCleaned, s.routeDistanceCache.destinationCleaned],
+      set: {
+        distanceKm: String(km),
+        polylinePath: typeof polylinePath === 'string' ? polylinePath : null,
+        routeSummary: typeof summary === 'string' ? summary : null,
+      },
+    });
+
+  res.json({ ok: true });
 }));
 
 export default router;
