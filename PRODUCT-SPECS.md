@@ -122,8 +122,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 * **Công thức đối với Xe nhà:** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương sản lượng + Chi phí dịch vụ đi kèm (nếu công ty trả trực tiếp)`.
 * **Công thức đối với Xe ngoài:** `Tổng chi phí = Giá cước thuê ngoài`.
+* **Thuế VAT trong chi phí:** Toàn bộ khoản chi phí được ghi nhận **gồm VAT** (incl. VAT). Không trừ VAT đầu vào trên chi phí. Điều này phản ánh thực tế doanh nghiệp: chi phí thực trả cho NCC đã bao gồm thuế GTGT.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
-* **Hai tầng:** thẻ **từng chuyến** giữ nguyên công thức trên (`computeTripTotals` không đổi). Ở **báo cáo lãi lỗ theo tháng**, Tổng chi phí bao gồm **TẤT CẢ chi phí** = Σ chi phí các chuyến + Σ chi phí vận hành/bảo dưỡng theo xe (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — xem §4.14). Chi phí bảo dưỡng là theo xe/tháng, không tính vào từng chuyến.
+* **Hai tầng:** thẻ **từng chuyến** giữ nguyên công thức trên (`computeTripTotals` không đổi). Ở **báo cáo lãi lỗ theo tháng**, Tổng chi phí bao gồm **TẤT CẢ chi phí** = Σ chi phí các chuyến (gồm VAT) + Σ chi phí vận hành/bảo dưỡng theo xe (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ — xem §4.14). Chi phí bảo dưỡng là theo xe/tháng, không tính vào từng chuyến.
 
 ### 4.6.1 Chi phí dịch vụ đi kèm (Ancillary Fees)
 * Các chi phí phát sinh tại cảng/bãi (Nâng container, Hạ container, Cân hàng, Kiểm hóa, Hải quan, Hạ tầng, Phục vụ kiểm hóa, Phí chi hộ khác).
@@ -154,8 +155,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.7 Lợi nhuận
 
-* **Lợi nhuận gộp (Gross Profit):** = Tổng Doanh thu (Vận tải + Lãi xe ngoài + Lãi dịch vụ đi kèm) − **Tổng chi phí xe**, tính theo từng **xe đầu kéo** (hoặc gộp riêng thành mục Xe ngoài), theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
-* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung)** + Thu nhập khác.
+* **Nguyên tắc VAT (bất đối xứng):** Doanh thu ghi nhận **chưa VAT** (ex-VAT), chi phí ghi nhận **gồm VAT** (incl. VAT). Đây là phương pháp tính của công ty: cước bán ra cho KH gồm VAT, nhưng nội bộ chỉ tính phần doanh thu thực (không VAT) trừ đi toàn bộ chi phí thực chi (đã có VAT). Khoản VAT đầu ra không phải thu nhập công ty; VAT đầu vào trên chi phí là chi phí thực tế không được khấu trừ trong bức tranh nội bộ.
+* **Lợi nhuận gộp (Gross Profit):** = Doanh thu vận tải **chưa VAT** − Tổng chi phí **gồm VAT**, tính theo từng **xe đầu kéo** (hoặc gộp riêng thành mục Xe ngoài), theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe (gồm VAT) + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
+* **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung, gồm VAT)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương tài xế ghi nhận đầy đủ, không trừ phạt.
 
@@ -362,8 +364,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Chi phí dầu | Tổng L dầu × Đơn giá thực tế (nếu có) hoặc Đơn giá cấu hình |
 | Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
 | Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
-| Tổng chi phí (Xe nhà) | Chi phí dầu + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT) |
-| Doanh thu chuyến | (Doanh thu trả hàng + Doanh thu kết hợp đóng hàng) / (1 + VAT) |
-| Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) quy về ex-VAT |
-| Lợi nhuận xe ngoài | Doanh thu ex-VAT - Chi phí xe ngoài ex-VAT |
-| Lợi nhuận gộp | Doanh thu vận tải ex-VAT - Tổng chi phí (Xe nhà) + LN dịch vụ + LN xe ngoài |
+| Tổng chi phí (Xe nhà) | Chi phí dầu (incl. VAT) + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT, incl. VAT) |
+| Doanh thu chuyến | (Doanh thu trả hàng + Doanh thu kết hợp đóng hàng) / (1 + VAT) — **ex-VAT** |
+| Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) — giá bán ra ex-VAT, giá mua vào incl. VAT |
+| Lợi nhuận xe ngoài | Doanh thu ex-VAT − Chi phí xe ngoài (incl. VAT) |
+| Lợi nhuận gộp | **Doanh thu vận tải ex-VAT** − **Tổng chi phí (incl. VAT)** + LN dịch vụ + LN xe ngoài |

@@ -35,7 +35,9 @@ Trang Phân bổ Lợi nhuận cho phép xem báo cáo Kết quả Kinh doanh (K
 ### 1.4 Công thức
 
 ```
-Lợi nhuận gộp = Doanh thu − Chi phí
+Doanh thu = customer_price / (1 + vatRate) — ex-VAT
+Chi phí = tổng các khoản chi — incl. VAT (không trừ VAT đầu vào)
+Lợi nhuận gộp = Doanh thu (ex-VAT) − Chi phí (incl. VAT)
 Lợi nhuận ròng = Lợi nhuận gộp − Phí quản lý + Thu nhập khác
 Phân bổ mỗi đối tác = Lợi nhuận ròng × Tỷ lệ (%)
 ```
@@ -72,7 +74,9 @@ Phân bổ mỗi đối tác = Lợi nhuận ròng × Tỷ lệ (%)
 ```
 Chọn Tháng/Năm → GET /api/reports/pnl?month=X&year=Y
 → Tính từ chuyến LOCKED trong tháng
-→ grossProfit = revenue − costs
+→ revenue = customer_price / (1 + vatRate) — ex-VAT
+→ costs = tổng chi phí — incl. VAT
+→ grossProfit = revenue (ex-VAT) − costs (incl. VAT)
 → netProfit = grossProfit − managementFee + otherIncome
 → Response: { period, totalRevenue, totalCosts, grossProfit, managementFee, otherIncome, netProfit, tripCount, trucks[] }
 ```

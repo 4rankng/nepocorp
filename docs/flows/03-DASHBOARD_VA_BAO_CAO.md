@@ -41,9 +41,9 @@
 
 | Thẻ | Nội dung | Đơn vị |
 |-----|----------|--------|
-| Tổng doanh thu | Tổng `customer_price` chuyến COMPLETED trong kỳ | VND |
-| Tổng chi phí | Tổng tất cả khoản chi (NL, cầu đường, lương, phụ phí) | VND |
-| Lợi nhuận ròng | Doanh thu − Chi phí | VND |
+| Tổng doanh thu | Tổng doanh thu **ex-VAT** (customer_price / (1 + vatRate)) chuyến COMPLETED trong kỳ | VND |
+| Tổng chi phí | Tổng tất cả khoản chi **incl. VAT** (NL, cầu đường, lương, phụ phí) | VND |
+| Lợi nhuận ròng | Doanh thu ex-VAT − Chi phí incl. VAT | VND |
 | Số chuyến | Số chuyến COMPLETED trong kỳ | chuyến |
 
 **Biểu đồ xu hướng 12 tháng:** Đường doanh thu (xanh) + đường chi phí (đỏ), tooltip khi hover.
@@ -68,19 +68,19 @@
 
 | Mục | Nguồn |
 |-----|-------|
-| I. Doanh thu vận tải | Σ customer_price (ex-VAT) |
-| Doanh thu điều xe ngoài (lãi quản lý) | Σ externalMargin (ex-VAT) |
-| Lãi dịch vụ đi kèm | Σ serviceMargin (ex-VAT) |
-| II. Chi phí nhiên liệu | Σ fuel_cost (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
-| Chi phí cầu đường | Σ toll_cost |
+| I. Doanh thu vận tải | Σ customer_price / (1 + vatRate) — **ex-VAT** |
+| Doanh thu điều xe ngoài (lãi quản lý) | Σ externalMargin (doanh thu ex-VAT − chi phí thuê ngoài incl. VAT) |
+| Lãi dịch vụ đi kèm | Σ serviceMargin (giá bán ex-VAT − giá mua incl. VAT) |
+| II. Chi phí nhiên liệu | Σ fuel_cost **incl. VAT** (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
+| Chi phí cầu đường | Σ toll_cost **incl. VAT** |
 | Công lương tài xế | Σ driver_pay |
-| Chi phí bốc xếp | Σ loading_cost |
-| Chi phí dỡ hàng | Σ unloading_cost |
-| Chi phí thuê xe ngoài | Σ externalFreightCost (chỉ cho báo cáo gộp, thường lấy margin trực tiếp) |
-| Chi phí khác | Σ other_cost |
-| **Tổng chi phí** | Tổng các khoản chi phí trên |
-| III. Lợi nhuận gộp | Doanh thu − Tổng chi phí |
-| Biên lợi nhuận | LN / Doanh thu × 100% |
+| Chi phí bốc xếp | Σ loading_cost **incl. VAT** |
+| Chi phí dỡ hàng | Σ unloading_cost **incl. VAT** |
+| Chi phí thuê xe ngoài | Σ externalFreightCost **incl. VAT** (chỉ cho báo cáo gộp, thường lấy margin trực tiếp) |
+| Chi phí khác | Σ other_cost **incl. VAT** |
+| **Tổng chi phí** | Tổng các khoản chi phí trên (**toàn bộ incl. VAT**) |
+| III. Lợi nhuận gộp | **Doanh thu ex-VAT** − **Tổng chi phí incl. VAT** |
+| Biên lợi nhuận | LN / Doanh thu ex-VAT × 100% |
 
 **Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bảng con phân tách chi phí bảo dưỡng theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, sẽ được nhóm dưới mục "Xe ngoài" (hoặc tên đối tác).
 
@@ -98,9 +98,9 @@
     │   └─ DRIVER: chỉ chuyến của mình
     │
     ├─ Tính KPI (chỉ chuyến COMPLETED)
-    │   ├─ Doanh thu = Σ customer_price
-    │   ├─ Chi phí = Σ (fuel + toll + driver_pay + loading + unloading + other)
-    │   ├─ Lợi nhuận = Doanh thu − Chi phí
+    │   ├─ Doanh thu = Σ customer_price / (1 + vatRate) — ex-VAT
+    │   ├─ Chi phí = Σ (fuel + toll + driver_pay + loading + unloading + other) — incl. VAT
+    │   ├─ Lợi nhuận = Doanh thu ex-VAT − Chi phí incl. VAT
     │   └─ Số chuyến = COUNT
     │
     ├─ Render biểu đồ
@@ -124,6 +124,8 @@
     ├─ Gọi API /api/financial/profit-loss?month=X&year=Y
     │   ├─ Lọc trips theo kỳ
     │   ├─ Tính từng khoản thu/chi bằng round2dp()
+    │   │   ├─ Doanh thu = customer_price / (1 + vatRate) — ex-VAT
+    │   │   ├─ Chi phí = giữ nguyên giá incl. VAT (không trừ VAT đầu vào)
     │   │   └─ Chi phí nhiên liệu: dùng fuelActualUnitPrice (nếu có) thay vì fuelPriceApplied
     │   └─ Group by vehicle cho per-truck breakdown
     │       └─ Phân tách chi phí bảo dưỡng: vehicle_component=TRUCK vs TRAILER

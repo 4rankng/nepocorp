@@ -151,16 +151,19 @@ DRIVER đăng nhập → Xem chuyến mình →
 ```
 computeTripTotals(trip):
   customerFreightExVat = customerFreightInclVat / (1 + vatRate)
-  
+
   Nếu Xe nhà:
-    totalExpenses = fuelAmount + tollFees + driverAllowance + ...
+    totalExpenses = fuelAmount + tollFees + driverAllowance + ...  // tất cả incl. VAT
     grandTotal = customerFreightExVat − totalExpenses + serviceMargin
-  
+
   Nếu Xe ngoài:
-    externalFreightExVat = externalFreightCost / (1 + vatRate)
-    externalMargin = customerFreightExVat - externalFreightExVat
+    externalFreightInclVat = externalFreightCost  // giá thuê ngoài đã gồm VAT
+    externalMargin = customerFreightExVat − externalFreightInclVat
     grandTotal = externalMargin + serviceMargin
 
+  Nguyên tắc VAT (bất đối xứng):
+    Doanh thu = ex-VAT (trừ VAT đầu ra)
+    Chi phí   = incl. VAT (giữ nguyên VAT đầu vào, không khấu trừ)
   → Mọi giá trị dùng round2dp()
 ```
 
