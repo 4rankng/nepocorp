@@ -738,11 +738,17 @@ export async function getTrips(filters: TripListFilters) {
     const c = eq(s.trips.customerId, filters.customerId);
     conditions.push(c); countConditions.push(c);
   }
-  if (filters.dateFrom) {
+  // Search intent is "find this specific trip regardless of when" — the date
+  // range from the topbar month chip is suppressed so e.g. searching for
+  // TRP-202605-0003 from the June chip still resolves to the May trip.
+  // Frontend already omits the range when searching; this is a defense layer
+  // for any client that doesn't.
+  const applyDateRange = !filters.search;
+  if (applyDateRange && filters.dateFrom) {
     const c = gte(s.trips.departureDate, filters.dateFrom);
     conditions.push(c); countConditions.push(c);
   }
-  if (filters.dateTo) {
+  if (applyDateRange && filters.dateTo) {
     const c = lte(s.trips.departureDate, filters.dateTo);
     conditions.push(c); countConditions.push(c);
   }

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
@@ -69,17 +70,19 @@ function AdvanceGridRow({
   req,
   approveMutation,
   rejectMutation,
+  focusId,
 }: {
   req: AdvanceRequest;
   approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
   rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+  focusId?: string;
 }) {
   const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-grid-row">
+    <div className="adv-grid-row" id={focusId}>
       {/* Requester */}
       <div className="adv-requester">
         <div className="adv-avatar">
@@ -149,17 +152,19 @@ function AdvanceMobileCard({
   req,
   approveMutation,
   rejectMutation,
+  focusId,
 }: {
   req: AdvanceRequest;
   approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
   rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+  focusId?: string;
 }) {
   const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-mcard">
+    <div className="adv-mcard" id={focusId}>
       {/* Top: avatar + name + status */}
       <div className="adv-mcard__top">
         <div className="adv-mcard__left">
@@ -230,6 +235,7 @@ function AdvanceMobileCard({
 
 export default function AdminAdvancesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
   const { data, isLoading } = useAdminAdvanceRequests();
@@ -237,6 +243,20 @@ export default function AdminAdvancesPage() {
   const rejectMutation = useRejectAdvanceRequest();
 
   const allRequests: AdvanceRequest[] = (data?.items ?? []) as AdvanceRequest[];
+
+  /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
+  const focusId = searchParams.get('focus');
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    const el = document.getElementById(`adv-${focusId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.animate?.([
+      { boxShadow: 'inset 0 0 0 2px var(--accent), 0 0 0 2px rgba(59,130,246,0.25)' },
+      { boxShadow: 'none' },
+    ], { duration: 2000, easing: 'ease-out' });
+    setSearchParams({}, { replace: true });
+  }, [focusId, isLoading, setSearchParams]);
 
   /* ── Derived counts & totals ─────────────────────────────────────────── */
   const stats = useMemo(() => {
@@ -348,6 +368,7 @@ export default function AdminAdvancesPage() {
                   req={req}
                   approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
+                  focusId={`adv-${req.id}`}
                 />
               ))}
             </div>
@@ -360,6 +381,7 @@ export default function AdminAdvancesPage() {
                   req={req}
                   approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
+                  focusId={`adv-${req.id}`}
                 />
               ))}
             </div>

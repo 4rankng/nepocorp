@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { formatCompact } from '../../../lib/format';
 import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
-import { TripStatus, parseThreshold } from '@nepocorp/shared';
+import { TripStatus, parseThreshold, Role } from '@nepocorp/shared';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   useDashboardStats,
   usePnlReport,
@@ -56,6 +57,15 @@ export interface ReceivablesSummary {
   overdueCustomers: number;
 }
 
+export interface DashboardAuditEntry {
+  id: number;
+  timestamp: string;
+  userName: string;
+  action: string;
+  message: string;
+  category?: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
+}
+
 export function useDashboardData(currentMonth: number, currentYear: number) {
 
   const { data: stats, isLoading: loading } = useDashboardStats();
@@ -72,6 +82,25 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   });
   const { data: thisYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear);
   const { data: lastYearRaw = EMPTY_YEARLY } = useYearlyPnl(currentYear - 1);
+
+  // Latest audit-log activity for the dashboard widget.
+  // Only ADMIN/MANAGER/ACCOUNTANT can access audit logs — skip the query entirely
+  // for DRIVER/FORWARDER to avoid wasted 403s.
+  const { user } = useAuth();
+  const canSeeAudit = user?.role && [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT].includes(user.role);
+  const { data: recentAudit = [] } = useQuery<DashboardAuditEntry[]>({
+    queryKey: ['dashboard-audit-recent'],
+    queryFn: async () => {
+      const res = await api.get<{ items: DashboardAuditEntry[]; total: number }>(
+        '/audit-logs?page=1&limit=8',
+      );
+      return res.items ?? [];
+    },
+    enabled: !!canSeeAudit,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 
   const yearlySeries = useMemo(() => {
     const out: Array<{ revenue: number; grossProfit: number }> = [];
@@ -231,6 +260,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     topOverdueCustomer,
     topShareholder,
     fuelWarnings,
+    recentAudit,
     derived,
     formattedRevenue,
     formattedCosts,

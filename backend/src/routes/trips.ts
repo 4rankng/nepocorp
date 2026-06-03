@@ -297,23 +297,22 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
 router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
   const tripId = parseInt(req.params.id as string, 10);
   const eid = parseInt(req.params.eid as string, 10);
-  await db.transaction(async (tx) => {
+  type TxResult = { ok: true } | { error: string; status: number };
+  const result: TxResult = await db.transaction(async (tx) => {
     // Guard: trip must not be locked
     const [trip] = await tx.select({ status: dbSchema.trips.status })
       .from(dbSchema.trips).where(eq(dbSchema.trips.id, tripId)).limit(1);
-    if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến xe' });
-    if (trip.status === 'LOCKED') {
-      return res.status(400).json({ error: 'Không thể xóa chi phí trên chuyến đã khóa' });
-    }
+    if (!trip) return { error: 'Không tìm thấy chuyến xe', status: 404 };
+    if (trip.status === 'LOCKED') return { error: 'Không thể xóa chi phí trên chuyến đã khóa', status: 400 };
     // Guard: expense must not be linked to any settlement
     const [link] = await tx.select({ id: dbSchema.settlementExpenses.id })
       .from(dbSchema.settlementExpenses)
       .where(eq(dbSchema.settlementExpenses.tripExpenseId, eid)).limit(1);
-    if (link) {
-      return res.status(400).json({ error: 'Không thể xóa chi phí đã được thanh toán' });
-    }
+    if (link) return { error: 'Không thể xóa chi phí đã được thanh toán', status: 400 };
     await tx.delete(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid));
+    return { ok: true as const };
   });
+  if ('error' in result) return res.status(result.status).json({ error: result.error });
   res.json({ ok: true });
 }));
 
@@ -324,21 +323,52 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    await db.transaction(async (tx) => {
+    type TxResult = { ok: true } | { error: string; status: number };
+    const result: TxResult = await db.transaction(async (tx) => {
       // Verify expense belongs to the specified trip
       const [expense] = await tx.select({ tripId: dbSchema.tripExpenses.tripId })
         .from(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid)).limit(1);
-      if (!expense) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
-      if (expense.tripId !== tripId) return res.status(400).json({ error: 'Chi phí không thuộc chuyến xe này' });
+      if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
+      if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
 
-      return transitionApproval(tx, {
+      await transitionApproval(tx, {
         table: 'trip_expenses',
         id: eid,
         toStatus: 'APPROVED',
         actorId: req.user!.userId,
         actorRole: req.user!.role,
       });
+      return { ok: true as const };
     });
+    if ('error' in result) return res.status(result.status).json({ error: result.error });
+    res.json({ ok: true });
+  }),
+);
+
+// POST /api/trips/:id/expenses/:eid/reject — MANAGER/ADMIN only
+router.post(
+  '/:id/expenses/:eid/reject',
+  requireRoles(Role.ADMIN, Role.MANAGER),
+  asyncHandler(async (req: Request, res: Response) => {
+    const tripId = parseInt(req.params.id as string, 10);
+    const eid = parseInt(req.params.eid as string, 10);
+    type TxResult = { ok: true } | { error: string; status: number };
+    const result: TxResult = await db.transaction(async (tx) => {
+      const [expense] = await tx.select({ tripId: dbSchema.tripExpenses.tripId })
+        .from(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid)).limit(1);
+      if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
+      if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
+
+      await transitionApproval(tx, {
+        table: 'trip_expenses',
+        id: eid,
+        toStatus: 'REJECTED',
+        actorId: req.user!.userId,
+        actorRole: req.user!.role,
+      });
+      return { ok: true as const };
+    });
+    if ('error' in result) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   }),
 );

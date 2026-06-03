@@ -8,6 +8,9 @@ import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
+import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
+import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
+import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -213,8 +216,12 @@ export default function DashboardPage() {
     createdTrips, createdTripsCount,
     renewalReminders, receivablesSummary,
     yearlySeries, fuelWarnings,
+    recentAudit,
     derived, formattedNet,
   } = useDashboardData(currentMonth, currentYear);
+
+  const showApprovalQueue = canSeeApprovalQueue(user?.role);
+  const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role);
 
   // ── Derived values (non-hook computations) ──────────────────────────────
   const d = derived ?? null;
@@ -446,13 +453,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Main grid ── */}
-      <div className="wf-grid">
+      {/* ── Bento grid (12-col, 2 hero tiles) ──
+           Tiles auto-flow into rows based on their grid-column/row spans.
+           Source order matters — heroes first, then secondary tiles cluster
+           around them. On mobile (≤1180px) every tile drops to full width
+           via the .wf-bento override in DashboardPage.css. */}
+      <div className="wf-bento">
 
-        {/* LEFT */}
-        <div className="wf-col">
-          {/* chart */}
-          <div className="wf-card wf-chart">
+        {/* Hero 1 — Chart (8 cols × 2 rows) */}
+        <div className="wf-card wf-chart wf-bento-hero">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Doanh thu & Lợi nhuận gộp</div>
@@ -482,55 +491,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* sub2: top trucks + top routes */}
-          <div className="wf-sub2">
-            <div className="wf-card">
-              <div className="wf-card-h">
-                <div>
-                  <div className="ttl">Lợi nhuận theo xe</div>
-                  <div className="sub">Biên gộp từng đầu kéo · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
-                </div>
-              </div>
-              <div className="wf-vlist">
-                {topTrucks.length === 0 ? (
-                  <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
-                ) : topTrucks.map((t, i) => (
-                  <div key={i} className="wf-vrow">
-                    <span className="plate" title={t.plate}>{t.plate}</span>
-                    <span className="bar"><i style={{ width: `${t.widthPct}%` }} /></span>
-                    <span className="pct">{t.pct}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="wf-card">
-              <div className="wf-card-h">
-                <div>
-                  <div className="ttl">Top tuyến sinh lời</div>
-                  <div className="sub">Theo lợi nhuận gộp · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
-                </div>
-                <button className="wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
-              </div>
-              <div className="wf-rlist">
-                {topRoutes.length === 0 ? (
-                  <div style={{ padding: 10, fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
-                ) : topRoutes.map((r, i) => (
-                  <div key={i} className="wf-rrow">
-                    <span className="rk">{i + 1}</span>
-                    <span className="rt" title={r.name}>{r.name}</span>
-                    <span className="rv">{formatCompact(r.profit)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT RAIL */}
-        <div className="wf-col">
-          {/* fleet */}
-          <div className="wf-card wf-fleet">
+        {/* Fleet (4 cols × 1 row) — right of chart, row 1 */}
+        <div className="wf-card wf-fleet wf-bento-third">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Tình trạng đội xe</div>
@@ -562,8 +524,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* cost donut */}
-          <div className="wf-card wf-cost">
+        {/* Cost donut (4 cols × 1 row) — right of chart, row 2 */}
+        <div className="wf-card wf-cost wf-bento-third">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cơ cấu chi phí</div>
@@ -590,8 +552,64 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* attention */}
-          <div className="wf-card wf-att">
+        {/* Lợi nhuận theo xe (6 cols × 1 row) — below chart */}
+        <div className="wf-card wf-bento-half">
+              <div className="wf-card-h">
+                <div>
+                  <div className="ttl">Lợi nhuận theo xe</div>
+                  <div className="sub">Biên gộp từng đầu kéo · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
+                </div>
+              </div>
+              <div className="wf-vlist">
+                {topTrucks.length === 0 ? (
+                  <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
+                ) : topTrucks.map((t, i) => (
+                  <div key={i} className="wf-vrow">
+                    <span className="plate" title={t.plate}>{t.plate}</span>
+                    <span className="bar"><i style={{ width: `${t.widthPct}%` }} /></span>
+                    <span className="pct">{t.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+        {/* Top tuyến sinh lời (6 cols × 1 row) — below chart, right half */}
+        <div className="wf-card wf-bento-half">
+              <div className="wf-card-h">
+                <div>
+                  <div className="ttl">Top tuyến sinh lời</div>
+                  <div className="sub">Theo lợi nhuận gộp · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
+                </div>
+                <button className="wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
+              </div>
+              <div className="wf-rlist">
+                {topRoutes.length === 0 ? (
+                  <div style={{ padding: 10, fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
+                ) : topRoutes.map((r, i) => (
+                  <div key={i} className="wf-rrow">
+                    <span className="rk">{i + 1}</span>
+                    <span className="rt" title={r.name}>{r.name}</span>
+                    <span className="rv">{formatCompact(r.profit)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+        {/* Hero 2 — Cần duyệt (8 cols × 2 rows) — only for roles allowed by
+            casbin. The wrapper div carries the bento span; the card itself
+            stays untouched inside. */}
+        {showApprovalQueue && (
+          <div className="wf-bento-hero">
+            <ApprovalQueueCard
+              data={approvalQueue}
+              loading={approvalQueueLoading}
+              navigate={navigate}
+            />
+          </div>
+        )}
+
+        {/* Cần chú ý (4 cols × 2 rows) — right of approval queue */}
+        <div className="wf-card wf-att wf-bento-side">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cần chú ý</div>
@@ -623,7 +641,15 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-        </div>
+
+        {/* Hoạt động gần đây (12 cols × 1 row) — full-width band, only for
+            roles allowed by casbin. recentAudit is empty for DRIVER so this
+            is skipped. */}
+        {recentAudit.length > 0 && (
+          <div className="wf-bento-full">
+            <AuditLogWidget entries={recentAudit} navigate={navigate} />
+          </div>
+        )}
       </div>
     </div>
   );

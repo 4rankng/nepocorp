@@ -294,6 +294,21 @@
   border-color: var(--fc-green);
   box-shadow: 0 0 0 3px rgba(0,90,45,.10);
 }
+.trip-list-page .filters-search-hint {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -.005em;
+  color: var(--fc-green, #005a2d);
+  background: rgba(0, 90, 45, .08);
+  padding: 0 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: help;
+}
 
 /* ── Divider ──────────────────────────────────────────────────────────── */
 .trip-list-page .filters-divider { height: 1px; background: var(--fc-line-2); margin: 16px 0; }

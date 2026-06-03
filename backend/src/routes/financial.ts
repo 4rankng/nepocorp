@@ -16,6 +16,7 @@ import { getCustomerAgingList } from '../services/receivables.service';
 import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../services/advance.service';
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../services/debtOffset.service';
 import { getDebitNoteData, buildDebitNoteXlsx } from '../services/debitNote.service';
+import { getApprovalQueue } from '../services/approval-queue.service';
 import { debtOffsetSchema } from '@nepocorp/shared';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
@@ -173,6 +174,11 @@ router.get('/reports/dashboard', asyncHandler(async (_req: Request, res: Respons
   res.json(await getDashboardStats());
 }));
 
+router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: Response) => {
+  const result = await getApprovalQueue(req.user!.userId, req.user!.role);
+  res.json(result);
+}));
+
 // ─── P&L report ──────────────────────────────────────────────────────────────
 
 router.get('/reports/pnl', asyncHandler(async (req: Request, res: Response) => {
@@ -305,7 +311,8 @@ router.get('/finance/debt-offsets', asyncHandler(async (req: Request, res: Respo
   if (supplierId !== undefined && Number.isNaN(supplierId)) {
     return res.status(400).json({ error: 'supplierId không hợp lệ' });
   }
-  res.json(await listDebtOffsets({ customerId, supplierId }));
+  const approvalStatus = typeof req.query.status === 'string' ? req.query.status : undefined;
+  res.json(await listDebtOffsets({ customerId, supplierId, approvalStatus }));
 }));
 
 router.post('/finance/debt-offsets', asyncHandler(async (req: Request, res: Response) => {

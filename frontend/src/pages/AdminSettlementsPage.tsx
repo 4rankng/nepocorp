@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FileText, Loader2, Check, X as XIcon, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
@@ -23,6 +24,7 @@ const tabs = [
 
 export default function AdminSettlementsPage() {
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: settlements, isLoading } = useAdminSettlements(
     statusFilter ? { status: statusFilter } : undefined,
   );
@@ -31,6 +33,20 @@ export default function AdminSettlementsPage() {
   const rejectMutation = useRejectSettlement();
   const { data: catalogs } = useCatalogs();
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
+
+  /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
+  const focusId = searchParams.get('focus');
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    const el = document.getElementById(`settlement-${focusId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.animate?.([
+      { boxShadow: 'inset 0 0 0 2px var(--accent), 0 0 0 2px rgba(59,130,246,0.25)' },
+      { boxShadow: 'none' },
+    ], { duration: 2000, easing: 'ease-out' });
+    setSearchParams({}, { replace: true });
+  }, [focusId, isLoading, setSearchParams]);
 
   return (
     <div>
@@ -74,6 +90,7 @@ export default function AdminSettlementsPage() {
             {settlements.items.map((s: any) => (
               <div
                 key={s.id}
+                id={`settlement-${s.id}`}
                 style={{
                   border: '1px solid var(--border)',
                   borderRadius: 8,

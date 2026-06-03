@@ -91,6 +91,13 @@ export default function TripListPage() {
   const dateFrom = salaryPeriod?.start;
   const dateTo = salaryPeriod?.end;
 
+  // Search intent is "find this specific trip regardless of when" — bypass the
+  // month chip when the user has typed something. Without this, a search for
+  // e.g. TRP-202605-0003 from the June chip yields the empty state.
+  const searching = debouncedSearch.length > 0;
+  const listDateFrom = searching ? undefined : dateFrom;
+  const listDateTo = searching ? undefined : dateTo;
+
   // ── Summary query (status counts + aggregate metrics for the month) ──
   const { data: summary } = useQuery({
     queryKey: ['trips-summary', dateFrom, dateTo],
@@ -107,7 +114,7 @@ export default function TripListPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['trips', dateFrom, dateTo, statusFilter, truckFilter, customerFilter, debouncedSearch],
+    queryKey: ['trips', listDateFrom, listDateTo, statusFilter, truckFilter, customerFilter, debouncedSearch],
     queryFn: ({ pageParam }) => tripClient.listTrips({
       page: pageParam,
       limit: PAGE_SIZE,
@@ -115,8 +122,8 @@ export default function TripListPage() {
       truckId: truckFilter || undefined,
       customerId: customerFilter || undefined,
       search: debouncedSearch || undefined,
-      dateFrom,
-      dateTo,
+      dateFrom: listDateFrom,
+      dateTo: listDateTo,
     }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
@@ -124,7 +131,7 @@ export default function TripListPage() {
       if (lastPage.page < totalPages) return lastPage.page + 1;
       return undefined;
     },
-    enabled: !!dateFrom && !!dateTo,
+    enabled: searching || (!!dateFrom && !!dateTo),
     staleTime: 30 * 1000,
   });
 
@@ -180,8 +187,8 @@ export default function TripListPage() {
       truckId: truckFilter || undefined,
       customerId: customerFilter || undefined,
       search: debouncedSearch || undefined,
-      dateFrom,
-      dateTo,
+      dateFrom: listDateFrom,
+      dateTo: listDateTo,
     };
 
     const first = await tripClient.listTrips({ ...commonParams, limit: 100, page: 1 });
@@ -218,7 +225,7 @@ export default function TripListPage() {
       ];
     });
     downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
-  }, [statusFilter, truckFilter, customerFilter, debouncedSearch, dateFrom, dateTo]);
+  }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);
 
   const columnHelper = createColumnHelper<TripDetail>();
 
@@ -577,6 +584,14 @@ export default function TripListPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          {searching && (
+            <span
+              className="filters-search-hint"
+              title="Khi tìm kiếm, hệ thống bỏ qua bộ lọc tháng để tìm trên tất cả các tháng."
+            >
+              Đang tìm trên tất cả tháng
+            </span>
+          )}
           <label className={`filter-pill${truckFilter ? ' has-value' : ''}`}>
             <div className="filter-lbl-wrap">
               <span className="filter-lbl-cap">Phương tiện</span>

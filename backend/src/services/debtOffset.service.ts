@@ -170,10 +170,12 @@ export async function approveDebtOffset(
 export async function listDebtOffsets(filters?: {
   customerId?: number;
   supplierId?: number;
+  approvalStatus?: string;
 }) {
   const conditions = [];
   if (filters?.customerId) conditions.push(eq(s.debtOffsets.customerId, filters.customerId));
   if (filters?.supplierId) conditions.push(eq(s.debtOffsets.supplierId, filters.supplierId));
+  if (filters?.approvalStatus) conditions.push(eq(s.debtOffsets.approvalStatus, filters.approvalStatus));
 
   return db
     .select()
