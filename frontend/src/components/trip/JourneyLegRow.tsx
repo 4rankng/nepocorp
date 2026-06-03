@@ -8,9 +8,15 @@ interface JourneyLegRowProps {
   onRemove: () => void;
   onUpdate: (field: keyof FormLeg, value: string) => void;
   canRemove: boolean;
+  /**
+   * Fires when the user finishes editing the km field (blur). Used to
+   * persist manually-entered km as the user's preference for this pair
+   * so the same (origin, destination) auto-fills correctly next time.
+   */
+  onKmBlur?: () => void;
 }
 
-export function JourneyLegRow({ leg, onRemove, onUpdate, canRemove }: JourneyLegRowProps) {
+export function JourneyLegRow({ leg, onRemove, onUpdate, canRemove, onKmBlur }: JourneyLegRowProps) {
   return (
     <div className="leg-card">
       <div className="leg-card__head">
@@ -44,7 +50,14 @@ export function JourneyLegRow({ leg, onRemove, onUpdate, canRemove }: JourneyLeg
       <div className="leg-card__fields">
         <div>
           <div className="leg-card__mini-label">Cự ly (Km)</div>
-          <input className="input input--sm" type="number" placeholder="Km" value={leg.km} onChange={(e) => onUpdate('km', e.target.value)} />
+          <input
+            className="input input--sm"
+            type="number"
+            placeholder="Km"
+            value={leg.km}
+            onChange={(e) => onUpdate('km', e.target.value)}
+            onBlur={onKmBlur}
+          />
         </div>
         <div>
           <div className="leg-card__mini-label">Tải trọng</div>

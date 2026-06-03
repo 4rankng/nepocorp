@@ -5,9 +5,18 @@ export interface PlaceSuggestion {
   description: string;
 }
 
+export interface RouteSuggestion {
+  km: number;
+  durationSeconds: number | null;
+  polylinePath: string | null;
+  summary: string;
+}
+
 export interface RouteResult {
   km: number | null;
   polylinePath: string | null;
+  routes: RouteSuggestion[];
+  selected: RouteSuggestion | null;
 }
 
 // ── In-memory cache for autocomplete (50 entries, 5-min TTL) ─────────────
@@ -49,18 +58,56 @@ export async function fetchPlaceSuggestions(input: string, sessionToken?: string
 }
 
 export async function calculateRoute(origin: string, destination: string): Promise<RouteResult> {
-  if (!origin || !destination || origin === destination) return { km: null, polylinePath: null };
+  if (!origin || !destination || origin === destination) {
+    return { km: null, polylinePath: null, routes: [], selected: null };
+  }
 
   try {
-    const data = await api.get<{ km: number | null; polylinePath: string | null }>(
+    const data = await api.get<{
+      km?: number | null;
+      polylinePath?: string | null;
+      routes?: RouteSuggestion[];
+      selected?: RouteSuggestion | null;
+    }>(
       `/maps/distance?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
     );
-    return { 
-      km: data.km ?? null, 
-      polylinePath: data.polylinePath ?? null 
+    // New backend shape: { routes, selected } with km/polylinePath mirrored on `selected`
+    // for back-compat with single-route callers.
+    const routes = Array.isArray(data.routes) ? data.routes : [];
+    const selected = data.selected ?? null;
+    return {
+      km: data.km ?? selected?.km ?? null,
+      polylinePath: data.polylinePath ?? selected?.polylinePath ?? null,
+      routes,
+      selected,
     };
   } catch {
-    return { km: null, polylinePath: null };
+    return { km: null, polylinePath: null, routes: [], selected: null };
+  }
+}
+
+/**
+ * Persist the user's preferred alternative for a given (origin, destination)
+ * pair on the backend. Non-fatal on error — never blocks the trip form on a
+ * background persistence call.
+ */
+export async function saveRoutePreference(
+  origin: string,
+  destination: string,
+  km: number,
+  polylinePath?: string | null,
+  summary?: string,
+): Promise<void> {
+  try {
+    await api.put('/maps/route-preference', {
+      origin,
+      destination,
+      km,
+      polylinePath: polylinePath ?? null,
+      summary: summary ?? null,
+    });
+  } catch {
+    /* non-fatal — preference save is best-effort */
   }
 }
 

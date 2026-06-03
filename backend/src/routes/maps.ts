@@ -130,37 +130,24 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
     )
     .limit(1);
 
-  if (cached) {
-    let routes: RouteSuggestion[] = [];
-    if (cached.allRoutesJson) {
-      try {
-        const parsed = JSON.parse(cached.allRoutesJson) as RouteSuggestion[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          routes = parsed;
-        }
-      } catch (err) {
-        console.warn('[maps] Failed to parse cached allRoutesJson, falling back to single route');
+  // Only use cache when it has the full alternatives list. Legacy entries
+  // (allRoutesJson = null) fall through to Google Maps so they get refreshed.
+  if (cached && cached.allRoutesJson) {
+    try {
+      const routes = JSON.parse(cached.allRoutesJson) as RouteSuggestion[];
+      if (Array.isArray(routes) && routes.length > 0) {
+        const selected: RouteSuggestion = {
+          km: Number(cached.distanceKm),
+          durationSeconds: cached.durationSeconds ?? null,
+          polylinePath: cached.polylinePath ?? null,
+          summary: cached.routeSummary ?? '',
+        };
+        res.json({ routes, selected } satisfies DistanceResponse);
+        return;
       }
+    } catch {
+      // Corrupt JSON — fall through and refresh from Google Maps
     }
-    if (routes.length === 0) {
-      // Legacy cache entry from before this feature: synthesize a single
-      // element from the stored fields so callers always get the new shape.
-      routes = [{
-        km: Number(cached.distanceKm),
-        durationSeconds: cached.durationSeconds ?? null,
-        polylinePath: cached.polylinePath ?? null,
-        summary: cached.routeSummary ?? '',
-      }];
-    }
-    const selected: RouteSuggestion = {
-      km: Number(cached.distanceKm),
-      durationSeconds: cached.durationSeconds ?? null,
-      polylinePath: cached.polylinePath ?? null,
-      summary: cached.routeSummary ?? '',
-    };
-    const response: DistanceResponse = { routes, selected };
-    res.json(response);
-    return;
   }
 
   if (!config.googleMapsApiKey) {
@@ -213,7 +200,16 @@ router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
     polylinePath: selected.polylinePath,
     allRoutesJson: JSON.stringify(suggestions),
     routeSummary: selected.summary || null,
-  }).onConflictDoNothing();
+  }).onConflictDoUpdate({
+    target: [s.routeDistanceCache.originCleaned, s.routeDistanceCache.destinationCleaned],
+    set: {
+      distanceKm: String(selected.km),
+      durationSeconds: selected.durationSeconds,
+      polylinePath: selected.polylinePath,
+      allRoutesJson: JSON.stringify(suggestions),
+      routeSummary: selected.summary || null,
+    },
+  });
 
   const distResponse: DistanceResponse = { routes: suggestions, selected };
   res.json(distResponse);

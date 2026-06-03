@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { JourneyLegRow } from './JourneyLegRow';
+import { RoutePickerModal } from './RoutePickerModal';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 
 interface JourneyLegsCardProps {
@@ -19,7 +20,10 @@ interface JourneyLegsCardProps {
 
 export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: JourneyLegsCardProps) {
   const form = useTripFormContext();
-  const { legs, addLeg, removeLeg, updateLeg } = form;
+  const {
+    legs, addLeg, removeLeg, updateLeg,
+    routePickerState, onRoutePicked, dismissRoutePicker, onKmManualBlur,
+  } = form;
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
   return (
@@ -61,6 +65,7 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
                 onRemove={() => removeLeg(idx)}
                 onUpdate={(field, value) => updateLeg(idx, field, value)}
                 canRemove={legs.length > 1}
+                onKmBlur={() => { void onKmManualBlur(idx); }}
               />
             ))}
           </div>
@@ -78,6 +83,15 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
               <Plus size={14} /> Thêm chặng
             </button>
           </div>
+          {routePickerState && (
+            <RoutePickerModal
+              origin={routePickerState.origin}
+              destination={routePickerState.destination}
+              routes={routePickerState.routes}
+              onSelect={onRoutePicked}
+              onDismiss={dismissRoutePicker}
+            />
+          )}
         </>
       )}
     </CardSection>

@@ -7,6 +7,7 @@ export { RouteChips } from './RouteChips';
 export { TripInfoCard } from './TripInfoCard';
 export { JourneyLegsCard } from './JourneyLegsCard';
 export { JourneyLegRow } from './JourneyLegRow';
+export { RoutePickerModal } from './RoutePickerModal';
 export { FuelModeToggle } from './FuelModeToggle';
 export { FuelTollsRevenueCard } from './FuelTollsRevenueCard';
 export { ImagesNotesCard } from './ImagesNotesCard';

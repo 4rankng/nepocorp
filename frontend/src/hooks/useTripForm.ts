@@ -8,7 +8,7 @@ import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
-import { calculateRoute } from "../lib/maps";
+import { calculateRoute, saveRoutePreference, type RouteSuggestion } from "../lib/maps";
 
 const FUEL_PRICE_PER_LITER = 25000;
 const LOADED_RATE = 43;
@@ -26,6 +26,13 @@ export interface FormLeg {
   km: string;
   loadingType: LoadingType;
   polylinePath?: string | null;
+}
+
+export interface RoutePickerState {
+  legIdx: number;
+  origin: string;
+  destination: string;
+  routes: RouteSuggestion[];
 }
 
 export interface CompletionStatus {
@@ -80,6 +87,10 @@ export interface UseTripFormReturn {
   addLeg: () => void;
   removeLeg: (idx: number) => void;
   updateLeg: (idx: number, field: keyof FormLeg, value: string) => void;
+  routePickerState: RoutePickerState | null;
+  onRoutePicked: (route: RouteSuggestion) => Promise<void>;
+  dismissRoutePicker: () => void;
+  onKmManualBlur: (idx: number) => Promise<void>;
 
   fuelMode: FuelMode;
   setFuelMode: (v: FuelMode) => void;
@@ -155,6 +166,7 @@ function isParamsObject(arg: TripOptions | UseTripFormParams): arg is UseTripFor
 
 function useTripLegs(routes: RouteOption[], routeId: string) {
   const [legs, setLegs] = useState<FormLeg[]>([]);
+  const [routePickerState, setRoutePickerState] = useState<RoutePickerState | null>(null);
 
   const selectedRoute = useMemo(
     () => routes.find((r) => r.id === Number(routeId)),
@@ -226,14 +238,23 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
         const destination = field === 'destination' ? value : currentLeg.destination;
 
         if (origin && destination) {
-          const { km, polylinePath } = await calculateRoute(origin, destination);
-          if (km !== null) {
+          const result = await calculateRoute(origin, destination);
+          if (result.routes.length > 1) {
+            // Multiple Google alternatives — show picker so the user can
+            // choose the route their truck actually uses.
+            setRoutePickerState({
+              legIdx: idx,
+              origin,
+              destination,
+              routes: result.routes,
+            });
+          } else if (result.km !== null) {
             setLegs(prev => prev.map((leg, i) => {
               if (i === idx) {
-                return { 
-                  ...leg, 
-                  km: String(km),
-                  polylinePath
+                return {
+                  ...leg,
+                  km: String(result.km),
+                  polylinePath: result.polylinePath,
                 };
               }
               return leg;
@@ -247,7 +268,43 @@ function useTripLegs(routes: RouteOption[], routeId: string) {
     [legs],
   );
 
-  return { legs, setLegs, addLeg, removeLeg, updateLeg };
+  const onRoutePicked = useCallback(async (route: RouteSuggestion) => {
+    const state = routePickerState;
+    if (!state) return;
+    setLegs(prev => prev.map((leg, i) => {
+      if (i !== state.legIdx) return leg;
+      return {
+        ...leg,
+        km: String(route.km),
+        polylinePath: route.polylinePath,
+      };
+    }));
+    setRoutePickerState(null);
+    // Persist the user's pick so the same pair auto-fills correctly next
+    // time. Best-effort — don't block the UI on a network roundtrip.
+    void saveRoutePreference(state.origin, state.destination, route.km, route.polylinePath, route.summary);
+  }, [routePickerState]);
+
+  const dismissRoutePicker = useCallback(() => {
+    setRoutePickerState(null);
+  }, []);
+
+  const onKmManualBlur = useCallback(async (idx: number) => {
+    const leg = legs[idx];
+    if (!leg) return;
+    const km = Number(leg.km);
+    if (!Number.isFinite(km) || km <= 0) return;
+    if (!leg.origin.trim() || !leg.destination.trim()) return;
+    // Save the manually-entered km + (existing) polylinePath/summary as the
+    // user's preference for this pair, so subsequent auto-fills match.
+    void saveRoutePreference(leg.origin, leg.destination, km, leg.polylinePath ?? null);
+  }, [legs]);
+
+  return {
+    legs, setLegs,
+    addLeg, removeLeg, updateLeg,
+    routePickerState, onRoutePicked, dismissRoutePicker, onKmManualBlur,
+  };
 }
 
 // ─── Sub-hook: Photo upload ──────────────────────────────────────────────
@@ -384,7 +441,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
+  const { legs, setLegs, addLeg, removeLeg, updateLeg, routePickerState, onRoutePicked, dismissRoutePicker, onKmManualBlur } = useTripLegs(options.routes, routeId);
   const { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
 
   useEffect(() => {
@@ -877,6 +934,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     externalDriverName, setExternalDriverName,
     externalDriverPhone, setExternalDriverPhone,
     legs, addLeg, removeLeg, updateLeg,
+    routePickerState, onRoutePicked, dismissRoutePicker, onKmManualBlur,
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,
     fuelSupplementLiters, setFuelSupplementLiters,

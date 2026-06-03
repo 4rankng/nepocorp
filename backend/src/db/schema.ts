@@ -604,6 +604,8 @@ export const routeDistanceCache = pgTable('route_distance_cache', {
   distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull(),
   durationSeconds: integer('duration_seconds'),
   polylinePath: text('polyline_path'),
+  allRoutesJson: text('all_routes_json'),
+  routeSummary: varchar('route_summary', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('route_distance_cache_uniq_idx').on(table.originCleaned, table.destinationCleaned),
