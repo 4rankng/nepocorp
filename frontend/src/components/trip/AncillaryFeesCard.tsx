@@ -5,7 +5,7 @@ import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROL
 import type { AncillaryExpenseType } from '@nepocorp/shared';
 import type { TripExpense } from '@nepocorp/shared';
 import { tripClient } from '../../api/tripClient';
-import { formatCurrency } from '../../lib/format';
+import { formatCurrency, formatNumber } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import type { CatalogData } from '../../hooks/useCatalogs';
@@ -349,13 +349,18 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                 <tfoot>
                   <tr>
                     <td colSpan={2}>Tổng</td>
-                    <td className="num">{formatCurrency(totalBuy)}</td>
-                    <td className="num">{formatCurrency(totalSell)}</td>
+                    {/* Tfoot cells drop the ₫ suffix to keep totals readable on
+                        phones where the narrow numeric columns can't fit
+                        "4.558.600 ₫" without clipping into the next cell. The
+                        column header (Mua vào / Bán ra / Lãi DV) already makes
+                        the unit unambiguous. */}
+                    <td className="num">{formatNumber(totalBuy)}</td>
+                    <td className="num">{formatNumber(totalSell)}</td>
                     <td
                       className="num"
                       style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}
                     >
-                      {formatCurrency(totalMargin)}
+                      {formatNumber(totalMargin)}
                     </td>
                     <td colSpan={3}></td>
                   </tr>
