@@ -16,7 +16,7 @@ import {
   X as XIcon,
   Loader2,
   MousePointerClick,
-  ChevronRight,
+
 } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { formatCurrency } from '../lib/format';
@@ -670,19 +670,9 @@ export default function TripListPage() {
                   else if (cell.column.id === 'consumption') cls = 'col-consumption';
                   else if (cell.column.id === 'road') cls = 'col-road right';
                   else if (cell.column.id === 'status') {
-                    // The status cell hosts the hover chevron — placing it
-                    // here keeps it inside the sticky column so it never
-                    // gets clipped by horizontal scroll, and reads as part
-                    // of the status pill's hover treatment.
                     return (
-                      <div key={cell.id} className={cls}>
+                      <div key={cell.id} className="col-status center">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        <ChevronRight
-                          size={15}
-                          strokeWidth={2.4}
-                          className="table-row__chev"
-                          aria-hidden="true"
-                        />
                       </div>
                     );
                   }

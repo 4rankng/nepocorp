@@ -55,6 +55,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .title-row h1 {
@@ -62,6 +63,10 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--ink);
+  /* Allow the title to shrink so the status badge can sit on the same
+     line on very narrow phones. Without this, the h1's natural width
+     pushes the badge past the right edge of the page header. */
+  min-width: 0;
 }
 
 /* ── Status Badge ────────────────────────────────────────────────────────── */
@@ -965,6 +970,13 @@
     margin-bottom: 14px;
   }
 
+  /* The .company (customer name) is set to max-width: 560px + nowrap on
+     desktop, which forces the entire title-block wider than the viewport
+     on phones. Cap it to the available width and let it ellipsis. */
+  .company {
+    max-width: 100%;
+  }
+
   /* Action buttons wrap onto their own row below the title and reflow
      into a multi-row grid. The desktop .header-actions is `flex` (single
      row) — on phones we want the buttons to fill the width and not get
@@ -984,6 +996,11 @@
     font-size: 12.5px;
   }
 
+  /* Tighter title on phones */
+  .title-row h1 {
+    font-size: 20px;
+  }
+
   .kpi-strip {
     grid-template-columns: 1fr;
   }
@@ -994,5 +1011,50 @@
 @media (max-width: 360px) {
   .header-actions .btn {
     flex: 1 1 100%;
+  }
+}
+
+/* ── Journey legs: stack origin / arrow / destination on phones ────────── */
+@media (max-width: 640px) {
+  .leg {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
+  }
+  /* Push the loading-type badge to a second row spanning the full width */
+  .leg-right {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  /* Stack stops on two visual lines so the full stop name fits */
+  .leg-stops {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 8px;
+  }
+  .leg-stops .st {
+    max-width: 100%;
+  }
+  .leg-stops .ar {
+    transform: rotate(90deg);
+  }
+  /* Compact meta line */
+  .leg-meta {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+}
+
+/* ── Journey foot: let it wrap; keep the CTA on one line ───────────────── */
+@media (max-width: 640px) {
+  .journey-foot {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 12px 16px;
+  }
+  .journey-foot .add-note {
+    margin-left: auto;
+    white-space: nowrap;
   }
 }

@@ -232,21 +232,143 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       ) : (
         <>
           {expenses.length > 0 ? (
-            <div className="table-scroll ancillary-fees__scroll" style={{ marginBottom: 12 }}>
-              <table className="ancillary-fees__table">
-                <thead>
-                  <tr>
-                    <th>Loại phí</th>
-                    <th>Hình thức</th>
-                    <th className="num" style={{ color: 'var(--ink-3)' }}>Mua vào</th>
-                    <th className="num" style={{ color: 'var(--ink-3)' }}>Bán ra</th>
-                    <th className="num" style={{ fontWeight: 700, color: 'var(--ink)' }}>Lãi DV</th>
-                    <th>Nhà CC</th>
-                    <th>Chứng từ</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <>
+              {/* ── Desktop / Tablet: classic table ────────────────────────── */}
+              <div className="table-scroll ancillary-fees__scroll ancillary-fees__desktop" style={{ marginBottom: 12 }}>
+                <table className="ancillary-fees__table">
+                  <thead>
+                    <tr>
+                      <th>Loại phí</th>
+                      <th className="num" style={{ color: 'var(--ink-3)' }}>Mua vào</th>
+                      <th className="num" style={{ color: 'var(--ink-3)' }}>Bán ra</th>
+                      <th className="num" style={{ fontWeight: 700, color: 'var(--ink)' }}>Lãi DV</th>
+                      <th>Nhà CC</th>
+                      <th>Chứng từ</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenses.map((fee, i) => {
+                      const buy = Number(fee.buyAmount);
+                      const sell = Number(fee.sellAmount);
+                      const margin = sell - buy;
+                      const canDecide = canApprove && fee.approvalStatus === 'PENDING';
+                      const isBusy = pendingId === fee.id;
+                      return (
+                        <tr key={fee.id ?? i}>
+                          <td>
+                            <div style={{ lineHeight: 1.25 }}>
+                              <div>{feeTypeLabel(fee.expenseType)}</div>
+                              <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', padding: '2px 4px', borderRadius: 4 }}>
+                                  {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
+                                </span>
+                                {fee.containerNumber && (
+                                  <span style={{ fontSize: 11, color: 'var(--ink-3)' }} className="mono">
+                                    {fee.containerNumber}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink-2)' }}>
+                            {buy > 0 ? formatCurrency(buy) : ''}
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink-2)' }}>
+                            {sell > 0 ? formatCurrency(sell) : ''}
+                          </td>
+                          <td
+                            className="num"
+                            style={{
+                              color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : ''}
+                          </td>
+                          <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
+                            {fee.supplierName ?? ''}
+                          </td>
+                          <td
+                            style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            title={[fee.invoiceNumber && `HĐ ${fee.invoiceNumber}`, fee.invoiceDate && `Ngày ${fee.invoiceDate}`, fee.declarationNumber && `TK ${fee.declarationNumber}`].filter(Boolean).join(' · ') || undefined}
+                          >
+                            {fee.invoiceNumber || fee.declarationNumber ? (
+                              <>
+                                <span style={{ color: 'var(--ink)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
+                                {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 11 }}>· {fee.invoiceDate.slice(5)}</span>}
+                              </>
+                            ) : ''}
+                          </td>
+                          <td>
+                            <div className="fee-decision-cell">
+                              {fee.approvalStatus === 'APPROVED' ? (
+                                <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
+                              ) : fee.approvalStatus === 'REJECTED' ? (
+                                <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
+                              ) : (
+                                <span title="Chờ duyệt"><StatusPill variant="neutral">Chờ</StatusPill></span>
+                              )}
+                              {canDecide && !readOnly && (
+                                <div className="fee-decision-cell__actions">
+                                  <button
+                                    type="button"
+                                    className="fee-decision-cell__btn fee-decision-cell__btn--approve"
+                                    onClick={() => confirmAndRun(fee, 'approve')}
+                                    disabled={isBusy}
+                                    title="Duyệt khoản phí này"
+                                    aria-label="Duyệt"
+                                  >
+                                    {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} strokeWidth={2.6} />}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="fee-decision-cell__btn fee-decision-cell__btn--reject"
+                                    onClick={() => confirmAndRun(fee, 'reject')}
+                                    disabled={isBusy}
+                                    title="Từ chối khoản phí này"
+                                    aria-label="Từ chối"
+                                  >
+                                    {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} strokeWidth={2.6} />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {!readOnly && !hideAddButton && !showForm && (
+                      <tr
+                        className="ancillary-fees__add-row"
+                        onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+                      >
+                        <td colSpan={7}>
+                          <Plus size={13} /> Thêm phí
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={1}>Tổng</td>
+                      <td className="num">{formatNumber(totalBuy)}</td>
+                      <td className="num">{formatNumber(totalSell)}</td>
+                      <td
+                        className="num"
+                        style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}
+                      >
+                        {formatNumber(totalMargin)}
+                      </td>
+                      <td colSpan={3}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* ── Mobile: card-based layout ──────────────────────────────── */}
+              <div className="ancillary-fees__mobile" style={{ marginBottom: 12 }}>
+                <div className="ancillary-fees__cards">
                   {expenses.map((fee, i) => {
                     const buy = Number(fee.buyAmount);
                     const sell = Number(fee.sellAmount);
@@ -254,119 +376,113 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     const canDecide = canApprove && fee.approvalStatus === 'PENDING';
                     const isBusy = pendingId === fee.id;
                     return (
-                      <tr key={fee.id ?? i}>
-                        <td>
-                          <div style={{ lineHeight: 1.25 }}>
-                            <div>{feeTypeLabel(fee.expenseType)}</div>
-                            {fee.containerNumber && (
-                              <div style={{ fontSize: 11, color: 'var(--ink-3)' }} className="mono">{fee.containerNumber}</div>
-                            )}
+                      <div className="ancillary-fee-card" key={fee.id ?? i}>
+                        <div className="ancillary-fee-card__head">
+                          <div className="ancillary-fee-card__name">
+                            <span>{feeTypeLabel(fee.expenseType)}</span>
+                            <span className="ancillary-fee-card__badge">
+                              {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
+                            </span>
                           </div>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                            {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
-                          </span>
-                        </td>
-                        <td className="num" style={{ color: 'var(--ink-2)' }}>
-                          {buy > 0 ? formatCurrency(buy) : ''}
-                        </td>
-                        <td className="num" style={{ color: 'var(--ink-2)' }}>
-                          {sell > 0 ? formatCurrency(sell) : ''}
-                        </td>
-                        <td
-                          className="num"
-                          style={{
-                            color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : ''}
-                        </td>
-                        <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
-                          {fee.supplierName ?? ''}
-                        </td>
-                        <td
-                          style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                          title={[fee.invoiceNumber && `HĐ ${fee.invoiceNumber}`, fee.invoiceDate && `Ngày ${fee.invoiceDate}`, fee.declarationNumber && `TK ${fee.declarationNumber}`].filter(Boolean).join(' · ') || undefined}
-                        >
-                          {fee.invoiceNumber || fee.declarationNumber ? (
-                            <>
-                              <span style={{ color: 'var(--ink)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
-                              {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 11 }}>· {fee.invoiceDate.slice(5)}</span>}
-                            </>
-                          ) : ''}
-                        </td>
-                        <td>
-                          <div className="fee-decision-cell">
+                          <div className="ancillary-fee-card__status">
                             {fee.approvalStatus === 'APPROVED' ? (
-                              <span title="Đã duyệt"><StatusPill variant="success">Duyệt</StatusPill></span>
+                              <StatusPill variant="success">Duyệt</StatusPill>
                             ) : fee.approvalStatus === 'REJECTED' ? (
-                              <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
+                              <StatusPill variant="danger">Từ chối</StatusPill>
                             ) : (
-                              <span title="Chờ duyệt"><StatusPill variant="neutral">Chờ</StatusPill></span>
-                            )}
-                            {canDecide && !readOnly && (
-                              <div className="fee-decision-cell__actions">
-                                <button
-                                  type="button"
-                                  className="fee-decision-cell__btn fee-decision-cell__btn--approve"
-                                  onClick={() => confirmAndRun(fee, 'approve')}
-                                  disabled={isBusy}
-                                  title="Duyệt khoản phí này"
-                                  aria-label="Duyệt"
-                                >
-                                  {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} strokeWidth={2.6} />}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="fee-decision-cell__btn fee-decision-cell__btn--reject"
-                                  onClick={() => confirmAndRun(fee, 'reject')}
-                                  disabled={isBusy}
-                                  title="Từ chối khoản phí này"
-                                  aria-label="Từ chối"
-                                >
-                                  {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} strokeWidth={2.6} />}
-                                </button>
-                              </div>
+                              <StatusPill variant="neutral">Chờ duyệt</StatusPill>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+
+                        <div className="ancillary-fee-card__amounts">
+                          <div className="ancillary-fee-card__amount">
+                            <span className="ancillary-fee-card__label">Mua vào</span>
+                            <span className="ancillary-fee-card__value mono">{buy > 0 ? formatCurrency(buy) : '—'}</span>
+                          </div>
+                          <div className="ancillary-fee-card__amount">
+                            <span className="ancillary-fee-card__label">Bán ra</span>
+                            <span className="ancillary-fee-card__value mono">{sell > 0 ? formatCurrency(sell) : '—'}</span>
+                          </div>
+                          <div className="ancillary-fee-card__amount">
+                            <span className="ancillary-fee-card__label">Lãi DV</span>
+                            <span
+                              className="ancillary-fee-card__value ancillary-fee-card__value--margin mono"
+                              style={{ color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)' }}
+                            >
+                              {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : '—'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {(fee.containerNumber || fee.supplierName || fee.invoiceNumber || fee.declarationNumber) && (
+                          <div className="ancillary-fee-card__meta">
+                            {fee.containerNumber && <span className="mono">{fee.containerNumber}</span>}
+                            {fee.supplierName && <span>{fee.supplierName}</span>}
+                            {fee.invoiceNumber && <span>HĐ {fee.invoiceNumber}</span>}
+                            {fee.declarationNumber && <span>TK {fee.declarationNumber}</span>}
+                          </div>
+                        )}
+
+                        {canDecide && !readOnly && (
+                          <div className="ancillary-fee-card__actions">
+                            <button
+                              type="button"
+                              className="btn btn--sm ancillary-fee-card__btn ancillary-fee-card__btn--approve"
+                              onClick={() => confirmAndRun(fee, 'approve')}
+                              disabled={isBusy}
+                            >
+                              {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} />}
+                              Duyệt
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn--sm btn--ghost ancillary-fee-card__btn ancillary-fee-card__btn--reject"
+                              onClick={() => confirmAndRun(fee, 'reject')}
+                              disabled={isBusy}
+                            >
+                              {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} />}
+                              Từ chối
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                  {!readOnly && !hideAddButton && !showForm && (
-                    <tr
-                      className="ancillary-fees__add-row"
-                      onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
-                    >
-                      <td colSpan={7}>
-                        <Plus size={13} /> Thêm phí
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={2}>Tổng</td>
-                    {/* Tfoot cells drop the ₫ suffix to keep totals readable on
-                        phones where the narrow numeric columns can't fit
-                        "4.558.600 ₫" without clipping into the next cell. The
-                        column header (Mua vào / Bán ra / Lãi DV) already makes
-                        the unit unambiguous. */}
-                    <td className="num">{formatNumber(totalBuy)}</td>
-                    <td className="num">{formatNumber(totalSell)}</td>
-                    <td
-                      className="num"
-                      style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}
-                    >
-                      {formatNumber(totalMargin)}
-                    </td>
-                    <td colSpan={3}></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                </div>
+
+                {/* Mobile totals bar */}
+                <div className="ancillary-fees__mobile-totals">
+                  <span className="ancillary-fees__mobile-totals-label">Tổng</span>
+                  <div className="ancillary-fees__mobile-totals-nums">
+                    <div>
+                      <span className="ancillary-fee-card__label">Mua</span>
+                      <span className="mono">{formatNumber(totalBuy)}</span>
+                    </div>
+                    <div>
+                      <span className="ancillary-fee-card__label">Bán</span>
+                      <span className="mono">{formatNumber(totalSell)}</span>
+                    </div>
+                    <div>
+                      <span className="ancillary-fee-card__label">Lãi</span>
+                      <span className="mono" style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
+                        {formatNumber(totalMargin)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {!readOnly && !hideAddButton && !showForm && (
+                  <button
+                    type="button"
+                    className="ancillary-fees__mobile-add"
+                    onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+                  >
+                    <Plus size={14} /> Thêm phí
+                  </button>
+                )}
+              </div>
+            </>
           ) : (
             <AncillaryEmptyState />
           )}
