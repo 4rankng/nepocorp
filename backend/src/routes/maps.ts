@@ -37,7 +37,8 @@ router.get('/autocomplete', asyncHandler(async (req: Request, res: Response) => 
   url.searchParams.set('key', config.googleMapsApiKey);
   url.searchParams.set('components', 'country:vn');
   url.searchParams.set('language', 'vi');
-  url.searchParams.set('types', 'geocode');
+  // No 'types' filter — we need both geocode results (cities, addresses) and
+  // establishment results (industrial parks like KCN Quang Minh, ports, depots).
 
   if (sessionToken) {
     url.searchParams.set('sessiontoken', sessionToken);

@@ -85,11 +85,10 @@ export function LocationAutocomplete({
     if (!q) {
       return allAsSuggestions(ports.slice(0, 8));
     }
-    // Match on name + code only — address matching caused city-name queries
-    // (e.g. "Hà Nội") to surface unrelated industrial ports located in that city.
     const matched = ports.filter((p) =>
       p.name.toLowerCase().includes(q) ||
-      (p.code ?? '').toLowerCase().includes(q)
+      (p.code ?? '').toLowerCase().includes(q) ||
+      (p.address ?? '').toLowerCase().includes(q)
     );
     return allAsSuggestions(matched.slice(0, 6));
   }, [ports, value]);
