@@ -66,12 +66,12 @@ export default function TripExpenseConfigPage() {
           <div className="field">
             <label>Tiền kết hợp mặc định (đ)</label>
             <input className="input mono" type="text" value={form.defaultDriverSalary} onChange={set('defaultDriverSalary')} placeholder="400.000" />
-            <div className="cfg-field-hint">Áp dụng khi tuyến chưa set lương riêng. Hiện tại: <strong>{fmt(form.defaultDriverSalary)} đ</strong></div>
+            <div className="cfg-field-hint">Áp dụng khi tuyến chưa thiết lập lương riêng. Hiện tại: <strong>{fmt(form.defaultDriverSalary)} đ</strong></div>
           </div>
           <div className="field">
             <label>Trả hàng 2 điểm mặc định (đ)</label>
             <input className="input mono" type="text" value={form.twoPointDeliveryBonus} onChange={set('twoPointDeliveryBonus')} placeholder="200.000" />
-            <div className="cfg-field-hint">Gợi ý khi nhập trả hàng 2 điểm trên form chuyến. Hiện tại: <strong>{fmt(form.twoPointDeliveryBonus)} đ</strong></div>
+            <div className="cfg-field-hint">Gợi ý khi nhập trả hàng 2 điểm trên phiếu chuyến. Hiện tại: <strong>{fmt(form.twoPointDeliveryBonus)} đ</strong></div>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function TripExpenseConfigPage() {
           <div className="field">
             <label>Thưởng chuyến về có hàng (đ)</label>
             <input className="input mono" type="text" value={form.returnCargoBonus} onChange={set('returnCargoBonus')} placeholder="300.000" style={{ maxWidth: 320 }} />
-            <div className="cfg-field-hint">Cộng khi tick "chuyến về có hàng". Hiện tại: <strong>{fmt(form.returnCargoBonus)} đ</strong></div>
+            <div className="cfg-field-hint">Cộng khi chọn "chuyến về có hàng". Hiện tại: <strong>{fmt(form.returnCargoBonus)} đ</strong></div>
           </div>
         </div>
 

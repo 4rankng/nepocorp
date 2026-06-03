@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, or, isNull, sql, desc, lte, gte, inArray } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, desc, lte, gte, inArray, ne } from 'drizzle-orm';
 import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
 import type { TripLegInput } from '@nepocorp/shared';
 import { emitAudit } from './audit.service';
@@ -328,6 +328,19 @@ export async function updateTripFigures(
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
 
     // 4. Compute Totals using pure shared function
+    //    Query ancillary fees for this trip (exclude rejected) so service margin
+    //    is included in the stored grossProfit.
+    const tripFees = await tx.select({
+      buyAmount: s.tripExpenses.buyAmount,
+      sellAmount: s.tripExpenses.sellAmount,
+      vatRate: s.tripExpenses.vatRate,
+    }).from(s.tripExpenses).where(
+      and(
+        eq(s.tripExpenses.tripId, tripId),
+        ne(s.tripExpenses.approvalStatus, 'REJECTED'),
+      )
+    );
+
     const totalsInput = {
       legs: normalizedLegs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
       fuelMode: data.fuelMode,
@@ -352,6 +365,14 @@ export async function updateTripFigures(
       twoPointDeliveryBonus,
       vehicleShiftAllowance,
       roadAllowanceOverride: data.roadAllowanceOverride ?? null,
+      vatRate: Number(trip.vatRate || 0),
+      carrierType: (trip.carrierType as 'OWN' | 'EXTERNAL') ?? 'OWN',
+      externalFreightCost: Number(trip.externalFreightCost || 0),
+      ancillaryFees: tripFees.map(f => ({
+        buyAmount: Number(f.buyAmount || 0),
+        sellAmount: Number(f.sellAmount || 0),
+        vatRate: Number(f.vatRate || 0.080),
+      })),
     };
 
     const totals = computeTripTotals(totalsInput);

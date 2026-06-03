@@ -61,7 +61,7 @@ export async function getDashboardStats() {
       topOverdueCustomer,
     ] = await Promise.all([
       db.select({
-        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.revenue}::numeric else 0 end), 0)`,
+        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
         costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
         tripCount: sql<number>`count(*)`,
         completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
@@ -152,7 +152,11 @@ export async function getPnlReport(month: number, year: number) {
       tripFeeMap.get(fee.tripId)!.push(fee);
     }
 
-    const totalRevenue = trips.reduce((sum, t) => sum + parseFloat(t.revenue || '0'), 0);
+    const totalRevenue = trips.reduce((sum, t) => {
+      const rev = parseFloat(t.revenue || '0');
+      const vat = Number(t.vatRate || 0);
+      return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
+    }, 0);
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
     const grossProfit = totalRevenue - totalCosts;
 
@@ -235,13 +239,21 @@ export async function getPnlReport(month: number, year: number) {
     for (const trip of trips) {
       if (!trip.truckId) continue; // EXTERNAL trips have no truck
       const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0, serviceMargin: 0 };
-      existing.revenue += parseFloat(trip.revenue || '0');
+      // Revenue ex-VAT for consistent P&L reporting
+      const tripRev = parseFloat(trip.revenue || '0');
+      const tripVat = Number(trip.vatRate || 0);
+      existing.revenue += tripVat > 0 ? Math.round(tripRev / (1 + tripVat)) : tripRev;
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
       existing.trips++;
-      // Accumulate service margin from approved ancillary fees (sell - buy)
+      // Accumulate service margin from approved ancillary fees (ex-VAT)
       const tripFees = tripFeeMap.get(trip.id) ?? [];
-      existing.serviceMargin += tripFees.reduce((sum, f) => sum + (Number(f.sellAmount) - Number(f.buyAmount)), 0);
+      existing.serviceMargin += tripFees.reduce((sum, f) => {
+        const feeVat = Number(f.vatRate || 0.080);
+        const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
+        const buyEx = feeVat > 0 ? Math.round(Number(f.buyAmount) / (1 + feeVat)) : Number(f.buyAmount);
+        return sum + (sellEx - buyEx);
+      }, 0);
       byTruck.set(trip.truckId, existing);
     }
     for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {
@@ -280,7 +292,12 @@ export async function getPnlReport(month: number, year: number) {
     if (extTrips.length > 0) {
       const extServiceMargin = extTrips.reduce((sum, t) => {
         const fees = tripFeeMap.get(t.id) ?? [];
-        return sum + fees.reduce((s, f) => s + (Number(f.sellAmount) - Number(f.buyAmount)), 0);
+        return sum + fees.reduce((s, f) => {
+          const feeVat = Number(f.vatRate || 0.080);
+          const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
+          const buyEx = feeVat > 0 ? Math.round(Number(f.buyAmount) / (1 + feeVat)) : Number(f.buyAmount);
+          return s + (sellEx - buyEx);
+        }, 0);
       }, 0);
 
       const extMgmtMargin = extTrips.reduce((sum, t) => {
@@ -292,7 +309,11 @@ export async function getPnlReport(month: number, year: number) {
         return sum + (revExVat - costExVat);
       }, 0);
 
-      const extRevenue = extTrips.reduce((s, t) => s + Number(t.revenue ?? 0), 0);
+      const extRevenue = extTrips.reduce((s, t) => {
+        const rev = Number(t.revenue ?? 0);
+        const vat = Number(t.vatRate ?? 0);
+        return s + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
+      }, 0);
       const extCosts = extTrips.reduce((s, t) => s + Number(t.externalFreightCost ?? 0), 0);
 
       truckBreakdown.push({
