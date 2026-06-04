@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import http from 'http';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
@@ -17,6 +18,7 @@ import configRoutes from '../routes/config';
 import tripRoutes from '../routes/trips';
 import financialRoutes from '../routes/financial';
 import driverRoutes from '../routes/driver';
+import salaryRoutes from '../routes/salary';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { initEnforcer } from '../casbin/enforcer';
@@ -28,6 +30,7 @@ app.use('/api/auth', authRoutes);
 // Apply same auth chain as production: specific paths first, catch-all /api last
 app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 app.use(globalErrorHandler);
@@ -63,27 +66,40 @@ before(async () => {
     });
   });
 
-  // Query existing database seed data
-  let [cust] = await db.select().from(s.customers).limit(1);
-  let [drvr] = await db.select().from(s.drivers).limit(1);
-  let [trck] = await db.select().from(s.trucks).limit(1);
-  let [rte] = await db.select().from(s.routes).limit(1);
-  let [crg] = await db.select().from(s.cargoTypes).limit(1);
+  // Seed data — create missing entities (fresh CI DB has no data)
   let [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
+  if (!adm) {
+    [adm] = await db.insert(s.users).values({
+      username: 'admin', passwordHash: await bcrypt.hash('admin123', 10), role: Role.ADMIN,
+    }).returning();
+  }
   let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  if (!drvUser) {
+    [drvUser] = await db.insert(s.users).values({
+      username: 'laixe', passwordHash: await bcrypt.hash('laixe123', 10), role: Role.DRIVER,
+    }).returning();
+  }
 
+  let [cust] = await db.select().from(s.customers).limit(1);
   if (!cust) {
     [cust] = await db.insert(s.customers).values({ name: 'Khách hàng E2E' }).returning();
   }
+  let [drvr] = await db.select().from(s.drivers).limit(1);
   if (!drvr) {
-    [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser?.id ?? null }).returning();
+    [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser.id }).returning();
   } else if (!drvr.userId && drvUser) {
     await db.update(s.drivers).set({ userId: drvUser.id }).where(eq(s.drivers.id, drvr.id));
     drvr.userId = drvUser.id;
   }
+  let [trck] = await db.select().from(s.trucks).limit(1);
+  if (!trck) {
+    [trck] = await db.insert(s.trucks).values({ licensePlate: '51C-12345' }).returning();
+  }
+  let [rte] = await db.select().from(s.routes).limit(1);
   if (!rte) {
     [rte] = await db.insert(s.routes).values({ name: 'Hà Nội - Hải Phòng' }).returning();
   }
+  let [crg] = await db.select().from(s.cargoTypes).limit(1);
   if (!crg) {
     [crg] = await db.insert(s.cargoTypes).values({ name: 'Hàng khô' }).returning();
   }
@@ -739,4 +755,215 @@ test('T4.10 — ACCOUNTANT: enter figures on IN_TRANSIT and COMPLETED trips, blo
   assert.ok(lockedUpdate.data.error.includes('chốt') || lockedUpdate.data.error.includes('khóa'),
     'Lock-guard error message should be returned');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T4.11 — Attendance/Salary and Driver Portal Earnings Integration
+// ─────────────────────────────────────────────────────────────────────────────
+test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async () => {
+  const testYear = 2026;
+  const testMonth = 6;
+
+  // 1. Fetch salary summaries list as accountant
+  const listRes = await testFetch(`/api/salary?year=${testYear}&month=${testMonth}`, {
+    method: 'GET',
+    token: accountantToken,
+  });
+  assert.strictEqual(listRes.status, 200, 'ACCOUNTANT must be able to view salary summary list');
+  assert.ok(Array.isArray(listRes.data.items), 'Salary summaries list items should be an array');
+
+  // Find our driver in the list
+  const driverSummaryItem = listRes.data.items.find((item: any) => item.id === driverId);
+  assert.ok(driverSummaryItem, 'Seeded driver should be present in the salary summaries list');
+
+  // 2. Fetch raw workdays list for our driver
+  const workdaysRes = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {
+    method: 'GET',
+    token: accountantToken,
+  });
+  assert.strictEqual(workdaysRes.status, 200, 'ACCOUNTANT must be able to view driver workdays list');
+  assert.ok(Array.isArray(workdaysRes.data.workDays), 'workDays should be an array');
+
+  // Let's perform a batch update of workdays (setting a day in June to PERSONAL_LEAVE and STANDBY)
+  const batchRes = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {
+    method: 'PUT',
+    token: accountantToken,
+    body: JSON.stringify({
+      items: [
+        { date: '2026-06-03', status: 'PERSONAL_LEAVE', note: 'Nghỉ phép năm' },
+        { date: '2026-06-04', status: 'STANDBY', note: 'Chờ việc không đi' },
+      ],
+    }),
+  });
+  assert.strictEqual(batchRes.status, 200, 'ACCOUNTANT must be able to batch update workdays');
+  assert.ok(batchRes.data.salary, 'Response should include the recalculated salary summary');
+
+  // Calculate standard workdays for June 2026 (30 days - 4 Sundays [7, 14, 21, 28] = 26 standard days)
+  const standardWorkDays = batchRes.data.salary.standardWorkDays;
+  assert.strictEqual(standardWorkDays, 26, 'June 2026 standard work days should be 26');
+
+  // 3. Check driver portal earnings endpoint: GET /api/driver/me/earnings
+  const driverEarningsRes = await testFetch(`/api/driver/me/earnings?month=${testMonth}&year=${testYear}`, {
+    method: 'GET',
+    token: driverToken,
+  });
+  assert.strictEqual(driverEarningsRes.status, 200, 'Driver must be able to access their own earnings in driver portal');
+
+  // The driver portal earnings should return the detailed fields: standardWorkDays, paidDays, dailyRate, adjustment
+  const earnings = driverEarningsRes.data;
+  assert.strictEqual(Number(earnings.standardWorkDays), 26, 'Earnings standardWorkDays should match');
+  assert.ok(earnings.adjustment !== undefined, 'Earnings adjustment must be present');
+  assert.ok(earnings.dailyRate !== undefined, 'Earnings dailyRate must be present');
+
+  // 4. Test driver status transition sync.
+  // Create a clean truck for this test to avoid conflicts with previous tests
+  const [testTruck] = await db.insert(s.trucks).values({
+    licensePlate: `TEST-${Date.now()}`,
+    status: 'ACTIVE',
+  }).returning();
+
+  // Create a trip for this driver in June
+  const trip = await tripService.createTrip({
+    customerId: customerId,
+    routeId: routeId,
+    truckId: testTruck.id,
+    driverId: driverId,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-10',
+  });
+
+  // Transit status to IN_TRANSIT
+  await testFetch(`/api/trips/${trip.id}/dispatch`, {
+    method: 'POST',
+    token: adminToken,
+  });
+
+  // Wait a small duration for fire-and-forget sync to complete
+  await new Promise(resolve => setTimeout(resolve, 150));
+
+  // Verify that a driver workday record is automatically created for 2026-06-10 as TRIP_DAY
+  const workdaysAfterDispatch = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {
+    method: 'GET',
+    token: accountantToken,
+  });
+  const dispatchDay = workdaysAfterDispatch.data.workDays.find((wd: any) => wd.date === '2026-06-10');
+  assert.ok(dispatchDay, 'A workday record should be created for the dispatch date');
+  assert.strictEqual(dispatchDay.status, 'TRIP_DAY', 'Status of workday should be TRIP_DAY');
+  assert.strictEqual(dispatchDay.tripId, trip.id, 'Workday record should link to the correct trip ID');
+
+  // Cancel the trip
+  await testFetch(`/api/trips/${trip.id}/cancel`, {
+    method: 'POST',
+    token: adminToken,
+  });
+
+  // Wait a small duration for fire-and-forget sync to complete
+  await new Promise(resolve => setTimeout(resolve, 150));
+
+  // Verify that the TRIP_DAY workday record is removed after canceling
+  const workdaysAfterCancel = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {
+    method: 'GET',
+    token: accountantToken,
+  });
+  const cancelDay = workdaysAfterCancel.data.workDays.find((wd: any) => wd.date === '2026-06-10');
+  assert.ok(!cancelDay, 'Workday record for canceled trip should be deleted');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T4.12 — Fuel Supplier and Fuel Expense Ledger Postings
+// ─────────────────────────────────────────────────────────────────────────────
+test('T4.12 — Fuel Supplier and Fuel Expense Ledger Postings', async () => {
+  // 1. Resolve or create a supplier to act as a fuel supplier
+  let [fuelSup] = await db.select().from(s.suppliers).limit(1);
+  if (!fuelSup) {
+    [fuelSup] = await db.insert(s.suppliers).values({ name: 'Nhà cung cấp nhiên liệu Test' }).returning();
+  }
+
+  // 2. Create a trip with this fuelSupplierId
+  const [testTruck] = await db.insert(s.trucks).values({
+    licensePlate: `F-${Date.now()}`,
+    status: 'ACTIVE',
+  }).returning();
+
+  const trip = await tripService.createTrip({
+    customerId: customerId,
+    routeId: routeId,
+    truckId: testTruck.id,
+    driverId: driverId,
+    cargoTypeId: cargoTypeId,
+    departureDate: '2026-06-15',
+    fuelSupplierId: fuelSup.id,
+  });
+
+  // Let's set some fuel figures to ensure totalFuelCost > 0
+  await tripService.updateTripFigures(trip.id, {
+    fuelMode: FuelMode.FLAT_RATE, // FLAT_RATE override
+    legs: [],
+    fuelLitersOverride: 100,
+    fuelActualUnitPrice: 25000,
+    fuelSupplierId: fuelSup.id,
+    driverSalary: 500000,
+    revenue: 4000000,
+  });
+
+  // Verify the trip fuel figures and totalFuelCost > 0
+  const [tripWithFuel] = await db.select().from(s.trips).where(eq(s.trips.id, trip.id)).limit(1);
+  assert.strictEqual(tripWithFuel.fuelSupplierId, fuelSup.id);
+  const expectedFuelCost = Number(tripWithFuel.totalFuelCost);
+  assert.ok(expectedFuelCost > 0, `Expected totalFuelCost to be > 0, got ${expectedFuelCost}`);
+
+  // Transition status to COMPLETED (upload photo first to satisfy gate)
+  await db.insert(s.tripPhotos).values({
+    tripId: trip.id,
+    type: 'CONTAINER',
+    storageKey: 'mock-trip-container-photo-fuel.jpg',
+    uploadedBy: adminUserId,
+  });
+
+  await tripService.transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, adminUserId, Role.ADMIN);
+  await tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN);
+
+  // Lock the trip via endpoint (as Admin) so that postTripLock is called
+  const lockRes = await testFetch(`/api/trips/${trip.id}/lock`, {
+    method: 'POST',
+    token: adminToken,
+  });
+  assert.strictEqual(lockRes.status, 200, 'Should lock trip successfully');
+
+  // Verify ledger postings for VENDOR (fuel supplier)
+  const vendorLedger = await db.select()
+    .from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'VENDOR'),
+      eq(s.ledger.entityId, fuelSup.id),
+      eq(s.ledger.txnId, trip.id)
+    ));
+  
+  assert.strictEqual(vendorLedger.length, 1, 'Should post 1 entry to fuel supplier ledger');
+  assert.strictEqual(vendorLedger[0].txnType, TxnType.FUEL_EXPENSE);
+  assert.strictEqual(Number(vendorLedger[0].credit), expectedFuelCost);
+  assert.strictEqual(Number(vendorLedger[0].debit), 0);
+
+  // Unlock the trip
+  const unlockRes = await testFetch(`/api/trips/${trip.id}/unlock`, {
+    method: 'POST',
+    token: adminToken,
+  });
+  assert.strictEqual(unlockRes.status, 200, 'Should unlock trip successfully');
+
+  // Verify reversal postings for VENDOR (fuel supplier)
+  const vendorLedgerAfterUnlock = await db.select()
+    .from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'VENDOR'),
+      eq(s.ledger.entityId, fuelSup.id),
+      eq(s.ledger.txnId, trip.id)
+    ));
+  
+  assert.strictEqual(vendorLedgerAfterUnlock.length, 2, 'Should post 2 entries (lock + unlock) to fuel supplier ledger');
+  const reversalEntry = vendorLedgerAfterUnlock.find(e => e.txnType === TxnType.UNLOCK_REVERSAL);
+  assert.ok(reversalEntry, 'Should find reversal entry');
+  assert.strictEqual(Number(reversalEntry.debit), expectedFuelCost);
+  assert.strictEqual(Number(reversalEntry.credit), 0);
+});
+
 

@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import http from 'http';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
@@ -65,15 +66,46 @@ before(async () => {
     });
   });
 
-  // Query existing database seed data
-  const [cust] = await db.select().from(s.customers).limit(1);
-  const [drvr] = await db.select().from(s.drivers).limit(1);
-  const [trck] = await db.select().from(s.trucks).limit(1);
-  const [rte] = await db.select().from(s.routes).limit(1);
-  const [crg] = await db.select().from(s.cargoTypes).limit(1);
-  const [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
-  const [act] = await db.select().from(s.users).where(eq(s.users.username, 'ketoan')).limit(1);
-  const [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  // Seed data — create missing entities (fresh CI DB has no data)
+  let [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
+  if (!adm) {
+    [adm] = await db.insert(s.users).values({
+      username: 'admin', passwordHash: await bcrypt.hash('admin123', 10), role: Role.ADMIN,
+    }).returning();
+  }
+  let [act] = await db.select().from(s.users).where(eq(s.users.username, 'ketoan')).limit(1);
+  if (!act) {
+    [act] = await db.insert(s.users).values({
+      username: 'ketoan', email: 'ketoan@nepo.vn', passwordHash: await bcrypt.hash('ketoan123', 10), role: Role.ACCOUNTANT,
+    }).returning();
+  }
+  let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  if (!drvUser) {
+    [drvUser] = await db.insert(s.users).values({
+      username: 'laixe', passwordHash: await bcrypt.hash('laixe123', 10), role: Role.DRIVER,
+    }).returning();
+  }
+
+  let [cust] = await db.select().from(s.customers).limit(1);
+  if (!cust) {
+    [cust] = await db.insert(s.customers).values({ name: 'Khách hàng E2E' }).returning();
+  }
+  let [rte] = await db.select().from(s.routes).limit(1);
+  if (!rte) {
+    [rte] = await db.insert(s.routes).values({ name: 'Hà Nội - Hải Phòng' }).returning();
+  }
+  let [crg] = await db.select().from(s.cargoTypes).limit(1);
+  if (!crg) {
+    [crg] = await db.insert(s.cargoTypes).values({ name: 'Hàng khô' }).returning();
+  }
+  let [trck] = await db.select().from(s.trucks).limit(1);
+  if (!trck) {
+    [trck] = await db.insert(s.trucks).values({ licensePlate: '51C-12345' }).returning();
+  }
+  let [drvr] = await db.select().from(s.drivers).limit(1);
+  if (!drvr) {
+    [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser.id }).returning();
+  }
 
   customerId = cust.id;
   routeId = rte.id;
