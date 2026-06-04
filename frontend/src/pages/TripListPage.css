@@ -932,21 +932,13 @@
 .trip-list-page .col-status {
   position: sticky;
   right: 0;
-  background: var(--surface);
+  background: inherit !important;
   z-index: 1;
   box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
   transition: background 150ms ease;
 }
-/* Ensure all direct cells inside a hovered/focused row (including the sticky status cell)
-   update their backgrounds dynamically to the hover green. */
-.trip-list-page .table-row:hover > *,
-.trip-list-page .table-row:focus-visible > *,
-.trip-list-page .table-row.is-selected > *,
-.trip-list-page .table-row.active > * {
-  background: #F1F8F4 !important;
-}
 .trip-list-page .table-head .col-status {
-  background: #F8FAFC;
+  background: #F8FAFC !important;
   z-index: 11;
   box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
 }
