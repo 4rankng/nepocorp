@@ -89,6 +89,7 @@ export default function TripListPage() {
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [searchQuery]);
 
+
   // Date range from salary period
   const dateFrom = salaryPeriod?.start;
   const dateTo = salaryPeriod?.end;

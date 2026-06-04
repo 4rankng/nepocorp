@@ -635,15 +635,13 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .ancillary-fees__table thead th { padding: 8px 6px !important; font-size: 10px; }
 .ancillary-fees__table tbody td { padding: 7px 6px; font-size: 12px; vertical-align: top; }
 .ancillary-fees__table tbody td.num { font-size: 12px; }
-/* Column widths — 8 columns, summing to 100% */
-.ancillary-fees__table thead th:nth-child(1) { width: 22%; }   /* Loại phí */
-.ancillary-fees__table thead th:nth-child(2) { width: 8%; }    /* Hình thức (Cty trả/Tạm ứng) */
-.ancillary-fees__table thead th:nth-child(3) { width: 12%; }   /* Mua vào */
-.ancillary-fees__table thead th:nth-child(4) { width: 12%; }   /* Bán ra */
-.ancillary-fees__table thead th:nth-child(5) { width: 11%; }   /* Lãi DV */
-.ancillary-fees__table thead th:nth-child(6) { width: 12%; }   /* Nhà cung cấp */
-.ancillary-fees__table thead th:nth-child(7) { width: 12%; }   /* Chứng từ */
-.ancillary-fees__table thead th:nth-child(8) { width: 11%; }   /* Trạng thái (sticky) */
+.ancillary-fees__table thead th:nth-child(1) { width: 30%; }   /* Loại phí + Hình thức */
+.ancillary-fees__table thead th:nth-child(2) { width: 12%; }   /* Mua vào */
+.ancillary-fees__table thead th:nth-child(3) { width: 12%; }   /* Bán ra */
+.ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* Lãi DV */
+.ancillary-fees__table thead th:nth-child(5) { width: 12%; }   /* Nhà cung cấp */
+.ancillary-fees__table thead th:nth-child(6) { width: 12%; }   /* Chứng từ */
+.ancillary-fees__table thead th:nth-child(7) { width: 11%; }   /* Trạng thái (sticky) */
 
 /* Clip long text in body cells so numbers/labels never bleed into the
    next column. Col 1 keeps the natural wrap (it stacks name + container). */
@@ -657,22 +655,11 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   text-overflow: ellipsis;
 }
 
-/* Sticky last column (col 8 — status + decision icons). Opaque bg + left shadow
-   so it pins cleanly during horizontal scroll. */
-.ancillary-fees__table thead th:nth-child(8),
-.ancillary-fees__table tbody td:nth-child(8) {
-  position: sticky;
-  right: 0;
-  background: var(--surface);
-  z-index: 1;
-  box-shadow: -4px 0 8px -4px rgba(14, 31, 22, 0.06);
-}
-.ancillary-fees__table thead th:nth-child(8) { z-index: 2; }
-.ancillary-fees__table tbody tr:hover td:nth-child(8) {
+/* Non-sticky last column */
+.ancillary-fees__table thead th:nth-child(7) {
   background: var(--surface-2);
 }
-/* tfoot sticky col must use the surface-2 (matches tfoot bg) */
-.ancillary-fees__table tfoot td:nth-child(8) {
+.ancillary-fees__table tfoot td:nth-child(7) {
   background: var(--surface-2);
 }
 
@@ -1014,8 +1001,7 @@ tbody tr:hover td {
 }
 /* Explicitly override sticky td cells on hover to ensure sync */
 tbody tr:hover td[style*="position: sticky"],
-tbody tr:hover td.sticky,
-.ancillary-fees__table tbody tr:hover td:nth-child(8) {
+tbody tr:hover td.sticky {
   background-color: #F1F8F4 !important;
 }
 tbody tr:last-child td { border-bottom: none; }

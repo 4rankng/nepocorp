@@ -459,13 +459,13 @@
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | status
    7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
-  display: grid;
+  display: inline-grid;
   grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
   background: #F8FAFC;
   border-bottom: 2px solid var(--line-2);
-  min-width: 900px;
+  min-width: max(900px, 100%);
   align-items: center;
   position: sticky;
   top: 0;
@@ -484,7 +484,7 @@
 .trip-list-page .center { text-align: center; justify-self: center; }
 
 .trip-list-page .table-row {
-  display: grid;
+  display: inline-grid;
   grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
@@ -492,7 +492,7 @@
   border-bottom: 1px solid var(--line);
   transition: all 150ms ease;
   cursor: pointer;
-  min-width: 900px;
+  min-width: max(900px, 100%);
   min-height: 60px;
   background: var(--surface);
 }
@@ -932,13 +932,18 @@
 .trip-list-page .col-status {
   position: sticky;
   right: 0;
-  background: inherit !important;
-  z-index: 1;
+  background: var(--surface);
+  z-index: 2;
   box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
   transition: background 150ms ease;
 }
+.trip-list-page .table-row:hover .col-status {
+  background: var(--tbl-green-050);
+}
 .trip-list-page .table-head .col-status {
-  background: #F8FAFC !important;
+  position: sticky;
+  right: 0;
+  background: #F8FAFC;
   z-index: 11;
   box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
 }
