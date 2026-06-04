@@ -640,8 +640,20 @@
 .topbar-date.is-open .topbar-date__icon {
   color: var(--accent);
 }
+.topbar-date__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
 .topbar-date__label {
   font-variant-numeric: tabular-nums;
+}
+.topbar-date__period {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  font-weight: 500;
+  line-height: 1;
 }
 .topbar-date__caret {
   color: var(--ink-3);

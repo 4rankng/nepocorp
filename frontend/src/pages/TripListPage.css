@@ -434,59 +434,37 @@
 .trip-list-page .table-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: visible;
+  border-radius: 16px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-card);
 }
 /* Scroll wrapper — holds buttons + scrollable body. */
 .trip-list-page .table-scroll-wrapper {
   position: relative;
-  display: flex;
-  align-items: stretch;
-  /* 48px padding each side creates visible room for the 32px circle buttons
-     that sit at ±16px — they never get clipped by overflow. */
-  padding: 0 48px;
 }
 /* Scroll body — both axes scroll, max-height caps vertical growth */
 .trip-list-page .table-scroll-body {
   overflow-x: auto;
   overflow-y: auto;
   max-height: clamp(400px, 55vh, 680px);
-  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-3) transparent;
 }
-.trip-list-page .table-scroll-body::-webkit-scrollbar { height: 6px; }
-.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar { width: 0; height: 6px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-track { background: transparent; }
-/* Arrow scroll buttons — sit on left/right edges of the wrapper */
-.trip-list-page .table-scroll-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 20;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 120ms, background 120ms;
-  color: var(--ink-2);
-}
-.trip-list-page .table-scroll-btn:hover { opacity: 1; background: var(--surface-2); }
-.trip-list-page .table-scroll-btn.left  { left: 0; }
-.trip-list-page .table-scroll-btn.right { right: 0; }
-.trip-list-page .table-scroll-btn.hidden { display: none; }
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | status
    7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
   display: grid;
   grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
-  padding: 13px 16px;
+  padding: 14px 16px;
   gap: 12px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
+  background: #F8FAFC;
+  border-bottom: 2px solid var(--line-2);
   min-width: 900px;
   align-items: center;
   position: sticky;
@@ -494,8 +472,9 @@
   z-index: 10;
 }
 .trip-list-page .table-head > div {
-  font-size: 11px; letter-spacing: 0.7px;
-  color: var(--ink-3); font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 11px; letter-spacing: 0.08em;
+  color: var(--ink-2); font-weight: 700;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -511,16 +490,19 @@
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  transition: background 120ms ease, box-shadow 140ms ease;
+  transition: all 150ms ease;
   cursor: pointer;
   min-width: 900px;
-  min-height: 58px;
+  min-height: 60px;
+  background: var(--surface);
 }
-.trip-list-page .table-row:hover { background: var(--tbl-green-050); }
+.trip-list-page .table-row:hover {
+  background: var(--tbl-green-050);
+  box-shadow: inset 4px 0 0 var(--accent), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
 /* Hover chevron — sits inside the sticky status cell so it stays visible
    regardless of horizontal scroll. Hidden at rest; fades in + slides on
-   row hover and keyboard focus, reading as a continuation of the
-   click affordance rather than a separate icon. */
+   row hover and keyboard focus. */
 .trip-list-page .table-row__chev {
   flex: 0 0 auto;
   color: var(--tbl-green-600);
@@ -534,11 +516,10 @@
   opacity: 1;
   transform: translateX(0);
 }
-/* Keyboard focus ring — a screen reader hears "button" via role=button,
-   sighted users see the ring + the chevron, both nudging Enter. */
+/* Keyboard focus ring */
 .trip-list-page .table-row:focus-visible {
-  outline: 2px solid var(--tbl-green-600);
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: inset 4px 0 0 var(--tbl-green-600), 0 0 0 2px var(--tbl-green-100);
 }
 .trip-list-page .table-row:last-of-type { border-bottom: none; }
 .trip-list-page .table-row > div {
@@ -599,30 +580,47 @@
 }
 .trip-list-page .trip-meta-sep { color: var(--ink-3); opacity: 0.6; }
 
-/* License plate — plain text with status dot */
+/* Keyframe animation for pulsing dot on active (In Transit) status */
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); opacity: 0.8; }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); opacity: 1; }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); opacity: 0.8; }
+}
+
+/* License plate — styled block like actual vehicle plates */
 .trip-list-page .plate {
   font-family: var(--font-mono);
-  font-weight: 600; font-size: 13px;
+  font-weight: 600; font-size: 12.5px;
   color: var(--ink);
-  background: transparent;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  letter-spacing: 0.4px;
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
   font-feature-settings: "tnum";
   white-space: nowrap;
 }
 .trip-list-page .plate::before {
   content: "";
   width: 6px; height: 6px;
-  border-radius: 2px;
-  background: var(--tbl-green-600);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--accent);
 }
-.trip-list-page .plate.idle { color: var(--ink-3); }
-.trip-list-page .plate.idle::before { background: var(--ink-3); opacity: 0.4; }
+.trip-list-page .plate.idle {
+  color: var(--ink-3);
+  background: var(--surface-3);
+  border-color: var(--line);
+}
+.trip-list-page .plate.idle::before {
+  background: var(--ink-3);
+  opacity: 0.5;
+  box-shadow: none;
+}
 
 /* Route column — two-row stacked layout */
 .trip-list-page .route-cell-flex {
@@ -675,17 +673,19 @@
 .trip-list-page .container-tag {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
-  background: var(--tbl-slate-100);
+  background: var(--surface-3);
   color: var(--ink-2);
   padding: 3px 8px;
   border-radius: 6px;
+  border: 1px solid var(--line-2);
   line-height: 1;
 }
 .trip-list-page .container-tag.multiplier {
   background: var(--brand-soft);
-  color: var(--brand);
+  color: var(--brand-hover);
+  border-color: rgba(0, 177, 79, 0.2);
 }
 
 .trip-list-page .km-empty { font-size: 13px; color: var(--ink-3); opacity: 0.6; text-align: right; }
@@ -693,24 +693,38 @@
 .trip-list-page .cons-cell { min-width: 0; }
 .trip-list-page .cons-main {
   font-family: var(--font-mono);
-  font-weight: 600; font-size: 12.5px;
+  font-weight: 600; font-size: 13px;
   display: flex; align-items: center; gap: 6px;
   color: var(--ink);
 }
 .trip-list-page .cons-rate {
-  font-size: 11px; color: var(--ink-3);
-  margin-top: 2px;
-  display: flex; align-items: center; gap: 5px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
 }
-.trip-list-page .cons-rate.warn { color: var(--d-amber); font-weight: 600; }
+.trip-list-page .cons-rate.warn {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+  font-weight: 600;
+}
 .trip-list-page .cons-rate.warn::before {
   content: ''; width: 5px; height: 5px;
-  background: var(--d-amber-dot); border-radius: 50%;
+  background: var(--danger); border-radius: 50%;
 }
-.trip-list-page .cons-rate.ok { color: var(--ink-3); }
+.trip-list-page .cons-rate.ok {
+  color: var(--success-text);
+  background: var(--success-soft);
+  font-weight: 600;
+}
 .trip-list-page .cons-rate.ok::before {
   content: ''; width: 5px; height: 5px;
-  background: #10B981; border-radius: 50%;
+  background: var(--success); border-radius: 50%;
 }
 .trip-list-page .cons-empty {
   font-size: 12px; color: var(--ink-3); opacity: 0.7;
@@ -725,21 +739,22 @@
 /* Pending pill — wireframe "Chờ khai báo" style */
 .trip-list-page .pending {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600;
-  color: var(--tbl-slate-700);
-  background: var(--tbl-slate-100);
-  border-radius: 7px;
-  padding: 4px 9px;
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border: 1px dashed var(--line-3);
+  border-radius: 6px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 
 .trip-list-page .money {
   font-family: var(--font-mono);
-  font-weight: 600; font-size: 13.5px;
+  font-weight: 600; font-size: 14px;
   text-align: right;
   color: var(--ink);
 }
-.trip-list-page .money-unit { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-left: 1px; }
+.trip-list-page .money-unit { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-left: 2px; }
 .trip-list-page .money-empty {
   font-size: 12px; color: var(--ink-3); opacity: 0.7;
   text-align: right;
@@ -749,32 +764,62 @@
 
 .trip-list-page .status-cell {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 6px;
   min-width: 0;
+  width: 100%;
 }
 .trip-list-page .status-pill {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 6px;
   font-size: 11px; font-weight: 600;
-  letter-spacing: 0.2px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 8px;
   text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
-.trip-list-page .status-pill .sd { width: 5px; height: 5px; border-radius: 50%; }
-.trip-list-page .pill-moi { background: var(--tbl-blue-100); color: var(--tbl-blue-700); }
-.trip-list-page .pill-moi .sd { background: var(--tbl-blue-700); }
-.trip-list-page .pill-dang { background: var(--tbl-green-100); color: var(--tbl-green-700); }
-.trip-list-page .pill-dang .sd { background: var(--tbl-green-600); }
-.trip-list-page .pill-htth { background: var(--tbl-amber-100); color: var(--tbl-amber-700); }
-.trip-list-page .pill-htth .sd { background: #C98A0A; }
-.trip-list-page .pill-chot { background: var(--tbl-green-100); color: var(--tbl-green-700); }
-.trip-list-page .pill-chot .sd { background: var(--tbl-green-600); }
-.trip-list-page .pill-huy { background: var(--tbl-red-100); color: var(--tbl-red-700); }
-.trip-list-page .pill-huy .sd { background: var(--tbl-red-700); }
+.trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
+
+.trip-list-page .pill-moi {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.trip-list-page .pill-moi .sd { background: #3B82F6; }
+
+.trip-list-page .pill-dang {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.trip-list-page .pill-dang .sd {
+  background: #22C55E;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+  animation: pulse-green 1.8s infinite ease-in-out;
+}
+
+.trip-list-page .pill-htth {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.trip-list-page .pill-htth .sd { background: #F59E0B; }
+
+.trip-list-page .pill-chot {
+  background: #E6F7EE;
+  color: #005A2D;
+  border: 1px solid rgba(0, 177, 79, 0.25);
+}
+.trip-list-page .pill-chot .sd { background: #00B14F; }
+
+.trip-list-page .pill-huy {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.trip-list-page .pill-huy .sd { background: #EF4444; }
 
 .trip-list-page .actions {
   display: inline-flex; gap: 4px;
@@ -884,23 +929,26 @@
 }
 
 /* ── Sticky status column ─────────────────────────────────────────── */
-/* Rows need explicit bg so the sticky cell can inherit it (including hover state) */
-.trip-list-page .table-row {
-  background: var(--surface);
-}
 .trip-list-page .col-status {
   position: sticky;
   right: 0;
-  background: inherit;
+  background: var(--surface);
   z-index: 1;
+  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
+  transition: background 150ms ease;
+}
+/* Ensure all direct cells inside a hovered/focused row (including the sticky status cell)
+   update their backgrounds dynamically to the hover green. */
+.trip-list-page .table-row:hover > *,
+.trip-list-page .table-row:focus-visible > *,
+.trip-list-page .table-row.is-selected > *,
+.trip-list-page .table-row.active > * {
+  background: #F1F8F4 !important;
 }
 .trip-list-page .table-head .col-status {
-  background: var(--surface-2);
+  background: #F8FAFC;
   z-index: 11;
-}
-/* Safety net: explicitly match hover so GPU compositing can't lag */
-.trip-list-page .table-row:hover .col-status {
-  background: var(--tbl-green-050);
+  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Infinite scroll sentinel ─────────────────────────────────────────── */

@@ -977,19 +977,19 @@ table {
 }
 thead th {
   text-align: left;
-  padding: 18px 20px !important;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--ink-3);
+  padding: 14px 18px !important;
+  background: #F8FAFC;
+  border-bottom: 2px solid var(--line-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
 }
 thead th.num,
 td.num {
@@ -1002,12 +1002,22 @@ tbody td {
   vertical-align: middle;
   color: var(--ink);
   white-space: nowrap;
+  transition: background 150ms ease;
 }
 tbody tr {
-  transition: background 0.12s;
+  background: var(--surface);
+  transition: background 150ms ease;
 }
 tbody tr.is-clickable { cursor: pointer; }
-tbody tr:hover { background: var(--surface-2); }
+tbody tr:hover td {
+  background-color: #F1F8F4;
+}
+/* Explicitly override sticky td cells on hover to ensure sync */
+tbody tr:hover td[style*="position: sticky"],
+tbody tr:hover td.sticky,
+.ancillary-fees__table tbody tr:hover td:nth-child(8) {
+  background-color: #F1F8F4 !important;
+}
 tbody tr:last-child td { border-bottom: none; }
 
 .table-foot {

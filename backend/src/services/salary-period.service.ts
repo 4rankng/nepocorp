@@ -218,6 +218,44 @@ export async function upsertSalaryPeriodOverride(
   return created;
 }
 
+/** Update a salary period override by its database id */
+export async function updateSalaryPeriodOverrideById(
+  id: number,
+  month: number,
+  year: number,
+  startDate: string,
+  endDate: string,
+  label?: string,
+) {
+  const [existing] = await db
+    .select()
+    .from(s.salaryPeriods)
+    .where(
+      and(
+        eq(s.salaryPeriods.id, id),
+        eq(s.salaryPeriods.isDefault, false),
+        isNull(s.salaryPeriods.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!existing) return null;
+
+  const [updated] = await db
+    .update(s.salaryPeriods)
+    .set({
+      month,
+      year,
+      startDate,
+      endDate,
+      label: label || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(s.salaryPeriods.id, id))
+    .returning();
+  return updated;
+}
+
 /** Soft-delete a salary period override */
 export async function deleteSalaryPeriodOverride(id: number) {
   const [deleted] = await db

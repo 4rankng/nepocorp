@@ -148,7 +148,7 @@ export default function DriverEarningsPage() {
         <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 'var(--radius)', background: 'var(--bg-2)', border: '1px solid var(--border-1)', fontSize: 12, color: 'var(--fg-3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <span>Công chuẩn: <strong style={{ color: 'var(--fg-2)' }}>{earnings.standardWorkDays} ngày</strong></span>
           {earnings.paidDays !== undefined && <span>Công hưởng lương: <strong style={{ color: 'var(--fg-2)' }}>{earnings.paidDays} ngày</strong></span>}
-          {earnings.dailyRate !== undefined && earnings.dailyRate > 0 && <span>Đơn giá ngày: <strong style={{ color: 'var(--fg-2)' }}>{formatCurrency(earnings.dailyRate)}</strong></span>}
+          {earnings.dailyRate !== undefined && earnings.dailyRate > 0 && <span>Đơn giá ngày: <strong style={{ color: 'var(--fg-2)' }}>{formatNumber(earnings.dailyRate)} ₫</strong></span>}
         </div>
       )}
 

@@ -32,9 +32,11 @@ import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
 import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
+import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 import { ROLE_LABELS } from '@nepocorp/shared';
 import type { Role } from '@nepocorp/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { MonthProvider, useMonth } from '../hooks/useMonth';
 import { NotificationDrawer } from './NotificationDrawer';
 import { useSearch } from '../context/SearchContext';
@@ -162,8 +164,15 @@ function MonthNavigator() {
   const [open, setOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(year);
   const containerRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(containerRef, () => setOpen(false), { escapeKey: true, enabled: open });
+  useFocusTrap(pickerRef, open);
+
+  const { data: period } = useSalaryPeriod(month, year);
+  const periodLabel = period
+    ? `${period.start.slice(8, 10)}/${period.start.slice(5, 7)} – ${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
+    : null;
 
   useEffect(() => {
     if (open) setPickerYear(year);
@@ -185,12 +194,15 @@ function MonthNavigator() {
         aria-label="Chọn tháng"
       >
         <Calendar size={14} className="topbar-date__icon" />
-        <span className="topbar-date__label">Tháng {month}/{year}</span>
+        <div className="topbar-date__body">
+          <span className="topbar-date__label">Tháng {month}/{year}</span>
+          {periodLabel && <span className="topbar-date__period">{periodLabel}</span>}
+        </div>
         <ChevronDown size={12} className="topbar-date__caret" />
       </button>
 
       {open && (
-        <div className="month-picker" role="dialog" aria-label="Chọn tháng">
+        <div className="month-picker" role="dialog" aria-label="Chọn tháng" ref={pickerRef}>
           <div className="month-picker__header">
             <button
               type="button"

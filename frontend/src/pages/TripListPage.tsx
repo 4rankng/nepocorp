@@ -149,41 +149,28 @@ export default function TripListPage() {
   // ── Sentinel ref for IntersectionObserver ──
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // ── Horizontal scroll refs + state ──
+  // ── Horizontal scroll ──
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateScrollButtons = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', updateScrollButtons, { passive: true });
-    updateScrollButtons();
-    return () => el.removeEventListener('scroll', updateScrollButtons);
-  }, [updateScrollButtons]);
 
   // Left/Right arrow key scrolls the table body
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.setAttribute('tabindex', '-1');
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); el.scrollBy({ left: -200, behavior: 'smooth' }); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); el.scrollBy({ left: 200, behavior: 'smooth' }); }
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const el = scrollRef.current;
+      if (!el) return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        el.scrollLeft = Math.max(0, el.scrollLeft - 200);
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + 200);
+      }
     };
-    el.addEventListener('keydown', handler);
-    return () => el.removeEventListener('keydown', handler);
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
   }, []);
-
-  const scrollLeft = useCallback(() => scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' }), []);
-  const scrollRight = useCallback(() => scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' }), []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -670,9 +657,6 @@ export default function TripListPage() {
       </div>
       <div className="table-card">
         <div className="table-scroll-wrapper">
-          <button className={`table-scroll-btn left${canScrollLeft ? '' : ' hidden'}`} onClick={scrollLeft} aria-label="Cuộn trái">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
           <div className="table-scroll-body" ref={scrollRef} tabIndex={-1}>
             <div className="table-head">
               {tableInstance.getHeaderGroups().map(headerGroup => (
@@ -729,9 +713,6 @@ export default function TripListPage() {
               ))
             )}
           </div>
-          <button className={`table-scroll-btn right${canScrollRight ? '' : ' hidden'}`} onClick={scrollRight} aria-label="Cuộn phải">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
         </div>
 
         {/* ── MOBILE CARDS ─────────────────────────────────────────── */}

@@ -22,6 +22,7 @@ import {
   updateSalaryPeriodDefault,
   getSalaryPeriodOverrides,
   upsertSalaryPeriodOverride,
+  updateSalaryPeriodOverrideById,
   deleteSalaryPeriodOverride,
   resolveSalaryPeriodDateRange,
 } from '../services/salary-period.service';
@@ -262,10 +263,10 @@ salaryPeriodsAdminRouter.put('/:id', asyncHandler(async (req: Request, res: Resp
   const id = parseInt(req.params.id as string, 10);
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
   const data = salaryPeriodSchema.parse(req.body);
-  // Update by id — fetch existing to validate, then upsert by month/year
-  const result = await upsertSalaryPeriodOverride(
-    data.month, data.year, data.startDate, data.endDate, data.label,
+  const result = await updateSalaryPeriodOverrideById(
+    id, data.month, data.year, data.startDate, data.endDate, data.label,
   );
+  if (!result) return res.status(404).json({ error: 'Không tìm thấy' });
   res.json(result);
 }));
 
