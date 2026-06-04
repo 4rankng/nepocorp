@@ -228,7 +228,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                   onChange={e => setTollsStations(e.target.value)}
                   placeholder="0"
                 />
-                <p style={hintStyle}>Trừ vào tiền đường.</p>
+                <p style={hintStyle}>Trừ vào tiền đi đường.</p>
               </div>
             </div>
             <div className="field" style={{ marginTop: 12 }}>

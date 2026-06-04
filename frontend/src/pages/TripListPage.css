@@ -460,7 +460,7 @@
    7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
   display: inline-grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
   background: #F8FAFC;
@@ -485,7 +485,7 @@
 
 .trip-list-page .table-row {
   display: inline-grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(140px, 1fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px;
   padding: 14px 16px;
   gap: 12px;
   align-items: center;
@@ -925,7 +925,7 @@
 
 /* ── Column-specific sizing ────────────────────────────────────────── */
 .trip-list-page .col-consumption {
-  min-width: 110px;
+  min-width: 90px;
 }
 
 /* ── Sticky status column ─────────────────────────────────────────── */
@@ -1036,7 +1036,7 @@
   .trip-list-page .table-head,
   .trip-list-page .table-row {
     /* 5 visible cols: trip | truck | route | container | status */
-    grid-template-columns: minmax(200px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(120px, 1fr) 100px 90px;
+    grid-template-columns: minmax(200px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(80px, 0.6fr) 80px 90px;
     min-width: unset;
     gap: 10px;
   }
