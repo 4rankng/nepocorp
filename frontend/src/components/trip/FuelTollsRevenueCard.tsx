@@ -78,7 +78,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
               style={{ width: '100%', height: '40px', borderRadius: '6px', border: '1px solid var(--border-color, #E5E7EB)', background: 'var(--bg-1, #FFF)', padding: '0 12px' }}
             >
               <option value="">-- Chọn nhà cung cấp nhiên liệu --</option>
-              {catalogData?.suppliers?.map((s) => (
+              {catalogData?.suppliers?.filter(s => (s as any).isFuelSupplier).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>

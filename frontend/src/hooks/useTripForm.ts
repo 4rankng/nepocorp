@@ -105,6 +105,8 @@ export interface UseTripFormReturn {
   setRoadAllowanceOverride: (v: string) => void;
   fuelActualUnitPrice: string;
   setFuelActualUnitPrice: (v: string) => void;
+  fuelSupplierId: number | null;
+  setFuelSupplierId: (v: number | null) => void;
   revenue: string;
   setRevenue: (v: string) => void;
   revenueEmptyReturn: string;

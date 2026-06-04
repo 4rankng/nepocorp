@@ -90,8 +90,8 @@ jobs:
 
       - name: Run shared unit tests
         run: |
-          npx tsx --test shared/src/calculations/tripTotals.test.ts
-          npx tsx --test shared/src/schemas/updateTripFiguresSchema.test.ts
+          cd backend && npx tsx --test ../shared/src/calculations/tripTotals.test.ts
+          cd backend && npx tsx --test ../shared/src/schemas/updateTripFiguresSchema.test.ts
 
       - name: Apply migrations to test DB
         run: cd backend && npx drizzle-kit migrate
