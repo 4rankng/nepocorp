@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationClient } from '../lib/notificationClient';
 import type { Notification } from '@nepocorp/shared';
 
-export function useUnreadCount() {
+export function useUnreadCount(options?: { enabled?: boolean }) {
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: () => notificationClient.getUnreadCount(),
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+    enabled: options?.enabled ?? true,
   });
 }
 

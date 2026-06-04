@@ -309,7 +309,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 
 .kpi__value {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: clamp(20px, 3.5vw + 4px, 24px);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -323,9 +323,10 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   margin-left: 2px;
 }
 .kpi--compact .kpi__value {
-  font-size: 18px;
+  font-size: clamp(14px, 2vw + 6px, 16px);
   letter-spacing: -0.01em;
   line-height: 1.2;
+  word-break: break-word;
 }
 .kpi--compact .kpi__value-unit {
   font-size: 13px;
@@ -355,6 +356,18 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
   pointer-events: none;
   color: var(--ink-3);
   opacity: 0.09;
+}
+.kpi--compact .kpi__watermark {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  right: 12px;
+  width: 48px;
+  height: 48px;
+}
+.kpi--compact .kpi__watermark svg {
+  width: 48px !important;
+  height: 48px !important;
 }
 .kpi--warn .kpi__watermark    { color: var(--warning); opacity: 0.13; }
 .kpi--danger .kpi__watermark  { color: var(--danger);  opacity: 0.12; }

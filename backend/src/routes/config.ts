@@ -216,9 +216,15 @@ router.get('/fuel-price-history/effective', asyncHandler(async (req: Request, re
 }));
 
 // ─── Salary Period Config ──────────────────────────────────────────────────────
+// Two routers:
+// 1. salaryPeriodsRouter — public resolve endpoint, mounted with casbinAuthz('salary')
+//    so DRIVER can resolve period date ranges.
+// 2. salaryPeriodsAdminRouter — admin CRUD (defaults, overrides), mounted with
+//    casbinAuthz('config') so only ADMIN/MANAGER/ACCOUNTANT can manage them.
 
-// Resolve a salary period for a given month/year (used by frontend hooks)
-router.get('/salary-periods/resolve', asyncHandler(async (req: Request, res: Response) => {
+export const salaryPeriodsRouter = Router();
+
+salaryPeriodsRouter.get('/resolve', asyncHandler(async (req: Request, res: Response) => {
   const month = parseInt(req.query.month as string, 10);
   const year = parseInt(req.query.year as string, 10);
   if (!month || !year || month < 1 || month > 12) {
@@ -227,23 +233,23 @@ router.get('/salary-periods/resolve', asyncHandler(async (req: Request, res: Res
   res.json(await resolveSalaryPeriodDateRange(month, year));
 }));
 
-// Global default — singleton GET/PUT (same pattern as fuel-config)
-router.get('/salary-periods/default', asyncHandler(async (_req: Request, res: Response) => {
+export const salaryPeriodsAdminRouter = Router();
+
+salaryPeriodsAdminRouter.get('/default', asyncHandler(async (_req: Request, res: Response) => {
   res.json(await getSalaryPeriodDefault());
 }));
 
-router.put('/salary-periods/default', asyncHandler(async (req: Request, res: Response) => {
+salaryPeriodsAdminRouter.put('/default', asyncHandler(async (req: Request, res: Response) => {
   const data = salaryPeriodDefaultSchema.parse(req.body);
   res.json(await updateSalaryPeriodDefault(data.defaultStartDay, data.defaultEndDay));
 }));
 
-// Per-month overrides — list, create, update, soft-delete
-router.get('/salary-periods', asyncHandler(async (_req: Request, res: Response) => {
+salaryPeriodsAdminRouter.get('/', asyncHandler(async (_req: Request, res: Response) => {
   const items = await getSalaryPeriodOverrides();
   res.json({ items, total: items.length });
 }));
 
-router.post('/salary-periods', asyncHandler(async (req: Request, res: Response) => {
+salaryPeriodsAdminRouter.post('/', asyncHandler(async (req: Request, res: Response) => {
   const data = salaryPeriodSchema.parse(req.body);
   res.status(201).json(
     await upsertSalaryPeriodOverride(
@@ -252,7 +258,7 @@ router.post('/salary-periods', asyncHandler(async (req: Request, res: Response) 
   );
 }));
 
-router.put('/salary-periods/:id', asyncHandler(async (req: Request, res: Response) => {
+salaryPeriodsAdminRouter.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
   const data = salaryPeriodSchema.parse(req.body);
@@ -263,7 +269,7 @@ router.put('/salary-periods/:id', asyncHandler(async (req: Request, res: Respons
   res.json(result);
 }));
 
-router.delete('/salary-periods/:id', asyncHandler(async (req: Request, res: Response) => {
+salaryPeriodsAdminRouter.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
   const deleted = await deleteSalaryPeriodOverride(id);
   if (!deleted) return res.status(404).json({ error: 'Không tìm thấy' });

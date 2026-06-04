@@ -258,7 +258,7 @@
 
 /* ── KPI value emphasis ───────────────────────────────────────────────────── */
 
-.kpi-grid .kpi__value {
+.users-admin-page .kpi-grid .kpi__value {
   font-size: 32px;
 }
 
@@ -611,20 +611,20 @@
 }
 
 /* KPI Premium Styling overrides */
-.kpi-grid .kpi {
+.users-admin-page .kpi-grid .kpi {
   background: #ffffff;
   border: 1px solid var(--line-2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
   transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
 }
 
-.kpi-grid .kpi:hover {
+.users-admin-page .kpi-grid .kpi:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
   border-color: var(--line);
 }
 
-.kpi-grid .kpi .kpi__value {
+.users-admin-page .kpi-grid .kpi .kpi__value {
   font-size: 34px;
   font-weight: 700;
   color: var(--ink);
@@ -633,7 +633,7 @@
   line-height: 1;
 }
 
-.kpi-grid .kpi .kpi__icon {
+.users-admin-page .kpi-grid .kpi .kpi__icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
@@ -644,17 +644,17 @@
   justify-content: center;
 }
 
-.kpi-grid .kpi.kpi--warn .kpi__icon {
+.users-admin-page .kpi-grid .kpi.kpi--warn .kpi__icon {
   background: rgba(245, 158, 11, 0.12);
   color: rgb(217, 119, 6);
 }
 
-.kpi-grid .kpi.kpi--success .kpi__icon {
+.users-admin-page .kpi-grid .kpi.kpi--success .kpi__icon {
   background: rgba(16, 185, 129, 0.12);
   color: rgb(5, 150, 105);
 }
 
-.kpi-grid .kpi.kpi--danger .kpi__icon {
+.users-admin-page .kpi-grid .kpi.kpi--danger .kpi__icon {
   background: rgba(239, 68, 68, 0.12);
   color: rgb(220, 38, 38);
 }

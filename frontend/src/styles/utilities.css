@@ -56,8 +56,7 @@
   .kpi__label { font-size: 9px; letter-spacing: 0.04em; line-height: 1.35; }
   .kpi__icon { width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; }
   .kpi__icon svg { width: 12px !important; height: 12px !important; }
-  .kpi__value { font-size: 24px; }
-  .kpi__value-unit { font-size: 12px; }
+  /* .kpi__value font-size handled by clamp() in UI.css */
   .kpi__meta { font-size: 10px; gap: 4px; flex-wrap: wrap; }
 }
 

@@ -1,5 +1,5 @@
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
-import { formatCurrency, formatDate } from '../lib/format';
+import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
@@ -76,43 +76,44 @@ export default function DriverEarningsPage() {
 
       {/* Net income hero card */}
       <div className="panel fade-up earnings-hero" style={{
-        marginBottom: 12,
+        marginBottom: 16,
         overflow: 'hidden',
         border: isPositive ? '1px solid var(--success)' : '1px solid var(--danger)',
+        boxShadow: isPositive ? '0 8px 24px -8px rgba(0, 177, 79, 0.25)' : '0 8px 24px -8px rgba(227, 36, 52, 0.25)'
       }}>
         <div className="earnings-hero__inner" style={{
-          padding: '24px 24px 20px',
+          padding: '24px 24px',
           background: isPositive
             ? 'linear-gradient(135deg, var(--success-soft) 0%, var(--bg-2) 100%)'
             : 'linear-gradient(135deg, var(--danger-soft) 0%, var(--bg-2) 100%)',
         }}>
-          <div className="earnings-hero__row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div className="earnings-hero__row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p className="earnings-hero__label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              <p className="earnings-hero__label" style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                 Thu nhập thực tế
               </p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <span className="earnings-hero__value" style={{
-                  fontSize: 32, fontWeight: 800, letterSpacing: '-0.03em',
+                  fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 800, letterSpacing: '-0.02em',
                   fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
                   color: isPositive ? 'var(--success-text)' : 'var(--danger-text)',
+                  lineHeight: 1.1,
+                  wordBreak: 'break-word'
                 }}>
-                  {formatCurrency(earnings.netIncome)}
+                  {formatNumber(earnings.netIncome)} <span style={{ fontSize: '0.65em', opacity: 0.8 }}>₫</span>
                 </span>
               </div>
-              <p className="earnings-hero__sub" style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
-                = Lương cơ bản + Thu nhập sản lượng - Khấu trừ
-              </p>
             </div>
             <div className="earnings-hero__icon" style={{
-              width: 52, height: 52, borderRadius: 'var(--radius-lg)',
-              background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
+              width: 48, height: 48, borderRadius: '14px',
+              background: isPositive ? 'var(--success)' : 'var(--danger)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
+              boxShadow: isPositive ? '0 4px 12px rgba(0, 177, 79, 0.3)' : '0 4px 12px rgba(227, 36, 52, 0.3)'
             }}>
               {isPositive
-                ? <TrendingUp size={24} style={{ color: 'var(--success)' }} />
-                : <TrendingDown size={24} style={{ color: 'var(--danger)' }} />
+                ? <TrendingUp size={24} style={{ color: '#fff' }} />
+                : <TrendingDown size={24} style={{ color: '#fff' }} />
               }
             </div>
           </div>
@@ -121,21 +122,25 @@ export default function DriverEarningsPage() {
 
       {/* Breakdown cards */}
       <div className="kpi-grid fade-up-2">
-        <KPI label="Lương cơ bản" value={formatCurrency(earnings.baseSalary)} icon={Wallet} />
-        <KPI label="Thu nhập sản lượng" value={formatCurrency(earnings.tripIncome)} icon={DollarSign} variant="success" />
+        <KPI label="Lương cơ bản" value={formatNumber(earnings.baseSalary)} unit="₫" icon={Wallet} compact />
+        <KPI label="Thu nhập sản lượng" value={formatNumber(earnings.tripIncome)} unit="₫" icon={DollarSign} variant="success" compact />
         {earnings.adjustment !== undefined && earnings.adjustment !== 0 && (
           <KPI
             label={earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
-            value={(earnings.adjustment > 0 ? '+' : '') + formatCurrency(earnings.adjustment)}
+            value={(earnings.adjustment > 0 ? '+' : '') + formatNumber(earnings.adjustment)}
+            unit="₫"
             icon={earnings.adjustment > 0 ? TrendingUp : TrendingDown}
             variant={earnings.adjustment > 0 ? 'success' : 'danger'}
+            compact
           />
         )}
         <KPI
           label="Khấu trừ kỷ luật"
-          value={penaltyNum > 0 ? `-${formatCurrency(earnings.penalties)}` : '0 ₫'}
+          value={penaltyNum > 0 ? `-${formatNumber(earnings.penalties)}` : '0'}
+          unit="₫"
           icon={TrendingDown}
           variant={penaltyNum > 0 ? 'danger' : 'default'}
+          compact
         />
       </div>
       {/* Work day info when available */}

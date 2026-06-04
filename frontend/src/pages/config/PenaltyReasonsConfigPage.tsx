@@ -9,25 +9,25 @@ import type { PenaltyReason, PaginatedResponse } from '@nepocorp/shared';
 /* ─── Page-scoped styles ─── */
 const pageStyles = `
   /* ── Override KPI wireframe: solid white + smaller type ── */
-  .kpi-grid .kpi {
+  .penalty-reasons-page .kpi-grid .kpi {
     background: #fff;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 16px 18px;
   }
-  .kpi-grid .kpi__icon {
+  .penalty-reasons-page .kpi-grid .kpi__icon {
     width: 32px; height: 32px;
     border-radius: 8px;
   }
-  .kpi-grid .kpi__icon svg { width: 15px; height: 15px; }
-  .kpi-grid .kpi__value {
+  .penalty-reasons-page .kpi-grid .kpi__icon svg { width: 15px; height: 15px; }
+  .penalty-reasons-page .kpi-grid .kpi__value {
     font-size: 22px;
     margin-bottom: 4px;
   }
-  .kpi-grid .kpi__value-unit {
+  .penalty-reasons-page .kpi-grid .kpi__value-unit {
     font-size: 13px;
   }
-  .kpi-grid .kpi__meta {
+  .penalty-reasons-page .kpi-grid .kpi__meta {
     font-size: 11px;
   }
 
@@ -341,7 +341,7 @@ export default function PenaltyReasonsConfigPage() {
   const topReasonCount = topEntry ? topEntry[1] : 0;
 
   return (
-    <div style={{ minHeight: '100%' }}>
+    <div className="penalty-reasons-page" style={{ minHeight: '100%' }}>
       {/* ── Page Header ─────────────────────────────────────────── */}
       <div className="page-header">
         <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>

@@ -1,3 +1,5 @@
+import './TripLegsPanel.css';
+
 interface TripLeg {
   id: number;
   sequence: number;
@@ -19,53 +21,67 @@ function loadingTypeLabel(t: string) {
 }
 
 export default function TripLegsPanel({ legs, emptyMessage = 'Chưa có thông tin hành trình' }: TripLegsPanelProps) {
-  return (
-    <div className="panel" style={{ marginBottom: 16 }}>
-      <div style={{ padding: '4px 20px 12px', borderBottom: '1px solid var(--border-1)' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Hành trình chi tiết {legs.length > 0 && `(${legs.length} chặng)`}
-        </span>
-      </div>
-      {legs.length === 0 ? (
-        <div style={{ padding: '16px 20px', color: 'var(--fg-3)', fontSize: 13, textAlign: 'center' }}>
-          {emptyMessage}
+  if (legs.length === 0) {
+    return (
+      <div className="panel" style={{ marginBottom: 16 }}>
+        <div className="panel__head">
+          <span className="trip-legs__title">Hành trình chi tiết</span>
         </div>
-      ) : (
-        <div style={{ padding: '8px 20px' }}>
-          {legs.map((leg, idx) => (
-            <div key={leg.id} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12,
-              padding: '10px 0',
-              borderBottom: idx < legs.length - 1 ? '1px solid var(--border-1)' : 'none',
-            }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%',
-                background: 'var(--brand-soft)', color: 'var(--brand)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
-              }}>
-                {leg.sequence}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)' }}>
-                  {leg.origin} → {leg.destination}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3, display: 'flex', gap: 12 }}>
-                  <span>{leg.km} km</span>
-                  <span style={{
-                    padding: '1px 8px', borderRadius: 20,
-                    background: leg.loadingType === 'HANG' ? 'var(--brand-soft)' : 'var(--bg-2)',
-                    color: leg.loadingType === 'HANG' ? 'var(--brand)' : 'var(--fg-3)',
-                    fontSize: 11, fontWeight: 600,
-                  }}>
-                    {loadingTypeLabel(leg.loadingType)}
+        <div className="trip-legs__empty">{emptyMessage}</div>
+      </div>
+    );
+  }
+
+  // Build unique stop list: first origin, then each leg's destination
+  const stops: { name: string; legAfter?: TripLeg }[] = [
+    { name: legs[0].origin, legAfter: legs[0] },
+    ...legs.slice(1).map(leg => ({ name: leg.origin, legAfter: leg })),
+    { name: legs[legs.length - 1].destination },
+  ];
+  const lastIdx = stops.length - 1;
+
+  return (
+    <div className="panel trip-legs" style={{ marginBottom: 16 }}>
+      <div className="panel__head">
+        <span className="trip-legs__title">Hành trình chi tiết</span>
+        <span className="trip-legs__count">{legs.length} chặng</span>
+      </div>
+      <div className="trip-legs__body">
+        {stops.map((stop, idx) => (
+          <div key={idx} className="trip-legs__stop">
+            {/* Timeline track */}
+            <div className="trip-legs__track">
+              <div
+                className={`trip-legs__dot ${
+                  idx === 0 ? 'trip-legs__dot--origin' :
+                  idx === lastIdx ? 'trip-legs__dot--dest' :
+                  'trip-legs__dot--mid'
+                }`}
+              />
+              {idx < lastIdx && <div className="trip-legs__line" />}
+            </div>
+
+            {/* Stop content */}
+            <div className="trip-legs__content">
+              <div className="trip-legs__stop-name">{stop.name}</div>
+
+              {/* Leg info between stops */}
+              {stop.legAfter && (
+                <div className="trip-legs__leg">
+                  <span className="trip-legs__km">{stop.legAfter.km} km</span>
+                  <span className={`trip-legs__badge ${
+                    stop.legAfter.loadingType === 'HANG'
+                      ? 'trip-legs__badge--loaded'
+                      : 'trip-legs__badge--empty'
+                  }`}>
+                    {loadingTypeLabel(stop.legAfter.loadingType)}
                   </span>
                 </div>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
 import { initNotificationService } from './services/notification.service';
 import authRoutes from './routes/auth';
-import configRoutes, { auditLogRouter } from './routes/config';
+import configRoutes, { auditLogRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
 import expenseRoutes from './routes/expense';
@@ -69,6 +69,10 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 
 // ── Protected routes (auth + Casbin) — specific paths first, catch-all /api last
+// DRIVER-accessible resolve endpoint only
+app.use('/api/salary-periods', authMiddleware, casbinAuthz('salary'), salaryPeriodsRouter);
+// Admin CRUD for salary periods (defaults, overrides) — config authz
+app.use('/api/salary-periods', authMiddleware, casbinAuthz('config'), salaryPeriodsAdminRouter);
 app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
 app.use('/api/forwarder/me', authMiddleware, casbinAuthz('forwarder_portal'), forwarderRoutes);
 app.use('/api/forwarder-expenses', authMiddleware, casbinAuthz('financial'), forwarderAdminRoutes);

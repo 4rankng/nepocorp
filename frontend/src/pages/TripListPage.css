@@ -435,12 +435,49 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
-/* Scroll wrapper — only head + rows scroll; footer stays pinned */
+/* Scroll wrapper — holds buttons + scrollable body. */
+.trip-list-page .table-scroll-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  /* 48px padding each side creates visible room for the 32px circle buttons
+     that sit at ±16px — they never get clipped by overflow. */
+  padding: 0 48px;
+}
+/* Scroll body — both axes scroll, max-height caps vertical growth */
 .trip-list-page .table-scroll-body {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: clamp(400px, 55vh, 680px);
+  scrollbar-gutter: stable;
 }
+.trip-list-page .table-scroll-body::-webkit-scrollbar { height: 6px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-track { background: transparent; }
+/* Arrow scroll buttons — sit on left/right edges of the wrapper */
+.trip-list-page .table-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 120ms, background 120ms;
+  color: var(--ink-2);
+}
+.trip-list-page .table-scroll-btn:hover { opacity: 1; background: var(--surface-2); }
+.trip-list-page .table-scroll-btn.left  { left: 0; }
+.trip-list-page .table-scroll-btn.right { right: 0; }
+.trip-list-page .table-scroll-btn.hidden { display: none; }
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | status
    7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
@@ -858,6 +895,7 @@
   z-index: 1;
 }
 .trip-list-page .table-head .col-status {
+  background: var(--surface-2);
   z-index: 11;
 }
 /* Safety net: explicitly match hover so GPU compositing can't lag */
@@ -974,6 +1012,7 @@
 
   /* Hide desktop table, show mobile cards */
   .trip-list-page .table-card { background: transparent; border: none; border-radius: 0; overflow: visible; }
+  .trip-list-page .table-scroll-wrapper { display: none; }
   .trip-list-page .table-head { display: none; }
   .trip-list-page .table-row { display: none; }
   .trip-list-page .trip-mobile-list { display: block; }

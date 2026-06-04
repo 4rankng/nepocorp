@@ -44,3 +44,4 @@ p, MANAGER, salary, read
 p, MANAGER, salary, write
 p, ACCOUNTANT, salary, read
 p, ACCOUNTANT, salary, write
+p, DRIVER, salary, read

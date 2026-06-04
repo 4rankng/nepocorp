@@ -144,7 +144,7 @@ export function useDispatchData() {
   });
 }
 
-export function useBadgeCounts() {
+export function useBadgeCounts(options?: { enabled?: boolean }) {
   return useQuery<{ dispatchCount: number; penaltiesCount: number }>({
     queryKey: ['badge-counts'],
     queryFn: async () => {
@@ -159,5 +159,6 @@ export function useBadgeCounts() {
     },
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
+    enabled: options?.enabled ?? true,
   });
 }

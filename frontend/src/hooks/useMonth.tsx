@@ -5,6 +5,7 @@ interface MonthContextValue {
   year: number;    // 4-digit
   goPrev: () => void;
   goNext: () => void;
+  setMonthYear: (month: number, year: number) => void;
 }
 
 const MonthContext = createContext<MonthContextValue | null>(null);
@@ -39,8 +40,13 @@ export function MonthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setMonthYear = useCallback((m: number, y: number) => {
+    setMonth(m);
+    setYear(y);
+  }, []);
+
   return (
-    <MonthContext.Provider value={{ month, year, goPrev, goNext }}>
+    <MonthContext.Provider value={{ month, year, goPrev, goNext, setMonthYear }}>
       {children}
     </MonthContext.Provider>
   );

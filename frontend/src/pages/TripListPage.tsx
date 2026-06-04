@@ -149,6 +149,42 @@ export default function TripListPage() {
   // ── Sentinel ref for IntersectionObserver ──
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  // ── Horizontal scroll refs + state ──
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    updateScrollButtons();
+    return () => el.removeEventListener('scroll', updateScrollButtons);
+  }, [updateScrollButtons]);
+
+  // Left/Right arrow key scrolls the table body
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.setAttribute('tabindex', '-1');
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); el.scrollBy({ left: -200, behavior: 'smooth' }); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); el.scrollBy({ left: 200, behavior: 'smooth' }); }
+    };
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, []);
+
+  const scrollLeft = useCallback(() => scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' }), []);
+  const scrollRight = useCallback(() => scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' }), []);
+
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -629,64 +665,73 @@ export default function TripListPage() {
         <MousePointerClick size={13} strokeWidth={2.2} />
         <span>
           <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến, sửa hoặc duyệt phí
+          &nbsp;·&nbsp; dùng ← → để cuộn ngang
         </span>
       </div>
       <div className="table-card">
-        <div className="table-scroll-body">
-          <div className="table-head">
-            {tableInstance.getHeaderGroups().map(headerGroup => (
-              <React.Fragment key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  let cls = '';
-                  if (header.column.id === 'route') cls = 'col-route';
-                  else if (header.column.id === 'consumption') cls = 'col-consumption';
-                  else if (header.column.id === 'road') cls = 'col-road right';
-                  else if (header.column.id === 'status') cls = 'col-status center';
-                  return (
-                    <div key={header.id} className={cls}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="table-empty">Đang tải danh sách chuyến đi…</div>
-          ) : trips.length === 0 ? (
-            <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
-              <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              Không tìm thấy chuyến đi nào.
-            </div>
-          ) : (
-            tableInstance.getRowModel().rows.map(row => (
-              <div
-                key={row.id}
-                className="table-row"
-                onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
-              >
-                {row.getVisibleCells().map(cell => {
-                  let cls = '';
-                  if (cell.column.id === 'route') cls = 'col-route';
-                  else if (cell.column.id === 'consumption') cls = 'col-consumption';
-                  else if (cell.column.id === 'road') cls = 'col-road right';
-                  else if (cell.column.id === 'status') {
+        <div className="table-scroll-wrapper">
+          <button className={`table-scroll-btn left${canScrollLeft ? '' : ' hidden'}`} onClick={scrollLeft} aria-label="Cuộn trái">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div className="table-scroll-body" ref={scrollRef} tabIndex={-1}>
+            <div className="table-head">
+              {tableInstance.getHeaderGroups().map(headerGroup => (
+                <React.Fragment key={headerGroup.id}>
+                  {headerGroup.headers.map(header => {
+                    let cls = '';
+                    if (header.column.id === 'route') cls = 'col-route';
+                    else if (header.column.id === 'consumption') cls = 'col-consumption';
+                    else if (header.column.id === 'road') cls = 'col-road right';
+                    else if (header.column.id === 'status') cls = 'col-status center';
                     return (
-                      <div key={cell.id} className="col-status center">
+                      <div key={header.id} className={cls}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {loading ? (
+              <div className="table-empty">Đang tải danh sách chuyến đi…</div>
+            ) : trips.length === 0 ? (
+              <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
+                <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                Không tìm thấy chuyến đi nào.
+              </div>
+            ) : (
+              tableInstance.getRowModel().rows.map(row => (
+                <div
+                  key={row.id}
+                  className="table-row"
+                  onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
+                >
+                  {row.getVisibleCells().map(cell => {
+                    let cls = '';
+                    if (cell.column.id === 'route') cls = 'col-route';
+                    else if (cell.column.id === 'consumption') cls = 'col-consumption';
+                    else if (cell.column.id === 'road') cls = 'col-road right';
+                    else if (cell.column.id === 'status') {
+                      return (
+                        <div key={cell.id} className="col-status center">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={cell.id} className={cls}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </div>
                     );
-                  }
-                  return (
-                    <div key={cell.id} className={cls}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+          <button className={`table-scroll-btn right${canScrollRight ? '' : ' hidden'}`} onClick={scrollRight} aria-label="Cuộn phải">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
 
         {/* ── MOBILE CARDS ─────────────────────────────────────────── */}
