@@ -259,14 +259,9 @@ export async function recordVendorPayment(input: VendorPaymentInput) {
       note: input.note || 'Thanh toán nhà cung cấp',
     });
 
-    const newBalance = currentBalance - paymentAmount;
-    if (newBalance <= 0) {
-      const updated = await tx.update(s.expenses)
-        .set({ paymentStatus: 'PAID', updatedAt: new Date() })
-        .where(and(eq(s.expenses.supplierId, input.supplierId), eq(s.expenses.paymentStatus, 'UNPAID')))
-        .returning({ id: s.expenses.id });
-      console.log(`[vendor-pay] Reconciled ${updated.length} UNPAID→PAID expenses for supplier ${input.supplierId} (balance ${newBalance})`);
-    }
+    // Per spec §4.15: "Khớp FIFO theo tổng số dư, không khớp từng khoản chi"
+    // Vendor payments reduce the aggregate balance only — individual expense
+    // paymentStatus is NOT tied to aggregate payments.
 
     return {
       ...posted,

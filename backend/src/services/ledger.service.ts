@@ -151,15 +151,18 @@ export class LedgerService {
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Customer freight revenue (always incl-VAT, unchanged) ──
-    await this.postEntry(tx, {
-      txnType: TxnType.TRIP_REVENUE,
-      txnId: trip.id,
-      entityType: 'CUSTOMER',
-      entityId: trip.customerId,
-      debit: revenue,
-      credit: 0,
-      note: label ? `Doanh thu chuyến ${label}` : 'Doanh thu chuyến',
-    });
+    // Skip zero-value entries to avoid polluting ledger with meaningless rows.
+    if (revenue > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.TRIP_REVENUE,
+        txnId: trip.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: revenue,
+        credit: 0,
+        note: label ? `Doanh thu chuyến ${label}` : 'Doanh thu chuyến',
+      });
+    }
 
     // ── 3. OWN: driver salary ──
     if (carrierType === 'OWN' && trip.driverId && driverSalary > 0) {

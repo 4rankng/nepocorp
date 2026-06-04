@@ -45,8 +45,8 @@ export interface ComputeTripTotalsOutput {
   totalCost: number;
   grossProfit: number;
   freightExVat: number;        // revenue / (1 + vatRate); equals revenue when vatRate=0
-  serviceMargin: number;       // Σ(sellExVat − buyExVat) across ancillary fees; 0 when none
-  totalServiceBuy: number;     // Σ buyAmount ex-VAT (cost component)
+  serviceMargin: number;       // Σ(sellExVat − buyInclVat) across ancillary fees; 0 when none
+  totalServiceBuy: number;     // Σ buyAmount incl-VAT (cost component, per spec §4.6.1)
   totalServiceSell: number;    // Σ sellAmount ex-VAT (revenue component)
   externalMargin: number;      // freightExVat − externalFreightExVat; 0 for OWN trips
   externalFreightExVat: number; // externalFreightCost/(1+vatRate); 0 for OWN trips
@@ -131,16 +131,18 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     ? Math.round(input.revenue / (1 + vatRate))
     : input.revenue;
 
-  // Ancillary service margin
+  // Ancillary service margin — per spec §4.6.1 & §4.7:
+  //   sell side = ex-VAT (revenue perspective), buy side = incl-VAT (cost perspective).
+  //   This follows the asymmetric VAT principle: revenue ex-VAT, costs incl-VAT.
   const fees = input.ancillaryFees ?? [];
-  let totalServiceBuyExVat = 0;
+  let totalServiceBuyInclVat = 0;
   let totalServiceSellExVat = 0;
   for (const fee of fees) {
     const feeVat = fee.vatRate ?? 0.080;
-    totalServiceBuyExVat  += feeVat > 0 ? Math.round(fee.buyAmount  / (1 + feeVat)) : fee.buyAmount;
-    totalServiceSellExVat += feeVat > 0 ? Math.round(fee.sellAmount / (1 + feeVat)) : fee.sellAmount;
+    totalServiceBuyInclVat += fee.buyAmount;  // incl-VAT, no stripping
+    totalServiceSellExVat  += feeVat > 0 ? Math.round(fee.sellAmount / (1 + feeVat)) : fee.sellAmount;
   }
-  const serviceMargin = totalServiceSellExVat - totalServiceBuyExVat;
+  const serviceMargin = totalServiceSellExVat - totalServiceBuyInclVat;
 
   let totalCost: number;
   let grossProfit: number;
@@ -172,7 +174,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     grossProfit,
     freightExVat,
     serviceMargin,
-    totalServiceBuy: totalServiceBuyExVat,
+    totalServiceBuy: totalServiceBuyInclVat,
     totalServiceSell: totalServiceSellExVat,
     externalMargin,
     externalFreightExVat,

@@ -3,6 +3,7 @@ import { db } from '../db';
 type Tx = Parameters<typeof db.transaction>[0] extends (tx: infer T) => any ? T : never;
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, inArray, notInArray } from 'drizzle-orm';
+import { ApiError } from '../errors';
 
 export class NoForwarderProfileError extends Error {
   status = 404;
@@ -238,6 +239,14 @@ export async function createTripExpense(
     note: string | null;
   },
 ) {
+  // Spec §4.9: locked trips are immutable — reject expense creation on LOCKED trips.
+  const [trip] = await (txOrDb as any).select({ status: s.trips.status })
+    .from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
+  if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+  if (trip.status === 'LOCKED') {
+    throw new ApiError(409, 'Không thể thêm chi phí cho chuyến đã chốt');
+  }
+
   // forwarderId=null means accountant/manager-created → auto-approve.
   // forwarderId set means forwarder-created → requires manager approval.
   const approvalStatus = data.forwarderId == null ? 'APPROVED' : 'PENDING';
@@ -278,13 +287,24 @@ export async function updateTripExpense(
 ) {
   // Fetch existing to check forwarderId — if forwarder-owned and sellAmount
   // is being updated, re-pend for manager review.
+  // Also check parent trip status (spec §4.9: locked trips are immutable).
   const [existing] = await (txOrDb as any)
-    .select({ forwarderId: s.tripExpenses.forwarderId })
+    .select({
+      forwarderId: s.tripExpenses.forwarderId,
+      tripId: s.tripExpenses.tripId,
+    })
     .from(s.tripExpenses)
     .where(eq(s.tripExpenses.id, id))
     .limit(1);
 
   if (!existing) return null;
+
+  // Guard: reject edits on expenses belonging to LOCKED trips
+  const [trip] = await (txOrDb as any).select({ status: s.trips.status })
+    .from(s.trips).where(eq(s.trips.id, existing.tripId)).limit(1);
+  if (trip?.status === 'LOCKED') {
+    throw new ApiError(409, 'Không thể sửa chi phí của chuyến đã chốt');
+  }
 
   const setPatch: Record<string, unknown> = { ...patch, updatedAt: new Date() };
 

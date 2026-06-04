@@ -104,8 +104,16 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
 
   const originalAmount = Number(existing.amount);
   const wasUnpaid = existing.paymentStatus === 'UNPAID';
+  const newAmount = Number(data.amount ?? existing.amount);
+  const newSupplierId = data.supplierId ?? existing.supplierId;
+  const financialFieldsChanged = wasUnpaid && (
+    (data.amount !== undefined && Number(data.amount) !== originalAmount) ||
+    (data.supplierId !== undefined && data.supplierId !== existing.supplierId)
+  );
 
-  if (wasUnpaid) {
+  // Only post ledger reversal+re-entry when financial fields actually changed.
+  // Non-financial edits (note, dates, photos) should not create ledger entries.
+  if (financialFieldsChanged) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       entityType: 'VENDOR',
@@ -132,10 +140,8 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   }
 
   const newPaymentStatus = data.paymentStatus ?? existing.paymentStatus;
-  const newAmount = Number(data.amount ?? existing.amount);
-  const newSupplierId = data.supplierId ?? existing.supplierId;
 
-  if (newPaymentStatus === 'UNPAID') {
+  if (financialFieldsChanged && newPaymentStatus === 'UNPAID') {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_EXPENSE,
       entityType: 'VENDOR',

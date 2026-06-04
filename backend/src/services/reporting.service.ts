@@ -61,8 +61,12 @@ export async function getDashboardStats() {
       topOverdueCustomer,
     ] = await Promise.all([
       db.select({
-        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
-        costs: sql<string>`coalesce(sum(case when ${s.trips.status} = 'LOCKED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
+        // Spec §4.9: Dashboard shows cumulative profit for IN_TRANSIT + COMPLETED + LOCKED trips.
+        // Revenue: ex-VAT freight for active trips in salary period.
+        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
+        costs: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then ${s.trips.totalCost}::numeric else 0 end), 0)`,
+        // Use stored grossProfit (includes service margin + handles OWN/EXTERNAL correctly)
+        grossProfitSum: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then ${s.trips.grossProfit}::numeric else 0 end), 0)`,
         tripCount: sql<number>`count(*)`,
         completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
         lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
@@ -91,11 +95,12 @@ export async function getDashboardStats() {
 
     const revenue = parseFloat(stats?.revenue || '0');
     const costs = parseFloat(stats?.costs || '0');
+    const grossProfit = parseFloat(stats?.grossProfitSum || '0');
 
     return {
       revenue,
       costs,
-      grossProfit: revenue - costs,
+      grossProfit,
       // tripCount reflects ALL active trips in the period (for display in trip list stats).
       // lockedTrips reflects the trips whose revenue/cost are included in the KPIs.
       tripCount: Number(stats?.tripCount || 0),
@@ -251,13 +256,14 @@ export async function getPnlReport(month: number, year: number) {
       existing.costs += parseFloat(trip.totalCost || '0');
       existing.profit += parseFloat(trip.grossProfit || '0');
       existing.trips++;
-      // Accumulate service margin from approved ancillary fees (ex-VAT)
+      // Accumulate service margin from approved ancillary fees
+      // Per spec §4.6.1 & §4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
       const tripFees = tripFeeMap.get(trip.id) ?? [];
       existing.serviceMargin += tripFees.reduce((sum, f) => {
         const feeVat = Number(f.vatRate || 0.080);
         const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
-        const buyEx = feeVat > 0 ? Math.round(Number(f.buyAmount) / (1 + feeVat)) : Number(f.buyAmount);
-        return sum + (sellEx - buyEx);
+        const buyIncl = Number(f.buyAmount);  // incl-VAT, no stripping
+        return sum + (sellEx - buyIncl);
       }, 0);
       byTruck.set(trip.truckId, existing);
     }
@@ -300,8 +306,8 @@ export async function getPnlReport(month: number, year: number) {
         return sum + fees.reduce((s, f) => {
           const feeVat = Number(f.vatRate || 0.080);
           const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
-          const buyEx = feeVat > 0 ? Math.round(Number(f.buyAmount) / (1 + feeVat)) : Number(f.buyAmount);
-          return s + (sellEx - buyEx);
+          const buyIncl = Number(f.buyAmount);  // incl-VAT per spec §4.6.1
+          return s + (sellEx - buyIncl);
         }, 0);
       }, 0);
 
@@ -363,6 +369,15 @@ export async function getPnlReport(month: number, year: number) {
  * Distribute net profit for a quarter to cap-table partners.
  */
 export async function distributeProfit(quarter: number, year: number) {
+  // Idempotency guard: prevent duplicate distributions for the same quarter/year.
+  const existing = await db.select({ id: s.distributions.id })
+    .from(s.distributions)
+    .where(and(eq(s.distributions.quarter, quarter), eq(s.distributions.year, year)))
+    .limit(1);
+  if (existing.length > 0) {
+    throw new ApiError(409, `Phân chia lợi nhuận Q${quarter}/${year} đã tồn tại`);
+  }
+
   const plan = await computeDistribution(quarter, year);
 
   if (plan.distributions.length > 0) {

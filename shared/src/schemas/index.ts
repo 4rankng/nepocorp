@@ -169,7 +169,8 @@ export const createPenaltySchema = z.object({
 
 export const createAdjustmentSchema = z.object({
   tripId: z.coerce.number().int().positive(),
-  amount: z.union([z.number(), z.string()]).transform(Number),
+  amount: z.union([z.number(), z.string()]).transform(Number)
+    .refine((v) => Number.isFinite(v), { message: 'Số tiền không hợp lệ' }),
   note: z.string().min(1),
   signedAgreementRef: z.string().min(1),
 });
@@ -475,7 +476,11 @@ export const forwarderExpenseTypeSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
   defaultMarkup: z.boolean().optional(),
   billingLabel: z.string().max(120).nullable().optional(),
-  vatRate: z.union([z.string(), z.number()]).optional(),
+  vatRate: z.union([z.string(), z.number()]).optional()
+    .transform(v => v == null ? undefined : Number(v))
+    .refine(v => v == null || (Number.isFinite(v) && v >= 0 && v <= 1), {
+      message: 'Tỷ lệ VAT phải từ 0 đến 1 (VD: 0.08 cho 8%)',
+    }),
 });
 
 export const debtOffsetSchema = z.object({

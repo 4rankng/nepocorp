@@ -729,6 +729,9 @@ export async function updateDepartureDate(
     if (trip.status === TripStatus.CANCELED) {
       throw new ApiError(400, 'Không thể thay đổi ngày khởi hành của chuyến đã hủy');
     }
+    if (trip.status === TripStatus.LOCKED) {
+      throw new ApiError(409, 'Không thể thay đổi ngày khởi hành của chuyến đã chốt');
+    }
     if (trip.departureDate === newDepartureDate) return trip; // Idempotent
 
     const [updated] = await tx.update(s.trips).set({

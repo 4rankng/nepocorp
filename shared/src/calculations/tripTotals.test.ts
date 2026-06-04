@@ -266,14 +266,15 @@ test('OWN trip with ancillary fees: serviceMargin included in grossProfit', () =
     ...BASE_A4,
     vatRate: 0.08,
     ancillaryFees: [
-      { buyAmount: 540000, sellAmount: 540000, vatRate: 0.08 },   // at-cost: margin 0
-      { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: margin 500000 ex-VAT
+      { buyAmount: 540000, sellAmount: 540000, vatRate: 0.08 },   // at-cost: sell ex-VAT 500000, buy incl-VAT 540000 → margin -40000
+      { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: sell ex-VAT 1000000, buy incl-VAT 540000 → margin 460000
     ],
   });
-  // buy ex-vat: 500000 + 500000 = 1000000; sell ex-vat: 500000 + 1000000 = 1500000
-  assert.strictEqual(r.totalServiceBuy, 1000000);
+  // Per spec §4.6.1 & §4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
+  // buy incl-VAT: 540000 + 540000 = 1080000; sell ex-vat: 500000 + 1000000 = 1500000
+  assert.strictEqual(r.totalServiceBuy, 1080000);
   assert.strictEqual(r.totalServiceSell, 1500000);
-  assert.strictEqual(r.serviceMargin, 500000);
+  assert.strictEqual(r.serviceMargin, 420000);  // 1500000 - 1080000
 });
 
 test('EXTERNAL trip: totalCost = externalFreightCost, margin computed ex-VAT', () => {
@@ -299,6 +300,7 @@ test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () =
     externalFreightCost: 5400000,
     ancillaryFees: [{ buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 }],
   });
-  assert.strictEqual(r.serviceMargin, 500000);
-  assert.strictEqual(r.grossProfit, 5500000);  // 5000000 + 500000
+  // sell ex-VAT: 1000000, buy incl-VAT: 540000 → serviceMargin = 460000
+  assert.strictEqual(r.serviceMargin, 460000);
+  assert.strictEqual(r.grossProfit, 5460000);  // 5000000 + 460000
 });

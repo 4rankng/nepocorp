@@ -71,10 +71,11 @@ export function computeFifoAging(
   for (const inv of openInvoices) {
     if (inv.open <= 0) continue;
     const ageDays = (referenceDate.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24);
-    if (ageDays <= 30) aging.current += inv.open;
-    else if (ageDays <= 60) aging.d30 += inv.open;
-    else if (ageDays <= 90) aging.d60 += inv.open;
-    else aging.over90 += inv.open;
+    // Round each bucket addition to avoid floating-point drift across hundreds of entries.
+    if (ageDays <= 30) aging.current += Math.round(inv.open);
+    else if (ageDays <= 60) aging.d30 += Math.round(inv.open);
+    else if (ageDays <= 90) aging.d60 += Math.round(inv.open);
+    else aging.over90 += Math.round(inv.open);
   }
 
   return { aging, openInvoices };
