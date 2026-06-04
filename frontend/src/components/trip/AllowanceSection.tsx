@@ -45,11 +45,11 @@ export function AllowanceSection() {
 
       <div className="row-2">
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tăng vé theo lệnh (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tổng tiền đi đường (đ)</label>
           <InputWithPrefix
             value={tollsAddition}
             onChange={setTollsAddition}
-            placeholder="VD: 150.000"
+            placeholder="VD: 2.700.000"
             prefix="đ"
             mono
             type="money"
@@ -57,17 +57,36 @@ export function AllowanceSection() {
           />
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Giảm vé QL5 (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tiền vé (công ty) đã thanh toán (đ)</label>
           <InputWithPrefix
             value={tollsDiscount}
             onChange={setTollsDiscount}
-            placeholder="VD: 40.000"
+            placeholder="VD: 400.000"
             prefix="đ"
             mono
             type="money"
             style={{ width: "100%" }}
           />
         </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: "var(--fg-2)", marginTop: -6, marginBottom: 14, fontWeight: 600, display: "flex", gap: 6 }}>
+        <span>Lái xe thực lĩnh:</span>
+        <span style={{ color: "var(--brand, #10B981)", fontFamily: "monospace" }}>
+          {(() => {
+            const base = Number(roadAllowanceBaseApplied) || 0;
+            const discount = Number(tollsDiscount) || 0;
+            const addition = Number(tollsAddition) || 0;
+            const stations = Number(tollsStations) || 0;
+            const perStation = tollPerStationApplied ?? 55000;
+            const returnBonus = hasReturnCargo ? (returnCargoBonusApplied ?? 300000) : 0;
+            const tongTien = addition > 0 ? addition : (base - (stations * perStation) + returnBonus);
+            const salary = Number(driverSalary) || 0;
+            const twoPoint = Number(twoPointDeliveryBonus) || 0;
+            const shift = Number(vehicleShiftAllowance) || 0;
+            return Math.max(0, tongTien + salary + twoPoint + shift - discount).toLocaleString("vi-VN");
+          })()} đ
+        </span>
       </div>
 
       <div className="row-2" style={{ alignItems: "center" }}>
@@ -165,7 +184,7 @@ export function AllowanceSection() {
 
       <div className="row-2">
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu trả hàng (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu đóng/ trả hàng (đ)</label>
           <InputWithPrefix
             value={revenueEmptyReturn}
             onChange={setRevenueEmptyReturn}
@@ -187,7 +206,7 @@ export function AllowanceSection() {
           )}
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp đóng hàng (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Doanh thu kết hợp (đ)</label>
           <InputWithPrefix
             value={revenueCombine}
             onChange={setRevenueCombine}

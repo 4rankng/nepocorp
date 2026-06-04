@@ -19,7 +19,7 @@ const defaultBaseInput: ComputeTripTotalsInput = {
   mountainFixedAllowance: null,
   roadAllowanceBase: 1500000,
   tollsDiscount: 100000,
-  tollsAddition: 50000,
+  tollsAddition: 1740000,
   tollsStations: 2,
   tollPerStation: 55000,
   hasReturnCargo: true,
@@ -303,4 +303,22 @@ test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () =
   // sell ex-VAT: 1000000, buy incl-VAT: 540000 → serviceMargin = 460000
   assert.strictEqual(r.serviceMargin, 460000);
   assert.strictEqual(r.grossProfit, 5460000);  // 5000000 + 460000
+});
+
+test('auto-calculated road allowance when tollsAddition is 0', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    tollsAddition: 0,
+    tollsDiscount: 100000,
+    tollsStations: 2,
+    tollPerStation: 50000,
+    hasReturnCargo: true,
+    returnCargoBonus: 300000,
+  });
+  // base = 500000, discount = 100000, addition = 0
+  // stations cost = 2 * 50000 = 100000
+  // return bonus = 300000
+  // tongTienDiDuong = 500000 - 100000 + 300000 = 700000
+  // totalRoadAllowance = tongTienDiDuong - discount = 700000 - 100000 = 600000
+  assert.strictEqual(r.totalRoadAllowance, 600000);
 });

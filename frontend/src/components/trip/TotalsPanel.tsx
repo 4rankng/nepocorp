@@ -201,33 +201,44 @@ export function TotalsPanel() {
               paddingBottom: 2,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Định mức tuyến</span>
-              <span className="mono">{fmt(roadBreakdown.base)}</span>
-            </div>
-            {roadBreakdown.addition > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>+ Vé tăng theo lệnh</span>
-                <span className="mono" style={{ color: "#10B981" }}>+{fmt(roadBreakdown.addition)}</span>
-              </div>
-            )}
-            {roadBreakdown.discount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>− Giảm vé QL5</span>
-                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.discount)}</span>
-              </div>
-            )}
-            {roadBreakdown.stations > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>− Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
-                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
-              </div>
-            )}
-            {roadBreakdown.returnBonus > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>+ Chuyển về có hàng</span>
-                <span className="mono" style={{ color: "#10B981" }}>+{fmt(roadBreakdown.returnBonus)}</span>
-              </div>
+            {roadBreakdown.addition > 0 ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Tổng tiền đi đường</span>
+                  <span className="mono" style={{ color: "#10B981" }}>{fmt(roadBreakdown.addition)}</span>
+                </div>
+                {roadBreakdown.discount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>− Tiền vé (công ty) đã thanh toán</span>
+                    <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.discount)}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Định mức tuyến</span>
+                  <span className="mono">{fmt(roadBreakdown.base)}</span>
+                </div>
+                {roadBreakdown.stations > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>− Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
+                    <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
+                  </div>
+                )}
+                {roadBreakdown.returnBonus > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>+ Chuyển về có hàng</span>
+                    <span className="mono" style={{ color: "#10B981" }}>+{fmt(roadBreakdown.returnBonus)}</span>
+                  </div>
+                )}
+                {roadBreakdown.discount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>− Tiền vé (công ty) đã thanh toán</span>
+                    <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.discount)}</span>
+                  </div>
+                )}
+              </>
             )}
             {roadBreakdown.overridden && (
               <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4, borderTop: "1px dashed rgba(255,255,255,0.18)", marginTop: 2 }}>

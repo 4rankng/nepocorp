@@ -108,9 +108,10 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 * Là khoản chi phí hoàn trả cho lái xe (chi phí đường bộ), **không tính là thu nhập của lái xe**.
 * **Tiền chuẩn:** Bảng tra cố định theo Tuyến đường × Loại rơ-mooc (~38 tuyến × 2 loại).
-* Điều chỉnh do kế toán/quản lý nhập thủ công từng chuyến: Giảm vé QL5, Tăng vé theo lệnh, Số trạm.
-* **Công thức:** `Tiền thực tế = Tiền chuẩn - Giảm vé QL5 + Tăng vé theo lệnh - (Số trạm × 55.000)`.
-* Chuyến về có hàng: + 300.000 VNĐ (khoản này cộng vào tiền đi đường độc lập với định mức nhiên liệu, áp dụng cho cả tuyến đèo đốc).
+* Điều chỉnh do kế toán/quản lý nhập thủ công từng chuyến: Tiền vé (công ty) đã thanh toán, Tổng tiền đi đường, Số trạm.
+* **Công thức:**
+  - Nếu nhập "Tổng tiền đi đường" (> 0), giá trị đó được sử dụng trực tiếp; ngược lại, hệ thống tự động tính: `Tổng tiền đi đường (tự tính) = Tiền chuẩn - (Số trạm × 55.000) + [300.000 nếu về có hàng]`.
+  - Số tiền thanh toán thực tế cho lái xe: `Lái xe thực lĩnh = Tổng tiền đi đường + Tiền kết hợp + Tiền lưu ca xe + Tiền đóng trả hàng 2 điểm - Tiền vé (công ty) đã thanh toán`.
 
 ### 4.5 Lương tài xế
 
@@ -344,13 +345,13 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Dầu bổ sung | Number | Không | L dầu thêm do xe hỏng, đi sửa... (cộng thêm vào cả 2 chế độ) |
 | Lý do bổ sung | Text | Không | Bắt buộc nếu có dầu bổ sung |
 | **Đơn giá thực tế** | Number | Không | Giá thực mua tại trạm (VNĐ/lít). Để trống → dùng đơn giá cấu hình. Hệ thống đề xuất giá hiệu lực từ lịch sử theo ngày xuất phát. Chỉ nhập trước khi khóa chuyến. |
-| Giảm vé QL5 | Number | Không | Mặc định 0 |
-| Tăng vé theo lệnh | Number | Không | Mặc định 0 |
+| Tiền vé (công ty) đã thanh toán | Number | Không | Mặc định 0 |
+| Tổng tiền đi đường | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
 | Lương sản lượng | Number | Có (OWN) | Thu nhập lái xe cho chuyến này (chỉ Xe nhà) |
-| Doanh thu trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container, INCL VAT |
-| Doanh thu kết hợp đóng hàng | Number | Không | Doanh thu bổ sung từ kết hợp đóng hàng trong chuyến (mặc định 0). |
+| Doanh thu đóng/ trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container, INCL VAT |
+| Doanh thu kết hợp | Number | Không | Doanh thu bổ sung từ kết hợp trong chuyến (mặc định 0). |
 | Ghi chú/diễn giải | Text | Không | |
 | **Các container** | Dynamic rows | Không | Cập nhật/bổ sung: Loại container, Số container, Số seal. |
 | **Chi phí DV đi kèm**| Dynamic rows | Không | Mỗi dòng: Loại phí, Giá mua, Giá bán, NCC, Hình thức chi (COMPANY_DIRECT/FORWARDER_ADVANCE), Số hóa đơn/ngày, Tờ khai. |
@@ -363,9 +364,9 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | Tổng L dầu | AUTO: tổng L từ các chặng + bổ sung. KHOÁN: L nhập tay + bổ sung. |
 | Chi phí dầu | Tổng L dầu × Đơn giá thực tế (nếu có) hoặc Đơn giá cấu hình |
 | Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
-| Tiền đi đường thực tế | Tiền chuẩn - Giảm vé + Tăng vé - (Số trạm × 55.000) [+ 300.000 nếu về có hàng] |
+| Tiền lái xe thực lĩnh | Tổng tiền đi đường + Tiền kết hợp + Tiền lưu ca xe + Tiền đóng trả hàng 2 điểm − Tiền vé (công ty) đã thanh toán |
 | Tổng chi phí (Xe nhà) | Chi phí dầu (incl. VAT) + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT, incl. VAT) |
-| Doanh thu chuyến | (Doanh thu trả hàng + Doanh thu kết hợp đóng hàng) / (1 + VAT) — **ex-VAT** |
+| Doanh thu chuyến | (Doanh thu đóng/ trả hàng + Doanh thu kết hợp) / (1 + VAT) — **ex-VAT** |
 | Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) — giá bán ra ex-VAT, giá mua vào incl. VAT |
 | Lợi nhuận xe ngoài | Doanh thu ex-VAT − Chi phí xe ngoài (incl. VAT) |
 | Lợi nhuận gộp | **Doanh thu vận tải ex-VAT** − **Tổng chi phí (incl. VAT)** + LN dịch vụ + LN xe ngoài |

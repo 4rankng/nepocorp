@@ -69,17 +69,36 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <div className="tc-form-row tc-form-row--three">
         <div className="field">
-          <label>Tăng vé theo lệnh</label>
-          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="150.000" prefix="đ" mono type="money" />
+          <label>Tổng tiền đi đường</label>
+          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="2.700.000" prefix="đ" mono type="money" />
         </div>
         <div className="field">
-          <label>Giảm vé QL5</label>
-          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="40.000" prefix="đ" mono type="money" />
+          <label>Tiền vé (công ty) đã thanh toán</label>
+          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="400.000" prefix="đ" mono type="money" />
         </div>
         <div className="field">
           <label>Số trạm thu phí</label>
           <input className="input mono" type="number" placeholder="4" value={form.tollsStations} onChange={(e) => form.setTollsStations(e.target.value)} />
         </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: 'var(--fg-2)', marginTop: 8, fontWeight: 600, display: "flex", gap: 6 }}>
+        <span>Lái xe thực lĩnh:</span>
+        <span className="mono" style={{ color: 'var(--brand, #10B981)' }}>
+          {(() => {
+            const base = Number(form.roadAllowanceBaseApplied) || 0;
+            const discount = Number(form.tollsDiscount) || 0;
+            const addition = Number(form.tollsAddition) || 0;
+            const stations = Number(form.tollsStations) || 0;
+            const perStation = form.tollPerStationApplied ?? 55000;
+            const returnBonus = form.hasReturnCargo ? (form.returnCargoBonusApplied ?? 300000) : 0;
+            const tongTien = addition > 0 ? addition : (base - (stations * perStation) + returnBonus);
+            const salary = Number(form.driverSalary) || 0;
+            const twoPoint = Number(form.twoPointDeliveryBonus) || 0;
+            const shift = Number(form.vehicleShiftAllowance) || 0;
+            return Math.max(0, tongTien + salary + twoPoint + shift - discount).toLocaleString("vi-VN");
+          })()} đ
+        </span>
       </div>
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
@@ -109,7 +128,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Doanh thu trả hàng</label>
+          <label>Doanh thu đóng/ trả hàng</label>
           <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="đ" mono type="money" />
           {form.suggestedPrice !== null && (
             <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
@@ -118,7 +137,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           )}
         </div>
         <div className="field">
-          <label>Doanh thu kết hợp đóng hàng</label>
+          <label>Doanh thu kết hợp</label>
           <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="đ" mono type="money" />
         </div>
       </div>

@@ -61,11 +61,10 @@ export function computeRoadAllowance(params: {
   returnCargoBonus: number;
   hasReturnCargo: boolean;
 }): number {
-  const raw = params.base
-    - params.tollsDiscount
-    + params.tollsAddition
-    - (params.tollsStations * params.tollPerStation)
-    + (params.hasReturnCargo ? params.returnCargoBonus : 0);
+  const tongTienDiDuong = params.tollsAddition > 0
+    ? params.tollsAddition
+    : (params.base - (params.tollsStations * params.tollPerStation) + (params.hasReturnCargo ? params.returnCargoBonus : 0));
+  const raw = tongTienDiDuong - params.tollsDiscount;
   return Math.max(0, raw);
 }
 

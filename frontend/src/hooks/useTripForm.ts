@@ -526,10 +526,28 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }, 0);
   }, [fuelMode, fuelLitersOverride, legs]);
 
-  const estimatedTollCost = useMemo(
-    () => (Number(tollsAddition) || 0) - (Number(tollsDiscount) || 0),
-    [tollsAddition, tollsDiscount],
-  );
+  const estimatedTollCost = useMemo(() => {
+    const base = isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : 0;
+    const discount = Number(tollsDiscount) || 0;
+    const addition = Number(tollsAddition) || 0;
+    const stations = Number(tollsStations) || 0;
+    
+    const perStation = isEditMode && existingTrip?.tollPerStationApplied
+      ? Number(existingTrip.tollPerStationApplied)
+      : (roadConfig ? Number(roadConfig.tollPerStation) : 55000);
+      
+    const returnBonus = hasReturnCargo
+      ? (isEditMode && existingTrip?.returnCargoBonusApplied
+          ? Number(existingTrip.returnCargoBonusApplied)
+          : (roadConfig ? Number(roadConfig.returnCargoBonus) : 300000))
+      : 0;
+
+    const tongTienDiDuong = addition > 0
+      ? addition
+      : (base - (stations * perStation) + returnBonus);
+
+    return Math.max(0, tongTienDiDuong - discount);
+  }, [isEditMode, existingTrip, roadConfig, tollsDiscount, tollsAddition, tollsStations, hasReturnCargo]);
 
   const estimatedProfit = useMemo(
     () =>
