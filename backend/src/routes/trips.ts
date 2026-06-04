@@ -117,7 +117,7 @@ router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
   await invalidateReportCaches();
   // Sync attendance when trip auto-completes (IN_TRANSIT → COMPLETED)
   if (prevRow?.status === TripStatus.IN_TRANSIT && updated.status === TripStatus.COMPLETED) {
-    tripService.syncAttendanceAfterStatusChange(
+    await tripService.syncAttendanceAfterStatusChange(
       updated.id, TripStatus.COMPLETED, updated.driverId ?? null,
       updated.departureDate ?? null, null, req.user!.userId,
     );
@@ -134,8 +134,8 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
     req.user!.role,
   );
   await invalidateReportCaches();
-  // Sync attendance: mark departure date as TRIP_DAY (best-effort)
-  tripService.syncAttendanceAfterStatusChange(
+  // Sync attendance: mark departure date as TRIP_DAY
+  await tripService.syncAttendanceAfterStatusChange(
     trip.id, TripStatus.IN_TRANSIT, trip.driverId ?? null,
     trip.departureDate ?? null, null, req.user!.userId,
   );
@@ -182,8 +182,8 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
     req.user!.role,
   );
   await invalidateReportCaches();
-  // Remove TRIP_DAY records for the canceled trip (best-effort)
-  tripService.syncAttendanceAfterStatusChange(
+  // Remove TRIP_DAY records for the canceled trip
+  await tripService.syncAttendanceAfterStatusChange(
     trip.id, TripStatus.CANCELED, trip.driverId ?? null,
     trip.departureDate ?? null, null, req.user!.userId,
   );

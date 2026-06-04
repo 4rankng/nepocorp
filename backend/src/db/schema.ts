@@ -95,6 +95,7 @@ export const suppliers = pgTable('suppliers', {
   note: text('note'),
   status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
   linkedCustomerId: integer('linked_customer_id'), // FK → customers(id), enforced at DB level
+  isFuelSupplier: boolean('is_fuel_supplier').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

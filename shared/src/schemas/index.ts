@@ -358,6 +358,7 @@ export const supplierSchema = z.object({
   note: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
   linkedCustomerId: z.number().int().positive().optional().nullable(),
+  isFuelSupplier: z.boolean().optional().default(false),
 });
 
 export const expenseCategorySchema = z.object({

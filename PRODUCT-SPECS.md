@@ -107,7 +107,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 
 ### 4.3.2 Lựa chọn Nhà cung cấp nhiên liệu & Ghi nhận công nợ
 
-* **Lựa chọn Nhà cung cấp:** Đối với các chuyến xe nhà (`OWN` carrier), kế toán có thể lựa chọn nhà cung cấp nhiên liệu tương ứng (trong số 2 đơn vị cung cấp chính được khai báo trong danh sách nhà cung cấp `suppliers`).
+* **Lựa chọn Nhà cung cấp:** Đối với các chuyến xe nhà (`OWN` carrier), kế toán có thể lựa chọn nhà cung cấp nhiên liệu tương ứng. Danh sách nhà cung cấp này được chọn lọc từ danh sách nhà cung cấp (`suppliers`) dựa trên việc đánh dấu cờ "Là nhà cung cấp nhiên liệu (xăng, dầu)" (`isFuelSupplier`). Điều này giúp phân biệt rõ ràng nhà cung cấp xăng dầu với các nhà cung cấp dịch vụ khác (ví dụ: sửa xe, đăng kiểm).
 * **Xuất phiếu cấp nhiên liệu:** Kế toán có thể xuất bảng cấp nhiên liệu theo từng chuyến và từng biển số xe (từ màn hình Danh sách Chuyến đi dưới dạng CSV, có đầy đủ cột tên nhà cung cấp và tổng giá trị dầu cấp) để gửi đối chiếu cho nhà cung cấp nhiên liệu.
 * **Ghi nhận công nợ tự động:**
     - Khi chuyến đi được Chốt khóa (`LOCKED`), hệ thống tự động ghi nhận một bút toán Có (`credit`) bằng `totalFuelCost` (Tổng chi phí nhiên liệu thực tế của chuyến) vào sổ cái của nhà cung cấp nhiên liệu tương ứng (`entity_type='VENDOR'`, loại giao dịch `FUEL_EXPENSE`).

@@ -831,14 +831,11 @@ test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async
     departureDate: '2026-06-10',
   });
 
-  // Transit status to IN_TRANSIT
+  // Transit status to IN_TRANSIT (attendance sync is awaited, so record exists immediately)
   await testFetch(`/api/trips/${trip.id}/dispatch`, {
     method: 'POST',
     token: adminToken,
   });
-
-  // Wait a small duration for fire-and-forget sync to complete
-  await new Promise(resolve => setTimeout(resolve, 150));
 
   // Verify that a driver workday record is automatically created for 2026-06-10 as TRIP_DAY
   const workdaysAfterDispatch = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {
@@ -850,14 +847,11 @@ test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async
   assert.strictEqual(dispatchDay.status, 'TRIP_DAY', 'Status of workday should be TRIP_DAY');
   assert.strictEqual(dispatchDay.tripId, trip.id, 'Workday record should link to the correct trip ID');
 
-  // Cancel the trip
+  // Cancel the trip (attendance sync is awaited, so TRIP_DAY removed immediately)
   await testFetch(`/api/trips/${trip.id}/cancel`, {
     method: 'POST',
     token: adminToken,
   });
-
-  // Wait a small duration for fire-and-forget sync to complete
-  await new Promise(resolve => setTimeout(resolve, 150));
 
   // Verify that the TRIP_DAY workday record is removed after canceling
   const workdaysAfterCancel = await testFetch(`/api/salary/${driverId}/${testYear}/${testMonth}/workdays`, {

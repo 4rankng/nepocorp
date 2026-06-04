@@ -93,6 +93,27 @@ async function seed() {
     console.log('✅ Driver↔user links already in place.');
   }
 
+  const supplierSeeds = [
+    { name: 'Petrolimex', contactPerson: 'Nguyễn Văn Hải', phone: '0901234567', taxCode: '0100100746', note: 'Nhà cung cấp xăng dầu chính', isFuelSupplier: true },
+    { name: 'PV Oil', contactPerson: 'Trần Thị Thảo', phone: '0907654321', taxCode: '0102716892', note: 'Nhà cung cấp xăng dầu dự phòng', isFuelSupplier: true },
+    { name: 'Gara Thành Đông', contactPerson: 'Lê Văn Đông', phone: '0912345678', taxCode: '0304567890', note: 'Xưởng sửa chữa xe chính', isFuelSupplier: false },
+    { name: 'Trạm Đăng kiểm 15-01S', contactPerson: 'Nguyễn Văn Đăng', phone: '02253888888', taxCode: '0304123456', note: 'Trung tâm đăng kiểm Hải Phòng', isFuelSupplier: false },
+    { name: 'Bảo hiểm Bảo Việt', contactPerson: 'Phạm Minh Việt', phone: '1900558899', taxCode: '0100111307', note: 'Công ty bảo hiểm', isFuelSupplier: false },
+  ];
+
+  const existingSuppliers = await db.select({ name: schema.suppliers.name }).from(schema.suppliers);
+  const existingSupplierNames = new Set(existingSuppliers.map(s => s.name));
+  const newSuppliers = supplierSeeds.filter(s => !existingSupplierNames.has(s.name));
+
+  if (newSuppliers.length > 0) {
+    for (const sup of newSuppliers) {
+      await db.insert(schema.suppliers).values(sup);
+    }
+    console.log(`✅ Suppliers seeded! (${newSuppliers.length} new)`);
+  } else {
+    console.log('✅ Suppliers already exist, skipping.');
+  }
+
   const categories = [
     { name: 'Sửa chữa', isRenewable: false, status: 'ACTIVE' },
     { name: 'Phụ tùng', isRenewable: false, status: 'ACTIVE' },

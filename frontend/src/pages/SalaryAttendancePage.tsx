@@ -191,6 +191,7 @@ export default function SalaryAttendancePage() {
 
   const drivers = salaryList?.items ?? [];
   const selectedDriver = drivers.find(d => d.id === selectedDriverId);
+  const salaryPeriod = workDayData?.period;
 
   // Build work day map from API data + pending local changes
   const workDayMap = useMemo(() => {
@@ -352,7 +353,7 @@ export default function SalaryAttendancePage() {
                     {selectedDriver?.name}
                   </h3>
                   <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>
-                    {MONTHS_VI[month - 1]}/{year} — Bấm vào ngày để đánh dấu trạng thái
+                    {salaryPeriod ? `Kỳ lương: ${salaryPeriod.start} → ${salaryPeriod.end}` : `${MONTHS_VI[month - 1]}/${year}`} — Bấm vào ngày để đánh dấu trạng thái
                   </p>
                 </div>
                 {isUpdating && <Loader2 size={16} className="spin" style={{ color: 'var(--primary)' }} />}

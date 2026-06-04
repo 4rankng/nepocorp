@@ -9,6 +9,7 @@ import {
   getDriverPenalties,
 } from '../services/driver.service';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { ApiError } from '../errors';
 
 const router = Router();
 
@@ -27,11 +28,14 @@ router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {
   res.json(trip);
 }));
 
-// Earnings summary — optional month/year for salary-period scoping
+// Earnings summary — requires month/year for salary-period scoping
 router.get('/earnings', asyncHandler(async (req: Request, res: Response) => {
   const driver = await getDriverByUserId(req.user!.userId);
-  const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
-  const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+  const month = parseInt(req.query.month as string, 10);
+  const year = parseInt(req.query.year as string, 10);
+  if (!month || !year || month < 1 || month > 12) {
+    throw new ApiError(400, 'Cần có tham số month (1-12) và year');
+  }
   res.json(await getDriverEarnings(driver.id, month, year));
 }));
 

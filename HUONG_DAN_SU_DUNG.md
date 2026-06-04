@@ -12,6 +12,17 @@ Nhằm quản lý khép kín hoạt động cấp nhiên liệu và công nợ m
 
 ## 1. Dành cho Kế toán & Quản lý
 
+### Bước 0: Thiết lập Nhà cung cấp nhiên liệu (Xăng, dầu)
+1. Đăng nhập vào Website, chọn **Nhà cung cấp** ở danh mục menu bên trái.
+2. Bấm **Thêm nhà cung cấp** (hoặc bấm biểu tượng cây bút **Sửa** bên cạnh một nhà cung cấp có sẵn trong danh sách).
+3. Trong ô điền thông tin, tích chọn **"Là nhà cung cấp nhiên liệu (xăng, dầu)"**.
+4. Bấm **Lưu** để hoàn thành cấu hình.
+5. Khi quay lại danh sách nhà cung cấp, những đơn vị cung cấp nhiên liệu sẽ được gắn thêm nhãn xanh lá ghi chữ **"Nhiên liệu"** để người dùng tiện quản lý và nhận biết.
+
+> [!IMPORTANT]
+> - Chỉ các nhà cung cấp được tích chọn là **"Là nhà cung cấp nhiên liệu (xăng, dầu)"** mới hiển thị trong ô chọn Nhà cung cấp nhiên liệu khi bạn tạo/sửa Chuyến đi. Điều này giúp ngăn chặn hoàn toàn việc chọn nhầm sang xưởng sửa chữa, đơn vị đăng kiểm, hoặc công ty bảo hiểm.
+> - Hệ thống mặc định đã được cấu hình sẵn 2 đơn vị cung cấp nhiên liệu chính (Petrolimex và PV Oil).
+
 ### Bước 1: Chỉ định Nhà cung cấp dầu khi nhập chuyến
 1. Đăng nhập vào Website, chọn **Lệnh vận chuyển** hoặc **Sổ chuyến đi** > chọn **Tạo lệnh vận chuyển** (hoặc nhấp **Sửa** trên một chuyến có sẵn).
 2. Tại màn hình nhập liệu, cuộn xuống phần **3. Nhiên liệu, vé đường & doanh thu**.
@@ -64,18 +75,17 @@ Tính năng này giúp tự động hóa bảng lương hàng tháng của tài 
    - **Ngày nghỉ riêng:** Số ngày nghỉ phép hoặc nghỉ việc riêng không tính công.
    - **Lương thực nhận:** Được hệ thống tính toán tự động dựa trên ngày công thực tế và các khoản phạt/lương chuyến.
 
-### Bước 2: Chấm công thủ công (Chờ việc / Nghỉ phép)
+### Bước 2: Chấm công thủ công (Chờ việc / Nghỉ riêng)
 Để chấm công thêm các ngày chờ việc hoặc nghỉ phép cho tài xế:
-1. Tại bảng lương tháng, nhấp vào **Tên tài xế** cần chấm công. Giao diện lịch chấm công của tài xế sẽ hiện ra.
-2. Các ngày đi chuyến thực tế sẽ được tô màu xanh lá cây và hiển thị mã chuyến đi liên kết (Không thể sửa trực tiếp các ngày đi chuyến này trừ khi hủy/sửa chuyến đi gốc).
-3. Để thêm ngày chờ việc hoặc nghỉ phép:
-   - Nhấp vào một ô ngày trống trên lịch.
-   - Chọn trạng thái ngày công: **Chờ việc** hoặc **Nghỉ riêng**.
-   - Nhập ghi chú (ví dụ: *Nghỉ cưới hỏi*, *Chờ sửa xe*).
-   - Bấm **Cập nhật**.
-4. Hệ thống sẽ ngay lập tức tính toán lại chỉ số **Điều chỉnh** trên bảng lương tài xế theo đúng công thức:
+1. Tại bảng lương tháng, nhấp vào **Tên tài xế** cần chấm công ở cột bên trái. Giao diện lịch chấm công và bảng tổng hợp lương của tài xế đó sẽ hiển thị ở bên phải.
+2. Các ngày đi chuyến thực tế sẽ được tô màu xanh lam kèm biểu tượng xe tải 🚛 và liên kết thông tin chuyến đi (Không thể sửa trực tiếp các ngày này từ lịch, hệ thống tự động ghi nhận dựa trên ngày đi-về thực tế của chuyến xe).
+3. Để thay đổi trạng thái của các ngày còn lại trên lịch, bạn chỉ cần nhấp chuột trực tiếp vào ô ngày đó để chuyển đổi trạng thái xoay vòng:
+   - **Lần bấm 1:** Chuyển sang **Chờ việc** (kèm biểu tượng đồng hồ cát ⏳ - được tính công hưởng lương).
+   - **Lần bấm 2:** Chuyển sang **Nghỉ riêng** (kèm biểu tượng cây dù 🏖 - không tính lương ngày này).
+   - **Lần bấm 3:** Xóa trạng thái và trở về ngày thường/nghỉ tuần mặc định.
+4. Hệ thống sẽ ngay lập tức tự động lưu và tính toán lại chỉ số **Điều chỉnh công** và hiển thị số tiền **Lương thực nhận** ở bảng tổng hợp bên dưới theo công thức:
    - *Công thức:* `Khoản điều chỉnh = (Ngày công thực tế - Ngày công chuẩn) * Lương ngày công`.
-   - Lương ngày công được tính bằng `(Lương cơ bản + Bảo hiểm xã hội) / Ngày công chuẩn`.
+   - Lương ngày công được tính bằng: `(Lương cơ bản + Bảo hiểm xã hội) / Ngày công chuẩn`.
 
 ---
 

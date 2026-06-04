@@ -29,6 +29,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
   const [note, setNote] = useState(item?.note || '');
   const [status, setStatus] = useState<string>(item?.status || 'ACTIVE');
   const [linkedCustomerId, setLinkedCustomerId] = useState<number | null>(item?.linkedCustomerId ?? null);
+  const [isFuelSupplier, setIsFuelSupplier] = useState<boolean>(item?.isFuelSupplier ?? false);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,6 +40,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
       setNote(item?.note || '');
       setStatus(item?.status || 'ACTIVE');
       setLinkedCustomerId(item?.linkedCustomerId ?? null);
+      setIsFuelSupplier(item?.isFuelSupplier ?? false);
     }
   }, [isOpen, item?.id]);
 
@@ -52,6 +54,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
       note: note.trim() || undefined,
       status,
       linkedCustomerId: linkedCustomerId ?? null,
+      isFuelSupplier,
     });
   };
   const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 } as const;
@@ -120,6 +123,18 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+        </div>
+        <div className="field" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          <input
+            id="supp-is-fuel"
+            type="checkbox"
+            checked={isFuelSupplier}
+            onChange={e => setIsFuelSupplier(e.target.checked)}
+            style={{ width: 16, height: 16, cursor: 'pointer' }}
+          />
+          <label htmlFor="supp-is-fuel" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer', margin: 0 }}>
+            Là nhà cung cấp nhiên liệu (xăng, dầu)
+          </label>
         </div>
       </div>
     </Modal>
@@ -213,12 +228,13 @@ export default function SupplierListPage() {
         action={
           <>
             <button className="btn btn--secondary" onClick={() => {
-              const headers = ['Tên NCC', 'Người liên hệ', 'Điện thoại', 'MST', 'Trạng thái'];
+              const headers = ['Tên NCC', 'Người liên hệ', 'Điện thoại', 'MST', 'Là nhà CC nhiên liệu', 'Trạng thái'];
               const rows = filtered.map(s => [
                 s.name,
                 s.contactPerson || '',
                 s.phone || '',
                 s.taxCode || '',
+                s.isFuelSupplier ? 'Có' : 'Không',
                 STATUS_LABELS[s.status] || s.status,
               ]);
               downloadCSV(`nha-cung-cap-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
@@ -275,7 +291,14 @@ export default function SupplierListPage() {
             filtered.map(s => (
               <div key={s.id} className="m-card" onClick={() => { setEditingId(s.id); setShowAddForm(false); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setEditingId(s.id); setShowAddForm(false); } }}>
                 <div className="m-card__top">
-                  <span className="m-card__title">{s.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span className="m-card__title">{s.name}</span>
+                    {s.isFuelSupplier && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px' }}>
+                        Nhiên liệu
+                      </span>
+                    )}
+                  </div>
                   <StatusPill variant={s.status === 'ACTIVE' ? 'success' : 'danger'}>
                     {STATUS_LABELS[s.status] || s.status}
                   </StatusPill>
@@ -342,7 +365,14 @@ export default function SupplierListPage() {
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                      {s.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {s.name}
+                        {s.isFuelSupplier && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px' }}>
+                            Nhiên liệu
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       {s.contactPerson || <span style={{ color: 'var(--ink-3)' }}>—</span>}

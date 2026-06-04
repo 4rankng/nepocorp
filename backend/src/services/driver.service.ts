@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
+import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 import { computeSalary } from './attendance.service';
@@ -92,50 +92,21 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
 
 /**
  * Earnings summary for a driver: base salary + trip income - penalties.
- * When month/year are provided, scopes to that salary period and returns details.
- * Otherwise returns all-time totals (backward compatible).
+ * Requires month/year — uses the attendance/salary computation logic.
  */
-export async function getDriverEarnings(driverId: number, month?: number, year?: number) {
-  // If month & year are provided, compute via detailed attendance/salary logic
-  if (month && year) {
-    const salaryData = await computeSalary(driverId, year, month);
-    return {
-      baseSalary: String(salaryData.baseSalary),
-      tripIncome: String(salaryData.totalTripSalary),
-      penalties: String(salaryData.totalPenalties),
-      netIncome: String(salaryData.netSalary),
-      adjustment: salaryData.adjustment,
-      standardWorkDays: salaryData.standardWorkDays,
-      paidDays: salaryData.paidDays,
-      dailyRate: salaryData.dailyRate,
-      periodStart: salaryData.periodStart,
-      periodEnd: salaryData.periodEnd,
-    };
-  }
-
-  // Fallback for all-time totals without month/year scoping
-  const [salarySum] = await db.select({
-    total: sql<string>`coalesce(sum(${s.trips.driverSalary}::numeric), 0)`,
-  }).from(s.trips)
-    .where(and(eq(s.trips.driverId, driverId), eq(s.trips.status, 'LOCKED'), isNull(s.trips.deletedAt)));
-
-  const [penaltySum] = await db.select({
-    total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)`,
-  }).from(s.penalties)
-    .where(and(eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt), ne(s.penalties.status, 'CANCELED')));
-
-  const [driver] = await db.select().from(s.drivers)
-    .where(eq(s.drivers.id, driverId)).limit(1);
-
-  const baseSalary = parseFloat(driver?.baseSalary || '0');
-  const tripIncome = parseFloat(salarySum?.total || '0');
-  const penalties = parseFloat(penaltySum?.total || '0');
-
+export async function getDriverEarnings(driverId: number, month: number, year: number) {
+  const salaryData = await computeSalary(driverId, year, month);
   return {
-    baseSalary: String(baseSalary),
-    tripIncome: String(tripIncome),
-    penalties: String(penalties),
-    netIncome: String(baseSalary + tripIncome - penalties),
+    baseSalary: String(salaryData.baseSalary),
+    tripIncome: String(salaryData.totalTripSalary),
+    penalties: String(salaryData.totalPenalties),
+    netIncome: String(salaryData.netSalary),
+    adjustment: salaryData.adjustment,
+    standardWorkDays: salaryData.standardWorkDays,
+    paidDays: salaryData.paidDays,
+    dailyRate: salaryData.dailyRate,
+    periodStart: salaryData.periodStart,
+    periodEnd: salaryData.periodEnd,
   };
 }
 

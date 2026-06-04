@@ -337,6 +337,7 @@ export interface Supplier {
   note: string | null;
   status: string;
   linkedCustomerId: number | null;
+  isFuelSupplier: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
