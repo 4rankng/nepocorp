@@ -106,12 +106,22 @@ router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response
 router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const data = updateTripFiguresSchema.parse(req.body);
+  // Check status before update to detect auto-complete
+  const [prevRow] = await db.select({ status: dbSchema.trips.status })
+    .from(dbSchema.trips).where(eq(dbSchema.trips.id, id)).limit(1);
   const updated = await tripService.updateTripFigures(id, {
     ...data,
     expectedVersion: data.version,
     userId: req.user!.userId,
   });
   await invalidateReportCaches();
+  // Sync attendance when trip auto-completes (IN_TRANSIT → COMPLETED)
+  if (prevRow?.status === TripStatus.IN_TRANSIT && updated.status === TripStatus.COMPLETED) {
+    tripService.syncAttendanceAfterStatusChange(
+      updated.id, TripStatus.COMPLETED, updated.driverId ?? null,
+      updated.departureDate ?? null, null, req.user!.userId,
+    );
+  }
   res.json(updated);
 }));
 
@@ -124,6 +134,11 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
     req.user!.role,
   );
   await invalidateReportCaches();
+  // Sync attendance: mark departure date as TRIP_DAY (best-effort)
+  tripService.syncAttendanceAfterStatusChange(
+    trip.id, TripStatus.IN_TRANSIT, trip.driverId ?? null,
+    trip.departureDate ?? null, null, req.user!.userId,
+  );
   emitNotification({
     type: NotificationType.TRIP_DISPATCHED,
     title: 'Chuyến được điều phối',
@@ -167,6 +182,11 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
     req.user!.role,
   );
   await invalidateReportCaches();
+  // Remove TRIP_DAY records for the canceled trip (best-effort)
+  tripService.syncAttendanceAfterStatusChange(
+    trip.id, TripStatus.CANCELED, trip.driverId ?? null,
+    trip.departureDate ?? null, null, req.user!.userId,
+  );
   emitNotification({
     type: NotificationType.TRIP_CANCELED,
     title: 'Chuyến đã hủy',

@@ -206,7 +206,7 @@ export default function TripListPage() {
       for (const res of remaining) allTrips.push(...res.items);
     }
 
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
     const rows = allTrips.map((t) => {
       const containers = ((t as any).containers ?? []) as Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>;
       const typeCodes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
@@ -221,6 +221,8 @@ export default function TripListPage() {
         typeCodes,
         numbers,
         t.fuelLiters ?? '',
+        t.fuelSupplier?.name ?? '',
+        t.totalFuelCost ?? '',
         t.totalRoadAllowance ?? '',
         t.revenue ?? '',
         TRIP_STATUS_LABELS[t.status],

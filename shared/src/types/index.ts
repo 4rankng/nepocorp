@@ -180,6 +180,7 @@ export interface Trip {
   fuelSupplementReason: string | null;
   fuelPriceApplied: string | null;
   fuelActualUnitPrice: string | null;
+  fuelSupplierId: number | null;
   tollsDiscount: string;
   tollsAddition: string;
   tollsStations: number;
@@ -217,6 +218,7 @@ export interface Trip {
   externalPlateNumber: string | null;
   externalDriverName: string | null;
   externalDriverPhone: string | null;
+  fuelSupplier?: { id: number; name: string } | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -539,6 +541,7 @@ export interface TripDetail extends Trip {
   route?: Route;
   customer?: Customer;
   cargoType?: CargoType;
+  fuelSupplier?: { id: number; name: string } | null;
 }
 
 export interface CreateTripRequest {
@@ -567,6 +570,7 @@ export interface UpdateTripFiguresRequest {
   fuelSupplementLiters?: number;
   fuelSupplementReason?: string;
   fuelActualUnitPrice?: number | null;
+  fuelSupplierId?: number | null;
   tollsDiscount?: number;
   tollsAddition?: number;
   tollsStations?: number;

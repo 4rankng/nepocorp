@@ -5,6 +5,7 @@ import { InputWithPrefix } from './InputWithPrefix';
 import { CheckboxCard } from './CheckboxCard';
 import { SectionDivider } from './SectionDivider';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
+import { useCatalogs } from '../../hooks/useCatalogs';
 
 interface FuelTollsRevenueCardProps {
   collapsible?: boolean;
@@ -13,6 +14,7 @@ interface FuelTollsRevenueCardProps {
 
 export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelTollsRevenueCardProps) {
   const form = useTripFormContext();
+  const { data: catalogData } = useCatalogs();
 
   return (
     <CardSection
@@ -64,6 +66,32 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           </p>
         </div>
       </div>
+
+      {form.carrierType === 'OWN' && (
+        <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+          <div className="field">
+            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>Nhà cung cấp nhiên liệu</label>
+            <select
+              className="select"
+              value={form.fuelSupplierId || ''}
+              onChange={(e) => form.setFuelSupplierId(e.target.value ? Number(e.target.value) : null)}
+              style={{ width: '100%', height: '40px', borderRadius: '6px', border: '1px solid var(--border-color, #E5E7EB)', background: 'var(--bg-1, #FFF)', padding: '0 12px' }}
+            >
+              <option value="">-- Chọn nhà cung cấp nhiên liệu --</option>
+              {catalogData?.suppliers?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0 }}>
+              Lựa chọn nhà cung cấp nhiên liệu cho chuyến này để ghi nhận công nợ.
+            </p>
+          </div>
+        </div>
+      )}
 
       <SectionDivider label="Vé đường bộ & doanh thu" />
 

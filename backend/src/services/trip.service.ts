@@ -9,6 +9,7 @@ import { computeTripTotals } from '@nepocorp/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { config } from '../config';
+import { syncTripWorkDays, removeTripWorkDays } from './attendance.service';
 
 // ─── Trip lifecycle ──────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export async function createTrip(data: {
   externalPlateNumber?: string | null;
   externalDriverName?: string | null;
   externalDriverPhone?: string | null;
+  fuelSupplierId?: number | null;
 }) {
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
@@ -147,6 +149,7 @@ export async function createTrip(data: {
       departureDate: data.departureDate,
       customerReference: data.customerReference ?? null,
       status: TripStatus.CREATED,
+      fuelSupplierId: data.fuelSupplierId ?? null,
       // Persist the chosen fuel mode (defaults to AUTO at the DB layer).
       fuelMode: data.fuelMode ?? FuelMode.AUTO,
       revenue: String(revenue),
@@ -194,6 +197,7 @@ export async function updateTripFigures(
     fuelSupplementLiters?: number;
     fuelSupplementReason?: string;
     fuelActualUnitPrice?: number | null;
+    fuelSupplierId?: number | null;
     tollsDiscount?: number;
     tollsAddition?: number;
     tollsStations?: number;
@@ -422,6 +426,7 @@ export async function updateTripFigures(
       fuelSupplementLiters: String(data.fuelSupplementLiters || 0),
       fuelSupplementReason: data.fuelSupplementReason ?? null,
       fuelActualUnitPrice: data.fuelActualUnitPrice != null ? String(data.fuelActualUnitPrice) : null,
+      fuelSupplierId: data.fuelSupplierId !== undefined ? data.fuelSupplierId : trip.fuelSupplierId,
       tollsDiscount: String(data.tollsDiscount || 0),
       tollsAddition: String(data.tollsAddition || 0),
       tollsStations: data.tollsStations || 0,
@@ -570,6 +575,8 @@ export async function transitionTripStatus(
         carrierType: unlockedTrip.carrierType ?? 'OWN',
         externalCarrierId: unlockedTrip.externalCarrierId ?? null,
         externalFreightCost: unlockedTrip.externalFreightCost ?? null,
+        fuelSupplierId: unlockedTrip.fuelSupplierId ?? null,
+        totalFuelCost: unlockedTrip.totalFuelCost,
         ancillaryFees: ancillaryFees.map(fee => ({
           id: fee.id,
           buyAmount: fee.buyAmount,
@@ -645,6 +652,8 @@ export async function transitionTripStatus(
         carrierType: lockedTrip.carrierType ?? 'OWN',
         externalCarrierId: lockedTrip.externalCarrierId ?? null,
         externalFreightCost: lockedTrip.externalFreightCost ?? null,
+        fuelSupplierId: lockedTrip.fuelSupplierId ?? null,
+        totalFuelCost: lockedTrip.totalFuelCost,
         ancillaryFees: ancillaryFees.map(fee => ({
           id: fee.id,
           buyAmount: fee.buyAmount,
@@ -711,6 +720,32 @@ export async function transitionTripStatus(
 
     return updated;
   });
+}
+
+// ─── Post-transaction attendance sync (best-effort, outside TX) ──────────────
+// Call this from routes/trips.ts after updateStatus resolves. Not inside the
+// transaction so a failed attendance write never blocks the lifecycle change.
+
+export async function syncAttendanceAfterStatusChange(
+  tripId: number,
+  newStatus: TripStatus,
+  driverId: number | null,
+  departureDate: string | null,
+  actualArrivalDate?: string | null,
+  userId?: number | null,
+) {
+  if (!driverId || !departureDate) return; // external carrier or missing data
+
+  try {
+    if (newStatus === TripStatus.IN_TRANSIT || newStatus === TripStatus.COMPLETED) {
+      await syncTripWorkDays(driverId, tripId, departureDate, actualArrivalDate ?? null, userId ?? null);
+    } else if (newStatus === TripStatus.CANCELED) {
+      await removeTripWorkDays(driverId, tripId);
+    }
+  } catch (err) {
+    // Log but don't throw — attendance sync failure must never block trip ops
+    console.warn('[attendance] sync failed for trip', tripId, err);
+  }
 }
 
 export async function updateDepartureDate(
@@ -791,6 +826,7 @@ const TRIP_RELATION_FIELDS = {
   trailerLicensePlate: s.trailers.licensePlate,
   trailerId: s.trips.trailerId,
   trailerType: s.trips.trailerType,
+  fuelSupplierName: s.suppliers.name,
 };
 
 const TRIP_RELATION_JOINS = (query: any) => query
@@ -798,7 +834,8 @@ const TRIP_RELATION_JOINS = (query: any) => query
   .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
   .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
   .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-  .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id));
+  .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
+  .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id));
 
 /** Shape flat joined rows into nested relation objects. */
 function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
@@ -814,6 +851,7 @@ function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; 
       licensePlate: item.trailerLicensePlate ?? null,
       type: item.trailerType || '40FT',
     } : undefined,
+    fuelSupplier: item.fuelSupplierName ? { id: item.fuelSupplierId, name: item.fuelSupplierName } : null,
     ...extras,
   };
 }
@@ -905,7 +943,7 @@ export async function getTrips(filters: TripListFilters) {
     truckId: s.trips.truckId, driverId: s.trips.driverId, routeId: s.trips.routeId,
     cargoTypeId: s.trips.cargoTypeId, containerCount: s.trips.containerCount,
     status: s.trips.status, departureDate: s.trips.departureDate,
-    fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
+    fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters, fuelSupplierId: s.trips.fuelSupplierId,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
     totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,
     revenueCombine: s.trips.revenueCombine, grossProfit: s.trips.grossProfit,
@@ -1058,7 +1096,7 @@ export async function getTripById(id: number) {
     fuelMode: s.trips.fuelMode, fuelLiters: s.trips.fuelLiters,
     fuelLitersOverride: s.trips.fuelLitersOverride, fuelSupplementLiters: s.trips.fuelSupplementLiters,
     fuelSupplementReason: s.trips.fuelSupplementReason, fuelPriceApplied: s.trips.fuelPriceApplied,
-    fuelActualUnitPrice: s.trips.fuelActualUnitPrice,
+    fuelActualUnitPrice: s.trips.fuelActualUnitPrice, fuelSupplierId: s.trips.fuelSupplierId,
     tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
     totalFuelCost: s.trips.totalFuelCost, totalRoadAllowance: s.trips.totalRoadAllowance,
     totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,

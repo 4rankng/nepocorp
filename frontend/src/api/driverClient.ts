@@ -21,6 +21,10 @@ export const driverClient = {
       tripIncome: string;
       penalties: string;
       netIncome: string;
+      adjustment?: number;
+      standardWorkDays?: number;
+      paidDays?: number;
+      dailyRate?: number;
       periodStart?: string;
       periodEnd?: string;
     }>(`${DRIVER.EARNINGS}?month=${month}&year=${year}`);

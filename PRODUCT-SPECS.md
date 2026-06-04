@@ -34,6 +34,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | **MVP 3** | **Công nợ phải thu** | Kiểm soát rủi ro tài chính tập trung (71% nợ ở 4 KH), tự động hóa theo dõi nợ. |
 | **Hậu MVP** | **Nhận đơn, Phân chia LN, Kỷ luật** | Hoàn thiện quy trình vận hành khép kín và quản trị nâng cao. |
 | **Hậu MVP** | **Chi phí vận hành & Công nợ phải trả** | Số hóa chi phí sửa chữa/vật tư/bảo hiểm/đăng kiểm/phí đường bộ, quản lý nợ Nhà cung cấp, nhắc gia hạn. |
+| **Hậu MVP** | **Lương & Chấm công tài xế** | Hệ thống chấm công ngày công (TRIP_DAY / STANDBY / PERSONAL_LEAVE), tính lương thực nhận tháng, phân bổ chi phí nhân công trực tiếp/gián tiếp vào P&L. |
 
 **Ngoài phạm vi:** GPS tracking, variable pricing.
 
@@ -104,6 +105,17 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 * **Ràng buộc:** Chỉ được nhập/sửa giá thực tế khi chuyến chưa khóa (trạng thái Mới tạo, Đang chạy, Hoàn thành). Chuyến đã chốt — giá bất biến. Chuyến cũ (trước khi có tính năng này) để trống giá thực tế → dùng giá cấu hình snapshotted như hiện tại.
 * **Cập nhật giá cấu hình:** Mỗi lần kế toán thay đổi đơn giá trong Cấu hình hệ thống, hệ thống tự ghi một dòng mới vào bảng `fuel_price_history` (append-only, không sửa/xóa). Giá cấu hình hiện tại luôn đồng bộ với dòng mới nhất trong lịch sử.
 
+### 4.3.2 Lựa chọn Nhà cung cấp nhiên liệu & Ghi nhận công nợ
+
+* **Lựa chọn Nhà cung cấp:** Đối với các chuyến xe nhà (`OWN` carrier), kế toán có thể lựa chọn nhà cung cấp nhiên liệu tương ứng (trong số 2 đơn vị cung cấp chính được khai báo trong danh sách nhà cung cấp `suppliers`).
+* **Xuất phiếu cấp nhiên liệu:** Kế toán có thể xuất bảng cấp nhiên liệu theo từng chuyến và từng biển số xe (từ màn hình Danh sách Chuyến đi dưới dạng CSV, có đầy đủ cột tên nhà cung cấp và tổng giá trị dầu cấp) để gửi đối chiếu cho nhà cung cấp nhiên liệu.
+* **Ghi nhận công nợ tự động:**
+    - Khi chuyến đi được Chốt khóa (`LOCKED`), hệ thống tự động ghi nhận một bút toán Có (`credit`) bằng `totalFuelCost` (Tổng chi phí nhiên liệu thực tế của chuyến) vào sổ cái của nhà cung cấp nhiên liệu tương ứng (`entity_type='VENDOR'`, loại giao dịch `FUEL_EXPENSE`).
+    - Khi chuyến đi được Mở khóa (`COMPLETED`), hệ thống ghi nhận một bút toán đối ứng Nợ (`debit` loại `UNLOCK_REVERSAL`) để hoàn tác công nợ.
+* **Tra cứu đối với lái xe:** Lái xe thông qua Driver Portal có thể tra cứu chi tiết từng chuyến để biết số dầu mình được cấp và nhà cung cấp nhiên liệu chỉ định.
+
+
+
 ### 4.4 Tiền đi đường (Road Allowance)
 
 * Là khoản chi phí hoàn trả cho lái xe (chi phí đường bộ), **không tính là thu nhập của lái xe**.
@@ -113,11 +125,66 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
   - Nếu nhập "Tổng tiền đi đường" (> 0), giá trị đó được sử dụng trực tiếp; ngược lại, hệ thống tự động tính: `Tổng tiền đi đường (tự tính) = Tiền chuẩn - (Số trạm × 55.000) + [300.000 nếu về có hàng]`.
   - Số tiền thanh toán thực tế cho lái xe: `Lái xe thực lĩnh = Tổng tiền đi đường + Tiền kết hợp + Tiền lưu ca xe + Tiền đóng trả hàng 2 điểm - Tiền vé (công ty) đã thanh toán`.
 
-### 4.5 Lương tài xế
+### 4.5 Lương tài xế & Chấm Công
 
-* **Lương sản lượng (Trip Income):** Trường nhập riêng cho mỗi chuyến, do kế toán nhập. Là khoản thu nhập bổ sung cho lái xe ngoài lương cơ bản.
-* **Lương cơ bản:** Cố định hàng tháng.
-* **Phạt kỷ luật (Penalty):** Trừ vào lương tài xế (không phải chi phí công ty).
+> Xem chi tiết tại [`docs/flows/14-LUONG_VA_CHAM_CONG.md`](docs/flows/14-LUONG_VA_CHAM_CONG.md)
+
+#### 4.5.1 Mô hình Chấm Công
+
+Hệ thống quản lý ngày công qua hai luồng song song:
+1. **Tự động từ chuyến đi:** Mỗi ngày tài xế có chuyến đang chạy → hệ thống tự ghi `TRIP_DAY`.
+2. **Kế toán chấm công thủ công:** Các ngày còn lại kế toán gán `STANDBY` (chờ việc/sửa xe) hoặc `PERSONAL_LEAVE` (nghỉ không lương). Hệ thống tự điền `WEEKLY_OFF` cho Chủ nhật không có chuyến.
+
+**Trạng thái ngày công (`WorkDayStatus`):**
+
+| Mã | Tên | Mô tả | Hưởng lương |
+| :--- | :--- | :--- | :--- |
+| `TRIP_DAY` | Ngày đi chuyến | Tự động từ dữ liệu vận hành | Có |
+| `STANDBY` | Chờ việc / Sửa xe | Trực bãi, không có hàng, xe hỏng do lỗi công ty | Có (đầy đủ) |
+| `PERSONAL_LEAVE` | Nghỉ việc riêng | Tự xin nghỉ không lương | Không |
+| `WEEKLY_OFF` | Nghỉ tuần | Chủ nhật không có chuyến | Không |
+
+**Lưu ý Chủ nhật xuyên chuyến:** Nếu chuyến kéo dài qua ngày Chủ nhật, ngày đó được tính là `TRIP_DAY` (ngày làm việc bình thường).
+
+#### 4.5.2 Số ngày công chuẩn (`standard_work_days`)
+
+* Tính theo **thực tế từng tháng**: tổng số ngày trong tháng − số ngày Chủ nhật.
+* **Không cố định 26 ngày.** Tháng có 27 ngày làm → tính thêm; tháng có 24 ngày làm → giảm tương ứng.
+
+#### 4.5.3 Công thức tính lương thực nhận
+
+```
+Ngày công hưởng lương = trip_days + standby_days
+
+daily_rate = (base_salary + social_insurance) / standard_work_days
+
+Điều chỉnh:
+  Nếu ngày công < standard_work_days → adjustment = -(personal_leave_days × daily_rate)
+  Nếu ngày công > standard_work_days → adjustment = +(ngày dôi × daily_rate)
+  Nếu bằng nhau → adjustment = 0
+
+net_salary = base_salary + total_trip_salary + adjustment - penalties
+```
+
+* **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) cộng vào trước khi tính `daily_rate` để phân bổ chi phí đúng. Lương thực trả tài xế vẫn dùng `base_salary` gốc; BHXH hạch toán chi phí riêng. *(Pete xác nhận 4/6)*
+* **Lương sản lượng / Tiền kết hợp (Trip Salary):** Kế toán nhập thủ công `driver_salary` trên form chuyến. Được cộng vào `total_trip_salary` khi kỳ lương được tính.
+* **Trường `trip_wage_days`:** Tuỳ chọn trên form chuyến — cho phép kế toán ghi override số ngày công của chuyến khi chuyến dài xuyên ngày nghỉ. *(Pete xác nhận 4/6)*
+* **Phạt kỷ luật (Penalty):** Trừ vào `net_salary` (không phải chi phí công ty — xem §4.11).
+
+#### 4.5.4 Phân bổ chi phí lương vào P&L
+
+| Loại | Hạch toán | Ghi chú |
+| :--- | :--- | :--- |
+| **Nhân công trực tiếp** | Vào từng chuyến qua trường `driver_salary` | Kế toán nhập thủ công |
+| **Nhân công gián tiếp (chờ việc)** | Vào chi phí chung tháng (`standby_cost = standby_days × daily_rate`) | Không gán vào chuyến bất kỳ — tránh méo hiệu quả chuyến |
+
+* Sau khi kế toán xác nhận kỳ lương (`CONFIRMED`), hệ thống tự tạo bản ghi `expenses` loại `STANDBY_LABOR` (truck_id = null) với số tiền = `standby_cost`, hạch toán vào chi phí chung trong báo cáo lãi lỗ.
+
+#### 4.5.5 Phân quyền chấm công
+
+* **Kế toán:** Chấm công, sửa ngày công, xác nhận kỳ lương. Xem thu nhập tất cả tài xế.
+* **Quản lý:** Xem và xác nhận kỳ lương. Xem thu nhập tất cả tài xế.
+* **Tài xế:** Chỉ xem lịch chấm công và thu nhập của chính mình qua `/my-earnings`. Không được sửa.
 
 ### 4.6 Tổng chi phí (Total Cost)
 
@@ -288,6 +355,14 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó (bao gồm chi phí rơ-mooc ghép cặp), và lợi nhuận ròng đã trừ chi phí chung (không gắn xe). Báo cáo phân tách chi phí đầu kéo vs rơ-mooc.
 6. **[Quản lý/Kế toán]** Tôi muốn Dashboard nhắc khi bảo hiểm/đăng kiểm/phí đường bộ của xe sắp tới hạn hoặc đã quá hạn.
 
+### MODULE 10: LƯƠNG & CHẤM CÔNG TÀI XẾ
+1. **[Kế toán]** Tôi muốn xem lịch chấm công tháng của từng tài xế — các ngày đi chuyến (`TRIP_DAY`) được hệ thống tự điền; tôi chỉ cần click vào ngày còn lại để gán `STANDBY` (chờ việc/sửa xe) hoặc `PERSONAL_LEAVE` (nghỉ không lương).
+2. **[Kế toán]** Tôi muốn hệ thống tự tính lương thực nhận tháng: lương cứng + tổng lương chuyến + điều chỉnh công thiếu/thừa − phạt kỷ luật. Số ngày công chuẩn tính theo số ngày làm việc thực tế của tháng (không cố định 26).
+3. **[Kế toán]** Tôi muốn xác nhận kỳ lương (CONFIRMED) — sau đó hệ thống tự hạch toán chi phí chờ việc (`standby_cost`) vào chi phí chung trong báo cáo lãi lỗ.
+4. **[Kế toán]** Tôi muốn nhập `driver_salary` (lương kết hợp/thưởng) và tùy chọn `trip_wage_days` trên form chuyến để kế toán kiểm soát chính xác khi chuyến kéo dài xuyên Chủ nhật.
+5. **[Quản lý]** Tôi muốn xem tổng kết lương tất cả tài xế theo tháng.
+6. **[Tài xế]** Tôi muốn xem lịch chấm công và thu nhập của mình (lương cứng, lương chuyến, điều chỉnh, phạt, lương thực nhận) trên điện thoại. Chỉ xem, không sửa.
+
 ---
 
 ## 6. BẢNG CẤU HÌNH HỆ THỐNG (CONFIGURATION TABLES)
@@ -312,6 +387,8 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 | 16 | **Cảng / Bãi** | Tên, địa chỉ, ghi chú, trạng thái | Cảng Đình Vũ, Cảng Nam Hải, Bãi ICD NL... |
 | 17 | **Lịch sử giá nhiên liệu** | Đơn giá, ngày hiệu lực, người thay đổi, ghi chú — append-only | Tự ghi khi cập nhật đơn giá cấu hình |
 | 18 | **Danh mục Chi phí Giao nhận** | Cấu hình các loại phí tại cảng, cờ mặc định xuất hóa đơn, cờ mặc định tính lãi | Nâng hạ, Cân xe, Kiểm hóa... |
+| 19 | **Ngày công tài xế (`driver_work_days`)** | Mỗi dòng = 1 ngày của 1 tài xế. Trạng thái: `TRIP_DAY` (tự động) / `STANDBY` / `PERSONAL_LEAVE` / `WEEKLY_OFF`. Liên kết `trip_id` nếu TRIP_DAY. | Tự động + kế toán chấm |
+| 20 | **Kỳ lương (`salary_periods`)** | Tổng kết lương tháng: ngày công chuẩn, daily_rate, trip_days, standby_days, total_trip_salary, adjustment, penalties, BHXH, net_salary, standby_cost. Status: DRAFT → CONFIRMED | 1 bản ghi / tài xế / tháng |
 
 ---
 

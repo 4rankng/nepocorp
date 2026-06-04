@@ -28,6 +28,7 @@ interface DriverTripDetail {
   cargoTypeName: string | null;
   fuelLiters: string | null;
   fuelMode: string | null;
+  fuelSupplierName: string | null;
   totalRoadAllowance: string | null;
   driverSalary: string | null;
   hasReturnCargo: boolean | null;
@@ -160,11 +161,18 @@ export default function DriverTripDetailPage() {
             </div>
           </div>
         </div>
-        {trip.fuelMode && (
-          <div style={{ padding: '10px 20px', fontSize: 12, color: 'var(--fg-3)' }}>
-            Chế độ: <strong>{trip.fuelMode === 'AUTO' ? 'Tự động (định mức × km)' : trip.fuelMode === 'FLAT_RATE' ? 'Khoán' : trip.fuelMode}</strong>
-          </div>
-        )}
+        <div style={{ padding: '10px 20px', fontSize: 12, color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {trip.fuelMode && (
+            <div>
+              Chế độ: <strong>{trip.fuelMode === 'AUTO' ? 'Tự động (định mức × km)' : trip.fuelMode === 'FLAT_RATE' ? 'Khoán' : trip.fuelMode}</strong>
+            </div>
+          )}
+          {trip.fuelSupplierName && (
+            <div>
+              Nhà cung cấp: <strong style={{ color: 'var(--brand)' }}>{trip.fuelSupplierName}</strong>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Earnings Card */}

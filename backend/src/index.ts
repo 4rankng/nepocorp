@@ -20,6 +20,7 @@ import forwarderAdminRoutes from './routes/forwarder-admin';
 import { uploadRouter, photosRouter } from './routes/upload';
 import mapsRoutes from './routes/maps';
 import notificationRoutes from './routes/notifications';
+import salaryRoutes from './routes/salary';
 
 await initAuditService();
 await initNotificationService();
@@ -80,6 +81,7 @@ app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes);
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
+app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 
 // ── Global error handler (MUST be last) ────────────────────────────────────
 app.use(globalErrorHandler);

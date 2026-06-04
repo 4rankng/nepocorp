@@ -1,8 +1,9 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, sql, gte, lte, ne } from 'drizzle-orm';
-import { resolveSalaryPeriodDateRange } from './salary-period.service';
 import { ApiError } from '../errors';
+
+import { computeSalary } from './attendance.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -69,12 +70,14 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
     trailerType: s.trips.trailerType,
     customerName: s.customers.name,
     cargoTypeName: s.cargoTypes.name,
+    fuelSupplierName: s.suppliers.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
     .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
     .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
+    .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id))
     .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
     .limit(1);
 
@@ -89,61 +92,51 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
 
 /**
  * Earnings summary for a driver: base salary + trip income - penalties.
- * When month/year are provided, scopes to that salary period.
+ * When month/year are provided, scopes to that salary period and returns details.
  * Otherwise returns all-time totals (backward compatible).
  */
 export async function getDriverEarnings(driverId: number, month?: number, year?: number) {
-  // Build date filters if month/year provided
-  let dateRange: { start: string; end: string } | null = null;
+  // If month & year are provided, compute via detailed attendance/salary logic
   if (month && year) {
-    const resolved = await resolveSalaryPeriodDateRange(month, year);
-    dateRange = { start: resolved.start, end: resolved.end };
+    const salaryData = await computeSalary(driverId, year, month);
+    return {
+      baseSalary: String(salaryData.baseSalary),
+      tripIncome: String(salaryData.totalTripSalary),
+      penalties: String(salaryData.totalPenalties),
+      netIncome: String(salaryData.netSalary),
+      adjustment: salaryData.adjustment,
+      standardWorkDays: salaryData.standardWorkDays,
+      paidDays: salaryData.paidDays,
+      dailyRate: salaryData.dailyRate,
+      periodStart: salaryData.periodStart,
+      periodEnd: salaryData.periodEnd,
+    };
   }
 
-  // Trip income — scoped to salary period if provided
-  const tripConditions = [eq(s.trips.driverId, driverId), eq(s.trips.status, 'LOCKED'), isNull(s.trips.deletedAt)];
-  if (dateRange) {
-    tripConditions.push(gte(s.trips.departureDate, dateRange.start));
-    tripConditions.push(lte(s.trips.departureDate, dateRange.end));
-  }
+  // Fallback for all-time totals without month/year scoping
   const [salarySum] = await db.select({
     total: sql<string>`coalesce(sum(${s.trips.driverSalary}::numeric), 0)`,
   }).from(s.trips)
-    .where(and(...tripConditions));
+    .where(and(eq(s.trips.driverId, driverId), eq(s.trips.status, 'LOCKED'), isNull(s.trips.deletedAt)));
 
-  // Penalties — scoped to salary period if provided
-  const penaltyConditions = [eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt), ne(s.penalties.status, 'CANCELED')];
-  if (dateRange) {
-    penaltyConditions.push(gte(s.penalties.date, dateRange.start));
-    penaltyConditions.push(lte(s.penalties.date, dateRange.end));
-  }
   const [penaltySum] = await db.select({
     total: sql<string>`coalesce(sum(${s.penalties.amount}::numeric), 0)`,
   }).from(s.penalties)
-    .where(and(...penaltyConditions));
+    .where(and(eq(s.penalties.driverId, driverId), isNull(s.penalties.deletedAt), ne(s.penalties.status, 'CANCELED')));
 
   const [driver] = await db.select().from(s.drivers)
     .where(eq(s.drivers.id, driverId)).limit(1);
 
-  // Thu nhập thực tế = Lương cơ bản + Thu nhập sản lượng − Khấu trừ
   const baseSalary = parseFloat(driver?.baseSalary || '0');
   const tripIncome = parseFloat(salarySum?.total || '0');
   const penalties = parseFloat(penaltySum?.total || '0');
 
-  const result: { baseSalary: string; tripIncome: string; penalties: string; netIncome: string; periodStart?: string; periodEnd?: string } = {
+  return {
     baseSalary: String(baseSalary),
     tripIncome: String(tripIncome),
     penalties: String(penalties),
     netIncome: String(baseSalary + tripIncome - penalties),
   };
-
-  // Include the resolved period info when scoped
-  if (dateRange) {
-    result.periodStart = dateRange.start;
-    result.periodEnd = dateRange.end;
-  }
-
-  return result;
 }
 
 /**

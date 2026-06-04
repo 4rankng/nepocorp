@@ -14,6 +14,7 @@ const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
   [TxnType.VENDOR_PAYMENT]:  { label: 'Thanh toán công nợ',  pill: 'dd-txn-pill dd-txn-pill--pay' },
   [TxnType.ADJUSTMENT]:      { label: 'Điều chỉnh',      pill: 'dd-txn-pill dd-txn-pill--adj' },
+  [TxnType.FUEL_EXPENSE]:    { label: 'Chi phí nhiên liệu',  pill: 'dd-txn-pill dd-txn-pill--pen' },
   [TxnType.UNLOCK_REVERSAL]: { label: 'Hoàn tác',         pill: 'dd-txn-pill dd-txn-pill--adj' },
 };
 const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
@@ -25,12 +26,13 @@ const AGING_RANGES = [
   { label: 'TRÊN 90 NGÀY', dotColor: 'var(--danger)',  index: 3 },
 ] as const;
 
-type LedgerFilter = 'all' | typeof TxnType.VENDOR_EXPENSE | typeof TxnType.VENDOR_PAYMENT | typeof TxnType.ADJUSTMENT;
+type LedgerFilter = 'all' | typeof TxnType.VENDOR_EXPENSE | typeof TxnType.VENDOR_PAYMENT | typeof TxnType.ADJUSTMENT | typeof TxnType.FUEL_EXPENSE;
 
 const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: 'all',                     label: 'Tất cả' },
   { key: TxnType.VENDOR_EXPENSE,    label: 'Ghi nhận chi phí' },
   { key: TxnType.VENDOR_PAYMENT,    label: 'Thanh toán công nợ' },
+  { key: TxnType.FUEL_EXPENSE,      label: 'Chi phí nhiên liệu' },
   { key: TxnType.ADJUSTMENT,        label: 'Điều chỉnh' },
 ];
 

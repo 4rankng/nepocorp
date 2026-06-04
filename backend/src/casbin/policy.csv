@@ -38,3 +38,9 @@ p, DRIVER, notifications, read
 p, DRIVER, notifications, write
 p, FORWARDER, notifications, read
 p, FORWARDER, notifications, write
+p, ADMIN, salary, read
+p, ADMIN, salary, write
+p, MANAGER, salary, read
+p, MANAGER, salary, write
+p, ACCOUNTANT, salary, read
+p, ACCOUNTANT, salary, write

@@ -9,6 +9,11 @@ interface EarningsSummary {
   tripIncome: string;
   penalties: string;
   netIncome: string;
+  // Optional fields from attendance system (when available)
+  adjustment?: number;
+  standardWorkDays?: number;
+  paidDays?: number;
+  dailyRate?: number;
   periodStart?: string;
   periodEnd?: string;
 }
@@ -118,13 +123,29 @@ export default function DriverEarningsPage() {
       <div className="kpi-grid fade-up-2">
         <KPI label="Lương cơ bản" value={formatCurrency(earnings.baseSalary)} icon={Wallet} />
         <KPI label="Thu nhập sản lượng" value={formatCurrency(earnings.tripIncome)} icon={DollarSign} variant="success" />
+        {earnings.adjustment !== undefined && earnings.adjustment !== 0 && (
+          <KPI
+            label={earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
+            value={(earnings.adjustment > 0 ? '+' : '') + formatCurrency(earnings.adjustment)}
+            icon={earnings.adjustment > 0 ? TrendingUp : TrendingDown}
+            variant={earnings.adjustment > 0 ? 'success' : 'danger'}
+          />
+        )}
         <KPI
-          label="Khấu trừ"
+          label="Khấu trừ kỷ luật"
           value={penaltyNum > 0 ? `-${formatCurrency(earnings.penalties)}` : '0 ₫'}
           icon={TrendingDown}
           variant={penaltyNum > 0 ? 'danger' : 'default'}
         />
       </div>
+      {/* Work day info when available */}
+      {earnings.standardWorkDays !== undefined && (
+        <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 'var(--radius)', background: 'var(--bg-2)', border: '1px solid var(--border-1)', fontSize: 12, color: 'var(--fg-3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span>Công chuẩn: <strong style={{ color: 'var(--fg-2)' }}>{earnings.standardWorkDays} ngày</strong></span>
+          {earnings.paidDays !== undefined && <span>Công hưởng lương: <strong style={{ color: 'var(--fg-2)' }}>{earnings.paidDays} ngày</strong></span>}
+          {earnings.dailyRate !== undefined && earnings.dailyRate > 0 && <span>Đơn giá ngày: <strong style={{ color: 'var(--fg-2)' }}>{formatCurrency(earnings.dailyRate)}</strong></span>}
+        </div>
+      )}
 
       {/* Penalties list */}
       <Panel

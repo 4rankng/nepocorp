@@ -106,6 +106,8 @@ export class LedgerService {
     carrierType?: string;          // 'OWN' | 'EXTERNAL', default 'OWN'
     externalCarrierId?: number | null;
     externalFreightCost?: string | null;  // incl-VAT
+    fuelSupplierId?: number | null;
+    totalFuelCost?: string | null;
     ancillaryFees?: Array<{
       id: number;
       buyAmount: string;
@@ -133,6 +135,12 @@ export class LedgerService {
 
     if (carrierType === 'OWN' && trip.driverId) {
       entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    }
+
+    if (trip.fuelSupplierId) {
+      if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
+        entitiesToLock.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
+      }
     }
 
     for (const fee of fees) {
@@ -174,6 +182,20 @@ export class LedgerService {
         debit: 0,
         credit: driverSalary,
         note: label ? `Lương sản lượng chuyến ${label}` : 'Lương sản lượng chuyến',
+      });
+    }
+
+    // ── OWN/EXTERNAL: fuel supplier payable ──
+    const fuelCost = Number(trip.totalFuelCost || 0);
+    if (trip.fuelSupplierId && fuelCost > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.FUEL_EXPENSE,
+        txnId: trip.id,
+        entityType: 'VENDOR',
+        entityId: trip.fuelSupplierId,
+        debit: 0,
+        credit: fuelCost,
+        note: label ? `Chi phí dầu chuyến ${label}` : 'Chi phí dầu chuyến',
       });
     }
 
@@ -237,6 +259,8 @@ export class LedgerService {
     carrierType?: string;
     externalCarrierId?: number | null;
     externalFreightCost?: string | null;
+    fuelSupplierId?: number | null;
+    totalFuelCost?: string | null;
     ancillaryFees?: Array<{
       id: number;
       buyAmount: string;
@@ -261,6 +285,11 @@ export class LedgerService {
     }
     if (carrierType === 'OWN' && trip.driverId) {
       entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    }
+    if (trip.fuelSupplierId) {
+      if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
+        entitiesToLock.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
+      }
     }
     for (const fee of fees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
@@ -298,6 +327,20 @@ export class LedgerService {
         debit: driverSalary,
         credit: 0,
         note: label ? `Lương sản lượng chuyến ${label} (Hoàn tác)` : 'Lương sản lượng chuyến (Hoàn tác)',
+      });
+    }
+
+    // ── Reverse OWN/EXTERNAL: fuel supplier payable ──
+    const fuelCost = Number(trip.totalFuelCost || 0);
+    if (trip.fuelSupplierId && fuelCost > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: trip.id,
+        entityType: 'VENDOR',
+        entityId: trip.fuelSupplierId,
+        debit: fuelCost,
+        credit: 0,
+        note: label ? `Chi phí dầu chuyến ${label} (Hoàn tác)` : 'Chi phí dầu (Hoàn tác)',
       });
     }
 

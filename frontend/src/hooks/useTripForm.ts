@@ -315,6 +315,10 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     isEditMode && existingTrip?.externalDriverPhone ? existingTrip.externalDriverPhone : ""
   );
 
+  const [fuelSupplierId, setFuelSupplierId] = useState<number | null>(
+    isEditMode && existingTrip ? existingTrip.fuelSupplierId : null
+  );
+
   const [fuelMode, setFuelMode] = useState<FuelMode>(isEditMode && existingTrip ? existingTrip.fuelMode : FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState(isEditMode && existingTrip?.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : "");
   const [fuelSupplementLiters, setFuelSupplementLiters] = useState(isEditMode && existingTrip?.fuelSupplementLiters ? String(existingTrip.fuelSupplementLiters) : "");
@@ -390,6 +394,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
     setNotes(existingTrip.notes || '');
     setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
+    setFuelSupplierId(existingTrip.fuelSupplierId ?? null);
     setPhotoUrls(existingTrip.photoUrls || []);
     setCarrierType(existingTrip.carrierType ?? 'OWN');
     setVatRate(existingTrip.vatRate != null ? Number(existingTrip.vatRate) : 0.08);
@@ -712,6 +717,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             notes: notes.trim() || undefined,
             roadAllowanceOverride: roadAllowanceOverride !== '' ? Number(roadAllowanceOverride) : null,
             fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
+            fuelSupplierId: fuelSupplierId !== null ? fuelSupplierId : null,
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
@@ -732,6 +738,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           fuelMode,
           carrierType,
           vatRate,
+          fuelSupplierId: carrierType === 'OWN' ? (fuelSupplierId ?? null) : null,
         };
         if (carrierType === 'OWN') {
           createPayload.truckId = Number(truckId);
@@ -816,6 +823,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             notes: notes.trim() || undefined,
             photoUrls,
             fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
+            fuelSupplierId: fuelSupplierId !== null ? fuelSupplierId : null,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
@@ -847,6 +855,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       tollsAddition, tollsStations, hasReturnCargo, driverSalary,
       roadAllowanceOverride,
       fuelActualUnitPrice,
+      fuelSupplierId,
       revenue, revenueEmptyReturn, revenueCombine, notes, photoUrls,
       carrierType, vatRate, externalCarrierId, externalFreightCost,
       externalPlateNumber, externalDriverName, externalDriverPhone,
@@ -885,6 +894,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     vehicleShiftAllowance, setVehicleShiftAllowance,
     roadAllowanceOverride, setRoadAllowanceOverride,
     fuelActualUnitPrice, setFuelActualUnitPrice,
+    fuelSupplierId, setFuelSupplierId,
     revenue, setRevenue,
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,

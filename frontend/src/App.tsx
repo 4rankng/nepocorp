@@ -53,6 +53,7 @@ const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
 const ExpenseEntryPage = lazy(() => import('./pages/ExpenseEntryPage'));
 const PayableListPage = lazy(() => import('./pages/PayableListPage'));
 const PayableDetailPage = lazy(() => import('./pages/PayableDetailPage'));
+const SalaryAttendancePage = lazy(() => import('./pages/SalaryAttendancePage'));
 
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
 const ContainerTypesConfigPage = lazy(() => import('./pages/config/ContainerTypesConfigPage'));
@@ -157,6 +158,7 @@ function AppRoutes() {
           <Route path="/expenses/:id/edit" element={adminOnly(page(<ExpenseEntryPage />))} />
           <Route path="/payables" element={adminOnly(page(<PayableListPage />))} />
           <Route path="/payables/:id" element={adminOnly(page(<PayableDetailPage />))} />
+          <Route path="/salary" element={adminOnly(page(<SalaryAttendancePage />))} />
           <Route path="/users" element={managerOrAdminOnly(page(<UsersPage />))} />
           <Route path="/audit-logs" element={managerOrAdminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />

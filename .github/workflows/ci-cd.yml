@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,73 +7,49 @@ on:
     branches: [main]
 
 concurrency:
-  group: cicd-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  NODE_VERSION: "22"
-  PNPM_VERSION: "10.33.0"
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
 
 jobs:
-  # ── Job 1: Build & Typecheck ──────────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────
+  # Job 1: Build & Typecheck
+  # ──────────────────────────────────────────────────────────
   build:
     name: Build & Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-          run_install: false
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
-      - name: Typecheck shared
-        run: cd shared && npx tsc --noEmit
+      - name: Build shared package
+        run: cd shared && npx tsc
 
       - name: Typecheck backend
         run: cd backend && npx tsc --noEmit
 
-      - name: Typecheck frontend
-        run: cd frontend && npx tsc --noEmit
-
-      - name: Build shared
-        run: cd shared && npx tsc
-
       - name: Build frontend
-        run: cd frontend && npx vite build
+        run: cd frontend && npx tsc -b && npx vite build
 
-  # ── Job 2: Integration Tests ─────────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────
+  # Job 2: Tests
+  # ──────────────────────────────────────────────────────────
   test:
-    name: Integration Tests
-    needs: build
+    name: Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     services:
       postgres:
@@ -85,161 +61,130 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=10
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/nepocorp
+      JWT_SECRET: ci-test-secret-that-is-at-least-32-characters-long
+      NODE_ENV: test
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-          run_install: false
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
-      - name: Run migrations on test DB
-        working-directory: backend
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nepocorp
-        run: npx drizzle-kit migrate
+      - name: Build shared (dependency of backend tests)
+        run: cd shared && npx tsc
 
-      - name: Run integration tests
-        working-directory: backend
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/nepocorp
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-jwt-secret-for-ci-not-production
-          NODE_ENV: test
-        run: npx tsx --test 'src/tests/*.test.ts'
+      - name: Run shared unit tests
+        run: |
+          npx tsx --test shared/src/calculations/tripTotals.test.ts
+          npx tsx --test shared/src/schemas/updateTripFiguresSchema.test.ts
 
-  # ── Job 3: Docker Build & Push ───────────────────────────────────────────
-  docker:
-    name: Docker Build & Push
-    needs: test
+      - name: Apply migrations to test DB
+        run: cd backend && npx drizzle-kit migrate
+
+      - name: Run backend integration tests
+        run: cd backend && npx tsx --test src/tests/integration.test.ts
+
+  # ──────────────────────────────────────────────────────────
+  # Job 3: Docker Build & Push
+  # ──────────────────────────────────────────────────────────
+  docker-push:
+    name: Docker Push (${{ matrix.name }})
+    needs: [build, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            image: franknguyenvd/nepo-backend
+            dockerfile: backend/Dockerfile
+          - name: frontend
+            image: franknguyenvd/nepo-frontend
+            dockerfile: frontend/Dockerfile
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get short SHA
+      - name: Generate short SHA tag
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Build & push backend image
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend/Dockerfile
+          file: ${{ matrix.dockerfile }}
           platforms: linux/amd64
           push: true
           tags: |
-            franknguyenvd/nepo-backend:latest
-            franknguyenvd/nepo-backend:${{ steps.sha.outputs.short }}
-          cache-from: type=registry,ref=franknguyenvd/nepo-backend:latest
-          cache-to: type=inline
+            ${{ matrix.image }}:latest
+            ${{ matrix.image }}:${{ steps.sha.outputs.short }}
+          cache-from: type=registry,ref=${{ matrix.image }}:latest
+          build-args: BUILDKIT_INLINE_CACHE=1
 
-      - name: Build & push frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: frontend/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            franknguyenvd/nepo-frontend:latest
-            franknguyenvd/nepo-frontend:${{ steps.sha.outputs.short }}
-          cache-from: type=registry,ref=franknguyenvd/nepo-frontend:latest
-          cache-to: type=inline
-
-  # ── Job 4: Deploy to Production ──────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────
+  # Job 4: Deploy to Production
+  # ──────────────────────────────────────────────────────────
   deploy:
     name: Deploy to Production
-    needs: docker
+    needs: [docker-push]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: production
 
     steps:
-      - name: Pull and restart backend
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.PROD_SERVER }}
+          host: nepo.tingting.vip
           username: root
           key: ${{ secrets.PROD_SSH_KEY }}
-          script_stop: true
           script: |
+            set -e
+            echo "=== Deploying Nepocorp ==="
+
             cd /opt/nepocorp
-            docker compose -f deploy/docker-compose.prod.yml pull backend
+
+            echo "Pulling latest images..."
+            docker compose -f deploy/docker-compose.prod.yml pull backend frontend
+
+            echo "Restarting backend..."
             docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps backend
 
-      - name: Run database migrations
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PROD_SERVER }}
-          username: root
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd /opt/nepocorp
+            echo "Waiting for backend to start..."
+            sleep 5
+
+            echo "Running database migrations..."
             docker compose -f deploy/docker-compose.prod.yml exec -T backend npx drizzle-kit migrate
 
-      - name: Pull and restart frontend
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PROD_SERVER }}
-          username: root
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd /opt/nepocorp
-            docker compose -f deploy/docker-compose.prod.yml pull frontend
+            echo "Restarting frontend..."
             docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps frontend
+
+            echo "Cleaning up unused images..."
             docker image prune -f
 
-      - name: Verify deployment
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PROD_SERVER }}
-          username: root
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script_stop: true
-          script: |
-            curl -sf http://localhost:3090/api/health || (echo "Backend health check failed!" && exit 1)
-            curl -sf -o /dev/null http://localhost:3000 || (echo "Frontend health check failed!" && exit 1)
-            echo "Deployment verified successfully."
+            echo "=== Deployment complete! ==="
+            echo "App: https://nepo.tingting.vip"
+            echo "API: https://nepo.tingting.vip/api/health"

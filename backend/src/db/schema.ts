@@ -8,7 +8,7 @@ export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'C
 export const fuelModeEnum = pgEnum('fuel_mode', ['AUTO', 'FLAT_RATE']);
 export const loadingTypeEnum = pgEnum('loading_type', ['HANG', 'VO']);
 export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER']);
-export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT', 'EXTERNAL_CARRIER_COST', 'UNLOCK_REVERSAL']);
+export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT', 'EXTERNAL_CARRIER_COST', 'FUEL_EXPENSE', 'UNLOCK_REVERSAL']);
 export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 export const driverStatusEnum = pgEnum('driver_status', ['ACTIVE', 'INACTIVE']);
@@ -26,6 +26,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'TRIP_LOCKED', 'TRIP_CANCELED', 'PAYMENT_RECEIVED', 'PENALTY_CREATED',
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
 ]);
+export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -249,6 +250,8 @@ export const trips = pgTable('trips', {
   revenueOverriddenBy: integer('revenue_overridden_by'),
   revenueOverriddenAt: timestamp('revenue_overridden_at'),
   notes: text('notes'),
+  tripWageDays: integer('trip_wage_days'), // optional override for days to count for this trip
+  fuelSupplierId: integer('fuel_supplier_id').references(() => suppliers.id),
   vatRate: numeric('vat_rate', { precision: 5, scale: 3 }).notNull().default('0.000'),
   carrierType: varchar('carrier_type', { length: 20 }).notNull().default('OWN'),
   // D-E decision: external carrier references customers table, NOT suppliers
@@ -553,6 +556,23 @@ export const settlementExpenses = pgTable('settlement_expenses', {
 }, (table) => [
   uniqueIndex('settlement_expense_unique_idx').on(table.settlementId, table.tripExpenseId),
   uniqueIndex('settlement_expense_trip_expense_uniq_idx').on(table.tripExpenseId),
+]);
+
+// ─── Attendance ──────────────────────────────────────────────────────────────
+
+export const driverWorkDays = pgTable('driver_work_days', {
+  id: serial('id').primaryKey(),
+  driverId: integer('driver_id').references(() => drivers.id).notNull(),
+  date: date('date').notNull(),
+  status: workDayStatusEnum('status').notNull(),
+  tripId: integer('trip_id').references(() => trips.id),
+  note: text('note'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('driver_work_days_driver_date_idx').on(table.driverId, table.date),
+  index('driver_work_days_driver_idx').on(table.driverId),
 ]);
 
 // ─── Audit ───────────────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ import {
   Store,
   Package,
   X,
+  CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -70,6 +71,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
         { key: 'settlements', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText, section: 'financials' },
+        { key: 'salary', label: 'Lương & Chấm công', path: '/salary', icon: CalendarDays, section: 'financials' },
 
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
         { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'admin' },
@@ -134,6 +136,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
   if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
   if (pathname.startsWith('/settlements')) return 'Quản lý phiếu thanh toán';
+  if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
   return 'NEPO';
 }
 

@@ -33,6 +33,12 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             <span className="k">Tiêu thụ bình quân</span>
             <span className="v">{ttbq > 0 ? `${ttbq.toFixed(1)} L/100km` : '—'}</span>
           </div>
+          {trip.fuelSupplier && (
+            <div className="pl-row">
+              <span className="k">Nhà cung cấp</span>
+              <span className="v" style={{ fontWeight: 600, color: 'var(--brand, #10B981)' }}>{trip.fuelSupplier.name}</span>
+            </div>
+          )}
         </div>
 
         {fuelLiters > 0 && (
