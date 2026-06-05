@@ -14,6 +14,20 @@ import type {
   ContainerType,
 } from '@nepocorp/shared';
 
+/** Auto-paginate a crud-factory GET endpoint (capped at 100/page by backend). */
+async function fetchAllPaginated<T>(endpoint: string): Promise<T[]> {
+  const pageSize = 100;
+  const first = await api.get<PaginatedResponse<T>>(`${endpoint}?limit=${pageSize}&page=1`);
+  const totalPages = Math.ceil(first.total / pageSize);
+  if (totalPages <= 1) return first.items;
+  const remaining = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, i) =>
+      api.get<PaginatedResponse<T>>(`${endpoint}?limit=${pageSize}&page=${i + 2}`)
+    ),
+  );
+  return [first, ...remaining].flatMap(r => r.items);
+}
+
 export const configClient = {
   getCustomers: async (page: number, search: string) => {
     const qs = new URLSearchParams({ page: String(page), limit: '10' });
@@ -21,15 +35,12 @@ export const configClient = {
     return api.get<{ items: any[]; total: number }>(`${CONFIG.CUSTOMERS}?${qs}`);
   },
 
-  getTrucks: async (params?: { pageSize?: number }) => {
-    const qs = new URLSearchParams();
-    if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return api.get<PaginatedResponse<Truck>>(`${CONFIG.TRUCKS}${query}`);
+  getTrucks: async () => {
+    return fetchAllPaginated<Truck>(CONFIG.TRUCKS);
   },
 
   getDrivers: async () => {
-    return api.get<PaginatedResponse<Driver>>(CONFIG.DRIVERS);
+    return fetchAllPaginated<Driver>(CONFIG.DRIVERS);
   },
 
   getSuppliers: async (page?: number, search?: string) => {
@@ -49,7 +60,7 @@ export const configClient = {
   },
 
   getCapTable: async () => {
-    return api.get<PaginatedResponse<CapTableHistory>>(CONFIG.CAP_TABLE);
+    return fetchAllPaginated<CapTableHistory>(CONFIG.CAP_TABLE);
   },
 
   getFuelConfig: async () => {
@@ -76,19 +87,19 @@ export const configClient = {
   },
 
   getPorts: async () => {
-    return api.get<PaginatedResponse<Port>>('/ports');
+    return fetchAllPaginated<Port>('/ports');
   },
 
   getContainerTypes: async () => {
-    return api.get<PaginatedResponse<ContainerType>>('/container-types');
+    return fetchAllPaginated<ContainerType>('/container-types');
   },
 
   getRoutesList: async () => {
-    return api.get<PaginatedResponse<any>>('/routes?limit=500');
+    return fetchAllPaginated<any>('/routes');
   },
 
   getAllCustomers: async () => {
-    return api.get<{ items: any[]; total: number }>(`${CONFIG.CUSTOMERS}?limit=500`);
+    return fetchAllPaginated<any>(CONFIG.CUSTOMERS);
   },
 
   getSalaryPeriodResolve: async (month: number, year: number) => {
@@ -96,7 +107,7 @@ export const configClient = {
   },
 
   getPenaltyReasons: async () => {
-    return api.get<PaginatedResponse<any>>(CONFIG.PENALTY_REASONS);
+    return fetchAllPaginated<any>(CONFIG.PENALTY_REASONS);
   },
 
   getFuelPriceHistory: async () => {

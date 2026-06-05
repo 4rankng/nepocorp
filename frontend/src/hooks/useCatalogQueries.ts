@@ -15,10 +15,7 @@ import type {
 export function useCapTable() {
   return useQuery<CapTableHistory[]>({
     queryKey: ['cap-table'],
-    queryFn: async () => {
-      const res = await configClient.getCapTable();
-      return res.items;
-    },
+    queryFn: () => configClient.getCapTable(),
   });
 }
 
@@ -51,14 +48,11 @@ export function useTrucksAndDrivers(options?: { enabled?: boolean }) {
   return useQuery<{ trucks: TruckType[]; drivers: DriverType[] }>({
     queryKey: ['trucks-drivers'],
     queryFn: async () => {
-      const [trucksRes, driversRes] = await Promise.all([
-        configClient.getTrucks({ pageSize: 50 }),
+      const [trucks, drivers] = await Promise.all([
+        configClient.getTrucks(),
         configClient.getDrivers(),
       ]);
-      return {
-        trucks: trucksRes.items,
-        drivers: driversRes.items,
-      };
+      return { trucks, drivers };
     },
     enabled: options?.enabled ?? true,
   });
@@ -122,30 +116,21 @@ export function useSaveRoadConfig() {
 export function usePorts() {
   return useQuery<PortType[]>({
     queryKey: ['ports'],
-    queryFn: async () => {
-      const res = await configClient.getPorts();
-      return res.items;
-    },
+    queryFn: () => configClient.getPorts(),
   });
 }
 
 export function useContainerTypes() {
   return useQuery<ContainerTypeType[]>({
     queryKey: ['container-types'],
-    queryFn: async () => {
-      const res = await configClient.getContainerTypes();
-      return res.items;
-    },
+    queryFn: () => configClient.getContainerTypes(),
   });
 }
 
 export function useRoutesDropdown() {
   return useQuery({
     queryKey: ['routes-dropdown'],
-    queryFn: async () => {
-      const res = await configClient.getRoutesList();
-      return res.items;
-    },
+    queryFn: () => configClient.getRoutesList(),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -153,10 +138,7 @@ export function useRoutesDropdown() {
 export function useAllCustomers() {
   return useQuery({
     queryKey: ['all-customers'],
-    queryFn: async () => {
-      const res = await configClient.getAllCustomers();
-      return res.items;
-    },
+    queryFn: () => configClient.getAllCustomers(),
     staleTime: 5 * 60 * 1000,
   });
 }

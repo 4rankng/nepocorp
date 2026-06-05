@@ -41,7 +41,17 @@ const ENTITY_LABELS: Record<string, string> = {
   'container-instances': 'thông tin container',
   notifications: 'thông báo',
   forwarder: 'nhân viên điều phối',
+  salary: 'lương và chấm công',
+  ledger: 'sổ cái',
+  finance: 'tài chính',
+  driver: 'lái xe',
+  photos: 'hình ảnh chứng từ',
+  maps: 'bản đồ',
+  advances: 'yêu cầu tạm ứng',
+  settlements: 'phiếu thanh toán',
+  'fuel-price-history': 'lịch sử giá nhiên liệu',
 };
+
 
 interface TemplateContext {
   role: string;

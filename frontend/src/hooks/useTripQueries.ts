@@ -137,8 +137,8 @@ export function useDispatchData() {
         tripClient.fetchAllTrips({ status: 'IN_TRANSIT' }),
       ]);
       return {
-        drivers: driversRes.items,
-        trucks: trucksRes.items,
+        drivers: driversRes,
+        trucks: trucksRes,
         pendingTrips: pendingRes.items.map(normalizeTrip),
         activeTrips: activeRes.items.map(normalizeTrip),
         pendingTotal: pendingRes.total,
