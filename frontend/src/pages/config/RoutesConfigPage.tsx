@@ -356,12 +356,12 @@ export default function RoutesConfigPage() {
 
   useEffect(() => {
     if (selectedRoute && selectedRoute.defaultLegs && Array.isArray(selectedRoute.defaultLegs)) {
-      const legs = selectedRoute.defaultLegs.map(l => ({
+      const legs = (selectedRoute.defaultLegs as NonNullable<RouteType['defaultLegs']>).map((l: NonNullable<RouteType['defaultLegs']>[number]) => ({
         ...l,
         polylinePath: null as string | null
       }));
       setSelectedRouteLegs(legs);
-      
+
       legs.forEach(async (leg, idx) => {
         if (leg.origin && leg.destination && leg.origin !== leg.destination) {
           try {
