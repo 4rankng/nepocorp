@@ -7,7 +7,6 @@ import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { ContainerType } from '@nepocorp/shared';
-import type { PaginatedResponse } from '@nepocorp/shared';
 import './config-list.css';
 import './config-page.css';
 
@@ -164,7 +163,7 @@ export default function ContainerTypesConfigPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data, refetch } = useQuery({
-    queryKey: ['/container-types'],
+    queryKey: ['container-types'],
     queryFn: () => configClient.getContainerTypes(),
   });
 

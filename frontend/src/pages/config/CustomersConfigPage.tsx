@@ -98,7 +98,7 @@ export default function CustomersConfigPage() {
         search
           ? (await api.get<PaginatedResponse<Customer>>(`/customers?search=${encodeURIComponent(search)}&limit=100`)).items
           : configClient.getAllCustomers(),
-        tripClient.fetchAllTrips({}),
+        tripClient.fetchAllTrips({}).catch(() => ({ items: [] as any[], total: 0 })),
       ]);
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;

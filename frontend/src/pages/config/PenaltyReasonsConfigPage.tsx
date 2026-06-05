@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
-import type { PenaltyReason, PaginatedResponse } from '@nepocorp/shared';
+import type { PenaltyReason } from '@nepocorp/shared';
 
 /* ─── Page-scoped styles ─── */
 const pageStyles = `
@@ -273,7 +273,7 @@ export default function PenaltyReasonsConfigPage() {
   }, []);
 
   const { data, refetch, isLoading } = useQuery({
-    queryKey: ['/penalty-reasons'],
+    queryKey: ['penalty-reasons'],
     queryFn: () => configClient.getPenaltyReasons(),
   });
 

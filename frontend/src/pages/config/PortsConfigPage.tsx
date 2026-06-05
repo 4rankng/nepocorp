@@ -7,7 +7,6 @@ import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { Port } from '@nepocorp/shared';
-import type { PaginatedResponse } from '@nepocorp/shared';
 import './config-list.css';
 import './config-page.css';
 
@@ -189,7 +188,7 @@ export default function PortsConfigPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data, refetch } = useQuery({
-    queryKey: ['/ports'],
+    queryKey: ['ports'],
     queryFn: () => configClient.getPorts(),
   });
 
