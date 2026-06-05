@@ -244,8 +244,8 @@ export async function computeSalary(
   // daily_rate based on standard_work_days (varies per month per spec §4.5.2)
   const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
 
-  // Adjustment: compared against standard_work_days for the month
-  const adjustment = (paidDays - standardWorkDays) * dailyRate;
+  // Adjustment: single rounding on proportion to avoid cumulative dailyRate error
+  const adjustment = Math.round(baseSalary * paidDays / standardWorkDays) - baseSalary;
 
   // Standby cost = standby_days * daily_rate (for P&L / indirect labor)
   const standbyCost = standbyDays * dailyRate;
