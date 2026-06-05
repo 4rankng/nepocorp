@@ -113,4 +113,24 @@ export const configClient = {
   getFuelPriceHistory: async () => {
     return api.get<FuelPriceHistory[]>('/fuel-price-history');
   },
+
+  getRoadAllowances: async () => {
+    return fetchAllPaginated<any>('/road-allowances');
+  },
+
+  getTrailers: async () => {
+    return fetchAllPaginated<any>('/trailers');
+  },
+
+  getPricingTables: async () => {
+    return fetchAllPaginated<any>('/pricing-tables');
+  },
+
+  getAllSuppliers: async () => {
+    return fetchAllPaginated<Supplier>(CONFIG.SUPPLIERS);
+  },
+
+  getAllExpenseCategories: async () => {
+    return fetchAllPaginated<ExpenseCategory>(CONFIG.EXPENSE_CATEGORIES);
+  },
 };

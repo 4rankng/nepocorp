@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Upload, X, Image as ImageIcon, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
+import { configClient } from '../api/configClient';
 import { formatCurrency } from '../lib/format';
 import { PageHeader, FormGroup } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -75,14 +76,14 @@ export default function ExpenseEntryPage() {
   useQuery({
     queryKey: ['expense-form-catalogs'],
     queryFn: async () => {
-      const [supRes, catRes] = await Promise.all([
-        api.get<PaginatedResponse<Supplier>>(CONFIG.SUPPLIERS),
-        api.get<PaginatedResponse<ExpenseCategory>>(CONFIG.EXPENSE_CATEGORIES),
+      const [suppliers, categories] = await Promise.all([
+        configClient.getAllSuppliers(),
+        configClient.getAllExpenseCategories(),
       ]);
-      setSuppliers(supRes.items);
-      setCategories(catRes.items);
+      setSuppliers(suppliers);
+      setCategories(categories);
       setCatalogsLoaded(true);
-      return { suppliers: supRes.items, categories: catRes.items };
+      return { suppliers, categories };
     },
     enabled: !catalogsLoaded,
     staleTime: 5 * 60 * 1000,

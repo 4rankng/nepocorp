@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { Port } from '@nepocorp/shared';
@@ -189,10 +190,7 @@ export default function PortsConfigPage() {
 
   const { data, refetch } = useQuery({
     queryKey: ['/ports'],
-    queryFn: async () => {
-      const r = await api.get<PaginatedResponse<Port>>('/ports');
-      return r.items;
-    },
+    queryFn: () => configClient.getPorts(),
   });
 
   const refresh = useCallback(async () => { await refetch(); }, [refetch]);

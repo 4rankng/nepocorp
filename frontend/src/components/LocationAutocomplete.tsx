@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
+import { configClient } from '../api/configClient';
 
 interface LocationAutocompleteProps {
   value: string;
@@ -54,12 +55,11 @@ export function LocationAutocomplete({
 
   // Ports catalog (Cảng / Bãi Hải Phòng — Pete's config catalog)
   // Cached for 5 min; fires once per session for all autocomplete inputs.
-  const { data: portsRes } = useQuery<{ items: PortRow[] }>({
+  const { data: ports = [] } = useQuery<PortRow[]>({
     queryKey: ['ports-catalog'],
-    queryFn: () => api.get('/ports?limit=200'),
+    queryFn: () => configClient.getPorts() as Promise<PortRow[]>,
     staleTime: 5 * 60 * 1000,
   });
-  const ports: PortRow[] = portsRes?.items ?? [];
 
   // Local fuzzy match against the ports catalog. We always show matching ports
   // FIRST so HP-area users can pick the canonical name in one tap. Google Places

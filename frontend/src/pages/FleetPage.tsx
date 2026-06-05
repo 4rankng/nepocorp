@@ -11,6 +11,7 @@ import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI
 import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { api } from '../lib/api';
+import { configClient } from '../api/configClient';
 import type { PaginatedResponse } from '@nepocorp/shared';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@nepocorp/shared';
 import type { Trailer, Truck as TruckType, Driver } from '@nepocorp/shared';
@@ -950,14 +951,13 @@ function DriverCard({ drivers, truckMap, crud }: {
 export default function FleetPage() {
   const queryClient = useQueryClient();
   const { data: fleetData } = useFleetData();
-  const { data: trailersData } = useQuery({
+  const { data: trailers = [] } = useQuery({
     queryKey: ['trailers'],
-    queryFn: () => api.get<PaginatedResponse<Trailer>>('/trailers'),
+    queryFn: () => configClient.getTrailers(),
     staleTime: 60_000,
   });
   const trucks = fleetData?.trucks ?? [];
   const drivers = fleetData?.drivers ?? [];
-  const trailers = trailersData?.items ?? [];
 
   const invalidateFleet = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['fleet'] });

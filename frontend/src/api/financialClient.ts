@@ -28,6 +28,23 @@ export const financialClient = {
     return api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}${query}`);
   },
 
+  getAllLedgerEntries: async (params?: { entityType?: string }) => {
+    const pageSize = 100;
+    let qs = `?limit=${pageSize}&page=1`;
+    if (params?.entityType) qs += `&entityType=${params.entityType}`;
+    const first = await api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}${qs}`);
+    const totalPages = Math.ceil(first.total / pageSize);
+    if (totalPages <= 1) return first.items;
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) => {
+        let pqs = `?limit=${pageSize}&page=${i + 2}`;
+        if (params?.entityType) pqs += `&entityType=${params.entityType}`;
+        return api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}${pqs}`);
+      }),
+    );
+    return [first, ...remaining].flatMap(r => r.items);
+  },
+
   getCustomerStatement: async (id: number) => {
     return api.get<CustomerStatement>(FINANCIAL.CUSTOMER_STATEMENT(id));
   },

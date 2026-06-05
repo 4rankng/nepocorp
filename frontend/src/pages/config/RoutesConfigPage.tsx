@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
+import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { PageHeader, useConfirm, Modal } from '../../components/UI';
 import { LocationAutocomplete } from '../../components/LocationAutocomplete';
@@ -326,16 +328,17 @@ export default function RoutesConfigPage() {
   const [selectedRouteLegs, setSelectedRouteLegs] = useState<any[]>([]);
 
   const fetchData = useCallback(async () => {
-    const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
-    const [routeRes, tripRes, raRes] = await Promise.all([
-      api.get<PaginatedResponse<RouteType>>(`/routes${qs}`),
-      api.get<{ items: any[] }>('/trips?limit=500').catch(() => ({ items: [] as any[] })),
-      api.get<PaginatedResponse<RoadAllowance>>('/road-allowances?limit=200').catch(() => ({ items: [] as any[] })),
+    const [routeList, tripRes, allowances] = await Promise.all([
+      search
+        ? (await api.get<PaginatedResponse<RouteType>>(`/routes?search=${encodeURIComponent(search)}&limit=100`)).items
+        : configClient.getRoutesList(),
+      tripClient.fetchAllTrips({}).then(r => r.items).catch(() => [] as any[]),
+      configClient.getRoadAllowances().catch(() => [] as any[]),
     ]);
     return {
-      routes: routeRes.items,
-      trips: (tripRes as any).items as any[],
-      allowances: (raRes as any).items as any[],
+      routes: routeList,
+      trips: tripRes,
+      allowances,
     };
   }, [search]);
 

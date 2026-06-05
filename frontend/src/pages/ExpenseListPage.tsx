@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, ChevronLeft, Receipt, AlertTriangle, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
+import { configClient } from '../api/configClient';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
@@ -68,14 +69,14 @@ export default function ExpenseListPage() {
   useQuery({
     queryKey: ['expense-catalogs'],
     queryFn: async () => {
-      const [supRes, catRes] = await Promise.all([
-        api.get<PaginatedResponse<Supplier>>(CONFIG.SUPPLIERS),
-        api.get<PaginatedResponse<ExpenseCategory>>(CONFIG.EXPENSE_CATEGORIES),
+      const [suppliers, categories] = await Promise.all([
+        configClient.getAllSuppliers(),
+        configClient.getAllExpenseCategories(),
       ]);
-      setSuppliers(supRes.items);
-      setCategories(catRes.items);
+      setSuppliers(suppliers);
+      setCategories(categories);
       setCatalogsLoaded(true);
-      return { suppliers: supRes.items, categories: catRes.items };
+      return { suppliers, categories };
     },
     enabled: !catalogsLoaded,
     staleTime: 5 * 60 * 1000,

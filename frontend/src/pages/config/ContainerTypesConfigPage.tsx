@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { ContainerType } from '@nepocorp/shared';
@@ -164,10 +165,7 @@ export default function ContainerTypesConfigPage() {
 
   const { data, refetch } = useQuery({
     queryKey: ['/container-types'],
-    queryFn: async () => {
-      const r = await api.get<PaginatedResponse<ContainerType>>('/container-types');
-      return r.items;
-    },
+    queryFn: () => configClient.getContainerTypes(),
   });
 
   const refresh = useCallback(async () => { await refetch(); }, [refetch]);

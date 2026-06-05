@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
-import { api } from "../lib/api";
-import type { PricingTable, PaginatedResponse } from "@nepocorp/shared";
+import { configClient } from "../api/configClient";
+import type { PricingTable } from "@nepocorp/shared";
 import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
 
 export interface SelectOption {
@@ -64,10 +64,7 @@ export function useTripOptions(): TripOptions {
   const pricingQuery = useQuery<PricingTable[]>({
     queryKey: ["pricing-tables"],
     staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const res = await api.get<PaginatedResponse<PricingTable>>("/pricing-tables");
-      return res.items ?? [];
-    },
+    queryFn: () => configClient.getPricingTables(),
   });
 
   const catalog = bootstrapQuery.data;

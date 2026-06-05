@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
 import type { PenaltyReason, PaginatedResponse } from '@nepocorp/shared';
@@ -273,10 +274,7 @@ export default function PenaltyReasonsConfigPage() {
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ['/penalty-reasons'],
-    queryFn: async () => {
-      const r = await api.get<PaginatedResponse<PenaltyReason>>('/penalty-reasons');
-      return r.items;
-    },
+    queryFn: () => configClient.getPenaltyReasons(),
   });
 
   const { data: statsData, refetch: refetchStats } = useQuery({

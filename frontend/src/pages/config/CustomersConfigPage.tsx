@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useConfirm, Modal } from '../../components/UI';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
+import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
@@ -92,10 +94,11 @@ export default function CustomersConfigPage() {
   const { data, refetch } = useQuery({
     queryKey: ['customers-config', search],
     queryFn: async () => {
-      const qs = search ? `?search=${encodeURIComponent(search)}&limit=100` : '?limit=100';
-      const [custRes, tripRes] = await Promise.all([
-        api.get<PaginatedResponse<Customer>>(`/customers${qs}`),
-        api.get<{ items: any[] }>('/trips?limit=500').catch(() => ({ items: [] as any[] })),
+      const [custList, tripRes] = await Promise.all([
+        search
+          ? (await api.get<PaginatedResponse<Customer>>(`/customers?search=${encodeURIComponent(search)}&limit=100`)).items
+          : configClient.getAllCustomers(),
+        tripClient.fetchAllTrips({}),
       ]);
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -112,7 +115,7 @@ export default function CustomersConfigPage() {
           }
         }
       });
-      return { customers: custRes.items, customerTripStats: statsMap };
+      return { customers: custList, customerTripStats: statsMap };
     },
     staleTime: 2 * 60 * 1000,
   });

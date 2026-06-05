@@ -142,3 +142,43 @@ export function useAllCustomers() {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export function useRoadAllowances() {
+  return useQuery({
+    queryKey: ['road-allowances'],
+    queryFn: () => configClient.getRoadAllowances(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTrailers() {
+  return useQuery({
+    queryKey: ['trailers'],
+    queryFn: () => configClient.getTrailers(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePricingTables() {
+  return useQuery({
+    queryKey: ['pricing-tables'],
+    queryFn: () => configClient.getPricingTables(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAllSuppliers() {
+  return useQuery({
+    queryKey: ['all-suppliers'],
+    queryFn: () => configClient.getAllSuppliers(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAllExpenseCategories() {
+  return useQuery({
+    queryKey: ['all-expense-categories'],
+    queryFn: () => configClient.getAllExpenseCategories(),
+    staleTime: 5 * 60 * 1000,
+  });
+}

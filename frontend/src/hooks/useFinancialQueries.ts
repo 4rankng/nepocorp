@@ -23,10 +23,7 @@ export function useCustomerStatement(id: string | undefined) {
 export function useCustomerLedgerEntries() {
   return useQuery<LedgerEntry[]>({
     queryKey: ['customer-ledger-entries'],
-    queryFn: async () => {
-      const res = await financialClient.getLedgerEntries({ entityType: 'CUSTOMER', limit: 2000 });
-      return res.items;
-    },
+    queryFn: () => financialClient.getAllLedgerEntries({ entityType: 'CUSTOMER' }),
     staleTime: 2 * 60 * 1000,
   });
 }

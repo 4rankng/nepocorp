@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Trash2, Save } from 'lucide-react';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
 
 /**
@@ -69,11 +70,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   // Container types from the global config catalog
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
     queryKey: ['container-types'],
-    queryFn: async () => {
-      const res = await api.get<{ items: ContainerType[] } | ContainerType[]>('/container-types?limit=100');
-      const items = Array.isArray(res) ? res : res.items;
-      return items ?? [];
-    },
+    queryFn: () => configClient.getContainerTypes(),
     staleTime: 5 * 60 * 1000,
   });
 

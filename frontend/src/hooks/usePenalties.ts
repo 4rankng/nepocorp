@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { configClient } from '../api/configClient';
 import type { Driver, PenaltyReason, Truck, PenaltyStatus } from '@nepocorp/shared';
 
 interface PenaltyRow {
@@ -38,16 +39,15 @@ export function usePenaltyCatalogs() {
   }>({
     queryKey: ['penalty-catalogs'],
     queryFn: async () => {
-      const [d, r, t] = await Promise.all([
-        api.get<any>('/drivers'),
-        api.get<any>('/penalty-reasons'),
-        api.get<any>('/trucks'),
+      const [drivers, reasons, trucks] = await Promise.all([
+        configClient.getDrivers(),
+        configClient.getPenaltyReasons(),
+        configClient.getTrucks(),
       ]);
-      const rawDrivers: any[] = Array.isArray(d) ? d : d.items ?? [];
       return {
-        drivers: rawDrivers.filter((x: any) => x.status === 'ACTIVE'),
-        reasons: Array.isArray(r) ? r : r.items ?? [],
-        trucks: Array.isArray(t) ? t : t.items ?? [],
+        drivers: drivers.filter((x: any) => x.status === 'ACTIVE'),
+        reasons,
+        trucks,
       };
     },
   });

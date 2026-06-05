@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { configClient } from '../../api/configClient';
 import { StatusPill } from '../../components/UI';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -53,13 +54,11 @@ function DriverForm({ saving, item, onsave, oncancel, truckList }: {
 }
 
 export default function DriversConfigPage() {
-  const { data: trucksData } = useQuery({
+  const { data: truckList = [] } = useQuery({
     queryKey: ['trucks-for-drivers-config'],
-    queryFn: () => api.get<PaginatedResponse<Truck>>('/trucks'),
+    queryFn: () => configClient.getTrucks(),
     staleTime: 5 * 60 * 1000,
   });
-
-  const truckList = trucksData?.items ?? [];
   const truckMap = useMemo(() => {
     const m = new Map<number, string>();
     truckList.forEach(tk => m.set(tk.id, tk.licensePlate));
