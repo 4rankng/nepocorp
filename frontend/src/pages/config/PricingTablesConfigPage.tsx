@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import { api } from '../../lib/api';
+import { useState, useMemo } from 'react';
 import { formatCurrency } from '../../lib/format';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
-import type { PricingTable, Customer, Route as RouteType, PaginatedResponse } from '@nepocorp/shared';
+import { useAllCustomers, useRoutesDropdown } from '../../hooks/useCatalogQueries';
+import type { PricingTable, Customer, Route as RouteType } from '@nepocorp/shared';
 
 function PricingForm({ saving, item, onsave, oncancel, customers, routes }: {
   saving: boolean; item?: PricingTable; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
@@ -41,8 +41,8 @@ function PricingForm({ saving, item, onsave, oncancel, customers, routes }: {
 }
 
 export default function PricingTablesConfigPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [routes, setRoutes] = useState<RouteType[]>([]);
+  const { data: customers = [] } = useAllCustomers();
+  const { data: routes = [] } = useRoutesDropdown();
   const customerMap = useMemo(() => {
     const m = new Map<number, string>();
     customers.forEach(c => m.set(c.id, c.name));
@@ -53,11 +53,6 @@ export default function PricingTablesConfigPage() {
     routes.forEach(r => m.set(r.id, r.name));
     return m;
   }, [routes]);
-
-  useEffect(() => {
-    api.get<PaginatedResponse<Customer>>('/customers').then(r => setCustomers(r.items));
-    api.get<PaginatedResponse<RouteType>>('/routes').then(r => setRoutes(r.items));
-  }, []);
 
   return (
     <CrudTable<PricingTable>

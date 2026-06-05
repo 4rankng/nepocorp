@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Field } from '../../components/config/Field';
-import { api } from '../../lib/api';
-import { useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Settings2, Info } from 'lucide-react';
-import type { SalaryPeriodDefault } from '../../api/salaryClient';
+import { useSalaryPeriodDefault, useUpdateSalaryPeriodDefault } from '../../hooks/useSalaryQueries';
 import './SalaryPeriodConfigPage.css';
-
-type DefaultConfig = Pick<SalaryPeriodDefault, 'id' | 'defaultStartDay' | 'defaultEndDay'>;
 
 /** Describe the default rule in human language */
 function describeDefault(startDay: number, endDay: number): string {
@@ -18,56 +14,40 @@ function describeDefault(startDay: number, endDay: number): string {
 }
 
 export default function SalaryPeriodConfigPage() {
-  const [defaultConfig, setDefaultConfig] = useState<DefaultConfig | null>(null);
+  const { data: defaultConfig, error: queryError } = useSalaryPeriodDefault();
+  const updateDefault = useUpdateSalaryPeriodDefault();
+
   const [mode, setMode] = useState<'calendar' | 'custom'>('calendar');
   const [startDay, setStartDay] = useState(26);
   const [endDay, setEndDay] = useState(25);
-  const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
-    api.get<DefaultConfig | null>('/salary-periods/default').then(row => {
-      if (row) {
-        setDefaultConfig(row);
-        const s = row.defaultStartDay ?? 1;
-        const e = row.defaultEndDay ?? 31;
-        if (s === 1 && e === 31) {
-          setMode('calendar');
-          setStartDay(26);
-          setEndDay(25);
-        } else {
-          setMode('custom');
-          setStartDay(s);
-          setEndDay(e);
-        }
+    if (defaultConfig) {
+      const s = defaultConfig.defaultStartDay ?? 1;
+      const e = defaultConfig.defaultEndDay ?? 31;
+      if (s === 1 && e === 31) {
+        setMode('calendar');
+        setStartDay(26);
+        setEndDay(25);
+      } else {
+        setMode('custom');
+        setStartDay(s);
+        setEndDay(e);
       }
-    }).catch(() => setLoadError(true));
-  }, []);
+    }
+  }, [defaultConfig]);
 
   async function saveDefault() {
-    setSaving(true);
     setSaveSuccess(false);
     try {
       const s = mode === 'calendar' ? 1 : startDay;
       const e = mode === 'calendar' ? 31 : endDay;
-      const result = await api.put<DefaultConfig>('/salary-periods/default', {
-        defaultStartDay: s,
-        defaultEndDay: e,
-      });
-      setDefaultConfig(result);
+      await updateDefault.mutateAsync({ startDay: s, endDay: e });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
-
-      // Invalidate related queries so SalaryAttendancePage sees the new period
-      queryClient.invalidateQueries({ queryKey: ['driver-workdays'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-salary'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-list'] });
     } catch {
-      setLoadError(true);
-    } finally {
-      setSaving(false);
+      // Error surfaced via updateDefault.error state
     }
   }
 
@@ -198,7 +178,7 @@ export default function SalaryPeriodConfigPage() {
             </div>
           )}
 
-          {loadError && (
+          {queryError && (
             <p className="sp-hint sp-hint--warn">Không thể tải cấu hình hiện tại — backend có thể đang khởi động.</p>
           )}
 
@@ -206,10 +186,10 @@ export default function SalaryPeriodConfigPage() {
             <button
               className="btn btn--primary"
               onClick={saveDefault}
-              disabled={saving}
+              disabled={updateDefault.isPending}
               style={{ minWidth: 140 }}
             >
-              {saving ? 'Đang lưu…' : 'Lưu mặc định'}
+              {updateDefault.isPending ? 'Đang lưu…' : 'Lưu mặc định'}
             </button>
             {saveSuccess && (
               <span className="sp-save-success">✓ Đã lưu thành công</span>

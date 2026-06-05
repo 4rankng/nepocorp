@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configClient } from '../api/configClient';
 import { userClient } from '../api/userClient';
 import type {
@@ -8,6 +8,8 @@ import type {
   RoadConfig,
   SalaryPeriodRange,
   CapTableHistory,
+  Port as PortType,
+  ContainerType as ContainerTypeType,
 } from '@nepocorp/shared';
 
 export function useCapTable() {
@@ -87,5 +89,74 @@ export function useUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: () => userClient.getUsers(),
+  });
+}
+
+/* ── Config mutations ── */
+
+export function useSaveFuelConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof configClient.saveFuelConfig>[0]) =>
+      configClient.saveFuelConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fuel-config'] });
+      queryClient.invalidateQueries({ queryKey: ['cfg-count', 'fuel-config'] });
+    },
+  });
+}
+
+export function useSaveRoadConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof configClient.saveRoadConfig>[0]) =>
+      configClient.saveRoadConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['road-config'] });
+    },
+  });
+}
+
+/* ── Config entity queries (for pages that currently use raw api.get) ── */
+
+export function usePorts() {
+  return useQuery<PortType[]>({
+    queryKey: ['ports'],
+    queryFn: async () => {
+      const res = await configClient.getPorts();
+      return res.items;
+    },
+  });
+}
+
+export function useContainerTypes() {
+  return useQuery<ContainerTypeType[]>({
+    queryKey: ['container-types'],
+    queryFn: async () => {
+      const res = await configClient.getContainerTypes();
+      return res.items;
+    },
+  });
+}
+
+export function useRoutesDropdown() {
+  return useQuery({
+    queryKey: ['routes-dropdown'],
+    queryFn: async () => {
+      const res = await configClient.getRoutesList();
+      return res.items;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAllCustomers() {
+  return useQuery({
+    queryKey: ['all-customers'],
+    queryFn: async () => {
+      const res = await configClient.getAllCustomers();
+      return res.items;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }

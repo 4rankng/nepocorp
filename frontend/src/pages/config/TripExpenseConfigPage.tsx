@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { Save, Loader2 } from 'lucide-react';
-import { api } from '../../lib/api';
+import { useRoadConfig, useSaveRoadConfig } from '../../hooks/useCatalogQueries';
 import { PageHeader, Panel } from '../../components/UI';
-import type { RoadConfig } from '@nepocorp/shared';
 import './config-page.css';
 
 export default function TripExpenseConfigPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { data: roadConfig } = useRoadConfig();
+  const saveRoad = useSaveRoadConfig();
   const [form, setForm] = useState({
     defaultDriverSalary: '400000',
     twoPointDeliveryBonus: '200000',
@@ -21,31 +20,28 @@ export default function TripExpenseConfigPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<RoadConfig | null>('/road-config').then(rc => {
-      if (rc) {
-        setForm({
-          defaultDriverSalary: rc.defaultDriverSalary ?? '400000',
-          twoPointDeliveryBonus: rc.twoPointDeliveryBonus ?? '200000',
-          vehicleShiftDefault: rc.vehicleShiftDefault ?? '200000',
-          tollPerStation: rc.tollPerStation ?? '55000',
-          returnCargoBonus: rc.returnCargoBonus ?? '300000',
-        });
-      }
-    });
-  }, []);
+    if (roadConfig) {
+      setForm({
+        defaultDriverSalary: roadConfig.defaultDriverSalary ?? '400000',
+        twoPointDeliveryBonus: roadConfig.twoPointDeliveryBonus ?? '200000',
+        vehicleShiftDefault: roadConfig.vehicleShiftDefault ?? '200000',
+        tollPerStation: roadConfig.tollPerStation ?? '55000',
+        returnCargoBonus: roadConfig.returnCargoBonus ?? '300000',
+      });
+    }
+  }, [roadConfig]);
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
     try {
-      await api.put('/road-config', {
+      await saveRoad.mutateAsync({
         tollPerStation: Number(form.tollPerStation),
         returnCargoBonus: Number(form.returnCargoBonus),
         defaultDriverSalary: Number(form.defaultDriverSalary),
         twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus),
         vehicleShiftDefault: Number(form.vehicleShiftDefault),
       });
-      queryClient.invalidateQueries({ queryKey: ['road-config'] });
       navigate('/config');
     } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };

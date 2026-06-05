@@ -9,8 +9,10 @@ import type {
   PaginatedResponse,
 } from "@nepocorp/shared";
 
+type ListTripsParams = { status?: string; limit?: number; page?: number; dateFrom?: string; dateTo?: string; search?: string; truckId?: number; customerId?: number };
+
 export const tripClient = {
-  listTrips: async (params?: { status?: string; limit?: number; page?: number; dateFrom?: string; dateTo?: string; search?: string; truckId?: number; customerId?: number }) => {
+  listTrips: async (params?: ListTripsParams) => {
     const query = new URLSearchParams();
     if (params?.status) query.append("status", params.status);
     if (params?.limit) query.append("limit", String(params.limit));
@@ -22,6 +24,21 @@ export const tripClient = {
     if (params?.customerId) query.append("customerId", String(params.customerId));
     const queryString = query.toString() ? `?${query.toString()}` : "";
     return api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${queryString}`);
+  },
+
+  /** Fetch all pages of trips for a given filter set. */
+  fetchAllTrips: async (params: Omit<ListTripsParams, 'page'> & { limit?: number }): Promise<{ items: TripDetail[]; total: number }> => {
+    const pageSize = params.limit ?? 100;
+    const first = await tripClient.listTrips({ ...params, limit: pageSize, page: 1 });
+    const totalPages = Math.ceil(first.total / pageSize);
+    if (totalPages <= 1) return { items: first.items, total: first.total };
+    const remaining = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) =>
+        tripClient.listTrips({ ...params, limit: pageSize, page: i + 2 })
+      ),
+    );
+    const allItems = [first, ...remaining].flatMap(r => r.items);
+    return { items: allItems, total: first.total };
   },
 
   getTripsSummary: async (params?: { dateFrom?: string; dateTo?: string }) => {

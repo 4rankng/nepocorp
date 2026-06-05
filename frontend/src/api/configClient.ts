@@ -10,6 +10,8 @@ import type {
   Supplier,
   ExpenseCategory,
   PaginatedResponse,
+  Port,
+  ContainerType,
 } from '@nepocorp/shared';
 
 export const configClient = {
@@ -54,8 +56,39 @@ export const configClient = {
     return api.get<FuelConfig | null>(CONFIG.FUEL_CONFIG);
   },
 
+  saveFuelConfig: async (data: {
+    loadedNorm: number; emptyNorm: number; supplement: number;
+    unitPrice: number; warningThreshold: number; criticalThreshold: number;
+  }) => {
+    return api.put<FuelConfig>('/fuel-config', data);
+  },
+
   getRoadConfig: async () => {
     return api.get<RoadConfig | null>(CONFIG.ROAD_CONFIG);
+  },
+
+  saveRoadConfig: async (data: {
+    tollPerStation: number; returnCargoBonus: number;
+    defaultDriverSalary: number; twoPointDeliveryBonus: number;
+    vehicleShiftDefault: number;
+  }) => {
+    return api.put<RoadConfig>('/road-config', data);
+  },
+
+  getPorts: async () => {
+    return api.get<PaginatedResponse<Port>>('/ports');
+  },
+
+  getContainerTypes: async () => {
+    return api.get<PaginatedResponse<ContainerType>>('/container-types');
+  },
+
+  getRoutesList: async () => {
+    return api.get<PaginatedResponse<any>>('/routes?limit=500');
+  },
+
+  getAllCustomers: async () => {
+    return api.get<{ items: any[]; total: number }>(`${CONFIG.CUSTOMERS}?limit=500`);
   },
 
   getSalaryPeriodResolve: async (month: number, year: number) => {

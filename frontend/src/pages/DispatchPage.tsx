@@ -18,6 +18,7 @@ export default function DispatchPage() {
   const trucks: Truck[] = (data?.trucks ?? []).map((t: any) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' }));
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
   const activeTrips: NormalizedTrip[] = data?.activeTrips ?? [];
+  const pendingTotal: number = data?.pendingTotal ?? 0;
   const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
 
   const { actionLoading, dispatching, toasts, setToasts, handleDispatch, confirmDialog } = useDispatchMutations(pendingTrips);
@@ -56,7 +57,7 @@ export default function DispatchPage() {
           <div className="hero-title-block">
             <div className="hero-eyebrow">Phiên điều vận đang mở</div>
             <h1 className="hero-h1">Điều vận hôm nay</h1>
-            <div className="hero-sub">{formatFullDate(new Date())} · {pendingTrips.length} đơn hàng chờ phân xe</div>
+            <div className="hero-sub">{formatFullDate(new Date())} · {pendingTotal} đơn hàng chờ phân xe</div>
           </div>
           <div className="hero-actions">
             <button className="btn-d btn-d--ghost-dark" type="button" disabled><Download size={15} /> Xuất báo cáo</button>
@@ -98,7 +99,7 @@ export default function DispatchPage() {
         ) : pendingTrips.map((trip) => (
           <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
         ))}
-        {pendingTrips.length > 0 && <div className="orders-foot"><span>Hiển thị {pendingTrips.length} đơn hàng</span><Link to='/trips'>Lịch sử điều vận →</Link></div>}
+        {pendingTrips.length > 0 && <div className="orders-foot"><span>{pendingTotal} đơn hàng</span><Link to='/trips'>Lịch sử điều vận →</Link></div>}
       </div>
       {confirmDialog}
     </div>

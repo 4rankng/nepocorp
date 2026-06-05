@@ -125,20 +125,24 @@ export function useDispatchData() {
     trucks: TruckType[];
     pendingTrips: NormalizedTrip[];
     activeTrips: NormalizedTrip[];
+    pendingTotal: number;
+    activeTotal: number;
   }>({
     queryKey: ['dispatch'],
     queryFn: async () => {
       const [driversRes, trucksRes, pendingRes, activeRes] = await Promise.all([
         configClient.getDrivers(),
         configClient.getTrucks(),
-        tripClient.listTrips({ status: 'CREATED', limit: 100 }),
-        tripClient.listTrips({ status: 'IN_TRANSIT', limit: 100 }),
+        tripClient.fetchAllTrips({ status: 'CREATED' }),
+        tripClient.fetchAllTrips({ status: 'IN_TRANSIT' }),
       ]);
       return {
         drivers: driversRes.items,
         trucks: trucksRes.items,
         pendingTrips: pendingRes.items.map(normalizeTrip),
         activeTrips: activeRes.items.map(normalizeTrip),
+        pendingTotal: pendingRes.total,
+        activeTotal: activeRes.total,
       };
     },
   });

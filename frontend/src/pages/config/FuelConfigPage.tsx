@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { Save, Loader2 } from 'lucide-react';
 import { Clock, User } from 'lucide-react';
-import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
+import { useFuelConfig, useSaveFuelConfig } from '../../hooks/useCatalogQueries';
 import { PageHeader, Panel } from '../../components/UI';
-import type { FuelConfig, FuelPriceHistory } from '@nepocorp/shared';
+import type { FuelPriceHistory } from '@nepocorp/shared';
 import './config-page.css';
 
 export default function FuelConfigPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { data: fuelConfig } = useFuelConfig();
+  const saveFuel = useSaveFuelConfig();
   const [form, setForm] = useState({
     loadedNorm: '', emptyNorm: '', supplement: '', unitPrice: '',
     warningThreshold: '37', criticalThreshold: '40',
@@ -22,20 +22,18 @@ export default function FuelConfigPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
-    api.get<FuelConfig | null>('/fuel-config').then(fc => {
-      if (fc) {
-        const f = fc as any;
-        setForm({
-          loadedNorm: f.loadedNorm ?? f.loaded_norm ?? '',
-          emptyNorm: f.emptyNorm ?? f.empty_norm ?? '',
-          supplement: f.supplement ?? '0',
-          unitPrice: f.unitPrice ?? f.unit_price ?? '',
-          warningThreshold: f.warningThreshold ?? f.warning_threshold ?? '37',
-          criticalThreshold: f.criticalThreshold ?? f.critical_threshold ?? '40',
-        });
-      }
-    });
-  }, []);
+    if (fuelConfig) {
+      const f = fuelConfig as any;
+      setForm({
+        loadedNorm: f.loadedNorm ?? f.loaded_norm ?? '',
+        emptyNorm: f.emptyNorm ?? f.empty_norm ?? '',
+        supplement: f.supplement ?? '0',
+        unitPrice: f.unitPrice ?? f.unit_price ?? '',
+        warningThreshold: f.warningThreshold ?? f.warning_threshold ?? '37',
+        criticalThreshold: f.criticalThreshold ?? f.critical_threshold ?? '40',
+      });
+    }
+  }, [fuelConfig]);
 
   useEffect(() => {
     configClient.getFuelPriceHistory().then(setHistory).catch(() => {}).finally(() => setHistoryLoading(false));
@@ -45,7 +43,7 @@ export default function FuelConfigPage() {
     setSaving(true);
     setError(null);
     try {
-      await api.put('/fuel-config', {
+      await saveFuel.mutateAsync({
         loadedNorm: Number(form.loadedNorm),
         emptyNorm: Number(form.emptyNorm),
         supplement: Number(form.supplement) || 0,
@@ -53,9 +51,6 @@ export default function FuelConfigPage() {
         warningThreshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
         criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
-      // Invalidate TanStack caches so other pages (TripEdit, TotalsPanel) see the new price.
-      queryClient.invalidateQueries({ queryKey: ['fuel-config'] });
-      queryClient.invalidateQueries({ queryKey: ['cfg-count', 'fuel-config'] });
       navigate('/config');
     } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };
