@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationClient } from '../lib/notificationClient';
-import type { Notification } from '@nepocorp/shared';
+import type { Notification } from '@tingting/shared';
 
 export function useUnreadCount(options?: { enabled?: boolean }) {
   return useQuery<{ count: number }>({

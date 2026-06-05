@@ -3,7 +3,7 @@ import { db } from '../db';
 import { notifications } from '../db/schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as s from '../db/schema';
-import { Role, NotificationType, FINANCIAL_ROLES } from '@nepocorp/shared';
+import { Role, NotificationType, FINANCIAL_ROLES } from '@tingting/shared';
 
 const eventBus = new EventEmitter();
 eventBus.setMaxListeners(50);

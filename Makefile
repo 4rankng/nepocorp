@@ -9,7 +9,7 @@
 
 # ─── Full dev environment ─────────────────────────────────────────────────────
 dev: ## Start everything (db, redis, backend, frontend)
-	@echo "Starting NEPO dev environment..."
+	@echo "Starting TingTing dev environment..."
 	@docker compose -f docker-compose.dev.yml up -d --wait 2>/dev/null || \
 		docker-compose -f docker-compose.dev.yml up -d
 	@echo "Waiting for database..."
@@ -127,16 +127,16 @@ prod-migrate:
 		basename=$$(basename "$$f"); \
 		echo "  Copying $$basename..."; \
 		scp "$$f" root@$(PROD_SERVER):/tmp/$$basename; \
-		ssh root@$(PROD_SERVER) "docker cp /tmp/$$basename nepocorp-postgres-1:/tmp/$$basename"; \
+		ssh root@$(PROD_SERVER) "docker cp /tmp/$$basename tingting-postgres-1:/tmp/$$basename"; \
 		echo "  Applying $$basename..."; \
-		ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
+		ssh root@$(PROD_SERVER) "docker exec tingting-postgres-1 psql -U tingting -d tingting \
 			-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$$basename" \
 			&& echo "  ✅ $$basename" \
 			|| echo "  ⚠️  $$basename skipped (already applied)"; \
 		ssh root@$(PROD_SERVER) "rm -f /tmp/$$basename"; \
 	done
 	@echo "==> Restarting backend..."
-	ssh root@$(PROD_SERVER) "docker restart nepocorp-backend-1"
+	ssh root@$(PROD_SERVER) "docker restart tingting-backend-1"
 	@echo "==> ✅ All migrations applied"
 
 ## prod-migrate-file: Apply a single migration file (make prod-migrate-file FILE=0022_cool_hydra.sql)
@@ -144,8 +144,8 @@ prod-migrate-file:
 	@test -n "$(FILE)" || (echo "Usage: make prod-migrate-file FILE=0022_cool_hydra.sql" && exit 1)
 	@echo "==> Applying $(FILE) on production..."
 	scp backend/drizzle/$(FILE) root@$(PROD_SERVER):/tmp/$(FILE)
-	ssh root@$(PROD_SERVER) "docker cp /tmp/$(FILE) nepocorp-postgres-1:/tmp/$(FILE)"
-	ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
+	ssh root@$(PROD_SERVER) "docker cp /tmp/$(FILE) tingting-postgres-1:/tmp/$(FILE)"
+	ssh root@$(PROD_SERVER) "docker exec tingting-postgres-1 psql -U tingting -d tingting \
 		-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$(FILE)"
 	ssh root@$(PROD_SERVER) "rm -f /tmp/$(FILE)"
 	@echo "==> ✅ $(FILE) applied"
@@ -153,21 +153,21 @@ prod-migrate-file:
 ## deploy-infra: Restart infra services (postgres, redis) on droplet
 deploy-infra:
 	@echo "Restarting infrastructure services on production..."
-	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate postgres redis"
+	ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate postgres redis"
 	@echo "Infrastructure restarted."
 
 ## backup: Dump production PostgreSQL DB → OneDrive
 backup:
 	@echo "💾 Starting database backup from production..."
 	@TIMESTAMP=$$(date +%Y-%m-%d_%H%M%S) && \
-	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
-	BACKUP_FILE="nepo_pg_backup_$$TIMESTAMP.sql" && \
-	BACKUP_FILE_GZ="nepo_pg_backup_$$TIMESTAMP.sql.gz" && \
+	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/tingting_db_backup" && \
+	BACKUP_FILE="tingting_pg_backup_$$TIMESTAMP.sql" && \
+	BACKUP_FILE_GZ="tingting_pg_backup_$$TIMESTAMP.sql.gz" && \
 	mkdir -p "$$BACKUP_DIR" && \
-	echo "📊 Creating PostgreSQL dump of nepocorp database..." && \
+	echo "📊 Creating PostgreSQL dump of tingting database..." && \
 	ssh root@$(PROD_SERVER) \
-		"docker exec nepocorp-postgres-1 \
-		pg_dump -U nepocorp nepocorp > /tmp/$$BACKUP_FILE" && \
+		"docker exec tingting-postgres-1 \
+		pg_dump -U tingting tingting > /tmp/$$BACKUP_FILE" && \
 	echo "🗜️  Compressing..." && \
 	ssh root@$(PROD_SERVER) "gzip /tmp/$$BACKUP_FILE" && \
 	ssh root@$(PROD_SERVER) \
@@ -185,9 +185,9 @@ restore:
 	docker compose -f docker-compose.dev.yml up -d --wait db 2>/dev/null || \
 		docker-compose -f docker-compose.dev.yml up -d db && \
 	echo "⏳ Waiting for DB to be ready..." && \
-	until docker exec nepo-db pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done && \
-	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
-	LATEST=$$(ls -t "$$BACKUP_DIR"/nepo_pg_backup_*.sql.gz 2>/dev/null | head -1) && \
+	until docker exec tingting-db pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done && \
+	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/tingting_db_backup" && \
+	LATEST=$$(ls -t "$$BACKUP_DIR"/tingting_pg_backup_*.sql.gz 2>/dev/null | head -1) && \
 	if [ -z "$$LATEST" ]; then echo "❌ No backup files found in $$BACKUP_DIR"; exit 1; fi && \
 	echo "📂 Using backup: $$LATEST" && \
 	echo "📊 Size: $$(du -h "$$LATEST" | cut -f1)" && \
@@ -195,27 +195,27 @@ restore:
 	gunzip -k -f "$$LATEST" && \
 	SQL_FILE="$${LATEST%.gz}" && \
 	echo "🗑️  Terminating active connections and recreating local database..." && \
-	docker exec nepo-db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'nepocorp' AND pid <> pg_backend_pid();" && \
-	docker exec nepo-db psql -U postgres -c "DROP DATABASE IF EXISTS nepocorp;" && \
-	docker exec nepo-db psql -U postgres -c "CREATE DATABASE nepocorp;" && \
+	docker exec tingting-db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'tingting' AND pid <> pg_backend_pid();" && \
+	docker exec tingting-db psql -U postgres -c "DROP DATABASE IF EXISTS tingting;" && \
+	docker exec tingting-db psql -U postgres -c "CREATE DATABASE tingting;" && \
 	echo "📥 Restoring backup into local database..." && \
-	docker exec -i nepo-db psql -U postgres -d nepocorp < "$$SQL_FILE" && \
+	docker exec -i tingting-db psql -U postgres -d tingting < "$$SQL_FILE" && \
 	rm -f "$$SQL_FILE" && \
 	echo "🔑 Resetting all user passwords to admin123..." && \
 	HASH=$$(cd backend && node -e "console.log(require('bcryptjs').hashSync('admin123',10))") && \
-	docker exec nepo-db psql -U postgres -d nepocorp -c "UPDATE users SET password_hash = '$$HASH';" && \
+	docker exec tingting-db psql -U postgres -d tingting -c "UPDATE users SET password_hash = '$$HASH';" && \
 	echo "✅ Restore complete! All passwords reset to admin123"
 
 ## adminer-on: Start adminer container on production
 adminer-on:
 	@echo "🔓 Enabling adminer on production..."
-	@ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml --profile adminer up -d adminer"
+	@ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml --profile adminer up -d adminer"
 	@echo "✅ Adminer: https://$(PROD_SERVER)/adminer"
 
 ## adminer-off: Stop adminer container on production (disables /adminer endpoint)
 adminer-off:
 	@echo "🔒 Disabling adminer on production..."
-	@ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml stop adminer"
+	@ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml stop adminer"
 	@echo "✅ Adminer container stopped — /adminer endpoint disabled"
 
 # ─── Help ──────────────────────────────────────────────────────────────────────

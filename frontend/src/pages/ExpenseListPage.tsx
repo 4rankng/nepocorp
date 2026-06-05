@@ -9,8 +9,8 @@ import { PageHeader } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
-import { FINANCIAL, CONFIG } from '@nepocorp/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@nepocorp/shared';
+import { FINANCIAL, CONFIG } from '@tingting/shared';
+import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;

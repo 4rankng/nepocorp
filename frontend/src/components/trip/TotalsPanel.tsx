@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
-import { computeTripTotals } from "@nepocorp/shared";
+import { computeTripTotals } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
 

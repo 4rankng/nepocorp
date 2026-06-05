@@ -4,7 +4,7 @@ import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
-} from '@nepocorp/shared';
+} from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
 import {
   useAdminAdvanceRequests,

@@ -19,7 +19,7 @@
 
 ### 1.1 Giới thiệu hệ thống
 
-**NEPOCORP** là hệ thống quản lý vận tải thay thế 7+ file Excel cho Công ty TNHH NEPO. Hệ thống quản lý 4+ xe đầu kéo, 38+ tuyến đường, và 44+ khách hàng.
+**TingTing** là hệ thống quản lý vận tải thay thế 7+ file Excel cho Công ty TNHH NEPO. Hệ thống quản lý 4+ xe đầu kéo, 38+ tuyến đường, và 44+ khách hàng.
 
 **Stack công nghệ:**
 
@@ -78,7 +78,7 @@
 ![Đăng nhập](./screenshots/login.png)
 
 1. Mở trình duyệt và truy cập `http://localhost:5173`
-2. Trang đăng nhập hiển thị với logo NEPOCORP
+2. Trang đăng nhập hiển thị với logo TingTing
 3. Nhập **Tên đăng nhập, email, hoặc số điện thoại** vào trường `identifier`
 4. Nhập **Mật khẩu** vào trường `password`
 5. Click nút **Đăng nhập** hoặc nhấn `Enter`

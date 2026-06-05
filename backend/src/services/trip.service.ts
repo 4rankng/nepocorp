@@ -1,11 +1,11 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, or, isNull, sql, desc, lte, gte, inArray, ne } from 'drizzle-orm';
-import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@nepocorp/shared';
-import type { TripLegInput } from '@nepocorp/shared';
+import { TripStatus, FuelMode, TxnType, LoadingType, Role } from '@tingting/shared';
+import type { TripLegInput } from '@tingting/shared';
 import { emitAudit } from './audit.service';
 import { AuditEvent } from './audit-types';
-import { computeTripTotals } from '@nepocorp/shared';
+import { computeTripTotals } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { config } from '../config';

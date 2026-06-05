@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
-import type { PenaltyReason } from '@nepocorp/shared';
+import type { PenaltyReason } from '@tingting/shared';
 
 /* ─── Page-scoped styles ─── */
 const pageStyles = `

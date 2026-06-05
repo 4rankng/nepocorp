@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, drivers } from '../db/schema';
 import { eq, isNull, sql } from 'drizzle-orm';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getEnforcer } from '../casbin/enforcer';
 

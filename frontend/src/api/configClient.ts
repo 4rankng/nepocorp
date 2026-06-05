@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { CONFIG } from '@nepocorp/shared';
+import { CONFIG } from '@tingting/shared';
 import type {
   Truck,
   Driver,
@@ -12,7 +12,7 @@ import type {
   PaginatedResponse,
   Port,
   ContainerType,
-} from '@nepocorp/shared';
+} from '@tingting/shared';
 
 /** Auto-paginate a crud-factory GET endpoint (capped at 100/page by backend). */
 export async function fetchAllPaginated<T>(

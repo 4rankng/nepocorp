@@ -5,8 +5,8 @@ import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
 import { useRoutesDropdown } from '../../hooks/useCatalogQueries';
-import type { RoadAllowance, Route as RouteType } from '@nepocorp/shared';
-import { TrailerType } from '@nepocorp/shared';
+import type { RoadAllowance, Route as RouteType } from '@tingting/shared';
+import { TrailerType } from '@tingting/shared';
 
 const TRAILER_TYPE_LABELS: Record<string, string> = {
   [TrailerType.FT20]: '20ft', [TrailerType.FT40]: '40ft',

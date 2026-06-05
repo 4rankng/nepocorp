@@ -10,8 +10,8 @@ import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { Route as RouteType, RoadAllowance } from '@nepocorp/shared';
-import { LoadingType } from '@nepocorp/shared';
+import type { Route as RouteType, RoadAllowance } from '@tingting/shared';
+import { LoadingType } from '@tingting/shared';
 import './config-page.css';
 
 /**

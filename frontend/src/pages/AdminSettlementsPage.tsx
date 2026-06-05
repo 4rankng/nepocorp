@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileText, Loader2, Check, X as XIcon, ClipboardCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
-import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
+import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import {
   useAdminSettlements,

@@ -2,7 +2,7 @@
 
 ## Problem
 
-The nepocorp frontend has a mature feature set but inconsistent UX infrastructure:
+The tingting frontend has a mature feature set but inconsistent UX infrastructure:
 - **No toast system** — 4 ad-hoc implementations, most pages have zero mutation feedback
 - **No ErrorBoundary** — any unhandled render error crashes the entire app
 - **No shared empty-state component** — 15+ pages each roll their own

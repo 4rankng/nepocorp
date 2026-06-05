@@ -1,4 +1,4 @@
-# Nepocorp — Vietnamese Trucking Logistics Platform
+# TingTing — Vietnamese Trucking Logistics Platform
 
 ## Identity
 

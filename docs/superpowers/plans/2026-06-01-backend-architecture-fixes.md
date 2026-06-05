@@ -83,7 +83,7 @@ The file should end at line 37 after the closing brace of `authMiddleware`:
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import { isTokenBlacklisted } from '../lib/redis';
 
 export interface AuthUser {
@@ -159,10 +159,10 @@ Replace the entire file. Key changes:
 ```typescript
 // backend/src/routes/financial.ts
 import { Router } from 'express';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@nepocorp/shared';
+import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
@@ -694,7 +694,7 @@ const raw = {
 const withDefaults = {
   ...raw,
   port: raw.port || '3001',
-  databaseUrl: raw.databaseUrl || (isProd ? undefined : 'postgres://postgres:postgres@localhost:5432/nepocorp'),
+  databaseUrl: raw.databaseUrl || (isProd ? undefined : 'postgres://postgres:postgres@localhost:5432/tingting'),
   redisUrl: raw.redisUrl || (isProd ? undefined : 'redis://localhost:6390'),
   jwtSecret: raw.jwtSecret || (isProd ? undefined : 'dev-secret-change-in-production'),
   jwtExpiresIn: raw.jwtExpiresIn || '7d',
@@ -721,7 +721,7 @@ if (!result.success) {
 
 export const config = result.success ? result.data : configSchema.parse({
   port: 3001,
-  databaseUrl: 'postgres://postgres:postgres@localhost:5432/nepocorp',
+  databaseUrl: 'postgres://postgres:postgres@localhost:5432/tingting',
   redisUrl: 'redis://localhost:6390',
   jwtSecret: 'dev-secret-change-in-production',
   jwtExpiresIn: '7d',
@@ -763,8 +763,8 @@ git commit -m "feat: add Zod config validation with fail-fast in production"
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, sql, inArray } from 'drizzle-orm';
-import { computeFifoAging } from '@nepocorp/shared';
-import type { PayableSummary } from '@nepocorp/shared';
+import { computeFifoAging } from '@tingting/shared';
+import type { PayableSummary } from '@tingting/shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

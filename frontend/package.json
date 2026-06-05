@@ -1,5 +1,5 @@
 {
-  "name": "@nepocorp/frontend",
+  "name": "@tingting/frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nepocorp/shared": "workspace:*",
+    "@tingting/shared": "workspace:*",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-table": "^8.21.3",
     "exceljs": "^4.4.0",

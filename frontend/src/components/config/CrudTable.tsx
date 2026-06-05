@@ -6,7 +6,7 @@ import { api } from '../../lib/api';
 import { PageHeader, Panel, Modal, useConfirm } from '../UI';
 import { ActionBtns } from './ActionBtns';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { PaginatedResponse } from '@nepocorp/shared';
+import type { PaginatedResponse } from '@tingting/shared';
 import '../../pages/config/config-page.css';
 
 interface CrudColumn<T> {

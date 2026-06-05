@@ -9,7 +9,7 @@ import {
   useFuelConfig,
 } from '../../hooks/useQueries';
 import { useCatalogs } from '../../hooks/useCatalogs';
-import { TripStatus, Role } from '@nepocorp/shared';
+import { TripStatus, Role } from '@tingting/shared';
 import { useConfirm } from '../../components/UI';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
 

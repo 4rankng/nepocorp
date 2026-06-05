@@ -12,7 +12,7 @@ import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND, formatNumber } from '../lib/format';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
-import type { CapTableHistory } from '@nepocorp/shared';
+import type { CapTableHistory } from '@tingting/shared';
 import { useMonth } from '../hooks/useMonth';
 
 interface DistributionResult {

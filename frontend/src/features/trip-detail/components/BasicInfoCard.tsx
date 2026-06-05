@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Truck, User, Calendar, Package, Hash, Pencil } from 'lucide-react';
 import { fmtDate } from '../formatters';
-import type { TripDetail } from '@nepocorp/shared';
+import type { TripDetail } from '@tingting/shared';
 
 interface BasicInfoCardProps {
   trip: TripDetail;

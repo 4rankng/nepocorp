@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 
 export interface AuthUser {
   userId: number;

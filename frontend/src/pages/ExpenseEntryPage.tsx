@@ -8,9 +8,9 @@ import { PageHeader, FormGroup } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FINANCIAL, CONFIG } from '@nepocorp/shared';
-import { expenseSchema } from '@nepocorp/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@nepocorp/shared';
+import { FINANCIAL, CONFIG } from '@tingting/shared';
+import { expenseSchema } from '@tingting/shared';
+import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
 
 type FormState = {
   expenseDate: string;

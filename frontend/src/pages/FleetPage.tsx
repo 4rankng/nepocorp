@@ -12,9 +12,9 @@ import { useCRUD } from '../hooks/useCRUD';
 import { useFleetData } from '../hooks/useFleetData';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
-import type { PaginatedResponse } from '@nepocorp/shared';
-import { TrailerType, TRAILER_TYPE_LABELS } from '@nepocorp/shared';
-import type { Trailer, Truck as TruckType, Driver } from '@nepocorp/shared';
+import type { PaginatedResponse } from '@tingting/shared';
+import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
+import type { Trailer, Truck as TruckType, Driver } from '@tingting/shared';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

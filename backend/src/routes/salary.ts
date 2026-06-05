@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { requireRoles } from '../middleware/casbin';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import {
   computeAttendanceSummary,
   computeSalary,

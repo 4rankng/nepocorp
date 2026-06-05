@@ -1,1 +1,1 @@
-export { round2dp } from "@nepocorp/shared";
+export { round2dp } from "@tingting/shared";

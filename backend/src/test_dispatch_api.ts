@@ -1,7 +1,7 @@
 import { db } from './db';
 import * as s from './db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
-import { TripStatus, Role } from '@nepocorp/shared';
+import { TripStatus, Role } from '@tingting/shared';
 import jwt from 'jsonwebtoken';
 import { config } from './config';
 

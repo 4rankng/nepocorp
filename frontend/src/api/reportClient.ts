@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
-import { REPORTS } from '@nepocorp/shared';
-import type { DashboardStats, PnlReport, RenewalReminder } from '@nepocorp/shared';
+import { REPORTS } from '@tingting/shared';
+import type { DashboardStats, PnlReport, RenewalReminder } from '@tingting/shared';
 
 export interface ExtendedDashboardStats extends DashboardStats {
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;

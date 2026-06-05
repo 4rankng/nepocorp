@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Drawer, Btn, FormGroup } from '../../../components/UI';
 import { ROLE_LABELS } from '../utils';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import type { UserRow, CreateData, EditData } from '../utils';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────

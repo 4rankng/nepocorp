@@ -5,7 +5,7 @@ import { Clock, User } from 'lucide-react';
 import { configClient } from '../../api/configClient';
 import { useFuelConfig, useSaveFuelConfig } from '../../hooks/useCatalogQueries';
 import { PageHeader, Panel } from '../../components/UI';
-import type { FuelPriceHistory } from '@nepocorp/shared';
+import type { FuelPriceHistory } from '@tingting/shared';
 import './config-page.css';
 
 export default function FuelConfigPage() {

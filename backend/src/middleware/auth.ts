@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import { isTokenBlacklisted } from '../lib/redis';
 
 export interface AuthUser {

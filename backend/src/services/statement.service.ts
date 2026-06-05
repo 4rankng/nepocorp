@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { TxnType, computeFifoAging } from '@nepocorp/shared';
+import { TxnType, computeFifoAging } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 

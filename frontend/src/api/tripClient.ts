@@ -1,5 +1,5 @@
 import { api } from "../lib/api";
-import { TRIPS, CATALOGS } from "@nepocorp/shared";
+import { TRIPS, CATALOGS } from "@tingting/shared";
 import type {
   Trip,
   TripDetail,
@@ -7,7 +7,7 @@ import type {
   CreateTripRequest,
   UpdateTripFiguresRequest,
   PaginatedResponse,
-} from "@nepocorp/shared";
+} from "@tingting/shared";
 
 type ListTripsParams = { status?: string; limit?: number; page?: number; dateFrom?: string; dateTo?: string; search?: string; truckId?: number; customerId?: number };
 

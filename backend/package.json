@@ -1,5 +1,5 @@
 {
-  "name": "@nepocorp/backend",
+  "name": "@tingting/backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "test": "npx tsx --test src/tests/integration.test.ts"
   },
   "dependencies": {
-    "@nepocorp/shared": "workspace:*",
+    "@tingting/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "casbin": "^5.50.0",
     "cors": "^2.8.5",

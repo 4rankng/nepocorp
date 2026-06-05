@@ -4,7 +4,7 @@ import { Drawer } from './UI';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../hooks/useNotificationQueries';
 import { useAuth } from '../hooks/useAuth';
 import { formatRelativeTime } from '../lib/date';
-import type { Notification } from '@nepocorp/shared';
+import type { Notification } from '@tingting/shared';
 
 interface Props {
   isOpen: boolean;

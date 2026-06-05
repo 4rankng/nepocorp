@@ -7,7 +7,7 @@ import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
 import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
-import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
+import type { TripDetail, CapTableHistory } from '@tingting/shared';
 
 function formatRawNumber(num: number | string | null): string {
   return formatNumber(num);

@@ -8,8 +8,8 @@ import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { Customer } from '@nepocorp/shared';
-import { CustomerStatus } from '@nepocorp/shared';
+import type { Customer } from '@tingting/shared';
+import { CustomerStatus } from '@tingting/shared';
 import './config-page.css';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

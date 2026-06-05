@@ -33,8 +33,8 @@ import { api } from '../lib/api';
 import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
-import { ROLE_LABELS } from '@nepocorp/shared';
-import type { Role } from '@nepocorp/shared';
+import { ROLE_LABELS } from '@tingting/shared';
+import type { Role } from '@tingting/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { MonthProvider, useMonth } from '../hooks/useMonth';
@@ -433,7 +433,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Update browser tab title on route change
   useEffect(() => {
-    document.title = `${pageTitle} · NEPOCORP`;
+    document.title = `${pageTitle} · TingTing`;
   }, [pageTitle]);
 
   // Announce page changes to screen readers
@@ -602,10 +602,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="sidebar-brand-logo">
-            <img src="/assets/logo.avif" alt="NEPOCORP" />
+            <img src="/assets/logo.avif" alt="TingTing" />
           </div>
           <div className="sidebar-brand-meta">
-            <strong>NEPOCORP</strong>
+            <strong>TingTing</strong>
             <span>Logistics System</span>
           </div>
           <button

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
-import type { Driver, PenaltyReason, Truck, PenaltyStatus } from '@nepocorp/shared';
+import type { Driver, PenaltyReason, Truck, PenaltyStatus } from '@tingting/shared';
 
 interface PenaltyRow {
   id: number;

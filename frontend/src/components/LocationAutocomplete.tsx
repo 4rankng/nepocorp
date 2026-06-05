@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { configClient } from '../api/configClient';
-import type { Port } from '@nepocorp/shared';
+import type { Port } from '@tingting/shared';
 
 interface LocationAutocompleteProps {
   value: string;

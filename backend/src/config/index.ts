@@ -52,7 +52,7 @@ const raw = {
 const withDefaults = {
   ...raw,
   port: raw.port || '3001',
-  databaseUrl: raw.databaseUrl || (isProd ? undefined : 'postgres://postgres:postgres@localhost:5432/nepocorp'),
+  databaseUrl: raw.databaseUrl || (isProd ? undefined : 'postgres://postgres:postgres@localhost:5432/tingting'),
   redisUrl: raw.redisUrl || (isProd ? undefined : 'redis://localhost:6390'),
   jwtSecret: raw.jwtSecret || (isProd ? undefined : 'dev-secret-change-in-production'),
   jwtExpiresIn: raw.jwtExpiresIn || '7d',
@@ -80,7 +80,7 @@ if (!result.success) {
 
 export const config = result.success ? result.data : configSchema.parse({
   port: 3001,
-  databaseUrl: 'postgres://postgres:postgres@localhost:5432/nepocorp',
+  databaseUrl: 'postgres://postgres:postgres@localhost:5432/tingting',
   redisUrl: 'redis://localhost:6390',
   jwtSecret: 'dev-secret-change-in-production',
   jwtExpiresIn: '7d',

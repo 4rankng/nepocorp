@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc } from 'drizzle-orm';
-import { Role, TripStatus, FuelMode, TxnType, LoadingType } from '@nepocorp/shared';
+import { Role, TripStatus, FuelMode, TxnType, LoadingType } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import { LedgerService } from '../services/ledger.service';
 import { config } from '../config';

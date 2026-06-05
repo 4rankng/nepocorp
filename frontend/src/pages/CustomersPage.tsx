@@ -7,8 +7,8 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import { formatCurrency, formatCompact } from '../lib/format';
-import type { Customer, Supplier, PaginatedResponse } from '@nepocorp/shared';
-import { CustomerStatus } from '@nepocorp/shared';
+import type { Customer, Supplier, PaginatedResponse } from '@tingting/shared';
+import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';

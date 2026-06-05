@@ -4,8 +4,8 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
-import { TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS } from '@nepocorp/shared';
-import type { Trailer } from '@nepocorp/shared';
+import { TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS } from '@tingting/shared';
+import type { Trailer } from '@tingting/shared';
 
 function TrailerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Trailer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;

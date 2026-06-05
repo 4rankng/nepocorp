@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tripClient } from '../api/tripClient';
 import { configClient } from '../api/configClient';
 import { financialClient } from '../api/financialClient';
-import type { TripDetail, Truck as TruckType, Driver as DriverType } from '@nepocorp/shared';
+import type { TripDetail, Truck as TruckType, Driver as DriverType } from '@tingting/shared';
 import { useSalaryPeriod } from './useCatalogQueries';
 
 export interface NormalizedTrip {

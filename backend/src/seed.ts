@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { db } from './db';
 import * as schema from './db/schema';
-import { Role, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@nepocorp/shared';
+import { Role, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { eq, and, desc, isNull } from 'drizzle-orm';
 
 async function seed() {

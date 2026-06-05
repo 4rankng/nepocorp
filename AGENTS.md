@@ -45,10 +45,10 @@ No linter or CI pipeline configured.
 ## Architecture
 
 ```
-nepocorp/
-├── shared/            # @nepocorp/shared — types, Zod schemas, enums, calculations
-├── backend/           # @nepocorp/backend — Express 5 + Drizzle ORM + PostgreSQL
-├── frontend/          # @nepocorp/frontend — React 19 + Vite + Tailwind 4
+tingting/
+├── shared/            # @tingting/shared — types, Zod schemas, enums, calculations
+├── backend/           # @tingting/backend — Express 5 + Drizzle ORM + PostgreSQL
+├── frontend/          # @tingting/frontend — React 19 + Vite + Tailwind 4
 ├── docs/              # product-spec.md, high-level-design.md, company PDFs
 ├── wireframe/         # HTML wireframes for accountant/director/driver views
 └── CONTEXT.md         # Domain glossary & business rules (authoritative)
@@ -128,7 +128,7 @@ nepocorp/
 
 ### Frontend
 
-- **Vite path aliases**: `@` → `./src`, `@nepocorp/shared` → `../shared/src` (configured in `vite.config.ts`).
+- **Vite path aliases**: `@` → `./src`, `@tingting/shared` → `../shared/src` (configured in `vite.config.ts`).
 - **Tailwind CSS v4** (not v3) — uses `@tailwindcss/vite` plugin, no `tailwind.config.js`.
 - **Dev server**: Port 7173, proxies `/api` → `http://localhost:3090`.
 - **No state management library** — React context (auth) + custom hooks (`useCRUD`, `useQueries`, `useCatalogs`, etc.).

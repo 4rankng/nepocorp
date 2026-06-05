@@ -3,8 +3,8 @@ import {
   ArrowLeft, Play, Pencil, Lock, LockOpen, XCircle, Shuffle, FilePen,
   Building2, Loader2,
 } from 'lucide-react';
-import type { TripDetail } from '@nepocorp/shared';
-import { TripStatus } from '@nepocorp/shared';
+import type { TripDetail } from '@tingting/shared';
+import { TripStatus } from '@tingting/shared';
 import type { TripPermissions } from '../types';
 
 interface TripHeaderProps {

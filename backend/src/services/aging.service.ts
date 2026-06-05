@@ -1,8 +1,8 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, sql, inArray, like } from 'drizzle-orm';
-import { computeFifoAging } from '@nepocorp/shared';
-import type { PayableSummary } from '@nepocorp/shared';
+import { computeFifoAging } from '@tingting/shared';
+import type { PayableSummary } from '@tingting/shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 

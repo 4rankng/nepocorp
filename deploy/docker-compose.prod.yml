@@ -33,7 +33,7 @@ services:
       retries: 5
 
   backend:
-    image: franknguyenvd/nepo-backend:latest
+    image: franknguyenvd/tingting-backend:latest
     restart: unless-stopped
     env_file:
       - .env
@@ -57,7 +57,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: franknguyenvd/nepo-frontend:latest
+    image: franknguyenvd/tingting-frontend:latest
     restart: unless-stopped
     expose:
       - "80"

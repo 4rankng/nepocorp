@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The Nepocorp monorepo currently employs a double-conversion pipeline for key casing:
+The TingTing monorepo currently employs a double-conversion pipeline for key casing:
 1. **Backend Database Mapping**: Drizzle ORM returns camelCase objects (e.g., `tripCode`, `customerId`, `grossProfit`) mapping from snake_case columns in PostgreSQL.
 2. **Serialization Layer**: The `snakeCaseSerializer` Express middleware intercepts all response payloads and converts all keys recursively to `snake_case` (e.g., `trip_code`, `customer_id`, `gross_profit`).
 3. **Frontend Deserialization**: The frontend `ApiClient` wraps responses with `addCamelCaseAliases()`, creating duplicate properties so that code can access both `.gross_profit` and `.grossProfit`.

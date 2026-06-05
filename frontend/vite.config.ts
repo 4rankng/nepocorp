@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@nepocorp/shared': path.resolve(__dirname, '../shared/src'),
+      '@tingting/shared': path.resolve(__dirname, '../shared/src'),
     },
   },
   server: {

@@ -1,4 +1,4 @@
-# Mobile Responsive Audit — Nepocorp
+# Mobile Responsive Audit — TingTing
 
 Iterative, one-page-at-a-time pass log. Each entry: page, issues spotted at 390×844 (iPhone 14), fix, files changed, verification.
 
@@ -596,7 +596,7 @@ Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ
 - **responsive.css** (inside the existing `@media (max-width: 640px)` block): `.topbar { padding: 0 8px }` (tighter horizontal so the larger touch targets fit). `.topbar__toggle { width: 40px; height: 40px }` + `.topbar__toggle svg { width: 20px; height: 20px }` (hamburger bumped 36→40). `.topbar-date__nav { width: 28px; height: 28px }` + `.topbar-date__nav svg { width: 14px; height: 14px }` (month chevrons bumped 18→28).
 
 **Verification:**
-- Mobile (390): hamburger reads as a 40×40 tap target. Month-nav chevrons are now thumb-comfortable at 28×28. Open drawer header shows `[logo] [NEPOCORP / LOGISTICS SYSTEM stacked] [X]` cleanly on one row each. Tapping X closes the drawer.
+- Mobile (390): hamburger reads as a 40×40 tap target. Month-nav chevrons are now thumb-comfortable at 28×28. Open drawer header shows `[logo] [TingTing / LOGISTICS SYSTEM stacked] [X]` cleanly on one row each. Tapping X closes the drawer.
 - Desktop (>1023): topbar padding, hamburger size, and date-nav size unchanged (the `@media (max-width: 640px)` overrides don't fire). `.sidebar-close` stays `display: none`. Brand-meta nowrap rule lives inside `@media (max-width: 1023px)` so it doesn't touch desktop either.
 
 ---

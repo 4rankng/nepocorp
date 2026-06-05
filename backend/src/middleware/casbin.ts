@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getEnforcer } from '../casbin/enforcer';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 
 const ACTION_MAP: Record<string, string> = {
   GET: 'read',

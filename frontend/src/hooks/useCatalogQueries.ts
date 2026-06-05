@@ -10,7 +10,7 @@ import type {
   CapTableHistory,
   Port as PortType,
   ContainerType as ContainerTypeType,
-} from '@nepocorp/shared';
+} from '@tingting/shared';
 
 export function useCapTable() {
   return useQuery<CapTableHistory[]>({

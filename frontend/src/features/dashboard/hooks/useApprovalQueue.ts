@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
-import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@nepocorp/shared';
+import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@tingting/shared';
 
 export { type ApprovalItemType };
 

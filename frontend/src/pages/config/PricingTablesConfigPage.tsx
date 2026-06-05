@@ -5,7 +5,7 @@ import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
 import { useAllCustomers, useRoutesDropdown } from '../../hooks/useCatalogQueries';
-import type { PricingTable, Customer, Route as RouteType } from '@nepocorp/shared';
+import type { PricingTable, Customer, Route as RouteType } from '@tingting/shared';
 
 function PricingForm({ saving, item, onsave, oncancel, customers, routes }: {
   saving: boolean; item?: PricingTable; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;

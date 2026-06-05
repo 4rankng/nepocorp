@@ -1,4 +1,4 @@
-import { Role, ROLE_LABELS } from '@nepocorp/shared';
+import { Role, ROLE_LABELS } from '@tingting/shared';
 
 export interface UserRow {
   id: number;

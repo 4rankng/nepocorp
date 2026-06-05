@@ -30,9 +30,9 @@ export default function LoginPage() {
         <form className="login-form" onSubmit={submit}>
           <div className="login-brand">
             <div className="brand-logo">
-              <img src="/assets/logo.avif" alt="NEPOCORP Logo" />
+              <img src="/assets/logo.avif" alt="TingTing Logo" />
             </div>
-            <h1>NEPOCORP</h1>
+            <h1>TingTing</h1>
             <p>Hệ thống Quản lý Vận tải</p>
           </div>
 
@@ -100,7 +100,7 @@ export default function LoginPage() {
       <img src="/assets/illustrations/bg-transport-world.svg" alt="" className="login-bg-svg" />
 
       <p className="login-footer">
-        &copy; {new Date().getFullYear()} NEPOCORP &middot; Hải Phòng
+        &copy; {new Date().getFullYear()} TingTing &middot; Hải Phòng
       </p>
     </div>
   );

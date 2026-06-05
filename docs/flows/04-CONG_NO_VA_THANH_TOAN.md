@@ -245,7 +245,7 @@ GET /api/ledger/customers/:id/statement
 ## 6. Ghi chú & Lưu ý
 
 - Ledger **IMMUTABLE** — mọi chỉnh sửa đều tạo row mới (append-only)
-- Migration 0001 thu hồi quyền UPDATE/DELETE trên bảng ledger khỏi role `nepocorp_app`
+- Migration 0001 thu hồi quyền UPDATE/DELETE trên bảng ledger khỏi role `tingting_app`
 - Advisory lock sử dụng `pg_advisory_xact_lock` — tự release khi transaction kết thúc
 - Dấu nợ: Debit tăng công nợ KH, Credit giảm công nợ KH
 - Module liên kết trực tiếp với Trip Lifecycle (mỗi chuyến LOCKED tạo TRIP_REVENUE) và Finance P&L

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layers, Pencil } from 'lucide-react';
-import { FuelMode } from '@nepocorp/shared';
+import { FuelMode } from '@tingting/shared';
 
 interface FuelModeToggleProps {
   value: FuelMode;

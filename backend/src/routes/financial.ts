@@ -1,10 +1,10 @@
 // backend/src/routes/financial.ts
 import { Router } from 'express';
-import { Role, NotificationType } from '@nepocorp/shared';
+import { Role, NotificationType } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { emitNotification } from '../services/notification.service';
-import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@nepocorp/shared';
+import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendorPaymentSchema } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
@@ -17,7 +17,7 @@ import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listA
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../services/debtOffset.service';
 import { getDebitNoteData, buildDebitNoteXlsx } from '../services/debitNote.service';
 import { getApprovalQueue } from '../services/approval-queue.service';
-import { debtOffsetSchema } from '@nepocorp/shared';
+import { debtOffsetSchema } from '@tingting/shared';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 

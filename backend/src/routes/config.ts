@@ -12,7 +12,7 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
-} from '@nepocorp/shared';
+} from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice } from '../services/config.service';

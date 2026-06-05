@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Wallet, Loader2, Plus, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS } from '@nepocorp/shared';
-import type { AdvanceRequestWithRefs } from '@nepocorp/shared';
+import { ADVANCE_REQUEST_STATUS_LABELS } from '@tingting/shared';
+import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';

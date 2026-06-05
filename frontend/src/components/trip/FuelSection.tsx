@@ -1,5 +1,5 @@
 import React from "react";
-import { FuelMode } from "@nepocorp/shared";
+import { FuelMode } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
 

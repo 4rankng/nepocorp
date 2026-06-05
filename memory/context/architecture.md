@@ -2,7 +2,7 @@
 
 ## Monorepo Structure
 ```
-nepocorp/
+tingting/
 ├── backend/        Express 5 + Drizzle ORM + PostgreSQL (port 3090)
 ├── frontend/       React 18 + Vite + TanStack (port 5173)
 ├── shared/         Types, Zod schemas, enums, calculations

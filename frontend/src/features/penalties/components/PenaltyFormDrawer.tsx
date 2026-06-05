@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import { Drawer, Btn, FormGroup } from '../../../components/UI';
 import { formatCurrency } from '../../../lib/format';
-import type { Driver, PenaltyReason } from '@nepocorp/shared';
-import type { CreatePenaltyRequest } from '@nepocorp/shared';
+import type { Driver, PenaltyReason } from '@tingting/shared';
+import type { CreatePenaltyRequest } from '@tingting/shared';
 
 interface PenaltyFormDrawerProps {
   isOpen: boolean;

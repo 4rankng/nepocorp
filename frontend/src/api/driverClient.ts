@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { DRIVER } from '@nepocorp/shared';
+import { DRIVER } from '@tingting/shared';
 
 export const driverClient = {
   getTrips: async () => {

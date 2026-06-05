@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { reportClient } from '../api/reportClient';
 import type { ExtendedDashboardStats } from '../api/reportClient';
-import type { PnlReport, RenewalReminder } from '@nepocorp/shared';
+import type { PnlReport, RenewalReminder } from '@tingting/shared';
 
-export type { PnlReport, PnlTruck } from '@nepocorp/shared';
+export type { PnlReport, PnlTruck } from '@tingting/shared';
 export type { ExtendedDashboardStats };
 
 export function useDashboardStats() {

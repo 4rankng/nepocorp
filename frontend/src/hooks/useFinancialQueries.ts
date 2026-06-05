@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { financialClient, type CustomerAging } from '../api/financialClient';
-import type { LedgerEntry, CustomerStatement, SupplierStatement } from '@nepocorp/shared';
+import type { LedgerEntry, CustomerStatement, SupplierStatement } from '@tingting/shared';
 
 export type { CustomerAging };
 

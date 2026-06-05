@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, desc, inArray, notInArray, sql } from 'drizzle-orm';
-import { TxnType } from '@nepocorp/shared';
+import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 
 export class AdvanceError extends Error {

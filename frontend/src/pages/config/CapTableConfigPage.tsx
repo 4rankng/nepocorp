@@ -4,7 +4,7 @@ import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
 import { formatCurrency } from '../../lib/format';
-import type { CapTableHistory } from '@nepocorp/shared';
+import type { CapTableHistory } from '@tingting/shared';
 
 function CapTableForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: CapTableHistory; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;

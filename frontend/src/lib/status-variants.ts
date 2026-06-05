@@ -1,4 +1,4 @@
-import type { AdvanceRequestStatus, AdvanceSettlementStatus } from '@nepocorp/shared';
+import type { AdvanceRequestStatus, AdvanceSettlementStatus } from '@tingting/shared';
 
 type StatusVariant = 'neutral' | 'info' | 'warn' | 'success' | 'danger';
 

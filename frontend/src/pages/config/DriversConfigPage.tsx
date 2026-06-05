@@ -7,7 +7,7 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
-import type { Driver, Truck } from '@nepocorp/shared';
+import type { Driver, Truck } from '@tingting/shared';
 
 const DRIVER_STATUS_LABELS: Record<string, string> = { ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng' };
 

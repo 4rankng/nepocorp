@@ -1,7 +1,7 @@
 import React from 'react';
 import { Panel } from '../../../components/UI';
 import { formatCurrency, formatCompact } from '../../../lib/format';
-import type { TripDetail, RenewalReminder } from '@nepocorp/shared';
+import type { TripDetail, RenewalReminder } from '@tingting/shared';
 import { styles } from '../utils';
 import type { FuelWarning, ReceivablesSummary } from '../hooks/useDashboardData';
 

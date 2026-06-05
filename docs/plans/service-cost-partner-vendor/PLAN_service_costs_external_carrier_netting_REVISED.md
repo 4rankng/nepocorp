@@ -5,7 +5,7 @@ Implementation Plan — Service Costs, External Carrier & Debt Netting
 
  Context
 
- The Nepocorp TMS today only records core freight + own-truck (xe nhà) costs. Three capabilities are missing and cause
+ The TingTing TMS today only records core freight + own-truck (xe nhà) costs. Three capabilities are missing and cause
  per-trip / per-vehicle P&L to be wrong and AR/AP to be overstated:
 
  1. Chi phí dịch vụ đi kèm (ancillary service costs) — port/depot fees with a buy (mua vào) and sell (bán ra) side;

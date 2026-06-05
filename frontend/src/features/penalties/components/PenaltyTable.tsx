@@ -10,7 +10,7 @@ import { Panel, Btn, KPI } from '../../../components/UI';
 import { getInitials, avatarColorById } from '../../../lib/avatar';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
-import type { Driver, PenaltyReason, Truck } from '@nepocorp/shared';
+import type { Driver, PenaltyReason, Truck } from '@tingting/shared';
 import type { PenaltyRow } from '../../../hooks/usePenalties';
 import { useSalaryPeriod } from '../../../hooks/useQueries';
 import {

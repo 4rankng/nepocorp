@@ -33,7 +33,7 @@ Lessons learned. Read before touching related code.
 ## Frontend
 
 ### Build & Config
-- **Vite path aliases**: `@` → `./src`, `@nepocorp/shared` → `../shared/src`
+- **Vite path aliases**: `@` → `./src`, `@tingting/shared` → `../shared/src`
 - **Tailwind CSS v4** (not v3) — uses `@tailwindcss/vite` plugin, no `tailwind.config.js`
 - Express **v5** (not v4) — async error handling differs; route handlers can be async without wrapping.
 

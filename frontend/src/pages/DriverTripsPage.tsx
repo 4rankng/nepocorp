@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { TRIP_STATUS_LABELS, type TripStatus } from '@nepocorp/shared';
+import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import { useDriverTrips } from '../hooks/useQueries';
 

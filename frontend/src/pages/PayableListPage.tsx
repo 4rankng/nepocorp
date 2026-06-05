@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import type { PayableSummary } from '@nepocorp/shared';
+import type { PayableSummary } from '@tingting/shared';
 import { Search, ChevronRight } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { usePayablesSummary } from '../hooks/useQueries';

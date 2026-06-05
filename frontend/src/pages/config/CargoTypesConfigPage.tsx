@@ -3,7 +3,7 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
-import type { CargoType } from '@nepocorp/shared';
+import type { CargoType } from '@tingting/shared';
 
 function CargoTypeForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: CargoType; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
-import type { PricingTable } from "@nepocorp/shared";
+import type { PricingTable } from "@tingting/shared";
 import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
 
 export interface SelectOption {

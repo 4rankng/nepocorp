@@ -5,7 +5,7 @@ import { db } from '../db';
 import { users } from '../db/schema';
 import { eq, or } from 'drizzle-orm';
 import { config } from '../config';
-import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@nepocorp/shared';
+import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@tingting/shared';
 import { authMiddleware } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { blacklistToken } from '../lib/redis';

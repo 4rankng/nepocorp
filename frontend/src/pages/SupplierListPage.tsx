@@ -7,8 +7,8 @@ import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
-import type { Supplier, Customer, PaginatedResponse } from '@nepocorp/shared';
-import { CONFIG } from '@nepocorp/shared';
+import type { Supplier, Customer, PaginatedResponse } from '@tingting/shared';
+import { CONFIG } from '@tingting/shared';
 import { useSuppliers } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 

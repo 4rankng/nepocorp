@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { LedgerService } from './ledger.service';
-import { TxnType } from '@nepocorp/shared';
+import { TxnType } from '@tingting/shared';
 import { transitionApproval } from './approval.service';
 
 /**

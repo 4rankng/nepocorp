@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Role } from '@nepocorp/shared';
+import { Role } from '@tingting/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useUsers } from '../hooks/useCatalogQueries';
 import { useUserMutations } from '../features/users/hooks/useUserMutations';

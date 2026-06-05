@@ -1,5 +1,5 @@
 import { api } from './api';
-import { NOTIFICATIONS } from '@nepocorp/shared';
+import { NOTIFICATIONS } from '@tingting/shared';
 
 export const notificationClient = {
   list: (page = 1, limit = 20) =>

@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { formatCompact } from '../../../lib/format';
-import type { TripDetail, CapTableHistory } from '@nepocorp/shared';
-import { Role, FINANCIAL_ROLES, TripStatus, parseThreshold } from '@nepocorp/shared';
+import type { TripDetail, CapTableHistory } from '@tingting/shared';
+import { Role, FINANCIAL_ROLES, TripStatus, parseThreshold } from '@tingting/shared';
 import { useAuth } from '../../../hooks/useAuth';
 import {
   useDashboardStats,

@@ -88,7 +88,7 @@ echo "============================================================"
 # Aggregate from JSON results
 python3 -c "
 import json, glob
-files = sorted(glob.glob('/tmp/nepo-e2e/*_results.json'))
+files = sorted(glob.glob('/tmp/tingting-e2e/*_results.json'))
 total = passed = failed = skipped = 0
 for f in files:
     d = json.load(open(f))
@@ -110,4 +110,4 @@ if failed > 0:
 
 echo "============================================================"
 echo ""
-echo "📁 Screenshots & results: /tmp/nepo-e2e/"
+echo "📁 Screenshots & results: /tmp/tingting-e2e/"

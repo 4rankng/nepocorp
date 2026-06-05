@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { FINANCIAL, REPORTS } from '@nepocorp/shared';
+import { FINANCIAL, REPORTS } from '@tingting/shared';
 import { fetchAllPaginated } from './configClient';
 import type {
   LedgerEntry,
@@ -8,7 +8,7 @@ import type {
   SupplierStatement,
   ExpenseWithRefs,
   PaginatedResponse,
-} from '@nepocorp/shared';
+} from '@tingting/shared';
 
 export interface CustomerAging {
   customerId: number;

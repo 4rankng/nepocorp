@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@nepocorp/shared';
+import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@tingting/shared';
 import { and, asc, eq, ne } from 'drizzle-orm';
 
 export { type ApprovalItemType };

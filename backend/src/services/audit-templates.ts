@@ -1,5 +1,5 @@
-import { ROLE_LABELS } from '@nepocorp/shared';
-import type { Role } from '@nepocorp/shared';
+import { ROLE_LABELS } from '@tingting/shared';
+import type { Role } from '@tingting/shared';
 import { AuditEvent } from './audit-types';
 import type { AuditPayload } from './audit-types';
 

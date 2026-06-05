@@ -14,7 +14,7 @@ set -euo pipefail
 
 UPLOAD_DIR="${UPLOAD_DIR:-./uploads}"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
-DATABASE_URL="${DATABASE_URL:-postgres://postgres:postgres@localhost:5432/nepocorp}"
+DATABASE_URL="${DATABASE_URL:-postgres://postgres:postgres@localhost:5432/tingting}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

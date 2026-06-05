@@ -6,7 +6,7 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
-import type { Port } from '@nepocorp/shared';
+import type { Port } from '@tingting/shared';
 import './config-list.css';
 import './config-page.css';
 

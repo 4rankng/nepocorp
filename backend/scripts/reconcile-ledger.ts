@@ -13,7 +13,7 @@
  * NOTE: --fix does NOT update existing ledger rows (ledger is append-only).
  *       Instead, it inserts a compensating ADJUSTMENT entry that corrects the
  *       running balance going forward. Requires connecting as a role with
- *       INSERT permission on ledger (e.g., nepocorp_app or superuser).
+ *       INSERT permission on ledger (e.g., tingting_app or superuser).
  *
  * Epic ref: §4.8
  */
@@ -21,7 +21,7 @@
 import { db } from '../src/db';
 import * as s from '../src/db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { TripStatus, TxnType } from '@nepocorp/shared';
+import { TripStatus, TxnType } from '@tingting/shared';
 
 const FIX_MODE = process.argv.includes('--fix');
 

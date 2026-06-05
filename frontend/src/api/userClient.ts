@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { AUTH } from '@nepocorp/shared';
+import { AUTH } from '@tingting/shared';
 
 export const userClient = {
   getUsers: async () => {

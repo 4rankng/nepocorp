@@ -1,4 +1,4 @@
-# NEPOCORP — Tài liệu QA Testing & Hướng dẫn Sử dụng
+# TingTing — Tài liệu QA Testing & Hướng dẫn Sử dụng
 
 > Phiên bản: 2026-05 · Stack: Express v5 + PostgreSQL + Drizzle ORM + React 18 + TypeScript
 

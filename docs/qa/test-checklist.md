@@ -1,4 +1,4 @@
-# Test Execution Checklist — Nepocorp QA Micro-Iteration
+# Test Execution Checklist — TingTing QA Micro-Iteration
 
 > Source: `PRODUCT-SPECS.md` + `docs/flows/*` (Vietnamese flow docs 00-13)
 > Method: One role + one flow per item. Test in order. Stop at 2 bugs per iteration.

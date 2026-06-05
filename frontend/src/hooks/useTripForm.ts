@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
-import { FuelMode, LoadingType, TripStatus } from "@nepocorp/shared";
-export type { FuelMode } from "@nepocorp/shared";
-import type { PricingTable, TripDetail, PaginatedResponse } from "@nepocorp/shared";
+import { FuelMode, LoadingType, TripStatus } from "@tingting/shared";
+export type { FuelMode } from "@tingting/shared";
+import type { PricingTable, TripDetail, PaginatedResponse } from "@tingting/shared";
 import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
 

@@ -1,4 +1,4 @@
-# Hướng dẫn Sử dụng — NEPOCORP Quản lý Vận tải
+# Hướng dẫn Sử dụng — TingTing Quản lý Vận tải
 
 > Tài liệu dành cho **QA testing** và **User Manual**.
 > Phiên bản: 2026-05 · Stack: Express v5 + PostgreSQL + React + TypeScript

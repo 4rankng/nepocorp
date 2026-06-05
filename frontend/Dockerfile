@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY shared/tsconfig.json shared/tsconfig.json
 COPY shared/src shared/src
 
-# Build shared first (Vite resolves @nepocorp/shared via alias to ../shared/src)
+# Build shared first (Vite resolves @tingting/shared via alias to ../shared/src)
 RUN cd shared && pnpm build
 
 # Copy frontend source

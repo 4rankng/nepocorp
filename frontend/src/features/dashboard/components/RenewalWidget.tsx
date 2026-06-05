@@ -1,7 +1,7 @@
 import React from 'react';
 import { Panel } from '../../../components/UI';
 import { styles } from '../utils';
-import type { RenewalReminder } from '@nepocorp/shared';
+import type { RenewalReminder } from '@tingting/shared';
 
 interface RenewalWidgetProps {
   renewalReminders: RenewalReminder[];

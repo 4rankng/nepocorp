@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { expenseSchema } from '@nepocorp/shared';
+import { expenseSchema } from '@tingting/shared';
 import { db } from '../db';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';

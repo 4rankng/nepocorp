@@ -1,15 +1,15 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: nepo-db
+    container_name: tingting-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nepocorp
+      POSTGRES_DB: tingting
     ports:
       - "5440:5432"
     volumes:
-      - nepo-pgdata:/var/lib/postgresql/data
+      - tingting-pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: nepo-redis
+    container_name: tingting-redis
     ports:
       - "6390:6379"
     healthcheck:
@@ -29,7 +29,7 @@ services:
 
   adminer:
     image: adminer
-    container_name: nepo-adminer
+    container_name: tingting-adminer
     ports:
       - "8081:8080"
     depends_on:
@@ -37,4 +37,4 @@ services:
         condition: service_healthy
 
 volumes:
-  nepo-pgdata:
+  tingting-pgdata:

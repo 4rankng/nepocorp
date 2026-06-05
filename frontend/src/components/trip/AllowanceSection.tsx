@@ -1,5 +1,5 @@
 import React from "react";
-import { computeRoadAllowance } from "@nepocorp/shared";
+import { computeRoadAllowance } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { InputWithPrefix } from "./InputWithPrefix";
 

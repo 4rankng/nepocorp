@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { SYSTEM } from '@nepocorp/shared';
+import { SYSTEM } from '@tingting/shared';
 
 export const systemClient = {
   getAuditLogs: async (params?: Record<string, string>) => {

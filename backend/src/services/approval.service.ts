@@ -1,6 +1,6 @@
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { FINANCIAL_ROLES } from '@nepocorp/shared';
+import { FINANCIAL_ROLES } from '@tingting/shared';
 
 export type ApprovableTable = 'trip_expenses' | 'debt_offsets';
 export type ApprovalTransition = 'APPROVED' | 'REJECTED';

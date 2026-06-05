@@ -23,8 +23,8 @@ import { formatCurrency } from '../lib/format';
 import { splitRoute } from '../lib/route';
 import { formatDayMonth } from '../lib/date';
 import { downloadCSV } from '../lib/csv';
-import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@nepocorp/shared';
-import type { TripDetail } from '@nepocorp/shared';
+import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@tingting/shared';
+import type { TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 

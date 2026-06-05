@@ -1,7 +1,7 @@
 import { db } from './db';
 import * as s from './db/schema';
 import { eq } from 'drizzle-orm';
-import { TripStatus, FuelMode } from '@nepocorp/shared';
+import { TripStatus, FuelMode } from '@tingting/shared';
 import * as tripService from './services/trip.service';
 
 async function run() {

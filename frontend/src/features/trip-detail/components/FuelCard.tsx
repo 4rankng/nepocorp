@@ -1,8 +1,8 @@
 import React from 'react';
 import { Fuel, AlertTriangle } from 'lucide-react';
-import { FUEL_MODE_LABELS } from '@nepocorp/shared';
+import { FUEL_MODE_LABELS } from '@tingting/shared';
 import { fmtVND } from '../formatters';
-import type { TripDetail } from '@nepocorp/shared';
+import type { TripDetail } from '@tingting/shared';
 import type { TripDerivedData } from '../types';
 
 interface FuelCardProps {

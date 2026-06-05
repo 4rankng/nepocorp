@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
-import type { SalaryPeriodRange } from '@nepocorp/shared';
+import type { SalaryPeriodRange } from '@tingting/shared';
 
 /**
  * Resolve the salary period date range for a given month/year.

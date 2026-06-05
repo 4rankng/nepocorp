@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { FORWARDER, FINANCIAL } from '@nepocorp/shared';
+import { FORWARDER, FINANCIAL } from '@tingting/shared';
 
 export const forwarderClient = {
   getTrips: async () => {

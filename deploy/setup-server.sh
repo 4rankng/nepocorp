@@ -1,6 +1,6 @@
 #!/bin/bash
 # ──────────────────────────────────────────────────────────────────────────────
-# Nepocorp — DigitalOcean Droplet one-time setup
+# TingTing — DigitalOcean Droplet one-time setup
 #
 # Usage:  ssh root@nepo.tingting.vip 'bash -s' < deploy/setup-server.sh
 #
@@ -10,7 +10,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-echo "=== Nepocorp Server Setup ==="
+echo "=== TingTing Server Setup ==="
 echo ""
 
 # ── 1. Update System ─────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ echo "✅ Secrets generated and saved to /opt/nepocorp/deploy/.env"
 
 # ── 7. Write Nginx Config ────────────────────────────────────────────────────
 echo "📝 Writing Nginx configuration..."
-cat > /etc/nginx/sites-available/nepocorp << 'NGINX'
+cat > /etc/nginx/sites-available/tingting << 'NGINX'
 server {
     listen 80;
     listen [::]:80;
@@ -124,7 +124,7 @@ NGINX
 
 # Enable site
 rm -f /etc/nginx/sites-enabled/default
-ln -sf /etc/nginx/sites-available/nepocorp /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/tingting /etc/nginx/sites-enabled/
 nginx -t && systemctl enable nginx && systemctl restart nginx
 echo "✅ Nginx configured"
 

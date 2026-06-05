@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X } from 'lucide-react';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@nepocorp/shared';
-import type { AncillaryExpenseType } from '@nepocorp/shared';
-import type { TripExpense } from '@nepocorp/shared';
+import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
+import type { AncillaryExpenseType } from '@tingting/shared';
+import type { TripExpense } from '@tingting/shared';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency, formatNumber } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';

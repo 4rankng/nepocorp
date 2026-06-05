@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Ruler, Image as ImageIcon, Plus, ArrowRight, Fuel } from 'lucide-react';
-import type { TripDetail } from '@nepocorp/shared';
-import { LoadingType } from '@nepocorp/shared';
+import type { TripDetail } from '@tingting/shared';
+import { LoadingType } from '@tingting/shared';
 import { LeafletMap } from '../../../components/shared/LeafletMap';
 import type { TripDerivedData } from '../types';
 

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
-import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@nepocorp/shared';
+import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
 import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';

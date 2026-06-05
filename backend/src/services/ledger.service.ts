@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { TxnType } from '@nepocorp/shared';
+import { TxnType } from '@tingting/shared';
 
 export interface LedgerPostRequest {
   txnType: TxnType;

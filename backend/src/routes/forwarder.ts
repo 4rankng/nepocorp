@@ -16,9 +16,9 @@ import {
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../db';
-import { tripContainerSchema, tripExpenseSchema } from '@nepocorp/shared';
+import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
 import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
-import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@nepocorp/shared';
+import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
 

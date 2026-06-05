@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
-import { FINANCIAL } from '@nepocorp/shared';
-import type { CreatePenaltyRequest } from '@nepocorp/shared';
+import { FINANCIAL } from '@tingting/shared';
+import type { CreatePenaltyRequest } from '@tingting/shared';
 
 export function useCreatePenalty() {
   const queryClient = useQueryClient();
