@@ -69,8 +69,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 
 // ── Protected routes (auth + Casbin) — specific paths first, catch-all /api last
-// DRIVER-accessible resolve endpoint only
-app.use('/api/salary-periods', authMiddleware, casbinAuthz('salary'), salaryPeriodsRouter);
+// Resolve endpoint for salary periods (defaults, overrides) — accessible to all authenticated users
+app.use('/api/salary-periods', authMiddleware, salaryPeriodsRouter);
 // Admin CRUD for salary periods (defaults, overrides) — config authz
 app.use('/api/salary-periods', authMiddleware, casbinAuthz('config'), salaryPeriodsAdminRouter);
 app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);

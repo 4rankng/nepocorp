@@ -26,3 +26,11 @@ export function formatDate(d: string | null): string {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('vi-VN');
 }
+
+export function removeDiacritics(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}

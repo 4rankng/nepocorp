@@ -64,7 +64,7 @@ export async function resolveSalaryPeriodDateRange(
       year,
       start,
       end,
-      label: `Kỳ lương T${month}/${year} (${formatDateShort(start)} - ${formatDateShort(end)})`,
+      label: `Kỳ lương T${month}/${year} (${formatDateShort(start)} – ${formatDateShort(end)})`,
     };
   }
 
@@ -261,7 +261,13 @@ export async function deleteSalaryPeriodOverride(id: number) {
   const [deleted] = await db
     .update(s.salaryPeriods)
     .set({ deletedAt: new Date(), updatedAt: new Date() })
-    .where(eq(s.salaryPeriods.id, id))
+    .where(
+      and(
+        eq(s.salaryPeriods.id, id),
+        eq(s.salaryPeriods.isDefault, false),
+        isNull(s.salaryPeriods.deletedAt),
+      ),
+    )
     .returning();
   return deleted ?? null;
 }
@@ -270,8 +276,15 @@ export async function deleteSalaryPeriodOverride(id: number) {
 
 /**
  * Derive start/end dates from the global default rule.
- * Salary month N = day `startDay` of month N-1 through day `endDay` of month N.
- * Handles year boundary (e.g., January salary period starts in December).
+ *
+ * Two modes:
+ * - Same-month (startDay <= endDay): start and end are within the same calendar
+ *   month. E.g. startDay=1, endDay=31 → 1st to last day of month N.
+ * - Cross-month (startDay > endDay): the classic Vietnamese payroll pattern where
+ *   the period starts on day `startDay` of month N-1 and ends on day `endDay` of
+ *   month N. E.g. startDay=26, endDay=25 → 26th of prev → 25th of current.
+ *
+ * Both modes clamp both startDay and endDay to actual days in their respective months.
  */
 function deriveFromDefault(
   month: number,
@@ -279,7 +292,19 @@ function deriveFromDefault(
   startDay: number,
   endDay: number,
 ): { start: string; end: string } {
-  // Start: day `startDay` of the PREVIOUS month
+  // Clamp endDay to actual days in the target month to avoid invalid dates like '2026-02-31'
+  const maxDay = new Date(year, month, 0).getDate();
+  const clampedEndDay = Math.min(endDay, maxDay);
+
+  if (startDay <= endDay) {
+    // Same-month mode: both start and end are within month N
+    const clampedStartDay = Math.min(startDay, maxDay);
+    const start = `${year}-${String(month).padStart(2, '0')}-${String(clampedStartDay).padStart(2, '0')}`;
+    const end   = `${year}-${String(month).padStart(2, '0')}-${String(clampedEndDay).padStart(2, '0')}`;
+    return { start, end };
+  }
+
+  // Cross-month mode: start is day `startDay` of the PREVIOUS month
   let startMonth = month - 1;
   let startYear = year;
   if (startMonth === 0) {
@@ -287,12 +312,12 @@ function deriveFromDefault(
     startYear = year - 1;
   }
 
-  const start = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
+  // Clamp startDay to the previous month's actual max days
+  const prevMaxDay = new Date(startYear, startMonth, 0).getDate();
+  const clampedStartDay = Math.min(startDay, prevMaxDay);
 
-  // Clamp endDay to actual days in the target month to avoid invalid dates like '2026-02-31'
-  const maxDay = new Date(year, month, 0).getDate(); // last day of month
-  const clampedEndDay = Math.min(endDay, maxDay);
-  const end = `${year}-${String(month).padStart(2, '0')}-${String(clampedEndDay).padStart(2, '0')}`;
+  const start = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(clampedStartDay).padStart(2, '0')}`;
+  const end   = `${year}-${String(month).padStart(2, '0')}-${String(clampedEndDay).padStart(2, '0')}`;
 
   return { start, end };
 }

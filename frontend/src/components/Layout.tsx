@@ -49,7 +49,7 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
-  section?: 'operations' | 'financials' | 'admin';
+  section?: 'operations' | 'hr' | 'financials' | 'master-data' | 'system';
   count?: number;
 }
 
@@ -60,11 +60,13 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
     case 'ACCOUNTANT':
     case 'ADMIN':
       return [
-        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard, section: 'operations' },
+        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard },
+
         { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
-        { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'admin' },
         { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
-        { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'operations', count: penaltiesCount },
+
+        { key: 'salary', label: 'Lương & Chấm công', path: '/salary', icon: CalendarDays, section: 'hr' },
+        { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'hr', count: penaltiesCount },
 
         { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
         { key: 'profit', label: 'Phân chia lợi nhuận', path: '/profit', icon: DollarSign, section: 'financials' },
@@ -73,16 +75,17 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
         { key: 'settlements', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText, section: 'financials' },
-        { key: 'salary', label: 'Lương & Chấm công', path: '/salary', icon: CalendarDays, section: 'financials' },
 
-        { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'admin' },
-        { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'admin' },
-        { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'admin' },
-        { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'admin' },
+        { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'master-data' },
+        { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'master-data' },
+        { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'master-data' },
+        { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'master-data' },
+
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
-          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'admin' as const },
-          { key: 'audit-logs', label: 'Nhật ký người dùng', path: '/audit-logs', icon: ScrollText, section: 'admin' as const },
+          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'system' as const },
+          { key: 'audit-logs', label: 'Nhật ký người dùng', path: '/audit-logs', icon: ScrollText, section: 'system' as const },
         ] : []),
+        { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'system' },
       ];
     case 'DRIVER':
       return [
@@ -466,15 +469,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const ITEM_H = item?.offsetHeight ?? 38;
     const LABEL_H = label?.offsetHeight ?? 36;
     const NAV_PAD = parseFloat(navStyle.paddingTop) + parseFloat(navStyle.paddingBottom) || 20;
-    const totalH = (['operations', 'financials', 'admin'] as const).reduce((acc, s) => {
+    const ungroupedCount = navItems.filter(i => !i.section).length;
+    const totalH = (['operations', 'hr', 'financials', 'master-data', 'system'] as const).reduce((acc, s) => {
       const count = navItems.filter(i => i.section === s).length;
       return count > 0 ? acc + LABEL_H + count * ITEM_H : acc;
-    }, NAV_PAD);
+    }, NAV_PAD + ungroupedCount * ITEM_H);
 
     if (totalH > navClientHeight) {
       setCollapsed(prev => {
         const next = new Set<string>(
-          (['operations', 'financials', 'admin'] as const).filter(k => k !== activeSection)
+          (['operations', 'hr', 'financials', 'master-data', 'system'] as const).filter(k => k !== activeSection)
         );
         if (next.size === prev.size && [...next].every(k => prev.has(k))) return prev;
         return next;
@@ -503,7 +507,42 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     navigate(path);
   };
 
-  const renderNavSection = (label: string, sectionName: 'operations' | 'financials' | 'admin') => {
+  const renderUngroupedItems = () => {
+    const items = navItems.filter(i => !i.section);
+    if (items.length === 0) return null;
+
+    return items.map(item => {
+      const IconC = item.icon;
+      const isActive = item.key === activeKey;
+      const isDanger = item.key === 'penalties';
+      return (
+        <button
+          key={item.key}
+          className={`sidebar-item ${isActive ? 'active' : ''}`}
+          onClick={() => handleNavigate(item.path)}
+          title={item.label}
+          aria-label={item.label}
+        >
+          <IconC size={16} />
+          <span className="sidebar-item-label">{item.label}</span>
+
+          {item.count !== undefined && item.count > 0 && (
+            <span
+              className={`nav-item__badge${isDanger ? ' nav-item__badge--danger' : ''}`}
+              style={{ marginLeft: 'auto' }}
+            >
+              {item.count}
+            </span>
+          )}
+          {isActive && (item.count === undefined || item.count === 0) && (
+            <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+          )}
+        </button>
+      );
+    });
+  };
+
+  const renderNavSection = (label: string, sectionName: 'operations' | 'hr' | 'financials' | 'master-data' | 'system') => {
     const items = navItems.filter(i => i.section === sectionName);
     if (items.length === 0) return null;
     const isCollapsed = collapsed.has(sectionName);
@@ -580,9 +619,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="sidebar-nav" ref={navRef as React.RefObject<HTMLElement>}>
+          {renderUngroupedItems()}
           {renderNavSection('Vận hành', 'operations')}
+          {renderNavSection('Nhân sự', 'hr')}
           {renderNavSection('Tài chính', 'financials')}
-          {renderNavSection('Danh mục', 'admin')}
+          {renderNavSection('Danh mục', 'master-data')}
+          {renderNavSection('Hệ thống', 'system')}
         </nav>
 
         <div className="sidebar-footer" ref={userMenuRef}>

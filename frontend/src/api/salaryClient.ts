@@ -71,3 +71,28 @@ export const salaryClient = {
       { items }
     ),
 };
+
+// ─── Salary Period Config ─────────────────────────────────────────
+export interface SalaryPeriodDefault {
+  id: number;
+  defaultStartDay: number;
+  defaultEndDay: number;
+  isDefault: boolean;
+  updatedAt: string;
+}
+export interface SalaryPeriodRange {
+  month: number;
+  year: number;
+  start: string;
+  end: string;
+  label: string;
+}
+export const salaryPeriodConfigClient = {
+  getDefault: () => api.get<SalaryPeriodDefault | null>('/salary-periods/default'),
+  updateDefault: (defaultStartDay: number, defaultEndDay: number) =>
+    api.put<SalaryPeriodDefault>('/salary-periods/default', { defaultStartDay, defaultEndDay }),
+  resolve: (year: number, month: number) =>
+    api.get<SalaryPeriodRange>(`/salary-periods/resolve?year=${year}&month=${month}`),
+  delete: (id: number) => api.delete<{ ok: boolean }>(`/salary-periods/${id}`),
+};
+

@@ -71,7 +71,14 @@ export default function ConfigPage() {
     if (salaryDefault.isLoading) return '—';
     const d = salaryDefault.data;
     if (!d || d.defaultStartDay == null) return 'Chưa cấu hình';
-    return `Ngày ${d.defaultStartDay}–${d.defaultEndDay} hàng tháng`;
+    const s = d.defaultStartDay;
+    const e = d.defaultEndDay;
+    if (s != null && e != null && s <= e) {
+      // Same-month mode
+      const endLabel = e === 31 ? 'cuối tháng' : `ngày ${e}`;
+      return `Ngày ${s} → ${endLabel}`;
+    }
+    return `Ngày ${s} tháng trước → Ngày ${e} tháng này`;
   }
 
   function fuelStatus(): string {

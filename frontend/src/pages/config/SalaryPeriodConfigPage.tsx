@@ -1,137 +1,229 @@
 import { useState, useEffect } from 'react';
-import { InlineForm } from '../../components/config/InlineForm';
-import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
-import { CrudTable } from '../../components/config/CrudTable';
 import { api } from '../../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { CalendarDays, Settings2, Info } from 'lucide-react';
+import type { SalaryPeriodDefault } from '../../api/salaryClient';
+import './SalaryPeriodConfigPage.css';
 
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+type DefaultConfig = Pick<SalaryPeriodDefault, 'id' | 'defaultStartDay' | 'defaultEndDay'>;
 
-interface SalaryPeriodOverride {
-  id: number;
-  month: number;
-  year: number;
-  startDate: string;
-  endDate: string;
-  label: string | null;
-}
-
-function SalaryPeriodOverrideForm({ saving, item, onsave, oncancel }: {
-  saving: boolean; item?: SalaryPeriodOverride; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
-}) {
-  const [month, setMonth] = useState(item?.month || new Date().getMonth() + 1);
-  const [year, setYear] = useState(item?.year || new Date().getFullYear());
-  const [startDate, setStartDate] = useState(item?.startDate || '');
-  const [endDate, setEndDate] = useState(item?.endDate || '');
-  const [label, setLabel] = useState(item?.label || '');
-
-  return (
-    <InlineForm colSpan={6}>
-      <div style={{ display: 'flex', gap: 12, minWidth: 520, flexWrap: 'wrap' }}>
-        <Field label="Tháng">
-          <select className="input" value={month} onChange={e => setMonth(Number(e.target.value))}>
-            {MONTHS.map(m => <option key={m} value={m}>Tháng {m}</option>)}
-          </select>
-        </Field>
-        <Field label="Năm">
-          <input className="input" type="number" value={year} onChange={e => setYear(Number(e.target.value))} style={{ width: 100 }} />
-        </Field>
-        <Field label="Ngày bắt đầu">
-          <input className="input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ width: 160 }} />
-        </Field>
-        <Field label="Ngày kết thúc">
-          <input className="input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ width: 160 }} />
-        </Field>
-        <Field label="Ghi chú">
-          <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="VD: Kỳ Tết" style={{ width: 140 }} />
-        </Field>
-      </div>
-      <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
-        if (!startDate || !endDate) return;
-        onsave({ month, year, startDate: startDate, endDate: endDate, label: label || undefined });
-      }} />
-    </InlineForm>
-  );
+/** Describe the default rule in human language */
+function describeDefault(startDay: number, endDay: number): string {
+  if (startDay <= endDay) {
+    const endLabel = endDay === 31 ? 'cuối tháng' : `ngày ${endDay}`;
+    return `Ngày ${startDay} đến ${endLabel} trong cùng tháng`;
+  }
+  return `Ngày ${startDay} tháng trước → Ngày ${endDay} tháng này`;
 }
 
 export default function SalaryPeriodConfigPage() {
-  const [defaultConfig, setDefaultConfig] = useState<{ defaultStartDay: number; defaultEndDay: number } | null>(null);
+  const [defaultConfig, setDefaultConfig] = useState<DefaultConfig | null>(null);
+  const [mode, setMode] = useState<'calendar' | 'custom'>('calendar');
   const [startDay, setStartDay] = useState(26);
   const [endDay, setEndDay] = useState(25);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    api.get<{ defaultStartDay: number; defaultEndDay: number } | null>('/salary-periods/default').then(row => {
+    api.get<DefaultConfig | null>('/salary-periods/default').then(row => {
       if (row) {
         setDefaultConfig(row);
-        setStartDay(row.defaultStartDay ?? 26);
-        setEndDay(row.defaultEndDay ?? 25);
+        const s = row.defaultStartDay ?? 1;
+        const e = row.defaultEndDay ?? 31;
+        if (s === 1 && e === 31) {
+          setMode('calendar');
+          setStartDay(26);
+          setEndDay(25);
+        } else {
+          setMode('custom');
+          setStartDay(s);
+          setEndDay(e);
+        }
       }
-    }).catch(() => {});
+    }).catch(() => setLoadError(true));
   }, []);
 
   async function saveDefault() {
     setSaving(true);
+    setSaveSuccess(false);
     try {
-      const result = await api.put<{ defaultStartDay: number; defaultEndDay: number }>('/salary-periods/default', { defaultStartDay: startDay, defaultEndDay: endDay });
+      const s = mode === 'calendar' ? 1 : startDay;
+      const e = mode === 'calendar' ? 31 : endDay;
+      const result = await api.put<DefaultConfig>('/salary-periods/default', {
+        defaultStartDay: s,
+        defaultEndDay: e,
+      });
       setDefaultConfig(result);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+
+      // Invalidate related queries so SalaryAttendancePage sees the new period
+      queryClient.invalidateQueries({ queryKey: ['driver-workdays'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-salary'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-list'] });
+    } catch {
+      setLoadError(true);
     } finally {
       setSaving(false);
     }
   }
 
-  const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
-  const startDays = daysInMonth.filter(d => d <= 28); // start day max 28 to avoid month-length issues
+  // Determine the display rule
+  const currentStart = defaultConfig?.defaultStartDay ?? 1;
+  const currentEnd = defaultConfig?.defaultEndDay ?? 31;
+  const currentDesc = describeDefault(currentStart, currentEnd);
+
+  // Live preview description of the form selection
+  const previewDesc = mode === 'calendar'
+    ? 'Ngày 1 đến cuối tháng trong cùng tháng'
+    : describeDefault(startDay, endDay);
 
   return (
-    <div className="fade-up" style={{ maxWidth: 960 }}>
-      {/* Global Default */}
-      <div style={{ marginBottom: 32, padding: 20, border: '1px solid var(--border-2)', borderRadius: 10, background: 'var(--bg-0)' }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: 'var(--fg-1)' }}>Quy tắc mặc định</h3>
-        <p style={{ fontSize: 13, color: 'var(--fg-3)', marginBottom: 16 }}>
-          Kỳ lương mặc định cho tất cả các tháng. Ví dụ: ngày 26 tháng trước đến ngày 25 tháng này = kỳ lương tháng hiện tại.
-        </p>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <Field label="Ngày bắt đầu (tháng trước)">
-            <select className="input" value={startDay} onChange={e => setStartDay(Number(e.target.value))} style={{ width: 100 }}>
-              {startDays.map(d => <option key={d} value={d}>Ngày {d}</option>)}
-            </select>
-          </Field>
-          <Field label="Ngày kết thúc (tháng này)">
-            <select className="input" value={endDay} onChange={e => setEndDay(Number(e.target.value))} style={{ width: 100 }}>
-              {daysInMonth.map(d => <option key={d} value={d}>Ngày {d}</option>)}
-            </select>
-          </Field>
-          <button className="btn btn--primary" onClick={saveDefault} disabled={saving} style={{ height: 38 }}>
-            {saving ? 'Đang lưu…' : 'Lưu mặc định'}
-          </button>
+    <div className="sp-wrap fade-up" style={{ maxWidth: 840 }}>
+      {/* ── Global Default Rule ── */}
+      <div className="sp-default-card">
+        <div className="sp-default-card__header">
+          <span className="sp-default-card__icon"><Settings2 size={16} /></span>
+          <div>
+            <h3 className="sp-default-card__title">Quy tắc mặc định</h3>
+            <p className="sp-default-card__subtitle">
+              Áp dụng cho tất cả các tháng
+            </p>
+          </div>
+          {defaultConfig && (
+            <span className="sp-badge sp-badge--active">
+              <span className="sp-badge__dot" />
+              Đang áp dụng
+            </span>
+          )}
         </div>
-        {defaultConfig && (
-          <p style={{ fontSize: 13, color: 'var(--brand)', marginTop: 12 }}>
-            Hiện tại: Ngày {defaultConfig.defaultStartDay} tháng trước → Ngày {defaultConfig.defaultEndDay} tháng này
-          </p>
-        )}
-      </div>
 
-      {/* Per-month overrides */}
-      <CrudTable<SalaryPeriodOverride>
-        title="Ghi đè kỳ lương theo tháng"
-        description="Thiết lập kỳ lương riêng cho tháng cần điều chỉnh (VD: Tết, cuối năm)"
-        endpoint="/salary-periods"
-        colSpan={6}
-        pageSlug="salary-periods"
-        emptyIllustration="empty-earnings.svg"
-        emptyTitle="Chưa có ghi đè"
-        emptyHint="Mặc định áp dụng cho mọi tháng. Thêm ghi đè cho tháng đặc biệt nếu cần."
-        columns={[
-          { header: 'Tháng', render: (r) => <span style={{ fontWeight: 600 }}>Tháng {r.month}</span> },
-          { header: 'Năm', render: (r) => r.year },
-          { header: 'Ngày bắt đầu', render: (r) => r.startDate },
-          { header: 'Ngày kết thúc', render: (r) => r.endDate },
-          { header: 'Ghi chú', render: (r) => r.label || '—' },
-        ]}
-        renderForm={(p) => <SalaryPeriodOverrideForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
-      />
+        <div className="sp-default-card__body">
+          {/* Mode Selector */}
+          <div className="sp-mode-selector">
+            <label className={`sp-mode-card ${mode === 'calendar' ? 'active' : ''}`}>
+              <input
+                type="radio"
+                name="periodMode"
+                value="calendar"
+                checked={mode === 'calendar'}
+                onChange={() => setMode('calendar')}
+                className="sr-only"
+              />
+              <span className="sp-mode-card__title">Cuối tháng</span>
+              <span className="sp-mode-card__desc">
+                Từ ngày 1 đến ngày cuối cùng của tháng (Ví dụ: 01/05 - 31/05)
+              </span>
+            </label>
+
+            <label className={`sp-mode-card ${mode === 'custom' ? 'active' : ''}`}>
+              <input
+                type="radio"
+                name="periodMode"
+                value="custom"
+                checked={mode === 'custom'}
+                onChange={() => {
+                  setMode('custom');
+                  // Use sensible defaults if transitioning
+                  if (startDay === 1 || endDay === 31) {
+                    setStartDay(26);
+                    setEndDay(25);
+                  }
+                }}
+                className="sr-only"
+              />
+              <span className="sp-mode-card__title">Khác (Tùy chỉnh)</span>
+              <span className="sp-mode-card__desc">
+                Kỳ lương liên tháng, ví dụ từ 26 tháng trước đến 25 tháng này
+              </span>
+            </label>
+          </div>
+
+          {/* Mode info banner */}
+          <div className={`sp-mode-hint ${mode === 'calendar' ? 'sp-mode-hint--same' : 'sp-mode-hint--cross'}`}>
+            <CalendarDays size={14} />
+            <span>
+              {mode === 'calendar'
+                ? 'Chế độ cùng tháng: ngày bắt đầu và kết thúc trong cùng tháng lương'
+                : 'Chế độ liên tháng: bắt đầu từ tháng trước, kết thúc tháng hiện tại'}
+            </span>
+          </div>
+
+          {/* Configuration Inputs */}
+          {mode === 'custom' ? (
+            <div className="sp-default-card__fields">
+              <Field label="Ngày bắt đầu (tháng trước)">
+                <select
+                  className="input"
+                  value={startDay}
+                  onChange={e => {
+                    const val = Number(e.target.value);
+                    setStartDay(val);
+                    // Automatically adjust endDay if it's no longer valid/contiguous
+                    if (endDay >= val) {
+                      setEndDay(val - 1);
+                    }
+                  }}
+                >
+                  {Array.from({ length: 27 }, (_, i) => i + 2).map(d => (
+                    <option key={d} value={d}>Ngày {d}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Ngày kết thúc (tháng này)">
+                <select
+                  className="input"
+                  value={endDay}
+                  onChange={e => setEndDay(Number(e.target.value))}
+                >
+                  {Array.from({ length: startDay - 1 }, (_, i) => i + 1).map(d => (
+                    <option key={d} value={d}>Ngày {d}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <div className="sp-preview">
+                <span className="sp-preview__label">Ví dụ (tháng này):</span>
+                <span className="sp-preview__value">{previewDesc}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="sp-preview" style={{ alignSelf: 'flex-start', margin: 0 }}>
+              <span className="sp-preview__label">Ví dụ (tháng này):</span>
+              <span className="sp-preview__value">{previewDesc}</span>
+            </div>
+          )}
+
+          {loadError && (
+            <p className="sp-hint sp-hint--warn">Không thể tải cấu hình hiện tại — backend có thể đang khởi động.</p>
+          )}
+
+          <div className="sp-default-card__actions">
+            <button
+              className="btn btn--primary"
+              onClick={saveDefault}
+              disabled={saving}
+              style={{ minWidth: 140 }}
+            >
+              {saving ? 'Đang lưu…' : 'Lưu mặc định'}
+            </button>
+            {saveSuccess && (
+              <span className="sp-save-success">✓ Đã lưu thành công</span>
+            )}
+          </div>
+
+          <div className="sp-current-rule">
+            <Info size={13} />
+            <span>
+              Cấu hình hiện tại: <strong>{currentDesc}</strong> {!defaultConfig && ' (Mặc định hệ thống)'}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
