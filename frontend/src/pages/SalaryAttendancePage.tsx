@@ -1,14 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Loader2, AlertTriangle, Users,
-  Truck, Coffee, XCircle, MoonStar, Calendar, CheckCircle, DollarSign,
+  ChevronLeft, Loader2, AlertTriangle, Users,
+  Truck, Coffee, XCircle, MoonStar, Calendar, CheckCircle, DollarSign, Search,
 } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
-import { PageHeader, Panel } from '../components/UI';
+import { PageHeader, Panel, KPI } from '../components/UI';
 import { useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays } from '../hooks/useSalaryQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { getInitials, avatarColorById } from '../lib/avatar';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
+import { useMonth } from '../hooks/useMonth';
 
 const MONTHS_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
   'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -18,7 +20,7 @@ const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 type CalEditStatus = 'STANDBY' | 'PERSONAL_LEAVE' | null;
 
 const STATUS_CONFIG = {
-  TRIP_DAY:      { label: 'Đi chuyến',    bg: 'var(--primary-soft)', color: 'var(--primary)', icon: Truck, emoji: '🚛' },
+  TRIP_DAY:      { label: 'Đi chuyến',    bg: 'var(--accent-soft)', color: 'var(--accent)', icon: Truck, emoji: '🚛' },
   STANDBY:       { label: 'Chờ việc',     bg: 'var(--warning-soft)', color: 'var(--warning-text)', icon: Coffee, emoji: '⏳' },
   PERSONAL_LEAVE:{ label: 'Nghỉ riêng',   bg: 'var(--danger-soft)',  color: 'var(--danger)',  icon: XCircle, emoji: '🏖' },
   WEEKLY_OFF:    { label: 'Nghỉ tuần',    bg: 'var(--bg-3)',         color: 'var(--fg-3)',    icon: MoonStar, emoji: '💤' },
@@ -51,52 +53,26 @@ function CalCell({ day, year, month, workDay, isUpdating, onCycle }: CalCellProp
   const dateStr = toDateStr(year, month, day);
   const status = workDay?.status ?? (isSunday(year, month, day) ? 'WEEKLY_OFF' : null);
   const cfg = status ? STATUS_CONFIG[status] : null;
-  const isTripDay = status === 'TRIP_DAY';
-  const isClickable = !isTripDay && !isUpdating;
+  const isClickable = !isUpdating;
 
   return (
     <div
       title={workDay?.trip ? `${workDay.trip.tripCode || ''} – ${workDay.trip.routeName || ''}` : cfg?.label || ''}
       onClick={() => isClickable && onCycle(dateStr, workDay)}
-      style={{
-        position: 'relative',
-        aspectRatio: '1',
-        minHeight: 52,
-        borderRadius: 'var(--radius)',
-        border: `1.5px solid ${cfg ? cfg.color + '55' : 'var(--border-1)'}`,
-        background: cfg?.bg || 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-        cursor: isClickable ? 'pointer' : isTripDay ? 'default' : 'default',
-        transition: 'box-shadow 0.15s, transform 0.1s',
-        userSelect: 'none',
-      }}
-      onMouseEnter={e => {
-        if (isClickable) {
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px var(--primary)';
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)';
-        }
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-        (e.currentTarget as HTMLElement).style.transform = 'none';
-      }}
+      className={`cal-cell ${isClickable ? 'is-clickable' : ''} ${status ? `status-${status.toLowerCase()}` : ''}`}
     >
-      <span style={{ fontSize: 11, fontWeight: 700, color: cfg?.color || 'var(--fg-2)', lineHeight: 1 }}>
+      <span className="cal-cell-day-num">
         {day}
       </span>
-      {cfg && (
-        <span style={{ fontSize: 14, lineHeight: 1 }}>{STATUS_CONFIG[status as keyof typeof STATUS_CONFIG].emoji}</span>
+      {cfg && cfg.icon && (
+        <div className="cal-cell-status-container">
+          <span className="cal-cell-icon-wrap">
+            <cfg.icon size={13} strokeWidth={2.5} />
+          </span>
+        </div>
       )}
       {workDay?.note && (
-        <div style={{
-          position: 'absolute', top: 2, right: 2,
-          width: 6, height: 6, borderRadius: '50%',
-          background: 'var(--primary)',
-        }} />
+        <div className="cal-cell-note-dot" />
       )}
     </div>
   );
@@ -105,84 +81,55 @@ function CalCell({ day, year, month, workDay, isUpdating, onCycle }: CalCellProp
 // ── Salary Summary Card ───────────────────────────────────────────────────────
 function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="payslip-container">
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-        {[
-          { label: 'Đi chuyến', value: salary.tripDays, color: 'var(--primary)', bg: 'var(--primary-soft)' },
-          { label: 'Chờ việc', value: salary.standbyDays, color: 'var(--warning-text)', bg: 'var(--warning-soft)' },
-          { label: 'Nghỉ riêng', value: salary.personalLeaveDays, color: 'var(--danger)', bg: 'var(--danger-soft)' },
-          { label: 'Công chuẩn', value: salary.standardWorkDays, color: 'var(--fg-2)', bg: 'var(--bg-3)' },
-        ].map(kpi => (
-          <div key={kpi.label} style={{
-            padding: '10px 12px', borderRadius: 'var(--radius)',
-            background: kpi.bg, textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: kpi.color }}>{kpi.value}</div>
-            <div style={{ fontSize: 11, color: 'var(--fg-3)', fontWeight: 600, marginTop: 2 }}>{kpi.label}</div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 8 }}>
+        <KPI label="Đi chuyến" value={salary.tripDays} variant="success" icon={Truck} compact />
+        <KPI label="Chờ việc" value={salary.standbyDays} variant="warn" icon={Coffee} compact />
+        <KPI label="Nghỉ riêng" value={salary.personalLeaveDays} variant="danger" icon={XCircle} compact />
+        <KPI label="Công chuẩn" value={salary.standardWorkDays} variant="info" icon={Calendar} compact />
       </div>
 
       {/* Financial breakdown */}
-      <div style={{
-        background: 'var(--bg-2)', borderRadius: 'var(--radius)', padding: '14px 16px',
-        border: '1px solid var(--border-1)',
-        display: 'flex', flexDirection: 'column', gap: 6,
-      }}>
+      <div className="payslip-header">Chi tiết tính lương</div>
+      <div className="payslip-card">
         {[
-          { label: 'Lương cứng', value: salary.baseSalary, sign: '' },
-          { label: `Lương chuyến (${salary.tripDays} ngày)`, value: salary.totalTripSalary, sign: '+' },
-          { label: `Điều chỉnh công ${salary.adjustment >= 0 ? 'thừa' : 'thiếu'}`, value: salary.adjustment, sign: salary.adjustment >= 0 ? '+' : '' },
-          { label: 'Phạt kỷ luật', value: -salary.totalPenalties, sign: salary.totalPenalties > 0 ? '-' : '' },
+          { label: 'Lương cứng', value: salary.baseSalary, sign: '', isNegative: false },
+          { label: `Lương chuyến (${salary.tripDays} ngày)`, value: salary.totalTripSalary, sign: '+', isNegative: false },
+          { label: `Điều chỉnh công ${salary.adjustment >= 0 ? 'thừa' : 'thiếu'}`, value: salary.adjustment, sign: salary.adjustment >= 0 ? '+' : '', isNegative: salary.adjustment < 0 },
+          { label: 'Phạt kỷ luật', value: -salary.totalPenalties, sign: salary.totalPenalties > 0 ? '-' : '', isNegative: salary.totalPenalties > 0 },
         ].map((row, i) => (
-          <div key={i} style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            fontSize: 13,
-            borderBottom: i < 3 ? '1px solid var(--border-1)' : 'none',
-            paddingBottom: i < 3 ? 6 : 0,
-          }}>
-            <span style={{ color: 'var(--fg-2)' }}>{row.label}</span>
-            <span style={{
-              fontWeight: 600, fontFamily: 'var(--font-mono)',
-              color: row.value < 0 ? 'var(--danger)' : row.value > 0 ? 'var(--success-text)' : 'var(--fg-2)',
-            }}>
+          <div key={i} className="payslip-row">
+            <span className="payslip-label">{row.label}</span>
+            <span className={`payslip-value ${row.isNegative ? 'is-negative' : row.value > 0 ? 'is-positive' : ''}`}>
               {row.sign}{formatCurrency(Math.abs(row.value))}
             </span>
           </div>
         ))}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          paddingTop: 8, marginTop: 4, borderTop: '2px solid var(--border-1)',
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-1)' }}>Lương thực nhận</span>
-          <span style={{
-            fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-mono)',
-            color: salary.netSalary >= 0 ? 'var(--success-text)' : 'var(--danger)',
-          }}>
-            {formatCurrency(salary.netSalary)}
+      </div>
+
+      <div className="payslip-total-box">
+        <span className="payslip-total-label">Lương thực nhận</span>
+        <span className="payslip-total-val">{formatCurrency(salary.netSalary)}</span>
+      </div>
+
+      {salary.standbyCost > 0 && (
+        <div className="payslip-callout">
+          <AlertTriangle size={16} className="payslip-callout-icon" />
+          <span className="payslip-callout-text">
+            <strong>Chi phí chờ việc:</strong> {formatCurrency(salary.standbyCost)} — hạch toán vào chi phí chung (không tính vào chuyến)
           </span>
         </div>
-        {salary.standbyCost > 0 && (
-          <div style={{
-            marginTop: 8, padding: '8px 12px', borderRadius: 'var(--radius)',
-            background: 'var(--warning-soft)', border: '1px solid var(--warning-soft)',
-            fontSize: 12, color: 'var(--warning-text)',
-          }}>
-            <strong>Chi phí chờ việc:</strong> {formatCurrency(salary.standbyCost)} — hạch toán vào chi phí chung (không tính vào chuyến)
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalaryAttendancePage() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const { month, year } = useMonth();
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: salaryList, isLoading: listLoading } = useSalaryList(year, month);
   const { data: workDayData, isLoading: wdLoading } = useDriverWorkDays(selectedDriverId, year, month);
@@ -193,6 +140,13 @@ export default function SalaryAttendancePage() {
   const selectedDriver = drivers.find(d => d.id === selectedDriverId);
   const salaryPeriod = workDayData?.period;
 
+  // Search filter
+  const filteredDrivers = useMemo(() => {
+    if (!searchTerm.trim()) return drivers;
+    const term = searchTerm.trim().toLowerCase();
+    return drivers.filter(d => d.name.toLowerCase().includes(term));
+  }, [drivers, searchTerm]);
+
   // Build work day map from API data + pending local changes
   const workDayMap = useMemo(() => {
     const map = new Map<string, WorkDayRecord>();
@@ -200,9 +154,10 @@ export default function SalaryAttendancePage() {
     return map;
   }, [workDayData?.workDays]);
 
-  // Cycle status: null → STANDBY → PERSONAL_LEAVE → null
-  const cycleStatus = (current: WorkDayRecord | undefined): 'STANDBY' | 'PERSONAL_LEAVE' | null => {
-    if (!current || current.status === 'WEEKLY_OFF') return 'STANDBY';
+  // Cycle status: null → TRIP_DAY → STANDBY → PERSONAL_LEAVE → null
+  const cycleStatus = (current: WorkDayRecord | undefined): 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null => {
+    if (!current || current.status === 'WEEKLY_OFF') return 'TRIP_DAY';
+    if (current.status === 'TRIP_DAY') return 'STANDBY';
     if (current.status === 'STANDBY') return 'PERSONAL_LEAVE';
     return null; // clear
   };
@@ -215,15 +170,6 @@ export default function SalaryAttendancePage() {
     const items = [{ date: dateStr, status: newStatus, note: null }];
     await updateMutation.mutateAsync(items);
   }, [selectedDriverId, updateMutation]);
-
-  const navigateMonth = (dir: -1 | 1) => {
-    let m = month + dir;
-    let y = year;
-    if (m < 1) { m = 12; y--; }
-    if (m > 12) { m = 1; y++; }
-    setMonth(m);
-    setYear(y);
-  };
 
   // Build calendar grid
   const daysInMonth = getDaysInMonth(year, month);
@@ -244,31 +190,23 @@ export default function SalaryAttendancePage() {
         description="Quản lý ngày công và tính lương tài xế theo tháng"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, alignItems: 'start' }}>
+      <div className={`salary-page-layout ${selectedDriverId ? 'has-selected' : ''}`}>
         {/* ── Left panel: driver list ── */}
-        <Panel flush style={{ position: 'sticky', top: 16 }}>
-          {/* Month navigator */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 14px', borderBottom: '1px solid var(--border-1)',
-          }}>
-            <button
-              onClick={() => navigateMonth(-1)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-2)', padding: 4, borderRadius: 6 }}
-              title="Tháng trước"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--fg-1)' }}>
-              {MONTHS_VI[month - 1]}/{year}
-            </span>
-            <button
-              onClick={() => navigateMonth(1)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-2)', padding: 4, borderRadius: 6 }}
-              title="Tháng sau"
-            >
-              <ChevronRight size={18} />
-            </button>
+        <Panel flush className="driver-sidebar">
+
+          {/* Search bar */}
+          <div className="driver-search-container">
+            <div className="input-icon">
+              <Search size={14} />
+              <input
+                type="text"
+                className="input"
+                style={{ height: 34, fontSize: 13 }}
+                placeholder="Tìm tài xế..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Driver list */}
@@ -277,58 +215,52 @@ export default function SalaryAttendancePage() {
               <Loader2 size={18} className="spin" />
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {drivers.map((d, i) => {
+            <div className="driver-list-scroll">
+              {filteredDrivers.map((d) => {
                 const isSelected = d.id === selectedDriverId;
                 const net = d.salary?.netSalary ?? 0;
+                const initials = getInitials(d.name);
+                const avatarColor = avatarColorById(d.id);
                 return (
                   <div
                     key={d.id}
                     onClick={() => setSelectedDriverId(d.id)}
-                    style={{
-                      padding: '11px 14px',
-                      borderBottom: i < drivers.length - 1 ? '1px solid var(--border-1)' : 'none',
-                      cursor: 'pointer',
-                      background: isSelected ? 'var(--primary-soft)' : 'transparent',
-                      borderLeft: isSelected ? '3px solid var(--primary)' : '3px solid transparent',
-                      transition: 'background 0.12s',
-                    }}
-                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-3)'; }}
-                    onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                    className={`driver-item-card ${isSelected ? 'is-active' : ''}`}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
-                      <span style={{
-                        fontSize: 13, fontWeight: 600,
-                        color: isSelected ? 'var(--primary)' : 'var(--fg-1)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-                      }}>{d.name}</span>
-                      {d.salary && (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: net >= 0 ? 'var(--success-text)' : 'var(--danger)', flexShrink: 0 }}>
-                          {formatCurrency(net)}
-                        </span>
-                      )}
+                    <div className="driver-avatar-circle" style={{ background: avatarColor.bg, color: avatarColor.fg }}>
+                      {initials}
                     </div>
-                    {d.salary && (
-                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                        <span title="Ngày đi chuyến" style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 500 }}>
-                          🚛 {d.salary.tripDays}
-                        </span>
-                        <span title="Chờ việc" style={{ fontSize: 11, color: 'var(--warning-text)', fontWeight: 500 }}>
-                          ⏳ {d.salary.standbyDays}
-                        </span>
-                        {d.salary.personalLeaveDays > 0 && (
-                          <span title="Nghỉ riêng" style={{ fontSize: 11, color: 'var(--danger)', fontWeight: 500 }}>
-                            🏖 {d.salary.personalLeaveDays}
+                    <div className="driver-info-main">
+                      <div className="driver-info-header">
+                        <span className="driver-card-name">{d.name}</span>
+                        {d.salary && (
+                          <span className="driver-card-salary" style={{ color: net >= 0 ? 'var(--success-text)' : 'var(--danger-text)' }}>
+                            {formatCurrency(net)}
                           </span>
                         )}
                       </div>
-                    )}
+                      {d.salary && (
+                        <div className="driver-card-stats">
+                          <span className="driver-stat-pill driver-stat-pill--trip" title="Ngày đi chuyến">
+                            <Truck size={10} /> {d.salary.tripDays}
+                          </span>
+                          <span className="driver-stat-pill driver-stat-pill--standby" title="Chờ việc">
+                            <Coffee size={10} /> {d.salary.standbyDays}
+                          </span>
+                          {d.salary.personalLeaveDays > 0 && (
+                            <span className="driver-stat-pill driver-stat-pill--leave" title="Nghỉ riêng">
+                              <XCircle size={10} /> {d.salary.personalLeaveDays}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
-              {drivers.length === 0 && (
+              {filteredDrivers.length === 0 && (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
-                  Không có tài xế nào
+                  Không tìm thấy tài xế nào
                 </div>
               )}
             </div>
@@ -344,30 +276,33 @@ export default function SalaryAttendancePage() {
             </div>
           </Panel>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="salary-page-layout__detail" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Calendar card */}
             <Panel>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--fg-1)' }}>
+              <div className="calendar-card-header">
+                <div style={{ width: '100%' }}>
+                  <button
+                    className="btn btn--secondary btn--sm mobile-back-btn"
+                    onClick={() => setSelectedDriverId(null)}
+                    style={{ marginBottom: 12, display: 'none', alignItems: 'center', gap: 6, width: 'fit-content' }}
+                  >
+                    <ChevronLeft size={16} /> Quay lại danh sách
+                  </button>
+                  <h3 className="calendar-header-title">
                     {selectedDriver?.name}
                   </h3>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>
+                  <p className="calendar-header-subtitle">
                     {salaryPeriod ? `Kỳ lương: ${salaryPeriod.start} → ${salaryPeriod.end}` : `${MONTHS_VI[month - 1]}/${year}`} — Bấm vào ngày để đánh dấu trạng thái
                   </p>
                 </div>
-                {isUpdating && <Loader2 size={16} className="spin" style={{ color: 'var(--primary)' }} />}
+                {isUpdating && <Loader2 size={16} className="spin" style={{ color: 'var(--accent)', marginLeft: 8 }} />}
               </div>
 
-              <div style={{ padding: 14 }}>
+              <div className="calendar-container">
                 {/* Day-of-week headers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
+                <div className="calendar-dow-header">
                   {DOW_LABELS.map(dow => (
-                    <div key={dow} style={{
-                      textAlign: 'center', fontSize: 11, fontWeight: 700,
-                      color: dow === 'CN' ? 'var(--danger)' : 'var(--fg-3)',
-                      padding: '4px 0',
-                    }}>
+                    <div key={dow} className={`calendar-dow-cell ${dow === 'CN' ? 'is-sunday' : ''}`}>
                       {dow}
                     </div>
                   ))}
@@ -379,7 +314,7 @@ export default function SalaryAttendancePage() {
                     <Loader2 size={20} className="spin" />
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                  <div className="calendar-grid">
                     {calCells.map((day, idx) => (
                       day === null ? (
                         <div key={`blank-${idx}`} />
@@ -399,15 +334,19 @@ export default function SalaryAttendancePage() {
                 )}
 
                 {/* Legend */}
-                <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
-                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--fg-3)' }}>
-                      <span>{cfg.emoji}</span>
-                      <span style={{ fontWeight: 500 }}>{cfg.label}</span>
-                    </div>
-                  ))}
-                  <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 'auto', fontStyle: 'italic' }}>
-                    Bấm ngày để chuyển: Chờ việc → Nghỉ riêng → Xóa
+                <div className="calendar-legend-bar">
+                  <div className="calendar-legend-items">
+                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                      <div key={key} className="calendar-legend-item">
+                        <span style={{ color: cfg.color, display: 'flex', alignItems: 'center' }}>
+                          <cfg.icon size={13} strokeWidth={2.5} />
+                        </span>
+                        <span>{cfg.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="calendar-legend-instruction">
+                    Bấm ngày để chuyển: Đi chuyến → Chờ việc → Nghỉ riêng → Xóa
                   </div>
                 </div>
               </div>

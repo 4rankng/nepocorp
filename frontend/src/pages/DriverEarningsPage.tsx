@@ -75,42 +75,20 @@ export default function DriverEarningsPage() {
       />
 
       {/* Net income hero card */}
-      <div className="panel fade-up earnings-hero" style={{
-        marginBottom: 16,
-        overflow: 'hidden',
-        border: isPositive ? '1px solid var(--success)' : '1px solid var(--danger)',
-        boxShadow: isPositive ? '0 8px 24px -8px rgba(0, 177, 79, 0.25)' : '0 8px 24px -8px rgba(227, 36, 52, 0.25)'
-      }}>
-        <div className="earnings-hero__inner" style={{
-          padding: '24px 24px',
-          background: isPositive
-            ? 'linear-gradient(135deg, var(--success-soft) 0%, var(--bg-2) 100%)'
-            : 'linear-gradient(135deg, var(--danger-soft) 0%, var(--bg-2) 100%)',
-        }}>
-          <div className="earnings-hero__row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p className="earnings-hero__label" style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+      <div className={`panel fade-up earnings-hero ${isPositive ? 'earnings-hero--positive' : 'earnings-hero--negative'}`}>
+        <div className="earnings-hero__inner">
+          <div className="earnings-hero__row">
+            <div className="earnings-hero__content">
+              <p className="earnings-hero__label">
                 Thu nhập thực tế
               </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                <span className="earnings-hero__value" style={{
-                  fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 800, letterSpacing: '-0.02em',
-                  fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums',
-                  color: isPositive ? 'var(--success-text)' : 'var(--danger-text)',
-                  lineHeight: 1.1,
-                  wordBreak: 'break-word'
-                }}>
-                  {formatNumber(earnings.netIncome)} <span style={{ fontSize: '0.65em', opacity: 0.8 }}>₫</span>
+              <div className="earnings-hero__value-container">
+                <span className="earnings-hero__value">
+                  {formatNumber(earnings.netIncome)} <span className="earnings-hero__unit">₫</span>
                 </span>
               </div>
             </div>
-            <div className="earnings-hero__icon" style={{
-              width: 48, height: 48, borderRadius: '14px',
-              background: isPositive ? 'var(--success)' : 'var(--danger)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: isPositive ? '0 4px 12px rgba(0, 177, 79, 0.3)' : '0 4px 12px rgba(227, 36, 52, 0.3)'
-            }}>
+            <div className="earnings-hero__icon">
               {isPositive
                 ? <TrendingUp size={24} style={{ color: '#fff' }} />
                 : <TrendingDown size={24} style={{ color: '#fff' }} />

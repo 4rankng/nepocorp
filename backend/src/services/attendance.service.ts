@@ -35,12 +35,11 @@ export async function getWorkDays(driverId: number, startDate: string, endDate: 
 
 /**
  * Upsert a single work day status for a driver.
- * TRIP_DAY records are managed automatically - this is for STANDBY / PERSONAL_LEAVE / WEEKLY_OFF.
  */
 export async function upsertWorkDay(
   driverId: number,
   date: string,
-  status: 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF',
+  status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF',
   note: string | null,
   createdBy: number,
 ) {
@@ -48,14 +47,14 @@ export async function upsertWorkDay(
     .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, date)))
     .limit(1);
 
-  // Can't overwrite a TRIP_DAY via this route
-  if (existing[0]?.status === 'TRIP_DAY') {
-    throw new ApiError(409, 'Không thể thay đổi ngày đi chuyến');
-  }
-
   if (existing[0]) {
     const [updated] = await db.update(s.driverWorkDays)
-      .set({ status, note, updatedAt: new Date() })
+      .set({ 
+        status, 
+        note, 
+        tripId: status === 'TRIP_DAY' ? existing[0].tripId ?? null : null,
+        updatedAt: new Date() 
+      })
       .where(eq(s.driverWorkDays.id, existing[0].id))
       .returning();
     return updated;
@@ -76,9 +75,6 @@ export async function deleteWorkDay(driverId: number, date: string) {
     .limit(1);
 
   if (!existing[0]) return null;
-  if (existing[0].status === 'TRIP_DAY') {
-    throw new ApiError(409, 'Không thể xóa ngày đi chuyến');
-  }
 
   await db.delete(s.driverWorkDays)
     .where(eq(s.driverWorkDays.id, existing[0].id));
@@ -87,11 +83,11 @@ export async function deleteWorkDay(driverId: number, date: string) {
 
 /**
  * Batch upsert work days. Used by the calendar UI to save multiple day changes at once.
- * Each item: { date, status: 'STANDBY' | 'PERSONAL_LEAVE' | null } - null means clear.
+ * Each item: { date, status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null } - null means clear.
  */
 export async function batchUpsertWorkDays(
   driverId: number,
-  items: Array<{ date: string; status: 'STANDBY' | 'PERSONAL_LEAVE' | null; note?: string | null }>,
+  items: Array<{ date: string; status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null; note?: string | null }>,
   createdBy: number,
 ) {
   return db.transaction(async (tx) => {
@@ -103,9 +99,6 @@ export async function batchUpsertWorkDays(
           .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, item.date)))
           .limit(1);
         if (existing[0]) {
-          if (existing[0].status === 'TRIP_DAY') {
-            throw new ApiError(409, `Không thể xóa ngày đi chuyến (${item.date})`);
-          }
           await tx.delete(s.driverWorkDays).where(eq(s.driverWorkDays.id, existing[0].id));
         }
         results.push({ date: item.date, action: 'deleted' });
@@ -114,13 +107,15 @@ export async function batchUpsertWorkDays(
         const existing = await tx.select().from(s.driverWorkDays)
           .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, item.date)))
           .limit(1);
-        if (existing[0]?.status === 'TRIP_DAY') {
-          throw new ApiError(409, `Không thể thay đổi ngày đi chuyến (${item.date})`);
-        }
         let result;
         if (existing[0]) {
           const [updated] = await tx.update(s.driverWorkDays)
-            .set({ status: item.status, note: item.note ?? null, updatedAt: new Date() })
+            .set({ 
+              status: item.status, 
+              note: item.note ?? null, 
+              tripId: item.status === 'TRIP_DAY' ? existing[0].tripId ?? null : null,
+              updatedAt: new Date() 
+            })
             .where(eq(s.driverWorkDays.id, existing[0].id))
             .returning();
           result = updated;

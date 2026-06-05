@@ -739,7 +739,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </Modal>
 
-      <MonthProvider>
       <div className={`app-main ${isDriver ? 'driver-mode' : ''}`}>
         <header className={`topbar ${isDriver ? 'topbar--driver' : ''}`}>
           {!isDriver && (
@@ -881,7 +880,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       <NotificationDrawer isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
-      </MonthProvider>
     </div>
   );
 }

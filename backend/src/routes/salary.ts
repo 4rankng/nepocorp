@@ -67,7 +67,7 @@ router.put('/:driverId/:year/:month/workdays', requireRoles(Role.MANAGER, Role.A
   const year = parseInt(String(req.params.year), 10);
   const month = parseInt(String(req.params.month), 10);
   const { items } = req.body as {
-    items: Array<{ date: string; status: 'STANDBY' | 'PERSONAL_LEAVE' | null; note?: string | null }>;
+    items: Array<{ date: string; status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null; note?: string | null }>;
   };
 
   if (!Array.isArray(items)) {

@@ -123,12 +123,12 @@ export default function DriverTripDetailPage() {
 
       {/* Trip Info Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
-        <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
+        <div className="panel__head">
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Thông tin chuyến
           </span>
         </div>
-        <div style={{ padding: '0 20px' }}>
+        <div className="panel__body">
           <InfoRow icon={<Truck size={16} />} label="Xe đầu kéo" value={trip.truckPlate} />
           <InfoRow icon={<Truck size={16} />} label="Rơ moóc" value={
             trip.trailerPlate ? `${trip.trailerPlate}${trip.trailerType ? ` (${trip.trailerType})` : ''}` : null
@@ -144,24 +144,19 @@ export default function DriverTripDetailPage() {
       </div>
 
       {/* Fuel Allocation Card — prominent for drivers */}
-      <div className="panel" style={{ marginBottom: 16, border: '2px solid var(--brand-soft)' }}>
-        <div style={{
-          padding: '12px 20px',
-          background: 'var(--brand-soft)',
-          display: 'flex', alignItems: 'center', gap: 12,
-          borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-        }}>
-          <Fuel size={20} style={{ color: 'var(--brand)' }} />
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div className="panel fuel-alloc-card" style={{ marginBottom: 16 }}>
+        <div className="fuel-alloc-card__header">
+          <Fuel size={20} className="fuel-alloc-card__icon" />
+          <div className="fuel-alloc-card__title-wrap">
+            <div className="fuel-alloc-card__label">
               Số dầu được cấp
             </div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--brand)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+            <div className="fuel-alloc-card__value">
               {trip.fuelLiters ? `${parseFloat(trip.fuelLiters).toFixed(0)} lít` : '— lít'}
             </div>
           </div>
         </div>
-        <div style={{ padding: '10px 20px', fontSize: 12, color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="fuel-alloc-card__body">
           {trip.fuelMode && (
             <div>
               Chế độ: <strong>{trip.fuelMode === 'AUTO' ? 'Tự động (định mức × km)' : trip.fuelMode === 'FLAT_RATE' ? 'Khoán' : trip.fuelMode}</strong>
@@ -177,12 +172,12 @@ export default function DriverTripDetailPage() {
 
       {/* Earnings Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
-        <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
+        <div className="panel__head">
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Thu nhập & chi phí
           </span>
         </div>
-        <div style={{ padding: '0 20px' }}>
+        <div className="panel__body">
           <InfoRow
             icon={<DollarSign size={16} />}
             label="Tiền kết hợp"
@@ -198,7 +193,7 @@ export default function DriverTripDetailPage() {
             value={trip.totalRoadAllowance ? formatCurrency(trip.totalRoadAllowance) : '—'}
           />
           {trip.hasReturnCargo && (
-            <div style={{ padding: '8px 0', fontSize: 13, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ padding: '8px 0 0', fontSize: 13, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>✓</span> Chuyến về có hàng (+300.000 đ)
             </div>
           )}
@@ -210,7 +205,7 @@ export default function DriverTripDetailPage() {
       {/* Notes */}
       {trip.notes && (
         <div className="panel" style={{ marginBottom: 16 }}>
-          <div style={{ padding: '12px 20px' }}>
+          <div className="panel__body">
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
               Ghi chú
             </div>
