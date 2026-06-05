@@ -15,17 +15,38 @@ import type {
 } from '@nepocorp/shared';
 
 /** Auto-paginate a crud-factory GET endpoint (capped at 100/page by backend). */
-async function fetchAllPaginated<T>(endpoint: string): Promise<T[]> {
+export async function fetchAllPaginated<T>(
+  endpoint: string,
+  params?: Record<string, string>,
+  concurrency = 5,
+): Promise<T[]> {
   const pageSize = 100;
-  const first = await api.get<PaginatedResponse<T>>(`${endpoint}?limit=${pageSize}&page=1`);
-  const totalPages = Math.ceil(first.total / pageSize);
-  if (totalPages <= 1) return first.items;
-  const remaining = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, i) =>
-      api.get<PaginatedResponse<T>>(`${endpoint}?limit=${pageSize}&page=${i + 2}`)
-    ),
+  const baseExtra = params ? `&${new URLSearchParams(params)}` : '';
+  const first = await api.get<PaginatedResponse<T>>(
+    `${endpoint}?limit=${pageSize}&page=1${baseExtra}`,
   );
-  return [first, ...remaining].flatMap(r => r.items);
+  const total = first.total ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return first.items ?? [];
+
+  // Fetch remaining pages in bounded batches to avoid thundering-herd
+  const results: PaginatedResponse<T>[] = [first];
+  const pageNums = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  for (let i = 0; i < pageNums.length; i += concurrency) {
+    const batch = pageNums.slice(i, i + concurrency);
+    const batchResults = await Promise.allSettled(
+      batch.map(page =>
+        api.get<PaginatedResponse<T>>(
+          `${endpoint}?limit=${pageSize}&page=${page}${baseExtra}`,
+        ),
+      ),
+    );
+    for (const r of batchResults) {
+      if (r.status === 'fulfilled') results.push(r.value);
+      else console.warn(`[fetchAllPaginated] page fetch failed:`, r.reason);
+    }
+  }
+  return results.flatMap(r => r.items ?? []);
 }
 
 export const configClient = {
@@ -94,12 +115,18 @@ export const configClient = {
     return fetchAllPaginated<ContainerType>('/container-types');
   },
 
-  getRoutesList: async () => {
-    return fetchAllPaginated<any>('/routes');
+  getRoutesList: async (search?: string) => {
+    return fetchAllPaginated<any>(
+      '/routes',
+      search ? { search } : undefined,
+    );
   },
 
-  getAllCustomers: async () => {
-    return fetchAllPaginated<any>(CONFIG.CUSTOMERS);
+  getAllCustomers: async (search?: string) => {
+    return fetchAllPaginated<any>(
+      CONFIG.CUSTOMERS,
+      search ? { search } : undefined,
+    );
   },
 
   getSalaryPeriodResolve: async (month: number, year: number) => {

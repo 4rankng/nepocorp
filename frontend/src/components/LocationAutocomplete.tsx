@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
+import type { Port } from '@nepocorp/shared';
 
 interface LocationAutocompleteProps {
   value: string;
@@ -12,14 +12,6 @@ interface LocationAutocompleteProps {
   className?: string;
   style?: React.CSSProperties;
   required?: boolean;
-}
-
-interface PortRow {
-  id: number;
-  name: string;
-  code: string | null;
-  city: string | null;
-  address: string | null;
 }
 
 interface MergedSuggestion {
@@ -55,9 +47,9 @@ export function LocationAutocomplete({
 
   // Ports catalog (Cảng / Bãi Hải Phòng — Pete's config catalog)
   // Cached for 5 min; fires once per session for all autocomplete inputs.
-  const { data: ports = [] } = useQuery<PortRow[]>({
+  const { data: ports = [] } = useQuery<Port[]>({
     queryKey: ['ports-catalog'],
-    queryFn: () => configClient.getPorts() as Promise<PortRow[]>,
+    queryFn: () => configClient.getPorts(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -76,7 +68,7 @@ export function LocationAutocomplete({
   //     the full port catalog.
   const portMatches = useMemo<MergedSuggestion[]>(() => {
     const q = value.trim().toLowerCase();
-    const allAsSuggestions = (rows: PortRow[]) => rows.map((p) => ({
+    const allAsSuggestions = (rows: Port[]) => rows.map((p) => ({
       key: `port-${p.id}`,
       description: p.name,
       source: 'port' as const,

@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useConfirm, Modal } from '../../components/UI';
-import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { Customer, PaginatedResponse } from '@nepocorp/shared';
+import type { Customer } from '@nepocorp/shared';
 import { CustomerStatus } from '@nepocorp/shared';
 import './config-page.css';
 
@@ -95,9 +94,7 @@ export default function CustomersConfigPage() {
     queryKey: ['customers-config', search],
     queryFn: async () => {
       const [custList, tripRes] = await Promise.all([
-        search
-          ? (await api.get<PaginatedResponse<Customer>>(`/customers?search=${encodeURIComponent(search)}&limit=100`)).items
-          : configClient.getAllCustomers(),
+        configClient.getAllCustomers(search || undefined),
         tripClient.fetchAllTrips({}).catch(() => ({ items: [] as any[], total: 0 })),
       ]);
       const now = new Date();

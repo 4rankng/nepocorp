@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
-import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
@@ -11,7 +10,7 @@ import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { Route as RouteType, RoadAllowance, PaginatedResponse } from '@nepocorp/shared';
+import type { Route as RouteType, RoadAllowance } from '@nepocorp/shared';
 import { LoadingType } from '@nepocorp/shared';
 import './config-page.css';
 
@@ -329,9 +328,7 @@ export default function RoutesConfigPage() {
 
   const fetchData = useCallback(async () => {
     const [routeList, tripRes, allowances] = await Promise.all([
-      search
-        ? (await api.get<PaginatedResponse<RouteType>>(`/routes?search=${encodeURIComponent(search)}&limit=100`)).items
-        : configClient.getRoutesList(),
+      configClient.getRoutesList(search || undefined),
       tripClient.fetchAllTrips({}).then(r => r.items).catch(() => [] as any[]),
       configClient.getRoadAllowances().catch(() => [] as any[]),
     ]);
@@ -356,7 +353,7 @@ export default function RoutesConfigPage() {
 
   useEffect(() => {
     if (selectedRoute && selectedRoute.defaultLegs && Array.isArray(selectedRoute.defaultLegs)) {
-      const legs = (selectedRoute.defaultLegs as NonNullable<RouteType['defaultLegs']>).map((l: NonNullable<RouteType['defaultLegs']>[number]) => ({
+      const legs = (selectedRoute.defaultLegs as any[]).map((l) => ({
         ...l,
         polylinePath: null as string | null
       }));
