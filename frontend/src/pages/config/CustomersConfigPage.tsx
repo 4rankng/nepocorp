@@ -143,12 +143,21 @@ export default function CustomersConfigPage() {
     return 'low';
   }
 
-  const filtered = useMemo(() => customers.filter(c => {
-    if (customerFilter === 'active') return c.status === CustomerStatus.ACTIVE;
-    if (customerFilter === 'locked') return c.status === CustomerStatus.LOCKED;
-    if (customerFilter === 'high-risk') return getRiskLevel(c) === 'high';
-    return true;
-  }).filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.taxCode || '').includes(search)), [customers, customerFilter, search]);
+  const filtered = useMemo(() => {
+    const byStatus = customers.filter(c => {
+      if (customerFilter === 'active') return c.status === CustomerStatus.ACTIVE;
+      if (customerFilter === 'locked') return c.status === CustomerStatus.LOCKED;
+      if (customerFilter === 'high-risk') return getRiskLevel(c) === 'high';
+      return true;
+    });
+    // Server-side search via fetchAllPaginated already filters by name.
+    // Client-side filter only adds taxCode matching (server only checks name).
+    if (!search) return byStatus;
+    const q = search.toLowerCase();
+    return byStatus.filter(c =>
+      c.name.toLowerCase().includes(q) || (c.taxCode || '').toLowerCase().includes(q)
+    );
+  }, [customers, customerFilter, search]);
 
   return (
     <div className="fade-up cfg-page cfg-page--customers">

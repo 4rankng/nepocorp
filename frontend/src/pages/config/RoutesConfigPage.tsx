@@ -353,7 +353,7 @@ export default function RoutesConfigPage() {
 
   useEffect(() => {
     if (selectedRoute && selectedRoute.defaultLegs && Array.isArray(selectedRoute.defaultLegs)) {
-      const legs = (selectedRoute.defaultLegs as any[]).map((l) => ({
+      const legs = (selectedRoute.defaultLegs as NonNullable<RouteType['defaultLegs']>).map((l) => ({
         ...l,
         polylinePath: null as string | null
       }));
@@ -421,7 +421,7 @@ export default function RoutesConfigPage() {
     if (routeFilter === 'plain') return !r.isMountain;
     if (routeFilter === 'mountain') return r.isMountain;
     return true;
-  }).filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
+  });
 
   return (
     <div className="fade-up cfg-page cfg-page--routes routes-config-page">
