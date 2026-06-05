@@ -1,4 +1,4 @@
-import { Clock, MapPin, UserX, Wrench } from 'lucide-react';
+import { Clock, UserX, Wrench } from 'lucide-react';
 import { getInitials } from '../../../lib/avatar';
 import { formatDayMonth } from '../../../lib/date';
 import { avatarColorClass } from '../utils';
@@ -56,15 +56,16 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
               : defDriver ? <><div className={`driver-avatar ${avatarColorClass(defDriver.id)}`}>{getInitials(defDriver.name)}</div><div><div className="driver-name">{defDriver.name}</div><div className="driver-meta">Tài xế chính</div></div></>
               : <div className="no-driver"><UserX size={14} /> Chưa giao tài xế</div>}
             </div>
-            <div className="v-body">
-              {activeTrip ? <><div className="vrow"><span className="lab">Tuyến</span><span className="val">{activeTrip.routeName}</span></div><div className="vrow"><span className="lab">Khách</span><span className="val">{activeTrip.customerName}</span></div></>
-              : isMaint ? <><div className="vrow"><span className="lab">Trạng thái</span><span className="val">Đang sửa chữa / bảo dưỡng định kỳ</span></div><div className="vrow"><span className="lab">Lưu ý</span><span className="val">Không khả dụng điều vận lúc này</span></div></>
-              : <><div className="vrow"><span className="lab">Bãi đỗ</span><span className="val">Long Biên, Hà Nội</span></div><div className="vrow"><span className="lab">Trạng thái</span><span className="val">Đỗ tại bãi, chờ lệnh xuất phát</span></div></>}
-            </div>
+            {activeTrip && (
+              <div className="v-body">
+                <div className="vrow"><span className="lab">Tuyến</span><span className="val">{activeTrip.routeName}</span></div>
+                <div className="vrow"><span className="lab">Khách</span><span className="val">{activeTrip.customerName}</span></div>
+              </div>
+            )}
             <div className="v-bottom-meta">
               {activeTrip ? <><Clock size={12} /> Khởi hành {formatDayMonth(activeTrip.departureDate)}</>
-              : isMaint ? <><Wrench size={12} /> Bảo dưỡng đang diễn ra</>
-              : <><MapPin size={12} /> Sẵn sàng nhận lệnh điều vận</>}
+              : isMaint ? <><Wrench size={12} /> Bảo dưỡng</>
+              : null}
             </div>
           </div>
         );
