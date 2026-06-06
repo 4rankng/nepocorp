@@ -43,7 +43,7 @@ export interface DriverSalarySummary {
 
 export interface WorkDayUpdate {
   date: string;
-  status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null;
+  status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null;
   note?: string | null;
 }
 

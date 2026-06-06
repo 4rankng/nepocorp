@@ -180,7 +180,7 @@ export default function SalaryAttendancePage() {
   }, [workDayData?.workDays]);
 
   // Cycle status: STANDBY -> PERSONAL_LEAVE -> WEEKLY_OFF -> STANDBY
-  const cycleStatus = (dateStr: string, current: WorkDayRecord | undefined): 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null => {
+  const cycleStatus = (dateStr: string, current: WorkDayRecord | undefined): 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null => {
     const [cy, cm, cd] = dateStr.split('-').map(Number);
     const isSunday = new Date(cy, cm - 1, cd).getDay() === 0;
     const currentStatus = current?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
