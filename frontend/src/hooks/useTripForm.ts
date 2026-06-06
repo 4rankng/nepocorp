@@ -145,6 +145,7 @@ export interface UseTripFormReturn {
   vehicleShiftDefault?: number;
   isEditMode: boolean;
   selectedRouteData: RouteOption | null;
+  resetForm?: () => void;
 }
 
 function isParamsObject(arg: TripOptions | UseTripFormParams): arg is UseTripFormParams {
@@ -284,6 +285,11 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   });
 
   const lastTripId = useRef<number | null>(null);
+  const [resetToggle, setResetToggle] = useState(0);
+  const resetForm = useCallback(() => {
+    lastTripId.current = null;
+    setResetToggle((prev) => prev + 1);
+  }, []);
 
   const [customerId, setCustomerId] = useState(isEditMode && existingTrip ? String(existingTrip.customerId) : "");
   const [routeId, setRouteId] = useState(isEditMode && existingTrip ? String(existingTrip.routeId) : "");
@@ -428,7 +434,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
         loadingType: LoadingType.HANG,
       }]);
     }
-  }, [isEditMode, existingTrip]);
+  }, [isEditMode, existingTrip, resetToggle]);
 
   useEffect(() => {
     if (truckId && options?.trucks && options?.trailers) {
@@ -723,11 +729,12 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
-          await api.put(endpoint, payload);
+          const updatedTrip = await api.put<any>(endpoint, payload);
           // Invalidate trip list + detail + monthly aggregates so caches don't go stale.
           // Fire-and-forget: don't block the UI on refetches.
           queryClient.invalidateQueries({ queryKey: ['trips'] });
-          queryClient.invalidateQueries({ queryKey: ['trip', existingTrip.id] });
+          queryClient.setQueryData(['trip', String(existingTrip.id)], updatedTrip);
+          queryClient.invalidateQueries({ queryKey: ['trip', String(existingTrip.id)] });
           queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
           return existingTrip.id;
         }
@@ -925,5 +932,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     vehicleShiftDefault: roadConfig?.vehicleShiftDefault ? Number(roadConfig.vehicleShiftDefault) : undefined,
     isEditMode,
     selectedRouteData,
+    resetForm,
   };
 }

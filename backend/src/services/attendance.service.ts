@@ -194,11 +194,42 @@ export async function computeAttendanceSummary(
   const { start, end } = period;
 
   const workDays = await getWorkDays(driverId, start, end);
+  const workDayMap = new Map(workDays.map(w => [w.date, w.status]));
 
-  const tripDays = workDays.filter(w => w.status === 'TRIP_DAY').length;
-  const standbyDays = workDays.filter(w => w.status === 'STANDBY').length;
-  const personalLeaveDays = workDays.filter(w => w.status === 'PERSONAL_LEAVE').length;
-  const weeklyOffDays = workDays.filter(w => w.status === 'WEEKLY_OFF').length;
+  const startParts = start.split('-').map(Number);
+  const endParts = end.split('-').map(Number);
+  const cur = new Date(Date.UTC(startParts[0], startParts[1] - 1, startParts[2]));
+  const stop = new Date(Date.UTC(endParts[0], endParts[1] - 1, endParts[2]));
+
+  const dates: string[] = [];
+  while (cur <= stop) {
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+
+  let tripDays = 0;
+  let standbyDays = 0;
+  let personalLeaveDays = 0;
+  let weeklyOffDays = 0;
+
+  for (const dateStr of dates) {
+    const status = workDayMap.get(dateStr);
+    if (status) {
+      if (status === 'TRIP_DAY') tripDays++;
+      else if (status === 'STANDBY') standbyDays++;
+      else if (status === 'PERSONAL_LEAVE') personalLeaveDays++;
+      else if (status === 'WEEKLY_OFF') weeklyOffDays++;
+    } else {
+      // Default: Sunday is WEEKLY_OFF, non-Sunday is STANDBY
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const isSunday = new Date(y, m - 1, d).getDay() === 0;
+      if (isSunday) {
+        weeklyOffDays++;
+      } else {
+        standbyDays++;
+      }
+    }
+  }
 
   // Standard work days: calendar days - sundays in the calendar month
   const standardWorkDays = computeStandardWorkDays(year, month);

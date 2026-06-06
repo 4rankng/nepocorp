@@ -510,6 +510,18 @@
   font-size: 12.5px;
 }
 
+.salary-edit-link {
+  color: rgba(255, 255, 255, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.salary-edit-link:hover {
+  color: #fff;
+}
+
 .salary-summary-dark__row-val--neg {
   color: #f87171;
 }

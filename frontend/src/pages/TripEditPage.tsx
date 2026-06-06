@@ -59,7 +59,8 @@ export default function TripEditPage() {
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 409) {
         if (await confirm("Có người khác đã cập nhật chuyến này. Tải lại?")) {
-          refetchTrip();
+          await refetchTrip();
+          form.resetForm?.();
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });

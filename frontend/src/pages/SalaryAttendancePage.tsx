@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   ChevronLeft, Loader2, AlertTriangle, Users,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info,
+  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
@@ -42,9 +42,9 @@ interface CalCellProps {
 }
 
 function CalCell({ dateStr, day, isSunday, dayLabel, workDay, isUpdating, onCycle }: CalCellProps) {
-  const status = workDay?.status ?? (isSunday ? 'WEEKLY_OFF' : null);
+  const status = workDay?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
   const cfg = status ? STATUS_CONFIG[status] : null;
-  const isClickable = !isUpdating;
+  const isClickable = !isUpdating && status !== 'TRIP_DAY';
 
   return (
     <div
@@ -89,8 +89,11 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           <span className="salary-summary-dark__row-lbl">
             <DollarSign size={12} /> Lương cứng
           </span>
-          <span className="salary-summary-dark__row-val">
+          <span className="salary-summary-dark__row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {formatCurrency(salary.baseSalary)}
+            <Link to="/config/drivers" className="salary-edit-link" title="Sửa lương cứng">
+              <Edit size={10} />
+            </Link>
           </span>
         </div>
         
@@ -176,17 +179,33 @@ export default function SalaryAttendancePage() {
     return map;
   }, [workDayData?.workDays]);
 
-  // Cycle status: null → TRIP_DAY → STANDBY → PERSONAL_LEAVE → null
-  const cycleStatus = (current: WorkDayRecord | undefined): 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null => {
-    if (!current || current.status === 'WEEKLY_OFF') return 'TRIP_DAY';
-    if (current.status === 'TRIP_DAY') return 'STANDBY';
-    if (current.status === 'STANDBY') return 'PERSONAL_LEAVE';
-    return null; // clear
+  // Cycle status: STANDBY -> PERSONAL_LEAVE -> WEEKLY_OFF -> STANDBY
+  const cycleStatus = (dateStr: string, current: WorkDayRecord | undefined): 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null => {
+    const [cy, cm, cd] = dateStr.split('-').map(Number);
+    const isSunday = new Date(cy, cm - 1, cd).getDay() === 0;
+    const currentStatus = current?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
+
+    if (currentStatus === 'TRIP_DAY') {
+      return 'TRIP_DAY';
+    }
+
+    if (isSunday) {
+      // Sunday: WEEKLY_OFF (default) -> STANDBY -> PERSONAL_LEAVE -> WEEKLY_OFF (default)
+      if (currentStatus === 'WEEKLY_OFF') return 'STANDBY';
+      if (currentStatus === 'STANDBY') return 'PERSONAL_LEAVE';
+      return null; // Revert to Sunday default (WEEKLY_OFF)
+    } else {
+      // Weekday: STANDBY (default) -> PERSONAL_LEAVE -> WEEKLY_OFF -> STANDBY (default)
+      if (currentStatus === 'STANDBY') return 'PERSONAL_LEAVE';
+      if (currentStatus === 'PERSONAL_LEAVE') return 'WEEKLY_OFF';
+      return null; // Revert to weekday default (STANDBY)
+    }
   };
 
   const handleCellClick = useCallback(async (dateStr: string, current: WorkDayRecord | undefined) => {
     if (!selectedDriverId) return;
-    const newStatus = cycleStatus(current);
+    const newStatus = cycleStatus(dateStr, current);
+    if (newStatus === 'TRIP_DAY') return;
 
     const items = [{ date: dateStr, status: newStatus, note: null }];
     try {
@@ -376,7 +395,7 @@ export default function SalaryAttendancePage() {
                     </div>
                     <div className="calendar-legend-instruction">
                       <Info size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
-                      <span>Bấm vào ngày để chuyển trạng thái: Đi chuyến → Chờ việc → Nghỉ riêng → Xóa</span>
+                      <span>Bấm vào ngày để chuyển trạng thái: Chờ việc ⇄ Nghỉ riêng ⇄ Nghỉ tuần</span>
                     </div>
                   </div>
                 </div>
