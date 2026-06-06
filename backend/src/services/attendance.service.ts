@@ -83,11 +83,11 @@ export async function deleteWorkDay(driverId: number, date: string) {
 
 /**
  * Batch upsert work days. Used by the calendar UI to save multiple day changes at once.
- * Each item: { date, status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null } - null means clear.
+ * Each item: { date, status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null } - null means clear.
  */
 export async function batchUpsertWorkDays(
   driverId: number,
-  items: Array<{ date: string; status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | null; note?: string | null }>,
+  items: Array<{ date: string; status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF' | null; note?: string | null }>,
   createdBy: number,
 ) {
   return db.transaction(async (tx) => {

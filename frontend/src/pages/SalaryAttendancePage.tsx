@@ -20,7 +20,6 @@ const MONTHS_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', '
 
 const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-type CalEditStatus = 'STANDBY' | 'PERSONAL_LEAVE' | null;
 
 const STATUS_CONFIG = {
   TRIP_DAY:      { label: 'Đi chuyến',    bg: 'var(--accent-soft)', color: 'var(--accent)', icon: Truck, emoji: '🚛' },
