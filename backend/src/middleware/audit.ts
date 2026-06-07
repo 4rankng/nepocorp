@@ -17,6 +17,11 @@ function extractEntityType(path: string): string | null {
     return 'forwarder';
   }
 
+  // Handle accountant/admin trip expenses: /api/trips/:id/expenses/...
+  if (parts.length >= 3 && parts[0] === 'trips' && parts[2] === 'expenses') {
+    return 'trip-expenses';
+  }
+
   if (parts.length >= 1) return parts[0];
   return null;
 }
@@ -26,6 +31,14 @@ function extractEntityId(path: string, body: Record<string, unknown>): number | 
   const last = parts[parts.length - 1];
   const num = parseInt(last);
   if (!isNaN(num)) return num;
+
+  // If the last segment is an action, the entity ID is the second-to-last segment
+  if (['approve', 'reject', 'lock', 'unlock', 'cancel', 'dispatch', 'pre-departure', 'actuals', 'departure-date'].includes(last)) {
+    const secondLast = parts[parts.length - 2];
+    const idNum = parseInt(secondLast);
+    if (!isNaN(idNum)) return idNum;
+  }
+
   return body?.id ? parseInt(body.id as string) : null;
 }
 
@@ -111,7 +124,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
     const event = resolveAuditEvent(req.method, fullPath);
     const entityType = extractEntityType(fullPath);
     const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
-    const entityKey = extractEntityKey(entityType, capturedBody, req.body as Record<string, unknown>);
+    const entityKey = res.locals.auditEntityKey || extractEntityKey(entityType, capturedBody, req.body as Record<string, unknown>);
 
     if (res.statusCode < 400 && req.user) {
       emitAudit({

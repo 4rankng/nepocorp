@@ -47,6 +47,7 @@ __pycache__/
 .kilo/
 .crush/
 .opencode/
+.omc/
 
 # Session state (never commit)
 HANDOFF.md

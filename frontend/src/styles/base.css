@@ -23,23 +23,17 @@ body {
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */
   overscroll-behavior-y: contain;
 }
-/* Mark the document as running in standalone (PWA) mode so component CSS can
-   tweak chrome (e.g. taller topbar to clear the iOS status bar). Detection
-   via display-mode media query — set on body so descendants can read it. */
-@media (display-mode: standalone) {
-  body { background: var(--bg); }
-  body::before {
-    /* Filler that paints the iOS status-bar area with the brand color so it
-       doesn't appear as a white strip on top of the notch. Only visible in
-       standalone mode. */
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: env(safe-area-inset-top, 0);
-    background: var(--bg);
-    z-index: 1000;
-    pointer-events: none;
-  }
+/* Paint the iOS status-bar / notch area with the page background so it
+   doesn't appear as a white strip above the topbar. Works in both
+   regular Safari and standalone (PWA) mode. */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top, 0);
+  background: var(--bg);
+  z-index: 1000;
+  pointer-events: none;
 }
 button { font: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; }

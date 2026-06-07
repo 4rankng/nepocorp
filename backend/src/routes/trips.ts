@@ -363,6 +363,20 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
 router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
   const tripId = parseInt(req.params.id as string, 10);
   const eid = parseInt(req.params.eid as string, 10);
+
+  // Fetch expense info for audit log before delete
+  const [expense] = await db.select({
+    buyAmount: dbSchema.tripExpenses.buyAmount,
+    typeName: dbSchema.forwarderExpenseTypes.name,
+    tripCode: dbSchema.trips.tripCode,
+    supplierName: dbSchema.suppliers.name,
+  }).from(dbSchema.tripExpenses)
+    .leftJoin(dbSchema.forwarderExpenseTypes, eq(dbSchema.tripExpenses.expenseType, dbSchema.forwarderExpenseTypes.code))
+    .leftJoin(dbSchema.trips, eq(dbSchema.tripExpenses.tripId, dbSchema.trips.id))
+    .leftJoin(dbSchema.suppliers, eq(dbSchema.tripExpenses.supplierId, dbSchema.suppliers.id))
+    .where(eq(dbSchema.tripExpenses.id, eid))
+    .limit(1);
+
   type TxResult = { ok: true } | { error: string; status: number };
   const result: TxResult = await db.transaction(async (tx) => {
     // Guard: trip must not be locked
@@ -379,6 +393,14 @@ router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Respo
     return { ok: true as const };
   });
   if ('error' in result) return res.status(result.status).json({ error: result.error });
+
+  if (expense) {
+    const buyAmt = Number(expense.buyAmount).toLocaleString('vi-VN') + ' ₫';
+    const tripPart = expense.tripCode ? ` cho chuyến ${expense.tripCode}` : '';
+    const supplierPart = expense.supplierName ? ` (Nhà cung cấp: ${expense.supplierName})` : '';
+    res.locals.auditEntityKey = `phí ${expense.typeName || 'hộ'} với số tiền chi ${buyAmt}${tripPart}${supplierPart}`;
+  }
+
   res.json({ ok: true });
 }));
 

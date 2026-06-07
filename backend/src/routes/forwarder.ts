@@ -16,6 +16,8 @@ import {
 } from '../services/forwarder.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../db';
+import * as s from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
 import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
@@ -92,9 +94,32 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
 
 router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = await getForwarderByUserId(req.user!.userId);
-  const result = await deleteTripExpense(parseInt(req.params.id as string, 10), forwarder.id);
+  const expenseId = parseInt(req.params.id as string, 10);
+
+  // Fetch expense info for audit log before delete
+  const [expense] = await db.select({
+    buyAmount: s.tripExpenses.buyAmount,
+    typeName: s.forwarderExpenseTypes.name,
+    tripCode: s.trips.tripCode,
+    supplierName: s.suppliers.name,
+  }).from(s.tripExpenses)
+    .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+    .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
+    .where(eq(s.tripExpenses.id, expenseId))
+    .limit(1);
+
+  const result = await deleteTripExpense(expenseId, forwarder.id);
   if (result === null) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
   if (result === 'FORBIDDEN') return res.status(403).json({ error: 'Không có quyền xóa chi phí này' });
+
+  if (expense) {
+    const buyAmt = Number(expense.buyAmount).toLocaleString('vi-VN') + ' ₫';
+    const tripPart = expense.tripCode ? ` cho chuyến ${expense.tripCode}` : '';
+    const supplierPart = expense.supplierName ? ` (Nhà cung cấp: ${expense.supplierName})` : '';
+    res.locals.auditEntityKey = `phí ${expense.typeName || 'hộ'} với số tiền chi ${buyAmt}${tripPart}${supplierPart}`;
+  }
+
   res.json({ success: true });
 }));
 

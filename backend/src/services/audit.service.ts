@@ -52,6 +52,29 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
     } catch {}
   }
 
+  // Trip Expenses entity
+  if ((payload.entityType === 'trip-expenses' || payload.entityType === 'forwarder-expenses') && payload.entityId) {
+    try {
+      const [expense] = await db.select({
+        buyAmount: s.tripExpenses.buyAmount,
+        typeName: s.forwarderExpenseTypes.name,
+        tripCode: s.trips.tripCode,
+        supplierName: s.suppliers.name,
+      }).from(s.tripExpenses)
+        .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+        .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+        .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
+        .where(eq(s.tripExpenses.id, payload.entityId))
+        .limit(1);
+      if (expense) {
+        const buyAmt = Number(expense.buyAmount).toLocaleString('vi-VN') + ' ₫';
+        const tripPart = expense.tripCode ? ` cho chuyến ${expense.tripCode}` : '';
+        const supplierPart = expense.supplierName ? ` (Nhà cung cấp: ${expense.supplierName})` : '';
+        return `phí ${expense.typeName || 'hộ'} với số tiền chi ${buyAmt}${tripPart}${supplierPart}`;
+      }
+    } catch {}
+  }
+
   // Penalties entity
   if (payload.entityType === 'penalties' && payload.entityId) {
     try {

@@ -60,6 +60,14 @@ export function registerAuditEvent(
 export function resolveAuditEvent(method: string, path: string): AuditEventType {
   const methodKey = method.toUpperCase();
 
+  // Custom overrides for trip expenses approve/reject
+  if (methodKey === 'POST' && path.includes('/expenses/') && path.endsWith('/approve')) {
+    return 'TRIP_EXPENSE_APPROVED' as AuditEventType;
+  }
+  if (methodKey === 'POST' && path.includes('/expenses/') && path.endsWith('/reject')) {
+    return 'TRIP_EXPENSE_REJECTED' as AuditEventType;
+  }
+
   // 1. Try exact match
   const exact = exactRegistry.get(exactKey(method, path));
   if (exact) return exact;

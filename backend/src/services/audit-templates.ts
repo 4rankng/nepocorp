@@ -139,6 +139,9 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} đã hủy bỏ quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} đã ghi nhận bảng tính lương cho tài xế${c.entityKey ? `: ${c.entityKey}` : ''}`,
 
+  [AuditEvent.TRIP_EXPENSE_APPROVED]: (c) => `${subj(c)} đã phê duyệt ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.TRIP_EXPENSE_REJECTED]: (c) => `${subj(c)} đã từ chối ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
+
   [AuditEvent.ENTITY_CREATED]: (c) => `${subj(c)} đã tạo mới ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.ENTITY_UPDATED]: (c) => `${subj(c)} đã cập nhật thông tin ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.ENTITY_DELETED]: (c) => `${subj(c)} đã xóa ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
