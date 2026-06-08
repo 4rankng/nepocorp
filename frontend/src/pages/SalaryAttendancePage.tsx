@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
-  ChevronLeft, Loader2, AlertTriangle, Users,
+  ChevronLeft, ChevronRight, Loader2, AlertTriangle, Users,
   Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
@@ -13,6 +13,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { getInitials, avatarColorById } from '../lib/avatar';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
+import './SalaryAttendancePage.css';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 
 const MONTHS_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -144,7 +145,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalaryAttendancePage() {
-  const { month, year } = useMonth();
+  const { month, year, goPrev, goNext } = useMonth();
   const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -277,6 +278,20 @@ export default function SalaryAttendancePage() {
           </div>
         }
       />
+
+      {/* Month navigation strip */}
+      <div className="month-strip">
+        <button className="month-strip__btn" onClick={goPrev} aria-label="Tháng trước">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="month-strip__center">
+          <span className="month-strip__label">Tháng {month}</span>
+          <span className="month-strip__year">{year}</span>
+        </div>
+        <button className="month-strip__btn" onClick={goNext} aria-label="Tháng sau">
+          <ChevronRight size={20} />
+        </button>
+      </div>
 
       {/* Driver selector strip */}
       <div className="driver-select-row">

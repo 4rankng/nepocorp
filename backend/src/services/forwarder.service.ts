@@ -376,7 +376,8 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     id: s.tripExpenses.id,
     tripId: s.tripExpenses.tripId,
     expenseType: s.tripExpenses.expenseType,
-    amount: s.tripExpenses.buyAmount,
+    buyAmount: s.tripExpenses.buyAmount,
+    approvalStatus: s.tripExpenses.approvalStatus,
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
     tripCode: s.trips.tripCode,
@@ -385,7 +386,10 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     // Intentionally scoped to forwarder-owned expenses only (forwarderId IS NOT NULL).
     // Accountant-created expenses (forwarderId = null) are excluded by design —
     // they are not eligible for forwarder advance settlement.
-    .where(eq(s.tripExpenses.forwarderId, forwarderId))
+    .where(and(
+      eq(s.tripExpenses.forwarderId, forwarderId),
+      eq(s.tripExpenses.approvalStatus, 'APPROVED'),
+    ))
     .orderBy(desc(s.tripExpenses.createdAt));
 
   return rows.filter(r => !linkedIds.has(r.id));

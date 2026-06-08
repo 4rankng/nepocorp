@@ -138,6 +138,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
   if (pathname.startsWith('/my-forwarder-trips')) return 'Chuyến đi';
   if (pathname.startsWith('/my-advances')) return 'Tạm ứng';
+  if (pathname.match(/^\/my-settlements\/\d+$/)) return 'Chi tiết phiếu thanh toán';
   if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
   if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
   if (pathname.startsWith('/settlements')) return 'Quản lý phiếu thanh toán';

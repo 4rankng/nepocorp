@@ -61,6 +61,9 @@ export const forwarderClient = {
   getAdvanceSettlements: async () => {
     return api.get<{ items: any[] }>(FORWARDER.ADVANCE_SETTLEMENTS);
   },
+  getAdvanceSettlementDetail: async (id: number) => {
+    return api.get<any>(FORWARDER.ADVANCE_SETTLEMENT_DETAIL(id));
+  },
   createAdvanceSettlement: async (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
     return api.post(FORWARDER.ADVANCE_SETTLEMENTS, data);
   },

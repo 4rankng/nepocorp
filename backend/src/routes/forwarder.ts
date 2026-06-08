@@ -19,7 +19,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
-import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements } from '../services/advance.service';
+import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
@@ -153,6 +153,14 @@ router.get('/advance-settlements', asyncHandler(async (req: Request, res: Respon
   const forwarder = await getForwarderByUserId(req.user!.userId);
   const items = await listAdvanceSettlements({ forwarderId: forwarder.id });
   res.json({ items });
+}));
+
+router.get('/advance-settlements/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const settlement = await getAdvanceSettlement(Number(req.params.id));
+  if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+  if (settlement.forwarderId !== forwarder.id) return res.status(403).json({ error: 'Không có quyền truy cập' });
+  res.json(settlement);
 }));
 
 router.post('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {

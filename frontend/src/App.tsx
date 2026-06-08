@@ -29,6 +29,7 @@ const ForwarderTripsPage = lazy(() => import('./pages/ForwarderTripsPage'));
 const ForwarderTripDetailPage = lazy(() => import('./pages/ForwarderTripDetailPage'));
 const ForwarderAdvancesPage = lazy(() => import('./pages/ForwarderAdvancesPage'));
 const ForwarderSettlementsPage = lazy(() => import('./pages/ForwarderSettlementsPage'));
+const SettlementPrintPage = lazy(() => import('./pages/SettlementPrintPage'));
 const AdminAdvancesPage = lazy(() => import('./pages/AdminAdvancesPage'));
 const AdminSettlementsPage = lazy(() => import('./pages/AdminSettlementsPage'));
 const DispatchPage = lazy(() => import('./pages/DispatchPage'));
@@ -172,6 +173,7 @@ function AppRoutes() {
           <Route path="/my-forwarder-trips/:id" element={forwarderOnly(page(<ForwarderTripDetailPage />))} />
           <Route path="/my-advances" element={forwarderOnly(page(<ForwarderAdvancesPage />))} />
           <Route path="/my-settlements" element={forwarderOnly(page(<ForwarderSettlementsPage />))} />
+          <Route path="/my-settlements/:id" element={forwarderOnly(page(<SettlementPrintPage />))} />
           <Route
             path="*"
             element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />}

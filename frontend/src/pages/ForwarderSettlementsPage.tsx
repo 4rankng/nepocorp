@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
@@ -55,6 +56,7 @@ interface AdvanceRequest {
 }
 
 export default function ForwarderSettlementsPage() {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
@@ -295,7 +297,11 @@ export default function ForwarderSettlementsPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {settlements.map(s => (
-            <Panel key={s.id}>
+            <Panel
+              key={s.id}
+              style={{ cursor: 'pointer', transition: 'box-shadow 150ms ease, border-color 150ms ease' }}
+              onClick={() => navigate(`/my-settlements/${s.id}`)}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -90,6 +90,14 @@ export function useForwarderSettlements() {
   });
 }
 
+export function useForwarderSettlementDetail(id: number) {
+  return useQuery({
+    queryKey: ['forwarder-settlement-detail', id],
+    queryFn: () => forwarderClient.getAdvanceSettlementDetail(id),
+    enabled: !!id,
+  });
+}
+
 export function useCreateAdvanceSettlement() {
   const qc = useQueryClient();
   return useMutation({

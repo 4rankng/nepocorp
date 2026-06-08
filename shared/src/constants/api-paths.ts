@@ -118,6 +118,7 @@ export const FORWARDER = {
   FORWARDER_EXPENSES: '/forwarder-expenses',
   ADVANCE_REQUESTS: '/forwarder/me/advance-requests',
   ADVANCE_SETTLEMENTS: '/forwarder/me/advance-settlements',
+  ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/forwarder/me/advance-settlements/${id}`,
   UNLINKED_EXPENSES: '/forwarder/me/unlinked-expenses',
 } as const;
 

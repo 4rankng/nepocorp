@@ -45,7 +45,7 @@ async function enrichSettlementWithRequests(settlement: any): Promise<any> {
       .where(inArray(s.advanceRequests.id, requestIds));
   }
 
-  // Also fetch linked trip expenses with breakdown by type
+  // Also fetch linked trip expenses with breakdown by type + print form fields
   const expenseLinks = await db.select()
     .from(s.settlementExpenses)
     .where(eq(s.settlementExpenses.settlementId, settlement.id));
@@ -57,11 +57,16 @@ async function enrichSettlementWithRequests(settlement: any): Promise<any> {
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
       amount: s.tripExpenses.buyAmount,
+      containerNumber: s.tripExpenses.containerNumber,
+      invoiceNumber: s.tripExpenses.invoiceNumber,
       note: s.tripExpenses.note,
       createdAt: s.tripExpenses.createdAt,
       tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      customerName: s.customers.name,
     }).from(s.tripExpenses)
       .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+      .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
       .where(inArray(s.tripExpenses.id, expenseIds));
   }
 
@@ -223,6 +228,9 @@ export async function createAdvanceSettlement(
       for (const exp of tripExpenseRows) {
         if (exp.forwarderId !== forwarderId) {
           throw new AdvanceError(400, `Chi phí #${exp.id} không thuộc về bạn`);
+        }
+        if (exp.approvalStatus !== 'APPROVED') {
+          throw new AdvanceError(400, `Chi phí #${exp.id} chưa được duyệt`);
         }
       }
 
