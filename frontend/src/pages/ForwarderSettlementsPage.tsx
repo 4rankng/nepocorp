@@ -297,10 +297,13 @@ export default function ForwarderSettlementsPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {settlements.map(s => (
-            <Panel
+            <div
               key={s.id}
-              style={{ cursor: 'pointer', transition: 'box-shadow 150ms ease, border-color 150ms ease' }}
+              style={{ cursor: 'pointer' }}
               onClick={() => navigate(`/my-settlements/${s.id}`)}
+            >
+            <Panel
+              style={{ transition: 'box-shadow 150ms ease, border-color 150ms ease' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <div>
@@ -367,6 +370,7 @@ export default function ForwarderSettlementsPage() {
                 )}
               </div>
             </Panel>
+            </div>
           ))}
         </div>
       )}
