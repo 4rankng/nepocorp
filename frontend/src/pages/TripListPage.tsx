@@ -16,7 +16,8 @@ import {
   X as XIcon,
   Loader2,
   MousePointerClick,
-
+  Banknote,
+  Fuel,
 } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { formatCurrency } from '../lib/format';
@@ -60,6 +61,21 @@ function calcConsumption(trip: TripDetail): { liters: number; per100: number } |
 
 function formatMoney(n: number): string {
   return formatCurrency(n).replace(' ₫', '').replace('₫', '').trim();
+}
+
+interface MissingIndicator {
+  icon: React.ComponentType<{ size?: number }>;
+  label: string;
+}
+
+function getMissingIndicators(trip: TripDetail): MissingIndicator[] {
+  if (trip.status === TripStatus.CANCELED || trip.status === TripStatus.CREATED) return [];
+  const missing: MissingIndicator[] = [];
+  const revenue = Number(trip.revenue ?? 0);
+  if (!revenue) missing.push({ icon: Banknote, label: 'Chưa nhập doanh thu' });
+  const fuel = Number(trip.fuelLiters ?? 0);
+  if (!fuel) missing.push({ icon: Fuel, label: 'Chưa khai báo dầu' });
+  return missing;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -265,6 +281,7 @@ export default function TripListPage() {
         const trip = row.original;
         const customerName = trip.customer?.name ?? '—';
         const tripCode = buildTripCode(trip);
+        const missingIndicators = getMissingIndicators(trip);
         return (
           <Link to={`/trips/${trip.id}`} className="trip-col" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }} onClick={(e) => e.stopPropagation()}>
             <div className="trip-name">
@@ -273,6 +290,15 @@ export default function TripListPage() {
               <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
             </div>
             <div className="trip-customer" title={customerName}>{customerName}</div>
+            {missingIndicators.length > 0 && (
+              <div className="trip-missing-row">
+                {missingIndicators.map((m, i) => (
+                  <span key={i} className="missing-tag" title={m.label} aria-label={m.label}>
+                    <m.icon size={10} />
+                  </span>
+                ))}
+              </div>
+            )}
           </Link>
         );
       }
@@ -410,6 +436,26 @@ export default function TripListPage() {
             {road > 0 ? (
               <>
                 {formatMoney(road)}
+                <span className="money-unit"> ₫</span>
+              </>
+            ) : (
+              '—'
+            )}
+          </div>
+        );
+      }
+    }),
+    columnHelper.accessor((row) => Number(row.revenue ?? 0), {
+      id: 'revenue',
+      header: 'Doanh thu',
+      cell: ({ row }) => {
+        const trip = row.original;
+        const revenue = Number(trip.revenue ?? 0);
+        return (
+          <div className={revenue > 0 ? 'money' : 'money-empty'}>
+            {revenue > 0 ? (
+              <>
+                {formatMoney(revenue)}
                 <span className="money-unit"> ₫</span>
               </>
             ) : (
@@ -667,6 +713,7 @@ export default function TripListPage() {
                     if (header.column.id === 'route') cls = 'col-route';
                     else if (header.column.id === 'consumption') cls = 'col-consumption';
                     else if (header.column.id === 'road') cls = 'col-road right';
+                    else if (header.column.id === 'revenue') cls = 'col-revenue right';
                     else if (header.column.id === 'status') cls = 'col-status center';
                     return (
                       <div key={header.id} className={cls}>
@@ -697,6 +744,7 @@ export default function TripListPage() {
                     if (cell.column.id === 'route') cls = 'col-route';
                     else if (cell.column.id === 'consumption') cls = 'col-consumption';
                     else if (cell.column.id === 'road') cls = 'col-road right';
+                    else if (cell.column.id === 'revenue') cls = 'col-revenue right';
                     else if (cell.column.id === 'status') {
                       return (
                         <div key={cell.id} className="col-status center">
@@ -734,6 +782,8 @@ export default function TripListPage() {
               const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
               const km = Number(trip.route?.distanceKm ?? 0);
               const road = Number(trip.totalRoadAllowance ?? 0);
+              const revenue = Number(trip.revenue ?? 0);
+              const missingIndicators = getMissingIndicators(trip);
 
               const tripContainers: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>
                 = (trip as any).containers ?? [];
@@ -793,6 +843,16 @@ export default function TripListPage() {
                     </div>
                   )}
 
+                  {missingIndicators.length > 0 && (
+                    <div className="trip-mcard__missing">
+                      {missingIndicators.map((m, i) => (
+                        <span key={i} className="missing-tag" title={m.label}>
+                          <m.icon size={10} />
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="trip-mcard__meta">
                     <div className="mm">
                       <span className="lab">KM</span>
@@ -816,6 +876,12 @@ export default function TripListPage() {
                       <span className="lab">Tiền đi đường</span>
                       <span className={road > 0 ? 'val' : 'val empty'}>
                         {road > 0 ? `${formatMoney(road)} ₫` : '—'}
+                      </span>
+                    </div>
+                    <div className="mm">
+                      <span className="lab">Doanh thu</span>
+                      <span className={revenue > 0 ? 'val' : 'val empty'}>
+                        {revenue > 0 ? `${formatMoney(revenue)} ₫` : '—'}
                       </span>
                     </div>
                     <div className="mm">

@@ -456,16 +456,16 @@
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-track { background: transparent; }
-/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | status
-   7 slots — KM merged into route, Loại cont + Số cont merged into Container. */
+/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | status
+   8 slots — KM merged into route, Loại cont + Số cont merged into Container. */
 .trip-list-page .table-head {
   display: inline-grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
   padding: 14px 16px;
   gap: 12px;
   background: #F8FAFC;
   border-bottom: 2px solid var(--line-2);
-  min-width: max(900px, 100%);
+  min-width: max(1010px, 100%);
   align-items: center;
   position: sticky;
   top: 0;
@@ -485,14 +485,14 @@
 
 .trip-list-page .table-row {
   display: inline-grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
   padding: 14px 16px;
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: all 150ms ease;
   cursor: pointer;
-  min-width: max(900px, 100%);
+  min-width: max(1010px, 100%);
   min-height: 60px;
   background: var(--surface);
 }
@@ -579,6 +579,26 @@
   color: var(--ink-3);
 }
 .trip-list-page .trip-meta-sep { color: var(--ink-3); opacity: 0.6; }
+
+/* ── Missing data indicator badges in trip column ────────────────────── */
+.trip-list-page .trip-missing-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.trip-list-page .missing-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--tbl-amber-100);
+  color: var(--tbl-amber-700);
+  cursor: help;
+  flex-shrink: 0;
+}
 
 /* Keyframe animation for pulsing dot on active (In Transit) status */
 @keyframes pulse-green {
@@ -927,6 +947,9 @@
 .trip-list-page .col-consumption {
   min-width: 90px;
 }
+.trip-list-page .col-revenue {
+  min-width: 100px;
+}
 
 /* ── Sticky status column ─────────────────────────────────────────── */
 .trip-list-page .col-status {
@@ -1027,6 +1050,14 @@
 .trip-list-page .trip-mcard__meta .val.warn { color: var(--d-amber); }
 .trip-list-page .trip-mcard__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
 
+/* ── Mobile card missing indicators ──────────────────────────────────── */
+.trip-list-page .trip-mcard__missing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
 /* ── Responsive collapses ─────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .trip-list-page .metrics { grid-template-columns: repeat(3, 1fr); }
@@ -1035,8 +1066,8 @@
 @media (max-width: 980px) {
   .trip-list-page .table-head,
   .trip-list-page .table-row {
-    /* 5 visible cols: trip | truck | route | container | status */
-    grid-template-columns: minmax(200px, 1.4fr) 100px minmax(140px, 1.2fr) minmax(80px, 0.6fr) 80px 90px;
+    /* 7 visible cols: trip | truck | route | container | consumption | revenue | status */
+    grid-template-columns: minmax(180px, 1.4fr) 90px minmax(120px, 1.2fr) minmax(70px, 0.6fr) 80px 100px 90px;
     min-width: unset;
     gap: 10px;
   }
