@@ -127,16 +127,16 @@ prod-migrate:
 		basename=$$(basename "$$f"); \
 		echo "  Copying $$basename..."; \
 		scp "$$f" root@$(PROD_SERVER):/tmp/$$basename; \
-		ssh root@$(PROD_SERVER) "docker cp /tmp/$$basename tingting-postgres-1:/tmp/$$basename"; \
+		ssh root@$(PROD_SERVER) "docker cp /tmp/$$basename nepocorp-postgres-1:/tmp/$$basename"; \
 		echo "  Applying $$basename..."; \
-		ssh root@$(PROD_SERVER) "docker exec tingting-postgres-1 psql -U tingting -d tingting \
+		ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
 			-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$$basename" \
 			&& echo "  ✅ $$basename" \
 			|| echo "  ⚠️  $$basename skipped (already applied)"; \
 		ssh root@$(PROD_SERVER) "rm -f /tmp/$$basename"; \
 	done
 	@echo "==> Restarting backend..."
-	ssh root@$(PROD_SERVER) "docker restart tingting-backend-1"
+	ssh root@$(PROD_SERVER) "docker restart nepocorp-backend-1"
 	@echo "==> ✅ All migrations applied"
 
 ## prod-migrate-file: Apply a single migration file (make prod-migrate-file FILE=0022_cool_hydra.sql)
@@ -144,8 +144,8 @@ prod-migrate-file:
 	@test -n "$(FILE)" || (echo "Usage: make prod-migrate-file FILE=0022_cool_hydra.sql" && exit 1)
 	@echo "==> Applying $(FILE) on production..."
 	scp backend/drizzle/$(FILE) root@$(PROD_SERVER):/tmp/$(FILE)
-	ssh root@$(PROD_SERVER) "docker cp /tmp/$(FILE) tingting-postgres-1:/tmp/$(FILE)"
-	ssh root@$(PROD_SERVER) "docker exec tingting-postgres-1 psql -U tingting -d tingting \
+	ssh root@$(PROD_SERVER) "docker cp /tmp/$(FILE) nepocorp-postgres-1:/tmp/$(FILE)"
+	ssh root@$(PROD_SERVER) "docker exec nepocorp-postgres-1 psql -U nepocorp -d nepocorp \
 		-v ON_ERROR_STOP=1 --single-transaction -f /tmp/$(FILE)"
 	ssh root@$(PROD_SERVER) "rm -f /tmp/$(FILE)"
 	@echo "==> ✅ $(FILE) applied"
@@ -166,8 +166,8 @@ backup:
 	mkdir -p "$$BACKUP_DIR" && \
 	echo "📊 Creating PostgreSQL dump of tingting database..." && \
 	ssh root@$(PROD_SERVER) \
-		"docker exec tingting-postgres-1 \
-		pg_dump -U tingting tingting > /tmp/$$BACKUP_FILE" && \
+		"docker exec nepocorp-postgres-1 \
+		pg_dump -U nepocorp nepocorp > /tmp/$$BACKUP_FILE" && \
 	echo "🗜️  Compressing..." && \
 	ssh root@$(PROD_SERVER) "gzip /tmp/$$BACKUP_FILE" && \
 	ssh root@$(PROD_SERVER) \
@@ -198,6 +198,7 @@ restore:
 	docker exec tingting-db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'tingting' AND pid <> pg_backend_pid();" && \
 	docker exec tingting-db psql -U postgres -c "DROP DATABASE IF EXISTS tingting;" && \
 	docker exec tingting-db psql -U postgres -c "CREATE DATABASE tingting;" && \
+	docker exec tingting-db psql -U postgres -c "CREATE ROLE nepocorp WITH LOGIN PASSWORD 'nepocorp';" 2>/dev/null || true && \
 	echo "📥 Restoring backup into local database..." && \
 	docker exec -i tingting-db psql -U postgres -d tingting < "$$SQL_FILE" && \
 	rm -f "$$SQL_FILE" && \
