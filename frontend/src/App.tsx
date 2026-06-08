@@ -31,7 +31,7 @@ const ForwarderAdvancesPage = lazy(() => import('./pages/ForwarderAdvancesPage')
 const ForwarderSettlementsPage = lazy(() => import('./pages/ForwarderSettlementsPage'));
 const SettlementPrintPage = lazy(() => import('./pages/SettlementPrintPage'));
 const AdminAdvancesPage = lazy(() => import('./pages/AdminAdvancesPage'));
-const AdminSettlementsPage = lazy(() => import('./pages/AdminSettlementsPage'));
+
 const DispatchPage = lazy(() => import('./pages/DispatchPage'));
 const ProfitPage = lazy(() => import('./pages/ProfitPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
@@ -128,7 +128,7 @@ function AppRoutes() {
           <Route path="/debt/:id" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/penalties" element={adminOnly(page(<PenaltyPage />))} />
           <Route path="/advances" element={adminOnly(page(<AdminAdvancesPage />))} />
-          <Route path="/settlements" element={adminOnly(page(<AdminSettlementsPage />))} />
+
           <Route path="/my-penalties" element={driverOnly(page(<DriverPenaltyPage />))} />
           <Route path="/customers" element={adminOnly(page(<CustomersPage />))} />
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />

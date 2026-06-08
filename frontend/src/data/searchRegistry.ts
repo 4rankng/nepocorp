@@ -48,7 +48,7 @@ const ADMIN_BASE_ITEMS: SearchItem[] = [
   { id: 'payables', type: 'page', label: 'Công nợ phải trả', path: '/payables', icon: Receipt },
   { id: 'expenses', type: 'page', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText },
   { id: 'advances', type: 'page', label: 'Tạm ứng', path: '/advances', icon: Wallet },
-  { id: 'settlements', type: 'page', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText },
+
   { id: 'customers', type: 'page', label: 'Khách hàng', path: '/customers', icon: Users },
   { id: 'suppliers', type: 'page', label: 'Nhà cung cấp', path: '/suppliers', icon: Store },
   { id: 'config', type: 'page', label: 'Cấu hình', path: '/config', icon: Settings },

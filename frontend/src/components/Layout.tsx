@@ -74,7 +74,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
         { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
-        { key: 'settlements', label: 'Phiếu thanh toán', path: '/settlements', icon: FileText, section: 'financials' },
+
 
         { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'master-data' },
         { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'master-data' },
@@ -141,7 +141,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/my-settlements\/\d+$/)) return 'Chi tiết phiếu thanh toán';
   if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
   if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
-  if (pathname.startsWith('/settlements')) return 'Quản lý phiếu thanh toán';
+
   if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
   return 'NEPO';
 }
