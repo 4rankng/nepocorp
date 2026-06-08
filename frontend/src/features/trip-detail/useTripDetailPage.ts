@@ -79,7 +79,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     if (!trip) {
       return {
         revenue: 0, totalCost: 0, grossProfit: 0, marginPct: null,
-        fuelCost: 0, roadAllowance: 0, driverSalary: 0, serviceCost: 0,
+        fuelCost: 0, roadAllowance: 0, tollCost: 0, driverSalary: 0, serviceCost: 0,
+        twoPointDeliveryBonus: 0, vehicleShiftAllowance: 0,
         totalKm: 0, fuelLiters: 0, computedLiters: 0, ttbq: 0,
         fuelVarianceLiters: 0, fuelVarianceOver: false,
         externalCarrierName: '—', externalMargin: null,
@@ -106,8 +107,11 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     const marginPct = revenue > 0 ? ((grossProfit / (isExternal ? Math.round(revenue / (1 + vatRate)) : revenue)) * 100).toFixed(1) : null;
     const fuelCost = Number(trip.totalFuelCost || 0);
     const roadAllowance = Number(trip.totalRoadAllowance || 0);
+    const tollCost = Number(trip.tollCost || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const serviceCost = 0;
+    const twoPointDeliveryBonus = Number(trip.twoPointDeliveryBonus || 0);
+    const vehicleShiftAllowance = Number(trip.vehicleShiftAllowance || 0);
     const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
     const fuelLiters = Number(trip.fuelLiters) || 0;
     const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
@@ -121,7 +125,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
 
     return {
       revenue, totalCost, grossProfit, marginPct,
-      fuelCost, roadAllowance, driverSalary, serviceCost,
+      fuelCost, roadAllowance, tollCost, driverSalary, serviceCost,
+      twoPointDeliveryBonus, vehicleShiftAllowance,
       totalKm, fuelLiters, computedLiters, ttbq,
       fuelVarianceLiters, fuelVarianceOver,
       externalCarrierName, externalMargin,

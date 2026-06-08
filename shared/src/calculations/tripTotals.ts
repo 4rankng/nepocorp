@@ -1,4 +1,4 @@
-import { round2dp } from './round';
+import { roundInt } from './round';
 
 export interface ComputeTripTotalsInput {
   legs: { sequence: number; km: number; loadingType: 'HANG' | 'VO' }[];
@@ -42,13 +42,14 @@ export interface ComputeTripTotalsOutput {
   fuelPriceVariance: number;
   effectiveFuelPrice: number;
   totalRoadAllowance: number;
+  tollCost: number;            // tollsStations × tollPerStation; separate from road allowance
   totalCost: number;
   grossProfit: number;
   freightExVat: number;        // revenue / (1 + vatRate); equals revenue when vatRate=0
-  serviceMargin: number;       // Σ(sellExVat − buyInclVat) across ancillary fees; 0 when none
-  totalServiceBuy: number;     // Σ buyAmount incl-VAT (cost component, per spec §4.6.1)
-  totalServiceSell: number;    // Σ sellAmount ex-VAT (revenue component)
-  externalMargin: number;      // freightExVat − externalFreightExVat; 0 for OWN trips
+  serviceMargin: number;       // sum(sellExVat - buyInclVat) across ancillary fees; 0 when none
+  totalServiceBuy: number;     // sum buyAmount incl-VAT (cost component, per spec section 4.6.1)
+  totalServiceSell: number;    // sum sellAmount ex-VAT (revenue component)
+  externalMargin: number;      // freightExVat - externalFreightExVat; 0 for OWN trips
   externalFreightExVat: number; // externalFreightCost/(1+vatRate); 0 for OWN trips
 }
 
@@ -72,35 +73,43 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
   let totalFuelLiters = 0;
   let legCalculations: { sequence: number; calculatedLiters: number }[] = [];
 
-  const fuelSupplement = round2dp(input.fuelSupplementLiters || 0);
+  // Fuel is issued in whole liters only -- round every quantity so the
+  // dispatched value matches what the fuel station hands over
+  // (e.g. 97.2 L -> 97 L, 68.96 L -> 69 L). The per-trip supplement and
+  // any manual supplement are likewise rounded, which keeps the displayed
+  // breakdown (sum of legs + supplements) consistent with the issued total.
+  const fuelSupplement = roundInt(input.fuelSupplementLiters || 0);
 
   // Precedence: FLAT_RATE takes precedence even over Mountain
   if (input.fuelMode === 'FLAT_RATE') {
-    const baseLiters = round2dp(input.fuelLitersOverride || 0);
-    totalFuelLiters = round2dp(baseLiters + fuelSupplement);
+    const baseLiters = roundInt(input.fuelLitersOverride || 0);
+    totalFuelLiters = baseLiters + fuelSupplement;
     legCalculations = input.legs.map((leg) => ({ sequence: leg.sequence, calculatedLiters: 0 }));
   } else {
     // AUTO Mode
     if (input.isMountainRoute && input.mountainFixedAllowance !== null) {
       // AUTO Mountain with allowance
-      const baseLiters = round2dp(input.mountainFixedAllowance);
-      totalFuelLiters = round2dp(baseLiters + fuelSupplement);
+      const baseLiters = roundInt(input.mountainFixedAllowance);
+      totalFuelLiters = baseLiters + fuelSupplement;
       legCalculations = input.legs.map((leg) => ({ sequence: leg.sequence, calculatedLiters: 0 }));
     } else {
       // AUTO Standard, or Mountain fallback to per-leg
       const legsLitersTotal = input.legs.reduce((sum, leg) => {
         const norm = leg.loadingType === 'HANG' ? input.fuelLoadedNorm : input.fuelEmptyNorm;
-        const legLiters = round2dp((leg.km * norm) / 100);
+        // Floor each leg so the per-leg breakdown (and the sum of legs)
+        // matches the integer total. Flooring after summing would let
+        // sub-liter noise from individual legs push the total up by 1.
+        const legLiters = roundInt((leg.km * norm) / 100);
         legCalculations.push({ sequence: leg.sequence, calculatedLiters: legLiters });
         return sum + legLiters;
       }, 0);
 
-      const tripSupplement = round2dp(input.fuelPerTripSupplement || 0);
-      totalFuelLiters = round2dp(legsLitersTotal + tripSupplement + fuelSupplement);
+      const tripSupplement = roundInt(input.fuelPerTripSupplement || 0);
+      totalFuelLiters = legsLitersTotal + tripSupplement + fuelSupplement;
     }
   }
 
-  // Use nullish coalescing — `0` is a valid numeric price, not "missing".
+  // Use nullish coalescing -- `0` is a valid numeric price, not "missing".
   const effectiveFuelPrice = input.fuelActualUnitPrice ?? input.fuelUnitPrice;
   const totalFuelCost = Math.round(totalFuelLiters * effectiveFuelPrice);
   const fuelPriceVariance = input.fuelActualUnitPrice != null
@@ -130,7 +139,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     ? Math.round(input.revenue / (1 + vatRate))
     : input.revenue;
 
-  // Ancillary service margin — per spec §4.6.1 & §4.7:
+  // Ancillary service margin -- per spec section 4.6.1 and 4.7:
   //   sell side = ex-VAT (revenue perspective), buy side = incl-VAT (cost perspective).
   //   This follows the asymmetric VAT principle: revenue ex-VAT, costs incl-VAT.
   const fees = input.ancillaryFees ?? [];
@@ -142,6 +151,12 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalServiceSellExVat  += feeVat > 0 ? Math.round(fee.sellAmount / (1 + feeVat)) : fee.sellAmount;
   }
   const serviceMargin = totalServiceSellExVat - totalServiceBuyInclVat;
+
+  // Toll cost — separate from road allowance for transparent P&L display.
+  // computeRoadAllowance already subtracts tolls from the base rate (driver pays tolls
+  // from their allowance). tollCost is the gross toll expense, added to totalCost so
+  // the company's P&L reflects the full cost picture: roadAllowance (net) + tollCost.
+  const tollCost = input.tollsStations * input.tollPerStation;
 
   let totalCost: number;
   let grossProfit: number;
@@ -156,8 +171,8 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalCost = extCost;
     grossProfit = externalMargin + serviceMargin;
   } else {
-    // OWN trip: existing formula
-    totalCost = totalFuelCost + totalRoadAllowance + input.driverSalary
+    // OWN trip: total cost = fuel + road allowance (net) + tolls + salary + bonuses
+    totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.driverSalary
       + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
     grossProfit = freightExVat - totalCost + serviceMargin;
   }
@@ -169,6 +184,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     fuelPriceVariance,
     effectiveFuelPrice,
     totalRoadAllowance,
+    tollCost,
     totalCost,
     grossProfit,
     freightExVat,

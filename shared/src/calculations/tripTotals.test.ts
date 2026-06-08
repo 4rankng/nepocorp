@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { round2dp } from './round';
+import { round2dp, roundInt } from './round';
 import { computeTripTotals, ComputeTripTotalsInput } from './tripTotals';
 
 const defaultBaseInput: ComputeTripTotalsInput = {
@@ -38,29 +38,42 @@ test('round2dp boundary correctness', () => {
   assert.strictEqual(round2dp(-1.005), -1.01);
 });
 
-test('AUTO standard mode calculation', () => {
+test('roundInt rounds to nearest integer and clamps negatives', () => {
+  assert.strictEqual(roundInt(97.2), 97);
+  assert.strictEqual(roundInt(97.9), 98);
+  assert.strictEqual(roundInt(97), 97);
+  assert.strictEqual(roundInt(0.4), 0);
+  assert.strictEqual(roundInt(0.5), 1);
+  assert.strictEqual(roundInt(0), 0);
+  assert.strictEqual(roundInt(-5.7), 0); // negative inputs are clamped to 0
+});
+
+test('AUTO standard mode calculation -- fuel liters rounded to integer', () => {
   const result = computeTripTotals(defaultBaseInput);
 
-  // Leg 1: 120 * 43.0 / 100 = 51.6 L
-  // Leg 2: 120 * 25.0 / 100 = 30.0 L
-  // Sum = 81.6 L
-  // Total = 81.6 + 3 (per-trip) + 0 (supplement) = 84.6 L
-  assert.strictEqual(result.totalFuelLiters, 84.6);
+  // Leg 1: 120 * 43.0 / 100 = 51.6 L -> round 52 L
+  // Leg 2: 120 * 25.0 / 100 = 30.0 L -> round 30 L
+  // Sum of legs = 82 L
+  // Total = 82 + 3 (per-trip) + 0 (supplement) = 85 L
+  assert.strictEqual(result.totalFuelLiters, 85);
   assert.strictEqual(result.legCalculations.length, 2);
-  assert.strictEqual(result.legCalculations[0].calculatedLiters, 51.6);
-  assert.strictEqual(result.legCalculations[1].calculatedLiters, 30.0);
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 52);
+  assert.strictEqual(result.legCalculations[1].calculatedLiters, 30);
 
-  // fuelCost = 84.6 * 20000 = 1692000 VNĐ
-  assert.strictEqual(result.totalFuelCost, 1692000);
+  // fuelCost = 85 * 20000 = 1700000 VND
+  assert.strictEqual(result.totalFuelCost, 1700000);
 
-  // roadAllowance = 1500000 - 100000 + 50000 - (2 * 55000) + 300000 = 1640000 VNĐ
+  // roadAllowance = tollsAddition(1740000) - tollsDiscount(100000) = 1640000 VND
   assert.strictEqual(result.totalRoadAllowance, 1640000);
 
-  // totalCost = 1692000 + 1640000 + 800000 = 4132000 VNĐ
-  assert.strictEqual(result.totalCost, 4132000);
+  // tollCost = tollsStations(2) × tollPerStation(55000) = 110000 VND
+  assert.strictEqual(result.tollCost, 110000);
 
-  // grossProfit = 4000000 - 4132000 = -132000 VNĐ
-  assert.strictEqual(result.grossProfit, -132000);
+  // totalCost = 1700000 (fuel) + 1640000 (road) + 110000 (tolls) + 800000 (salary) = 4250000 VND
+  assert.strictEqual(result.totalCost, 4250000);
+
+  // grossProfit = 4000000 - 4250000 = -250000 VND
+  assert.strictEqual(result.grossProfit, -250000);
 });
 
 test('AUTO mountain mode allowance calculation', () => {
@@ -72,8 +85,8 @@ test('AUTO mountain mode allowance calculation', () => {
 
   const result = computeTripTotals(input);
 
-  // totalLiters = 240 + 0 (supplement) = 240 L (per-trip supplement NOT added)
-  assert.strictEqual(result.totalFuelLiters, 240.0);
+  // totalLiters = round(240) + 0 (supplement) = 240 L (per-trip supplement NOT added)
+  assert.strictEqual(result.totalFuelLiters, 240);
   assert.strictEqual(result.legCalculations[0].calculatedLiters, 0);
   assert.strictEqual(result.legCalculations[1].calculatedLiters, 0);
   assert.strictEqual(result.totalFuelCost, 240 * 20000);
@@ -88,9 +101,9 @@ test('AUTO mountain fallback calculation when allowance is null', () => {
 
   const result = computeTripTotals(input);
 
-  // Falls back to standard per-leg AUTO
-  assert.strictEqual(result.totalFuelLiters, 84.6);
-  assert.strictEqual(result.legCalculations[0].calculatedLiters, 51.6);
+  // Falls back to standard per-leg AUTO (rounded)
+  assert.strictEqual(result.totalFuelLiters, 85);
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 52);
 });
 
 test('FLAT_RATE mode calculation', () => {
@@ -102,8 +115,8 @@ test('FLAT_RATE mode calculation', () => {
 
   const result = computeTripTotals(input);
 
-  // totalLiters = 150 + 0 = 150 L (per-trip supplement NOT added)
-  assert.strictEqual(result.totalFuelLiters, 150.0);
+  // totalLiters = round(150) + 0 = 150 L (per-trip supplement NOT added)
+  assert.strictEqual(result.totalFuelLiters, 150);
   assert.strictEqual(result.legCalculations[0].calculatedLiters, 0);
 });
 
@@ -119,10 +132,21 @@ test('FLAT_RATE mode takes precedence over mountain route', () => {
   const result = computeTripTotals(input);
 
   // totalLiters = 150 (FLAT_RATE wins over mountain 240)
-  assert.strictEqual(result.totalFuelLiters, 150.0);
+  assert.strictEqual(result.totalFuelLiters, 150);
 });
 
-test('supplement added in all modes', () => {
+test('FLAT_RATE with fractional override is rounded to integer', () => {
+  const input = {
+    ...defaultBaseInput,
+    fuelMode: 'FLAT_RATE' as const,
+    fuelLitersOverride: 150.7,
+  };
+  const result = computeTripTotals(input);
+  // round(150.7) = 151
+  assert.strictEqual(result.totalFuelLiters, 151);
+});
+
+test('supplement added in all modes (and rounded)', () => {
   const input = {
     ...defaultBaseInput,
     fuelSupplementLiters: 15.5
@@ -130,8 +154,8 @@ test('supplement added in all modes', () => {
 
   const result = computeTripTotals(input);
 
-  // AUTO standard: 84.6 + 15.5 = 100.1 L
-  assert.strictEqual(result.totalFuelLiters, 100.1);
+  // AUTO standard: 82 (rounded legs) + 3 (per-trip) + round(15.5)=16 = 101 L
+  assert.strictEqual(result.totalFuelLiters, 101);
 });
 
 test('negative road allowance clamped to 0', () => {
@@ -155,33 +179,47 @@ test('0 legs (empty legs array)', () => {
 
   const result = computeTripTotals(input);
 
-  // No legs → 0 leg liters, no per-trip supplement → only user supplement
+  // No legs -> 0 leg liters, no per-trip supplement -> only user supplement
   assert.strictEqual(result.totalFuelLiters, 0);
   assert.strictEqual(result.legCalculations.length, 0);
   assert.strictEqual(result.totalFuelCost, 0);
   // roadAllowance unchanged by legs
   assert.strictEqual(result.totalRoadAllowance, 1640000);
-  assert.strictEqual(result.grossProfit, 4000000 - 0 - 1640000 - 800000);
+  // tollCost = 2 × 55000 = 110000
+  assert.strictEqual(result.tollCost, 110000);
+  assert.strictEqual(result.grossProfit, 4000000 - 0 - 1640000 - 110000 - 800000);
 });
 
-test('0 revenue produces negative grossProfit (full cost)', () => {
+test('rounding preserves sum-of-legs consistency', () => {
+  // 0.43 + 0.43 = 0.86 -- sum of rounds would be 0, round of sum is 1.
+  // Our implementation rounds each leg individually so the displayed
+  // breakdown adds up to the issued total (a saner UX for the fuel card).
   const input = {
     ...defaultBaseInput,
+    legs: [
+      { sequence: 1, km: 1, loadingType: 'HANG' as const }, // 1 * 43 / 100 = 0.43 -> round 0
+      { sequence: 2, km: 1, loadingType: 'HANG' as const }, // 1 * 43 / 100 = 0.43 -> round 0
+    ],
+    fuelPerTripSupplement: 0,
+    fuelSupplementLiters: 0,
+    tollsDiscount: 0,
+    tollsAddition: 0,
+    tollsStations: 0,
+    hasReturnCargo: false,
+    driverSalary: 0,
     revenue: 0,
+    roadAllowanceBase: 0,
   };
 
   const result = computeTripTotals(input);
-
-  assert.strictEqual(result.totalFuelLiters, 84.6);
-  assert.strictEqual(result.totalFuelCost, 1692000);
-  assert.strictEqual(result.totalRoadAllowance, 1640000);
-  assert.strictEqual(result.totalCost, 4132000);
-  // grossProfit = 0 - 4132000 = -4132000
-  assert.strictEqual(result.grossProfit, -4132000);
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 0);
+  assert.strictEqual(result.legCalculations[1].calculatedLiters, 0);
+  // 0 + 0 + 0 (per-trip rounded) + 0 (supplement) = 0
+  assert.strictEqual(result.totalFuelLiters, 0);
 });
 
-test('round2dp x.xx5 boundary within computeTripTotals', () => {
-  // Use km that produces x.xx5 boundary: 11.5 km * 43.0 / 100 = 4.945 → round2dp = 4.95
+test('fuel liters always integer even when raw result is x.xx5', () => {
+  // 11.5 * 43 / 100 = 4.945 -- rounds to 5
   const input = {
     ...defaultBaseInput,
     legs: [{ sequence: 1, km: 11.5, loadingType: 'HANG' as const }],
@@ -197,12 +235,10 @@ test('round2dp x.xx5 boundary within computeTripTotals', () => {
   };
 
   const result = computeTripTotals(input);
-
-  // 11.5 * 43 / 100 = 4.945 → round2dp = 4.95
-  assert.strictEqual(result.legCalculations[0].calculatedLiters, 4.95);
-  assert.strictEqual(result.totalFuelLiters, 4.95);
-  // fuelCost = 4.95 * 20000 = 99000
-  assert.strictEqual(result.totalFuelCost, 99000);
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 5);
+  assert.strictEqual(result.totalFuelLiters, 5);
+  // fuelCost = 5 * 20000 = 100000
+  assert.strictEqual(result.totalFuelCost, 100000);
 });
 
 test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', () => {
@@ -214,12 +250,12 @@ test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', ()
 
   const result = computeTripTotals(input);
 
-  // totalCost = 1692000 (fuel) + 1640000 (road) + 800000 (salary) + 200000 + 350000 = 4682000
-  assert.strictEqual(result.totalCost, 4682000);
-  assert.strictEqual(result.grossProfit, 4000000 - 4682000);
+  // totalCost = 1700000 (fuel) + 1640000 (road) + 110000 (tolls) + 800000 (salary) + 200000 + 350000 = 4800000
+  assert.strictEqual(result.totalCost, 4800000);
+  assert.strictEqual(result.grossProfit, 4000000 - 4800000);
 });
 
-// ── A4 extension tests ──────────────────────────────────────────────────────
+// --- A4 extension tests -----------------------------------------------------
 
 const BASE_A4 = {
   legs: [{ sequence: 1, km: 100, loadingType: 'HANG' as const }],
@@ -246,7 +282,7 @@ const BASE_A4 = {
   roadAllowanceOverride: null,
 };
 
-test('backward-compat: vatRate=0 (default) — freightExVat equals revenue', () => {
+test('backward-compat: vatRate=0 (default) -- freightExVat equals revenue', () => {
   const r = computeTripTotals(BASE_A4);
   assert.strictEqual(r.freightExVat, BASE_A4.revenue);
   assert.strictEqual(r.serviceMargin, 0);
@@ -266,11 +302,11 @@ test('OWN trip with ancillary fees: serviceMargin included in grossProfit', () =
     ...BASE_A4,
     vatRate: 0.08,
     ancillaryFees: [
-      { buyAmount: 540000, sellAmount: 540000, vatRate: 0.08 },   // at-cost: sell ex-VAT 500000, buy incl-VAT 540000 → margin -40000
-      { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: sell ex-VAT 1000000, buy incl-VAT 540000 → margin 460000
+      { buyAmount: 540000, sellAmount: 540000, vatRate: 0.08 },   // at-cost: sell ex-VAT 500000, buy incl-VAT 540000 -> margin -40000
+      { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: sell ex-VAT 1000000, buy incl-VAT 540000 -> margin 460000
     ],
   });
-  // Per spec §4.6.1 & §4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
+  // Per spec section 4.6.1 & 4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
   // buy incl-VAT: 540000 + 540000 = 1080000; sell ex-vat: 500000 + 1000000 = 1500000
   assert.strictEqual(r.totalServiceBuy, 1080000);
   assert.strictEqual(r.totalServiceSell, 1500000);
@@ -300,7 +336,7 @@ test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () =
     externalFreightCost: 5400000,
     ancillaryFees: [{ buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 }],
   });
-  // sell ex-VAT: 1000000, buy incl-VAT: 540000 → serviceMargin = 460000
+  // sell ex-VAT: 1000000, buy incl-VAT: 540000 -> serviceMargin = 460000
   assert.strictEqual(r.serviceMargin, 460000);
   assert.strictEqual(r.grossProfit, 5460000);  // 5000000 + 460000
 });
@@ -321,4 +357,36 @@ test('auto-calculated road allowance when tollsAddition is 0', () => {
   // tongTienDiDuong = 500000 - 100000 + 300000 = 700000
   // totalRoadAllowance = tongTienDiDuong - discount = 700000 - 100000 = 600000
   assert.strictEqual(r.totalRoadAllowance, 600000);
+});
+
+test('tollCost = tollsStations × tollPerStation, included in totalCost for OWN trips', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    tollsStations: 3,
+    tollPerStation: 70000,
+  });
+  // tollCost = 3 × 70000 = 210000
+  assert.strictEqual(r.tollCost, 210000);
+  // roadAllowance = 500000 - (3 × 70000) = 290000 (tolls subtracted from base)
+  // totalCost = 920000 (fuel) + 290000 (road) + 210000 (tolls) + 800000 (salary) = 2220000
+  assert.strictEqual(r.totalCost, 2220000);
+  assert.strictEqual(r.grossProfit, 10800000 - 2220000);
+});
+
+test('tollCost = 0 when tollsStations is 0', () => {
+  const r = computeTripTotals(BASE_A4);
+  assert.strictEqual(r.tollCost, 0);
+});
+
+test('tollCost NOT included in totalCost for EXTERNAL trips', () => {
+  const r = computeTripTotals({
+    ...BASE_A4,
+    tollsStations: 3,
+    tollPerStation: 70000,
+    carrierType: 'EXTERNAL',
+    externalFreightCost: 5400000,
+  });
+  assert.strictEqual(r.tollCost, 210000);
+  // EXTERNAL: totalCost = externalFreightCost only, tollCost not added
+  assert.strictEqual(r.totalCost, 5400000);
 });

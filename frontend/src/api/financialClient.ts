@@ -86,4 +86,14 @@ export const financialClient = {
     const qs = search && search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
     return api.get<{ customers: CustomerAging[] }>(`${REPORTS.RECEIVABLES_AGING}${qs}`);
   },
+
+  // ── Admin: Advance Settlements ────────────────────────────────────────────
+
+  getAdminSettlementDetail: async (id: number) => {
+    return api.get<any>(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}`);
+  },
+
+  getSettlementExportUrl: (id: number, format: 'xlsx' | 'pdf') => {
+    return `/api${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}/export?format=${format}`;
+  },
 };

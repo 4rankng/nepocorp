@@ -54,6 +54,8 @@ export interface UseTripFormReturn {
   setCargoTypeId: (v: string) => void;
   departureDate: string;
   setDepartureDate: (v: string) => void;
+  completedAt: string;
+  setCompletedAt: (v: string) => void;
   customerReference: string;
   setCustomerReference: (v: string) => void;
   containerCount: string;
@@ -298,6 +300,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [driverId, setDriverId] = useState(isEditMode && existingTrip ? String(existingTrip.driverId) : "");
   const [cargoTypeId, setCargoTypeId] = useState(isEditMode && existingTrip ? String(existingTrip.cargoTypeId) : "");
   const [departureDate, setDepartureDate] = useState(isEditMode && existingTrip ? existingTrip.departureDate : "");
+  const [completedAt, setCompletedAt] = useState(isEditMode && existingTrip?.completedAt ? existingTrip.completedAt.slice(0, 10) : "");
   const [customerReference, setCustomerReference] = useState(isEditMode && existingTrip?.customerReference ? existingTrip.customerReference : "");
   const [containerCount, setContainerCount] = useState(isEditMode && existingTrip?.containerCount ? String(existingTrip.containerCount) : "1");
 
@@ -700,6 +703,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           const payload = {
             routeId: routeId ? Number(routeId) : undefined,
             departureDate: departureDate || undefined,
+            completedAt: completedAt || undefined,
             legs: legs.map(l => ({
               sequence: l.sequence,
               origin: l.origin.trim(),
@@ -881,6 +885,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     cargoTypeId, setCargoTypeId,
     departureDate, setDepartureDate,
     customerReference, setCustomerReference,
+    completedAt, setCompletedAt,
     containerCount, setContainerCount,
     carrierType, setCarrierType,
     vatRate, setVatRate,

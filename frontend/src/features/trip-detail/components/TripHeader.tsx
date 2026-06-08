@@ -52,7 +52,7 @@ export function TripHeader({
         </button>
         <div className="title-block">
           <div className="title-row">
-            <h1>Lệnh vận chuyển</h1>
+            <h1>{trip.tripCode || 'Lệnh vận chuyển'}</h1>
             <StatusBadge status={trip.status} />
           </div>
           <div className="company">

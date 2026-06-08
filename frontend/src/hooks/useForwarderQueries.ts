@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
+import { financialClient } from '../api/financialClient';
 
 export function useForwarderTrips() {
   return useQuery({
@@ -183,5 +184,15 @@ export function useRejectSettlement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-settlements'] });
     },
+  });
+}
+
+// ── Admin: Settlement detail (for print/export page) ─────────────────────────
+
+export function useAdminSettlementDetail(id: number) {
+  return useQuery({
+    queryKey: ['admin-settlement-detail', id],
+    queryFn: () => financialClient.getAdminSettlementDetail(id),
+    enabled: !!id,
   });
 }

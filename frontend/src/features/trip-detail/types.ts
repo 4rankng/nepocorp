@@ -10,8 +10,11 @@ export interface TripDerivedData {
   marginPct: string | null;
   fuelCost: number;
   roadAllowance: number;
+  tollCost: number;
   driverSalary: number;
   serviceCost: number;
+  twoPointDeliveryBonus: number;
+  vehicleShiftAllowance: number;
   totalKm: number;
   fuelLiters: number;
   computedLiters: number;

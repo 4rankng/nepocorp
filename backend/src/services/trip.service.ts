@@ -192,6 +192,7 @@ export async function updateTripFigures(
   data: {
     legs: TripLegInput[];
     departureDate?: string;
+    completedAt?: string;
     fuelMode: FuelMode;
     fuelLitersOverride?: number | null;
     fuelSupplementLiters?: number;
@@ -328,7 +329,14 @@ export async function updateTripFigures(
       revenueOverriddenAt = new Date();
     }
 
-    const driverSalary = data.driverSalary !== undefined ? data.driverSalary : Number(trip.driverSalary || 0);
+    // Auto-populate driverSalary from route config if not yet set.
+    // Only auto-fill when the user didn't explicitly send a value (undefined)
+    // AND the existing trip has no salary — this prevents overwriting an
+    // explicit user-entered 0 with the route default.
+    let driverSalary = data.driverSalary !== undefined ? data.driverSalary : Number(trip.driverSalary || 0);
+    if (data.driverSalary === undefined && driverSalary === 0 && route?.driverSalary) {
+      driverSalary = Number(route.driverSalary);
+    }
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
 
@@ -393,7 +401,7 @@ export async function updateTripFigures(
         .from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId)).limit(1);
       if (photos.length > 0) {
         await tx.update(s.trips)
-          .set({ status: TripStatus.COMPLETED, updatedAt: new Date() })
+          .set({ status: TripStatus.COMPLETED, completedAt: data.completedAt ? new Date(data.completedAt) : new Date(), updatedAt: new Date() })
           .where(eq(s.trips.id, tripId));
 
         // Emit a dedicated audit event for the auto-completion.
@@ -436,6 +444,8 @@ export async function updateTripFigures(
       fuelLiters: String(totals.totalFuelLiters),
       totalFuelCost: String(totals.totalFuelCost),
       totalRoadAllowance: String(totals.totalRoadAllowance),
+      tollCost: String(totals.tollCost),
+      ...(data.completedAt ? { completedAt: new Date(data.completedAt) } : {}),
       totalCost: String(totals.totalCost),
       revenue: String(revenue),
       revenueEmptyReturn: String(revenueEmptyReturn),
@@ -704,6 +714,7 @@ export async function transitionTripStatus(
 
     const [updated] = await tx.update(s.trips).set({
       status: targetStatus,
+      ...(targetStatus === TripStatus.COMPLETED ? { completedAt: new Date() } : {}),
       updatedAt: new Date(),
     }).where(and(eq(s.trips.id, tripId), eq(s.trips.status, currentStatus))).returning();
 

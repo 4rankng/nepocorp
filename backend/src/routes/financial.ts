@@ -13,6 +13,8 @@ import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
 import { getPayablesSummary } from '../services/payables.service';
 import { getCustomerAgingList } from '../services/receivables.service';
+import { getAdvanceSettlement } from '../services/advance.service';
+import { exportSettlementXlsx, exportSettlementHtml } from '../services/settlement-export.service';
 import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../services/advance.service';
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../services/debtOffset.service';
 import { getDebitNoteData, buildDebitNoteXlsx } from '../services/debitNote.service';
@@ -294,6 +296,37 @@ router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MAN
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceSettlement(id, req.user!.userId);
   res.json(result);
+}));
+
+// ─── Advance Settlement detail & export (admin) ───────────────────────────
+
+router.get('/advance-settlements/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const settlement = await getAdvanceSettlement(id);
+  if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+  res.json(settlement);
+}));
+
+router.get('/advance-settlements/:id/export', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const format = (req.query.format as string) || 'xlsx';
+  const dateStr = formatLocalDate();
+
+  if (format === 'pdf' || format === 'html') {
+    const html = await exportSettlementHtml(id);
+    if (!html) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+    return;
+  }
+
+  // Default: xlsx
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=phieu-thanh-toan-${id}-${dateStr}.xlsx`);
+  const ok = await exportSettlementXlsx(id, res);
+  if (!ok) {
+    return;
+  }
 }));
 
 // ─── Debt Offsets ─────────────────────────────────────────────────────────────

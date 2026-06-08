@@ -197,6 +197,7 @@ export interface Trip {
   twoPointDeliveryBonus: string;
   vehicleShiftAllowance: string;
   grossProfit: string | null;
+  tollCost: string | null;
   revenueOriginal: string | null;
   revenueOverriddenBy: number | null;
   revenueOverriddenAt: string | null;
@@ -219,6 +220,7 @@ export interface Trip {
   externalDriverName: string | null;
   externalDriverPhone: string | null;
   fuelSupplier?: { id: number; name: string } | null;
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

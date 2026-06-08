@@ -1,6 +1,6 @@
 import React from 'react';
 import { Fuel, AlertTriangle } from 'lucide-react';
-import { FUEL_MODE_LABELS } from '@tingting/shared';
+import { FUEL_MODE_LABELS, roundInt } from '@tingting/shared';
 import { fmtVND } from '../formatters';
 import type { TripDetail } from '@tingting/shared';
 import type { TripDerivedData } from '../types';
@@ -10,6 +10,11 @@ interface FuelCardProps {
   derived: TripDerivedData;
   fuelPriceConfig: number | null;
 }
+
+// Fuel is dispatched in whole liters only (see shared/src/calculations/tripTotals.ts).
+// Round on display so older trips persisted with sub-liter precision (e.g. 97.2 L)
+// also render without decimals and stay consistent with newly created trips.
+const fmtLiters = (v: number) => roundInt(v).toString();
 
 export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
@@ -47,7 +52,7 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             <div className="bullet">
               <div className="bullet-head">
                 <span className="bl">Phát hành</span>
-                <span className="bv">{fuelLiters.toFixed(1)} L</span>
+                <span className="bv">{fmtLiters(fuelLiters)} L</span>
               </div>
               <div className="track">
                 <div className="fill actual" style={{ width: `${Math.min((fuelLiters / (computedLiters || 1)) * 100, 100)}%` }} />
@@ -57,7 +62,7 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
               <div className="bullet">
                 <div className="bullet-head">
                   <span className="bl">Định mức</span>
-                  <span className="bv">{computedLiters.toFixed(1)} L</span>
+                  <span className="bv">{fmtLiters(computedLiters)} L</span>
                 </div>
                 <div className="track">
                   <div className="fill norm" style={{ width: '100%' }} />
@@ -68,8 +73,8 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
               <div className="fc-flag">
                 <AlertTriangle size={15} />
                 {fuelVarianceOver
-                  ? `Vượt định mức +${fuelVarianceLiters.toFixed(1)} L`
-                  : `Tiết kiệm ${Math.abs(fuelVarianceLiters).toFixed(1)} L`}
+                  ? `Vượt định mức +${fmtLiters(fuelVarianceLiters)} L`
+                  : `Tiết kiệm ${fmtLiters(Math.abs(fuelVarianceLiters))} L`}
               </div>
             )}
           </div>

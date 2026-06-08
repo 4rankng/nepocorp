@@ -8,7 +8,15 @@ interface FinancialCardProps {
 }
 
 export function FinancialCard({ derived }: FinancialCardProps) {
-  const { revenue, fuelCost, roadAllowance, driverSalary, serviceCost, totalCost, grossProfit } = derived;
+  const {
+    revenue, fuelCost, roadAllowance, tollCost, driverSalary,
+    serviceCost, twoPointDeliveryBonus, vehicleShiftAllowance,
+    totalCost, grossProfit,
+  } = derived;
+
+  // Only show bonus/allowance rows when they have values
+  const showTwoPointBonus = twoPointDeliveryBonus > 0;
+  const showShiftAllowance = vehicleShiftAllowance > 0;
 
   return (
     <div className="card">
@@ -28,16 +36,32 @@ export function FinancialCard({ derived }: FinancialCardProps) {
           </div>
           <div className="pl-row">
             <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền đi đường</span>
-            <span className={`v ${roadAllowance === 0 ? 'zero' : ''}`}>{roadAllowance > 0 ? fmtCurrency(roadAllowance) : '0 đ'}</span>
+            <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}>{roadAllowance > 0 ? `− ${fmtCurrency(roadAllowance)}` : '0 đ'}</span>
           </div>
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền kết hợp</span>
-            <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}>{driverSalary > 0 ? fmtCurrency(driverSalary) : '0 đ'}</span>
+            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền vé (trạm thu phí)</span>
+            <span className={`v ${tollCost === 0 ? 'zero' : ''}`}>{tollCost > 0 ? `− ${fmtCurrency(tollCost)}` : '0 đ'}</span>
+          </div>
+          <div className="pl-row">
+            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền lương tài xế</span>
+            <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}>{driverSalary > 0 ? `− ${fmtCurrency(driverSalary)}` : '0 đ'}</span>
           </div>
           <div className="pl-row">
             <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Chi phí dịch vụ</span>
-            <span className={`v ${serviceCost === 0 ? 'zero' : ''}`}>{serviceCost > 0 ? fmtCurrency(serviceCost) : '0 đ'}</span>
+            <span className={`v ${serviceCost === 0 ? 'zero' : ''}`}>{serviceCost > 0 ? `− ${fmtCurrency(serviceCost)}` : '0 đ'}</span>
           </div>
+          {showTwoPointBonus && (
+            <div className="pl-row">
+              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Thưởng giao 2 điểm</span>
+              <span className="v neg">− {fmtCurrency(twoPointDeliveryBonus)}</span>
+            </div>
+          )}
+          {showShiftAllowance && (
+            <div className="pl-row">
+              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Phép tàu</span>
+              <span className="v neg">− {fmtCurrency(vehicleShiftAllowance)}</span>
+            </div>
+          )}
           <div className="pl-divider" />
           <div className="pl-row subtotal">
             <span className="k">Tổng chi phí</span>

@@ -8,3 +8,14 @@ export function round2dp(n: number): number {
   const absN = Math.abs(n);
   return sign * Number(Math.round(parseFloat(absN + 'e2')) + 'e-2');
 }
+
+/**
+ * Round a number to the nearest integer.
+ * Used for fuel-liter calculations where the dispatch system issues whole
+ * liters only (e.g. 97.2 L -> 97 L, 68.96 L -> 69 L).
+ * Math.max(0, ...) guards against negative inputs propagating through
+ * caller code paths.
+ */
+export function roundInt(n: number): number {
+  return Math.max(0, Math.round(n));
+}

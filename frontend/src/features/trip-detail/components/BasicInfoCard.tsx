@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, User, Calendar, Package, Hash, Pencil } from 'lucide-react';
+import { Truck, User, Calendar, Package, Hash, Pencil, CheckCircle } from 'lucide-react';
 import { fmtDate } from '../formatters';
 import type { TripDetail } from '@tingting/shared';
 
@@ -27,6 +27,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
       mono: true,
     },
     { icon: <Calendar size={17} />, label: 'Ngày khởi hành', value: fmtDate(trip.departureDate), mono: true, isDate: true },
+    { icon: <CheckCircle size={17} />, label: 'Ngày hoàn thành', value: trip.completedAt ? fmtDate(trip.completedAt) : '—', mono: true },
     { icon: <Package size={17} />, label: 'Số container', value: String(trip.containerCount ?? 1), mono: true },
     { icon: <Hash size={17} />, label: 'Mã tham chiếu', value: trip.customerReference ?? 'Chưa có', muted: !trip.customerReference },
   ];

@@ -46,7 +46,7 @@ export default function TripEditPage() {
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
-  const { error, setError, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, tripId: formTripId, isEditMode } = form;
+  const { error, setError, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt, tripId: formTripId, isEditMode } = form;
 
   const onSubmit = async (e: React.FormEvent) => {
     try {
@@ -128,6 +128,20 @@ export default function TripEditPage() {
                       required
                     />
                   </div>
+
+                  {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
+                    <div className="field" style={{ marginBottom: 20 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Ngày hoàn thành</label>
+                      <input
+                        className="input"
+                        type="date"
+                        value={completedAt}
+                        onChange={(e) => setCompletedAt(e.target.value)}
+                        max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
+                      />
+                      <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Để trống nếu chưa hoàn thành</div>
+                    </div>
+                  )}
 
                   <div className="field" style={{ marginBottom: 20 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Tuyến đường</label>

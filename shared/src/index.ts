@@ -63,7 +63,7 @@ export type {
   AncillaryExpenseType,
 } from './schemas';
 
-export { round2dp } from './calculations/round';
+export { round2dp, roundInt } from './calculations/round';
 export { computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
