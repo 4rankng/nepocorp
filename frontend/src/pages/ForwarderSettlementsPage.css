@@ -1,6 +1,7 @@
 /* ============================================================================
  * ForwarderSettlementsPage (.fset-page)
  * BEM-scoped styles for forwarder settlement list & create form.
+ * Matches ForwarderTripsPage / ForwarderAdvancesPage card pattern.
  * Vantai tokens: --ink, --line, --surface, --accent, --font-display, etc.
  * ========================================================================== */
 
@@ -19,134 +20,128 @@
   gap: 10px;
 }
 
-/* ── Settlement card ────────────────────────────────────────────────────── */
+/* ── Settlement card — matches driver-trip-card pattern ─────────────────── */
 .fset-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: border-color var(--t-normal), box-shadow var(--t-normal),
-              transform var(--t-normal), background var(--t-fast);
+  transition: border-color var(--t-normal, 180ms ease), box-shadow var(--t-normal, 180ms ease),
+              transform var(--t-normal, 180ms ease);
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
 }
 
 .fset-card:hover {
   border-color: var(--line-2);
-  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px -4px rgba(9,9,11,0.06);
+  transform: translateY(-1px);
 }
 
-.fset-card__head {
+/* Status strip — 3px left bar, centered vertically */
+.fset-card__strip {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Card body — horizontal flex like ForwarderTripsPage */
+.fset-card__body {
+  padding: 16px 20px;
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  gap: 16px;
 }
 
-.fset-card__code {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fset-card__code-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--surface-3);
-  color: var(--ink-3);
+/* Icon tile */
+.fset-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: background var(--t-fast), color var(--t-fast);
+  margin-top: 2px;
+  transition: background var(--t-fast, 120ms ease), color var(--t-fast, 120ms ease);
 }
 
-.fset-card:hover .fset-card__code-icon {
-  background: var(--accent-soft);
-  color: var(--accent);
+.fset-card:hover .fset-card__icon {
+  background: var(--accent, #00B14F);
+  color: #fff;
+}
+
+/* Main content area */
+.fset-card__main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Head: code + status pill */
+.fset-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .fset-card__code-text {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
 
-.fset-card__date {
-  font-size: 12px;
-  color: var(--ink-3);
-  margin-top: 2px;
+/* Meta row — date, amounts */
+.fset-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  flex-wrap: wrap;
+  line-height: 1.5;
 }
 
-.fset-card__amounts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  font-size: 13px;
+.fset-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
-.fset-card__amount-label {
-  color: var(--ink-3);
-}
-
-.fset-card__amount-value {
-  font-weight: 600;
+.fset-card__meta-item strong {
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Expense breakdown chips */
-.fset-card__breakdown {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.fset-card__breakdown-label {
-  font-size: 11px;
-  color: var(--ink-3);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.fset-card__breakdown-chips {
+/* Chips — breakdown + linked advances */
+.fset-card__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
-.fset-card__chip {
+/* Generic chip (shared between form + card) */
+.fset-chip {
   font-size: 11px;
   padding: 2px 8px;
   background: var(--surface-2);
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--ink-2);
+  white-space: nowrap;
 }
 
-/* Linked advances */
-.fset-card__linked {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.fset-card__linked-label {
-  font-size: 11px;
-  color: var(--ink-3);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.fset-card__linked-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
+.fset-chip--linked {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent-ink, #004D22);
 }
 
 /* Note */
@@ -154,28 +149,38 @@
   margin-top: 8px;
   font-size: 12px;
   color: var(--ink-3);
+  line-height: 1.5;
 }
 
-.fset-card__note strong {
-  color: var(--ink-2);
-  font-weight: 500;
-}
-
-/* Meta (checker/approver) */
-.fset-card__meta {
+/* Footer — checker/approver */
+.fset-card__footer {
   margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
   display: flex;
-  gap: 6px 14px;
+  gap: 14px;
   font-size: 11px;
   color: var(--ink-3);
-  flex-wrap: wrap;
+}
+
+/* Arrow */
+.fset-card__arrow {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  margin-top: 8px;
+  transition: transform var(--t-fast, 120ms ease), color var(--t-fast, 120ms ease);
+}
+
+.fset-card:hover .fset-card__arrow {
+  color: var(--accent, #00B14F);
+  transform: translateX(2px);
 }
 
 /* ── Create form panel ──────────────────────────────────────────────────── */
 .fset-form-panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 18px 20px;
   margin-bottom: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
@@ -186,51 +191,103 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 
 .fset-form-panel__title {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--ink);
 }
 
-/* Checkbox items */
+/* Empty hint for Step 2 */
+.fset-form-panel__empty-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.fset-form-panel__empty-hint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+
+/* Checkbox select-all bar */
 .fset-form-panel__select-all {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 10px;
+  padding: 7px 12px;
   background: var(--surface-2);
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--ink-2);
+  transition: background var(--t-fast, 120ms ease), color var(--t-fast, 120ms ease);
+  user-select: none;
   margin-bottom: 6px;
 }
 
-.fset-form-panel__item {
+.fset-form-panel__select-all:hover {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
+}
+
+.fset-form-panel__select-all > input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent, #00B14F);
+}
+
+/* Checkbox items — 2-column grid for compact layout */
+.fset-form-panel__items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
+.fset-page .fset-form-panel__item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: border-color var(--t-fast), background var(--t-fast);
-  font-size: 13px;
+  transition: background var(--t-fast, 120ms ease);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.fset-page .fset-form-panel__item > input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--accent, #00B14F);
 }
 
 .fset-form-panel__item:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--accent-soft, #E6F7EE);
 }
 
 .fset-form-panel__item-text {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fset-form-panel__item-amount {
@@ -241,19 +298,32 @@
 
 .fset-form-panel__item-meta {
   color: var(--ink-3);
-  margin-left: 8px;
+  margin-left: 4px;
 }
 
 .fset-form-panel__item-date {
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: 11.5px;
   flex-shrink: 0;
+}
+
+.fset-form-panel__item-price {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+/* Single-column mode for expense items (more text) */
+.fset-form-panel__items--single {
+  grid-template-columns: 1fr;
 }
 
 /* Summary box */
 .fset-form-panel__summary {
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 16px;
 }
@@ -284,33 +354,35 @@
   font-size: 11px;
   color: var(--ink-3);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .fset-form-panel__breakdown-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* Warning banner */
 .fset-form-panel__warn {
-  padding: 8px 12px;
-  background: var(--warning-soft);
-  border: 1px solid var(--warning);
-  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--warning-soft, #FFFBEB);
+  border: 1px solid var(--warning, #D97706);
+  border-radius: 10px;
   font-size: 13px;
-  color: var(--warning-text);
+  color: var(--warning-text, #92400E);
   margin-bottom: 12px;
 }
 
 /* Error banner */
 .fset-form-panel__error {
-  padding: 8px 12px;
-  background: var(--danger-soft);
-  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--danger-soft, #FEF2F2);
+  border-radius: 10px;
   font-size: 13px;
-  color: var(--danger);
+  color: var(--danger, #DC2626);
   margin-bottom: 12px;
 }
 
@@ -320,6 +392,8 @@
   gap: 8px;
   justify-content: flex-end;
   margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
 /* ── Empty state ────────────────────────────────────────────────────────── */
@@ -329,19 +403,25 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 48px 24px;
+  padding: 64px 32px;
   background: var(--surface);
-  border: 1px dashed var(--line-2);
-  border-radius: 18px;
+  border: 1.5px dashed var(--line-2);
+  border-radius: 20px;
 }
 
 .fset-empty__icon {
   color: var(--ink-4, #D4D4D8);
   margin-bottom: 14px;
+  animation: fsetFloat 4s ease-in-out infinite;
+}
+
+@keyframes fsetFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 .fset-empty__title {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
@@ -374,17 +454,30 @@
     grid-column: 1 / -1;
   }
 
-  .fset-card {
-    padding: 14px;
+  .fset-card__body {
+    padding: 14px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
-  .fset-card__amounts {
-    grid-template-columns: 1fr;
-    gap: 4px;
+
+  .fset-card__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .fset-card__meta {
+    gap: 10px;
+  }
+
+  .fset-card__arrow {
+    display: none;
   }
 
   .fset-form-panel {
     padding: 14px 16px;
   }
+
   .fset-form-panel__summary-grid {
     grid-template-columns: 1fr;
   }

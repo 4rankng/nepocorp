@@ -283,13 +283,11 @@
       "breakpoints": true
     },
     {
+      "idx": 40,
       "version": "7",
-      "dialect": "postgresql",
-      "id": 40,
-      "prevId": 39,
+      "when": 1749456000000,
       "tag": "0040_settlement_code_column",
-      "name": "settlement-code-column",
-      "createdAt": 1749456000000
+      "breakpoints": true
     }
   ]
 }

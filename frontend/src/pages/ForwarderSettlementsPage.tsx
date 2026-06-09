@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
+import { FileText, Loader2, Plus, X, Check, ArrowRight, Info } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
-import { PageHeader, StatusPill, FormGroup, KPI } from '../components/UI';
+import { PageHeader, FormGroup, KPI } from '../components/UI';
 import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
-import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import './ForwarderSettlementsPage.css';
 
 /** Vietnamese fallback labels for expense type codes */
@@ -32,6 +31,14 @@ function expenseLabel(code: string, options: Array<{ code: string; name: string 
 function advanceRequestCode(id: number): string {
   return `TU-${String(id).padStart(4, '0')}`;
 }
+
+/** Status strip colors matching ForwarderTripsPage pattern */
+const STATUS_STRIP: Record<AdvanceSettlementStatus, string> = {
+  PENDING: '#D97706',
+  CHECKED_BY_ACCOUNTANT: '#2563EB',
+  APPROVED: '#059669',
+  REJECTED: '#DC2626',
+};
 
 interface LinkedRequest {
   id: number;
@@ -87,6 +94,7 @@ export default function ForwarderSettlementsPage() {
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
   const [refundAmount, setRefundAmount] = useState('0');
   const [note, setNote] = useState('');
+  const [activeFilter, setActiveFilter] = useState<AdvanceSettlementStatus | ''>('');
 
   const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
   const { data: requestsData } = useForwarderAdvanceRequests();
@@ -98,7 +106,7 @@ export default function ForwarderSettlementsPage() {
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
-    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null;
+    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null;
   }>;
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
@@ -167,6 +175,18 @@ export default function ForwarderSettlementsPage() {
   const pending = settlements.filter(s => s.status === 'PENDING').length;
   const totalExpenseAll = settlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
 
+  // Status counts & filtered list
+  const statusCounts = useMemo(() => {
+    const counts: Partial<Record<AdvanceSettlementStatus, number>> = {};
+    for (const s of settlements) {
+      counts[s.status] = (counts[s.status] ?? 0) + 1;
+    }
+    return counts;
+  }, [settlements]);
+  const filteredSettlements = activeFilter
+    ? settlements.filter(s => s.status === activeFilter)
+    : settlements;
+
   if (loadingSettlements) return (
     <div className="fset-page">
       <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" />
@@ -204,13 +224,13 @@ export default function ForwarderSettlementsPage() {
       {showForm && (
         <div className="fset-form-panel fade-up">
           <div className="fset-form-panel__head">
-            <span className="fset-form-panel__title">Tạo phiếu</span>
+            <span className="fset-form-panel__title">Tạo phiếu thanh toán</span>
             <button className="btn btn--ghost btn--sm" onClick={resetForm}><X size={16} /></button>
           </div>
 
           <form onSubmit={handleSubmit}>
             {/* Step 1: Select advance requests */}
-            <FormGroup label="Bước 1: Chọn tạm ứng đã duyệt">
+            <FormGroup label="Bước 1 · Chọn tạm ứng đã duyệt">
               {approvedRequests.length === 0 ? (
                 <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Không có tạm ứng nào đã duyệt</p>
               ) : (
@@ -244,9 +264,12 @@ export default function ForwarderSettlementsPage() {
             </FormGroup>
 
             {/* Step 2: Select trip expenses */}
-            <FormGroup label="Bước 2: Chọn chi phí phát sinh">
+            <FormGroup label="Bước 2 · Chọn chi phí phát sinh">
               {unlinkedExpenses.length === 0 ? (
-                <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Không có chi phí nào chưa thanh toán</p>
+                <div className="fset-form-panel__empty-hint">
+                  <Info size={14} />
+                  <span>Không có chi phí nào chưa thanh toán. Các chi phí đã nằm trong phiếu khác sẽ không hiện ở đây.</span>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label className="fset-form-panel__select-all">
@@ -273,11 +296,15 @@ export default function ForwarderSettlementsPage() {
                         {exp.tripCode && (
                           <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
                         )}
+                        <span className="fset-form-panel__item-meta">
+                          · {exp.departureDate ? formatDate(exp.departureDate) : '—'}
+                          {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
+                        </span>
                         {exp.note && (
-                          <span className="fset-form-panel__item-meta">{exp.note}</span>
+                          <span className="fset-form-panel__item-meta">· {exp.note}</span>
                         )}
                       </div>
-                      <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                      <span className="fset-form-panel__item-price">
                         {formatCurrency(Number(exp.buyAmount))}
                       </span>
                     </label>
@@ -297,7 +324,7 @@ export default function ForwarderSettlementsPage() {
                   <span className="fset-form-panel__breakdown-label">Chi tiết theo hạng mục:</span>
                   <div className="fset-form-panel__breakdown-chips">
                     {[...expenseBreakdown.entries()].map(([label, amount]) => (
-                      <span key={label} className="fset-card__chip">{label}: {formatCurrency(amount)}</span>
+                      <span key={label} className="fset-chip">{label}: {formatCurrency(amount)}</span>
                     ))}
                   </div>
                 </div>
@@ -348,6 +375,35 @@ export default function ForwarderSettlementsPage() {
         </div>
       )}
 
+      {/* Status filter pills — matching ForwarderTripsPage design */}
+      {settlements.length > 0 && (
+        <div className="fwd-filter-pills">
+          <button
+            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            onClick={() => setActiveFilter('')}
+          >
+            Tất cả
+            <span className="fwd-filter-pill__count">{settlements.length}</span>
+          </button>
+          {(Object.entries(ADVANCE_SETTLEMENT_STATUS_LABELS) as [AdvanceSettlementStatus, string][]).map(([status, label]) => {
+            const count = statusCounts[status] ?? 0;
+            if (count === 0) return null;
+            return (
+              <button
+                key={status}
+                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+                data-status={status}
+                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
+              >
+                <span className="fwd-filter-pill__dot" style={{ background: STATUS_STRIP[status] }} />
+                {label}
+                <span className="fwd-filter-pill__count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Empty state */}
       {settlements.length === 0 && !showForm ? (
         <div className="fset-empty fade-up">
@@ -357,81 +413,92 @@ export default function ForwarderSettlementsPage() {
         </div>
       ) : (
         <div className="fset-list">
-          {settlements.map((s, idx) => (
-            <div
-              key={s.id}
-              className="fset-card fade-up"
-              style={{ animationDelay: `${idx * 40}ms` }}
-              onClick={() => navigate(`/my-settlements/${s.id}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-settlements/${s.id}`); } }}
-            >
-              <div className="fset-card__head">
-                <div className="fset-card__code">
-                  <div className="fset-card__code-icon">
-                    <FileText size={14} />
-                  </div>
-                  <div>
-                    <div className="fset-card__code-text">{s.code}</div>
-                    <div className="fset-card__date">Tạo ngày {formatDate(s.createdAt)}</div>
-                  </div>
-                </div>
-                <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-                  {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
-                </StatusPill>
-              </div>
+          {filteredSettlements.map((s, idx) => {
+            const hasBreakdown = s.linkedExpenses && s.linkedExpenses.length > 0;
+            const groups = hasBreakdown ? groupExpensesByType(s.linkedExpenses!, expenseTypeOptions) : null;
 
-              <div className="fset-card__amounts">
-                <div><span className="fset-card__amount-label">Tổng chi phí:</span> <span className="fset-card__amount-value">{formatCurrency(Number(s.totalExpenseAmount))}</span></div>
-                <div><span className="fset-card__amount-label">Tiền hoàn lại:</span> <span className="fset-card__amount-value">{formatCurrency(Number(s.refundAmount))}</span></div>
-              </div>
+            return (
+              <div
+                key={s.id}
+                className="fset-card fade-up"
+                style={{
+                  animationDelay: `${idx * 40}ms`,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onClick={() => navigate(`/my-settlements/${s.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-settlements/${s.id}`); } }}
+              >
+                {/* Status strip — color tells status, no text needed */}
+                <span className="fset-card__strip" style={{ background: STATUS_STRIP[s.status] }} />
 
-              {/* Expense breakdown by category */}
-              {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
-                const groups = groupExpensesByType(s.linkedExpenses, expenseTypeOptions);
-                return (
-                  <div className="fset-card__breakdown">
-                    <span className="fset-card__breakdown-label">Chi phí theo hạng mục:</span>
-                    <div className="fset-card__breakdown-chips">
-                      {[...groups.entries()].map(([label, amount]) => (
-                        <span key={label} className="fset-card__chip">{label}: {formatCurrency(amount)}</span>
-                      ))}
+                <div className="fset-card__body">
+                  {/* Icon tile */}
+                  <div className="fset-card__icon">
+                    <FileText size={16} />
+                  </div>
+
+                  {/* Main content */}
+                  <div className="fset-card__main">
+                    <div className="fset-card__head">
+                      <span className="fset-card__code-text">{s.code}</span>
                     </div>
-                  </div>
-                );
-              })()}
 
-              {/* Linked advances — use business codes */}
-              {s.linkedRequests && s.linkedRequests.length > 0 && (
-                <div className="fset-card__linked">
-                  <span className="fset-card__linked-label">Tạm ứng liên kết:</span>
-                  <div className="fset-card__linked-chips">
-                    {s.linkedRequests.map(r => (
-                      <span key={r.id} className="fset-card__chip">
-                        {advanceRequestCode(r.id)} — {formatCurrency(Number(r.amount))}
+                    <div className="fset-card__meta">
+                      <span className="fset-card__meta-item">{formatDate(s.createdAt)}</span>
+                      <span className="fset-card__meta-item">
+                        Chi phí: <strong>{formatCurrency(Number(s.totalExpenseAmount))}</strong>
                       </span>
-                    ))}
+                      {Number(s.refundAmount) > 0 && (
+                        <span className="fset-card__meta-item">
+                          Hoàn lại: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Breakdown chips — compact inline */}
+                    {groups && groups.size > 0 && (
+                      <div className="fset-card__chips">
+                        {[...groups.entries()].map(([label, amount]) => (
+                          <span key={label} className="fset-chip">{label}: {formatCurrency(amount)}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Linked advances */}
+                    {s.linkedRequests && s.linkedRequests.length > 0 && (
+                      <div className="fset-card__chips">
+                        {s.linkedRequests.map(r => (
+                          <span key={r.id} className="fset-chip fset-chip--linked">
+                            {advanceRequestCode(r.id)} — {formatCurrency(Number(r.amount))}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Note */}
+                    {s.note && (
+                      <div className="fset-card__note">{s.note}</div>
+                    )}
+
+                    {/* Checker/approver */}
+                    {(s.checkerName || s.approverName) && (
+                      <div className="fset-card__footer">
+                        {s.checkerName && <span>Kiểm tra: {s.checkerName}</span>}
+                        {s.approverName && <span>Duyệt: {s.approverName}</span>}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
 
-              {s.note && (
-                <div className="fset-card__note">
-                  <strong>Ghi chú:</strong> {s.note}
+                  {/* Arrow */}
+                  <ArrowRight size={16} className="fset-card__arrow" />
                 </div>
-              )}
-
-              <div className="fset-card__meta">
-                {s.checkerName && s.checkedAt && (
-                  <span>Kiểm tra: {s.checkerName} ({formatDate(s.checkedAt)})</span>
-                )}
-                {s.approverName && s.approvedAt && (
-                  <span>Duyệt: {s.approverName} ({formatDate(s.approvedAt)})</span>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

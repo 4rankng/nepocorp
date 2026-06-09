@@ -401,8 +401,11 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
     tripCode: s.trips.tripCode,
+    departureDate: s.trips.departureDate,
+    truckPlate: s.trucks.licensePlate,
   }).from(s.tripExpenses)
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
     // Intentionally scoped to forwarder-owned expenses only (forwarderId IS NOT NULL).
     // Accountant-created expenses (forwarderId = null) are excluded by design —
     // they are not eligible for forwarder advance settlement.
