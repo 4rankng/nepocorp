@@ -239,16 +239,17 @@
   margin-bottom: 6px;
 }
 
-.fset-form-panel__select-all:hover {
-  background: var(--accent-soft, #E6F7EE);
-  color: var(--accent, #00B14F);
-}
-
 .fset-form-panel__select-all > input[type="checkbox"] {
   width: 15px;
   height: 15px;
-  margin: 0;
+  margin: 0 4px 0 0;
+  flex-shrink: 0;
   accent-color: var(--accent, #00B14F);
+}
+
+.fset-form-panel__select-all:hover {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
 }
 
 /* Checkbox items — 2-column grid for compact layout */
