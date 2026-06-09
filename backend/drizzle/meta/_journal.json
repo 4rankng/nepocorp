@@ -281,6 +281,15 @@
       "when": 1780925710452,
       "tag": "0039_windy_proemial_gods",
       "breakpoints": true
+    },
+    {
+      "version": "7",
+      "dialect": "postgresql",
+      "id": 40,
+      "prevId": 39,
+      "tag": "0040_settlement_code_column",
+      "name": "settlement-code-column",
+      "createdAt": 1749456000000
     }
   ]
 }

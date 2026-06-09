@@ -13,10 +13,10 @@ HOST=http://localhost:7173/
 - QA Checklist: `docs/qa/test-checklist.md`
 
 **Test Accounts (Role-Based):**
-1. Role: Director (giamdoc) | Username: quan | Password: admin123
+1. Role: Director (giamdoc) | Username: phung | Password: admin123
 2. Role: Accountant (ketoan) | Username: anh | Password: admin123
-3. Role: Dispatcher (giaonhan) | Username: giaonhan | Password: admin123
-4. Role: Driver (laixe) | Username: laixe | Password: admin123
+3. Role: Dispatcher (giaonhan) | Username: quan | Password: admin123
+4. Role: Driver (laixe) | Username: pho | Password: admin123
 
 **Agent Personas:**
 - Agent 1: Lead QA Engineer. You are meticulous, focusing on edge cases and business logic, but you are strictly disciplined about scoping your tests to one component at a time.

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, inArray, notInArray, sql } from 'drizzle-orm';
+import { eq, and, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 
@@ -117,6 +117,24 @@ export async function listAdvanceRequests(filters?: { requesterId?: number; stat
     .where(where)
     .orderBy(desc(s.advanceRequests.createdAt));
   return enrichWithNames(rows);
+}
+
+export async function getAdvanceRequestCounts(requesterId?: number) {
+  const conditions = [];
+  if (requesterId) conditions.push(eq(s.advanceRequests.requesterId, requesterId));
+
+  const rows = await db.select({
+    status: s.advanceRequests.status,
+    count: count(),
+  }).from(s.advanceRequests)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .groupBy(s.advanceRequests.status);
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    counts[row.status] = row.count;
+  }
+  return counts;
 }
 
 export async function getAdvanceRequest(id: number) {

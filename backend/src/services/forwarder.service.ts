@@ -2,7 +2,7 @@ import { db } from '../db';
 // Extract the transaction type so listTripContainers can accept both db and tx.
 type Tx = Parameters<typeof db.transaction>[0] extends (tx: infer T) => any ? T : never;
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, inArray, notInArray } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 export class NoForwarderProfileError extends Error {
@@ -26,7 +26,12 @@ export async function getForwarderByUserId(userId: number) {
   return user;
 }
 
-export async function getForwarderTrips() {
+export async function getForwarderTrips(status?: string) {
+  const conditions = [isNull(s.trips.deletedAt)];
+  if (status) {
+    conditions.push(eq(s.trips.status, status as 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'LOCKED' | 'CANCELED'));
+  }
+
   return db.select({
     id: s.trips.id,
     tripCode: s.trips.tripCode,
@@ -43,8 +48,23 @@ export async function getForwarderTrips() {
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
     .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
-    .where(isNull(s.trips.deletedAt))
+    .where(and(...conditions))
     .orderBy(desc(s.trips.departureDate));
+}
+
+export async function getForwarderTripCounts() {
+  const rows = await db.select({
+    status: s.trips.status,
+    count: count(),
+  }).from(s.trips)
+    .where(isNull(s.trips.deletedAt))
+    .groupBy(s.trips.status);
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    counts[row.status] = row.count;
+  }
+  return counts;
 }
 
 export async function getForwarderTripDetail(tripId: number, forwarderId: number) {

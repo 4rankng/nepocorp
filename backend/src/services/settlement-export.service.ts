@@ -21,8 +21,7 @@ function formatVND(n: number): string {
 
 function formatMonth(dateStr: string): string {
   const d = new Date(dateStr);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}`;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function formatLocalDate(): string {
@@ -190,107 +189,326 @@ export async function exportSettlementXlsx(id: number, writable: import('stream'
   const refund = Number(settlement.refundAmount || 0);
   const balance = totalAdvance - totalExpense - refund;
   const rows = buildPrintRows(expenses);
+  const code = settlement.code || `PT-${String(settlement.id).padStart(4, '0')}`;
 
   const ExcelJSMod = await import('exceljs');
   const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Phiếu thanh toán');
+  workbook.creator = 'TingTing';
+  workbook.created = new Date();
 
-  // Title
+  const sheet = workbook.addWorksheet('Phiếu thanh toán', {
+    pageSetup: {
+      paperSize: 9,
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      margins: { left: 0.4, right: 0.4, top: 0.4, bottom: 0.4, header: 0, footer: 0.3 },
+    },
+    properties: {},
+  });
+
+  // ── Constants ──
+  const F = 'Calibri';
+  const LAST_COL = 6;
+  const CLR = {
+    dark:    'FF1E293B',
+    ink:     'FF475569',
+    accent:  'FF0F172A',
+    hdrBg:   'FF1E293B',
+    hdrFg:   'FFFFFFFF',
+    stripe:  'FFF8FAFC',
+    border:  'FFCBD5E1',
+    green:   'FF059669',
+    red:     'FFDC2626',
+    totalBg: 'FFF1F5F9',
+  };
+
+  const thinB = {
+    top:    { style: 'thin' as const, color: { argb: CLR.border } },
+    bottom: { style: 'thin' as const, color: { argb: CLR.border } },
+    left:   { style: 'thin' as const, color: { argb: CLR.border } },
+    right:  { style: 'thin' as const, color: { argb: CLR.border } },
+  };
+
+  // ── Helpers (always scoped to columns 1–LAST_COL) ──
+  function fillRow(r: number, argb: string) {
+    const f = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb } };
+    for (let c = 1; c <= LAST_COL; c++) sheet.getRow(r).getCell(c).fill = f;
+  }
+  function setBorders(r: number, b: any) {
+    for (let c = 1; c <= LAST_COL; c++) sheet.getRow(r).getCell(c).border = b;
+  }
+  function setWrapAndHeight(r: number, height: number) {
+    for (let c = 1; c <= LAST_COL; c++) {
+      const cell = sheet.getRow(r).getCell(c);
+      cell.alignment = { ...(cell.alignment as any), wrapText: true, vertical: 'middle' as const };
+    }
+    sheet.getRow(r).height = height;
+  }
+
+  // ── Column widths ──
+  const widths = [12, 22, 26, 16, 18, 20];
+  for (let c = 0; c < widths.length; c++) {
+    sheet.getColumn(c + 1).width = widths[c];
+  }
+
+  let row = 1;
+
+  // ── 1. Document title ──
   sheet.mergeCells('A1:F1');
-  const titleCell = sheet.getCell('A1');
-  titleCell.value = `PHIẾU THANH TOÁN — PT-${String(settlement.id).padStart(4, '0')}`;
-  titleCell.font = { size: 14, bold: true };
+  const c1 = sheet.getCell('A1');
+  c1.value = 'PHIẾU THANH TOÁN TẠM ỨNG';
+  c1.font = { name: F, size: 16, bold: true, color: { argb: CLR.accent } };
+  c1.alignment = { horizontal: 'center', vertical: 'middle' };
+  sheet.getRow(1).height = 30;
 
-  // Meta
-  sheet.getCell('A2').value = `Nhân viên: ${settlement.forwarderName || ''}`;
-  sheet.getCell('A3').value = `Ngày lập: ${new Date(settlement.createdAt).toLocaleDateString('vi-VN')}`;
+  // ── 2. Metadata ──
+  sheet.mergeCells('A2:C2');
+  sheet.getCell('A2').value = `Số phiếu: ${code}`;
+  sheet.getCell('A2').font = { name: F, size: 10, color: { argb: CLR.ink } };
 
-  let row = 5;
+  sheet.mergeCells('D2:F2');
+  sheet.getCell('D2').value = `Ngày lập: ${new Date(settlement.createdAt).toLocaleDateString('vi-VN')}`;
+  sheet.getCell('D2').font = { name: F, size: 10, color: { argb: CLR.ink } };
+  sheet.getCell('D2').alignment = { horizontal: 'right' };
+  sheet.getRow(2).height = 18;
 
-  // Advance summary
+  sheet.mergeCells('A3:F3');
+  sheet.getCell('A3').value = `Nhân viên giao nhận: ${settlement.forwarderName || '—'}`;
+  sheet.getCell('A3').font = { name: F, size: 10, color: { argb: CLR.ink } };
+  sheet.getRow(3).height = 18;
+  row = 5;
+
+  // ── 4. Advances section ──
   if (requests.length > 0) {
-    sheet.getCell(`A${row}`).value = 'Tạm ứng đã nhận';
-    sheet.getCell(`A${row}`).font = { bold: true, size: 12 };
+    sheet.mergeCells(`A${row}:F${row}`);
+    sheet.getCell(`A${row}`).value = 'I. TẠM ỨNG ĐÃ NHẬN';
+    sheet.getCell(`A${row}`).font = { name: F, size: 11, bold: true, color: { argb: CLR.accent } };
+    sheet.getRow(row).height = 22;
     row++;
-    for (const r of requests) {
-      sheet.getCell(`A${row}`).value = r.reason;
-      sheet.getCell(`D${row}`).value = Number(r.amount);
-      sheet.getCell(`D${row}`).numFmt = '#,##0';
-      sheet.getCell(`E${row}`).value = new Date(r.createdAt).toLocaleDateString('vi-VN');
+
+    // Header
+    sheet.mergeCells(`B${row}:D${row}`);
+    const hdrVals = ['STT', 'Lý do tạm ứng', '', '', 'Số tiền (VNĐ)', 'Ngày'];
+    for (let c = 1; c <= LAST_COL; c++) {
+      const cell = sheet.getRow(row).getCell(c);
+      if (hdrVals[c - 1]) cell.value = hdrVals[c - 1];
+      cell.font = { name: F, size: 10, bold: true, color: { argb: CLR.hdrFg } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = thinB;
+    }
+    fillRow(row, CLR.hdrBg);
+    sheet.getRow(row).height = 20;
+    row++;
+
+    // Data rows
+    for (let i = 0; i < requests.length; i++) {
+      const r = requests[i];
+      sheet.mergeCells(`B${row}:D${row}`);
+      sheet.getCell(`A${row}`).value = i + 1;
+      sheet.getCell(`A${row}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet.getCell(`B${row}`).value = r.reason || '';
+      sheet.getCell(`B${row}`).alignment = { wrapText: true, vertical: 'middle' };
+      sheet.getCell(`E${row}`).value = Number(r.amount);
+      sheet.getCell(`E${row}`).numFmt = '#,##0';
+      sheet.getCell(`E${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+      sheet.getCell(`F${row}`).value = new Date(r.createdAt).toLocaleDateString('vi-VN');
+      sheet.getCell(`F${row}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      for (let c = 1; c <= LAST_COL; c++) {
+        sheet.getRow(row).getCell(c).font = { name: F, size: 10, color: { argb: CLR.dark } };
+        sheet.getRow(row).getCell(c).border = thinB;
+      }
+      if (i % 2 === 1) fillRow(row, CLR.stripe);
       row++;
     }
-    sheet.getCell(`A${row}`).value = 'Tổng tạm ứng:';
-    sheet.getCell(`A${row}`).font = { bold: true };
-    sheet.getCell(`D${row}`).value = totalAdvance;
-    sheet.getCell(`D${row}`).numFmt = '#,##0';
-    sheet.getCell(`D${row}`).font = { bold: true };
+
+    // Subtotal
+    sheet.mergeCells(`A${row}:D${row}`);
+    sheet.getCell(`A${row}`).value = 'Tổng tạm ứng';
+    sheet.getCell(`A${row}`).font = { name: F, size: 10, bold: true, color: { argb: CLR.accent } };
+    sheet.getCell(`A${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+    sheet.getCell(`E${row}`).value = totalAdvance;
+    sheet.getCell(`E${row}`).numFmt = '#,##0';
+    sheet.getCell(`E${row}`).font = { name: F, size: 10, bold: true, color: { argb: CLR.accent } };
+    sheet.getCell(`E${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+    fillRow(row, CLR.totalBg);
+    setBorders(row, { ...thinB, top: { style: 'medium', color: { argb: CLR.accent } } });
+    sheet.getRow(row).height = 20;
     row += 2;
   }
 
-  // Expense table header
-  sheet.getCell(`A${row}`).value = 'Chi tiết chi phí';
-  sheet.getCell(`A${row}`).font = { bold: true, size: 12 };
+  // ── 5. Expense detail section ──
+  const sectionNum = requests.length > 0 ? 'II' : 'I';
+  sheet.mergeCells(`A${row}:F${row}`);
+  sheet.getCell(`A${row}`).value = `${sectionNum}. CHI TIẾT CHI PHÍ`;
+  sheet.getCell(`A${row}`).font = { name: F, size: 11, bold: true, color: { argb: CLR.accent } };
+  sheet.getRow(row).height = 22;
   row++;
 
-  const headerRow = sheet.getRow(row);
-  headerRow.values = ['Ngày', 'Nội dung', 'Khách hàng', 'Số cont', 'Tiền tệ', 'Hóa đơn'];
-  headerRow.font = { bold: true };
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+  // Header
+  const expHdr = ['Ngày', 'Nội dung chi phí', 'Khách hàng', 'Số cont', 'Thành tiền (VNĐ)', 'Số hóa đơn'];
+  for (let c = 1; c <= LAST_COL; c++) {
+    const cell = sheet.getRow(row).getCell(c);
+    cell.value = expHdr[c - 1];
+    cell.font = { name: F, size: 10, bold: true, color: { argb: CLR.hdrFg } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = thinB;
+  }
+  fillRow(row, CLR.hdrBg);
+  sheet.getRow(row).height = 22;
   row++;
 
-  // Expense data rows
-  for (const r of rows) {
-    sheet.getCell(`A${row}`).value = r.date;
-    sheet.getCell(`B${row}`).value = r.expenseType;
-    sheet.getCell(`C${row}`).value = r.customer;
-    sheet.getCell(`D${row}`).value = r.container;
-    sheet.getCell(`E${row}`).value = r.amount;
-    sheet.getCell(`E${row}`).numFmt = '#,##0';
-    sheet.getCell(`F${row}`).value = r.invoice;
+  // Data rows
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const vals: Array<{ v: any; align?: string; fmt?: string }> = [
+      { v: r.date, align: 'center' },
+      { v: r.expenseType },
+      { v: r.customer },
+      { v: r.container, align: 'center' },
+      { v: r.amount, align: 'right', fmt: '#,##0' },
+      { v: r.invoice },
+    ];
+    for (let c = 0; c < vals.length; c++) {
+      const cell = sheet.getRow(row).getCell(c + 1);
+      cell.value = vals[c].v;
+      cell.font = { name: F, size: 10, color: { argb: CLR.dark } };
+      cell.border = thinB;
+      cell.alignment = {
+        horizontal: (vals[c].align || 'left') as any,
+        vertical: 'middle',
+        wrapText: true,
+      };
+      if (vals[c].fmt) cell.numFmt = vals[c].fmt;
+    }
+    if (i % 2 === 1) fillRow(row, CLR.stripe);
     row++;
   }
 
-  // Total row
-  const totalRow = sheet.getRow(row);
-  totalRow.values = ['TỔNG CỘNG', '', '', '', totalExpense, ''];
-  totalRow.font = { bold: true };
-  totalRow.getCell(5).numFmt = '#,##0';
-  row += 2;
-
-  // Summary
-  sheet.getCell(`A${row}`).value = 'Tổng tạm ứng:';
-  sheet.getCell(`E${row}`).value = totalAdvance;
-  sheet.getCell(`E${row}`).numFmt = '#,##0';
-  row++;
-  sheet.getCell(`A${row}`).value = 'Tổng chi phí:';
+  // Total
+  sheet.mergeCells(`A${row}:D${row}`);
+  sheet.getCell(`A${row}`).value = 'TỔNG CỘNG CHI PHÍ';
+  sheet.getCell(`A${row}`).font = { name: F, size: 10, bold: true, color: { argb: CLR.accent } };
+  sheet.getCell(`A${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
   sheet.getCell(`E${row}`).value = totalExpense;
   sheet.getCell(`E${row}`).numFmt = '#,##0';
-  row++;
-  if (refund > 0) {
-    sheet.getCell(`A${row}`).value = 'Tiền hoàn lại:';
-    sheet.getCell(`E${row}`).value = refund;
-    sheet.getCell(`E${row}`).numFmt = '#,##0';
-    row++;
-  }
-  sheet.getCell(`A${row}`).value = balance >= 0 ? 'Còn dư (phải hoàn):' : 'Thiếu (phải bổ sung):';
-  sheet.getCell(`A${row}`).font = { bold: true };
-  sheet.getCell(`E${row}`).value = Math.abs(balance);
-  sheet.getCell(`E${row}`).numFmt = '#,##0';
-  sheet.getCell(`E${row}`).font = { bold: true, color: { argb: balance >= 0 ? 'FF16A34A' : 'FFDC2626' } };
+  sheet.getCell(`E${row}`).font = { name: F, size: 11, bold: true, color: { argb: CLR.accent } };
+  sheet.getCell(`E${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+  fillRow(row, CLR.totalBg);
+  setBorders(row, {
+    ...thinB,
+    top: { style: 'double', color: { argb: CLR.accent } },
+    bottom: { style: 'medium', color: { argb: CLR.accent } },
+  });
+  sheet.getRow(row).height = 22;
   row += 2;
 
-  if (settlement.note) {
-    sheet.getCell(`A${row}`).value = `Ghi chú: ${settlement.note}`;
+  // ── 6. Summary box ──
+  sheet.mergeCells(`A${row}:F${row}`);
+  sheet.getCell(`A${row}`).value = 'TÓM TẮT THANH TOÁN';
+  sheet.getCell(`A${row}`).font = { name: F, size: 11, bold: true, color: { argb: CLR.accent } };
+  sheet.getCell(`A${row}`).alignment = { horizontal: 'center', vertical: 'middle' };
+  setBorders(row, {
+    top: { style: 'medium', color: { argb: CLR.accent } },
+    left: { style: 'thin', color: { argb: CLR.border } },
+    right: { style: 'thin', color: { argb: CLR.border } },
+  });
+  sheet.getRow(row).height = 22;
+  row++;
+
+  const summaryItems: Array<[string, number]> = [
+    ['Tổng tạm ứng đã nhận', totalAdvance],
+    ['Tổng chi phí phát sinh', totalExpense],
+  ];
+  if (refund > 0) summaryItems.push(['Tiền hoàn lại', refund]);
+
+  for (const [label, value] of summaryItems) {
+    sheet.mergeCells(`A${row}:D${row}`);
+    sheet.getCell(`A${row}`).value = label;
+    sheet.getCell(`A${row}`).font = { name: F, size: 10, color: { argb: CLR.ink } };
+    sheet.getCell(`A${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+    sheet.mergeCells(`E${row}:F${row}`);
+    sheet.getCell(`E${row}`).value = value;
+    sheet.getCell(`E${row}`).numFmt = '#,##0';
+    sheet.getCell(`E${row}`).font = { name: F, size: 10, color: { argb: CLR.dark } };
+    sheet.getCell(`E${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+    setBorders(row, {
+      left: { style: 'thin', color: { argb: CLR.border } },
+      right: { style: 'thin', color: { argb: CLR.border } },
+    });
+    sheet.getRow(row).height = 18;
+    row++;
   }
 
-  // Column widths
-  sheet.getColumn(1).width = 16;
-  sheet.getColumn(2).width = 24;
-  sheet.getColumn(3).width = 18;
-  sheet.getColumn(4).width = 18;
-  sheet.getColumn(5).width = 16;
-  sheet.getColumn(6).width = 16;
+  // Balance row
+  const balLabel = balance >= 0 ? 'Còn dư (phải hoàn lại)' : 'Thiếu (phải bổ sung)';
+  const balClr = balance >= 0 ? CLR.green : CLR.red;
+
+  sheet.mergeCells(`A${row}:D${row}`);
+  sheet.getCell(`A${row}`).value = balLabel;
+  sheet.getCell(`A${row}`).font = { name: F, size: 11, bold: true, color: { argb: balClr } };
+  sheet.getCell(`A${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+  sheet.mergeCells(`E${row}:F${row}`);
+  sheet.getCell(`E${row}`).value = Math.abs(balance);
+  sheet.getCell(`E${row}`).numFmt = '#,##0';
+  sheet.getCell(`E${row}`).font = { name: F, size: 12, bold: true, color: { argb: balClr } };
+  sheet.getCell(`E${row}`).alignment = { horizontal: 'right', vertical: 'middle' };
+  setBorders(row, {
+    top: { style: 'medium', color: { argb: balClr } },
+    bottom: { style: 'medium', color: { argb: CLR.accent } },
+    left: { style: 'thin', color: { argb: CLR.border } },
+    right: { style: 'thin', color: { argb: CLR.border } },
+  });
+  sheet.getRow(row).height = 24;
+  row++;
+
+  // ── 7. Note ──
+  if (settlement.note) {
+    row++;
+    sheet.mergeCells(`A${row}:F${row}`);
+    sheet.getCell(`A${row}`).value = `Ghi chú: ${settlement.note}`;
+    sheet.getCell(`A${row}`).font = { name: F, size: 9, italic: true, color: { argb: CLR.ink } };
+    sheet.getCell(`A${row}`).alignment = { wrapText: true, vertical: 'middle' };
+    sheet.getRow(row).height = 30;
+    row += 2;
+  }
+
+  // ── 8. Signatures ──
+  row++;
+  const sigRow1 = row;
+  const sigTitles = ['Người lập phiếu', 'Kế toán kiểm tra', 'Quản lý duyệt'];
+  const sigCols = [['A', 'B'], ['C', 'D'], ['E', 'F']];
+
+  for (let i = 0; i < sigTitles.length; i++) {
+    const [s, e] = sigCols[i];
+    sheet.mergeCells(`${s}${sigRow1}:${e}${sigRow1}`);
+    const cell = sheet.getCell(`${s}${sigRow1}`);
+    cell.value = sigTitles[i];
+    cell.font = { name: F, size: 10, bold: true, color: { argb: CLR.accent } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  sheet.getRow(sigRow1).height = 20;
+
+  const sigRow2 = sigRow1 + 4;
+  for (const [s, e] of sigCols) {
+    sheet.mergeCells(`${s}${sigRow2}:${e}${sigRow2}`);
+    const cell = sheet.getCell(`${s}${sigRow2}`);
+    cell.value = '(Ký, ghi rõ họ tên)';
+    cell.font = { name: F, size: 9, italic: true, color: { argb: CLR.ink } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+
+  // ── 9. Footer ──
+  const footerRow = sigRow2 + 2;
+  sheet.mergeCells(`A${footerRow}:F${footerRow}`);
+  sheet.getCell(`A${footerRow}`).value = `In ngày ${new Date().toLocaleDateString('vi-VN')} — TingTing Logistics`;
+  sheet.getCell(`A${footerRow}`).font = { name: F, size: 8, italic: true, color: { argb: 'FF94A3B8' } };
+  sheet.getCell(`A${footerRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+  sheet.pageSetup.printTitlesRow = '1:2';
 
   await workbook.xlsx.write(writable);
   return true;

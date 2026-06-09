@@ -2,7 +2,8 @@ import { api } from '../lib/api';
 import { FORWARDER, FINANCIAL } from '@tingting/shared';
 
 export const forwarderClient = {
-  getTrips: async () => {
+  getTrips: async (status?: string) => {
+    const params = status ? `?status=${encodeURIComponent(status)}` : '';
     return api.get<{
       items: Array<{
         id: number;
@@ -16,7 +17,8 @@ export const forwarderClient = {
         containerCount: number | null;
         cargoTypeName: string | null;
       }>;
-    }>(FORWARDER.TRIPS);
+      counts: Record<string, number>;
+    }>(`${FORWARDER.TRIPS}${params}`);
   },
 
   getTripDetail: async (id: number) => {
@@ -51,8 +53,9 @@ export const forwarderClient = {
     return api.delete(FORWARDER.EXPENSE(id));
   },
 
-  getAdvanceRequests: async () => {
-    return api.get<{ items: any[] }>(FORWARDER.ADVANCE_REQUESTS);
+  getAdvanceRequests: async (status?: string) => {
+    const params = status ? `?status=${encodeURIComponent(status)}` : '';
+    return api.get<{ items: any[]; counts: Record<string, number> }>(`${FORWARDER.ADVANCE_REQUESTS}${params}`);
   },
   createAdvanceRequest: async (data: { amount: number; reason: string }) => {
     return api.post(FORWARDER.ADVANCE_REQUESTS, data);

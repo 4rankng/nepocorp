@@ -392,6 +392,94 @@
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
 .driver-trip-card__arrow { color: var(--fg-3); flex-shrink: 0; }
+.driver-trip-card__status-strip {
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 20px;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Forwarder trips filter pills */
+.fwd-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 0 16px;
+  margin-bottom: 4px;
+}
+.fwd-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+.fwd-filter-pill:hover {
+  border-color: var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.fwd-filter-pill--active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.fwd-filter-pill--active:hover {
+  background: var(--ink);
+  color: #fff;
+  opacity: 0.9;
+}
+.fwd-filter-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.fwd-filter-pill--active .fwd-filter-pill__dot {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+.fwd-filter-pill__count {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: rgba(0,0,0,0.08);
+  padding: 0 5px;
+  line-height: 1;
+}
+.fwd-filter-pill--active .fwd-filter-pill__count {
+  background: rgba(255,255,255,0.25);
+}
+
+.driver-trip-card__plate-badge {
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+}
 
 /* ============================================================================
  * BASE — earnings hero (used by DriverEarningsPage)

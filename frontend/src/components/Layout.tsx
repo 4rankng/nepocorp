@@ -607,7 +607,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="sidebar-brand-meta">
             <strong>TingTing</strong>
-            <span>Logistics System</span>
+            <span>Hệ thống Quản lý Vận tải</span>
           </div>
           <button
             type="button"

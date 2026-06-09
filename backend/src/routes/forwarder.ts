@@ -4,6 +4,7 @@ import multer from 'multer';
 import {
   getForwarderByUserId,
   getForwarderTrips,
+  getForwarderTripCounts,
   getForwarderTripDetail,
   createTripContainer,
   createTripExpense,
@@ -14,12 +15,13 @@ import {
   deleteExpensePhoto,
   listActiveSuppliersForForwarder,
 } from '../services/forwarder.service';
+import { exportSettlementXlsx, exportSettlementHtml } from '../services/settlement-export.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
-import { createAdvanceRequest, listAdvanceRequests, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement } from '../services/advance.service';
+import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
@@ -40,8 +42,12 @@ const router = Router();
 
 router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = await getForwarderByUserId(req.user!.userId);
-  const items = await getForwarderTrips();
-  res.json({ items });
+  const status = req.query.status as string | undefined;
+  const [items, counts] = await Promise.all([
+    getForwarderTrips(status),
+    getForwarderTripCounts(),
+  ]);
+  res.json({ items, counts });
 }));
 
 router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {
@@ -135,8 +141,12 @@ router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response
 
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = await getForwarderByUserId(req.user!.userId);
-  const items = await listAdvanceRequests({ requesterId: forwarder.id });
-  res.json({ items });
+  const status = req.query.status as string | undefined;
+  const [items, counts] = await Promise.all([
+    listAdvanceRequests({ requesterId: forwarder.id, status }),
+    getAdvanceRequestCounts(forwarder.id),
+  ]);
+  res.json({ items, counts });
 }));
 
 router.post('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
@@ -161,6 +171,28 @@ router.get('/advance-settlements/:id', asyncHandler(async (req: Request, res: Re
   if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
   if (settlement.forwarderId !== forwarder.id) return res.status(403).json({ error: 'Không có quyền truy cập' });
   res.json(settlement);
+}));
+
+router.get('/advance-settlements/:id/export', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const id = Number(req.params.id);
+  const settlement = await getAdvanceSettlement(id);
+  if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+  if (settlement.forwarderId !== forwarder.id) return res.status(403).json({ error: 'Không có quyền truy cập' });
+
+  const format = (req.query.format as string) || 'xlsx';
+  if (format === 'pdf' || format === 'html') {
+    const html = await exportSettlementHtml(id);
+    if (!html) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+    return;
+  }
+
+  const dateStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=phieu-thanh-toan-${id}-${dateStr}.xlsx`);
+  await exportSettlementXlsx(id, res);
 }));
 
 router.post('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {

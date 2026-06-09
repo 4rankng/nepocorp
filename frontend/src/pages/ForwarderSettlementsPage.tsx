@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
-import { formatCurrency, formatCompact, formatDate } from '../lib/format';
+import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader, StatusPill, FormGroup, KPI } from '../components/UI';
@@ -169,7 +169,7 @@ export default function ForwarderSettlementsPage() {
 
   if (loadingSettlements) return (
     <div className="fset-page">
-      <PageHeader title="Phiếu thanh toán" description="Tạo và xem phiếu thanh toán tạm ứng" />
+      <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" />
       <div className="fset-loading">
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
         <p style={{ marginTop: 8 }}>Đang tải danh sách phiếu thanh toán…</p>
@@ -179,7 +179,7 @@ export default function ForwarderSettlementsPage() {
 
   if (error) return (
     <div className="fset-page">
-      <PageHeader title="Phiếu thanh toán" description="Tạo và xem phiếu thanh toán tạm ứng" />
+      <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" />
       <div className="empty-state">
         <p style={{ color: 'var(--danger)' }}>{error}</p>
       </div>
@@ -190,11 +190,11 @@ export default function ForwarderSettlementsPage() {
     <div className="fset-page">
       <PageHeader
         title="Phiếu thanh toán"
-        description="Tạo và xem phiếu thanh toán tạm ứng"
+        description="Thanh toán tạm ứng"
         action={
           !showForm ? (
             <button className="btn btn--primary" onClick={() => setShowForm(true)}>
-              <Plus size={16} /> Tạo phiếu thanh toán
+              <Plus size={16} /> Thêm phiếu
             </button>
           ) : undefined
         }
@@ -204,7 +204,7 @@ export default function ForwarderSettlementsPage() {
       {showForm && (
         <div className="fset-form-panel fade-up">
           <div className="fset-form-panel__head">
-            <span className="fset-form-panel__title">Tạo phiếu thanh toán</span>
+            <span className="fset-form-panel__title">Tạo phiếu</span>
             <button className="btn btn--ghost btn--sm" onClick={resetForm}><X size={16} /></button>
           </div>
 
@@ -344,7 +344,7 @@ export default function ForwarderSettlementsPage() {
         <div className="fset-kpi-row">
           <KPI label="Tổng phiếu" value={settlements.length} icon={FileText} />
           <KPI label="Chờ xử lý" value={pending} variant={pending > 0 ? 'warn' : 'default'} />
-          <KPI label="Tổng chi phí" value={formatCompact(totalExpenseAll)} variant={totalExpenseAll > 0 ? 'success' : 'default'} />
+          <KPI label="Tổng chi phí" value={formatCurrency(totalExpenseAll)} variant={totalExpenseAll > 0 ? 'success' : 'default'} />
         </div>
       )}
 
@@ -353,7 +353,7 @@ export default function ForwarderSettlementsPage() {
         <div className="fset-empty fade-up">
           <div className="fset-empty__icon"><FileText size={48} /></div>
           <h3 className="fset-empty__title">Chưa có phiếu thanh toán</h3>
-          <p className="fset-empty__desc">Nhấn "Tạo phiếu thanh toán" để lập phiếu mới.</p>
+          <p className="fset-empty__desc">Nhấn "Thêm phiếu" để lập phiếu mới.</p>
         </div>
       ) : (
         <div className="fset-list">

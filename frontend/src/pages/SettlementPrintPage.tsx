@@ -1,21 +1,21 @@
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, CheckCircle, Clock, XCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { useForwarderSettlementDetail } from '../hooks/useForwarderQueries';
-import { useCatalogs } from '../hooks/useCatalogs';
 import { PageHeader, StatusPill } from '../components/UI';
 import './SettlementPrintPage.css';
 
-// ─── Expense type Vietnamese labels (matches Excel form) ───
+// ─── Expense type Vietnamese labels ───
 const EXPENSE_TYPE_LABELS: Record<string, string> = {
-  LIFTING: 'NẶNG-HA',
-  LOWERING: 'NẶNG-HA',
-  INFRASTRUCTURE: 'HÀ TẶNG',
-  CUSTOMS: 'TKHQ',
-  WEIGHING: 'CÂN HÀNG',
-  INSPECTION: 'KIỂM TRA',
-  OTHER: 'KHÁC',
+  LIFTING: 'Nâng hạ',
+  LOWERING: 'Nâng hạ',
+  INFRASTRUCTURE: 'Hạ tầng',
+  CUSTOMS: 'Thủ tục HQ',
+  WEIGHING: 'Cân hàng',
+  INSPECTION: 'Kiểm tra',
+  OTHER: 'Khác',
 };
 
 function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
@@ -28,10 +28,9 @@ function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | '
   }
 }
 
-function formatMonth(dateStr: string): string {
+function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${String(d.getDate()).padStart(2, '0')}-${months[d.getMonth()]}`;
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 }
 
 interface LinkedExpense {
@@ -69,9 +68,8 @@ interface SettlementData {
   linkedExpenses?: LinkedExpense[];
 }
 
-// ─── Print Table Row (grouped by date → container → expense type) ───
+// ─── Build table rows grouped by date → container ───
 function buildPrintRows(expenses: LinkedExpense[]) {
-  // Group by departureDate, then containerNumber
   const grouped = new Map<string, Map<string, LinkedExpense[]>>();
 
   for (const exp of expenses) {
@@ -95,11 +93,10 @@ function buildPrintRows(expenses: LinkedExpense[]) {
 
   for (const [dateKey, containerMap] of grouped) {
     for (const [containerKey, exps] of containerMap) {
-      // Sort expenses by type for consistent ordering
       const sorted = [...exps].sort((a, b) => a.expenseType.localeCompare(b.expenseType));
       for (const exp of sorted) {
         rows.push({
-          date: dateKey !== 'unknown' ? formatMonth(dateKey) : '—',
+          date: dateKey !== 'unknown' ? formatDate(dateKey) : '—',
           container: containerKey !== '-' ? containerKey : '—',
           customer: exp.customerName || '—',
           expenseType: EXPENSE_TYPE_LABELS[exp.expenseType] || exp.expenseType,
@@ -119,7 +116,23 @@ export default function SettlementPrintPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: settlement, isLoading, error } = useForwarderSettlementDetail(Number(id));
-  const { data: catalogs } = useCatalogs();
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const handlePrint = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/forwarder/me/advance-settlements/${id}/export?format=html`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const html = await res.text();
+    setPreviewHtml(html);
+    setShowPreview(true);
+  };
+
+  const handleIframePrint = () => {
+    iframeRef.current?.contentWindow?.print();
+  };
 
   if (isLoading) {
     return (
@@ -156,50 +169,77 @@ export default function SettlementPrintPage() {
 
   return (
     <div className="fade-up">
+      {/* ── Page Header (hidden in print) ── */}
       <div className="no-print">
         <PageHeader
           title={`Phiếu thanh toán ${s.code}`}
           description={s.forwarderName || ''}
           action={
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="settlement-detail__header-actions">
               <StatusPill variant={settlementStatusVariant(s.status)}>
                 {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
               </StatusPill>
               <button className="btn btn--secondary btn--sm" onClick={() => navigate('/my-settlements')}>
                 <ArrowLeft size={14} /> Quay lại
               </button>
-              <button className="btn btn--primary btn--sm" onClick={() => window.print()}>
+              <button className="btn btn--primary btn--sm" onClick={handlePrint}>
                 <Printer size={14} /> In
+              </button>
+              <button
+                className="btn btn--secondary btn--sm"
+                onClick={() => {
+                  const token = localStorage.getItem('token');
+                  const url = `/api/forwarder/me/advance-settlements/${s.id}/export`;
+                  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.blob())
+                    .then(blob => {
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `phieu-thanh-toan-${s.code}.xlsx`;
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                    });
+                }}
+              >
+                <FileSpreadsheet size={14} /> Excel
               </button>
             </div>
           }
         />
       </div>
 
-      {/* ── Print Form ── */}
-      <div className="print-form">
-        <div className="print-form__header">
-          <h1 className="print-form__title">PHIẾU THANH TOÁN</h1>
-          <div className="print-form__meta">
-            <span>Số: <strong>{s.code}</strong></span>
-            <span>Ngày: <strong>{new Date(s.createdAt).toLocaleDateString('vi-VN')}</strong></span>
-            <span>Nhân viên: <strong>{s.forwarderName || ''}</strong></span>
+      <div className="settlement-detail">
+        {/* ── Info Grid ── */}
+        <div className="settlement-detail__section">
+          <div className="settlement-detail__info">
+            <div className="settlement-detail__info-item">
+              <span className="settlement-detail__info-label">Số phiếu</span>
+              <span className="settlement-detail__info-value">{s.code}</span>
+            </div>
+            <div className="settlement-detail__info-item">
+              <span className="settlement-detail__info-label">Ngày lập</span>
+              <span className="settlement-detail__info-value">{new Date(s.createdAt).toLocaleDateString('vi-VN')}</span>
+            </div>
+            <div className="settlement-detail__info-item">
+              <span className="settlement-detail__info-label">Nhân viên</span>
+              <span className="settlement-detail__info-value">{s.forwarderName || '—'}</span>
+            </div>
           </div>
         </div>
 
-        {/* ── Advance Summary ── */}
+        {/* ── Advances ── */}
         {requests.length > 0 && (
-          <div className="print-form__section">
-            <h2 className="print-form__section-title">Tạm ứng đã nhận</h2>
-            <div className="print-form__advance-list">
+          <div className="settlement-detail__section">
+            <h2 className="settlement-detail__section-title">Tạm ứng đã nhận</h2>
+            <div className="settlement-detail__advances">
               {requests.map(r => (
-                <div key={r.id} className="print-form__advance-item">
-                  <span>{formatCurrency(Number(r.amount))}</span>
-                  <span className="print-form__advance-reason">— {r.reason}</span>
-                  <span className="print-form__advance-date">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                <div key={r.id} className="settlement-detail__advance-row">
+                  <span className="settlement-detail__advance-amount">{formatCurrency(Number(r.amount))}</span>
+                  <span className="settlement-detail__advance-reason">{r.reason}</span>
+                  <span className="settlement-detail__advance-date">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
                 </div>
               ))}
-              <div className="print-form__advance-total">
+              <div className="settlement-detail__advance-total">
                 <span>Tổng tạm ứng:</span>
                 <strong>{formatCurrency(totalAdvance)}</strong>
               </div>
@@ -208,86 +248,103 @@ export default function SettlementPrintPage() {
         )}
 
         {/* ── Expense Table ── */}
-        <div className="print-form__section">
-          <h2 className="print-form__section-title">Chi tiết chi phí</h2>
-          <table className="print-form__table">
-            <thead>
-              <tr>
-                <th style={{ width: 80 }}>Ngày</th>
-                <th style={{ width: 100 }}>Nội dung</th>
-                <th>Khách hàng</th>
-                <th style={{ width: 140 }}>Số cont</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Tiền tệ</th>
-                <th style={{ width: 120 }}>Hóa đơn</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, idx) => (
-                <tr key={idx}>
-                  <td>{row.date}</td>
-                  <td>{row.expenseType}</td>
-                  <td>{row.customer}</td>
-                  <td style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12 }}>{row.container}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(row.amount))}</td>
-                  <td>{row.invoice}</td>
-                </tr>
-              ))}
-              <tr className="print-form__table-total">
-                <td colSpan={4}><strong>TỔNG CỘNG</strong></td>
-                <td style={{ textAlign: 'right' }}><strong>{formatCurrency(totalFromRows)}</strong></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="settlement-detail__section">
+          <h2 className="settlement-detail__section-title">Chi tiết chi phí</h2>
+          <div className="expense-grid">
+            <div className="expense-grid__header">
+              <span>Ngày</span>
+              <span>Nội dung</span>
+              <span>Khách hàng</span>
+              <span>Số cont</span>
+              <span className="u-right">Thành tiền</span>
+              <span>Hóa đơn</span>
+            </div>
+            {rows.map((row, idx) => (
+              <div key={idx} className="expense-grid__row">
+                <span className="u-muted">{row.date}</span>
+                <span>{row.expenseType}</span>
+                <span className="u-wrap">{row.customer}</span>
+                <span className="u-mono">{row.container}</span>
+                <span className="u-right u-num">{formatCurrency(Number(row.amount))}</span>
+                <span>{row.invoice}</span>
+              </div>
+            ))}
+            <div className="expense-grid__total">
+              <span className="u-bold" style={{ gridColumn: '1 / 5' }}>Tổng cộng</span>
+              <span className="u-right u-num u-bold">{formatCurrency(totalFromRows)}</span>
+              <span></span>
+            </div>
+          </div>
         </div>
 
-        {/* ── Summary Box ── */}
-        <div className="print-form__summary">
-          <div className="print-form__summary-row">
-            <span>Tổng tạm ứng:</span>
-            <strong>{formatCurrency(totalAdvance)}</strong>
+        {/* ── Summary ── */}
+        <div className="settlement-detail__summary">
+          <div className="settlement-detail__summary-card">
+            <div className="settlement-detail__summary-label">Tổng tạm ứng</div>
+            <div className="settlement-detail__summary-value">{formatCurrency(totalAdvance)}</div>
           </div>
-          <div className="print-form__summary-row">
-            <span>Tổng chi phí:</span>
-            <strong>{formatCurrency(totalExpense)}</strong>
+          <div className="settlement-detail__summary-card">
+            <div className="settlement-detail__summary-label">Tổng chi phí</div>
+            <div className="settlement-detail__summary-value">{formatCurrency(totalExpense)}</div>
           </div>
-          {refund > 0 && (
-            <div className="print-form__summary-row">
-              <span>Tiền hoàn lại:</span>
-              <strong>{formatCurrency(refund)}</strong>
+          <div className="settlement-detail__summary-card settlement-detail__summary-card--balance">
+            <div className="settlement-detail__summary-label">
+              {balance >= 0 ? 'Còn dư (phải hoàn)' : 'Thiếu (phải bổ sung)'}
             </div>
-          )}
-          <div className="print-form__summary-row print-form__summary-row--balance">
-            <span>{balance >= 0 ? 'Còn dư (phải hoàn):' : 'Thiếu (phải bổ sung):'}</span>
-            <strong style={{ color: balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            <div className={`settlement-detail__summary-value ${balance >= 0 ? 'settlement-detail__summary-value--positive' : 'settlement-detail__summary-value--negative'}`}>
               {formatCurrency(Math.abs(balance))}
-            </strong>
+            </div>
           </div>
         </div>
 
         {/* ── Note ── */}
         {s.note && (
-          <div className="print-form__note">
+          <div className="settlement-detail__note">
             <strong>Ghi chú:</strong> {s.note}
           </div>
         )}
 
-        {/* ── Signature Section ── */}
-        <div className="print-form__signatures">
-          <div className="print-form__sig-block">
-            <div className="print-form__sig-label">Người lập</div>
-            <div className="print-form__sig-line">(Ký, họ tên)</div>
+        {/* ── Signatures (print only) ── */}
+        <div className="settlement-detail__signatures">
+          <div className="settlement-detail__sig-block">
+            <div className="settlement-detail__sig-label">Người lập</div>
+            <div className="settlement-detail__sig-line">(Ký, họ tên)</div>
           </div>
-          <div className="print-form__sig-block">
-            <div className="print-form__sig-label">Kế toán</div>
-            <div className="print-form__sig-line">(Ký, họ tên)</div>
+          <div className="settlement-detail__sig-block">
+            <div className="settlement-detail__sig-label">Kế toán</div>
+            <div className="settlement-detail__sig-line">(Ký, họ tên)</div>
           </div>
-          <div className="print-form__sig-block">
-            <div className="print-form__sig-label">Quản lý</div>
-            <div className="print-form__sig-line">(Ký, họ tên)</div>
+          <div className="settlement-detail__sig-block">
+            <div className="settlement-detail__sig-label">Quản lý</div>
+            <div className="settlement-detail__sig-line">(Ký, họ tên)</div>
           </div>
         </div>
       </div>
+
+      {/* ── Print Preview Modal ── */}
+      {showPreview && previewHtml && (
+        <div className="print-preview-overlay">
+          <div className="print-preview-toolbar">
+            <span className="print-preview-title">Phiếu thanh toán {s.code}</span>
+            <div className="print-preview-actions">
+              <button className="btn btn--primary btn--sm" onClick={handleIframePrint}>
+                <Printer size={14} /> In / Lưu PDF
+              </button>
+              <button className="btn btn--secondary btn--sm" onClick={() => setShowPreview(false)}>
+                <X size={14} /> Đóng
+              </button>
+            </div>
+          </div>
+          <div className="print-preview-body">
+            <iframe
+              ref={iframeRef}
+              className="print-preview-iframe"
+              title={`Phiếu thanh toán ${s.code}`}
+              srcDoc={previewHtml}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

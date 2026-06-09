@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Calendar, ArrowRight, Loader2, MapPin, Package } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, Package } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
-import { PageHeader, Panel, StatusPill } from '../components/UI';
+import { PageHeader, Panel } from '../components/UI';
 import { useForwarderTrips } from '../hooks/useQueries';
 
 interface TripSummary {
@@ -16,21 +17,26 @@ interface TripSummary {
   containerCount: number | null;
 }
 
-function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'IN_TRANSIT': return 'info';
-    case 'COMPLETED': return 'warn';
-    case 'LOCKED': return 'success';
-    case 'CANCELED': return 'danger';
-    default: return 'neutral';
-  }
-}
+const STATUS_BORDER: Record<TripStatus, string> = {
+  CREATED: '#3B82F6',
+  IN_TRANSIT: '#22C55E',
+  COMPLETED: '#F59E0B',
+  LOCKED: '#00B14F',
+  CANCELED: '#EF4444',
+};
+
+type StatusFilter = '' | TripStatus;
 
 export default function ForwarderTripsPage() {
   const navigate = useNavigate();
-  const { data, isLoading: loading, error: queryError } = useForwarderTrips();
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
+  const { data, isLoading: loading, error: queryError } = useForwarderTrips(activeFilter || undefined);
   const trips = (data?.items ?? []) as TripSummary[];
+  const counts = data?.counts ?? {};
   const error = queryError ? 'Không thể tải danh sách chuyến đi' : null;
+
+  const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
+  const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
 
   if (loading) return (
     <Panel>
@@ -45,7 +51,7 @@ export default function ForwarderTripsPage() {
     <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
   );
 
-  if (trips.length === 0) return (
+  if (totalTrips === 0) return (
     <div>
       <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
       <div className="empty-state">
@@ -60,7 +66,34 @@ export default function ForwarderTripsPage() {
 
   return (
     <div>
-      <PageHeader title="Chuyến đi" description={`Danh sách chuyến đi vận chuyển (${trips.length} chuyến)`} />
+      <PageHeader title="Chuyến đi" description={`Danh sách chuyến đi vận chuyển (${totalTrips} chuyến · ${totalContainers} cont)`} />
+
+      {/* Clickable status filter pills */}
+      <div className="fwd-filter-pills">
+        <button
+          className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+          onClick={() => setActiveFilter('')}
+        >
+          Tất cả
+          <span className="fwd-filter-pill__count">{totalTrips}</span>
+        </button>
+        {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
+          const count = counts[status] ?? 0;
+          if (count === 0) return null;
+          return (
+            <button
+              key={status}
+              className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+              data-status={status}
+              onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
+            >
+              <span className="fwd-filter-pill__dot" style={{ background: STATUS_BORDER[status] }} />
+              {label}
+              <span className="fwd-filter-pill__count">{count}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
@@ -69,6 +102,8 @@ export default function ForwarderTripsPage() {
             className="panel fade-up driver-trip-card"
             style={{
               cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
             }}
@@ -82,22 +117,16 @@ export default function ForwarderTripsPage() {
               (e.currentTarget as HTMLDivElement).style.borderColor = '';
             }}
           >
+            <span className="driver-trip-card__status-strip" style={{ background: STATUS_BORDER[trip.status] }} />
             <div className="driver-trip-card__body">
-              <div className="driver-trip-card__icon">
-                <MapPin size={20} style={{ color: 'var(--brand)' }} />
-              </div>
-
               <div className="driver-trip-card__main">
                 <div className="driver-trip-card__head">
                   <span className="driver-trip-card__route">
                     {trip.routeName || 'Tuyến không xác định'}
                   </span>
-                  <StatusPill variant={tripStatusVariant(trip.status)}>
-                    {TRIP_STATUS_LABELS[trip.status] || trip.status}
-                  </StatusPill>
                 </div>
                 <div className="driver-trip-card__meta">
-                  <span className="driver-trip-card__meta-item">
+                  <span className="driver-trip-card__plate-badge">
                     <Truck size={12} />
                     {trip.truckPlate || '—'}
                   </span>

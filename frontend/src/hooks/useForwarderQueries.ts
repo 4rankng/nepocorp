@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { financialClient } from '../api/financialClient';
 
-export function useForwarderTrips() {
+export function useForwarderTrips(status?: string) {
   return useQuery({
-    queryKey: ['forwarder-trips'],
-    queryFn: () => forwarderClient.getTrips(),
+    queryKey: ['forwarder-trips', status],
+    queryFn: () => forwarderClient.getTrips(status),
   });
 }
 
@@ -64,10 +64,10 @@ export function useDeleteForwarderExpense() {
 
 // ── Advance Requests (forwarder) ──────────────────────────────────────────────
 
-export function useForwarderAdvanceRequests() {
+export function useForwarderAdvanceRequests(status?: string) {
   return useQuery({
-    queryKey: ['forwarder-advance-requests'],
-    queryFn: () => forwarderClient.getAdvanceRequests(),
+    queryKey: ['forwarder-advance-requests', status],
+    queryFn: () => forwarderClient.getAdvanceRequests(status),
   });
 }
 

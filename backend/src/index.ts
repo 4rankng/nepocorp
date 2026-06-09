@@ -81,10 +81,12 @@ app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter)
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/notifications', authMiddleware, casbinAuthz('notifications'), notificationRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+// Config must mount before the generic /api financial catch-all,
+// otherwise financial Casbin gate blocks FORWARDER from /catalogs/bootstrap etc.
+app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes);
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
-app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 
 // ── Global error handler (MUST be last) ────────────────────────────────────

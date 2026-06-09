@@ -1,198 +1,237 @@
 /* ============================================================================
- * TingTing — Settlement Print Page
- * Professional payment slip layout matching business Excel form.
- * Vantai design tokens: --ink, --ink-2, --ink-3, --line, --line-2,
- *   --surface, --surface-2, --surface-3, --accent, --accent-soft, etc.
+ * TingTing — Settlement Detail Page
+ * Clean web detail page that also prints well.
  * ========================================================================== */
 
-.print-form {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 32px;
-  max-width: 960px;
+.settlement-detail {
+  max-width: 860px;
   margin: 0 auto;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
 }
 
-/* ─── Header ─── */
-.print-form__header {
-  text-align: center;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--ink);
-}
-
-.print-form__title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--ink);
-  margin: 0 0 12px;
-}
-
-.print-form__meta {
+/* ─── Header Card ─── */
+.settlement-detail__header {
   display: flex;
-  justify-content: center;
-  gap: 24px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.print-form__meta strong {
-  color: var(--ink);
-}
-
-/* ─── Sections ─── */
-.print-form__section {
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 24px;
 }
 
-.print-form__section-title {
-  font-family: var(--font-mono);
-  font-size: 11px;
+.settlement-detail__header-left h1 {
+  font-size: 20px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-  margin: 0 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--line);
-}
-
-/* ─── Advance Summary ─── */
-.print-form__advance-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.print-form__advance-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  padding: 4px 0;
-}
-
-.print-form__advance-reason {
-  color: var(--ink-3);
-}
-
-.print-form__advance-date {
-  margin-left: auto;
-  color: var(--ink-3);
-  font-size: 12px;
-}
-
-.print-form__advance-total {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 8px;
-  margin-top: 4px;
-  border-top: 1px dashed var(--line);
-  font-size: 14px;
-}
-
-/* ─── Table ─── */
-.print-form__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.print-form__table th {
-  text-align: left;
-  padding: 8px 10px;
-  background: var(--surface-2);
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-  border-bottom: 2px solid var(--line-2);
-}
-
-.print-form__table td {
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--line);
+  margin: 0 0 4px;
   color: var(--ink);
 }
 
-.print-form__table tbody tr:hover {
-  background: var(--surface-2);
+.settlement-detail__header-left p {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0;
 }
 
-.print-form__table-total td {
-  border-top: 2px solid var(--ink);
-  border-bottom: none;
-  padding-top: 10px;
+.settlement-detail__header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── Info Grid ─── */
+.settlement-detail__info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.settlement-detail__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settlement-detail__info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.settlement-detail__info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ─── Section Card ─── */
+.settlement-detail__section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.settlement-detail__section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ─── Advance Rows ─── */
+.settlement-detail__advances {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settlement-detail__advance-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 100px;
+  gap: 12px;
+  align-items: center;
   font-size: 14px;
 }
 
-/* ─── Summary Box ─── */
-.print-form__summary {
+.settlement-detail__advance-amount {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.settlement-detail__advance-reason {
+  color: var(--ink-2);
+}
+
+.settlement-detail__advance-date {
+  text-align: right;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.settlement-detail__advance-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+
+/* ─── Expense Grid (replaces table) ─── */
+.expense-grid {
+  display: grid;
+  grid-template-columns: 70px 100px 1fr 130px 120px 100px;
+  gap: 0;
+  font-size: 13px;
+}
+
+.expense-grid__header {
+  display: contents;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+}
+
+.expense-grid__header > span {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.expense-grid__row {
+  display: contents;
+}
+
+.expense-grid__row > span {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.expense-grid__row:hover > span {
   background: var(--surface-2);
+}
+
+.expense-grid__total {
+  display: contents;
+}
+
+.expense-grid__total > span {
+  padding: 12px 6px 0;
+  border-top: 2px solid var(--line-2);
+  border-bottom: none;
+  font-size: 14px;
+}
+
+/* Utility classes */
+.expense-grid .u-right { text-align: right; }
+.expense-grid .u-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.expense-grid .u-mono { font-family: var(--font-mono, monospace); font-size: 12px; white-space: nowrap; }
+.expense-grid .u-muted { color: var(--ink-2); white-space: nowrap; }
+.expense-grid .u-wrap { word-break: break-word; overflow-wrap: break-word; }
+.expense-grid .u-bold { font-weight: 700; }
+
+/* ─── Summary ─── */
+.settlement-detail__summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.settlement-detail__summary-card {
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 16px 20px;
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
-.print-form__summary-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
+.settlement-detail__summary-card--balance {
+  grid-column: 1 / -1;
 }
 
-.print-form__summary-row--balance {
-  border-top: 1px solid var(--line);
-  margin-top: 6px;
-  padding-top: 10px;
-  font-size: 16px;
+.settlement-detail__summary-label {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+
+.settlement-detail__summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.settlement-detail__summary-value--positive {
+  color: #16a34a;
+}
+
+.settlement-detail__summary-value--negative {
+  color: var(--danger, #dc2626);
 }
 
 /* ─── Note ─── */
-.print-form__note {
-  margin-top: 16px;
-  padding: 10px 14px;
-  background: var(--warning-soft);
-  border: 1px solid var(--warning);
-  border-radius: 8px;
+.settlement-detail__note {
+  padding: 12px 16px;
+  background: #fffbeb;
+  border-left: 3px solid #d97706;
+  border-radius: 4px;
   font-size: 13px;
-  color: var(--warning-text);
+  color: #92400e;
+  margin-bottom: 16px;
+  line-height: 1.6;
 }
 
-/* ─── Signatures ─── */
-.print-form__signatures {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 48px;
-  padding-top: 16px;
-}
-
-.print-form__sig-block {
-  text-align: center;
-  width: 160px;
-}
-
-.print-form__sig-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 40px;
-  color: var(--ink);
-}
-
-.print-form__sig-line {
-  font-size: 11px;
-  color: var(--ink-3);
-  border-top: 1px solid var(--line);
-  padding-top: 6px;
+/* ─── Signatures (print only on screen) ─── */
+.settlement-detail__signatures {
+  display: none;
 }
 
 /* ─── Print Styles ─── */
@@ -205,18 +244,44 @@
     background: #fff !important;
   }
 
-  .print-form {
-    border: none !important;
-    box-shadow: none !important;
-    padding: 16px !important;
+  .settlement-detail {
     max-width: 100% !important;
   }
 
-  .print-form__table tbody tr:hover {
-    background: transparent !important;
+  .settlement-detail__section {
+    border: none !important;
+    padding: 12px 0 !important;
+    break-inside: avoid;
   }
 
-  /* Hide sidebar & topbar in print */
+  .settlement-detail__summary-card {
+    border: 1px solid #ddd !important;
+  }
+
+  .settlement-detail__signatures {
+    display: flex !important;
+    justify-content: space-around;
+    margin-top: 48px;
+  }
+
+  .settlement-detail__sig-block {
+    text-align: center;
+    width: 160px;
+  }
+
+  .settlement-detail__sig-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 56px;
+  }
+
+  .settlement-detail__sig-line {
+    font-size: 11px;
+    color: #666;
+    border-top: 1px dashed #999;
+    padding-top: 6px;
+  }
+
   .sidebar,
   .topbar,
   .mobile-bottom-nav {
@@ -224,39 +289,90 @@
   }
 }
 
+/* ─── Print Preview Modal ─── */
+.print-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.print-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.print-preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.print-preview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.print-preview-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: #e5e7eb;
+}
+
+.print-preview-iframe {
+  width: 100%;
+  max-width: 900px;
+  height: 100%;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
 /* ─── Mobile ─── */
 @media (max-width: 640px) {
-  .print-form {
-    padding: 16px;
-  }
-
-  .print-form__header {
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-  }
-
-  .print-form__title {
-    font-size: 18px;
-  }
-
-  .print-form__meta {
+  .settlement-detail__header {
     flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
+    gap: 12px;
   }
 
-  .print-form__table {
+  .settlement-detail__info {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .settlement-detail__advance-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .settlement-detail__advance-date {
+    text-align: left;
+  }
+
+  .settlement-detail__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-grid {
+    grid-template-columns: 50px 80px 1fr 100px 100px 80px;
     font-size: 11px;
   }
 
-  .print-form__table th,
-  .print-form__table td {
-    padding: 5px 6px;
-  }
-
-  .print-form__signatures {
-    flex-direction: column;
-    gap: 32px;
-    align-items: center;
+  .expense-grid__header > span,
+  .expense-grid__row > span {
+    padding: 6px 4px;
   }
 }
