@@ -62,7 +62,7 @@ export async function getForwarderTripCounts() {
 
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    counts[row.status] = row.count;
+    if (row.status != null) counts[row.status] = row.count;
   }
   return counts;
 }

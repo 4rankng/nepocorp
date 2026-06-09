@@ -1124,7 +1124,6 @@ export async function getTripById(id: number) {
     roadAllowanceOverride: s.trips.roadAllowanceOverride,
     tollCost: s.trips.tollCost,
     completedAt: s.trips.completedAt,
-    trailerType: s.trips.trailerType,
     roadAllowanceBaseApplied: s.trips.roadAllowanceBaseApplied,
     tollPerStationApplied: s.trips.tollPerStationApplied,
     returnCargoBonusApplied: s.trips.returnCargoBonusApplied,

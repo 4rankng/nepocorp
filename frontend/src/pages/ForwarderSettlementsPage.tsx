@@ -56,6 +56,8 @@ interface LinkedExpense {
   note: string | null;
   createdAt: string;
   tripCode: string | null;
+  departureDate: string | null;
+  truckPlate: string | null;
 }
 
 interface Settlement {
@@ -297,7 +299,7 @@ export default function ForwarderSettlementsPage() {
                           <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
                         )}
                         <span className="fset-form-panel__item-meta">
-                          · {exp.departureDate ? formatDate(exp.departureDate) : '—'}
+                          · {formatDate(exp.createdAt)}
                           {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
                         </span>
                         {exp.note && (
