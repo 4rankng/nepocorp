@@ -515,6 +515,7 @@ export interface AdvanceRequestWithRefs extends AdvanceRequest {
 
 export interface AdvanceSettlement {
   id: number;
+  code: string;
   forwarderId: number;
   totalExpenseAmount: string;
   refundAmount: string;

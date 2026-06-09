@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, X, Check } from 'lucide-react';
-import { formatCurrency, formatDate } from '../lib/format';
+import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
-import { PageHeader, Panel, StatusPill, FormGroup } from '../components/UI';
+import { PageHeader, StatusPill, FormGroup, KPI } from '../components/UI';
 import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
+import './ForwarderSettlementsPage.css';
 
-/** Vietnamese fallback labels for expense type codes (used when catalog hasn't loaded) */
+/** Vietnamese fallback labels for expense type codes */
 const EXPENSE_TYPE_VI: Record<string, string> = {
   LIFTING: 'Nâng container',
   LOWERING: 'Hạ container',
@@ -25,6 +26,11 @@ const EXPENSE_TYPE_VI: Record<string, string> = {
 
 function expenseLabel(code: string, options: Array<{ code: string; name: string }>): string {
   return options.find(t => t.code === code)?.name || EXPENSE_TYPE_VI[code] || code;
+}
+
+/** Generate business codes — NEVER show raw IDs */
+function advanceRequestCode(id: number): string {
+  return `TU-${String(id).padStart(4, '0')}`;
 }
 
 interface LinkedRequest {
@@ -47,6 +53,7 @@ interface LinkedExpense {
 
 interface Settlement {
   id: number;
+  code: string;
   forwarderId: number;
   totalExpenseAmount: string;
   refundAmount: string;
@@ -156,212 +163,218 @@ export default function ForwarderSettlementsPage() {
 
   const error = settlementsError ? 'Không thể tải danh sách phiếu thanh toán' : null;
 
+  // Derived stats
+  const pending = settlements.filter(s => s.status === 'PENDING').length;
+  const totalExpenseAll = settlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
+
   if (loadingSettlements) return (
-    <Panel>
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+    <div className="fset-page">
+      <PageHeader title="Phiếu thanh toán" description="Tạo và xem phiếu thanh toán tạm ứng" />
+      <div className="fset-loading">
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
         <p style={{ marginTop: 8 }}>Đang tải danh sách phiếu thanh toán…</p>
       </div>
-    </Panel>
+    </div>
   );
 
   if (error) return (
-    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
+    <div className="fset-page">
+      <PageHeader title="Phiếu thanh toán" description="Tạo và xem phiếu thanh toán tạm ứng" />
+      <div className="empty-state">
+        <p style={{ color: 'var(--danger)' }}>{error}</p>
+      </div>
+    </div>
   );
 
   return (
-    <div>
+    <div className="fset-page">
       <PageHeader
         title="Phiếu thanh toán"
         description="Tạo và xem phiếu thanh toán tạm ứng"
+        action={
+          !showForm ? (
+            <button className="btn btn--primary" onClick={() => setShowForm(true)}>
+              <Plus size={16} /> Tạo phiếu thanh toán
+            </button>
+          ) : undefined
+        }
       />
 
-      <div style={{ marginBottom: 16 }}>
-        {!showForm ? (
-          <button className="btn btn--primary" onClick={() => setShowForm(true)}>
-            <Plus size={16} /> Tạo phiếu thanh toán
-          </button>
-        ) : (
-          <Panel>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Tạo phiếu thanh toán</h3>
-              <button className="btn btn--ghost" onClick={resetForm}><X size={16} /></button>
+      {/* Create form */}
+      {showForm && (
+        <div className="fset-form-panel fade-up">
+          <div className="fset-form-panel__head">
+            <span className="fset-form-panel__title">Tạo phiếu thanh toán</span>
+            <button className="btn btn--ghost btn--sm" onClick={resetForm}><X size={16} /></button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {/* Step 1: Select advance requests */}
+            <FormGroup label="Bước 1: Chọn tạm ứng đã duyệt">
+              {approvedRequests.length === 0 ? (
+                <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Không có tạm ứng nào đã duyệt</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label className="fset-form-panel__select-all">
+                    <input
+                      type="checkbox"
+                      checked={approvedRequests.length > 0 && selectedRequestIds.size === approvedRequests.length}
+                      onChange={() => {
+                        if (selectedRequestIds.size === approvedRequests.length) {
+                          setSelectedRequestIds(new Set());
+                        } else {
+                          setSelectedRequestIds(new Set(approvedRequests.map(r => r.id)));
+                        }
+                      }}
+                    />
+                    Chọn tất cả ({approvedRequests.length})
+                  </label>
+                  {approvedRequests.map(r => (
+                    <label key={r.id} className="fset-form-panel__item">
+                      <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
+                      <div className="fset-form-panel__item-text">
+                        <span className="fset-form-panel__item-amount">{formatCurrency(Number(r.amount))}</span>
+                        <span className="fset-form-panel__item-meta">— {r.reason}</span>
+                      </div>
+                      <span className="fset-form-panel__item-date">{formatDate(r.createdAt)}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </FormGroup>
+
+            {/* Step 2: Select trip expenses */}
+            <FormGroup label="Bước 2: Chọn chi phí phát sinh">
+              {unlinkedExpenses.length === 0 ? (
+                <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Không có chi phí nào chưa thanh toán</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label className="fset-form-panel__select-all">
+                    <input
+                      type="checkbox"
+                      checked={unlinkedExpenses.length > 0 && selectedExpenseIds.size === unlinkedExpenses.length}
+                      onChange={() => {
+                        if (selectedExpenseIds.size === unlinkedExpenses.length) {
+                          setSelectedExpenseIds(new Set());
+                        } else {
+                          setSelectedExpenseIds(new Set(unlinkedExpenses.map(e => e.id)));
+                        }
+                      }}
+                    />
+                    Chọn tất cả ({unlinkedExpenses.length})
+                  </label>
+                  {unlinkedExpenses.map(exp => (
+                    <label key={exp.id} className="fset-form-panel__item">
+                      <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
+                      <div className="fset-form-panel__item-text">
+                        <span className="fset-form-panel__item-amount">
+                          {expenseLabel(exp.expenseType, expenseTypeOptions)}
+                        </span>
+                        {exp.tripCode && (
+                          <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
+                        )}
+                        {exp.note && (
+                          <span className="fset-form-panel__item-meta">{exp.note}</span>
+                        )}
+                      </div>
+                      <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                        {formatCurrency(Number(exp.buyAmount))}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </FormGroup>
+
+            {/* Summary */}
+            <div className="fset-form-panel__summary">
+              <div className="fset-form-panel__summary-grid">
+                <div><span className="fset-form-panel__summary-label">Tổng tạm ứng:</span> <span className="fset-form-panel__summary-value">{formatCurrency(totalAdvance)}</span></div>
+                <div><span className="fset-form-panel__summary-label">Tổng chi phí:</span> <span className="fset-form-panel__summary-value">{formatCurrency(totalExpense)}</span></div>
+              </div>
+              {expenseBreakdown.size > 0 && (
+                <div className="fset-form-panel__breakdown">
+                  <span className="fset-form-panel__breakdown-label">Chi tiết theo hạng mục:</span>
+                  <div className="fset-form-panel__breakdown-chips">
+                    {[...expenseBreakdown.entries()].map(([label, amount]) => (
+                      <span key={label} className="fset-card__chip">{label}: {formatCurrency(amount)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <form onSubmit={handleSubmit}>
-              {/* Step 1: Select advance requests */}
-              <FormGroup label="Bước 1: Chọn tạm ứng đã duyệt">
-                {approvedRequests.length === 0 ? (
-                  <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có tạm ứng nào đã duyệt</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
-                      <input
-                        type="checkbox"
-                        checked={approvedRequests.length > 0 && selectedRequestIds.size === approvedRequests.length}
-                        onChange={() => {
-                          if (selectedRequestIds.size === approvedRequests.length) {
-                            setSelectedRequestIds(new Set());
-                          } else {
-                            setSelectedRequestIds(new Set(approvedRequests.map(r => r.id)));
-                          }
-                        }}
-                      />
-                      Chọn tất cả ({approvedRequests.length})
-                    </label>
-                    {approvedRequests.map(r => (
-                      <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
-                        <span style={{ flex: 1 }}>
-                          <span style={{ fontWeight: 500 }}>{formatCurrency(Number(r.amount))}</span>
-                          <span style={{ color: 'var(--fg-3)', marginLeft: 8 }}>- {r.reason}</span>
-                        </span>
-                        <span style={{ color: 'var(--fg-3)', fontSize: 12 }}>{formatDate(r.createdAt)}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </FormGroup>
+            <FormGroup label="Tiền hoàn lại">
+              <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="0" min={0} />
+            </FormGroup>
 
-              {/* Step 2: Select trip expenses */}
-              <FormGroup label="Bước 2: Chọn chi phí phát sinh">
-                {unlinkedExpenses.length === 0 ? (
-                  <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có chi phí nào chưa thanh toán</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
-                      <input
-                        type="checkbox"
-                        checked={unlinkedExpenses.length > 0 && selectedExpenseIds.size === unlinkedExpenses.length}
-                        onChange={() => {
-                          if (selectedExpenseIds.size === unlinkedExpenses.length) {
-                            setSelectedExpenseIds(new Set());
-                          } else {
-                            setSelectedExpenseIds(new Set(unlinkedExpenses.map(e => e.id)));
-                          }
-                        }}
-                      />
-                      Chọn tất cả ({unlinkedExpenses.length})
-                    </label>
-                    {unlinkedExpenses.map(exp => (
-                      <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
-                        <span style={{ flex: 1 }}>
-                          <span style={{ fontWeight: 500 }}>
-                            {expenseLabel(exp.expenseType, expenseTypeOptions)}
-                          </span>
-                          {exp.tripCode && (
-                            <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>({exp.tripCode})</span>
-                          )}
-                          {exp.note && (
-                            <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>{exp.note}</span>
-                          )}
-                          {exp.approvalStatus === 'PENDING' && (
-                            <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warn, #A16207)', background: 'var(--warn-bg, #FEF9C3)', padding: '1px 6px', borderRadius: 3 }}>Chờ duyệt</span>
-                          )}
-                        </span>
-                        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(exp.buyAmount))}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </FormGroup>
-
-              {/* Summary: auto-calculated totals */}
-              <div style={{ background: 'var(--bg-2)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 14 }}>
-                  <div><span style={{ color: 'var(--fg-3)' }}>Tổng tạm ứng:</span> <strong>{formatCurrency(totalAdvance)}</strong></div>
-                  <div><span style={{ color: 'var(--fg-3)' }}>Tổng chi phí:</span> <strong>{formatCurrency(totalExpense)}</strong></div>
-                </div>
-
-                {/* Breakdown by category */}
-                {expenseBreakdown.size > 0 && (
-                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Chi tiết theo hạng mục:</span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-                      {[...expenseBreakdown.entries()].map(([label, amount]) => (
-                        <span key={label} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-3, var(--bg))', borderRadius: 4 }}>
-                          {label}: {formatCurrency(amount)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {totalAdvance > 0 && balance !== 0 && (
+              <div className="fset-form-panel__warn">
+                Chênh lệch: {formatCurrency(balance)} (tạm ứng − chi phí − hoàn lại)
               </div>
+            )}
 
-              <FormGroup label="Tiền hoàn lại">
-                <input
-                  type="number"
-                  value={refundAmount}
-                  onChange={e => setRefundAmount(e.target.value)}
-                  placeholder="0"
-                  className="input"
-                  style={{ width: '100%' }}
-                  min={0}
-                />
-              </FormGroup>
+            <FormGroup label="Ghi chú">
+              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú (không bắt buộc)" style={{ minHeight: 64, resize: 'vertical' }} />
+            </FormGroup>
 
-              {totalAdvance > 0 && balance !== 0 && (
-                <div style={{ padding: '8px 12px', background: 'var(--warn-bg, #FEF9C3)', borderRadius: 6, fontSize: 14, color: 'var(--warn, #A16207)', marginBottom: 12 }}>
-                  Chênh lệch: {formatCurrency(balance)} (tạm ứng - chi phí - hoàn lại)
-                </div>
-              )}
-
-              <FormGroup label="Ghi chú">
-                <textarea
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                  placeholder="Ghi chú (không bắt buộc)"
-                  className="input"
-                  style={{ width: '100%', minHeight: 64, resize: 'vertical' }}
-                />
-              </FormGroup>
-
-              {createSettlement.error && (
-                <div style={{ padding: '8px 12px', background: '#FEE2E2', borderRadius: 6, fontSize: 14, color: 'var(--danger)', marginBottom: 12 }}>
-                  {(createSettlement.error as Error)?.message || 'Có lỗi xảy ra'}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn--ghost" onClick={resetForm}>Hủy</button>
-                <button
-                  type="submit"
-                  className="btn btn--primary"
-                  disabled={selectedRequestIds.size === 0 || createSettlement.isPending}
-                >
-                  {createSettlement.isPending ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
-                  Gửi phiếu thanh toán
-                </button>
+            {createSettlement.error && (
+              <div className="fset-form-panel__error">
+                {(createSettlement.error as Error)?.message || 'Có lỗi xảy ra'}
               </div>
-            </form>
-          </Panel>
-        )}
-      </div>
+            )}
 
+            <div className="fset-form-panel__actions">
+              <button type="button" className="btn btn--ghost btn--sm" onClick={resetForm}>Hủy</button>
+              <button
+                type="submit"
+                className="btn btn--primary btn--sm"
+                disabled={selectedRequestIds.size === 0 || createSettlement.isPending}
+              >
+                {createSettlement.isPending ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
+                Gửi phiếu thanh toán
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* KPI row */}
+      {settlements.length > 0 && (
+        <div className="fset-kpi-row">
+          <KPI label="Tổng phiếu" value={settlements.length} icon={FileText} />
+          <KPI label="Chờ xử lý" value={pending} variant={pending > 0 ? 'warn' : 'default'} />
+          <KPI label="Tổng chi phí" value={formatCompact(totalExpenseAll)} variant={totalExpenseAll > 0 ? 'success' : 'default'} />
+        </div>
+      )}
+
+      {/* Empty state */}
       {settlements.length === 0 && !showForm ? (
-        <div className="empty-state">
-          <h3 className="empty-state-title">Chưa có phiếu thanh toán nào</h3>
+        <div className="fset-empty fade-up">
+          <div className="fset-empty__icon"><FileText size={48} /></div>
+          <h3 className="fset-empty__title">Chưa có phiếu thanh toán</h3>
+          <p className="fset-empty__desc">Nhấn "Tạo phiếu thanh toán" để lập phiếu mới.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {settlements.map(s => (
+        <div className="fset-list">
+          {settlements.map((s, idx) => (
             <div
               key={s.id}
-              style={{ cursor: 'pointer' }}
+              className="fset-card fade-up"
+              style={{ animationDelay: `${idx * 40}ms` }}
               onClick={() => navigate(`/my-settlements/${s.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-settlements/${s.id}`); } }}
             >
-            <Panel
-              style={{ transition: 'box-shadow 150ms ease, border-color 150ms ease' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <FileText size={16} style={{ color: 'var(--brand)' }} />
-                    <span style={{ fontWeight: 600 }}>Mã {s.id}</span>
+              <div className="fset-card__head">
+                <div className="fset-card__code">
+                  <div className="fset-card__code-icon">
+                    <FileText size={14} />
                   </div>
-                  <div style={{ fontSize: 14, color: 'var(--fg-3)', marginTop: 4 }}>
-                    Tạo ngày {formatDate(s.createdAt)}
+                  <div>
+                    <div className="fset-card__code-text">{s.code}</div>
+                    <div className="fset-card__date">Tạo ngày {formatDate(s.createdAt)}</div>
                   </div>
                 </div>
                 <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
@@ -369,35 +382,34 @@ export default function ForwarderSettlementsPage() {
                 </StatusPill>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 14 }}>
-                <div><span style={{ color: 'var(--fg-3)' }}>Tổng chi phí:</span> <strong>{formatCurrency(Number(s.totalExpenseAmount))}</strong></div>
-                <div><span style={{ color: 'var(--fg-3)' }}>Tiền hoàn lại:</span> <strong>{formatCurrency(Number(s.refundAmount))}</strong></div>
+              <div className="fset-card__amounts">
+                <div><span className="fset-card__amount-label">Tổng chi phí:</span> <span className="fset-card__amount-value">{formatCurrency(Number(s.totalExpenseAmount))}</span></div>
+                <div><span className="fset-card__amount-label">Tiền hoàn lại:</span> <span className="fset-card__amount-value">{formatCurrency(Number(s.refundAmount))}</span></div>
               </div>
 
               {/* Expense breakdown by category */}
               {s.linkedExpenses && s.linkedExpenses.length > 0 && (() => {
                 const groups = groupExpensesByType(s.linkedExpenses, expenseTypeOptions);
                 return (
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Chi phí theo hạng mục:</span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                  <div className="fset-card__breakdown">
+                    <span className="fset-card__breakdown-label">Chi phí theo hạng mục:</span>
+                    <div className="fset-card__breakdown-chips">
                       {[...groups.entries()].map(([label, amount]) => (
-                        <span key={label} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-2)', borderRadius: 4 }}>
-                          {label}: {formatCurrency(amount)}
-                        </span>
+                        <span key={label} className="fset-card__chip">{label}: {formatCurrency(amount)}</span>
                       ))}
                     </div>
                   </div>
                 );
               })()}
 
+              {/* Linked advances — use business codes */}
               {s.linkedRequests && s.linkedRequests.length > 0 && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 500 }}>Tạm ứng liên kết:</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                <div className="fset-card__linked">
+                  <span className="fset-card__linked-label">Tạm ứng liên kết:</span>
+                  <div className="fset-card__linked-chips">
                     {s.linkedRequests.map(r => (
-                      <span key={r.id} style={{ fontSize: 12, padding: '2px 8px', background: 'var(--bg-2)', borderRadius: 4 }}>
-                        Mã {r.id} — {formatCurrency(Number(r.amount))}
+                      <span key={r.id} className="fset-card__chip">
+                        {advanceRequestCode(r.id)} — {formatCurrency(Number(r.amount))}
                       </span>
                     ))}
                   </div>
@@ -405,12 +417,12 @@ export default function ForwarderSettlementsPage() {
               )}
 
               {s.note && (
-                <div style={{ marginTop: 8, fontSize: 13, color: 'var(--fg-3)' }}>
-                  <span style={{ fontWeight: 500 }}>Ghi chú:</span> {s.note}
+                <div className="fset-card__note">
+                  <strong>Ghi chú:</strong> {s.note}
                 </div>
               )}
 
-              <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: 12, color: 'var(--fg-3)', flexWrap: 'wrap' }}>
+              <div className="fset-card__meta">
                 {s.checkerName && s.checkedAt && (
                   <span>Kiểm tra: {s.checkerName} ({formatDate(s.checkedAt)})</span>
                 )}
@@ -418,7 +430,6 @@ export default function ForwarderSettlementsPage() {
                   <span>Duyệt: {s.approverName} ({formatDate(s.approvedAt)})</span>
                 )}
               </div>
-            </Panel>
             </div>
           ))}
         </div>

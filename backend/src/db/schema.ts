@@ -531,6 +531,7 @@ export const advanceRequests = pgTable('advance_requests', {
 
 export const advanceSettlements = pgTable('advance_settlements', {
   id: serial('id').primaryKey(),
+  code: varchar('code', { length: 20 }).notNull(),
   forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
   totalExpenseAmount: numeric('total_expense_amount', { precision: 15, scale: 0 }).notNull(),
   refundAmount: numeric('refund_amount', { precision: 15, scale: 0 }).default('0').notNull(),
@@ -542,7 +543,9 @@ export const advanceSettlements = pgTable('advance_settlements', {
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex('advance_settlements_code_unique_idx').on(table.code),
+]);
 
 export const advanceSettlementRequests = pgTable('advance_settlement_requests', {
   id: serial('id').primaryKey(),

@@ -57,6 +57,7 @@ interface LinkedRequest {
 
 interface SettlementData {
   id: number;
+  code: string;
   forwarderId: number;
   forwarderName?: string;
   totalExpenseAmount: string;
@@ -122,7 +123,7 @@ export default function SettlementPrintPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--ink-3)' }}>
         <Loader2 size={20} className="spin" />
         <span style={{ fontSize: 14 }}>Đang tải phiếu thanh toán…</span>
       </div>
@@ -157,7 +158,7 @@ export default function SettlementPrintPage() {
     <div className="fade-up">
       <div className="no-print">
         <PageHeader
-          title={`Phiếu thanh toán #${s.id}`}
+          title={`Phiếu thanh toán ${s.code}`}
           description={s.forwarderName || ''}
           action={
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -180,7 +181,7 @@ export default function SettlementPrintPage() {
         <div className="print-form__header">
           <h1 className="print-form__title">PHIẾU THANH TOÁN</h1>
           <div className="print-form__meta">
-            <span>Số: <strong>PT-{String(s.id).padStart(4, '0')}</strong></span>
+            <span>Số: <strong>{s.code}</strong></span>
             <span>Ngày: <strong>{new Date(s.createdAt).toLocaleDateString('vi-VN')}</strong></span>
             <span>Nhân viên: <strong>{s.forwarderName || ''}</strong></span>
           </div>

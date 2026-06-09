@@ -5,9 +5,9 @@ Execute an autonomous, iterative Quality Assurance (QA) and micro-fixing loop fo
 To prevent context bloat, you must operate in micro-iterations. **Never test the entire application at once.** Test one specific user flow for one specific role at a time, and fix bugs in small, isolated batches.
 
 OBJECTIVE="please go through page by page , subpages, components to ensure they looks elegant in mobile view"
+HOST=http://localhost:7173/
 
 **Context & Resources:**
-- Application URL: http://localhost:7173/
 - Product Specifications: `PRODUCT-SPECS.md`
 - Business Flows: `docs/flows`
 - QA Checklist: `docs/qa/test-checklist.md`
@@ -30,7 +30,7 @@ OBJECTIVE="please go through page by page , subpages, components to ensure they 
 3. Select the first incomplete item on this checklist to begin Phase 1.
 
 **Phase 1: Focused QA Testing (Lead QA Engineer)**
-1. Authenticate into http://localhost:7173/ using ONLY the account relevant to the current checklist item.
+1. Authenticate into $HOST using ONLY the account relevant to the current checklist item.
 2. Test ONLY the specific business flow and UI components associated with this single task.
 3. **Hard Cap:** Stop testing immediately once you have identified a maximum of **2 bugs or UI issues**.
 4. Generate a brief "Micro-Bug Report." If no bugs are found for this specific flow, mark the item as "Passed" on your checklist and restart Phase 1 with the next item.

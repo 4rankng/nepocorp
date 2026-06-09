@@ -220,4 +220,15 @@ router.delete('/expense-photos/:id', asyncHandler(async (req: Request, res: Resp
   res.json({ success: true });
 }));
 
+// ── Expense type labels (for forwarder catalog) ──
+
+router.get('/expense-types', asyncHandler(async (_req: Request, res: Response) => {
+  const rows = await db.select({
+    code: s.forwarderExpenseTypes.code,
+    name: s.forwarderExpenseTypes.name,
+  }).from(s.forwarderExpenseTypes)
+    .orderBy(s.forwarderExpenseTypes.name);
+  res.json(rows);
+}));
+
 export default router;

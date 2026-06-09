@@ -4,6 +4,25 @@ import { eq, and, desc, inArray, notInArray, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 
+async function generateSettlementCode(tx: any): Promise<string> {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = `PT-${yy}${mm}`;
+
+  const [row] = await tx.select({ maxCode: sql<string | null>`max(${s.advanceSettlements.code})` })
+    .from(s.advanceSettlements)
+    .where(sql`${s.advanceSettlements.code} like ${prefix + '%'}`);
+
+  let seq = 1;
+  if (row?.maxCode) {
+    const lastSeq = parseInt(row.maxCode.split('-').pop() || '0', 10);
+    seq = lastSeq + 1;
+  }
+
+  return `${prefix}-${String(seq).padStart(4, '0')}`;
+}
+
 export class AdvanceError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -251,7 +270,10 @@ export async function createAdvanceSettlement(
       totalExpenseAmount = tripExpenseRows.reduce((sum, exp) => sum + Number(exp.buyAmount), 0);
     }
 
+    const code = await generateSettlementCode(tx);
+
     const [settlement] = await tx.insert(s.advanceSettlements).values({
+      code,
       forwarderId,
       totalExpenseAmount: String(totalExpenseAmount),
       refundAmount: String(data.refundAmount ?? 0),

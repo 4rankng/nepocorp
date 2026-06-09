@@ -1,0 +1,391 @@
+/* ============================================================================
+ * ForwarderSettlementsPage (.fset-page)
+ * BEM-scoped styles for forwarder settlement list & create form.
+ * Vantai tokens: --ink, --line, --surface, --accent, --font-display, etc.
+ * ========================================================================== */
+
+/* ── KPI row ────────────────────────────────────────────────────────────── */
+.fset-page .fset-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* ── Settlement card list ───────────────────────────────────────────────── */
+.fset-page .fset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Settlement card ────────────────────────────────────────────────────── */
+.fset-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color var(--t-normal), box-shadow var(--t-normal),
+              transform var(--t-normal), background var(--t-fast);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
+}
+
+.fset-card:hover {
+  border-color: var(--line-2);
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03);
+  transform: translateY(-2px);
+}
+
+.fset-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.fset-card__code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fset-card__code-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.fset-card:hover .fset-card__code-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.fset-card__code-text {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.fset-card__date {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.fset-card__amounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.fset-card__amount-label {
+  color: var(--ink-3);
+}
+
+.fset-card__amount-value {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Expense breakdown chips */
+.fset-card__breakdown {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.fset-card__breakdown-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fset-card__breakdown-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.fset-card__chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  color: var(--ink-2);
+}
+
+/* Linked advances */
+.fset-card__linked {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.fset-card__linked-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fset-card__linked-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* Note */
+.fset-card__note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.fset-card__note strong {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* Meta (checker/approver) */
+.fset-card__meta {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px 14px;
+  font-size: 11px;
+  color: var(--ink-3);
+  flex-wrap: wrap;
+}
+
+/* ── Create form panel ──────────────────────────────────────────────────── */
+.fset-form-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
+}
+
+.fset-form-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.fset-form-panel__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* Checkbox items */
+.fset-form-panel__select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.fset-form-panel__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast);
+  font-size: 13px;
+}
+
+.fset-form-panel__item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.fset-form-panel__item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.fset-form-panel__item-amount {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.fset-form-panel__item-meta {
+  color: var(--ink-3);
+  margin-left: 8px;
+}
+
+.fset-form-panel__item-date {
+  color: var(--ink-3);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Summary box */
+.fset-form-panel__summary {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.fset-form-panel__summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.fset-form-panel__summary-label {
+  color: var(--ink-3);
+}
+
+.fset-form-panel__summary-value {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fset-form-panel__breakdown {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.fset-form-panel__breakdown-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.fset-form-panel__breakdown-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* Warning banner */
+.fset-form-panel__warn {
+  padding: 8px 12px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--warning-text);
+  margin-bottom: 12px;
+}
+
+/* Error banner */
+.fset-form-panel__error {
+  padding: 8px 12px;
+  background: var(--danger-soft);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+
+/* Actions */
+.fset-form-panel__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.fset-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--surface);
+  border: 1px dashed var(--line-2);
+  border-radius: 18px;
+}
+
+.fset-empty__icon {
+  color: var(--ink-4, #D4D4D8);
+  margin-bottom: 14px;
+}
+
+.fset-empty__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.fset-empty__desc {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* ── Loading state ──────────────────────────────────────────────────────── */
+.fset-loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink-3);
+}
+
+/* ── Responsive: ≤640px ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .fset-page .fset-kpi-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .fset-page .fset-kpi-row .kpi:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .fset-card {
+    padding: 14px;
+  }
+  .fset-card__amounts {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .fset-form-panel {
+    padding: 14px 16px;
+  }
+  .fset-form-panel__summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
