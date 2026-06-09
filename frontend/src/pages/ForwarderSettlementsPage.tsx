@@ -289,26 +289,26 @@ export default function ForwarderSettlementsPage() {
                     Chọn tất cả ({unlinkedExpenses.length})
                   </label>
                   {unlinkedExpenses.map(exp => (
-                    <label key={exp.id} className="fset-form-panel__item">
+                    <label key={exp.id} className="fset-form-panel__item fset-form-panel__item--two-row">
                       <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
                       <div className="fset-form-panel__item-text">
-                        <span className="fset-form-panel__item-amount">
-                          {expenseLabel(exp.expenseType, expenseTypeOptions)}
+                        <span className="fset-form-panel__item-row1">
+                          <span className="fset-form-panel__item-label">
+                            {expenseLabel(exp.expenseType, expenseTypeOptions)}
+                          </span>
+                          {exp.tripCode && (
+                            <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
+                          )}
+                          <span className="fset-form-panel__item-price">
+                            {formatCurrency(Number(exp.buyAmount))}
+                          </span>
                         </span>
-                        {exp.tripCode && (
-                          <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
-                        )}
-                        <span className="fset-form-panel__item-meta">
-                          · {formatDate(exp.createdAt)}
+                        <span className="fset-form-panel__item-row2">
+                          {formatDate(exp.createdAt)}
                           {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
+                          {exp.note && ` · ${exp.note}`}
                         </span>
-                        {exp.note && (
-                          <span className="fset-form-panel__item-meta">· {exp.note}</span>
-                        )}
                       </div>
-                      <span className="fset-form-panel__item-price">
-                        {formatCurrency(Number(exp.buyAmount))}
-                      </span>
                     </label>
                   ))}
                 </div>
