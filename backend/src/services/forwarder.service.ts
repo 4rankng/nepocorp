@@ -388,7 +388,7 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     // they are not eligible for forwarder advance settlement.
     .where(and(
       eq(s.tripExpenses.forwarderId, forwarderId),
-      eq(s.tripExpenses.approvalStatus, 'APPROVED'),
+      notInArray(s.tripExpenses.approvalStatus, ['REJECTED']),
     ))
     .orderBy(desc(s.tripExpenses.createdAt));
 

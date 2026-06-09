@@ -9,6 +9,24 @@ import { useForwarderSettlements, useForwarderAdvanceRequests, useCreateAdvanceS
 import { useCatalogs } from '../hooks/useCatalogs';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 
+/** Vietnamese fallback labels for expense type codes (used when catalog hasn't loaded) */
+const EXPENSE_TYPE_VI: Record<string, string> = {
+  LIFTING: 'Nâng container',
+  LOWERING: 'Hạ container',
+  CUSTOMS: 'Hải quan',
+  WEIGHING: 'Cân hàng',
+  INFRASTRUCTURE: 'Hạ tầng',
+  INSPECTION: 'Kiểm tra',
+  INSPECTION_SVC: 'Dịch vụ kiểm tra',
+  PORT_STORAGE: 'Lưu bãi',
+  CLEANING: 'Vệ sinh container',
+  OTHER: 'Khác',
+};
+
+function expenseLabel(code: string, options: Array<{ code: string; name: string }>): string {
+  return options.find(t => t.code === code)?.name || EXPENSE_TYPE_VI[code] || code;
+}
+
 interface LinkedRequest {
   id: number;
   amount: string;
@@ -73,7 +91,7 @@ export default function ForwarderSettlementsPage() {
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
-    id: number; tripId: number; expenseType: string; buyAmount: string; note: string | null; createdAt: string; tripCode: string | null;
+    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null;
   }>;
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
@@ -177,6 +195,20 @@ export default function ForwarderSettlementsPage() {
                   <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có tạm ứng nào đã duyệt</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                      <input
+                        type="checkbox"
+                        checked={approvedRequests.length > 0 && selectedRequestIds.size === approvedRequests.length}
+                        onChange={() => {
+                          if (selectedRequestIds.size === approvedRequests.length) {
+                            setSelectedRequestIds(new Set());
+                          } else {
+                            setSelectedRequestIds(new Set(approvedRequests.map(r => r.id)));
+                          }
+                        }}
+                      />
+                      Chọn tất cả ({approvedRequests.length})
+                    </label>
                     {approvedRequests.map(r => (
                       <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
                         <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
@@ -197,18 +229,35 @@ export default function ForwarderSettlementsPage() {
                   <p style={{ color: 'var(--fg-3)', fontSize: 14 }}>Không có chi phí nào chưa thanh toán</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+                      <input
+                        type="checkbox"
+                        checked={unlinkedExpenses.length > 0 && selectedExpenseIds.size === unlinkedExpenses.length}
+                        onChange={() => {
+                          if (selectedExpenseIds.size === unlinkedExpenses.length) {
+                            setSelectedExpenseIds(new Set());
+                          } else {
+                            setSelectedExpenseIds(new Set(unlinkedExpenses.map(e => e.id)));
+                          }
+                        }}
+                      />
+                      Chọn tất cả ({unlinkedExpenses.length})
+                    </label>
                     {unlinkedExpenses.map(exp => (
                       <label key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
                         <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
                         <span style={{ flex: 1 }}>
                           <span style={{ fontWeight: 500 }}>
-                            {expenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType}
+                            {expenseLabel(exp.expenseType, expenseTypeOptions)}
                           </span>
                           {exp.tripCode && (
                             <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>({exp.tripCode})</span>
                           )}
                           {exp.note && (
                             <span style={{ color: 'var(--fg-3)', marginLeft: 8, fontSize: 12 }}>{exp.note}</span>
+                          )}
+                          {exp.approvalStatus === 'PENDING' && (
+                            <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--warn, #A16207)', background: 'var(--warn-bg, #FEF9C3)', padding: '1px 6px', borderRadius: 3 }}>Chờ duyệt</span>
                           )}
                         </span>
                         <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(Number(exp.buyAmount))}</span>
