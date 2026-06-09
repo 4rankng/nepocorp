@@ -78,6 +78,20 @@ function getMissingIndicators(trip: TripDetail): MissingIndicator[] {
   return missing;
 }
 
+type DataCompleteness = 'complete' | 'incomplete' | 'na';
+
+/** Row-level data completeness for color-coded visual identification.
+ *  Pete (8/6): "nhận diện bằng màu sắc dòng nào đã nhập đủ số liệu" */
+function getDataCompleteness(trip: TripDetail): DataCompleteness {
+  if (trip.status === TripStatus.CREATED || trip.status === TripStatus.CANCELED) return 'na';
+  const revenue = Number(trip.revenue ?? 0);
+  const fuel = Number(trip.fuelLiters ?? 0);
+  const road = Number(trip.totalRoadAllowance ?? 0);
+  const salary = Number(trip.driverSalary ?? 0);
+  if (revenue > 0 && fuel > 0 && road > 0 && salary > 0) return 'complete';
+  return 'incomplete';
+}
+
 // ─── Component ────────────────────────────────────────────────────────────
 export default function TripListPage() {
   const navigate = useNavigate();
@@ -246,7 +260,7 @@ export default function TripListPage() {
       for (const res of remaining) allTrips.push(...res.items);
     }
 
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tiền đi đường', 'Doanh thu', 'Trạng thái'];
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Trạng thái'];
     const rows = allTrips.map((t) => {
       const containers = ((t as any).containers ?? []) as Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>;
       const typeCodes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
@@ -263,7 +277,7 @@ export default function TripListPage() {
         t.fuelLiters ?? '',
         t.fuelSupplier?.name ?? '',
         t.totalFuelCost ?? '',
-        t.totalRoadAllowance ?? '',
+        (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
         t.revenue ?? '',
         TRIP_STATUS_LABELS[t.status],
       ];
@@ -425,12 +439,12 @@ export default function TripListPage() {
         );
       }
     }),
-    columnHelper.accessor((row) => Number(row.totalRoadAllowance ?? 0), {
+    columnHelper.accessor((row) => Number(row.totalRoadAllowance ?? 0) + Number(row.tollCost ?? 0), {
       id: 'road',
-      header: 'Tiền đi đường',
+      header: 'Tổng đi đường',
       cell: ({ row }) => {
         const trip = row.original;
-        const road = Number(trip.totalRoadAllowance ?? 0);
+        const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
         return (
           <div className={road > 0 ? 'money' : 'money-empty'}>
             {road > 0 ? (
@@ -736,7 +750,7 @@ export default function TripListPage() {
               tableInstance.getRowModel().rows.map(row => (
                 <div
                   key={row.id}
-                  className="table-row"
+                  className={`table-row table-row--${getDataCompleteness(row.original)}`}
                   onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
                 >
                   {row.getVisibleCells().map(cell => {
@@ -781,7 +795,7 @@ export default function TripListPage() {
               const isCreated = trip.status === TripStatus.CREATED;
               const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
               const km = Number(trip.route?.distanceKm ?? 0);
-              const road = Number(trip.totalRoadAllowance ?? 0);
+              const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
               const revenue = Number(trip.revenue ?? 0);
               const missingIndicators = getMissingIndicators(trip);
 
@@ -792,7 +806,7 @@ export default function TripListPage() {
               return (
                 <div
                   key={trip.id}
-                  className="trip-mcard"
+                  className={`trip-mcard trip-mcard--${getDataCompleteness(trip)}`}
                   onClick={() => navigate(`/trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${trip.id}`); } }}
                 >
                   <div className="trip-mcard__top">
@@ -873,7 +887,7 @@ export default function TripListPage() {
                       )}
                     </div>
                     <div className="mm">
-                      <span className="lab">Tiền đi đường</span>
+                      <span className="lab">Tổng đi đường</span>
                       <span className={road > 0 ? 'val' : 'val empty'}>
                         {road > 0 ? `${formatMoney(road)} ₫` : '—'}
                       </span>

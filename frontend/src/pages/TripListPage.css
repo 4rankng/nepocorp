@@ -1058,6 +1058,34 @@
   margin-top: 6px;
 }
 
+/* ── Data completeness row tinting ────────────────────────────────────── */
+/* Pete (8/6): "nhận diện bằng màu sắc dòng nào đã nhập đủ số liệu"     */
+/* Complete = all financials entered (revenue + fuel + road + salary)     */
+.trip-list-page .table-row--complete {
+  background: rgba(16, 185, 129, 0.06);
+  box-shadow: inset 3px 0 0 #10B981;
+}
+.trip-list-page .table-row--incomplete {
+  background: rgba(245, 158, 11, 0.07);
+  box-shadow: inset 3px 0 0 #F59E0B;
+}
+/* Hover overrides completeness tint with standard hover */
+.trip-list-page .table-row--complete:hover,
+.trip-list-page .table-row--incomplete:hover {
+  background: var(--tbl-green-050);
+  box-shadow: inset 4px 0 0 var(--accent), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+/* Mobile cards — left border accent */
+.trip-list-page .trip-mcard--complete {
+  border-left: 3px solid #10B981;
+}
+.trip-list-page .trip-mcard--incomplete {
+  border-left: 3px solid #F59E0B;
+}
+.trip-list-page .trip-mcard--na {
+  border-left: 3px solid transparent;
+}
+
 /* ── Responsive collapses ─────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .trip-list-page .metrics { grid-template-columns: repeat(3, 1fr); }
