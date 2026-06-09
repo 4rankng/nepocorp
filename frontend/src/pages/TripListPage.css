@@ -1061,6 +1061,28 @@
 /* ── Data completeness row tinting ────────────────────────────────────── */
 /* Pete (8/6): "nhận diện bằng màu sắc dòng nào đã nhập đủ số liệu"     */
 /* Complete = all financials entered (revenue + fuel + road + salary)     */
+
+/* Color legend in table hint bar */
+.trip-list-page .table-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.trip-list-page .legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.trip-list-page .legend-dot--ok { background: #10B981; }
+.trip-list-page .legend-dot--warn { background: #F59E0B; }
 .trip-list-page .table-row--complete {
   background: rgba(16, 185, 129, 0.06);
   box-shadow: inset 3px 0 0 #10B981;

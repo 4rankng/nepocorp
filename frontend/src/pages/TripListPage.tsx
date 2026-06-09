@@ -715,6 +715,10 @@ export default function TripListPage() {
           <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến, sửa hoặc duyệt phí
           &nbsp;·&nbsp; dùng ← → để cuộn ngang
         </span>
+        <span className="table-legend">
+          <span className="legend-item"><span className="legend-dot legend-dot--ok" />Đầy đủ số liệu</span>
+          <span className="legend-item"><span className="legend-dot legend-dot--warn" />Chưa nhập đủ</span>
+        </span>
       </div>
       <div className="table-card">
         <div className="table-scroll-wrapper">
