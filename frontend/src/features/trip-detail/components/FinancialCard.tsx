@@ -58,7 +58,7 @@ export function FinancialCard({ derived }: FinancialCardProps) {
           )}
           {showShiftAllowance && (
             <div className="pl-row">
-              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Phép tàu</span>
+              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Lưu ca xe</span>
               <span className="v neg">− {fmtCurrency(vehicleShiftAllowance)}</span>
             </div>
           )}

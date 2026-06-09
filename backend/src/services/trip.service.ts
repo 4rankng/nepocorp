@@ -959,6 +959,10 @@ export async function getTrips(filters: TripListFilters) {
     totalCost: s.trips.totalCost, revenue: s.trips.revenue, revenueEmptyReturn: s.trips.revenueEmptyReturn,
     revenueCombine: s.trips.revenueCombine, grossProfit: s.trips.grossProfit,
     hasReturnCargo: s.trips.hasReturnCargo, driverSalary: s.trips.driverSalary, notes: s.trips.notes,
+    twoPointDeliveryBonus: s.trips.twoPointDeliveryBonus,
+    vehicleShiftAllowance: s.trips.vehicleShiftAllowance,
+    tollCost: s.trips.tollCost,
+    tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))
