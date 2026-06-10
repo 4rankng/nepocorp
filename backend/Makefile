@@ -33,10 +33,11 @@ deploy:
 	@echo "Deploying backend on production..."
 	@echo "Pulling latest image..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml pull backend"
-	@echo "Restarting backend service..."
+	@echo "Restarting backend service (new image for migrations)..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps backend"
+	@sleep 2
 	@echo "Running database migrations..."
-	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml exec -T backend npx drizzle-kit migrate"
+	ssh root@$(PROD_SERVER) "docker exec nepocorp-backend-1 npx drizzle-kit migrate"
 	@echo "Cleaning up unused images..."
 	ssh root@$(PROD_SERVER) "docker image prune -f"
 	@echo "Backend deployment complete!"
