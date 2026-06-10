@@ -420,6 +420,56 @@
   border-top: 1px solid var(--line);
 }
 
+/* ── Create form page ─────────────────────────────────────────────────── */
+.fset-create-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+/* ── Success state ───────────────────────────────────────────────────── */
+.fset-create-success {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.fset-create-success__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--success-soft, #ECFDF5);
+  color: var(--success, #059669);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.fset-create-success__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.fset-create-success__code {
+  font-size: 15px;
+  color: var(--ink-3);
+  margin: 0 0 24px;
+  font-family: var(--mono, monospace);
+}
+
+.fset-create-success__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* ── Empty state ────────────────────────────────────────────────────────── */
 .fset-empty {
   display: flex;

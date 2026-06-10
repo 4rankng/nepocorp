@@ -42,6 +42,11 @@ export async function getForwarderTrips(status?: string) {
     customerName: s.customers.name,
     customerReference: s.trips.customerReference,
     containerCount: s.trips.containerCount,
+    containerNumbers: sql<string | null>`(
+      SELECT string_agg(tc.container_number, ', ' ORDER BY tc.id)
+      FROM trip_containers tc
+      WHERE tc.trip_id = ${s.trips.id}
+    )`,
     cargoTypeName: s.cargoTypes.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
@@ -411,7 +416,7 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     // they are not eligible for forwarder advance settlement.
     .where(and(
       eq(s.tripExpenses.forwarderId, forwarderId),
-      notInArray(s.tripExpenses.approvalStatus, ['REJECTED']),
+      eq(s.tripExpenses.approvalStatus, 'APPROVED'),
     ))
     .orderBy(desc(s.tripExpenses.createdAt));
 

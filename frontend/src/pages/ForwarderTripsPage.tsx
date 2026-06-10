@@ -15,6 +15,7 @@ interface TripSummary {
   truckPlate: string | null;
   customerName: string | null;
   containerCount: number | null;
+  containerNumbers: string | null;
 }
 
 const STATUS_BORDER: Record<TripStatus, string> = {
@@ -130,6 +131,12 @@ export default function ForwarderTripsPage() {
                     <Truck size={12} />
                     {trip.truckPlate || '—'}
                   </span>
+                  {trip.containerNumbers && (
+                    <span className="driver-trip-card__plate-badge">
+                      <Package size={12} />
+                      {trip.containerNumbers}
+                    </span>
+                  )}
                   <span className="driver-trip-card__meta-item">
                     <Calendar size={12} />
                     {formatDate(trip.departureDate)}
@@ -137,12 +144,6 @@ export default function ForwarderTripsPage() {
                   {trip.customerName && (
                     <span className="driver-trip-card__meta-item">
                       {trip.customerName}
-                    </span>
-                  )}
-                  {trip.containerCount && (
-                    <span className="driver-trip-card__meta-item">
-                      <Package size={12} />
-                      {trip.containerCount} container
                     </span>
                   )}
                 </div>
