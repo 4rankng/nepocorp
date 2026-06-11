@@ -64,13 +64,8 @@ export default function PayableDetailPage() {
 
   const downloadExport = async (format: string) => {
     setShowExportMenu(false);
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api${FINANCIAL.SUPPLIER_STATEMENT_EXPORT(Number(id))}?format=${format}`, {
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      });
-      if (!res.ok) throw new Error('Tải thất bại');
-      const blob = await res.blob();
+      const blob = await api.getBlob(`${FINANCIAL.SUPPLIER_STATEMENT_EXPORT(Number(id))}?format=${format}`);
       const url = URL.createObjectURL(blob);
       if (format === 'pdf') {
         window.open(url, '_blank');

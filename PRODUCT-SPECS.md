@@ -54,11 +54,13 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
     5. **Đã hủy**: Chuyến xe bị hủy bỏ giữa chừng, lưu lại lịch sử.
 * **Quy trình nhập liệu:** Quản lý tạo chuyến -> Kế toán điền số dự kiến -> Xe chạy -> Xe về, kế toán chốt số thực tế -> Quản lý/Kế toán khóa chuyến (Đã chốt).
 
-### 4.1.1 Thuế VAT & Doanh thu vận tải
+### 4.1.1 Thuế VAT, Hoa hồng & Doanh thu vận tải
 * Giá cước bán cho khách hàng luôn được nhập **bao gồm VAT** (INCL VAT). 
 * Hệ thống ghi nhận **Tỷ lệ VAT** (VD: 8% hoặc 10%) cho từng chuyến đi (mặc định cấu hình theo khách hàng).
+* **Hoa hồng chi khách hàng** (`customerCommission`): khoản chiết khấu/hoa hồng thương mại trả trực tiếp cho đối tác/khách hàng theo từng chuyến. Kế toán nhập tay, không theo công thức. **Ghi nhận ngay khi nhập dữ liệu** (không phải đợi khóa chuyến).
+* **Công thức doanh thu thực tế:** `Doanh thu ghi nhận = Giá cước (chưa VAT) − Hoa hồng chi KH`. Hay: `recordedRevenue = freightExVat − customerCommission`.
 * Doanh thu ghi nhận trên giấy báo nợ (phải thu) là giá gồm VAT. 
-* Doanh thu ghi nhận vào Báo cáo Lãi lỗ nội bộ (P&L, DT xe) là doanh thu **chưa VAT** (= Giá bán / (1 + VAT)).
+* Doanh thu ghi nhận vào Báo cáo Lãi lỗ nội bộ (P&L, DT xe) là **doanh thu thực tế** (= Giá bán / (1 + VAT) − Hoa hồng). *(Pete xác nhận 11/6)*
 
 ### 4.1.2 Điều động Xe ngoài (External Carrier)
 * Một chuyến đi có thể được thực hiện bởi **Xe nhà** (OWN) hoặc **Xe ngoài** (EXTERNAL).
@@ -108,7 +110,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### 4.3.2 Lựa chọn Nhà cung cấp nhiên liệu & Ghi nhận công nợ
 
 * **Lựa chọn Nhà cung cấp:** Đối với các chuyến xe nhà (`OWN` carrier), kế toán có thể lựa chọn nhà cung cấp nhiên liệu tương ứng. Danh sách nhà cung cấp này được chọn lọc từ danh sách nhà cung cấp (`suppliers`) dựa trên việc đánh dấu cờ "Là nhà cung cấp nhiên liệu (xăng, dầu)" (`isFuelSupplier`). Điều này giúp phân biệt rõ ràng nhà cung cấp xăng dầu với các nhà cung cấp dịch vụ khác (ví dụ: sửa xe, đăng kiểm).
-* **Xuất phiếu cấp nhiên liệu:** Kế toán có thể xuất bảng cấp nhiên liệu theo từng chuyến và từng biển số xe (từ màn hình Danh sách Chuyến đi dưới dạng CSV, có đầy đủ cột tên nhà cung cấp và tổng giá trị dầu cấp) để gửi đối chiếu cho nhà cung cấp nhiên liệu.
+* **Xuất phiếu cấp nhiên liệu (Phiếu cấp dầu):** Kế toán có thể xuất phiếu cấp nhiên liệu (HTML/PDF hoặc Excel) theo từng chuyến sau khi phê duyệt trên phần mềm. Phiếu bao gồm: Biển số xe, Khối lượng/Số lít dầu được cấp, Tên + Địa chỉ nhà cung cấp nhiên liệu, Mã chuyến, Tuyến đường, Ngày, Tên lái xe, Khối chữ ký (Kế toán / Giám đốc / Người nhận). Thông tin NCC tối giản — chỉ cần tên + địa chỉ, **không cần** MST, số tài khoản ngân hàng hay người liên hệ. Phiếu được in ra để ký tay hoặc trích xuất dưới dạng file ảnh/file điện tử gửi cho đối tác. *(Pete xác nhận 11/6)*
 * **Ghi nhận công nợ tự động:**
     - Khi chuyến đi được Chốt khóa (`LOCKED`), hệ thống tự động ghi nhận một bút toán Có (`credit`) bằng `totalFuelCost` (Tổng chi phí nhiên liệu thực tế của chuyến) vào sổ cái của nhà cung cấp nhiên liệu tương ứng (`entity_type='VENDOR'`, loại giao dịch `FUEL_EXPENSE`).
     - Khi chuyến đi được Mở khóa (`COMPLETED`), hệ thống ghi nhận một bút toán đối ứng Nợ (`debit` loại `UNLOCK_REVERSAL`) để hoàn tác công nợ.
@@ -158,17 +160,27 @@ Ngày công hưởng lương = trip_days + standby_days
 
 daily_rate = (base_salary + social_insurance) / standard_work_days
 
-Điều chỉnh:
+Lương bổ sung (supplement):
+  lương_bù = standby_days × daily_rate
+
+Khấu trừ nghỉ việc riêng (leave deduction):
+  free_leave_days = 4 (nghỉ Chủ nhật mặc định)
+  excess_days = max(0, personal_leave_days − free_leave_days)
+  trừ_nghỉ_riêng = excess_days × daily_rate
+
+Điều chỉnh công:
   Nếu ngày công < standard_work_days → adjustment = -(personal_leave_days × daily_rate)
   Nếu ngày công > standard_work_days → adjustment = +(ngày dôi × daily_rate)
   Nếu bằng nhau → adjustment = 0
 
-net_salary = base_salary + total_trip_salary + adjustment - penalties
+net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riêng + adjustment − penalties
 ```
 
-* **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) cộng vào trước khi tính `daily_rate` để phân bổ chi phí đúng. Lương thực trả tài xế vẫn dùng `base_salary` gốc; BHXH hạch toán chi phí riêng. *(Pete xác nhận 4/6)*
-* **Lương sản lượng / Tiền kết hợp (Trip Salary):** Kế toán nhập thủ công `driver_salary` trên form chuyến. Được cộng vào `total_trip_salary` khi kỳ lương được tính.
-* **Trường `trip_wage_days`:** Tuỳ chọn trên form chuyến — cho phép kế toán ghi override số ngày công của chuyến khi chuyến dài xuyên ngày nghỉ. *(Pete xác nhận 4/6)*
+* **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe (thêm trường `social_insurance` trên bảng `drivers`). Cộng vào trước khi tính `daily_rate` để phân bổ chi phí đúng. Lương thực trả tài xế vẫn dùng `base_salary` gốc; BHXH hạch toán chi phí riêng. *(Pete xác nhận 4/6, 11/6)*
+* **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `(base_salary + social_insurance) / 26 × trip_wage_days`. Kế toán có thể sửa/ghi đè số tiền hoặc điều chỉnh `trip_wage_days`. Hành vi tương tự các chi phí khác (dầu, vé cầu đường, tiền đi đường) — tự điền, cho phép sửa. *(Pete xác nhận 11/6: "tự nhảy", giống chi phí xăng dầu)*
+* **Trường `trip_wage_days`:** Hệ thống tự tính từ khoảng ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ. *(Pete xác nhận 4/6)*
+* **Lương bổ sung (Supplement Pay):** Kế toán đánh dấu ngày `STANDBY` trên lịch chấm công (`/salary`). Hệ thống tự tính `lương_bù = standby_days × daily_rate` và cộng vào `net_salary`. *(Pete xác nhận 11/6)*
+* **Khấu trừ nghỉ việc riêng (Leave Deduction):** Lái xe được miễn trừ **4 ngày Chủ nhật** nghỉ mặc định trong tháng. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường; nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate`. *(Pete xác nhận 11/6)*
 * **Phạt kỷ luật (Penalty):** Trừ vào `net_salary` (không phải chi phí công ty — xem §4.11).
 
 #### 4.5.4 Phân bổ chi phí lương vào P&L
@@ -188,7 +200,7 @@ net_salary = base_salary + total_trip_salary + adjustment - penalties
 
 ### 4.6 Tổng chi phí (Total Cost)
 
-* **Công thức đối với Xe nhà:** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương sản lượng + Chi phí dịch vụ đi kèm (nếu công ty trả trực tiếp)`.
+* **Công thức đối với Xe nhà:** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương chuyến quy đổi (driver_salary) + Chi phí dịch vụ đi kèm (nếu công ty trả trực tiếp)`. Lương chuyến quy đổi được hệ thống tự điền theo công thức `(baseSalary + socialInsurance) / 26 × tripWageDays`, kế toán có thể ghi đè.
 * **Công thức đối với Xe ngoài:** `Tổng chi phí = Giá cước thuê ngoài`.
 * **Thuế VAT trong chi phí:** Toàn bộ khoản chi phí được ghi nhận **gồm VAT** (incl. VAT). Không trừ VAT đầu vào trên chi phí. Điều này phản ánh thực tế doanh nghiệp: chi phí thực trả cho NCC đã bao gồm thuế GTGT.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
@@ -306,11 +318,13 @@ net_salary = base_salary + total_trip_salary + adjustment - penalties
 5. **[Lái xe]** Tôi muốn xem số dầu được cấp cho chuyến đi trên điện thoại (chỉ xem).
 
 ### MODULE 2: GHI NHẬN CHUYẾN ĐI & CHI PHÍ
-1. **[Kế toán]** Tôi muốn nhập số liệu thực tế cho chuyến đi: km, số lít dầu, loại tải (hàng/vỏ), điều chỉnh vé đường, số trạm, lương sản lượng, doanh thu.
+1. **[Kế toán]** Tôi muốn nhập số liệu thực tế cho chuyến đi: km, số lít dầu, loại tải (hàng/vỏ), điều chỉnh vé đường, số trạm, lương chuyến quy đổi, doanh thu.
 2. **[Kế toán]** Tôi muốn hệ thống tự động tính: chi phí nhiên liệu (lít × đơn giá), tiền đi đường, tổng chi phí, lợi nhuận gộp.
 3. **[Kế toán/Giám đốc/Giao nhận]** Tôi muốn nhập danh sách container cho chuyến: loại container (từ danh mục), số container (nhập text), số seal (nhập text). Có thể nhập ở cả bước tạo chuyến và bước hoàn thành.
 4. **[Kế toán]** Tôi muốn upload ảnh container/seal đối với chuyến chở chè khi đóng chuyến. Bên cạnh ảnh, có thể nhập số container/seal bằng text.
 5. **[Kế toán]** Tôi muốn thêm ghi chú/diễn giải cho chuyến đi.
+6. **[Kế toán]** Tôi muốn nhập **hoa hồng chi khách hàng** trên form chuyến, để hệ thống tính **doanh thu thực tế = giá cước (chưa VAT) − hoa hồng**. Hoa hồng ghi nhận ngay khi nhập, không đợi khóa chuyến. *(Mới — Pete xác nhận 11/6)*
+7. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** khi nhập liệu chuyến đi (chọn lái xe + nhập ngày đi/về), theo công thức `(lươngCB + BHXH) / 26 × số ngày chuyến`. Tôi có thể sửa lại hoặc điều chỉnh số ngày tính lương. *(Mới — Pete xác nhận 11/6)*
 
 ### MODULE 3: KIỂM SOÁT NHIÊN LIỆU & TIỀN ĐI ĐƯỜNG
 1. **[Hệ thống]** Tự động tính TTBQ (liters/km × 100) và hiển thị trên chi tiết chuyến đi. Đối chiếu định mức và cảnh báo hoãn sang giai đoạn sau.
@@ -357,11 +371,13 @@ net_salary = base_salary + total_trip_salary + adjustment - penalties
 
 ### MODULE 10: LƯƠNG & CHẤM CÔNG TÀI XẾ
 1. **[Kế toán]** Tôi muốn xem lịch chấm công tháng của từng tài xế — các ngày đi chuyến (`TRIP_DAY`) được hệ thống tự điền; tôi chỉ cần click vào ngày còn lại để gán `STANDBY` (chờ việc/sửa xe) hoặc `PERSONAL_LEAVE` (nghỉ không lương).
-2. **[Kế toán]** Tôi muốn hệ thống tự tính lương thực nhận tháng: lương cứng + tổng lương chuyến + điều chỉnh công thiếu/thừa − phạt kỷ luật. Số ngày công chuẩn tính theo số ngày làm việc thực tế của tháng (không cố định 26).
+2. **[Kế toán]** Tôi muốn hệ thống tự tính lương thực nhận tháng: lương cứng + tổng lương chuyến + lương bổ sung (ngày chờ việc) − khấu trừ nghỉ việc riêng + điều chỉnh công thiếu/thừa − phạt kỷ luật. Số ngày công chuẩn tính theo số ngày làm việc thực tế của tháng (không cố định 26).
 3. **[Kế toán]** Tôi muốn xác nhận kỳ lương (CONFIRMED) — sau đó hệ thống tự hạch toán chi phí chờ việc (`standby_cost`) vào chi phí chung trong báo cáo lãi lỗ.
-4. **[Kế toán]** Tôi muốn nhập `driver_salary` (lương kết hợp/thưởng) và tùy chọn `trip_wage_days` trên form chuyến để kế toán kiểm soát chính xác khi chuyến kéo dài xuyên Chủ nhật.
+4. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** trên form chuyến (`driver_salary`) theo công thức `(lươngCB + BHXH) / 26 × trip_wage_days`. Tôi có thể sửa lại hoặc điều chỉnh số ngày.
 5. **[Quản lý]** Tôi muốn xem tổng kết lương tất cả tài xế theo tháng.
-6. **[Tài xế]** Tôi muốn xem lịch chấm công và thu nhập của mình (lương cứng, lương chuyến, điều chỉnh, phạt, lương thực nhận) trên điện thoại. Chỉ xem, không sửa.
+6. **[Tài xế]** Tôi muốn xem lịch chấm công và thu nhập của mình (lương cứng, lương chuyến, lương bổ sung, khấu trừ nghỉ việc riêng, điều chỉnh, phạt, lương thực nhận) trên điện thoại. Chỉ xem, không sửa.
+7. **[Kế toán]** Tôi muốn cấu hình **BHXH/BHYT** cho từng lái xe (trường `social_insurance` trên trang cấu hình Lái xe) để hệ thống tính đúng `daily_rate` và lương chuyến quy đổi. *(Mới)*
+8. **[Kế toán]** Tôi muốn xem **lương bổ sung** (từ ngày STANDBY do lỗi công ty) và **khấu trừ nghỉ việc riêng** (vượt 4 ngày Chủ nhật miễn trừ) trên bảng tổng kết lương tháng. *(Mới)*
 
 ---
 
@@ -426,7 +442,9 @@ net_salary = base_salary + total_trip_salary + adjustment - penalties
 | Tổng tiền đi đường | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
-| Lương sản lượng | Number | Có (OWN) | Thu nhập lái xe cho chuyến này (chỉ Xe nhà) |
+| Lương chuyến quy đổi | Number | Có (OWN) | Hệ thống tự điền theo `(baseSalary + BHXH) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè. Chỉ Xe nhà. *(Mới — auto-fill)* |
+| Số ngày tính lương (trip_wage_days) | Number | Không | Hệ thống tự tính từ ngày đi → ngày về. Kế toán có thể điều chỉnh khi chuyến kéo dài xuyên Chủ nhật. *(Mới — auto-populate)* |
+| Hoa hồng chi KH | Number | Không | Khoản chiết khấu/hoa hồng thương mại cho khách hàng theo từng chuyến. Ghi nhận ngay khi nhập (không đợi khóa). **Doanh thu thực tế = freightExVat − commission**. *(Mới)* |
 | Doanh thu đóng/ trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container, INCL VAT |
 | Doanh thu kết hợp | Number | Không | Doanh thu bổ sung từ kết hợp trong chuyến (mặc định 0). |
 | Ghi chú/diễn giải | Text | Không | |
@@ -443,7 +461,8 @@ net_salary = base_salary + total_trip_salary + adjustment - penalties
 | Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
 | Tiền lái xe thực lĩnh | Tổng tiền đi đường + Tiền kết hợp + Tiền lưu ca xe + Tiền đóng trả hàng 2 điểm − Tiền vé (công ty) đã thanh toán |
 | Tổng chi phí (Xe nhà) | Chi phí dầu (incl. VAT) + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT, incl. VAT) |
-| Doanh thu chuyến | (Doanh thu đóng/ trả hàng + Doanh thu kết hợp) / (1 + VAT) — **ex-VAT** |
+| Doanh thu thực tế ghi nhận | (Doanh thu đóng/ trả hàng + Doanh thu kết hợp) / (1 + VAT) − **Hoa hồng chi KH** = `recordedRevenue` |
+| Hoa hồng chi KH | Kế toán nhập tay, trừ vào doanh thu thực tế |
 | Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) — giá bán ra ex-VAT, giá mua vào incl. VAT |
 | Lợi nhuận xe ngoài | Doanh thu ex-VAT − Chi phí xe ngoài (incl. VAT) |
-| Lợi nhuận gộp | **Doanh thu vận tải ex-VAT** − **Tổng chi phí (incl. VAT)** + LN dịch vụ + LN xe ngoài |
+| Lợi nhuận gộp | **Doanh thu thực tế ghi nhận** (`recordedRevenue` = freightExVat − commission) − **Tổng chi phí (incl. VAT)** + LN dịch vụ + LN xe ngoài |

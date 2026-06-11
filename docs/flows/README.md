@@ -32,15 +32,16 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | 11 | [Cổng thông tin Lái xe](./11-LAI_XE_MOBILE.md) | Lệnh vận chuyển, chi tiết chuyến, thu nhập, phạt (mobile-first) | `/my-trips`, `/my-trips/:id`, `/my-earnings`, `/my-penalties` |
 | 12 | [Chi phí, NCC & Công nợ phải trả](./12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md) | Danh mục Nhà cung cấp, hạng mục chi phí (một lần/định kỳ), nhập phiếu chi phí, công nợ phải trả, nhắc gia hạn | `/suppliers`, `/expenses`, `/payables`, `/payables/:id` |
 | 13 | [Nhân viên giao nhận & Tạm ứng](./13-GIAO_NHAN_VA_TAM_UNG.md) | Xem chuyến, nhập container/seal, ghi chi phí phát sinh, tạm ứng (Phase 2/3) | `/my-forwarder-trips`, `/my-forwarder-trips/:id` |
+| 14 | [Lương & Chấm công](./14-LUONG_VA_CHAM_CONG.md) | Lịch chấm công tháng, tính lương thực nhận, lương bổ sung, khấu trừ nghỉ việc riêng, xác nhận kỳ lương | `/salary` |
 
 ---
 
 ## Độ phủ
 
-### Routes (42/42)
+### Routes (43/43)
 
 <details>
-<summary>✅ Đã phủ toàn bộ 42 routes</summary>
+<summary>✅ Đã phủ toàn bộ 43 routes</summary>
 
 | Route | Trang | Tài liệu |
 |-------|-------|----------|
@@ -86,6 +87,7 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | `/my-penalties` | DriverPenaltyPage | 11 |
 | `/my-forwarder-trips` | ForwarderTripsPage | 13 |
 | `/my-forwarder-trips/:id` | ForwarderTripDetailPage | 13 |
+| `/salary` | SalaryAttendancePage | 14 |
 
 </details>
 

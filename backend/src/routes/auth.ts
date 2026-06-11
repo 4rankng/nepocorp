@@ -1,9 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { db } from '../db';
-import { users } from '../db/schema';
-import { eq, or } from 'drizzle-orm';
 import { config } from '../config';
 import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@tingting/shared';
 import { authMiddleware } from '../middleware/auth';
@@ -37,21 +34,7 @@ async function blacklistCurrentToken(req: Request) {
 router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const { identifier, password } = loginSchema.parse(req.body);
 
-  const [user] = await db.select().from(users).where(
-    or(eq(users.username, identifier), eq(users.email, identifier), eq(users.phone, identifier))
-  ).limit(1);
-
-  if (!user || user.deletedAt || user.status !== 'ACTIVE') {
-    throw new ApiError(401, 'Thông tin đăng nhập không hợp lệ');
-  }
-
-  // Import bcrypt locally to keep this as the only auth route that needs it.
-  const bcryptMod = await import('bcryptjs');
-  const bcrypt = (bcryptMod as any).default ?? bcryptMod;
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    throw new ApiError(401, 'Thông tin đăng nhập không hợp lệ');
-  }
+  const user = await userService.authenticate(identifier, password);
 
   const displayName = await userService.resolveDisplayName(user);
 
@@ -61,9 +44,8 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
     { expiresIn: config.jwtExpiresIn as any }
   );
 
-  const { passwordHash, deletedAt, ...userPublic } = user;
   const capabilities = await userService.getCapabilities(user.role);
-  res.json({ token, user: { ...userPublic, fullName: displayName, capabilities } });
+  res.json({ token, user: { ...user, fullName: displayName, capabilities } });
 }));
 
 // ─── Current user ────────────────────────────────────────────────────────────

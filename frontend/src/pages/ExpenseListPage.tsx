@@ -6,6 +6,7 @@ import { configClient } from '../api/configClient';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
@@ -141,7 +142,7 @@ export default function ExpenseListPage() {
         title="Chi phí phát sinh"
         description={`${total} khoản chi phí`}
         action={
-          <button className="btn btn--primary" onClick={() => navigate('/expenses/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/expenses/new'); } }}>
+          <button className="btn btn--primary" onClick={() => navigate('/expenses/new')}>
             <Plus size={15} /> Thêm phiếu chi
           </button>
         }
@@ -268,10 +269,10 @@ export default function ExpenseListPage() {
             renderEmptyState()
           ) : (
             expenses.map(e => (
-              <div
+              <ClickableCard
                 key={e.id}
+                to={`/expenses/${e.id}/edit`}
                 className="m-card"
-                onClick={() => navigate(`/expenses/${e.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="m-card__top">
@@ -309,7 +310,7 @@ export default function ExpenseListPage() {
                     <span className="m-card__row-value">{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : 'Đầu kéo'}</span>
                   </div>
                 )}
-              </div>
+              </ClickableCard>
             ))
           )}
         </div>
@@ -342,9 +343,9 @@ export default function ExpenseListPage() {
                 </tr>
               ) : (
                 expenses.map(e => (
-                  <tr
+                  <ClickableCard
                     key={e.id}
-                    onClick={() => navigate(`/expenses/${e.id}/edit`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
+                    to={`/expenses/${e.id}/edit`}
                   >
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)' }}>{formatDate(e.expenseDate)}</td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
@@ -365,7 +366,7 @@ export default function ExpenseListPage() {
                     <td style={{ textAlign: 'right' }}>
                       <ChevronRight size={14} style={{ color: 'var(--ink-4)' }} />
                     </td>
-                  </tr>
+                  </ClickableCard>
                 ))
               )}
             </tbody>

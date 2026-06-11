@@ -77,6 +77,14 @@ Ngày công hưởng lương = trip_days + standby_days
 
 daily_rate = (base_salary + social_insurance) / standard_work_days
 
+Lương bổ sung (supplement):
+  lương_bù = standby_days × daily_rate
+
+Khấu trừ nghỉ việc riêng (leave deduction):
+  free_leave_days = 4 (nghỉ Chủ nhật mặc định)
+  excess_days = max(0, personal_leave_days − free_leave_days)
+  trừ_nghỉ_riêng = excess_days × daily_rate
+
 Điều chỉnh:
   Nếu ngày công hưởng lương < standard_work_days:
     adjustment = -(personal_leave_days × daily_rate)
@@ -85,10 +93,12 @@ daily_rate = (base_salary + social_insurance) / standard_work_days
   Nếu bằng nhau:
     adjustment = 0
 
-net_salary = base_salary + total_trip_salary + adjustment - penalties
+net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riêng + adjustment - penalties
 ```
 
-> **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho tài xế (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp.
+> **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe trên trang Cấu hình → Lái xe, lưu trong cột `drivers.social_insurance`. Cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho tài xế (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp. *(Pete xác nhận 11/6)*
+
+> **Khấu trừ nghỉ việc riêng:** Lái xe được miễn trừ 4 ngày Chủ nhật nghỉ mặc định. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường; nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate` trên màn hình chốt công. *(Pete xác nhận 11/6)*
 
 ### 3.2 Số ngày công chuẩn (`standard_work_days`)
 
@@ -150,14 +160,22 @@ Layout:
 - **Ngày trống / WEEKLY_OFF:** Click để chuyển vòng: `STANDBY → PERSONAL_LEAVE → (trống)`.
 - **Ghi chú:** Hover vào ngày STANDBY → icon bút → nhập ghi chú ngắn (VD: "Sửa chữa gầm", "Trực bãi Đình Vũ").
 
-### 4.3 Trường bổ sung trên form chuyến (Phase 2)
+### 4.3 Trường bổ sung trên form chuyến — Lương quy đổi tự động
 
 | Trường | Loại | Ghi chú |
 |---|---|---|
-| `driver_salary` (Lương sản lượng/kết hợp) | Number | Thưởng/kết hợp theo chuyến — kế toán nhập tay |
-| `trip_wage_days` | Number (tùy chọn) | Số ngày công của chuyến này — override khi chuyến kéo dài qua CN |
+| `driver_salary` (Lương chuyến quy đổi) | Number | **Hệ thống tự điền** theo công thức `(baseSalary + socialInsurance) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè. Tương tự cách dầu, vé cầu đường, tiền đi đường tự điền. |
+| `trip_wage_days` | Number | **Hệ thống tự tính** từ ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể điều chỉnh khi chuyến kéo dài xuyên Chủ nhật. |
 
-> Trường `trip_wage_days` giải quyết trường hợp chuyến xuyên Chủ nhật: kế toán ghi đúng số ngày thực sự chạy để hệ thống phân bổ chi phí đúng.
+> **Luồng tự điền:** Khi kế toán chọn lái xe và nhập ngày đi/ngày về trên form chuyến → hệ thống load `baseSalary` + `socialInsurance` của lái xe → tính `tripWageDays` → tự điền `driver_salary`. Kế toán thấy ngay số tiền gợi ý, có thể sửa lại hoặc điều chỉnh số ngày. *(Pete xác nhận 11/6: "tự nhảy", giống chi phí xăng dầu và vé cầu đường)*
+
+### 4.4 BHXH/BHYT cấu hình theo lái xe
+
+| Trường | Vị trí | Ghi chú |
+|---|---|---|
+| `social_insurance` (BHXH/BHYT) | Cấu hình → Lái xe → cột "BHXH" | Phần doanh nghiệp đóng, cấu hình riêng cho từng lái xe. Mặc định 0. |
+
+> Hệ thống dùng `social_insurance` để tính `daily_rate` và lương chuyến quy đổi. Nếu chưa cấu hình (= 0), công thức vẫn hoạt động bình thường với `daily_rate = base_salary / standard_work_days`.
 
 ---
 
@@ -309,5 +327,9 @@ Sau khi xác nhận kỳ lương:
 | 2 | `standard_work_days` tính theo số ngày thực tế từng tháng trừ Chủ nhật (không cố định 26) | Pete | 4/6/2026 |
 | 3 | Chỉ kế toán mới được chấm công; tài xế chỉ có quyền xem | Pete | 4/6/2026 |
 | 4 | Chủ nhật đang trong chuyến → tính là `TRIP_DAY` (ngày làm việc bình thường) | Pete | 4/6/2026 |
-| 5 | Tiền lương chuyến nhập thủ công trên form chuyến; có thể thêm trường `trip_wage_days` để override số ngày khi cần | Pete | 4/6/2026 |
+| 5 | Lương chuyến quy đổi: **hệ thống tự điền** theo công thức `(base+BHXH)/26×days`, kế toán có thể sửa/ghi đè | Pete | 11/6/2026 |
 | 6 | Chi phí chờ việc (standby_cost) hạch toán vào chi phí chung, không gán vào chuyến cụ thể | Thiết kế | 4/6/2026 |
+| 7 | 4 ngày nghỉ miễn trừ = Chủ nhật mặc định. Làm CN có thể hoán đổi nghỉ bù; không nghỉ bù → kế toán nhập tay bổ sung 1× dailyRate | Pete | 11/6/2026 |
+| 8 | Lương bổ sung (supplement) = standby_days × daily_rate, cộng vào net_salary | Pete | 11/6/2026 |
+| 9 | Khấu trừ nghỉ việc riêng: personal_leave_days vượt 4 ngày miễn trừ → trừ tại dailyRate | Pete | 11/6/2026 |
+| 10 | BHXH cấu hình riêng cho từng lái xe trên trang Cấu hình → Lái xe | Pete | 11/6/2026 |

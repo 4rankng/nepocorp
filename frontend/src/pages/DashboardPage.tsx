@@ -244,9 +244,14 @@ export default function DashboardPage() {
   // ── Chart series (12 months) ────────────────────────────────────────────
   // useDashboardData.yearlySeries is the historical line. Map to Tr (millions)
   // so the axis scales nicely.
-  const chartMonths = useMemo(() => yearlySeries?.map((p: any) => p.label || p.month || '') ?? [], [yearlySeries]);
-  const chartRevenue = useMemo(() => yearlySeries?.map((p: any) => Number(p.revenue ?? 0) / 1_000_000) ?? [], [yearlySeries]);
-  const chartGross = useMemo(() => yearlySeries?.map((p: any) => Number(p.grossProfit ?? p.gross ?? 0) / 1_000_000) ?? [], [yearlySeries]);
+  const chartMonths = useMemo(() => {
+    if (!yearlySeries) return [];
+    const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+    const baseIdx = currentMonth - 1;
+    return yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
+  }, [yearlySeries, currentMonth]);
+  const chartRevenue = useMemo(() => yearlySeries?.map((p) => Number(p.revenue ?? 0) / 1_000_000) ?? [], [yearlySeries]);
+  const chartGross = useMemo(() => yearlySeries?.map((p) => Number(p.grossProfit ?? 0) / 1_000_000) ?? [], [yearlySeries]);
 
   // ── Top trucks (by margin) ──────────────────────────────────────────────
   const topTrucks = useMemo(() => {
@@ -290,14 +295,13 @@ export default function DashboardPage() {
 
   // ── Fleet stats ─────────────────────────────────────────────────────────
   const fleet = useMemo(() => {
-    const s = stats as any;
-    const fs = s?.fleetStatus ?? {};
+    const fs = stats?.fleetStatus ?? {};
     const totalActive = fs.ACTIVE ?? 0;
     const maintenance = fs.MAINTENANCE ?? 0;
     const idle = fs.INACTIVE ?? 0;
-    const inTransit = s?.inTransitTrips ?? 0;
-    const total = s?.totalTrucks ?? 0;
-    const drivers = s?.totalDrivers ?? 0;
+    const inTransit = stats?.inTransitTrips ?? 0;
+    const total = stats?.totalTrucks ?? 0;
+    const drivers = stats?.totalDrivers ?? 0;
     
     // ACTIVE status includes trucks currently in transit.
     // Subtract inTransit to get the mutually exclusive count of trucks that are ready/idle.

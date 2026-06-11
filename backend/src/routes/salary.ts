@@ -8,11 +8,12 @@ import {
   computeSalary,
   batchUpsertWorkDays,
   getWorkDays,
+  computeAllDriverSalaries,
 } from '../services/attendance.service';
 import { resolveSalaryPeriodDateRange } from '../services/salary-period.service';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 const router = Router();
@@ -22,29 +23,7 @@ router.get('/', requireRoles(Role.MANAGER, Role.ADMIN, Role.ACCOUNTANT), asyncHa
   const year = parseInt(req.query.year as string, 10) || new Date().getFullYear();
   const month = parseInt(req.query.month as string, 10) || new Date().getMonth() + 1;
 
-  // Get all active drivers
-  const drivers = await db.select({
-    id: s.drivers.id,
-    name: s.drivers.name,
-    baseSalary: s.drivers.baseSalary,
-    status: s.drivers.status,
-  }).from(s.drivers)
-    .where(and(isNull(s.drivers.deletedAt)))
-    .orderBy(s.drivers.name);
-
-  // For each driver, compute summary (lightweight)
-  const summaries = await Promise.all(
-    drivers.map(async (driver) => {
-      try {
-        const salary = await computeSalary(driver.id, year, month);
-        return { ...driver, salary };
-      } catch {
-        return { ...driver, salary: null };
-      }
-    })
-  );
-
-  res.json({ year, month, items: summaries });
+  res.json(await computeAllDriverSalaries(year, month));
 }));
 
 // GET /api/salary/:driverId/:year/:month — full salary computation for one driver

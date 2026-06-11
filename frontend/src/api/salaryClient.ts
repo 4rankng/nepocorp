@@ -1,4 +1,6 @@
 import { api } from '../lib/api';
+import { toQuery } from '../lib/http/query';
+import { SALARY, CONFIG } from '@tingting/shared';
 
 export interface WorkDayRecord {
   id: number;
@@ -51,23 +53,23 @@ export const salaryClient = {
   // List all drivers with salary summary for a month
   getAll: (year: number, month: number) =>
     api.get<{ year: number; month: number; items: DriverSalarySummary[] }>(
-      `/salary?year=${year}&month=${month}`
+      `${SALARY.LIST}${toQuery({ year, month })}`
     ),
 
   // Full salary computation for one driver
   getSalary: (driverId: number, year: number, month: number) =>
-    api.get<AttendanceSalary>(`/salary/${driverId}/${year}/${month}`),
+    api.get<AttendanceSalary>(SALARY.DRIVER_MONTH(driverId, year, month)),
 
   // Get raw work day records for calendar view
   getWorkDays: (driverId: number, year: number, month: number) =>
     api.get<{ period: { start: string; end: string; label: string }; workDays: WorkDayRecord[] }>(
-      `/salary/${driverId}/${year}/${month}/workdays`
+      SALARY.WORK_DAYS(driverId, year, month)
     ),
 
   // Batch update work days
   updateWorkDays: (driverId: number, year: number, month: number, items: WorkDayUpdate[]) =>
     api.put<{ results: any[]; salary: AttendanceSalary }>(
-      `/salary/${driverId}/${year}/${month}/workdays`,
+      SALARY.WORK_DAYS(driverId, year, month),
       { items }
     ),
 };
@@ -88,11 +90,11 @@ export interface SalaryPeriodRange {
   label: string;
 }
 export const salaryPeriodConfigClient = {
-  getDefault: () => api.get<SalaryPeriodDefault | null>('/salary-periods/default'),
+  getDefault: () => api.get<SalaryPeriodDefault | null>(CONFIG.SALARY_PERIOD_DEFAULT),
   updateDefault: (defaultStartDay: number, defaultEndDay: number) =>
-    api.put<SalaryPeriodDefault>('/salary-periods/default', { defaultStartDay, defaultEndDay }),
+    api.put<SalaryPeriodDefault>(CONFIG.SALARY_PERIOD_DEFAULT, { defaultStartDay, defaultEndDay }),
   resolve: (year: number, month: number) =>
-    api.get<SalaryPeriodRange>(`/salary-periods/resolve?year=${year}&month=${month}`),
-  delete: (id: number) => api.delete<{ ok: boolean }>(`/salary-periods/${id}`),
+    api.get<SalaryPeriodRange>(`${CONFIG.SALARY_PERIOD_RESOLVE}${toQuery({ year, month })}`),
+  delete: (id: number) => api.delete<{ ok: boolean }>(`${CONFIG.SALARY_PERIODS}/${id}`),
 };
 

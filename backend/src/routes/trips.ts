@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
-import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses } from '../services/forwarder.service';
-import { transitionApproval } from '../services/approval.service';
+import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo } from '../services/forwarder.service';
+import { processExpenseApproval } from '../services/approval.service';
 import { requireRoles } from '../middleware/casbin';
 import { db } from '../db';
 import * as dbSchema from '../db/schema';
@@ -365,33 +365,9 @@ router.delete('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Respo
   const eid = parseInt(req.params.eid as string, 10);
 
   // Fetch expense info for audit log before delete
-  const [expense] = await db.select({
-    buyAmount: dbSchema.tripExpenses.buyAmount,
-    typeName: dbSchema.forwarderExpenseTypes.name,
-    tripCode: dbSchema.trips.tripCode,
-    supplierName: dbSchema.suppliers.name,
-  }).from(dbSchema.tripExpenses)
-    .leftJoin(dbSchema.forwarderExpenseTypes, eq(dbSchema.tripExpenses.expenseType, dbSchema.forwarderExpenseTypes.code))
-    .leftJoin(dbSchema.trips, eq(dbSchema.tripExpenses.tripId, dbSchema.trips.id))
-    .leftJoin(dbSchema.suppliers, eq(dbSchema.tripExpenses.supplierId, dbSchema.suppliers.id))
-    .where(eq(dbSchema.tripExpenses.id, eid))
-    .limit(1);
+  const expense = await getTripExpenseAuditInfo(eid);
 
-  type TxResult = { ok: true } | { error: string; status: number };
-  const result: TxResult = await db.transaction(async (tx) => {
-    // Guard: trip must not be locked
-    const [trip] = await tx.select({ status: dbSchema.trips.status })
-      .from(dbSchema.trips).where(eq(dbSchema.trips.id, tripId)).limit(1);
-    if (!trip) return { error: 'Không tìm thấy chuyến xe', status: 404 };
-    if (trip.status === 'LOCKED') return { error: 'Không thể xóa chi phí trên chuyến đã khóa', status: 400 };
-    // Guard: expense must not be linked to any settlement
-    const [link] = await tx.select({ id: dbSchema.settlementExpenses.id })
-      .from(dbSchema.settlementExpenses)
-      .where(eq(dbSchema.settlementExpenses.tripExpenseId, eid)).limit(1);
-    if (link) return { error: 'Không thể xóa chi phí đã được thanh toán', status: 400 };
-    await tx.delete(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid));
-    return { ok: true as const };
-  });
+  const result = await deleteTripExpenseGuarded(tripId, eid);
   if ('error' in result) return res.status(result.status).json({ error: result.error });
 
   if (expense) {
@@ -411,23 +387,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    type TxResult = { ok: true } | { error: string; status: number };
-    const result: TxResult = await db.transaction(async (tx) => {
-      // Verify expense belongs to the specified trip
-      const [expense] = await tx.select({ tripId: dbSchema.tripExpenses.tripId })
-        .from(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid)).limit(1);
-      if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
-      if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
-
-      await transitionApproval(tx, {
-        table: 'trip_expenses',
-        id: eid,
-        toStatus: 'APPROVED',
-        actorId: req.user!.userId,
-        actorRole: req.user!.role,
-      });
-      return { ok: true as const };
-    });
+    const result = await processExpenseApproval(tripId, eid, req.user!.userId, req.user!.role, 'APPROVED');
     if ('error' in result) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   }),
@@ -440,22 +400,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    type TxResult = { ok: true } | { error: string; status: number };
-    const result: TxResult = await db.transaction(async (tx) => {
-      const [expense] = await tx.select({ tripId: dbSchema.tripExpenses.tripId })
-        .from(dbSchema.tripExpenses).where(eq(dbSchema.tripExpenses.id, eid)).limit(1);
-      if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
-      if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
-
-      await transitionApproval(tx, {
-        table: 'trip_expenses',
-        id: eid,
-        toStatus: 'REJECTED',
-        actorId: req.user!.userId,
-        actorRole: req.user!.role,
-      });
-      return { ok: true as const };
-    });
+    const result = await processExpenseApproval(tripId, eid, req.user!.userId, req.user!.role, 'REJECTED');
     if ('error' in result) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   }),

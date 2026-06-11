@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { toQuery } from '../lib/http/query';
 import { REPORTS } from '@tingting/shared';
 import type { DashboardStats, PnlReport, RenewalReminder } from '@tingting/shared';
 
@@ -13,7 +14,7 @@ export const reportClient = {
   },
 
   getPnl: async (month: number, year: number) => {
-    return api.get<PnlReport>(`${REPORTS.PNL}?month=${month}&year=${year}`);
+    return api.get<PnlReport>(`${REPORTS.PNL}${toQuery({ month, year })}`);
   },
 
   getDistributionHistory: async () => {

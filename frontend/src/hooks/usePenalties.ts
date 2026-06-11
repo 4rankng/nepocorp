@@ -24,8 +24,8 @@ export function usePenalties() {
   return useQuery<PenaltyRow[]>({
     queryKey: ['penalties'],
     queryFn: async () => {
-      const data = await api.get<any>('/penalties');
-      const raw: any[] = Array.isArray(data) ? data : (data as any).items ?? [];
+      const data = await api.get<{ items: PenaltyRow[] } | PenaltyRow[]>('/penalties');
+      const raw: PenaltyRow[] = Array.isArray(data) ? data : data.items ?? [];
       return raw;
     },
   });
@@ -45,7 +45,7 @@ export function usePenaltyCatalogs() {
         configClient.getTrucks(),
       ]);
       return {
-        drivers: drivers.filter((x: any) => x.status === 'ACTIVE'),
+        drivers: drivers.filter((x: Driver) => x.status === 'ACTIVE'),
         reasons,
         trucks,
       };

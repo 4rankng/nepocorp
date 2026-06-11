@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { toQuery } from '../lib/http/query';
 import { DRIVER } from '@tingting/shared';
 
 export const driverClient = {
@@ -27,11 +28,10 @@ export const driverClient = {
       dailyRate?: number;
       periodStart?: string;
       periodEnd?: string;
-    }>(`${DRIVER.EARNINGS}?month=${month}&year=${year}`);
+    }>(`${DRIVER.EARNINGS}${toQuery({ month, year })}`);
   },
 
   getPenalties: async (params?: { dateFrom: string; dateTo: string }) => {
-    const qs = params ? `?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}` : '';
     return api.get<
       | Array<{
           id: number;
@@ -45,6 +45,6 @@ export const driverClient = {
           reasonText?: string;
         }>
       | { items: Array<any> }
-    >(`${DRIVER.PENALTIES}${qs}`);
+    >(`${DRIVER.PENALTIES}${toQuery(params)}`);
   },
 };

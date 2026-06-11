@@ -9,7 +9,7 @@ import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
 import { useCRUD } from '../hooks/useCRUD';
-import { useFleetData } from '../hooks/useFleetData';
+import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
 import type { PaginatedResponse } from '@tingting/shared';
@@ -950,7 +950,7 @@ function DriverCard({ drivers, truckMap, crud }: {
 
 export default function FleetPage() {
   const queryClient = useQueryClient();
-  const { data: fleetData } = useFleetData();
+  const { data: fleetData } = useTrucksAndDrivers();
   const { data: trailers = [] } = useQuery({
     queryKey: ['trailers'],
     queryFn: () => configClient.getTrailers(),
@@ -960,7 +960,7 @@ export default function FleetPage() {
   const drivers = fleetData?.drivers ?? [];
 
   const invalidateFleet = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['fleet'] });
+    await queryClient.invalidateQueries({ queryKey: ['trucks-drivers'] });
   }, [queryClient]);
 
   const truckCrud = useCRUD('/trucks', invalidateFleet);

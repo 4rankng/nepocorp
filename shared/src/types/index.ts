@@ -454,6 +454,7 @@ export interface TripContainer {
   containerTypeName: string | null; // joined display name
   containerNumber: string;
   sealNumber: string | null;
+  cargoWeightKg: number | null;
   notes: string | null;
   createdBy: number;
   createdAt: string;
@@ -481,20 +482,6 @@ export interface TripExpense {
 export interface TripExpenseWithRefs extends TripExpense {
   forwarderName?: string | null;
   tripCode?: string | null;
-}
-
-export interface DebtOffset {
-  id: number;
-  customerId: number;
-  supplierId: number;
-  amount: string;
-  offsetDate: string;
-  note: string | null;
-  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdBy: number | null;
-  approvedBy: number | null;
-  approvedAt: string | null;
-  createdAt: string;
 }
 
 export interface AdvanceRequest {
@@ -535,6 +522,62 @@ export interface AdvanceSettlementWithRefs extends AdvanceSettlement {
   linkedRequests?: AdvanceRequest[];
 }
 
+/** Trip detail projection returned by the forwarder GET /trips/:id endpoint. */
+export interface ForwarderTripDetail {
+  id: number;
+  tripCode: string | null;
+  departureDate: string;
+  status: TripStatus;
+  routeName: string | null;
+  truckPlate: string | null;
+  customerName: string | null;
+  customerReference: string | null;
+  containerCount: number | null;
+  cargoTypeName: string | null;
+  notes: string | null;
+  legs: TripLeg[];
+  containers: Array<{
+    id: number;
+    tripId: number;
+    containerTypeId: number | null;
+    containerTypeName: string | null;
+    containerNumber: string;
+    sealNumber: string | null;
+    notes: string | null;
+    createdBy: number;
+    createdAt: string;
+  }>;
+  expenses: Array<{
+    id: number;
+    tripId: number;
+    forwarderId: number | null;
+    expenseType: string;
+    buyAmount: string;
+    sellAmount: string;
+    settlementMethod: string;
+    supplierId: number | null;
+    supplierName: string | null;
+    containerNumber: string | null;
+    invoiceNumber: string | null;
+    invoiceDate: string | null;
+    declarationNumber: string | null;
+    approvalStatus: string;
+    note: string | null;
+    createdAt: string;
+    forwarderName: string | null;
+  }>;
+}
+
+/** Trip expense as returned by forwarder unlinked-expenses and financial advance-settlements endpoints. */
+export interface TripExpenseWithSupplier extends TripExpense {
+  supplierName?: string | null;
+  forwarderName?: string | null;
+  tripCode?: string | null;
+  departureDate?: string | null;
+  truckPlate?: string | null;
+  containerNumbers?: string | null;
+}
+
 // ─── API types ───────────────────────────────────────────────────────────────
 
 export interface TripDetail extends Trip {
@@ -551,12 +594,21 @@ export interface TripDetail extends Trip {
 export interface CreateTripRequest {
   customerId: number;
   routeId: number;
-  truckId: number;
-  driverId: number;
+  truckId?: number | null;
+  driverId?: number | null;
   cargoTypeId: number;
   departureDate: string;
   customerReference?: string;
   containerCount?: number;
+  fuelMode?: FuelMode;
+  fuelSupplierId?: number | null;
+  vatRate?: number;
+  carrierType?: 'OWN' | 'EXTERNAL';
+  externalCarrierId?: number;
+  externalFreightCost?: number;
+  externalPlateNumber?: string;
+  externalDriverName?: string;
+  externalDriverPhone?: string;
 }
 
 export interface TripLegInput {
@@ -569,8 +621,10 @@ export interface TripLegInput {
 
 export interface UpdateTripFiguresRequest {
   legs: TripLegInput[];
+  departureDate?: string;
+  completedAt?: string;
   fuelMode: FuelMode;
-  fuelLitersOverride?: number;
+  fuelLitersOverride?: number | null;
   fuelSupplementLiters?: number;
   fuelSupplementReason?: string;
   fuelActualUnitPrice?: number | null;
@@ -588,6 +642,15 @@ export interface UpdateTripFiguresRequest {
   vehicleShiftAllowance?: number;
   notes?: string;
   photoUrls?: string[];
+  version?: number;
+  routeId?: number;
+  vatRate?: number;
+  carrierType?: 'OWN' | 'EXTERNAL';
+  externalCarrierId?: number;
+  externalFreightCost?: number;
+  externalPlateNumber?: string;
+  externalDriverName?: string;
+  externalDriverPhone?: string;
 }
 
 export interface CreatePaymentRequest {

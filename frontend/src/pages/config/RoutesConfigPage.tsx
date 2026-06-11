@@ -54,7 +54,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
         }));
         setDefaultLegs(mapped);
 
-        // Fetch polylines for map visualization only
+        // Polyline fetch is decorative; a 4xx/5xx must not block saving.
         mapped.forEach(async (leg) => {
           if (leg.origin && leg.destination && leg.origin !== leg.destination) {
             try {
@@ -62,7 +62,9 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               if (res.polylinePath) {
                 setDefaultLegs(prev => prev.map(l => l.id === leg.id ? { ...l, polylinePath: res.polylinePath } : l));
               }
-            } catch {}
+            } catch (err) {
+              console.warn('[RoutesConfigPage] polyline fetch failed for', leg.origin, '→', leg.destination, err);
+            }
           }
         });
       } else {
@@ -111,7 +113,10 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                 polylinePath: result.polylinePath
               } : l));
             }
-          } catch {}
+          } catch (err) {
+            // Polyline is decorative; a failure here must not block the leg save.
+            console.warn('[RoutesConfigPage] polyline fetch failed for', origin, '→', destination, err);
+          }
         }
       }
     }

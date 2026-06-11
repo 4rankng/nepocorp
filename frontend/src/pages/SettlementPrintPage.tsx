@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
+import { api } from '../lib/api';
 import { useForwarderSettlementDetail } from '../hooks/useForwarderQueries';
 import { PageHeader, StatusPill } from '../components/UI';
 import './SettlementPrintPage.css';
@@ -121,11 +122,7 @@ export default function SettlementPrintPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handlePrint = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`/api/forwarder/me/advance-settlements/${id}/export?format=html`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const html = await res.text();
+    const html = await api.postForText(`/forwarder/me/advance-settlements/${id}/export?format=html`, {});
     setPreviewHtml(html);
     setShowPreview(true);
   };
@@ -188,10 +185,7 @@ export default function SettlementPrintPage() {
               <button
                 className="btn btn--secondary btn--sm"
                 onClick={() => {
-                  const token = localStorage.getItem('token');
-                  const url = `/api/forwarder/me/advance-settlements/${s.id}/export`;
-                  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-                    .then(r => r.blob())
+                  api.getBlob(`/forwarder/me/advance-settlements/${s.id}/export`)
                     .then(blob => {
                       const a = document.createElement('a');
                       a.href = URL.createObjectURL(blob);

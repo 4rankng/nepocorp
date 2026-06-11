@@ -6,3 +6,4 @@ export { useToast, ToastProvider } from './Toast';
 export type { ToastOptions } from './Toast';
 export { Skeleton, SkeletonLine, SkeletonCircle, SkeletonCard, SkeletonTable, SkeletonKPIs } from './Skeleton';
 export { EmptyState } from './EmptyState';
+export { ClickableCard } from './ClickableCard';

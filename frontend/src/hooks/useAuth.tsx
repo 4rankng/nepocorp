@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '../lib/api';
+import React, { createContext, useContext, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, ApiError } from '../lib/api';
 import { Role } from '@tingting/shared';
+import { qk } from '../api/keys';
 
 export interface AuthUser {
   userId: number;
@@ -23,56 +25,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
-/** Decode JWT payload without a library — returns null if malformed or expired. */
+/** Decode a JWT payload without a library; null if malformed or expired. */
 function isTokenExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    // exp is in seconds since epoch
     return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
   } catch {
-    return true; // malformed token → treat as expired
+    return true;
+  }
+}
+
+async function fetchAuthUser(): Promise<AuthUser | null> {
+  const token = localStorage.getItem('token');
+  if (!token || isTokenExpired(token)) {
+    api.clearToken();
+    return null;
+  }
+  try {
+    return await api.get<AuthUser>('/auth/me');
+  } catch (err) {
+    // Any failure to validate the token (network, 401, malformed) means
+    // the user is effectively logged out — drop the bad token.
+    if (err instanceof ApiError) api.clearToken();
+    return null;
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  // Only show loading spinner if token exists AND is not already expired
-  const [loading, setLoading] = useState<boolean>(() => {
-    const token = localStorage.getItem('token');
-    return !!token && !isTokenExpired(token);
+  const queryClient = useQueryClient();
+
+  // Cached at the TanStack level: login/logout invalidates the key, not the
+  // entire app. The previous useEffect+fetch approach bypassed the cache
+  // entirely, so every page mount re-fetched /auth/me.
+  const { data: user = null, isLoading } = useQuery({
+    queryKey: qk.auth.me,
+    queryFn: fetchAuthUser,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token && !isTokenExpired(token)) {
-      api.get<AuthUser>('/auth/me').then(setUser).catch(() => {
-        api.clearToken();
-        setUser(null);
-      }).finally(() => setLoading(false));
-    } else {
-      if (token) api.clearToken(); // remove expired token
-      setLoading(false);
-    }
-  }, []);
-
-  const login = useCallback(async (identifier: string, password: string) => {
-    const res = await api.post<{ token: string; user: AuthUser }>('/auth/login', { identifier, password });
-    api.setToken(res.token);
-    setUser(res.user);
-    setLoading(false);
-  }, []);
+  const login = useCallback(
+    async (identifier: string, password: string) => {
+      const res = await api.post<{ token: string; user: AuthUser }>('/auth/login', {
+        identifier,
+        password,
+      });
+      api.setToken(res.token);
+      queryClient.setQueryData(qk.auth.me, res.user);
+    },
+    [queryClient],
+  );
 
   const logout = useCallback(() => {
     api.clearToken();
-    setUser(null);
-  }, []);
+    queryClient.setQueryData(qk.auth.me, null);
+  }, [queryClient]);
 
-  const updateUser = useCallback((updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => {
-    setUser(prev => prev ? { ...prev, ...updates } : prev);
-  }, []);
+  const updateUser = useCallback(
+    (updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => {
+      queryClient.setQueryData<AuthUser | null>(qk.auth.me, (prev) =>
+        prev ? { ...prev, ...updates } : prev,
+      );
+    },
+    [queryClient],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated: !!user,
+        loading: isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

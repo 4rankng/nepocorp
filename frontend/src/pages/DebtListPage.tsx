@@ -4,6 +4,7 @@ import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
 import { KPI, PageHeader, Card } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
@@ -236,7 +237,7 @@ export default function DebtListPage() {
                 const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
                 const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                 return (
-                  <div key={d.customerId} className="m-card" onClick={() => navigate(`/debt/${d.customerId}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customerId}`); } }}>
+                  <ClickableCard key={d.customerId} to={`/debt/${d.customerId}`} className="m-card">
                     <div className="m-card__top">
                       <span className="m-card__title">
                         <span className={`risk-dot risk-dot--${d.riskClass}`} />
@@ -272,7 +273,7 @@ export default function DebtListPage() {
                         )}
                       </>
                     )}
-                  </div>
+                  </ClickableCard>
                 );
               })
             )}
@@ -303,9 +304,9 @@ export default function DebtListPage() {
                   const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
 
                   return (
-                    <tr
+                    <ClickableCard
                       key={d.customerId}
-                      onClick={() => navigate(`/debt/${d.customerId}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/debt/${d.customerId}`); } }}
+                      to={`/debt/${d.customerId}`}
                       style={{ cursor: 'pointer' }}
                     >
                       <td>
@@ -378,7 +379,7 @@ export default function DebtListPage() {
                       <td style={{ textAlign: 'right' }}>
                         <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
                       </td>
-                    </tr>
+                    </ClickableCard>
                   );
                 })}
 

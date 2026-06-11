@@ -10,6 +10,7 @@ import { formatCurrency, formatCompact } from '../lib/format';
 import type { Customer, Supplier, PaginatedResponse } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
+import { ClickableCard } from '../components/shared/ClickableCard';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -373,7 +374,7 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(c => (
-              <div key={c.id} className="m-card" onClick={() => { setEditingId(c.id); setShowAddForm(false); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setEditingId(c.id); setShowAddForm(false); } }}>
+              <ClickableCard key={c.id} className="m-card" onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
@@ -410,7 +411,7 @@ export default function CustomersPage() {
                     Sửa
                   </button>
                 </div>
-              </div>
+              </ClickableCard>
             ))
           )}
         </div>
@@ -449,8 +450,8 @@ export default function CustomersPage() {
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(c => (
-                  <tr key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
-                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null);} } }}
+                  <ClickableCard key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
+                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
@@ -507,7 +508,7 @@ export default function CustomersPage() {
                         </div>
                       )}
                     </td>
-                  </tr>
+                  </ClickableCard>
               ))}
             </tbody>
           </table>

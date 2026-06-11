@@ -4,6 +4,7 @@ import { Truck, Calendar, ArrowRight, Loader2, Package } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { useForwarderTrips } from '../hooks/useQueries';
 
 interface TripSummary {
@@ -98,8 +99,9 @@ export default function ForwarderTripsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
-          <div
+          <ClickableCard
             key={trip.id}
+            to={`/my-forwarder-trips/${trip.id}`}
             className="panel fade-up driver-trip-card"
             style={{
               cursor: 'pointer',
@@ -108,7 +110,6 @@ export default function ForwarderTripsPage() {
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
             }}
-            onClick={() => navigate(`/my-forwarder-trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-forwarder-trips/${trip.id}`); } }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
               (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';
@@ -151,7 +152,7 @@ export default function ForwarderTripsPage() {
 
               <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
-          </div>
+          </ClickableCard>
         ))}
       </div>
     </div>

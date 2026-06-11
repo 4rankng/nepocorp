@@ -5,7 +5,7 @@
 import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, drivers } from '../db/schema';
-import { eq, isNull, sql } from 'drizzle-orm';
+import { eq, isNull, sql, or } from 'drizzle-orm';
 import { Role } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getEnforcer } from '../casbin/enforcer';
@@ -22,6 +22,28 @@ export async function verifyPassword(userId: number, password: string): Promise<
   if (!user) throw new ApiError(404, 'Không tìm thấy người dùng');
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new ApiError(401, 'Mật khẩu hiện tại không đúng');
+}
+
+/**
+ * Authenticate a user by identifier (username, email, or phone) and password.
+ * Returns the full user row (without passwordHash) on success, or throws ApiError(401) on failure.
+ */
+export async function authenticate(identifier: string, password: string) {
+  const [user] = await db.select().from(users).where(
+    or(eq(users.username, identifier), eq(users.email, identifier), eq(users.phone, identifier))
+  ).limit(1);
+
+  if (!user || user.deletedAt || user.status !== 'ACTIVE') {
+    throw new ApiError(401, 'Thông tin đăng nhập không hợp lệ');
+  }
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) {
+    throw new ApiError(401, 'Thông tin đăng nhập không hợp lệ');
+  }
+
+  const { passwordHash, deletedAt, ...userPublic } = user;
+  return userPublic;
 }
 
 /** List all active users. Non-ADMIN requesters cannot see ADMIN accounts. */

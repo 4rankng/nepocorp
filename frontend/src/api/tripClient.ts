@@ -1,5 +1,6 @@
-import { api } from "../lib/api";
-import { TRIPS, CATALOGS } from "@tingting/shared";
+import { api } from '../lib/api';
+import { toQuery } from '../lib/http/query';
+import { TRIPS, CATALOGS } from '@tingting/shared';
 import type {
   Trip,
   TripDetail,
@@ -7,46 +8,44 @@ import type {
   CreateTripRequest,
   UpdateTripFiguresRequest,
   PaginatedResponse,
-} from "@tingting/shared";
+} from '@tingting/shared';
 
-type ListTripsParams = { status?: string; limit?: number; page?: number; dateFrom?: string; dateTo?: string; search?: string; truckId?: number; customerId?: number };
+type ListTripsParams = {
+  status?: string;
+  limit?: number;
+  page?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  truckId?: number;
+  customerId?: number;
+};
 
 export const tripClient = {
-  listTrips: async (params?: ListTripsParams) => {
-    const query = new URLSearchParams();
-    if (params?.status) query.append("status", params.status);
-    if (params?.limit) query.append("limit", String(params.limit));
-    if (params?.page) query.append("page", String(params.page));
-    if (params?.dateFrom) query.append("dateFrom", params.dateFrom);
-    if (params?.dateTo) query.append("dateTo", params.dateTo);
-    if (params?.search) query.append("search", params.search);
-    if (params?.truckId) query.append("truckId", String(params.truckId));
-    if (params?.customerId) query.append("customerId", String(params.customerId));
-    const queryString = query.toString() ? `?${query.toString()}` : "";
-    return api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${queryString}`);
-  },
+  listTrips: (params?: ListTripsParams) =>
+    api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${toQuery(params)}`),
 
   /** Fetch all pages of trips for a given filter set. */
-  fetchAllTrips: async (params: Omit<ListTripsParams, 'page'> & { limit?: number }): Promise<{ items: TripDetail[]; total: number }> => {
+  fetchAllTrips: async (
+    params: Omit<ListTripsParams, 'page'> & { limit?: number },
+  ): Promise<{ items: TripDetail[]; total: number }> => {
     const pageSize = params.limit ?? 100;
     const first = await tripClient.listTrips({ ...params, limit: pageSize, page: 1 });
     const totalPages = Math.ceil(first.total / pageSize);
     if (totalPages <= 1) return { items: first.items, total: first.total };
     const remaining = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
-        tripClient.listTrips({ ...params, limit: pageSize, page: i + 2 })
+        tripClient.listTrips({ ...params, limit: pageSize, page: i + 2 }),
       ),
     );
-    const allItems = [first, ...remaining].flatMap(r => r.items);
-    return { items: allItems, total: first.total };
+    return {
+      items: [first, ...remaining].flatMap((r) => r.items),
+      total: first.total,
+    };
   },
 
-  getTripsSummary: async (params?: { dateFrom?: string; dateTo?: string }) => {
-    const query = new URLSearchParams();
-    if (params?.dateFrom) query.append("dateFrom", params.dateFrom);
-    if (params?.dateTo) query.append("dateTo", params.dateTo);
-    const queryString = query.toString() ? `?${query.toString()}` : "";
-    return api.get<{
+  getTripsSummary: (params?: { dateFrom?: string; dateTo?: string }) =>
+    api.get<{
       statusCounts: Record<string, number>;
       totalKm: number;
       totalFuel: number;
@@ -56,70 +55,55 @@ export const tripClient = {
       avgPer100: number;
       truckOptions: Array<{ id: number; licensePlate: string }>;
       customerOptions: Array<{ id: number; name: string }>;
-    }>(`${TRIPS.LIST}/summary${queryString}`);
-  },
+    }>(`${TRIPS.LIST}/summary${toQuery(params)}`),
 
-  getTrip: async (id: number) => {
-    return api.get<TripDetail>(TRIPS.DETAIL(id));
-  },
+  getTrip: (id: number) => api.get<TripDetail>(TRIPS.DETAIL(id)),
 
-  getAdjustments: async (id: number) => {
-    return api.get<{ items: any[] }>(TRIPS.ADJUSTMENTS(id));
-  },
+  getAdjustments: (id: number) => api.get<{ items: any[] }>(TRIPS.ADJUSTMENTS(id)),
 
-  createTrip: async (data: CreateTripRequest) => {
-    return api.post<Trip>(TRIPS.CREATE, data);
-  },
+  createTrip: (data: CreateTripRequest) => api.post<Trip>(TRIPS.CREATE, data),
 
-  updateTripPreDeparture: async (id: number, data: UpdateTripFiguresRequest, opts?: { expectedUpdatedAt?: string }) => {
-    return api.put<Trip>(TRIPS.PRE_DEPARTURE(id), data, opts);
-  },
+  updateTripPreDeparture: (
+    id: number,
+    data: UpdateTripFiguresRequest,
+    opts?: { expectedUpdatedAt?: string },
+  ) => api.put<Trip>(TRIPS.PRE_DEPARTURE(id), data, opts),
 
-  updateTripActuals: async (id: number, data: UpdateTripFiguresRequest, opts?: { expectedUpdatedAt?: string }) => {
-    return api.put<Trip>(TRIPS.ACTUALS(id), data, opts);
-  },
+  updateTripActuals: (
+    id: number,
+    data: UpdateTripFiguresRequest,
+    opts?: { expectedUpdatedAt?: string },
+  ) => api.put<Trip>(TRIPS.ACTUALS(id), data, opts),
 
-  dispatchTrip: async (id: number) => {
-    return api.post<Trip>(TRIPS.DISPATCH(id), {});
-  },
+  dispatchTrip: (id: number) => api.post<Trip>(TRIPS.DISPATCH(id), {}),
 
-  lockTrip: async (id: number, confirmZeroRevenue?: boolean) => {
-    return api.post<Trip>(TRIPS.LOCK(id), { confirmZeroRevenue });
-  },
+  lockTrip: (id: number, confirmZeroRevenue?: boolean) =>
+    api.post<Trip>(TRIPS.LOCK(id), { confirmZeroRevenue }),
 
-  cancelTrip: async (id: number) => {
-    return api.post<Trip>(TRIPS.CANCEL(id), {});
-  },
+  cancelTrip: (id: number) => api.post<Trip>(TRIPS.CANCEL(id), {}),
 
-  reassignTrip: async (id: number, data: { truckId: number; driverId: number }) => {
-    return api.patch<Trip>(TRIPS.REASSIGN(id), data);
-  },
+  reassignTrip: (id: number, data: { truckId: number; driverId: number }) =>
+    api.patch<Trip>(TRIPS.REASSIGN(id), data),
 
-  getPricing: async (customerId: number, routeId: number, date?: string) => {
-    const query = new URLSearchParams({
-      customerId: String(customerId),
-      routeId: String(routeId),
-    });
-    if (date) query.append("date", date);
-    return api.get<{ price: number }>(`${CATALOGS.PRICING}?${query.toString()}`);
-  },
+  getPricing: (customerId: number, routeId: number, date?: string) =>
+    api.get<{ price: number }>(
+      `${CATALOGS.PRICING}${toQuery({ customerId, routeId, date })}`,
+    ),
 
-  getBootstrap: async () => {
-    return api.get<any>(CATALOGS.BOOTSTRAP);
-  },
+  getBootstrap: () => api.get<any>(CATALOGS.BOOTSTRAP),
 
   listTripExpenses: (tripId: number) =>
-    api.get<{ items: TripExpense[] }>(`/trips/${tripId}/expenses`),
+    api.get<{ items: TripExpense[] }>(TRIPS.EXPENSES(tripId)),
 
   createTripExpense: (tripId: number, data: object) =>
-    api.post<TripExpense>(`/trips/${tripId}/expenses`, data),
+    api.post<TripExpense>(TRIPS.EXPENSES(tripId), data),
 
   deleteTripExpense: (tripId: number, eid: number) =>
-    api.delete<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}`),
+    api.delete<{ ok: boolean }>(TRIPS.EXPENSE(tripId, eid)),
 
   approveTripExpense: (tripId: number, eid: number) =>
-    api.post<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}/approve`, {}),
+    api.post<{ ok: boolean }>(TRIPS.EXPENSE_APPROVE(tripId, eid), {}),
 
   rejectTripExpense: (tripId: number, eid: number) =>
-    api.post<{ ok: boolean }>(`/trips/${tripId}/expenses/${eid}/reject`, {}),
+    api.post<{ ok: boolean }>(TRIPS.EXPENSE_REJECT(tripId, eid), {}),
 };

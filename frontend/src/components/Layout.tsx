@@ -11,47 +11,33 @@ import {
   ScrollText,
   Route,
   DollarSign,
-  LogOut,
-  User,
-  UserCog,
-  KeyRound,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Compass,
   Layers,
   FileText,
   Store,
   Package,
-  X,
   CalendarDays,
-  Calendar,
+  User,
+  LogOut,
+  UserCog,
+  KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
-import { Modal, FormGroup } from './UI';
 import { useBadgeCounts } from '../hooks/useQueries';
-import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
-import { useFocusTrap } from '../hooks/useFocusTrap';
-import { MonthProvider, useMonth } from '../hooks/useMonth';
+import { MonthProvider } from '../hooks/useMonth';
 import { NotificationDrawer } from './NotificationDrawer';
-import { useSearch } from '../context/SearchContext';
-import { getSearchItems, filterItems } from '../data/searchRegistry';
-import type { SearchItem } from '../data/searchRegistry';
-import { SearchDropdown } from './SearchDropdown';
+import { Sidebar } from './layout/Sidebar';
+import { Topbar } from './layout/Topbar';
+import { ProfileModal } from './layout/ProfileModal';
+import { PasswordModal } from './layout/PasswordModal';
+import type { NavItem } from './layout/types';
 
-interface NavItem {
-  key: string;
-  label: string;
-  path: string;
-  icon: React.ElementType;
-  section?: 'operations' | 'hr' | 'financials' | 'master-data' | 'system';
-  count?: number;
-}
+// ─── Navigation config ────────────────────────────────────────────────────
 
 function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
   const normRole = String(role || '').toUpperCase();
@@ -141,166 +127,36 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/my-settlements\/\d+$/)) return 'Chi tiết phiếu thanh toán';
   if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
   if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
-
   if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
   return 'NEPO';
 }
 
-const errorBoxStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  background: '#FEF2F2',
-  borderRadius: 8,
-  color: 'var(--danger)',
-  fontSize: 13,
-  marginBottom: 16,
-};
-
-const MONTHS = [
-  { m: 1, short: 'T1' }, { m: 2, short: 'T2' }, { m: 3, short: 'T3' },
-  { m: 4, short: 'T4' }, { m: 5, short: 'T5' }, { m: 6, short: 'T6' },
-  { m: 7, short: 'T7' }, { m: 8, short: 'T8' }, { m: 9, short: 'T9' },
-  { m: 10, short: 'T10' }, { m: 11, short: 'T11' }, { m: 12, short: 'T12' },
-];
-
-/** Clickable month chip in the topbar — opens a month/year grid picker */
-function MonthNavigator() {
-  const { month, year, setMonthYear } = useMonth();
-  const [open, setOpen] = useState(false);
-  const [pickerYear, setPickerYear] = useState(year);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
-
-  useClickOutside(containerRef, () => setOpen(false), { escapeKey: true, enabled: open });
-  useFocusTrap(pickerRef, open);
-
-  const { data: period } = useSalaryPeriod(month, year);
-  const periodLabel = period
-    ? `${period.start.slice(8, 10)}/${period.start.slice(5, 7)} – ${period.end.slice(8, 10)}/${period.end.slice(5, 7)}`
-    : null;
-
-  useEffect(() => {
-    if (open) setPickerYear(year);
-  }, [open, year]);
-
-  const months = MONTHS;
-
-  const now = new Date();
-  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
-
-  return (
-    <div className={`topbar-date ${open ? 'is-open' : ''}`} ref={containerRef}>
-      <button
-        type="button"
-        className="topbar-date__trigger"
-        onClick={() => setOpen(v => !v)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label="Chọn tháng"
-      >
-        <Calendar size={14} className="topbar-date__icon" />
-        <div className="topbar-date__body">
-          <span className="topbar-date__label">Tháng {month}/{year}</span>
-          {periodLabel && <span className="topbar-date__period">{periodLabel}</span>}
-        </div>
-        <ChevronDown size={12} className="topbar-date__caret" />
-      </button>
-
-      {open && (
-        <div className="month-picker" role="dialog" aria-label="Chọn tháng" ref={pickerRef}>
-          <div className="month-picker__header">
-            <button
-              type="button"
-              className="month-picker__year-nav"
-              onClick={() => setPickerYear(y => y - 1)}
-              aria-label="Năm trước"
-            >
-              <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
-            </button>
-            <span className="month-picker__year">{pickerYear}</span>
-            <button
-              type="button"
-              className="month-picker__year-nav"
-              onClick={() => setPickerYear(y => y + 1)}
-              aria-label="Năm sau"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-          <div className="month-picker__grid">
-            {months.map(({ m, short }) => {
-              const isSelected = m === month && pickerYear === year;
-              const isThisMonth = pickerYear === now.getFullYear() && m === now.getMonth() + 1;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  className={[
-                    'month-picker__cell',
-                    isSelected ? 'is-selected' : '',
-                    isThisMonth && !isSelected ? 'is-current' : '',
-                  ].filter(Boolean).join(' ')}
-                  onClick={() => {
-                    setMonthYear(m, pickerYear);
-                    setOpen(false);
-                  }}
-                >
-                  {short}
-                </button>
-              );
-            })}
-          </div>
-          <div className="month-picker__footer">
-            <button
-              type="button"
-              className="month-picker__today"
-              onClick={() => {
-                const n = new Date();
-                setMonthYear(n.getMonth() + 1, n.getFullYear());
-                setOpen(false);
-              }}
-            >
-              Hôm nay
-            </button>
-            <span className="month-picker__hint">
-              {isCurrentMonth ? 'Đang chọn tháng hiện tại' : ' '}
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+// ─── Layout component ─────────────────────────────────────────────────────
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { searchQuery, setSearchQuery } = useSearch();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const { data: unreadData } = useUnreadCount({ enabled: user?.role !== 'DRIVER' });
   const unreadCount = unreadData?.count ?? 0;
 
-  const userMenuRef = useRef<HTMLDivElement>(null);
-
+  // Profile modal state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ email: '', phone: '', username: '', fullName: '' });
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [profileSaving, setProfileSaving] = useState(false);
-  const [passwordSaving, setPasswordSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Password modal state
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
-
-  useClickOutside(userMenuRef, closeUserMenu, { escapeKey: true, enabled: userMenuOpen });
-  useClickOutside(searchContainerRef, () => setSearchQuery(''), { enabled: searchQuery.length > 0 });
 
   const openProfileModal = () => {
     if (!user) return;
@@ -318,7 +174,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const handleSaveProfile = async () => {
-    if (profileSaving) return; // guard re-entry (Enter key + button)
+    if (profileSaving) return;
     setProfileSaving(true);
     setProfileError(null);
     try {
@@ -333,7 +189,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const handleChangePassword = async () => {
-    if (passwordSaving) return; // guard re-entry
+    if (passwordSaving) return;
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
       setPasswordError('Vui lòng nhập đầy đủ thông tin.');
       return;
@@ -365,33 +221,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
         setSidebarOpen(v => !v);
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    setSearchQuery('');
-  }, [location.pathname, setSearchQuery]);
-
+  // Badge counts
   const { data: badgeData } = useBadgeCounts({
     enabled: user?.role !== 'DRIVER' && user?.role !== 'FORWARDER',
   });
   const dispatchCount = badgeData?.dispatchCount;
   const penaltiesCount = badgeData?.penaltiesCount;
 
-  // Derive nav items before early return so hooks remain unconditional
+  // Nav items and active state
   const navItems = user ? getNavItems(user.role, dispatchCount, penaltiesCount) : [];
   const activeKey = navItems
     .filter(item => location.pathname.startsWith(item.path))
@@ -400,53 +249,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageTitle = getPageTitle(location.pathname);
   const activeSection = navItems.find(i => i.key === activeKey)?.section;
 
-  const roleItems = useMemo(() => (user ? getSearchItems(user.role) : []), [user?.role]);
-  const matchedItems = useMemo(() => filterItems(roleItems, searchQuery), [roleItems, searchQuery]);
+  // Sidebar navigation handler
+  const handleNavigate = useCallback((path: string) => {
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+    navigate(path);
+  }, [navigate]);
 
-  useEffect(() => { setActiveIndex(0); }, [searchQuery]);
-
-  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(i => Math.min(i + 1, matchedItems.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(i => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const item = matchedItems[activeIndex];
-      if (item) {
-        navigate(item.path);
-        setSearchQuery('');
-        searchInputRef.current?.blur();
-      }
-    } else if (e.key === 'Escape') {
-      setSearchQuery('');
-      searchInputRef.current?.blur();
-    }
-  }
-
-  function handleSearchSelect(item: SearchItem) {
-    navigate(item.path);
-    setSearchQuery('');
-    searchInputRef.current?.blur();
-  }
-
-  // Update browser tab title on route change
-  useEffect(() => {
-    document.title = `${pageTitle} · TingTing`;
-  }, [pageTitle]);
-
-  // Announce page changes to screen readers
-  const [ariaLiveMsg, setAriaLiveMsg] = useState('');
-  useEffect(() => {
-    setAriaLiveMsg(`Đã chuyển đến ${pageTitle}`);
-  }, [pageTitle]);
-
+  // Sidebar collapse state
   const navRef = useRef<HTMLElement>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  // Track only the nav's own clientHeight — changes only on real window/sidebar resize,
-  // never when we collapse/expand sections (avoids feedback loops with scrollHeight).
   const [navClientHeight, setNavClientHeight] = useState(0);
 
   useEffect(() => {
@@ -456,10 +267,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const ro = new ResizeObserver(() => setNavClientHeight(nav.clientHeight));
     ro.observe(nav);
     return () => ro.disconnect();
-  }, []); // no deps — just measures the element, never writes collapsed
+  }, []);
 
-  // Auto-collapse / expand based on calculated total height vs available height.
-  // Uses item counts (stable per role) instead of scrollHeight (changes with collapse state).
   useEffect(() => {
     if (!sidebarOpen || navClientHeight === 0) return;
     const nav = navRef.current;
@@ -499,99 +308,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Update browser tab title on route change
+  useEffect(() => {
+    document.title = `${pageTitle} · TingTing`;
+  }, [pageTitle]);
+
+  // Screen reader live region
+  const [ariaLiveMsg, setAriaLiveMsg] = useState('');
+  useEffect(() => {
+    setAriaLiveMsg(`Đã chuyển đến ${pageTitle}`);
+  }, [pageTitle]);
+
   if (!user) return null;
 
   const isDriver = user.role === 'DRIVER';
 
-  const handleNavigate = (path: string) => {
-    if (window.innerWidth < 1024) setSidebarOpen(false);
-    navigate(path);
+  const sidebarProps = {
+    user,
+    navItems,
+    activeKey,
+    sidebarOpen,
+    userMenuOpen,
+    collapsed,
+    onNavigate: handleNavigate,
+    onToggleSidebar: () => setSidebarOpen(false),
+    onToggleUserMenu: toggleUserMenu,
+    onCloseUserMenu: closeUserMenu,
+    onOpenProfileModal: openProfileModal,
+    onOpenPasswordModal: openPasswordModal,
+    onLogout: logout,
+    navRef,
+    activeSection,
+    toggleSection,
   };
 
-  const renderUngroupedItems = () => {
-    const items = navItems.filter(i => !i.section);
-    if (items.length === 0) return null;
-
-    return items.map(item => {
-      const IconC = item.icon;
-      const isActive = item.key === activeKey;
-      const isDanger = item.key === 'penalties';
-      return (
-        <button
-          key={item.key}
-          className={`sidebar-item ${isActive ? 'active' : ''}`}
-          onClick={() => handleNavigate(item.path)}
-          title={item.label}
-          aria-label={item.label}
-        >
-          <IconC size={16} />
-          <span className="sidebar-item-label">{item.label}</span>
-
-          {item.count !== undefined && item.count > 0 && (
-            <span
-              className={`nav-item__badge${isDanger ? ' nav-item__badge--danger' : ''}`}
-              style={{ marginLeft: 'auto' }}
-            >
-              {item.count}
-            </span>
-          )}
-          {isActive && (item.count === undefined || item.count === 0) && (
-            <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
-          )}
-        </button>
-      );
-    });
-  };
-
-  const renderNavSection = (label: string, sectionName: 'operations' | 'hr' | 'financials' | 'master-data' | 'system') => {
-    const items = navItems.filter(i => i.section === sectionName);
-    if (items.length === 0) return null;
-    const isCollapsed = collapsed.has(sectionName);
-
-    return (
-      <div key={sectionName}>
-        <button
-          className="sidebar-section-label sidebar-section-toggle"
-          onClick={() => toggleSection(sectionName)}
-          aria-expanded={!isCollapsed}
-        >
-          <span>{label}</span>
-          <ChevronDown
-            size={10}
-            className={`sidebar-section-chevron${isCollapsed ? ' collapsed' : ''}`}
-          />
-        </button>
-        {!isCollapsed && items.map(item => {
-          const IconC = item.icon;
-          const isActive = item.key === activeKey;
-          const isDanger = item.key === 'penalties';
-          return (
-            <button
-              key={item.key}
-              className={`sidebar-item ${isActive ? 'active' : ''}`}
-              onClick={() => handleNavigate(item.path)}
-              title={item.label}
-              aria-label={item.label}
-            >
-              <IconC size={16} />
-              <span className="sidebar-item-label">{item.label}</span>
-
-              {item.count !== undefined && item.count > 0 && (
-                <span
-                  className={`nav-item__badge${isDanger ? ' nav-item__badge--danger' : ''}`}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  {item.count}
-                </span>
-              )}
-              {isActive && (item.count === undefined || item.count === 0) && (
-                <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    );
+  const topbarProps = {
+    user,
+    isDriver,
+    sidebarOpen,
+    unreadCount,
+    onToggleSidebar: () => setSidebarOpen(v => !v),
+    onOpenNotifications: () => setNotifOpen(true),
   };
 
   return (
@@ -599,255 +356,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className="skip-link">Bỏ qua đến nội dung chính</a>
       {/* Screen reader live region for route changes */}
       <div aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>{ariaLiveMsg}</div>
-      <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-brand">
-          <div className="sidebar-brand-logo">
-            <img src="/assets/logo.avif" alt="TingTing" />
-          </div>
-          <div className="sidebar-brand-meta">
-            <strong>TingTing</strong>
-            <span>Hệ thống Quản lý Vận tải</span>
-          </div>
-          <button
-            type="button"
-            className="sidebar-close"
-            aria-label="Đóng menu"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X size={18} />
-          </button>
-        </div>
 
-        <nav className="sidebar-nav" ref={navRef as React.RefObject<HTMLElement>}>
-          {renderUngroupedItems()}
-          {renderNavSection('Vận hành', 'operations')}
-          {renderNavSection('Nhân sự', 'hr')}
-          {renderNavSection('Tài chính', 'financials')}
-          {renderNavSection('Danh mục', 'master-data')}
-          {renderNavSection('Hệ thống', 'system')}
-        </nav>
+      <Sidebar {...sidebarProps} />
 
-        <div className="sidebar-footer" ref={userMenuRef}>
-          <button className="sidebar-user" onClick={toggleUserMenu} aria-expanded={userMenuOpen} aria-label="Menu người dùng">
-            <div className="avatar">
-              <User size={18} />
-            </div>
-            <div className="meta">
-              <div className="name">{user.fullName || user.username || getRoleLabel(user.role)}</div>
-              <div className="role">{getRoleLabel(user.role)}</div>
-            </div>
-            <ChevronUp size={14} className="sidebar-user-chevron" />
-          </button>
-          {userMenuOpen && (
-            <div className="sidebar-user-dropdown">
-              <div className="sidebar-user-dropdown-header">
-                <div className="name">{user.fullName || getRoleLabel(user.role)}</div>
-                <div className="role">{getRoleLabel(user.role)}</div>
-              </div>
-              <div className="sidebar-user-dropdown-divider" />
-              <button
-                className="sidebar-user-dropdown-item sidebar-user-dropdown-item--neutral"
-                onClick={openProfileModal}
-              >
-                <UserCog size={16} />
-                Thông tin cá nhân
-              </button>
-              <button
-                className="sidebar-user-dropdown-item sidebar-user-dropdown-item--neutral"
-                onClick={openPasswordModal}
-              >
-                <KeyRound size={16} />
-                Đổi mật khẩu
-              </button>
-              <div className="sidebar-user-dropdown-divider" />
-              <button
-                className="sidebar-user-dropdown-item"
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  logout();
-                }}
-              >
-                <LogOut size={16} />
-                Đăng xuất
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      <Modal
+      <ProfileModal
         isOpen={profileModalOpen}
-        title="Thông tin cá nhân"
         onClose={() => { if (!profileSaving) setProfileModalOpen(false); }}
-        onConfirm={handleSaveProfile}
-        footer={
-          <>
-            <button className="btn btn--secondary btn--sm" onClick={() => setProfileModalOpen(false)}>Hủy</button>
-            <button className="btn btn--primary btn--sm" onClick={handleSaveProfile} disabled={profileSaving}>
-              {profileSaving ? 'Đang lưu…' : 'Lưu thay đổi'}
-            </button>
-          </>
-        }
-      >
-        {profileError && (
-          <div style={errorBoxStyle}>
-            {profileError}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <FormGroup label="Tên đăng nhập">
-            <input
-              className="input"
-              value={profileForm.username}
-              onChange={e => setProfileForm(f => ({ ...f, username: e.target.value }))}
-              placeholder="username"
-            />
-          </FormGroup>
-          <FormGroup label="Họ và tên">
-            <input
-              className="input"
-              value={profileForm.fullName}
-              onChange={e => setProfileForm(f => ({ ...f, fullName: e.target.value }))}
-              placeholder="Nguyễn Văn A"
-            />
-          </FormGroup>
-          <FormGroup label="Email">
-            <input
-              className="input"
-              type="email"
-              value={profileForm.email}
-              onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))}
-              placeholder="email@example.com"
-            />
-          </FormGroup>
-          <FormGroup label="Số điện thoại">
-            <input
-              className="input"
-              value={profileForm.phone}
-              onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}
-              placeholder="0912345678"
-            />
-          </FormGroup>
-        </div>
-      </Modal>
+        saving={profileSaving}
+        error={profileError}
+        form={profileForm}
+        onFormChange={setProfileForm}
+        onSave={handleSaveProfile}
+      />
 
-      <Modal
+      <PasswordModal
         isOpen={passwordModalOpen}
-        title="Đổi mật khẩu"
         onClose={() => { if (!passwordSaving) setPasswordModalOpen(false); }}
-        onConfirm={handleChangePassword}
-        footer={
-          <>
-            <button className="btn btn--secondary btn--sm" onClick={() => setPasswordModalOpen(false)}>Hủy</button>
-            <button className="btn btn--primary btn--sm" onClick={handleChangePassword} disabled={passwordSaving}>
-              {passwordSaving ? 'Đang lưu…' : 'Đổi mật khẩu'}
-            </button>
-          </>
-        }
-      >
-        {passwordError && (
-          <div style={errorBoxStyle}>
-            {passwordError}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <FormGroup label="Mật khẩu hiện tại">
-            <input
-              className="input"
-              type="password"
-              value={passwordForm.currentPassword}
-              onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
-              placeholder="Nhập mật khẩu hiện tại"
-            />
-          </FormGroup>
-          <FormGroup label="Mật khẩu mới">
-            <input
-              className="input"
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
-              placeholder="Ít nhất 6 ký tự"
-            />
-          </FormGroup>
-          <FormGroup label="Xác nhận mật khẩu mới">
-            <input
-              className="input"
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
-              placeholder="Nhập lại mật khẩu mới"
-            />
-          </FormGroup>
-        </div>
-      </Modal>
+        saving={passwordSaving}
+        error={passwordError}
+        form={passwordForm}
+        onFormChange={setPasswordForm}
+        onSave={handleChangePassword}
+      />
 
       <div className={`app-main ${isDriver ? 'driver-mode' : ''}`}>
-        <header className={`topbar ${isDriver ? 'topbar--driver' : ''}`}>
-          {!isDriver && (
-            <button
-              className="topbar__toggle"
-              aria-label="Ẩn / hiện menu"
-              title="Ẩn / hiện menu (⌘B)"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-          )}
-
-          {!isDriver && (
-            <div ref={searchContainerRef} className="topbar__search" style={{ position: 'relative' }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Tìm trang, cấu hình, thao tác…"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-              />
-              {!searchQuery && <kbd>⌘ K</kbd>}
-              {searchQuery.length > 0 && (
-                <SearchDropdown
-                  items={matchedItems}
-                  query={searchQuery}
-                  activeIndex={activeIndex}
-                  onSelect={handleSearchSelect}
-                  onHover={setActiveIndex}
-                />
-              )}
-            </div>
-          )}
-
-          {isDriver && (
-            <>
-              <div className="topbar__left-driver">
-                <div className="topbar__welcome">
-                  <span className="greeting">Xin chào,</span>
-                  <span className="name">{user.fullName || user.username}</span>
-                </div>
-              </div>
-              <div className="topbar__center-driver">
-                <MonthNavigator />
-              </div>
-            </>
-          )}
-
-          <div className="topbar__actions">
-            {!isDriver && <MonthNavigator />}
-            {!isDriver && (
-              <button className="icon-btn help-btn" aria-label="Trợ giúp">
-                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              </button>
-            )}
-            <button className="icon-btn notification-btn" aria-label="Thông báo" onClick={() => setNotifOpen(true)}>
-              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-              {unreadCount > 0 && (
-                <span className="badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-              )}
-            </button>
-          </div>
-        </header>
+        <Topbar {...topbarProps} />
 
         <main className="app-body" id="main-content">
           {children}
@@ -873,7 +406,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </button>
               );
             })}
-            
+
             {/* Account button for mobile bottom nav */}
             <button
               className={`bottom-nav-item ${userMenuOpen ? 'active' : ''}`}

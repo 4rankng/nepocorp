@@ -11,6 +11,7 @@ import type { Supplier, Customer, PaginatedResponse } from '@tingting/shared';
 import { CONFIG } from '@tingting/shared';
 import { useSuppliers } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { ClickableCard } from '../components/shared/ClickableCard';
 
 type FilterKey = 'all' | 'active' | 'inactive';
 
@@ -289,7 +290,7 @@ export default function SupplierListPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(s => (
-              <div key={s.id} className="m-card" onClick={() => { setEditingId(s.id); setShowAddForm(false); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setEditingId(s.id); setShowAddForm(false); } }}>
+              <ClickableCard key={s.id} className="m-card" onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
                 <div className="m-card__top">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span className="m-card__title">{s.name}</span>
@@ -319,7 +320,7 @@ export default function SupplierListPage() {
                     Sửa
                   </button>
                 </div>
-              </div>
+              </ClickableCard>
             ))
           )}
         </div>
@@ -359,8 +360,8 @@ export default function SupplierListPage() {
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(s => (
-                  <tr key={s.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
-                    onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null);} } }}
+                  <ClickableCard key={s.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
+                    onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
@@ -422,7 +423,7 @@ export default function SupplierListPage() {
                         </div>
                       )}
                     </td>
-                  </tr>
+                  </ClickableCard>
               ))}
             </tbody>
           </table>

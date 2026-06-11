@@ -140,17 +140,7 @@ export default function ExpenseEntryPage() {
 
     setUploading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Lỗi tải ảnh lên');
-      }
-      const result = await response.json();
+      const result = await api.upload('/upload', formData) as { url: string };
       setPhotoUrls(prev => [...prev, result.url]);
     } catch {
       toast({ kind: 'error', message: 'Lỗi khi tải ảnh. Vui lòng thử lại.' });

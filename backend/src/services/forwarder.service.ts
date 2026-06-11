@@ -1,7 +1,8 @@
 import { db } from '../db';
-// Extract the transaction type so listTripContainers can accept both db and tx.
-type Tx = Parameters<typeof db.transaction>[0] extends (tx: infer T) => any ? T : never;
+import type { Tx } from './trip-shared';
+export type { Tx };
 import * as s from '../db/schema';
+import type { GuardedResult } from './approval.service';
 import { eq, and, isNull, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
@@ -386,6 +387,48 @@ export async function deleteTripExpense(expenseId: number, forwarderId: number) 
 }
 
 /**
+ * Fetch expense audit info (type name, amounts, trip code, supplier) for logging.
+ * Returns null if expense not found.
+ */
+export async function getTripExpenseAuditInfo(expenseId: number) {
+  const [expense] = await db.select({
+    buyAmount: s.tripExpenses.buyAmount,
+    typeName: s.forwarderExpenseTypes.name,
+    tripCode: s.trips.tripCode,
+    supplierName: s.suppliers.name,
+  }).from(s.tripExpenses)
+    .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+    .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
+    .where(eq(s.tripExpenses.id, expenseId))
+    .limit(1);
+  return expense ?? null;
+}
+
+/**
+ * Hard-delete a trip expense with business guards:
+ * - Trip must not be LOCKED
+ * - Expense must not be linked to any settlement
+ * Must be called from the trips route (not the forwarder portal).
+ */
+export async function deleteTripExpenseGuarded(tripId: number, expenseId: number): Promise<GuardedResult> {
+  return db.transaction(async (tx) => {
+    // Guard: trip must not be locked
+    const [trip] = await tx.select({ status: s.trips.status })
+      .from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) return { error: 'Không tìm thấy chuyến xe', status: 404 };
+    if (trip.status === 'LOCKED') return { error: 'Không thể xóa chi phí trên chuyến đã khóa', status: 400 };
+    // Guard: expense must not be linked to any settlement
+    const [link] = await tx.select({ id: s.settlementExpenses.id })
+      .from(s.settlementExpenses)
+      .where(eq(s.settlementExpenses.tripExpenseId, expenseId)).limit(1);
+    if (link) return { error: 'Không thể xóa chi phí đã được thanh toán', status: 400 };
+    await tx.delete(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId));
+    return { ok: true as const };
+  });
+}
+
+/**
  * List trip expenses belonging to a forwarder that are NOT yet linked to a
  * non-rejected settlement. Used in the settlement form for expense selection.
  */
@@ -408,6 +451,11 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     tripCode: s.trips.tripCode,
     departureDate: s.trips.departureDate,
     truckPlate: s.trucks.licensePlate,
+    containerNumbers: sql<string | null>`(
+      SELECT string_agg(tc.container_number, ', ' ORDER BY tc.id)
+      FROM trip_containers tc
+      WHERE tc.trip_id = ${s.tripExpenses.tripId}
+    )`,
   }).from(s.tripExpenses)
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))

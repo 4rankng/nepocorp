@@ -3,6 +3,7 @@ import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'luc
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { useDriverTrips } from '../hooks/useQueries';
 
 interface TripSummary {
@@ -71,15 +72,15 @@ export default function DriverTripsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
-          <div
+          <ClickableCard
             key={trip.id}
+            to={`/my-trips/${trip.id}`}
             className="panel fade-up driver-trip-card"
             style={{
               cursor: 'pointer',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
             }}
-            onClick={() => navigate(`/my-trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-trips/${trip.id}`); } }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
               (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';
@@ -129,7 +130,7 @@ export default function DriverTripsPage() {
               {/* Arrow */}
               <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
-          </div>
+          </ClickableCard>
         ))}
       </div>
     </div>

@@ -8,6 +8,10 @@ import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
+import { useTripFormLegs } from "./useTripFormLegs";
+import type { FormLeg } from "./useTripFormLegs";
+export type { FormLeg } from "./useTripFormLegs";
+import { useTripFormPhotos } from "./useTripFormPhotos";
 
 const FUEL_PRICE_PER_LITER = 25000;
 const LOADED_RATE = 43;
@@ -15,15 +19,6 @@ const EMPTY_RATE = 25;
 
 function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
-}
-
-export interface FormLeg {
-  id: string;
-  sequence: number;
-  origin: string;
-  destination: string;
-  km: string;
-  loadingType: LoadingType;
 }
 
 export interface CompletionStatus {
@@ -154,124 +149,6 @@ function isParamsObject(arg: TripOptions | UseTripFormParams): arg is UseTripFor
   return 'options' in arg;
 }
 
-// ─── Sub-hook: Leg management ────────────────────────────────────────────
-
-function useTripLegs(routes: RouteOption[], routeId: string) {
-  const [legs, setLegs] = useState<FormLeg[]>([]);
-
-  const selectedRoute = useMemo(
-    () => routes.find((r) => r.id === Number(routeId)),
-    [routes, routeId],
-  );
-
-  useEffect(() => {
-    if (!selectedRoute || legs.length > 0) return;
-
-    if (selectedRoute.defaultLegs && selectedRoute.defaultLegs.length > 0) {
-      setLegs(selectedRoute.defaultLegs.map((l, i) => ({
-        id: Math.random().toString(),
-        sequence: i + 1,
-        origin: l.origin,
-        destination: l.destination,
-        km: l.km.toString(),
-        loadingType: l.loadingType as LoadingType,
-      })));
-    } else {
-      const parts = selectedRoute.name.split(/\s*[-→]\s*/).filter(Boolean);
-      setLegs([
-        {
-          id: Math.random().toString(),
-          sequence: 1,
-          origin: parts[0]?.trim() || "",
-          destination: parts.length > 1 ? parts[parts.length - 1].trim() : "",
-          km: selectedRoute.distanceKm ? String(selectedRoute.distanceKm) : "",
-          loadingType: LoadingType.HANG,
-        },
-      ]);
-    }
-  }, [selectedRoute, legs.length]);
-
-  const addLeg = useCallback(() => {
-    setLegs((prev) => {
-      const lastLeg = prev[prev.length - 1];
-      return [
-        ...prev,
-        {
-          id: Math.random().toString(),
-          sequence: prev.length + 1,
-          origin: lastLeg ? lastLeg.destination : "",
-          destination: "",
-          km: "",
-          loadingType: LoadingType.HANG,
-        },
-      ];
-    });
-  }, []);
-
-  const removeLeg = useCallback((idx: number) => {
-    setLegs((prev) =>
-      prev
-        .filter((_, i) => i !== idx)
-        .map((leg, i) => ({ ...leg, sequence: i + 1 })),
-    );
-  }, []);
-
-  const updateLeg = useCallback(
-    (idx: number, field: keyof FormLeg, value: string) => {
-      setLegs((prev) =>
-        prev.map((leg, i) => (i === idx ? { ...leg, [field]: value } : leg)),
-      );
-    },
-    [],
-  );
-
-  return {
-    legs, setLegs,
-    addLeg, removeLeg, updateLeg,
-  };
-}
-
-// ─── Sub-hook: Photo upload ──────────────────────────────────────────────
-
-function useTripUpload(onError: (msg: string) => void) {
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-
-  const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: 'CONTAINER' | 'SEAL' | 'OTHER' = 'OTHER') => {
-    setUploading(true);
-    try {
-      const token = localStorage.getItem("token");
-      for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (tripId) formData.append("trip_id", String(tripId));
-        formData.append("type", type);
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
-        });
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || "Lỗi tải ảnh lên");
-        }
-        const result = await response.json();
-        setPhotoUrls((prev) => [...prev, result.url]);
-      }
-    } catch (err: any) {
-      onError(err.message || "Lỗi khi tải ảnh.");
-    } finally {
-      setUploading(false);
-    }
-  }, [onError]);
-
-  const removePhoto = useCallback((idx: number) => {
-    setPhotoUrls((prev) => prev.filter((_, i) => i !== idx));
-  }, []);
-
-  return { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto };
-}
-
 // ─── Main hook ───────────────────────────────────────────────────────────
 
 export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormReturn {
@@ -375,9 +252,11 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripLegs(options.routes, routeId);
-  const { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto } = useTripUpload(setError);
+  // ── Sub-hooks ──
+  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, routeId);
+  const { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto } = useTripFormPhotos(setError);
 
+  // ── Edit mode: populate form from existing trip ──
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
     if (lastTripId.current === existingTrip.id) return;
@@ -439,6 +318,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
   }, [isEditMode, existingTrip, resetToggle]);
 
+  // Auto-set trailer type from truck's current trailer
   useEffect(() => {
     if (truckId && options?.trucks && options?.trailers) {
       const selectedTruck = options.trucks.find(t => t.id === Number(truckId));
@@ -451,6 +331,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
   }, [truckId, options?.trucks, options?.trailers]);
 
+  // ── Pricing query ──
   const pricingQuery = useQuery({
     queryKey: ["suggested-price", customerId, routeId, departureDate],
     queryFn: async () => {
@@ -506,6 +387,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     return null;
   }, [routeId, options.routes, isEditMode, existingTrip]);
 
+  // Auto-fill route-based defaults
   useEffect(() => {
     if (!selectedRouteData) return;
     if (isEditMode && existingTrip && existingTrip.routeId === selectedRouteData.id) {
@@ -530,6 +412,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
   }, [selectedRouteData, isEditMode, existingTrip]);
 
+  // ── Derived values ──
   const estimatedFuelCost = useMemo(() => {
     if (fuelMode === FuelMode.FLAT_RATE) {
       const liters = Number(fuelLitersOverride) || 0;
@@ -547,11 +430,11 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     const discount = Number(tollsDiscount) || 0;
     const addition = Number(tollsAddition) || 0;
     const stations = Number(tollsStations) || 0;
-    
+
     const perStation = isEditMode && existingTrip?.tollPerStationApplied
       ? Number(existingTrip.tollPerStationApplied)
       : (roadConfig ? Number(roadConfig.tollPerStation) : 55000);
-      
+
     const returnBonus = hasReturnCargo
       ? (isEditMode && existingTrip?.returnCargoBonusApplied
           ? Number(existingTrip.returnCargoBonusApplied)
@@ -581,8 +464,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     if (customerId) count++;
     if (routeId) count++;
     if (carrierType === 'EXTERNAL') {
-      // For external trips, truck/trailer/driver slots are replaced by external fields
-      count += 3; // truckId + trailerType + driverId equivalents always satisfied
+      count += 3;
     } else {
       if (truckId) count++;
       if (trailerType) count++;
@@ -660,6 +542,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     ],
   );
 
+  // ── Submit handler ──
   const handleSubmit = useCallback(
     async (e?: React.FormEvent): Promise<number | undefined> => {
       e?.preventDefault();
@@ -676,10 +559,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           return;
         }
         for (const leg of legs) {
-          // Origin + destination are still required (DB enforces .min(1)). Km is
-          // now optional / allowed to be 0 so accountants can save partial drafts
-          // before the actual mileage is known. Backend matches: km uses
-          // `nonNegNumeric` in shared/src/schemas/index.ts.
           if (!leg.origin.trim() || !leg.destination.trim()) {
             setError(`Chặng số ${leg.sequence}: cần điền cả điểm đi và điểm đến.`);
             return;
@@ -734,8 +613,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
           const updatedTrip = await api.put<any>(endpoint, payload);
-          // Invalidate trip list + detail + monthly aggregates so caches don't go stale.
-          // Fire-and-forget: don't block the UI on refetches.
           queryClient.invalidateQueries({ queryKey: ['trips'] });
           queryClient.setQueryData(['trip', String(existingTrip.id)], updatedTrip);
           queryClient.invalidateQueries({ queryKey: ['trip', String(existingTrip.id)] });
@@ -774,9 +651,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
         if (hasOptionalData) {
-          // On create, submit any leg that has at least origin OR destination
-          // filled in (not just non-empty km). Km is allowed to be 0 — backend
-          // schema is nonNegNumeric, matching the edit-mode rule.
           const legsToSubmit = legs.filter(
             (leg) => leg.origin.trim() !== '' || leg.destination.trim() !== '' || leg.km.trim() !== '',
           );
@@ -840,7 +714,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
-        // Invalidate trip list after a fresh create so the new row appears.
         await queryClient.invalidateQueries({ queryKey: ['trips'] });
         return trip.id;
       } catch (err) {

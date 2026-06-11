@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader, KPI } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import './ForwarderSettlementsPage.css';
@@ -191,8 +192,9 @@ export default function ForwarderSettlementsPage() {
             const groups = hasBreakdown ? groupExpensesByType(s.linkedExpenses!, expenseTypeOptions) : null;
 
             return (
-              <div
+              <ClickableCard
                 key={s.id}
+                to={`/my-settlements/${s.id}`}
                 className="fset-card fade-up"
                 style={{
                   animationDelay: `${idx * 40}ms`,
@@ -200,10 +202,6 @@ export default function ForwarderSettlementsPage() {
                   position: 'relative',
                   overflow: 'hidden',
                 }}
-                onClick={() => navigate(`/my-settlements/${s.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/my-settlements/${s.id}`); } }}
               >
                 {/* Status strip — color tells status, no text needed */}
                 <span className="fset-card__strip" style={{ background: STATUS_STRIP[s.status] }} />
@@ -269,7 +267,7 @@ export default function ForwarderSettlementsPage() {
                   {/* Arrow */}
                   <ArrowRight size={16} className="fset-card__arrow" />
                 </div>
-              </div>
+              </ClickableCard>
             );
           })}
         </div>

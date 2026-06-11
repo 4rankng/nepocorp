@@ -5,6 +5,7 @@ import { downloadCSV } from '../lib/csv';
 import type { PayableSummary } from '@tingting/shared';
 import { Search, ChevronRight } from 'lucide-react';
 import { PageHeader } from '../components/UI';
+import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary } from '../hooks/useQueries';
 import { splitKpi } from '../features/dashboard/utils';
 
@@ -211,7 +212,7 @@ export default function PayableListPage() {
                 const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
                 const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                 return (
-                  <div key={d.supplier.id} className="m-card" onClick={() => navigate(`/payables/${d.supplier.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/payables/${d.supplier.id}`); } }}>
+                  <ClickableCard key={d.supplier.id} to={`/payables/${d.supplier.id}`} className="m-card">
                     <div className="m-card__top">
                       <span className="m-card__title">{d.supplier.name}</span>
                       <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
@@ -239,7 +240,7 @@ export default function PayableListPage() {
                         )}
                       </>
                     )}
-                  </div>
+                  </ClickableCard>
                 );
               })
             )}
@@ -263,9 +264,9 @@ export default function PayableListPage() {
               </thead>
               <tbody>
                 {filteredPayables.map(d => (
-                  <tr
+                  <ClickableCard
                     key={d.supplier.id}
-                    onClick={() => navigate(`/payables/${d.supplier.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/payables/${d.supplier.id}`); } }}
+                    to={`/payables/${d.supplier.id}`}
                     style={{ cursor: 'pointer' }}
                   >
                     <td>
@@ -297,7 +298,7 @@ export default function PayableListPage() {
                     <td style={{ textAlign: 'right' }}>
                       <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
                     </td>
-                  </tr>
+                  </ClickableCard>
                 ))}
 
                 {filteredPayables.length === 0 && (

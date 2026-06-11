@@ -321,3 +321,32 @@ export async function computeSalary(
     netSalary,
   };
 }
+
+/**
+ * Compute salary summaries for ALL active drivers in a given month/year.
+ * Extracted from the salary route to move the N+1 query pattern into the service layer.
+ */
+export async function computeAllDriverSalaries(year: number, month: number) {
+  const drivers = await db.select({
+    id: s.drivers.id,
+    name: s.drivers.name,
+    baseSalary: s.drivers.baseSalary,
+    status: s.drivers.status,
+  }).from(s.drivers)
+    .where(isNull(s.drivers.deletedAt))
+    .orderBy(s.drivers.name);
+
+  const summaries = await Promise.all(
+    drivers.map(async (driver) => {
+      try {
+        const salary = await computeSalary(driver.id, year, month);
+        return { ...driver, salary };
+      } catch (err) {
+        console.error(`[salary] computeSalary failed for driver ${driver.id}:`, err);
+        return { ...driver, salary: null };
+      }
+    })
+  );
+
+  return { year, month, items: summaries };
+}

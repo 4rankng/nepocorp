@@ -1,6 +1,8 @@
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { FINANCIAL_ROLES } from '@tingting/shared';
+import { db } from '../db';
+import { ApiError } from '../errors';
 
 export type ApprovableTable = 'trip_expenses' | 'debt_offsets';
 export type ApprovalTransition = 'APPROVED' | 'REJECTED';
@@ -26,7 +28,7 @@ export async function transitionApproval(
   },
 ): Promise<void> {
   if (!(FINANCIAL_ROLES as readonly string[]).includes(opts.actorRole)) {
-    throw Object.assign(new Error('Bạn không có quyền phê duyệt hoặc từ chối'), { status: 403 });
+    throw new ApiError(403, 'Bạn không có quyền phê duyệt hoặc từ chối');
   }
 
   const table = APPROVABLE_TABLES[opts.table];
@@ -38,13 +40,10 @@ export async function transitionApproval(
     .limit(1);
 
   if (!record) {
-    throw Object.assign(new Error('Không tìm thấy bản ghi'), { status: 404 });
+    throw new ApiError(404, 'Không tìm thấy bản ghi');
   }
   if (record.approvalStatus !== 'PENDING') {
-    throw Object.assign(
-      new Error(`Không thể chuyển trạng thái: bản ghi đang ở ${record.approvalStatus}`),
-      { status: 400 },
-    );
+    throw new ApiError(400, `Không thể chuyển trạng thái: bản ghi đang ở ${record.approvalStatus}`);
   }
 
   // trip_expenses has updatedAt; debt_offsets does not
@@ -52,4 +51,36 @@ export async function transitionApproval(
   if (opts.table === 'trip_expenses') patch.updatedAt = new Date();
 
   await tx.update(table).set(patch).where(eq(table.id, opts.id));
+}
+
+/** Shared result type for guarded business operations inside a transaction. */
+export type GuardedResult = { ok: true } | { error: string; status: number };
+
+/**
+ * Process an expense approval or rejection within a transaction.
+ * Verifies the expense belongs to the specified trip, then transitions approval status.
+ */
+export async function processExpenseApproval(
+  tripId: number,
+  expenseId: number,
+  actorId: number,
+  actorRole: string,
+  action: 'APPROVED' | 'REJECTED',
+): Promise<GuardedResult> {
+  return db.transaction(async (tx) => {
+    // Verify expense belongs to the specified trip
+    const [expense] = await tx.select({ tripId: s.tripExpenses.tripId })
+      .from(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId)).limit(1);
+    if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
+    if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
+
+    await transitionApproval(tx, {
+      table: 'trip_expenses',
+      id: expenseId,
+      toStatus: action,
+      actorId,
+      actorRole,
+    });
+    return { ok: true as const };
+  });
 }

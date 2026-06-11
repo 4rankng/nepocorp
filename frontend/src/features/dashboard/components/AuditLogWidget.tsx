@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Settings, Truck, DollarSign, LogIn, FileText, Activity } from 'lucide-react';
 import type { DashboardAuditEntry } from '../hooks/useDashboardData';
 import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../../../lib/audit-helpers';
+import { ClickableCard } from '../../../components/shared/ClickableCard';
 
 function categoryDotClass(c: string): string {
   if (c === 'trip') return 'audit-dot--trip';
@@ -64,14 +65,10 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
             return (
               <React.Fragment key={entry.id ?? idx}>
                 {idx > 0 && <div className="wf-divider" />}
-                <div
+                <ClickableCard
+                  to="/audit-log"
                   className="wf-aurow"
-                  onClick={() => navigate('/audit-log')}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') navigate('/audit-log');
-                  }}
+                  ariaLabel="Xem nhật ký hoạt động"
                 >
                   <span className={`audit-dot ${categoryDotClass(entry.category)}`} style={{ width: 8, height: 8 }} />
                   <div className="tx">
@@ -86,7 +83,7 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
                       {entry.message}
                     </div>
                   </div>
-                </div>
+                </ClickableCard>
               </React.Fragment>
             );
           })

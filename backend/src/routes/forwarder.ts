@@ -14,8 +14,9 @@ import {
   getExpensePhotos,
   deleteExpensePhoto,
   listActiveSuppliersForForwarder,
+  getTripExpenseAuditInfo,
 } from '../services/forwarder.service';
-import { exportSettlementXlsx, exportSettlementHtml } from '../services/settlement-export.service';
+import { exportSettlementXlsx, exportSettlementHtml, previewSettlementHtml, previewSettlementXlsx, formatLocalDate } from '../services/settlement-export.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { db } from '../db';
 import * as s from '../db/schema';
@@ -102,18 +103,8 @@ router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) 
   const forwarder = await getForwarderByUserId(req.user!.userId);
   const expenseId = parseInt(req.params.id as string, 10);
 
-  // Fetch expense info for audit log before delete
-  const [expense] = await db.select({
-    buyAmount: s.tripExpenses.buyAmount,
-    typeName: s.forwarderExpenseTypes.name,
-    tripCode: s.trips.tripCode,
-    supplierName: s.suppliers.name,
-  }).from(s.tripExpenses)
-    .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
-    .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
-    .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
-    .where(eq(s.tripExpenses.id, expenseId))
-    .limit(1);
+  // Fetch expense info for audit log before delete (shared with trips route)
+  const expense = await getTripExpenseAuditInfo(expenseId);
 
   const result = await deleteTripExpense(expenseId, forwarder.id);
   if (result === null) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
@@ -193,6 +184,28 @@ router.get('/advance-settlements/:id/export', asyncHandler(async (req: Request, 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=phieu-thanh-toan-${id}-${dateStr}.xlsx`);
   await exportSettlementXlsx(id, res);
+}));
+
+router.post('/advance-settlements/preview', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const parsed = createAdvanceSettlementSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  const { advanceRequestIds, tripExpenseIds, refundAmount, note } = parsed.data;
+
+  const format = (req.query.format as string) || 'html';
+  const input = { forwarderId: forwarder.id, advanceRequestIds, tripExpenseIds, refundAmount, note: note ?? undefined };
+
+  if (format === 'xlsx') {
+    const dateStr = formatLocalDate();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=phieu-thanh-toan-xem-truoc-${dateStr}.xlsx`);
+    await previewSettlementXlsx(input, res);
+    return;
+  }
+
+  const html = await previewSettlementHtml(input);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
 }));
 
 router.post('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {

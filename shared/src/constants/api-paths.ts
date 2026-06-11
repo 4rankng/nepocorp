@@ -20,10 +20,17 @@ export const TRIPS = {
   ACTUALS: (id: number) => `/trips/${id}/actuals`,
   DISPATCH: (id: number) => `/trips/${id}/dispatch`,
   LOCK: (id: number) => `/trips/${id}/lock`,
+  UNLOCK: (id: number) => `/trips/${id}/unlock`,
   CANCEL: (id: number) => `/trips/${id}/cancel`,
   REASSIGN: (id: number) => `/trips/${id}/reassign`,
   ADJUSTMENTS: (id: number) => `/trips/${id}/adjustments`,
   ADJUSTMENT: (id: number) => `/trips/${id}/adjustment`,
+  DEPARTURE_DATE: (id: number) => `/trips/${id}/departure-date`,
+  CONTAINERS: (id: number) => `/trips/${id}/containers`,
+  EXPENSES: (id: number) => `/trips/${id}/expenses`,
+  EXPENSE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}`,
+  EXPENSE_APPROVE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/approve`,
+  EXPENSE_REJECT: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/reject`,
 } as const;
 
 // ─── Catalogs & Pricing ────────────────────────────────────────────────────────
@@ -65,6 +72,9 @@ export const CONFIG = {
   SUPPLIER: (id: number) => `/suppliers/${id}`,
   EXPENSE_CATEGORIES: '/expense-categories',
   EXPENSE_CATEGORY: (id: number) => `/expense-categories/${id}`,
+  PORTS: '/ports',
+  CONTAINER_TYPES: '/container-types',
+  FUEL_PRICE_HISTORY: '/fuel-price-history',
 } as const;
 
 // ─── Financial ──────────────────────────────────────────────────────────────────
@@ -87,6 +97,10 @@ export const FINANCIAL = {
   ADVANCE_SETTLEMENT_CHECK: (id: number) => `/advance-settlements/${id}/check`,
   ADVANCE_SETTLEMENT_APPROVE: (id: number) => `/advance-settlements/${id}/approve`,
   ADVANCE_SETTLEMENT_REJECT: (id: number) => `/advance-settlements/${id}/reject`,
+  ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/advance-settlements/${id}`,
+  ADVANCE_SETTLEMENT_EXPORT: (id: number, format: string) => `/advance-settlements/${id}/export?format=${format}`,
+  DASHBOARD_APPROVAL_QUEUE: '/dashboard/approval-queue',
+  LEDGER_BALANCES: '/ledger/balances',
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────
@@ -98,6 +112,8 @@ export const REPORTS = {
   PAYABLES_SUMMARY: '/reports/payables-summary',
   RENEWALS: '/expenses/reports/renewals',
   DISTRIBUTE_PROFIT: '/reports/distribute-profit',
+  DISTRIBUTION_HISTORY: '/reports/distribution-history',
+  DISTRIBUTE_PROFIT_PREVIEW: '/reports/distribute-profit/preview',
 } as const;
 
 // ─── Driver portal ─────────────────────────────────────────────────────────────
@@ -118,8 +134,10 @@ export const FORWARDER = {
   FORWARDER_EXPENSES: '/forwarder-expenses',
   ADVANCE_REQUESTS: '/forwarder/me/advance-requests',
   ADVANCE_SETTLEMENTS: '/forwarder/me/advance-settlements',
+  ADVANCE_SETTLEMENT_PREVIEW: '/forwarder/me/advance-settlements/preview',
   ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/forwarder/me/advance-settlements/${id}`,
   UNLINKED_EXPENSES: '/forwarder/me/unlinked-expenses',
+  SUPPLIERS: '/forwarder/me/suppliers',
 } as const;
 
 // ─── Notifications ──────────────────────────────────────────────────────────────
@@ -138,4 +156,11 @@ export const SYSTEM = {
   MAPS_AUTOCOMPLETE: '/maps/autocomplete',
   MAPS_DISTANCE: '/maps/distance',
   HEALTH: '/health',
+} as const;
+
+// ─── Salary ─────────────────────────────────────────────────────────────────────
+export const SALARY = {
+  LIST: '/salary',
+  DRIVER_MONTH: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}`,
+  WORK_DAYS: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}/workdays`,
 } as const;

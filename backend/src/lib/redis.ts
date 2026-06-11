@@ -88,11 +88,11 @@ export async function isTokenBlacklisted(jti: string): Promise<boolean> {
   try {
     const exists = await client.exists(`blacklist:${jti}`);
     return exists === 1;
-  } catch {
-    // Fail-open: if Redis is down, don't lock out all users.
-    // Blacklist is a revocation mechanism — missing a check during an outage
-    // is preferable to rejecting all authenticated traffic.
-    return false;
+  } catch (error) {
+    // Fail-closed: if Redis is down, treat the token as blacklisted.
+    // Rejecting potentially-revoked tokens is safer than allowing them.
+    console.error('[Redis] blacklist check failed:', error);
+    return true;
   }
 }
 

@@ -3,6 +3,7 @@ import * as s from '../db/schema';
 import { eq, and, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
+import { AdvanceError, validateSettlementInputs } from './settlement-validation';
 
 async function generateSettlementCode(tx: any): Promise<string> {
   const now = new Date();
@@ -23,12 +24,9 @@ async function generateSettlementCode(tx: any): Promise<string> {
   return `${prefix}-${String(seq).padStart(4, '0')}`;
 }
 
-export class AdvanceError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-    this.name = 'AdvanceError';
-  }
-}
+
+// Re-export AdvanceError for backward compatibility with route imports
+export { AdvanceError } from './settlement-validation';
 
 async function enrichWithNames(rows: any[]): Promise<any[]> {
   if (rows.length === 0) return rows;
@@ -219,73 +217,20 @@ export async function createAdvanceSettlement(
   }
 
   return db.transaction(async (tx) => {
-    const requests = await tx.select()
-      .from(s.advanceRequests)
-      .where(inArray(s.advanceRequests.id, data.advanceRequestIds));
+    // Shared validation: existence, ownership, status, and already-linked checks
+    const { advanceRequests: requests, tripExpenses: tripExpenseRows } =
+      await validateSettlementInputs({
+        dbOrTx: tx,
+        forwarderId,
+        advanceRequestIds: data.advanceRequestIds,
+        tripExpenseIds: data.tripExpenseIds,
+        checkAlreadyLinked: true,
+      });
 
-    if (requests.length !== data.advanceRequestIds.length) {
-      throw new AdvanceError(400, 'One or more advance requests not found');
-    }
-
-    for (const req of requests) {
-      if (req.requesterId !== forwarderId) {
-        throw new AdvanceError(400, `Advance request #${req.id} does not belong to this forwarder`);
-      }
-      if (req.status !== 'APPROVED') {
-        throw new AdvanceError(400, `Advance request #${req.id} must have status APPROVED`);
-      }
-    }
-
-    const existingLinks = await tx.select({ advanceRequestId: s.advanceSettlementRequests.advanceRequestId })
-      .from(s.advanceSettlementRequests)
-      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.advanceSettlementRequests.settlementId))
-      .where(and(
-        inArray(s.advanceSettlementRequests.advanceRequestId, data.advanceRequestIds),
-        notInArray(s.advanceSettlements.status, ['REJECTED']),
-      ));
-    if (existingLinks.length > 0) {
-      const dupIds = existingLinks.map(l => l.advanceRequestId).join(', ');
-      throw new AdvanceError(400, `Yêu cầu tạm ứng đã được liên kết với phiếu thanh toán khác: ${dupIds}`);
-    }
-
-    // Validate and auto-calculate from trip expenses if provided
+    // Auto-calculate total from selected expenses
     let totalExpenseAmount = data.totalExpenseAmount ?? 0;
-    let tripExpenseRows: any[] = [];
-
-    if (data.tripExpenseIds && data.tripExpenseIds.length > 0) {
-      tripExpenseRows = await tx.select()
-        .from(s.tripExpenses)
-        .where(inArray(s.tripExpenses.id, data.tripExpenseIds));
-
-      if (tripExpenseRows.length !== data.tripExpenseIds.length) {
-        throw new AdvanceError(400, 'Một hoặc nhiều chi phí không tồn tại');
-      }
-
-      // Validate ownership — all expenses must belong to this forwarder
-      for (const exp of tripExpenseRows) {
-        if (exp.forwarderId !== forwarderId) {
-          throw new AdvanceError(400, `Chi phí #${exp.id} không thuộc về bạn`);
-        }
-        if (exp.approvalStatus !== 'APPROVED') {
-          throw new AdvanceError(400, `Chi phí #${exp.id} chưa được duyệt`);
-        }
-      }
-
-      // Check that none are already linked to another non-rejected settlement
-      const alreadyLinked = await tx.select({ tripExpenseId: s.settlementExpenses.tripExpenseId })
-        .from(s.settlementExpenses)
-        .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
-        .where(and(
-          inArray(s.settlementExpenses.tripExpenseId, data.tripExpenseIds),
-          notInArray(s.advanceSettlements.status, ['REJECTED']),
-        ));
-      if (alreadyLinked.length > 0) {
-        const dupIds = alreadyLinked.map(l => l.tripExpenseId).join(', ');
-        throw new AdvanceError(400, `Chi phí đã được liên kết với phiếu thanh toán khác: ${dupIds}`);
-      }
-
-      // Auto-calculate total from selected expenses
-      totalExpenseAmount = tripExpenseRows.reduce((sum, exp) => sum + Number(exp.buyAmount), 0);
+    if (tripExpenseRows.length > 0) {
+      totalExpenseAmount = tripExpenseRows.reduce((sum, exp: any) => sum + Number(exp.buyAmount), 0);
     }
 
     const code = await generateSettlementCode(tx);

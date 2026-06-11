@@ -1,6 +1,7 @@
 import { api } from '../lib/api';
+import { toQuery } from '../lib/http/query';
+import { fetchAllPaginated } from '../lib/http/paginate';
 import { FINANCIAL, REPORTS } from '@tingting/shared';
-import { fetchAllPaginated } from './configClient';
 import type {
   LedgerEntry,
   CustomerStatement,
@@ -21,36 +22,29 @@ export interface CustomerAging {
 }
 
 export const financialClient = {
-  getLedgerEntries: async (params?: { entityType?: string; limit?: number }) => {
-    const qs = new URLSearchParams();
-    if (params?.entityType) qs.set('entityType', params.entityType);
-    if (params?.limit) qs.set('limit', String(params.limit));
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return api.get<PaginatedResponse<LedgerEntry>>(`${FINANCIAL.LEDGER}${query}`);
-  },
+  getLedgerEntries: (params?: { entityType?: string; limit?: number }) =>
+    api.get<PaginatedResponse<LedgerEntry>>(
+      `${FINANCIAL.LEDGER}${toQuery(params)}`,
+    ),
 
-  getAllLedgerEntries: async (params?: { entityType?: string }) => {
-    return fetchAllPaginated<LedgerEntry>(
+  getAllLedgerEntries: (params?: { entityType?: string }) =>
+    fetchAllPaginated<LedgerEntry>(
       FINANCIAL.LEDGER,
       params?.entityType ? { entityType: params.entityType } : undefined,
-    );
-  },
+    ),
 
-  getCustomerStatement: async (id: number) => {
-    return api.get<CustomerStatement>(FINANCIAL.CUSTOMER_STATEMENT(id));
-  },
+  getCustomerStatement: (id: number) =>
+    api.get<CustomerStatement>(FINANCIAL.CUSTOMER_STATEMENT(id)),
 
-  getSupplierStatement: async (id: number) => {
-    return api.get<SupplierStatement>(FINANCIAL.SUPPLIER_STATEMENT(id));
-  },
+  getSupplierStatement: (id: number) =>
+    api.get<SupplierStatement>(FINANCIAL.SUPPLIER_STATEMENT(id)),
 
-  getPenalties: async (params?: Record<string, string>) => {
-    const qs = new URLSearchParams(params);
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return api.get<PaginatedResponse<any>>(`${FINANCIAL.PENALTIES}${query}`);
-  },
+  getPenalties: (params?: Record<string, string>) =>
+    api.get<PaginatedResponse<any>>(
+      `${FINANCIAL.PENALTIES}${toQuery(params as Record<string, string | number | undefined>)}`,
+    ),
 
-  getExpenses: async (filters?: {
+  getExpenses: (filters?: {
     truckId?: number;
     supplierId?: number;
     categoryId?: number;
@@ -58,42 +52,31 @@ export const financialClient = {
     toDate?: string;
     page?: number;
     pageSize?: number;
-  }) => {
-    const qs = new URLSearchParams();
-    if (filters) {
-      if (filters.truckId) qs.set('truckId', String(filters.truckId));
-      if (filters.supplierId) qs.set('supplierId', String(filters.supplierId));
-      if (filters.categoryId) qs.set('categoryId', String(filters.categoryId));
-      if (filters.fromDate) qs.set('fromDate', filters.fromDate);
-      if (filters.toDate) qs.set('toDate', filters.toDate);
-      if (filters.page) qs.set('page', String(filters.page));
-      if (filters.pageSize) qs.set('pageSize', String(filters.pageSize));
-    }
-    const query = qs.toString() ? `?${qs.toString()}` : '';
-    return api.get<PaginatedResponse<ExpenseWithRefs>>(`${FINANCIAL.EXPENSES}${query}`);
-  },
+  }) =>
+    api.get<PaginatedResponse<ExpenseWithRefs>>(
+      `${FINANCIAL.EXPENSES}${toQuery(filters)}`,
+    ),
 
-  getPayablesSummary: async () => {
-    return api.get<{
+  getPayablesSummary: () =>
+    api.get<{
       items: PayableSummary[];
       totalOutstanding: string;
       totalSuppliers: number;
       overdueSuppliers: number;
-    }>(REPORTS.PAYABLES_SUMMARY);
+    }>(REPORTS.PAYABLES_SUMMARY),
+
+  getCustomerAging: (search?: string) => {
+    const trimmed = search?.trim();
+    return api.get<{ customers: CustomerAging[] }>(
+      trimmed
+        ? `${REPORTS.RECEIVABLES_AGING}${toQuery({ search: trimmed })}`
+        : REPORTS.RECEIVABLES_AGING,
+    );
   },
 
-  getCustomerAging: async (search?: string) => {
-    const qs = search && search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
-    return api.get<{ customers: CustomerAging[] }>(`${REPORTS.RECEIVABLES_AGING}${qs}`);
-  },
+  getAdminSettlementDetail: (id: number) =>
+    api.get<any>(FINANCIAL.ADVANCE_SETTLEMENT_DETAIL(id)),
 
-  // ── Admin: Advance Settlements ────────────────────────────────────────────
-
-  getAdminSettlementDetail: async (id: number) => {
-    return api.get<any>(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}`);
-  },
-
-  getSettlementExportUrl: (id: number, format: 'xlsx' | 'pdf') => {
-    return `/api${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}/export?format=${format}`;
-  },
+  getSettlementExportUrl: (id: number, format: 'xlsx' | 'pdf') =>
+    `/api${FINANCIAL.ADVANCE_SETTLEMENT_EXPORT(id, format)}`,
 };

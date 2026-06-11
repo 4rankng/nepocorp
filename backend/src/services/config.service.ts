@@ -4,7 +4,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, isNull, desc, and, lte } from 'drizzle-orm';
+import { eq, isNull, desc, and, lte, ne } from 'drizzle-orm';
 import { cacheGet, cacheInvalidate } from '../lib/redis';
 
 // ─── Bootstrap ──────────────────────────────────────────────────────────────────
@@ -134,4 +134,71 @@ export async function getEffectiveFuelPrice(date: Date): Promise<number | null> 
     .orderBy(desc(s.fuelPriceHistory.effectiveDate))
     .limit(1);
   return row ? Number(row.unitPrice) : null;
+}
+
+// ─── Customer ↔ Supplier link mirroring ────────────────────────────────────
+
+/** Mirror customer.linkedSupplierId ↔ supplier.linkedCustomerId after create/update. */
+export async function mirrorCustomerLink(
+  customer: { id: number },
+  data: { linkedSupplierId?: number | null },
+) {
+  if (customer == null || customer.id == null) return;
+  if (data == null || !('linkedSupplierId' in data)) return; // not in this patch
+  const customerId = customer.id;
+  const newSupplierId = data.linkedSupplierId;
+
+  // Clear any other supplier still pointing back at this customer
+  const staleCond = newSupplierId == null
+    ? eq(s.suppliers.linkedCustomerId, customerId)
+    : and(eq(s.suppliers.linkedCustomerId, customerId), ne(s.suppliers.id, newSupplierId));
+  await db.update(s.suppliers)
+    .set({ linkedCustomerId: null, updatedAt: new Date() })
+    .where(staleCond);
+
+  if (newSupplierId != null) {
+    await db.update(s.suppliers)
+      .set({ linkedCustomerId: customerId, updatedAt: new Date() })
+      .where(eq(s.suppliers.id, newSupplierId));
+  }
+}
+
+/** Mirror supplier.linkedCustomerId ↔ customer.linkedSupplierId after create/update. */
+export async function mirrorSupplierLink(
+  supplier: { id: number },
+  data: { linkedCustomerId?: number | null },
+) {
+  if (supplier == null || supplier.id == null) return;
+  if (data == null || !('linkedCustomerId' in data)) return;
+  const supplierId = supplier.id;
+  const newCustomerId = data.linkedCustomerId;
+
+  const staleCond = newCustomerId == null
+    ? eq(s.customers.linkedSupplierId, supplierId)
+    : and(eq(s.customers.linkedSupplierId, supplierId), ne(s.customers.id, newCustomerId));
+  await db.update(s.customers)
+    .set({ linkedSupplierId: null, updatedAt: new Date() })
+    .where(staleCond);
+
+  if (newCustomerId != null) {
+    await db.update(s.customers)
+      .set({ linkedSupplierId: supplierId, updatedAt: new Date() })
+      .where(eq(s.customers.id, newCustomerId));
+  }
+}
+
+/** Sync trailer-related fields (plate number, type) from the trailers table. */
+export async function syncTrailerFields(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const trailerId = data.currentTrailerId;
+  if (trailerId != null && trailerId !== '') {
+    const [trailer] = await db.select().from(s.trailers)
+      .where(and(eq(s.trailers.id, Number(trailerId)), isNull(s.trailers.deletedAt)))
+      .limit(1);
+    if (trailer) {
+      return { ...data, trailerPlateNumber: trailer.licensePlate, trailerType: trailer.type };
+    }
+  } else if (trailerId === null || trailerId === '') {
+    return { ...data, trailerPlateNumber: null, trailerType: null };
+  }
+  return data;
 }

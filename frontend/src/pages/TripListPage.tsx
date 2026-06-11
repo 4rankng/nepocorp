@@ -28,8 +28,20 @@ import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@tingting/shared
 import type { TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
+import { ClickableCard } from '../components/shared/ClickableCard';
 
 // ─── Constants ────────────────────────────────────────────────────────────
+
+interface TripListContainer {
+  containerNumber: string;
+  containerTypeCode: string | null;
+  containerTypeName: string | null;
+}
+
+interface TripListRow extends TripDetail {
+  containers?: TripListContainer[];
+}
+
 type StatusFilter = '' | TripStatus;
 
 const STATUS_PILL_CLASS: Record<TripStatus, string> = {
@@ -47,8 +59,7 @@ const PAGE_SIZE = 25;
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function buildTripCode(trip: TripDetail): string {
-  const t = trip as any;
-  if (t.tripCode) return t.tripCode;
+  if (trip.tripCode) return trip.tripCode;
   return '—';
 }
 
@@ -262,7 +273,7 @@ export default function TripListPage() {
 
     const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Trạng thái'];
     const rows = allTrips.map((t) => {
-      const containers = ((t as any).containers ?? []) as Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>;
+      const containers = (t as TripListRow).containers ?? [];
       const typeCodes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
       const numbers = containers.map(c => c.containerNumber).join(', ');
       return [
@@ -369,8 +380,7 @@ export default function TripListPage() {
       header: 'Container',
       cell: ({ row }) => {
         const trip = row.original;
-        const containers: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>
-          = (trip as any).containers ?? [];
+        const containers: TripListContainer[] = (trip as TripListRow).containers ?? [];
         const codes = Array.from(new Set(containers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
         const allNumbers = containers.map(c => c.containerNumber).join(', ');
 
@@ -533,7 +543,7 @@ export default function TripListPage() {
             <button
               type="button"
               className="btn-d btn-d--primary"
-              onClick={() => navigate('/trips/new')} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate('/trips/new'); } }}
+              onClick={() => navigate('/trips/new')}
             >
               <Plus size={15} strokeWidth={2.4} />
               Thêm chuyến
@@ -752,10 +762,10 @@ export default function TripListPage() {
               </div>
             ) : (
               tableInstance.getRowModel().rows.map(row => (
-                <div
+                <ClickableCard
                   key={row.id}
+                  to={`/trips/${row.original.id}`}
                   className={`table-row table-row--${getDataCompleteness(row.original)}`}
-                  onClick={() => navigate(`/trips/${row.original.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${row.original.id}`); } }}
                 >
                   {row.getVisibleCells().map(cell => {
                     let cls = '';
@@ -776,7 +786,7 @@ export default function TripListPage() {
                       </div>
                     );
                   })}
-                </div>
+                </ClickableCard>
               ))
             )}
           </div>
@@ -803,15 +813,14 @@ export default function TripListPage() {
               const revenue = Number(trip.revenue ?? 0);
               const missingIndicators = getMissingIndicators(trip);
 
-              const tripContainers: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>
-                = (trip as any).containers ?? [];
+              const tripContainers: TripListContainer[] = (trip as TripListRow).containers ?? [];
               const typeCodes = Array.from(new Set(tripContainers.map(c => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
 
               return (
-                <div
+                <ClickableCard
                   key={trip.id}
+                  to={`/trips/${trip.id}`}
                   className={`trip-mcard trip-mcard--${getDataCompleteness(trip)}`}
-                  onClick={() => navigate(`/trips/${trip.id}`)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/trips/${trip.id}`); } }}
                 >
                   <div className="trip-mcard__top">
                     <div className="left">
@@ -909,7 +918,7 @@ export default function TripListPage() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </ClickableCard>
               );
             })
           )}

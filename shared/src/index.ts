@@ -6,7 +6,7 @@ export {
   AdvanceRequestStatus, AdvanceSettlementStatus,
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS,
-  CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS,
+  CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
@@ -22,7 +22,7 @@ export type {
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
   SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlReport,
   Supplier, ExpenseCategory, Expense, ExpenseWithRefs, PayableSummary, SupplierStatement, RenewalReminder, VendorPaymentRequest,
-  TripContainer, TripExpense, TripExpenseWithRefs,
+  TripContainer, TripExpense, TripExpenseWithRefs, ForwarderTripDetail, TripExpenseWithSupplier,
   AdvanceRequest, AdvanceRequestWithRefs, AdvanceSettlement, AdvanceSettlementWithRefs,
   ContainerType, Port,
   DebtOffset,
@@ -61,6 +61,7 @@ export type {
   CreateAdvanceRequestInput, CreateAdvanceSettlementInput,
   ContainerTypeInput, PortInput,
   AncillaryExpenseType,
+  UpdateProfileInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

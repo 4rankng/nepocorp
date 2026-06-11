@@ -1,9 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, ArrowLeft, Info, Printer, FileSpreadsheet, X } from 'lucide-react';
+import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
-import { PageHeader, FormGroup } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import './ForwarderSettlementsPage.css';
@@ -40,6 +40,23 @@ interface CreatedSettlement {
   code: string;
 }
 
+/* ─── Step header component ──────────────────────────────────────────────── */
+function StepHeader({ step, title, icon: Icon }: { step: number; title: string; icon: React.ComponentType<{ size?: number; className?: string }> }) {
+  return (
+    <div className="fset-step-header">
+      <div className="fset-step-header__left">
+        <div className="fset-step-header__badge">
+          <Icon size={14} />
+        </div>
+        <div>
+          <span className="fset-step-header__step">Bước {step}</span>
+          <h3 className="fset-step-header__title">{title}</h3>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ForwarderSettlementCreatePage() {
   const navigate = useNavigate();
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
@@ -47,9 +64,7 @@ export default function ForwarderSettlementCreatePage() {
   const [refundAmount, setRefundAmount] = useState('0');
   const [note, setNote] = useState('');
   const [created, setCreated] = useState<CreatedSettlement | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: requestsData } = useForwarderAdvanceRequests();
   const { data: unlinkedData } = useUnlinkedExpenses();
@@ -59,7 +74,7 @@ export default function ForwarderSettlementCreatePage() {
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
-    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null;
+    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null; containerNumbers: string | null;
   }>;
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
@@ -83,6 +98,17 @@ export default function ForwarderSettlementCreatePage() {
     return groupExpensesByType(selected, expenseTypeOptions);
   }, [unlinkedExpenses, selectedExpenseIds, expenseTypeOptions]);
 
+  const filteredUnlinkedExpenses = useMemo(() => {
+    if (!searchQuery.trim()) return unlinkedExpenses;
+    const lowerQ = searchQuery.toLowerCase();
+    return unlinkedExpenses.filter(e => {
+      const matchTrip = e.tripCode?.toLowerCase().includes(lowerQ);
+      const matchTruck = e.truckPlate?.toLowerCase().includes(lowerQ);
+      const matchContainer = e.containerNumbers?.toLowerCase().includes(lowerQ);
+      return matchTrip || matchTruck || matchContainer;
+    });
+  }, [unlinkedExpenses, searchQuery]);
+
   function toggleRequest(id: number) {
     setSelectedRequestIds(prev => {
       const next = new Set(prev);
@@ -101,36 +127,6 @@ export default function ForwarderSettlementCreatePage() {
     });
   }
 
-  const handlePrint = async () => {
-    if (!created) return;
-    const token = localStorage.getItem('token');
-    const res = await fetch(`/api/forwarder/me/advance-settlements/${created.id}/export?format=html`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const html = await res.text();
-    setPreviewHtml(html);
-    setShowPreview(true);
-  };
-
-  const handleIframePrint = () => {
-    iframeRef.current?.contentWindow?.print();
-  };
-
-  const handleExportExcel = () => {
-    if (!created) return;
-    const token = localStorage.getItem('token');
-    const url = `/api/forwarder/me/advance-settlements/${created.id}/export`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.blob())
-      .then(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `phieu-thanh-toan-${created.code}.xlsx`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-  };
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (selectedRequestIds.size === 0) return;
@@ -143,6 +139,8 @@ export default function ForwarderSettlementCreatePage() {
     });
     setCreated(result as CreatedSettlement);
   }
+
+  const isFormReady = selectedRequestIds.size > 0;
 
   // ── Success state ──
   if (created) {
@@ -165,45 +163,15 @@ export default function ForwarderSettlementCreatePage() {
           <p className="fset-create-success__code">{created.code}</p>
 
           <div className="fset-create-success__actions">
-            <button className="btn btn--primary btn--sm" onClick={handlePrint}>
-              <Printer size={14} /> In / Lưu PDF
+            <button className="btn btn--primary" onClick={() => navigate(`/my-settlements/${created.id}`)}>
+              <ChevronRight size={14} /> Xem chi tiết
             </button>
-            <button className="btn btn--secondary btn--sm" onClick={handleExportExcel}>
-              <FileSpreadsheet size={14} /> Xuất Excel
-            </button>
-            <button className="btn btn--secondary btn--sm" onClick={() => navigate(`/my-settlements/${created.id}`)}>
-              Xem chi tiết
-            </button>
-            <button className="btn btn--ghost btn--sm" onClick={() => navigate('/my-settlements')}>
+            <button className="btn btn--ghost" onClick={() => navigate('/my-settlements')}>
               <ArrowLeft size={14} /> Quay lại danh sách
             </button>
           </div>
         </div>
 
-        {/* Print Preview Modal */}
-        {showPreview && previewHtml && (
-          <div className="print-preview-overlay">
-            <div className="print-preview-toolbar">
-              <span className="print-preview-title">Phiếu thanh toán {created.code}</span>
-              <div className="print-preview-actions">
-                <button className="btn btn--primary btn--sm" onClick={handleIframePrint}>
-                  <Printer size={14} /> In / Lưu PDF
-                </button>
-                <button className="btn btn--secondary btn--sm" onClick={() => setShowPreview(false)}>
-                  <X size={14} /> Đóng
-                </button>
-              </div>
-            </div>
-            <div className="print-preview-body">
-              <iframe
-                ref={iframeRef}
-                className="print-preview-iframe"
-                title={`Phiếu thanh toán ${created.code}`}
-                srcDoc={previewHtml}
-              />
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -216,104 +184,167 @@ export default function ForwarderSettlementCreatePage() {
       </button>
       <PageHeader
         title="Tạo phiếu thanh toán"
-        description="Thanh toán tạm ứng"
+        description="Chọn tạm ứng đã duyệt và chi phí phát sinh để tạo phiếu quyết toán"
       />
 
       <form onSubmit={handleSubmit} className="fset-create-form fade-up">
-        {/* Step 1: Select advance requests */}
-        <FormGroup label="Bước 1 · Chọn tạm ứng đã duyệt">
-          {approvedRequests.length === 0 ? (
-            <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Không có tạm ứng nào đã duyệt</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label className="fset-form-panel__select-all">
-                <input
-                  type="checkbox"
-                  checked={approvedRequests.length > 0 && selectedRequestIds.size === approvedRequests.length}
-                  onChange={() => {
-                    if (selectedRequestIds.size === approvedRequests.length) {
-                      setSelectedRequestIds(new Set());
-                    } else {
-                      setSelectedRequestIds(new Set(approvedRequests.map(r => r.id)));
-                    }
-                  }}
-                />
-                Chọn tất cả ({approvedRequests.length})
-              </label>
-              {approvedRequests.map(r => (
-                <label key={r.id} className="fset-form-panel__item">
-                  <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
-                  <div className="fset-form-panel__item-text">
-                    <span className="fset-form-panel__item-amount">{formatCurrency(Number(r.amount))}</span>
-                    <span className="fset-form-panel__item-meta">— {r.reason}</span>
-                  </div>
-                  <span className="fset-form-panel__item-date">{formatDate(r.createdAt)}</span>
+        {/* ── Step 1: Select advance requests ── */}
+        <div className="fset-step-panel">
+          <StepHeader step={1} title="Chọn tạm ứng đã duyệt" icon={Wallet} />
+          <div className="fset-step-body">
+            {approvedRequests.length === 0 ? (
+              <div className="fset-empty-inline">
+                <div className="fset-empty-inline__icon">
+                  <Wallet size={18} />
+                </div>
+                <span>Không có tạm ứng nào đã duyệt</span>
+              </div>
+            ) : (
+              <div className="fset-check-list">
+                <label className="fset-check-all">
+                  <input
+                    type="checkbox"
+                    checked={approvedRequests.length > 0 && selectedRequestIds.size === approvedRequests.length}
+                    onChange={() => {
+                      if (selectedRequestIds.size === approvedRequests.length) {
+                        setSelectedRequestIds(new Set());
+                      } else {
+                        setSelectedRequestIds(new Set(approvedRequests.map(r => r.id)));
+                      }
+                    }}
+                  />
+                  <span>Chọn tất cả</span>
+                  <span className="fset-check-all__count">{approvedRequests.length}</span>
                 </label>
-              ))}
-            </div>
-          )}
-        </FormGroup>
+                {approvedRequests.map(r => (
+                  <label key={r.id} className={`fset-check-item ${selectedRequestIds.has(r.id) ? 'fset-check-item--selected' : ''}`}>
+                    <input type="checkbox" checked={selectedRequestIds.has(r.id)} onChange={() => toggleRequest(r.id)} />
+                    <div className="fset-check-item__body">
+                      <div className="fset-check-item__row">
+                        <span className="fset-check-item__amount">{formatCurrency(Number(r.amount))}</span>
+                        <span className="fset-check-item__reason">{r.reason}</span>
+                      </div>
+                      <span className="fset-check-item__date">{formatDate(r.createdAt)}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-        {/* Step 2: Select trip expenses */}
-        <FormGroup label="Bước 2 · Chọn chi phí phát sinh">
-          {unlinkedExpenses.length === 0 ? (
-            <div className="fset-form-panel__empty-hint">
-              <Info size={14} />
-              <span>Không có chi phí nào chưa thanh toán. Các chi phí đã nằm trong phiếu khác sẽ không hiện ở đây.</span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label className="fset-form-panel__select-all">
-                <input
-                  type="checkbox"
-                  checked={unlinkedExpenses.length > 0 && selectedExpenseIds.size === unlinkedExpenses.length}
-                  onChange={() => {
-                    if (selectedExpenseIds.size === unlinkedExpenses.length) {
-                      setSelectedExpenseIds(new Set());
-                    } else {
-                      setSelectedExpenseIds(new Set(unlinkedExpenses.map(e => e.id)));
-                    }
-                  }}
-                />
-                Chọn tất cả ({unlinkedExpenses.length})
-              </label>
-              {unlinkedExpenses.map(exp => (
-                <label key={exp.id} className="fset-form-panel__item fset-form-panel__item--two-row">
-                  <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
-                  <div className="fset-form-panel__item-text">
-                    <span className="fset-form-panel__item-row1">
-                      <span className="fset-form-panel__item-label">
-                        {expenseLabel(exp.expenseType, expenseTypeOptions)}
-                      </span>
-                      {exp.tripCode && (
-                        <span className="fset-form-panel__item-meta">({exp.tripCode})</span>
-                      )}
-                      <span className="fset-form-panel__item-price">
-                        {formatCurrency(Number(exp.buyAmount))}
-                      </span>
-                    </span>
-                    <span className="fset-form-panel__item-row2">
-                      {formatDate(exp.createdAt)}
-                      {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
-                      {exp.note && ` · ${exp.note}`}
-                    </span>
+        {/* ── Step 2: Select trip expenses ── */}
+        <div className="fset-step-panel">
+          <StepHeader step={2} title="Chọn chi phí phát sinh" icon={Receipt} />
+          <div className="fset-step-body">
+            {unlinkedExpenses.length === 0 ? (
+              <div className="fset-empty-inline">
+                <div className="fset-empty-inline__icon">
+                  <Info size={18} />
+                </div>
+                <span>Không có chi phí nào chưa thanh toán. Các chi phí đã nằm trong phiếu khác sẽ không hiện ở đây.</span>
+              </div>
+            ) : (
+              <>
+                <div className="fset-expense-toolbar">
+                  <label className="fset-check-all">
+                    <input
+                      type="checkbox"
+                      checked={filteredUnlinkedExpenses.length > 0 && filteredUnlinkedExpenses.every(e => selectedExpenseIds.has(e.id))}
+                      onChange={() => {
+                        if (filteredUnlinkedExpenses.every(e => selectedExpenseIds.has(e.id))) {
+                          setSelectedExpenseIds(prev => {
+                            const next = new Set(prev);
+                            filteredUnlinkedExpenses.forEach(e => next.delete(e.id));
+                            return next;
+                          });
+                        } else {
+                          setSelectedExpenseIds(prev => {
+                            const next = new Set(prev);
+                            filteredUnlinkedExpenses.forEach(e => next.add(e.id));
+                            return next;
+                          });
+                        }
+                      }}
+                    />
+                    <span>Chọn tất cả</span>
+                    <span className="fset-check-all__count">{filteredUnlinkedExpenses.length}</span>
+                  </label>
+                  <div className="fset-search-bar">
+                    <Search size={14} className="fset-search-bar__icon" />
+                    <input
+                      type="text"
+                      className="fset-search-bar__input"
+                      placeholder="Tìm mã chuyến, số xe, số cont..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
                   </div>
-                </label>
-              ))}
-            </div>
-          )}
-        </FormGroup>
+                </div>
+                <div className="fset-check-list">
+                  {filteredUnlinkedExpenses.map(exp => (
+                    <label key={exp.id} className={`fset-check-item fset-check-item--expense ${selectedExpenseIds.has(exp.id) ? 'fset-check-item--selected' : ''}`}>
+                      <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
+                      <div className="fset-check-item__body">
+                        <div className="fset-check-item__row">
+                          <span className="fset-check-item__label">
+                            {expenseLabel(exp.expenseType, expenseTypeOptions)}
+                          </span>
+                          {exp.tripCode && (
+                            <span className="fset-check-item__meta">({exp.tripCode})</span>
+                          )}
+                          <span className="fset-check-item__price">
+                            {formatCurrency(Number(exp.buyAmount))}
+                          </span>
+                        </div>
+                        <span className="fset-check-item__sub">
+                          {exp.departureDate ? formatDate(exp.departureDate) : formatDate(exp.createdAt)}
+                          {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
+                          {exp.containerNumbers && (
+                            <span className="fset-cont-badge">{exp.containerNumbers}</span>
+                          )}
+                          {exp.note && ` · ${exp.note}`}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
-        {/* Summary */}
-        <div className="fset-form-panel__summary">
-          <div className="fset-form-panel__summary-grid">
-            <div><span className="fset-form-panel__summary-label">Tổng tạm ứng:</span> <span className="fset-form-panel__summary-value">{formatCurrency(totalAdvance)}</span></div>
-            <div><span className="fset-form-panel__summary-label">Tổng chi phí:</span> <span className="fset-form-panel__summary-value">{formatCurrency(totalExpense)}</span></div>
+        {/* ── Summary receipt ── */}
+        <div className="fset-summary">
+          <div className="fset-summary__header">
+            <FileText size={15} />
+            <span>Tổng kết</span>
+          </div>
+          <div className="fset-summary__grid">
+            <div className="fset-summary__row">
+              <span className="fset-summary__label">Tổng tạm ứng</span>
+              <span className="fset-summary__value">{formatCurrency(totalAdvance)}</span>
+            </div>
+            <div className="fset-summary__row">
+              <span className="fset-summary__label">Tổng chi phí</span>
+              <span className="fset-summary__value fset-summary__value--expense">− {formatCurrency(totalExpense)}</span>
+            </div>
+            <div className="fset-summary__row">
+              <span className="fset-summary__label">Tiền hoàn lại</span>
+              <span className="fset-summary__value fset-summary__value--refund">− {formatCurrency(totalRefund)}</span>
+            </div>
+            <div className="fset-summary__divider" />
+            <div className="fset-summary__row fset-summary__row--total">
+              <span>Chênh lệch</span>
+              <span className={`fset-summary__total ${balance > 0 ? 'fset-summary__total--positive' : balance < 0 ? 'fset-summary__total--negative' : ''}`}>
+                {formatCurrency(Math.abs(balance))}
+              </span>
+            </div>
           </div>
           {expenseBreakdown.size > 0 && (
-            <div className="fset-form-panel__breakdown">
-              <span className="fset-form-panel__breakdown-label">Chi tiết theo hạng mục:</span>
-              <div className="fset-form-panel__breakdown-chips">
+            <div className="fset-summary__breakdown">
+              <span className="fset-summary__breakdown-label">Chi tiết theo hạng mục</span>
+              <div className="fset-summary__breakdown-chips">
                 {[...expenseBreakdown.entries()].map(([label, amount]) => (
                   <span key={label} className="fset-chip">{label}: {formatCurrency(amount)}</span>
                 ))}
@@ -322,34 +353,56 @@ export default function ForwarderSettlementCreatePage() {
           )}
         </div>
 
-        <FormGroup label="Tiền hoàn lại">
-          <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="0" min={0} />
-        </FormGroup>
-
-        {totalAdvance > 0 && balance !== 0 && (
-          <div className="fset-form-panel__warn">
-            Chênh lệch: {formatCurrency(balance)} (tạm ứng − chi phí − hoàn lại)
+        <div className="fset-details-card">
+          <div className="fset-input-group">
+            <label className="fset-input-label">Tiền hoàn lại</label>
+            <input
+              type="number"
+              className="fset-input"
+              value={refundAmount}
+              onChange={e => setRefundAmount(e.target.value)}
+              placeholder="0"
+              min={0}
+            />
           </div>
-        )}
 
-        <FormGroup label="Ghi chú">
-          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú (không bắt buộc)" style={{ minHeight: 64, resize: 'vertical' }} />
-        </FormGroup>
+          {totalAdvance > 0 && balance !== 0 && (
+            <div className="fset-warn-banner">
+              <div className="fset-warn-banner__icon">
+                <Info size={15} />
+              </div>
+              <span>Chênh lệch: {formatCurrency(balance)} (tạm ứng − chi phí − hoàn lại)</span>
+            </div>
+          )}
 
+          <div className="fset-input-group">
+            <label className="fset-input-label">Ghi chú</label>
+            <textarea
+              className="fset-textarea"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Ghi chú (không bắt buộc)"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        {/* ── Error ── */}
         {createSettlement.error && (
-          <div className="fset-form-panel__error">
+          <div className="fset-error-banner">
             {(createSettlement.error as Error)?.message || 'Có lỗi xảy ra'}
           </div>
         )}
 
-        <div className="fset-form-panel__actions">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('/my-settlements')}>
-            <ArrowLeft size={14} /> Hủy
+        {/* ── Actions ── */}
+        <div className="fset-form-actions">
+          <button type="button" className="btn btn--secondary" onClick={() => navigate('/my-settlements')}>
+            <ArrowLeft size={14} /> Hủy bỏ
           </button>
           <button
             type="submit"
-            className="btn btn--primary btn--sm"
-            disabled={selectedRequestIds.size === 0 || createSettlement.isPending}
+            className={`btn btn--primary ${!isFormReady || createSettlement.isPending ? 'btn--disabled' : ''}`}
+            disabled={!isFormReady || createSettlement.isPending}
           >
             {createSettlement.isPending ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
             Gửi phiếu thanh toán
