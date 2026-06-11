@@ -104,6 +104,10 @@ export interface UseTripFormReturn {
   setFuelActualUnitPrice: (v: string) => void;
   fuelSupplierId: number | null;
   setFuelSupplierId: (v: number | null) => void;
+  customerCommission: string;
+  setCustomerCommission: (v: string) => void;
+  tripWageDays: string;
+  setTripWageDays: (v: string) => void;
   revenue: string;
   setRevenue: (v: string) => void;
   revenueEmptyReturn: string;
@@ -240,6 +244,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
     return "0";
   });
+  const [customerCommission, setCustomerCommission] = useState(isEditMode && existingTrip?.customerCommission ? String(existingTrip.customerCommission) : "0");
+  const [tripWageDays, setTripWageDays] = useState(isEditMode && existingTrip?.tripWageDays ? String(existingTrip.tripWageDays) : "");
   const [revenue, setRevenue] = useState("");
 
   useEffect(() => {
@@ -282,6 +288,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       setRevenueEmptyReturn('');
     }
     setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
+    setCustomerCommission(existingTrip.customerCommission ? String(existingTrip.customerCommission) : '0');
+    setTripWageDays(existingTrip.tripWageDays ? String(existingTrip.tripWageDays) : '');
     setNotes(existingTrip.notes || '');
     setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     setFuelSupplierId(existingTrip.fuelSupplierId ?? null);
@@ -609,6 +617,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             roadAllowanceOverride: roadAllowanceOverride !== '' ? Number(roadAllowanceOverride) : null,
             fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
             fuelSupplierId: fuelSupplierId !== null ? fuelSupplierId : null,
+            customerCommission: Number(customerCommission) || 0,
+            tripWageDays: tripWageDays ? Number(tripWageDays) : undefined,
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
@@ -711,6 +721,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
             photoUrls,
             fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
             fuelSupplierId: fuelSupplierId !== null ? fuelSupplierId : null,
+            customerCommission: Number(customerCommission) || 0,
+            tripWageDays: tripWageDays ? Number(tripWageDays) : undefined,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
@@ -742,6 +754,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
       roadAllowanceOverride,
       fuelActualUnitPrice,
       fuelSupplierId,
+      customerCommission, tripWageDays,
       revenue, revenueEmptyReturn, revenueCombine, notes, photoUrls,
       carrierType, vatRate, externalCarrierId, externalFreightCost,
       externalPlateNumber, externalDriverName, externalDriverPhone,
@@ -782,6 +795,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     roadAllowanceOverride, setRoadAllowanceOverride,
     fuelActualUnitPrice, setFuelActualUnitPrice,
     fuelSupplierId, setFuelSupplierId,
+    customerCommission, setCustomerCommission,
+    tripWageDays, setTripWageDays,
     revenue, setRevenue,
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,

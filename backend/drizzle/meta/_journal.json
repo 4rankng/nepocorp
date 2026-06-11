@@ -288,6 +288,13 @@
       "when": 1749456000000,
       "tag": "0040_settlement_code_column",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1781189705651,
+      "tag": "0041_glamorous_maddog",
+      "breakpoints": true
     }
   ]
 }

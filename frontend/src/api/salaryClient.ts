@@ -28,6 +28,8 @@ export interface AttendanceSalary {
   socialInsurance: number;
   dailyRate: number;
   totalTripSalary: number;
+  supplementPay: number;
+  leaveDeduction: number;
   adjustment: number;
   totalPenalties: number;
   standbyCost: number;

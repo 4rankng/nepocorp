@@ -100,6 +100,8 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
     baseSalary: String(salaryData.baseSalary),
     tripIncome: String(salaryData.totalTripSalary),
     penalties: String(salaryData.totalPenalties),
+    supplementPay: String(salaryData.supplementPay),
+    leaveDeduction: String(salaryData.leaveDeduction),
     netIncome: String(salaryData.netSalary),
     adjustment: salaryData.adjustment,
     standardWorkDays: salaryData.standardWorkDays,

@@ -70,6 +70,19 @@ class ApiClient {
     return this.request<T>(path, { method: 'DELETE' });
   }
 
+  /** Fetch a text response (e.g. HTML) with auth headers via GET. */
+  async getForText(url: string): Promise<string> {
+    const headers: Record<string, string> = {
+      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+    };
+    const res = await fetch(`${API_BASE}${url}`, { headers });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
+    }
+    return res.text();
+  }
+
   /** Fetch a binary blob (PDF, XLSX, etc.) with auth headers. */
   async getBlob(url: string): Promise<Blob> {
     const headers: Record<string, string> = {

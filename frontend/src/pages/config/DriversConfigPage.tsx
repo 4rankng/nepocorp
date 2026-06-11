@@ -17,10 +17,11 @@ function DriverForm({ saving, item, onsave, oncancel, truckList }: {
   const [name, setName] = useState(item?.name || '');
   const [phone, setPhone] = useState(item?.phone || '');
   const [baseSalary, setBaseSalary] = useState(item?.baseSalary || '');
+  const [socialInsurance, setSocialInsurance] = useState(item?.socialInsurance || '');
   const [truckId, setTruckId] = useState(item?.assignedTruckId || 0);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
   return (
-    <InlineForm colSpan={6}>
+    <InlineForm colSpan={7}>
       <div style={{ flex: 2, minWidth: 150 }}>
         <Field label="Tên tài xế"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Họ và tên" /></Field>
       </div>
@@ -29,6 +30,9 @@ function DriverForm({ saving, item, onsave, oncancel, truckList }: {
       </div>
       <div style={{ flex: 1, minWidth: 130 }}>
         <Field label="Lương CB"><input className="input" type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} placeholder="0" /></Field>
+      </div>
+      <div style={{ flex: 1, minWidth: 130 }}>
+        <Field label="BHXH/BHYT"><input className="input" type="number" value={socialInsurance} onChange={e => setSocialInsurance(e.target.value)} placeholder="0" /></Field>
       </div>
       <div style={{ flex: 1, minWidth: 130 }}>
         <Field label="Xe phân công">
@@ -47,7 +51,7 @@ function DriverForm({ saving, item, onsave, oncancel, truckList }: {
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!name.trim()) return;
-        onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, assignedTruckId: truckId || null, status });
+        onsave({ name: name.trim(), phone: phone.trim() || undefined, baseSalary: baseSalary ? Number(baseSalary) : undefined, socialInsurance: socialInsurance ? Number(socialInsurance) : undefined, assignedTruckId: truckId || null, status });
       }} />
     </InlineForm>
   );
@@ -68,7 +72,7 @@ export default function DriversConfigPage() {
   return (
     <CrudTable<Driver>
       title="Người dùng & tài xế" description="Quản lý tài khoản lái xe — lương cơ bản, xe phụ trách và thông tin liên hệ"
-      endpoint="/drivers" colSpan={6}
+      endpoint="/drivers" colSpan={7}
       pageSlug="drivers"
       emptyIllustration="empty-users.svg"
       emptyTitle="Chưa có tài xế"

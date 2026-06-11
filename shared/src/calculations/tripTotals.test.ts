@@ -390,3 +390,45 @@ test('tollCost NOT included in totalCost for EXTERNAL trips', () => {
   // EXTERNAL: totalCost = externalFreightCost only, tollCost not added
   assert.strictEqual(r.totalCost, 5400000);
 });
+
+// --- Commission (recordedRevenue) tests ------------------------------------
+
+test('customerCommission=0: recordedRevenue equals freightExVat (backward compat)', () => {
+  const r = computeTripTotals({ ...BASE_A4, vatRate: 0.08, customerCommission: 0 });
+  assert.strictEqual(r.freightExVat, 10000000);
+  assert.strictEqual(r.recordedRevenue, 10000000);  // no commission
+});
+
+test('customerCommission=500K: recordedRevenue = freightExVat - commission', () => {
+  // AC1: revenue 10.8M, vatRate 8%, commission 500K
+  const r = computeTripTotals({ ...BASE_A4, vatRate: 0.08, customerCommission: 500000 });
+  assert.strictEqual(r.freightExVat, 10000000);
+  assert.strictEqual(r.recordedRevenue, 9500000);   // 10000000 - 500000
+});
+
+test('customerCommission omitted (undefined): recordedRevenue equals freightExVat', () => {
+  const r = computeTripTotals({ ...BASE_A4, vatRate: 0.08 });
+  assert.strictEqual(r.recordedRevenue, r.freightExVat);
+});
+
+test('commission reduces grossProfit for OWN trips', () => {
+  const noCommission = computeTripTotals({ ...BASE_A4, vatRate: 0.08 });
+  const withCommission = computeTripTotals({ ...BASE_A4, vatRate: 0.08, customerCommission: 500000 });
+  // grossProfit reduced by exactly 500000 (commission amount)
+  assert.strictEqual(withCommission.grossProfit, noCommission.grossProfit - 500000);
+});
+
+test('commission does not affect EXTERNAL trip grossProfit (margin-based)', () => {
+  // EXTERNAL trips use externalMargin (freightExVat - externalFreightExVat), not recordedRevenue
+  const r = computeTripTotals({
+    ...BASE_A4,
+    vatRate: 0.08,
+    carrierType: 'EXTERNAL',
+    externalFreightCost: 5400000,
+    customerCommission: 500000,
+  });
+  assert.strictEqual(r.recordedRevenue, 9500000);    // still computed
+  // externalMargin is still based on freightExVat, not recordedRevenue
+  assert.strictEqual(r.externalMargin, 5000000);
+  assert.strictEqual(r.grossProfit, 5000000);         // externalMargin + serviceMargin(0)
+});

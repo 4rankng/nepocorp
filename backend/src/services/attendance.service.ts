@@ -262,24 +262,32 @@ export async function computeSalary(
   const { periodStart: start, periodEnd: end, standardWorkDays, tripDays, standbyDays, personalLeaveDays, paidDays } = attendance;
 
   // Get driver base salary
-  const [driver] = await db.select().from(s.drivers)
+  const [driver] = await db.select({
+    baseSalary: s.drivers.baseSalary,
+    socialInsurance: s.drivers.socialInsurance,
+  }).from(s.drivers)
     .where(eq(s.drivers.id, driverId)).limit(1);
 
   if (!driver) {
     throw new ApiError(404, 'Không tìm thấy tài xế');
   }
   const baseSalary = parseFloat(driver.baseSalary || '0');
-  // Social insurance (stored on driver in future; default 0 for now)
-  const socialInsurance = 0;
+  // Social insurance from drivers.social_insurance column (was hardcoded to 0)
+  const socialInsurance = parseFloat(driver.socialInsurance || '0');
 
   // daily_rate based on standard_work_days (varies per month per spec §4.5.2)
   const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
 
+  // Supplement pay: standby_days × daily_rate (company-idle days → paid supplement)
+  const supplementPay = standbyDays * dailyRate;
+
   // Adjustment: single rounding on proportion to avoid cumulative dailyRate error
   const adjustment = Math.round(baseSalary * paidDays / standardWorkDays) - baseSalary;
 
-  // Standby cost = standby_days * daily_rate (for P&L / indirect labor)
-  const standbyCost = standbyDays * dailyRate;
+  // Leave deduction: personal_leave_days exceeding 4 free Sundays → deducted at dailyRate
+  const freeSundays = Math.min(countSundays(year, month), 4);
+  const excessLeaveDays = Math.max(0, personalLeaveDays - freeSundays);
+  const leaveDeduction = excessLeaveDays * dailyRate;
 
   // Trip salary: sum of driver_salary from LOCKED trips in period
   const [tripSalaryRow] = await db.select({
@@ -307,7 +315,7 @@ export async function computeSalary(
 
   const totalTripSalary = parseFloat(tripSalaryRow?.total || '0');
   const totalPenalties = parseFloat(penaltyRow?.total || '0');
-  const netSalary = baseSalary + totalTripSalary + adjustment - totalPenalties;
+  const netSalary = baseSalary + totalTripSalary + adjustment + supplementPay - leaveDeduction - totalPenalties;
 
   return {
     ...attendance,
@@ -316,8 +324,10 @@ export async function computeSalary(
     dailyRate,
     totalTripSalary,
     adjustment,
+    supplementPay,
+    leaveDeduction,
     totalPenalties,
-    standbyCost,
+    standbyCost: supplementPay, // kept for backward compat — same value as supplementPay
     netSalary,
   };
 }

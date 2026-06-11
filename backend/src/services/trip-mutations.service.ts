@@ -197,6 +197,8 @@ export async function updateTripFigures(
     revenueCombine?: number;
     twoPointDeliveryBonus?: number;
     vehicleShiftAllowance?: number;
+    customerCommission?: number;
+    tripWageDays?: number;
     notes?: string;
     expectedVersion?: number;
     userId?: number;
@@ -324,8 +326,37 @@ export async function updateTripFigures(
     if (data.driverSalary === undefined && driverSalary === 0 && route?.driverSalary) {
       driverSalary = Number(route.driverSalary);
     }
+
+    // Salary auto-fill from driver's baseSalary + socialInsurance.
+    // Formula: (baseSalary + socialInsurance) / 26 × tripWageDays
+    // Only triggers when no salary is set yet and we have a driver + wage days.
+    let tripWageDays = data.tripWageDays !== undefined ? data.tripWageDays : trip.tripWageDays;
+    if (!tripWageDays) {
+      // Auto-compute from departure date to completedAt (or departure alone for 1-day trips)
+      const depDate = new Date(data.departureDate ?? trip.departureDate);
+      const compDate = data.completedAt ? new Date(data.completedAt) : (trip.completedAt ? new Date(trip.completedAt) : null);
+      if (compDate) {
+        const diffMs = compDate.getTime() - depDate.getTime();
+        tripWageDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1);
+      } else {
+        tripWageDays = 1; // default: single-day trip
+      }
+    }
+
+    if (data.driverSalary === undefined && driverSalary === 0 && trip.driverId) {
+      const [driver] = await tx.select({
+        baseSalary: s.drivers.baseSalary,
+        socialInsurance: s.drivers.socialInsurance,
+      }).from(s.drivers).where(eq(s.drivers.id, trip.driverId)).limit(1);
+      if (driver?.baseSalary) {
+        const base = parseFloat(driver.baseSalary);
+        const bhxh = parseFloat(driver.socialInsurance || '0');
+        driverSalary = Math.round((base + bhxh) / 26 * (tripWageDays ?? 1));
+      }
+    }
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
+    const customerCommission = data.customerCommission !== undefined ? data.customerCommission : Number(trip.customerCommission || 0);
 
     // 4. Compute Totals using pure shared function
     //    Query ancillary fees for this trip (exclude rejected) so service margin
@@ -375,6 +406,7 @@ export async function updateTripFigures(
         sellAmount: Number(f.sellAmount || 0),
         vatRate: Number(f.vatRate || 0.080),
       })),
+      customerCommission,
     };
 
     const totals = computeTripTotals(totalsInput);
@@ -439,6 +471,8 @@ export async function updateTripFigures(
       revenueCombine: String(revenueCombine),
       twoPointDeliveryBonus: String(twoPointDeliveryBonus),
       vehicleShiftAllowance: String(vehicleShiftAllowance),
+      customerCommission: String(customerCommission),
+      tripWageDays: tripWageDays,
       grossProfit: String(totals.grossProfit),
       revenueOriginal: String(revenueOriginal),
       revenueOverriddenBy,

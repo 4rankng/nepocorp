@@ -16,6 +16,8 @@ export function AllowanceSection() {
     twoPointDeliveryDefault, vehicleShiftDefault,
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,
+    customerCommission, setCustomerCommission,
+    tripWageDays, setTripWageDays,
     suggestedPrice,
     containerCount,
     roadAllowanceOverride, setRoadAllowanceOverride,
@@ -216,6 +218,35 @@ export function AllowanceSection() {
             type="money"
             style={{ width: "100%" }}
           />
+        </div>
+      </div>
+
+      <div className="row-2">
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Hoa hồng chi KH (đ)</label>
+          <InputWithPrefix
+            value={customerCommission}
+            onChange={setCustomerCommission}
+            placeholder="0"
+            prefix="đ"
+            mono
+            type="money"
+            style={{ width: "100%" }}
+          />
+        </div>
+        <div className="field">
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số ngày tính lương</label>
+          <input
+            className="input"
+            type="number"
+            min="1"
+            max="31"
+            value={tripWageDays}
+            onChange={(e) => setTripWageDays(e.target.value)}
+            placeholder="Tự động"
+            style={{ width: "100%" }}
+          />
+          <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Để trống = tự tính theo số ngày</div>
         </div>
       </div>
     </div>

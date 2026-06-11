@@ -11,6 +11,7 @@ export function TotalsPanel() {
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     tollsDiscount, tollsAddition, tollsStations,
     hasReturnCargo, driverSalary, revenue,
+    customerCommission,
     revenueEmptyReturn, revenueCombine,
     selectedRouteData, roadAllowanceBaseApplied, fuelActualUnitPrice,
     roadAllowanceOverride, tollPerStationApplied, returnCargoBonusApplied,
@@ -50,13 +51,14 @@ export function TotalsPanel() {
       driverSalary: driverSalary ? Number(driverSalary) : 0,
       twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus) || 0,
       vehicleShiftAllowance: Number(form.vehicleShiftAllowance) || 0,
+      customerCommission: Number(customerCommission) || 0,
     });
   }, [
     legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
     tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
     hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
-    form.twoPointDeliveryBonus, form.vehicleShiftAllowance,
+    form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission,
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");

@@ -120,6 +120,8 @@ export const updateTripFiguresSchema = z.object({
   revenue: nonNegNumeric.optional(),
   revenueEmptyReturn: nonNegNumeric.optional(),
   revenueCombine: nonNegNumeric.optional(),
+  customerCommission: nonNegNumeric.optional(),
+  tripWageDays: z.number().int().nonnegative().optional(),
   twoPointDeliveryBonus: nonNegNumeric.optional(),
   vehicleShiftAllowance: nonNegNumeric.optional(),
   notes: z.string().optional(),
@@ -308,6 +310,7 @@ export const driverSchema = z.object({
   phone: z.string().optional(),
   assignedTruckId: z.number().int().positive().nullable().optional(),
   baseSalary: nonNegNumeric.optional(),
+  socialInsurance: nonNegNumeric.optional(),
   status: z.nativeEnum(DriverStatus).optional().default(DriverStatus.ACTIVE),
 });
 

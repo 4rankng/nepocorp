@@ -106,6 +106,28 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           </span>
         </div>
 
+        {salary.supplementPay > 0 && (
+          <div className="salary-summary-dark__row">
+            <span className="salary-summary-dark__row-lbl">
+              <Coffee size={12} /> Lương bổ sung ({salary.standbyDays} ngày chờ)
+            </span>
+            <span className="salary-summary-dark__row-val salary-summary-dark__row-val--pos">
+              +{formatCurrency(salary.supplementPay)}
+            </span>
+          </div>
+        )}
+
+        {salary.leaveDeduction > 0 && (
+          <div className="salary-summary-dark__row">
+            <span className="salary-summary-dark__row-lbl">
+              <XCircle size={12} /> Khấu trừ nghỉ riêng
+            </span>
+            <span className="salary-summary-dark__row-val salary-summary-dark__row-val--neg">
+              -{formatCurrency(salary.leaveDeduction)}
+            </span>
+          </div>
+        )}
+
         <div className="salary-summary-dark__row">
           <span className="salary-summary-dark__row-lbl">
             <Info size={12} /> Điều chỉnh công ({salary.adjustment >= 0 ? 'thừa' : 'thiếu'})
@@ -129,15 +151,6 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           <span className="salary-summary-dark__row-val">{formatCurrency(salary.netSalary)}</span>
         </div>
       </div>
-
-      {salary.standbyCost > 0 && (
-        <div className="payslip-callout" style={{ marginTop: 12, background: 'rgba(245, 166, 35, 0.1)', borderColor: 'rgba(245, 166, 35, 0.2)' }}>
-          <AlertTriangle size={14} className="payslip-callout-icon" />
-          <span className="payslip-callout-text" style={{ color: '#FCD34D' }}>
-            <strong>Chờ việc:</strong> {formatCurrency(salary.standbyCost)} (hạch toán chi phí chung)
-          </span>
-        </div>
-      )}
     </div>
   );
 }

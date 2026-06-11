@@ -28,6 +28,7 @@ export interface Driver {
   phone: string | null;
   assignedTruckId: number | null;
   baseSalary: string | null;
+  socialInsurance: string | null;
   status: DriverStatus;
   createdAt: string;
   updatedAt: string;
@@ -194,6 +195,8 @@ export interface Trip {
   revenue: string | null;
   revenueEmptyReturn: string | null;
   revenueCombine: string | null;
+  customerCommission: string | null;
+  tripWageDays: number | null;
   twoPointDeliveryBonus: string;
   vehicleShiftAllowance: string;
   grossProfit: string | null;
@@ -638,6 +641,8 @@ export interface UpdateTripFiguresRequest {
   revenue?: number;
   revenueEmptyReturn?: number;
   revenueCombine?: number;
+  customerCommission?: number;
+  tripWageDays?: number;
   twoPointDeliveryBonus?: number;
   vehicleShiftAllowance?: number;
   notes?: string;

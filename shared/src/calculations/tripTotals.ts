@@ -33,6 +33,7 @@ export interface ComputeTripTotalsInput {
     sellAmount: number;               // incl-VAT billed to customer
     vatRate?: number;                  // per-fee VAT rate, default 0.080
   }>;
+  customerCommission?: number;         // per-trip commission deducted from freightExVat
 }
 
 export interface ComputeTripTotalsOutput {
@@ -46,6 +47,7 @@ export interface ComputeTripTotalsOutput {
   totalCost: number;
   grossProfit: number;
   freightExVat: number;        // revenue / (1 + vatRate); equals revenue when vatRate=0
+  recordedRevenue: number;     // freightExVat - customerCommission; P&L revenue after commission
   serviceMargin: number;       // sum(sellExVat - buyInclVat) across ancillary fees; 0 when none
   totalServiceBuy: number;     // sum buyAmount incl-VAT (cost component, per spec section 4.6.1)
   totalServiceSell: number;    // sum sellAmount ex-VAT (revenue component)
@@ -158,6 +160,10 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
   // the company's P&L reflects the full cost picture: roadAllowance (net) + tollCost.
   const tollCost = input.tollsStations * input.tollPerStation;
 
+  // Recorded revenue = freight ex-VAT minus customer commission
+  const customerCommission = input.customerCommission ?? 0;
+  const recordedRevenue = freightExVat - customerCommission;
+
   let totalCost: number;
   let grossProfit: number;
   let externalMargin = 0;
@@ -174,7 +180,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     // OWN trip: total cost = fuel + road allowance (net) + tolls + salary + bonuses
     totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.driverSalary
       + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
-    grossProfit = freightExVat - totalCost + serviceMargin;
+    grossProfit = recordedRevenue - totalCost + serviceMargin;
   }
 
   return {
@@ -188,6 +194,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalCost,
     grossProfit,
     freightExVat,
+    recordedRevenue,
     serviceMargin,
     totalServiceBuy: totalServiceBuyInclVat,
     totalServiceSell: totalServiceSellExVat,

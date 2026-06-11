@@ -1,7 +1,8 @@
 import React from 'react';
-import { Fuel, AlertTriangle } from 'lucide-react';
+import { Fuel, AlertTriangle, Printer, FileSpreadsheet } from 'lucide-react';
 import { FUEL_MODE_LABELS, roundInt } from '@tingting/shared';
 import { fmtVND } from '../formatters';
+import { api } from '../../../lib/api';
 import type { TripDetail } from '@tingting/shared';
 import type { TripDerivedData } from '../types';
 
@@ -18,6 +19,32 @@ const fmtLiters = (v: number) => roundInt(v).toString();
 
 export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
+
+  const handlePrintVoucher = async () => {
+    // Open window synchronously before await to avoid popup blocker
+    const win = window.open('', '_blank');
+    try {
+      const html = await api.getForText(`/trips/${trip.id}/fuel-voucher/html`);
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+      }
+    } catch {
+      win?.close();
+    }
+  };
+
+  const handleExportXlsx = async () => {
+    try {
+      const blob = await api.getBlob(`/trips/${trip.id}/fuel-voucher/xlsx`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `phieu-cap-nhien-lieu-${trip.tripCode ?? trip.id}.xlsx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch { /* download failed */ }
+  };
 
   return (
     <div className="card">
@@ -45,6 +72,25 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             </div>
           )}
         </div>
+
+        {trip.fuelSupplier && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={handlePrintVoucher}
+              title="In phiếu cấp dầu"
+            >
+              <Printer size={14} /> In phiếu cấp dầu
+            </button>
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={handleExportXlsx}
+              title="Xuất Excel"
+            >
+              <FileSpreadsheet size={14} /> Xuất Excel
+            </button>
+          </div>
+        )}
 
         {fuelLiters > 0 && (
           <div className="fuel-compare">

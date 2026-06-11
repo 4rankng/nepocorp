@@ -77,6 +77,8 @@ export const drivers = pgTable('drivers', {
   phone: varchar('phone', { length: 20 }),
   assignedTruckId: integer('assigned_truck_id').references(() => trucks.id),
   baseSalary: numeric('base_salary', { precision: 15, scale: 0 }),
+  // BHXH/BHYT monthly contribution — used for salary auto-fill: (baseSalary + socialInsurance) / 26 × tripWageDays
+  socialInsurance: numeric('social_insurance', { precision: 15, scale: 0 }).default('0'),
   status: driverStatusEnum('status').default('ACTIVE'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -252,6 +254,9 @@ export const trips = pgTable('trips', {
   revenueOverriddenBy: integer('revenue_overridden_by'),
   revenueOverriddenAt: timestamp('revenue_overridden_at'),
   notes: text('notes'),
+  // Per-trip customer commission (hoa hồng). Deducted from freightExVat to produce recordedRevenue.
+  // Recorded immediately on data entry (not at lock). Default 0 = no commission.
+  customerCommission: numeric('customer_commission', { precision: 15, scale: 0 }).default('0'),
   tripWageDays: integer('trip_wage_days'), // optional override for days to count for this trip
   fuelSupplierId: integer('fuel_supplier_id').references(() => suppliers.id),
   vatRate: numeric('vat_rate', { precision: 5, scale: 3 }).notNull().default('0.000'),
