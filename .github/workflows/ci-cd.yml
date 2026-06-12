@@ -45,31 +45,12 @@ jobs:
         run: cd frontend && npx tsc -b && npx vite build
 
   # ──────────────────────────────────────────────────────────
-  # Job 2: Tests
+  # Job 2: Tests (unit tests only — integration tests require a
+  #   real database and are run separately)
   # ──────────────────────────────────────────────────────────
   test:
     name: Tests
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tingting
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 10
-
-    env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/tingting
-      JWT_SECRET: ci-test-secret-that-is-at-least-32-characters-long
-      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4
@@ -93,12 +74,6 @@ jobs:
         run: |
           npx tsx --test ../shared/src/calculations/tripTotals.test.ts
           npx tsx --test ../shared/src/schemas/updateTripFiguresSchema.test.ts
-
-      - name: Apply migrations to test DB
-        run: cd backend && npx drizzle-kit migrate 2>&1 | grep -v "already exists, skipping" | grep -v "will be truncated" || true
-
-      - name: Run backend integration tests
-        run: cd backend && npx tsx --test src/tests/integration.test.ts
 
   # ──────────────────────────────────────────────────────────
   # Job 3: Docker Build & Push
