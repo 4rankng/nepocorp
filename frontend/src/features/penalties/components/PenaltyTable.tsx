@@ -272,37 +272,50 @@ export function PenaltyTable({
           </div>
         </div>
         <div className="mobile-only mobile-table-wrap">
-          <div className="m-card-list">
-            {driverDetails.map((d, idx) => {
+          <div className="penalty-m-cards">
+            {driverDetails.map((d) => {
               const ac = avatarColorById(d.id);
               const gc = getGradeClass(d.grade);
-              const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
+              const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'danger';
               return (
-                <div key={d.id} className="m-card" onClick={() => onOpenDrawer(d.id)} style={{ cursor: 'pointer' }}>
-                  <div className="m-card__top">
-                    <span className="m-card__title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg, width: 28, height: 28, fontSize: 11 }}>{getInitials(d.name)}</span>
-                      {d.name}
-                    </span>
-                    <span className={`penalty-grade ${gc}`}>{d.grade}</span>
-                  </div>
-                  <div className="m-card__meta">
-                    <span>{d.truckPlate || 'Chưa phân xe'}</span>
-                  </div>
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">Chuỗi an toàn</span>
-                    <span className="m-card__row-value" style={{ color: d.streakDays >= 90 ? 'var(--success)' : 'var(--ink)' }}>{d.streakDays} ngày</span>
-                  </div>
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">Vi phạm</span>
-                    <span className={`m-card__row-value ${vClass === 'zero' ? 'm-card__row-value--success' : vClass === 'bad' ? 'm-card__row-value--danger' : ''}`}>{d.violationsInPeriod} vụ</span>
-                  </div>
-                  {d.fineYTD > 0 && (
-                    <div className="m-card__row">
-                      <span className="m-card__row-label">Phạt YTD</span>
-                      <span className="m-card__row-value m-card__row-value--danger">{formatCurrency(d.fineYTD)} đ</span>
+                <div key={d.id} className="penalty-m-card" onClick={() => onOpenDrawer(d.id)}>
+                  <div className="penalty-m-card__top">
+                    <div className="left">
+                      <div className="penalty-driver-avatar" style={{ background: ac.bg, color: ac.fg }}>
+                        {getInitials(d.name)}
+                      </div>
+                      <div className="penalty-m-card__info">
+                        <div className="penalty-m-card__name">{d.name}</div>
+                        <div className="penalty-m-card__id">
+                          {d.truckPlate || 'Chưa phân xe'}
+                        </div>
+                      </div>
                     </div>
-                  )}
+                    <span className={`penalty-grade-badge ${gc}`}>
+                      Hạng {d.grade}
+                    </span>
+                  </div>
+
+                  <div className="penalty-m-card__meta">
+                    <div className="mm">
+                      <span className="lab">Chuỗi an toàn</span>
+                      <span className={d.streakDays >= 90 ? 'val' : 'val empty'} style={d.streakDays >= 90 ? { color: 'var(--accent)' } : undefined}>
+                        {d.streakDays} ngày
+                      </span>
+                    </div>
+                    <div className="mm">
+                      <span className="lab">Vi phạm (tháng)</span>
+                      <span className={vClass === 'zero' ? 'val empty' : `val ${vClass}`}>
+                        {d.violationsInPeriod} vụ
+                      </span>
+                    </div>
+                    <div className="mm">
+                      <span className="lab">Phạt YTD</span>
+                      <span className={d.fineYTD > 0 ? 'val danger' : 'val empty'}>
+                        {d.fineYTD > 0 ? `${formatCurrency(d.fineYTD)} ₫` : '—'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               );
             })}

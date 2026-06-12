@@ -4,7 +4,8 @@ import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
-import { useForwarderSettlementDetail } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail } from '../hooks/useForwarderQueries';
+import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
 import './SettlementPrintPage.css';
 
@@ -116,13 +117,24 @@ function buildPrintRows(expenses: LinkedExpense[]) {
 export default function SettlementPrintPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: settlement, isLoading, error } = useForwarderSettlementDetail(Number(id));
+  const { user } = useAuth();
+  const isPortal = user?.role === 'FORWARDER' || user?.role === 'DRIVER';
+  
+  const fwdQuery = useForwarderSettlementDetail(isPortal ? Number(id) : 0);
+  const admQuery = useAdminSettlementDetail(!isPortal ? Number(id) : 0);
+  
+  const settlement = isPortal ? fwdQuery.data : admQuery.data;
+  const isLoading = isPortal ? fwdQuery.isLoading : admQuery.isLoading;
+  const error = isPortal ? fwdQuery.error : admQuery.error;
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handlePrint = async () => {
-    const html = await api.postForText(`/forwarder/me/advance-settlements/${id}/export?format=html`, {});
+    const endpoint = isPortal 
+      ? `/forwarder/me/advance-settlements/${id}/export?format=html`
+      : `/finance/advance-settlements/${id}/export?format=html`;
+    const html = await api.postForText(endpoint, {});
     setPreviewHtml(html);
     setShowPreview(true);
   };
@@ -176,8 +188,8 @@ export default function SettlementPrintPage() {
               <StatusPill variant={settlementStatusVariant(s.status)}>
                 {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
               </StatusPill>
-              <button className="btn btn--secondary btn--sm" onClick={() => navigate('/my-settlements')}>
-                <ArrowLeft size={14} /> Quay lại
+              <button className="btn btn--secondary btn--sm" onClick={() => navigate(-1)}>
+                <ArrowLeft size={14} /> Trở về
               </button>
               <button className="btn btn--primary btn--sm" onClick={handlePrint}>
                 <Printer size={14} /> In

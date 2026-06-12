@@ -811,28 +811,197 @@
   }
 }
 
+/* ─── Mobile driver cards (mirrors trip-mcard design) ─── */
+
+.penalty-m-cards {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.penalty-m-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.penalty-m-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--strip-bg, var(--line-3));
+}
+
+.penalty-m-card:hover { border-color: var(--ink-2); }
+
+.penalty-m-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.penalty-m-card__top .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.penalty-driver-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.penalty-m-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.penalty-m-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.penalty-m-card__id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.penalty-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.penalty-grade-badge.a-plus { background: #ECFDF5; color: #047857; border: 1px solid rgba(16, 185, 129, 0.2); }
+.penalty-grade-badge.a { background: #EFF6FF; color: #1E40AF; border: 1px solid rgba(59, 130, 246, 0.2); }
+.penalty-grade-badge.b { background: #FFFBEB; color: #92400E; border: 1px solid rgba(245, 158, 11, 0.2); }
+.penalty-grade-badge.c { background: #FEF2F2; color: #991B1B; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+.penalty-m-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  margin-top: 6px;
+}
+
+.penalty-m-card__meta .mm {
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.penalty-m-card__meta .lab {
+  font-size: 10px; letter-spacing: 0.8px;
+  color: var(--ink-3); text-transform: uppercase; font-weight: 600;
+}
+
+.penalty-m-card__meta .val {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 600; color: var(--ink);
+}
+
+.penalty-m-card__meta .val.warn { color: #B45309; }
+.penalty-m-card__meta .val.danger { color: #B91C1C; }
+.penalty-m-card__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
+
+/* ─── Mobile breakpoint ─── */
+
 @media (max-width: 640px) {
-  /* Head padding/flex is handled globally in responsive.css for both
-     penalty and fleet pages. Tighten the icon + inner gap here. */
+  /* Fix header white space wrapping bug */
+  .penalty-page .penalty-card-head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 16px;
+  }
+  
   .penalty-page .penalty-card-lead {
-    gap: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
   }
+
   .penalty-page .penalty-card-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(0,177,79,0.05) 100%);
   }
+  
+  .penalty-page .penalty-card-title {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .penalty-page .penalty-card-sub {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
   .penalty-page .penalty-head-tools {
     width: 100%;
-    overflow-x: auto;
   }
+  
   .penalty-seg {
+    display: flex;
     width: 100%;
-    justify-content: center;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: 10px;
   }
-  .penalty-two-col {
-    grid-template-columns: 1fr;
+  
+  .penalty-seg button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 13px;
+    border-radius: 8px;
   }
+
+  /* Page header — stack, full-width actions */
   .penalty-page .page-header {
     flex-direction: column;
     gap: 12px;
@@ -844,30 +1013,53 @@
     flex: 1;
     justify-content: center;
   }
+
+  /* KPI grid — compact 2×2 */
+  .penalty-page .kpi-grid {
+    gap: 8px;
+  }
+  .penalty-page .kpi__watermark {
+    display: none;
+  }
+  .penalty-page .kpi__meta {
+    display: none;
+  }
+
+  /* Row action touch targets */
   .penalty-row-act {
     min-width: 36px;
     min-height: 36px;
   }
 
-  /* Tighten row paddings — at 390px the 20px horizontal eats 12% of
-     the row and forces middle-column wrap for long reason text. */
+  /* Violation log items */
   .penalty-page .plog-item {
-    padding: 10px 14px;
+    padding: 12px 14px;
     gap: 10px;
   }
+  .penalty-page .plog-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  .penalty-page .plog-amount {
+    font-size: 14px;
+  }
+
+  /* Violation type rows */
   .penalty-page .penalty-vio-type-row {
     padding: 12px 14px;
     gap: 10px;
+  }
+  .penalty-page .penalty-vio-type-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
   }
   .penalty-page .penalty-vio-type-fine .amt {
     font-size: 12.5px;
     white-space: nowrap;
   }
 
-  /* Empty state: stats row was inline-flex with 3 stats + 2 vertical
-     dividers — wraps poorly. Switch to a 3-column grid so each stat
-     gets equal width, and hide the now-meaningless vertical dividers.
-     Action buttons go full-width stacked. */
+  /* Empty state */
   .penalty-page .penalty-empty-log {
     padding: 28px 16px;
   }
@@ -894,16 +1086,16 @@
     justify-content: center;
   }
 
-  /* Footer: stack the two halves on mobile so the right-side "Hiển thị X/Y"
-     doesn't collide with the legend chips. */
+  /* Footer */
   .penalty-page .penalty-table-foot {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-    padding: 10px 14px;
+    padding: 12px 16px;
   }
   .penalty-page .penalty-table-foot .legend {
     flex-wrap: wrap;
     gap: 8px;
   }
 }
+

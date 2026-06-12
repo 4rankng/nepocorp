@@ -509,6 +509,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                   style={{ cursor: editable ? 'pointer' : 'default', position: 'relative' }}
                   onClick={editable ? () => onEdit(u) : undefined}
                 >
+              <StatusStrip status={u.status} />
               <div className="users-mobile-card__header">
                 <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
                   {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}

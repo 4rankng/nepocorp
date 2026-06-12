@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +11,7 @@ import { useMonth } from '../hooks/useMonth';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
+import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -224,8 +225,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { month: currentMonth, year: currentYear } = useMonth();
-
   const [chartView, setChartView] = useState<'day' | 'month'>('day');
+  const countersAnimated = useRef(false);
+
+  // KPI refs for counter animation — point to <span> wrapping just the number
+  const kpiRefs = useRef<Record<string, HTMLSpanElement | null>>({});
 
   const {
     stats, loading, prevPnlReport,
@@ -236,6 +240,9 @@ export default function DashboardPage() {
     derived, formattedNet,
     allTrips,
   } = useDashboardData(currentMonth, currentYear);
+
+  // Animation hook — must be after loading is defined
+  const { rootRef, animateCounters } = useDashboardAnimations(!loading);
 
   const showApprovalQueue = canSeeApprovalQueue(user?.role);
   const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
@@ -432,6 +439,25 @@ export default function DashboardPage() {
     return items.slice(0, 5);
   }, [receivablesSummary, createdTripsCount, renewalReminders, fuelWarnings, revenue, currentMonth, currentYear, navigate]);
 
+  // ── Trigger KPI counter animations once data loads ──
+  useEffect(() => {
+    if (loading || countersAnimated.current) return;
+    countersAnimated.current = true;
+
+    // Small delay to let entrance animations start first
+    const timer = setTimeout(() => {
+      const refs = kpiRefs.current;
+      animateCounters([
+        { el: refs.revenue!, value: revenue },
+        { el: refs.costs!, value: costs },
+        { el: refs.gross!, value: grossProfit },
+        { el: refs.net!, value: netProfit },
+      ].filter(t => t.el !== null));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [loading, revenue, costs, grossProfit, netProfit, animateCounters]);
+
   // ── Loading state (must be AFTER all hooks) ────────────────────────────
   if (loading) {
     return (
@@ -444,7 +470,7 @@ export default function DashboardPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="dash-wf fade-up">
+    <div className="dash-wf fade-up" ref={rootRef}>
       {/* ── page head ── */}
       <header className="wf-head">
         <div>
@@ -483,7 +509,7 @@ export default function DashboardPage() {
             <span className="lbl">Doanh thu · {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
             <DeltaPill mom={revenueMoM} />
           </div>
-          <div className="val">{fmtVN(revenue)} <i>đ</i></div>
+          <div className="val"><span ref={el => { kpiRefs.current.revenue = el; }}>{fmtVN(revenue)}</span> <i>đ</i></div>
           <div className="foot">Tháng trước · {formatCompact(prevRevenue)} đ</div>
         </div>
         <div className="wf-kpi">
@@ -491,7 +517,7 @@ export default function DashboardPage() {
             <span className="lbl">Tổng chi phí</span>
             <DeltaPill mom={costsMoM} />
           </div>
-          <div className="val">{fmtVN(costs)} <i>đ</i></div>
+          <div className="val"><span ref={el => { kpiRefs.current.costs = el; }}>{fmtVN(costs)}</span> <i>đ</i></div>
           <div className="foot">{costRatio.toFixed(1)}% doanh thu</div>
         </div>
         <div className="wf-kpi">
@@ -499,7 +525,7 @@ export default function DashboardPage() {
             <span className="lbl">Lợi nhuận gộp</span>
             <DeltaPill mom={grossMoM} />
           </div>
-          <div className="val">{fmtVN(grossProfit)} <i>đ</i></div>
+          <div className="val"><span ref={el => { kpiRefs.current.gross = el; }}>{fmtVN(grossProfit)}</span> <i>đ</i></div>
           <div className="foot">Biên gộp · {grossMargin.toFixed(1)}%</div>
         </div>
         <div className="wf-kpi">
@@ -507,7 +533,7 @@ export default function DashboardPage() {
             <span className="lbl">Lợi nhuận ròng</span>
             <DeltaPill mom={netMoM} />
           </div>
-          <div className="val">{fmtVN(netProfit)} <i>đ</i></div>
+          <div className="val"><span ref={el => { kpiRefs.current.net = el; }}>{fmtVN(netProfit)}</span> <i>đ</i></div>
           <div className="foot">
             Sau phí quản lý · <button className="wf-link" onClick={() => navigate('/profit')}>Phân chia →</button>
           </div>

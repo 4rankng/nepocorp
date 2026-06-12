@@ -187,6 +187,7 @@
   --wf-amber-soft: #FBF1DE;
   --wf-red: #C7372F;
   --wf-shadow: 0 1px 2px rgba(14, 31, 22, 0.04), 0 1px 1px rgba(14, 31, 22, 0.03);
+  --wf-shadow-hover: 0 4px 16px -4px rgba(9, 9, 11, 0.1), 0 0 0 1px rgba(9, 9, 11, 0.04);
   --wf-radius: 14px;
   display: flex;
   flex-direction: column;
@@ -195,6 +196,67 @@
   font-size: 14px;
   line-height: 1.45;
 }
+
+/* ── Entrance animation initial states ──
+   Elements start hidden; anime.js animates them in.
+   Reduced-motion users see everything immediately via scope mediaQueries. */
+.dash-wf .wf-head {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.dash-wf .wf-kpi {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.dash-wf .wf-bento > * {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.dash-wf .wf-arow {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.dash-wf .wf-aurow {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* Smooth transitions for hover states managed entirely by CSS */
+.dash-wf .wf-kpi {
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), border-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-wf .wf-kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--wf-shadow-hover);
+}
+
+.dash-wf .wf-card {
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), border-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-wf .wf-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wf-shadow-hover);
+}
+
+.dash-wf .wf-btn,
+.dash-wf .wf-minibtn {
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-wf .wf-btn:hover,
+.dash-wf .wf-minibtn:hover {
+  transform: translateY(-1px);
+}
+
+/* @media (prefers-reduced-motion: reduce) {
+  .dash-wf .wf-head,
+  .dash-wf .wf-kpi,
+  .dash-wf .wf-bento > *,
+  .dash-wf .wf-arow,
+  .dash-wf .wf-aurow {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+} */
 /* Safety net: any SVG inside the dashboard that's missing width/height attrs
    defaults to the browser's intrinsic SVG size (300×150 or full container),
    which leaks a giant icon onto the chart card. Force a small default for

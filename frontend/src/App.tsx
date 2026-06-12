@@ -176,6 +176,7 @@ function AppRoutes() {
           <Route path="/my-settlements" element={forwarderOnly(page(<ForwarderSettlementsPage />))} />
           <Route path="/my-settlements/new" element={forwarderOnly(page(<ForwarderSettlementCreatePage />))} />
           <Route path="/my-settlements/:id" element={forwarderOnly(page(<SettlementPrintPage />))} />
+          <Route path="/settlements/:id" element={officeStaffOnly(page(<SettlementPrintPage />))} />
           <Route
             path="*"
             element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />}

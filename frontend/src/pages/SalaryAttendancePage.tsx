@@ -149,6 +149,76 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
 }
 
 
+// ── Mobile Day List (replaces calendar grid on mobile) ────────────────────────
+interface MobileDayListProps {
+  dates: string[];
+  workDayMap: Map<string, WorkDayRecord>;
+  isUpdating: boolean;
+  isConfirmed: boolean;
+  onCycle: (date: string, current: WorkDayRecord | undefined) => void;
+  parseLocalDate: (s: string) => Date;
+}
+
+function MobileDayList({ dates, workDayMap, isUpdating, isConfirmed, onCycle, parseLocalDate }: MobileDayListProps) {
+  return (
+    <div className="mobile-day-list">
+      {dates.map(dateStr => {
+        const dateObj = parseLocalDate(dateStr);
+        const day = dateObj.getDate();
+        const cellMonth = dateObj.getMonth() + 1;
+        const dow = dateObj.getDay(); // 0=Sun
+        const dowLabel = DOW_LABELS[dow];
+        const isSun = dow === 0;
+        const workDay = workDayMap.get(dateStr);
+        const status = workDay?.status ?? (isSun ? 'WEEKLY_OFF' : 'STANDBY');
+        const cfg = STATUS_CONFIG[status];
+        const isClickable = !isConfirmed && status !== 'TRIP_DAY';
+
+        return (
+          <div
+            key={dateStr}
+            onClick={() => isClickable && onCycle(dateStr, workDay)}
+            className={`mobile-day-row status-${status.toLowerCase()} ${isClickable ? 'is-clickable' : ''}`}
+          >
+            {/* Date column */}
+            <div className="mobile-day-row__date-col">
+              <span className="mobile-day-row__day-num">{day}/{cellMonth}</span>
+              <span className={`mobile-day-row__dow ${isSun ? 'is-sunday' : ''}`}>{dowLabel}</span>
+            </div>
+
+            {/* Status column */}
+            <div className="mobile-day-row__status-col">
+              <span className="mobile-day-row__status-icon" style={{ background: cfg.bg, color: cfg.color }}>
+                <cfg.icon size={15} strokeWidth={2} />
+              </span>
+              <span className="mobile-day-row__status-label">{cfg.label}</span>
+            </div>
+
+            {/* Right column: trip code */}
+            <div className="mobile-day-row__right-col">
+              {status === 'TRIP_DAY' && workDay?.trip?.tripCode ? (
+                <span className="mobile-day-row__trip-badge" title={workDay.trip.routeName || undefined}>
+                  {workDay.trip.tripCode}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Compact legend */}
+      <div className="mobile-day-legend">
+        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+          <span key={key} className={`mobile-day-legend__item status-${key.toLowerCase()}`}>
+            <cfg.icon size={11} strokeWidth={2} />
+            {cfg.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalaryAttendancePage() {
   const { month, year, goPrev, goNext } = useMonth();
@@ -438,17 +508,29 @@ export default function SalaryAttendancePage() {
           )}
         </div>
 
+        {/* ── Mobile Day List (hidden on desktop, shown on mobile via CSS) ── */}
+        {selectedDriverId && (
+          <div className="mobile-day-list-wrapper">
+            {wdLoading ? (
+              <div style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <Loader2 size={20} className="spin" />
+              </div>
+            ) : (
+              <MobileDayList
+                dates={dates}
+                workDayMap={workDayMap}
+                isUpdating={isUpdating}
+                isConfirmed={isConfirmed}
+                onCycle={handleCellClick}
+                parseLocalDate={parseLocalDate}
+              />
+            )}
+          </div>
+        )}
+
         {/* ── Right Column: Sidebar (Driver info + Summary Card) ── */}
         {selectedDriverId && (
           <aside className="salary-page-layout__sidebar">
-            <button
-              className="btn btn--secondary btn--sm mobile-back-btn"
-              onClick={() => setSelectedDriverId(null)}
-              style={{ display: 'none', alignItems: 'center', gap: 6, width: 'fit-content', marginBottom: 12 }}
-            >
-              <ChevronLeft size={16} /> Quay lại danh sách
-            </button>
-
             {/* 3. Salary Summary Card (on the Right) */}
             <div className="salary-summary-area">
               {salaryLoading ? (
@@ -458,47 +540,47 @@ export default function SalaryAttendancePage() {
               ) : salary ? (
                 <>
                   <SalarySummaryCard salary={salary} />
-                  {/* Confirm button & status badge */}
-                  <div style={{ marginTop: 12 }}>
-                    {isConfirmed ? (
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                        borderRadius: 8, background: 'var(--success-soft)', color: 'var(--success)',
-                        fontSize: 13, fontWeight: 500,
-                      }}>
-                        <CheckCircle2 size={16} />
-                        <span>Đã xác nhận</span>
-                        {salary.confirmedAt && (
-                          <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
-                            {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        className="btn btn--primary btn--sm"
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                        disabled={confirmMutation.isPending}
-                        onClick={() => {
-                          confirmMutation.mutate(undefined, {
-                            onError: (err: any) => {
-                              toast({
-                                kind: 'error',
-                                message: err?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
-                              });
-                            },
-                          });
-                        }}
-                      >
-                        {confirmMutation.isPending ? (
-                          <Loader2 size={14} className="spin" />
-                        ) : (
-                          <CheckCircle2 size={14} />
-                        )}
-                        Xác nhận kỳ lương
-                      </button>
-                    )}
-                  </div>
+                    {/* Confirm button & status badge */}
+                    <div style={{ marginTop: 12 }}>
+                      {isConfirmed ? (
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                          borderRadius: 8, background: 'var(--success-soft)', color: 'var(--success)',
+                          fontSize: 13, fontWeight: 500,
+                        }}>
+                          <CheckCircle2 size={16} />
+                          <span>Đã xác nhận</span>
+                          {salary.confirmedAt && (
+                            <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
+                              {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn--primary btn--sm"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                          disabled={confirmMutation.isPending}
+                          onClick={() => {
+                            confirmMutation.mutate(undefined, {
+                              onError: (err: any) => {
+                                toast({
+                                  kind: 'error',
+                                  message: err?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
+                                });
+                              },
+                            });
+                          }}
+                        >
+                          {confirmMutation.isPending ? (
+                            <Loader2 size={14} className="spin" />
+                          ) : (
+                            <CheckCircle2 size={14} />
+                          )}
+                          Xác nhận kỳ lương
+                        </button>
+                      )}
+                    </div>
                 </>
               ) : (
                 <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
@@ -511,12 +593,23 @@ export default function SalaryAttendancePage() {
             {isConfirmed && (
               <div style={{
                 marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                borderRadius: 8, background: 'var(--bg-2)', fontSize: 12, color: 'var(--fg-3)',
+                borderRadius: 8, background: 'var(--surface-2)', fontSize: 12, color: 'var(--ink-3)',
               }}>
                 <Lock size={14} style={{ flexShrink: 0 }} />
                 <span>Kỳ lương đã khóa — không thể chỉnh sửa ngày công</span>
               </div>
             )}
+
+            {/* Mobile back button — sticky bottom */}
+            <div className="mobile-back-bar">
+              <button
+                className="btn btn--secondary"
+                onClick={() => setSelectedDriverId(null)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <ChevronLeft size={16} /> Quay lại danh sách
+              </button>
+            </div>
           </aside>
         )}
       </div>

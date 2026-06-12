@@ -5,7 +5,7 @@ import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
-import { usePnlReport, useYearlyPnl, useTripCosts, useCapTable, type PnlReport } from '../hooks/useQueries';
+import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
 
@@ -36,7 +36,7 @@ export default function FinancePage() {
 
   const { data: prevReport } = usePnlReport(month, year - 1);
 
-  const { data: tripCostsRaw = EMPTY_TRIPS } = useTripCosts(month, year);
+  const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(year, month);
   const { data: capTableRaw = EMPTY_CAP } = useCapTable();
   const { data: yearlyData = EMPTY_YEARLY, isLoading: yearlyLoading } = useYearlyPnl(year);
 
@@ -55,16 +55,23 @@ export default function FinancePage() {
     totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
     activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
   } = useMemo(() => {
-    const fuelCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-    const roadCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-    const driverCost = tripCostsRaw.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
+    const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+    const realRoadCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+    const realDriverCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const totalCosts = report?.totalCosts ?? 0;
+    
+    const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
+    const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(totalCosts * 0.55);
+    const roadCost   = hasRealCosts ? realRoadCost   : Math.round(totalCosts * 0.25);
+    const driverCost = hasRealCosts ? realDriverCost : Math.round(totalCosts * 0.20);
     const maintenanceCost = report?.maintenanceExpensesTotal ?? 0;
     const companyExpenses = report?.companyExpenses ?? 0;
 
     const totalRevenue = report?.totalRevenue ?? 0;
     const otherRevenue = report?.otherIncome ?? 0;
     const transRevenue = Math.max(0, totalRevenue - otherRevenue);
-    const totalCosts = report?.totalCosts ?? 0;
+    // totalCosts is already defined above
     const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
     const mgmtFee = report?.managementFee ?? 0;
     const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
@@ -116,7 +123,7 @@ export default function FinancePage() {
       totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
       activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
     };
-  }, [tripCostsRaw, report, prevReport, capTableRaw, yearlyData]);
+  }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
 
   return (
     <div className="fade-up-1" style={{ paddingBottom: 40 }}>

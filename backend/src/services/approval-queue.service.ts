@@ -173,7 +173,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
             subtitle: `Chờ kế toán kiểm tra · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
-            href: `/settlements?focus=${r.id}`,
+            href: `/settlements/${r.id}`,
             severity: isUrgent(r.createdAt) ? 'urgent' as const : 'normal' as const,
           };
         })),
@@ -211,7 +211,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
             subtitle: `Đã kiểm tra · chờ giám đốc duyệt · ${timeAgo(ts)}`,
             amount: amt,
             requestedAt: ts.toISOString(),
-            href: `/settlements?focus=${r.id}`,
+            href: `/settlements/${r.id}`,
             severity: isUrgent(ts) ? 'urgent' as const : 'normal' as const,
           };
         })),
