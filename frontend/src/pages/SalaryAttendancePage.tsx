@@ -101,38 +101,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
         
         <div className="salary-summary-dark__row">
           <span className="salary-summary-dark__row-lbl">
-            <Truck size={12} /> Lương chuyến ({salary.tripDays} ngày)
-          </span>
-          <span className={`salary-summary-dark__row-val ${salary.totalTripSalary > 0 ? 'salary-summary-dark__row-val--pos' : ''}`}>
-            {salary.totalTripSalary > 0 ? '+' : ''}{formatCurrency(salary.totalTripSalary)}
-          </span>
-        </div>
-
-        {salary.supplementPay > 0 && (
-          <div className="salary-summary-dark__row">
-            <span className="salary-summary-dark__row-lbl">
-              <Coffee size={12} /> Lương bổ sung ({salary.standbyDays} ngày chờ)
-            </span>
-            <span className="salary-summary-dark__row-val salary-summary-dark__row-val--pos">
-              +{formatCurrency(salary.supplementPay)}
-            </span>
-          </div>
-        )}
-
-        {salary.leaveDeduction > 0 && (
-          <div className="salary-summary-dark__row">
-            <span className="salary-summary-dark__row-lbl">
-              <XCircle size={12} /> Khấu trừ nghỉ riêng
-            </span>
-            <span className="salary-summary-dark__row-val salary-summary-dark__row-val--neg">
-              -{formatCurrency(salary.leaveDeduction)}
-            </span>
-          </div>
-        )}
-
-        <div className="salary-summary-dark__row">
-          <span className="salary-summary-dark__row-lbl">
-            <Info size={12} /> Điều chỉnh công ({salary.adjustment >= 0 ? 'thừa' : 'thiếu'})
+            <Info size={12} /> Điều chỉnh công
           </span>
           <span className={`salary-summary-dark__row-val ${salary.adjustment > 0 ? 'salary-summary-dark__row-val--pos' : salary.adjustment < 0 ? 'salary-summary-dark__row-val--neg' : ''}`}>
             {salary.adjustment > 0 ? '+' : salary.adjustment < 0 ? '-' : ''}{formatCurrency(Math.abs(salary.adjustment))}
@@ -148,9 +117,31 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           </span>
         </div>
 
-        <div className="salary-summary-dark__row salary-summary-dark__row--total">
+        <div className="salary-summary-dark__row salary-summary-dark__row--total" style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
           <span className="salary-summary-dark__row-lbl" style={{ color: 'rgba(255,255,255,0.85)' }}>Lương thực nhận</span>
           <span className="salary-summary-dark__row-val">{formatCurrency(salary.netSalary)}</span>
+        </div>
+
+        <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginTop: 16, marginBottom: 8, fontWeight: 600, letterSpacing: '0.5px' }}>
+          Phân bổ chi phí (Nội bộ)
+        </div>
+        
+        <div className="salary-summary-dark__row" style={{ opacity: 0.7 }}>
+          <span className="salary-summary-dark__row-lbl">
+            <Truck size={12} /> Lương chuyến ({salary.tripDays} ngày)
+          </span>
+          <span className="salary-summary-dark__row-val">
+            {formatCurrency(salary.totalTripSalary)}
+          </span>
+        </div>
+
+        <div className="salary-summary-dark__row" style={{ opacity: 0.7 }}>
+          <span className="salary-summary-dark__row-lbl">
+            <Coffee size={12} /> Lương chờ việc ({salary.standbyDays} ngày)
+          </span>
+          <span className="salary-summary-dark__row-val">
+            {formatCurrency(salary.supplementPay)}
+          </span>
         </div>
       </div>
     </div>

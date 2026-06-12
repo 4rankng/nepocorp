@@ -77,29 +77,22 @@ Ngày công hưởng lương = trip_days + standby_days
 
 daily_rate = (base_salary + social_insurance) / standard_work_days
 
-Lương bổ sung (supplement):
-  Kế toán chọn từng ngày cụ thể trên lịch → gán STANDBY (không nhập tổng số ngày)
-  lương_bù = standby_days × daily_rate
-
-Khấu trừ nghỉ việc riêng (leave deduction):
-  free_leave_days = 4 (nghỉ Chủ nhật mặc định)
-  excess_days = max(0, personal_leave_days − free_leave_days)
-  trừ_nghỉ_riêng = excess_days × daily_rate
-
 Điều chỉnh:
   Nếu ngày công hưởng lương < standard_work_days:
-    adjustment = -(personal_leave_days × daily_rate)
+    adjustment = -((standard_work_days - ngày công hưởng lương) × daily_rate)
   Nếu ngày công hưởng lương > standard_work_days:
-    adjustment = +((trip_days + standby_days - standard_work_days) × daily_rate)
+    adjustment = +((ngày công hưởng lương - standard_work_days) × daily_rate)
   Nếu bằng nhau:
     adjustment = 0
 
-net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riêng + adjustment - penalties
+net_salary = base_salary + adjustment - penalties
+
+*Lưu ý: Các khoản Lương chuyến (total_trip_salary) và Chi phí chờ việc (standby_cost) là các khoản phân bổ để hạch toán chi phí công ty, KHÔNG cộng vào `net_salary` của tài xế.*
 ```
 
 > **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe trên trang Cấu hình → Lái xe, lưu trong cột `drivers.social_insurance`. Cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho tài xế (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp. *(Pete xác nhận 11/6)*
 
-> **Khấu trừ nghỉ việc riêng:** Lái xe được miễn trừ 4 ngày Chủ nhật nghỉ mặc định. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường (trước hoặc sau đó); nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate` (hệ số = 1, không phải lương tăng ca) trên màn hình chốt công. Ngày Chủ nhật đi làm được tính như ngày làm việc bình thường. *(Pete xác nhận 11/6, 12/6)*
+> **Điều chỉnh ngày công:** Khi tài xế nghỉ không lương (`PERSONAL_LEAVE`), số ngày công hưởng lương sẽ giảm xuống dưới chuẩn, hệ thống tự động trừ tiền qua `adjustment`. Ngược lại, nếu tài xế đi làm vào ngày Chủ nhật (WEEKLY_OFF) và không nghỉ bù, số ngày công sẽ lớn hơn chuẩn, hệ thống tự động cộng tiền thêm (hệ số 1).
 
 ### 3.2 Số ngày công chuẩn (`standard_work_days`)
 
@@ -147,10 +140,15 @@ Layout:
 │  Tổng kết tháng:                                     │
 │  Ngày đi chuyến: 18  │  Ngày chờ việc: 4           │
 │  Ngày nghỉ riêng: 2  │  Ngày công chuẩn: 26        │
-│  Lương cứng: 10,000,000 ₫  │  Lương chuyến: 7,500,000 ₫ │
-│  Điều chỉnh: -768,000 ₫   │  Phạt: -500,000 ₫      │
+│  Lương cứng: 10,000,000 ₫                          │
+│  Điều chỉnh (thiếu công): -769,230 ₫               │
+│  Phạt: -500,000 ₫                                  │
 │  ─────────────────────────────────────────          │
-│  Lương thực nhận: 16,232,000 ₫                     │
+│  Lương thực nhận: 8,730,770 ₫                      │
+│                                                    │
+│  (Phân bổ chi phí nội bộ:                          │
+│   Lương chuyến: 6,923,076 ₫                        │
+│   Lương chờ việc: 1,538,461 ₫)                     │
 │                              [Xác nhận kỳ lương]   │
 └──────────────────────────────────────────────────────┘
 ```
@@ -165,7 +163,7 @@ Layout:
 
 | Trường | Loại | Ghi chú |
 |---|---|---|
-| `driver_salary` (Lương chuyến quy đổi) | Number | **Hệ thống tự điền** theo công thức `(baseSalary + socialInsurance) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè. Tương tự cách dầu, vé cầu đường, tiền đi đường tự điền. |
+| `driver_salary` (Lương chuyến quy đổi) | Number | **Hệ thống tự điền** theo công thức `(baseSalary + socialInsurance) / standardWorkDays × tripWageDays`. Kế toán có thể sửa/ghi đè. Đây là khoản phân bổ chi phí nội bộ. |
 | `trip_wage_days` | Number | **Hệ thống tự tính** từ ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể điều chỉnh khi chuyến kéo dài xuyên Chủ nhật. |
 
 > **Luồng tự điền:** Khi kế toán chọn lái xe và nhập ngày đi/ngày về trên form chuyến → hệ thống load `baseSalary` + `socialInsurance` của lái xe → tính `tripWageDays` → tự điền `driver_salary`. Kế toán thấy ngay số tiền gợi ý, có thể sửa lại hoặc điều chỉnh số ngày. *(Pete xác nhận 11/6: "tự nhảy", giống chi phí xăng dầu và vé cầu đường)*
@@ -228,9 +226,8 @@ Driver mở /my-earnings?month=2026-06
   → GET /api/driver/me/earnings?month=2026-06
   → Hiển thị breakdown:
      - Lương cứng (base_salary)
-     - Lương chuyến (Σ driver_salary từ LOCKED trips)
-     - Điều chỉnh công thiếu/thừa
-     - Phạt kỷ luật
+     - Điều chỉnh công thiếu/thừa (adjustment)
+     - Phạt kỷ luật (penalties)
      - Lương thực nhận (net_salary)
   → Chỉ xem — không có quyền sửa
 ```
@@ -291,9 +288,9 @@ Sau khi xác nhận kỳ lương:
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |---|---|---|---|---|---|
-| TC-LC-010 | Đủ công, không nghỉ | 26 ngày công, 0 nghỉ riêng | Xem kỳ lương | adjustment = 0, net = base + trip_salary - penalties | High |
-| TC-LC-011 | Nghỉ riêng 2 ngày | standard=26, personal_leave=2 | Xem kỳ lương | adjustment = -(2 × daily_rate) | High |
-| TC-LC-012 | Chạy thêm CN (dôi công) | trip_days+standby=28, standard=26 | Xem kỳ lương | adjustment = +(2 × daily_rate) | High |
+| TC-LC-010 | Đủ công, không nghỉ | 26 ngày công, 0 nghỉ riêng | Xem kỳ lương | adjustment = 0, net = base - penalties | High |
+| TC-LC-011 | Nghỉ riêng 2 ngày | standard=26, personal_leave=2 | Xem kỳ lương | adjustment = -(2 × daily_rate), net = base + adj | High |
+| TC-LC-012 | Chạy thêm CN (dôi công) | trip_days+standby=28, standard=26 | Xem kỳ lương | adjustment = +(2 × daily_rate), net = base + adj | High |
 | TC-LC-013 | Xe hỏng, trực bãi đủ tháng | trip_days=10, standby=16, standard=26 | Xem kỳ lương | adjustment = 0, nhận đủ base_salary | High |
 | TC-LC-014 | BHXH cộng vào daily_rate | social_insurance được cấu hình | daily_rate tính | daily_rate = (base + si) / standard | Medium |
 | TC-LC-015 | standard_work_days theo tháng thực | Tháng 2/2026 = 28 ngày, 4 CN | Tạo kỳ lương | standard = 24 | High |

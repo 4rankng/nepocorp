@@ -160,27 +160,21 @@ Ngày công hưởng lương = trip_days + standby_days
 
 daily_rate = (base_salary + social_insurance) / standard_work_days
 
-Lương bổ sung (supplement):
-  lương_bù = standby_days × daily_rate
-
-Khấu trừ nghỉ việc riêng (leave deduction):
-  free_leave_days = 4 (nghỉ Chủ nhật mặc định)
-  excess_days = max(0, personal_leave_days − free_leave_days)
-  trừ_nghỉ_riêng = excess_days × daily_rate
-
-Điều chỉnh công:
-  Nếu ngày công < standard_work_days → adjustment = -(personal_leave_days × daily_rate)
-  Nếu ngày công > standard_work_days → adjustment = +(ngày dôi × daily_rate)
+Điều chỉnh công (Adjustment):
+  Nếu ngày công hưởng lương < standard_work_days → adjustment = -(số ngày thiếu × daily_rate)
+  Nếu ngày công hưởng lương > standard_work_days → adjustment = +(số ngày thừa × daily_rate)
   Nếu bằng nhau → adjustment = 0
 
-net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riêng + adjustment − penalties
+net_salary = base_salary + adjustment − penalties
+
+*Lưu ý: Lương chuyến (total_trip_salary) và Lương chờ việc (standby_cost) chỉ là các khoản phân bổ để hạch toán chi phí vào báo cáo Lãi/Lỗ, KHÔNG cộng thêm vào lương thực nhận của tài xế.*
 ```
 
 * **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe (thêm trường `social_insurance` trên bảng `drivers`). Cộng vào trước khi tính `daily_rate` để phân bổ chi phí đúng. Lương thực trả tài xế vẫn dùng `base_salary` gốc; BHXH hạch toán chi phí riêng. *(Pete xác nhận 4/6, 11/6)*
-* **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `(base_salary + social_insurance) / 26 × trip_wage_days`. Kế toán có thể sửa/ghi đè số tiền hoặc điều chỉnh `trip_wage_days`. Hành vi tương tự các chi phí khác (dầu, vé cầu đường, tiền đi đường) — tự điền, cho phép sửa. *(Pete xác nhận 11/6: "tự nhảy", giống chi phí xăng dầu)*
-* **Trường `trip_wage_days`:** Hệ thống tự tính từ khoảng ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ. *(Pete xác nhận 4/6)*
-* **Lương bổ sung (Supplement Pay):** Kế toán **chọn từng ngày cụ thể** trên lịch chấm công (`/salary`) và gán `STANDBY` — không nhập tổng số ngày cộng dồn. Hệ thống tự đếm số ngày `STANDBY` và tính `lương_bù = standby_days × daily_rate`, cộng vào `net_salary`. Công thức xác nhận: `standby_days × (base_salary + social_insurance) / standard_work_days`. *(Pete xác nhận 11/6, 12/6)*
-* **Khấu trừ nghỉ việc riêng (Leave Deduction):** Lái xe được miễn trừ **4 ngày Chủ nhật** nghỉ mặc định trong tháng. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường (trước hoặc sau đó); nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate` (hệ số = 1, không phải lương tăng ca). Ngày Chủ nhật đi làm được tính như ngày làm việc bình thường. *(Pete xác nhận 11/6, 12/6)*
+* **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `(base_salary + social_insurance) / standard_work_days × trip_wage_days`. Đây là khoản PHÂN BỔ chi phí vào chuyến, không cộng thêm vào thu nhập tài xế. Kế toán có thể sửa/ghi đè.
+* **Trường `trip_wage_days`:** Hệ thống tự tính từ khoảng ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ.
+* **Chi phí chờ việc (Standby Cost):** Tính bằng `standby_days × daily_rate`. Đây là khoản PHÂN BỔ chi phí gián tiếp vào P&L chung, không cộng thêm vào thu nhập tài xế.
+* **Khấu trừ / Thưởng ngày công (Adjustment):** Hệ thống so sánh tổng ngày làm việc (`trip_days + standby_days`) với `standard_work_days`. Nếu tài xế nghỉ không lương (`PERSONAL_LEAVE`), ngày làm việc sẽ giảm và bị trừ lương. Nếu tài xế làm thêm ngày Chủ nhật mà không nghỉ bù, ngày làm việc sẽ tăng và được cộng thêm lương (theo `daily_rate`).
 * **Phạt kỷ luật (Penalty):** Trừ vào `net_salary` (không phải chi phí công ty — xem §4.11).
 
 #### 4.5.4 Phân bổ chi phí lương vào P&L

@@ -208,6 +208,11 @@
 }
 .dispatch-page .tab:hover { color: var(--ink); }
 .dispatch-page .tab.active { background: var(--ink); color: #fff; font-weight: 600; }
+.dispatch-page .tab-dot {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
 .dispatch-page .tab .tc {
   font-size: 10.5px; font-weight: 700;
   background: rgba(0,0,0,0.06);
@@ -216,30 +221,64 @@
 }
 .dispatch-page .tab.active .tc { background: rgba(255,255,255,0.18); color: #fff; }
 
-/* ── Fleet vehicle cards ──────────────────────────────────────────────── */
-.dispatch-page .fleet-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
-  gap: 12px;
-  margin-bottom: 30px;
-}
-.dispatch-page .vcard {
+/* ── Fleet status table ───────────────────────────────────────────────── */
+.dispatch-page .fleet-table {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 16px 16px 14px;
-  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
-  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 30px;
 }
-.dispatch-page .vcard.is-clickable { cursor: pointer; }
-.dispatch-page .vcard:hover {
-  border-color: var(--ink-2);
-  transform: translateY(-2px);
-  box-shadow: 0 1px 2px rgba(15, 25, 20, 0.04), 0 8px 24px -12px rgba(15, 25, 20, 0.08);
+.dispatch-page .fleet-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 30px;
 }
-.dispatch-page .vcard-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
+
+/* Header row */
+.dispatch-page .fleet-head {
+  display: grid;
+  grid-template-columns: 140px 1fr 1.6fr 1.6fr;
+  padding: 12px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.dispatch-page .fleet-head > div {
+  font-size: 10.5px;
+  letter-spacing: 1.4px;
+  color: var(--ink-3);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Data rows */
+.dispatch-page .fleet-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1.6fr 1.6fr;
+  padding: 14px 20px;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  transition: background 120ms ease;
+}
+.dispatch-page .fleet-row:last-child { border-bottom: none; }
+.dispatch-page .fleet-row:hover { background: #F1F8F4; }
+.dispatch-page .fleet-row.is-clickable { cursor: pointer; }
+
+.dispatch-page .fleet-cell {
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 .dispatch-page .plate {
   font-family: var(--font-mono);
@@ -254,87 +293,53 @@
 }
 .dispatch-page .plate.maint { background: var(--d-amber); }
 
-.dispatch-page .status-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.8px;
-  padding: 4px 9px;
-  border-radius: 99px;
-  text-transform: uppercase;
+/* Row left-edge accent strip conveys status color */
+.dispatch-page .fleet-row {
+  position: relative;
 }
-.dispatch-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
-.dispatch-page .pill-running { background: var(--d-green-50); color: var(--d-green-800); }
-.dispatch-page .pill-running .sd {
-  background: var(--d-green-600);
-  box-shadow: 0 0 0 3px rgba(0, 135, 63, 0.15);
-  animation: d-pulse-dot 1.8s ease-in-out infinite;
+.dispatch-page .fleet-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: var(--strip-color, transparent);
 }
-@keyframes d-pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(0, 135, 63, 0.15); }
-  50% { box-shadow: 0 0 0 5px rgba(0, 135, 63, 0.05); }
-}
-.dispatch-page .pill-ready { background: #ECFDF5; color: #047857; }
-.dispatch-page .pill-ready .sd { background: #10B981; }
-.dispatch-page .pill-maint { background: var(--d-amber-bg); color: var(--d-amber); }
-.dispatch-page .pill-maint .sd { background: var(--d-amber-dot); }
-.dispatch-page .pill-noassign { background: #F1F5F9; color: #475569; }
-.dispatch-page .pill-noassign .sd { background: #64748B; }
 
-.dispatch-page .v-driver-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 12px;
-  min-height: 32px;
-}
-.dispatch-page .driver-avatar {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 11px; font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-.dispatch-page .da-1 { background: linear-gradient(135deg, #0EA5E9, #0369A1); }
-.dispatch-page .da-2 { background: linear-gradient(135deg, #F59E0B, #D97706); }
-.dispatch-page .da-3 { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
-.dispatch-page .da-4 { background: linear-gradient(135deg, #EC4899, #BE185D); }
-.dispatch-page .da-5 { background: linear-gradient(135deg, #10B981, #047857); }
 .dispatch-page .driver-name { font-size: 13.5px; font-weight: 600; line-height: 1.2; color: var(--ink); }
 .dispatch-page .driver-meta { font-size: 11px; color: var(--ink-3); }
 .dispatch-page .no-driver {
   color: var(--ink-3);
   font-size: 12.5px;
-  font-style: italic;
   display: flex; align-items: center; gap: 6px;
 }
 
-.dispatch-page .v-body {
-  border-top: 1px dashed var(--line);
-  padding-top: 12px;
-  font-size: 12.5px;
+/* Driver cell layout */
+.dispatch-page .fleet-driver .driver-info {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
 }
-.dispatch-page .vrow {
-  display: flex; align-items: flex-start; gap: 8px;
-  margin-bottom: 6px;
+.dispatch-page .fleet-driver .driver-text {
+  min-width: 0;
 }
-.dispatch-page .vrow:last-child { margin-bottom: 0; }
-.dispatch-page .vrow .lab {
+
+/* Route & customer text */
+.dispatch-page .fleet-route {
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  line-height: 1.35;
+  word-break: break-word;
+}
+.dispatch-page .fleet-cust {
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+  line-height: 1.35;
+  word-break: break-word;
+}
+.dispatch-page .fleet-dash {
   color: var(--ink-3);
-  min-width: 56px;
-  font-size: 11.5px;
-  padding-top: 1px;
-}
-.dispatch-page .vrow .val {
-  flex: 1; font-weight: 500; color: var(--ink);
-  line-height: 1.4;
-}
-.dispatch-page .route-arrow { color: var(--ink-3); opacity: 0.6; margin: 0 4px; }
-.dispatch-page .v-bottom-meta {
-  margin-top: 11px;
-  padding-top: 11px;
-  border-top: 1px solid var(--line);
-  font-size: 11px;
-  color: var(--ink-3);
-  display: flex; align-items: center; gap: 6px;
+  font-size: 13px;
 }
 
 /* ── Orders queue (table-like) ────────────────────────────────────────── */
@@ -627,11 +632,23 @@
   .dispatch-page .hero-top { flex-direction: column; gap: 14px; }
 }
 
-/* ── Mobile Pass 12 (2026-06-02) ──
-   Featured "utilization" metric spans full width so its progress bar is
-   visible at usable size; remaining 4 metrics fall into a clean 2x2 below.
-   Tighten vcard padding so the 9-truck fleet grid doesn't waste vertical
-   real estate. */
+/* ── Mobile responsive (fleet table) ── */
+@media (max-width: 1100px) {
+  .dispatch-page .fleet-head,
+  .dispatch-page .fleet-row {
+    grid-template-columns: 130px 1fr 1.4fr 1.4fr;
+  }
+}
+@media (max-width: 860px) {
+  .dispatch-page .fleet-head,
+  .dispatch-page .fleet-row {
+    grid-template-columns: 120px 1fr;
+  }
+  .dispatch-page .fleet-head .fleet-col-route,
+  .dispatch-page .fleet-head .fleet-col-cust,
+  .dispatch-page .fleet-row .fleet-col-route,
+  .dispatch-page .fleet-row .fleet-col-cust { display: none; }
+}
 @media (max-width: 640px) {
   .dispatch-page .metrics > .metric.featured {
     grid-column: 1 / -1;
@@ -639,11 +656,14 @@
   .dispatch-page .metrics > .metric.featured .metric-value {
     font-size: 22px;
   }
-  .dispatch-page .vcard {
-    padding: 12px 14px 10px;
-    border-radius: 12px;
+  .dispatch-page .fleet-head,
+  .dispatch-page .fleet-row {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
   }
-  .dispatch-page .vcard-top { margin-bottom: 8px; }
-  .dispatch-page .v-driver-row { margin-bottom: 6px; }
-  .dispatch-page .fleet-grid { gap: 8px; margin-bottom: 18px; }
+  .dispatch-page .fleet-head > div:nth-child(2),
+  .dispatch-page .fleet-row .fleet-driver { display: none; }
+  .dispatch-page .fleet-row {
+    padding: 12px 14px;
+  }
 }

@@ -103,34 +103,13 @@ export default function DriverEarningsPage() {
       {/* Breakdown cards */}
       <div className="kpi-grid fade-up-2">
         <KPI label="Lương cơ bản" value={formatNumber(earnings.baseSalary)} unit="₫" icon={Wallet} compact />
-        <KPI label="Thu nhập sản lượng" value={formatNumber(earnings.tripIncome)} unit="₫" icon={DollarSign} variant="success" compact />
         {earnings.adjustment !== undefined && earnings.adjustment !== 0 && (
           <KPI
             label={earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
-            value={(earnings.adjustment > 0 ? '+' : '') + formatNumber(earnings.adjustment)}
+            value={(earnings.adjustment > 0 ? '+' : '') + formatNumber(Math.abs(earnings.adjustment))}
             unit="₫"
             icon={earnings.adjustment > 0 ? TrendingUp : TrendingDown}
             variant={earnings.adjustment > 0 ? 'success' : 'danger'}
-            compact
-          />
-        )}
-        {earnings.supplementPay !== undefined && earnings.supplementPay > 0 && (
-          <KPI
-            label="Phụ cấp trực"
-            value={`+${formatNumber(earnings.supplementPay)}`}
-            unit="₫"
-            icon={TrendingUp}
-            variant="success"
-            compact
-          />
-        )}
-        {earnings.leaveDeduction !== undefined && earnings.leaveDeduction > 0 && (
-          <KPI
-            label="Trừ nghỉ việc riêng"
-            value={`-${formatNumber(earnings.leaveDeduction)}`}
-            unit="₫"
-            icon={TrendingDown}
-            variant="danger"
             compact
           />
         )}

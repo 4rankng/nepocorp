@@ -77,7 +77,7 @@ export default function DispatchPage() {
         <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>
         <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
       </div>
-      <div className="fleet-grid fade-up-4"><FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} /></div>
+      <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} />
 
       <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
       <div className="orders-card">

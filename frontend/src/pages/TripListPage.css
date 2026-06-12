@@ -444,11 +444,10 @@
 .trip-list-page .table-scroll-wrapper {
   position: relative;
 }
-/* Scroll body — both axes scroll, max-height caps vertical growth */
+/* Scroll body — horizontal scroll, vertical grows with content */
 .trip-list-page .table-scroll-body {
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: clamp(400px, 55vh, 680px);
+  overflow-y: visible;
   scrollbar-width: thin;
   scrollbar-color: var(--line-3) transparent;
 }

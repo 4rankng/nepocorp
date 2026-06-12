@@ -292,16 +292,14 @@ export async function computeSalary(
   // daily_rate based on standard_work_days (varies per month per spec §4.5.2)
   const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
 
-  // Supplement pay: standby_days × daily_rate (company-idle days → paid supplement)
+  // Supplement pay / Standby cost: standby_days × daily_rate (company-idle days → allocated cost)
   const supplementPay = standbyDays * dailyRate;
 
-  // Adjustment: single rounding on proportion to avoid cumulative dailyRate error
-  const adjustment = Math.round(baseSalary * paidDays / standardWorkDays) - baseSalary;
+  // Leave deduction: Removed because adjustment handles it natively.
+  const leaveDeduction = 0;
 
-  // Leave deduction: personal_leave_days exceeding 4 free Sundays → deducted at dailyRate
-  const freeSundays = Math.min(countSundays(year, month), 4);
-  const excessLeaveDays = Math.max(0, personalLeaveDays - freeSundays);
-  const leaveDeduction = excessLeaveDays * dailyRate;
+  // Adjustment: (paidDays - standardWorkDays) * dailyRate
+  const adjustment = (paidDays - standardWorkDays) * dailyRate;
 
   // Trip salary: sum of driver_salary from LOCKED trips in period
   const [tripSalaryRow] = await db.select({
@@ -329,7 +327,9 @@ export async function computeSalary(
 
   const totalTripSalary = parseFloat(tripSalaryRow?.total || '0');
   const totalPenalties = parseFloat(penaltyRow?.total || '0');
-  const netSalary = baseSalary + totalTripSalary + adjustment + supplementPay - leaveDeduction - totalPenalties;
+  
+  // Net salary is just base salary + adjustment - penalties
+  const netSalary = baseSalary + adjustment - totalPenalties;
 
   // Get salary confirmation status — use pre-fetched map if available
   let confirmationRow: { status: string | null; confirmedBy: number | null; confirmedAt: Date | null } | undefined;
