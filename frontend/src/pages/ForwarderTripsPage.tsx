@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, Package } from 'lucide-react';
 import { formatDate } from '../lib/format';
-import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
+import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useForwarderTrips } from '../hooks/useQueries';
@@ -19,13 +19,7 @@ interface TripSummary {
   containerNumbers: string | null;
 }
 
-const STATUS_BORDER: Record<TripStatus, string> = {
-  CREATED: '#3B82F6',
-  IN_TRANSIT: '#22C55E',
-  COMPLETED: '#F59E0B',
-  LOCKED: '#00B14F',
-  CANCELED: '#EF4444',
-};
+
 
 type StatusFilter = '' | TripStatus;
 
@@ -89,7 +83,7 @@ export default function ForwarderTripsPage() {
               data-status={status}
               onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
             >
-              <span className="fwd-filter-pill__dot" style={{ background: STATUS_BORDER[status] }} />
+              <span className="fwd-filter-pill__dot" style={{ background: TRIP_STATUS_COLORS[status] }} />
               {label}
               <span className="fwd-filter-pill__count">{count}</span>
             </button>
@@ -109,7 +103,9 @@ export default function ForwarderTripsPage() {
               overflow: 'hidden',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
-            }}
+              '--strip-top': TRIP_STATUS_COLORS[trip.status],
+              '--strip-bottom': TRIP_STATUS_COLORS[trip.status],
+            } as React.CSSProperties}
             onMouseEnter={e => {
               (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
               (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';
@@ -119,7 +115,6 @@ export default function ForwarderTripsPage() {
               (e.currentTarget as HTMLDivElement).style.borderColor = '';
             }}
           >
-            <span className="driver-trip-card__status-strip" style={{ background: STATUS_BORDER[trip.status] }} />
             <div className="driver-trip-card__body">
               <div className="driver-trip-card__main">
                 <div className="driver-trip-card__head">

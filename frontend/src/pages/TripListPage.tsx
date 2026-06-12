@@ -24,7 +24,7 @@ import { formatCurrency } from '../lib/format';
 import { splitRoute } from '../lib/route';
 import { formatDayMonth } from '../lib/date';
 import { downloadCSV } from '../lib/csv';
-import { TripStatus, TRIP_STATUS_LABELS, parseThreshold } from '@tingting/shared';
+import { TripStatus, TRIP_STATUS_LABELS, parseThreshold, TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS } from '@tingting/shared';
 import type { TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
@@ -631,7 +631,7 @@ export default function TripListPage() {
               className={`stab-pill${statusFilter === TripStatus.CREATED ? ' active' : ''}${statusCounts[TripStatus.CREATED] === 0 ? ' zero' : ''}`}
               onClick={() => setStatusFilter(TripStatus.CREATED)}
             >
-              <span className="stab-dot" style={{ '--dot': '#9AA4AD' } as React.CSSProperties} />
+              <span className="stab-dot" style={{ '--dot': TRIP_STATUS_COLORS[TripStatus.CREATED] } as React.CSSProperties} />
               Mới tạo
               <span className="stab-count">{statusCounts[TripStatus.CREATED]}</span>
             </button>
@@ -639,7 +639,7 @@ export default function TripListPage() {
               className={`stab-pill${statusFilter === TripStatus.IN_TRANSIT ? ' active' : ''}${statusCounts[TripStatus.IN_TRANSIT] === 0 ? ' zero' : ''}`}
               onClick={() => setStatusFilter(TripStatus.IN_TRANSIT)}
             >
-              <span className="stab-dot" style={{ '--dot': '#1D9F5B' } as React.CSSProperties} />
+              <span className="stab-dot" style={{ '--dot': TRIP_STATUS_COLORS[TripStatus.IN_TRANSIT] } as React.CSSProperties} />
               Đang chạy
               <span className="stab-count">{statusCounts[TripStatus.IN_TRANSIT]}</span>
             </button>
@@ -647,7 +647,7 @@ export default function TripListPage() {
               className={`stab-pill${statusFilter === TripStatus.COMPLETED ? ' active' : ''}${statusCounts[TripStatus.COMPLETED] === 0 ? ' zero' : ''}`}
               onClick={() => setStatusFilter(TripStatus.COMPLETED)}
             >
-              <span className="stab-dot" style={{ '--dot': '#2D7FF9' } as React.CSSProperties} />
+              <span className="stab-dot" style={{ '--dot': TRIP_STATUS_COLORS[TripStatus.COMPLETED] } as React.CSSProperties} />
               Hoàn thành
               <span className="stab-count">{statusCounts[TripStatus.COMPLETED]}</span>
             </button>
@@ -655,7 +655,7 @@ export default function TripListPage() {
               className={`stab-pill${statusFilter === TripStatus.LOCKED ? ' active' : ''}${statusCounts[TripStatus.LOCKED] === 0 ? ' zero' : ''}`}
               onClick={() => setStatusFilter(TripStatus.LOCKED)}
             >
-              <span className="stab-dot" style={{ '--dot': '#E0A106' } as React.CSSProperties} />
+              <span className="stab-dot" style={{ '--dot': TRIP_STATUS_COLORS[TripStatus.LOCKED] } as React.CSSProperties} />
               Đã khóa
               <span className="stab-count">{statusCounts[TripStatus.LOCKED]}</span>
             </button>
@@ -663,7 +663,7 @@ export default function TripListPage() {
               className={`stab-pill${statusFilter === TripStatus.CANCELED ? ' active' : ''}${statusCounts[TripStatus.CANCELED] === 0 ? ' zero' : ''}`}
               onClick={() => setStatusFilter(TripStatus.CANCELED)}
             >
-              <span className="stab-dot" style={{ '--dot': '#E0533D' } as React.CSSProperties} />
+              <span className="stab-dot" style={{ '--dot': TRIP_STATUS_COLORS[TripStatus.CANCELED] } as React.CSSProperties} />
               Đã hủy
               <span className="stab-count">{statusCounts[TripStatus.CANCELED]}</span>
             </button>
@@ -765,7 +765,11 @@ export default function TripListPage() {
                 <ClickableCard
                   key={row.id}
                   to={`/trips/${row.original.id}`}
-                  className={`table-row table-row--${getDataCompleteness(row.original)}`}
+                  className="table-row"
+                  style={{
+                    '--strip-top': TRIP_STATUS_COLORS[row.original.status],
+                    '--strip-bottom': getDataCompleteness(row.original) === 'na' ? TRIP_STATUS_COLORS[row.original.status] : DATA_COMPLETENESS_COLORS[getDataCompleteness(row.original)],
+                  } as React.CSSProperties}
                 >
                   {row.getVisibleCells().map(cell => {
                     let cls = '';
@@ -820,7 +824,11 @@ export default function TripListPage() {
                 <ClickableCard
                   key={trip.id}
                   to={`/trips/${trip.id}`}
-                  className={`trip-mcard trip-mcard--${getDataCompleteness(trip)}`}
+                  className="trip-mcard"
+                  style={{
+                    '--strip-top': TRIP_STATUS_COLORS[trip.status],
+                    '--strip-bottom': getDataCompleteness(trip) === 'na' ? TRIP_STATUS_COLORS[trip.status] : DATA_COMPLETENESS_COLORS[getDataCompleteness(trip)],
+                  } as React.CSSProperties}
                 >
                   <div className="trip-mcard__top">
                     <div className="left">

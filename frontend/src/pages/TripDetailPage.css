@@ -99,13 +99,13 @@
 }
 
 .status-badge--new {
-  background: var(--info-soft, #DCE9FC);
-  color: var(--info, #1E5BB8);
+  background: #F3F4F6;
+  color: #4B5563;
 }
 
 .status-badge--transit {
-  background: var(--amber-soft, #FBF1DC);
-  color: var(--amber, #C77F0A);
+  background: var(--info-soft, #DCE9FC);
+  color: var(--info, #1E5BB8);
 }
 
 .status-badge--completed {
@@ -114,8 +114,8 @@
 }
 
 .status-badge--locked {
-  background: var(--bg-3, #EFF1F5);
-  color: var(--fg-2, #535963);
+  background: #F1F5F9;
+  color: #0F172A;
 }
 
 .status-badge--canceled {

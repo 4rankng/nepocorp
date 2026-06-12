@@ -105,6 +105,22 @@ export const TRIP_STATUS_LABELS: Record<TripStatus, string> = {
   [TripStatus.CANCELED]: 'Đã hủy',
 };
 
+/** Canonical status colors — single source of truth for all trip status rendering. */
+export const TRIP_STATUS_COLORS: Record<TripStatus, string> = {
+  [TripStatus.CREATED]: '#6B7280',     // slate gray — mới tạo
+  [TripStatus.IN_TRANSIT]: '#3B82F6',  // blue — đang chạy
+  [TripStatus.COMPLETED]: '#10B981',   // emerald green — hoàn thành
+  [TripStatus.LOCKED]: '#1E293B',      // dark slate — đã khóa
+  [TripStatus.CANCELED]: '#EF4444',    // red — đã hủy
+};
+
+/** Data-completeness strip colors. */
+export const DATA_COMPLETENESS_COLORS = {
+  complete: '#10B981',   // emerald — đầy đủ số liệu
+  incomplete: '#F59E0B', // amber — thiếu số liệu
+  na: 'transparent',     // CREATED / CANCELED — not applicable
+} as const;
+
 export const ROLE_LABELS: Record<Role, string> = {
   [Role.ADMIN]: 'Quản trị viên',
   [Role.MANAGER]: 'Quản lý',

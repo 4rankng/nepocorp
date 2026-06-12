@@ -16,11 +16,11 @@ interface TripSummary {
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
-    case 'IN_TRANSIT': return 'info';
-    case 'COMPLETED': return 'warn';
-    case 'LOCKED': return 'success';
-    case 'CANCELED': return 'danger';
-    default: return 'neutral';
+    case 'IN_TRANSIT': return 'info';      // blue
+    case 'COMPLETED': return 'success';    // green
+    case 'LOCKED': return 'neutral';       // slate gray
+    case 'CANCELED': return 'danger';      // red
+    default: return 'neutral';             // CREATED — slate gray
   }
 }
 

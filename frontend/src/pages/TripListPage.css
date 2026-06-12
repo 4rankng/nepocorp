@@ -164,11 +164,11 @@
   display: flex; overflow: hidden;
 }
 .trip-list-page .bb-seg { height: 100%; transition: width 200ms ease; }
-.trip-list-page .bb-chot { background: #16A34A; }
-.trip-list-page .bb-htth { background: #F59E0B; }
-.trip-list-page .bb-dang { background: #5EE99B; }
-.trip-list-page .bb-moi  { background: #3B82F6; }
-.trip-list-page .bb-huy  { background: #DC2626; }
+.trip-list-page .bb-moi  { background: #6B7280; }
+.trip-list-page .bb-dang { background: #3B82F6; }
+.trip-list-page .bb-htth { background: #10B981; }
+.trip-list-page .bb-chot { background: #1E293B; }
+.trip-list-page .bb-huy  { background: #EF4444; }
 .trip-list-page .breakdown-legend {
   margin-top: 8px;
   display: flex; flex-wrap: wrap; gap: 10px 14px;
@@ -495,10 +495,21 @@
   min-width: max(1010px, 100%);
   min-height: 60px;
   background: var(--surface);
+  position: relative;
+}
+.trip-list-page .table-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .table-row:hover {
   background: var(--tbl-green-050);
-  box-shadow: inset 4px 0 0 var(--accent), 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 /* Hover chevron — sits inside the sticky status cell so it stays visible
    regardless of horizontal scroll. Hidden at rest; fades in + slides on
@@ -601,10 +612,10 @@
 }
 
 /* Keyframe animation for pulsing dot on active (In Transit) status */
-@keyframes pulse-amber {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); opacity: 0.8; }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); opacity: 1; }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); opacity: 0.8; }
+@keyframes pulse-blue {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); opacity: 0.8; }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); opacity: 1; }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); opacity: 0.8; }
 }
 
 @keyframes pulse-green {
@@ -809,36 +820,36 @@
 .trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
 
 .trip-list-page .pill-moi {
-  background: #EFF6FF;
-  color: #1E40AF;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-}
-.trip-list-page .pill-moi .sd { background: #3B82F6; }
-
-.trip-list-page .pill-dang {
-  background: #FFFBEB;
-  color: #92400E;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-.trip-list-page .pill-dang .sd {
-  background: #F59E0B;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
-  animation: pulse-amber 1.8s infinite ease-in-out;
-}
-
-.trip-list-page .pill-htth {
-  background: #F0FDF4;
-  color: #15803D;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-.trip-list-page .pill-htth .sd { background: #22C55E; }
-
-.trip-list-page .pill-chot {
   background: #F3F4F6;
   color: #4B5563;
   border: 1px solid rgba(107, 114, 128, 0.2);
 }
-.trip-list-page .pill-chot .sd { background: #6B7280; }
+.trip-list-page .pill-moi .sd { background: #6B7280; }
+
+.trip-list-page .pill-dang {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.trip-list-page .pill-dang .sd {
+  background: #3B82F6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+  animation: pulse-blue 1.8s infinite ease-in-out;
+}
+
+.trip-list-page .pill-htth {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.trip-list-page .pill-htth .sd { background: #10B981; }
+
+.trip-list-page .pill-chot {
+  background: #F1F5F9;
+  color: #0F172A;
+  border: 1px solid rgba(30, 41, 59, 0.2);
+}
+.trip-list-page .pill-chot .sd { background: #1E293B; }
 
 .trip-list-page .pill-huy {
   background: #FEF2F2;
@@ -1013,6 +1024,18 @@
   margin-bottom: 10px;
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease;
+  position: relative;
+}
+.trip-list-page .trip-mcard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .trip-mcard:hover { border-color: var(--ink-2); }
 .trip-list-page .trip-mcard__top {
@@ -1089,30 +1112,12 @@
 }
 .trip-list-page .legend-dot--ok { background: #10B981; }
 .trip-list-page .legend-dot--warn { background: #F59E0B; }
-.trip-list-page .table-row--complete {
-  background: rgba(16, 185, 129, 0.06);
-  box-shadow: inset 3px 0 0 #10B981;
-}
-.trip-list-page .table-row--incomplete {
-  background: rgba(245, 158, 11, 0.07);
-  box-shadow: inset 3px 0 0 #F59E0B;
-}
+/* Table row completeness uses edge strip now, removing old background tints */
 /* Hover overrides completeness tint with standard hover */
-.trip-list-page .table-row--complete:hover,
-.trip-list-page .table-row--incomplete:hover {
+.trip-list-page .table-row:hover {
   background: var(--tbl-green-050);
-  box-shadow: inset 4px 0 0 var(--accent), 0 4px 12px rgba(0, 0, 0, 0.03);
 }
-/* Mobile cards — left border accent */
-.trip-list-page .trip-mcard--complete {
-  border-left: 3px solid #10B981;
-}
-.trip-list-page .trip-mcard--incomplete {
-  border-left: 3px solid #F59E0B;
-}
-.trip-list-page .trip-mcard--na {
-  border-left: 3px solid transparent;
-}
+/* Mobile cards completeness uses edge strip now, removing old borders */
 
 /* ── Responsive collapses ─────────────────────────────────────────────── */
 @media (max-width: 1200px) {
