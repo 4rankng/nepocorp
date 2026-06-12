@@ -199,8 +199,8 @@ function Row({
       await queryClient.invalidateQueries({ queryKey: qk.dashboard.approvalQueue(undefined, undefined) });
       // Also refresh the underlying data sources that the approve just changed.
       queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpensesAll });
-      queryClient.invalidateQueries({ queryKey: qk.forwarder.advanceRequestsAll });
-      queryClient.invalidateQueries({ queryKey: qk.forwarder.advanceSettlementsAll });
+      queryClient.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
+      queryClient.invalidateQueries({ queryKey: qk.forwarder.settlements });
       queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsetsAll });
     } catch (err: any) {
       setError(err?.message || 'Lỗi khi duyệt');

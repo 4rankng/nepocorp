@@ -327,8 +327,8 @@ export async function updateTripFigures(
       driverSalary = Number(route.driverSalary);
     }
 
-    // Salary auto-fill from driver's baseSalary + socialInsurance.
-    // Formula: (baseSalary + socialInsurance) / 26 × tripWageDays
+    // Salary auto-fill from driver's baseSalary (cost allocation, no BHXH per customer Pete).
+    // Formula: baseSalary / 26 × tripWageDays
     // Only triggers when no salary is set yet and we have a driver + wage days.
     let tripWageDays = data.tripWageDays !== undefined ? data.tripWageDays : trip.tripWageDays;
     if (!tripWageDays) {
@@ -346,12 +346,10 @@ export async function updateTripFigures(
     if (data.driverSalary === undefined && driverSalary === 0 && trip.driverId) {
       const [driver] = await tx.select({
         baseSalary: s.drivers.baseSalary,
-        socialInsurance: s.drivers.socialInsurance,
       }).from(s.drivers).where(eq(s.drivers.id, trip.driverId)).limit(1);
       if (driver?.baseSalary) {
         const base = parseFloat(driver.baseSalary);
-        const bhxh = parseFloat(driver.socialInsurance || '0');
-        driverSalary = Math.round((base + bhxh) / 26 * (tripWageDays ?? 1));
+        driverSalary = Math.round(base / 26 * (tripWageDays ?? 1));
       }
     }
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);

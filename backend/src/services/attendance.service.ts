@@ -45,9 +45,10 @@ export async function upsertWorkDay(
   note: string | null,
   createdBy: number,
 ) {
-  // Use SQL-level expression to preserve existing tripId atomically (avoids TOCTOU race).
-  // For TRIP_DAY: COALESCE keeps existing tripId if set, else uses NULL (no SELECT needed).
-  // For other statuses: clears tripId.
+  // Preserve existing tripId atomically in the SET clause (avoids TOCTOU race).
+  // Drizzle's onConflictDoUpdate SET references the existing row's column value,
+  // so just referencing the column preserves whatever is already stored.
+  // For TRIP_DAY: keep existing tripId. For other statuses: clear it.
   const [result] = await db.insert(s.driverWorkDays)
     .values({ driverId, date, status, note, createdBy, tripId: null })
     .onConflictDoUpdate({
@@ -56,7 +57,7 @@ export async function upsertWorkDay(
         status,
         note,
         tripId: status === 'TRIP_DAY'
-          ? sql`COALESCE(${s.driverWorkDays.tripId}, NULL)`
+          ? sql`${s.driverWorkDays.tripId}`
           : null,
         updatedAt: new Date(),
       },
@@ -274,8 +275,8 @@ export async function computeSalary(
   // Social insurance from drivers.social_insurance column (was hardcoded to 0)
   const socialInsurance = parseFloat(driver.socialInsurance || '0');
 
-  // Daily rate based on standard_work_days — base salary only, no BHXH.
-  // This is a cost-allocation rate, not an employer-cost rate.
+  // Per customer (Pete): dailyRate = baseSalary / standardWorkDays
+  // This is a cost-allocation rate to distribute monthly salary across trips, NOT actual pay.
   const dailyRate = Math.round(baseSalary / standardWorkDays);
 
   // Cost allocation: trip salary = trip days × daily rate
