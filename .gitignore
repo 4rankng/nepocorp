@@ -56,3 +56,4 @@ qa/scripts/*
 
 # Session state (never commit)
 HANDOFF.md
+qa/
