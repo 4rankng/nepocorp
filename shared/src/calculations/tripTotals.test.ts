@@ -63,17 +63,17 @@ test('AUTO standard mode calculation -- fuel liters rounded to integer', () => {
   // fuelCost = 85 * 20000 = 1700000 VND
   assert.strictEqual(result.totalFuelCost, 1700000);
 
-  // roadAllowance = tollsAddition(1740000) - tollsDiscount(100000) = 1640000 VND
-  assert.strictEqual(result.totalRoadAllowance, 1640000);
+  // roadAllowance = tollsAddition(1740000) + returnCargoBonus(300000) - tollsDiscount(100000) = 1940000 VND
+  assert.strictEqual(result.totalRoadAllowance, 1940000);
 
   // tollCost = tollsStations(2) × tollPerStation(55000) = 110000 VND
   assert.strictEqual(result.tollCost, 110000);
 
-  // totalCost = 1700000 (fuel) + 1640000 (road) + 110000 (tolls) + 800000 (salary) = 4250000 VND
-  assert.strictEqual(result.totalCost, 4250000);
+  // totalCost = 1700000 (fuel) + 1940000 (road) + 110000 (tolls) + 100000 (tollsDiscount) + 800000 (salary) = 4650000 VND
+  assert.strictEqual(result.totalCost, 4650000);
 
-  // grossProfit = 4000000 - 4250000 = -250000 VND
-  assert.strictEqual(result.grossProfit, -250000);
+  // grossProfit = 4000000 - 4650000 = -650000 VND
+  assert.strictEqual(result.grossProfit, -650000);
 });
 
 test('AUTO mountain mode allowance calculation', () => {
@@ -166,8 +166,8 @@ test('negative road allowance clamped to 0', () => {
 
   const result = computeTripTotals(input);
 
-  // 1500000 - 2000000 + 50000 - 110000 + 300000 = -260000 -> clamped to 0
-  assert.strictEqual(result.totalRoadAllowance, 0);
+  // tollsAddition(1740000) + returnCargoBonus(300000) - tollsDiscount(2000000) = 40000 -> not negative, not clamped
+  assert.strictEqual(result.totalRoadAllowance, 40000);
 });
 
 test('0 legs (empty legs array)', () => {
@@ -183,11 +183,12 @@ test('0 legs (empty legs array)', () => {
   assert.strictEqual(result.totalFuelLiters, 0);
   assert.strictEqual(result.legCalculations.length, 0);
   assert.strictEqual(result.totalFuelCost, 0);
-  // roadAllowance unchanged by legs
-  assert.strictEqual(result.totalRoadAllowance, 1640000);
+  // roadAllowance unchanged by legs: tollsAddition(1740000) + returnCargoBonus(300000) - tollsDiscount(100000) = 1940000
+  assert.strictEqual(result.totalRoadAllowance, 1940000);
   // tollCost = 2 × 55000 = 110000
   assert.strictEqual(result.tollCost, 110000);
-  assert.strictEqual(result.grossProfit, 4000000 - 0 - 1640000 - 110000 - 800000);
+  // totalCost = 0 (fuel) + 1940000 (road) + 110000 (tolls) + 100000 (tollsDiscount) + 800000 (salary) = 2950000
+  assert.strictEqual(result.grossProfit, 4000000 - 0 - 1940000 - 110000 - 100000 - 800000);
 });
 
 test('rounding preserves sum-of-legs consistency', () => {
@@ -250,9 +251,9 @@ test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', ()
 
   const result = computeTripTotals(input);
 
-  // totalCost = 1700000 (fuel) + 1640000 (road) + 110000 (tolls) + 800000 (salary) + 200000 + 350000 = 4800000
-  assert.strictEqual(result.totalCost, 4800000);
-  assert.strictEqual(result.grossProfit, 4000000 - 4800000);
+  // totalCost = 1700000 (fuel) + 1940000 (road) + 110000 (tolls) + 100000 (tollsDiscount) + 800000 (salary) + 200000 + 350000 = 5200000
+  assert.strictEqual(result.totalCost, 5200000);
+  assert.strictEqual(result.grossProfit, 4000000 - 5200000);
 });
 
 // --- A4 extension tests -----------------------------------------------------
