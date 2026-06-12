@@ -8,11 +8,16 @@
  *
  * Skips: CANCELED trips, EXTERNAL trips, trips without a driver,
  *        trips that already have a non-zero driverSalary.
+ *
+ * @deprecated One-time migration script. The salary formula has been refactored to use
+ * attendance-based daily rate. Re-running this script requires verifying the formula
+ * matches the current implementation in shared/src/calculations/ and attendance.service.ts.
  */
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as s from '../backend/src/db/schema.js';
 import { eq, ne, isNull, and, or, sql, inArray } from 'drizzle-orm';
+import { computeStandardWorkDays } from '../backend/src/services/attendance.service.js';
 
 const { DATABASE_URL } = process.env;
 if (!DATABASE_URL) {
@@ -92,7 +97,9 @@ for (const trip of trips) {
     }
   }
 
-  const driverSalary = Math.round((base + bhxh) / 26 * wageDays);
+  const depDate = new Date(trip.departureDate);
+  const standardDays = computeStandardWorkDays(depDate.getFullYear(), depDate.getMonth() + 1);
+  const driverSalary = Math.round((base + bhxh) / standardDays * wageDays);
 
   // Recalculate totalCost and grossProfit
   const fuelCost = Number(trip.totalFuelCost || 0);

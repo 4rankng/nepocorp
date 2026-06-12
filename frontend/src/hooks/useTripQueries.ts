@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tripClient } from '../api/tripClient';
 import { configClient } from '../api/configClient';
 import { financialClient } from '../api/financialClient';
+import { qk } from '../api/keys';
 import type { TripDetail, Truck as TruckType, Driver as DriverType } from '@tingting/shared';
 import { useSalaryPeriod } from './useCatalogQueries';
 
@@ -47,7 +48,7 @@ export function normalizeTrip(t: any): NormalizedTrip {
 
 export function useTripDetail(id: string | undefined) {
   return useQuery<TripDetail>({
-    queryKey: ['trip', id],
+    queryKey: qk.trips.detail(id),
     enabled: !!id,
     queryFn: () => tripClient.getTrip(Number(id)),
   });
@@ -55,7 +56,7 @@ export function useTripDetail(id: string | undefined) {
 
 export function useTripAdjustments(id: number) {
   return useQuery({
-    queryKey: ['trip-adjustments', id],
+    queryKey: qk.trips.adjustments(id),
     enabled: id > 0,
     queryFn: () => tripClient.getAdjustments(id),
     select: (data) => data.items,
@@ -66,7 +67,7 @@ export function useTripCosts(month: number, year: number) {
   const salaryPeriodQuery = useSalaryPeriod(month, year);
 
   const tripsQuery = useQuery<TripDetail[]>({
-    queryKey: ['trip-costs', month, year, salaryPeriodQuery.data?.start],
+    queryKey: qk.trips.costs(month, year, salaryPeriodQuery.data?.start),
     enabled: !!salaryPeriodQuery.data,
     queryFn: async () => {
       const res = await tripClient.listTrips({
@@ -90,7 +91,7 @@ export function useMonthlyTrips(year: number, month: number) {
   const salaryPeriodQuery = useSalaryPeriod(month, year);
 
   const tripsQuery = useQuery<TripDetail[]>({
-    queryKey: ['trips', 'monthly', year, month, salaryPeriodQuery.data?.start],
+    queryKey: qk.trips.monthly(year, month, salaryPeriodQuery.data?.start),
     enabled: !!salaryPeriodQuery.data,
     queryFn: async () => {
       const res = await tripClient.listTrips({
@@ -111,7 +112,7 @@ export function useMonthlyTrips(year: number, month: number) {
 
 export function useCreatedTrips() {
   return useQuery<TripDetail[]>({
-    queryKey: ['trips', 'created'],
+    queryKey: qk.trips.created,
     queryFn: async () => {
       const res = await tripClient.listTrips({ status: 'CREATED', limit: 100 });
       return res.items;
@@ -128,7 +129,7 @@ export function useDispatchData() {
     pendingTotal: number;
     activeTotal: number;
   }>({
-    queryKey: ['dispatch'],
+    queryKey: qk.trips.dispatch,
     queryFn: async () => {
       const [driversRes, trucksRes, pendingRes, activeRes] = await Promise.all([
         configClient.getDrivers(),
@@ -150,7 +151,7 @@ export function useDispatchData() {
 
 export function useBadgeCounts(options?: { enabled?: boolean }) {
   return useQuery<{ dispatchCount: number; penaltiesCount: number }>({
-    queryKey: ['badge-counts'],
+    queryKey: qk.trips.badgeCounts,
     queryFn: async () => {
       const [tripsRes, penaltiesRes] = await Promise.all([
         tripClient.listTrips({ status: 'CREATED', limit: 1 }),

@@ -1,3 +1,5 @@
+import { getToken } from '../../design-system/hooks/useToken';
+
 /**
  * Photo URLs are protected behind the JWT, but the `<img>` tag can't send
  * Authorization headers. We attach the token as a query string instead.
@@ -7,11 +9,14 @@
  * long-term fix is server-side signed URLs or cookie-based auth. Keeping
  * the implementation in one place so a future migration is a one-file
  * change.
+ *
+ * The token is read via the centralized `useToken` cache rather than
+ * re-parsing `localStorage` on every URL construction.
  */
 export function getAuthenticatedPhotoUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url.startsWith('/api/photos/') || url.includes('/api/photos/')) {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (token) {
       const separator = url.includes('?') ? '&' : '?';
       return `${url}${separator}token=${encodeURIComponent(token)}`;

@@ -302,6 +302,20 @@
       "when": 1781192073005,
       "tag": "0042_silky_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1781275881639,
+      "tag": "0043_fuzzy_bloodstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1781276407271,
+      "tag": "0044_nappy_umar",
+      "breakpoints": true
     }
   ]
 }

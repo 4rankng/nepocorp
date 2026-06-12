@@ -13,36 +13,10 @@ import { storageService } from '../services/storage.service';
 import { config } from '../config';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { sniffImageType } from '../lib/format';
 
 // Maximum dimension for server-side downscale
 const MAX_IMAGE_DIMENSION = 2048;
-
-// Magic-bytes sniffer for secure validation Sniff file signatures
-function sniffMimeType(buffer: Buffer): string | null {
-  if (buffer.length < 12) return null;
-  // JPEG
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return 'image/jpeg';
-  }
-  // PNG
-  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
-    return 'image/png';
-  }
-  // WebP
-  if (
-    buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
-    buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50
-  ) {
-    return 'image/webp';
-  }
-  // HEIC: ftypheic or ftypmsf1 at offset 4
-  const brand = buffer.toString('ascii', 8, 12);
-  if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70 &&
-      (brand === 'heic' || brand === 'heix' || brand === 'mif1' || brand === 'msf1')) {
-    return 'image/heic';
-  }
-  return null;
-}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -63,7 +37,7 @@ uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, 
   }
 
   // 1. Sniff magic bytes
-  const mime = sniffMimeType(file.buffer);
+  const mime = sniffImageType(file.buffer);
   if (!mime) {
     return res.status(400).json({ error: 'Định dạng file không được hỗ trợ hoặc file bị hỏng' });
   }

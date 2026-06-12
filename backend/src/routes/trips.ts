@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo } from '../services/forwarder.service';
@@ -13,6 +13,8 @@ import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { parsePagination } from './utils/pagination';
+import { throwValidation } from '../lib/validation';
 import { emitNotification } from '../services/notification.service';
 import { getFuelVoucherHtml, getFuelVoucherXlsx } from '../services/fuel-voucher.service';
 
@@ -46,9 +48,10 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const dateToVal = (req.query.dateTo || req.query.date_to) as string;
   const searchVal = (req.query.search || req.query.q) as string;
 
+  const { page, limit } = parsePagination(req);
   res.json(await tripService.getTrips({
-    page: parseInt(req.query.page as string) || 1,
-    limit: parseInt(req.query.limit as string) || 50,
+    page,
+    limit,
     status: req.query.status as string,
     truckId: truckIdVal ? parseInt(truckIdVal, 10) : undefined,
     driverId: driverIdVal ? parseInt(driverIdVal, 10) : undefined,
@@ -314,7 +317,7 @@ router.get('/:id/expenses', asyncHandler(async (req: Request, res: Response) => 
 router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) => {
   const tripId = parseInt(req.params.id as string, 10);
   const parsed = tripExpenseSchema.safeParse({ ...req.body, tripId });
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const item = await db.transaction(async (tx) =>
     createTripExpense(tx, {
       tripId,
@@ -334,15 +337,11 @@ router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) =>
   res.status(201).json(item);
 }));
 
-// Partial update schema for expense — derived from shared tripExpenseSchema
-import { z } from 'zod';
-const tripExpensePatchSchema = baseTripExpenseSchema.omit({ tripId: true }).partial();
-
 // PUT /api/trips/:id/expenses/:eid — update expense
 router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response) => {
   const eid = parseInt(req.params.eid as string, 10);
   const parsed = tripExpensePatchSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const item = await db.transaction(async (tx) =>
     updateTripExpense(tx, eid, {
       expenseType: parsed.data.expenseType,

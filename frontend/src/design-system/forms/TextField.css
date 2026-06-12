@@ -1,0 +1,101 @@
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ds-field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2, var(--fg-2));
+}
+
+.ds-field__required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.ds-field__input,
+.ds-field select.ds-field__input,
+.ds-field textarea.ds-field__input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink, var(--fg));
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-2, var(--line));
+  border-radius: 6px;
+  transition: border-color 100ms, box-shadow 100ms;
+  box-sizing: border-box;
+}
+
+.ds-field__input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+.ds-field__input:disabled {
+  background: var(--surface-2, var(--bg-2));
+  color: var(--fg-3, var(--ink-3));
+  cursor: not-allowed;
+}
+
+.ds-field__input-group {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-2, var(--line));
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  overflow: hidden;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+
+.ds-field__input-group:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+.ds-field__input-group .ds-field__input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ds-field__input-group .ds-field__input:focus {
+  box-shadow: none;
+}
+
+.ds-field__affix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  background: var(--surface-2, var(--bg-2));
+  color: var(--fg-3, var(--ink-3));
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ds-field__msg {
+  font-size: 11px;
+  color: var(--fg-3, var(--ink-3));
+  margin-top: 2px;
+}
+
+.ds-field__msg--error {
+  color: var(--danger);
+}
+
+.ds-field--error .ds-field__input,
+.ds-field--error .ds-field__input-group {
+  border-color: var(--danger);
+}
+
+.ds-field--error .ds-field__input:focus,
+.ds-field--error .ds-field__input-group:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent);
+}

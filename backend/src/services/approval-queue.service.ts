@@ -64,7 +64,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           return {
             id: `ancillaryFees:${r.id}`,
             type: 'ancillaryFees' as const,
-            title: `Phí ${r.expenseTypeName ?? r.expenseType} ${formatVND(amt)} cho ${r.tripCode}`,
+            title: `Phí ${r.expenseTypeName ?? r.expenseType} ${formatVND(amt, true)} cho ${r.tripCode}`,
             subtitle: `${r.requesterName ?? 'Forwarder'} · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
@@ -99,7 +99,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           return {
             id: `debtOffsets:${r.id}`,
             type: 'debtOffsets' as const,
-            title: `Bù trừ ${formatVND(amt)} giữa ${r.customerName} & ${r.supplierName}`,
+            title: `Bù trừ ${formatVND(amt, true)} giữa ${r.customerName} & ${r.supplierName}`,
             subtitle: `${r.requesterName ?? 'Không rõ'} · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
@@ -133,7 +133,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           return {
             id: `advances:${r.id}`,
             type: 'advances' as const,
-            title: `Tạm ứng ${formatVND(amt)} — ${r.reason}`,
+            title: `Tạm ứng ${formatVND(amt, true)} — ${r.reason}`,
             subtitle: `${r.requesterName} · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
@@ -169,7 +169,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           return {
             id: `advanceSettlementsCheck:${r.id}`,
             type: 'advanceSettlementsCheck' as const,
-            title: `Kiểm tra phiếu thanh toán ${formatVND(amt)} — ${r.requesterName}`,
+            title: `Kiểm tra phiếu thanh toán ${formatVND(amt, true)} — ${r.requesterName}`,
             subtitle: `Chờ kế toán kiểm tra · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
@@ -207,7 +207,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           return {
             id: `advanceSettlementsApprove:${r.id}`,
             type: 'advanceSettlementsApprove' as const,
-            title: `Duyệt phiếu thanh toán ${formatVND(amt)} — ${r.requesterName}`,
+            title: `Duyệt phiếu thanh toán ${formatVND(amt, true)} — ${r.requesterName}`,
             subtitle: `Đã kiểm tra · chờ giám đốc duyệt · ${timeAgo(ts)}`,
             amount: amt,
             requestedAt: ts.toISOString(),
@@ -239,9 +239,7 @@ function emptyByType(): Record<ApprovalItemType, number> {
   };
 }
 
-function formatVND(n: number): string {
-  return Math.round(n).toLocaleString('vi-VN') + '₫';
-}
+import { formatVND } from '../lib/format';
 
 function timeAgo(d: Date): string {
   const diff = Date.now() - d.getTime();

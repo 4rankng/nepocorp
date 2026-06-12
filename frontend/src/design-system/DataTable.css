@@ -1,0 +1,120 @@
+.ds-table-wrap {
+  width: 100%;
+}
+
+.ds-table-scroll {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-2, var(--line));
+  background: var(--surface, #fff);
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ds-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-3, var(--ink-3));
+  padding: 10px 12px;
+  background: var(--surface-2, var(--bg-2));
+  border-bottom: 1px solid var(--border-2, var(--line));
+  white-space: nowrap;
+}
+
+.ds-table th.num,
+.ds-table td.num {
+  text-align: right;
+}
+
+.ds-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-2, var(--line));
+  color: var(--ink, var(--fg));
+  vertical-align: middle;
+}
+
+.ds-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ds-table tbody tr.is-clickable {
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.ds-table tbody tr.is-clickable:hover {
+  background: var(--surface-2, var(--bg-2));
+}
+
+.ds-table__skeleton-row td {
+  padding: 14px 12px;
+}
+
+.ds-table__skeleton-bar {
+  display: block;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2, var(--bg-2)) 0%,
+    var(--surface-3, #e5e7eb) 50%,
+    var(--surface-2, var(--bg-2)) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: ds-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes ds-skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ds-table-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--fg-3, var(--ink-3));
+}
+
+.ds-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ds-mobile-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-2, var(--line));
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--ink, var(--fg));
+}
+
+.ds-mobile-card.is-clickable {
+  cursor: pointer;
+  transition: border-color 100ms, transform 100ms;
+}
+
+.ds-mobile-card.is-clickable:hover {
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+
+.ds-table-wrap--mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .ds-table-wrap--desktop {
+    display: none;
+  }
+  .ds-table-wrap--mobile {
+    display: block;
+  }
+}

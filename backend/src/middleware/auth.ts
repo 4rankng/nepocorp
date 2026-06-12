@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { Role } from '@tingting/shared';
 import { isTokenBlacklisted } from '../lib/redis';
+import { ApiError } from '../errors';
 
 export interface AuthUser {
   userId: number;
@@ -58,4 +59,14 @@ export async function assetAuthMiddleware(req: Request, res: Response, next: Nex
   } catch {
     res.status(401).json({ error: 'Token hết hạn hoặc không hợp lệ' });
   }
+}
+
+/**
+ * Type-safe helper to extract authenticated user from request.
+ * Throws 401 if user is not set (should never happen behind authMiddleware,
+ * but prevents non-null assertion crashes if routes are reorganized).
+ */
+export function getUser(req: Request): AuthUser {
+  if (!req.user) throw new ApiError(401, 'Chưa xác thực');
+  return req.user;
 }

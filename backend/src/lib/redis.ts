@@ -105,10 +105,6 @@ export async function blacklistToken(jti: string, ttlSeconds: number): Promise<v
   }
 }
 
-async function gracefulShutdown() {
-  await disconnectRedis();
-  process.exit(0);
-}
-
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+// Graceful shutdown is handled centrally in index.ts to ensure
+// HTTP server drain and DB pool close happen before Redis disconnect.
+// Redis handlers were removed to prevent racing process.exit(0).

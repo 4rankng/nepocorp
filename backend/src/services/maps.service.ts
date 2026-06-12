@@ -6,6 +6,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { config } from '../config';
+import { ApiError } from '../errors';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ function routeToSuggestion(route: GoogleDirectionsRoute): RouteSuggestion | null
 
 export async function getPlaceAutocomplete(query: string, sessionToken?: string): Promise<PlaceSuggestion[]> {
   if (!config.googleMapsApiKey) {
-    throw Object.assign(new Error('Google Maps API key not configured'), { status: 503 });
+    throw new ApiError(503, 'Google Maps API key not configured');
   }
 
   const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
@@ -133,7 +134,7 @@ export async function getDistance(origin: string, destination: string): Promise<
   }
 
   if (!config.googleMapsApiKey) {
-    throw Object.assign(new Error('Google Maps API key not configured'), { status: 503 });
+    throw new ApiError(503, 'Google Maps API key not configured');
   }
 
   // 2. Fallback to Google Directions API — request alternatives

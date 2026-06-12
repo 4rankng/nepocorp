@@ -2,6 +2,31 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
+import type { Tx } from './trip-shared';
+
+/** Common trip shape for ledger lock/unlock operations */
+interface TripLedgerParams {
+  id: number;
+  customerId: number;
+  driverId: number | null;
+  tripCode: string | null;
+  revenue: string | null;
+  driverSalary: string | null;
+  carrierType?: string;
+  externalCarrierId?: number | null;
+  externalFreightCost?: string | null;
+  fuelSupplierId?: number | null;
+  totalFuelCost?: string | null;
+  ancillaryFees?: Array<{
+    id: number;
+    buyAmount: string;
+    sellAmount: string;
+    settlementMethod: string;
+    supplierId: number | null;
+    forwarderId: number | null;
+    approvalStatus: string;
+  }>;
+}
 
 export interface LedgerPostRequest {
   txnType: TxnType;
@@ -29,7 +54,7 @@ export class LedgerService {
   /**
    * Acquire a transaction-level advisory lock on entityType + entityId
    */
-  static async lockEntity(tx: any, entityType: string, entityId: number) {
+  static async lockEntity(tx: Tx, entityType: string, entityId: number) {
     const typeKey = this.getEntityTypeKey(entityType);
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${typeKey}, ${entityId})`);
   }
@@ -37,7 +62,7 @@ export class LedgerService {
   /**
    * Acquire sorted locks for multiple entities to prevent deadlocks
    */
-  static async lockEntities(tx: any, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }[]) {
+  static async lockEntities(tx: Tx, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }[]) {
     // Sort entities globally to prevent deadlocks
     const sorted = [...entities].sort((a, b) => {
       const aKey = this.getEntityTypeKey(a.entityType);
@@ -52,9 +77,52 @@ export class LedgerService {
   }
 
   /**
+   * Collect all ledger entities involved in a trip lock/unlock.
+   * Shared between postTripLock and postTripUnlock to avoid duplication.
+   */
+  private static collectTripEntities(
+    trip: TripLedgerParams
+  ): Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> {
+    const carrierType = trip.carrierType ?? 'OWN';
+    const fees = trip.ancillaryFees ?? [];
+    const entities: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
+
+    entities.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
+
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
+      entities.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
+    }
+
+    if (carrierType === 'OWN' && trip.driverId) {
+      entities.push({ entityType: 'DRIVER', entityId: trip.driverId });
+    }
+
+    if (trip.fuelSupplierId) {
+      if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
+        entities.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
+      }
+    }
+
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
+        if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
+          entities.push({ entityType: 'VENDOR', entityId: fee.supplierId });
+        }
+      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
+        if (!entities.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
+          entities.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
+        }
+      }
+    }
+
+    return entities;
+  }
+
+  /**
    * Immutable insert of a ledger row inside transaction
    */
-  static async postEntry(tx: any, request: LedgerPostRequest) {
+  static async postEntry(tx: Tx, request: LedgerPostRequest) {
     // First lock the entity we are about to modify
     await this.lockEntity(tx, request.entityType, request.entityId);
 
@@ -96,28 +164,7 @@ export class LedgerService {
    * Seam to handle financial ledger posting when a trip is locked.
    * Isolates financial calculations and notes from the trip lifecycle machine.
    */
-  static async postTripLock(tx: any, trip: {
-    id: number;
-    customerId: number;
-    driverId: number | null;       // null for EXTERNAL trips
-    tripCode: string | null;
-    revenue: string | null;        // incl-VAT customer freight
-    driverSalary: string | null;
-    carrierType?: string;          // 'OWN' | 'EXTERNAL', default 'OWN'
-    externalCarrierId?: number | null;
-    externalFreightCost?: string | null;  // incl-VAT
-    fuelSupplierId?: number | null;
-    totalFuelCost?: string | null;
-    ancillaryFees?: Array<{
-      id: number;
-      buyAmount: string;
-      sellAmount: string;
-      settlementMethod: string;
-      supplierId: number | null;
-      forwarderId: number | null;
-      approvalStatus: string;
-    }>;
-  }) {
+  static async postTripLock(tx: Tx, trip: TripLedgerParams) {
     const revenue = Number(trip.revenue || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const carrierType = trip.carrierType ?? 'OWN';
@@ -125,37 +172,7 @@ export class LedgerService {
     const label = trip.tripCode || '';
 
     // ── 1. Collect all entities to lock (sorted globally to prevent deadlocks) ──
-    const entitiesToLock: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
-
-    entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
-
-    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
-      entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
-    }
-
-    if (carrierType === 'OWN' && trip.driverId) {
-      entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
-    }
-
-    if (trip.fuelSupplierId) {
-      if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
-        entitiesToLock.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
-      }
-    }
-
-    for (const fee of fees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
-        if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
-          entitiesToLock.push({ entityType: 'VENDOR', entityId: fee.supplierId });
-        }
-      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
-        if (!entitiesToLock.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
-          entitiesToLock.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
-        }
-      }
-    }
-
+    const entitiesToLock = this.collectTripEntities(trip);
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Customer freight revenue (always incl-VAT, unchanged) ──
@@ -249,28 +266,7 @@ export class LedgerService {
    * Posts compensating entries (swap debit↔credit) with UNLOCK_REVERSAL txnType.
    * The ledger is append-only — this does not modify existing rows.
    */
-  static async postTripUnlock(tx: any, trip: {
-    id: number;
-    customerId: number;
-    driverId: number | null;
-    tripCode: string | null;
-    revenue: string | null;
-    driverSalary: string | null;
-    carrierType?: string;
-    externalCarrierId?: number | null;
-    externalFreightCost?: string | null;
-    fuelSupplierId?: number | null;
-    totalFuelCost?: string | null;
-    ancillaryFees?: Array<{
-      id: number;
-      buyAmount: string;
-      sellAmount: string;
-      settlementMethod: string;
-      supplierId: number | null;
-      forwarderId: number | null;
-      approvalStatus: string;
-    }>;
-  }) {
+  static async postTripUnlock(tx: Tx, trip: TripLedgerParams) {
     const revenue = Number(trip.revenue || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const carrierType = trip.carrierType ?? 'OWN';
@@ -278,31 +274,7 @@ export class LedgerService {
     const label = trip.tripCode || '';
 
     // ── 1. Collect entities to lock (same as postTripLock) ──
-    const entitiesToLock: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
-    entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
-    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
-      entitiesToLock.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
-    }
-    if (carrierType === 'OWN' && trip.driverId) {
-      entitiesToLock.push({ entityType: 'DRIVER', entityId: trip.driverId });
-    }
-    if (trip.fuelSupplierId) {
-      if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
-        entitiesToLock.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
-      }
-    }
-    for (const fee of fees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
-        if (!entitiesToLock.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
-          entitiesToLock.push({ entityType: 'VENDOR', entityId: fee.supplierId });
-        }
-      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
-        if (!entitiesToLock.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
-          entitiesToLock.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
-        }
-      }
-    }
+    const entitiesToLock = this.collectTripEntities(trip);
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Reverse customer freight revenue (swap debit↔credit) ──
@@ -441,12 +413,43 @@ export class LedgerService {
    * Transaction-scoped balance read — use inside a db.transaction() callback
    * to see uncommitted entries from the current transaction.
    */
-  static async getBalanceTx(tx: any, entityType: string, entityId: number): Promise<number> {
+  static async getBalanceTx(tx: Tx, entityType: string, entityId: number): Promise<number> {
     const [last] = await tx.select({ balance: s.ledger.balance })
       .from(s.ledger)
       .where(and(eq(s.ledger.entityType, entityType), eq(s.ledger.entityId, entityId)))
       .orderBy(desc(s.ledger.id))
       .limit(1);
     return last ? Number(last.balance) : 0;
+  }
+
+  /**
+   * Batch balance lookup — single query for multiple entities.
+   * Replaces N individual getBalance() calls with one DISTINCT ON query.
+   * Returns a Map keyed by "entityType:entityId".
+   */
+  static async getBalancesBatch(
+    entries: Array<{ entityType: string; entityId: number }>,
+  ): Promise<Map<string, number>> {
+    if (entries.length === 0) return new Map();
+
+    // Build WHERE clause: (entity_type = 'X' AND entity_id = Y) OR ...
+    const conditions = entries.map(e =>
+      sql`(entity_type = ${e.entityType} AND entity_id = ${e.entityId})`
+    );
+
+    const result = await db.execute(sql`
+      SELECT DISTINCT ON (entity_type, entity_id)
+        entity_type, entity_id, balance
+      FROM ledger
+      WHERE ${sql.join(conditions, sql` OR `)}
+      ORDER BY entity_type, entity_id, id DESC
+    `);
+
+    const rows = Array.isArray(result) ? result : (result as any).rows ?? [];
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      map.set(`${row.entity_type}:${row.entity_id}`, Number(row.balance));
+    }
+    return map;
   }
 }

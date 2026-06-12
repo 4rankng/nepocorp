@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config';
 import { client as dbClient } from './db';
+import { disconnectRedis } from './lib/redis';
 import { initEnforcer } from './casbin/enforcer';
 import { authMiddleware, assetAuthMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
@@ -89,6 +90,9 @@ app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
 app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 
+// ── 404 catch-all (before error handler so unmatched API routes get 404, not 500) ──
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Không tìm thấy API' }));
+
 // ── Global error handler (MUST be last) ────────────────────────────────────
 app.use(globalErrorHandler);
 
@@ -103,8 +107,9 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   console.log(`\n${signal} received — shutting down…`);
 
-  server.close();           // stop accepting new connections
-  await dbClient.end();     // drain Postgres pool
+  server.close();                // stop accepting new connections
+  await dbClient.end();          // drain Postgres pool
+  await disconnectRedis();       // close Redis connection
   process.exit(0);
 }
 

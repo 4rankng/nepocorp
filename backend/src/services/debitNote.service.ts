@@ -1,6 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, gte, lte, isNull, inArray } from 'drizzle-orm';
+import { ApiError } from '../errors';
 
 export interface DebitNoteLine {
   tripCode: string;
@@ -38,7 +39,7 @@ export async function getDebitNoteData(
   }).from(s.customers)
     .where(and(eq(s.customers.id, customerId), isNull(s.customers.deletedAt)));
 
-  if (!customer) throw Object.assign(new Error('Không tìm thấy khách hàng'), { status: 404 });
+  if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
 
   // 2. Build trip filter conditions
   const tripConditions: ReturnType<typeof eq>[] = [
@@ -49,7 +50,7 @@ export async function getDebitNoteData(
 
   if (opts.mode === 'MONTHLY') {
     if (!opts.month || !opts.year) {
-      throw Object.assign(new Error('MONTHLY mode requires month and year'), { status: 400 });
+      throw new ApiError(400, 'MONTHLY mode requires month and year');
     }
     const monthStr = String(opts.month).padStart(2, '0');
     const from = `${opts.year}-${monthStr}-01`;
@@ -59,7 +60,7 @@ export async function getDebitNoteData(
     tripConditions.push(lte(s.trips.departureDate, to) as any);
   } else if (opts.mode === 'PER_BATCH') {
     if (!opts.tripIds?.length) {
-      throw Object.assign(new Error('PER_BATCH mode requires at least one trip ID'), { status: 400 });
+      throw new ApiError(400, 'PER_BATCH mode requires at least one trip ID');
     }
     tripConditions.push(inArray(s.trips.id, opts.tripIds) as any);
   }

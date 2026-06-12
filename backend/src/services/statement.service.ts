@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { TxnType, computeFifoAging } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import { escapeHtml, formatLocalDate } from '../lib/format';
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null };
@@ -30,11 +31,6 @@ interface StatementExportConfig {
   ledgerRows: any[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
-}
-
-export function formatLocalDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 export function safeFilename(name: string): string {
@@ -354,11 +350,4 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
 </body></html>`;
 }
 
-function escapeHtml(s: string): string {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+// escapeHtml imported from lib/format

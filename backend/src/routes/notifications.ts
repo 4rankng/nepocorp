@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { parsePagination } from './utils/pagination';
 import * as notifService from '../services/notification.service';
 import type { Request, Response } from 'express';
 
@@ -16,8 +17,7 @@ router.post('/read-all', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 20;
+  const { page, limit } = parsePagination(req, { limit: 20 });
   res.json(await notifService.getNotifications(req.user!.userId, page, limit));
 }));
 

@@ -15,22 +15,11 @@ const EXPENSE_TYPE_LABELS: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function formatVND(n: number): string {
-  return n.toLocaleString('vi-VN');
-}
+import { escapeHtml, formatVND, formatLocalDate } from '../lib/format';
 
 function formatMonth(dateStr: string): string {
   const d = new Date(dateStr);
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-export function formatLocalDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 interface PrintRow {
@@ -165,7 +154,7 @@ ${requests.length > 0 ? `
   ${advanceRows}
   <div class="advance-total">
     <span>Tổng tạm ứng:</span>
-    <span>${formatVND(totalAdvance)} ₫</span>
+    <span>${formatVND(totalAdvance, true)}</span>
   </div>
 </div>` : ''}
 
@@ -176,19 +165,19 @@ ${requests.length > 0 ? `
     ${expenseTableRows}
     <tr class="table-total">
       <td colspan="4"><strong>TỔNG CỘNG</strong></td>
-      <td class="num"><strong>${formatVND(totalExpense)} ₫</strong></td>
+      <td class="num"><strong>${formatVND(totalExpense, true)}</strong></td>
       <td></td>
     </tr>
   </tbody>
 </table>
 
 <div class="summary">
-  <div class="summary-row"><span>Tổng tạm ứng:</span><strong>${formatVND(totalAdvance)} ₫</strong></div>
-  <div class="summary-row"><span>Tổng chi phí:</span><strong>${formatVND(totalExpense)} ₫</strong></div>
-  ${refund > 0 ? `<div class="summary-row"><span>Tiền hoàn lại:</span><strong>${formatVND(refund)} ₫</strong></div>` : ''}
+  <div class="summary-row"><span>Tổng tạm ứng:</span><strong>${formatVND(totalAdvance, true)}</strong></div>
+  <div class="summary-row"><span>Tổng chi phí:</span><strong>${formatVND(totalExpense, true)}</strong></div>
+  ${refund > 0 ? `<div class="summary-row"><span>Tiền hoàn lại:</span><strong>${formatVND(refund, true)}</strong></div>` : ''}
   <div class="summary-row summary-row--balance">
     <span>${balance >= 0 ? 'Còn dư (phải hoàn):' : 'Thiếu (phải bổ sung):'}</span>
-    <strong style="color: ${balance >= 0 ? '#16a34a' : '#dc2626'}">${formatVND(Math.abs(balance))} ₫</strong>
+    <strong style="color: ${balance >= 0 ? '#16a34a' : '#dc2626'}">${formatVND(Math.abs(balance), true)}</strong>
   </div>
 </div>
 

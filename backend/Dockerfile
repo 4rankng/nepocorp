@@ -1,3 +1,29 @@
+# ── Build ─────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+
+WORKDIR /app
+
+# Copy manifests first — pnpm install layer is cached until lock file changes
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY shared/package.json shared/package.json
+COPY backend/package.json backend/package.json
+
+# Install ALL dependencies (including devDependencies for tsc)
+RUN pnpm install --frozen-lockfile
+
+# Copy source after install — code changes don't bust the install cache
+COPY shared/tsconfig.json shared/tsconfig.json
+COPY shared/src shared/src
+COPY backend/tsconfig.json backend/tsconfig.json
+COPY backend/src backend/src
+COPY backend/drizzle backend/drizzle
+COPY backend/drizzle.config.ts backend/drizzle.config.ts
+
+# Compile TypeScript — fails fast if type errors exist
+RUN pnpm --filter @tingting/shared build && pnpm --filter backend build
+
 # ── Production ───────────────────────────────────────────────────────────────
 FROM node:22-alpine AS production
 
@@ -5,17 +31,16 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
-# Copy only manifests first — pnpm install layer is cached until lock file changes
+# Copy only manifests — install production deps only
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY shared/package.json shared/package.json
 COPY backend/package.json backend/package.json
 
-# Install production dependencies + tsx (cached unless lock file changes)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod
 
-# Copy source after install — code changes don't bust the install cache
-COPY shared/src shared/src
-COPY backend/src backend/src
+# Copy compiled output from builder
+COPY --from=builder /app/shared/dist shared/dist
+COPY --from=builder /app/backend/dist backend/dist
 COPY backend/drizzle backend/drizzle
 COPY backend/drizzle.config.ts backend/drizzle.config.ts
 
@@ -27,4 +52,4 @@ WORKDIR /app/backend
 ENV NODE_ENV=production
 EXPOSE 3090
 
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]

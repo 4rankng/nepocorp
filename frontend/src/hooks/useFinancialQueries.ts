@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { financialClient, type CustomerAging } from '../api/financialClient';
+import { qk } from '../api/keys';
 import type { LedgerEntry, CustomerStatement, SupplierStatement } from '@tingting/shared';
 
 export type { CustomerAging };
 
 export function useCustomerAging(search?: string) {
   return useQuery<{ customers: CustomerAging[] }>({
-    queryKey: ['customer-aging', search ?? ''],
+    queryKey: qk.financial.customerAging(search),
     queryFn: () => financialClient.getCustomerAging(search),
     staleTime: 2 * 60 * 1000,
   });
@@ -14,7 +15,7 @@ export function useCustomerAging(search?: string) {
 
 export function useCustomerStatement(id: string | undefined) {
   return useQuery<CustomerStatement>({
-    queryKey: ['customer-statement', id],
+    queryKey: qk.financial.customerStatement(id),
     enabled: !!id,
     queryFn: () => financialClient.getCustomerStatement(Number(id)),
   });
@@ -22,7 +23,7 @@ export function useCustomerStatement(id: string | undefined) {
 
 export function useCustomerLedgerEntries() {
   return useQuery<LedgerEntry[]>({
-    queryKey: ['customer-ledger-entries'],
+    queryKey: qk.financial.customerLedgerEntries,
     queryFn: () => financialClient.getAllLedgerEntries({ entityType: 'CUSTOMER' }),
     staleTime: 2 * 60 * 1000,
   });
@@ -30,14 +31,14 @@ export function useCustomerLedgerEntries() {
 
 export function usePayablesSummary() {
   return useQuery({
-    queryKey: ['payables-summary'],
+    queryKey: qk.financial.payablesSummary,
     queryFn: () => financialClient.getPayablesSummary(),
   });
 }
 
 export function useSupplierStatement(supplierId: number | undefined) {
   return useQuery<SupplierStatement>({
-    queryKey: ['supplier-statement', supplierId],
+    queryKey: qk.financial.supplierStatement(supplierId),
     queryFn: () => financialClient.getSupplierStatement(supplierId!),
     enabled: !!supplierId,
   });
@@ -53,7 +54,7 @@ export function useExpenses(filters?: {
   pageSize?: number;
 }) {
   return useQuery({
-    queryKey: ['expenses', filters],
+    queryKey: qk.financial.expenses(filters),
     queryFn: () => financialClient.getExpenses(filters),
   });
 }

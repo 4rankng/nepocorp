@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, sql, inArray, like } from 'drizzle-orm';
+import { eq, and, sql, inArray, like } from 'drizzle-orm';
 import { computeFifoAging } from '@tingting/shared';
 import type { PayableSummary } from '@tingting/shared';
 
@@ -14,6 +14,13 @@ interface AgingConfig {
   invertSigns: boolean;
 }
 
+interface FetchOptions {
+  /** Point-in-time snapshot: only include entries up to this date (inclusive) */
+  asOfDate?: string;
+  /** Restrict to a single entity — avoids fetching all entities when only one is needed */
+  entityId?: number;
+}
+
 interface EntityAgingResult {
   entityId: number;
   aging: { current: number; d30: number; d60: number; over90: number };
@@ -24,14 +31,21 @@ interface EntityAgingResult {
 
 // ─── Core computation ────────────────────────────────────────────────────────
 
-async function fetchLedgerGrouped(config: AgingConfig): Promise<Map<number, LedgerEntry[]>> {
+async function fetchLedgerGrouped(
+  config: AgingConfig,
+  opts: FetchOptions = {},
+): Promise<Map<number, LedgerEntry[]>> {
+  const conditions = [eq(s.ledger.entityType, config.entityType)];
+  if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
+  if (opts.asOfDate) conditions.push(sql`${s.ledger.timestamp} <= ${opts.asOfDate}::timestamptz`);
+
   const ledgerRows = await db.select({
     entityId: s.ledger.entityId,
     debit: s.ledger.debit,
     credit: s.ledger.credit,
     timestamp: s.ledger.timestamp,
   }).from(s.ledger)
-    .where(eq(s.ledger.entityType, config.entityType))
+    .where(and(...conditions))
     .orderBy(sql`${s.ledger.id} ASC`);
 
   const grouped = new Map<number, LedgerEntry[]>();
@@ -82,8 +96,8 @@ function computeEntityResults(
 
 // ─── Accounts Receivable (Customer aging) ────────────────────────────────────
 
-export async function getReceivablesSummary() {
-  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false });
+export async function getReceivablesSummary(opts: { asOfDate?: string } = {}) {
+  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false }, opts);
   const results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
 
   const buckets = [
@@ -167,8 +181,8 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
   return topOverdue;
 }
 
-export async function getCustomerAgingList(opts: { search?: string } = {}) {
-  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false });
+export async function getCustomerAgingList(opts: { search?: string; asOfDate?: string } = {}) {
+  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false }, opts);
   let results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
 
   // Container-number / name search: if provided, narrow customer IDs to those
@@ -220,7 +234,7 @@ export async function getCustomerAgingList(opts: { search?: string } = {}) {
   const linkedSupplierIds = [...new Set(customers.map(c => c.linkedSupplierId).filter((v): v is number => v != null))];
   const apByVendor = new Map<number, number>();
   if (linkedSupplierIds.length > 0) {
-    const apGrouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true });
+    const apGrouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true }, opts);
     const apResults = computeEntityResults(apGrouped, { entityType: 'VENDOR', invertSigns: true });
     for (const r of apResults) {
       if (linkedSupplierIds.includes(r.entityId)) {
@@ -251,8 +265,8 @@ export async function getCustomerAgingList(opts: { search?: string } = {}) {
 
 // ─── Accounts Payable (Vendor aging) ─────────────────────────────────────────
 
-export async function getPayablesSummary() {
-  const grouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true });
+export async function getPayablesSummary(opts: { asOfDate?: string } = {}) {
+  const grouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true }, opts);
   const results = computeEntityResults(grouped, { entityType: 'VENDOR', invertSigns: true });
 
   const vendorIds = results.map(r => r.entityId);

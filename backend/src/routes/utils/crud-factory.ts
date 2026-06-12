@@ -10,6 +10,8 @@ import { db } from '../../db';
 import { eq, isNull, sql, like, and } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 import { cacheInvalidate } from '../../lib/redis';
+import { asyncHandler } from '../../middleware/asyncHandler';
+import { parsePagination } from './pagination';
 
 export interface CrudRouterOptions {
   searchableField?: string;
@@ -40,9 +42,8 @@ export function createCrudRouter(
   const sub = Router();
   const hasSoftDelete = 'deletedAt' in table;
 
-  sub.get('/', async (req: Request, res: Response) => {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+  sub.get('/', asyncHandler(async (req: Request, res: Response) => {
+    const { page, limit, offset } = parsePagination(req);
     const search = req.query.search as string;
 
     const conditions = [];
@@ -57,15 +58,15 @@ export function createCrudRouter(
 
     const items = await db.select().from(table)
       .where(where)
-      .limit(limit).offset((page - 1) * limit);
+      .limit(limit).offset(offset);
 
     const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(table)
       .where(where);
 
     res.json({ items, total: Number(countRow?.count ?? 0), page, pageSize: limit });
-  });
+  }));
 
-  sub.post('/', async (req: Request, res: Response) => {
+  sub.post('/', asyncHandler(async (req: Request, res: Response) => {
     let data = createSchema.parse(req.body);
     if (beforeCreate) {
       data = (await beforeCreate(data, req)) || data;
@@ -76,18 +77,18 @@ export function createCrudRouter(
     }
     await cacheInvalidate('catalogs:bootstrap');
     res.status(201).json(item);
-  });
+  }));
 
-  sub.get('/:id', async (req: Request, res: Response) => {
+  sub.get('/:id', asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const conditions = [eq(table.id, id)];
     if (hasSoftDelete) conditions.push(isNull(table.deletedAt));
     const [item] = await db.select().from(table).where(and(...conditions)).limit(1);
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     res.json(item);
-  });
+  }));
 
-  sub.put('/:id', async (req: Request, res: Response) => {
+  sub.put('/:id', asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     let data = createSchema.partial().parse(req.body);
     if (beforeUpdate) {
@@ -100,9 +101,9 @@ export function createCrudRouter(
     }
     await cacheInvalidate('catalogs:bootstrap');
     res.json(item);
-  });
+  }));
 
-  sub.delete('/:id', async (req: Request, res: Response) => {
+  sub.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
     if (disableDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     const id = parseInt(req.params.id as string);
     if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
@@ -116,7 +117,7 @@ export function createCrudRouter(
     }
     await cacheInvalidate('catalogs:bootstrap');
     res.json({ ok: true });
-  });
+  }));
 
   return sub;
 }

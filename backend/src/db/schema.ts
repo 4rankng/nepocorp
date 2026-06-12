@@ -273,6 +273,10 @@ export const trips = pgTable('trips', {
   deletedAt: timestamp('deleted_at'),
 }, (table) => [
   index('trips_trailer_id_idx').on(table.trailerId),
+  // Trip list and report queries filter heavily on status and date
+  index('trips_status_idx').on(table.status),
+  index('trips_departure_date_idx').on(table.departureDate),
+  index('trips_customer_departure_idx').on(table.customerId, table.departureDate),
 ]);
 
 export const tripLegs = pgTable('trip_legs', {
@@ -303,7 +307,10 @@ export const ledger = pgTable('ledger', {
   balance: numeric('balance', { precision: 15, scale: 0 }).notNull(),
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+  // Hottest query path: every getBalance/postEntry does WHERE entity_type = ? AND entity_id = ? ORDER BY id DESC LIMIT 1
+  index('ledger_entity_entity_idx').on(table.entityType, table.entityId),
+]);
 
 export const penalties = pgTable('penalties', {
   id: serial('id').primaryKey(),

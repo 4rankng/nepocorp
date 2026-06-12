@@ -4,18 +4,7 @@ import { eq } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 // ── Helpers ──
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function formatVND(n: number): string {
-  return n.toLocaleString('vi-VN');
-}
+import { escapeHtml, formatVND } from '../lib/format';
 
 function formatDate(dateStr: string): string {
   // Parse YYYY-MM-DD directly to avoid UTC/local timezone off-by-one

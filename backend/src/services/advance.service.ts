@@ -4,8 +4,9 @@ import { eq, and, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { AdvanceError, validateSettlementInputs } from './settlement-validation';
+import type { Tx } from './trip-shared';
 
-async function generateSettlementCode(tx: any): Promise<string> {
+async function generateSettlementCode(tx: Tx): Promise<string> {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, '0');

@@ -1,4 +1,5 @@
 import { ApiError } from './errors';
+import { getToken, setToken as storeToken, clearToken as storeClearToken, invalidateTokenCache } from '../../design-system/hooks/useToken';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -9,22 +10,28 @@ type RequestInitWithSkip = RequestInit & { expectedUpdatedAt?: string };
  * about domain shapes, Zod, or Vietnamese — see `./errors.ts` for error
  * translation. Endpoints are constructed in `api/*Client.ts` so this stays
  * purely transport-level.
+ *
+ * Token storage is delegated to `design-system/hooks/useToken` so all auth
+ * state flows through a single source of truth.
  */
 class ApiClient {
-  private token: string | null = null;
-
   constructor() {
-    this.token = localStorage.getItem('token');
+    // Eagerly hydrate the token cache from localStorage on first use so
+    // subsequent `getToken()` calls are O(1) and don't re-read storage.
+    getToken();
   }
 
   setToken(token: string) {
-    this.token = token;
-    localStorage.setItem('token', token);
+    storeToken(token);
   }
 
   clearToken() {
-    this.token = null;
-    localStorage.removeItem('token');
+    storeClearToken();
+  }
+
+  /** Drop the in-memory token cache. Useful on logout or tab-switching. */
+  refreshTokenFromStorage() {
+    invalidateTokenCache();
   }
 
   private async request<T>(
@@ -34,7 +41,7 @@ class ApiClient {
   ): Promise<T> {
     const headers: Record<string, string> = {
       ...(skipContentType ? {} : { 'Content-Type': 'application/json' }),
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
       ...((options?.headers as Record<string, string> | undefined) || {}),
     };
     if (options?.expectedUpdatedAt) {
@@ -73,7 +80,7 @@ class ApiClient {
   /** Fetch a text response (e.g. HTML) with auth headers via GET. */
   async getForText(url: string): Promise<string> {
     const headers: Record<string, string> = {
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
     if (!res.ok) {
@@ -86,7 +93,7 @@ class ApiClient {
   /** Fetch a binary blob (PDF, XLSX, etc.) with auth headers. */
   async getBlob(url: string): Promise<Blob> {
     const headers: Record<string, string> = {
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
     if (!res.ok) {
@@ -100,7 +107,7 @@ class ApiClient {
   async postForBlob(url: string, body: unknown): Promise<Blob> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
@@ -118,7 +125,7 @@ class ApiClient {
   async postForText(url: string, body: unknown): Promise<string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',

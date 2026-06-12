@@ -2,7 +2,6 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import multer from 'multer';
 import {
-  getForwarderByUserId,
   getForwarderTrips,
   getForwarderTripCounts,
   getForwarderTripDetail,
@@ -16,8 +15,11 @@ import {
   listActiveSuppliersForForwarder,
   getTripExpenseAuditInfo,
 } from '../services/forwarder.service';
-import { exportSettlementXlsx, exportSettlementHtml, previewSettlementHtml, previewSettlementXlsx, formatLocalDate } from '../services/settlement-export.service';
+import { exportSettlementXlsx, exportSettlementHtml, previewSettlementHtml, previewSettlementXlsx } from '../services/settlement-export.service';
+import { formatLocalDate } from '../lib/format';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { resolveForwarder } from '../middleware/forwarder';
+import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -26,23 +28,18 @@ import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, cre
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
+import { sniffImageType } from '../lib/format';
 
 const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const MAX_IMAGE_DIMENSION = 1600;
 
-function sniffImageType(buffer: Buffer): string | null {
-  if (buffer.length < 12) return null;
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
-  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return 'image/png';
-  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
-      buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return 'image/webp';
-  return null;
-}
-
 const router = Router();
 
+// Resolve forwarder profile once for all routes — handlers access req.forwarder
+router.use(resolveForwarder);
+
 router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const status = req.query.status as string | undefined;
   const [items, counts] = await Promise.all([
     getForwarderTrips(status),
@@ -52,17 +49,17 @@ router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const trip = await getForwarderTripDetail(parseInt(req.params.id as string, 10), forwarder.id);
   if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
   res.json(trip);
 }));
 
 router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const tripId = parseInt(req.params.tripId as string, 10);
   const parsed = tripContainerSchema.safeParse({ ...req.body, tripId });
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const container = await createTripContainer({
     ...parsed.data,
     containerTypeId: parsed.data.containerTypeId ?? null,
@@ -79,9 +76,9 @@ router.get('/suppliers', asyncHandler(async (_req: Request, res: Response) => {
 }));
 
 router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const parsed = tripExpenseSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const expense = await createTripExpense(db, {
     tripId: parsed.data.tripId,
     forwarderId: forwarder.id,  // forwarder-created → PENDING
@@ -100,7 +97,7 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const expenseId = parseInt(req.params.id as string, 10);
 
   // Fetch expense info for audit log before delete (shared with trips route)
@@ -123,7 +120,7 @@ router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) 
 // ── Unlinked Trip Expenses (for settlement form) ──
 
 router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const items = await listUnlinkedTripExpenses(forwarder.id);
   res.json({ items });
 }));
@@ -131,7 +128,7 @@ router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response
 // ── Advance Requests ──
 
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const status = req.query.status as string | undefined;
   const [items, counts] = await Promise.all([
     listAdvanceRequests({ requesterId: forwarder.id, status }),
@@ -141,9 +138,9 @@ router.get('/advance-requests', asyncHandler(async (req: Request, res: Response)
 }));
 
 router.post('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const parsed = createAdvanceRequestSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const result = await createAdvanceRequest(forwarder.id, parsed.data);
   res.status(201).json(result);
 }));
@@ -151,13 +148,13 @@ router.post('/advance-requests', asyncHandler(async (req: Request, res: Response
 // ── Advance Settlements ──
 
 router.get('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const items = await listAdvanceSettlements({ forwarderId: forwarder.id });
   res.json({ items });
 }));
 
 router.get('/advance-settlements/:id', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const settlement = await getAdvanceSettlement(Number(req.params.id));
   if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
   if (settlement.forwarderId !== forwarder.id) return res.status(403).json({ error: 'Không có quyền truy cập' });
@@ -165,7 +162,7 @@ router.get('/advance-settlements/:id', asyncHandler(async (req: Request, res: Re
 }));
 
 router.get('/advance-settlements/:id/export', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const id = Number(req.params.id);
   const settlement = await getAdvanceSettlement(id);
   if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
@@ -187,9 +184,9 @@ router.get('/advance-settlements/:id/export', asyncHandler(async (req: Request, 
 }));
 
 router.post('/advance-settlements/preview', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const parsed = createAdvanceSettlementSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
   const { advanceRequestIds, tripExpenseIds, refundAmount, note } = parsed.data;
 
   const format = (req.query.format as string) || 'html';
@@ -209,9 +206,9 @@ router.post('/advance-settlements/preview', asyncHandler(async (req: Request, re
 }));
 
 router.post('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const parsed = createAdvanceSettlementSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+  if (!parsed.success) throwValidation(parsed.error);
     const { note, ...rest } = parsed.data;
     const result = await createAdvanceSettlement(forwarder.id, { ...rest, note: note ?? undefined });
   res.status(201).json(result);
@@ -220,14 +217,14 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
 // ── Expense Photos ──
 
 router.get('/expenses/:id/photos', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const expenseId = parseInt(req.params.id as string, 10);
   const photos = await getExpensePhotos(expenseId);
   res.json({ items: photos });
 }));
 
 router.post('/expenses/:id/photos', expensePhotoUpload.single('file'), asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const file = req.file;
   if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
 
@@ -255,7 +252,7 @@ router.post('/expenses/:id/photos', expensePhotoUpload.single('file'), asyncHand
 }));
 
 router.delete('/expense-photos/:id', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = await getForwarderByUserId(req.user!.userId);
+  const forwarder = req.forwarder!;
   const photoId = parseInt(req.params.id as string, 10);
   const result = await deleteExpensePhoto(photoId, forwarder.id);
   if (result === null) return res.status(404).json({ error: 'Không tìm thấy ảnh' });

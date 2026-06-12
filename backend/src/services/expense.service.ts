@@ -4,6 +4,7 @@ import { eq, and, sql, desc, isNull, gte, lte } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import type { Tx } from './trip-shared';
 
 export interface ExpenseCreateInput {
   expenseDate: string;
@@ -43,7 +44,7 @@ export interface ExpenseListFilters {
   pageSize?: number;
 }
 
-export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: number) {
+export async function createExpense(tx: Tx, data: ExpenseCreateInput, userId?: number) {
   const [category] = await tx.select()
     .from(s.expenseCategories)
     .where(eq(s.expenseCategories.id, data.categoryId))
@@ -92,7 +93,7 @@ export async function createExpense(tx: any, data: ExpenseCreateInput, userId?: 
   return expense;
 }
 
-export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInput, userId?: number) {
+export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput, userId?: number) {
   const [existing] = await tx.select()
     .from(s.expenses)
     .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))
@@ -180,7 +181,7 @@ export async function updateExpense(tx: any, id: number, data: ExpenseUpdateInpu
   return updated;
 }
 
-export async function deleteExpense(tx: any, id: number, userId?: number) {
+export async function deleteExpense(tx: Tx, id: number, userId?: number) {
   const [existing] = await tx.select()
     .from(s.expenses)
     .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))
@@ -206,7 +207,7 @@ export async function deleteExpense(tx: any, id: number, userId?: number) {
     .where(eq(s.expenses.id, id));
 }
 
-export async function listExpenses(database: any, filters: ExpenseListFilters) {
+export async function listExpenses(dbOrTx: typeof db | Tx, filters: ExpenseListFilters) {
   const page = Math.max(1, filters.page ?? 1);
   const pageSize = Math.min(100, filters.pageSize ?? 20);
   const conditions = [isNull(s.expenses.deletedAt)];
@@ -230,7 +231,7 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
   const where = and(...conditions);
 
   const [items, [countRow]] = await Promise.all([
-    database.select({
+    dbOrTx.select({
       id: s.expenses.id,
       expenseDate: s.expenses.expenseDate,
       supplierId: s.expenses.supplierId,
@@ -294,7 +295,7 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
       .orderBy(desc(s.expenses.expenseDate), desc(s.expenses.id))
       .limit(pageSize)
       .offset((page - 1) * pageSize),
-    database.select({ count: sql<number>`count(*)` })
+    dbOrTx.select({ count: sql<number>`count(*)` })
       .from(s.expenses)
       .where(where),
   ]);
@@ -307,8 +308,8 @@ export async function listExpenses(database: any, filters: ExpenseListFilters) {
  * Used by the edit page to pre-populate the form. Returns `null` when the
  * row doesn't exist or is soft-deleted — callers should map that to 404.
  */
-export async function getExpense(database: any, id: number) {
-  const [row] = await database.select({
+export async function getExpense(dbOrTx: typeof db | Tx, id: number) {
+  const [row] = await dbOrTx.select({
     id: s.expenses.id,
     expenseDate: s.expenses.expenseDate,
     supplierId: s.expenses.supplierId,
@@ -354,8 +355,8 @@ export async function getExpense(database: any, id: number) {
   return row ?? null;
 }
 
-export async function getRenewalReminders(database: any) {
-  const rows = await database.select({
+export async function getRenewalReminders(dbOrTx: typeof db | Tx) {
+  const rows = await dbOrTx.select({
     expenseId: s.expenses.id,
     categoryId: s.expenseCategories.id,
     categoryName: s.expenseCategories.name,
@@ -412,7 +413,7 @@ export async function getRenewalReminders(database: any) {
         categoryName: row.categoryName,
         truckId: row.truckId,
         truckPlate: row.truckPlate ?? null,
-        validTo: row.validTo!,
+        validTo: row.validTo instanceof Date ? row.validTo.toISOString().slice(0, 10) : row.validTo ? String(row.validTo) : '',
         reminderLeadDays: row.reminderLeadDays ?? 30,
         daysRemaining,
       });

@@ -19,3 +19,10 @@ export function round2dp(n: number): number {
 export function roundInt(n: number): number {
   return Math.max(0, Math.round(n));
 }
+
+export {
+  FUEL_PRICE_PER_LITER_FALLBACK,
+  FUEL_LOADED_NORM_FALLBACK,
+  FUEL_EMPTY_NORM_FALLBACK,
+  ROAD_ALLOWANCE_PER_KM_FALLBACK,
+} from './tripFormDefaults';

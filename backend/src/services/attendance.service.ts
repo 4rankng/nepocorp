@@ -35,6 +35,8 @@ export async function getWorkDays(driverId: number, startDate: string, endDate: 
 
 /**
  * Upsert a single work day status for a driver.
+ * Uses onConflictDoUpdate for atomicity — avoids the race condition
+ * of the previous select-then-insert-or-update pattern.
  */
 export async function upsertWorkDay(
   driverId: number,
@@ -43,42 +45,31 @@ export async function upsertWorkDay(
   note: string | null,
   createdBy: number,
 ) {
-  const existing = await db.select().from(s.driverWorkDays)
+  // Read current tripId for conditional logic (safe: idempotent if stale)
+  const [existing] = await db.select({ tripId: s.driverWorkDays.tripId })
+    .from(s.driverWorkDays)
     .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, date)))
     .limit(1);
+  const preservedTripId = status === 'TRIP_DAY' ? (existing?.tripId ?? null) : null;
 
-  if (existing[0]) {
-    const [updated] = await db.update(s.driverWorkDays)
-      .set({ 
-        status, 
-        note, 
-        tripId: status === 'TRIP_DAY' ? existing[0].tripId ?? null : null,
-        updatedAt: new Date() 
-      })
-      .where(eq(s.driverWorkDays.id, existing[0].id))
-      .returning();
-    return updated;
-  }
-
-  const [created] = await db.insert(s.driverWorkDays)
-    .values({ driverId, date, status, note, createdBy, tripId: null })
+  const [result] = await db.insert(s.driverWorkDays)
+    .values({ driverId, date, status, note, createdBy, tripId: preservedTripId })
+    .onConflictDoUpdate({
+      target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
+      set: { status, note, tripId: preservedTripId, updatedAt: new Date() },
+    })
     .returning();
-  return created;
+  return result;
 }
 
 /**
  * Delete a work day (set to nothing - clear a STANDBY/PERSONAL_LEAVE)
  */
 export async function deleteWorkDay(driverId: number, date: string) {
-  const existing = await db.select().from(s.driverWorkDays)
+  const deleted = await db.delete(s.driverWorkDays)
     .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, date)))
-    .limit(1);
-
-  if (!existing[0]) return null;
-
-  await db.delete(s.driverWorkDays)
-    .where(eq(s.driverWorkDays.id, existing[0].id));
-  return { deleted: true };
+    .returning();
+  return deleted.length > 0 ? { deleted: true } : null;
 }
 
 /**
@@ -109,32 +100,23 @@ export async function batchUpsertWorkDays(
         results.push({ date: item.date, action: 'deleted' });
       } else {
         // Upsert the work day
-        const existing = await tx.select().from(s.driverWorkDays)
+        const [existing] = await tx.select({ tripId: s.driverWorkDays.tripId, id: s.driverWorkDays.id })
+          .from(s.driverWorkDays)
           .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, item.date)))
           .limit(1);
         // Reject status changes on trip-linked records (TRIP_DAY from sync)
-        if (existing[0]?.tripId && item.status !== 'TRIP_DAY') {
+        if (existing?.tripId && item.status !== 'TRIP_DAY') {
           results.push({ date: item.date, action: 'rejected', reason: 'TRIP_DAY locked (trip-linked)' });
           continue;
         }
-        let result;
-        if (existing[0]) {
-          const [updated] = await tx.update(s.driverWorkDays)
-            .set({
-              status: item.status,
-              note: item.note ?? null,
-              tripId: item.status === 'TRIP_DAY' ? existing[0].tripId ?? null : null,
-              updatedAt: new Date()
-            })
-            .where(eq(s.driverWorkDays.id, existing[0].id))
-            .returning();
-          result = updated;
-        } else {
-          const [created] = await tx.insert(s.driverWorkDays)
-            .values({ driverId, date: item.date, status: item.status, note: item.note ?? null, createdBy, tripId: null })
-            .returning();
-          result = created;
-        }
+        const preservedTripId = item.status === 'TRIP_DAY' ? (existing?.tripId ?? null) : null;
+        const [result] = await tx.insert(s.driverWorkDays)
+          .values({ driverId, date: item.date, status: item.status, note: item.note ?? null, createdBy, tripId: preservedTripId })
+          .onConflictDoUpdate({
+            target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
+            set: { status: item.status, note: item.note ?? null, tripId: preservedTripId, updatedAt: new Date() },
+          })
+          .returning();
         results.push({ date: item.date, action: 'upserted', result });
       }
     }

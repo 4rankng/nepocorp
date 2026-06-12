@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { FINANCIAL_ROLES } from '@tingting/shared';
 import { db } from '../db';
 import { ApiError } from '../errors';
+import type { Tx } from './trip-shared';
 
 export type ApprovableTable = 'trip_expenses' | 'debt_offsets';
 export type ApprovalTransition = 'APPROVED' | 'REJECTED';
@@ -18,7 +19,7 @@ const APPROVABLE_TABLES = {
  * ADMIN, MANAGER, and ACCOUNTANT may approve.
  */
 export async function transitionApproval(
-  tx: any,
+  tx: Tx,
   opts: {
     table: ApprovableTable;
     id: number;

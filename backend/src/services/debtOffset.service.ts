@@ -2,6 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { LedgerService } from './ledger.service';
+import { ApiError } from '../errors';
 import { TxnType } from '@tingting/shared';
 import { transitionApproval } from './approval.service';
 
@@ -22,21 +23,26 @@ export async function getDualEntities() {
   // Filter to only those with a linkedSupplierId
   const withLink = linked.filter(r => r.supplierId != null);
 
-  return Promise.all(
-    withLink.map(async (row) => {
-      const arBalance = await LedgerService.getBalance('CUSTOMER', row.customerId);
-      const apBalance = await LedgerService.getBalance('VENDOR', row.supplierId!);
-      return {
-        customerId: row.customerId,
-        customerName: row.customerName,
-        supplierId: row.supplierId,
-        arBalance,
-        apBalance,
-        netBalance: arBalance - apBalance,
-        offsetAmount: Math.min(arBalance, apBalance),
-      };
-    }),
-  );
+  // Single batch query instead of N individual getBalance() calls
+  const balanceEntries = withLink.flatMap(row => [
+    { entityType: 'CUSTOMER' as const, entityId: row.customerId },
+    { entityType: 'VENDOR' as const, entityId: row.supplierId! },
+  ]);
+  const balances = await LedgerService.getBalancesBatch(balanceEntries);
+
+  return withLink.map(row => {
+    const arBalance = balances.get(`CUSTOMER:${row.customerId}`) ?? 0;
+    const apBalance = balances.get(`VENDOR:${row.supplierId}`) ?? 0;
+    return {
+      customerId: row.customerId,
+      customerName: row.customerName,
+      supplierId: row.supplierId,
+      arBalance,
+      apBalance,
+      netBalance: arBalance - apBalance,
+      offsetAmount: Math.min(arBalance, apBalance),
+    };
+  });
 }
 
 /**
@@ -62,10 +68,7 @@ export async function createDebtOffset(input: {
     const amount = Math.min(arBalance, apBalance);
 
     if (amount <= 0) {
-      throw Object.assign(
-        new Error('Không có số dư để đối trừ (số tiền đối trừ phải > 0)'),
-        { status: 400 },
-      );
+      throw new ApiError(400, 'Không có số dư để đối trừ (số tiền đối trừ phải > 0)');
     }
 
     const [row] = await tx
@@ -126,10 +129,7 @@ export async function approveDebtOffset(
     const currentAr = await LedgerService.getBalanceTx(tx, 'CUSTOMER', offset.customerId);
     const currentAp = await LedgerService.getBalanceTx(tx, 'VENDOR', offset.supplierId);
     if (amount > currentAr || amount > currentAp) {
-      throw Object.assign(
-        new Error(`Số dư hiện tại không đủ để đối trừ ${amount} (AR=${currentAr}, AP=${currentAp})`),
-        { status: 400 },
-      );
+      throw new ApiError(400, `Số dư hiện tại không đủ để đối trừ ${amount} (AR=${currentAr}, AP=${currentAp})`);
     }
 
     // CREDIT on customer: reduces AR (CUSTOMER balance += debit − credit)

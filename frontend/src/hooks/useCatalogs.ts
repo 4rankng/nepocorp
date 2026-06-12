@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
+import { qk } from "../api/keys";
 
-export const BOOTSTRAP_QUERY_KEY = ["catalogs"] as const;
+export const BOOTSTRAP_QUERY_KEY = qk.catalogs.all;
 
 export interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean; linkedSupplierId: number | null }>;

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
+import { qk } from '../api/keys';
 import type { Driver, PenaltyReason, Truck, PenaltyStatus } from '@tingting/shared';
 
 interface PenaltyRow {
@@ -22,7 +23,7 @@ interface PenaltyRow {
 
 export function usePenalties() {
   return useQuery<PenaltyRow[]>({
-    queryKey: ['penalties'],
+    queryKey: qk.penalties.list,
     queryFn: async () => {
       const data = await api.get<{ items: PenaltyRow[] } | PenaltyRow[]>('/penalties');
       const raw: PenaltyRow[] = Array.isArray(data) ? data : data.items ?? [];
@@ -37,7 +38,7 @@ export function usePenaltyCatalogs() {
     reasons: PenaltyReason[];
     trucks: Truck[];
   }>({
-    queryKey: ['penalty-catalogs'],
+    queryKey: qk.penalties.catalogs,
     queryFn: async () => {
       const [drivers, reasons, trucks] = await Promise.all([
         configClient.getDrivers(),

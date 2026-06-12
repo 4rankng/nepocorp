@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import { Role } from '@tingting/shared';
 import { qk } from '../api/keys';
+import { getToken } from '../design-system/hooks/useToken';
 
 export interface AuthUser {
   userId: number;
@@ -36,7 +37,7 @@ function isTokenExpired(token: string): boolean {
 }
 
 async function fetchAuthUser(): Promise<AuthUser | null> {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   if (!token || isTokenExpired(token)) {
     api.clearToken();
     return null;

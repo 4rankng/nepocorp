@@ -1,17 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { financialClient } from '../api/financialClient';
+import { qk } from '../api/keys';
 
 export function useForwarderTrips(status?: string) {
   return useQuery({
-    queryKey: ['forwarder-trips', status],
+    queryKey: qk.forwarder.trips(status),
     queryFn: () => forwarderClient.getTrips(status),
   });
 }
 
 export function useForwarderTripDetail(id: number) {
   return useQuery({
-    queryKey: ['forwarder-trip-detail', id],
+    queryKey: qk.forwarder.tripDetail(id),
     queryFn: () => forwarderClient.getTripDetail(id),
     enabled: !!id,
   });
@@ -23,7 +24,7 @@ export function useCreateForwarderContainer() {
     mutationFn: ({ tripId, data }: { tripId: number; data: { containerTypeId?: number; containerNumber: string; sealNumber?: string; notes?: string } }) =>
       forwarderClient.createContainer(tripId, data),
     onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: ['forwarder-trip-detail', variables.tripId] });
+      qc.invalidateQueries({ queryKey: qk.forwarder.tripDetail(variables.tripId) });
     },
   });
 }
@@ -46,7 +47,7 @@ export function useCreateForwarderExpense() {
     }) =>
       forwarderClient.createExpense(data),
     onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: ['forwarder-trip-detail', variables.tripId] });
+      qc.invalidateQueries({ queryKey: qk.forwarder.tripDetail(variables.tripId) });
     },
   });
 }
@@ -66,7 +67,7 @@ export function useDeleteForwarderExpense() {
 
 export function useForwarderAdvanceRequests(status?: string) {
   return useQuery({
-    queryKey: ['forwarder-advance-requests', status],
+    queryKey: qk.forwarder.advanceRequests(status),
     queryFn: () => forwarderClient.getAdvanceRequests(status),
   });
 }
@@ -86,14 +87,14 @@ export function useCreateAdvanceRequest() {
 
 export function useForwarderSettlements() {
   return useQuery({
-    queryKey: ['forwarder-settlements'],
+    queryKey: qk.forwarder.settlements,
     queryFn: () => forwarderClient.getAdvanceSettlements(),
   });
 }
 
 export function useForwarderSettlementDetail(id: number) {
   return useQuery({
-    queryKey: ['forwarder-settlement-detail', id],
+    queryKey: qk.forwarder.settlementDetail(id),
     queryFn: () => forwarderClient.getAdvanceSettlementDetail(id),
     enabled: !!id,
   });
@@ -114,7 +115,7 @@ export function useCreateAdvanceSettlement() {
 
 export function useUnlinkedExpenses() {
   return useQuery({
-    queryKey: ['forwarder-unlinked-expenses'],
+    queryKey: qk.forwarder.unlinkedExpenses,
     queryFn: () => forwarderClient.getUnlinkedExpenses(),
   });
 }
@@ -123,7 +124,7 @@ export function useUnlinkedExpenses() {
 
 export function useAdminAdvanceRequests(filters?: { status?: string }) {
   return useQuery({
-    queryKey: ['admin-advance-requests', filters],
+    queryKey: qk.adminForwarder.advanceRequests(filters),
     queryFn: () => forwarderClient.listAllAdvanceRequests(filters),
   });
 }
@@ -152,7 +153,7 @@ export function useRejectAdvanceRequest() {
 
 export function useAdminSettlements(filters?: { status?: string }) {
   return useQuery({
-    queryKey: ['admin-settlements', filters],
+    queryKey: qk.adminForwarder.settlements(filters),
     queryFn: () => forwarderClient.listAllAdvanceSettlements(filters),
   });
 }
@@ -191,7 +192,7 @@ export function useRejectSettlement() {
 
 export function useAdminSettlementDetail(id: number) {
   return useQuery({
-    queryKey: ['admin-settlement-detail', id],
+    queryKey: qk.adminForwarder.settlementDetail(id),
     queryFn: () => financialClient.getAdminSettlementDetail(id),
     enabled: !!id,
   });

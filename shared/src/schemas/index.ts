@@ -551,6 +551,9 @@ export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;
 export type TripContainerInput = z.infer<typeof tripContainerSchema>;
 export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
+
+/** Partial update schema for trip expense — used by PUT /trips/:id/expenses/:eid */
+export const tripExpensePatchSchema = baseTripExpenseSchema.omit({ tripId: true }).partial();
 export type DebtOffsetInput = z.infer<typeof debtOffsetSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;

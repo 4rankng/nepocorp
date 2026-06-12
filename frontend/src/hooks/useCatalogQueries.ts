@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { configClient } from '../api/configClient';
 import { userClient } from '../api/userClient';
+import { qk } from '../api/keys';
 import type {
   Truck as TruckType,
   Driver as DriverType,
@@ -14,14 +15,15 @@ import type {
 
 export function useCapTable() {
   return useQuery<CapTableHistory[]>({
-    queryKey: ['cap-table'],
+    queryKey: qk.catalogs.capTable,
     queryFn: () => configClient.getCapTable(),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useSalaryPeriod(month: number, year: number) {
   return useQuery<SalaryPeriodRange>({
-    queryKey: ['salary-period', month, year],
+    queryKey: qk.catalogs.salaryPeriod(month, year),
     queryFn: () => configClient.getSalaryPeriodResolve(month, year),
     staleTime: 30 * 60 * 1000,
     enabled: month >= 1 && month <= 12 && year >= 2000,
@@ -30,7 +32,7 @@ export function useSalaryPeriod(month: number, year: number) {
 
 export function useFuelConfig() {
   return useQuery<FuelConfig | null>({
-    queryKey: ['fuel-config'],
+    queryKey: qk.catalogs.fuelConfig,
     queryFn: () => configClient.getFuelConfig(),
     staleTime: 10 * 60 * 1000,
   });
@@ -38,7 +40,7 @@ export function useFuelConfig() {
 
 export function useRoadConfig() {
   return useQuery<RoadConfig | null>({
-    queryKey: ['road-config'],
+    queryKey: qk.catalogs.roadConfig,
     queryFn: () => configClient.getRoadConfig(),
     staleTime: 10 * 60 * 1000,
   });
@@ -46,7 +48,7 @@ export function useRoadConfig() {
 
 export function useTrucksAndDrivers(options?: { enabled?: boolean }) {
   return useQuery<{ trucks: TruckType[]; drivers: DriverType[] }>({
-    queryKey: ['trucks-drivers'],
+    queryKey: qk.catalogs.trucksDrivers,
     queryFn: async () => {
       const [trucks, drivers] = await Promise.all([
         configClient.getTrucks(),
@@ -54,35 +56,37 @@ export function useTrucksAndDrivers(options?: { enabled?: boolean }) {
       ]);
       return { trucks, drivers };
     },
+    staleTime: 5 * 60 * 1000,
     enabled: options?.enabled ?? true,
   });
 }
 
 export function useSuppliers(page?: number, search?: string) {
   return useQuery({
-    queryKey: ['suppliers', page, search],
+    queryKey: qk.catalogs.suppliers(page, search),
     queryFn: () => configClient.getSuppliers(page, search),
   });
 }
 
 export function useExpenseCategories(page?: number, search?: string) {
   return useQuery({
-    queryKey: ['expense-categories', page, search],
+    queryKey: qk.catalogs.expenseCategories(page, search),
     queryFn: () => configClient.getExpenseCategories(page, search),
   });
 }
 
 export function useCustomers(page: number, search: string) {
   return useQuery({
-    queryKey: ['customers', page, search],
+    queryKey: qk.catalogs.customers(page, search),
     queryFn: () => configClient.getCustomers(page, search),
   });
 }
 
 export function useUsers() {
   return useQuery({
-    queryKey: ['users'],
+    queryKey: qk.catalogs.users,
     queryFn: () => userClient.getUsers(),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -94,8 +98,8 @@ export function useSaveFuelConfig() {
     mutationFn: (data: Parameters<typeof configClient.saveFuelConfig>[0]) =>
       configClient.saveFuelConfig(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fuel-config'] });
-      queryClient.invalidateQueries({ queryKey: ['cfg-count', 'fuel-config'] });
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.fuelConfig });
+      queryClient.invalidateQueries({ queryKey: qk.configCounts.fuelConfig });
     },
   });
 }
@@ -106,7 +110,7 @@ export function useSaveRoadConfig() {
     mutationFn: (data: Parameters<typeof configClient.saveRoadConfig>[0]) =>
       configClient.saveRoadConfig(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['road-config'] });
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.roadConfig });
     },
   });
 }
@@ -115,21 +119,23 @@ export function useSaveRoadConfig() {
 
 export function usePorts() {
   return useQuery<PortType[]>({
-    queryKey: ['ports'],
+    queryKey: qk.catalogs.ports,
     queryFn: () => configClient.getPorts(),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useContainerTypes() {
   return useQuery<ContainerTypeType[]>({
-    queryKey: ['container-types'],
+    queryKey: qk.catalogs.containerTypes,
     queryFn: () => configClient.getContainerTypes(),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useRoutesDropdown() {
   return useQuery({
-    queryKey: ['routes-dropdown'],
+    queryKey: qk.catalogs.routesDropdown,
     queryFn: () => configClient.getRoutesList(),
     staleTime: 5 * 60 * 1000,
   });
@@ -137,7 +143,7 @@ export function useRoutesDropdown() {
 
 export function useAllCustomers() {
   return useQuery({
-    queryKey: ['all-customers'],
+    queryKey: qk.catalogs.allCustomers,
     queryFn: () => configClient.getAllCustomers(),
     staleTime: 5 * 60 * 1000,
   });
@@ -145,7 +151,7 @@ export function useAllCustomers() {
 
 export function useRoadAllowances() {
   return useQuery({
-    queryKey: ['road-allowances'],
+    queryKey: qk.catalogs.roadAllowances,
     queryFn: () => configClient.getRoadAllowances(),
     staleTime: 5 * 60 * 1000,
   });
@@ -153,7 +159,7 @@ export function useRoadAllowances() {
 
 export function useTrailers() {
   return useQuery({
-    queryKey: ['trailers'],
+    queryKey: qk.catalogs.trailers,
     queryFn: () => configClient.getTrailers(),
     staleTime: 5 * 60 * 1000,
   });
@@ -161,7 +167,7 @@ export function useTrailers() {
 
 export function usePricingTables() {
   return useQuery({
-    queryKey: ['pricing-tables'],
+    queryKey: qk.catalogs.pricingTables,
     queryFn: () => configClient.getPricingTables(),
     staleTime: 5 * 60 * 1000,
   });
@@ -169,7 +175,7 @@ export function usePricingTables() {
 
 export function useAllSuppliers() {
   return useQuery({
-    queryKey: ['all-suppliers'],
+    queryKey: qk.catalogs.allSuppliers,
     queryFn: () => configClient.getAllSuppliers(),
     staleTime: 5 * 60 * 1000,
   });
@@ -177,7 +183,7 @@ export function useAllSuppliers() {
 
 export function useAllExpenseCategories() {
   return useQuery({
-    queryKey: ['all-expense-categories'],
+    queryKey: qk.catalogs.allExpenseCategories,
     queryFn: () => configClient.getAllExpenseCategories(),
     staleTime: 5 * 60 * 1000,
   });

@@ -1,11 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
-import { FuelMode, LoadingType, TripStatus } from "@tingting/shared";
+import {
+  FuelMode, LoadingType, TripStatus,
+  FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK,
+} from "@tingting/shared";
 export type { FuelMode } from "@tingting/shared";
 import type { PricingTable, TripDetail, PaginatedResponse } from "@tingting/shared";
 import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
+import { qk } from "../api/keys";
 
 import type { TripOptions, RouteOption } from "./useTripOptions";
 import { useTripFormLegs } from "./useTripFormLegs";
@@ -13,9 +17,9 @@ import type { FormLeg } from "./useTripFormLegs";
 export type { FormLeg } from "./useTripFormLegs";
 import { useTripFormPhotos } from "./useTripFormPhotos";
 
-const FUEL_PRICE_PER_LITER = 25000;
-const LOADED_RATE = 43;
-const EMPTY_RATE = 25;
+const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
+const LOADED_RATE = FUEL_LOADED_NORM_FALLBACK;
+const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
 
 function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
@@ -162,7 +166,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
   const queryClient = useQueryClient();
 
   const { data: roadConfig } = useQuery({
-    queryKey: ['road-config'],
+    queryKey: qk.catalogs.roadConfig,
     queryFn: () => configClient.getRoadConfig(),
     staleTime: 10 * 60 * 1000,
   });
@@ -341,7 +345,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
 
   // ── Pricing query ──
   const pricingQuery = useQuery({
-    queryKey: ["suggested-price", customerId, routeId, departureDate],
+    queryKey: qk.trips.suggestedPrice(Number(customerId) || 0, Number(routeId) || 0, departureDate),
     queryFn: async () => {
       if (isEditMode && existingTrip?.customerId && existingTrip?.routeId) {
         const ptRes = await api.get<PaginatedResponse<PricingTable>>('/pricing-tables');
@@ -444,7 +448,16 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     // Only auto-fill tripWageDays if user hasn't manually set it
     setTripWageDays(prev => prev || String(days));
 
-    const dailyRate = Math.round(10000000 / 26);
+    // Per spec §4.5.3: dailyRate = (baseSalary + socialInsurance) / standardWorkDays
+    // standardWorkDays = days in month - sundays for the departure month
+    const [y, m] = departureDate.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    let sundays = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(y, m - 1, d).getDay() === 0) sundays++;
+    }
+    const standardWorkDays = daysInMonth - sundays;
+    const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
     setDriverSalary(String(dailyRate * days));
   }, [driverId, departureDate, completedAt, selectedRouteData, roadConfig, isEditMode, options?.drivers]);
 

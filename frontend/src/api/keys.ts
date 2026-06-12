@@ -259,8 +259,12 @@ type _ExtractPrefix<T> = T extends readonly [infer F, ...any[]] ? F
   : T extends (...a: any[]) => readonly [infer F, ...any[]] ? F
   : never;
 type _CatalogPrefixes = _ExtractPrefix<_CatVal[keyof _CatVal]>;
+// Compile-time guard: allCatalogKeys must cover every qk.catalogs prefix.
+// The runtime `void` is required so TypeScript actually evaluates the
+// conditional type instead of erasing it as unused.
 type _AssertCatalogs = _CatalogPrefixes extends typeof qk.allCatalogKeys[number] ? true : never;
-const _catalogCheck: _AssertCatalogs = true as _AssertCatalogs;
+const _catalogTypeGuard: _AssertCatalogs = true;
+void _catalogTypeGuard;
 
 /**
  * Invalidate every cache key that depends on catalog data. Used by the

@@ -42,11 +42,18 @@ export {
   managementFeeSchema, capTableSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
-  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema, forwarderExpenseTypeSchema,
+  tripContainerSchema, tripContainerBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
   containerTypeSchema, portSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
 } from './schemas';
+
+export {
+  FUEL_PRICE_PER_LITER_FALLBACK,
+  FUEL_LOADED_NORM_FALLBACK,
+  FUEL_EMPTY_NORM_FALLBACK,
+  ROAD_ALLOWANCE_PER_KM_FALLBACK,
+} from './calculations/tripFormDefaults';
 
 export type {
   CreateTripInput, UpdateTripFiguresInput, CreatePaymentInput,

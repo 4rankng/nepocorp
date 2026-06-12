@@ -27,6 +27,7 @@ import {
   resolveSalaryPeriodDateRange,
 } from '../services/salary-period.service';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { parsePagination } from './utils/pagination';
 import { queryAuditLogs } from '../services/audit-query.service';
 import { getPenaltyStats } from '../services/reporting.service';
 
@@ -220,8 +221,7 @@ salaryPeriodsAdminRouter.delete('/:id', asyncHandler(async (req: Request, res: R
 // ─── Audit logs (mounted separately with ADMIN-only Casbin resource) ────────
 export const auditLogRouter = Router();
 auditLogRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
-  const limit = Math.min(100, parseInt(req.query.limit as string, 10) || 50);
+  const { page, limit } = parsePagination(req);
   res.json(await queryAuditLogs({
     page,
     limit,

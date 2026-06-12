@@ -1,0 +1,4 @@
+/* SelectField shares its base CSS with TextField.css (imported at the top of
+ * SelectField.tsx). This file is reserved for any select-specific tweaks that
+ * don't apply to plain text inputs. Currently empty by design — the shared
+ * rules in TextField.css cover the arrow chrome and group layout. */
