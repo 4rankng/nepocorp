@@ -167,7 +167,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const routeMap = new Map<string, { name: string; trips: number; profit: number }>();
     allTrips.forEach((t: TripDetail) => {
       if (!t.route || !t.route.name) return;
-      if (t.status !== 'LOCKED') return;
+      if (t.status === 'CANCELED') return;
       const name = t.route.name;
       const profVal = parseFloat(t.grossProfit as string || '0');
       const existing = routeMap.get(name) || { name, trips: 0, profit: 0 };
@@ -258,6 +258,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     loading,
     pnlReport,
     prevPnlReport,
+    allTrips,
     createdTrips,
     createdTripsCount,
     renewalReminders,

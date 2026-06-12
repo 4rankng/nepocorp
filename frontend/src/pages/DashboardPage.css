@@ -211,7 +211,7 @@
 /* Chart SVG fills the card body — opt out of the safety net. */
 .dash-wf .wf-chart .body svg {
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
   max-width: none !important;
   max-height: none !important;
   display: block;
@@ -272,6 +272,35 @@
 .dash-wf .wf-link svg { width: 13px; height: 13px; }
 .dash-wf .wf-link:hover { color: var(--wf-green-700); }
 
+/* ── Chart day/month toggle ── */
+.dash-wf .wf-chart-toggle {
+  display: inline-flex;
+  border: 1px solid var(--wf-border-2);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--wf-card);
+}
+.dash-wf .wf-chart-toggle__btn {
+  padding: 3px 12px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--wf-ink-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  line-height: 1.5;
+}
+.dash-wf .wf-chart-toggle__btn:hover {
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+}
+.dash-wf .wf-chart-toggle__btn.is-active {
+  color: #fff;
+  background: var(--wf-green);
+}
+
 .dash-wf .wf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .dash-wf .wf-kpi {
   background: var(--wf-card); border: 1px solid var(--wf-border);
@@ -324,11 +353,12 @@
 .dash-wf .wf-bento > .wf-bento-third { grid-column: span 4; }
 .dash-wf .wf-bento > .wf-bento-full  { grid-column: span 12; }
 
-.dash-wf .wf-chart .body { padding: 8px 8px 6px; }
+.dash-wf .wf-chart { display: flex; flex-direction: column; }
+.dash-wf .wf-chart .body { padding: 8px 8px 6px; flex: 1; min-height: 0; }
 .dash-wf .wf-legend { display: flex; gap: 16px; padding: 10px 12px 0; }
 .dash-wf .wf-legend .li { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--wf-ink-2); font-weight: 500; }
 .dash-wf .wf-legend .sw { width: 14px; height: 3px; border-radius: 2px; }
-.dash-wf .wf-chart svg { display: block; width: 100%; height: auto; }
+.dash-wf .wf-chart .body svg { display: block; width: 100%; height: 100%; }
 
 /* Lợi nhuận theo xe + Top tuyến sinh lời stack vertically inside the left
    column — Pete requested they not sit side-by-side. Children take the

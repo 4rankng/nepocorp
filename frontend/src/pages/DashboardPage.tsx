@@ -55,9 +55,11 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
   const W = 760, H = 280;
   const mL = 46, mR = 18, mT = 14, mB = 30;
   const pW = W - mL - mR, pH = H - mT - mB;
-  // Round yMax up to nearest 250M
+  // Auto-scale y-axis: pick a nice step size that fits the data
   const peak = Math.max(...revenue, ...gross, 1);
-  const yMax = Math.max(250, Math.ceil(peak / 250) * 250);
+  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
+  const step = niceSteps.find(s => s * 4 >= peak) ?? 1000;
+  const yMax = Math.ceil(peak / step) * step || step;
   const X = (i: number) => mL + pW * (i / Math.max(1, revenue.length - 1));
   const Y = (v: number) => mT + pH * (1 - v / yMax);
 
@@ -211,6 +213,8 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { month: currentMonth, year: currentYear } = useMonth();
 
+  const [chartView, setChartView] = useState<'day' | 'month'>('day');
+
   const {
     stats, loading, prevPnlReport,
     createdTrips, createdTripsCount,
@@ -218,6 +222,7 @@ export default function DashboardPage() {
     yearlySeries, fuelWarnings,
     recentAudit,
     derived, formattedNet,
+    allTrips,
   } = useDashboardData(currentMonth, currentYear);
 
   const showApprovalQueue = canSeeApprovalQueue(user?.role);
@@ -241,18 +246,49 @@ export default function DashboardPage() {
   const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
   const costRatio = revenue > 0 ? (costs / revenue) * 100 : 0;
 
-  // ── Chart series ────────────────────────────────────────────────────────
-  // useDashboardData.yearlySeries is the historical line. Map to Tr (millions)
-  // so the axis scales nicely. Trim leading months with no data so the chart
-  // only shows the range that actually has data.
+  // ── Chart series (daily + monthly) ────────────────────────────────────────
+  // Daily view groups trips by departureDate; monthly view uses yearly P&L.
+  // Both convert to Tr (millions). Only data points with actual data are shown.
+
+  const dailyChartData = useMemo(() => {
+    if (!allTrips || allTrips.length === 0) return { labels: [] as string[], revenue: [] as number[], gross: [] as number[] };
+    const activeTrips = allTrips.filter((t: any) => t.status !== 'CANCELED');
+    const dayMap = new Map<string, { revenue: number; gross: number }>();
+    for (const t of activeTrips) {
+      const dateKey = t.departureDate?.slice(0, 10);
+      if (!dateKey) continue;
+      const rev = Number(t.revenue) || 0;
+      const gp = Number(t.grossProfit) || 0;
+      const existing = dayMap.get(dateKey) ?? { revenue: 0, gross: 0 };
+      existing.revenue += rev;
+      existing.gross += gp;
+      dayMap.set(dateKey, existing);
+    }
+    const sorted = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .filter(([, v]) => v.revenue > 0 || v.gross > 0);
+    return {
+      labels: sorted.map(([d]) => String(parseInt(d.slice(8, 10), 10))),
+      revenue: sorted.map(([, v]) => v.revenue / 1_000_000),
+      gross: sorted.map(([, v]) => v.gross / 1_000_000),
+    };
+  }, [allTrips]);
+
   const { chartMonths, chartRevenue, chartGross } = useMemo(() => {
+    if (chartView === 'day') {
+      return {
+        chartMonths: dailyChartData.labels,
+        chartRevenue: dailyChartData.revenue,
+        chartGross: dailyChartData.gross,
+      };
+    }
+    // Monthly view — trim leading months with no data
     if (!yearlySeries || yearlySeries.length === 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
     const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
     const baseIdx = currentMonth - 1;
     const allMonths = yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
     const allRev = yearlySeries.map((p) => Number(p.revenue ?? 0) / 1_000_000);
     const allGross = yearlySeries.map((p) => Number(p.grossProfit ?? 0) / 1_000_000);
-    // Find first month with any data (revenue OR gross profit > 0)
     const firstDataIdx = allRev.findIndex((r, i) => r > 0 || allGross[i] > 0);
     if (firstDataIdx < 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
     return {
@@ -260,7 +296,7 @@ export default function DashboardPage() {
       chartRevenue: allRev.slice(firstDataIdx),
       chartGross: allGross.slice(firstDataIdx),
     };
-  }, [yearlySeries, currentMonth]);
+  }, [chartView, dailyChartData, yearlySeries, currentMonth]);
 
   // ── Top trucks (by margin) ──────────────────────────────────────────────
   const topTrucks = useMemo(() => {
@@ -478,11 +514,23 @@ export default function DashboardPage() {
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Doanh thu & Lợi nhuận gộp</div>
-                <div className="sub">{chartMonths.length > 0 ? `${chartMonths.length} tháng gần nhất` : 'Chưa có dữ liệu'}</div>
+                <div className="sub">
+                  {chartMonths.length > 0
+                    ? chartView === 'day'
+                      ? `${chartMonths.length} ngày · Tháng ${currentMonth}/${currentYear}`
+                      : `${chartMonths.length} tháng gần nhất`
+                    : 'Chưa có dữ liệu'}
+                </div>
               </div>
-              <button className="wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="wf-chart-toggle">
+                  <button className={`wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')}>Ngày</button>
+                  <button className={`wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')}>Tháng</button>
+                </div>
+                <button className="wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              </div>
             </div>
             <div className="wf-legend">
               <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu</span>
