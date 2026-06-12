@@ -489,7 +489,7 @@
 
 .dash-wf .wf-att .body { padding: 6px 8px 8px; }
 .dash-wf .wf-arow { display: flex; align-items: flex-start; gap: 11px; padding: 9px 8px; border-radius: 10px; flex-wrap: wrap; }
-.dash-wf .wf-arow .go { flex-basis: 100%; padding-left: 41px; margin-top: 2px; }
+.dash-wf .wf-arow .go { flex-basis: 100%; margin-top: 2px; }
 .dash-wf .wf-arow:hover { background: var(--wf-bg); }
 .dash-wf .wf-arow .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto; }
 .dash-wf .wf-arow .ic svg { width: 15px; height: 15px; }
