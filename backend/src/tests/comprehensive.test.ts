@@ -102,7 +102,7 @@ before(async () => {
   if (!trck) {
     [trck] = await db.insert(s.trucks).values({ licensePlate: '51C-12345' }).returning();
   }
-  let [drvr] = await db.select().from(s.drivers).limit(1);
+  let [drvr] = await db.select().from(s.drivers).where(eq(s.drivers.userId, drvUser.id)).limit(1);
   if (!drvr) {
     [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser.id }).returning();
   }
@@ -362,7 +362,11 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     partnerName: 'Ông Thương',
     percentage: '100',
     effectiveDate: '2026-01-01',
-  });
+  }).onConflictDoNothing();
+
+  // Clean up any prior distributions for Q2/2026 (idempotency guard returns 409)
+  await db.delete(s.distributions)
+    .where(and(eq(s.distributions.quarter, 2), eq(s.distributions.year, 2026)));
 
   const distributeRes = await testFetch('/api/reports/distribute-profit', {
     method: 'POST',
@@ -412,8 +416,8 @@ test('E2E — Driver portal isolation & earnings summary', async () => {
   assert.strictEqual(tripsRes.status, 200);
   assert.ok(tripsRes.data.items !== undefined);
 
-  // 2. Driver cumulative earnings
-  const earningsRes = await testFetch('/api/driver/me/earnings', { token: driverToken });
+  // 2. Driver cumulative earnings (requires month/year query params)
+  const earningsRes = await testFetch('/api/driver/me/earnings?month=6&year=2026', { token: driverToken });
   assert.strictEqual(earningsRes.status, 200);
   assert.ok(earningsRes.data.baseSalary !== undefined);
   assert.ok(earningsRes.data.tripIncome !== undefined);
