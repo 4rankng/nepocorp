@@ -12,10 +12,12 @@ export function getStatusColor(status: string): string {
 }
 
 /**
- * Absolute-positioned color bar for the left edge of a table cell.
- * Parent `<td>` must have `position: 'relative'`.
+ * Absolute-positioned color bar for the left edge of a table cell or card.
+ * Parent must have `position: 'relative'`.
+ * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
-export function StatusStrip({ status }: { status: string }) {
+export function StatusStrip({ status, color }: { status?: string; color?: string }) {
+  const bg = color ?? (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       position: 'absolute',
@@ -25,7 +27,7 @@ export function StatusStrip({ status }: { status: string }) {
       width: 4,
       height: 32,
       borderRadius: '0 4px 4px 0',
-      background: getStatusColor(status),
+      background: bg,
       pointerEvents: 'none',
     }} />
   );
@@ -34,14 +36,16 @@ export function StatusStrip({ status }: { status: string }) {
 /**
  * Small colored dot for filter tabs and legends.
  * `size` defaults to 7 (filter tabs) — use 4 for legend swatches.
+ * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
-export function StatusDot({ status, size = 7, style }: { status: string; size?: number; style?: React.CSSProperties }) {
+export function StatusDot({ status, size = 7, color, style }: { status?: string; size?: number; color?: string; style?: React.CSSProperties }) {
+  const bg = color ?? (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       width: size,
       height: size,
       borderRadius: '50%',
-      background: getStatusColor(status),
+      background: bg,
       display: 'inline-block',
       ...style,
     }} />
@@ -51,14 +55,16 @@ export function StatusDot({ status, size = 7, style }: { status: string; size?: 
 /**
  * Small vertical strip swatch for inline legends.
  * Thinner/shorter than StatusStrip — designed for flex rows, not table cells.
+ * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
-export function StatusSwatch({ status }: { status: string }) {
+export function StatusSwatch({ status, color }: { status?: string; color?: string }) {
+  const bg = color ?? (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       width: 4,
       height: 20,
       borderRadius: '0 4px 4px 0',
-      background: getStatusColor(status),
+      background: bg,
       display: 'inline-block',
     }} />
   );

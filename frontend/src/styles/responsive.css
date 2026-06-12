@@ -32,7 +32,7 @@
 }
 .info-row__body { min-width: 0; flex: 1; }
 .info-row__label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--fg-3, var(--ink-3));
   margin-bottom: 2px;
@@ -40,7 +40,7 @@
   letter-spacing: 0.05em;
 }
 .info-row__value {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--fg-1, var(--ink));
 }
@@ -69,7 +69,7 @@
 }
 .info-row--feature .info-row__icon svg { width: 16px; height: 16px; }
 .info-row--feature .info-row__label {
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -77,7 +77,7 @@
   margin-bottom: 2px;
 }
 .info-row--feature .info-row__value {
-  font-size: 14.5px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.3;
@@ -93,7 +93,7 @@
 .info-row--hero { padding: 14px 0; }
 .info-row--hero .info-row__icon { width: 40px; height: 40px; border-radius: 12px; }
 .info-row--hero .info-row__icon svg { width: 18px; height: 18px; }
-.info-row--hero .info-row__label { font-size: 10px; }
+.info-row--hero .info-row__label { font-size: var(--fs-2xs); }
 .info-row--hero .info-row__value {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -135,7 +135,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: var(--tracking-eyebrow);
@@ -146,7 +146,7 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-semibold);
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -156,7 +156,7 @@
 .metric-strip__value--danger  { color: var(--danger); }
 .metric-strip__value--muted   { color: var(--ink-3); }
 .metric-strip__sub {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   display: flex;
   flex-wrap: wrap;
@@ -185,7 +185,7 @@
 .subsection-card--warn   { border-left-color: var(--warning); background: linear-gradient(to right, var(--warning-soft), var(--surface-2) 40%); }
 .subsection-card--danger { border-left-color: var(--danger);  background: linear-gradient(to right, var(--danger-soft), var(--surface-2) 40%); }
 .subsection-card__title {
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: var(--tracking-eyebrow);
@@ -232,7 +232,7 @@
 }
 .trip-hero__back:hover { background: var(--surface-3); color: var(--ink); border-color: var(--line-2); }
 .trip-hero__crumb {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -247,7 +247,7 @@
 }
 .trip-hero__title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-bold);
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -268,7 +268,7 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
   font-weight: 500;
   white-space: nowrap;
@@ -305,7 +305,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--warning-text);
   font-weight: 500;
   padding: 4px 8px;
@@ -320,7 +320,7 @@
  * Panel padding bump — more breathing room for detail panels
  * ========================================================================== */
 .panel__head { padding: 18px 24px 16px; }
-.panel__title { font-size: 16px; }
+.panel__title { font-size: var(--fs-md); }
 .panel__body { padding: 18px 24px 22px; }
 
 /* ============================================================================
@@ -341,7 +341,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   font-family: var(--font-body);
   margin-left: 8px;
@@ -376,11 +376,11 @@
   flex-wrap: wrap;
 }
 .driver-trip-card__route {
-  font-weight: 600; font-size: 14px; color: var(--fg-1);
+  font-weight: 600; font-size: var(--fs-sm); color: var(--fg-1);
 }
 .driver-trip-card__meta {
   display: flex; align-items: center; gap: 16px;
-  font-size: 12px; color: var(--fg-3);
+  font-size: var(--fs-xs); color: var(--fg-3);
   flex-wrap: wrap;
 }
 .driver-trip-card__meta-item {
@@ -420,7 +420,7 @@
   border-radius: 9999px;
   background: var(--surface);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   cursor: pointer;
   transition: all 150ms ease;
@@ -433,12 +433,12 @@
 }
 .fwd-filter-pill--active {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
   border-color: var(--ink);
 }
 .fwd-filter-pill--active:hover {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
   opacity: 0.9;
 }
 .fwd-filter-pill__dot {
@@ -451,7 +451,7 @@
   box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
 }
 .fwd-filter-pill__count {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   min-width: 18px;
   height: 18px;
@@ -468,7 +468,7 @@
 
 .driver-trip-card__plate-badge {
   font-family: var(--font-mono);
-  font-weight: 600; font-size: 12.5px;
+  font-weight: 600; font-size: var(--fs-xs);
   color: var(--ink);
   background: var(--surface-2);
   padding: 4px 10px;
@@ -519,7 +519,7 @@
   min-width: 0;
 }
 .earnings-hero__label {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--fg-2);
   text-transform: uppercase;
@@ -593,7 +593,7 @@
   flex-direction: column;
 }
 .fuel-alloc-card__label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--brand);
   text-transform: uppercase;
@@ -608,7 +608,7 @@
 }
 .fuel-alloc-card__body {
   padding: 12px 20px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--fg-3);
   display: flex;
   flex-direction: column;
@@ -638,7 +638,7 @@
 }
 .trip-detail-subtitle {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3, var(--ink-3));
   margin-left: 46px;
 }
@@ -651,8 +651,8 @@
   gap: 8px;
   overflow: auto;
 }
-.expense-filters__select { font-size: 12.5px; min-width: 120px; }
-.expense-filters__date { font-size: 12.5px; width: auto; min-width: 130px; }
+.expense-filters__select { font-size: var(--fs-xs); min-width: 120px; }
+.expense-filters__date { font-size: var(--fs-xs); width: auto; min-width: 130px; }
 
 
 /* ============================================================================
@@ -685,11 +685,11 @@
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .row-2 { grid-template-columns: 1fr; }
   .row-3 { grid-template-columns: 1fr; }
-  .page-title { font-size: 26px; }
+  .page-title { font-size: var(--fs-2xl); }
 
   /* ── Trip hero / metric-strip on tablet ── */
   .metric-strip--cols-3 { grid-template-columns: 1fr; }
-  .trip-hero__title { font-size: 22px; }
+  .trip-hero__title { font-size: var(--fs-2xl); }
   .trip-hero__actions { flex-wrap: wrap; }
   .detail-grid { grid-template-columns: 1fr; gap: 0; }
 }
@@ -717,7 +717,7 @@
   /* Bump hamburger to a 44px touch target (was 40px) */
   .topbar__toggle { width: 44px; height: 44px; }
   .topbar__toggle svg { width: 20px; height: 20px; }
-  .topbar-date { padding: 5px 8px; font-size: 12px; gap: 5px; }
+  .topbar-date { padding: 5px 8px; font-size: var(--fs-xs); gap: 5px; }
   .topbar-date__sep { display: none; }
   /* Date trigger was 34px h — bump to 38px for tappability */
   .topbar-date__trigger { min-height: 38px; }
@@ -729,8 +729,8 @@
   thead.sticky-header { position: relative; }
 
   /* ── Page header ── */
-  .page-title { font-size: 18px; line-height: 1.2; margin-bottom: 2px; }
-  .page-subtitle { font-size: 12px; line-height: 1.4; }
+  .page-title { font-size: var(--fs-lg); line-height: 1.2; margin-bottom: 2px; }
+  .page-subtitle { font-size: var(--fs-xs); line-height: 1.4; }
   .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .page-header .page-actions,
   .page-actions,
@@ -740,10 +740,10 @@
   .header-actions .btn,
   .page-header .btn,
   .page-header .btn-primary { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 40px; }
-  .trip-detail-title { font-size: 19px; gap: 8px; line-height: 1.2; }
+  .trip-detail-title { font-size: var(--fs-xl); gap: 8px; line-height: 1.2; }
   .trip-detail-title > span { flex: 1 1 auto; min-width: 0; }
-  .trip-detail-subtitle { margin-left: 0; font-size: 12px; }
-  .trip-detail-title .status-pill { font-size: 10px; padding: 3px 7px; }
+  .trip-detail-subtitle { margin-left: 0; font-size: var(--fs-xs); }
+  .trip-detail-title .status-pill { font-size: var(--fs-2xs); padding: 3px 7px; }
 
   /* ── KPI grid ── */
   .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
@@ -756,13 +756,13 @@
     min-height: 0;
   }
   .kpi__top { margin-bottom: 4px; }
-  .kpi__label { font-size: 9.5px; line-height: 1.2; letter-spacing: 0.04em; }
+  .kpi__label { font-size: var(--fs-2xs); line-height: 1.2; letter-spacing: 0.04em; }
   .kpi__icon { width: 20px; height: 20px; border-radius: 6px; }
   .kpi__icon svg { width: 11px; height: 11px; }
-  .kpi__value { font-size: 18px; line-height: 1.1; margin: 2px 0; }
-  .kpi__value-unit { font-size: 11px; margin-left: 2px; }
+  .kpi__value { font-size: var(--fs-lg); line-height: 1.1; margin: 2px 0; }
+  .kpi__value-unit { font-size: var(--fs-2xs); margin-left: 2px; }
   .kpi__meta {
-    font-size: 10.5px; line-height: 1.25;
+    font-size: var(--fs-2xs); line-height: 1.25;
     gap: 3px; flex-wrap: wrap; margin-top: 2px;
     display: block;
   }
@@ -837,7 +837,7 @@
   .filter-tabs > *, .pill-row > * { flex-shrink: 0; }
   .filter-pill {
     padding: 5px 9px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     white-space: nowrap;
   }
 
@@ -852,7 +852,7 @@
   .expense-filters__date {
     min-width: 0;
     width: 100%;
-    font-size: 14px;
+    font-size: var(--fs-sm);
   }
   .expense-filters__reset {
     grid-column: 1 / -1;
@@ -892,7 +892,7 @@
     border-radius: 2px;
     background: var(--line-2);
   }
-  .modal__title { font-size: 16px; padding-top: 6px; }
+  .modal__title { font-size: var(--fs-md); padding-top: 6px; }
   .modal__body {
     padding: 14px 16px 16px;
     max-height: calc(100dvh - 180px);
@@ -939,7 +939,7 @@
 
   /* ── Tap targets (Apple/Material want ≥44px) ── */
   .btn--sm,
-  .btn-sm { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+  .btn-sm { min-height: 38px; padding: 8px 12px; font-size: var(--fs-sm); }
   .btn--icon,
   .btn-icon { min-width: 40px; min-height: 40px; padding: 10px; }
   .btn--icon.btn--sm,
@@ -952,7 +952,7 @@
   select.input,
   input.input,
   textarea.input {
-    font-size: 16px; /* prevents iOS zoom-on-focus */
+    font-size: var(--fs-md); /* prevents iOS zoom-on-focus */
     min-height: 44px;
   }
   textarea.input { min-height: 80px; }
@@ -972,7 +972,7 @@
     min-width: 0;
   }
   .info-row__label {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     margin: 0;
     text-transform: none;
     letter-spacing: 0;
@@ -981,7 +981,7 @@
     color: var(--ink-3);
   }
   .info-row__value {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-align: right;
     overflow-wrap: anywhere;
     word-break: normal;
@@ -1004,7 +1004,7 @@
     max-width: 55%;
   }
   .info-row--feature .info-row__value {
-    font-size: 13.5px;
+    font-size: var(--fs-sm);
     text-align: right;
   }
 
@@ -1023,30 +1023,30 @@
     letter-spacing: 0;
     max-width: 55%;
   }
-  .info-row--hero .info-row__value { font-size: 20px; }
+  .info-row--hero .info-row__value { font-size: var(--fs-xl); }
 
   /* ── metric-strip (new) — stack into single column on phone ── */
   .metric-strip { grid-template-columns: 1fr; }
   .metric-strip__cell { padding: 12px 16px; }
-  .metric-strip__label { font-size: 10px; }
-  .metric-strip__value { font-size: 22px; }
-  .metric-strip__sub { font-size: 11px; }
+  .metric-strip__label { font-size: var(--fs-2xs); }
+  .metric-strip__value { font-size: var(--fs-2xl); }
+  .metric-strip__sub { font-size: var(--fs-2xs); }
 
   /* ── subsection-card (new) — less padding on phone ── */
   .subsection-card { padding: 12px 14px; border-radius: 10px; }
-  .subsection-card__title { font-size: 10px; }
+  .subsection-card__title { font-size: var(--fs-2xs); }
 
   /* ── trip-hero (new) — tighter padding, smaller title ── */
   .trip-hero { padding: 14px 16px 12px; border-radius: 14px; gap: 10px; margin-bottom: 12px; }
-  .trip-hero__title { font-size: 20px; }
-  .trip-hero__crumb { font-size: 10px; }
-  .trip-hero__chip { font-size: 11.5px; padding: 4px 9px; }
+  .trip-hero__title { font-size: var(--fs-xl); }
+  .trip-hero__crumb { font-size: var(--fs-2xs); }
+  .trip-hero__chip { font-size: var(--fs-xs); padding: 4px 9px; }
   .trip-hero__chip svg { width: 13px; height: 13px; }
   .trip-hero__actions { padding-top: 10px; gap: 6px; }
   .trip-hero__actions .btn { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 40px; }
   .trip-hero__actions-divider { display: none; }
   .trip-hero__actions-spacer { display: none; }
-  .trip-hero__warn { font-size: 10.5px; padding: 3px 7px; }
+  .trip-hero__warn { font-size: var(--fs-2xs); padding: 3px 7px; }
 
   /* ── detail-grid (new) — single col on phone ── */
   .detail-grid { grid-template-columns: 1fr; gap: 0; }
@@ -1062,12 +1062,12 @@
     padding: 6px 0;
   }
   .detail-row__label, .kv-row__label, .field-row__label {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--ink-3);
     flex-shrink: 0;
   }
   .detail-row__value, .kv-row__value, .field-row__value {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     text-align: right;
     word-break: break-word;
     min-width: 0;
@@ -1081,23 +1081,23 @@
   .driver-trip-card__icon { width: 32px; height: 32px; }
   .driver-trip-card__main { flex: 1 1 calc(100% - 50px); }
   .driver-trip-card__head { margin-bottom: 2px; gap: 6px; }
-  .driver-trip-card__route { font-size: 13.5px; }
-  .driver-trip-card__meta { gap: 12px; font-size: 11.5px; }
+  .driver-trip-card__route { font-size: var(--fs-sm); }
+  .driver-trip-card__meta { gap: 12px; font-size: var(--fs-xs); }
   .driver-trip-card__salary { order: 99; flex: 1 1 100%; text-align: left; padding-left: 42px; margin-top: -2px; }
-  .driver-trip-card__salary-value { font-size: 14px; }
+  .driver-trip-card__salary-value { font-size: var(--fs-sm); }
   .driver-trip-card__arrow { display: none; }
 
   /* ── Dispatch page ── */
   .dispatch-page .hero { padding: 18px 16px; }
   .dispatch-page .hero-top { flex-direction: column; gap: 12px; align-items: flex-start; }
-  .dispatch-page .hero-h1 { font-size: 22px; line-height: 1.2; }
-  .dispatch-page .hero-sub { font-size: 12.5px; }
+  .dispatch-page .hero-h1 { font-size: var(--fs-2xl); line-height: 1.2; }
+  .dispatch-page .hero-sub { font-size: var(--fs-xs); }
   .dispatch-page .hero-actions { width: 100%; flex-wrap: wrap; }
   .dispatch-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; }
   .dispatch-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
   .dispatch-page .metric { padding: 8px 10px; }
-  .dispatch-page .metric-label { font-size: 9.5px; }
-  .dispatch-page .metric-value { font-size: 16px; }
+  .dispatch-page .metric-label { font-size: var(--fs-2xs); }
+  .dispatch-page .metric-value { font-size: var(--fs-md); }
   .dispatch-page .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
   .dispatch-page .filter-tabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
   .dispatch-page .filter-tabs::-webkit-scrollbar { display: none; }
@@ -1110,22 +1110,21 @@
     column-gap: 10px; row-gap: 4px;
     padding: 10px 14px; align-items: center;
   }
-  .dispatch-page .order-row .o-date { grid-area: date; font-size: 12px; }
+  .dispatch-page .order-row .o-date { grid-area: date; font-size: var(--fs-xs); }
   .dispatch-page .order-row .o-route {
-    grid-area: route; font-size: 12px;
-    min-width: 0; overflow: hidden;
-    flex-wrap: nowrap; gap: 6px;
+    grid-area: route; font-size: var(--fs-xs);
+    flex-direction: column; align-items: flex-start;
+    gap: 2px; min-width: 0;
   }
   .dispatch-page .order-row .o-route .from,
   .dispatch-page .order-row .o-route .to {
-    min-width: 0; flex: 1 1 0;
-    overflow: hidden; text-overflow: ellipsis;
-    padding: 2px 7px; font-size: 11.5px;
+    min-width: 0; font-size: var(--fs-xs);
   }
+  .dispatch-page .order-row .o-route .arr { transform: rotate(90deg); }
   .dispatch-page .order-row .o-actions { grid-area: action; }
   .dispatch-page .order-row .o-actions .btn,
-  .dispatch-page .order-row .o-actions .pill-btn { padding: 6px 12px; font-size: 12px; }
-  .dispatch-page .order-row .o-customer { grid-area: cust; font-size: 12px; color: var(--ink-3); }
+  .dispatch-page .order-row .o-actions .pill-btn { padding: 6px 12px; font-size: var(--fs-xs); }
+  .dispatch-page .order-row .o-customer { grid-area: cust; font-size: var(--fs-xs); color: var(--ink-3); }
   .dispatch-page .order-row .o-assign { display: none; }
 
   /* ── Trip list page — Mobile Pass 2 (2026-06-02) ──
@@ -1134,15 +1133,15 @@
      off the right edge with no swipe hint). */
   .trip-list-page .hero { padding: 14px 14px 12px; }
   .trip-list-page .hero-top { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .trip-list-page .hero-h1 { font-size: 22px; line-height: 1.2; }
-  .trip-list-page .hero-sub { font-size: 12.5px; }
+  .trip-list-page .hero-h1 { font-size: var(--fs-2xl); line-height: 1.2; }
+  .trip-list-page .hero-sub { font-size: var(--fs-xs); }
   .trip-list-page .hero-actions { width: 100%; flex-wrap: wrap; }
   .trip-list-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; min-height: 38px; }
 
   .trip-list-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
   .trip-list-page .metric { padding: 8px 10px; min-width: 0; }
   .trip-list-page .metric-label {
-    font-size: 9.5px;
+    font-size: var(--fs-2xs);
     /* Force single-line so cards align on the 2-col grid. Long labels like
        "Tổng KM tháng này" used to wrap to 2 lines, throwing off the rhythm. */
     white-space: nowrap;
@@ -1152,11 +1151,11 @@
   /* "Tổng giá trị lệnh (tất cả trạng thái)" — drop the parenthetical on phones,
      it doesn't fit and the metric-delta line below repeats the same info. */
   .trip-list-page .metric-label > span { display: none; }
-  .trip-list-page .metric-value { font-size: 16px; }
+  .trip-list-page .metric-value { font-size: var(--fs-md); }
   .trip-list-page .metric-value .metric-unit { margin-left: 2px; }
-  .trip-list-page .metric-delta { font-size: 10.5px; line-height: 1.3; }
+  .trip-list-page .metric-delta { font-size: var(--fs-2xs); line-height: 1.3; }
   .trip-list-page .metric.featured { grid-column: 1 / -1; }
-  .trip-list-page .metric.featured .breakdown-legend { gap: 6px 10px; font-size: 11px; }
+  .trip-list-page .metric.featured .breakdown-legend { gap: 6px 10px; font-size: var(--fs-2xs); }
 
   .trip-list-page .stats-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
   .trip-list-page .section-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
@@ -1176,11 +1175,11 @@
   .trip-list-page .status-tabs > * { flex-shrink: 0; }
   .trip-list-page .status-tabs .stab-pill {
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     gap: 6px;
   }
   .trip-list-page .status-tabs .stab-pill .stab-count {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     padding: 1px 6px;
   }
   /* Right-edge fade — sits inside the scroll container so it pins to the
@@ -1204,8 +1203,8 @@
   .trip-form-grid,
   .trip-form-row { grid-template-columns: 1fr; flex-direction: column; }
   .tc-page-head { padding: 16px 14px 8px; flex-wrap: wrap; gap: 12px; }
-  .tc-page-title { font-size: 20px; line-height: 1.2; }
-  .tc-page-sub { font-size: 12.5px; }
+  .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-page-sub { font-size: var(--fs-xs); }
   .tc-progress-pills { order: 99; flex-basis: 100%; justify-content: flex-start; }
   .tc-back-btn { width: 32px; height: 32px; }
   .tc-form-row,
@@ -1215,11 +1214,11 @@
   .tc-action-bar { left: 0; padding: 12px 16px; }
   .tc-card { margin-bottom: 12px; border-radius: 12px; }
   .tc-card-head { padding: 12px 14px; gap: 10px; }
-  .tc-card-num { width: 24px; height: 24px; font-size: 12px; border-radius: 6px; }
-  .tc-card-title { font-size: 14px; }
-  .tc-card-sub { font-size: 11.5px; }
+  .tc-card-num { width: 24px; height: 24px; font-size: var(--fs-xs); border-radius: 6px; }
+  .tc-card-title { font-size: var(--fs-sm); }
+  .tc-card-sub { font-size: var(--fs-xs); }
   .tc-card-body { padding: 14px; }
-  .tc-badge-required, .tc-badge-optional { font-size: 10px; padding: 2px 6px; }
+  .tc-badge-required, .tc-badge-optional { font-size: var(--fs-2xs); padding: 2px 6px; }
 
   /* ── Trip detail ── */
   .trip-detail-grid { grid-template-columns: 1fr; }
@@ -1270,7 +1269,7 @@
   .dd-header { flex-wrap: wrap; align-items: center; gap: 12px; }
   .dd-avatar { display: none; }
   .dd-meta { flex: 1 1 100%; min-width: 0; }
-  .dd-meta h1 { font-size: 18px; line-height: 1.25; word-break: keep-all; }
+  .dd-meta h1 { font-size: var(--fs-lg); line-height: 1.25; word-break: keep-all; }
   .dd-actions { flex: 1 1 100%; }
   .dd-actions .btn { width: 100%; justify-content: center; }
   .dd-ledger-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
@@ -1293,7 +1292,7 @@
   .setting-card__icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
   .setting-card__icon svg { width: 18px; height: 18px; }
   .setting-card__title {
-    font-size: 14px; line-height: 1.3; margin: 0;
+    font-size: var(--fs-sm); line-height: 1.3; margin: 0;
     flex: 1; min-width: 0;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden;
@@ -1348,7 +1347,7 @@
     display: inline-flex; align-items: center;
     gap: 4px; padding: 4px 8px;
     margin: 3px 6px 3px 0;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--fg-2, var(--ink-2));
     background: var(--bg-2, rgba(15, 23, 42, 0.04));
     border-radius: 8px;
@@ -1356,7 +1355,7 @@
   }
   .routes-table tbody td[data-label]::before {
     content: attr(data-label) ":";
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: 600;
     color: var(--fg-3, var(--ink-3));
     text-transform: uppercase;
@@ -1394,7 +1393,7 @@
     display: block;
   }
   .routes-table tbody td:first-child[data-label] .row-meta {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--fg-3, var(--ink-3));
     margin-top: 4px;
     line-height: 1.4;
@@ -1408,7 +1407,7 @@
   .routes-config-page .kpi__value { word-break: keep-all; overflow-wrap: anywhere; }
 
   /* Table footer — compact */
-  .routes-config-page .table-foot { padding: 8px 4px; font-size: 11.5px; }
+  .routes-config-page .table-foot { padding: 8px 4px; font-size: var(--fs-xs); }
 
   /* ── Users admin page — Mobile Pass 4 (2026-06-02) ──
      Same family of fixes as Routes page Pass 1 — hide the decorative KPI
@@ -1427,12 +1426,12 @@
     gap: 4px;
   }
   .users-admin-page .kpi__label {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     line-height: 1.25;
     flex: 1 1 100%;
   }
-  .users-admin-page .kpi__value { font-size: 22px; line-height: 1.15; }
-  .users-admin-page .kpi__meta { font-size: 11px; margin-top: 6px; }
+  .users-admin-page .kpi__value { font-size: var(--fs-2xl); line-height: 1.15; }
+  .users-admin-page .kpi__meta { font-size: var(--fs-2xs); margin-top: 6px; }
 
   /* ── Login page ── */
   .login-card { padding: 24px 20px; }
@@ -1442,29 +1441,29 @@
 
   /* ── Profit page ── */
   .profit-hero { padding: 18px 16px; border-radius: 14px; margin-bottom: 16px; }
-  .profit-hero__label { font-size: 10px; margin-bottom: 6px; letter-spacing: 0.06em; }
-  .profit-hero__value { font-size: 30px; letter-spacing: -0.02em; word-break: break-word; }
-  .profit-hero__currency { font-size: 18px; margin-left: 4px; }
-  .profit-hero__sub { font-size: 12px; margin-top: 8px; line-height: 1.4; }
+  .profit-hero__label { font-size: var(--fs-2xs); margin-bottom: 6px; letter-spacing: 0.06em; }
+  .profit-hero__value { font-size: var(--fs-3xl); letter-spacing: -0.02em; word-break: break-word; }
+  .profit-hero__currency { font-size: var(--fs-lg); margin-left: 4px; }
+  .profit-hero__sub { font-size: var(--fs-xs); margin-top: 8px; line-height: 1.4; }
   .partner-grid { gap: 10px; }
   .partner-card { padding: 14px; border-radius: 12px; }
   .partner-card__head { gap: 10px; margin-bottom: 8px; }
-  .partner-card__avatar { width: 36px; height: 36px; font-size: 14px; }
-  .partner-card__name { font-size: 14px; }
-  .partner-card__role { font-size: 11px; }
-  .partner-card__pct { font-size: 14px; }
-  .partner-card__amount-label { font-size: 10px; margin-bottom: 4px; letter-spacing: 0.04em; }
-  .partner-card__amount { font-size: 22px; letter-spacing: -0.02em; word-break: break-word; }
+  .partner-card__avatar { width: 36px; height: 36px; font-size: var(--fs-sm); }
+  .partner-card__name { font-size: var(--fs-sm); }
+  .partner-card__role { font-size: var(--fs-2xs); }
+  .partner-card__pct { font-size: var(--fs-sm); }
+  .partner-card__amount-label { font-size: var(--fs-2xs); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .partner-card__amount { font-size: var(--fs-2xl); letter-spacing: -0.02em; word-break: break-word; }
   .calc-row { padding: 10px 12px; gap: 8px; }
-  .calc-row__label { font-size: 13px; }
-  .calc-row__value { font-size: 14px; }
-  .calc-row--final .calc-row__value { font-size: 18px; }
+  .calc-row__label { font-size: var(--fs-sm); }
+  .calc-row__value { font-size: var(--fs-sm); }
+  .calc-row--final .calc-row__value { font-size: var(--fs-lg); }
 
   /* ── Earnings page ── */
   .panel.earnings-hero { padding: 0; }
   .earnings-hero__inner { padding: 14px 16px 12px; }
-  .earnings-hero__label { font-size: 10.5px; margin-bottom: 4px; letter-spacing: 0.06em; }
-  .earnings-hero__value { font-size: 24px; letter-spacing: -0.02em; }
+  .earnings-hero__label { font-size: var(--fs-2xs); margin-bottom: 4px; letter-spacing: 0.06em; }
+  .earnings-hero__value { font-size: var(--fs-2xl); letter-spacing: -0.02em; }
   .earnings-hero__icon { width: 40px; height: 40px; }
   .earnings-hero__icon svg { width: 20px; height: 20px; }
 
@@ -1478,11 +1477,11 @@
   /* ── Fuel allocation card mobile overrides ── */
   .fuel-alloc-card { padding: 0 !important; }
   .fuel-alloc-card__header { padding: 10px 14px; gap: 10px; }
-  .fuel-alloc-card__value { font-size: 22px; }
+  .fuel-alloc-card__value { font-size: var(--fs-2xl); }
   .fuel-alloc-card__body { padding: 10px 14px; gap: 4px; }
 
   /* ── Misc layout helpers ── */
-  .typo-eyebrow { letter-spacing: 0.04em; font-size: 10.5px; }
+  .typo-eyebrow { letter-spacing: 0.04em; font-size: var(--fs-2xs); }
 
   /* ── Pass 14 — /customers + /suppliers (2026-06-02) ──
      Both pages render one "Sửa" button in a 38px-tall action row at the
@@ -1502,7 +1501,7 @@
   .trip-list-page .filter-pill {
     height: 40px;
     padding: 0 10px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
   .trip-list-page .filter-pill .filter-lbl-wrap { line-height: 1.2; }
   .trip-list-page .breakdown-bar {
@@ -1511,18 +1510,18 @@
   }
   .trip-list-page .breakdown-legend {
     gap: 4px 8px;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
   }
 
   /* ── DispatchPage: prevent section header text cutoff ── */
   .dispatch-page .section-title h2 {
-    font-size: 16px;
+    font-size: var(--fs-md);
     word-break: break-word;
     overflow-wrap: anywhere;
   }
   .dispatch-page .vrow .lab {
     min-width: 48px;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
   }
   .dispatch-page .vcard { padding: 12px; }
 
@@ -1534,7 +1533,7 @@
   .debt-list-page .filter-tab {
     min-height: 38px;
     padding: 6px 12px;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
   }
   .debt-list-page .filter-bar__search {
     width: 100%;
@@ -1544,18 +1543,18 @@
     padding: 10px 12px;
     border-radius: 12px;
   }
-  .debt-list-page .bucket__value { font-size: 18px; }
+  .debt-list-page .bucket__value { font-size: var(--fs-lg); }
 
   /* ── PenaltyPage: larger chip/seg tap targets ── */
   .penalty-chip {
     min-height: 36px;
     padding: 6px 12px;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
   }
   .penalty-seg button {
     min-height: 34px;
     padding: 6px 14px;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
   }
   .penalty-row-act {
     min-width: 38px;
@@ -1570,15 +1569,15 @@
     padding: 4px 2px !important;
     border-radius: 5px !important;
   }
-  .cal-cell-day-num { font-size: 9.5px !important; }
+  .cal-cell-day-num { font-size: var(--fs-2xs) !important; }
   .cal-cell-icon-wrap svg { width: 14px; height: 14px; }
   .calendar-legend-item {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     padding: 2px 7px;
     gap: 4px;
   }
   .calendar-legend-instruction {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     padding: 6px 10px;
     gap: 5px;
     line-height: 1.4;
@@ -1586,17 +1585,17 @@
   .salary-summary-dark {
     padding: 16px 16px 14px;
   }
-  .salary-summary-dark__big { font-size: 24px; }
+  .salary-summary-dark__big { font-size: var(--fs-2xl); }
   .salary-summary-dark__label { font-size: 9px; margin-bottom: 8px; }
-  .salary-summary-dark__mini { font-size: 10.5px; }
-  .salary-summary-dark__row { font-size: 12px; }
-  .salary-summary-dark__row-val { font-size: 12px; }
+  .salary-summary-dark__mini { font-size: var(--fs-2xs); }
+  .salary-summary-dark__row { font-size: var(--fs-xs); }
+  .salary-summary-dark__row-val { font-size: var(--fs-xs); }
   .driver-select-card {
     min-width: 88px;
     padding: 6px 10px;
   }
-  .driver-select-card__name { font-size: 11.5px; max-width: 120px; }
-  .driver-select-card__salary { font-size: 10px; }
+  .driver-select-card__name { font-size: var(--fs-xs); max-width: 120px; }
+  .driver-select-card__salary { font-size: var(--fs-2xs); }
 
   /* ── CustomersPage: full-width search, larger filter pills ── */
   .customers-page .toolbar {
@@ -1610,7 +1609,7 @@
   .customers-page .toolbar input {
     width: 100% !important;
     min-height: 40px;
-    font-size: 14px;
+    font-size: var(--fs-sm);
   }
 
   /* ── Config Drivers/CrudTable: horizontal scroll for wide tables ── */
@@ -1626,17 +1625,17 @@
 @media (max-width: 420px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 10px 12px; }
-  .kpi__label { font-size: 9.5px; letter-spacing: 0.02em; }
+  .kpi__label { font-size: var(--fs-2xs); letter-spacing: 0.02em; }
   .kpi__value { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi__value-unit { font-size: 12px; }
-  .kpi__meta { font-size: 10.5px; }
-  .page-title { font-size: 19px; }
+  .kpi__value-unit { font-size: var(--fs-xs); }
+  .kpi__meta { font-size: var(--fs-2xs); }
+  .page-title { font-size: var(--fs-xl); }
   .aging-buckets { grid-template-columns: 1fr 1fr; gap: 8px; }
   .aging-buckets > .bucket:first-child { grid-column: 1 / -1; }
   .bucket { padding: 10px 12px; border-radius: 12px; }
-  .bucket__label { font-size: 9.5px; margin-bottom: 4px; }
-  .bucket__value { font-size: 18px; margin-bottom: 2px; }
-  .bucket__count { font-size: 10.5px; }
+  .bucket__label { font-size: var(--fs-2xs); margin-bottom: 4px; }
+  .bucket__value { font-size: var(--fs-lg); margin-bottom: 2px; }
+  .bucket__count { font-size: var(--fs-2xs); }
   .fleet-page .fleet-two-col { grid-template-columns: 1fr; }
   .dispatch-page .metrics { grid-template-columns: 1fr 1fr; }
   .trip-list-page .stats-strip { grid-template-columns: 1fr; }

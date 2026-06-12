@@ -47,12 +47,12 @@
 .payables-summary-dot--total { background: var(--accent); }
 .payables-summary-dot--current { background: var(--success); }
 .payables-summary-dot--d30 { background: var(--warning); }
-.payables-summary-dot--d60 { background: #D97706; }
+.payables-summary-dot--d60 { background: var(--warning-text); }
 .payables-summary-dot--over90 { background: var(--danger); }
 
 .payables-summary-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -68,7 +68,7 @@
 
 .payables-summary-value {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -76,7 +76,7 @@
 }
 
 .payables-summary-unit {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 2px;
@@ -84,12 +84,12 @@
 
 .payables-summary-count {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .payables-summary-bar {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -123,7 +123,7 @@
 }
 
 .payables-toolbar.toolbar .toolbar__search {
-  background: #fff;
+  background: var(--surface);
   width: 320px;
 }
 

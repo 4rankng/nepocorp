@@ -9,7 +9,7 @@
 /* ── Table density: sparse config rows don't need 24px vertical td padding ── */
 .cfg-page .tt-table thead th {
   padding: 13px 18px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.06em;
   font-weight: 600;
   color: var(--ink-3);
@@ -34,7 +34,7 @@
 
 /* Inline meta summary that lives in the toolbar (replaces ad-hoc inline styles) */
 .cfg-page__summary {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   display: inline-flex;
   align-items: center;
@@ -59,7 +59,7 @@
   margin-left: 8px;
   border-radius: 999px;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -67,7 +67,7 @@
   white-space: nowrap;
 }
 .cfg-pill--success { background: var(--accent-soft); color: var(--accent); }
-.cfg-pill--warn    { background: rgba(245, 158, 11, 0.12); color: #B45309; }
+.cfg-pill--warn    { background: rgba(245, 158, 11, 0.12); color: var(--warning-text); }
 .cfg-pill--neutral { background: var(--surface-3); color: var(--ink-3); }
 
 /* ── Empty state inside the table — bring more breathing room + larger illo ── */
@@ -78,7 +78,7 @@
   gap: 10px;
   padding: 28px 16px 12px;
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 .cfg-page .cfg-empty img {
   width: 132px;
@@ -89,11 +89,11 @@
 .cfg-page .cfg-empty__title {
   font-weight: 600;
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   margin-top: 2px;
 }
 .cfg-page .cfg-empty__hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
@@ -139,19 +139,19 @@
 .cfg-page .field > label,
 .cfg-page label.cfg-field__label {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 6px;
   letter-spacing: 0;
 }
 .cfg-page .cfg-field-hint {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   margin-top: 5px;
   line-height: 1.45;
 }
-.cfg-page .cfg-field-hint--warn { color: #B45309; }
+.cfg-page .cfg-field-hint--warn { color: var(--warning-text); }
 .cfg-page .cfg-field-hint--danger { color: var(--danger); }
 .cfg-page .cfg-field-hint strong { color: var(--ink); font-weight: 600; }
 
@@ -161,7 +161,7 @@
   border-top: 1px solid var(--line);
 }
 .cfg-page .cfg-section__heading {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 14px;
@@ -172,7 +172,7 @@
 }
 .cfg-page .cfg-section__heading-pill {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -204,7 +204,7 @@
   .cfg-page .tt-table thead th { padding: 11px 12px; }
   .cfg-page .tt-table tbody td { padding: 12px 12px; }
   .cfg-page .toolbar { padding: 12px 14px 4px; gap: 8px; }
-  .cfg-page__summary { font-size: 11px; }
+  .cfg-page__summary { font-size: var(--fs-2xs); }
   .cfg-page .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .cfg-page .table-scroll table { min-width: 600px; }
 }

@@ -13,6 +13,7 @@
   --surface: #FFFFFF;
   --surface-2: #F7F8FA;
   --surface-3: #EFF1F5;
+  --surface-accent: #F1F8F4;
 
   --ink: #0A0A0A;
   --ink-2: #535963;
@@ -192,7 +193,16 @@
   --z-sticky: 100;
   --z-overlay: 200;
   --z-modal: 300;
+  --z-confirm: 350;
   --z-popover: 400;
   --z-toast: 500;
   --z-tooltip: 600;
+  --z-max: 700;
+
+  /* --- Breakpoint tiers (use ONLY these values in @media) ---
+   * 420px  — narrow phone
+   * 640px  — phone
+   * 1023px — tablet
+   * 1100px — small desktop
+   * No other breakpoint values without updating this list. --- */
 }

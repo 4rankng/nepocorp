@@ -34,11 +34,11 @@
   border-radius: var(--r-lg);
   flex-shrink: 0;
   background: linear-gradient(150deg, #00702F, var(--sidebar));
-  color: #fff;
+  color: var(--fg-on-brand);
   display: grid;
   place-items: center;
   font-weight: 800;
-  font-size: 21px;
+  font-size: var(--fs-xl);
   letter-spacing: .02em;
   box-shadow: 0 10px 22px -12px rgba(0, 90, 45, .7);
 }
@@ -46,7 +46,7 @@
 .dd-meta { flex: 1; min-width: 0; }
 
 .dd-meta h1 {
-  font-size: 27px;
+  font-size: var(--fs-3xl);
   font-weight: 800;
   letter-spacing: -.01em;
   line-height: 1.1;
@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   font-weight: 500;
 }
@@ -82,7 +82,7 @@
   gap: 6px;
   padding: 5px 11px;
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: .01em;
 }
@@ -129,7 +129,7 @@
 }
 
 .dd-sum-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: .16em;
   color: var(--ink-3);
@@ -138,14 +138,14 @@
 .dd-sum-total {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 46px;
+  font-size: var(--fs-4xl);
   line-height: 1;
   color: var(--danger);
   letter-spacing: -.02em;
   margin-top: 12px;
 }
 .dd-sum-total .dd-cur {
-  font-size: 24px;
+  font-size: var(--fs-2xl);
   font-weight: 600;
   margin-left: 6px;
   color: var(--danger);
@@ -160,14 +160,14 @@
   align-items: center;
   gap: 8px;
   margin-top: 14px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-2);
   font-weight: 500;
 }
 
 .dd-sum-update {
   text-align: right;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   line-height: 1.7;
@@ -177,7 +177,7 @@
   display: block;
   font-family: var(--font-mono);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 /* ─── Aging Bar ─────────────────────────────────────────────────────────────── */
@@ -196,7 +196,7 @@
 }
 .dd-seg-0 { background: var(--accent); }
 .dd-seg-1 { background: var(--warning); }
-.dd-seg-2 { background: #D97706; }
+.dd-seg-2 { background: var(--warning-text); }
 .dd-seg-3 { background: var(--danger); }
 
 /* ─── Aging Grid ────────────────────────────────────────────────────────────── */
@@ -206,7 +206,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
 }
-@media (max-width: 800px) {
+@media (max-width: 1023px) {
   .dd-aging-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -227,7 +227,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: .1em;
   color: var(--ink-3);
@@ -248,7 +248,7 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-1);
 }
 .dd-export-btn:hover {
@@ -258,7 +258,7 @@
 .dd-ac-val {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   margin-top: 12px;
   color: var(--ink);
 }
@@ -267,7 +267,7 @@
 }
 
 .dd-ac-share {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 600;
   margin-top: 6px;
@@ -297,7 +297,7 @@
   font-weight: 800;
 }
 .dd-ledger-head .dd-cnt {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 600;
   font-family: var(--font-mono);
@@ -315,7 +315,7 @@
   border: 1px solid var(--line);
   background: var(--surface);
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-2);
   cursor: pointer;
@@ -325,7 +325,7 @@
 .dd-filter-chip--on {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 /* ─── Ledger Table ──────────────────────────────────────────────────────────── */
@@ -335,7 +335,7 @@
   border-collapse: collapse;
 }
 .dd-table thead th {
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   letter-spacing: .13em;
   color: var(--ink-3);
   font-weight: 700;
@@ -349,15 +349,15 @@
 .dd-table tbody td {
   padding: 15px 24px;
   border-bottom: 1px solid var(--bg-3);
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   vertical-align: middle;
 }
 
 @media (max-width: 640px) {
-  .dd-table thead th { padding: 10px 10px !important; font-size: 9.5px !important; letter-spacing: 0.06em !important; }
-  .dd-table tbody td { padding: 10px 10px !important; font-size: 12.5px !important; }
-  .dd-table { min-width: 520px !important; }
-  .dd-td-date { font-size: 11.5px !important; }
+  .debt-detail-page .dd-table thead th { padding: 10px 10px; font-size: var(--fs-2xs); letter-spacing: 0.06em; }
+  .debt-detail-page .dd-table tbody td { padding: 10px 10px; font-size: var(--fs-xs); }
+  .debt-detail-page .dd-table { min-width: 520px; }
+  .debt-detail-page .dd-td-date { font-size: var(--fs-xs); }
 }
 .dd-table tbody tr:last-child td { border-bottom: none; }
 .dd-table tbody tr { transition: background .12s; }
@@ -367,7 +367,7 @@
   font-family: var(--font-mono);
   font-weight: 500;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   white-space: nowrap;
 }
 
@@ -379,7 +379,7 @@
   gap: 7px;
   padding: 5px 11px;
   border-radius: 8px;
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;
@@ -421,7 +421,7 @@
   font-weight: 600;
   text-align: right;
   white-space: nowrap;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
 }
 .dd-num--debit { color: var(--ink); }
 .dd-num--credit { color: #00803a; }
@@ -430,12 +430,12 @@
 
 .dd-td-note {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   white-space: nowrap;
 }
 .dd-td-note .dd-code {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
 }
@@ -466,10 +466,10 @@
   .debt-detail-page .dd-avatar {
     width: 44px;
     height: 44px;
-    font-size: 15px;
+    font-size: var(--fs-sm);
   }
   .debt-detail-page .dd-meta h1 {
-    font-size: 18px;
+    font-size: var(--fs-lg);
     line-height: 1.25;
   }
   .debt-detail-page .dd-sub {
@@ -477,7 +477,7 @@
     margin-top: 4px;
   }
   .debt-detail-page .dd-sub span {
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
   }
   .debt-detail-page .dd-actions {
     flex-basis: 100%;
@@ -506,19 +506,19 @@
     min-width: 0;
   }
   .debt-detail-page .dd-sum-label {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     letter-spacing: 0.12em;
   }
   .debt-detail-page .dd-sum-total {
-    font-size: 30px;
+    font-size: var(--fs-3xl);
     margin-top: 6px;
   }
   .debt-detail-page .dd-sum-total .dd-cur {
-    font-size: 17px;
+    font-size: var(--fs-lg);
     margin-left: 4px;
   }
   .debt-detail-page .dd-sum-note {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     margin-top: 10px;
     line-height: 1.4;
   }
@@ -526,14 +526,14 @@
     flex: 1 1 100%;
     text-align: left;
     white-space: normal;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     line-height: 1.5;
     border-top: 1px solid var(--line);
     padding-top: 8px;
   }
   .debt-detail-page .dd-sum-update b {
     display: inline;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     margin-right: 6px;
   }
   .debt-detail-page .dd-aging-bar {
@@ -549,11 +549,11 @@
     border-radius: 10px;
   }
   .debt-detail-page .dd-ac-val {
-    font-size: 16px;
+    font-size: var(--fs-md);
     margin-top: 6px;
   }
   .debt-detail-page .dd-ac-share {
-    font-size: 10.5px;
+    font-size: var(--fs-2xs);
     margin-top: 4px;
   }
 
@@ -565,7 +565,7 @@
     padding: 12px 14px;
   }
   .debt-detail-page .dd-ledger-head h2 {
-    font-size: 14px;
+    font-size: var(--fs-sm);
   }
   .debt-detail-page .dd-filters {
     margin-left: 0;
@@ -576,7 +576,7 @@
   .debt-detail-page .dd-filters::-webkit-scrollbar { display: none; }
   .debt-detail-page .dd-filter-chip {
     padding: 5px 10px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     flex-shrink: 0;
   }
 }

@@ -7,13 +7,13 @@
   gap: 10px;
   margin-bottom: 22px;
 }
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .aging-buckets { grid-template-columns: repeat(2, 1fr); }
   .aging-buckets > .bucket:first-child { grid-column: 1 / -1; }
 }
 
 .bucket {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px 16px;
@@ -26,7 +26,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -36,7 +36,7 @@
 .bucket__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .bucket__dot--ok { background: var(--accent); }
 .bucket__dot--t1 { background: var(--warning); }
-.bucket__dot--t2 { background: #D97706; }
+.bucket__dot--t2 { background: var(--warning-text); }
 .bucket__dot--t3 { background: #DD5A1F; }
 .bucket__dot--t4 { background: var(--danger); }
 
@@ -49,7 +49,7 @@
   margin-bottom: 4px;
   color: var(--ink);
 }
-.bucket__count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.bucket__count { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--ink-3); }
 
 /* ============================================================================
  * Mobile (≤640px) — page-scoped tweaks

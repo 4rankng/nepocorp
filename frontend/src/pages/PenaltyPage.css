@@ -14,6 +14,7 @@
 }
 
 .plog-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -41,7 +42,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -52,7 +53,7 @@
 }
 
 .plog-name {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
   line-height: 1.3;
@@ -67,22 +68,22 @@
 }
 
 .plog-reason {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
 }
 
 .plog-date {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
 .plog-sep {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-4);
 }
 
 .plog-trip {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
   color: var(--accent);
@@ -98,7 +99,7 @@
 }
 
 .plog-amount {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--danger);
   font-family: var(--font-mono);
@@ -116,7 +117,7 @@
   border: 1px solid rgba(0, 177, 79, 0.15);
   border-radius: 999px;
   color: var(--accent-ink);
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -144,7 +145,7 @@
   border: 0;
   background: transparent;
   padding: 5px 11px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   border-radius: 6px;
@@ -201,7 +202,7 @@
 }
 
 .penalty-page .penalty-card-title {
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
   color: var(--ink);
   display: flex;
@@ -211,7 +212,7 @@
 
 .penalty-page .count-pill {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -220,7 +221,7 @@
 }
 
 .penalty-page .penalty-card-sub {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -240,7 +241,7 @@
   height: 26px;
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   background: var(--surface-3);
   color: var(--ink-3);
@@ -276,19 +277,19 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   flex-shrink: 0;
 }
 
 .penalty-driver-info .name {
   font-weight: 600;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   line-height: 1.2;
 }
 
 .penalty-driver-info .role {
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -304,12 +305,12 @@
 .penalty-streak-num {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--ink);
 }
 
 .penalty-streak-num .unit {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -344,7 +345,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -380,7 +381,7 @@
 
 .penalty-money {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
 }
@@ -391,7 +392,7 @@
 }
 
 .penalty-money .unit {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -406,7 +407,7 @@
   min-width: 44px;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   font-weight: 800;
   letter-spacing: 0.6px;
   font-family: var(--font-mono);
@@ -472,7 +473,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   cursor: pointer;
@@ -486,7 +487,7 @@
 
 .penalty-chip.active {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
   border-color: var(--ink);
 }
 
@@ -496,13 +497,13 @@
   color: var(--ink-3);
   padding: 0 5px;
   border-radius: 4px;
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
 }
 
 .penalty-chip.active .count {
   background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 /* ─── Empty state ─── */
@@ -548,14 +549,14 @@
 }
 
 .penalty-empty-title {
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
 
 .penalty-empty-desc {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   max-width: 440px;
   line-height: 1.6;
@@ -582,7 +583,7 @@
 }
 
 .penalty-empty-stat .lbl {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -591,7 +592,7 @@
 
 .penalty-empty-stat .val {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--ink);
   display: flex;
@@ -601,7 +602,7 @@
 }
 
 .penalty-empty-stat .val .u {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
 }
@@ -669,7 +670,7 @@
 
 .penalty-vio-type-icon.critical {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .penalty-vio-type-info {
@@ -677,7 +678,7 @@
 }
 
 .penalty-vio-type-name {
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
 }
@@ -687,13 +688,13 @@
   align-items: center;
   gap: 8px;
   margin-top: 3px;
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
 }
 
 .penalty-sev-pill {
   padding: 1px 7px;
   border-radius: 4px;
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -716,13 +717,13 @@
 
 .penalty-sev-pill.critical {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .penalty-vio-type-meta .code {
   font-family: var(--font-mono);
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
 }
 
 .penalty-vio-type-fine {
@@ -732,13 +733,13 @@
 
 .penalty-vio-type-fine .amt {
   font-family: var(--font-mono);
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--ink);
 }
 
 .penalty-vio-type-fine .lbl {
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -760,7 +761,7 @@
   align-items: center;
   justify-content: space-between;
   background: var(--surface-2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
@@ -773,7 +774,7 @@
 /* ─── KPI meta with dot ─── */
 
 .penalty-kpi-meta {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   display: flex;
   align-items: center;
@@ -799,13 +800,13 @@
 
 /* ─── Responsive ─── */
 
-@media (max-width: 1180px) {
+@media (max-width: 1100px) {
   .penalty-two-col {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1023px) {
   .penalty-two-col {
     grid-template-columns: 1fr;
   }
@@ -868,7 +869,7 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   flex-shrink: 0;
 }
 
@@ -880,7 +881,7 @@
 }
 
 .penalty-m-card__name {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
@@ -890,7 +891,7 @@
 
 .penalty-m-card__id {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-3);
   display: inline-flex;
@@ -902,7 +903,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.03em;
   padding: 4px 10px;
@@ -931,17 +932,17 @@
 }
 
 .penalty-m-card__meta .lab {
-  font-size: 10px; letter-spacing: 0.8px;
+  font-size: var(--fs-2xs); letter-spacing: 0.8px;
   color: var(--ink-3); text-transform: uppercase; font-weight: 600;
 }
 
 .penalty-m-card__meta .val {
   font-family: var(--font-mono);
-  font-size: 13px; font-weight: 600; color: var(--ink);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
 }
 
-.penalty-m-card__meta .val.warn { color: #B45309; }
-.penalty-m-card__meta .val.danger { color: #B91C1C; }
+.penalty-m-card__meta .val.warn { color: var(--warning-text); }
+.penalty-m-card__meta .val.danger { color: var(--danger-text); }
 .penalty-m-card__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
 
 /* ─── Mobile breakpoint ─── */
@@ -954,21 +955,21 @@
 
   /* Remove card wrapper on mobile for all transparent panels */
   .penalty-page .penalty-transparent-panel {
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
   }
 
   /* Flatten card headers inside transparent panels */
   .penalty-page .penalty-transparent-panel .penalty-card-head {
-    padding: 0 0 8px !important;
-    gap: 6px !important;
-    border-bottom: none !important;
+    padding: 0 0 8px;
+    gap: 6px;
+    border-bottom: none;
   }
 
   .penalty-page .penalty-card-head {
@@ -981,7 +982,7 @@
   }
 
   .penalty-page .penalty-m-cards {
-    padding: 0 !important;
+    padding: 0;
   }
 
   .penalty-page .penalty-card-lead {
@@ -1002,12 +1003,12 @@
   }
 
   .penalty-page .penalty-card-title {
-    font-size: 16px;
+    font-size: var(--fs-md);
     margin-bottom: 0;
   }
 
   .penalty-page .penalty-card-sub {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     line-height: 1.3;
     margin-top: 0;
   }
@@ -1029,7 +1030,7 @@
     flex: 1;
     text-align: center;
     padding: 8px 0;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     border-radius: 8px;
   }
 
@@ -1073,7 +1074,7 @@
     height: 36px;
   }
   .penalty-page .plog-amount {
-    font-size: 14px;
+    font-size: var(--fs-sm);
   }
 
   /* Violation type rows */
@@ -1087,7 +1088,7 @@
     border-radius: 8px;
   }
   .penalty-page .penalty-vio-type-fine .amt {
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     white-space: nowrap;
   }
 
@@ -1107,7 +1108,7 @@
     display: none;
   }
   .penalty-page .penalty-empty-stat .val {
-    font-size: 14px;
+    font-size: var(--fs-sm);
   }
   .penalty-page .penalty-empty-actions {
     width: 100%;

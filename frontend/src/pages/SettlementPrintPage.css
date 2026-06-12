@@ -17,14 +17,14 @@
 }
 
 .settlement-detail__header-left h1 {
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   margin: 0 0 4px;
   color: var(--ink);
 }
 
 .settlement-detail__header-left p {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   margin: 0;
 }
@@ -50,7 +50,7 @@
 }
 
 .settlement-detail__info-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -58,7 +58,7 @@
 }
 
 .settlement-detail__info-value {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--ink);
 }
@@ -73,7 +73,7 @@
 }
 
 .settlement-detail__section-title {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 16px;
@@ -93,7 +93,7 @@
   grid-template-columns: 160px 1fr 100px;
   gap: 12px;
   align-items: center;
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 .settlement-detail__advance-amount {
@@ -108,7 +108,7 @@
 
 .settlement-detail__advance-date {
   text-align: right;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
 }
 
@@ -118,7 +118,7 @@
   padding-top: 12px;
   margin-top: 8px;
   border-top: 1px solid var(--line);
-  font-size: 15px;
+  font-size: var(--fs-sm);
 }
 
 /* ─── Expense Grid (replaces table) ─── */
@@ -126,13 +126,13 @@
   display: grid;
   grid-template-columns: 70px 100px 1fr 130px 120px 100px;
   gap: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .expense-grid__header {
   display: contents;
   font-weight: 600;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--ink-3);
@@ -166,13 +166,13 @@
   padding: 12px 6px 0;
   border-top: 2px solid var(--line-2);
   border-bottom: none;
-  font-size: 14px;
+  font-size: var(--fs-sm);
 }
 
 /* Utility classes */
 .expense-grid .u-right { text-align: right; }
 .expense-grid .u-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.expense-grid .u-mono { font-family: var(--font-mono, monospace); font-size: 12px; white-space: nowrap; }
+.expense-grid .u-mono { font-family: var(--font-mono, monospace); font-size: var(--fs-xs); white-space: nowrap; }
 .expense-grid .u-muted { color: var(--ink-2); white-space: nowrap; }
 .expense-grid .u-wrap { word-break: break-word; overflow-wrap: break-word; }
 .expense-grid .u-bold { font-weight: 700; }
@@ -197,13 +197,13 @@
 }
 
 .settlement-detail__summary-label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-bottom: 4px;
 }
 
 .settlement-detail__summary-value {
-  font-size: 18px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -223,7 +223,7 @@
   background: #fffbeb;
   border-left: 3px solid #d97706;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: #92400e;
   margin-bottom: 16px;
   line-height: 1.6;
@@ -241,7 +241,7 @@
   }
 
   body {
-    background: #fff !important;
+    background: var(--surface) !important;
   }
 
   .settlement-detail {
@@ -255,7 +255,7 @@
   }
 
   .settlement-detail__summary-card {
-    border: 1px solid #ddd !important;
+    border: 1px solid var(--line-2) !important;
   }
 
   .settlement-detail__signatures {
@@ -270,13 +270,13 @@
   }
 
   .settlement-detail__sig-label {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
     margin-bottom: 56px;
   }
 
   .settlement-detail__sig-line {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     color: #666;
     border-top: 1px dashed #999;
     padding-top: 6px;
@@ -293,7 +293,7 @@
 .print-preview-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.4);
@@ -305,14 +305,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 20px;
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
 
 .print-preview-title {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
 }
@@ -338,7 +338,7 @@
   height: 100%;
   border: none;
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -368,7 +368,7 @@
 
   .expense-grid {
     grid-template-columns: 50px 80px 1fr 100px 100px 80px;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
   }
 
   .expense-grid__header > span,

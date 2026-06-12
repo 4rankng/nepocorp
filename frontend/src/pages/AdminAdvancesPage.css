@@ -41,7 +41,7 @@
 }
 .adv-page .adv-kpi__label {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -49,7 +49,7 @@
 }
 .adv-page .adv-kpi__value {
   font-family: var(--font-mono);
-  font-size: 25px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -57,7 +57,7 @@
   color: var(--ink);
 }
 .adv-page .adv-kpi__meta {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
   margin-top: 6px;
 }
@@ -99,7 +99,7 @@
   align-items: center;
 }
 .adv-page .adv-grid-head > div {
-  font-size: 10.5px;           /* dashboard .lbl uses 10.5px */
+  font-size: var(--fs-2xs);           /* dashboard .lbl uses 10.5px */
   font-weight: var(--fw-bold);
   color: var(--ink-3);
   text-transform: uppercase;
@@ -149,7 +149,7 @@
 }
 .adv-page .adv-requester-name {
   font-weight: var(--fw-semibold);
-  font-size: 13px;             /* dashboard row titles: 12.5–13px */
+  font-size: var(--fs-sm);             /* dashboard row titles: 12.5–13px */
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -158,7 +158,7 @@
 .adv-page .adv-amount {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 13px;             /* dashboard values: 13px mono 700 */
+  font-size: var(--fs-sm);             /* dashboard values: 13px mono 700 */
   color: var(--ink);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -170,7 +170,7 @@
   text-align: center;
 }
 .adv-page .adv-reason {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -327,7 +327,7 @@
 }
 
 /* ── Responsive: ≤760px ───────────────────────────────────────────────── */
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   /* KPI row collapses to 2 cols; 3rd card spans full width */
   .adv-page .adv-kpi-row {
     grid-template-columns: repeat(2, 1fr);
@@ -341,11 +341,11 @@
     padding: 10px 12px;
   }
   .adv-page .adv-kpi__value {
-    font-size: 21px;
+    font-size: var(--fs-xl);
     margin-top: 6px;
   }
   .adv-page .adv-kpi__meta {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     margin-top: 4px;
   }
 

@@ -131,7 +131,7 @@ select.expense-input {
 }
 
 .expense-label {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 6px;
@@ -165,7 +165,7 @@ select.expense-input {
   border-radius: 50%;
   background: rgba(0,0,0,0.6);
   border: none;
-  color: #fff;
+  color: var(--fg-on-brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,7 +206,7 @@ select.expense-input {
 
 .expense-btn-cancel {
   padding: 12px 20px;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   border-radius: 10px;
   border: 1px solid var(--line-3);
   background: transparent;
@@ -246,7 +246,7 @@ select.expense-input {
 }
 
 /* ── Mobile responsive ── */
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .expense-page-wrap {
     padding: 12px 12px 24px;
   }
@@ -257,7 +257,7 @@ select.expense-input {
     padding: 16px;
   }
   .expense-input {
-    font-size: 16px; /* prevents iOS zoom */
+    font-size: var(--fs-md); /* prevents iOS zoom */
     min-height: 44px;
   }
   .expense-btn-save,

@@ -49,7 +49,7 @@
 }
 
 .fleet-page .fleet-card-title {
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
   color: var(--ink);
   display: flex;
@@ -59,7 +59,7 @@
 
 .fleet-page .count-pill {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -68,7 +68,7 @@
 }
 
 .fleet-page .fleet-card-sub {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -85,16 +85,16 @@
   align-items: center;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink);
 }
 
 .fleet-page .fleet-plate-tag {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
   padding: 3px 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.5px;
   margin-right: 6px;
 }
@@ -107,7 +107,7 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   flex-shrink: 0;
 }
 
@@ -120,13 +120,13 @@
 .fleet-page .fleet-assigned .name {
   font-weight: 600;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .fleet-page .fleet-unassigned {
   color: var(--ink-3);
   font-style: italic;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 /* Trailer type chip */
@@ -139,7 +139,7 @@
   border: 1px solid var(--line);
   color: var(--ink-2);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -162,7 +162,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
   padding: 3px 8px;
   background: var(--surface-2);
@@ -177,7 +177,7 @@
 /* Phone display */
 .fleet-page .fleet-phone {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-2);
   letter-spacing: 0.3px;
 }
@@ -185,13 +185,13 @@
 /* Salary display */
 .fleet-page .fleet-salary {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   font-weight: 600;
 }
 
 .fleet-page .fleet-salary .unit {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -215,14 +215,14 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink);
 }
 
 .fleet-page .fleet-mini-search input:focus {
   outline: none;
   border-color: var(--accent);
-  background: #fff;
+  background: var(--surface);
 }
 
 .fleet-page .fleet-mini-search svg {
@@ -244,7 +244,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
@@ -275,7 +275,7 @@
 /* compact inputs inside the edit row */
 .fleet-page .fleet-edit-row .input--sm {
   padding: 5px 8px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   height: 32px;
   width: 100%;
 }
@@ -310,7 +310,7 @@
    ~1400px the embedded tables become narrow enough that the "Trạng thái"
    and "Thao tác" columns clip off the right edge (table-scroll's
    overflow-x: auto fires but users miss the hidden columns). */
-@media (max-width: 1400px) {
+@media (max-width: 1100px) {
   .fleet-page .fleet-two-col {
     grid-template-columns: 1fr;
   }

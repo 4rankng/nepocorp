@@ -14,7 +14,7 @@
 
 .expense-kpi-card {
   position: relative;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 20px 24px;
@@ -32,23 +32,23 @@
 
 /* Variant: total (default) */
 .expense-kpi-card--total {
-  background: #fff;
+  background: var(--surface);
 }
 
 /* Variant: unpaid */
 .expense-kpi-card--unpaid {
-  background: #fff;
+  background: var(--surface);
   border-color: rgba(245, 166, 35, 0.25);
 }
 
 /* Variant: paid */
 .expense-kpi-card--paid {
-  background: #fff;
+  background: var(--surface);
   border-color: rgba(0, 177, 79, 0.25);
 }
 
 .expense-kpi-label {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -85,7 +85,7 @@
 
 .expense-kpi-value {
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -94,14 +94,14 @@
 }
 
 .expense-kpi-value-unit {
-  font-size: 16px;
+  font-size: var(--fs-md);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
 }
 
 .expense-kpi-meta {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-family: var(--font-mono);
   font-weight: 500;
@@ -118,7 +118,7 @@
 /* ── Filter Bar ─────────────────────────────────────────────────────────── */
 
 .expense-filter-bar {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 14px 16px;
@@ -141,7 +141,7 @@
   background: var(--surface-2);
   border: 1px solid transparent;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   font-family: var(--font-body);
   cursor: pointer;
@@ -157,7 +157,7 @@
 
 .expense-filter-bar__select:hover,
 .expense-filter-bar__date:hover {
-  background: #fff;
+  background: var(--surface);
   border-color: var(--line-2);
 }
 
@@ -165,7 +165,7 @@
 .expense-filter-bar__date:focus {
   outline: none;
   border-color: var(--accent);
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
@@ -189,7 +189,7 @@
   height: 36px;
   padding: 0 14px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   background: transparent;
@@ -208,7 +208,7 @@
 /* ── Data Table ─────────────────────────────────────────────────────────── */
 
 .expense-table-wrap {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
@@ -221,7 +221,7 @@
 .expense-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   min-width: 860px;
 }
 
@@ -231,7 +231,7 @@
   background: linear-gradient(180deg, var(--surface-2) 0%, rgba(247, 248, 250, 0.8) 100%);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -292,7 +292,7 @@
 .expense-amount {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   letter-spacing: -0.01em;
 }
 
@@ -312,7 +312,7 @@
   gap: 5px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -353,7 +353,7 @@
 .expense-plate {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   padding: 2px 8px;
   background: var(--surface-3);
   color: var(--ink);
@@ -372,7 +372,7 @@
   padding: 12px 16px;
   background: var(--surface-2);
   border-top: 1px solid var(--line);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
@@ -388,7 +388,7 @@
   padding: 0 8px;
   border-radius: 8px;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: var(--font-mono);
   background: transparent;
@@ -398,14 +398,14 @@
 }
 
 .expense-page-btn:hover:not(:disabled) {
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line);
 }
 
 .expense-page-btn.is-active {
   background: var(--ink);
-  color: #fff;
+  color: var(--fg-on-brand);
   border-color: var(--ink);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -439,7 +439,7 @@
 }
 
 .expense-empty__text {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   font-weight: 500;
 }
@@ -452,7 +452,7 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .expense-kpi-grid {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -475,6 +475,16 @@
   }
 }
 
+/* ── Status Strip ──────────────────────────────────────────────────────── */
+
+.expense-list-page .m-card--strip {
+  position: relative;
+}
+
+.expense-list-page .expense-row--strip td:first-child {
+  position: relative;
+}
+
 /* ── Pass 15 mobile tweaks (2026-06-02) ──
    The 3-select + date + reset filter bar was 150px tall on phone with
    3 wrap rows of 36px controls. Tighten to ~110px by shrinking the
@@ -490,7 +500,7 @@
   .expense-list-page .expense-filter-bar__select,
   .expense-list-page .expense-filter-bar__date {
     height: 32px;
-    font-size: 12.5px;
+    font-size: var(--fs-xs);
     padding: 0 28px 0 10px;
     background-size: 14px 14px;
     background-position: right 8px center;
@@ -501,6 +511,6 @@
   .expense-list-page .expense-filter-bar__reset {
     height: 32px;
     padding: 0 11px;
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
   }
 }

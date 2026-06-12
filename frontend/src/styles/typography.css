@@ -36,7 +36,7 @@
 .text-muted { color: var(--ink-3); }
 .typo-code {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   background: var(--surface-3);
   padding: 1px 6px;
   border-radius: 6px;

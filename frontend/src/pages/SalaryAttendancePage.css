@@ -33,7 +33,7 @@
 
 .month-strip__btn:hover {
   background: var(--brand);
-  color: #fff;
+  color: var(--fg-on-brand);
   border-color: var(--brand);
 }
 
@@ -50,14 +50,14 @@
 }
 
 .month-strip__label {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.02em;
 }
 
 .month-strip__year {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 300;
   color: var(--fg-3);
   font-variant-numeric: tabular-nums;
@@ -70,7 +70,7 @@
   }
   .month-strip__label,
   .month-strip__year {
-    font-size: 18px;
+    font-size: var(--fs-lg);
   }
   .month-strip__btn {
     width: 36px;
@@ -99,13 +99,13 @@
   }
 }
 
-@media (max-width: 1024px) {
-  .salary-page-layout {
+@media (max-width: 1023px) {
+  .salary-page-layout.salary-page-layout {
     width: 100%;
     overflow-x: hidden;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .mobile-back-btn {
@@ -166,7 +166,7 @@
 }
 
 .driver-select-card__name {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--fg-1);
   white-space: nowrap;
@@ -180,7 +180,7 @@
 }
 
 .driver-select-card__salary {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -212,7 +212,7 @@
 }
 
 .calendar-header-title {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--fg-1);
   margin: 0;
@@ -233,7 +233,7 @@
 
 .calendar-dow-cell {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 5px 0;
@@ -242,7 +242,7 @@
 }
 
 .calendar-dow-cell.is-sunday {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 /* ─── Calendar Grid ─── */
@@ -293,7 +293,7 @@
 }
 
 .cal-cell-day-num {
-  font-size: 10.5px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--fg-3);
   line-height: 1;
@@ -323,7 +323,7 @@
 }
 
 .cal-cell-trip-code {
-  font-size: 7.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--accent-ink);
   background: rgba(0, 177, 79, 0.1);
@@ -417,7 +417,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 500;
   color: var(--fg-2);
   padding: 3px 9px;
@@ -449,7 +449,7 @@
 }
 
 .calendar-legend-instruction {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--fg-3);
   background: var(--surface-2);
   border: 1px solid var(--border-1);
@@ -497,7 +497,7 @@
 }
 
 .salary-summary-dark__label {
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
@@ -508,7 +508,7 @@
 
 .salary-summary-dark__big {
   font-family: var(--font-mono);
-  font-size: 30px;
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: #f8fafc;
@@ -518,7 +518,7 @@
 }
 
 .salary-summary-dark__mini {
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   color: #475569;
   margin-bottom: 0;
   position: relative;
@@ -538,7 +538,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 .salary-summary-dark__row-lbl {
@@ -557,7 +557,7 @@
   font-family: var(--font-mono);
   font-weight: 600;
   color: #cbd5e1;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 .salary-edit-link {
@@ -569,7 +569,7 @@
 }
 
 .salary-edit-link:hover {
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .salary-summary-dark__row-val--neg {
@@ -584,7 +584,7 @@
   margin-top: 4px;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .salary-summary-dark__row--total .salary-summary-dark__row-lbl {
@@ -594,7 +594,7 @@
 
 .salary-summary-dark__row--total .salary-summary-dark__row-val {
   color: #4ade80;
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
 }
 
@@ -618,7 +618,7 @@
 }
 
 .payslip-callout-text {
-  font-size: 11.5px;
+  font-size: var(--fs-2xs);
   line-height: 1.5;
   color: #d97706;
 }
@@ -646,7 +646,7 @@
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-1);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 .payslip-row:last-of-type { border-bottom: none; }
 .payslip-label { color: var(--fg-2); font-weight: 500; }
@@ -673,7 +673,7 @@
 }
 
 .period-config-label {
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--fg-2);
 }
@@ -690,7 +690,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--accent);
   padding: 4px 8px;
@@ -721,7 +721,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-2);
   cursor: pointer;
   user-select: none;
@@ -744,7 +744,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
 }
 
@@ -763,8 +763,8 @@
   display: none;
 }
 
-/* ── 768px Mobile Breakpoint ── */
-@media (max-width: 768px) {
+/* ── 1023px Mobile Breakpoint ── */
+@media (max-width: 1023px) {
 
   /* --- Hide desktop calendar, show mobile day list --- */
   .salary-calendar-area {
@@ -786,7 +786,7 @@
 
   .month-strip__label,
   .month-strip__year {
-    font-size: 17px;
+    font-size: var(--fs-md);
   }
 
   .month-strip__btn {
@@ -827,12 +827,12 @@
   }
 
   .driver-select-card__name {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     max-width: 100px;
   }
 
   .driver-select-card__salary {
-    font-size: 10.5px;
+    font-size: var(--fs-2xs);
   }
 
   /* --- Day list wrapper --- */
@@ -901,7 +901,7 @@
   }
 
   .mobile-day-row__day-num {
-    font-size: 14px;
+    font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--ink);
     line-height: 1.1;
@@ -909,7 +909,7 @@
   }
 
   .mobile-day-row__dow {
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: 600;
     color: var(--ink-3);
     text-transform: uppercase;
@@ -918,7 +918,7 @@
   }
 
   .mobile-day-row__dow.is-sunday {
-    color: #dc2626;
+    color: var(--danger);
   }
 
   /* --- Status column --- */
@@ -941,7 +941,7 @@
   }
 
   .mobile-day-row__status-label {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--ink-2);
     white-space: nowrap;
@@ -960,7 +960,7 @@
 
   .mobile-day-row__trip-badge {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: 700;
     color: var(--accent-ink);
     background: var(--accent-soft);
@@ -972,7 +972,7 @@
   }
 
   .mobile-day-row__tap-hint {
-    font-size: 14px;
+    font-size: var(--fs-sm);
     opacity: 0.4;
     padding: 0 4px;
   }
@@ -991,7 +991,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: 500;
     color: var(--ink-3);
     padding: 2px 6px;
@@ -1048,13 +1048,13 @@
   .mobile-back-bar .btn {
     min-height: 44px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 600;
   }
 }
 
-/* ── Small phones (≤480px) — tighter spacing ── */
-@media (max-width: 480px) {
+/* ── Small phones (≤640px) — tighter spacing ── */
+@media (max-width: 640px) {
   .mobile-day-row {
     min-height: 48px;
     padding-right: 10px;
@@ -1066,7 +1066,7 @@
   }
 
   .mobile-day-row__day-num {
-    font-size: 13px;
+    font-size: var(--fs-sm);
   }
 
   .mobile-day-row__status-icon {
@@ -1076,7 +1076,7 @@
   }
 
   .mobile-day-row__status-label {
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
 
 
@@ -1085,7 +1085,7 @@
   }
 
   .driver-select-card__name {
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     max-width: 72px;
   }
 }

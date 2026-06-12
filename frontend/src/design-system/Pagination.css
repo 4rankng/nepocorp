@@ -8,7 +8,7 @@
 }
 
 .ds-pagination__summary-slot {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--fg-3, var(--ink-3));
 }
 
@@ -34,7 +34,7 @@
   border: 1px solid var(--border-2, var(--line));
   background: var(--surface, #fff);
   color: var(--ink-2, var(--fg-2));
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   cursor: pointer;
   transition: background 120ms, border-color 120ms, color 120ms;
@@ -54,12 +54,12 @@
 .ds-pagination__btn--active {
   background: var(--brand);
   border-color: var(--brand);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .ds-pagination__btn--active:hover {
   background: var(--brand);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .ds-pagination__ellipsis {
@@ -69,5 +69,5 @@
   min-width: 24px;
   height: 30px;
   color: var(--fg-3, var(--ink-3));
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }

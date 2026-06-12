@@ -60,7 +60,7 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,7 +72,7 @@
 .login-brand h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 800;
   color: var(--ink);
   letter-spacing: 0.08em;
@@ -81,7 +81,7 @@
 .login-brand p {
   margin: 4px 0 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   color: var(--ink-3);
   letter-spacing: 0.1em;
@@ -95,19 +95,19 @@
 .login-form h2 {
   margin: 0 0 4px;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
-.login-form .sub { margin: 0 0 24px; font-size: 13px; color: var(--ink-3); }
+.login-form .sub { margin: 0 0 24px; font-size: var(--fs-sm); color: var(--ink-3); }
 
 .login-error {
   padding: 10px 14px;
   background: var(--danger-soft);
   color: var(--danger-text);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   margin-bottom: 16px;
   font-weight: 500;
 }
@@ -115,10 +115,10 @@
   width: 100%;
   margin-top: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   height: 40px;
   background: var(--accent);
-  color: #fff;
+  color: var(--fg-on-brand);
   border-radius: 8px;
   border: none;
   box-shadow: 0 4px 12px rgba(0, 177, 79, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -137,7 +137,7 @@
   right: 0;
   text-align: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
   font-weight: 500;
   z-index: 1;
@@ -168,7 +168,7 @@
   text-align: center;
 }
 .login-hints__title {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -190,7 +190,7 @@
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.6);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
@@ -200,7 +200,7 @@
   font-family: var(--font-body);
   font-weight: 400;
   color: var(--ink-3);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
 }
 .login-hints__chip:hover {
   background: var(--accent-soft);
@@ -208,7 +208,7 @@
 }
 .login-hints__pw {
   margin: 10px 0 0;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--ink-3);
 }
 .login-hints__pw code {
@@ -217,7 +217,7 @@
   padding: 1px 5px;
   border-radius: 4px;
   border: 1px solid var(--line);
-  font-size: 11px;
+  font-size: var(--fs-2xs);
 }
 
 /* ── Mobile (≤640px): tighten chrome, fix dvh, bump touch target ──
@@ -234,15 +234,15 @@
   .login-form { padding: 22px 20px 24px; }
   .login-brand { margin-bottom: 18px; }
   .login-brand .brand-logo { width: 48px; height: 48px; border-radius: 12px; margin-bottom: 10px; }
-  .login-brand h1 { font-size: 18px; }
-  .login-brand p { font-size: 11px; }
+  .login-brand h1 { font-size: var(--fs-lg); }
+  .login-brand p { font-size: var(--fs-2xs); }
   .login-divider { margin-bottom: 18px; }
-  .login-form h2 { font-size: 18px; }
-  .login-form .sub { margin-bottom: 18px; font-size: 13px; }
-  .login-form label { font-size: 13px; }
+  .login-form h2 { font-size: var(--fs-lg); }
+  .login-form .sub { margin-bottom: 18px; font-size: var(--fs-sm); }
+  .login-form label { font-size: var(--fs-sm); }
   /* Bump CTA to a proper 44px touch target */
   .login-submit { height: 44px; font-size: 15px; }
-  .login-footer { font-size: 11px; bottom: 12px; padding: 0 16px; }
+  .login-footer { font-size: var(--fs-2xs); bottom: 12px; padding: 0 16px; }
   /* Password toggle: expand tap area from 16×16 to ≥36×36 */
   .password-toggle { padding: 10px; min-width: 36px; min-height: 36px; }
   /* Username placeholder was getting clipped — give the input the full row width */

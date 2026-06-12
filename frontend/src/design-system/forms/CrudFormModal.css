@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 20px;
 }
 
@@ -71,7 +71,7 @@
   background: var(--surface-2, var(--bg-2));
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .ds-crud-overlay {
     padding: 0;
     align-items: flex-end;

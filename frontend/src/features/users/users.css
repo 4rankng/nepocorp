@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   border: 2.5px solid transparent;
   transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
@@ -54,20 +54,20 @@
 .user-name {
   font-weight: 600;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   line-height: 1.3;
 }
 
 .user-name__you {
   margin-left: 6px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   color: var(--accent);
   font-weight: 500;
 }
 
 .user-handle {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 2px;
 }
@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
 }
 
@@ -133,12 +133,12 @@
 .filter-pill[class*="filter-pill--"].is-active {
   background: var(--fp-color);
   border-color: var(--fp-color);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 .filter-pill[class*="filter-pill--"].is-active .filter-pill__count {
   background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: var(--fg-on-brand);
 }
 
 /* ── Users table panel (unified wrapper) ────────────────────────────────── */
@@ -224,14 +224,14 @@
 
 .users-empty__title {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 6px;
 }
 
 .users-empty__desc {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   margin: 0;
 }
@@ -239,7 +239,7 @@
 /* ── Form sections inside drawer ──────────────────────────────────────────── */
 
 .users-form-section__title {
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -259,7 +259,7 @@
 /* ── KPI value emphasis ───────────────────────────────────────────────────── */
 
 .users-admin-page .kpi-grid .kpi__value {
-  font-size: 32px;
+  font-size: var(--fs-4xl);
 }
 
 /* ── Icon Input ─────────────────────────────────────────────────────────────── */
@@ -271,7 +271,7 @@
   border: 1.5px solid var(--line-2);
   border-radius: 10px;
   height: 40px;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -296,7 +296,7 @@
   background: transparent;
   padding: 0 12px;
   height: 100%;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   outline: none;
   font-family: inherit;
@@ -391,7 +391,7 @@
   background: var(--danger-soft);
   color: var(--danger);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
 }
 
 /* ── Mobile card enhancements ───────────────────────────────────────────── */
@@ -405,7 +405,7 @@
   .user-avatar {
     width: 40px;
     height: 40px;
-    font-size: 15px;
+    font-size: var(--fs-sm);
     border-width: 2.5px;
   }
 
@@ -432,7 +432,7 @@
 
   .users-mobile-card__name {
     font-weight: 700;
-    font-size: 14px;
+    font-size: var(--fs-sm);
     color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -441,7 +441,7 @@
 
   .users-mobile-card__handle {
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: var(--fs-xs);
     color: var(--ink-3);
     margin-top: 1px;
   }
@@ -461,7 +461,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--ink-3);
   }
 
@@ -486,7 +486,7 @@
     gap: 5px;
     padding: 6px 12px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     background: var(--surface-2);
     color: var(--ink-2);
@@ -496,7 +496,7 @@
   }
 
   .users-mobile-card__action-btn:hover {
-    background: #fff;
+    background: var(--surface);
     color: var(--ink);
     border-color: var(--line-2);
   }
@@ -538,8 +538,8 @@
 }
 
 .kebab-btn:hover {
-  background: var(--surface-3) !important;
-  color: var(--ink) !important;
+  background: var(--surface-3);
+  color: var(--ink);
 }
 
 .users-mobile-card__dropdown {
@@ -547,7 +547,7 @@
   right: 0;
   top: 100%;
   z-index: 100;
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--line-2);
   border-radius: 10px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
@@ -562,7 +562,7 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   border: none;
   background: none;
   cursor: pointer;
@@ -573,8 +573,8 @@
 }
 
 .users-mobile-card__dropdown button:hover {
-  background: var(--surface-2) !important;
-  color: var(--ink) !important;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .users-mobile-card__dropdown button:disabled {
@@ -607,12 +607,12 @@
 }
 
 .users-table-panel .toolbar__search input {
-  padding-right: 28px !important;
+  padding-right: 28px;
 }
 
 /* KPI Premium Styling overrides */
 .users-admin-page .kpi-grid .kpi {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--line-2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
   transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
@@ -625,7 +625,7 @@
 }
 
 .users-admin-page .kpi-grid .kpi .kpi__value {
-  font-size: 34px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.04em;
@@ -664,7 +664,7 @@
 .users-admin-page .user-truck-plate {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: var(--ink);
   background: var(--surface-2);
   padding: 3px 9px;

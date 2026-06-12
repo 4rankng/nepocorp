@@ -6,7 +6,7 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -32,7 +32,7 @@ body::before {
   top: 0; left: 0; right: 0;
   height: env(safe-area-inset-top, 0);
   background: var(--bg);
-  z-index: 1000;
+  z-index: var(--z-modal);
   pointer-events: none;
 }
 button { font: inherit; cursor: pointer; }
