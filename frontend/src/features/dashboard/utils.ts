@@ -12,25 +12,6 @@ export const FALLBACK_COLORS = ['#8B5CF6', '#F59E0B', '#06B6D4', '#10B981', '#EC
 
 export const styles = {
   thinBar: { height: 4 },
-  sectionPadding: { paddingBottom: 40 },
-  brandSwatch: { background: 'var(--brand)' },
-  infoSwatch: { background: 'var(--info)' },
-  chartOverflow: { overflow: 'visible' },
-  gap18: { gap: 18 },
-  gap6: { gap: 6 },
-  noDataMsg: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 },
-  smallUnit: { fontSize: '0.75em', opacity: 0.7 },
-  smallUnitLg: { fontSize: '0.8em', opacity: 0.7 },
-  linkAction: { fontSize: 12, color: 'var(--brand)', fontWeight: 600 },
-  brandBold: { color: 'var(--brand)', fontWeight: 600 },
-  bold: { fontWeight: 600 },
-  fullWidth: { gridColumn: '1 / -1' },
-  mb16: { marginBottom: 16 },
-  fleetGrid: { gridTemplateColumns: 'repeat(2, 1fr)' },
-  utilBar: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 },
-  utilTrack: { flex: 1, height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' },
-  utilFill: { height: '100%', borderRadius: 3, background: 'var(--success)' },
-  utilLabel: { fontSize: 11, color: 'var(--fg-3)' },
 } as const;
 
 export function splitKpi(v: number): { num: string; suffix: string } {
