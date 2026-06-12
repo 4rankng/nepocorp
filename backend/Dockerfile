@@ -14,6 +14,7 @@ COPY backend/package.json backend/package.json
 RUN pnpm install --frozen-lockfile
 
 # Copy source after install — code changes don't bust the install cache
+COPY tsconfig.base.json tsconfig.base.json
 COPY shared/tsconfig.json shared/tsconfig.json
 COPY shared/src shared/src
 COPY backend/tsconfig.json backend/tsconfig.json

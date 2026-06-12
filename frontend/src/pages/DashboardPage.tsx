@@ -241,17 +241,26 @@ export default function DashboardPage() {
   const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
   const costRatio = revenue > 0 ? (costs / revenue) * 100 : 0;
 
-  // ── Chart series (12 months) ────────────────────────────────────────────
+  // ── Chart series ────────────────────────────────────────────────────────
   // useDashboardData.yearlySeries is the historical line. Map to Tr (millions)
-  // so the axis scales nicely.
-  const chartMonths = useMemo(() => {
-    if (!yearlySeries) return [];
+  // so the axis scales nicely. Trim leading months with no data so the chart
+  // only shows the range that actually has data.
+  const { chartMonths, chartRevenue, chartGross } = useMemo(() => {
+    if (!yearlySeries || yearlySeries.length === 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
     const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
     const baseIdx = currentMonth - 1;
-    return yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
+    const allMonths = yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
+    const allRev = yearlySeries.map((p) => Number(p.revenue ?? 0) / 1_000_000);
+    const allGross = yearlySeries.map((p) => Number(p.grossProfit ?? 0) / 1_000_000);
+    // Find first month with any data (revenue OR gross profit > 0)
+    const firstDataIdx = allRev.findIndex((r, i) => r > 0 || allGross[i] > 0);
+    if (firstDataIdx < 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
+    return {
+      chartMonths: allMonths.slice(firstDataIdx),
+      chartRevenue: allRev.slice(firstDataIdx),
+      chartGross: allGross.slice(firstDataIdx),
+    };
   }, [yearlySeries, currentMonth]);
-  const chartRevenue = useMemo(() => yearlySeries?.map((p) => Number(p.revenue ?? 0) / 1_000_000) ?? [], [yearlySeries]);
-  const chartGross = useMemo(() => yearlySeries?.map((p) => Number(p.grossProfit ?? 0) / 1_000_000) ?? [], [yearlySeries]);
 
   // ── Top trucks (by margin) ──────────────────────────────────────────────
   const topTrucks = useMemo(() => {
@@ -469,7 +478,7 @@ export default function DashboardPage() {
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Doanh thu & Lợi nhuận gộp</div>
-                <div className="sub">12 tháng gần nhất</div>
+                <div className="sub">{chartMonths.length > 0 ? `${chartMonths.length} tháng gần nhất` : 'Chưa có dữ liệu'}</div>
               </div>
               <button className="wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -480,12 +489,25 @@ export default function DashboardPage() {
               <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
             </div>
             <div className="body">
-              {chartRevenue.length > 0
-                ? <RevenueChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />
-                : <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
-                    Đang tải dữ liệu...
-                  </div>
-              }
+              {(() => {
+                if (chartRevenue.length === 0) {
+                  return (
+                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                      Đang tải dữ liệu...
+                    </div>
+                  );
+                }
+                const totalRev = chartRevenue.reduce((a, b) => a + b, 0);
+                const totalGp = chartGross.reduce((a, b) => a + b, 0);
+                if (totalRev === 0 && totalGp === 0) {
+                  return (
+                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                      Chưa đủ dữ liệu lịch sử để vẽ biểu đồ.
+                    </div>
+                  );
+                }
+                return <RevenueChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
+              })()}
             </div>
           </div>
 

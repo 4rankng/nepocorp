@@ -33,7 +33,7 @@ export async function getDashboardStats() {
         costs: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
         // Use stored grossProfit (includes service margin + handles OWN/EXTERNAL correctly)
         grossProfitSum: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.grossProfit}::numeric else 0 end), 0)`,
-        tripCount: sql<number>`count(*)`,
+        tripCount: sql<number>`count(*) filter (where ${s.trips.status} != 'CANCELED')`,
         completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
         lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
       }).from(s.trips).where(and(

@@ -8,6 +8,7 @@ import { formatDate } from '../../../lib/format';
 import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
 import { UserStatusBadge } from './UserStatusBadge';
+import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
 
 interface UserTableProps {
   users: UserRow[];
@@ -205,6 +206,28 @@ export function UserTable({
           </div>
         </div>
 
+        {/* Legend */}
+        {(canManage || canEditDriversOnly) && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+            padding: '10px 18px', fontSize: 12, color: 'var(--ink-3)',
+            borderBottom: '1px solid var(--line-2)',
+          }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Pencil size={12} style={{ opacity: 0.5 }} />
+              Nhấp vào hàng để chỉnh sửa
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <StatusSwatch status="ACTIVE" />
+              Hoạt động
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <StatusSwatch status="LOCKED" />
+              Bị khoá
+            </span>
+          </div>
+        )}
+
         {/* Desktop table */}
         <DesktopTable
           filtered={paginated}
@@ -337,15 +360,12 @@ function DesktopTable({
   sortOrder: 'asc' | 'desc';
   onSort: (field: 'name' | 'role' | 'status' | 'date') => void;
 }) {
-  // The actions column renders for full managers OR scoped accountants (driver edits).
-  const showActions = canManage || canEditDriversOnly;
-  // Tài khoản, Liên hệ, Vai trò, Xe, Trạng thái, Ngày tạo  (+ actions)
-  const colCount = 6 + (showActions ? 1 : 0);
+  // 5 columns: Tài khoản, Liên hệ, Vai trò, Xe, Ngày tạo (status via left-edge strip)
 
   return (
     <div className="desktop-only">
       <div className="table-scroll">
-        <table className="tt-table" style={{ minWidth: 980 }}>
+        <table className="tt-table" style={{ minWidth: 880 }}>
           <thead>
             <tr>
               <th onClick={() => onSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
@@ -362,25 +382,18 @@ function DesktopTable({
                 </div>
               </th>
               <th>Xe</th>
-              <th onClick={() => onSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Trạng thái
-                  {sortBy === 'status' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
-                </div>
-              </th>
               <th onClick={() => onSort('date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   Ngày tạo
                   {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
                 </div>
               </th>
-              {showActions && <th style={{ width: 80 }}></th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={colCount}>
+                <td colSpan={5}>
                   <div className="users-empty">
                     <img src="/assets/illustrations/empty-users.svg" alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
@@ -395,8 +408,14 @@ function DesktopTable({
               const editable = canEditRow(u, canManage, canEditDriversOnly);
               const plate = getPlate(u, truckMap);
               return (
-                <tr key={u.id}>
-                  <td>
+                <tr
+                  key={u.id}
+                  className={editable ? 'is-clickable' : undefined}
+                  onClick={editable ? () => onEdit(u) : undefined}
+                  style={{ cursor: editable ? 'pointer' : 'default' }}
+                >
+                  <td style={{ position: 'relative' }}>
+                    <StatusStrip status={u.status} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
                         {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
@@ -433,38 +452,9 @@ function DesktopTable({
                       ? <span className="user-truck-plate">{plate}</span>
                       : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                   </td>
-                  <td><UserStatusBadge status={u.status} isMe={isMe} userId={u.id} /></td>
                   <td style={{ color: 'var(--ink-3)', fontSize: 12.5, whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
-                  {showActions && (
-                    <td>
-                      <div className="row-actions">
-                        {editable && (
-                          <button
-                            className="row-action"
-                            title={u.role === Role.DRIVER ? 'Chỉnh sửa tài xế' : 'Chỉnh sửa tài khoản'}
-                            onClick={() => onEdit(u)}
-                          >
-                            <Pencil size={13} />
-                          </button>
-                        )}
-                        {canManage && canDelete && (
-                          <button
-                            className="row-action"
-                            title={isMe ? 'Không thể tự xóa' : 'Xóa tài khoản'}
-                            disabled={!!deleting || isMe}
-                            onClick={() => !isMe && onDelete(u.id)}
-                            style={{ opacity: isMe ? 0.3 : 1 }}
-                          >
-                            {deleting === u.id
-                              ? <Loader2 size={13} className="spin" />
-                              : <Trash2 size={13} style={{ color: isMe ? undefined : 'var(--danger)' }} />}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
                 </tr>
               );
             })}
@@ -513,7 +503,12 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
           const editable = canEditRow(u, canManage, canEditDriversOnly);
           const plate = getPlate(u, truckMap);
           return (
-            <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default', position: 'relative' }}>
+            <div
+                  key={u.id}
+                  className={`m-card users-mobile-card${editable ? ' is-clickable' : ''}`}
+                  style={{ cursor: editable ? 'pointer' : 'default', position: 'relative' }}
+                  onClick={editable ? () => onEdit(u) : undefined}
+                >
               <div className="users-mobile-card__header">
                 <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
                   {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
@@ -528,7 +523,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
-                  {editable && (
+                  {editable && canManage && canDelete && (
                     <div style={{ position: 'relative' }}>
                       <button
                         className="kebab-btn"
@@ -550,10 +545,6 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                           background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
                           boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 120,
                         }} onClick={(e) => e.stopPropagation()}>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
-                            onClick={() => { setActiveMenuId(null); onEdit(u); }}>
-                            <Pencil size={13} /> Sửa
-                          </button>
                           {canManage && canDelete && (
                             <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                               disabled={!!deleting || isMe}

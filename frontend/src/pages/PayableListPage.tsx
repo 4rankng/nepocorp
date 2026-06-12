@@ -265,6 +265,7 @@ export default function PayableListPage() {
               <tbody>
                 {filteredPayables.map(d => (
                   <ClickableCard
+                    as="tr"
                     key={d.supplier.id}
                     to={`/payables/${d.supplier.id}`}
                     style={{ cursor: 'pointer' }}

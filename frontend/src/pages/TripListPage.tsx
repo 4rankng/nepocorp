@@ -92,7 +92,9 @@ export default function TripListPage() {
   // truth for query execution.
   useEffect(() => {
     table.setSearch(debouncedSearch);
-  }, [debouncedSearch, table]);
+  // table omitted from deps: setSearch is a stable useCallback ref inside useTableQueryState
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
   useEffect(() => {
     table.setFilters({
       status: statusFilter || undefined,
@@ -101,7 +103,9 @@ export default function TripListPage() {
       dateFrom: listDateFrom,
       dateTo: listDateTo,
     });
-  }, [statusFilter, truckFilter, customerFilter, listDateFrom, listDateTo, table]);
+  // table omitted from deps: setFilters is a stable useCallback ref inside useTableQueryState
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, truckFilter, customerFilter, listDateFrom, listDateTo]);
 
   // ── Summary query ──
   const { data: summary } = useQuery({

@@ -1,7 +1,11 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+type ClickableCardElement = 'div' | 'tr' | 'li' | 'article' | 'section';
+
 interface ClickableCardProps {
+  /** HTML element to render. Defaults to 'div'. Use 'tr' when inside a table body. */
+  as?: ClickableCardElement;
   /** Route to navigate to on click / Enter / Space. Optional — omit when
    *  the card only triggers in-page state changes (e.g. opening an edit
    *  modal). */
@@ -11,13 +15,13 @@ interface ClickableCardProps {
   style?: React.CSSProperties;
   /** Click handler — runs before navigation. If `to` is omitted, the
    *  handler is the only side effect. */
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
   /** Stop click propagation (e.g. when nested in another clickable parent). */
   stopPropagation?: boolean;
   /** Accessible label for screen readers when children contain no text. */
   ariaLabel?: string;
-  onMouseEnter?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onMouseLeave?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 /**
@@ -35,6 +39,7 @@ interface ClickableCardProps {
  *   rows that open a modal but don't navigate.
  */
 export function ClickableCard({
+  as: Tag = 'div',
   to,
   children,
   className,
@@ -48,28 +53,29 @@ export function ClickableCard({
   const navigate = useNavigate();
 
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
       if (stopPropagation) e.stopPropagation();
       onClick?.(e);
-      if (to) navigate(to);
+      if (to && !e.defaultPrevented) navigate(to);
     },
     [navigate, to, onClick, stopPropagation],
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
+    (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         if (stopPropagation) e.stopPropagation();
-        if (to) navigate(to);
+        onClick?.(e as unknown as React.MouseEvent<HTMLElement>);
+        if (to && !e.defaultPrevented) navigate(to);
       }
     },
-    [navigate, to, stopPropagation],
+    [navigate, to, onClick, stopPropagation],
   );
 
   return (
-    <div
-      role="button"
+    <Tag
+      role={Tag === 'tr' ? undefined : 'button'}
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -80,6 +86,6 @@ export function ClickableCard({
       aria-label={ariaLabel}
     >
       {children}
-    </div>
+    </Tag>
   );
 }
