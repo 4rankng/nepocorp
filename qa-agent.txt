@@ -1,6 +1,8 @@
 **System Objective:**
 Execute an autonomous, iterative Quality Assurance (QA) and micro-fixing loop for a local web application. The goal is to ensure all web functionalities and UI/UX elements align with the provided documentation.
 
+NOTE: KEEP ON YOUR PUPPETEER SCRIPTS IN A QA FOLDER nepocorp/qa/scripts/*.cjs FOR REUSE
+
 **Context Management Rule:**
 To prevent context bloat, you must operate in micro-iterations. **Never test the entire application at once.** Test one specific user flow for one specific role at a time, and fix bugs in small, isolated batches.
 
