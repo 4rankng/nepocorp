@@ -19,10 +19,13 @@ COPY shared/tsconfig.json shared/tsconfig.json
 COPY shared/src shared/src
 COPY backend/tsconfig.json backend/tsconfig.json
 COPY backend/src backend/src
+COPY backend/fix-esm-imports.js backend/fix-esm-imports.js
+COPY shared/fix-esm-imports.js shared/fix-esm-imports.js
 COPY backend/drizzle backend/drizzle
 COPY backend/drizzle.config.ts backend/drizzle.config.ts
 
 # Compile TypeScript — fails fast if type errors exist
+# Then rewrite bare imports for Node.js ESM compatibility
 RUN pnpm --filter @tingting/shared build && pnpm --filter backend build
 
 # ── Production ───────────────────────────────────────────────────────────────
