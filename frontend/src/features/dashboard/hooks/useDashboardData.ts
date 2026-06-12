@@ -200,10 +200,10 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
         : `${r.trips} chuyến`,
     }));
 
-    const lockedTrips = allTrips.filter((t: TripDetail) => t.status === TripStatus.LOCKED);
-    const realFuelCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-    const realRoadCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-    const realDriverCost = lockedTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
+    const realFuelCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
+    const realRoadCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
+    const realDriverCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
     const mgmtCost = pnlReport?.managementFee ?? 0;
     const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
     const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
