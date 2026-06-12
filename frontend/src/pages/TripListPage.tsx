@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,7 +14,6 @@ import {
   ArrowRight,
   AlertCircle,
   X as XIcon,
-  Loader2,
   MousePointerClick,
   Banknote,
   Fuel,
@@ -150,17 +149,20 @@ export default function TripListPage() {
     staleTime: 30 * 1000,
   });
 
-  // ── Infinite query for paginated trip list ──
+  // ── Pagination state ──
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, truckFilter, customerFilter, debouncedSearch, month, year]);
+
+  // ── Paginated trip list query ──
   const {
-    data: infiniteData,
+    data: tripsData,
     isLoading: loading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['trips', listDateFrom, listDateTo, statusFilter, truckFilter, customerFilter, debouncedSearch],
-    queryFn: ({ pageParam }) => tripClient.listTrips({
-      page: pageParam,
+  } = useQuery({
+    queryKey: ['trips', listDateFrom, listDateTo, statusFilter, truckFilter, customerFilter, debouncedSearch, currentPage],
+    queryFn: () => tripClient.listTrips({
+      page: currentPage,
       limit: PAGE_SIZE,
       status: statusFilter || undefined,
       truckId: truckFilter || undefined,
@@ -169,27 +171,13 @@ export default function TripListPage() {
       dateFrom: listDateFrom,
       dateTo: listDateTo,
     }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
-      if (lastPage.page < totalPages) return lastPage.page + 1;
-      return undefined;
-    },
     enabled: searching || (!!dateFrom && !!dateTo),
     staleTime: 30 * 1000,
   });
 
-  // Flatten all loaded pages into a single array
-  const trips = useMemo(
-    () => infiniteData?.pages.flatMap(p => p.items) ?? [],
-    [infiniteData]
-  );
-
-  // Total from the last page (server-side count)
-  const totalCount = infiniteData?.pages?.[0]?.total ?? 0;
-
-  // ── Sentinel ref for IntersectionObserver ──
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const trips = useMemo(() => tripsData?.items ?? [], [tripsData]);
+  const totalCount = tripsData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // ── Horizontal scroll ──
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -214,21 +202,6 @@ export default function TripListPage() {
     return () => document.removeEventListener('keydown', handler, true);
   }, []);
 
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // ── Derived data from summary ──────────────────────────────────────
   const statusCounts = summary?.statusCounts ?? { all: 0, [TripStatus.CREATED]: 0, [TripStatus.IN_TRANSIT]: 0, [TripStatus.COMPLETED]: 0, [TripStatus.LOCKED]: 0, [TripStatus.CANCELED]: 0 };
@@ -932,21 +905,34 @@ export default function TripListPage() {
           )}
         </div>
 
-        {/* ── Infinite scroll sentinel (shared by desktop + mobile) ─── */}
-        <div ref={sentinelRef} style={{ height: 1 }} />
-        {isFetchingNextPage && (
-          <div className="table-empty" style={{ padding: '16px 0' }}>
-            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />
-            Đang tải thêm…
-          </div>
-        )}
-
-        {/* ── Footer info ──────────────────────────────────────────── */}
+        {/* ── Pagination ──────────────────────────────────────────── */}
         {trips.length > 0 && (
           <div className="table-foot">
             <div className="page-info">
-              Hiển thị <b>{trips.length}</b> trong <b>{totalCount}</b> chuyến
-              {!hasNextPage && ' · Đã tải tất cả'}
+              Hiển thị <b>{((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)}</b> trên <b>{totalCount}</b> chuyến
+            </div>
+            <div className="pagination">
+              <button className="page-btn" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>‹</button>
+              {(() => {
+                const pages: (number | string)[] = [];
+                if (totalPages <= 7) {
+                  for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else {
+                  pages.push(1);
+                  const start = Math.max(2, currentPage - 2);
+                  const end = Math.min(totalPages - 1, currentPage + 2);
+                  if (start > 2) pages.push('…');
+                  for (let i = start; i <= end; i++) pages.push(i);
+                  if (end < totalPages - 1) pages.push('…');
+                  pages.push(totalPages);
+                }
+                return pages.map((p, i) =>
+                  typeof p === 'string'
+                    ? <span key={`e${i}`} className="page-ellipsis">…</span>
+                    : <button key={p} className={`page-btn${p === currentPage ? ' active' : ''}`} onClick={() => setCurrentPage(p)}>{p}</button>
+                );
+              })()}
+              <button className="page-btn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>›</button>
             </div>
           </div>
         )}

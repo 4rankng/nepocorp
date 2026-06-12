@@ -195,6 +195,11 @@ export const createUserSchema = z.object({
   password: z.string().min(6),
   role: z.nativeEnum(Role),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
+  // Driver-profile fields — only meaningful when role === DRIVER. The user
+  // service uses these to create the linked `drivers` row on the same transaction.
+  baseSalary: nonNegNumeric.optional(),
+  socialInsurance: nonNegNumeric.optional(),
+  assignedTruckId: z.number().int().positive().nullable().optional(),
 }).refine(data => data.username || data.email || data.phone, {
   message: 'Phải cung cấp ít nhất một trong: username, email, hoặc số điện thoại',
 });
@@ -207,6 +212,11 @@ export const updateUserSchema = z.object({
   fullName: fullNameField,
   email: z.string().email().or(z.literal('')).optional(),
   phone: z.string().min(6).or(z.literal('')).optional(),
+  // Driver-profile fields — upserted onto the linked `drivers` row when the
+  // resulting role is DRIVER. Optional so non-driver payloads validate unchanged.
+  baseSalary: nonNegNumeric.optional(),
+  socialInsurance: nonNegNumeric.optional(),
+  assignedTruckId: z.number().int().positive().nullable().optional(),
 });
 
 export const updateProfileSchema = z.object({

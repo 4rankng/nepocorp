@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Role } from '@tingting/shared';
+import type { Truck } from '@tingting/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useUsers } from '../hooks/useCatalogQueries';
+import { configClient } from '../api/configClient';
 import { useUserMutations } from '../features/users/hooks/useUserMutations';
 import { UserTable } from '../features/users/components/UserTable';
 import { AddPanel, EditPanel } from '../features/users/components/UserForm';
@@ -13,9 +16,24 @@ export default function UsersPage() {
     ? me.capabilities.includes('manage_users')
     : me?.role === Role.ADMIN || me?.role === Role.MANAGER;
   const canDelete = me?.role === Role.ADMIN;
+  // Accountants get scoped /users access: read-only except DRIVER rows (salary/truck/contact).
+  const canEditDriversOnly = !canManage && me?.role === Role.ACCOUNTANT;
 
   const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
   const users = (usersData?.items ?? []) as UserRow[];
+
+  // Load trucks once for the driver "Xe phân công" field + the table "Xe" plate column.
+  // Shares cache with useTrucksAndDrivers by using a common query key prefix.
+  const { data: truckList = [] } = useQuery<Truck[]>({
+    queryKey: ['trucks'],
+    queryFn: () => configClient.getTrucks(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const truckMap = useMemo(() => {
+    const m = new Map<number, string>();
+    truckList.forEach(t => m.set(t.id, t.licensePlate));
+    return m;
+  }, [truckList]);
 
   const {
     saving, panelError, deleting, confirmDialog,
@@ -127,6 +145,8 @@ export default function UsersPage() {
         search={search}
         canManage={canManage}
         canDelete={canDelete}
+        canEditDriversOnly={canEditDriversOnly}
+        truckMap={truckMap}
         deleting={deleting}
         currentUserId={me?.userId}
         onFilterChange={handleFilterChange}
@@ -146,6 +166,7 @@ export default function UsersPage() {
         isOpen={showAdd}
         saving={saving}
         error={panelError}
+        truckList={truckList}
         onClose={closeAdd}
         onSave={doCreate}
       />
@@ -156,6 +177,8 @@ export default function UsersPage() {
           isMe={editingUser.id === me?.userId}
           saving={saving}
           error={panelError}
+          truckList={truckList}
+          canEditDriversOnly={canEditDriversOnly}
           onClose={closeEdit}
           onSave={doUpdate}
         />

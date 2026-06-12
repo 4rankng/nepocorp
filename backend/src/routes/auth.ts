@@ -83,6 +83,9 @@ router.get('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (r
 }));
 
 router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (req: Request, res: Response) => {
+  if (req.user?.role === Role.ACCOUNTANT) {
+    throw new ApiError(403, 'Kế toán không thể tạo người dùng');
+  }
   const data = createUserSchema.parse(req.body);
   if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
     throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
@@ -95,16 +98,36 @@ router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (
     password: data.password,
     role: data.role,
     status: data.status,
+    baseSalary: data.baseSalary,
+    socialInsurance: data.socialInsurance,
+    assignedTruckId: data.assignedTruckId,
   });
   res.status(201).json(created);
 }));
 
 router.patch('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (isNaN(id)) throw new ApiError(400, 'ID không hợp lệ');
   const data = updateUserSchema.parse(req.body);
+  // Accountants may only edit DRIVER users, and only driver-relevant fields.
+  // Positive allowlist + requireDriverTarget moves the role check into the
+  // same transaction, eliminating the TOCTOU race from a separate getUserRole call.
+  if (req.user?.role === Role.ACCOUNTANT) {
+    const updated = await userService.updateUser(id, {
+      fullName: data.fullName,
+      phone: data.phone,
+      baseSalary: data.baseSalary,
+      socialInsurance: data.socialInsurance,
+      assignedTruckId: data.assignedTruckId,
+      requireDriverTarget: true,
+    });
+    res.json(updated);
+    return;
+  }
   if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
     throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
   }
-  const updated = await userService.updateUser(Number(req.params.id), {
+  const updated = await userService.updateUser(id, {
     role: data.role,
     status: data.status,
     password: data.password,
@@ -112,12 +135,20 @@ router.patch('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(as
     fullName: data.fullName,
     email: data.email,
     phone: data.phone,
+    baseSalary: data.baseSalary,
+    socialInsurance: data.socialInsurance,
+    assignedTruckId: data.assignedTruckId,
   });
   res.json(updated);
 }));
 
 router.delete('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(async (req: Request, res: Response) => {
-  await userService.deleteUser(Number(req.params.id), req.user!.userId);
+  if (req.user?.role === Role.ACCOUNTANT) {
+    throw new ApiError(403, 'Kế toán không thể xóa người dùng');
+  }
+  const id = parseInt(req.params.id as string, 10);
+  if (isNaN(id)) throw new ApiError(400, 'ID không hợp lệ');
+  await userService.deleteUser(id, req.user!.userId);
   res.json({ success: true });
 }));
 

@@ -32,7 +32,6 @@ export interface AttendanceSalary {
   leaveDeduction: number;
   adjustment: number;
   totalPenalties: number;
-  standbyCost: number;
   netSalary: number;
   workDays?: WorkDayRecord[];
   confirmationStatus: 'DRAFT' | 'CONFIRMED';

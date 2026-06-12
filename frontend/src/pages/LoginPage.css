@@ -235,13 +235,16 @@
   .login-brand { margin-bottom: 18px; }
   .login-brand .brand-logo { width: 48px; height: 48px; border-radius: 12px; margin-bottom: 10px; }
   .login-brand h1 { font-size: 18px; }
-  .login-brand p { font-size: 9.5px; }
+  .login-brand p { font-size: 11px; }
   .login-divider { margin-bottom: 18px; }
   .login-form h2 { font-size: 18px; }
-  .login-form .sub { margin-bottom: 18px; font-size: 12.5px; }
+  .login-form .sub { margin-bottom: 18px; font-size: 13px; }
+  .login-form label { font-size: 13px; }
   /* Bump CTA to a proper 44px touch target */
   .login-submit { height: 44px; font-size: 15px; }
-  .login-footer { font-size: 10.5px; bottom: 12px; padding: 0 16px; }
+  .login-footer { font-size: 11px; bottom: 12px; padding: 0 16px; }
+  /* Password toggle: expand tap area from 16×16 to ≥36×36 */
+  .password-toggle { padding: 10px; min-width: 36px; min-height: 36px; }
   /* Username placeholder was getting clipped — give the input the full row width */
   .login-form .input { width: 100%; min-width: 0; }
   .login-form .field { min-width: 0; }

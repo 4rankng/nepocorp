@@ -60,7 +60,6 @@ export const routes = {
   configPricingTables: '/config/pricing-tables',
   configRoadAllowances: '/config/road-allowances',
   configPenaltyReasons: '/config/penalty-reasons',
-  configDrivers: '/config/drivers',
   configFuel: '/config/fuel',
   configTripExpense: '/config/trip-expense',
   configCapTable: '/config/cap-table',

@@ -43,7 +43,6 @@ const CargoTypesConfigPage = lazy(() => import('./pages/config/CargoTypesConfigP
 const PricingTablesConfigPage = lazy(() => import('./pages/config/PricingTablesConfigPage'));
 const RoadAllowancesConfigPage = lazy(() => import('./pages/config/RoadAllowancesConfigPage'));
 const PenaltyReasonsConfigPage = lazy(() => import('./pages/config/PenaltyReasonsConfigPage'));
-const DriversConfigPage = lazy(() => import('./pages/config/DriversConfigPage'));
 const FuelConfigPage = lazy(() => import('./pages/config/FuelConfigPage'));
 const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'));
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
@@ -96,6 +95,8 @@ function AppRoutes() {
   const forwarderOnly = (el: ReactElement) => (isForwarder ? el : <Navigate to={isDriver ? driverHome : adminHome} replace />);
   const superAdminOnly = (el: ReactElement) => (isAdmin ? el : <Navigate to={adminHome} replace />);
   const managerOrAdminOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
+  // /users is the single home for everyone; accountants get scoped (driver-only) access.
+  const officeStaffOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER || user?.role === Role.ACCOUNTANT ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
 
   // Wrap each page in its own ErrorBoundary so a crash in one route
   // doesn't block navigation to other routes.
@@ -144,7 +145,6 @@ function AppRoutes() {
           <Route path="/config/pricing-tables" element={adminOnly(page(<PricingTablesConfigPage />))} />
           <Route path="/config/road-allowances" element={adminOnly(page(<RoadAllowancesConfigPage />))} />
           <Route path="/config/penalty-reasons" element={adminOnly(page(<PenaltyReasonsConfigPage />))} />
-          <Route path="/config/drivers" element={adminOnly(page(<DriversConfigPage />))} />
           <Route path="/config/fuel" element={adminOnly(page(<FuelConfigPage />))} />
           <Route path="/config/trip-expense" element={adminOnly(page(<TripExpenseConfigPage />))} />
           <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />
@@ -162,7 +162,7 @@ function AppRoutes() {
           <Route path="/payables" element={adminOnly(page(<PayableListPage />))} />
           <Route path="/payables/:id" element={adminOnly(page(<PayableDetailPage />))} />
           <Route path="/salary" element={adminOnly(page(<SalaryAttendancePage />))} />
-          <Route path="/users" element={managerOrAdminOnly(page(<UsersPage />))} />
+          <Route path="/users" element={officeStaffOnly(page(<UsersPage />))} />
           <Route path="/audit-logs" element={managerOrAdminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-logs" element={<Navigate to="/audit-logs" replace />} />

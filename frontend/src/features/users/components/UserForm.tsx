@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
   ShieldCheck, Plus, KeyRound, Loader2, Save, User, Eye, EyeOff,
-  Mail, Phone, Check, AtSign, Lock,
+  Mail, Phone, Check, AtSign, Lock, Truck as TruckIcon,
 } from 'lucide-react';
 import { Drawer, Btn, FormGroup } from '../../../components/UI';
 import { ROLE_LABELS } from '../utils';
 import { Role } from '@tingting/shared';
+import type { Truck } from '@tingting/shared';
 import type { UserRow, CreateData, EditData } from '../utils';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────
 
-function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement }: {
+function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled }: {
   icon: React.ReactNode;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -20,6 +21,7 @@ function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComp
   valid?: boolean;
   error?: boolean;
   rightElement?: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
     <div className={`icon-input${valid ? ' icon-input--valid' : ''}${error ? ' icon-input--error' : ''}`}>
@@ -31,12 +33,70 @@ function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComp
         onChange={onChange}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        disabled={disabled}
       />
       {valid && !rightElement && (
         <span className="icon-input__check"><Check size={14} /></span>
       )}
       {rightElement}
     </div>
+  );
+}
+
+// ── Driver Fields (shared by Add/Edit panels, shown when role === DRIVER) ───
+
+function DriverFields({ baseSalary, setBaseSalary, socialInsurance, setSocialInsurance, assignedTruckId, setAssignedTruckId, truckList }: {
+  baseSalary: string;
+  setBaseSalary: (v: string) => void;
+  socialInsurance: string;
+  setSocialInsurance: (v: string) => void;
+  assignedTruckId: number | null;
+  setAssignedTruckId: (v: number | null) => void;
+  truckList: Truck[];
+}) {
+  return (
+    <>
+      <div className="users-form-divider" />
+      <div className="users-form-section__title"><TruckIcon size={12} /> Thông tin tài xế</div>
+      <div className="users-form-cards">
+        <div className="users-form-card">
+          <FormGroup label="Lương cơ bản (đ)">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={baseSalary}
+              onChange={e => setBaseSalary(e.target.value)}
+              placeholder="0"
+            />
+          </FormGroup>
+          <FormGroup label="BHXH / BHYT (đ)">
+            <input
+              className="input"
+              type="number"
+              min={0}
+              value={socialInsurance}
+              onChange={e => setSocialInsurance(e.target.value)}
+              placeholder="0"
+            />
+          </FormGroup>
+        </div>
+        <div className="users-form-card">
+          <FormGroup label="Xe phân công">
+            <select
+              className="input"
+              value={assignedTruckId ?? 0}
+              onChange={e => setAssignedTruckId(Number(e.target.value) || null)}
+            >
+              <option value={0}>Chưa phân công</option>
+              {truckList.filter(t => t.status === 'ACTIVE').map(t => (
+                <option key={t.id} value={t.id}>{t.licensePlate}</option>
+              ))}
+            </select>
+          </FormGroup>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -48,11 +108,14 @@ interface EditPanelProps {
   isMe: boolean;
   saving: boolean;
   error: string | null;
+  truckList: Truck[];
+  /** Accountant scope: lock role/credentials, only driver + contact fields editable. */
+  canEditDriversOnly?: boolean;
   onClose: () => void;
   onSave: (id: number, data: EditData) => Promise<boolean | void>;
 }
 
-export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }: EditPanelProps) {
+export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEditDriversOnly, onClose, onSave }: EditPanelProps) {
   const [fullName, setFullName] = useState(user.fullName ?? '');
   const [username, setUsername] = useState(user.username ?? '');
   const [email, setEmail]       = useState(user.email ?? '');
@@ -61,6 +124,9 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
   const [status, setStatus]     = useState(user.status);
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
+  const [baseSalary, setBaseSalary]           = useState(user.baseSalary ?? '');
+  const [socialInsurance, setSocialInsurance] = useState(user.socialInsurance ?? '');
+  const [assignedTruckId, setAssignedTruckId] = useState<number | null>(user.assignedTruckId ?? null);
 
   useEffect(() => {
     if (isOpen) {
@@ -72,6 +138,9 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
       setStatus(user.status);
       setPassword('');
       setShowPw(false);
+      setBaseSalary(user.baseSalary ?? '');
+      setSocialInsurance(user.socialInsurance ?? '');
+      setAssignedTruckId(user.assignedTruckId ?? null);
     }
   }, [isOpen, user]);
 
@@ -84,18 +153,25 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
   const pwError = password.length > 0 && !pwValid;
 
   const handleSubmit = async () => {
-    const ok = await onSave(user.id, { fullName, username, email, phone, role, status, password });
+    const payload: EditData = { fullName, username, email, phone, role, status, password };
+    if (role === Role.DRIVER) {
+      payload.baseSalary = baseSalary;
+      payload.socialInsurance = socialInsurance;
+      payload.assignedTruckId = assignedTruckId;
+    }
+    const ok = await onSave(user.id, payload);
     if (ok) onClose();
   };
 
   const displayName = user.fullName || user.username || user.email || 'Tài khoản';
   const subtitle = isMe ? `${displayName} (bạn)` : displayName;
+  const title = role === Role.DRIVER ? `Chỉnh sửa tài xế ${displayName}` : 'Chỉnh sửa tài khoản';
 
   return (
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Chỉnh sửa tài khoản"
+      title={title}
       subtitle={subtitle}
       onConfirm={handleSubmit}
       footer={
@@ -137,6 +213,7 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
               placeholder="nguyen.van.a"
               autoComplete="off"
               valid={usernameValid}
+              disabled={canEditDriversOnly}
             />
           </FormGroup>
         </div>
@@ -149,6 +226,7 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
               onChange={e => setEmail(e.target.value)}
               placeholder="nva@cty.vn"
               error={emailError}
+              disabled={canEditDriversOnly}
             />
           </FormGroup>
           <FormGroup label="Số điện thoại">
@@ -169,44 +247,57 @@ export function EditPanel({ isOpen, user, isMe, saving, error, onClose, onSave }
       <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & trạng thái</div>
       <div className="row-2">
         <FormGroup label="Vai trò">
-          <select className="input" value={role} onChange={e => setRole(e.target.value as Role)}>
+          <select className="input" value={role} disabled={canEditDriversOnly} onChange={e => setRole(e.target.value as Role)}>
             {Object.values(Role).map(r => (
               <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
           </select>
         </FormGroup>
         <FormGroup label="Trạng thái">
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+          <select className="input" value={status} disabled={canEditDriversOnly} onChange={e => setStatus(e.target.value)}>
             <option value="ACTIVE">Hoạt động</option>
             <option value="INACTIVE">Bị khoá</option>
           </select>
         </FormGroup>
       </div>
 
-      <div className="users-form-divider" />
-
-      {/* Password */}
-      <div className="users-form-section__title"><KeyRound size={12} /> Đặt lại mật khẩu</div>
-      <FormGroup
-        label="Mật khẩu mới (để trống = không thay đổi)"
-        error={pwError ? 'Mật khẩu phải có tối thiểu 6 ký tự' : undefined}
-      >
-        <IconInput
-          icon={<Lock size={14} />}
-          type={showPw ? 'text' : 'password'}
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          placeholder="Tối thiểu 6 ký tự"
-          autoComplete="new-password"
-          valid={pwValid}
-          error={pwError}
-          rightElement={
-            <button type="button" onClick={() => setShowPw(v => !v)} className="pw-toggle">
-              {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          }
+      {/* Driver profile fields (only for DRIVER role) */}
+      {role === Role.DRIVER && (
+        <DriverFields
+          baseSalary={baseSalary} setBaseSalary={setBaseSalary}
+          socialInsurance={socialInsurance} setSocialInsurance={setSocialInsurance}
+          assignedTruckId={assignedTruckId} setAssignedTruckId={setAssignedTruckId}
+          truckList={truckList}
         />
-      </FormGroup>
+      )}
+
+      {/* Password — hidden for accountants (they cannot reset credentials) */}
+      {!canEditDriversOnly && (
+        <>
+          <div className="users-form-divider" />
+          <div className="users-form-section__title"><KeyRound size={12} /> Đặt lại mật khẩu</div>
+          <FormGroup
+            label="Mật khẩu mới (để trống = không thay đổi)"
+            error={pwError ? 'Mật khẩu phải có tối thiểu 6 ký tự' : undefined}
+          >
+            <IconInput
+              icon={<Lock size={14} />}
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Tối thiểu 6 ký tự"
+              autoComplete="new-password"
+              valid={pwValid}
+              error={pwError}
+              rightElement={
+                <button type="button" onClick={() => setShowPw(v => !v)} className="pw-toggle">
+                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              }
+            />
+          </FormGroup>
+        </>
+      )}
     </Drawer>
   );
 }
@@ -217,11 +308,12 @@ interface AddPanelProps {
   isOpen: boolean;
   saving: boolean;
   error: string | null;
+  truckList: Truck[];
   onClose: () => void;
   onSave: (data: CreateData) => Promise<boolean | void>;
 }
 
-export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelProps) {
+export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: AddPanelProps) {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail]       = useState('');
@@ -229,12 +321,16 @@ export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelPro
   const [role, setRole]         = useState<Role>(Role.DRIVER);
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
+  const [baseSalary, setBaseSalary]           = useState('');
+  const [socialInsurance, setSocialInsurance] = useState('');
+  const [assignedTruckId, setAssignedTruckId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setFullName(''); setUsername(''); setEmail('');
       setPhone(''); setRole(Role.DRIVER);
       setPassword(''); setShowPw(false);
+      setBaseSalary(''); setSocialInsurance(''); setAssignedTruckId(null);
     }
   }, [isOpen]);
 
@@ -247,16 +343,24 @@ export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelPro
   const pwError = password.length > 0 && !pwValid;
 
   const handleSubmit = async () => {
-    const ok = await onSave({ fullName, username, email, phone, role, password });
+    const payload: CreateData = { fullName, username, email, phone, role, password };
+    if (role === Role.DRIVER) {
+      payload.baseSalary = baseSalary;
+      payload.socialInsurance = socialInsurance;
+      payload.assignedTruckId = assignedTruckId;
+    }
+    const ok = await onSave(payload);
     if (ok) onClose();
   };
+
+  const title = role === Role.DRIVER ? 'Thêm tài xế' : 'Tạo tài khoản mới';
 
   return (
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Tạo tài khoản mới"
-      subtitle="Điền thông tin bên dưới"
+      title={title}
+      subtitle={role === Role.DRIVER ? 'Tài khoản đăng nhập + hồ sơ tài xế' : 'Điền thông tin bên dưới'}
       onConfirm={handleSubmit}
       footer={
         <>
@@ -267,7 +371,7 @@ export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelPro
             disabled={saving}
             onClick={handleSubmit}
           >
-            Tạo tài khoản
+            {role === Role.DRIVER ? 'Thêm tài xế' : 'Tạo tài khoản'}
           </Btn>
         </>
       }
@@ -356,6 +460,16 @@ export function AddPanel({ isOpen, saving, error, onClose, onSave }: AddPanelPro
           />
         </FormGroup>
       </div>
+
+      {/* Driver profile fields (only for DRIVER role) */}
+      {role === Role.DRIVER && (
+        <DriverFields
+          baseSalary={baseSalary} setBaseSalary={setBaseSalary}
+          socialInsurance={socialInsurance} setSocialInsurance={setSocialInsurance}
+          assignedTruckId={assignedTruckId} setAssignedTruckId={setAssignedTruckId}
+          truckList={truckList}
+        />
+      )}
     </Drawer>
   );
 }

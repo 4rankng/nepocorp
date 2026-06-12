@@ -93,7 +93,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           </span>
           <span className="salary-summary-dark__row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {formatCurrency(salary.baseSalary)}
-            <Link to="/config/drivers" className="salary-edit-link" title="Sửa lương cứng">
+            <Link to="/users" className="salary-edit-link" title="Sửa lương cứng">
               <Edit size={10} />
             </Link>
           </span>

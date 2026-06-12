@@ -2,7 +2,7 @@
 include .env
 export
 
-.PHONY: push deploy
+.PHONY: push deploy link-drivers link-drivers-apply
 
 IMAGE_NAME  := $(DOCKERHUB_USERNAME)/tingting-backend
 GIT_SHA     := $(shell cd .. && git rev-parse --short HEAD)
@@ -42,3 +42,11 @@ deploy:
 	ssh root@$(PROD_SERVER) "docker image prune -f"
 	@echo "Backend deployment complete!"
 	@echo "API: https://$(PROD_SERVER)/api/health"
+
+## link-drivers: Dry-run — list orphan drivers that would link to existing users
+link-drivers:
+	@npx tsx scripts/link-orphan-drivers.ts
+
+## link-drivers-apply: Link orphan driver profiles to existing matching user accounts
+link-drivers-apply:
+	@npx tsx scripts/link-orphan-drivers.ts --apply

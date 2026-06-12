@@ -21,6 +21,10 @@ interface UserTableProps {
   search: string;
   canManage: boolean;
   canDelete?: boolean;
+  /** Accountant scope: may open the edit Drawer for DRIVER rows only. */
+  canEditDriversOnly?: boolean;
+  /** truckId → licensePlate, for the "Xe" column on driver rows. */
+  truckMap?: Map<number, string>;
   deleting: number | null;
   currentUserId?: number;
   onFilterChange: (f: FilterKey) => void;
@@ -54,9 +58,20 @@ const ROLE_FILTER_CLS: Record<string, string> = {
   [Role.FORWARDER]: 'filter-pill--forwarder',
 };
 
+/** Can the current user edit this row? Full managers can; scoped accountants can only edit drivers. */
+function canEditRow(u: UserRow, canManage: boolean, canEditDriversOnly: boolean) {
+  return canManage || (canEditDriversOnly && u.role === Role.DRIVER);
+}
+
+/** Resolve the assigned truck's license plate for a driver row, if any. */
+function getPlate(u: UserRow, truckMap?: Map<number, string>) {
+  return u.role === Role.DRIVER && u.assignedTruckId != null ? truckMap?.get(u.assignedTruckId) : undefined;
+}
+
 export function UserTable({
   users, filtered, paginated, total, staffCount, driverCount, inactiveCount,
-  filter, search, canManage, canDelete = canManage, deleting, currentUserId,
+  filter, search, canManage, canDelete = canManage, canEditDriversOnly = false,
+  truckMap, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
   sortBy, sortOrder, onSort,
   currentPage, pageSize, onPageChange,
@@ -195,6 +210,8 @@ export function UserTable({
           filtered={paginated}
           canManage={canManage}
           canDelete={canDelete}
+          canEditDriversOnly={canEditDriversOnly}
+          truckMap={truckMap}
           deleting={deleting}
           currentUserId={currentUserId}
           onEdit={onEdit}
@@ -209,6 +226,8 @@ export function UserTable({
           filtered={paginated}
           canManage={canManage}
           canDelete={canDelete}
+          canEditDriversOnly={canEditDriversOnly}
+          truckMap={truckMap}
           deleting={deleting}
           currentUserId={currentUserId}
           onEdit={onEdit}
@@ -289,7 +308,9 @@ export function UserTable({
           color: 'var(--ink-3)', fontSize: 12.5,
         }}>
           <KeyRound size={14} />
-          Chỉ quản trị viên hoặc giám đốc mới có thể tạo, sửa hoặc xóa tài khoản.
+          {canEditDriversOnly
+            ? 'Bạn chỉ có thể chỉnh sửa thông tin tài xế (lương, xe phân công, liên hệ).'
+            : 'Chỉ quản trị viên hoặc giám đốc mới có thể tạo, sửa hoặc xóa tài khoản.'}
         </div>
       )}
     </>
@@ -299,12 +320,15 @@ export function UserTable({
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
 function DesktopTable({
-  filtered, canManage, canDelete, deleting, currentUserId, onEdit, onDelete,
+  filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId,
+  onEdit, onDelete,
   sortBy, sortOrder, onSort,
 }: {
   filtered: UserRow[];
   canManage: boolean;
   canDelete: boolean;
+  canEditDriversOnly: boolean;
+  truckMap?: Map<number, string>;
   deleting: number | null;
   currentUserId?: number;
   onEdit: (u: UserRow) => void;
@@ -313,10 +337,15 @@ function DesktopTable({
   sortOrder: 'asc' | 'desc';
   onSort: (field: 'name' | 'role' | 'status' | 'date') => void;
 }) {
+  // The actions column renders for full managers OR scoped accountants (driver edits).
+  const showActions = canManage || canEditDriversOnly;
+  // Tài khoản, Liên hệ, Vai trò, Xe, Trạng thái, Ngày tạo  (+ actions)
+  const colCount = 6 + (showActions ? 1 : 0);
+
   return (
     <div className="desktop-only">
       <div className="table-scroll">
-        <table className="tt-table" style={{ minWidth: 900 }}>
+        <table className="tt-table" style={{ minWidth: 980 }}>
           <thead>
             <tr>
               <th onClick={() => onSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
@@ -332,6 +361,7 @@ function DesktopTable({
                   {sortBy === 'role' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
                 </div>
               </th>
+              <th>Xe</th>
               <th onClick={() => onSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   Trạng thái
@@ -344,13 +374,13 @@ function DesktopTable({
                   {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
                 </div>
               </th>
-              {canManage && <th style={{ width: 80 }}></th>}
+              {showActions && <th style={{ width: 80 }}></th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={canManage ? 6 : 5}>
+                <td colSpan={colCount}>
                   <div className="users-empty">
                     <img src="/assets/illustrations/empty-users.svg" alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
@@ -362,6 +392,8 @@ function DesktopTable({
             {filtered.map(u => {
               const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
               const isMe = u.id === currentUserId;
+              const editable = canEditRow(u, canManage, canEditDriversOnly);
+              const plate = getPlate(u, truckMap);
               return (
                 <tr key={u.id}>
                   <td>
@@ -396,21 +428,28 @@ function DesktopTable({
                     </div>
                   </td>
                   <td><span className={pill.cls}><span className="dot" />{pill.label}</span></td>
+                  <td>
+                    {plate
+                      ? <span className="user-truck-plate">{plate}</span>
+                      : <span style={{ color: 'var(--ink-4)' }}>—</span>}
+                  </td>
                   <td><UserStatusBadge status={u.status} isMe={isMe} userId={u.id} /></td>
                   <td style={{ color: 'var(--ink-3)', fontSize: 12.5, whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
-                  {canManage && (
+                  {showActions && (
                     <td>
                       <div className="row-actions">
-                        <button
-                          className="row-action"
-                          title="Chỉnh sửa tài khoản"
-                          onClick={() => onEdit(u)}
-                        >
-                          <Pencil size={13} />
-                        </button>
-                        {canDelete && (
+                        {editable && (
+                          <button
+                            className="row-action"
+                            title={u.role === Role.DRIVER ? 'Chỉnh sửa tài xế' : 'Chỉnh sửa tài khoản'}
+                            onClick={() => onEdit(u)}
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        )}
+                        {canManage && canDelete && (
                           <button
                             className="row-action"
                             title={isMe ? 'Không thể tự xóa' : 'Xóa tài khoản'}
@@ -438,10 +477,12 @@ function DesktopTable({
 
 /* ── Mobile card list (inside panel) ──────────────────────────────────────── */
 
-function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserId, onEdit, onDelete }: {
+function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
   canDelete: boolean;
+  canEditDriversOnly: boolean;
+  truckMap?: Map<number, string>;
   deleting: number | null;
   currentUserId?: number;
   onEdit: (u: UserRow) => void;
@@ -469,6 +510,8 @@ function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserI
         filtered.map(u => {
           const pill = ROLE_PILL[u.role] || { cls: 'pill pill--neutral', label: u.role };
           const isMe = u.id === currentUserId;
+          const editable = canEditRow(u, canManage, canEditDriversOnly);
+          const plate = getPlate(u, truckMap);
           return (
             <div key={u.id} className="m-card users-mobile-card" style={{ cursor: 'default', position: 'relative' }}>
               <div className="users-mobile-card__header">
@@ -482,10 +525,10 @@ function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserI
                   </div>
                   {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
-                  {canManage && (
+                  {editable && (
                     <div style={{ position: 'relative' }}>
                       <button
                         className="kebab-btn"
@@ -511,7 +554,7 @@ function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserI
                             onClick={() => { setActiveMenuId(null); onEdit(u); }}>
                             <Pencil size={13} /> Sửa
                           </button>
-                          {canDelete && (
+                          {canManage && canDelete && (
                             <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                               disabled={!!deleting || isMe}
                               onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}>
@@ -527,6 +570,9 @@ function MobileCardList({ filtered, canManage, canDelete, deleting, currentUserI
               <div className="users-mobile-card__details">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px 12px', flexWrap: 'wrap' }}>
                   <UserStatusBadge status={u.status} isMe={isMe} userId={u.id} />
+                  {plate && (
+                    <span className="user-truck-plate">{plate}</span>
+                  )}
                   {u.email && (
                     <span className="users-mobile-card__detail">
                       <Mail size={12} /> {u.email}

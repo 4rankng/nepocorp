@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, gte, lte, sql, inArray, isNull, ne } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, isNull, ne } from 'drizzle-orm';
 import { resolveSalaryPeriodDateRange } from './salary-period.service';
 import { ApiError } from '../errors';
 
@@ -289,10 +289,14 @@ export async function computeSalary(
   // Social insurance from drivers.social_insurance column (was hardcoded to 0)
   const socialInsurance = parseFloat(driver.socialInsurance || '0');
 
-  // daily_rate based on standard_work_days (varies per month per spec §4.5.2)
-  const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
+  // Daily rate based on standard_work_days — base salary only, no BHXH.
+  // This is a cost-allocation rate, not an employer-cost rate.
+  const dailyRate = Math.round(baseSalary / standardWorkDays);
 
-  // Supplement pay / Standby cost: standby_days × daily_rate (company-idle days → allocated cost)
+  // Cost allocation: trip salary = trip days × daily rate
+  const totalTripSalary = tripDays * dailyRate;
+
+  // Standby cost: standby days × daily rate (idle days → allocated cost)
   const supplementPay = standbyDays * dailyRate;
 
   // Leave deduction: Removed because adjustment handles it natively.
@@ -300,18 +304,6 @@ export async function computeSalary(
 
   // Adjustment: (paidDays - standardWorkDays) * dailyRate
   const adjustment = (paidDays - standardWorkDays) * dailyRate;
-
-  // Trip salary: sum of driver_salary from LOCKED trips in period
-  const [tripSalaryRow] = await db.select({
-    total: sql<string>`coalesce(sum(${s.trips.driverSalary}::numeric), 0)`,
-  }).from(s.trips)
-    .where(and(
-      eq(s.trips.driverId, driverId),
-      eq(s.trips.status, 'LOCKED'),
-      isNull(s.trips.deletedAt),
-      gte(s.trips.departureDate, start),
-      lte(s.trips.departureDate, end),
-    ));
 
   // Penalties in period
   const [penaltyRow] = await db.select({
@@ -325,9 +317,8 @@ export async function computeSalary(
       lte(s.penalties.date, end),
     ));
 
-  const totalTripSalary = parseFloat(tripSalaryRow?.total || '0');
   const totalPenalties = parseFloat(penaltyRow?.total || '0');
-  
+
   // Net salary is just base salary + adjustment - penalties
   const netSalary = baseSalary + adjustment - totalPenalties;
 
@@ -358,7 +349,6 @@ export async function computeSalary(
     supplementPay,
     leaveDeduction,
     totalPenalties,
-    standbyCost: supplementPay, // kept for backward compat — same value as supplementPay
     netSalary,
     confirmationStatus: confirmationRow?.status ?? 'DRAFT',
     confirmedBy: confirmationRow?.confirmedBy ?? null,

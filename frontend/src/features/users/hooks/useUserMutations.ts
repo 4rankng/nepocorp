@@ -1,8 +1,18 @@
 import { useState, useCallback } from 'react';
+import { Role } from '@tingting/shared';
 import { userClient } from '../../../api/userClient';
 import { useToast } from '../../../components/shared/Toast';
 import { useConfirm } from '../../../components/UI';
 import type { CreateData, EditData } from '../utils';
+
+/** Normalize driver-profile fields: empty strings become undefined (omitted from API payload). */
+function driverPayload(data: CreateData | EditData) {
+  return data.role === Role.DRIVER ? {
+    baseSalary: data.baseSalary !== undefined && data.baseSalary !== '' ? data.baseSalary : undefined,
+    socialInsurance: data.socialInsurance !== undefined && data.socialInsurance !== '' ? data.socialInsurance : undefined,
+    assignedTruckId: data.assignedTruckId ?? null,
+  } : {};
+}
 
 export function useUserMutations(refetch: () => void) {
   const [saving, setSaving] = useState(false);
@@ -26,6 +36,7 @@ export function useUserMutations(refetch: () => void) {
         fullName: data.fullName || undefined,
         password: data.password,
         role:     data.role,
+        ...driverPayload(data),
       });
       refetch();
       showToast({ kind: 'success', message: 'Tạo tài khoản thành công' });
@@ -49,6 +60,7 @@ export function useUserMutations(refetch: () => void) {
         fullName: data.fullName,
         email:    data.email,
         phone:    data.phone,
+        ...driverPayload(data),
       };
       if (data.password) body.password = data.password;
       await userClient.updateUser(id, body);

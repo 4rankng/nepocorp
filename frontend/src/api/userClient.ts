@@ -1,20 +1,10 @@
 import { api } from '../lib/api';
 import { AUTH } from '@tingting/shared';
+import type { UserRow } from '../features/users/utils';
 
 export const userClient = {
   getUsers: async () => {
-    return api.get<{
-      items: Array<{
-        id: number;
-        username: string | null;
-        fullName: string | null;
-        email: string | null;
-        phone: string | null;
-        role: string;
-        status: string;
-        createdAt: string;
-      }>;
-    }>(AUTH.USERS);
+    return api.get<{ items: UserRow[] }>(AUTH.USERS);
   },
 
   getUser: async (id: number) => {

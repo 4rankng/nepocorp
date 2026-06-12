@@ -9,6 +9,11 @@ export interface UserRow {
   role: Role;
   status: string;
   createdAt: string;
+  // Linked driver profile (null for non-driver users or users without a profile row).
+  driverId: number | null;
+  assignedTruckId: number | null;
+  baseSalary: string | null;
+  socialInsurance: string | null;
 }
 
 export interface EditData {
@@ -19,6 +24,10 @@ export interface EditData {
   role: Role;
   status: string;
   password: string;
+  // Driver-profile fields — sent only when role === DRIVER.
+  baseSalary?: string;
+  socialInsurance?: string;
+  assignedTruckId?: number | null;
 }
 
 export interface CreateData {
@@ -28,6 +37,10 @@ export interface CreateData {
   fullName: string;
   role: Role;
   password: string;
+  // Driver-profile fields — sent only when role === DRIVER.
+  baseSalary?: string;
+  socialInsurance?: string;
+  assignedTruckId?: number | null;
 }
 
 export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
@@ -36,14 +49,6 @@ export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
   [Role.ACCOUNTANT]: { cls: 'pill pill--neutral', label: 'Kế toán' },
   [Role.DRIVER]:     { cls: 'pill pill--success', label: 'Tài xế' },
   [Role.FORWARDER]:  { cls: 'pill pill--info',    label: 'Giao nhận' },
-};
-
-export const AVATAR_COLORS: Record<Role, { bg: string; color: string }> = {
-  [Role.ADMIN]:      { bg: 'var(--danger-soft)',  color: 'var(--danger)' },
-  [Role.MANAGER]:    { bg: 'var(--warning-soft)', color: 'var(--warning)' },
-  [Role.ACCOUNTANT]: { bg: 'var(--warning-soft)', color: 'var(--warning)' },
-  [Role.DRIVER]:     { bg: 'var(--success-soft)', color: 'var(--success)' },
-  [Role.FORWARDER]:  { bg: 'var(--info-soft)',     color: 'var(--info)' },
 };
 
 export type FilterKey = 'all' | Role;

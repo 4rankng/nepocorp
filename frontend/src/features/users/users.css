@@ -658,3 +658,20 @@
   background: rgba(239, 68, 68, 0.12);
   color: rgb(220, 38, 38);
 }
+
+/* License-plate badge for the assigned-truck ("Xe") column on driver rows.
+   Vantai plate pattern — light variant: mono, hairline border, no truncation. */
+.users-admin-page .user-truck-plate {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface-2);
+  padding: 3px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+  display: inline-block;
+}

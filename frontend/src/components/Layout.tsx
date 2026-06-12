@@ -67,8 +67,10 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'master-data' },
         { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'master-data' },
 
-        ...(role === 'ADMIN' || role === 'MANAGER' ? [
+        ...(role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT' ? [
           { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'system' as const },
+        ] : []),
+        ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'audit-logs', label: 'Nhật ký người dùng', path: '/audit-logs', icon: ScrollText, section: 'system' as const },
         ] : []),
         { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'system' },

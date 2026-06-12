@@ -21,6 +21,23 @@ export interface User {
 }
 export type UserPublic = Omit<User, 'passwordHash' | 'deletedAt'>;
 
+/**
+ * A user row LEFT-JOINED with its optional linked `drivers` profile
+ * (drivers.userId). The driver-* fields are null for non-driver users or for
+ * drivers that have no profile row. Returned by GET /api/auth/users so the
+ * /users page can render salary/truck inline. baseSalary/socialInsurance are
+ * string|null because the numeric(15,0) columns serialize as strings (see Driver).
+ */
+export interface UserWithDriver extends UserPublic {
+  driverId: number | null;
+  driverName: string | null;
+  driverPhone: string | null;
+  assignedTruckId: number | null;
+  baseSalary: string | null;
+  socialInsurance: string | null;
+  driverStatus: DriverStatus | null;
+}
+
 export interface Driver {
   id: number;
   userId: number | null;
