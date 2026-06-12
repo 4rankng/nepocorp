@@ -204,10 +204,12 @@ export function TotalsPanel() {
               paddingBottom: 2,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Lái xe thực nhận (Tiền mặt)</span>
-              <span className="mono" style={{ color: "#EF4444" }}>−{fmt(totals.totalRoadAllowance)}</span>
-            </div>
+            {roadBreakdown.returnBonus > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Chuyến về có hàng</span>
+                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.returnBonus)}</span>
+              </div>
+            )}
             {roadBreakdown.discount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Tiền vé (công ty) đã thanh toán</span>
@@ -220,6 +222,7 @@ export function TotalsPanel() {
                 <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
               </div>
             )}
+
             {roadBreakdown.overridden && (
               <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4, borderTop: "1px dashed rgba(255,255,255,0.18)", marginTop: 2 }}>
                 <span style={{ color: "#FBBF24" }}>Đã điều chỉnh tay tổng chi phí</span>
@@ -230,7 +233,7 @@ export function TotalsPanel() {
         )}
         <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
           <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-            <Users size={13} style={{ color: "#10B981" }} /> Tiền kết hợp
+            <Users size={13} style={{ color: "#10B981" }} /> Tiền lương tài xế
           </span>
           <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
             −{fmt(Number(driverSalary) || 0)}

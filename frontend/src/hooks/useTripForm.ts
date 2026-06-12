@@ -444,17 +444,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     // Only auto-fill tripWageDays if user hasn't manually set it
     setTripWageDays(prev => prev || String(days));
 
-    // Calculate standardWorkDays for departure month (days in month - sundays)
-    const year = startDate.getFullYear();
-    const month = startDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    let sundays = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (new Date(year, month, d).getDay() === 0) sundays++;
-    }
-    const standardWorkDays = daysInMonth - sundays;
-    const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
-
+    const dailyRate = Math.round(10000000 / 26);
     setDriverSalary(String(dailyRate * days));
   }, [driverId, departureDate, completedAt, selectedRouteData, roadConfig, isEditMode, options?.drivers]);
 

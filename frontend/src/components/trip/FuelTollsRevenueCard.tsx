@@ -120,7 +120,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
             const stations = Number(form.tollsStations) || 0;
             const perStation = form.tollPerStationApplied ?? 55000;
             const returnBonus = form.hasReturnCargo ? (form.returnCargoBonusApplied ?? 300000) : 0;
-            const tongTien = addition > 0 ? addition : (base - (stations * perStation) + returnBonus);
+            const tongTien = addition > 0 ? (addition + returnBonus) : (base - (stations * perStation) + returnBonus);
             const salary = Number(form.driverSalary) || 0;
             const twoPoint = Number(form.twoPointDeliveryBonus) || 0;
             const shift = Number(form.vehicleShiftAllowance) || 0;

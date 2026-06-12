@@ -82,7 +82,7 @@ export function AllowanceSection() {
             const stations = Number(tollsStations) || 0;
             const perStation = tollPerStationApplied ?? 55000;
             const returnBonus = hasReturnCargo ? (returnCargoBonusApplied ?? 300000) : 0;
-            const tongTien = addition > 0 ? addition : (base - (stations * perStation) + returnBonus);
+            const tongTien = addition > 0 ? (addition + returnBonus) : (base - (stations * perStation) + returnBonus);
             const salary = Number(driverSalary) || 0;
             const twoPoint = Number(twoPointDeliveryBonus) || 0;
             const shift = Number(vehicleShiftAllowance) || 0;
@@ -142,7 +142,7 @@ export function AllowanceSection() {
           )}
         </div>
         <div className="field">
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tiền kết hợp (đ)</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Tiền lương tài xế (đ)</label>
           <InputWithPrefix
             value={driverSalary}
             onChange={setDriverSalary}
@@ -236,17 +236,57 @@ export function AllowanceSection() {
         </div>
         <div className="field">
           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", marginBottom: 6 }}>Số ngày tính lương</label>
-          <input
-            className="input"
-            type="number"
-            min="1"
-            max="31"
-            value={tripWageDays}
-            onChange={(e) => setTripWageDays(e.target.value)}
-            placeholder="Tự động"
-            style={{ width: "100%" }}
-          />
-          <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Để trống = tự tính theo số ngày</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              className="input"
+              value={tripWageDays}
+              placeholder="VD: 2"
+              onChange={(e) => {
+                const days = e.target.value;
+                setTripWageDays(days);
+                if (days) {
+                  const dailyRate = Math.round(10000000 / 26);
+                  setDriverSalary(String(dailyRate * Number(days)));
+                }
+              }}
+              style={{ width: "100%" }}
+            />
+            {[1, 2, 3].map((d) => (
+              <button
+                key={d}
+                type="button"
+                className="btn"
+                style={{
+                  padding: 0,
+                  width: 36,
+                  height: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  background: tripWageDays === String(d) ? "var(--brand)" : "var(--bg-3)",
+                  color: tripWageDays === String(d) ? "#fff" : "var(--fg-2)",
+                  border: "none",
+                  fontWeight: 600
+                }}
+                onClick={() => {
+                  setTripWageDays(String(d));
+                  const dailyRate = Math.round(10000000 / 26);
+                  setDriverSalary(String(dailyRate * d));
+                }}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+            {tripWageDays && Number(tripWageDays) > 0 
+              ? `${tripWageDays} ngày = ${(Math.round(10000000 / 26) * Number(tripWageDays)).toLocaleString('vi-VN')} đ`
+              : '1 ngày = 384.615 đ'}
+          </div>
         </div>
       </div>
     </div>
