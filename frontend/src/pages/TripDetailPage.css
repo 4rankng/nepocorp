@@ -99,13 +99,13 @@
 }
 
 .status-badge--new {
-  background: var(--amber-soft, #FBF1DC);
-  color: var(--amber, #C77F0A);
+  background: var(--info-soft, #DCE9FC);
+  color: var(--info, #1E5BB8);
 }
 
 .status-badge--transit {
-  background: var(--info-soft, #DCE9FC);
-  color: var(--info, #1E5BB8);
+  background: var(--amber-soft, #FBF1DC);
+  color: var(--amber, #C77F0A);
 }
 
 .status-badge--completed {

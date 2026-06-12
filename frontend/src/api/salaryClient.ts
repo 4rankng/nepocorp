@@ -35,6 +35,21 @@ export interface AttendanceSalary {
   standbyCost: number;
   netSalary: number;
   workDays?: WorkDayRecord[];
+  confirmationStatus: 'DRAFT' | 'CONFIRMED';
+  confirmedBy: number | null;
+  confirmedAt: string | null;
+}
+
+export interface SalaryConfirmation {
+  id: number;
+  driverId: number;
+  year: number;
+  month: number;
+  status: 'DRAFT' | 'CONFIRMED';
+  confirmedBy: number | null;
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DriverSalarySummary {
@@ -73,6 +88,12 @@ export const salaryClient = {
     api.put<{ results: any[]; salary: AttendanceSalary }>(
       SALARY.WORK_DAYS(driverId, year, month),
       { items }
+    ),
+
+  // Confirm salary period (DRAFT → CONFIRMED)
+  confirmSalary: (driverId: number, year: number, month: number) =>
+    api.post<{ confirmation: SalaryConfirmation; salary: AttendanceSalary }>(
+      SALARY.CONFIRM(driverId, year, month)
     ),
 };
 

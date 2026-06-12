@@ -7,6 +7,7 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
+import { formatNumber } from '../../lib/format';
 import type { Driver, Truck } from '@tingting/shared';
 
 const DRIVER_STATUS_LABELS: Record<string, string> = { ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng' };
@@ -80,6 +81,7 @@ export default function DriversConfigPage() {
       columns={[
         { header: 'Tên tài xế', render: (d) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{d.name}</span> },
         { header: 'SĐT', render: (d) => d.phone || '—' },
+        { header: 'Lương CB', render: (d) => d.baseSalary ? formatNumber(d.baseSalary) : '—' },
         { header: 'Xe phân công', render: (d) => <span style={{ fontFamily: 'var(--font-mono)' }}>{d.assignedTruckId ? (truckMap.get(d.assignedTruckId) || '—') : '—'}</span> },
         { header: 'Trạng thái', render: (d) => <StatusPill variant={d.status === 'ACTIVE' ? 'success' : 'danger'}>{DRIVER_STATUS_LABELS[d.status] || d.status}</StatusPill> },
       ]}

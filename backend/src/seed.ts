@@ -13,6 +13,9 @@ async function seed() {
     { username: 'ketoan', email: 'ketoan@nepo.vn', phone: '0900000002', passwordHash, role: Role.ACCOUNTANT, fullName: 'Nguyễn Thị Mai' },
     { username: 'laixe', email: 'laixe@nepo.vn', phone: '0900000003', passwordHash, role: Role.DRIVER, fullName: 'Phạm Văn Hùng' },
     { username: 'giaonhan', email: 'giaonhan@nepo.vn', phone: '0900000004', passwordHash, role: Role.FORWARDER, fullName: 'Nguyễn Văn Giao' },
+    { username: 'thu', email: 'thu@nepo.vn', phone: '0900000010', passwordHash, role: Role.DRIVER, fullName: 'Nguyễn Văn Thụ' },
+    { username: 'pho', email: 'pho@nepo.vn', phone: '0900000011', passwordHash, role: Role.DRIVER, fullName: 'Nguyễn Văn Phố' },
+    { username: 'quyet', email: 'quyet@nepo.vn', phone: '0900000012', passwordHash, role: Role.DRIVER, fullName: 'Lê Văn Quyết' },
   ];
 
   for (const user of users) {
@@ -37,9 +40,9 @@ async function seed() {
 
   const driverSeeds = [
     { userId: userByEmail.get('laixe@nepo.vn') ?? null, name: 'Phạm Văn Hùng',  phone: '0900000003', assignedTruckId: 1, baseSalary: '5000000', status: 'ACTIVE' as const },
-    { userId: null,                                     name: 'Nguyễn Văn Lái',  phone: '0912000001', assignedTruckId: 2, baseSalary: '4500000', status: 'ACTIVE' as const },
-    { userId: null,                                     name: 'Trần Văn Tài',   phone: '0912000002', assignedTruckId: 3, baseSalary: '4500000', status: 'ACTIVE' as const },
-    { userId: null,                                     name: 'Lê Văn Phương',  phone: '0912000003', assignedTruckId: 4, baseSalary: '5000000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('thu@nepo.vn') ?? null,   name: 'Nguyễn Văn Thụ', phone: '0900000010', assignedTruckId: 2, baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('quyet@nepo.vn') ?? null, name: 'Lê Văn Quyết',   phone: '0900000012', assignedTruckId: 3, baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('pho@nepo.vn') ?? null,   name: 'Nguyễn Văn Phố', phone: '0900000011', assignedTruckId: 4, baseSalary: '5000000', status: 'ACTIVE' as const },
   ];
 
   // Use onConflictDoNothing with a unique constraint on (name) if it exists,

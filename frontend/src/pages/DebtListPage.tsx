@@ -304,10 +304,18 @@ export default function DebtListPage() {
                   const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
 
                   return (
-                    <ClickableCard
+                    <tr
                       key={d.customerId}
-                      to={`/debt/${d.customerId}`}
+                      role="button"
+                      tabIndex={0}
                       style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/debt/${d.customerId}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/debt/${d.customerId}`);
+                        }
+                      }}
                     >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--fg-1)' }}>
@@ -379,7 +387,7 @@ export default function DebtListPage() {
                       <td style={{ textAlign: 'right' }}>
                         <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
                       </td>
-                    </ClickableCard>
+                    </tr>
                   );
                 })}
 

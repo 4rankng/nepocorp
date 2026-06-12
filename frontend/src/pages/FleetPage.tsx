@@ -84,7 +84,7 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
   onClose: () => void;
   details: Array<{ label: string; value: React.ReactNode }>;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   deleting: number | null;
   itemId: number;
 }) {
@@ -101,15 +101,17 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
           <button className="btn btn--primary btn--sm" onClick={onEdit}>
             <Pencil size={13} /> Sửa
           </button>
-          <button
-            className="btn btn--ghost btn--sm"
-            style={{ color: 'var(--danger)' }}
-            disabled={deleting === itemId}
-            onClick={onDelete}
-          >
-            {deleting === itemId ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />}
-            Xóa
-          </button>
+          {onDelete && (
+            <button
+              className="btn btn--ghost btn--sm"
+              style={{ color: 'var(--danger)' }}
+              disabled={deleting === itemId}
+              onClick={onDelete}
+            >
+              {deleting === itemId ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />}
+              Xóa
+            </button>
+          )}
         </>
       }
     >
@@ -889,7 +891,6 @@ function DriverCard({ drivers, truckMap, crud }: {
                 ) : null}
                 <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(d.id); }}>Xem</button>
-                  <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(d.id); }}>Xóa</button>
                 </div>
               </div>
             );
@@ -916,7 +917,6 @@ function DriverCard({ drivers, truckMap, crud }: {
         itemId={viewingId ?? 0}
         deleting={crud.deleting}
         onEdit={() => { const id = viewingId; setViewingId(null); if (id != null) crud.setEditingId(id); }}
-        onDelete={() => { const id = viewingId; setViewingId(null); if (id != null) crud.doDelete(id); }}
         details={(() => {
           const d = viewingId != null ? drivers.find(x => x.id === viewingId) : null;
           if (!d) return [];

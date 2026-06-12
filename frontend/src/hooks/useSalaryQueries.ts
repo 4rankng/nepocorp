@@ -83,4 +83,14 @@ export function useResolveSalaryPeriod(year: number, month: number) {
   });
 }
 
+export function useConfirmSalary(driverId: number, year: number, month: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => salaryClient.confirmSalary(driverId, year, month),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['driver-salary', driverId, year, month] });
+      queryClient.invalidateQueries({ queryKey: ['salary-list', year, month] });
+    },
+  });
+}
 

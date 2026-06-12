@@ -360,10 +360,12 @@ export default function SupplierListPage() {
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(s => (
-                  <ClickableCard key={s.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
+                  <tr key={s.id} role="button" tabIndex={0}
+                    style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
                     onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); } }}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontWeight: 600 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -423,7 +425,7 @@ export default function SupplierListPage() {
                         </div>
                       )}
                     </td>
-                  </ClickableCard>
+                  </tr>
               ))}
             </tbody>
           </table>

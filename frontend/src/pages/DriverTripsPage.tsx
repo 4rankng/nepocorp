@@ -1,9 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
-import { ClickableCard } from '../components/shared/ClickableCard';
 import { useDriverTrips } from '../hooks/useQueries';
 
 interface TripSummary {
@@ -26,7 +25,6 @@ function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 's
 }
 
 export default function DriverTripsPage() {
-  const navigate = useNavigate();
   const { data, isLoading: loading, error: queryError } = useDriverTrips();
   const trips = (data?.items ?? []) as TripSummary[];
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
@@ -72,22 +70,25 @@ export default function DriverTripsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
-          <ClickableCard
+          <Link
             key={trip.id}
             to={`/my-trips/${trip.id}`}
             className="panel fade-up driver-trip-card"
             style={{
+              display: 'block',
+              textDecoration: 'none',
+              color: 'inherit',
               cursor: 'pointer',
               transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
-              (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = '#D4D4D8';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = '';
-              (e.currentTarget as HTMLDivElement).style.borderColor = '';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '';
+              (e.currentTarget as HTMLAnchorElement).style.borderColor = '';
             }}
           >
             <div className="driver-trip-card__body">
@@ -130,7 +131,7 @@ export default function DriverTripsPage() {
               {/* Arrow */}
               <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
-          </ClickableCard>
+          </Link>
         ))}
       </div>
     </div>

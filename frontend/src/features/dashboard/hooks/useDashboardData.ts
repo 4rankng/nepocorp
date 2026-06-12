@@ -35,7 +35,7 @@ export interface DerivedData {
   costs: number;
   grossProfit: number;
   netProfit: number;
-  displayTrucks: Array<{ plate: string; trips: number; profit: number; driver: string }>;
+  displayTrucks: Array<{ plate: string; trips: number; revenue: number; profit: number; driver: string }>;
   maxTruckProfit: number;
   displayRoutes: Array<{ name: string; trips: number; profit: number; meta: string }>;
   fuelCost: number;
@@ -181,6 +181,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const displayTrucks = sortedTrucks.map(t => ({
       plate: t.plate,
       trips: t.trips,
+      revenue: t.revenue,
       profit: t.profit,
       driver: `Đầu kéo · ${t.trips} chuyến`
     }));

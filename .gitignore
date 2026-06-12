@@ -50,5 +50,8 @@ __pycache__/
 .omc/
 .omo/
 
+# QA test scripts
+frontend/qa-*.js
+
 # Session state (never commit)
 HANDOFF.md

@@ -244,7 +244,10 @@ export default function CustomersPage() {
       if (filter === 'risk') {
         const debt = debtMap.get(c.id) ?? 0;
         const limit = Number((c as any).creditLimit || c.creditLimit || 0);
-        return limit > 0 && debt / limit > 0.8;
+        if (debt <= 0) return false;
+        // No credit limit + outstanding debt = unlimited risk exposure
+        if (limit <= 0) return true;
+        return debt / limit > 0.8;
       }
       return true;
     });
@@ -266,9 +269,9 @@ export default function CustomersPage() {
     setSaving(true);
     try {
       await api.put(`/customers/${id}`, body);
+      await refetchCustomers();
       setEditingId(null);
       setMenuOpenId(null);
-      await refetchCustomers();
     } catch (e: any) { setMutationError(e?.message || 'Lỗi cập nhật'); } finally { setSaving(false); }
   }
 
@@ -450,10 +453,12 @@ export default function CustomersPage() {
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(c => (
-                  <ClickableCard key={c.id} style={{ transition: 'background 0.12s ease', cursor: 'pointer' }}
+                  <tr key={c.id} role="button" tabIndex={0}
+                    style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
                     onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); } }}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 600 }}>
@@ -508,7 +513,7 @@ export default function CustomersPage() {
                         </div>
                       )}
                     </td>
-                  </ClickableCard>
+                  </tr>
               ))}
             </tbody>
           </table>

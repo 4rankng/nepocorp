@@ -601,6 +601,12 @@
 }
 
 /* Keyframe animation for pulsing dot on active (In Transit) status */
+@keyframes pulse-amber {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); opacity: 0.8; }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); opacity: 1; }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); opacity: 0.8; }
+}
+
 @keyframes pulse-green {
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); opacity: 0.8; }
   70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); opacity: 1; }
@@ -810,29 +816,29 @@
 .trip-list-page .pill-moi .sd { background: #3B82F6; }
 
 .trip-list-page .pill-dang {
-  background: #F0FDF4;
-  color: #15803D;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-.trip-list-page .pill-dang .sd {
-  background: #22C55E;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
-  animation: pulse-green 1.8s infinite ease-in-out;
-}
-
-.trip-list-page .pill-htth {
   background: #FFFBEB;
   color: #92400E;
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
-.trip-list-page .pill-htth .sd { background: #F59E0B; }
+.trip-list-page .pill-dang .sd {
+  background: #F59E0B;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+  animation: pulse-amber 1.8s infinite ease-in-out;
+}
+
+.trip-list-page .pill-htth {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.trip-list-page .pill-htth .sd { background: #22C55E; }
 
 .trip-list-page .pill-chot {
-  background: #E6F7EE;
-  color: #005A2D;
-  border: 1px solid rgba(0, 177, 79, 0.25);
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid rgba(107, 114, 128, 0.2);
 }
-.trip-list-page .pill-chot .sd { background: #00B14F; }
+.trip-list-page .pill-chot .sd { background: #6B7280; }
 
 .trip-list-page .pill-huy {
   background: #FEF2F2;

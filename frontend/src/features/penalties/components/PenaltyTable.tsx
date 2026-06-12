@@ -109,7 +109,7 @@ export function PenaltyTable({
     const violationsInPeriod = driverPenalties.length;
     const driverYTD = ytdPenalties.filter(p => p.driverId === d.id);
     const fineYTD = driverYTD.reduce((s, p) => s + parseFloat(p.amount), 0);
-    const grade = getGrade(streakDays, violationsInPeriod);
+    const grade = getGrade(violationsInPeriod);
     const truckPlate = d.assignedTruckId && truckMap.has(d.assignedTruckId)
       ? truckMap.get(d.assignedTruckId)!.licensePlate: null;
     return { ...d, streakDays, violationsInPeriod, fineYTD, grade, truckPlate };

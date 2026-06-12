@@ -2,12 +2,12 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, Users,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit,
+  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
 import {
-  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays,
+  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary,
 } from '../hooks/useSalaryQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { getInitials, avatarColorById } from '../lib/avatar';
@@ -38,13 +38,14 @@ interface CalCellProps {
   dayLabel: string;
   workDay: WorkDayRecord | undefined;
   isUpdating: boolean;
+  isLocked: boolean;
   onCycle: (date: string, current: WorkDayRecord | undefined) => void;
 }
 
-function CalCell({ dateStr, day, isSunday, dayLabel, workDay, isUpdating, onCycle }: CalCellProps) {
+function CalCell({ dateStr, day, isSunday, dayLabel, workDay, isUpdating, isLocked, onCycle }: CalCellProps) {
   const status = workDay?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
   const cfg = status ? STATUS_CONFIG[status] : null;
-  const isClickable = !isUpdating && status !== 'TRIP_DAY';
+  const isClickable = !isUpdating && !isLocked && status !== 'TRIP_DAY';
 
   return (
     <div
@@ -166,6 +167,9 @@ export default function SalaryAttendancePage() {
   const { data: workDayData, isLoading: wdLoading } = useDriverWorkDays(selectedDriverId, year, month);
   const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
+  const confirmMutation = useConfirmSalary(selectedDriverId ?? 0, year, month);
+
+  const isConfirmed = salary?.confirmationStatus === 'CONFIRMED';
 
   const drivers = salaryList?.items ?? [];
   const selectedDriver = drivers.find(d => d.id === selectedDriverId);
@@ -216,7 +220,7 @@ export default function SalaryAttendancePage() {
   };
 
   const handleCellClick = useCallback(async (dateStr: string, current: WorkDayRecord | undefined) => {
-    if (!selectedDriverId) return;
+    if (!selectedDriverId || isConfirmed) return;
     const newStatus = cycleStatus(dateStr, current);
     if (newStatus === 'TRIP_DAY') return;
 
@@ -403,6 +407,7 @@ export default function SalaryAttendancePage() {
                             dayLabel={dayLabel}
                             workDay={workDayMap.get(dateStr)}
                             isUpdating={isUpdating}
+                            isLocked={isConfirmed}
                             onCycle={handleCellClick}
                           />
                         );
@@ -421,8 +426,17 @@ export default function SalaryAttendancePage() {
                       ))}
                     </div>
                     <div className="calendar-legend-instruction">
-                      <Info size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
-                      <span>Bấm vào ngày để chuyển trạng thái: Chờ việc ⇄ Nghỉ riêng ⇄ Nghỉ tuần</span>
+                      {isConfirmed ? (
+                        <>
+                          <Lock size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
+                          <span>Kỳ lương đã xác nhận — lịch chấm công đã khóa</span>
+                        </>
+                      ) : (
+                        <>
+                          <Info size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
+                          <span>Bấm vào ngày để chuyển trạng thái: Chờ việc ⇄ Nghỉ riêng ⇄ Nghỉ tuần</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -449,13 +463,58 @@ export default function SalaryAttendancePage() {
                   <Loader2 size={24} className="spin" style={{ color: '#fff' }} />
                 </div>
               ) : salary ? (
-                <SalarySummaryCard salary={salary} />
+                <>
+                  <SalarySummaryCard salary={salary} />
+                  {/* Confirm button & status badge */}
+                  <div style={{ marginTop: 12 }}>
+                    {isConfirmed ? (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                        borderRadius: 8, background: 'var(--success-soft)', color: 'var(--success)',
+                        fontSize: 13, fontWeight: 500,
+                      }}>
+                        <CheckCircle2 size={16} />
+                        <span>Đã xác nhận</span>
+                        {salary.confirmedAt && (
+                          <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
+                            {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        className="btn btn--primary btn--sm"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                        disabled={confirmMutation.isPending}
+                        onClick={() => confirmMutation.mutate()}
+                      >
+                        {confirmMutation.isPending ? (
+                          <Loader2 size={14} className="spin" />
+                        ) : (
+                          <CheckCircle2 size={14} />
+                        )}
+                        Xác nhận kỳ lương
+                      </button>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
                   Không thể tải dữ liệu lương
                 </div>
               )}
             </div>
+
+            {/* Confirmed lock notice */}
+            {isConfirmed && (
+              <div style={{
+                marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                borderRadius: 8, background: 'var(--bg-2)', fontSize: 12, color: 'var(--fg-3)',
+              }}>
+                <Lock size={14} style={{ flexShrink: 0 }} />
+                <span>Kỳ lương đã khóa — không thể chỉnh sửa ngày công</span>
+              </div>
+            )}
           </aside>
         )}
       </div>

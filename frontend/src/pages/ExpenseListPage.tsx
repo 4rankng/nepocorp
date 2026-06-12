@@ -343,9 +343,12 @@ export default function ExpenseListPage() {
                 </tr>
               ) : (
                 expenses.map(e => (
-                  <ClickableCard
-                    key={e.id}
-                    to={`/expenses/${e.id}/edit`}
+                  <tr key={e.id} role="button" tabIndex={0}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/expenses/${e.id}/edit`)}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                    onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                   >
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)' }}>{formatDate(e.expenseDate)}</td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
@@ -366,7 +369,7 @@ export default function ExpenseListPage() {
                     <td style={{ textAlign: 'right' }}>
                       <ChevronRight size={14} style={{ color: 'var(--ink-4)' }} />
                     </td>
-                  </ClickableCard>
+                  </tr>
                 ))
               )}
             </tbody>

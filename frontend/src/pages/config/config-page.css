@@ -205,4 +205,6 @@
   .cfg-page .tt-table tbody td { padding: 12px 12px; }
   .cfg-page .toolbar { padding: 12px 14px 4px; gap: 8px; }
   .cfg-page__summary { font-size: 11px; }
+  .cfg-page .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cfg-page .table-scroll table { min-width: 600px; }
 }

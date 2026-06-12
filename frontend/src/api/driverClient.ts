@@ -23,6 +23,8 @@ export const driverClient = {
       penalties: string;
       netIncome: string;
       adjustment?: number;
+      supplementPay?: number;
+      leaveDeduction?: number;
       standardWorkDays?: number;
       paidDays?: number;
       dailyRate?: number;

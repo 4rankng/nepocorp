@@ -99,6 +99,11 @@ export async function batchUpsertWorkDays(
           .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, item.date)))
           .limit(1);
         if (existing[0]) {
+          // Reject deletion of trip-linked TRIP_DAY records
+          if (existing[0].tripId) {
+            results.push({ date: item.date, action: 'rejected', reason: 'TRIP_DAY locked (trip-linked)' });
+            continue;
+          }
           await tx.delete(s.driverWorkDays).where(eq(s.driverWorkDays.id, existing[0].id));
         }
         results.push({ date: item.date, action: 'deleted' });
@@ -107,14 +112,19 @@ export async function batchUpsertWorkDays(
         const existing = await tx.select().from(s.driverWorkDays)
           .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, item.date)))
           .limit(1);
+        // Reject status changes on trip-linked records (TRIP_DAY from sync)
+        if (existing[0]?.tripId && item.status !== 'TRIP_DAY') {
+          results.push({ date: item.date, action: 'rejected', reason: 'TRIP_DAY locked (trip-linked)' });
+          continue;
+        }
         let result;
         if (existing[0]) {
           const [updated] = await tx.update(s.driverWorkDays)
-            .set({ 
-              status: item.status, 
-              note: item.note ?? null, 
+            .set({
+              status: item.status,
+              note: item.note ?? null,
               tripId: item.status === 'TRIP_DAY' ? existing[0].tripId ?? null : null,
-              updatedAt: new Date() 
+              updatedAt: new Date()
             })
             .where(eq(s.driverWorkDays.id, existing[0].id))
             .returning();
@@ -317,6 +327,18 @@ export async function computeSalary(
   const totalPenalties = parseFloat(penaltyRow?.total || '0');
   const netSalary = baseSalary + totalTripSalary + adjustment + supplementPay - leaveDeduction - totalPenalties;
 
+  // Get salary confirmation status
+  const [confirmationRow] = await db.select({
+    status: s.salaryConfirmations.status,
+    confirmedBy: s.salaryConfirmations.confirmedBy,
+    confirmedAt: s.salaryConfirmations.confirmedAt,
+  }).from(s.salaryConfirmations)
+    .where(and(
+      eq(s.salaryConfirmations.driverId, driverId),
+      eq(s.salaryConfirmations.year, year),
+      eq(s.salaryConfirmations.month, month),
+    )).limit(1);
+
   return {
     ...attendance,
     baseSalary,
@@ -329,6 +351,9 @@ export async function computeSalary(
     totalPenalties,
     standbyCost: supplementPay, // kept for backward compat — same value as supplementPay
     netSalary,
+    confirmationStatus: confirmationRow?.status ?? 'DRAFT',
+    confirmedBy: confirmationRow?.confirmedBy ?? null,
+    confirmedAt: confirmationRow?.confirmedAt ?? null,
   };
 }
 
@@ -359,4 +384,46 @@ export async function computeAllDriverSalaries(year: number, month: number) {
   );
 
   return { year, month, items: summaries };
+}
+
+/**
+ * Confirm a salary period for a driver (DRAFT → CONFIRMED).
+ * Upserts a salary_confirmations row.
+ */
+export async function confirmSalary(
+  driverId: number,
+  year: number,
+  month: number,
+  userId: number,
+) {
+  // Validate driver exists
+  const [driver] = await db.select({ id: s.drivers.id })
+    .from(s.drivers)
+    .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt)))
+    .limit(1);
+  if (!driver) throw new ApiError(404, 'Không tìm thấy tài xế');
+
+  const now = new Date();
+  const [confirmation] = await db.insert(s.salaryConfirmations)
+    .values({
+      driverId,
+      year,
+      month,
+      status: 'CONFIRMED',
+      confirmedBy: userId,
+      confirmedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [s.salaryConfirmations.driverId, s.salaryConfirmations.year, s.salaryConfirmations.month],
+      set: {
+        status: 'CONFIRMED',
+        confirmedBy: userId,
+        confirmedAt: now,
+        updatedAt: now,
+      },
+    })
+    .returning();
+
+  const salary = await computeSalary(driverId, year, month);
+  return { confirmation, salary };
 }

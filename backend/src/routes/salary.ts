@@ -9,11 +9,12 @@ import {
   batchUpsertWorkDays,
   getWorkDays,
   computeAllDriverSalaries,
+  confirmSalary,
 } from '../services/attendance.service';
 import { resolveSalaryPeriodDateRange } from '../services/salary-period.service';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 const router = Router();
@@ -53,6 +54,18 @@ router.put('/:driverId/:year/:month/workdays', requireRoles(Role.MANAGER, Role.A
     throw new ApiError(400, 'Cần có danh sách ngày công');
   }
 
+  // Guard: reject updates if salary period is confirmed
+  const [confirmation] = await db.select({ status: s.salaryConfirmations.status })
+    .from(s.salaryConfirmations)
+    .where(and(
+      eq(s.salaryConfirmations.driverId, driverId),
+      eq(s.salaryConfirmations.year, year),
+      eq(s.salaryConfirmations.month, month),
+    )).limit(1);
+  if (confirmation?.status === 'CONFIRMED') {
+    throw new ApiError(400, 'Kỳ lương đã xác nhận, không thể chỉnh sửa ngày công');
+  }
+
   // Validate that all dates belong to the resolved salary period
   const period = await resolveSalaryPeriodDateRange(month, year);
   for (const item of items) {
@@ -65,6 +78,20 @@ router.put('/:driverId/:year/:month/workdays', requireRoles(Role.MANAGER, Role.A
   // Return updated salary summary
   const salary = await computeSalary(driverId, year, month);
   res.json({ results, salary });
+}));
+
+// POST /api/salary/:driverId/:year/:month/confirm — confirm salary period (DRAFT → CONFIRMED)
+router.post('/:driverId/:year/:month/confirm', requireRoles(Role.ADMIN, Role.ACCOUNTANT, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(String(req.params.driverId), 10);
+  const year = parseInt(String(req.params.year), 10);
+  const month = parseInt(String(req.params.month), 10);
+
+  if (!driverId || !year || !month || month < 1 || month > 12) {
+    throw new ApiError(400, 'Tham số không hợp lệ');
+  }
+
+  const result = await confirmSalary(driverId, year, month, req.user!.userId);
+  res.json(result);
 }));
 
 // GET /api/salary/:driverId/:year/:month/workdays — get raw work day records for calendar

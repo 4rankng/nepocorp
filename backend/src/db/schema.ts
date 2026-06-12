@@ -371,6 +371,22 @@ export const managementFees = pgTable('management_fees', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const salaryConfirmationStatusEnum = pgEnum('salary_confirmation_status', ['DRAFT', 'CONFIRMED']);
+
+export const salaryConfirmations = pgTable('salary_confirmations', {
+  id: serial('id').primaryKey(),
+  driverId: integer('driver_id').references(() => drivers.id).notNull(),
+  year: integer('year').notNull(),
+  month: integer('month').notNull(),
+  status: salaryConfirmationStatusEnum('status').default('DRAFT').notNull(),
+  confirmedBy: integer('confirmed_by').references(() => users.id),
+  confirmedAt: timestamp('confirmed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('salary_confirmations_driver_period_idx').on(table.driverId, table.year, table.month),
+]);
+
 export const salaryPeriods = pgTable('salary_periods', {
   id: serial('id').primaryKey(),
   // null for the global default row; 1-12 for per-month overrides

@@ -11,6 +11,8 @@ interface EarningsSummary {
   netIncome: string;
   // Optional fields from attendance system (when available)
   adjustment?: number;
+  supplementPay?: number;
+  leaveDeduction?: number;
   standardWorkDays?: number;
   paidDays?: number;
   dailyRate?: number;
@@ -109,6 +111,26 @@ export default function DriverEarningsPage() {
             unit="₫"
             icon={earnings.adjustment > 0 ? TrendingUp : TrendingDown}
             variant={earnings.adjustment > 0 ? 'success' : 'danger'}
+            compact
+          />
+        )}
+        {earnings.supplementPay !== undefined && earnings.supplementPay > 0 && (
+          <KPI
+            label="Phụ cấp trực"
+            value={`+${formatNumber(earnings.supplementPay)}`}
+            unit="₫"
+            icon={TrendingUp}
+            variant="success"
+            compact
+          />
+        )}
+        {earnings.leaveDeduction !== undefined && earnings.leaveDeduction > 0 && (
+          <KPI
+            label="Trừ nghỉ việc riêng"
+            value={`-${formatNumber(earnings.leaveDeduction)}`}
+            unit="₫"
+            icon={TrendingDown}
+            variant="danger"
             compact
           />
         )}
