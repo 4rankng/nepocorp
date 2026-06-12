@@ -759,8 +759,8 @@
   .kpi__label { font-size: 9.5px; line-height: 1.2; letter-spacing: 0.04em; }
   .kpi__icon { width: 20px; height: 20px; border-radius: 6px; }
   .kpi__icon svg { width: 11px; height: 11px; }
-  .kpi__value { font-size: 18px; line-height: 1.1; margin: 2px 0; }
-  .kpi__value-unit { font-size: 11px; margin-left: 2px; }
+  .kpi__value { font-size: 15px; line-height: 1.1; margin: 2px 0; }
+  .kpi__value-unit { font-size: 10px; margin-left: 2px; }
   .kpi__meta {
     font-size: 10.5px; line-height: 1.25;
     gap: 3px; flex-wrap: wrap; margin-top: 2px;
@@ -1627,8 +1627,8 @@
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 10px 12px; }
   .kpi__label { font-size: 9.5px; letter-spacing: 0.02em; }
-  .kpi__value { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi__value-unit { font-size: 12px; }
+  .kpi__value { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi__value-unit { font-size: 10px; }
   .kpi__meta { font-size: 10.5px; }
   .page-title { font-size: 19px; }
   .aging-buckets { grid-template-columns: 1fr 1fr; gap: 8px; }
