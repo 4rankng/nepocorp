@@ -947,42 +947,74 @@
 /* ─── Mobile breakpoint ─── */
 
 @media (max-width: 640px) {
-  /* Fix header white space wrapping bug */
+  /* Tighten page-level gap on mobile */
+  .penalty-page {
+    gap: 12px;
+  }
+
+  /* Remove card wrapper on mobile for all transparent panels */
+  .penalty-page .penalty-transparent-panel {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Flatten card headers inside transparent panels */
+  .penalty-page .penalty-transparent-panel .penalty-card-head {
+    padding: 0 0 8px !important;
+    gap: 6px !important;
+    border-bottom: none !important;
+  }
+
   .penalty-page .penalty-card-head {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 16px;
-    gap: 16px;
+    padding: 0;
+    gap: 6px;
+    border-bottom: none;
   }
-  
+
+  .penalty-page .penalty-m-cards {
+    padding: 0 !important;
+  }
+
   .penalty-page .penalty-card-lead {
     display: flex;
     flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 12px;
     width: 100%;
+    flex: none; /* Prevent flex-basis: 300px from turning into vertical height */
   }
 
   .penalty-page .penalty-card-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(0,177,79,0.05) 100%);
   }
-  
+
   .penalty-page .penalty-card-title {
-    font-size: 18px;
-    margin-bottom: 2px;
+    font-size: 16px;
+    margin-bottom: 0;
   }
 
   .penalty-page .penalty-card-sub {
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.3;
+    margin-top: 0;
   }
 
   .penalty-page .penalty-head-tools {
     width: 100%;
+    margin-top: 2px;
   }
   
   .penalty-seg {
@@ -1087,6 +1119,14 @@
   }
 
   /* Footer */
+  .penalty-page .penalty-transparent-panel .penalty-table-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+  }
   .penalty-page .penalty-table-foot {
     flex-direction: column;
     align-items: flex-start;

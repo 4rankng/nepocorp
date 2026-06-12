@@ -1242,7 +1242,14 @@
     padding: 14px 16px;
   }
   .penalty-page .penalty-card-lead,
-  .fleet-page .fleet-card-lead { width: 100%; flex-wrap: wrap; }
+  .fleet-page .fleet-card-lead { 
+    width: 100%; 
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+  }
   .penalty-page .penalty-card-title,
   .fleet-page .fleet-card-title { flex-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
   .penalty-page .penalty-card-sub,

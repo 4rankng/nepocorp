@@ -217,7 +217,9 @@
   will-change: opacity, transform;
 }
 .dash-wf .wf-aurow {
-  opacity: 0;
+  /* NOTE: opacity initial state is set by JS in useDashboardAnimations
+     only when elements exist at animation time. Conditional/late-rendering
+     elements (audit log) must not be CSS-trapped at opacity:0. */
   will-change: opacity, transform;
 }
 
@@ -292,7 +294,7 @@
   color: var(--wf-ink-3);
 }
 
-.dash-wf .wf-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.dash-wf .wf-head { display: flex; flex-direction: column; gap: 12px; }
 .dash-wf .wf-head h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
 .dash-wf .wf-head .wf-sum { margin-top: 6px; color: var(--wf-ink-2); font-size: 13px; max-width: 640px; }
 .dash-wf .wf-head .wf-sum b { color: var(--wf-ink); font-weight: 700; }
@@ -486,7 +488,8 @@
 .dash-wf .wf-crow .pc { font-family: var(--font-mono); font-weight: 600; color: var(--wf-ink); }
 
 .dash-wf .wf-att .body { padding: 6px 8px 8px; }
-.dash-wf .wf-arow { display: flex; align-items: center; gap: 11px; padding: 9px 8px; border-radius: 10px; }
+.dash-wf .wf-arow { display: flex; align-items: flex-start; gap: 11px; padding: 9px 8px; border-radius: 10px; flex-wrap: wrap; }
+.dash-wf .wf-arow .go { flex-basis: 100%; padding-left: 41px; margin-top: 2px; }
 .dash-wf .wf-arow:hover { background: var(--wf-bg); }
 .dash-wf .wf-arow .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto; }
 .dash-wf .wf-arow .ic svg { width: 15px; height: 15px; }
@@ -495,8 +498,8 @@
 .dash-wf .wf-ic-cal { background: var(--wf-amber-soft); color: var(--wf-amber); }
 .dash-wf .wf-ic-warn { background: #FBE5E3; color: var(--wf-red); }
 .dash-wf .wf-arow .tx { flex: 1; min-width: 0; }
-.dash-wf .wf-arow .tx .t { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dash-wf .wf-arow .tx .s { font-size: 11px; color: var(--wf-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.dash-wf .wf-arow .tx .t { font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+.dash-wf .wf-arow .tx .s { font-size: 11px; color: var(--wf-ink-3); margin-top: 1px; line-height: 1.35; }
 .dash-wf .wf-arow .go { flex: 0 0 auto; }
 .dash-wf .wf-minibtn { height: 30px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--wf-border-2); background: #fff; font-family: var(--font-body); font-weight: 600; font-size: 11.5px; cursor: pointer; color: var(--wf-ink); }
 .dash-wf .wf-minibtn.green { background: var(--wf-green); border-color: var(--wf-green); color: #fff; }
@@ -788,4 +791,154 @@
 }
 @keyframes wf-spin {
   to { transform: rotate(360deg); }
+}
+
+
+/* ============================================================================
+ * Premium visual polish — KPI accents, depth, ambient effects
+ * ========================================================================== */
+
+/* ── 1A. Background gradient mesh (faint brand glow behind KPIs) ── */
+.dash-wf { position: relative; }
+.dash-wf::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(0,177,79,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.dash-wf > * { position: relative; z-index: 1; }
+
+/* ── 1B. Card depth layering (inner top highlight for top-down light) ── */
+.dash-wf .wf-card {
+  box-shadow:
+    var(--wf-shadow),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* ── 1A. KPI card gradient accent rails (StatusStrip style: 4px × 32px, centered) ── */
+.dash-wf .wf-kpi::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+}
+.dash-wf .wf-kpi:nth-child(1)::before { background: var(--wf-green); }
+.dash-wf .wf-kpi:nth-child(2)::before { background: var(--wf-amber); }
+.dash-wf .wf-kpi:nth-child(3)::before { background: var(--wf-blue); }
+.dash-wf .wf-kpi:nth-child(4)::before { background: var(--wf-green-500); }
+
+/* ── 1D. Typography hierarchy polish ── */
+.dash-wf .wf-kpi .val {
+  font-size: 27px;
+  letter-spacing: -0.04em;
+}
+.dash-wf .wf-kpi .lbl {
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+.dash-wf .wf-head h1 {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+/* ── 1E. Bar gradient enhancement (three-stop gradient) ── */
+.dash-wf .wf-vrow .bar i {
+  background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500) 60%, #34d399);
+}
+
+/* ── 1F. Chart toggle active state ── */
+.dash-wf .wf-chart-toggle__btn.is-active {
+  box-shadow: 0 1px 3px rgba(0,90,45,0.2);
+}
+
+/* ── 1F. Donut center lift ── */
+.dash-wf .wf-donut .ctr .big {
+  text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+/* ── 2A. Hero card top gradient bar (3px accent) ── */
+.dash-wf .wf-bento-hero .wf-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500), var(--wf-blue));
+  border-radius: var(--wf-radius) var(--wf-radius) 0 0;
+  opacity: 0.7;
+}
+
+/* ── 2B. Shimmer on primary button ── */
+.dash-wf .wf-btn--primary {
+  position: relative;
+  overflow: hidden;
+}
+.dash-wf .wf-btn--primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: wf-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes wf-shimmer {
+  0%   { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* ── 2C. Warning glow on attention items ── */
+.dash-wf .wf-ic-warn {
+  animation: wf-warn-glow 2.5s ease-in-out infinite;
+}
+@keyframes wf-warn-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(199,55,47,0); }
+  50%      { box-shadow: 0 0 8px 2px rgba(199,55,47,0.15); }
+}
+
+/* ── 2D. Utilization bar animated gradient shift ── */
+.dash-wf .wf-util .track i {
+  background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500), var(--wf-green));
+  background-size: 200% 100%;
+  animation: wf-bar-shift 3s ease-in-out infinite alternate;
+}
+@keyframes wf-bar-shift {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 100% 0%; }
+}
+
+/* ── 2E. Fleet status pip subtle pulse ── */
+.dash-wf .wf-fstat .pip {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.04);
+}
+
+/* ── 2F. Reduced-motion guard for ambient effects ── */
+@media (prefers-reduced-motion: reduce) {
+  .dash-wf .wf-btn--primary::after { animation: none; }
+  .dash-wf .wf-ic-warn { animation: none; }
+  .dash-wf .wf-util .track i { animation: none; }
+}
+
+/* ── Mobile overrides for new styles ── */
+@media (max-width: 560px) {
+  .dash-wf .wf-kpi .val {
+    font-size: 19px;
+    letter-spacing: -0.02em;
+  }
+  .dash-wf .wf-head h1 {
+    font-size: 20px;
+  }
 }

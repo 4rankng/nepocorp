@@ -243,7 +243,7 @@ export function PenaltyTable({
       )}
 
       {/* ── Driver scoreboard ────────────────────────────────────────────── */}
-      <Panel flush>
+      <Panel flush className="penalty-transparent-panel">
         <div className="penalty-card-head">
           <div className="penalty-card-lead">
             <div className="penalty-card-icon">
@@ -271,7 +271,7 @@ export function PenaltyTable({
             </div>
           </div>
         </div>
-        <div className="mobile-only mobile-table-wrap">
+        <div className="mobile-only">
           <div className="penalty-m-cards">
             {driverDetails.map((d) => {
               const ac = avatarColorById(d.id);
@@ -419,7 +419,7 @@ export function PenaltyTable({
       <div className="penalty-two-col">
 
         {/* Left: Violation log */}
-        <Panel flush>
+        <Panel flush className="penalty-transparent-panel">
           <div className="penalty-card-head">
             <div className="penalty-card-lead">
               <div className="penalty-card-icon alt">
@@ -553,7 +553,7 @@ export function PenaltyTable({
         </Panel>
 
         {/* Right: Violation type reference */}
-        <Panel flush>
+        <Panel flush className="penalty-transparent-panel">
           <div className="penalty-card-head">
             <div className="penalty-card-lead">
               <div className="penalty-card-icon">

@@ -433,7 +433,7 @@ export default function DashboardPage() {
         icon: 'info',
         title: `Báo cáo lợi nhuận ${currentMonth}/${currentYear} sẵn sàng`,
         sub: 'Xác nhận để chốt sổ tháng',
-        action: { label: 'Xem & xác nhận', onClick: () => navigate('/profit'), green: true },
+        action: { label: 'Xem', onClick: () => navigate('/profit'), green: true },
       });
     }
     return items.slice(0, 5);
