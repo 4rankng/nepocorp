@@ -13,10 +13,10 @@ export function getSeverityLabel(s: Severity): string {
   return { light: 'Nhẹ', med: 'Trung bình', heavy: 'Nặng', critical: 'Đặc biệt' }[s];
 }
 
-export function getGrade(totalPoints: number): string {
-  if (totalPoints === 0) return 'A+';
-  if (totalPoints <= 2) return 'A';
-  if (totalPoints <= 5) return 'B';
+export function getViolationGrade(violationCount: number): string {
+  if (violationCount === 0) return 'A+';
+  if (violationCount <= 2) return 'A';
+  if (violationCount <= 5) return 'B';
   return 'C';
 }
 

@@ -14,7 +14,7 @@ import type { Driver, PenaltyReason, Truck } from '@tingting/shared';
 import type { PenaltyRow } from '../../../hooks/usePenalties';
 import { useSalaryPeriod } from '../../../hooks/useQueries';
 import {
-  getSeverity, getSeverityLabel, getGrade, getGradeClass,
+  getSeverity, getSeverityLabel, getViolationGrade, getGradeClass,
   formatTenure, computeStreak,
   type Severity,
 } from '../utils';
@@ -109,7 +109,7 @@ export function PenaltyTable({
     const violationsInPeriod = driverPenalties.length;
     const driverYTD = ytdPenalties.filter(p => p.driverId === d.id);
     const fineYTD = driverYTD.reduce((s, p) => s + parseFloat(p.amount), 0);
-    const grade = getGrade(violationsInPeriod);
+    const grade = getViolationGrade(violationsInPeriod);
     const truckPlate = d.assignedTruckId && truckMap.has(d.assignedTruckId)
       ? truckMap.get(d.assignedTruckId)!.licensePlate: null;
     return { ...d, streakDays, violationsInPeriod, fineYTD, grade, truckPlate };

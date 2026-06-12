@@ -52,6 +52,7 @@ __pycache__/
 
 # QA test scripts
 frontend/qa-*.js
+qa/scripts/*
 
 # Session state (never commit)
 HANDOFF.md
