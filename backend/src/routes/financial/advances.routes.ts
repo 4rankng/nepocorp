@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
+import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
 import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../../services/advance.service';
@@ -20,13 +21,13 @@ router.get('/advance-requests', asyncHandler(async (req: Request, res: Response)
 
 router.post('/advance-requests/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const result = await approveAdvanceRequest(id, req.user!.userId);
+  const result = await approveAdvanceRequest(id, getUser(req).userId);
   res.json(result);
 }));
 
 router.post('/advance-requests/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const result = await rejectAdvanceRequest(id, req.user!.userId);
+  const result = await rejectAdvanceRequest(id, getUser(req).userId);
   res.json(result);
 }));
 
@@ -40,19 +41,19 @@ router.get('/advance-settlements', asyncHandler(async (req: Request, res: Respon
 
 router.post('/advance-settlements/:id/check', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const result = await checkAdvanceSettlement(id, req.user!.userId);
+  const result = await checkAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 
 router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const result = await approveAdvanceSettlement(id, req.user!.userId);
+  const result = await approveAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 
 router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const result = await rejectAdvanceSettlement(id, req.user!.userId);
+  const result = await rejectAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 

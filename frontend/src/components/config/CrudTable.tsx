@@ -7,6 +7,7 @@ import { PageHeader, Panel, Modal, useConfirm } from '../UI';
 import { ActionBtns } from './ActionBtns';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { PaginatedResponse } from '@tingting/shared';
+import { qk } from '../../api/keys';
 import '../../pages/config/config-page.css';
 
 interface CrudColumn<T> {
@@ -60,7 +61,7 @@ export function CrudTable<T extends { id: number }>({
   // Config tables are small (< 50 rows) so this is fine for now.
   // If any table grows beyond 50 items, add pagination controls here.
   const { data, refetch } = useQuery({
-    queryKey: [endpoint],
+    queryKey: qk.crud.entity(endpoint),
     queryFn: async () => {
       const r = await api.get<PaginatedResponse<T>>(endpoint);
       return r.items;

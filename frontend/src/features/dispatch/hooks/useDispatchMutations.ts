@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { tripClient } from '../../../api/tripClient';
+import { qk } from '../../../api/keys';
 import type { NormalizedTrip } from '../../../hooks/useTripQueries';
 import { useConfirm } from '../../../components/UI';
 import type { ReassignState, Toast } from '../utils';
@@ -29,7 +30,7 @@ export function useDispatchMutations(pendingTrips: NormalizedTrip[]) {
       await tripClient.dispatchTrip(tripId);
       const code = trip?.tripCode || '';
       addToast('success', code ? `Đã xuất phát chuyến ${code}` : 'Đã xuất phát chuyến đi');
-      await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.dispatch });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi khởi hành chuyến đi.';
       addToast('error', msg);
@@ -78,7 +79,7 @@ export function useReassignMutations() {
         truckId: Number(reassignState.truckId),
         driverId: Number(reassignState.driverId),
       });
-      await queryClient.invalidateQueries({ queryKey: ['dispatch'] });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.dispatch });
       closeReassign();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật';

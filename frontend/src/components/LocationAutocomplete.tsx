@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { configClient } from '../api/configClient';
+import { qk } from '../api/keys';
 import type { Port } from '@tingting/shared';
 
 interface LocationAutocompleteProps {
@@ -48,7 +49,7 @@ export function LocationAutocomplete({
   // Ports catalog (Cảng / Bãi Hải Phòng — Pete's config catalog)
   // Cached for 5 min; fires once per session for all autocomplete inputs.
   const { data: ports = [] } = useQuery<Port[]>({
-    queryKey: ['ports-catalog'],
+    queryKey: qk.catalogs.portsCatalog,
     queryFn: () => configClient.getPorts(),
     staleTime: 5 * 60 * 1000,
   });

@@ -13,6 +13,7 @@ import { storageService } from '../services/storage.service';
 import { config } from '../config';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { getUser } from '../middleware/auth';
 import { sniffImageType } from '../lib/format';
 
 // Maximum dimension for server-side downscale
@@ -86,7 +87,7 @@ uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, 
     tripId,
     type,
     storageKey: key,
-    uploadedBy: req.user!.userId,
+    uploadedBy: getUser(req).userId,
   }).returning();
 
   res.status(201).json({
@@ -111,9 +112,9 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
   const tripId = parseInt(match[1]);
 
   // Check permissions
-  if (req.user!.role === Role.DRIVER) {
+  if (getUser(req).role === Role.DRIVER) {
     const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-      .where(eq(s.drivers.userId, req.user!.userId)).limit(1);
+      .where(eq(s.drivers.userId, getUser(req).userId)).limit(1);
     
     if (!driver) {
       return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });

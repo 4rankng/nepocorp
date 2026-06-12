@@ -11,7 +11,7 @@ import debtOffsetsRoutes from './debt-offsets.routes';
 import debitNotesRoutes from './debit-notes.routes';
 
 // Audit event registrations
-registerAuditEvent('POST', '/api/payments', AuditEvent.PAYMENT_RECEIVED);
+registerAuditEvent('POST', '/api/payments/receive', AuditEvent.PAYMENT_RECEIVED);
 registerAuditEvent('POST', '/api/adjustments', AuditEvent.ADJUSTMENT_CREATED);
 registerAuditEvent('POST', '/api/penalties', AuditEvent.PENALTY_CREATED);
 registerAuditEvent('POST', '/api/penalties/', '/cancel', AuditEvent.PENALTY_CANCELED);
@@ -23,6 +23,7 @@ registerAuditEvent('POST', '/api/advance-settlements/', '/check', AuditEvent.ENT
 registerAuditEvent('POST', '/api/advance-settlements/', '/approve', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/advance-settlements/', '/reject', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/finance/debt-offsets/', '/approve', AuditEvent.ENTITY_UPDATED);
+registerAuditEvent('POST', '/api/finance/debt-offsets', AuditEvent.ENTITY_CREATED);
 
 const router = Router();
 

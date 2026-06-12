@@ -27,6 +27,7 @@ import {
   resolveSalaryPeriodDateRange,
 } from '../services/salary-period.service';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { getUser } from '../middleware/auth';
 import { parsePagination } from './utils/pagination';
 import { queryAuditLogs } from '../services/audit-query.service';
 import { getPenaltyStats } from '../services/reporting.service';
@@ -140,7 +141,7 @@ router.get('/fuel-config', asyncHandler(async (_req: Request, res: Response) => 
 
 router.put('/fuel-config', asyncHandler(async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
-  const { result, status } = await upsertFuelConfig(data, req.user!.userId);
+  const { result, status } = await upsertFuelConfig(data, getUser(req).userId);
   res.status(status).json(result);
 }));
 

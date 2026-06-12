@@ -88,6 +88,8 @@ export const qk = {
     all: ['trips'],
     detail: (id: number | string | undefined) => ['trip', id] as const,
     adjustments: (id: number) => ['trip-adjustments', id] as const,
+    /** Broad prefix — matches all trip-adjustments queries. */
+    adjustmentsAll: ['trip-adjustments'] as const,
     summary: (dateFrom: string | undefined, dateTo: string | undefined) =>
       ['trips-summary', dateFrom, dateTo] as const,
     /** List view — invalidates any paged/filtered list. */
@@ -119,10 +121,18 @@ export const qk = {
   forwarder: {
     trips: (status?: string) => ['forwarder-trips', status] as const,
     tripDetail: (id: number) => ['forwarder-trip-detail', id] as const,
+    /** Broad prefix — matches all forwarder-trip-detail queries. */
+    tripDetailAll: ['forwarder-trip-detail'] as const,
     suppliers: ['forwarder-suppliers'],
     advanceRequests: (status?: string) =>
       ['forwarder-advance-requests', status] as const,
+    /** Broad prefix — matches all advance-requests queries. */
+    advanceRequestsAll: ['advance-requests'] as const,
+    /** Broad prefix — matches all forwarder-advance-requests queries. */
+    forwarderAdvanceRequestsAll: ['forwarder-advance-requests'] as const,
     settlements: ['forwarder-settlements'],
+    /** Broad prefix — matches all advance-settlements queries. */
+    advanceSettlementsAll: ['advance-settlements'] as const,
     settlementDetail: (id: number) =>
       ['forwarder-settlement-detail', id] as const,
     unlinkedExpenses: ['forwarder-unlinked-expenses'],
@@ -133,8 +143,12 @@ export const qk = {
   adminForwarder: {
     advanceRequests: (filters?: { status?: string }) =>
       ['admin-advance-requests', filters] as const,
+    /** Broad prefix — matches all admin-advance-requests queries. */
+    advanceRequestsAll: ['admin-advance-requests'] as const,
     settlements: (filters?: { status?: string }) =>
       ['admin-settlements', filters] as const,
+    /** Broad prefix — matches all admin-settlements queries. */
+    settlementsAll: ['admin-settlements'] as const,
     settlementDetail: (id: number) =>
       ['admin-settlement-detail', id] as const,
   },
@@ -158,6 +172,8 @@ export const qk = {
   financial: {
     customerAging: (search: string | undefined) =>
       ['customer-aging', search ?? ''] as const,
+    /** Broad prefix — matches all customerAging queries regardless of args. */
+    customerAgingAll: ['customer-aging'] as const,
     customerStatement: (id: string | number | undefined) =>
       ['customer-statement', id] as const,
     customerLedgerEntries: ['customer-ledger-entries'],
@@ -167,6 +183,8 @@ export const qk = {
     expenses: (filters: unknown) => ['expenses', filters] as const,
     debtOffsets: (customerId: number | string) =>
       ['debt-offsets', customerId] as const,
+    /** Broad prefix — matches all debtOffsets queries regardless of args. */
+    debtOffsetsAll: ['debt-offsets'] as const,
     debt: ['debt'],
   },
 
@@ -183,13 +201,21 @@ export const qk = {
   salary: {
     list: (year: number, month: number) =>
       ['salary-list', year, month] as const,
+    /** Broad prefix — matches all salary-list queries. */
+    listAll: ['salary-list'] as const,
     driverSalary: (driverId: number | null, year: number, month: number) =>
       ['driver-salary', driverId, year, month] as const,
+    /** Broad prefix — matches all driver-salary queries. */
+    driverSalaryAll: ['driver-salary'] as const,
     driverWorkdays: (driverId: number | null, year: number, month: number) =>
       ['driver-workdays', driverId, year, month] as const,
+    /** Broad prefix — matches all driver-workdays queries. */
+    driverWorkdaysAll: ['driver-workdays'] as const,
     periodDefault: ['salary-period-default'],
     periodResolve: (year: number, month: number) =>
       ['salary-period-resolve', year, month] as const,
+    /** Broad prefix — matches all salary-period-resolve queries. */
+    periodResolveAll: ['salary-period-resolve'] as const,
   },
 
   /* ── Notifications ──────────────────────────────────────────────────── */
@@ -215,6 +241,8 @@ export const qk = {
     expense: (id: number | string) => ['expense', id] as const,
     tripContainers: (tripId: number) => ['trip-containers', tripId] as const,
     tripExpenses: (tripId: number) => ['trip-expenses', tripId] as const,
+    /** Broad prefix — matches all trip-expenses queries regardless of args. */
+    tripExpensesAll: ['trip-expenses'] as const,
     customersConfig: (search: string) =>
       ['customers-config', search] as const,
     trucksForDrivers: ['trucks-for-drivers-config'],

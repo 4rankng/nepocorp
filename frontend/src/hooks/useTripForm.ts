@@ -664,10 +664,10 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
           const updatedTrip = await api.put<any>(endpoint, payload);
-          queryClient.invalidateQueries({ queryKey: ['trips'] });
-          queryClient.setQueryData(['trip', String(existingTrip.id)], updatedTrip);
-          queryClient.invalidateQueries({ queryKey: ['trip', String(existingTrip.id)] });
-          queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
+          queryClient.invalidateQueries({ queryKey: qk.trips.all });
+          queryClient.setQueryData(qk.trips.detail(existingTrip.id), updatedTrip);
+          queryClient.invalidateQueries({ queryKey: qk.trips.detail(existingTrip.id) });
+          queryClient.invalidateQueries({ queryKey: qk.trips.adjustments(existingTrip.id) });
           return existingTrip.id;
         }
 
@@ -767,7 +767,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
-        await queryClient.invalidateQueries({ queryKey: ['trips'] });
+        await queryClient.invalidateQueries({ queryKey: qk.trips.all });
         return trip.id;
       } catch (err) {
         if (isEditMode && err instanceof ApiError && err.status === 409) {

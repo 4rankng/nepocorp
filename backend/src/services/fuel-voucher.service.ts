@@ -4,13 +4,7 @@ import { eq } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 // ── Helpers ──
-import { escapeHtml, formatVND } from '../lib/format';
-
-function formatDate(dateStr: string): string {
-  // Parse YYYY-MM-DD directly to avoid UTC/local timezone off-by-one
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
-}
+import { escapeHtml, formatVND, formatDateVi } from '../lib/format';
 
 // ── Data contract ──
 
@@ -94,7 +88,7 @@ const PRINT_CSS = `
 `;
 
 export function renderFuelVoucherHtml(data: FuelVoucherData): string {
-  const dateStr = formatDate(data.departureDate);
+  const dateStr = formatDateVi(data.departureDate);
 
   return `<!doctype html>
 <html lang="vi">
@@ -232,7 +226,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   ws.mergeCells(`D${row}:E${row}`);
   meta1.getCell(1).value = `Mã chuyến: ${data.tripCode ?? '—'}`;
   meta1.getCell(1).font = { name: F, size: 10, color: { argb: CLR.dark } };
-  meta1.getCell(4).value = `Ngày xuất phát: ${formatDate(data.departureDate)}`;
+  meta1.getCell(4).value = `Ngày xuất phát: ${formatDateVi(data.departureDate)}`;
   meta1.getCell(4).font = { name: F, size: 10, color: { argb: CLR.dark } };
   row++;
 

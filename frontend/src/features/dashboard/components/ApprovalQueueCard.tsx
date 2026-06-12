@@ -7,6 +7,7 @@ import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
 import { useAuth } from '../../../hooks/useAuth';
+import { qk } from '../../../api/keys';
 
 const TYPE_LABEL: Record<ApprovalItemType, string> = {
   ancillaryFees: 'Phí phụ trợ',
@@ -195,12 +196,12 @@ function Row({
           throw new Error('Loại mục chưa hỗ trợ quick-approve');
       }
       // Refresh the queue so the approved item disappears / moves.
-      await queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
+      await queryClient.invalidateQueries({ queryKey: qk.dashboard.approvalQueue(undefined, undefined) });
       // Also refresh the underlying data sources that the approve just changed.
-      queryClient.invalidateQueries({ queryKey: ['trip-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['advance-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['advance-settlements'] });
-      queryClient.invalidateQueries({ queryKey: ['debt-offsets'] });
+      queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpensesAll });
+      queryClient.invalidateQueries({ queryKey: qk.forwarder.advanceRequestsAll });
+      queryClient.invalidateQueries({ queryKey: qk.forwarder.advanceSettlementsAll });
+      queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsetsAll });
     } catch (err: any) {
       setError(err?.message || 'Lỗi khi duyệt');
     } finally {

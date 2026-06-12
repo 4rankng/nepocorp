@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { qk } from '../../../api/keys';
 import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@tingting/shared';
 
 export { type ApprovalItemType };
@@ -40,7 +41,7 @@ export function canSeeApprovalQueue(role: Role | undefined): boolean {
 export function useApprovalQueue(role: Role | undefined, userId?: number) {
   const enabled = canSeeApprovalQueue(role);
   return useQuery<ApprovalQueueResponse>({
-    queryKey: ['approval-queue', role, userId],
+    queryKey: qk.dashboard.approvalQueue(role, userId),
     queryFn: () => api.get<ApprovalQueueResponse>('/dashboard/approval-queue'),
     enabled,
     staleTime: 30 * 1000,

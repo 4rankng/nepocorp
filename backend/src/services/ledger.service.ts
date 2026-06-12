@@ -278,16 +278,17 @@ export class LedgerService {
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Reverse customer freight revenue (swap debit↔credit) ──
-    // Posts unconditionally to match postTripLock (which also posts even for revenue=0)
-    await this.postEntry(tx, {
-      txnType: TxnType.UNLOCK_REVERSAL,
-      txnId: trip.id,
-      entityType: 'CUSTOMER',
-      entityId: trip.customerId,
-      debit: 0,
-      credit: revenue,
-      note: label ? `Doanh thu chuyến ${label} (Hoàn tác)` : 'Doanh thu chuyến (Hoàn tác)',
-    });
+    if (revenue > 0) {
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: trip.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: 0,
+        credit: revenue,
+        note: label ? `Doanh thu chuyến ${label} (Hoàn tác)` : 'Doanh thu chuyến (Hoàn tác)',
+      });
+    }
 
     // ── 3. Reverse OWN: driver salary ──
     if (carrierType === 'OWN' && trip.driverId && driverSalary > 0) {

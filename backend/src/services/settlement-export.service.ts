@@ -15,12 +15,7 @@ const EXPENSE_TYPE_LABELS: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-import { escapeHtml, formatVND, formatLocalDate } from '../lib/format';
-
-function formatMonth(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
+import { escapeHtml, formatVND, formatLocalDate, formatDateShort } from '../lib/format';
 
 interface PrintRow {
   date: string;
@@ -48,7 +43,7 @@ function buildPrintRows(expenses: any[]): PrintRow[] {
       const sorted = [...exps].sort((a, b) => a.expenseType.localeCompare(b.expenseType));
       for (const exp of sorted) {
         rows.push({
-          date: dateKey !== 'unknown' ? formatMonth(dateKey) : '—',
+          date: dateKey !== 'unknown' ? formatDateShort(dateKey) : '—',
           container: containerKey !== '-' ? containerKey : '—',
           customer: exp.customerName || '—',
           expenseType: EXPENSE_TYPE_LABELS[exp.expenseType] || exp.expenseType,

@@ -3,6 +3,7 @@ import { tripClient } from "../api/tripClient";
 import { configClient } from "../api/configClient";
 import type { PricingTable } from "@tingting/shared";
 import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
+import { qk } from "../api/keys";
 
 export interface SelectOption {
   id: number;
@@ -62,7 +63,7 @@ export function useTripOptions(): TripOptions {
   });
 
   const pricingQuery = useQuery<PricingTable[]>({
-    queryKey: ["pricing-tables"],
+    queryKey: qk.catalogs.pricingTables,
     staleTime: 5 * 60 * 1000,
     queryFn: () => configClient.getPricingTables(),
   });

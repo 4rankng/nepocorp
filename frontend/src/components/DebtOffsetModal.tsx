@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '../lib/format';
 import { api } from '../lib/api';
+import { qk } from '../api/keys';
 
 interface DebtOffsetModalProps {
   isOpen: boolean;
@@ -30,10 +31,10 @@ export function DebtOffsetModal({
     mutationFn: () =>
       api.post('/finance/debt-offsets', { customerId, supplierId, offsetDate, note: note || undefined }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['debt-offsets', customerId] });
-      queryClient.invalidateQueries({ queryKey: ['customer-statement', String(customerId)] });
-      queryClient.invalidateQueries({ queryKey: ['supplier-statement', supplierId] });
-      queryClient.invalidateQueries({ queryKey: ['customer-aging'] });
+      queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsets(customerId) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(String(customerId)) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatement(supplierId) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
       onClose();
     },
     onError: (err: unknown) => {

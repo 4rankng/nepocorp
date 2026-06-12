@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
+import { getUser } from '../../middleware/auth';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../../services/reporting.service';
 import { getFuelVarianceReport } from '../../services/pnl.service';
 import { getCustomerAgingList } from '../../services/receivables.service';
@@ -17,7 +18,7 @@ router.get('/reports/dashboard', asyncHandler(async (_req: Request, res: Respons
 }));
 
 router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: Response) => {
-  const result = await getApprovalQueue(req.user!.userId, req.user!.role);
+  const result = await getApprovalQueue(getUser(req).userId, getUser(req).role);
   res.json(result);
 }));
 

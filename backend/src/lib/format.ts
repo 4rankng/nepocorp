@@ -9,7 +9,8 @@
  * @param symbol - If true, append ₫ suffix
  */
 export function formatVND(n: number, symbol = false): string {
-  return Math.round(n).toLocaleString('vi-VN') + (symbol ? '₫' : '');
+  const safe = Number.isFinite(n) ? n : 0;
+  return Math.round(safe).toLocaleString('vi-VN') + (symbol ? ' ₫' : '');
 }
 
 /**

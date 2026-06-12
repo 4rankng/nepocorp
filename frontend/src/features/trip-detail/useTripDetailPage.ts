@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../hooks/useAuth';
+import { qk } from '../../api/keys';
 import {
   useTripDetail,
   useTripAdjustments,
@@ -300,7 +301,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
         note: adjustNote.trim(),
         signedAgreementRef: adjustRef.trim(),
       });
-      await queryClient.invalidateQueries({ queryKey: ['trip-adjustments'] });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.adjustmentsAll });
       await refetchTrip();
       setAdjustAmount('');
       setAdjustNote('');

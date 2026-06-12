@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { qk } from '../api/keys';
 
 export interface AuditEntry {
   id: number;
@@ -19,7 +20,7 @@ export type Category = 'all' | 'trip' | 'config' | 'finance' | 'auth' | 'penalty
 
 export function useAuditLogs(pageSize: number, filter: Category, search: string) {
   return useInfiniteQuery<{ items: AuditEntry[]; total: number }>({
-    queryKey: ['audit-logs', pageSize, filter, search],
+    queryKey: qk.auditLogs.list(pageSize, filter, search),
     queryFn: async ({ pageParam = 1 }) => {
       const params = new URLSearchParams({ page: String(pageParam), limit: String(pageSize) });
       if (filter !== 'all') params.set('category', filter);

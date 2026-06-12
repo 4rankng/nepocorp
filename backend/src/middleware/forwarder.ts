@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getForwarderByUserId } from '../services/forwarder.service';
+import { getUser } from './auth';
 
 interface ForwarderProfile {
   id: number;
@@ -25,7 +26,7 @@ declare global {
  */
 export async function resolveForwarder(req: Request, _res: Response, next: NextFunction) {
   try {
-    req.forwarder = await getForwarderByUserId(req.user!.userId);
+    req.forwarder = await getForwarderByUserId(getUser(req).userId);
     next();
   } catch (err) {
     next(err);

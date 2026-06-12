@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { config } from '../config';
 import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@tingting/shared';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, getUser } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { blacklistToken } from '../lib/redis';
 import * as userService from '../services/user.service';
@@ -51,8 +51,8 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
 // ─── Current user ────────────────────────────────────────────────────────────
 
 router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
-  const profile = await userService.getUserProfile(req.user!.userId);
-  if (req.user!.role !== profile.role) {
+  const profile = await userService.getUserProfile(getUser(req).userId);
+  if (getUser(req).role !== profile.role) {
     throw new ApiError(401, 'Vai trò đã thay đổi, vui lòng đăng nhập lại');
   }
   const capabilities = await userService.getCapabilities(profile.role);
@@ -65,13 +65,13 @@ router.post('/logout', authMiddleware, asyncHandler(async (req: Request, res: Re
 }));
 
 router.patch('/me', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
-  const updated = await userService.updateProfile(req.user!.userId, updateProfileSchema.parse(req.body));
+  const updated = await userService.updateProfile(getUser(req).userId, updateProfileSchema.parse(req.body));
   res.json(updated);
 }));
 
 router.post('/change-password', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
-  await userService.changePassword(req.user!.userId, currentPassword, newPassword);
+  await userService.changePassword(getUser(req).userId, currentPassword, newPassword);
   await blacklistCurrentToken(req);
   res.json({ success: true });
 }));
@@ -148,7 +148,7 @@ router.delete('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(a
   }
   const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) throw new ApiError(400, 'ID không hợp lệ');
-  await userService.deleteUser(id, req.user!.userId);
+  await userService.deleteUser(id, getUser(req).userId);
   res.json({ success: true });
 }));
 

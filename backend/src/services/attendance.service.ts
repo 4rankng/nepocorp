@@ -45,18 +45,21 @@ export async function upsertWorkDay(
   note: string | null,
   createdBy: number,
 ) {
-  // Read current tripId for conditional logic (safe: idempotent if stale)
-  const [existing] = await db.select({ tripId: s.driverWorkDays.tripId })
-    .from(s.driverWorkDays)
-    .where(and(eq(s.driverWorkDays.driverId, driverId), eq(s.driverWorkDays.date, date)))
-    .limit(1);
-  const preservedTripId = status === 'TRIP_DAY' ? (existing?.tripId ?? null) : null;
-
+  // Use SQL-level expression to preserve existing tripId atomically (avoids TOCTOU race).
+  // For TRIP_DAY: COALESCE keeps existing tripId if set, else uses NULL (no SELECT needed).
+  // For other statuses: clears tripId.
   const [result] = await db.insert(s.driverWorkDays)
-    .values({ driverId, date, status, note, createdBy, tripId: preservedTripId })
+    .values({ driverId, date, status, note, createdBy, tripId: null })
     .onConflictDoUpdate({
       target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
-      set: { status, note, tripId: preservedTripId, updatedAt: new Date() },
+      set: {
+        status,
+        note,
+        tripId: status === 'TRIP_DAY'
+          ? sql`COALESCE(${s.driverWorkDays.tripId}, NULL)`
+          : null,
+        updatedAt: new Date(),
+      },
     })
     .returning();
   return result;

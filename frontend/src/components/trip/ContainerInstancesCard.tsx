@@ -4,6 +4,7 @@ import { Loader2, Plus, Trash2, Save } from 'lucide-react';
 import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
+import { qk } from '../../api/keys';
 
 /**
  * Card section embedded in `TripEditPage` / `TripCreatePage` that lets the
@@ -69,14 +70,14 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
 
   // Container types from the global config catalog
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
-    queryKey: ['container-types'],
+    queryKey: qk.catalogs.containerTypes,
     queryFn: () => configClient.getContainerTypes(),
     staleTime: 5 * 60 * 1000,
   });
 
   // Existing container instances for this trip
   const { data: existing, isLoading } = useQuery<{ items: any[] }>({
-    queryKey: ['trip-containers', tripId],
+    queryKey: qk.tripForm.tripContainers(tripId),
     queryFn: () => api.get(`/trips/${tripId}/containers`),
     enabled: !!tripId,
   });
@@ -144,8 +145,8 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
       await api.put(`/trips/${tripId}/containers`, payload);
       // Allow the next refetch to re-seed rows with the saved data.
       seededTripRef.current = null;
-      await queryClient.invalidateQueries({ queryKey: ['trip-containers', tripId] });
-      await queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(tripId) });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.detail(tripId) });
       toast({ kind: 'success', message: 'Đã lưu danh sách container.' });
     } catch (e: any) {
       setPageError(e?.message || 'Lỗi lưu container');

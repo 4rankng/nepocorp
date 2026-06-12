@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
+import { qk } from '../../../api/keys';
 import { formatCompact } from '../../../lib/format';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
 import { Role, FINANCIAL_ROLES, TripStatus, parseThreshold } from '@tingting/shared';
@@ -76,7 +77,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   const { data: fuelConfig } = useFuelConfig();
   const { data: renewalReminders = [] } = useRenewalReminders();
   const { data: receivablesSummary } = useQuery({
-    queryKey: ['receivables-summary'],
+    queryKey: qk.dashboard.receivablesSummary,
     queryFn: () => api.get<ReceivablesSummary>('/reports/receivables-summary').catch(() => null),
     staleTime: 2 * 60 * 1000,
   });
@@ -89,7 +90,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   const { user } = useAuth();
   const canSeeAudit = user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
   const { data: recentAudit = [] } = useQuery<DashboardAuditEntry[]>({
-    queryKey: ['dashboard-audit-recent'],
+    queryKey: qk.dashboard.auditRecent,
     queryFn: async () => {
       const res = await api.get<{ items: DashboardAuditEntry[]; total: number }>(
         '/audit-logs?page=1&limit=8',

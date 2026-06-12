@@ -11,6 +11,7 @@ import { useCatalogs } from '../../hooks/useCatalogs';
 import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
 import { StatusPill, useConfirm } from '../UI';
+import { qk } from '../../api/keys';
 
 function AncillaryEmptyState() {
   return (
@@ -97,7 +98,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const [pendingId, setPendingId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['trip-expenses', tripId],
+    queryKey: qk.tripForm.tripExpenses(tripId),
     queryFn: async () => {
       const res = await tripClient.listTripExpenses(tripId);
       return res.items ?? [];
@@ -171,7 +172,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
         declarationNumber: form.declarationNumber.trim() || undefined,
         note: form.note.trim() || undefined,
       });
-      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpenses(tripId) });
       setForm(EMPTY_FORM);
       setShowForm(false);
     } catch (e: any) {
@@ -202,8 +203,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       } else {
         await tripClient.rejectTripExpense(tripId, fee.id);
       }
-      await queryClient.invalidateQueries({ queryKey: ['trip-expenses', tripId] });
-      await queryClient.invalidateQueries({ queryKey: ['trip-detail', String(tripId)] });
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpenses(tripId) });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.tripDetail(tripId) });
       return true;
     } catch {
       // silently ignore — toast wiring lives outside this card

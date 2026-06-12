@@ -5,6 +5,7 @@ import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo } from '../services/forwarder.service';
 import { processExpenseApproval } from '../services/approval.service';
 import { requireRoles } from '../middleware/casbin';
+import { getUser } from '../middleware/auth';
 import { db } from '../db';
 import * as dbSchema from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -67,7 +68,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const data = createTripSchema.parse(req.body);
   const trip = await tripService.createTrip({
     ...data,
-    createdBy: req.user!.userId,
+    createdBy: getUser(req).userId,
   });
   await invalidateReportCaches();
   emitNotification({
@@ -102,7 +103,7 @@ router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response
   const trip = await tripService.updateTripFigures(id, {
     ...data,
     expectedVersion: data.version,
-    userId: req.user!.userId,
+    userId: getUser(req).userId,
   });
   await invalidateReportCaches();
   res.json(trip);
@@ -118,14 +119,14 @@ router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
   const updated = await tripService.updateTripFigures(id, {
     ...data,
     expectedVersion: data.version,
-    userId: req.user!.userId,
+    userId: getUser(req).userId,
   });
   await invalidateReportCaches();
   // Sync attendance when trip auto-completes (IN_TRANSIT → COMPLETED)
   if (prevRow?.status === TripStatus.IN_TRANSIT && updated.status === TripStatus.COMPLETED) {
     await tripService.syncAttendanceAfterStatusChange(
       updated.id, TripStatus.COMPLETED, updated.driverId ?? null,
-      updated.departureDate ?? null, null, req.user!.userId,
+      updated.departureDate ?? null, null, getUser(req).userId,
     );
   }
   res.json(updated);
@@ -136,14 +137,14 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
   const trip = await tripService.transitionTripStatus(
     parseInt(req.params.id as string),
     TripStatus.IN_TRANSIT,
-    req.user!.userId,
-    req.user!.role,
+    getUser(req).userId,
+    getUser(req).role,
   );
   await invalidateReportCaches();
   // Sync attendance: mark departure date as TRIP_DAY
   await tripService.syncAttendanceAfterStatusChange(
     trip.id, TripStatus.IN_TRANSIT, trip.driverId ?? null,
-    trip.departureDate ?? null, null, req.user!.userId,
+    trip.departureDate ?? null, null, getUser(req).userId,
   );
   emitNotification({
     type: NotificationType.TRIP_DISPATCHED,
@@ -163,8 +164,8 @@ router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
   const trip = await tripService.transitionTripStatus(
     id,
     TripStatus.LOCKED,
-    req.user!.userId,
-    req.user!.role,
+    getUser(req).userId,
+    getUser(req).role,
     confirmZeroRevenue,
   );
   await invalidateReportCaches(true);
@@ -184,14 +185,14 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
   const trip = await tripService.transitionTripStatus(
     id,
     TripStatus.CANCELED,
-    req.user!.userId,
-    req.user!.role,
+    getUser(req).userId,
+    getUser(req).role,
   );
   await invalidateReportCaches();
   // Remove TRIP_DAY records for the canceled trip
   await tripService.syncAttendanceAfterStatusChange(
     trip.id, TripStatus.CANCELED, trip.driverId ?? null,
-    trip.departureDate ?? null, null, req.user!.userId,
+    trip.departureDate ?? null, null, getUser(req).userId,
   );
   emitNotification({
     type: NotificationType.TRIP_CANCELED,
@@ -222,8 +223,8 @@ router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
   const trip = await tripService.transitionTripStatus(
     id,
     TripStatus.COMPLETED,
-    req.user!.userId,
-    req.user!.role,
+    getUser(req).userId,
+    getUser(req).role,
   );
   await invalidateReportCaches(true);
   emitNotification({
@@ -253,8 +254,8 @@ router.patch('/:id/departure-date', asyncHandler(async (req: Request, res: Respo
   const trip = await tripService.updateDepartureDate(
     id,
     departureDate,
-    req.user!.userId,
-    req.user!.role,
+    getUser(req).userId,
+    getUser(req).role,
   );
   await invalidateReportCaches(true);
   res.json(trip);
@@ -389,7 +390,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    const result = await processExpenseApproval(tripId, eid, req.user!.userId, req.user!.role, 'APPROVED');
+    const result = await processExpenseApproval(tripId, eid, getUser(req).userId, getUser(req).role, 'APPROVED');
     if ('error' in result) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   }),
@@ -402,7 +403,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const tripId = parseInt(req.params.id as string, 10);
     const eid = parseInt(req.params.eid as string, 10);
-    const result = await processExpenseApproval(tripId, eid, req.user!.userId, req.user!.role, 'REJECTED');
+    const result = await processExpenseApproval(tripId, eid, getUser(req).userId, getUser(req).role, 'REJECTED');
     if ('error' in result) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   }),

@@ -53,11 +53,11 @@ export function useUpdateSalaryPeriodDefault() {
     mutationFn: ({ startDay, endDay }: { startDay: number; endDay: number }) =>
       salaryPeriodConfigClient.updateDefault(startDay, endDay),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-period-default'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-period-resolve'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-workdays'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-salary'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-list'] });
+      queryClient.invalidateQueries({ queryKey: qk.salary.periodDefault });
+      queryClient.invalidateQueries({ queryKey: qk.salary.periodResolveAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.driverWorkdaysAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.driverSalaryAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.listAll });
     },
   });
 }
@@ -67,11 +67,11 @@ export function useDeleteSalaryPeriodDefault() {
   return useMutation({
     mutationFn: (id: number) => salaryPeriodConfigClient.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-period-default'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-period-resolve'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-workdays'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-salary'] });
-      queryClient.invalidateQueries({ queryKey: ['salary-list'] });
+      queryClient.invalidateQueries({ queryKey: qk.salary.periodDefault });
+      queryClient.invalidateQueries({ queryKey: qk.salary.periodResolveAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.driverWorkdaysAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.driverSalaryAll });
+      queryClient.invalidateQueries({ queryKey: qk.salary.listAll });
     },
   });
 }

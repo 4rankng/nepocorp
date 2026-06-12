@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { Role, debtOffsetSchema } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
+import { getUser } from '../../middleware/auth';
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../../services/debtOffset.service';
 
 const router = Router();
@@ -26,11 +27,11 @@ router.get('/finance/debt-offsets', asyncHandler(async (req: Request, res: Respo
   res.json(await listDebtOffsets({ customerId, supplierId, approvalStatus }));
 }));
 
-router.post('/finance/debt-offsets', asyncHandler(async (req: Request, res: Response) => {
+router.post('/finance/debt-offsets', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const data = debtOffsetSchema.parse(req.body);
   const result = await createDebtOffset({
     ...data,
-    createdBy: req.user!.userId,
+    createdBy: getUser(req).userId,
   });
   res.status(201).json(result);
 }));
@@ -39,7 +40,7 @@ router.post('/finance/debt-offsets/:id/approve',
   requireRoles(Role.ADMIN, Role.MANAGER),
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
-    const result = await approveDebtOffset(id, req.user!.userId, req.user!.role);
+    const result = await approveDebtOffset(id, getUser(req).userId, getUser(req).role);
     res.json(result);
   }),
 );

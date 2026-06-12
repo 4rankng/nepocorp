@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { requireRoles } from '../middleware/casbin';
+import { getUser } from '../middleware/auth';
 import { Role } from '@tingting/shared';
 import {
   computeAttendanceSummary,
@@ -74,7 +75,7 @@ router.put('/:driverId/:year/:month/workdays', requireRoles(Role.MANAGER, Role.A
     }
   }
 
-  const results = await batchUpsertWorkDays(driverId, items, req.user!.userId);
+  const results = await batchUpsertWorkDays(driverId, items, getUser(req).userId);
   // Return updated salary summary
   const salary = await computeSalary(driverId, year, month);
   res.json({ results, salary });
@@ -90,7 +91,7 @@ router.post('/:driverId/:year/:month/confirm', requireRoles(Role.ADMIN, Role.ACC
     throw new ApiError(400, 'Tham số không hợp lệ');
   }
 
-  const result = await confirmSalary(driverId, year, month, req.user!.userId);
+  const result = await confirmSalary(driverId, year, month, getUser(req).userId);
   res.json(result);
 }));
 

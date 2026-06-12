@@ -2,6 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import type { SalaryPeriodRange } from '@tingting/shared';
+import { formatDateShort } from '../lib/format';
 
 /**
  * Resolve the salary period date range for a given month/year.
@@ -320,11 +321,4 @@ function deriveFromDefault(
   const end   = `${year}-${String(month).padStart(2, '0')}-${String(clampedEndDay).padStart(2, '0')}`;
 
   return { start, end };
-}
-
-/** Format a YYYY-MM-DD date as DD/MM for display in labels */
-function formatDateShort(dateStr: string): string {
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  return `${parts[2]}/${parts[1]}`;
 }
