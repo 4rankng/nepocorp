@@ -387,7 +387,8 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(c => (
-              <ClickableCard key={c.id} className="m-card" onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
+              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
+                <StatusStrip status={c.status} />
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />

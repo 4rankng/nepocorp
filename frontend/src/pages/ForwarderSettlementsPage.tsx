@@ -6,6 +6,7 @@ import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader, KPI } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import './ForwarderSettlementsPage.css';
@@ -204,7 +205,7 @@ export default function ForwarderSettlementsPage() {
                 }}
               >
                 {/* Status strip — color tells status, no text needed */}
-                <span className="fset-card__strip" style={{ background: STATUS_STRIP[s.status] }} />
+                <StatusStrip color={STATUS_STRIP[s.status] || '#999'} />
 
                 <div className="fset-card__body">
                   {/* Icon tile */}

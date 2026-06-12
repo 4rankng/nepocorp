@@ -3,6 +3,8 @@ import { formatDayMonth } from '../../../lib/date';
 import { splitRoute } from '../../../lib/route';
 import { isUrgent } from '../utils';
 import { ReassignDialog } from './ReassignDialog';
+import { StatusStrip } from '../../../components/shared/StatusStrip';
+import { TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import type { NormalizedTrip } from '../../../hooks/useTripQueries';
 import type { ReassignState, Truck, Driver } from '../utils';
 
@@ -40,6 +42,7 @@ export function DispatchTripCard({
 
   return (
     <div className="order-row">
+      <StatusStrip color={TRIP_STATUS_COLORS[trip.status as TripStatus]} />
       <div className={`o-date${urgent ? ' urgent' : ''}`}>
         <span className="day">{formatDayMonth(trip.departureDate)}</span>
         <span className="lbl">Khởi hành</span>

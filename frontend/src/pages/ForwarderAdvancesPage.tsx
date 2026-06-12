@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@tingting/shared';
 import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
 import './ForwarderAdvancesPage.css';
 
@@ -210,7 +211,7 @@ export default function ForwarderAdvancesPage() {
               }}
             >
               {/* Status strip — color indicates status */}
-              <span className="fadv-card-trip__strip" style={{ background: STATUS_COLORS[req.status] || '#999' }} />
+              <StatusStrip color={STATUS_COLORS[req.status] || '#999'} />
 
               <div className="fadv-card-trip__body">
                 <div className="fadv-card-trip__main">

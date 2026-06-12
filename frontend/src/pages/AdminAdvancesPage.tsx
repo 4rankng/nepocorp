@@ -6,6 +6,7 @@ import {
   AdvanceRequestStatus,
 } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import {
   useAdminAdvanceRequests,
   useApproveAdvanceRequest,
@@ -35,6 +36,12 @@ const TABS: { key: StatusFilter; label: string }[] = [
   { key: AdvanceRequestStatus.APPROVED, label: 'Đã duyệt' },
   { key: AdvanceRequestStatus.REJECTED, label: 'Từ chối' },
 ];
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: '#D97706',
+  APPROVED: '#059669',
+  REJECTED: '#DC2626',
+};
 
 /* ── Compact KPI card — matches dashboard .wf-kpi proportions ─────────── */
 
@@ -82,7 +89,8 @@ function AdvanceGridRow({
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-grid-row" id={focusId}>
+    <div className="adv-grid-row" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
+      <StatusStrip color={STATUS_COLORS[req.status]} />
       {/* Requester */}
       <div className="adv-requester">
         <div className="adv-avatar">
@@ -164,7 +172,8 @@ function AdvanceMobileCard({
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-mcard" id={focusId}>
+    <div className="adv-mcard" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
+      <StatusStrip color={STATUS_COLORS[req.status]} />
       {/* Top: avatar + name + status */}
       <div className="adv-mcard__top">
         <div className="adv-mcard__left">

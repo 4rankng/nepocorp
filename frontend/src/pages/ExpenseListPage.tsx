@@ -7,6 +7,7 @@ import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +16,11 @@ import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } fr
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
+
+const EXPENSE_STATUS_COLORS: Record<string, string> = {
+  PAID: '#059669',
+  UNPAID: '#D97706',
+};
 
 export function useExpenses(params: {
   page: number;
@@ -272,9 +278,10 @@ export default function ExpenseListPage() {
               <ClickableCard
                 key={e.id}
                 to={`/expenses/${e.id}/edit`}
-                className="m-card"
+                className="m-card m-card--strip"
                 style={{ cursor: 'pointer' }}
               >
+                <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
                 <div className="m-card__top">
                   <span className="m-card__title">
                     {(e.supplier?.name) || '—'}
@@ -344,13 +351,17 @@ export default function ExpenseListPage() {
               ) : (
                 expenses.map(e => (
                   <tr key={e.id} role="button" tabIndex={0}
+                    className="expense-row--strip"
                     style={{ cursor: 'pointer' }}
                     onClick={() => navigate(`/expenses/${e.id}/edit`)}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                     onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                   >
-                    <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)' }}>{formatDate(e.expenseDate)}</td>
+                    <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)', position: 'relative' }}>
+                      <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
+                      {formatDate(e.expenseDate)}
+                    </td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
                     <td style={{ color: 'var(--ink-2)' }}>{e.category?.name || '—'}</td>
                     <td>

@@ -7,6 +7,7 @@ import {
   DollarSign, XCircle, Loader2,
 } from 'lucide-react';
 import { Panel, Btn, KPI } from '../../../components/UI';
+import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { getInitials, avatarColorById } from '../../../lib/avatar';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
@@ -507,6 +508,7 @@ export function PenaltyTable({
                   const canceled = p.status === 'CANCELED';
                   return (
                     <div key={p.id} className={`plog-item${canceled ? ' plog-item--canceled' : ''}`}>
+                      <StatusStrip color={canceled ? '#94A3B8' : '#059669'} />
                       <div className="plog-avatar" style={{ background: pac.bg, color: pac.fg }}>
                         {getInitials(p.driverName || 'T')}
                       </div>

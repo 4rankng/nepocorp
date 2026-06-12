@@ -297,7 +297,8 @@ export default function SupplierListPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(s => (
-              <ClickableCard key={s.id} className="m-card" onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
+              <ClickableCard key={s.id} className="m-card" style={{ position: 'relative' }} onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
+                <StatusStrip status={s.status} />
                 <div className="m-card__top">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span className="m-card__title">{s.name}</span>
