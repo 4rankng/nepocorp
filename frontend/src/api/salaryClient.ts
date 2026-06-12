@@ -93,7 +93,7 @@ export const salaryClient = {
   // Confirm salary period (DRAFT → CONFIRMED)
   confirmSalary: (driverId: number, year: number, month: number) =>
     api.post<{ confirmation: SalaryConfirmation; salary: AttendanceSalary }>(
-      SALARY.CONFIRM(driverId, year, month)
+      SALARY.CONFIRM(driverId, year, month), {}
     ),
 };
 

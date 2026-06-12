@@ -13,6 +13,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { getInitials, avatarColorById } from '../lib/avatar';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
+import { useToast } from '../components/shared/Toast';
 import './SalaryAttendancePage.css';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 
@@ -168,6 +169,7 @@ export default function SalaryAttendancePage() {
   const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
   const confirmMutation = useConfirmSalary(selectedDriverId ?? 0, year, month);
+  const { toast } = useToast();
 
   const isConfirmed = salary?.confirmationStatus === 'CONFIRMED';
 
@@ -486,7 +488,16 @@ export default function SalaryAttendancePage() {
                         className="btn btn--primary btn--sm"
                         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                         disabled={confirmMutation.isPending}
-                        onClick={() => confirmMutation.mutate()}
+                        onClick={() => {
+                          confirmMutation.mutate(undefined, {
+                            onError: (err: any) => {
+                              toast({
+                                kind: 'error',
+                                message: err?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
+                              });
+                            },
+                          });
+                        }}
                       >
                         {confirmMutation.isPending ? (
                           <Loader2 size={14} className="spin" />
