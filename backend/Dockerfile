@@ -45,6 +45,9 @@ RUN pnpm install --frozen-lockfile --prod
 # Copy compiled output from builder
 COPY --from=builder /app/shared/dist shared/dist
 COPY --from=builder /app/backend/dist backend/dist
+# Copy static files that tsc doesn't emit
+COPY backend/src/casbin/model.conf backend/dist/casbin/model.conf
+COPY backend/src/casbin/policy.csv backend/dist/casbin/policy.csv
 COPY backend/drizzle backend/drizzle
 COPY backend/drizzle.config.ts backend/drizzle.config.ts
 
