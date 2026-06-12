@@ -78,6 +78,7 @@ Ngày công hưởng lương = trip_days + standby_days
 daily_rate = (base_salary + social_insurance) / standard_work_days
 
 Lương bổ sung (supplement):
+  Kế toán chọn từng ngày cụ thể trên lịch → gán STANDBY (không nhập tổng số ngày)
   lương_bù = standby_days × daily_rate
 
 Khấu trừ nghỉ việc riêng (leave deduction):
@@ -98,7 +99,7 @@ net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riê
 
 > **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe trên trang Cấu hình → Lái xe, lưu trong cột `drivers.social_insurance`. Cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho tài xế (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp. *(Pete xác nhận 11/6)*
 
-> **Khấu trừ nghỉ việc riêng:** Lái xe được miễn trừ 4 ngày Chủ nhật nghỉ mặc định. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường; nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate` trên màn hình chốt công. *(Pete xác nhận 11/6)*
+> **Khấu trừ nghỉ việc riêng:** Lái xe được miễn trừ 4 ngày Chủ nhật nghỉ mặc định. Nếu `personal_leave_days > 4`, phần vượt bị trừ tại `daily_rate`. Chính sách hoán đổi: nếu lái xe làm ngày Chủ nhật, công ty bố trí nghỉ bù vào ngày thường (trước hoặc sau đó); nếu không nghỉ bù → kế toán nhập tay bổ sung 1× `daily_rate` (hệ số = 1, không phải lương tăng ca) trên màn hình chốt công. Ngày Chủ nhật đi làm được tính như ngày làm việc bình thường. *(Pete xác nhận 11/6, 12/6)*
 
 ### 3.2 Số ngày công chuẩn (`standard_work_days`)
 
@@ -333,3 +334,5 @@ Sau khi xác nhận kỳ lương:
 | 8 | Lương bổ sung (supplement) = standby_days × daily_rate, cộng vào net_salary | Pete | 11/6/2026 |
 | 9 | Khấu trừ nghỉ việc riêng: personal_leave_days vượt 4 ngày miễn trừ → trừ tại dailyRate | Pete | 11/6/2026 |
 | 10 | BHXH cấu hình riêng cho từng lái xe trên trang Cấu hình → Lái xe | Pete | 11/6/2026 |
+| 11 | Phương thức nhập lương bổ sung: chọn **từng ngày cụ thể** trên lịch (không nhập tổng), trực quan hơn. Công thức: `standby_days × (baseSalary + BHXH) / standard_work_days` | Pete | 12/6/2026 |
+| 12 | Chủ nhật hoán đổi: làm CN → nghỉ bù ngày thường (trước/sau). Không nghỉ bù → 1× daily_rate (không phải OT). CN đi làm = ngày làm việc bình thường | Pete | 12/6/2026 |

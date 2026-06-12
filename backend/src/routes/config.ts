@@ -100,9 +100,10 @@ router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, {
 }));
 router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseCategorySchema, { searchableField: 'name' }));
 
-// Drivers — special handling (includes user_id)
+// Drivers — special handling (includes user_id, no delete per spec §4.2)
 router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
   searchableField: 'name',
+  disableDelete: true,
 }));
 
 // Road config — singleton GET/PUT

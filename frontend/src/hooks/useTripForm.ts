@@ -420,6 +420,44 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     }
   }, [selectedRouteData, isEditMode, existingTrip]);
 
+  // ── Auto-fill salary from driver baseSalary when no route default exists ──
+  useEffect(() => {
+    if (isEditMode) return;
+    if (!driverId || !departureDate) return;
+    // Skip if route already provides a salary
+    if (selectedRouteData?.driverSalary != null) return;
+    if (roadConfig?.defaultDriverSalary && Number(roadConfig.defaultDriverSalary) > 0) return;
+
+    const driver = options?.drivers?.find((d: any) => d.id === Number(driverId));
+    if (!driver) return;
+
+    const baseSalary = Number((driver as any).baseSalary) || 0;
+    const socialInsurance = Number((driver as any).socialInsurance) || 0;
+    if (baseSalary <= 0) return;
+
+    // Calculate tripWageDays from date range
+    const startDate = new Date(departureDate);
+    const days = completedAt
+      ? Math.max(1, Math.ceil((new Date(completedAt).getTime() - startDate.getTime()) / (86400000)) + 1)
+      : 1;
+
+    // Only auto-fill tripWageDays if user hasn't manually set it
+    setTripWageDays(prev => prev || String(days));
+
+    // Calculate standardWorkDays for departure month (days in month - sundays)
+    const year = startDate.getFullYear();
+    const month = startDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let sundays = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(year, month, d).getDay() === 0) sundays++;
+    }
+    const standardWorkDays = daysInMonth - sundays;
+    const dailyRate = Math.round((baseSalary + socialInsurance) / standardWorkDays);
+
+    setDriverSalary(String(dailyRate * days));
+  }, [driverId, departureDate, completedAt, selectedRouteData, roadConfig, isEditMode, options?.drivers]);
+
   // ── Derived values ──
   const estimatedFuelCost = useMemo(() => {
     if (fuelMode === FuelMode.FLAT_RATE) {

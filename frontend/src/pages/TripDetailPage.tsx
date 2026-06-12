@@ -92,7 +92,7 @@ export default function TripDetailPage() {
           onChangeDepartureDate={page.handleChangeDepartureDate}
           actionLoading={ui.actionLoading}
         />
-        <FinancialCard derived={derived} />
+        <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
         <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
       </section>
 

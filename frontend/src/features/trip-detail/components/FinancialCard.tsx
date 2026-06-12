@@ -5,14 +5,17 @@ import type { TripDerivedData } from '../types';
 
 interface FinancialCardProps {
   derived: TripDerivedData;
+  customerCommission?: number;
 }
 
-export function FinancialCard({ derived }: FinancialCardProps) {
+export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
   const {
     revenue, fuelCost, roadAllowance, tollCost, driverSalary,
     serviceCost, twoPointDeliveryBonus, vehicleShiftAllowance,
     totalCost, grossProfit,
   } = derived;
+
+  const showCommission = customerCommission > 0;
 
   // Only show bonus/allowance rows when they have values
   const showTwoPointBonus = twoPointDeliveryBonus > 0;
@@ -29,6 +32,12 @@ export function FinancialCard({ derived }: FinancialCardProps) {
             <span className="k">Doanh thu</span>
             <span className="v">{fmtCurrency(revenue)}</span>
           </div>
+          {showCommission && (
+            <div className="pl-row">
+              <span className="k"><span className="swatch" style={{ background: '#E8A87C' }} />Hoa hồng khách hàng</span>
+              <span className="v neg">− {fmtCurrency(customerCommission)}</span>
+            </div>
+          )}
           <div className="pl-divider dashed" />
           <div className="pl-row">
             <span className="k"><span className="swatch" style={{ background: 'var(--accent)' }} />Chi phí nhiên liệu</span>

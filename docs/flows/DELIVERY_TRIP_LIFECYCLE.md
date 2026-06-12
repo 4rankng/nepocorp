@@ -100,6 +100,9 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Các chặng (origin, destination, km, loại xếp hàng: hàng/vỏ)
   - Chế độ nhiên liệu (TỰ ĐỘNG hoặc KHOÁN)
   - Doanh thu (tự động tra bảng giá, có thể ghi đè)
+  - **Hoa hồng chi KH** (`customerCommission`): khoản chiết khấu/hoa hồng cho khách hàng, nhập tay theo từng chuyến (không theo công thức). Ghi nhận ngay, không đợi khóa.
+  - **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `(baseSalary + BHXH) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè. Chỉ áp dụng cho Xe nhà. *(Pete xác nhận 12/6)*
+  - **Số ngày tính lương** (`trip_wage_days`): hệ thống tự tính `daysBetween(departure, arrival) + 1`. Kế toán có thể ghi đè.
   - **Các container** (tùy chọn): mỗi dòng gồm Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng.
 - **Hệ thống tự động:**
   - Tra giá cước từ bảng giá theo Khách hàng × Tuyến đường × Ngày
@@ -122,6 +125,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Cập nhật các chặng (km thực tế)
   - Số liệu nhiên liệu thực tế
   - Thu phí đường bộ thực tế
+  - Hoa hồng chi KH (nếu chưa nhập, hoặc cần điều chỉnh)
+  - Lương chuyến quy đổi (hệ thống tự điền, kế toán có thể sửa)
   - Doanh thu cuối cùng
   - **Cập nhật/bổ sung container** (Loại container, Số container nhập tay, Số seal nhập tay — nhập được bởi Kế toán, Giám đốc hoặc Giao nhận)
   - Ảnh bốc xếp (bắt buộc nếu hàng hóa yêu cầu — vd: chè). Bên cạnh ảnh, có thể nhập số container/seal bằng text.
@@ -137,8 +142,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   1. Hệ thống kiểm tra doanh thu > 0
   2. Nếu doanh thu = 0 → hiện cảnh báo "Doanh thu bằng 0. Xác nhận chốt?" → cần xác nhận
   3. Hệ thống ghi sổ cái:
-     - **Nợ Khách hàng** (TRIP_REVENUE): tăng công nợ = doanh thu
-     - **Có Tài xế** (DRIVER_SALARY): tăng lương = lương chuyến
+     - **Nợ Khách hàng** (TRIP_REVENUE): tăng công nợ = doanh thu (gồm VAT). Doanh thu thực tế nội bộ = freightExVat − customerCommission.
+     - **Có Tài xế** (DRIVER_SALARY): tăng lương = lương chuyến quy đổi
   4. Ghi nhật ký kiểm toán
 - **Kết quả:** Trạng thái `LOCKED` — **không thể sửa đổi**, số liệu đã ghi sổ
 
@@ -265,18 +270,19 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 
 **Bảng P&L:**
 ```
-Doanh thu vận tải       (+) Doanh thu
+Doanh thu vận tải       (+) Doanh thu (ex-VAT)
+Hoa hồng chi KH         (−) Khấu trừ trên từng chuyến
 Thu nhập phạt            (+) Phạt tài xế
 ─────────────────────────────────────
 Tổng doanh thu
 
 Chi phí nhiên liệu      (−) Xăng dầu (dùng giá thực tế nếu có, ngược lại giá cấu hình)
 Chi phí đi đường        (−) Cầu đường, trạm thu phí
-Lương tài xế            (−) Lương chuyến
+Lương tài xế            (−) Lương chuyến quy đổi (driver_salary)
 ─────────────────────────────────────
 Tổng chi phí trực tiếp
 
-LỢI NHUẬN GỘP           = Doanh thu − Chi phí trực tiếp
+LỢI NHUẬN GỘP           = Doanh thu thực tế − Chi phí trực tiếp
 Phí quản lý             (−) Chi phí vận hành
 ─────────────────────────────────────
 LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý

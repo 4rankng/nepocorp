@@ -129,9 +129,17 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </span>
       </div>
 
-      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+      <div className="tc-form-row tc-form-row--three" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Tiền kết hợp</label>
+          <label>Số ngày tính lương</label>
+          <input className="input mono" type="number" placeholder="1" min="1" max="31"
+            value={form.tripWageDays} onChange={(e) => form.setTripWageDays(e.target.value)} />
+          <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+            Số ngày tính lương (mặc định = ngày đi → ngày về + 1)
+          </div>
+        </div>
+        <div className="field">
+          <label>Tiền lương tài xế</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
         <CheckboxCard
@@ -167,6 +175,16 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         <div className="field">
           <label>Doanh thu kết hợp</label>
           <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="đ" mono type="money" />
+        </div>
+      </div>
+
+      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+        <div className="field">
+          <label>Hoa hồng khách hàng (đ)</label>
+          <InputWithPrefix value={form.customerCommission} onChange={form.setCustomerCommission} placeholder="0" prefix="đ" mono type="money" />
+          <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+            Trừ trực tiếp vào doanh thu chuyến. Mặc định 0 = không có hoa hồng.
+          </div>
         </div>
       </div>
     </CardSection>

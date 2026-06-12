@@ -104,9 +104,9 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 ### 2.5 Người dùng & Tài xế `/config/drivers`
 
-**Trường:** Họ tên (bắt buộc), SĐT (bắt buộc, duy nhất), Email (duy nhất), Vai trò, Mật khẩu (bắt buộc khi tạo), Biển số xe mặc định (DRIVER), Trạng thái.
+**Trường:** Họ tên (bắt buộc), SĐT (bắt buộc, duy nhất), Email (duy nhất), Vai trò, Mật khẩu (bắt buộc khi tạo), Biển số xe mặc định (DRIVER), **Lương cơ bản (VNĐ)** — `baseSalary`, số không âm, bắt buộc cho DRIVER role, **BHXH doanh nghiệp đóng (VNĐ)** — `social_insurance`, số không âm, mặc định 0 *(dùng để tính `daily_rate` và lương chuyến quy đổi — Pete xác nhận 4/6)*, Trạng thái.
 
-**Đặc biệt:** Không xóa user có chuyến → deactivate. Xe gắn phải ACTIVE.
+**Đặc biệt:** Không xóa user có chuyến → deactivate. Xe gắn phải ACTIVE. Lương cơ bản và BHXH dùng trong công thức lương chuyến: `(baseSalary + social_insurance) / 26 × tripWageDays`.
 
 ### 2.6 Cổ phần `/config/cap-table`
 

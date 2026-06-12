@@ -13,8 +13,9 @@ import { cacheInvalidate } from '../../lib/redis';
 
 export interface CrudRouterOptions {
   searchableField?: string;
+  disableDelete?: boolean;
   beforeCreate?: (data: any, req: Request) => Promise<any> | any;
-  afterCreate?: (item: any, data: any, req: Request) => Promise<void> | void;
+  afterCreate?: (item: any, data: any, req: Request) => Promise<any> | any;
   beforeUpdate?: (id: number, data: any, req: Request) => Promise<any> | any;
   afterUpdate?: (item: any, data: any, req: Request) => Promise<void> | void;
   beforeDelete?: (id: number, req: Request) => Promise<void> | void;
@@ -28,6 +29,7 @@ export function createCrudRouter(
 ) {
   const {
     searchableField,
+    disableDelete = false,
     beforeCreate,
     afterCreate,
     beforeUpdate,
@@ -101,6 +103,7 @@ export function createCrudRouter(
   });
 
   sub.delete('/:id', async (req: Request, res: Response) => {
+    if (disableDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     const id = parseInt(req.params.id as string);
     if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     if (beforeDelete) {

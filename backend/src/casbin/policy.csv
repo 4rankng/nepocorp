@@ -7,7 +7,6 @@ p, MANAGER, config, write
 p, MANAGER, financial, read
 p, MANAGER, financial, write
 p, MANAGER, users, read
-p, MANAGER, users, write
 p, MANAGER, audit_logs, read
 p, MANAGER, maps, read
 p, MANAGER, upload, write

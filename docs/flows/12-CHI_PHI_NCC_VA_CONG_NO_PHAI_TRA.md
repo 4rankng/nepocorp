@@ -47,7 +47,7 @@ Module bổ sung phần chi phí vận hành mà quy trình Excel cũ vẫn theo
 
 ### 2.1 Danh mục Nhà cung cấp (/suppliers)
 
-CRUD đơn giản (theo mẫu Khách hàng): Tên, Người liên hệ, SĐT, Mã số thuế, Ghi chú, Trạng thái. Không có trường "phân loại" — phân loại nằm ở hạng mục của từng phiếu chi.
+CRUD đơn giản (theo mẫu Khách hàng): Tên, Người liên hệ, SĐT, Mã số thuế, Ghi chú, Trạng thái, **Cờ "Là NCC nhiên liệu"** (`isFuelSupplier`, checkbox). Không có trường "phân loại" — phân loại nằm ở hạng mục của từng phiếu chi. NCC được đánh dấu `isFuelSupplier` sẽ xuất hiện trong dropdown chọn NCC nhiên liệu trên form nhập liệu chuyến đi (§6).
 
 ### 2.2 Hạng mục chi phí (trong /config)
 

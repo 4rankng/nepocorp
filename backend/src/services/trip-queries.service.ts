@@ -323,6 +323,8 @@ export async function getTripById(id: number) {
     externalPlateNumber: s.trips.externalPlateNumber,
     externalDriverName: s.trips.externalDriverName,
     externalDriverPhone: s.trips.externalDriverPhone,
+    customerCommission: s.trips.customerCommission,
+    tripWageDays: s.trips.tripWageDays,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))

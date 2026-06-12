@@ -28,6 +28,12 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, _nex
     return;
   }
 
+  // Custom errors with numeric status property (e.g., NoForwarderProfileError)
+  if ('status' in err && typeof (err as any).status === 'number' && (err as any).status >= 400 && (err as any).status < 600) {
+    res.status((err as any).status).json({ error: err.message });
+    return;
+  }
+
   // PostgreSQL unique constraint violation
   if ('code' in err && (err as any).code === '23505') {
     res.status(409).json({ error: 'Dữ liệu đã tồn tại' });

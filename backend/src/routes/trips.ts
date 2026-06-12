@@ -87,7 +87,9 @@ router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
 
 // Get trip detail with legs
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
-  res.json(await tripService.getTripById(parseInt(req.params.id as string)));
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  res.json(await tripService.getTripById(id));
 }));
 
 // Update pre-departure figures

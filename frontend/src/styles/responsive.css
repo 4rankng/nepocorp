@@ -1473,6 +1473,129 @@
   .customers-page .m-card-edit-row,
   .suppliers-page .m-card-edit-row { display: none; }
 
+  /* ════════════════════════════════════════════════════════════════════════
+   * Mobile QA Pass (2026-06-12) — fixes for 8 pages with mobile UX issues
+   * ════════════════════════════════════════════════════════════════════════ */
+
+  /* ── TripListPage: larger filter pill tap targets, breakdown bar fix ── */
+  .trip-list-page .filter-pill {
+    height: 40px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .trip-list-page .filter-pill .filter-lbl-wrap { line-height: 1.2; }
+  .trip-list-page .breakdown-bar {
+    height: 6px;
+    border-radius: 99px;
+  }
+  .trip-list-page .breakdown-legend {
+    gap: 4px 8px;
+    font-size: 10px;
+  }
+
+  /* ── DispatchPage: prevent section header text cutoff ── */
+  .dispatch-page .section-title h2 {
+    font-size: 16px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .dispatch-page .vrow .lab {
+    min-width: 48px;
+    font-size: 11px;
+  }
+  .dispatch-page .vcard { padding: 12px; }
+
+  /* ── DebtListPage: larger filter-tab tap targets, full-width search ── */
+  .debt-list-page .filter-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .debt-list-page .filter-tab {
+    min-height: 38px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+  .debt-list-page .filter-bar__search {
+    width: 100%;
+    order: 99;
+  }
+  .debt-list-page .bucket {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+  .debt-list-page .bucket__value { font-size: 18px; }
+
+  /* ── PenaltyPage: larger chip/seg tap targets ── */
+  .penalty-chip {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+  .penalty-seg button {
+    min-height: 34px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+  }
+  .penalty-row-act {
+    min-width: 38px;
+    min-height: 38px;
+  }
+  .penalty-page .kpi-grid { gap: 8px; }
+
+  /* ── SalaryAttendancePage: calendar cell breathing room, action buttons ── */
+  .cal-cell {
+    aspect-ratio: auto;
+    min-height: 42px;
+    padding: 4px 2px !important;
+    border-radius: 5px !important;
+  }
+  .cal-cell-day-num { font-size: 9.5px !important; }
+  .cal-cell-icon-wrap svg { width: 14px; height: 14px; }
+  .calendar-legend-item {
+    font-size: 10px;
+    padding: 2px 7px;
+    gap: 4px;
+  }
+  .calendar-legend-instruction {
+    font-size: 11px;
+    padding: 6px 10px;
+    gap: 5px;
+    line-height: 1.4;
+  }
+  .salary-summary-dark {
+    padding: 16px 16px 14px;
+  }
+  .salary-summary-dark__big { font-size: 24px; }
+  .salary-summary-dark__label { font-size: 9px; margin-bottom: 8px; }
+  .salary-summary-dark__mini { font-size: 10.5px; }
+  .salary-summary-dark__row { font-size: 12px; }
+  .salary-summary-dark__row-val { font-size: 12px; }
+  .driver-select-card {
+    min-width: 88px;
+    padding: 6px 10px;
+  }
+  .driver-select-card__name { font-size: 11.5px; max-width: 120px; }
+  .driver-select-card__salary { font-size: 10px; }
+
+  /* ── CustomersPage: full-width search, larger filter pills ── */
+  .customers-page .toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .customers-page .toolbar > div:has(input) {
+    width: 100%;
+    order: 99;
+  }
+  .customers-page .toolbar input {
+    width: 100% !important;
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  /* ── Config Drivers/CrudTable: horizontal scroll for wide tables ── */
+  .cfg-page .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cfg-page .tt-table { min-width: 520px; }
+
 } /* end PHONE ≤ 640px */
 
 

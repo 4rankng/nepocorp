@@ -66,7 +66,10 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
    - **Loại hàng** (tùy chọn)
    - **Ghi chú** (tùy chọn)
 3. **Giá cước tự động điền** dựa trên cặp (KH + tuyến) từ bảng giá cước
-4. Nhấn **"Lưu"** → chuyến tạo ở trạng thái CREATED
+4. **Hoa hồng chi KH** (`customerCommission`): kế toán nhập tay khoản chiết khấu/hoa hồng thương mại cho khách hàng (không theo công thức). Ghi nhận ngay khi nhập, không đợi khóa chuyến. **Doanh thu thực tế = freightExVat − customerCommission.** *(Pete xác nhận 12/6)*
+5. **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `(baseSalary + BHXH) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè số tiền hoặc điều chỉnh `trip_wage_days`. Hành vi tương tự chi phí xăng dầu, vé cầu đường — tự điền, cho phép sửa. Chỉ áp dụng cho **Xe nhà** (OWN). *(Pete xác nhận 12/6)*
+6. **Số ngày tính lương** (`trip_wage_days`): hệ thống tự tính từ `daysBetween(departure, arrival) + 1`. Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ.
+7. Nhấn **"Lưu"** → chuyến tạo ở trạng thái CREATED
 
 ### 2.2 Chỉnh sửa chuyến (PUT /api/trips/:id)
 
@@ -109,6 +112,9 @@ Chỉ xóa được chuyến ở trạng thái **CREATED**. Chuyến IN_TRANSIT,
     ▼ CREATED
     │  Chọn KH + Tuyến + Xe + Tài xế
     │  Giá cước tự điền
+    │  Hoa hồng chi KH (nhập tay)
+    │  Lương chuyến quy đổi tự điền (khi có lái xe + ngày)
+    │  trip_wage_days tự tính
     │
     ▼ Nhấn "Xuất phát"
     │
@@ -151,10 +157,11 @@ DRIVER đăng nhập → Xem chuyến mình →
 ```
 computeTripTotals(trip):
   customerFreightExVat = customerFreightInclVat / (1 + vatRate)
+  recordedRevenue = customerFreightExVat − customerCommission   // doanh thu thực tế
 
   Nếu Xe nhà:
-    totalExpenses = fuelAmount + tollFees + driverAllowance + ...  // tất cả incl. VAT
-    grandTotal = customerFreightExVat − totalExpenses + serviceMargin
+    totalExpenses = fuelAmount + tollFees + driverSalary + driverAllowance + ...  // tất cả incl. VAT
+    grandTotal = recordedRevenue − totalExpenses + serviceMargin
 
   Nếu Xe ngoài:
     externalFreightInclVat = externalFreightCost  // giá thuê ngoài đã gồm VAT
@@ -199,6 +206,9 @@ computeTripTotals(trip):
 | origin/destination | Tối đa 200 ký tự |
 | distance | Số dương |
 | customerRate | Số không âm |
+| customerCommission | Số không âm, mặc định 0. Ghi nhận ngay, không đợi khóa. |
+| driverSalary | Số không âm (OWN only). Hệ thống tự điền `(baseSalary+BHXH)/26×tripWageDays` |
+| tripWageDays | Số nguyên dương. Hệ thống tự tính `daysBetween(departure, arrival)+1` |
 | fuelAmount | Số không âm |
 | status | Default: CREATED |
 
@@ -301,12 +311,25 @@ computeTripTotals(trip):
 | TC-TL-049 | Sửa giá bảng giá → chuyến cũ không đổi | Có chuyến đã tạo | Sửa bảng giá → xem chuyến cũ | Chuyến cũ giữ giá snapshot | High |
 | TC-TL-050 | Chuyến mới dùng giá mới | Đã sửa bảng giá | Tạo chuyến mới | Chuyến mới dùng giá mới | High |
 
-### 5.8 Responsive & UI (TC-TL-051 → TC-TL-055)
+### 5.8 Hoa hồng & Lương chuyến quy đổi (TC-TL-056 → TC-TL-063)
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-TL-051 | Mobile form tạo chuyến | < 768px | Mở form | Form stack dọc, cuộn được | Medium |
-| TC-TL-052 | Mobile danh sách chuyến | < 768px | Xem /trips | Bảng cuộn ngang, KPI 2 cột | Medium |
-| TC-TL-053 | Badge trạng thái đúng màu | 5 trạng thái | Xem badge | CREATED xanh dương, IN_TRANSIT vàng, COMPLETED xanh lá, LOCKED xám, CANCELLED đỏ | High |
-| TC-TL-054 | Format VND | grandTotal = 5000000 | Xem tổng tiền | "5,000,000 ₫" | Medium |
-| TC-TL-055 | Chuyến thiếu dữ liệu | Null fields | Xem chi tiết | Hiển thị "-" cho null | Low |
+| TC-TL-056 | Hoa hồng nhập tay | Chuyến OWN | Nhập customerCommission = 500K | Lưu thành công | High |
+| TC-TL-057 | Hoa hồng trừ doanh thu | commission=500K, freightExVat=5M | Khóa chuyến → kiểm tra | recordedRevenue = 4,500,000 | High |
+| TC-TL-058 | Hoa hồng = 0 (mặc định) | Chuyến mới | Không nhập commission | recordedRevenue = freightExVat | High |
+| TC-TL-059 | Hoa hồng ghi nhận ngay | Chuyến IN_TRANSIT | Nhập commission → Lưu | Hiển thị ngay trên form, không đợi khóa | High |
+| TC-TL-060 | Lương chuyến tự điền | Lái xe baseSalary=8M, BHXH=0, 3 ngày | Chọn lái xe + nhập ngày đi/về | driverSalary = (8M+0)/26×3 = 923,077 | High |
+| TC-TL-061 | Sửa lương chuyến | driverSalary đã tự điền | Đổi số tiền → Lưu | Giá trị mới được lưu | High |
+| TC-TL-062 | trip_wage_days tự tính | departure=1/6, arrival=3/6 | Xem trip_wage_days | = 3 (daysBetween+1) | High |
+| TC-TL-063 | Lương chuyến chỉ Xe nhà | Chuyến EXTERNAL | Xem form | Không có trường driverSalary | High |
+
+### 5.9 Responsive & UI (TC-TL-064 → TC-TL-068)
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-TL-064 | Mobile form tạo chuyến | < 768px | Mở form | Form stack dọc, cuộn được | Medium |
+| TC-TL-065 | Mobile danh sách chuyến | < 768px | Xem /trips | Bảng cuộn ngang, KPI 2 cột | Medium |
+| TC-TL-066 | Badge trạng thái đúng màu | 5 trạng thái | Xem badge | CREATED xanh dương, IN_TRANSIT vàng, COMPLETED xanh lá, LOCKED xám, CANCELLED đỏ | High |
+| TC-TL-067 | Format VND | grandTotal = 5000000 | Xem tổng tiền | "5,000,000 ₫" | Medium |
+| TC-TL-068 | Chuyến thiếu dữ liệu | Null fields | Xem chi tiết | Hiển thị "-" cho null | Low |
