@@ -177,8 +177,8 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalCost = extCost;
     grossProfit = externalMargin + serviceMargin;
   } else {
-    // OWN trip: total cost = fuel + road allowance (net) + tolls + salary + bonuses
-    totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.driverSalary
+    // OWN trip: total cost = fuel + road allowance (net) + tolls + ticket paid by company + salary + bonuses
+    totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.tollsDiscount + input.driverSalary
       + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
     grossProfit = recordedRevenue - totalCost + serviceMargin;
   }

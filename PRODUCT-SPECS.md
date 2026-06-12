@@ -200,7 +200,19 @@ net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riê
 
 ### 4.6 Tổng chi phí (Total Cost)
 
-* **Công thức đối với Xe nhà:** `Tổng chi phí = Chi phí dầu (lít × đơn giá thực tế hoặc đơn giá cấu hình) + Tiền đi đường + Lương chuyến quy đổi (driver_salary) + Chi phí dịch vụ đi kèm (nếu công ty trả trực tiếp)`. Lương chuyến quy đổi được hệ thống tự điền theo công thức `(baseSalary + socialInsurance) / 26 × tripWageDays`, kế toán có thể ghi đè.
+* **Công thức đối với Xe nhà:**
+  ```
+  Tổng chi phí = Chi phí dầu (incl. VAT)
+               + Tiền đi đường (net — lái xe thực nhận)
+               + Tiền vé BOT (trạm thu phí: số trạm × phí/trạm)
+               + Tiền vé (công ty đã thanh toán hộ lái xe — tollsDiscount)
+               + Lương chuyến quy đổi (driver_salary)
+               + Thưởng giao 2 điểm (nếu có)
+               + Lưu ca xe (nếu có)
+  ```
+  Chi phí dịch vụ đi kèm **không** cộng trực tiếp vào tổng chi phí — biên lợi nhuận dịch vụ (service margin = bán ex-VAT − mua incl-VAT) được cộng riêng vào lợi nhuận gộp (xem §4.7). Lương chuyến quy đổi được hệ thống tự điền theo công thức `(baseSalary + socialInsurance) / 26 × tripWageDays`, kế toán có thể ghi đè.
+
+  **Lưu ý hiển thị:** Tiền đi đường trên thẻ phân tích tài chính hiển thị theo 2 dòng riêng biệt: (1) "Tiền đi đường" = số tiền lái xe thực nhận (đã trừ vé công ty), và (2) "Tiền vé (công ty thanh toán)" = khoản công ty trả hộ vé cho lái xe. Cả hai đều là chi phí công ty và được tính vào tổng chi phí.
 * **Công thức đối với Xe ngoài:** `Tổng chi phí = Giá cước thuê ngoài`.
 * **Thuế VAT trong chi phí:** Toàn bộ khoản chi phí được ghi nhận **gồm VAT** (incl. VAT). Không trừ VAT đầu vào trên chi phí. Điều này phản ánh thực tế doanh nghiệp: chi phí thực trả cho NCC đã bao gồm thuế GTGT.
 * Phạt kỷ luật **không** tính vào tổng chi phí — đây là khoản trừ lương tài xế, không phải chi phí công ty.
@@ -459,8 +471,8 @@ net_salary = base_salary + total_trip_salary + lương_bù − trừ_nghỉ_riê
 | Tổng L dầu | AUTO: tổng L từ các chặng + bổ sung. KHOÁN: L nhập tay + bổ sung. |
 | Chi phí dầu | Tổng L dầu × Đơn giá thực tế (nếu có) hoặc Đơn giá cấu hình |
 | Chênh lệch giá dầu | Chi phí dầu (thực tế) − (Tổng L dầu × Đơn giá cấu hình). Chỉ hiển thị khi có đơn giá thực tế |
-| Tiền lái xe thực lĩnh | Tổng tiền đi đường + Tiền kết hợp + Tiền lưu ca xe + Tiền đóng trả hàng 2 điểm − Tiền vé (công ty) đã thanh toán |
-| Tổng chi phí (Xe nhà) | Chi phí dầu (incl. VAT) + Tiền đi đường + Lương sản lượng + Chi phí DV đi kèm (COMPANY_DIRECT, incl. VAT) |
+| Tiền lái xe thực lĩnh | Tiền đi đường (net) + Lương chuyến quy đổi + Tiền lưu ca xe + Thưởng giao 2 điểm. (= `totalRoadAllowance` + `driverSalary` + `vehicleShiftAllowance` + `twoPointDeliveryBonus`) |
+| Tổng chi phí (Xe nhà) | Chi phí dầu (incl. VAT) + Tiền đi đường (net) + Tiền vé BOT (số trạm × phí/trạm) + Tiền vé công ty (tollsDiscount) + Lương chuyến quy đổi + Thưởng giao 2 điểm + Lưu ca xe |
 | Doanh thu thực tế ghi nhận | (Doanh thu đóng/ trả hàng + Doanh thu kết hợp) / (1 + VAT) − **Hoa hồng chi KH** = `recordedRevenue` |
 | Hoa hồng chi KH | Kế toán nhập tay, trừ vào doanh thu thực tế |
 | Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) — giá bán ra ex-VAT, giá mua vào incl. VAT |

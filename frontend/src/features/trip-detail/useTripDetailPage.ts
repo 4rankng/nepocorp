@@ -79,7 +79,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     if (!trip) {
       return {
         revenue: 0, totalCost: 0, grossProfit: 0, marginPct: null,
-        fuelCost: 0, roadAllowance: 0, tollCost: 0, driverSalary: 0, serviceCost: 0,
+        fuelCost: 0, roadAllowance: 0, tollCost: 0, tollsDiscount: 0, driverSalary: 0, serviceCost: 0,
         twoPointDeliveryBonus: 0, vehicleShiftAllowance: 0,
         totalKm: 0, fuelLiters: 0, computedLiters: 0, ttbq: 0,
         fuelVarianceLiters: 0, fuelVarianceOver: false,
@@ -108,6 +108,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     const fuelCost = Number(trip.totalFuelCost || 0);
     const roadAllowance = Number(trip.totalRoadAllowance || 0);
     const tollCost = Number(trip.tollCost || 0);
+    const tollsDiscount = Number(trip.tollsDiscount || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const serviceCost = 0;
     const twoPointDeliveryBonus = Number(trip.twoPointDeliveryBonus || 0);
@@ -125,7 +126,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
 
     return {
       revenue, totalCost, grossProfit, marginPct,
-      fuelCost, roadAllowance, tollCost, driverSalary, serviceCost,
+      fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary, serviceCost,
       twoPointDeliveryBonus, vehicleShiftAllowance,
       totalKm, fuelLiters, computedLiters, ttbq,
       fuelVarianceLiters, fuelVarianceOver,

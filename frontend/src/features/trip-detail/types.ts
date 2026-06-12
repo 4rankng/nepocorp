@@ -11,6 +11,7 @@ export interface TripDerivedData {
   fuelCost: number;
   roadAllowance: number;
   tollCost: number;
+  tollsDiscount: number;
   driverSalary: number;
   serviceCost: number;
   twoPointDeliveryBonus: number;

@@ -10,7 +10,7 @@ interface FinancialCardProps {
 
 export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
   const {
-    revenue, fuelCost, roadAllowance, tollCost, driverSalary,
+    revenue, fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
     serviceCost, twoPointDeliveryBonus, vehicleShiftAllowance,
     totalCost, grossProfit,
   } = derived;
@@ -47,6 +47,12 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
             <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền đi đường</span>
             <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}>{roadAllowance > 0 ? `− ${fmtCurrency(roadAllowance)}` : '0 đ'}</span>
           </div>
+          {tollsDiscount > 0 && (
+            <div className="pl-row">
+              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền vé (công ty thanh toán)</span>
+              <span className="v neg">− {fmtCurrency(tollsDiscount)}</span>
+            </div>
+          )}
           <div className="pl-row">
             <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền vé (trạm thu phí)</span>
             <span className={`v ${tollCost === 0 ? 'zero' : ''}`}>{tollCost > 0 ? `− ${fmtCurrency(tollCost)}` : '0 đ'}</span>

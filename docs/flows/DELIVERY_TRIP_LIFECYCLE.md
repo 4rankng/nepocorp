@@ -272,20 +272,27 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 ```
 Doanh thu vận tải       (+) Doanh thu (ex-VAT)
 Hoa hồng chi KH         (−) Khấu trừ trên từng chuyến
-Thu nhập phạt            (+) Phạt tài xế
 ─────────────────────────────────────
-Tổng doanh thu
+Doanh thu thực tế       = freightExVat − customerCommission
 
 Chi phí nhiên liệu      (−) Xăng dầu (dùng giá thực tế nếu có, ngược lại giá cấu hình)
-Chi phí đi đường        (−) Cầu đường, trạm thu phí
+Tiền đi đường           (−) Lái xe thực nhận (đã trừ vé công ty)
+Tiền vé BOT             (−) Trạm thu phí: số trạm × phí/trạm
+Tiền vé công ty         (−) Công ty thanh toán hộ lái xe (tollsDiscount)
 Lương tài xế            (−) Lương chuyến quy đổi (driver_salary)
+Thưởng giao 2 điểm      (−) Nếu có
+Lưu ca xe               (−) Nếu có
 ─────────────────────────────────────
 Tổng chi phí trực tiếp
 
-LỢI NHUẬN GỘP           = Doanh thu thực tế − Chi phí trực tiếp
-Phí quản lý             (−) Chi phí vận hành
+Biên dịch vụ            (+/−) Lãi từ phí đi kèm: bán ex-VAT − mua incl-VAT
 ─────────────────────────────────────
-LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý
+LỢI NHUẬN GỘP           = Doanh thu thực tế − Tổng chi phí + Biên dịch vụ
+
+Phí quản lý             (−) Chi phí vận hành
+Bảo dưỡng xe            (−) Sửa chữa, bảo hiểm, đăng kiểm, phí đường bộ
+─────────────────────────────────────
+LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý − Bảo dưỡng + Thu nhập khác
 ```
 
 ### 3.6 Phân bổ lợi nhuận (chỉ Giám đốc)
@@ -412,7 +419,7 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 3 | Cập nhật **chặng thực tế** | Km thực tế, có thể thêm/xóa chặng | Tổng km cập nhật |
 | 4 | Kiểm tra **nhiên liệu** | Xem tổng tự tính hoặc nhập tay nếu KHOÁN | |
 | 4a | Nhập **Đơn giá thực tế** (tùy chọn) | Giá thực mua tại trạm (VNĐ/lít). Nút **Đề xuất** tra giá hiệu lực từ lịch sử theo ngày xuất phát. Để trống → dùng giá cấu hình snapshot. Chỉ nhập được trước khi khóa chuyến. | Hệ thống tính lại `totalFuelCost` và `fuelPriceVariance` |
-| 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ, cộng thêm | |
+| 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ (tiền vé công ty đã thanh toán), cộng thêm | |
 | 6 | Cập nhật **doanh thu** (nếu cần) | Nếu giá thực tế khác bảng giá → ghi đè | Hệ thống lưu giá gốc + giá ghi đè |
 | 7 | **Cập nhật/bổ sung container** | Loại container (dropdown), Số container (text), Số seal (text) | Nhập được bởi Kế toán, Giám đốc hoặc Giao nhận |
 | 8 | **Tải ảnh** | Ảnh CONTAINER, SEAL (bắt buộc nếu hàng yêu cầu). Bên cạnh ảnh, có thể nhập số cont/seal bằng text. | |
