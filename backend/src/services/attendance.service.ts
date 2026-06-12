@@ -260,13 +260,17 @@ export async function computeAttendanceSummary(
   };
 }
 
+type ConfirmationMap = Map<number, { status: string | null; confirmedBy: number | null; confirmedAt: Date | null }>;
+
 /**
  * Compute the full salary breakdown for a driver in a month.
+ * @param confirmationMap Optional pre-fetched confirmation map (avoids N+1 in batch calls).
  */
 export async function computeSalary(
   driverId: number,
   year: number,
   month: number,
+  confirmationMap?: ConfirmationMap,
 ) {
   const attendance = await computeAttendanceSummary(driverId, year, month);
   const { periodStart: start, periodEnd: end, standardWorkDays, tripDays, standbyDays, personalLeaveDays, paidDays } = attendance;
@@ -327,17 +331,22 @@ export async function computeSalary(
   const totalPenalties = parseFloat(penaltyRow?.total || '0');
   const netSalary = baseSalary + totalTripSalary + adjustment + supplementPay - leaveDeduction - totalPenalties;
 
-  // Get salary confirmation status
-  const [confirmationRow] = await db.select({
-    status: s.salaryConfirmations.status,
-    confirmedBy: s.salaryConfirmations.confirmedBy,
-    confirmedAt: s.salaryConfirmations.confirmedAt,
-  }).from(s.salaryConfirmations)
-    .where(and(
-      eq(s.salaryConfirmations.driverId, driverId),
-      eq(s.salaryConfirmations.year, year),
-      eq(s.salaryConfirmations.month, month),
-    )).limit(1);
+  // Get salary confirmation status — use pre-fetched map if available
+  let confirmationRow: { status: string | null; confirmedBy: number | null; confirmedAt: Date | null } | undefined;
+  if (confirmationMap) {
+    confirmationRow = confirmationMap.get(driverId);
+  } else {
+    [confirmationRow] = await db.select({
+      status: s.salaryConfirmations.status,
+      confirmedBy: s.salaryConfirmations.confirmedBy,
+      confirmedAt: s.salaryConfirmations.confirmedAt,
+    }).from(s.salaryConfirmations)
+      .where(and(
+        eq(s.salaryConfirmations.driverId, driverId),
+        eq(s.salaryConfirmations.year, year),
+        eq(s.salaryConfirmations.month, month),
+      )).limit(1);
+  }
 
   return {
     ...attendance,
@@ -359,7 +368,6 @@ export async function computeSalary(
 
 /**
  * Compute salary summaries for ALL active drivers in a given month/year.
- * Extracted from the salary route to move the N+1 query pattern into the service layer.
  */
 export async function computeAllDriverSalaries(year: number, month: number) {
   const drivers = await db.select({
@@ -371,10 +379,26 @@ export async function computeAllDriverSalaries(year: number, month: number) {
     .where(isNull(s.drivers.deletedAt))
     .orderBy(s.drivers.name);
 
+  // Batch-fetch all confirmations for this month (eliminates N+1)
+  const confirmations = await db.select({
+    driverId: s.salaryConfirmations.driverId,
+    status: s.salaryConfirmations.status,
+    confirmedBy: s.salaryConfirmations.confirmedBy,
+    confirmedAt: s.salaryConfirmations.confirmedAt,
+  }).from(s.salaryConfirmations)
+    .where(and(
+      eq(s.salaryConfirmations.year, year),
+      eq(s.salaryConfirmations.month, month),
+    ));
+
+  const confirmationMap = new Map(
+    confirmations.map(c => [c.driverId, c]),
+  );
+
   const summaries = await Promise.all(
     drivers.map(async (driver) => {
       try {
-        const salary = await computeSalary(driver.id, year, month);
+        const salary = await computeSalary(driver.id, year, month, confirmationMap);
         return { ...driver, salary };
       } catch (err) {
         console.error(`[salary] computeSalary failed for driver ${driver.id}:`, err);
