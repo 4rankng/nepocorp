@@ -406,14 +406,12 @@ export default function TripListPage() {
             </div>
           ) : (
             table.rows.map((trip) => (
-              <ClickableCard
-                key={trip.id}
-                to={`/trips/${trip.id}`}
-                className="trip-mcard"
+              <TripMobileCard 
+                key={trip.id} 
+                trip={trip} 
+                warnThreshold={warnThreshold} 
                 style={tripRowStyle(trip) as CSSProperties}
-              >
-                <TripMobileCard trip={trip} warnThreshold={warnThreshold} />
-              </ClickableCard>
+              />
             ))
           )}
         </div>

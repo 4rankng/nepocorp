@@ -50,7 +50,7 @@ const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' })
 interface ChartProps { months: string[]; revenue: number[]; gross: number[]; }
 function RevenueChart({ months, revenue, gross }: ChartProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const activeIdx = hoverIdx ?? (revenue.length - 1);
+  const activeIdx = hoverIdx;
 
   const W = 760, H = 280;
   const mL = 46, mR = 18, mT = 14, mB = 30;
@@ -71,22 +71,17 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
 
   const gridValues = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
 
-  const ax = X(activeIdx);
-  const ay = Y(revenue[activeIdx] || 0);
-  const ayGp = Y(gross[activeIdx] || 0);
-
-  // Tooltip dimensions — shows month + both series values
-  const tw = 168, th = 72;
-  const tx = Math.min(W - mR - tw, Math.max(mL, ax - tw / 2));
-  const ty = Math.max(mT, Math.min(ay, ayGp) - th - 12);
+  const ax = activeIdx !== null ? X(activeIdx) : 0;
+  const ay = activeIdx !== null ? Y(revenue[activeIdx] || 0) : 0;
+  const ayGp = activeIdx !== null ? Y(gross[activeIdx] || 0) : 0;
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      xmlns="http://www.w3.org/2000/svg"
-      onMouseLeave={() => setHoverIdx(null)}
-      style={{ display: 'block' }}
-    >
+    <div style={{ position: 'relative', width: '100%' }} onMouseLeave={() => setHoverIdx(null)}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: 'block', width: '100%', overflow: 'visible' }}
+      >
       <defs>
         <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#005A2D" stopOpacity={0.16} />
@@ -113,39 +108,14 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
       <path d={areaPath(revenue)} fill="url(#gRev)" />
       <path d={path(gross)} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       <path d={path(revenue)} fill="none" stroke="#005A2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      {/* active point crosshair */}
-      <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
-      <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
-      <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
-      {/* Tooltip card */}
-      <rect x={tx} y={ty} width={tw} height={th} rx="8" fill="#fff"
-            stroke="#E2E8E5" strokeWidth="1"
-            style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />
-      {/* Month header */}
-      <text x={tx + tw / 2} y={ty + 15} textAnchor="middle"
-            fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="600" fill="#6B7B73">
-        {months[activeIdx]}
-      </text>
-      {/* Divider */}
-      <line x1={tx + 10} y1={ty + 20} x2={tx + tw - 10} y2={ty + 20} stroke="#EEF1EF" strokeWidth="1" />
-      {/* Revenue row */}
-      <circle cx={tx + 16} cy={ty + 35} r="4" fill="#005A2D" />
-      <text x={tx + 26} y={ty + 38.5} fontFamily="JetBrains Mono, monospace" fontSize="9.5" fill="#6B7B73">
-        Doanh thu
-      </text>
-      <text x={tx + tw - 10} y={ty + 38.5} textAnchor="end"
-            fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="700" fill="#005A2D">
-        {(revenue[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
-      </text>
-      {/* Gross profit row */}
-      <circle cx={tx + 16} cy={ty + 56} r="4" fill="#2563EB" />
-      <text x={tx + 26} y={ty + 59.5} fontFamily="JetBrains Mono, monospace" fontSize="9.5" fill="#6B7B73">
-        LN gộp
-      </text>
-      <text x={tx + tw - 10} y={ty + 59.5} textAnchor="end"
-            fontFamily="JetBrains Mono, monospace" fontSize="10" fontWeight="700" fill="#2563EB">
-        {(gross[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
-      </text>
+      {activeIdx !== null && (
+        <>
+          {/* active point crosshair */}
+          <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
+          <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
+          <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
+        </>
+      )}
       {/* Invisible hit areas — one per month column, rendered last so they sit on top */}
       {months.map((_, i) => {
         const cx = X(i);
@@ -165,6 +135,48 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
         );
       })}
     </svg>
+    {activeIdx !== null && (
+      <div
+        style={{
+          position: 'absolute',
+          left: `${(ax / W) * 100}%`,
+          top: `${(Math.min(ay, ayGp) / H) * 100}%`,
+          transform: `translate(${activeIdx === 0 ? '0' : activeIdx === months.length - 1 ? '-100%' : '-50%'}, calc(-100% - 12px))`,
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #E2E8E5',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+          padding: '10px 14px',
+          pointerEvents: 'none',
+          minWidth: '160px',
+          zIndex: 10,
+        }}
+      >
+        <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', fontWeight: 600, color: '#6B7B73', marginBottom: '8px' }}>
+          {months[activeIdx]}
+        </div>
+        <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
+            Doanh thu
+          </div>
+          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D' }}>
+            {(revenue[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
+            LN gộp
+          </div>
+          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#2563EB' }}>
+            {(gross[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
   );
 }
 
@@ -569,13 +581,6 @@ export default function DashboardPage() {
               <button className="wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
             </div>
             <div className="body">
-              <div className="wf-seg">
-                {fleet.ready > 0 && <i style={{ background: 'var(--wf-green-500)', flex: fleet.ready }} />}
-                {fleet.inTransit > 0 && <i style={{ background: 'var(--wf-green)', flex: fleet.inTransit }} />}
-                {fleet.maintenance > 0 && <i style={{ background: 'var(--wf-amber)', flex: fleet.maintenance }} />}
-                {fleet.idle > 0 && <i style={{ background: 'var(--wf-ink-3)', flex: fleet.idle }} />}
-                {fleet.ready + fleet.inTransit + fleet.maintenance + fleet.idle === 0 && <i style={{ background: 'var(--wf-border)', flex: 1 }} />}
-              </div>
               <div className="wf-fstats">
                 <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green-500)' }} />{fleet.ready}</div><div className="k">Sẵn sàng</div></div>
                 <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green)' }} />{fleet.inTransit}</div><div className="k">Đang chạy</div></div>

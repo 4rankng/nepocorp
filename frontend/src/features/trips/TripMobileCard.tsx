@@ -18,9 +18,10 @@ const formatMoney = (n: number): string =>
 export interface TripMobileCardProps {
   trip: TripDetail;
   warnThreshold: number;
+  style?: React.CSSProperties;
 }
 
-export function TripMobileCard({ trip, warnThreshold }: TripMobileCardProps) {
+export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardProps) {
   const cons = calcConsumption(trip);
   const route = splitRoute(trip.route?.name);
   const isCanceled = trip.status === TripStatus.CANCELED;
@@ -41,6 +42,7 @@ export function TripMobileCard({ trip, warnThreshold }: TripMobileCardProps) {
         textDecoration: 'none',
         color: 'inherit',
         display: 'block',
+        ...style,
       }}
     >
       <div className="trip-mcard__top">

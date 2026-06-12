@@ -640,14 +640,57 @@
   }
 }
 @media (max-width: 860px) {
-  .dispatch-page .fleet-head,
-  .dispatch-page .fleet-row {
-    grid-template-columns: 120px 1fr;
+  .dispatch-page .fleet-head {
+    display: none;
   }
-  .dispatch-page .fleet-head .fleet-col-route,
-  .dispatch-page .fleet-head .fleet-col-cust,
-  .dispatch-page .fleet-row .fleet-col-route,
-  .dispatch-page .fleet-row .fleet-col-cust { display: none; }
+  .dispatch-page .fleet-table {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .dispatch-page .fleet-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: 
+      "plate driver"
+      "route route"
+      "cust cust";
+    gap: 8px 16px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    align-items: center;
+  }
+  .dispatch-page .fleet-row::before {
+    height: 100%;
+    top: 0;
+    transform: none;
+    border-radius: 12px 0 0 12px;
+    width: 4px;
+  }
+  .dispatch-page .fleet-cell:nth-child(1) { grid-area: plate; }
+  .dispatch-page .fleet-cell:nth-child(2) { grid-area: driver; justify-self: end; }
+  .dispatch-page .fleet-cell:nth-child(3) { grid-area: route; }
+  .dispatch-page .fleet-cell:nth-child(4) { grid-area: cust; }
+
+  .dispatch-page .fleet-col-route::before {
+    content: 'Tuyến: ';
+    color: var(--ink-3);
+    font-size: 12.5px;
+    margin-right: 6px;
+    font-weight: 500;
+  }
+  .dispatch-page .fleet-col-cust::before {
+    content: 'Khách: ';
+    color: var(--ink-3);
+    font-size: 12.5px;
+    margin-right: 6px;
+    font-weight: 500;
+  }
 }
 @media (max-width: 640px) {
   .dispatch-page .metrics > .metric.featured {
@@ -655,15 +698,5 @@
   }
   .dispatch-page .metrics > .metric.featured .metric-value {
     font-size: 22px;
-  }
-  .dispatch-page .fleet-head,
-  .dispatch-page .fleet-row {
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-  }
-  .dispatch-page .fleet-head > div:nth-child(2),
-  .dispatch-page .fleet-row .fleet-driver { display: none; }
-  .dispatch-page .fleet-row {
-    padding: 12px 14px;
   }
 }
