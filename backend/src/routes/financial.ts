@@ -8,6 +8,7 @@ import { createPaymentSchema, createPenaltySchema, createAdjustmentSchema, vendo
 import type { Request, Response } from 'express';
 import { LedgerService } from '../services/ledger.service';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../services/reporting.service';
+import { getFuelVarianceReport } from '../services/pnl.service';
 import { getStatementData, exportStatementXlsx, exportStatementHtml, getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, formatLocalDate, safeFilename } from '../services/statement.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import * as financialService from '../services/financial.service';
@@ -186,6 +187,9 @@ router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: R
 router.get('/reports/pnl', asyncHandler(async (req: Request, res: Response) => {
   const month = parseInt(req.query.month as string);
   const year = parseInt(req.query.year as string) || new Date().getFullYear();
+  if (!month || month < 1 || month > 12) {
+    return res.status(400).json({ error: 'Tháng là bắt buộc (month 1-12)' });
+  }
   res.json(await getPnlReport(month, year));
 }));
 
@@ -200,6 +204,17 @@ router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, 
   res.json(await getCustomerAgingList({ search }));
 }));
 
+// ─── Fuel variance report ────────────────────────────────────────────────────
+
+router.get('/reports/fuel-variance', asyncHandler(async (req: Request, res: Response) => {
+  const month = parseInt(req.query.month as string);
+  const year = parseInt(req.query.year as string) || new Date().getFullYear();
+  if (!month || month < 1 || month > 12) {
+    return res.status(400).json({ error: 'Tháng là bắt buộc (month 1-12)' });
+  }
+  res.json(await getFuelVarianceReport(month, year));
+}));
+
 // Profit distribution — ADMIN/MANAGER/ACCOUNTANT
 router.get('/reports/distribution-history', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
   res.json(await getDistributionHistory());
@@ -208,12 +223,15 @@ router.get('/reports/distribution-history', requireRoles(Role.ADMIN, Role.MANAGE
 router.post('/reports/distribute-profit/preview', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const { quarter, year } = req.body;
   if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
+  if (quarter < 1 || quarter > 4) return res.status(400).json({ error: 'Quý phải từ 1 đến 4' });
   res.json(await previewDistribution(quarter, year));
 }));
 
-router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+// Execute distribution — ADMIN/MANAGER only. ACCOUNTANT can preview but not execute per spec.
+router.post('/reports/distribute-profit', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const { quarter, year } = req.body;
   if (!quarter || !year) return res.status(400).json({ error: 'Cần nhập quý và năm' });
+  if (quarter < 1 || quarter > 4) return res.status(400).json({ error: 'Quý phải từ 1 đến 4' });
   res.status(201).json(await distributeProfit(quarter, year));
 }));
 

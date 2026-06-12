@@ -258,3 +258,99 @@ export async function getPnlReport(month: number, year: number) {
     };
   });
 }
+
+/**
+ * Fuel variance report for a given period.
+ * Compares actual fuel dispensed (fuelLiters) against norm (sum of leg calculatedLiters).
+ */
+export async function getFuelVarianceReport(month: number, year: number) {
+  return cacheGet(`reports:fuel-variance:${month}:${year}`, 120, async () => {
+    const { start: tripStart, end: tripEnd } = await salaryPeriodDateRange(month, year);
+
+    // Query locked trips with fuel data for the period
+    const trips = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      fuelLiters: s.trips.fuelLiters,
+      fuelMode: s.trips.fuelMode,
+      totalFuelCost: s.trips.totalFuelCost,
+      truckId: s.trips.truckId,
+      routeId: s.trips.routeId,
+    }).from(s.trips).where(
+      and(
+        eq(s.trips.status, TripStatus.LOCKED),
+        isNull(s.trips.deletedAt),
+        gte(s.trips.departureDate, tripStart),
+        sql`${s.trips.departureDate} < ${tripEnd}`,
+      ),
+    );
+
+    if (trips.length === 0) {
+      return { period: { month, year }, trips: [], totals: { trips: 0, totalActual: 0, totalNorm: 0, totalVariance: 0 } };
+    }
+
+    // Get trip IDs for leg lookup
+    const tripIds = trips.map(t => t.id);
+
+    // Aggregate norm liters per trip from legs
+    const legSums = await db.select({
+      tripId: s.tripLegs.tripId,
+      normLiters: sql<string>`coalesce(sum(${s.tripLegs.calculatedLiters}::numeric), 0)`,
+      totalKm: sql<string>`coalesce(sum(${s.tripLegs.km}), 0)`,
+    }).from(s.tripLegs)
+      .where(inArray(s.tripLegs.tripId, tripIds))
+      .groupBy(s.tripLegs.tripId);
+
+    const normByTrip = new Map(legSums.map(r => [r.tripId, { normLiters: parseFloat(r.normLiters), totalKm: Number(r.totalKm) }]));
+
+    // Get truck plates
+    const truckIds = [...new Set(trips.map(t => t.truckId).filter((id): id is number => id != null))];
+    const truckRows = truckIds.length > 0
+      ? await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate }).from(s.trucks)
+          .where(sql`${s.trucks.id} IN (${sql.join(truckIds.map(id => sql`${id}`), sql`, `)})`)
+      : [];
+    const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
+
+    // Build per-trip variance data
+    let totalActual = 0;
+    let totalNorm = 0;
+    let totalVariance = 0;
+
+    const tripData = trips.map(t => {
+      const actual = parseFloat(t.fuelLiters || '0');
+      const normInfo = normByTrip.get(t.id);
+      const norm = normInfo?.normLiters ?? 0;
+      const totalKm = normInfo?.totalKm ?? 0;
+      const variance = actual - norm;
+
+      totalActual += actual;
+      totalNorm += norm;
+      totalVariance += variance;
+
+      return {
+        tripId: t.id,
+        tripCode: t.tripCode,
+        departureDate: t.departureDate,
+        truckPlate: t.truckId ? plateById.get(t.truckId) || null : null,
+        fuelMode: t.fuelMode,
+        totalKm,
+        actualLiters: Math.round(actual),
+        normLiters: Math.round(norm),
+        varianceLiters: Math.round(variance),
+        variancePercent: norm > 0 ? Math.round((variance / norm) * 100) / 100 : 0,
+      };
+    });
+
+    return {
+      period: { month, year },
+      trips: tripData,
+      totals: {
+        trips: trips.length,
+        totalActual: Math.round(totalActual),
+        totalNorm: Math.round(totalNorm),
+        totalVariance: Math.round(totalVariance),
+      },
+    };
+  });
+}
