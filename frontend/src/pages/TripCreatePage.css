@@ -668,3 +668,29 @@
   /* Content scrolls behind action bar — give it bottom padding */
   .tc-content.tc-content { padding-bottom: 100px; }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Trip create / edit ── */
+  .leg-card__head { gap: 8px; }
+  .leg-card__route { grid-template-columns: 1fr; }
+  .trip-form-grid,
+  .trip-form-row { grid-template-columns: 1fr; flex-direction: column; }
+  .tc-page-head { padding: 16px 14px 8px; flex-wrap: wrap; gap: 12px; }
+  .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-page-sub { font-size: var(--fs-xs); }
+  .tc-progress-pills { order: 99; flex-basis: 100%; justify-content: flex-start; }
+  .tc-back-btn { width: 32px; height: 32px; }
+  .tc-form-row,
+  .tc-form-row--three { grid-template-columns: 1fr; }
+  .tc-content { grid-template-columns: 1fr; gap: 16px; padding: 0; }
+  .tc-rail { position: static; }
+  .tc-action-bar { left: 0; padding: 12px 16px; }
+  .tc-card { margin-bottom: 12px; border-radius: 12px; }
+  .tc-card-head { padding: 12px 14px; gap: 10px; }
+  .tc-card-num { width: 24px; height: 24px; font-size: var(--fs-xs); border-radius: 6px; }
+  .tc-card-title { font-size: var(--fs-sm); }
+  .tc-card-sub { font-size: var(--fs-xs); }
+  .tc-card-body { padding: 14px; }
+  .tc-badge-required, .tc-badge-optional { font-size: var(--fs-2xs); padding: 2px 6px; }
+} /* end 640px */

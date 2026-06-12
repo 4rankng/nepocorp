@@ -215,3 +215,9 @@
   }
 }
 
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Audit log ── */
+  .audit-grid { grid-template-columns: 1fr; }
+} /* end 640px */

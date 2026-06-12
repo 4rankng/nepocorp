@@ -180,3 +180,26 @@
   color: var(--ink-3);
   flex-shrink: 0;
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Profit page ── */
+  .profit-hero { padding: 18px 16px; border-radius: 14px; margin-bottom: 16px; }
+  .profit-hero__label { font-size: var(--fs-2xs); margin-bottom: 6px; letter-spacing: 0.06em; }
+  .profit-hero__value { font-size: var(--fs-3xl); letter-spacing: -0.02em; word-break: break-word; }
+  .profit-hero__currency { font-size: var(--fs-lg); margin-left: 4px; }
+  .profit-hero__sub { font-size: var(--fs-xs); margin-top: 8px; line-height: 1.4; }
+  .partner-grid { gap: 10px; }
+  .partner-card { padding: 14px; border-radius: 12px; }
+  .partner-card__head { gap: 10px; margin-bottom: 8px; }
+  .partner-card__avatar { width: 36px; height: 36px; font-size: var(--fs-sm); }
+  .partner-card__name { font-size: var(--fs-sm); }
+  .partner-card__role { font-size: var(--fs-2xs); }
+  .partner-card__pct { font-size: var(--fs-sm); }
+  .partner-card__amount-label { font-size: var(--fs-2xs); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .partner-card__amount { font-size: var(--fs-2xl); letter-spacing: -0.02em; word-break: break-word; }
+  .calc-row { padding: 10px 12px; gap: 8px; }
+  .calc-row__label { font-size: var(--fs-sm); }
+  .calc-row__value { font-size: var(--fs-sm); }
+  .calc-row--final .calc-row__value { font-size: var(--fs-lg); }
+} /* end 640px */

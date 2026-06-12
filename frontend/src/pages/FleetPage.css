@@ -364,3 +364,8 @@
     gap: 10px;
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 420px) {
+  .fleet-page .fleet-two-col { grid-template-columns: 1fr; }
+} /* end 420px */

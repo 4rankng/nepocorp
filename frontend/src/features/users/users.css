@@ -675,3 +675,30 @@
   white-space: nowrap;
   display: inline-block;
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Users admin page — Mobile Pass 4 (2026-06-02) ──
+     Same family of fixes as Routes page Pass 1 — hide the decorative KPI
+     watermark icon (lucide outline at 72px) that crowds the tile value,
+     and let the longer two-word labels (NHÂN SỰ VĂN PHÒNG, BỊ KHOÁ / NGƯNG)
+     wrap gracefully instead of butting up against the badge.
+     Page-scope class lives on the root <div className="fade-up …">. */
+  .users-admin-page .kpi__watermark { display: none; }
+  .users-admin-page .kpi { overflow: hidden; padding: 12px 14px; }
+  .users-admin-page .kpi__top {
+    /* The role badge ("· Văn phòng", "· An toàn") in .kpi__top was forcing
+       the label into a narrow column. Wrap the badge below the label so the
+       label always gets the full width. */
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .users-admin-page .kpi__label {
+    font-size: var(--fs-2xs);
+    line-height: 1.25;
+    flex: 1 1 100%;
+  }
+  .users-admin-page .kpi__value { font-size: var(--fs-2xl); line-height: 1.15; }
+  .users-admin-page .kpi__meta { font-size: var(--fs-2xs); margin-top: 6px; }
+} /* end 640px */

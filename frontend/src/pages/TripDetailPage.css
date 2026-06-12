@@ -1058,3 +1058,10 @@
     white-space: nowrap;
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Trip detail ── */
+  .trip-detail-grid { grid-template-columns: 1fr; }
+  .trip-detail-cols { flex-direction: column; }
+} /* end 640px */

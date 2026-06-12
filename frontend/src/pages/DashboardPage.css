@@ -160,8 +160,8 @@
 .aging-bar__seg { height: 100%; transition: width 0.3s ease; }
 .aging-bar__seg--ok { background: var(--accent); }
 .aging-bar__seg--t1 { background: var(--warning); }
-.aging-bar__seg--t2 { background: var(--warning-text); }
-.aging-bar__seg--t3 { background: #DD5A1F; }
+.aging-bar__seg--t2 { background: #D97706; }
+.aging-bar__seg--t3 { background: var(--warning-deep); }
 .aging-bar__seg--t4 { background: var(--danger); }
 
 

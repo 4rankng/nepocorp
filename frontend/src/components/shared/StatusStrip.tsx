@@ -17,7 +17,7 @@ export function getStatusColor(status: string): string {
  * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
 export function StatusStrip({ status, color }: { status?: string; color?: string }) {
-  const bg = color ?? (status ? getStatusColor(status) : '#999');
+  const bg = color || (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       position: 'absolute',
@@ -39,7 +39,7 @@ export function StatusStrip({ status, color }: { status?: string; color?: string
  * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
 export function StatusDot({ status, size = 7, color, style }: { status?: string; size?: number; color?: string; style?: React.CSSProperties }) {
-  const bg = color ?? (status ? getStatusColor(status) : '#999');
+  const bg = color || (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       width: size,
@@ -58,7 +58,7 @@ export function StatusDot({ status, size = 7, color, style }: { status?: string;
  * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
 export function StatusSwatch({ status, color }: { status?: string; color?: string }) {
-  const bg = color ?? (status ? getStatusColor(status) : '#999');
+  const bg = color || (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
       width: 4,

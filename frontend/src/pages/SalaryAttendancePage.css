@@ -1096,3 +1096,41 @@
   gap: 8px;
 }
 
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── SalaryAttendancePage: calendar cell breathing room, action buttons ── */
+  .cal-cell {
+    aspect-ratio: auto;
+    min-height: 42px;
+    padding: 4px 2px !important;
+    border-radius: 5px !important;
+  }
+  .cal-cell-day-num { font-size: var(--fs-2xs) !important; }
+  .cal-cell-icon-wrap svg { width: 14px; height: 14px; }
+  .calendar-legend-item {
+    font-size: var(--fs-2xs);
+    padding: 2px 7px;
+    gap: 4px;
+  }
+  .calendar-legend-instruction {
+    font-size: var(--fs-2xs);
+    padding: 6px 10px;
+    gap: 5px;
+    line-height: 1.4;
+  }
+  .salary-summary-dark {
+    padding: 16px 16px 14px;
+  }
+  .salary-summary-dark__big { font-size: var(--fs-2xl); }
+  .salary-summary-dark__label { font-size: 9px; margin-bottom: 8px; }
+  .salary-summary-dark__mini { font-size: var(--fs-2xs); }
+  .salary-summary-dark__row { font-size: var(--fs-xs); }
+  .salary-summary-dark__row-val { font-size: var(--fs-xs); }
+  .driver-select-card {
+    min-width: 88px;
+    padding: 6px 10px;
+  }
+  .driver-select-card__name { font-size: var(--fs-xs); max-width: 120px; }
+  .driver-select-card__salary { font-size: var(--fs-2xs); }
+} /* end 640px */

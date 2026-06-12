@@ -249,3 +249,9 @@
   .login-form .input { width: 100%; min-width: 0; }
   .login-form .field { min-width: 0; }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Login page ── */
+  .login-card { padding: 24px 20px; }
+} /* end 640px */

@@ -74,3 +74,26 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── DebtListPage: larger filter-tab tap targets, full-width search ── */
+  .debt-list-page .filter-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .debt-list-page .filter-tab {
+    min-height: 38px;
+    padding: 6px 12px;
+    font-size: var(--fs-xs);
+  }
+  .debt-list-page .filter-bar__search {
+    width: 100%;
+    order: 99;
+  }
+  .debt-list-page .bucket {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+  .debt-list-page .bucket__value { font-size: var(--fs-lg); }
+} /* end 640px */

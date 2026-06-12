@@ -156,3 +156,14 @@
     padding: 12px 14px;
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Finance page ── */
+  .finance-page .charts-row { flex-direction: column; }
+  .finance-page .panel { width: 100%; min-width: 0; }
+  .finance-page .panel, .pnl-row { min-width: 0; }
+  .pnl-row { padding-left: 14px; padding-right: 14px; }
+  .profit-layout { grid-template-columns: 1fr; }
+  .dash-grid { grid-template-columns: 1fr; }
+} /* end 640px */

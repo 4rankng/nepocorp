@@ -1140,3 +1140,59 @@
   }
 }
 
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Penalty page ── */
+  .penalty-page .penalty-card-head,
+  .fleet-page .fleet-card-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .penalty-page .penalty-card-lead,
+  .fleet-page .fleet-card-lead { 
+    width: 100%; 
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .penalty-page .penalty-card-title,
+  .fleet-page .fleet-card-title { flex-wrap: wrap; word-break: keep-all; overflow-wrap: anywhere; }
+  .penalty-page .penalty-card-sub,
+  .fleet-page .fleet-card-sub { white-space: normal; word-break: keep-all; }
+  .penalty-page .penalty-head-tools,
+  .fleet-page .fleet-card-tools {
+    width: 100%; overflow-x: auto;
+    flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
+  }
+  .penalty-page .penalty-head-tools::-webkit-scrollbar,
+  .fleet-page .fleet-card-tools::-webkit-scrollbar { display: none; }
+  .penalty-page .penalty-head-tools > *,
+  .fleet-page .fleet-card-tools > * { flex-shrink: 0; }
+  .penalty-page .penalty-two-col { grid-template-columns: 1fr; }
+  .penalty-page .penalty-grid { grid-template-columns: 1fr; }
+} /* end 640px */
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── PenaltyPage: larger chip/seg tap targets ── */
+  .penalty-chip {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: var(--fs-xs);
+  }
+  .penalty-seg button {
+    min-height: 34px;
+    padding: 6px 14px;
+    font-size: var(--fs-xs);
+  }
+  .penalty-row-act {
+    min-width: 38px;
+    min-height: 38px;
+  }
+  .penalty-page .kpi-grid { gap: 8px; }
+} /* end 640px */

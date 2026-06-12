@@ -138,7 +138,7 @@
 .dd-sum-total {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: var(--fs-4xl);
+  font-size: 46px; /* hero total — intentionally above token scale for visual weight */
   line-height: 1;
   color: var(--danger);
   letter-spacing: -.02em;
@@ -196,7 +196,7 @@
 }
 .dd-seg-0 { background: var(--accent); }
 .dd-seg-1 { background: var(--warning); }
-.dd-seg-2 { background: var(--warning-text); }
+.dd-seg-2 { background: #D97706; }
 .dd-seg-3 { background: var(--danger); }
 
 /* ─── Aging Grid ────────────────────────────────────────────────────────────── */
@@ -580,3 +580,20 @@
     flex-shrink: 0;
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Debt detail page ── */
+  .dd-header { flex-wrap: wrap; align-items: center; gap: 12px; }
+  .dd-avatar { display: none; }
+  .dd-meta { flex: 1 1 100%; min-width: 0; }
+  .dd-meta h1 { font-size: var(--fs-lg); line-height: 1.25; word-break: keep-all; }
+  .dd-actions { flex: 1 1 100%; }
+  .dd-actions .btn { width: 100%; justify-content: center; }
+  .dd-ledger-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
+  .dd-ledger-head h2 { font-size: 15px; }
+  .dd-filters { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .dd-filters > * { flex-shrink: 0; }
+  .dd-filters::-webkit-scrollbar { display: none; }
+  .dd-aging-grid { grid-template-columns: 1fr; gap: 10px; }
+} /* end 640px */

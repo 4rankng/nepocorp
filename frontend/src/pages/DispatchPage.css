@@ -702,3 +702,66 @@
     font-size: var(--fs-xl);
   }
 }
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Dispatch page ── */
+  .dispatch-page .hero { padding: 18px 16px; }
+  .dispatch-page .hero-top { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .dispatch-page .hero-h1 { font-size: var(--fs-2xl); line-height: 1.2; }
+  .dispatch-page .hero-sub { font-size: var(--fs-xs); }
+  .dispatch-page .hero-actions { width: 100%; flex-wrap: wrap; }
+  .dispatch-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; }
+  .dispatch-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+  .dispatch-page .metric { padding: 8px 10px; }
+  .dispatch-page .metric-label { font-size: var(--fs-2xs); }
+  .dispatch-page .metric-value { font-size: var(--fs-md); }
+  .dispatch-page .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .dispatch-page .filter-tabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .dispatch-page .filter-tabs::-webkit-scrollbar { display: none; }
+  .dispatch-page .fleet-grid { grid-template-columns: 1fr; }
+  .dispatch-page .orders-head { display: none; }
+  .dispatch-page .order-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "date route action" "cust cust cust";
+    column-gap: 10px; row-gap: 4px;
+    padding: 10px 14px; align-items: center;
+  }
+  .dispatch-page .order-row .o-date { grid-area: date; font-size: var(--fs-xs); }
+  .dispatch-page .order-row .o-route {
+    grid-area: route; font-size: var(--fs-xs);
+    flex-direction: column; align-items: flex-start;
+    gap: 2px; min-width: 0;
+  }
+  .dispatch-page .order-row .o-route .from,
+  .dispatch-page .order-row .o-route .to {
+    min-width: 0; font-size: var(--fs-xs);
+  }
+  .dispatch-page .order-row .o-route .arr { transform: rotate(90deg); }
+  .dispatch-page .order-row .o-actions { grid-area: action; }
+  .dispatch-page .order-row .o-actions .btn,
+  .dispatch-page .order-row .o-actions .pill-btn { padding: 6px 12px; font-size: var(--fs-xs); }
+  .dispatch-page .order-row .o-customer { grid-area: cust; font-size: var(--fs-xs); color: var(--ink-3); }
+  .dispatch-page .order-row .o-assign { display: none; }
+} /* end 640px */
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── DispatchPage: prevent section header text cutoff ── */
+  .dispatch-page .section-title h2 {
+    font-size: var(--fs-md);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .dispatch-page .vrow .lab {
+    min-width: 48px;
+    font-size: var(--fs-2xs);
+  }
+  .dispatch-page .vcard { padding: 12px; }
+} /* end 640px */
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 420px) {
+  .dispatch-page .metrics { grid-template-columns: 1fr 1fr; }
+} /* end 420px */
