@@ -480,18 +480,12 @@ export default function DashboardPage() {
               <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
             </div>
             <div className="body">
-              {(() => {
-                const totalRev = chartRevenue.reduce((a, b) => a + b, 0);
-                const totalGp = chartGross.reduce((a, b) => a + b, 0);
-                if (chartRevenue.length === 0 || (totalRev === 0 && totalGp === 0)) {
-                  return (
-                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
-                      Chưa đủ dữ liệu lịch sử để vẽ biểu đồ.
-                    </div>
-                  );
-                }
-                return <RevenueChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
-              })()}
+              {chartRevenue.length > 0
+                ? <RevenueChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />
+                : <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                    Đang tải dữ liệu...
+                  </div>
+              }
             </div>
           </div>
 

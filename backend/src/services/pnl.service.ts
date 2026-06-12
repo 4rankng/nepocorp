@@ -22,8 +22,10 @@ export async function getPnlReport(month: number, year: number) {
       ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
       : gte(s.trips.departureDate, tripStart);
 
+    // Include all non-canceled trips — dashboard shows operational data
+    // as soon as trips have revenue/costs, regardless of lock status.
     const monthTrips = await db.select().from(s.trips).where(
-      and(eq(s.trips.status, TripStatus.LOCKED), isNull(s.trips.deletedAt), dateFilter)
+      and(sql`${s.trips.status} != 'CANCELED'`, isNull(s.trips.deletedAt), dateFilter)
     );
 
     // Separate OWN vs EXTERNAL carrier trips

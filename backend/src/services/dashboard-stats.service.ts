@@ -28,12 +28,11 @@ export async function getDashboardStats() {
       topOverdueCustomer,
     ] = await Promise.all([
       db.select({
-        // Spec §4.9: Dashboard shows cumulative profit for IN_TRANSIT + COMPLETED + LOCKED trips.
-        // Revenue: ex-VAT freight for active trips in salary period.
-        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
-        costs: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then ${s.trips.totalCost}::numeric else 0 end), 0)`,
+        // Include all non-canceled trips — show data as soon as trips have values.
+        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
+        costs: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
         // Use stored grossProfit (includes service margin + handles OWN/EXTERNAL correctly)
-        grossProfitSum: sql<string>`coalesce(sum(case when ${s.trips.status} in ('IN_TRANSIT','COMPLETED','LOCKED') then ${s.trips.grossProfit}::numeric else 0 end), 0)`,
+        grossProfitSum: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.grossProfit}::numeric else 0 end), 0)`,
         tripCount: sql<number>`count(*)`,
         completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
         lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
