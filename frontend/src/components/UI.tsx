@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 import { animate, utils, spring } from 'animejs';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
+import { usePressAnimation } from '../hooks/animations/usePressAnimation';
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
-
-const BTN_PRESS_IN = { scaleX: [1, 0.97], duration: 100, ease: 'out(3)' } as const;
-const BTN_PRESS_OUT = { scaleX: [0.97, 1], duration: 300, ease: spring({ stiffness: 400, damping: 18 }) };
 
 const overlayEntrance: EntranceFn = (overlay, content, prefersReduced) => {
   if (prefersReduced) {
@@ -250,34 +247,18 @@ export function Btn({
   onPointerLeave: restPointerLeave,
   ...rest
 }: BtnProps) {
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const pressAnimRef = useRef<ReturnType<typeof animate> | null>(null);
-  const prefersReduced = usePrefersReducedMotion();
+  const { ref: pressRef, handlers: pressHandlers } = usePressAnimation({ axis: 'x' });
   const sizeClass = size === 'sm' ? ' btn--sm' : '';
   const iconOnly = !children && icon ? ' btn--icon' : '';
 
-  const handlePointerDown = useCallback(() => {
-    const el = btnRef.current;
-    if (!el || prefersReduced) return;
-    pressAnimRef.current?.pause();
-    pressAnimRef.current = animate(el, BTN_PRESS_IN);
-  }, [prefersReduced]);
-
-  const handlePointerUp = useCallback(() => {
-    const el = btnRef.current;
-    if (!el || prefersReduced) return;
-    pressAnimRef.current?.pause();
-    pressAnimRef.current = animate(el, BTN_PRESS_OUT);
-  }, [prefersReduced]);
-
   return (
     <button
-      ref={btnRef}
+      ref={pressRef as React.RefObject<HTMLButtonElement>}
       type={type}
       className={`btn btn--${variant}${sizeClass}${iconOnly} ${className}`}
-      onPointerDown={(e) => { handlePointerDown(); restPointerDown?.(e); }}
-      onPointerUp={(e) => { handlePointerUp(); restPointerUp?.(e); }}
-      onPointerLeave={(e) => { handlePointerUp(); restPointerLeave?.(e); }}
+      onPointerDown={(e) => { pressHandlers.onPointerDown(); restPointerDown?.(e); }}
+      onPointerUp={(e) => { pressHandlers.onPointerUp(); restPointerUp?.(e); }}
+      onPointerLeave={(e) => { pressHandlers.onPointerLeave(); restPointerLeave?.(e); }}
       {...rest}
     >
       {icon}

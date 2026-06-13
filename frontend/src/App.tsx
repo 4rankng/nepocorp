@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';
+import { ReducedMotionProvider } from './hooks/usePrefersReducedMotion';
 import { Role } from '@tingting/shared';
 import Layout from './components/Layout';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
@@ -189,12 +190,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MonthProvider>
-        <SearchProvider>
-          <AppRoutes />
-        </SearchProvider>
-      </MonthProvider>
-    </AuthProvider>
+    <ReducedMotionProvider>
+      <AuthProvider>
+        <MonthProvider>
+          <SearchProvider>
+            <AppRoutes />
+          </SearchProvider>
+        </MonthProvider>
+      </AuthProvider>
+    </ReducedMotionProvider>
   );
 }

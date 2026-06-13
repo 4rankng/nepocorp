@@ -50,6 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animatedIds = useRef<Set<string>>(new Set());
+  const animationsRef = useRef<ReturnType<typeof animate>[]>([]);
   const counter = useRef(0);
 
   // Create scope for the toast container (re-create when it mounts/unmounts)
@@ -63,6 +64,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       scope.revert();
+      animationsRef.current.forEach(a => a.pause());
+      animationsRef.current = [];
       scopeRef.current = null;
     };
   }, [hasToasts]);
@@ -82,13 +85,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       }
 
       utils.set(el, { opacity: 0, scale: 0.9, translateY: 16, willChange: 'opacity, transform' });
-      animate(el, {
+      const anim = animate(el, {
         opacity: [0, 1],
         scale: [0.9, 1],
         translateY: [16, 0],
         duration: 400,
         ease: spring({ stiffness: 300, damping: 18 }),
       });
+      animationsRef.current.push(anim);
     });
   }, [toasts]);
 
@@ -100,7 +104,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Mark as exiting and animate out
       setToasts(prev => prev.map(t => (t.id === id ? { ...t, exiting: true } : t)));
-      animate(el, {
+      const exitAnim = animate(el, {
         opacity: [1, 0],
         scale: [1, 0.92],
         translateY: [0, 12],
@@ -115,6 +119,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           if (exitTimer) { clearTimeout(exitTimer); exitTimers.current.delete(id); }
         },
       });
+      animationsRef.current.push(exitAnim);
     }
 
     const timer = timers.current.get(id);
@@ -137,11 +142,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return id;
   }, [dismiss]);
 
-  // Clean up all timers on unmount
+  // Clean up all timers and animations on unmount
   useEffect(() => {
     return () => {
       for (const t of timers.current.values()) clearTimeout(t);
       for (const t of exitTimers.current.values()) clearTimeout(t);
+      animationsRef.current.forEach(a => a.pause());
+      animationsRef.current = [];
     };
   }, []);
 
