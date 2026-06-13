@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
@@ -20,7 +21,9 @@ function CargoTypeForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function CargoTypesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<CargoType>
       title="Loại hàng hóa" description="Bảng quy chuẩn loại hàng hóa vận chuyển — ảnh hưởng đến việc phân xe theo chặng"
       endpoint="/cargo-types" colSpan={3}
@@ -32,5 +35,6 @@ export default function CargoTypesConfigPage() {
       ]}
       renderForm={(p) => <CargoTypeForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './DebtListPage.css';
 
 interface CustomerDebtInfo {
@@ -50,6 +51,7 @@ export default function DebtListPage() {
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
   const { toast: showToast } = useToast();
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     return rawCustomers.map(c => ({
@@ -127,8 +129,10 @@ export default function DebtListPage() {
     return result;
   }, [customerDebts, filterMode]);
 
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.m-card, table tbody tr', deps: [filteredDebts] });
+
   return (
-    <div className="fade-up debt-list-page">
+    <div ref={rootRef} className="debt-list-page">
       <PageHeader
         title="Công nợ phải thu"
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${rawCustomers.length} khách hàng • cập nhật vừa xong`}
@@ -223,7 +227,7 @@ export default function DebtListPage() {
       ) : (
         <>
         {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
-        <div className="mobile-only mobile-table-wrap">
+        <div className="mobile-only mobile-table-wrap" ref={listRef}>
           <div className="m-card-list">
             {filteredDebts.length === 0 ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

@@ -12,6 +12,7 @@ import {
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
 import type { SidebarProps, NavItem, SectionName } from './types';
+import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 
 function getRoleLabel(role: Role): string {
   return ROLE_LABELS[role] || role;
@@ -35,6 +36,8 @@ function Sidebar({
   activeSection,
   toggleSection,
 }: SidebarProps) {
+  const animRef = useSidebarAnimations();
+
   const renderUngroupedItems = () => {
     const items = navItems.filter(i => !i.section);
     if (items.length === 0) return null;
@@ -143,7 +146,10 @@ function Sidebar({
           </button>
         </div>
 
-        <nav className="sidebar-nav" ref={navRef as React.RefObject<HTMLElement>}>
+        <nav className="sidebar-nav" ref={(node) => {
+          (animRef as React.MutableRefObject<HTMLElement | null>).current = node;
+          (navRef as React.MutableRefObject<HTMLElement | null>).current = node;
+        }}>
           {renderUngroupedItems()}
           {renderNavSection('Vận hành', 'operations')}
           {renderNavSection('Nhân sự', 'hr')}

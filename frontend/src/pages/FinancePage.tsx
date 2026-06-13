@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
@@ -7,6 +7,8 @@ import { CalendarDays } from 'lucide-react';
 import { PageHeader, Panel } from '../components/UI';
 import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
+import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
 import './FinancePage.css';
 
@@ -32,8 +34,13 @@ const EMPTY_YEARLY: (PnlReport | null)[] = [];
 export default function FinancePage() {
   const navigate = useNavigate();
   const { month, year } = useMonth();
-
   const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
+  const { rootRef } = usePageAnimations({ ready: !loading });
+
+  const kpiRefs = useRef<{ revenue: HTMLSpanElement | null; gross: HTMLSpanElement | null; net: HTMLSpanElement | null; margin: HTMLSpanElement | null }>({
+    revenue: null, gross: null, net: null, margin: null,
+  });
+  const prefersReduced = usePrefersReducedMotion();
 
   const { data: prevReport } = usePnlReport(month, year - 1);
 
@@ -147,8 +154,29 @@ export default function FinancePage() {
     };
   }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
 
+  // ── KPI counter animation ──
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 100 });
+
+  useEffect(() => {
+    if (loading || !report || prefersReduced) return;
+
+    const targets: { el: HTMLElement; value: number; format?: (val: number) => string }[] = [
+      { el: kpiRefs.current.revenue, value: totalRevenue },
+      { el: kpiRefs.current.gross, value: grossProfit },
+      { el: kpiRefs.current.net, value: netProfit },
+    ].filter((c): c is { el: HTMLSpanElement; value: number } => c.el !== null);
+
+    // Margin % counter with decimal formatting
+    const marginEl = kpiRefs.current.margin;
+    if (marginEl) {
+      targets.push({ el: marginEl, value: (grossProfit / (totalRevenue || 1)) * 100, format: (val) => val.toFixed(1) });
+    }
+
+    animateCounters(targets);
+  }, [report, loading, totalRevenue, grossProfit, netProfit, prefersReduced, animateCounters]);
+
   return (
-    <div className="fade-up-1" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} style={{ paddingBottom: 40 }}>
       <PageHeader
         title="Báo cáo lãi lỗ"
         description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
@@ -186,7 +214,7 @@ export default function FinancePage() {
       <div className="pnl-kpi-strip fade-up-2">
         <div className="pnl-kpi">
           <div className="pnl-kpi__label">Tổng doanh thu</div>
-          <div className="pnl-kpi__value">{formatRawNumber(totalRevenue)}<span className="pnl-kpi__unit">₫</span></div>
+          <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.revenue = el; }}>{formatRawNumber(totalRevenue)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
             ? <div className={`pnl-kpi__delta ${totalRevenue >= totalRevenueLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(totalRevenue, totalRevenueLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
@@ -194,7 +222,7 @@ export default function FinancePage() {
         </div>
         <div className="pnl-kpi pnl-kpi--profit">
           <div className="pnl-kpi__label">Lợi nhuận gộp</div>
-          <div className="pnl-kpi__value">{formatRawNumber(grossProfit)}<span className="pnl-kpi__unit">₫</span></div>
+          <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.gross = el; }}>{formatRawNumber(grossProfit)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
             ? <div className={`pnl-kpi__delta ${grossProfit >= grossProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(grossProfit, grossProfitLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
@@ -202,7 +230,7 @@ export default function FinancePage() {
         </div>
         <div className="pnl-kpi">
           <div className="pnl-kpi__label">Biên lợi nhuận gộp</div>
-          <div className="pnl-kpi__value">{((grossProfit / (totalRevenue || 1)) * 100).toFixed(1)}<span className="pnl-kpi__unit">%</span></div>
+          <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.margin = el; }}>{((grossProfit / (totalRevenue || 1)) * 100).toFixed(1)}</span><span className="pnl-kpi__unit">%</span></div>
           <div className="pnl-kpi__delta pnl-kpi__delta--neutral"
             title="Chốt sổ: chuyến đã chuyển trạng thái 'Đã khóa' trong kỳ — doanh thu và chi phí được ghi nhận vào sổ kế toán"
           >
@@ -211,7 +239,7 @@ export default function FinancePage() {
         </div>
         <div className="pnl-kpi pnl-kpi--net">
           <div className="pnl-kpi__label">Lợi nhuận ròng</div>
-          <div className="pnl-kpi__value">{formatRawNumber(netProfit)}<span className="pnl-kpi__unit">₫</span></div>
+          <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.net = el; }}>{formatRawNumber(netProfit)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
             ? <div className={`pnl-kpi__delta ${netProfit >= netProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(netProfit, netProfitLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>

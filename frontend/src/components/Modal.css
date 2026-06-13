@@ -1,15 +1,8 @@
 /* ============================================================================
  * Modal — TingTing
  * Extracted from UI.css during architecture refactoring (Phase 4)
+ * Enhanced with anime.js spring physics (Phase 5)
  * ========================================================================== */
-@keyframes modalSlideUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
-@keyframes modalScaleIn {
-  from { opacity: 0; transform: scale(0.95) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
 
 .modal {
   position: fixed;
@@ -22,7 +15,8 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  animation: modalFadeIn 0.2s var(--ease) forwards;
+  /* anime.js handles opacity animation */
+  opacity: 1;
 }
 .modal__content {
   background: var(--surface, #fff);
@@ -35,7 +29,9 @@
   flex-direction: column;
   overflow: hidden;
   max-height: calc(100vh - 48px);
-  animation: modalScaleIn 0.28s var(--ease-spring) forwards;
+  /* anime.js handles opacity/scale animation */
+  opacity: 1;
+  transform: none;
 }
 .modal__head {
   padding: 20px 24px 16px;

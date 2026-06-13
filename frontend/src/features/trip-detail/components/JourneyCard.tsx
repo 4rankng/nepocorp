@@ -16,7 +16,7 @@ export function JourneyCard({ trip, derived }: JourneyCardProps) {
   const legCount = trip.legs?.length ?? 0;
 
   return (
-    <section className="card journey-card anim d5" style={{ marginBottom: 20 }}>
+    <section className="card journey-card anim d5">
       <div className="card-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <h2 style={{ gap: '8px', margin: 0 }}>

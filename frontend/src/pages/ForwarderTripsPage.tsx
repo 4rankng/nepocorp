@@ -6,6 +6,7 @@ import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingti
 import { PageHeader, Panel } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useForwarderTrips } from '../hooks/useQueries';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 
 interface TripSummary {
   id: number;
@@ -30,6 +31,8 @@ export default function ForwarderTripsPage() {
   const trips = (data?.items ?? []) as TripSummary[];
   const counts = data?.counts ?? {};
   const error = queryError ? 'Không thể tải danh sách chuyến đi' : null;
+  const { rootRef } = usePageAnimations({ ready: !loading });
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
 
   const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
   const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
@@ -61,7 +64,7 @@ export default function ForwarderTripsPage() {
   );
 
   return (
-    <div>
+    <div ref={rootRef}>
       <PageHeader title="Chuyến đi" description={`Danh sách chuyến đi vận chuyển (${totalTrips} chuyến · ${totalContainers} cont)`} />
 
       {/* Clickable status filter pills */}
@@ -91,7 +94,7 @@ export default function ForwarderTripsPage() {
         })}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
           <ClickableCard
             key={trip.id}

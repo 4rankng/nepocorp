@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { Save, Loader2 } from 'lucide-react';
 import { Clock, User } from 'lucide-react';
@@ -9,6 +10,7 @@ import type { FuelPriceHistory } from '@tingting/shared';
 import './config-page.css';
 
 export default function FuelConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const { data: fuelConfig } = useFuelConfig();
   const saveFuel = useSaveFuelConfig();
@@ -56,7 +58,7 @@ export default function FuelConfigPage() {
   };
 
   return (
-    <div className="fade-up cfg-page cfg-page--fuel">
+    <div ref={pageRef} className="cfg-page cfg-page--fuel">
       <PageHeader title="Định mức nhiên liệu" description="Định mức tiêu hao theo xe và loại tải · đơn giá dầu hiện hành · ngưỡng cảnh báo TTBQ" onBack={() => navigate('/config')} />
       <Panel title="Cấu hình tính nhiên liệu" subtitle="Thông số dùng để tính chi phí nhiên liệu cho mỗi chuyến">
         <div className="cfg-form-grid">

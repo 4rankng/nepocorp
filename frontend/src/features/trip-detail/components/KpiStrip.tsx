@@ -11,7 +11,7 @@ interface KpiStripProps {
 
 export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStripProps) {
   return (
-    <section className="kpi-strip anim d2">
+    <>
       <div className="kpi">
         <div className="kpi-label">
           <span className="dot"><Wallet size={13} /></span>
@@ -59,6 +59,6 @@ export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStri
         </div>
         <div className="kpi-sub">Trên doanh thu</div>
       </div>
-    </section>
+    </>
   );
 }

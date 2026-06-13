@@ -1,6 +1,39 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
+import { animate, utils, spring } from 'animejs';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
+
+/* ─── Shared overlay animation defaults ──────────────────────────────────── */
+
+const overlayEntrance: EntranceFn = (overlay, content, prefersReduced) => {
+  if (prefersReduced) {
+    utils.set(overlay, { opacity: 1 });
+    utils.set(content, { opacity: 1, scale: 1 });
+    return;
+  }
+  utils.set(overlay, { opacity: 0 });
+  animate(overlay, { opacity: [0, 1], duration: 180, ease: 'out(2)' });
+  utils.set(content, { opacity: 0, scale: 0.92, willChange: 'opacity, transform' });
+  animate(content, {
+    opacity: [0, 1],
+    scale: [0.92, 1],
+    duration: 350,
+    ease: spring({ stiffness: 320, damping: 22 }),
+  });
+};
+
+const overlayExit: ExitFn = (overlay, content, onDone) => {
+  animate(overlay, { opacity: [1, 0], duration: 160, ease: 'in(2)' });
+  animate(content, {
+    opacity: [1, 0],
+    scale: [1, 0.92],
+    duration: 200,
+    ease: 'in(3)',
+    onComplete: onDone,
+  });
+};
 
 /* ─── Extracted shared style constants ──────────────────────────────────── */
 
@@ -209,14 +242,47 @@ export function Btn({
   icon,
   children,
   className = '',
+  onPointerDown: restPointerDown,
+  onPointerUp: restPointerUp,
+  onPointerLeave: restPointerLeave,
   ...rest
 }: BtnProps) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const pressAnimRef = useRef<ReturnType<typeof animate> | null>(null);
+  const prefersReduced = usePrefersReducedMotion();
   const sizeClass = size === 'sm' ? ' btn--sm' : '';
   const iconOnly = !children && icon ? ' btn--icon' : '';
+
+  const handlePointerDown = useCallback(() => {
+    const el = btnRef.current;
+    if (!el || prefersReduced) return;
+    pressAnimRef.current?.pause();
+    pressAnimRef.current = animate(el, {
+      scaleX: [1, 0.97],
+      duration: 100,
+      ease: 'out(3)',
+    });
+  }, [prefersReduced]);
+
+  const handlePointerUp = useCallback(() => {
+    const el = btnRef.current;
+    if (!el || prefersReduced) return;
+    pressAnimRef.current?.pause();
+    pressAnimRef.current = animate(el, {
+      scaleX: [0.97, 1],
+      duration: 300,
+      ease: spring({ stiffness: 400, damping: 18 }),
+    });
+  }, [prefersReduced]);
+
   return (
     <button
+      ref={btnRef}
       type={type}
       className={`btn btn--${variant}${sizeClass}${iconOnly} ${className}`}
+      onPointerDown={(e) => { handlePointerDown(); restPointerDown?.(e); }}
+      onPointerUp={(e) => { handlePointerUp(); restPointerUp?.(e); }}
+      onPointerLeave={(e) => { handlePointerUp(); restPointerLeave?.(e); }}
       {...rest}
     >
       {icon}
@@ -362,41 +428,58 @@ interface ModalProps {
 export function Modal({ isOpen, title, onClose, children, footer, onConfirm, maxWidth = 540 }: ModalProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
-  if (!isOpen || !portalTarget) return null;
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const { visible, handleClose } = useAnimatedOverlay({
+    overlayRef,
+    contentRef,
+    isOpen,
+    onClose,
+    entrance: overlayEntrance,
+    exit: overlayExit,
+  });
+
+  if (!portalTarget) return null;
+
   // Forward maxWidth via CSS variable so mobile overrides (max-width: 100%) win.
   const cssVars = { '--modal-max-w': typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth } as React.CSSProperties;
   return createPortal(
-    <div
-      className="modal"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
+    visible ? (
       <div
-        className="modal__content"
-        style={cssVars}
-        onClick={(e) => e.stopPropagation()}
+        ref={overlayRef}
+        className="modal"
+        onClick={handleClose}
+        role="dialog"
+        aria-modal="true"
       >
-        <div className="modal__head">
-          <h3 className="modal__title">{title}</h3>
-          <button
-            className="btn btn--ghost btn--icon btn--sm modal__close"
-            onClick={onClose}
-            aria-label="Đóng"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
-        <div className="modal__body">
-          {children}
-        </div>
-        {footer && (
-          <div className="modal__foot">
-            {footer}
+        <div
+          ref={contentRef}
+          className="modal__content"
+          style={cssVars}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal__head">
+            <h3 className="modal__title">{title}</h3>
+            <button
+              className="btn btn--ghost btn--icon btn--sm modal__close"
+              onClick={handleClose}
+              aria-label="Đóng"
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
           </div>
-        )}
+          <div className="modal__body">
+            {children}
+          </div>
+          {footer && (
+            <div className="modal__foot">
+              {footer}
+            </div>
+          )}
+        </div>
       </div>
-    </div>,
+    ) : null,
     portalTarget,
   );
 }
@@ -416,38 +499,77 @@ interface DrawerProps {
 export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm }: DrawerProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
+
+  const { visible, handleClose } = useAnimatedOverlay({
+    overlayRef,
+    contentRef: asideRef,
+    isOpen,
+    onClose,
+    entrance: (overlay, aside, prefersReduced) => {
+      if (prefersReduced) {
+        utils.set(overlay, { opacity: 1 });
+        utils.set(aside, { translateX: '0%' });
+        return;
+      }
+      utils.set(overlay, { opacity: 0 });
+      animate(overlay, { opacity: [0, 1], duration: 200, ease: 'out(2)' });
+      utils.set(aside, { translateX: '100%', willChange: 'transform' });
+      animate(aside, {
+        translateX: ['100%', '0%'],
+        duration: 420,
+        ease: spring({ stiffness: 200, damping: 24 }),
+      });
+    },
+    exit: (overlay, aside, onDone) => {
+      animate(overlay, { opacity: [1, 0], duration: 220, ease: 'in(2)' });
+      animate(aside, {
+        translateX: ['0%', '100%'],
+        duration: 350,
+        ease: spring({ stiffness: 180, damping: 20 }),
+        onComplete: onDone,
+      });
+    },
+  });
+
   if (!portalTarget) return null;
+
   return createPortal(
-    <>
-      <div
-        className={`drawer-overlay${isOpen ? ' is-open' : ''}`}
-        onClick={onClose}
-        aria-hidden={!isOpen}
-      />
-      <aside
-        className={`drawer${isOpen ? ' is-open' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isOpen}
-      >
-        <header className="drawer__head">
-          <div style={{ minWidth: 0 }}>
-            <h2 className="drawer__title">{title}</h2>
-            {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
-          </div>
-          <button
-            className="drawer__close"
-            onClick={onClose}
-            aria-label="Đóng"
-            type="button"
-          >
-            <X size={18} />
-          </button>
-        </header>
-        <div className="drawer__body">{children}</div>
-        {footer && <div className="drawer__foot">{footer}</div>}
-      </aside>
-    </>,
+    visible ? (
+      <>
+        <div
+          ref={overlayRef}
+          className="drawer-overlay"
+          onClick={handleClose}
+          aria-hidden={!isOpen}
+        />
+        <aside
+          ref={asideRef}
+          className="drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-hidden={!isOpen}
+        >
+          <header className="drawer__head">
+            <div style={{ minWidth: 0 }}>
+              <h2 className="drawer__title">{title}</h2>
+              {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
+            </div>
+            <button
+              className="drawer__close"
+              onClick={handleClose}
+              aria-label="Đóng"
+              type="button"
+            >
+              <X size={18} />
+            </button>
+          </header>
+          <div className="drawer__body">{children}</div>
+          {footer && <div className="drawer__foot">{footer}</div>}
+        </aside>
+      </>
+    ) : null,
     portalTarget,
   );
 }
@@ -556,44 +678,58 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel });
   const portalTarget = usePortalTarget();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
-  if (!isOpen || !portalTarget) return null;
+  const { visible, handleClose } = useAnimatedOverlay({
+    overlayRef,
+    contentRef: boxRef,
+    isOpen,
+    onClose: onCancel,
+    entrance: overlayEntrance,
+    exit: overlayExit,
+  });
+
+  if (!portalTarget) return null;
 
   const Icon = variant === 'danger' || variant === 'warning' ? AlertTriangle : HelpCircle;
   const iconColor = variant === 'danger' ? 'var(--danger)' : variant === 'warning' ? 'var(--warning)' : 'var(--accent)';
   const iconBg = variant === 'danger' ? 'confirm-icon--danger' : variant === 'warning' ? 'confirm-icon--warning' : 'confirm-icon--primary';
 
   return createPortal(
-    <div className="confirm-overlay" onClick={onCancel}>
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        className="confirm-box"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="confirm-body">
-          <div className={`confirm-icon ${iconBg}`}>
-            <Icon size={22} color={iconColor} />
+    visible ? (
+      <div ref={overlayRef} className="confirm-overlay" onClick={handleClose}>
+        <div
+          ref={boxRef}
+          role="alertdialog"
+          aria-modal="true"
+          className="confirm-box"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="confirm-body">
+            <div className={`confirm-icon ${iconBg}`}>
+              <Icon size={22} color={iconColor} />
+            </div>
+            <p className="confirm-message">
+              {message}
+            </p>
           </div>
-          <p className="confirm-message">
-            {message}
-          </p>
-        </div>
-        <div className="confirm-actions">
-          <button className="btn btn--secondary btn--sm" onClick={onCancel}>
-            {cancelLabel}
-          </button>
-          <button
-            className={`btn btn--${variant === 'danger' ? 'danger' : 'primary'} btn--sm`}
-            onClick={onConfirm}
-            autoFocus
-          >
-            {confirmLabel}
-          </button>
+          <div className="confirm-actions">
+            <button className="btn btn--secondary btn--sm" onClick={onCancel}>
+              {cancelLabel}
+            </button>
+            <button
+              className={`btn btn--${variant === 'danger' ? 'danger' : 'primary'} btn--sm`}
+              onClick={onConfirm}
+              autoFocus
+            >
+              {confirmLabel}
+            </button>
+          </div>
         </div>
       </div>
-    </div>,
-    portalTarget
+    ) : null,
+    portalTarget,
   );
 }
 

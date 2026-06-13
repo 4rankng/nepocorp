@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { formatCurrency } from '../../lib/format';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -54,7 +55,9 @@ export default function PricingTablesConfigPage() {
     return m;
   }, [routes]);
 
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<PricingTable>
       title="Bảng giá cước" description="Đơn giá thỏa thuận theo Khách hàng × Tuyến đường — dùng khi tạo chuyến mới"
       endpoint="/pricing-tables" colSpan={5}
@@ -69,5 +72,6 @@ export default function PricingTablesConfigPage() {
       ]}
       renderForm={(p) => <PricingForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} customers={customers} routes={routes} />}
     />
+    </div>
   );
 }

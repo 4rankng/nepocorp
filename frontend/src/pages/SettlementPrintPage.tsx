@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { useForwarderSettlementDetail, useAdminSettlementDetail } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
+import { usePageAnimations } from '../hooks/animations';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -126,6 +127,7 @@ export default function SettlementPrintPage() {
   const settlement = isPortal ? fwdQuery.data : admQuery.data;
   const isLoading = isPortal ? fwdQuery.isLoading : admQuery.isLoading;
   const error = isPortal ? fwdQuery.error : admQuery.error;
+  const { rootRef } = usePageAnimations({ ready: !isLoading });
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -177,7 +179,7 @@ export default function SettlementPrintPage() {
   const totalFromRows = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
   return (
-    <div className="fade-up">
+    <div ref={rootRef}>
       {/* ── Page Header (hidden in print) ── */}
       <div className="no-print">
         <PageHeader

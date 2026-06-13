@@ -10,6 +10,7 @@ import { getSearchItems, filterItems } from '../../data/searchRegistry';
 import type { SearchItem } from '../../data/searchRegistry';
 import { SearchDropdown } from '../SearchDropdown';
 import type { TopbarProps } from './types';
+import { useTopbarEntrance } from '../../hooks/useTopbarEntrance';
 
 const MONTHS = [
   { m: 1, short: 'T1' }, { m: 2, short: 'T2' }, { m: 3, short: 'T3' },
@@ -136,6 +137,7 @@ function Topbar({
   onToggleSidebar,
   onOpenNotifications,
 }: TopbarProps) {
+  const topbarRef = useTopbarEntrance();
   const navigate = useNavigate();
   const { searchQuery, setSearchQuery } = useSearch();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +179,7 @@ function Topbar({
   }
 
   return (
-    <header className={`topbar ${isDriver ? 'topbar--driver' : ''}`}>
+    <header ref={topbarRef as React.RefObject<HTMLElement>} className={`topbar ${isDriver ? 'topbar--driver' : ''}`}>
       {!isDriver && (
         <button
           className="topbar__toggle"

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
@@ -182,6 +183,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 /* ─── Page ──────────────────────────────────────────────────────────── */
 
 export default function PortsConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<Port | undefined>();
@@ -217,7 +219,7 @@ export default function PortsConfigPage() {
   };
 
   return (
-    <div className="fade-up cfg-page cfg-page--ports">
+    <div ref={pageRef} className="cfg-page cfg-page--ports">
       <PageHeader
         title="Cảng / Bãi Hải Phòng"
         description="Danh mục các cảng và bãi container tại khu vực Hải Phòng — điểm đi / điểm đến trong chuyến hàng"

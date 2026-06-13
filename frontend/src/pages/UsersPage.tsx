@@ -9,6 +9,7 @@ import { useUserMutations } from '../features/users/hooks/useUserMutations';
 import { UserTable } from '../features/users/components/UserTable';
 import { AddPanel, EditPanel } from '../features/users/components/UserForm';
 import type { UserRow, FilterKey } from '../features/users/utils';
+import { usePageAnimations } from '../hooks/animations';
 import '../features/users/users.css';
 
 export default function UsersPage() {
@@ -21,6 +22,7 @@ export default function UsersPage() {
   const canEditDriversOnly = !canManage && me?.role === Role.ACCOUNTANT;
 
   const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
+  const { rootRef } = usePageAnimations({ ready: !loading });
   const users = (usersData?.items ?? []) as UserRow[];
 
   // Load trucks once for the driver "Xe phân công" field + the table "Xe" plate column.
@@ -133,7 +135,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="fade-up users-admin-page" style={{ paddingBottom: 40 }}>
+    <div className="users-admin-page" style={{ paddingBottom: 40 }} ref={rootRef}>
       <UserTable
         users={users}
         filtered={filtered}

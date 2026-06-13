@@ -9,6 +9,7 @@ import {
 import { Panel, KPI, Drawer } from '../components/UI';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
+import { usePageAnimations } from '../hooks/animations';
 import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../lib/audit-helpers';
 import './AuditLogPage.css';
 
@@ -93,7 +94,9 @@ export default function AuditLogPage() {
     hasNextPage,
     fetchNextPage
   } = useAuditLogs(PAGE_SIZE, filter, search);
-  
+
+  const { rootRef } = usePageAnimations({ ready: !loading });
+   
   const rawEntries: AuditEntry[] = useMemo(() => data?.pages.flatMap(p => p.items) ?? [], [data]);
   const entries = useMemo(() => rawEntries.map(normalizeEntry), [rawEntries]);
   const total = data?.pages[0]?.total ?? 0;
@@ -293,7 +296,7 @@ fontSize: 13,
   };
 
   return (
-    <div className="fade-up audit-log-page" style={{ paddingBottom: 40 }}>
+    <div className="audit-log-page" style={{ paddingBottom: 40 }} ref={rootRef}>
       {/* ── Page Header ── */}
       <header className="page-header">
         <div className="page-header-main">

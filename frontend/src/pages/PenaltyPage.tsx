@@ -6,6 +6,7 @@ import { PenaltyTable } from '../features/penalties/components/PenaltyTable';
 import { PenaltyFormDrawer } from '../features/penalties/components/PenaltyFormDrawer';
 import { CancelPenaltyDialog } from '../features/penalties/components/CancelPenaltyDialog';
 import type { PenaltyRow } from '../hooks/usePenalties';
+import { usePageAnimations } from '../hooks/animations';
 import './PenaltyPage.css';
 
 export default function PenaltyPage() {
@@ -25,6 +26,7 @@ export default function PenaltyPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [preselectedDriver, setPreselectedDriver] = useState<number | undefined>();
   const [cancelTarget, setCancelTarget] = useState<PenaltyRow | null>(null);
+  const { rootRef } = usePageAnimations({ ready: !listLoading });
 
   const openDrawer = useCallback((driverId?: number) => {
     setPreselectedDriver(driverId);
@@ -42,7 +44,7 @@ export default function PenaltyPage() {
   }, [cancelTarget, cancelMutation]);
 
   return (
-    <div className="penalty-page fade-up">
+    <div ref={rootRef} className="penalty-page">
       <PenaltyTable
         penalties={penalties}
         drivers={drivers}

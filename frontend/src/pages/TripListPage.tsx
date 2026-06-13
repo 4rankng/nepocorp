@@ -36,9 +36,30 @@ import {
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
   type StatusFilter, type StatusCounts,
 } from '../features/trips';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './TripListPage.css';
 
 export default function TripListPage() {
+  const { rootRef } = usePageAnimations({
+    ready: true,
+    selectors: ['.hero', '.status-tabs', '.filters-card', '.table-card', '.table-foot'],
+    staggerDelay: 80,
+  });
+  const { rootRef: tableRef, replay: replayRows } = useListAnimations({
+    itemSelector: '.table-row',
+    mode: 'rows',
+    deps: [/* re-runs replayRows() below when rows change */],
+  });
+  const { rootRef: metricsRef } = useListAnimations({
+    itemSelector: '.metric',
+    mode: 'cards',
+    staggerDelay: 60,
+  });
+  const { rootRef: filtersRef } = useListAnimations({
+    itemSelector: '.filter-pill, .status-tab',
+    mode: 'rows',
+    staggerDelay: 40,
+  });
   const navigate = useNavigate();
   const { month, year } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
@@ -220,7 +241,7 @@ export default function TripListPage() {
   const todayLabel = `Tháng ${month}/${year}`;
 
   return (
-    <div className="trip-list-page fade-up" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className="trip-list-page" style={{ paddingBottom: 40 }}>
       <section className="hero">
         <div className="hero-top">
           <div className="hero-title-block">

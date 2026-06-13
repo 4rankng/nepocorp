@@ -3,6 +3,7 @@ import { Loader2, XCircle, Shuffle, FilePen, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal, Drawer } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
+import { usePageAnimations } from '../hooks/animations';
 
 // Feature: logic (.ts) + UI (.tsx)
 import { useTripDetailPage } from '../features/trip-detail';
@@ -18,6 +19,7 @@ export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const page = useTripDetailPage(id);
+  const { rootRef } = usePageAnimations({ ready: !page.loading });
 
   /* ── Loading / Error / Empty guards ────────────────────────────────── */
   if (page.loading) {
@@ -49,7 +51,7 @@ export default function TripDetailPage() {
 
   /* ── Main render ───────────────────────────────────────────────────── */
   return (
-    <div className="fade-up">
+    <div ref={rootRef}>
       <TripHeader
         trip={trip}
         permissions={permissions}
@@ -78,49 +80,63 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      <KpiStrip
-        revenue={derived.revenue}
-        totalCost={derived.totalCost}
-        grossProfit={derived.grossProfit}
-        marginPct={derived.marginPct}
-      />
-
-      <section className="detail-grid anim d3">
-        <BasicInfoCard
-          trip={trip}
-          canChangeDate={permissions.canChangeDate}
-          onChangeDepartureDate={page.handleChangeDepartureDate}
-          actionLoading={ui.actionLoading}
+      {/* ── Zone 1: At a Glance ──────────────────────────────────────────── */}
+      <section className="bento-zone-1 anim d2">
+        <KpiStrip
+          revenue={derived.revenue}
+          totalCost={derived.totalCost}
+          grossProfit={derived.grossProfit}
+          marginPct={derived.marginPct}
         />
-        <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
-        <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
+        {trip.legs && trip.legs.length > 0 && (
+          <div className="span-3">
+            <JourneyCard trip={trip} derived={derived} />
+          </div>
+        )}
+        <div className="row-2">
+          <BasicInfoCard
+            trip={trip}
+            canChangeDate={permissions.canChangeDate}
+            onChangeDepartureDate={page.handleChangeDepartureDate}
+            actionLoading={ui.actionLoading}
+          />
+        </div>
       </section>
 
-      <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
+      {/* ── Zone 2: Financial Detail ─────────────────────────────────────── */}
+      <section className="bento-zone-2 anim d3">
+        <div className="span-2">
+          <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
+        </div>
+        <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
+        <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
 
-      {trip.legs && trip.legs.length > 0 && (
-        <JourneyCard trip={trip} derived={derived} />
-      )}
+        {trip.carrierType === 'EXTERNAL' && (
+          <div className="span-2">
+            <ExternalCarrierCard
+              derived={derived}
+              carrierName={derived.externalCarrierName}
+              plateNumber={trip.externalPlateNumber}
+              driverName={trip.externalDriverName}
+              driverPhone={trip.externalDriverPhone}
+              freightCost={trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null}
+            />
+          </div>
+        )}
 
-      {trip.carrierType === 'EXTERNAL' && (
-        <ExternalCarrierCard
-          derived={derived}
-          carrierName={derived.externalCarrierName}
-          plateNumber={trip.externalPlateNumber}
-          driverName={trip.externalDriverName}
-          driverPhone={trip.externalDriverPhone}
-          freightCost={trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null}
-        />
-      )}
+        {(trip.photoUrls?.length ?? 0) > 0 && (
+          <div className="span-2">
+            <PhotosCard photoUrls={trip.photoUrls} />
+          </div>
+        )}
 
-      <PhotosCard photoUrls={trip.photoUrls} />
-
-      {trip.notes && (
-        <section className="card" style={{ marginTop: 20, padding: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Ghi chú</h3>
-          <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: 'var(--fg-2)', margin: 0 }}>{trip.notes}</p>
-        </section>
-      )}
+        {trip.notes && (
+          <section className="span-4 card" style={{ padding: 20 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Ghi chú</h3>
+            <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: 'var(--fg-2)', margin: 0 }}>{trip.notes}</p>
+          </section>
+        )}
+      </section>
 
       {/* ── Reassign Modal ──────────────────────────────────────────────── */}
       <Modal

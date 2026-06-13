@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { formatCurrency } from '../../lib/format';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -34,7 +35,9 @@ function ManagementFeeForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function ManagementFeesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<ManagementFee>
       title="Phí quản lý" description="Cấu hình phí quản lý vận hành theo tháng/năm — dùng cho báo cáo lãi lỗ"
       endpoint="/management-fees" colSpan={5}
@@ -50,5 +53,6 @@ export default function ManagementFeesConfigPage() {
       ]}
       renderForm={(p) => <ManagementFeeForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />
+    </div>
   );
 }

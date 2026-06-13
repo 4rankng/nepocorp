@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import { useDriverTrips } from '../hooks/useQueries';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 
 interface TripSummary {
   id: number;
@@ -28,6 +29,8 @@ export default function DriverTripsPage() {
   const { data, isLoading: loading, error: queryError } = useDriverTrips();
   const trips = (data?.items ?? []) as TripSummary[];
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
+  const { rootRef } = usePageAnimations({ ready: !loading });
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
 
   if (loading) return (
     <Panel>
@@ -65,10 +68,10 @@ export default function DriverTripsPage() {
   );
 
   return (
-    <div>
+    <div ref={rootRef}>
       <PageHeader title="Lệnh của tôi" description={`Danh sách lệnh vận chuyển đã nhận (${trips.length} lệnh)`} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
           <Link
             key={trip.id}

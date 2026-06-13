@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { StatusPill } from '../../components/UI';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -33,7 +34,9 @@ function TruckForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function TrucksConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<Truck>
       title="Xe đầu kéo" description="Biển số các đầu kéo container đang vận hành — định mức mặc định và trạng thái bảo dưỡng"
       endpoint="/trucks" colSpan={4}
@@ -47,5 +50,6 @@ export default function TrucksConfigPage() {
       ]}
       renderForm={(p) => <TruckForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />
+    </div>
   );
 }

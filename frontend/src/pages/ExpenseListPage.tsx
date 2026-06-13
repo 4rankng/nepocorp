@@ -11,6 +11,7 @@ import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
 import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
 import './ExpenseListPage.css';
@@ -66,6 +67,8 @@ export default function ExpenseListPage() {
     dateTo: dateTo || undefined,
   });
 
+  const { rootRef } = usePageAnimations({ ready: !isLoading });
+
   const { data: catalogData } = useCatalogs();
   const trucks = catalogData?.trucks ?? [];
 
@@ -93,6 +96,17 @@ export default function ExpenseListPage() {
   const total = expenseData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const error = queryError ? 'Không thể tải dữ liệu' : null;
+
+  const { rootRef: desktopListRef } = useListAnimations({
+    itemSelector: '.expense-table tbody tr',
+    mode: 'rows',
+    deps: [expenses, isLoading],
+  });
+  const { rootRef: mobileListRef } = useListAnimations({
+    itemSelector: '.m-card',
+    mode: 'cards',
+    deps: [expenses, isLoading],
+  });
 
   const resetFilters = () => {
     setSupplierId('');
@@ -141,7 +155,7 @@ export default function ExpenseListPage() {
   );
 
   return (
-    <div className="fade-up expense-list-page">
+    <div ref={rootRef} className="expense-list-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { Save, Loader2, Trash2 } from 'lucide-react';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
@@ -248,7 +249,9 @@ function formatPercent(rate?: string | null): string {
 }
 
 export default function ForwarderExpenseTypesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<ForwarderExpenseType>
       title="Loại chi phí giao nhận"
       description="Các khoản phí phát sinh do giao nhận nhập — nâng hạ, hải quan, cân xe, kiểm tra…"
@@ -302,5 +305,6 @@ export default function ForwarderExpenseTypesConfigPage() {
         />
       )}
     />
+    </div>
   );
 }

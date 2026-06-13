@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
+import { usePageAnimations } from '../hooks/animations';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
@@ -59,6 +60,7 @@ function StepHeader({ step, title, icon: Icon }: { step: number; title: string; 
 
 export default function ForwarderSettlementCreatePage() {
   const navigate = useNavigate();
+  const { rootRef } = usePageAnimations({ ready: true });
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
   const [refundAmount, setRefundAmount] = useState('0');
@@ -178,7 +180,7 @@ export default function ForwarderSettlementCreatePage() {
 
   // ── Form state ──
   return (
-    <div className="fset-page">
+    <div ref={rootRef} className="fset-page">
       <button className="btn btn--ghost btn--sm" onClick={() => navigate('/my-settlements')} style={{ marginBottom: 4 }}>
         <ArrowLeft size={14} /> Danh sách phiếu thanh toán
       </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { Save, Loader2 } from 'lucide-react';
 import { useRoadConfig, useSaveRoadConfig } from '../../hooks/useCatalogQueries';
@@ -6,6 +7,7 @@ import { PageHeader, Panel } from '../../components/UI';
 import './config-page.css';
 
 export default function TripExpenseConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const { data: roadConfig } = useRoadConfig();
   const saveRoad = useSaveRoadConfig();
@@ -55,7 +57,7 @@ export default function TripExpenseConfigPage() {
   };
 
   return (
-    <div className="fade-up cfg-page cfg-page--trip-expense" style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div ref={pageRef} className="cfg-page cfg-page--trip-expense" style={{ maxWidth: 720, margin: '0 auto' }}>
       <PageHeader title="Chi phí chuyến đi" description="Tiền kết hợp · trả hàng 2 điểm · lưu ca xe · trạm BOT · thưởng chuyến về có hàng" onBack={() => navigate('/config')} />
       <Panel title="Mặc định toàn công ty" subtitle="Áp dụng khi tuyến hoặc tài xế chưa có cấu hình riêng">
         <div className="cfg-form-grid">

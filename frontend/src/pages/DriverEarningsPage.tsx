@@ -1,8 +1,11 @@
+import { useRef, useEffect } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader, Panel, KPI } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
+import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
+import type { CounterTarget } from '../hooks/animations';
 
 interface EarningsSummary {
   baseSalary: string;
@@ -30,7 +33,6 @@ interface PenaltyEntry {
 
 export default function DriverEarningsPage() {
   const { month, year } = useMonth();
-
   const { data: period } = useSalaryPeriod(month, year);
   const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
   const penaltyParams = period ? { dateFrom: period.start, dateTo: period.end } : undefined;
@@ -38,6 +40,17 @@ export default function DriverEarningsPage() {
   const penalties: PenaltyEntry[] = Array.isArray(penaltiesData) ? penaltiesData : (penaltiesData as any)?.items ?? [];
   const loading = earningsLoading || penaltiesLoading;
   const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
+  const { rootRef } = usePageAnimations({ ready: !loading });
+  const heroValueRef = useRef<HTMLSpanElement>(null);
+  const { animateCounters } = useCounterAnimation({ delay: 100 });
+
+  useEffect(() => {
+    if (!earnings || !heroValueRef.current) return;
+    const net = parseFloat(earnings.netIncome);
+    animateCounters([
+      { el: heroValueRef.current, value: Math.abs(net), prefix: net < 0 ? '-' : '' },
+    ]);
+  }, [earnings, animateCounters]);
 
   if (loading) return (
     <Panel>
@@ -70,7 +83,7 @@ export default function DriverEarningsPage() {
   const penaltyNum = parseFloat(earnings.penalties);
 
   return (
-    <div>
+    <div ref={rootRef}>
       <PageHeader
         title="Thu nhập"
         description="Tổng hợp thu nhập và khấu trừ"
@@ -86,7 +99,8 @@ export default function DriverEarningsPage() {
               </p>
               <div className="earnings-hero__value-container">
                 <span className="earnings-hero__value">
-                  {formatNumber(earnings.netIncome)} <span className="earnings-hero__unit">₫</span>
+                  <span ref={heroValueRef}>{formatNumber(earnings.netIncome)}</span>{' '}
+                  <span className="earnings-hero__unit">₫</span>
                 </span>
               </div>
             </div>

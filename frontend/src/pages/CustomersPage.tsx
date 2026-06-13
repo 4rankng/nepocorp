@@ -10,6 +10,7 @@ import { formatCurrency, formatCompact } from '../lib/format';
 import type { Customer, Supplier, PaginatedResponse } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
+import { usePageAnimations } from '../hooks/animations';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
 
@@ -184,6 +185,7 @@ export default function CustomersPage() {
   const pageSize = 10;
 
   const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
+  const { rootRef } = usePageAnimations({ ready: !loading });
   const { data: ledgerEntries } = useCustomerLedgerEntries();
   const { data: suppliersData } = useSuppliers(1, '');
   const allSuppliers = suppliersData?.items ?? [];
@@ -286,7 +288,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="fade-up customers-page">
+    <div className="customers-page" ref={rootRef}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader

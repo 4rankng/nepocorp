@@ -5,7 +5,8 @@ import {
   Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
-import { PageHeader, Panel, KPI } from '../components/UI';
+import { Panel } from '../components/UI';
+import { usePageAnimations } from '../hooks/animations';
 import {
   useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary,
 } from '../hooks/useSalaryQueries';
@@ -226,6 +227,7 @@ export default function SalaryAttendancePage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: salaryList, isLoading: listLoading } = useSalaryList(year, month);
+  const { rootRef } = usePageAnimations({ ready: !listLoading });
   const { data: workDayData, isLoading: wdLoading } = useDriverWorkDays(selectedDriverId, year, month);
   const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
@@ -236,6 +238,16 @@ export default function SalaryAttendancePage() {
 
   const drivers = salaryList?.items ?? [];
   const selectedDriver = drivers.find(d => d.id === selectedDriverId);
+
+  // Cross-driver aggregates for hero metrics
+  const aggregates = useMemo(() => {
+    const total = drivers.length;
+    const confirmed = drivers.filter(d => d.salary?.confirmationStatus === 'CONFIRMED').length;
+    const totalNet = drivers.reduce((s, d) => s + (d.salary?.netSalary ?? 0), 0);
+    const totalTripDays = drivers.reduce((s, d) => s + (d.salary?.tripDays ?? 0), 0);
+    const totalStandbyDays = drivers.reduce((s, d) => s + (d.salary?.standbyDays ?? 0), 0);
+    return { total, confirmed, totalNet, totalTripDays, totalStandbyDays };
+  }, [drivers]);
   const { data: salaryPeriod } = useSalaryPeriod(month, year);
 
   // Auto-select the first driver once the list loads
@@ -341,40 +353,60 @@ export default function SalaryAttendancePage() {
   const isUpdating = updateMutation.isPending;
 
   return (
-    <div>
-      <PageHeader
-        title="Lương & Chấm công"
-        description="Quản lý ngày công và tính lương tài xế theo tháng"
-        action={
-          <div className="input-icon" style={{ width: 260 }}>
-            <Search size={14} />
-            <input
-              type="text"
-              className="input"
-              placeholder="Tìm tài xế..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+    <div ref={rootRef} className="salary-page">
+      {/* ── Hero section with bento metrics ── */}
+      <section className="hero">
+        <div className="hero-top fade-up-2">
+          <div className="hero-title-block">
+            <div className="hero-eyebrow">Kỳ lương</div>
+            <h1 className="hero-h1">Lương & Chấm công</h1>
+            <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} tài xế</div>
           </div>
-        }
-      />
-
-      {/* Month navigation strip */}
-      <div className="month-strip">
-        <button className="month-strip__btn" onClick={goPrev} aria-label="Tháng trước">
-          <ChevronLeft size={20} />
-        </button>
-        <div className="month-strip__center">
-          <span className="month-strip__label">Tháng {month}</span>
-          <span className="month-strip__year">{year}</span>
+          <div className="hero-actions">
+            <button className="btn-d btn-d--ghost-dark" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
+            <span className="hero-month-label">Tháng {month}</span>
+            <button className="btn-d btn-d--ghost-dark" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
+          </div>
         </div>
-        <button className="month-strip__btn" onClick={goNext} aria-label="Tháng sau">
-          <ChevronRight size={20} />
-        </button>
-      </div>
+        <div className="metrics fade-up-3">
+          <div className="metric featured">
+            <div className="metric-label">Tổng quỹ lương</div>
+            <div className="metric-value">{formatCurrency(aggregates.totalNet)}</div>
+            <div className="metric-delta delta-flat">Lương thực nhận · tất cả tài xế</div>
+            <div className="utilization-bar"><div className="utilization-fill" style={{ width: `${aggregates.total > 0 ? (aggregates.confirmed / aggregates.total) * 100 : 0}%` }} /></div>
+            <div className="metric-delta delta-up"><CheckCircle2 size={10} strokeWidth={2.5} /> {aggregates.confirmed}/{aggregates.total} đã xác nhận</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Tổng tài xế</div>
+            <div className="metric-value d-mono">{aggregates.total}</div>
+            <div className="metric-delta delta-flat">— trong kỳ</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Đã xác nhận</div>
+            <div className="metric-value d-mono">{aggregates.confirmed}<span className="metric-value-unit">/{aggregates.total}</span></div>
+            <div className="metric-delta delta-up"><CheckCircle2 size={10} strokeWidth={2.5} /> kỳ lương</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Ngày đi chuyến</div>
+            <div className="metric-value d-mono">{aggregates.totalTripDays}</div>
+            <div className="metric-delta delta-flat">— tổng cả đội</div>
+          </div>
+          <div className="metric">
+            <div className="metric-label">Ngày chờ việc</div>
+            <div className="metric-value d-mono">{aggregates.totalStandbyDays}</div>
+            <div className="metric-delta delta-flat">— tổng cả đội</div>
+          </div>
+        </div>
+      </section>
 
-      {/* Driver selector strip */}
+      {/* ── Driver selector grid ── */}
       <div className="driver-select-row">
+        <div className="driver-select-row__search">
+          <div className="input-icon" style={{ width: '100%', maxWidth: 340 }}>
+            <Search size={14} />
+            <input type="text" className="input" placeholder="Tìm tài xế..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          </div>
+        </div>
         {listLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', padding: '16px 24px' }}>
             <Loader2 size={20} className="spin" style={{ color: 'var(--fg-3)', marginRight: 8 }} />

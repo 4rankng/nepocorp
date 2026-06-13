@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
+import { usePageAnimations } from '../hooks/animations';
 
 interface TripLeg {
   id: number;
@@ -65,6 +66,7 @@ export default function DriverTripDetailPage() {
   const [trip, setTrip] = useState<DriverTripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   useEffect(() => {
     if (!id) return;
@@ -95,7 +97,7 @@ export default function DriverTripDetailPage() {
   );
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 40 }}>
+    <div ref={rootRef} style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 40 }}>
       {/* Back button + Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 8px' }}>
         <button

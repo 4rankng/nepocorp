@@ -5,6 +5,7 @@ import { PageHeader } from '../components/UI';
 import { api } from '../lib/api';
 import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
+import { usePageAnimations } from '../hooks/animations';
 import './ConfigPage.css';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
@@ -27,6 +28,7 @@ function removeVietnameseTones(str: string): string {
 export default function ConfigPage() {
   const navigate = useNavigate();
   const { searchQuery } = useSearch();
+  const { rootRef } = usePageAnimations({ ready: true });
 
   const [
     penaltyReasons,
@@ -135,7 +137,7 @@ export default function ConfigPage() {
   });
 
   return (
-    <div className="fade-up">
+    <div ref={rootRef}>
       <PageHeader
         title="Cấu hình hệ thống"
         description="Quản lý định mức, quy tắc tính toán, người dùng & tích hợp hệ thống"

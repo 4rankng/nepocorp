@@ -9,6 +9,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './ForwarderSettlementsPage.css';
 
 /** Vietnamese fallback labels for expense type codes */
@@ -87,6 +88,7 @@ export default function ForwarderSettlementsPage() {
   const [activeFilter, setActiveFilter] = useState<AdvanceSettlementStatus | ''>('');
 
   const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
+  const { rootRef } = usePageAnimations({ ready: !loadingSettlements });
   const { data: catalogs } = useCatalogs();
 
   const settlements = (settlementsData?.items ?? settlementsData ?? []) as Settlement[];
@@ -109,6 +111,7 @@ export default function ForwarderSettlementsPage() {
   const filteredSettlements = activeFilter
     ? settlements.filter(s => s.status === activeFilter)
     : settlements;
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.fset-card', mode: 'cards', deps: [filteredSettlements] });
 
   if (loadingSettlements) return (
     <div className="fset-page">
@@ -130,7 +133,7 @@ export default function ForwarderSettlementsPage() {
   );
 
   return (
-    <div className="fset-page">
+    <div ref={rootRef} className="fset-page">
       <PageHeader
         title="Phiếu thanh toán"
         description="Thanh toán tạm ứng"
@@ -187,7 +190,7 @@ export default function ForwarderSettlementsPage() {
           <p className="fset-empty__desc">Nhấn "Thêm phiếu" để lập phiếu mới.</p>
         </div>
       ) : (
-        <div className="fset-list">
+        <div ref={listRef} className="fset-list">
           {filteredSettlements.map((s, idx) => {
             const hasBreakdown = s.linkedExpenses && s.linkedExpenses.length > 0;
             const groups = hasBreakdown ? groupExpensesByType(s.linkedExpenses!, expenseTypeOptions) : null;

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { formatCurrency } from '../../lib/format';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -52,7 +53,9 @@ export default function RoadAllowancesConfigPage() {
     return m;
   }, [routes]);
 
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<RoadAllowance>
       title="Tiền đi đường" description="Định mức tiền chuẩn theo Tuyến × Loại rơ-moóc — quy tắc: − vé QL5, + chuyến về có hàng, − phí trạm"
       endpoint="/road-allowances" colSpan={5}
@@ -67,5 +70,6 @@ export default function RoadAllowancesConfigPage() {
       ]}
       renderForm={(p) => <RoadAllowanceForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} routes={routes} />}
     />
+    </div>
   );
 }

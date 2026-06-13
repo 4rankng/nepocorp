@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
@@ -325,6 +326,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
 }
 
 export default function RoutesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const [routeFilter, setRouteFilter] = useState<'all' | 'plain' | 'mountain'>('all');
   const [search, setSearch] = useState('');
@@ -429,7 +431,7 @@ export default function RoutesConfigPage() {
   });
 
   return (
-    <div className="fade-up cfg-page cfg-page--routes routes-config-page">
+    <div ref={pageRef} className="cfg-page cfg-page--routes routes-config-page">
       <div className="page-header">
         <button
           type="button"

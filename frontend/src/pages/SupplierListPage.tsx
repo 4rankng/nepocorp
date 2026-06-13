@@ -13,6 +13,7 @@ import { useSuppliers } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
+import { usePageAnimations } from '../hooks/animations';
 
 type FilterKey = 'all' | 'active' | 'inactive';
 
@@ -160,6 +161,7 @@ export default function SupplierListPage() {
   const { data: suppliersData, isLoading: loading, error: queryError, refetch: refetchSuppliers } = useSuppliers(page, search);
   const suppliers = suppliersData?.items ?? [];
   const total = suppliersData?.total ?? 0;
+  const { rootRef } = usePageAnimations({ ready: !loading });
   // Use the bootstrap catalog for the full active-customer list (not the
   // paginated /customers endpoint which only returns page 1 by default).
   const { data: catalogData } = useCatalogs();
@@ -221,7 +223,7 @@ export default function SupplierListPage() {
   }
 
   return (
-    <div className="fade-up suppliers-page">
+    <div ref={rootRef} className="suppliers-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
       <PageHeader

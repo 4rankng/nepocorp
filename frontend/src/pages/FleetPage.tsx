@@ -1,50 +1,31 @@
-import { useState, useCallback, useMemo, memo, useEffect } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
-  Download, Filter, CheckCircle, Save, X, Loader2,
-  Pencil, Trash2,
+  Download, Filter, CheckCircle,
+  Pencil, Trash2, X, Loader2,
 } from 'lucide-react';
-import { AVATAR_COLORS, getInitials, avatarColorByName } from '../lib/avatar';
+import { getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
 import { useCRUD } from '../hooks/useCRUD';
 import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
-import { api } from '../lib/api';
+import { usePageAnimations } from '../hooks/animations';
 import { configClient } from '../api/configClient';
-import type { PaginatedResponse } from '@tingting/shared';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
-import type { Trailer, Truck as TruckType, Driver } from '@tingting/shared';
+import type { Truck as TruckType, Driver } from '@tingting/shared';
+
+// Extracted form modals + shared fleet constants
+import {
+  TruckFormModal,
+  DriverFormModal,
+  TrailerFormModal,
+  TRUCK_STATUS,
+  DRIVER_STATUS,
+  fleetStyles as styles,
+} from '../features/fleet';
+
 import './FleetPage.css';
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const TRUCK_STATUS: Record<string, string> = {
-  ACTIVE: 'Hoạt động', MAINTENANCE: 'Bảo trì', INACTIVE: 'Ngưng',
-};
-const DRIVER_STATUS: Record<string, string> = {
-  ACTIVE: 'Hoạt động', INACTIVE: 'Ngưng',
-};
-
-// ─── Static Styles ───────────────────────────────────────────────────────────
-
-const styles = {
-  emptyRow: { textAlign: 'center', padding: 32, color: 'var(--fg-3)' },
-  centerAlign: { textAlign: 'center' },
-  errorBanner: { textAlign: 'center', color: 'var(--danger)', padding: '8px 20px' },
-  swatchSuccess: { background: 'var(--success)' },
-  swatchWarning: { background: 'var(--warning)' },
-  salaryMono: { fontFamily: 'var(--font-mono)', color: 'var(--ink)' },
-  dotSep: { opacity: 0.5 },
-  actionRow: { display: 'flex', gap: 8 },
-  metaRow: { display: 'flex', alignItems: 'center', gap: 8 },
-  dotSuccess: { width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' },
-  dotWarning: { width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' },
-  textSuccess: { color: 'var(--success)', fontWeight: 600 },
-  textWarning: { color: 'var(--warning)', fontWeight: 600 },
-  textMuted: { opacity: 0.4 },
-  fontMono: { fontFamily: 'var(--font-mono)' },
-} as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -123,294 +104,6 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
             <div style={{ fontSize: 14, color: 'var(--ink)' }}>{d.value}</div>
           </div>
         ))}
-      </div>
-    </Modal>
-  );
-}
-
-// ─── Forms (modal-based) ─────────────────────────────────────────────────────
-
-/**
- * TruckForm rendered inside a Modal — the previous tr-based inline edit row
- * was visually cramped and easy to miss when toggled. Modal gives the form
- * proper breathing room, focused labels, and an obvious save/cancel footer.
- */
-function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpen }: {
-  saving: boolean; item?: TruckType; trailers: Array<{ id: number; licensePlate: string; type: string }>; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
-}) {
-  const [plate, setPlate] = useState(item?.licensePlate || '');
-  const [currentTrailerId, setCurrentTrailerId] = useState<number | null>(item?.currentTrailerId ?? null);
-  const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  useEffect(() => {
-    if (isOpen) {
-      setPlate(item?.licensePlate || '');
-      setCurrentTrailerId(item?.currentTrailerId ?? null);
-      setStatus(item?.status || 'ACTIVE');
-    }
-  }, [isOpen, item?.id]);
-  const handleSave = () => {
-    if (!plate.trim()) return;
-    onsave({
-      licensePlate: plate.trim(),
-      currentTrailerId,
-      status,
-    });
-  };
-  return (
-    <Modal
-      isOpen={isOpen}
-      title={item ? `Sửa xe ${item.licensePlate}` : 'Thêm xe đầu kéo'}
-      onClose={oncancel}
-      onConfirm={handleSave}
-      footer={
-        <>
-          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-            <X size={14} /> Hủy
-          </button>
-          <button className="btn btn--primary btn--sm" disabled={saving || !plate.trim()} onClick={handleSave}>
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {item ? 'Cập nhật' : 'Thêm xe'}
-          </button>
-        </>
-      }
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="truck-plate" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Biển số xe đầu kéo <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="truck-plate"
-            className="input"
-            value={plate}
-            onChange={e => setPlate(e.target.value)}
-            placeholder="VD: 60C-12345"
-            autoFocus
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="trailer-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Rơ-moóc hiện tại
-          </label>
-          <select
-            id="trailer-select"
-            className="input"
-            value={currentTrailerId ?? ''}
-            onChange={e => setCurrentTrailerId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">— Không có —</option>
-            {trailers.map(t => (
-              <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})</option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="truck-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Trạng thái
-          </label>
-          <select id="truck-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen }: {
-  saving: boolean; item?: Driver; trucks: TruckType[]; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean;
-}) {
-  const [name, setName] = useState(item?.name || '');
-  const [phone, setPhone] = useState(item?.phone || '');
-  const [baseSalary, setBaseSalary] = useState<string | number>(item?.baseSalary || '');
-  const [truckId, setTruckId] = useState<number>(item?.assignedTruckId || 0);
-  const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  useEffect(() => {
-    if (isOpen) {
-      setName(item?.name || '');
-      setPhone(item?.phone || '');
-      setBaseSalary(item?.baseSalary || '');
-      setTruckId(item?.assignedTruckId || 0);
-      setStatus(item?.status || 'ACTIVE');
-    }
-  }, [isOpen, item?.id]);
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onsave({
-      name: name.trim(),
-      phone: phone.trim() || undefined,
-      baseSalary: baseSalary ? Number(baseSalary) : undefined,
-      assignedTruckId: truckId || null,
-      status,
-    });
-  };
-  return (
-    <Modal
-      isOpen={isOpen}
-      title={item ? `Sửa tài xế ${item.name}` : 'Thêm tài xế'}
-      onClose={oncancel}
-      onConfirm={handleSave}
-      footer={
-        <>
-          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-            <X size={14} /> Hủy
-          </button>
-          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {item ? 'Cập nhật' : 'Thêm tài xế'}
-          </button>
-        </>
-      }
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="driver-name" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Họ và tên <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="driver-name"
-            className="input"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="VD: Nguyễn Văn A"
-            autoFocus
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="driver-phone" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Số điện thoại
-            </label>
-            <input
-              id="driver-phone"
-              className="input"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="0912…"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="driver-salary" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Lương cơ bản (đ)
-            </label>
-            <input
-              id="driver-salary"
-              className="input"
-              type="number"
-              value={baseSalary}
-              onChange={e => setBaseSalary(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="driver-truck" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Xe phân công
-            </label>
-            <select id="driver-truck" className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
-              <option value={0}>— Chưa phân —</option>
-              {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="driver-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Trạng thái
-            </label>
-            <select id="driver-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-// ─── TrailerFormModal ───────────────────────────────────────────────────────
-
-/**
- * Modal for creating/editing a trailer (rơ-moóc).
- * Trailers are separate entities from trucks so a single trailer can be
- * reassigned across multiple đầu kéo over its lifetime, and so registration
- * / tyre / repair expenses can be tagged to a specific trailer (Pete's
- * requirement: "phần chi phí sửa chữa và chi phí đăng kiểm, thay lốp thì
- * nên tách theo rơ mooc và đầu kéo").
- */
-function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
-  saving: boolean;
-  item?: { id: number; licensePlate: string; type: string; status: string };
-  onsave: (d: Record<string, unknown>) => void;
-  oncancel: () => void;
-  isOpen: boolean;
-}) {
-  const [plate, setPlate] = useState(item?.licensePlate || '');
-  const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
-  const [status, setStatus] = useState(item?.status || 'ACTIVE');
-  useEffect(() => {
-    if (isOpen) {
-      setPlate(item?.licensePlate || '');
-      setType(item?.type || TrailerType.FT40);
-      setStatus(item?.status || 'ACTIVE');
-    }
-  }, [isOpen, item?.id]);
-  const handleSave = () => {
-    if (!plate.trim()) return;
-    onsave({ licensePlate: plate.trim(), type, status });
-  };
-  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
-  return (
-    <Modal
-      isOpen={isOpen}
-      title={item ? `Sửa rơ-moóc ${item.licensePlate}` : 'Thêm rơ-moóc'}
-      onClose={oncancel}
-      onConfirm={handleSave}
-      footer={
-        <>
-          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-            <X size={14} /> Hủy
-          </button>
-          <button className="btn btn--primary btn--sm" disabled={saving || !plate.trim()} onClick={handleSave}>
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {item ? 'Cập nhật' : 'Thêm rơ-moóc'}
-          </button>
-        </>
-      }
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="trailer-plate-input" style={labelStyle}>
-            Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="trailer-plate-input"
-            className="input"
-            value={plate}
-            onChange={e => setPlate(e.target.value)}
-            placeholder="VD: 70C-12345"
-            autoFocus
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="trailer-type-input" style={labelStyle}>Loại rơ-moóc</label>
-            <select id="trailer-type-input" className="input" value={type} onChange={e => setType(e.target.value)}>
-              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="trailer-status-input" style={labelStyle}>Trạng thái</label>
-            <select id="trailer-status-input" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="MAINTENANCE">Bảo trì</option>
-              <option value="INACTIVE">Ngưng</option>
-            </select>
-          </div>
-        </div>
-        <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 6 }}>
-          💡 Sau khi thêm, bạn có thể gán rơ-moóc cho đầu kéo bằng cách sửa xe
-          đầu kéo và chọn rơ-moóc trong danh sách.
-        </p>
       </div>
     </Modal>
   );
@@ -951,6 +644,7 @@ function DriverCard({ drivers, truckMap, crud }: {
 
 export default function FleetPage() {
   const queryClient = useQueryClient();
+  const { rootRef } = usePageAnimations({ ready: true });
   const { data: fleetData } = useTrucksAndDrivers();
   const { data: trailers = [] } = useQuery({
     queryKey: ['trailers'],
@@ -996,7 +690,7 @@ export default function FleetPage() {
   const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
 
   return (
-    <div className="fleet-page fade-up">
+    <div className="fleet-page" ref={rootRef}>
       <PageHeader
         title="Đội xe"
         description="Quản lý xe đầu kéo, rơ-moóc và tài xế trong một trang"

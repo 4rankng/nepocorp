@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -36,6 +36,7 @@ import { Topbar } from './layout/Topbar';
 import { ProfileModal } from './layout/ProfileModal';
 import { PasswordModal } from './layout/PasswordModal';
 import type { NavItem } from './layout/types';
+import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -139,6 +140,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const bottomNavRef = useBottomNavAnimations();
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -390,7 +392,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Bottom Navigation for Drivers on Mobile */}
         {isDriver && (
-          <nav className="bottom-nav">
+          <nav className="bottom-nav" ref={bottomNavRef as React.RefObject<HTMLElement>}>
             {navItems.map(item => {
               const IconC = item.icon;
               const isActive = item.key === activeKey;

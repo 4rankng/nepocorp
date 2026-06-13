@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
@@ -60,7 +61,9 @@ function ExpenseCategoryForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function ExpenseCategoriesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<ExpenseCategory>
       title="Hạng mục chi phí"
       description="Phân loại chi phí vận hành — bật định kỳ để theo dõi gia hạn bảo hiểm, đăng kiểm, bảo dưỡng"
@@ -123,5 +126,6 @@ export default function ExpenseCategoriesConfigPage() {
         />
       )}
     />
+    </div>
   );
 }

@@ -11,6 +11,7 @@ import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarder
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useQuery } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
+import { usePageAnimations } from '../hooks/animations';
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
@@ -28,6 +29,7 @@ export default function ForwarderTripDetailPage() {
   const tripId = parseInt(id || '0', 10);
 
   const { data: trip, isLoading: loading, error: queryError } = useForwarderTripDetail(tripId);
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const createContainerMut = useCreateForwarderContainer();
   const createExpenseMut = useCreateForwarderExpense();
@@ -201,7 +203,7 @@ export default function ForwarderTripDetailPage() {
   const legs: any[] = trip.legs || [];
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
+    <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
       {/* Back button + Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 8px' }}>
         <button

@@ -10,11 +10,13 @@ import { DispatchFilters } from '../features/dispatch/components/DispatchFilters
 import { FleetGrid } from '../features/dispatch/components/FleetGrid';
 import { formatFullDate } from '../features/dispatch/utils';
 import type { Driver, Truck, FleetFilter } from '../features/dispatch/utils';
+import { usePageAnimations } from '../hooks/animations';
 import './DispatchPage.css';
 
 export default function DispatchPage() {
   const navigate = useNavigate();
   const { data, isLoading: loading, error: queryError } = useDispatchData();
+  const { rootRef } = usePageAnimations({ ready: !loading });
   const drivers = (data?.drivers ?? []) as Driver[];
   const trucks: Truck[] = (data?.trucks ?? []).map((t: any) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' }));
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
@@ -46,7 +48,7 @@ export default function DispatchPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div className="spin" style={{ width: 32, height: 32, border: '4px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} /></div>;
 
   return (
-    <div className="dispatch-page fade-up-1" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className="dispatch-page" style={{ paddingBottom: 40 }}>
       {toasts.length > 0 && createPortal(
         <div style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {toasts.map(t => (<div key={t.id} role="status" style={{ minWidth: 280, maxWidth: 480, padding: '12px 16px', borderRadius: 8, background: t.kind === 'success' ? 'var(--accent)' : 'var(--danger)', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}><span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} /><span style={{ flex: 1 }}>{t.text}</span></div>))}
@@ -66,7 +68,7 @@ export default function DispatchPage() {
           </div>
         </div>
         <div className="metrics fade-up-3">
-          <div className="metric featured"><div className="metric-label">Tỉ lệ vận dụng</div><div className="metric-value">{utilizationPct}<span className="metric-unit">%</span></div><div className="utilization-bar"><div className="utilization-fill" style={{ width: `${utilizationPct}%` }} /></div></div>
+          <div className="metric featured"><div className="metric-label">Tỉ lệ sử dụng</div><div className="metric-value">{utilizationPct}<span className="metric-unit">%</span></div><div className="utilization-bar"><div className="utilization-fill" style={{ width: `${utilizationPct}%` }} /></div></div>
           <div className="metric"><div className="metric-label">Tổng đội xe</div><div className="metric-value d-mono">{fleetCounts.all}</div><div className="metric-delta delta-flat">— xe đăng ký</div></div>
           <div className="metric"><div className="metric-label">Xe đang chạy</div><div className="metric-value d-mono">{fleetCounts.running}<span className="metric-value-unit">/{fleetCounts.all}</span></div><div className="metric-delta delta-up"><TrendingUp size={10} strokeWidth={2.5} /> hoạt động</div></div>
           <div className="metric"><div className="metric-label">Sẵn sàng</div><div className="metric-value d-mono">{fleetCounts.ready}</div><div className="metric-delta delta-up"><TrendingUp size={10} strokeWidth={2.5} /> khả dụng</div></div>

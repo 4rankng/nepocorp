@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
@@ -59,7 +60,9 @@ function computePercentages(items: CapTableHistory[]): Map<number, number> {
 }
 
 export default function CapTableConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<CapTableHistory>
       title="Thông tin công ty & Cổ phần" description="Lịch sử vốn góp cổ đông — tỷ lệ tự động tính từ số vốn góp đang hiệu lực"
       endpoint="/cap-table" colSpan={5}
@@ -112,5 +115,6 @@ export default function CapTableConfigPage() {
       ]}
       renderForm={(p) => <CapTableForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />
+    </div>
   );
 }

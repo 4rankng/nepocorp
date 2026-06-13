@@ -263,13 +263,20 @@
   background: #D8F0E2;
 }
 
-/* ── KPI Strip ──────────────────────────────────────────────────────────── */
-.kpi-strip {
+/* ── Bento Grid ────────────────────────────────────────────────────────── */
+.bento-zone-1,
+.bento-zone-2 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 20px;
+  align-items: start;
 }
+
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.row-2  { grid-row: span 2; }
 
 .kpi {
   background: var(--surface);
@@ -361,15 +368,6 @@
   width: 120px;
   height: 120px;
   background: radial-gradient(circle, rgba(0, 177, 79, 0.35), transparent 70%);
-}
-
-/* ── Detail Grid ────────────────────────────────────────────────────────── */
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-  align-items: start;
 }
 
 /* ── Card ───────────────────────────────────────────────────────────────── */
@@ -672,11 +670,6 @@
   flex: 0 0 auto;
 }
 
-/* ── Service Card ──────────────────────────────────────────────────────── */
-.service-card {
-  margin-bottom: 20px;
-}
-
 /* ── Journey ────────────────────────────────────────────────────────────── */
 .journey-pills {
   display: flex;
@@ -943,13 +936,13 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 1023px) {
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .kpi-strip {
+  .bento-zone-1,
+  .bento-zone-2 {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .span-3 { grid-column: span 2; }
+  .span-4 { grid-column: span 2; }
 
   .journey-body {
     grid-template-columns: 1fr;
@@ -1001,8 +994,13 @@
     font-size: var(--fs-xl);
   }
 
-  .kpi-strip {
+  .bento-zone-1,
+  .bento-zone-2 {
     grid-template-columns: 1fr;
+  }
+
+  .span-2, .span-3, .span-4 {
+    grid-column: span 1;
   }
 }
 
@@ -1061,7 +1059,5 @@
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 640px) {
-  /* ── Trip detail ── */
-  .trip-detail-grid { grid-template-columns: 1fr; }
   .trip-detail-cols { flex-direction: column; }
 } /* end 640px */

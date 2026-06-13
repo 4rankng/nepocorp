@@ -3,6 +3,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react';
 import { Card } from '../components/UI';
 import { useSalaryPeriod, useDriverPenalties } from '../hooks/useQueries';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 
 interface DriverPenaltyRow {
   id: number;
@@ -23,6 +24,7 @@ export default function DriverPenaltyPage() {
   const allPenalties = useMemo((): DriverPenaltyRow[] => {
     return Array.isArray(allPenaltiesData) ? allPenaltiesData : (allPenaltiesData as any)?.items ?? [];
   }, [allPenaltiesData]);
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const filterMonthNum = monthFilter ? parseInt(monthFilter.split('-')[1]) : 0;
   const filterYearNum = monthFilter ? parseInt(monthFilter.split('-')[0]) : 0;
@@ -35,6 +37,7 @@ export default function DriverPenaltyPage() {
     if (!monthFilter) return allPenalties;
     return Array.isArray(filteredPenaltiesData) ? filteredPenaltiesData : (filteredPenaltiesData as any)?.items ?? allPenalties;
   }, [monthFilter, filteredPenaltiesData, allPenalties]);
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.panel', mode: 'rows', deps: [filteredPenalties] });
 
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
@@ -62,7 +65,7 @@ export default function DriverPenaltyPage() {
   const isLoadingPeriod = periodLoading;
 
   return (
-    <div className="fade-up" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} style={{ paddingBottom: 40 }}>
 
       {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div className="page-header">
@@ -186,7 +189,7 @@ export default function DriverPenaltyPage() {
           </p>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredPenalties.map(p => (
             <div
               key={p.id}

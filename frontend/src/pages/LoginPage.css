@@ -91,6 +91,7 @@
   height: 1px;
   background: radial-gradient(circle, rgba(10, 10, 10, 0.08) 0%, transparent 100%);
   margin-bottom: 24px;
+  transform-origin: center;
 }
 .login-form h2 {
   margin: 0 0 4px;

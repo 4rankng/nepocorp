@@ -7,6 +7,7 @@ import {
   spring,
   svg,
 } from 'animejs';
+import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 
 /**
  * Orchestrates dashboard entrance animations via anime.js v4.
@@ -24,6 +25,7 @@ export function useDashboardAnimations(ready: boolean) {
   const rootRef = useRef<HTMLDivElement>(null);
   const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
   const hasAnimated = useRef(false);
+  const prefersReduced = usePrefersReducedMotion();
 
   useEffect(() => {
     if (!ready || hasAnimated.current) return;
@@ -36,10 +38,9 @@ export function useDashboardAnimations(ready: boolean) {
     if (!hasKpis) return;
 
     hasAnimated.current = true;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const scope = createScope({ root }).add(() => {
-      if (prefersReducedMotion) {
+      if (prefersReduced) {
         utils.set(
           root.querySelectorAll(
             '.wf-head, .wf-kpi, .wf-bento > *, .wf-arow, .wf-aurow',
@@ -286,11 +287,36 @@ export function useDashboardAnimations(ready: boolean) {
 
     scopeRef.current = scope;
 
+    // ── Phase 4b: Revenue line traveling dot (outside scope) ──
+    // createMotionPath needs unscoped animate() — it doesn't work inside
+    // createScope().add(). Delayed to start after Phase 4 line draw completes.
+    let travelerAnim: ReturnType<typeof animate> | null = null;
+    const motionTimer = setTimeout(() => {
+      const root = rootRef.current;
+      if (!root || prefersReduced) return;
+      const revPath = root.querySelector('.wf-rev-line');
+      const traveler = root.querySelector('.wf-chart-traveler');
+      if (!revPath || !traveler) return;
+      try {
+        const mp = svg.createMotionPath(revPath as SVGPathElement);
+        travelerAnim = animate(traveler as HTMLElement, {
+          ...mp,
+          opacity: [0, 1, 1, 0],
+          duration: 2000,
+          ease: 'linear',
+        });
+      } catch {
+        // createMotionPath not supported or path not ready — skip silently
+      }
+    }, 1900);
+
     return () => {
+      clearTimeout(motionTimer);
+      travelerAnim?.cancel();
       scope.revert();
       scopeRef.current = null;
     };
-  }, [ready]);
+  }, [ready, prefersReduced]);
 
   /**
    * Animate KPI number counters from 0 → final value.

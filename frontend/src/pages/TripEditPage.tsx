@@ -16,6 +16,7 @@ import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
+import { usePageAnimations } from '../hooks/animations';
 import type { TripOptions } from '../hooks/useTripOptions';
 import './TripForm.css';
 
@@ -25,6 +26,7 @@ export default function TripEditPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: trip, isLoading: loading, refetch: refetchTrip } = useTripDetail(id);
   const { data: catalogData } = useCatalogs();
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const editOptions: TripOptions = useMemo(() => ({
     customers: [],
@@ -95,7 +97,7 @@ export default function TripEditPage() {
 
   return (
     <TripFormProvider form={form}>
-      <div className="fade-up">
+      <div ref={rootRef}>
         <header className="tc-page-head">
           <button className="tc-back-btn" onClick={() => navigate(`/trips/${trip.id}`)} aria-label="Quay lại">
             <ArrowLeft size={18} />

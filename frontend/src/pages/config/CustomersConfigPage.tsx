@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
@@ -86,6 +87,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function CustomersConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const [customerFilter, setCustomerFilter] = useState<'all' | 'high-risk' | 'active' | 'locked'>('all');
   const [search, setSearch] = useState('');
@@ -160,7 +162,7 @@ export default function CustomersConfigPage() {
   }, [customers, customerFilter, search]);
 
   return (
-    <div className="fade-up cfg-page cfg-page--customers">
+    <div ref={pageRef} className="cfg-page cfg-page--customers">
       <div className="page-header">
         <button
           type="button"

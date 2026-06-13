@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { ToastProvider } from './components/shared/Toast';
 
+
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const TripListPage = lazy(() => import('./pages/TripListPage'));
@@ -111,8 +112,7 @@ function AppRoutes() {
   return (
     <ToastProvider>
       <Layout>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+        <Routes>
           <Route path="/" element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />} />
           <Route
             path="/dashboard"
@@ -181,8 +181,7 @@ function AppRoutes() {
             path="*"
             element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />}
           />
-            </Routes>
-          </Suspense>
+        </Routes>
       </Layout>
     </ToastProvider>
   );

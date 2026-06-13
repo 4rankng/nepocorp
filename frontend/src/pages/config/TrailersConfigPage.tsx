@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { StatusPill } from '../../components/UI';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
@@ -38,7 +39,9 @@ function TrailerForm({ saving, item, onsave, oncancel }: {
 }
 
 export default function TrailersConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   return (
+    <div ref={pageRef}>
     <CrudTable<Trailer>
       title="Rơ-moóc" description="Danh sách rơ-moóc — phân loại theo kích thước và trạng thái đăng kiểm"
       endpoint="/trailers" colSpan={5}
@@ -53,5 +56,6 @@ export default function TrailersConfigPage() {
       ]}
       renderForm={(p) => <TrailerForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}
     />
+    </div>
   );
 }

@@ -317,6 +317,7 @@
   text-align: left;
   margin-bottom: 2px;
   position: relative;
+  will-change: transform;
 }
 .sidebar-item::before {
   content: "";
@@ -552,6 +553,7 @@
   flex-shrink: 0;
   -webkit-backdrop-filter: blur(14px) saturate(140%);
           backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0; /* starts hidden for anime.js entrance */
   transition: transform 220ms var(--ease), opacity 220ms var(--ease), margin-top 220ms var(--ease);
 }
 
@@ -1120,6 +1122,7 @@
     align-items: stretch;
     padding-bottom: env(safe-area-inset-bottom, 12px);
     box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
+    opacity: 0; /* starts hidden for anime.js entrance */
   }
   
   .bottom-nav-item {
@@ -1135,6 +1138,7 @@
     cursor: pointer;
     transition: color 0.3s ease;
     padding-top: 4px; /* Space for the indicator */
+    will-change: transform;
   }
 
   .bottom-nav-indicator {

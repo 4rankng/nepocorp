@@ -6,6 +6,7 @@ import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './ForwarderAdvancesPage.css';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -20,9 +21,11 @@ type StatusFilter = '' | AdvanceRequestStatus;
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
+  const { rootRef } = usePageAnimations({ ready: !loading });
   const createAdvanceRequest = useCreateAdvanceRequest();
   const requests = (data?.items ?? []) as AdvanceRequestWithRefs[];
   const counts = data?.counts ?? {};
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.fadv-card-trip', mode: 'cards', deps: [requests] });
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ amount: '', reason: '' });
@@ -70,7 +73,7 @@ export default function ForwarderAdvancesPage() {
   );
 
   return (
-    <div className="fadv-page">
+    <div ref={rootRef} className="fadv-page">
       <PageHeader
         title="Tạm ứng"
         description={`${totalRequests} yêu cầu tạm ứng`}
@@ -198,7 +201,7 @@ export default function ForwarderAdvancesPage() {
           </p>
         </div>
       ) : (
-        <div className="fadv-list">
+        <div ref={listRef} className="fadv-list">
           {requests.map((req, idx) => (
             <div
               key={req.id}

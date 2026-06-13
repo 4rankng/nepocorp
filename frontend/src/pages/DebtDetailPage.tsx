@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 import { Modal } from '../components/UI';
 import { DebtOffsetModal } from '../components/DebtOffsetModal';
 import { useAuth } from '../hooks/useAuth';
+import { usePageAnimations } from '../hooks/animations';
 import './DebtDetailPage.css';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
@@ -65,6 +66,7 @@ export default function DebtDetailPage() {
   const navigate = useNavigate();
   const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
   const error = queryError ? (queryError as Error).message : null;
+  const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -235,7 +237,7 @@ export default function DebtDetailPage() {
   };
 
   return (
-    <div className="debt-detail-page">
+    <div ref={rootRef} className="debt-detail-page">
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
         <button className="dd-back" onClick={() => navigate('/debt')}>

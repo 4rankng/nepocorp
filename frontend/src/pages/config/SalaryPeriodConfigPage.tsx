@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { Field } from '../../components/config/Field';
 import { CalendarDays, Settings2, Info } from 'lucide-react';
 import { useSalaryPeriodDefault, useUpdateSalaryPeriodDefault } from '../../hooks/useSalaryQueries';
@@ -14,6 +15,7 @@ function describeDefault(startDay: number, endDay: number): string {
 }
 
 export default function SalaryPeriodConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const { data: defaultConfig, error: queryError } = useSalaryPeriodDefault();
   const updateDefault = useUpdateSalaryPeriodDefault();
 
@@ -62,7 +64,7 @@ export default function SalaryPeriodConfigPage() {
     : describeDefault(startDay, endDay);
 
   return (
-    <div className="sp-wrap fade-up" style={{ maxWidth: 840 }}>
+    <div ref={pageRef} className="sp-wrap" style={{ maxWidth: 840 }}>
       {/* ── Global Default Rule ── */}
       <div className="sp-default-card">
         <div className="sp-default-card__header">

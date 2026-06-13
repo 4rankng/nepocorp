@@ -1,0 +1,91 @@
+import { useState, useEffect } from 'react';
+import { Save, X, Loader2 } from 'lucide-react';
+import { Modal } from '../../components/UI';
+import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
+
+/**
+ * Modal for creating/editing a trailer (rơ-moóc).
+ * Trailers are separate entities from trucks so a single trailer can be
+ * reassigned across multiple đầu kéo over its lifetime, and so registration
+ * / tyre / repair expenses can be tagged to a specific trailer (Pete's
+ * requirement: "phần chi phí sửa chữa và chi phí đăng kiểm, thay lốp thì
+ * nên tách theo rơ mooc và đầu kéo").
+ */
+export function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
+  saving: boolean;
+  item?: { id: number; licensePlate: string; type: string; status: string };
+  onsave: (d: Record<string, unknown>) => void;
+  oncancel: () => void;
+  isOpen: boolean;
+}) {
+  const [plate, setPlate] = useState(item?.licensePlate || '');
+  const [type, setType] = useState<string>(item?.type || TrailerType.FT40);
+  const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  useEffect(() => {
+    if (isOpen) {
+      setPlate(item?.licensePlate || '');
+      setType(item?.type || TrailerType.FT40);
+      setStatus(item?.status || 'ACTIVE');
+    }
+  }, [isOpen, item?.id]);
+  const handleSave = () => {
+    if (!plate.trim()) return;
+    onsave({ licensePlate: plate.trim(), type, status });
+  };
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
+  return (
+    <Modal
+      isOpen={isOpen}
+      title={item ? `Sửa rơ-moóc ${item.licensePlate}` : 'Thêm rơ-moóc'}
+      onClose={oncancel}
+      onConfirm={handleSave}
+      footer={
+        <>
+          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
+            <X size={14} /> Hủy
+          </button>
+          <button className="btn btn--primary btn--sm" disabled={saving || !plate.trim()} onClick={handleSave}>
+            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {item ? 'Cập nhật' : 'Thêm rơ-moóc'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="field">
+          <label htmlFor="trailer-plate-input" style={labelStyle}>
+            Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            id="trailer-plate-input"
+            className="input"
+            value={plate}
+            onChange={e => setPlate(e.target.value)}
+            placeholder="VD: 70C-12345"
+            autoFocus
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label htmlFor="trailer-type-input" style={labelStyle}>Loại rơ-moóc</label>
+            <select id="trailer-type-input" className="input" value={type} onChange={e => setType(e.target.value)}>
+              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="trailer-status-input" style={labelStyle}>Trạng thái</label>
+            <select id="trailer-status-input" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="MAINTENANCE">Bảo trì</option>
+              <option value="INACTIVE">Ngưng</option>
+            </select>
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 6 }}>
+          💡 Sau khi thêm, bạn có thể gán rơ-moóc cho đầu kéo bằng cách sửa xe
+          đầu kéo và chọn rơ-moóc trong danh sách.
+        </p>
+      </div>
+    </Modal>
+  );
+}

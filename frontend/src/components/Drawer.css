@@ -1,6 +1,7 @@
 /* ============================================================================
  * Drawer — TingTing
  * Extracted from UI.css during architecture refactoring (Phase 4)
+ * Enhanced with anime.js spring physics (Phase 5)
  * ========================================================================== */
 .drawer-overlay {
   position: fixed;
@@ -8,12 +9,10 @@
   background: rgba(10, 10, 10, 0.45);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.28s var(--ease);
+  /* anime.js handles opacity animation */
+  opacity: 1;
   z-index: var(--z-overlay);
 }
-.drawer-overlay.is-open { opacity: 1; pointer-events: auto; }
 .drawer {
   position: fixed;
   top: 0;
@@ -23,22 +22,13 @@
   max-width: 580px;
   background: var(--surface, #fff);
   box-shadow: -24px 0 64px rgba(0, 0, 0, 0.16), -4px 0 16px rgba(0, 0, 0, 0.06);
-  transform: translateX(100%);
-  visibility: hidden;
-  pointer-events: none;
-  /* hide immediately on open, delay hide until after slide-out finishes */
-  transition: transform 0.36s var(--ease-drawer), visibility 0s 0.36s;
+  /* anime.js handles translateX animation */
+  transform: none;
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid var(--line);
-}
-.drawer.is-open {
-  transform: translateX(0);
-  visibility: visible;
-  pointer-events: auto;
-  transition: transform 0.36s var(--ease-drawer), visibility 0s 0s;
 }
 .drawer__head {
   padding: 24px 28px 18px;

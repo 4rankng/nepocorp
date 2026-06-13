@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Calendar,
   TrendingUp,
@@ -14,6 +14,7 @@ import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQ
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@tingting/shared';
 import { useMonth } from '../hooks/useMonth';
+import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import './ProfitPage.css';
 
 interface DistributionResult {
@@ -57,6 +58,17 @@ export default function ProfitPage() {
   const { data: history = [], refetch: refetchHistory } = useDistributionHistory();
 
   const error = reportError || capError ? 'Không thể tải báo cáo phân chia lợi nhuận.' : null;
+  const { rootRef } = usePageAnimations({ ready: !loading });
+  const netProfit = report?.netProfit || 0;
+  const heroValueRef = useRef<HTMLSpanElement>(null);
+  const { animateCounters } = useCounterAnimation({ delay: 200 });
+
+  useEffect(() => {
+    if (!report || !heroValueRef.current) return;
+    animateCounters([
+      { el: heroValueRef.current, value: netProfit, suffix: '₫' },
+    ]);
+  }, [report, netProfit]);
 
   const handlePreview = async () => {
     setPreviewing(true);
@@ -106,10 +118,9 @@ export default function ProfitPage() {
   };
 
   const activeCapTable = getDisplayCapTable();
-  const netProfit = report?.netProfit || 0;
 
   return (
-    <div className="fade-up" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} style={{ paddingBottom: 40 }}>
       {/* Header */}
       <PageHeader
         title="Phân chia lợi nhuận"
@@ -134,7 +145,7 @@ export default function ProfitPage() {
             <div className="profit-hero">
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
               <div className="profit-hero__value">
-                {formatNumber(netProfit)}<span className="profit-hero__currency">₫</span>
+                <span ref={heroValueRef}>0₫</span>
               </div>
               <div className="profit-hero__sub">
                 Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa

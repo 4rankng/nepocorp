@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
+import { usePageAnimations } from '../hooks/animations';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
@@ -248,6 +249,7 @@ export default function AdminAdvancesPage() {
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
   const { data, isLoading } = useAdminAdvanceRequests();
+  const { rootRef } = usePageAnimations({ ready: !isLoading });
   const approveMutation = useApproveAdvanceRequest();
   const rejectMutation = useRejectAdvanceRequest();
 
@@ -286,7 +288,7 @@ export default function AdminAdvancesPage() {
 
   /* ── Render ──────────────────────────────────────────────────────────── */
   return (
-    <div className="adv-page fade-up">
+    <div ref={rootRef} className="adv-page">
       <PageHeader
         title="Quản lý tạm ứng"
         description="Duyệt hoặc từ chối yêu cầu tạm ứng"

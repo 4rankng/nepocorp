@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -254,6 +255,7 @@ function PenaltyReasonForm({
 }
 
 export default function PenaltyReasonsConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
 
@@ -339,7 +341,7 @@ export default function PenaltyReasonsConfigPage() {
   const topReasonCount = topEntry ? topEntry[1] : 0;
 
   return (
-    <div className="penalty-reasons-page" style={{ minHeight: '100%' }}>
+    <div ref={pageRef} className="penalty-reasons-page" style={{ minHeight: '100%' }}>
       {/* ── Page Header ─────────────────────────────────────────── */}
       <div className="page-header">
         <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>

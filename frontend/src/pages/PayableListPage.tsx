@@ -8,6 +8,7 @@ import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary } from '../hooks/useQueries';
 import { splitKpi } from '../features/dashboard/utils';
+import { usePageAnimations } from '../hooks/animations';
 import './PayableListPage.css';
 
 interface PayablesResponse {
@@ -26,6 +27,7 @@ export default function PayableListPage() {
   const apiOverdueCount = (data as unknown as PayablesResponse | undefined)?.overdueSuppliers ?? 0;
   const error = queryError ? (queryError as Error).message : null;
   const [search, setSearch] = useState('');
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const totals = useMemo(() => {
     const sum = {
@@ -73,7 +75,7 @@ export default function PayableListPage() {
   const kpiOver90 = splitKpi(totals.over90);
 
   return (
-    <div className="fade-up">
+    <div ref={rootRef}>
       <PageHeader
         title="Công nợ phải trả"
         description={`Tổng nợ: ${formatCurrency(totals.total)} • ${totals.supplierCount} NCC • cập nhật vừa xong`}

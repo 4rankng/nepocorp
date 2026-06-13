@@ -9,6 +9,7 @@ import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
 import { useConfirm, Modal } from '../components/UI';
+import { usePageAnimations } from '../hooks/animations';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -53,6 +54,7 @@ export default function PayableDetailPage() {
   const error = queryError ? (queryError as Error).message : null;
   const { toast: showToast } = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
+  const { rootRef } = usePageAnimations({ ready: !loading });
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -179,7 +181,7 @@ export default function PayableDetailPage() {
   const agingTotal = totalOutstanding || 1;
 
   return (
-    <div>
+    <div ref={rootRef}>
       {/* Supplier Header */}
       <div className="dd-header">
         <button className="dd-back" onClick={() => navigate('/payables')}>

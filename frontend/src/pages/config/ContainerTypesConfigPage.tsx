@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
@@ -157,6 +158,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 /* ─── Page ──────────────────────────────────────────────────────────── */
 
 export default function ContainerTypesConfigPage() {
+  const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<ContainerType | undefined>();
@@ -192,7 +194,7 @@ export default function ContainerTypesConfigPage() {
   };
 
   return (
-    <div className="fade-up cfg-page cfg-page--container-types">
+    <div ref={pageRef} className="cfg-page cfg-page--container-types">
       <PageHeader
         title="Loại container"
         description="Danh mục các loại container dùng trong chuyến đi: 20'DC, 20'OT, 40'HC, 40'DC, 40'HC…"

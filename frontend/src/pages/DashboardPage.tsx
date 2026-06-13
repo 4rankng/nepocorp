@@ -115,7 +115,7 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
       ))}
       <path d={areaPath(revenue)} fill="url(#gRev)" />
       <path d={path(gross)} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={path(revenue)} fill="none" stroke="#005A2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path className="wf-rev-line" d={path(revenue)} fill="none" stroke="#005A2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       {activeIdx !== null && (
         <>
           {/* active point crosshair */}
@@ -143,6 +143,8 @@ function RevenueChart({ months, revenue, gross }: ChartProps) {
         );
       })}
     </svg>
+    {/* HTML dot overlay — createMotionPath targets HTML elements with position:absolute */}
+    <div className="wf-chart-traveler" style={{ position: 'absolute', width: 7, height: 7, background: '#005A2D', borderRadius: '50%', left: -3.5, top: -3.5, opacity: 0, boxShadow: '0 0 4px rgba(0,90,45,0.5)', pointerEvents: 'none', zIndex: 5 }} />
     {activeIdx !== null && (
       <div
         style={{
@@ -477,7 +479,7 @@ export default function DashboardPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="dash-wf fade-up" ref={rootRef}>
+    <div className="dash-wf" ref={rootRef}>
       {/* ── page head ── */}
       <header className="wf-head">
         <div>

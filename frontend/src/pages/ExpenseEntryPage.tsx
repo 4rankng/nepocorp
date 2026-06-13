@@ -8,6 +8,7 @@ import { PageHeader, FormGroup } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePageAnimations } from '../hooks/animations';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
 import { expenseSchema } from '@tingting/shared';
 import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
@@ -95,6 +96,8 @@ export default function ExpenseEntryPage() {
     queryFn: () => api.get(`${FINANCIAL.EXPENSE(Number(id))}`),
     enabled: isEdit,
   });
+
+  const { rootRef } = usePageAnimations({ ready: !loadingExpense });
 
   useEffect(() => {
     if (existingExpense) {
@@ -318,7 +321,7 @@ export default function ExpenseEntryPage() {
   }
 
   return (
-    <div className="fade-up expense-page-wrap">
+    <div ref={rootRef} className="expense-page-wrap">
 
       <div className="expense-page-container">
         <PageHeader

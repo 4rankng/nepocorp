@@ -14,6 +14,7 @@ import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
 import { TipCard } from '../components/trip/TipCard';
 import { ActionBar } from '../components/trip/ActionBar';
 import { SectionDivider } from '../components/trip/SectionDivider';
+import { usePageAnimations } from '../hooks/animations';
 import './TripCreatePage.css';
 import './TripForm.css';
 
@@ -21,6 +22,10 @@ export default function TripCreatePage() {
   const navigate = useNavigate();
   const options = useTripOptions();
   const form = useTripForm(options);
+  const { rootRef } = usePageAnimations({
+    ready: !options.loading,
+    selectors: ['.tc-page-head', '.tc-form-col', '.tc-rail'],
+  });
 
   const handleSubmit = async () => {
     const tripId = await form.handleSubmit();
@@ -31,7 +36,7 @@ export default function TripCreatePage() {
 
   return (
     <TripFormProvider form={form}>
-      <div className="fade-up">
+      <div ref={rootRef}>
         <header className="tc-page-head">
           <button className="tc-back-btn" onClick={() => navigate('/trips')} aria-label="Quay lại">
             <ArrowLeft size={18} />
