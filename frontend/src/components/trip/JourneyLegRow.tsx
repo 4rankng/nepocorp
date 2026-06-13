@@ -1,4 +1,5 @@
 import React from 'react';
+import './JourneyLegRow.css';
 import { Trash2 } from 'lucide-react';
 import type { FormLeg } from '../../hooks/useTripForm';
 import { LocationAutocomplete } from '../LocationAutocomplete';

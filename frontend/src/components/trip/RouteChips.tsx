@@ -1,4 +1,5 @@
 import React from 'react';
+import './RouteChips.css';
 import type { RouteOption } from '../../hooks/useTripOptions';
 
 interface RouteChipsProps {

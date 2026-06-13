@@ -1,4 +1,5 @@
 import React from 'react';
+import './TripSummaryCard.css';
 import { Clock, DollarSign, Users } from 'lucide-react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 

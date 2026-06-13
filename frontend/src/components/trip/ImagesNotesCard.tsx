@@ -1,4 +1,5 @@
 import React from 'react';
+import './ImagesNotesCard.css';
 import { Upload, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { useTripFormContext } from '../../hooks/useTripFormContext';

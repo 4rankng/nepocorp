@@ -1,0 +1,63 @@
+/* ==========================================================================
+   TripEditPage — legacy 2-column content + right rail layout
+   ========================================================================== */
+
+/* Content grid: form + rail */
+.tc-content {
+  padding: 12px 28px 120px;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Right rail */
+.tc-rail {
+  position: sticky;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Trip edit mobile save bar ── */
+/* Uses a dedicated class instead of inline styles + .mobile-only,
+   because inline display:flex would override .mobile-only's display:none
+   on desktop (specificity: inline > class). */
+.tc-edit-mobile-bar {
+  display: none;
+}
+@media (max-width: 640px) {
+  .tc-edit-mobile-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border-1, var(--line));
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+    z-index: 40;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  /* `minmax(0, 1fr)` lets the form column shrink below its widest option
+   * (the Tuyến đường <select> can have very long route names) instead of
+   * pushing the card past the viewport. */
+  .tc-content { grid-template-columns: minmax(0, 1fr); }
+  .tc-rail { position: static; }
+}
+@media (max-width: 640px) {
+  .tc-content { grid-template-columns: 1fr; gap: 16px; padding: 0; }
+  /* Content scrolls behind action bar — give it bottom padding */
+  .tc-content.tc-content { padding-bottom: 100px; }
+  .tc-rail { position: static; }
+}

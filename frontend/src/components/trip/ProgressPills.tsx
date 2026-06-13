@@ -1,4 +1,5 @@
 import React from 'react';
+import './ProgressPills.css';
 
 interface ProgressPillsProps {
   current: number;

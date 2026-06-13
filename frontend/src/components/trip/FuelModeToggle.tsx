@@ -1,4 +1,5 @@
 import React from 'react';
+import './FuelModeToggle.css';
 import { Layers, Pencil } from 'lucide-react';
 import { FuelMode } from '@tingting/shared';
 

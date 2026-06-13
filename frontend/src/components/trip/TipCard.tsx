@@ -1,4 +1,5 @@
 import React from 'react';
+import './TipCard.css';
 import { Info } from 'lucide-react';
 
 export function TipCard() {

@@ -1,0 +1,256 @@
+/* ==========================================================================
+   TripCreatePage — Bento layout
+   Scoped to .tc-create-wrap. Create page ONLY — TripEditPage keeps the
+   legacy .tc-content / .tc-rail layout in TripEditPage.css.
+   ========================================================================== */
+
+/* Page scoper: centers hero + bento on a shared max-width so they always align */
+.tc-create-wrap {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 28px 0;
+  width: 100%;
+}
+
+/* ── Hero band ── charcoal gradient with glows: title, progress, widgets */
+.tc-create-hero {
+  --d-charcoal-1: #14181A;
+  --d-charcoal-2: #1A2220;
+  --d-charcoal-3: #1F2D27;
+  background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
+  color: var(--fg-on-brand);
+  border-radius: var(--r-xl);
+  padding: 26px 30px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 32px;
+  align-items: start;
+  position: relative;
+  overflow: hidden;
+}
+.tc-create-hero::before {
+  content: '';
+  position: absolute;
+  right: -120px; top: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.18), transparent 65%);
+  pointer-events: none;
+}
+.tc-create-hero::after {
+  content: '';
+  position: absolute;
+  left: 40%; bottom: -60px;
+  width: 200px; height: 120px;
+  background: radial-gradient(ellipse, rgba(0, 135, 63, 0.14), transparent 70%);
+  pointer-events: none;
+}
+.tc-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+.tc-create-hero__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+/* Re-skin the shared header primitives for the dark hero surface */
+.tc-create-hero .tc-back-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transition: all 150ms ease;
+}
+.tc-create-hero .tc-back-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateX(-2px);
+}
+.tc-create-hero .tc-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-2xs);
+  letter-spacing: 1.8px;
+  font-weight: 700;
+  color: #5EE99B;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.tc-create-hero .tc-hero-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #5EE99B;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18);
+  animation: d-pulse 2s ease-in-out infinite;
+}
+
+@keyframes d-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18); }
+  50% { box-shadow: 0 0 0 7px rgba(94, 233, 155, 0.08); }
+}
+
+.tc-create-hero .tc-page-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  color: #fff;
+}
+.tc-create-hero .tc-page-sub {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
+/* Custom styled progress pills inside the hero */
+.tc-create-hero .tc-progress-pills {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+}
+.tc-create-hero .tc-progress-pills strong {
+  color: #fff !important;
+}
+.tc-create-hero .tc-pill-dot {
+  background: rgba(255, 255, 255, 0.2);
+}
+.tc-create-hero .tc-pill-dot--done {
+  background: #5EE99B;
+}
+.tc-create-hero .tc-pill-dot--active {
+  background: #34D399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
+}
+
+/* ── Hero widgets container ── side-by-side estimate + checklist */
+.tc-hero-widgets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  position: relative;
+  z-index: 1;
+}
+.tc-hero-widgets .tc-summary-card,
+.tc-hero-widgets .tc-checklist {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  margin-bottom: 0;
+}
+
+/* Override summary card styles inside the dark hero */
+.tc-hero-widgets .tc-summary-card::before {
+  opacity: 0.15;
+}
+.tc-hero-widgets .tc-summary-card__label {
+  color: rgba(255, 255, 255, 0.45);
+}
+.tc-hero-widgets .tc-summary-card__big {
+  color: #fff;
+}
+.tc-hero-widgets .tc-summary-card__currency {
+  color: rgba(255, 255, 255, 0.65);
+}
+.tc-hero-widgets .tc-summary-card__mini {
+  color: rgba(255, 255, 255, 0.55);
+}
+.tc-hero-widgets .tc-summary-rows {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.tc-hero-widgets .tc-summary-row__lbl {
+  color: rgba(255, 255, 255, 0.65);
+}
+.tc-hero-widgets .tc-summary-row__val--neg {
+  color: #FCA5A5;
+}
+.tc-hero-widgets .tc-summary-row__val--pos {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-summary-row--total {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+.tc-hero-widgets .tc-summary-row--total .tc-summary-row__val {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-summary-row--total .tc-summary-row__lbl {
+  color: #fff !important;
+}
+
+/* Override checklist styles inside the dark hero */
+.tc-hero-widgets .tc-checklist__title {
+  color: rgba(255, 255, 255, 0.45);
+}
+.tc-hero-widgets .tc-check-item {
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 120ms ease;
+}
+.tc-hero-widgets .tc-check-item:hover {
+  color: #fff;
+}
+.tc-hero-widgets .tc-check-item__dot {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tc-hero-widgets .tc-check-item--done .tc-check-item__dot {
+  background: #00873F;
+  border-color: #5EE99B;
+  color: #fff;
+}
+.tc-hero-widgets .tc-check-item--active .tc-check-item__dot {
+  border-color: #5EE99B;
+  box-shadow: 0 0 0 3px rgba(94, 233, 155, 0.18);
+}
+.tc-hero-widgets .tc-check-item__name {
+  color: rgba(255, 255, 255, 0.85);
+}
+.tc-hero-widgets .tc-check-item__badge--done {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-check-item__badge--pending {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Bento grid ── 12-col; all card sections span 12 for full row width */
+.tc-create-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+  padding-bottom: 120px; /* ActionBar clearance */
+}
+.tc-create-bento > * { min-width: 0; grid-column: span 12; }
+
+/* Drop the cards' own 16px bottom margin inside tiles */
+.tc-create-bento .tc-card {
+  margin-bottom: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+  .tc-create-hero {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 20px;
+  }
+  .tc-create-bento { grid-template-columns: 1fr; }
+  .tc-create-bento > * { grid-column: span 1; }
+}
+@media (max-width: 640px) {
+  .tc-create-wrap { padding: 8px 12px 0; }
+  .tc-create-hero { padding: 16px; margin-bottom: 14px; gap: 14px; }
+  .tc-create-hero__top { gap: 12px; flex-wrap: wrap; }
+  .tc-create-hero .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-hero-widgets { grid-template-columns: 1fr; gap: 16px; }
+  .tc-create-bento { padding-bottom: 100px; gap: 16px; }
+}

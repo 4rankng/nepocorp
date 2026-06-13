@@ -19,6 +19,7 @@ import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import { usePageAnimations } from '../hooks/animations';
 import type { TripOptions } from '../hooks/useTripOptions';
 import './TripForm.css';
+import './TripEditPage.css';
 
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,4 +1,5 @@
 import React from 'react';
+import './ActionBar.css';
 import { AlertTriangle, Check, Save, ArrowRight, Loader2 } from 'lucide-react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 

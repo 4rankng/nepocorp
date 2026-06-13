@@ -15,6 +15,7 @@ import { ActionBar } from '../components/trip/ActionBar';
 import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
 import './TripForm.css';
+import './TripCreatePage.css';
 
 export default function TripCreatePage() {
   const navigate = useNavigate();

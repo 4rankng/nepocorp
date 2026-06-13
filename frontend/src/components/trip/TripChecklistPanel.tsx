@@ -1,4 +1,5 @@
 import React from 'react';
+import './TripChecklistPanel.css';
 import { Check } from 'lucide-react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 

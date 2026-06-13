@@ -1,4 +1,5 @@
 import React from 'react';
+import './JourneyLegsCard.css';
 import { Plus } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { JourneyLegRow } from './JourneyLegRow';
