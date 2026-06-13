@@ -85,6 +85,15 @@ export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {
       } else {
         utils.set(items, { opacity: 1 });
       }
+
+      // Safety fallback: ensure items become visible even if anime.js fails
+      const fallbackTimer = setTimeout(() => {
+        items.forEach(item => { item.style.opacity = '1'; });
+      }, 2000);
+
+      self.add('cleanup', () => {
+        clearTimeout(fallbackTimer);
+      });
     });
 
     scopeRef.current = scope;

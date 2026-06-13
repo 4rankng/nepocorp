@@ -5,7 +5,7 @@ import { animate } from 'animejs';
 
 export interface CounterTarget {
   /** DOM element whose textContent will be animated */
-  el: HTMLElement;
+  el: HTMLElement | null;
   /** Target numeric value */
   value: number;
   /** Optional prefix (e.g., '₫') */
@@ -58,6 +58,7 @@ export function useCounterAnimation({
 
       targets.forEach(
         ({ el, value, prefix = '', suffix = '', locale = 'vi-VN', format }, i) => {
+          if (!el) return;
           const obj = { val: 0 };
           const anim = animate(obj, {
             val: value,

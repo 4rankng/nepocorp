@@ -21,6 +21,8 @@ import {
   LogOut,
   UserCog,
   KeyRound,
+  ChevronRight,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -426,35 +428,55 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </div>
 
-      {/* Mobile User Menu Sheet for Drivers */}
+      {/* Mobile User Menu Sheet for Drivers — Vantai Design System */}
       {isDriver && userMenuOpen && (
         <div className="mobile-user-sheet-overlay" onClick={closeUserMenu}>
           <div className="mobile-user-sheet" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
-            <div className="mobile-user-sheet-header">
-              <div className="avatar">
-                <User size={24} />
-              </div>
-              <div className="meta">
-                <div className="name">{user.fullName || getRoleLabel(user.role)}</div>
-                <div className="email">{user.email || user.username}</div>
+            {/* Drag handle */}
+            <div className="mobile-user-sheet-handle" />
+
+            {/* Profile hero with brand gradient */}
+            <div className="mobile-user-sheet-hero">
+              <div className="mobile-user-sheet-header">
+                <div className="avatar">
+                  <User size={24} />
+                </div>
+                <div className="meta">
+                  <div className="name">{user.fullName || getRoleLabel(user.role)}</div>
+                  <div className="email">{user.email || user.username}</div>
+                  <div className="mobile-user-sheet-role-badge">
+                    <Shield size={10} />
+                    {getRoleLabel(user.role)}
+                  </div>
+                </div>
               </div>
             </div>
+
             <div className="mobile-user-sheet-divider" />
+
+            {/* Menu items with icon tiles + trailing chevrons */}
             <div className="mobile-user-sheet-body">
               <button className="mobile-user-sheet-btn" onClick={openProfileModal}>
-                <UserCog size={18} />
-                <span>Thông tin cá nhân</span>
+                <span className="icon-tile"><UserCog size={18} /></span>
+                <span className="btn-label">Thông tin cá nhân</span>
+                <ChevronRight size={16} className="btn-chevron" />
               </button>
               <button className="mobile-user-sheet-btn" onClick={openPasswordModal}>
-                <KeyRound size={18} />
-                <span>Đổi mật khẩu</span>
+                <span className="icon-tile"><KeyRound size={18} /></span>
+                <span className="btn-label">Đổi mật khẩu</span>
+                <ChevronRight size={16} className="btn-chevron" />
               </button>
+
               <div className="mobile-user-sheet-divider" />
+
               <button className="mobile-user-sheet-btn danger" onClick={() => { closeUserMenu(); logout(); }}>
-                <LogOut size={18} />
-                <span>Đăng xuất</span>
+                <span className="icon-tile"><LogOut size={18} /></span>
+                <span className="btn-label">Đăng xuất</span>
+                <ChevronRight size={16} className="btn-chevron" />
               </button>
             </div>
+
+            <div className="mobile-user-sheet-footer" />
           </div>
         </div>
       )}

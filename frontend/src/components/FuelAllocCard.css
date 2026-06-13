@@ -44,3 +44,10 @@
   flex-direction: column;
   gap: 4px;
 }
+
+@media (max-width: 640px) {
+  .fuel-alloc-card { padding: 0 !important; }
+  .fuel-alloc-card__header { padding: 10px 14px; gap: 10px; }
+  .fuel-alloc-card__value { font-size: var(--fs-2xl); }
+  .fuel-alloc-card__body { padding: 10px 14px; gap: 4px; }
+}

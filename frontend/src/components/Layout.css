@@ -1138,11 +1138,6 @@
     padding-top: 4px; /* Space for the indicator */
     will-change: transform;
     opacity: 0; /* starts hidden for anime.js entrance */
-    animation: bottomNavFallback 0s 1.5s forwards; /* safety fallback */
-  }
-
-  @keyframes bottomNavFallback {
-    to { opacity: 1; }
   }
 
   .bottom-nav-indicator {
@@ -1193,113 +1188,241 @@
     opacity: 1;
   }
   
-  /* Mobile User Menu Sheet */
+  /* ── Mobile User Menu Sheet (Vantai Design System) ── */
   .mobile-user-sheet-overlay {
     position: fixed;
     inset: 0;
     background: rgba(10, 10, 10, 0.45);
+    backdrop-filter: blur(6px);
     z-index: var(--z-modal, 1000);
     display: flex;
     align-items: flex-end;
     animation: sheetOverlayIn 0.2s ease-out;
   }
-  
+
   .mobile-user-sheet {
     background: var(--surface);
     width: 100%;
-    border-radius: 20px 20px 0 0;
-    padding: 20px 16px env(safe-area-inset-bottom, 16px);
-    box-shadow: 0 -8px 24px rgba(0,0,0,0.1);
-    animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 24px 24px 0 0;
+    padding: 0 0 env(safe-area-inset-bottom, 16px);
+    box-shadow: 0 -8px 40px -8px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(0, 0, 0, 0.04);
+    animation: sheetUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     transform-origin: bottom;
+    overflow: hidden;
   }
-  
+
+  /* Drag handle */
+  .mobile-user-sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0 4px;
+  }
+  .mobile-user-sheet-handle::after {
+    content: '';
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--line-2);
+  }
+
+  /* Profile hero area with subtle brand gradient */
+  .mobile-user-sheet-hero {
+    position: relative;
+    padding: 12px 20px 20px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 8%, white) 0%,
+      var(--surface) 60%
+    );
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .mobile-user-sheet-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, var(--accent) 0.8px, transparent 0.8px);
+    background-size: 24px 24px;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  .mobile-user-sheet-header .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #000));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px -2px rgba(0, 177, 79, 0.3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .mobile-user-sheet-header .meta {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mobile-user-sheet-header .name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 3px;
+  }
+
+  .mobile-user-sheet-header .email {
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.3;
+  }
+
+  .mobile-user-sheet-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Menu section */
+  .mobile-user-sheet-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 0;
+  }
+
+  .mobile-user-sheet-body {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+  }
+
+  .mobile-user-sheet-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 180ms ease, transform 120ms ease;
+    min-height: 48px;
+    position: relative;
+    opacity: 0;
+    animation: sheetItemIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .mobile-user-sheet-btn:nth-child(1) { animation-delay: 0.08s; }
+  .mobile-user-sheet-btn:nth-child(2) { animation-delay: 0.12s; }
+  .mobile-user-sheet-divider + .mobile-user-sheet-btn { animation-delay: 0.16s; }
+
+  .mobile-user-sheet-btn:active {
+    background: var(--surface-2);
+    transform: scale(0.98);
+  }
+
+  /* Icon tile */
+  .mobile-user-sheet-btn .icon-tile {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 180ms ease;
+  }
+
+  .mobile-user-sheet-btn:active .icon-tile {
+    background: var(--surface-3);
+  }
+
+  .mobile-user-sheet-btn .icon-tile svg {
+    width: 18px;
+    height: 18px;
+    color: var(--ink-2);
+  }
+
+  .mobile-user-sheet-btn .btn-label {
+    flex: 1;
+    text-align: left;
+  }
+
+  /* Trailing chevron */
+  .mobile-user-sheet-btn .btn-chevron {
+    color: var(--ink-3);
+    opacity: 0.5;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+  .mobile-user-sheet-btn:active .btn-chevron {
+    opacity: 0.8;
+    transform: translateX(2px);
+  }
+
+  /* Logout danger section */
+  .mobile-user-sheet-btn.danger {
+    color: var(--danger);
+  }
+
+  .mobile-user-sheet-btn.danger .icon-tile {
+    background: var(--danger-soft);
+  }
+
+  .mobile-user-sheet-btn.danger .icon-tile svg {
+    color: var(--danger);
+  }
+
+  .mobile-user-sheet-btn.danger .btn-chevron {
+    color: var(--danger);
+    opacity: 0.4;
+  }
+
+  .mobile-user-sheet-footer {
+    height: 8px;
+  }
+
+  /* Sheet animations */
   @keyframes sheetOverlayIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  
+
   @keyframes sheetUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
   }
-  
-  .mobile-user-sheet-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 0 8px 16px;
-  }
-  
-  .mobile-user-sheet-header .avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--surface-3);
-    color: var(--ink-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .mobile-user-sheet-header .meta {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .mobile-user-sheet-header .name {
-    font-size: var(--fs-md);
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 2px;
-  }
-  
-  .mobile-user-sheet-header .email {
-    font-size: 13px;
-    color: var(--ink-3);
-  }
-  
-  .mobile-user-sheet-divider {
-    height: 1px;
-    background: var(--line);
-    margin: 4px 0;
-  }
-  
-  .mobile-user-sheet-body {
-    display: flex;
-    flex-direction: column;
-    padding-top: 8px;
-  }
-  
-  .mobile-user-sheet-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 12px;
-    background: transparent;
-    border: none;
-    border-radius: 12px;
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    color: var(--ink);
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .mobile-user-sheet-btn:active {
-    background: var(--surface-2);
-  }
-  
-  .mobile-user-sheet-btn svg {
-    color: var(--ink-2);
-  }
-  
-  .mobile-user-sheet-btn.danger {
-    color: var(--danger);
-  }
-  
-  .mobile-user-sheet-btn.danger svg {
-    color: var(--danger);
+
+  @keyframes sheetItemIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
@@ -1308,4 +1431,11 @@
 @media (max-width: 640px) {
   /* ── Driver portal ── */
   .driver-bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Prevent KPI text truncation on mobile for driver portal */
+  .is-driver .kpi__value {
+    white-space: normal !important;
+    font-size: clamp(14px, 4.5vw, 18px) !important;
+    word-break: break-all;
+  }
 } /* end 640px */
