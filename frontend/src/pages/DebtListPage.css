@@ -336,7 +336,6 @@
   .debt-aging-card {
     padding: 12px 14px;
     border-radius: 14px;
-    border-left-width: 3px;
   }
   .debt-aging-card__amount {
     font-size: 17px;

@@ -1063,11 +1063,11 @@
   .mobile-day-row {
     display: flex;
     align-items: center;
+    position: relative;
     min-height: 52px;
-    padding: 0 14px 0 0;
+    padding: 0 14px 0 10px;
     border-bottom: 1px solid var(--line);
     gap: 10px;
-    border-left: 3px solid transparent;
     transition: background 120ms ease;
     -webkit-tap-highlight-color: transparent;
   }
@@ -1076,21 +1076,33 @@
     border-bottom: none;
   }
 
-  /* Status strip colors — left border */
-  .mobile-day-row.status-trip_day {
-    border-left-color: var(--accent);
+  /* Status strip — 3×20px centered indicator, NOT full-height border */
+  .mobile-day-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    border-radius: 0 2px 2px 0;
+    background: transparent;
   }
 
-  .mobile-day-row.status-standby {
-    border-left-color: var(--warning);
+  .mobile-day-row.status-trip_day::before {
+    background: var(--accent);
   }
 
-  .mobile-day-row.status-personal_leave {
-    border-left-color: #e11d48;
+  .mobile-day-row.status-standby::before {
+    background: var(--warning);
   }
 
-  .mobile-day-row.status-weekly_off {
-    border-left-color: var(--ink-4, #BABDC3);
+  .mobile-day-row.status-personal_leave::before {
+    background: #e11d48;
+  }
+
+  .mobile-day-row.status-weekly_off::before {
+    background: var(--ink-4, #BABDC3);
   }
 
   /* Tappable rows */
