@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 18px 24px 16px;
   border-bottom: 1px solid var(--line);
   gap: 12px;
 }
@@ -38,7 +38,7 @@
   margin-top: 2px;
 }
 .panel__body {
-  padding: 14px 20px 20px;
+  padding: 18px 24px 22px;
 }
 .panel__body--flush { padding: 0 !important; }
 
@@ -94,8 +94,3 @@
   gap: 6px;
 }
 .subsection-card__title svg { width: 13px; height: 13px; }
-
-/* Panel padding bump — more breathing room for detail panels */
-.panel__head { padding: 18px 24px 16px; }
-.panel__title { font-size: var(--fs-md); }
-.panel__body { padding: 18px 24px 22px; }

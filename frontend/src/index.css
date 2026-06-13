@@ -1,4 +1,6 @@
-/* Aggregator — all rules live in co-located files. */
+/* Aggregator. Global component stylesheets (className-based, no owning .tsx)
+   are imported here ahead of responsive.css. Page- and feature-scoped CSS is
+   co-located — imported by its own .tsx. */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "./styles/tokens.css";     /* @import "tailwindcss" + :root design tokens */
 @import "./styles/base.css";

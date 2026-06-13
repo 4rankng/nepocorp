@@ -27,7 +27,7 @@
 .ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* Lãi DV */
 .ancillary-fees__table thead th:nth-child(5) { width: 12%; }   /* Nhà cung cấp */
 .ancillary-fees__table thead th:nth-child(6) { width: 12%; }   /* Chứng từ */
-.ancillary-fees__table thead th:nth-child(7) { width: 11%; }   /* Trạng thái (sticky) */
+.ancillary-fees__table thead th:nth-child(7) { width: 11%; background: var(--surface-2); }   /* Trạng thái */
 
 /* Clip long text in body cells so numbers/labels never bleed into the
    next column. Col 1 keeps the natural wrap (it stacks name + container). */
@@ -41,10 +41,6 @@
   text-overflow: ellipsis;
 }
 
-/* Non-sticky last column */
-.ancillary-fees__table thead th:nth-child(7) {
-  background: var(--surface-2);
-}
 .ancillary-fees__table tfoot td:nth-child(7) {
   background: var(--surface-2);
 }
@@ -454,15 +450,6 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 /* Misc table helpers */
-.ttbq-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-.ttbq-cell__bar { width: 36px; height: 4px; background: var(--surface-3); border-radius: 999px; position: relative; overflow: hidden; }
-.ttbq-cell__bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
-.ttbq-cell--ok .ttbq-cell__bar-fill { background: var(--accent); width: 78%; }
-.ttbq-cell--warn .ttbq-cell__bar-fill { background: var(--warning); width: 92%; }
-.ttbq-cell--danger .ttbq-cell__bar-fill { background: var(--danger); width: 100%; }
-
-.missing-flag { display: inline-flex; align-items: center; gap: 4px; color: var(--danger); font-size: 11px; font-weight: 600; margin-left: 4px; }
-
 .row-strong { font-weight: 600; color: var(--ink); font-size: 13px; }
 .row-meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
 

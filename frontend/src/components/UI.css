@@ -72,3 +72,11 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+
+/* Shared overlay fade — used by .modal (Modal.css) and .confirm-overlay
+   (ConfirmDialog.css). Lives here so neither component file depends on the
+   other being imported first. */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

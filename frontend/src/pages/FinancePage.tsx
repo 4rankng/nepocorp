@@ -54,7 +54,7 @@ export default function FinancePage() {
     fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
     totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
-    activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
+    activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
   } = useMemo(() => {
     const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
     const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
@@ -118,11 +118,32 @@ export default function FinancePage() {
         maintenance: t.maintenanceExpenses ?? 0,
       }));
 
+    // Per-truck breakdown from all active trips (not gated on locked status)
+    const truckMap = new Map<number, { id: number; plate: string; trips: number; revenue: number; costs: number; profit: number }>();
+    for (const t of activeTrips) {
+      const isExternal = t.carrierType === 'EXTERNAL';
+      const key = isExternal ? 0 : t.truckId;
+      const plate = isExternal ? 'Xe ngoài' : (t.truck?.licensePlate ?? `Truck #${t.truckId}`);
+      const rev = parseFloat(t.revenue ?? '0') + parseFloat(t.revenueEmptyReturn ?? '0');
+      const cost = parseFloat(t.totalCost ?? '0');
+      const gp = parseFloat(t.grossProfit ?? '0');
+      const existing = truckMap.get(key);
+      if (existing) {
+        existing.trips++;
+        existing.revenue += rev;
+        existing.costs += cost;
+        existing.profit += gp;
+      } else {
+        truckMap.set(key, { id: key, plate, trips: 1, revenue: rev, costs: cost, profit: gp });
+      }
+    }
+    const truckBreakdown = [...truckMap.values()].sort((a, b) => b.profit - a.profit);
+
     return {
       fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
       totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
       totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
-      activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown,
+      activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
     };
   }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
 
@@ -584,25 +605,26 @@ export default function FinancePage() {
             </Link>
           </p>
 
-          {/* Per-truck breakdown */}
-          {report?.trucks && report.trucks.length > 0 && (
+          {/* Per-truck breakdown — from all active trips */}
+          {truckBreakdown.length > 0 && (
             <Panel
               title="Phân tích lãi gộp theo phương tiện"
-              subtitle={`Hiệu suất vận tải chi tiết của ${report.trucks.length} đầu xe`}
+              subtitle={`Hiệu suất vận tải chi tiết của ${truckBreakdown.length} đầu xe`}
               style={{ marginTop: 20 }}
               flush
             >
               {/* ── Mobile card list (≤640px) ──────────────────────────────── */}
               <div className="mobile-only">
                 <div className="truck-card-list">
-                  {report.trucks.map(t => {
+                  {truckBreakdown.map(t => {
                     const margin = t.revenue > 0 ? ((t.profit / t.revenue) * 100).toFixed(1) : '0.0';
                     const barPct = t.revenue > 0 ? Math.min(100, Math.max(0, (t.profit / t.revenue) * 100)) : 0;
+                    const maintComp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
                     return (
                       <div key={t.id} className="truck-card">
                         <div className="truck-card__header">
                           <span className="truck-card__plate">
-                            {t.id === 0 ? 'Xe ngoài' : t.plate}
+                            {t.plate}
                           </span>
                           <span className={`truck-card__profit ${t.profit >= 0 ? 'truck-card__profit--up' : 'truck-card__profit--down'}`}>
                             {formatRawNumber(t.profit)}₫
@@ -621,20 +643,16 @@ export default function FinancePage() {
                             <span className="truck-card__stat-label">Chi phí</span>
                             <span className="truck-card__stat-value">{formatRawNumber(t.costs)}</span>
                           </div>
-                          {maintenanceCost > 0 && (() => {
-                            const comp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
-                            if (comp.truck > 0 || comp.trailer > 0) return (
-                              <div className="truck-card__stat">
-                                <span className="truck-card__stat-label">Bảo dưỡng</span>
-                                <span className="truck-card__stat-value">
-                                  {comp.truck > 0 ? `${formatRawNumber(comp.truck)} ĐK` : ''}
-                                  {comp.truck > 0 && comp.trailer > 0 ? ' · ' : ''}
-                                  {comp.trailer > 0 ? `${formatRawNumber(comp.trailer)} RM` : ''}
-                                </span>
-                              </div>
-                            );
-                            return null;
-                          })()}
+                          {(maintComp.truck > 0 || maintComp.trailer > 0) && (
+                            <div className="truck-card__stat">
+                              <span className="truck-card__stat-label">Bảo dưỡng</span>
+                              <span className="truck-card__stat-value">
+                                {maintComp.truck > 0 ? `${formatRawNumber(maintComp.truck)} ĐK` : ''}
+                                {maintComp.truck > 0 && maintComp.trailer > 0 ? ' · ' : ''}
+                                {maintComp.trailer > 0 ? `${formatRawNumber(maintComp.trailer)} RM` : ''}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="truck-card__bar-track">
                           <div
@@ -671,28 +689,28 @@ export default function FinancePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {report.trucks.map(t => (
+                      {truckBreakdown.map(t => {
+                        const maintComp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
+                        return (
                           <tr key={t.id}>
                             <td style={{ fontWeight: 600, color: t.id === 0 ? 'var(--fg-3)' : 'var(--fg-1)', fontStyle: t.id === 0 ? 'italic' : 'normal' }}>
-                              {t.id === 0 ? 'Xe ngoài' : t.plate}
+                              {t.plate}
                             </td>
                             <td className="num">{t.trips}</td>
                             <td className="num">{formatRawNumber(t.revenue)}</td>
                             <td className="num">{formatRawNumber(t.costs)}</td>
-                            {maintenanceCost > 0 && (() => {
-                              const comp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
-                              return (
-                                <>
-                                  <td className="num">{comp.truck > 0 ? formatRawNumber(comp.truck) : '—'}</td>
-                                  <td className="num">{comp.trailer > 0 ? formatRawNumber(comp.trailer) : '—'}</td>
-                                </>
-                              );
-                            })()}
+                            {maintenanceCost > 0 && (
+                              <>
+                                <td className="num">{maintComp.truck > 0 ? formatRawNumber(maintComp.truck) : '—'}</td>
+                                <td className="num">{maintComp.trailer > 0 ? formatRawNumber(maintComp.trailer) : '—'}</td>
+                              </>
+                            )}
                             <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
                               {formatRawNumber(t.profit)}
                             </td>
                           </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
