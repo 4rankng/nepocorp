@@ -1121,7 +1121,6 @@
     align-items: stretch;
     padding-bottom: env(safe-area-inset-bottom, 12px);
     box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
-    opacity: 0; /* starts hidden for anime.js entrance */
   }
   
   .bottom-nav-item {
@@ -1138,6 +1137,12 @@
     transition: color 0.3s ease;
     padding-top: 4px; /* Space for the indicator */
     will-change: transform;
+    opacity: 0; /* starts hidden for anime.js entrance */
+    animation: bottomNavFallback 0s 1.5s forwards; /* safety fallback */
+  }
+
+  @keyframes bottomNavFallback {
+    to { opacity: 1; }
   }
 
   .bottom-nav-indicator {

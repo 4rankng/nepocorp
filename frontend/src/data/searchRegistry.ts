@@ -83,7 +83,7 @@ const ACTION_ITEMS: SearchItem[] = [
 ];
 
 const DRIVER_ITEMS: SearchItem[] = [
-  { id: 'my-trips', type: 'page', label: 'Lệnh của tôi', path: '/my-trips', icon: Route },
+  { id: 'my-trips', type: 'page', label: 'Hành trình', path: '/my-trips', icon: Route },
   { id: 'my-earnings', type: 'page', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign },
   { id: 'my-penalties', type: 'page', label: 'Kỷ luật', path: '/my-penalties', icon: AlertTriangle },
 ];

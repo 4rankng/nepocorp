@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react';
-import { Card } from '../components/UI';
+import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2, Calendar, Truck } from 'lucide-react';
+import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverPenalties } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import './DriverPenaltyPage.css';
 
 interface DriverPenaltyRow {
   id: number;
@@ -37,7 +38,7 @@ export default function DriverPenaltyPage() {
     if (!monthFilter) return allPenalties;
     return Array.isArray(filteredPenaltiesData) ? filteredPenaltiesData : (filteredPenaltiesData as any)?.items ?? allPenalties;
   }, [monthFilter, filteredPenaltiesData, allPenalties]);
-  const { rootRef: listRef } = useListAnimations({ itemSelector: '.panel', mode: 'rows', deps: [filteredPenalties] });
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.penalty-violation-row', mode: 'rows', deps: [filteredPenalties] });
 
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
@@ -57,56 +58,30 @@ export default function DriverPenaltyPage() {
   const incidentCount = monthPenalties.length;
   const isSafeThisMonth = incidentCount === 0;
 
-  // Only show the loading banner while the period query is in flight.
-  // If the query finished with no period defined for current month, we still
-  // want to render the safe/violation banner using monthPenalties=[] (the
-  // memo handles that). Previously this stuck on "Đang tải…" forever when
-  // no period existed for the current month.
   const isLoadingPeriod = periodLoading;
 
   return (
-    <div ref={rootRef} style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className="driver-penalty-page">
 
       {/* ── Page header ─────────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Kỷ luật của tôi</h1>
-          <p className="page-subtitle">Lịch sử vi phạm và khấu trừ lương của bạn</p>
-        </div>
-      </div>
+      <PageHeader title="Kỷ luật của tôi" description="Lịch sử vi phạm và khấu trừ lương của bạn" />
 
-      {/* ── Status banner ───────────────────────────────────────────────────── */}
+      {/* ── Zone 1: Status banner ───────────────────────────────────────────── */}
       {isLoadingPeriod ? (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '16px 20px', borderRadius: 12, marginBottom: 20,
-          background: 'var(--bg-2)', border: '1px solid var(--border-2)',
-          color: 'var(--fg-3)', fontSize: 13,
-        }}>
+        <div className="penalty-loading-banner">
           <Loader2 size={16} className="spin" />
           Đang tải dữ liệu kỳ lương...
         </div>
       ) : (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '16px 20px',
-          borderRadius: 12,
-          marginBottom: 20,
-          background: isSafeThisMonth ? 'var(--success-soft)' : 'var(--danger-soft)',
-          border: `1px solid ${isSafeThisMonth ? 'var(--success)' : 'var(--danger)'}`,
-        }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-            background: isSafeThisMonth ? 'var(--success)' : 'var(--danger)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-          }}>
+        <div className={`penalty-status-banner ${isSafeThisMonth ? 'penalty-status-banner--safe' : 'penalty-status-banner--violation'}`}>
+          <div className="penalty-status-banner__icon">
             {isSafeThisMonth ? <ShieldCheck size={22} /> : <AlertOctagon size={22} />}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: isSafeThisMonth ? 'var(--success)' : 'var(--danger)' }}>
+          <div>
+            <div className="penalty-status-banner__title">
               {isSafeThisMonth ? `Không vi phạm ${monthLabel}` : `${incidentCount} vi phạm ${monthLabel}`}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 2 }}>
+            <div className="penalty-status-banner__subtitle">
               {isSafeThisMonth
                 ? 'Bạn đang chấp hành tốt nội quy công ty. Tiếp tục phát huy!'
                 : `Tổng khấu trừ lương: ${formatCurrency(totalMonthAmount)}`
@@ -116,8 +91,8 @@ export default function DriverPenaltyPage() {
         </div>
       )}
 
-      {/* ── KPI row ────────────────────────────────────────────────────────── */}
-      <div className="kpi-grid" style={{ marginBottom: 28 }}>
+      {/* ── Zone 2: KPI grid ──────────────────────────────────────────────── */}
+      <div className="kpi-grid penalty-kpi-grid">
         <div className={`kpi ${incidentCount > 0 ? 'kpi--danger' : 'kpi--success'}`}>
           <div className="kpi__top"><span className="kpi__label">Vi phạm {monthLabel}</span></div>
           <div className="kpi__value">
@@ -150,97 +125,78 @@ export default function DriverPenaltyPage() {
         </div>
       </div>
 
-      {/* ── Violations list ─────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{
-          fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase',
-          letterSpacing: '0.1em', color: 'var(--fg-3)', fontWeight: 600, margin: 0,
-        }}>
-          Sổ vi phạm · {filteredPenalties.length}
-        </h3>
-        <select
-          className="input"
-          style={{ width: 150, height: 28, fontSize: 12 }}
-          value={monthFilter}
-          onChange={e => setMonthFilter(e.target.value)}
-        >
-          <option value="">Tất cả thời gian</option>
-          {Array.from({ length: 12 }, (_, i) => {
-            const d = new Date();
-            d.setDate(1); // Set to 1st of the month to avoid month-end rollover (e.g., May 31 -> April 31 rolls over to May 1)
-            d.setMonth(d.getMonth() - i);
-            const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            return <option key={value} value={value}>Tháng {d.getMonth() + 1}/{d.getFullYear()}</option>;
-          })}
-        </select>
-      </div>
-
-      {loading ? (
-        <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
-          <Loader2 size={24} className="spin" style={{ display: 'inline-block' }} />
-          <p style={{ marginTop: 12 }}>Đang tải…</p>
+      {/* ── Zone 3: Violations data card ───────────────────────────────────── */}
+      <div className="penalty-data-card">
+        <div className="penalty-data-card__header">
+          <span className="penalty-data-card__title">
+            Sổ vi phạm · {filteredPenalties.length}
+          </span>
+          <select
+            className="input penalty-month-select"
+            value={monthFilter}
+            onChange={e => setMonthFilter(e.target.value)}
+          >
+            <option value="">Tất cả thời gian</option>
+            {Array.from({ length: 12 }, (_, i) => {
+              const d = new Date();
+              d.setDate(1);
+              d.setMonth(d.getMonth() - i);
+              const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+              return <option key={value} value={value}>Tháng {d.getMonth() + 1}/{d.getFullYear()}</option>;
+            })}
+          </select>
         </div>
-      ) : filteredPenalties.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--fg-3)' }}>
-          <ShieldCheck size={32} style={{ color: 'var(--success)', margin: '0 auto 12px' }} />
-          <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg-1)' }}>Không có biên bản vi phạm</p>
-          <p style={{ margin: '4px 0 0', fontSize: 12 }}>
-            {monthFilter ? 'Không có vi phạm trong khoảng thời gian này.' : 'Bạn chưa có biên bản vi phạm nào.'}
-          </p>
-        </Card>
-      ) : (
-        <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filteredPenalties.map(p => (
-            <div
-              key={p.id}
-              className="panel"
-              style={{ padding: '14px 18px', border: '1px solid var(--border-1)' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                {/* Icon */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0, marginTop: 2,
-                  background: 'var(--danger-soft)', color: 'var(--danger)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
+
+        {loading ? (
+          <div className="penalty-empty-state">
+            <Loader2 size={24} className="spin" />
+            <p className="penalty-empty-state__loading-text">Đang tải…</p>
+          </div>
+        ) : filteredPenalties.length === 0 ? (
+          <div className="penalty-empty-state">
+            <div className="penalty-empty-state__icon">
+              <ShieldCheck size={32} />
+            </div>
+            <p className="penalty-empty-state__title">Không có biên bản vi phạm</p>
+            <p className="penalty-empty-state__desc">
+              {monthFilter ? 'Không có vi phạm trong khoảng thời gian này.' : 'Bạn chưa có biên bản vi phạm nào.'}
+            </p>
+          </div>
+        ) : (
+          <div ref={listRef} className="penalty-violation-list">
+            {filteredPenalties.map(p => (
+              <div key={p.id} className="penalty-violation-row">
+                <div className="penalty-violation-row__icon">
                   <AlertTriangle size={16} />
                 </div>
-
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-1)' }}>
+                <div className="penalty-violation-row__content">
+                  <div className="penalty-violation-row__top">
+                    <div className="penalty-violation-row__reason">
                       {p.reasonText || p.customReason || 'Vi phạm nội quy'}
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--danger)', whiteSpace: 'nowrap' }}>
+                    <div className="penalty-violation-row__amount">
                       -{formatCurrency(Number(p.amount))}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-                      📅 {formatDate(p.date)}
-                    </span>
-                    {p.tripId && p.tripCode && (
-                      <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-                        🚛 {p.tripCode}
-                      </span>
-                    )}
+                  <div className="penalty-violation-row__meta">
+                    <span><Calendar size={12} /> {formatDate(p.date)}</span>
+                    {p.tripId && p.tripCode && <span><Truck size={12} /> {p.tripCode}</span>}
                   </div>
                   {p.customReason && p.reasonText && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: 'var(--fg-3)', fontStyle: 'italic' }}>
+                    <div className="penalty-violation-row__note">
                       {p.customReason}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* ── Footer note ─────────────────────────────────────────────────────── */}
+      {/* ── Zone 4: Footer note ─────────────────────────────────────────────── */}
       {allPenalties.length > 0 && (
-        <div style={{ marginTop: 24, padding: '12px 16px', background: 'var(--bg-2)', borderRadius: 8, fontSize: 12, color: 'var(--fg-3)', textAlign: 'center' }}>
+        <div className="penalty-footer-note">
           Các khoản phạt được khấu trừ trực tiếp vào lương sản lượng hàng tháng.
           Liên hệ quản lý nếu có thắc mắc.
         </div>

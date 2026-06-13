@@ -53,8 +53,8 @@ export default function FinancePage() {
 
   const compactNum = (v: number) => {
     if (v === 0) return '0';
-    if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`;
-    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}tr`;
+    if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`.replace('.0', '');
+    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}tr`.replace('.0', '');
     return `${(v / 1e3).toFixed(0)}k`;
   };
 
@@ -104,11 +104,11 @@ export default function FinancePage() {
     }));
 
     const costPieData = [
-      { name: 'Nhiên liệu', value: fuelCost, fill: '#3b82f6' },
-      { name: 'Tiền đi đường', value: roadCost, fill: '#f59e0b' },
-      { name: 'Lương lái xe', value: driverCost, fill: '#10b981' },
-      { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#ef4444' },
-      { name: 'Phí quản lý', value: mgmtFee, fill: '#E07D2E' },
+      { name: 'Nhiên liệu', value: fuelCost, fill: '#059669' },
+      { name: 'Tiền đi đường', value: roadCost, fill: '#D97706' },
+      { name: 'Lương lái xe', value: driverCost, fill: '#2563EB' },
+      { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#DC2626' },
+      { name: 'Phí quản lý', value: mgmtFee, fill: '#EA580C' },
     ].filter(d => d.value > 0.5);
 
     const categoryBreakdown: Array<{ categoryName: string; total: number }> =
@@ -257,24 +257,24 @@ export default function FinancePage() {
       {/* ── Charts ──────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3 finance-charts-row">
         {/* Revenue trend */}
-        <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0 }}>
+        <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
               Xu hướng doanh thu {year}
             </div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--fg-2)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 10, height: 10, background: '#3b82f6', borderRadius: 2, display: 'inline-block' }} /> Doanh thu
+            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--ink-2)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#059669" strokeWidth="2.5" /></svg> Doanh thu
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 10, height: 10, background: '#10b981', borderRadius: 2, display: 'inline-block' }} /> LN gộp
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#34D399" strokeWidth="2" strokeDasharray="4 3" /></svg> LN gộp
               </span>
             </div>
           </div>
           {yearlyLoading ? (
-            <div style={{ height: 200, background: 'var(--bg-2)', borderRadius: 6 }} />
+            <div style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 6 }} />
           ) : revenueChartData.every(d => d['Doanh thu'] === 0 && d['LN gộp'] === 0) ? (
-            <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontSize: 13, gap: 8 }}>
               <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
                 <line x1="3" y1="20" x2="21" y2="20"/>
                 <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
@@ -284,48 +284,87 @@ export default function FinancePage() {
               <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
             </div>
           ) : (
-            <div className="finance-revenue-chart" style={{ width: '100%', height: 220 }}>
+            <div className="finance-revenue-chart" style={{ flex: 1, minHeight: 0, width: '100%' }}>
               {(() => {
-                const w = 600;
-                const h = 220;
-                const padL = 54, padR = 8, padT = 8, padB = 36;
+                const w = 600, h = 300;
+                const padL = 50, padR = 20, padT = 10, padB = 28;
                 const plotW = w - padL - padR, plotH = h - padT - padB;
-                const max = Math.max(
-                  1,
-                  ...revenueChartData.flatMap((d) => [d['Doanh thu'] as number, d['LN gộp'] as number]),
-                );
+                const baseline = padT + plotH;
+                const max = Math.max(1, ...revenueChartData.flatMap(d => [d['Doanh thu'] as number, d['LN gộp'] as number]));
                 const niceMax = Math.ceil(max / 10_000_000) * 10_000_000;
-                const xStep = plotW / revenueChartData.length;
-                const barW = Math.min(16, (xStep - 6) / 2);
-                const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => niceMax * t);
+                const xStep = plotW / 12; // Full year — 12 months
+                const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => niceMax * t);
+                // Data points for active months only
+                const activeData = revenueChartData.filter((_, i) => i + 1 <= month);
+                const revPts: [number, number][] = [];
+                const gpPts: [number, number][] = [];
+                activeData.forEach((d, idx) => {
+                  const cx = padL + idx * xStep + xStep / 2;
+                  revPts.push([cx, baseline - ((d['Doanh thu'] as number) / niceMax) * plotH]);
+                  gpPts.push([cx, baseline - ((d['LN gộp'] as number) / niceMax) * plotH]);
+                });
+                // Straight-line path helpers
+                const toLine = (pts: [number, number][]) => pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x},${y}`).join(' ');
+                const toArea = (pts: [number, number][]) => {
+                  if (pts.length === 0) return '';
+                  return `${toLine(pts)} L ${pts[pts.length - 1][0]},${baseline} L ${pts[0][0]},${baseline} Z`;
+                };
                 return (
-                  <svg aria-hidden="true" className="finance-revenue-svg" width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
+                  <svg className="finance-revenue-svg" width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
+                    <defs>
+                      <linearGradient id="revAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#059669" stopOpacity="0.20" />
+                        <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
+                      </linearGradient>
+                      <linearGradient id="gpAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.14" />
+                        <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0.01" />
+                      </linearGradient>
+                    </defs>
+                    {/* Grid */}
                     {ticks.map((tv, i) => {
-                      const y = padT + plotH - (tv / niceMax) * plotH;
+                      const y = baseline - (tv / niceMax) * plotH;
                       return (
                         <g key={i}>
-                          <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="var(--line)" strokeDasharray={i === 0 ? undefined : '2 4'} />
-                          <text x={padL - 6} y={y + 4} textAnchor="end" fontSize="14" fill="var(--fg-3)">{compactNum(tv)}</text>
+                          <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="var(--line)" strokeWidth={0.5} strokeDasharray={i === 0 ? undefined : '3 5'} />
+                          <text x={padL - 8} y={y + 3.5} textAnchor="end" fontSize="10.5" fill="var(--ink-3)" fontFamily="var(--font-mono)">{compactNum(tv)}</text>
                         </g>
                       );
                     })}
+                    {/* Revenue area + solid line */}
+                    {revPts.length >= 2 && (
+                      <>
+                        <path d={toArea(revPts)} fill="url(#revAreaGrad)" />
+                        <path d={toLine(revPts)} fill="none" stroke="#059669" strokeWidth={2.5} strokeLinejoin="round" />
+                      </>
+                    )}
+                    {/* Profit area + dashed line */}
+                    {gpPts.length >= 2 && (
+                      <>
+                        <path d={toArea(gpPts)} fill="url(#gpAreaGrad)" />
+                        <path d={toLine(gpPts)} fill="none" stroke="#34D399" strokeWidth={2} strokeDasharray="5 4" strokeLinejoin="round" />
+                      </>
+                    )}
+                    {/* Revenue data dots */}
+                    {revPts.map(([x, y], i) => (
+                      <circle key={`r${i}`} cx={x} cy={y} r={i === revPts.length - 1 ? 4.5 : 3} fill="#059669" stroke="white" strokeWidth={2} />
+                    ))}
+                    {/* Profit data dots */}
+                    {gpPts.map(([x, y], i) => (
+                      <circle key={`g${i}`} cx={x} cy={y} r={i === gpPts.length - 1 ? 4 : 2.5} fill="#34D399" stroke="white" strokeWidth={2} />
+                    ))}
+                    {/* Current month highlight line */}
+                    {revPts.length > 0 && (() => {
+                      const lastX = revPts[revPts.length - 1][0];
+                      return <line x1={lastX} y1={padT} x2={lastX} y2={baseline} stroke="#059669" strokeOpacity={0.15} strokeWidth={1} strokeDasharray="4 3" />;
+                    })()}
+                    {/* X-axis — all 12 months */}
                     {revenueChartData.map((d, i) => {
                       const cx = padL + i * xStep + xStep / 2;
-                      const rev = d['Doanh thu'] as number;
-                      const gp = d['LN gộp'] as number;
-                      const revH = Math.max(0, (rev / niceMax) * plotH);
-                      const gpH = Math.max(0, (gp / niceMax) * plotH);
                       const isFuture = i + 1 > month;
+                      const isCurrent = i + 1 === month;
                       return (
-                        <g key={i}>
-                          {!isFuture && (
-                            <>
-                              <rect x={cx - barW - 1} y={padT + plotH - revH} width={barW} height={revH} fill="#3b82f6" rx={2} />
-                              <rect x={cx + 1} y={padT + plotH - gpH} width={barW} height={gpH} fill="#10b981" rx={2} />
-                            </>
-                          )}
-                          <text className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="13" fill={isFuture ? 'var(--line)' : 'var(--fg-3)'}>{d.name as string}</text>
-                        </g>
+                        <text key={i} className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fontFamily="var(--font-mono)" fontWeight={isCurrent ? 700 : 400} fill={isFuture ? 'var(--line)' : isCurrent ? 'var(--ink)' : 'var(--ink-3)'}>{d.name as string}</text>
                       );
                     })}
                   </svg>
@@ -345,10 +384,10 @@ export default function FinancePage() {
             {loading ? (
               <div style={{ height: 160, background: 'var(--bg-2)', borderRadius: 6 }} />
             ) : costPieData.length > 0 ? (
-              <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 20 }}>
                 {(() => {
                   const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
-                  const cx = 90, cy = 90, rOuter = 70, rInner = 42;
+                  const cx = 100, cy = 100, rOuter = 80, rInner = 50;
                   let start = -Math.PI / 2;
                   const arcs = costPieData.map((d) => {
                     const angle = (d.value / total) * Math.PI * 2;
@@ -364,16 +403,18 @@ export default function FinancePage() {
                   });
                   return (
                     <>
-                      <svg aria-hidden="true" viewBox="0 0 180 180" width={130} height={130} style={{ flexShrink: 0 }} role="img" aria-label="Cơ cấu chi phí">
-                        {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} />)}
+                      <svg aria-hidden="true" viewBox="0 0 200 200" width={150} height={150} style={{ flexShrink: 0 }} role="img" aria-label="Cơ cấu chi phí">
+                        {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} stroke="#FFFFFF" strokeWidth={2.5} />)}
+                        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="var(--ink-3)" fontFamily="var(--font-sans)">Tổng chi phí</text>
+                        <text x={cx} y={cy + 11} textAnchor="middle" fontSize="14" fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">{compactNum(total)}</text>
                       </svg>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 12, flex: '1 1 0', minWidth: 0 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, flex: '1 1 0', minWidth: 0 }}>
                         {arcs.map((a, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ width: 10, height: 10, background: a.fill, borderRadius: 2, flexShrink: 0 }} />
-                            <span style={{ flex: 1, minWidth: 0 }}>{a.name}</span>
-                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{formatNumber(a.value)}₫</span>
-                            <span style={{ color: 'var(--fg-3)', flexShrink: 0, marginLeft: 4 }}>{a.pct.toFixed(0)}%</span>
+                            <span style={{ flex: 1, minWidth: 0, color: 'var(--ink-2)' }}>{a.name}</span>
+                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--ink)' }}>{formatNumber(a.value)}₫</span>
+                            <span style={{ color: 'var(--ink-3)', flexShrink: 0, marginLeft: 4 }}>{a.pct.toFixed(0)}%</span>
                           </div>
                         ))}
                       </div>
@@ -413,25 +454,25 @@ export default function FinancePage() {
                 const minProfit = Math.min(...topTrucks.map(t => t['LN gộp']), 0);
                 const totalRange = maxProfit - minProfit;
                 const svgH = topTrucks.length * 32;
-                const plateW = 72;
-                const barTrackW = 260 - plateW;
+                const plateW = 76;
+                const barTrackW = 280 - plateW;
                 const zeroX = minProfit < 0 ? plateW + (Math.abs(minProfit) / totalRange) * barTrackW : plateW;
                 return (
-                  <svg aria-hidden="true" width="100%" height={svgH} viewBox={`0 0 260 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
+                  <svg aria-hidden="true" width="100%" height={svgH} viewBox={`0 0 280 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
                     {topTrucks.map((t, i) => {
                       const val = t['LN gộp'];
                       const isNegative = val < 0;
                       const w = Math.max(2, (Math.abs(val) / totalRange) * barTrackW);
                       const barX = isNegative ? zeroX - w : zeroX;
-                      const fill = isNegative ? 'var(--danger)' : '#3b82f6';
+                      const fill = isNegative ? 'var(--danger)' : '#059669';
                       return (
                         <g key={i} transform={`translate(0, ${i * 32})`}>
-                          <text x={0} y={15} fontSize={10.5} fill="var(--fg-2)">{t.name}</text>
-                          <rect x={barX} y={3} width={w} height={16} fill={fill} rx={3} />
+                          <text x={0} y={15} fontSize="10" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)">{t.name}</text>
+                          <rect x={barX} y={4} width={w} height={14} fill={fill} rx={3} opacity={0.85} />
                           {minProfit < 0 && (
-                            <line x1={zeroX} y1={0} x2={zeroX} y2={24} stroke="var(--border-2)" strokeWidth={1} strokeDasharray="2,2" />
+                            <line x1={zeroX} y1={0} x2={zeroX} y2={24} stroke="var(--line-2)" strokeWidth={1} strokeDasharray="2,2" />
                           )}
-                          <text x={barX + w + 4} y={15} fontSize={9.5} fill={isNegative ? 'var(--danger)' : 'var(--fg-2)'} fontWeight={isNegative ? 600 : 400}>{formatNumber(val)}₫</text>
+                          <text x={barX + w + 5} y={15} fontSize="9.5" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500}>{formatNumber(val)}₫</text>
                         </g>
                       );
                     })}

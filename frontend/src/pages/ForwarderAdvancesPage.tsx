@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Wallet, Loader2, Plus, X, User, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@tingting/shared';
 import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderAdvancesPage.css';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,7 +22,10 @@ type StatusFilter = '' | AdvanceRequestStatus;
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
-  const { rootRef } = usePageAnimations({ ready: !loading });
+  const { rootRef } = usePageAnimations({
+    ready: !loading,
+    selectors: ['.page-header', '.fadv-hero-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
+  });
   const createAdvanceRequest = useCreateAdvanceRequest();
   const requests = (data?.items ?? []) as AdvanceRequestWithRefs[];
   const counts = data?.counts ?? {};
@@ -35,6 +39,23 @@ export default function ForwarderAdvancesPage() {
 
   const error = queryError ? 'Không thể tải danh sách yêu cầu tạm ứng' : null;
   const totalRequests = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
+  const totalAmount = requests.reduce((sum, r) => sum + Number(r.amount), 0);
+  const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+
+  const prefersReduced = usePrefersReducedMotion();
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
+  const heroAmountRef = useRef<HTMLSpanElement>(null);
+  const heroTotalRef = useRef<HTMLSpanElement>(null);
+  const heroPendingRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (loading || totalRequests === 0 || prefersReduced) return;
+    animateCounters([
+      { el: heroAmountRef.current!, value: totalAmount, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
+      { el: heroTotalRef.current!, value: totalRequests, suffix: ' yêu cầu' },
+      { el: heroPendingRef.current!, value: pendingCount, suffix: ' chờ duyệt' },
+    ].filter(c => c.el));
+  }, [loading, totalRequests, totalAmount, pendingCount, animateCounters, prefersReduced]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,7 +97,7 @@ export default function ForwarderAdvancesPage() {
     <div ref={rootRef} className="fadv-page">
       <PageHeader
         title="Tạm ứng"
-        description={`${totalRequests} yêu cầu tạm ứng`}
+        description="Yêu cầu tạm ứng và theo dõi trạng thái"
         action={
           !showForm ? (
             <button className="btn btn--primary" onClick={() => setShowForm(true)}>
@@ -85,6 +106,34 @@ export default function ForwarderAdvancesPage() {
           ) : undefined
         }
       />
+
+      {/* Hero KPI row */}
+      {totalRequests > 0 && (
+        <div className="fadv-hero-row">
+          <div className="fadv-hero">
+            <span className="fadv-hero__eyebrow">Tổng tạm ứng</span>
+            <span className="fadv-hero__amount" ref={heroAmountRef}>0 ₫</span>
+            <span className="fadv-hero__subtitle">{totalRequests} yêu cầu tạm ứng</span>
+            <Wallet size={72} className="fadv-hero__watermark" aria-hidden />
+          </div>
+          <div className="fadv-kpi-stack">
+            <div className="fadv-kpi-mini fadv-kpi-mini--accent">
+              <div className="fadv-kpi-mini__icon"><Wallet size={16} /></div>
+              <div className="fadv-kpi-mini__body">
+                <span className="fadv-kpi-mini__value" ref={heroTotalRef}>0</span>
+                <span className="fadv-kpi-mini__label">yêu cầu</span>
+              </div>
+            </div>
+            <div className="fadv-kpi-mini fadv-kpi-mini--warn">
+              <div className="fadv-kpi-mini__icon"><Clock size={16} /></div>
+              <div className="fadv-kpi-mini__body">
+                <span className="fadv-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="fadv-kpi-mini__label">chờ duyệt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create form */}
       {showForm && (
@@ -145,48 +194,32 @@ export default function ForwarderAdvancesPage() {
         </div>
       )}
 
-      {/* Filter pills + legend */}
+      {/* Filter pills */}
       {totalRequests > 0 && (
-        <>
-          <div className="fwd-filter-pills">
-            <button
-              className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
-              onClick={() => setActiveFilter('')}
-            >
-              Tất cả
-              <span className="fwd-filter-pill__count">{totalRequests}</span>
-            </button>
-            {(Object.entries(ADVANCE_REQUEST_STATUS_LABELS) as [AdvanceRequestStatus, string][]).map(([status, label]) => {
-              const count = counts[status] ?? 0;
-              if (count === 0) return null;
-              return (
-                <button
-                  key={status}
-                  className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
-                  onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
-                >
-                  <span className="fwd-filter-pill__dot" style={{ background: STATUS_COLORS[status] }} />
-                  {label}
-                  <span className="fwd-filter-pill__count">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Strip color legend */}
-          <div className="fadv-legend">
-            {(Object.entries(ADVANCE_REQUEST_STATUS_LABELS) as [AdvanceRequestStatus, string][]).map(([status, label]) => {
-              const count = counts[status] ?? 0;
-              if (count === 0) return null;
-              return (
-                <span key={status} className="fadv-legend__item">
-                  <span className="fadv-legend__dot" style={{ background: STATUS_COLORS[status] }} />
-                  {label}
-                </span>
-              );
-            })}
-          </div>
-        </>
+        <div className="fwd-filter-pills">
+          <button
+            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            onClick={() => setActiveFilter('')}
+          >
+            Tất cả
+            <span className="fwd-filter-pill__count">{totalRequests}</span>
+          </button>
+          {(Object.entries(ADVANCE_REQUEST_STATUS_LABELS) as [AdvanceRequestStatus, string][]).map(([status, label]) => {
+            const count = counts[status] ?? 0;
+            if (count === 0) return null;
+            return (
+              <button
+                key={status}
+                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
+              >
+                <span className="fwd-filter-pill__dot" style={{ background: STATUS_COLORS[status] }} />
+                {label}
+                <span className="fwd-filter-pill__count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {/* Empty state */}
@@ -217,6 +250,7 @@ export default function ForwarderAdvancesPage() {
               <StatusStrip color={STATUS_COLORS[req.status] || '#999'} />
 
               <div className="fadv-card-trip__body">
+                <div className="fadv-card-trip__icon"><Wallet size={16} /></div>
                 <div className="fadv-card-trip__main">
                   <div className="fadv-card-trip__head">
                     <span className="fadv-card-trip__amount">

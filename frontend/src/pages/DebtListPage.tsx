@@ -1,14 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, formatCompact } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import { Search, ChevronRight, Users, Wallet, AlertCircle } from 'lucide-react';
-import { KPI, PageHeader, Card } from '../components/UI';
+import { Search, ChevronRight, Wallet, AlertTriangle, AlertCircle, Users, Clock } from 'lucide-react';
+import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './DebtListPage.css';
 
 interface CustomerDebtInfo {
@@ -32,13 +34,30 @@ interface CustomerDebtInfo {
 function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], maxOverdueDays: number): 'high' | 'med' | 'low' {
   if (totalOutstanding <= 0) return 'low';
   if (aging.over90 > 0 || totalOutstanding > 100_000_000) return 'high';
-  // Use aging buckets (not maxOverdueDays) to avoid float-vs-floor mismatch:
-  // computeFifoAging uses raw float ageDays (30.5 → d30), but maxOverdueDays
-  // uses Math.floor (30.5 → 30). Checking the bucket amounts directly ensures
-  // the risk dot is consistent with the aging bar shown in the UI.
   if (aging.d30 > 0 || aging.d60 > 0) return 'med';
   return 'low';
 }
+
+/* ─── Aging bucket config ────────────────────────────────────────────────── */
+
+interface AgingBucket {
+  key: string;
+  label: string;
+  amountKey: 'current' | 'd30' | 'd60' | 'over90';
+  countKey: 'currentCusts' | 'd30Custs' | 'd60Custs' | 'over90Custs';
+  dotClass: string;
+  color: string;
+  filterMode: 'all' | 'overdue' | 'high-risk';
+}
+
+const AGING_BUCKETS: AgingBucket[] = [
+  { key: 'current', label: '0–30 NGÀY', amountKey: 'current', countKey: 'currentCusts', dotClass: 'debt-aging__dot--ok', color: '#00B14F', filterMode: 'all' },
+  { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: '#F5A623', filterMode: 'overdue' },
+  { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'overdue' },
+  { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'high-risk' },
+];
+
+/* ─── Component ──────────────────────────────────────────────────────────── */
 
 export default function DebtListPage() {
   const navigate = useNavigate();
@@ -51,8 +70,35 @@ export default function DebtListPage() {
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
   const { toast: showToast } = useToast();
-  const { rootRef } = usePageAnimations({ ready: !loading });
 
+  /* ── Animation hooks ── */
+  const prefersReduced = usePrefersReducedMotion();
+  const { rootRef } = usePageAnimations({
+    ready: !loading,
+    selectors: ['.debt-hero', '.debt-kpi-mini', '.debt-aging-card', '.debt-data-card'],
+  });
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 80 });
+
+  /* ── Counter refs ── */
+  const counterRefs = useRef<{
+    heroTotal: HTMLSpanElement | null;
+    overdueCount: HTMLSpanElement | null;
+    highRiskCount: HTMLSpanElement | null;
+    currentAmount: HTMLSpanElement | null;
+    d30Amount: HTMLSpanElement | null;
+    d60Amount: HTMLSpanElement | null;
+    over90Amount: HTMLSpanElement | null;
+  }>({
+    heroTotal: null,
+    overdueCount: null,
+    highRiskCount: null,
+    currentAmount: null,
+    d30Amount: null,
+    d60Amount: null,
+    over90Amount: null,
+  });
+
+  /* ── Data processing (preserved exactly) ── */
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     return rawCustomers.map(c => ({
       customerId: c.customerId,
@@ -86,29 +132,12 @@ export default function DebtListPage() {
     customerDebts.forEach(d => {
       if (d.totalOutstanding > 0) {
         sum.total += d.totalOutstanding;
-        if (d.aging.current > 0) {
-          sum.current += d.aging.current;
-          sum.currentCusts++;
-        }
-        if (d.aging.d30 > 0) {
-          sum.d30 += d.aging.d30;
-          sum.d30Custs++;
-        }
-        if (d.aging.d60 > 0) {
-          sum.d60 += d.aging.d60;
-          sum.d60Custs++;
-        }
-        if (d.aging.over90 > 0) {
-          sum.over90 += d.aging.over90;
-          sum.over90Custs++;
-        }
-
-        if (d.maxOverdueDays > 30) {
-          sum.overdueCount++;
-        }
-        if (d.riskClass === 'high') {
-          sum.highRiskCount++;
-        }
+        if (d.aging.current > 0) { sum.current += d.aging.current; sum.currentCusts++; }
+        if (d.aging.d30 > 0) { sum.d30 += d.aging.d30; sum.d30Custs++; }
+        if (d.aging.d60 > 0) { sum.d60 += d.aging.d60; sum.d60Custs++; }
+        if (d.aging.over90 > 0) { sum.over90 += d.aging.over90; sum.over90Custs++; }
+        if (d.maxOverdueDays > 30) { sum.overdueCount++; }
+        if (d.riskClass === 'high') { sum.highRiskCount++; }
       }
     });
 
@@ -117,25 +146,44 @@ export default function DebtListPage() {
 
   const filteredDebts = useMemo(() => {
     let result = customerDebts;
-
     if (filterMode === 'overdue') {
       result = result.filter(d => d.maxOverdueDays > 30 && d.totalOutstanding > 0);
     } else if (filterMode === 'high-risk') {
       result = result.filter(d => d.riskClass === 'high' && d.totalOutstanding > 0);
     }
-
-    // Search is server-side now (name/contactInfo/container) — no further client filter needed.
-
     return result;
   }, [customerDebts, filterMode]);
 
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.m-card, table tbody tr', deps: [filteredDebts] });
 
+  /* ── Counter animation trigger ── */
+  useEffect(() => {
+    if (loading || prefersReduced) return;
+
+    const r = counterRefs.current;
+    animateCounters([
+      { el: r.heroTotal, value: totals.total, format: (v) => formatCompact(v) },
+      { el: r.overdueCount, value: totals.overdueCount, suffix: '' },
+      { el: r.highRiskCount, value: totals.highRiskCount, suffix: '' },
+      { el: r.currentAmount, value: totals.current, format: (v) => formatCompact(v) },
+      { el: r.d30Amount, value: totals.d30, format: (v) => formatCompact(v) },
+      { el: r.d60Amount, value: totals.d60, format: (v) => formatCompact(v) },
+      { el: r.over90Amount, value: totals.over90, format: (v) => formatCompact(v) },
+    ].filter((c): c is { el: HTMLElement; value: number; format?: (val: number) => string; suffix?: string } => c.el !== null));
+  }, [loading, totals, prefersReduced, animateCounters]);
+
+  /* ── Helpers ── */
+  const agingTotal = totals.current + totals.d30 + totals.d60 + totals.over90;
+
+  const handleBucketClick = (bucket: AgingBucket) => {
+    setFilterMode(bucket.filterMode);
+  };
+
   return (
     <div ref={rootRef} className="debt-list-page">
       <PageHeader
         title="Công nợ phải thu"
-        description={`Tổng nợ: ${formatCurrency(totals.total)} • ${rawCustomers.length} khách hàng • cập nhật vừa xong`}
+        description={`${rawCustomers.length} khách hàng · cập nhật vừa xong`}
         action={
           <div className="page-actions">
             <button className="btn btn--secondary btn--sm" onClick={() => {
@@ -158,260 +206,355 @@ export default function DebtListPage() {
         }
       />
 
-      {/* Aging buckets matching the wireframe */}
-      <div className="aging-buckets">
-        <div className="bucket" onClick={() => setFilterMode('all')} style={{ borderColor: filterMode === 'all' ? 'var(--brand)' : undefined }}>
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--ok"></span>0–30 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.current)} ₫</div>
-          <div className="bucket__count">{totals.currentCusts} khách hàng</div>
+      {/* ══════════════════════════════════════════════════════════════════════
+        *  ZONE 1 — Hero KPI Row (bento: 3-col hero + 1-col stacked minis)
+        * ══════════════════════════════════════════════════════════════════════ */}
+      <div className="debt-hero-row">
+        {/* Hero card — spans 3 columns */}
+        <div className="debt-hero">
+          <div className="debt-hero__content">
+            <span className="debt-hero__eyebrow">Tổng công nợ phải thu</span>
+            <div className="debt-hero__amount">
+              <span ref={(el) => { counterRefs.current.heroTotal = el; }}>
+                {formatCompact(totals.total)}
+              </span>
+              <span className="debt-hero__currency">₫</span>
+            </div>
+            <span className="debt-hero__subtitle">
+              {rawCustomers.length} khách hàng · cập nhật vừa xong
+            </span>
+          </div>
+          <div className="debt-hero__watermark" aria-hidden="true">
+            <Wallet size={72} strokeWidth={1} />
+          </div>
         </div>
-        <div className="bucket" onClick={() => setFilterMode('overdue')} style={{ borderColor: filterMode === 'overdue' ? 'var(--brand)' : undefined }}>
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t1"></span>31–60 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.d30)} ₫</div>
-          <div className="bucket__count">{totals.d30Custs} khách hàng</div>
-        </div>
-        <div className="bucket" onClick={() => setFilterMode('overdue')} style={{ borderColor: filterMode === 'overdue' ? 'var(--brand)' : undefined }}>
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t2"></span>61–90 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.d60)} ₫</div>
-          <div className="bucket__count">{totals.d60Custs} khách hàng</div>
-        </div>
-        <div className="bucket" onClick={() => setFilterMode('high-risk')} style={{ borderColor: filterMode === 'high-risk' ? 'var(--brand)' : undefined }}>
-          <div className="bucket__label"><span className="bucket__dot bucket__dot--t4"></span>Trên 90 ngày</div>
-          <div className="bucket__value">{formatCompact(totals.over90)} ₫</div>
-          <div className="bucket__count">{totals.over90Custs} khách hàng</div>
+
+        {/* Stacked mini-KPI cards — span 1 column */}
+        <div className="debt-kpi-stack">
+          <div className="debt-kpi-mini debt-kpi-mini--danger">
+            <div className="debt-kpi-mini__icon">
+              <AlertTriangle size={16} />
+            </div>
+            <div className="debt-kpi-mini__body">
+              <span className="debt-kpi-mini__value">
+                <span ref={(el) => { counterRefs.current.overdueCount = el; }}>
+                  {totals.overdueCount}
+                </span>
+              </span>
+              <span className="debt-kpi-mini__label">quá hạn</span>
+            </div>
+          </div>
+          <div className="debt-kpi-mini debt-kpi-mini--warning">
+            <div className="debt-kpi-mini__icon">
+              <AlertCircle size={16} />
+            </div>
+            <div className="debt-kpi-mini__body">
+              <span className="debt-kpi-mini__value">
+                <span ref={(el) => { counterRefs.current.highRiskCount = el; }}>
+                  {totals.highRiskCount}
+                </span>
+              </span>
+              <span className="debt-kpi-mini__label">rủi ro cao</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filter toolbar matching the wireframe */}
-      <div className="filter-bar">
-        <button
-          className={`filter-tab${filterMode === 'all' ? ' is-active' : ''}`}
-          onClick={() => setFilterMode('all')}
-        >
-          Tất cả <strong>· {customerDebts.length}</strong>
-        </button>
-        <button
-          className={`filter-tab${filterMode === 'overdue' ? ' is-active' : ''}`}
-          onClick={() => setFilterMode('overdue')}
-        >
-          Quá hạn <strong style={{ color: filterMode === 'overdue' ? '#fff' : 'var(--danger)' }}>· {totals.overdueCount}</strong>
-        </button>
-        <button
-          className={`filter-tab${filterMode === 'high-risk' ? ' is-active' : ''}`}
-          onClick={() => setFilterMode('high-risk')}
-        >
-          Rủi ro cao <strong style={{ color: filterMode === 'high-risk' ? '#fff' : 'var(--warning)' }}>· {totals.highRiskCount}</strong>
-        </button>
-        <div className="filter-bar__spacer" />
-        <div className="filter-bar__search">
-          <Search size={14} />
-          <input
-            type="text"
-            placeholder="Tìm khách hàng…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
+      {/* ══════════════════════════════════════════════════════════════════════
+        *  ZONE 2 — Aging Distribution (4 equal glass cards)
+        * ══════════════════════════════════════════════════════════════════════ */}
+      <div className="debt-aging-grid">
+        {AGING_BUCKETS.map((bucket) => {
+          const amount = totals[bucket.amountKey];
+          const count = totals[bucket.countKey];
+          const pct = agingTotal > 0 ? (amount / agingTotal) * 100 : 0;
+          const isActive =
+            (bucket.filterMode === 'all' && filterMode === 'all') ||
+            (bucket.filterMode === 'overdue' && filterMode === 'overdue' && (bucket.amountKey === 'd30' || bucket.amountKey === 'd60')) ||
+            (bucket.filterMode === 'high-risk' && filterMode === 'high-risk');
 
-      {error && (
-        <div className="panel" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
-          Đang tải dữ liệu công nợ...
-        </div>
-      ) : (
-        <>
-        {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
-        <div className="mobile-only mobile-table-wrap" ref={listRef}>
-          <div className="m-card-list">
-            {filteredDebts.length === 0 ? (
-              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img src="/assets/illustrations/empty-debts.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                Không tìm thấy dữ liệu.
+          return (
+            <button
+              key={bucket.key}
+              type="button"
+              className={`debt-aging-card${isActive ? ' is-active' : ''}`}
+              onClick={() => handleBucketClick(bucket)}
+              style={{ '--bucket-color': bucket.color } as React.CSSProperties}
+              aria-label={`${bucket.label}: ${formatCompact(amount)} ₫, ${count} khách hàng`}
+            >
+              <div className="debt-aging-card__header">
+                <span className={`debt-aging__dot ${bucket.dotClass}`} />
+                <span className="debt-aging-card__label">{bucket.label}</span>
               </div>
-            ) : (
-              filteredDebts.map(d => {
-                const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
-                const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
-                const pct30     = totalAging > 0 ? (d.aging.d30    / totalAging) * 100 : 0;
-                const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
-                const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
-                return (
-                  <ClickableCard key={d.customerId} to={`/debt/${d.customerId}`} className="m-card">
-                    <div className="m-card__top">
-                      <span className="m-card__title">
-                        <span className={`risk-dot risk-dot--${d.riskClass}`} />
-                        {d.customerName}
-                        {d.linkedSupplierId != null && (
-                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
-                            2 chiều
-                          </span>
-                        )}
-                      </span>
-                      <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value debt-list-page__amount`}>
-                        {formatCurrency(d.totalOutstanding)}
-                      </span>
-                    </div>
-                    {d.totalOutstanding > 0 && (
-                      <>
-                        {d.contactInfo && (
-                          <div className="m-card__meta">{d.contactInfo}</div>
-                        )}
-                        <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
-                          <div className="aging-bar__seg aging-bar__seg--ok"  style={{ width: `${pctCurrent}%` }} />
-                          <div className="aging-bar__seg aging-bar__seg--t1"  style={{ width: `${pct30}%` }} />
-                          <div className="aging-bar__seg aging-bar__seg--t2"  style={{ width: `${pct60}%` }} />
-                          <div className="aging-bar__seg aging-bar__seg--t4"  style={{ width: `${pct90}%` }} />
-                        </div>
-                        {d.maxOverdueDays > 0 && (
-                          <div className="m-card__row">
-                            <span className="m-card__row-label">Quá hạn lớn nhất</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
-                              {d.maxOverdueDays} ngày
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </ClickableCard>
-                );
-              })
-            )}
+              <div className="debt-aging-card__amount">
+                <span ref={(el) => {
+                  if (bucket.amountKey === 'current') counterRefs.current.currentAmount = el;
+                  else if (bucket.amountKey === 'd30') counterRefs.current.d30Amount = el;
+                  else if (bucket.amountKey === 'd60') counterRefs.current.d60Amount = el;
+                  else if (bucket.amountKey === 'over90') counterRefs.current.over90Amount = el;
+                }}>
+                  {formatCompact(amount)}
+                </span>
+                <span className="debt-aging-card__unit">₫</span>
+              </div>
+              <div className="debt-aging-card__count">{count} khách hàng</div>
+              <div className="debt-aging-card__bar-track">
+                <div
+                  className="debt-aging-card__bar-fill"
+                  style={{ width: `${Math.max(pct, 2)}%`, background: bucket.color }}
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+        *  ZONE 3 — Data Section (full-width card with filters + table/cards)
+        * ══════════════════════════════════════════════════════════════════════ */}
+      <div className="debt-data-card">
+        {/* Filter pill bar */}
+        <div className="debt-filter-bar">
+          <div className="debt-filter-pills">
+            <button
+              type="button"
+              className={`filter-pill${filterMode === 'all' ? ' is-active' : ''}`}
+              onClick={() => setFilterMode('all')}
+            >
+              <Users size={14} />
+              <span>Tất cả</span>
+              <span className="filter-pill__count">{customerDebts.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`filter-pill${filterMode === 'overdue' ? ' is-active' : ''}`}
+              onClick={() => setFilterMode('overdue')}
+            >
+              <Clock size={14} />
+              <span>Quá hạn</span>
+              <span className="filter-pill__count">{totals.overdueCount}</span>
+            </button>
+            <button
+              type="button"
+              className={`filter-pill${filterMode === 'high-risk' ? ' is-active' : ''}`}
+              onClick={() => setFilterMode('high-risk')}
+            >
+              <AlertTriangle size={14} />
+              <span>Rủi ro cao</span>
+              <span className="filter-pill__count">{totals.highRiskCount}</span>
+            </button>
+          </div>
+          <div className="debt-filter-spacer" />
+          <div className="debt-filter-search">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Tìm khách hàng..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
-        <div className="desktop-only table-wrap">
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Khách hàng</th>
-                  <th className="num">Tổng nợ</th>
-                  <th className="num">Net công nợ</th>
-                  <th>Thông tin liên hệ</th>
-                  <th>Phân bổ tuổi nợ</th>
-                  <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
-                  <th style={{ width: 48 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDebts.map(d => {
-                  const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
-                  const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
-                  const pct30 = totalAging > 0 ? (d.aging.d30 / totalAging) * 100 : 0;
-                  const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
-                  const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
+        {error && (
+          <div style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
+            {error}
+          </div>
+        )}
 
-                  return (
-                    <tr
-                      key={d.customerId}
-                      role="button"
-                      tabIndex={0}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/debt/${d.customerId}`)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          navigate(`/debt/${d.customerId}`);
-                        }
-                      }}
-                    >
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--fg-1)' }}>
-                          <span className={`risk-dot risk-dot--${d.riskClass}`} />
-                          {d.customerName}
-                          {d.linkedSupplierId != null && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
-                              2 chiều
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
-                          {d.totalOutstanding > 0
-                            ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
-                            : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
-                        </div>
-                      </td>
-
-                      <td className="num typo-mono" style={{
-                        fontWeight: 700,
-                        color: d.totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)'
-                      }}>
-                        {formatCurrency(d.totalOutstanding)}
-                      </td>
-
-                      <td className="num typo-mono" style={{
-                        fontWeight: 600,
-                        color: d.linkedSupplierId == null
-                          ? 'var(--fg-3)'
-                          : (d.netBalance > 0 ? 'var(--danger)' : d.netBalance < 0 ? 'var(--success)' : 'var(--fg-3)')
-                      }}>
-                        {d.linkedSupplierId == null
-                          ? <span style={{ color: 'var(--fg-3)' }}>—</span>
-                          : formatCurrency(d.netBalance)}
-                      </td>
-
-                      <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
-                        {d.contactInfo || <span style={{ color: 'var(--fg-3)' }}>—</span>}
-                      </td>
-
-                      <td style={{ verticalAlign: 'middle' }}>
-                        {d.totalOutstanding > 0 ? (
-                          <div
-                            className="aging-bar"
-                            title={`Trong hạn: ${Math.round(pctCurrent)}% | 31-60 ngày: ${Math.round(pct30)}% | 61-90 ngày: ${Math.round(pct60)}% | Trên 90 ngày: ${Math.round(pct90)}%`}
-                          >
-                            <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: `${pctCurrent}%` }} />
-                            <div className="aging-bar__seg aging-bar__seg--t1" style={{ width: `${pct30}%` }} />
-                            <div className="aging-bar__seg aging-bar__seg--t2" style={{ width: `${pct60}%` }} />
-                            <div className="aging-bar__seg aging-bar__seg--t4" style={{ width: `${pct90}%` }} />
-                          </div>
-                        ) : (
-                          <div className="aging-bar" title="Không có công nợ">
-                            <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: '100%' }} />
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="num" style={{ textAlign: 'center', fontWeight: 600 }}>
-                        {d.maxOverdueDays > 0 ? (
-                          <span style={{ color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
-                            {d.maxOverdueDays} ngày
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-3)' }}>
+            Đang tải dữ liệu công nợ...
+          </div>
+        ) : (
+          <>
+            {/* ── Mobile card list (<=640px) ── */}
+            <div className="mobile-only mobile-table-wrap" ref={listRef}>
+              <div className="m-card-list">
+                {filteredDebts.length === 0 ? (
+                  <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <img src="/assets/illustrations/empty-debts.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    Không tìm thấy dữ liệu.
+                  </div>
+                ) : (
+                  filteredDebts.map(d => {
+                    const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
+                    const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
+                    const pct30     = totalAging > 0 ? (d.aging.d30    / totalAging) * 100 : 0;
+                    const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
+                    const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
+                    return (
+                      <ClickableCard key={d.customerId} to={`/debt/${d.customerId}`} className="m-card">
+                        <div className="m-card__top">
+                          <span className="m-card__title">
+                            <span className={`risk-dot risk-dot--${d.riskClass}`} />
+                            {d.customerName}
+                            {d.linkedSupplierId != null && (
+                              <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                                2 chiều
+                              </span>
+                            )}
                           </span>
-                        ) : (
-                          <span style={{ color: 'var(--fg-3)' }}>—</span>
+                          <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value debt-list-page__amount`}>
+                            {formatCurrency(d.totalOutstanding)}
+                          </span>
+                        </div>
+                        {d.totalOutstanding > 0 && (
+                          <>
+                            {d.contactInfo && (
+                              <div className="m-card__meta">{d.contactInfo}</div>
+                            )}
+                            <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
+                              <div className="aging-bar__seg aging-bar__seg--ok"  style={{ width: `${pctCurrent}%` }} />
+                              <div className="aging-bar__seg aging-bar__seg--t1"  style={{ width: `${pct30}%` }} />
+                              <div className="aging-bar__seg aging-bar__seg--t2"  style={{ width: `${pct60}%` }} />
+                              <div className="aging-bar__seg aging-bar__seg--t4"  style={{ width: `${pct90}%` }} />
+                            </div>
+                            {d.maxOverdueDays > 0 && (
+                              <div className="m-card__row">
+                                <span className="m-card__row-label">Quá hạn lớn nhất</span>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
+                                  {d.maxOverdueDays} ngày
+                                </span>
+                              </div>
+                            )}
+                          </>
                         )}
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {filteredDebts.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                        <img src="/assets/illustrations/empty-debts.svg" alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
-                      </div>
-                    </td>
-                  </tr>
+                      </ClickableCard>
+                    );
+                  })
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        </>
-      )}
+              </div>
+            </div>
+
+            {/* ── Desktop table (>640px) ── */}
+            <div className="desktop-only table-wrap">
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Khách hàng</th>
+                      <th className="num">Tổng nợ</th>
+                      <th className="num">Net công nợ</th>
+                      <th>Thông tin liên hệ</th>
+                      <th>Phân bổ tuổi nợ</th>
+                      <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
+                      <th style={{ width: 48 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDebts.map(d => {
+                      const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
+                      const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
+                      const pct30 = totalAging > 0 ? (d.aging.d30 / totalAging) * 100 : 0;
+                      const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
+                      const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
+
+                      return (
+                        <tr
+                          key={d.customerId}
+                          role="button"
+                          tabIndex={0}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/debt/${d.customerId}`)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              navigate(`/debt/${d.customerId}`);
+                            }
+                          }}
+                        >
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--fg-1)' }}>
+                              <span className={`risk-dot risk-dot--${d.riskClass}`} />
+                              {d.customerName}
+                              {d.linkedSupplierId != null && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
+                                  2 chiều
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
+                              {d.totalOutstanding > 0
+                                ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
+                                : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
+                            </div>
+                          </td>
+
+                          <td className="num typo-mono" style={{
+                            fontWeight: 700,
+                            color: d.totalOutstanding > 0 ? 'var(--danger)' : 'var(--success)'
+                          }}>
+                            {formatCurrency(d.totalOutstanding)}
+                          </td>
+
+                          <td className="num typo-mono" style={{
+                            fontWeight: 600,
+                            color: d.linkedSupplierId == null
+                              ? 'var(--fg-3)'
+                              : (d.netBalance > 0 ? 'var(--danger)' : d.netBalance < 0 ? 'var(--success)' : 'var(--fg-3)')
+                          }}>
+                            {d.linkedSupplierId == null
+                              ? <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>
+                              : formatCurrency(d.netBalance)}
+                          </td>
+
+                          <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
+                            {d.contactInfo || <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>}
+                          </td>
+
+                          <td style={{ verticalAlign: 'middle' }}>
+                            {d.totalOutstanding > 0 ? (
+                              <div
+                                className="aging-bar"
+                                title={`Trong hạn: ${Math.round(pctCurrent)}% | 31-60 ngày: ${Math.round(pct30)}% | 61-90 ngày: ${Math.round(pct60)}% | Trên 90 ngày: ${Math.round(pct90)}%`}
+                              >
+                                <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: `${pctCurrent}%` }} />
+                                <div className="aging-bar__seg aging-bar__seg--t1" style={{ width: `${pct30}%` }} />
+                                <div className="aging-bar__seg aging-bar__seg--t2" style={{ width: `${pct60}%` }} />
+                                <div className="aging-bar__seg aging-bar__seg--t4" style={{ width: `${pct90}%` }} />
+                              </div>
+                            ) : (
+                              <div className="aging-bar" title="Không có công nợ">
+                                <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: '100%' }} />
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="num" style={{ textAlign: 'center', fontWeight: 600 }}>
+                            {d.maxOverdueDays > 0 ? (
+                              <span style={{ color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
+                                {d.maxOverdueDays} ngày
+                              </span>
+                            ) : (
+                              <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>
+                            )}
+                          </td>
+
+                          <td style={{ textAlign: 'right' }}>
+                            <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredDebts.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                            <img src="/assets/illustrations/empty-debts.svg" alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -8,19 +8,23 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion';
  * Uses anime.js v4 createScope for automatic cleanup.
  * Respects prefers-reduced-motion (instant state changes only).
  */
-export function useBottomNavAnimations() {
+export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {}) {
   const rootRef = useRef<HTMLElement>(null);
   const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
+  const hasAnimated = useRef(false);
   const prefersReduced = usePrefersReducedMotion();
 
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root || !ready || hasAnimated.current) return;
+
+    const items = root.querySelectorAll<HTMLButtonElement>('.bottom-nav-item');
+    if (items.length === 0) return;
+
+    hasAnimated.current = true;
 
     const scope = createScope({ root }).add((self) => {
       if (!self) return;
-      const items = root.querySelectorAll<HTMLButtonElement>('.bottom-nav-item');
-      if (items.length === 0) return;
 
       // Active indicator spring entrance
       const activeItem = root.querySelector<HTMLButtonElement>(
@@ -88,7 +92,7 @@ export function useBottomNavAnimations() {
       scope.revert();
       scopeRef.current = null;
     };
-  }, [prefersReduced]);
+  }, [prefersReduced, ready]);
 
   return rootRef;
 }

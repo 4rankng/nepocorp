@@ -1,0 +1,218 @@
+/* ============================================================================
+ * ForwarderTripsPage (.ftrip-page)
+ * Vantai design system: hero KPI row, glassmorphism cards, status strips.
+ * ========================================================================== */
+
+/* ── Hero KPI Row ────────────────────────────────────────────────────────── */
+.ftrip-hero-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ftrip-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #005A2D, #00813F);
+  color: #fff;
+  border-radius: var(--r-lg, 18px);
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 148px;
+  box-shadow: 0 2px 8px rgba(0, 90, 45, 0.15);
+}
+
+.ftrip-hero__eyebrow {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.ftrip-hero__amount {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.ftrip-hero__subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.ftrip-hero__watermark {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* ── Mini-KPI stack ──────────────────────────────────────────────────────── */
+.ftrip-kpi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ftrip-kpi-mini {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--r-lg, 18px);
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+  transition: transform 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.ftrip-kpi-mini:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
+}
+
+.ftrip-kpi-mini__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ftrip-kpi-mini--accent .ftrip-kpi-mini__icon {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
+}
+
+.ftrip-kpi-mini__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ftrip-kpi-mini__value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink, #0A0A0A);
+}
+
+.ftrip-kpi-mini__label {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 500;
+  color: var(--ink-3, #8B919B);
+  margin-top: 2px;
+}
+
+/* ── Trip cards ──────────────────────────────────────────────────────────── */
+.ftrip-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: border-color var(--t-normal, 180ms ease),
+              box-shadow var(--t-normal, 180ms ease),
+              transform var(--t-normal, 180ms ease);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+}
+
+.ftrip-card:hover {
+  border-color: var(--line-2);
+  box-shadow: 0 4px 16px -4px rgba(9, 9, 11, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Icon tile */
+.ftrip-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background var(--t-fast, 120ms ease), color var(--t-fast, 120ms ease);
+}
+
+.ftrip-card:hover .ftrip-card__icon {
+  background: var(--accent, #00B14F);
+  color: var(--fg-on-brand);
+}
+
+/* Arrow slide on hover */
+.ftrip-card:hover .driver-trip-card__arrow {
+  color: var(--accent, #00B14F);
+  transform: translateX(2px);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .ftrip-hero-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ftrip-hero {
+    padding: 22px 20px 20px;
+    min-height: 120px;
+  }
+
+  .ftrip-kpi-stack {
+    flex-direction: row;
+  }
+
+  .ftrip-kpi-mini {
+    padding: 12px 14px;
+    border-radius: var(--r, 12px);
+  }
+
+  .ftrip-kpi-mini__value {
+    font-size: 18px;
+  }
+
+  .driver-trip-card__body {
+    padding: 14px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .ftrip-card__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .driver-trip-card__arrow {
+    display: none;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ftrip-card { transition: none; }
+  .ftrip-kpi-mini { transition: none; }
+}

@@ -1,18 +1,18 @@
 import { useRef, useEffect } from 'react';
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
-import { PageHeader, Panel, KPI } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import type { CounterTarget } from '../hooks/animations';
+import './DriverEarningsPage.css';
 
 interface EarningsSummary {
   baseSalary: string;
   tripIncome: string;
   penalties: string;
   netIncome: string;
-  // Optional fields from attendance system (when available)
   adjustment?: number;
   supplementPay?: number;
   leaveDeduction?: number;
@@ -42,27 +42,43 @@ export default function DriverEarningsPage() {
   const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
   const heroValueRef = useRef<HTMLSpanElement>(null);
+  const kpiRefs = useRef<{
+    baseSalary: HTMLSpanElement | null;
+    adjustment: HTMLSpanElement | null;
+    penalties: HTMLSpanElement | null;
+  }>({ baseSalary: null, adjustment: null, penalties: null });
   const { animateCounters } = useCounterAnimation({ delay: 100 });
 
   useEffect(() => {
-    if (!earnings || !heroValueRef.current) return;
-    const net = parseFloat(earnings.netIncome);
-    animateCounters([
-      { el: heroValueRef.current, value: Math.abs(net), prefix: net < 0 ? '-' : '' },
-    ]);
+    if (!earnings) return;
+    const targets: CounterTarget[] = [];
+    const salaryNum = parseFloat(earnings.baseSalary);
+    const penaltyNum = parseFloat(earnings.penalties);
+
+    if (heroValueRef.current) {
+      const net = parseFloat(earnings.netIncome);
+      targets.push({ el: heroValueRef.current, value: Math.abs(net), prefix: net < 0 ? '-' : '' });
+    }
+    if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum });
+    if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum });
+    if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
+      targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-' });
+    }
+    if (targets.length > 0) animateCounters(targets);
   }, [earnings, animateCounters]);
 
   if (loading) return (
-    <Panel>
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải dữ liệu thu nhập…</p>
+    <div className="driver-earnings-page">
+      <PageHeader title="Thu nhập" description="Tổng hợp thu nhập và khấu trừ" />
+      <div className="earnings-loading">
+        <Loader2 size={20} className="spin" />
+        <p>Đang tải dữ liệu thu nhập…</p>
       </div>
-    </Panel>
+    </div>
   );
 
   if (error) return (
-    <div>
+    <div className="driver-earnings-page">
       <PageHeader title="Thu nhập" description="Tổng hợp thu nhập và khấu trừ" />
       <div className="empty-state">
         <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
@@ -79,119 +95,119 @@ export default function DriverEarningsPage() {
   const netNum = parseFloat(earnings.netIncome);
   const isPositive = netNum >= 0;
   const salaryNum = parseFloat(earnings.baseSalary);
-  const tripIncomeNum = parseFloat(earnings.tripIncome);
   const penaltyNum = parseFloat(earnings.penalties);
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="driver-earnings-page">
       <PageHeader
         title="Thu nhập"
         description="Tổng hợp thu nhập và khấu trừ"
       />
 
-      {/* Net income hero card */}
-      <div className={`panel fade-up earnings-hero ${isPositive ? 'earnings-hero--positive' : 'earnings-hero--negative'}`}>
-        <div className="earnings-hero__inner">
-          <div className="earnings-hero__row">
-            <div className="earnings-hero__content">
-              <p className="earnings-hero__label">
-                Thu nhập thực tế
-              </p>
-              <div className="earnings-hero__value-container">
-                <span className="earnings-hero__value">
-                  <span ref={heroValueRef}>{formatNumber(earnings.netIncome)}</span>{' '}
-                  <span className="earnings-hero__unit">₫</span>
-                </span>
-              </div>
-            </div>
-            <div className="earnings-hero__icon">
-              {isPositive
-                ? <TrendingUp size={24} style={{ color: '#fff' }} />
-                : <TrendingDown size={24} style={{ color: '#fff' }} />
-              }
-            </div>
+      {/* ═══ Zone 1 — Gradient Hero Card ═══ */}
+      <div className={`earnings-hero-bento fade-up ${isPositive ? 'earnings-hero-bento--positive' : 'earnings-hero-bento--negative'}`}>
+        <div className="earnings-hero-bento__content">
+          <p className="earnings-hero-bento__eyebrow">Thu nhập thực tế</p>
+          <div className="earnings-hero-bento__amount">
+            <span ref={heroValueRef}>{formatNumber(earnings.netIncome)}</span>
+            <span className="earnings-hero-bento__currency">đ</span>
           </div>
+        </div>
+        <div className="earnings-hero-bento__icon">
+          {isPositive
+            ? <TrendingUp size={24} color="#fff" />
+            : <TrendingDown size={24} color="#fff" />
+          }
+        </div>
+        <div className="earnings-hero-bento__watermark">
+          <DollarSign size={120} />
         </div>
       </div>
 
-      {/* Breakdown cards */}
-      <div className="kpi-grid fade-up-2">
-        <KPI label="Lương cơ bản" value={formatNumber(earnings.baseSalary)} unit="₫" icon={Wallet} compact />
+      {/* ═══ Zone 2 — KPI Grid ═══ */}
+      <div className="earnings-kpi-grid fade-up-2">
+        <div className="earnings-kpi-card">
+          <span className="earnings-kpi-card__label">Lương cơ bản</span>
+          <span className="earnings-kpi-card__value">
+            <span ref={(el) => { kpiRefs.current.baseSalary = el; }}>{formatNumber(earnings.baseSalary)}</span>
+            <span className="earnings-kpi-card__unit">đ</span>
+          </span>
+        </div>
         {earnings.adjustment !== undefined && earnings.adjustment !== 0 && (
-          <KPI
-            label={earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
-            value={(earnings.adjustment > 0 ? '+' : '') + formatNumber(Math.abs(earnings.adjustment))}
-            unit="₫"
-            icon={earnings.adjustment > 0 ? TrendingUp : TrendingDown}
-            variant={earnings.adjustment > 0 ? 'success' : 'danger'}
-            compact
-          />
+          <div className={`earnings-kpi-card ${earnings.adjustment > 0 ? 'earnings-kpi-card--success' : 'earnings-kpi-card--danger'}`}>
+            <span className="earnings-kpi-card__label">
+              {earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
+            </span>
+            <span className="earnings-kpi-card__value">
+              <span ref={(el) => { kpiRefs.current.adjustment = el; }}>
+                {earnings.adjustment > 0 ? '+' : '-'}{formatNumber(Math.abs(earnings.adjustment))}
+              </span>
+              <span className="earnings-kpi-card__unit">đ</span>
+            </span>
+          </div>
         )}
-        <KPI
-          label="Khấu trừ kỷ luật"
-          value={penaltyNum > 0 ? `-${formatNumber(earnings.penalties)}` : '0'}
-          unit="₫"
-          icon={TrendingDown}
-          variant={penaltyNum > 0 ? 'danger' : 'default'}
-          compact
-        />
+        <div className={`earnings-kpi-card ${penaltyNum > 0 ? 'earnings-kpi-card--danger' : ''}`}>
+          <span className="earnings-kpi-card__label">Khấu trừ kỷ luật</span>
+          <span className="earnings-kpi-card__value">
+            <span ref={(el) => { kpiRefs.current.penalties = el; }}>
+              {penaltyNum > 0 ? `-${formatNumber(earnings.penalties)}` : '0'}
+            </span>
+            <span className="earnings-kpi-card__unit">đ</span>
+          </span>
+        </div>
       </div>
-      {/* Work day info when available */}
+
+      {/* ═══ Zone 3 — Work-day Strip ═══ */}
       {earnings.standardWorkDays !== undefined && (
-        <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 'var(--radius)', background: 'var(--bg-2)', border: '1px solid var(--border-1)', fontSize: 12, color: 'var(--fg-3)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <span>Công chuẩn: <strong style={{ color: 'var(--fg-2)' }}>{earnings.standardWorkDays} ngày</strong></span>
-          {earnings.paidDays !== undefined && <span>Công hưởng lương: <strong style={{ color: 'var(--fg-2)' }}>{earnings.paidDays} ngày</strong></span>}
-          {earnings.dailyRate !== undefined && earnings.dailyRate > 0 && <span>Đơn giá ngày: <strong style={{ color: 'var(--fg-2)' }}>{formatNumber(earnings.dailyRate)} ₫</strong></span>}
+        <div className="earnings-workday-strip fade-up-3">
+          <span>Công chuẩn: <strong>{earnings.standardWorkDays} ngày</strong></span>
+          {earnings.paidDays !== undefined && (
+            <span>Công hưởng lương: <strong>{earnings.paidDays} ngày</strong></span>
+          )}
+          {earnings.dailyRate !== undefined && earnings.dailyRate > 0 && (
+            <span>Đơn giá ngày: <strong>{formatNumber(earnings.dailyRate)} đ</strong></span>
+          )}
         </div>
       )}
 
-      {/* Penalties list */}
-      <Panel
-        title="Lịch sử khấu trừ"
-        subtitle={`${penalties.length} khoản khấu trừ`}
-        style={{ marginTop: 16 }}
-        flush
-      >
+      {/* ═══ Zone 4 — Penalties Panel ═══ */}
+      <div className="earnings-penalties-panel fade-up-3">
+        <div className="earnings-penalties-panel__header">
+          <span className="earnings-penalties-panel__title">Lịch sử khấu trừ</span>
+          <span className="earnings-penalties-panel__count">{penalties.length} khoản khấu trừ</span>
+        </div>
         {penalties.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <img src="/assets/illustrations/empty-earnings.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <p style={{ margin: 0 }}>Chưa có khoản khấu trừ nào</p>
+          <div className="earnings-penalties-empty">
+            <img
+              src="/assets/illustrations/empty-earnings.svg"
+              alt=""
+              aria-hidden="true"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <p>Chưa có khoản khấu trừ nào</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {penalties.map((p, i) => (
-              <div
-                key={p.id}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 20px',
-                  borderBottom: i < penalties.length - 1 ? '1px solid var(--border-1)' : 'none',
-                }}
-              >
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--danger-soft)', color: 'var(--danger)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <AlertTriangle size={14} />
+          penalties.map((p) => (
+            <div key={p.id} className="earnings-penalty-row">
+              <div className="earnings-penalty-row__icon">
+                <AlertTriangle size={14} />
+              </div>
+              <div className="earnings-penalty-row__content">
+                <div className="earnings-penalty-row__reason">
+                  {p.reasonText || p.customReason || 'Vi phạm nội quy'}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)' }}>
-                    {p.reasonText || p.customReason || 'Vi phạm nội quy'}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Calendar size={11} />
-                    {formatDate(p.date)}
-                  </div>
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--danger)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  -{formatCurrency(p.amount)}
+                <div className="earnings-penalty-row__date">
+                  <Calendar size={11} />
+                  {formatDate(p.date)}
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="earnings-penalty-row__amount">
+                -{formatCurrency(p.amount)}
+              </div>
+            </div>
+          ))
         )}
-      </Panel>
+      </div>
     </div>
   );
 }

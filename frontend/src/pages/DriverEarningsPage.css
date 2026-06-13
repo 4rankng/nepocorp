@@ -1,0 +1,306 @@
+/* ============================================================================
+ * DriverEarningsPage — Bento Grid Layout (Vantai Design System)
+ *
+ * Zone 1: Gradient Hero Card (net income)
+ * Zone 2: KPI Grid (glassmorphism cards)
+ * Zone 3: Work-day Strip (conditional)
+ * Zone 4: Penalties Panel (glassmorphism)
+ * ========================================================================== */
+
+/* ── Page wrapper ──────────────────────────────────────────────────────────── */
+.driver-earnings-page {
+  /* Scopes animation selectors */
+}
+
+/* ============================================================================
+ * Zone 1 — Gradient Hero Card
+ * ========================================================================== */
+.earnings-hero-bento {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 130px;
+  padding: 28px 32px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.earnings-hero-bento--positive {
+  background: linear-gradient(135deg, #005A2D, #00813F);
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(0, 177, 79, 0.3);
+}
+
+.earnings-hero-bento--negative {
+  background: linear-gradient(135deg, #7F1D1D, #B91C1C);
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(185, 28, 28, 0.3);
+}
+
+.earnings-hero-bento__content {
+  position: relative;
+  z-index: 1;
+}
+
+.earnings-hero-bento__eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.earnings-hero-bento__amount {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.earnings-hero-bento__currency {
+  font-size: 0.6em;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.earnings-hero-bento__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.earnings-hero-bento__watermark {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.08;
+  z-index: 0;
+}
+
+/* ============================================================================
+ * Zone 2 — KPI Grid
+ * ========================================================================== */
+.earnings-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.earnings-kpi-card {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+  transition: transform 150ms var(--ease, ease), box-shadow 150ms var(--ease, ease);
+}
+
+.earnings-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
+}
+
+.earnings-kpi-card__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.earnings-kpi-card__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.earnings-kpi-card__unit {
+  font-size: 0.6em;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+.earnings-kpi-card--danger .earnings-kpi-card__value {
+  color: var(--danger);
+}
+
+.earnings-kpi-card--success .earnings-kpi-card__value {
+  color: var(--success);
+}
+
+/* ============================================================================
+ * Zone 3 — Work-day Strip
+ * ========================================================================== */
+.earnings-workday-strip {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 14px;
+}
+
+.earnings-workday-strip strong {
+  color: var(--ink-2);
+}
+
+/* ============================================================================
+ * Zone 4 — Penalties Panel
+ * ========================================================================== */
+.earnings-penalties-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.earnings-penalties-panel__header {
+  padding: 16px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.earnings-penalties-panel__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.earnings-penalties-panel__count {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.earnings-penalty-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  transition: background 120ms ease;
+}
+
+.earnings-penalty-row:hover {
+  background: var(--surface-2);
+}
+
+.earnings-penalty-row__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--danger-soft);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.earnings-penalty-row__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.earnings-penalty-row__reason {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.earnings-penalty-row__date {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.earnings-penalty-row__amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--danger);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.earnings-penalties-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.earnings-penalties-empty img {
+  width: 140px;
+  height: 116px;
+  object-fit: contain;
+}
+
+/* ============================================================================
+ * Loading state
+ * ========================================================================== */
+.earnings-loading {
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.earnings-loading p {
+  margin-top: 8px;
+}
+
+/* ============================================================================
+ * Responsive
+ * ========================================================================== */
+@media (max-width: 640px) {
+  .earnings-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .earnings-hero-bento {
+    min-height: auto;
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .earnings-hero-bento__amount {
+    font-size: 24px;
+  }
+
+  .earnings-kpi-card:hover {
+    transform: none;
+  }
+}

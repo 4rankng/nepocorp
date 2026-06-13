@@ -1,0 +1,41 @@
+/* ============================================================================
+ * DriverTripsPage — TingTing
+ * Bento grid layout with status filter pills
+ * ========================================================================== */
+
+/* Page wrapper */
+.driver-trips-page {
+}
+
+/* Filter pill bar — reuse .fwd-filter-pill classes from FwdFilterPills.css */
+.driver-trips-filter-bar {
+  margin-bottom: 4px;
+}
+
+/* Trip list container */
+.driver-trips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Trip card overrides for page context */
+.driver-trips-page .driver-trip-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 150ms var(--ease), box-shadow 150ms var(--ease), border-color 150ms var(--ease);
+}
+.driver-trips-page .driver-trip-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px -8px rgba(9, 9, 11, 0.08);
+  border-color: var(--line-2);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .driver-trips-page .driver-trip-card:hover {
+    transform: none;
+  }
+}

@@ -1,130 +1,400 @@
 /* ============================================================================
- * Payables Summary Card (Space-efficient redesign)
+ * PayableListPage — Bento Grid Layout (Vantai Design System)
+ *
+ * Zone 1: Hero KPI Row (4-column grid: hero span-3 + mini-KPI stack span-1)
+ * Zone 2: Aging Distribution (4 equal cards with progress bars)
+ * Zone 3: Data Card (full-width card wrapping toolbar + table/mobile cards)
  * ========================================================================== */
-.payables-summary-bar {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  background: var(--bg-1, #fff);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 18px;
-  gap: 12px;
-  margin-bottom: 20px;
-  box-shadow: var(--sh-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+
+/* ── Page wrapper ──────────────────────────────────────────────────────────── */
+.payables-page {
+  /* Ensures animation selectors are scoped */
 }
 
-.payables-summary-item {
+/* ============================================================================
+ * Zone 1 — Hero KPI Row
+ * ========================================================================== */
+.payables-hero-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── Hero card ───────────────────────────────────────────────────────────── */
+.payables-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #005A2D, #00813F);
+  color: #fff;
+  border-radius: var(--r-lg, 18px);
+  padding: 28px 32px 24px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  position: relative;
-  padding: 2px 4px;
+  min-height: 148px;
+  box-shadow: 0 2px 8px rgba(0, 90, 45, 0.15);
 }
 
-.payables-summary-item:not(:last-child)::after {
-  content: '';
+.payables-hero__eyebrow {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.payables-hero__amount {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.payables-hero__subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.payables-hero__watermark {
   position: absolute;
-  right: -6px;
-  top: 15%;
-  height: 70%;
-  width: 1px;
-  background: var(--line);
+  right: 20px;
+  bottom: 12px;
+  color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
 }
 
-.payables-summary-header {
+/* ── Mini-KPI stack ──────────────────────────────────────────────────────── */
+.payables-kpi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payables-kpi-mini {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--r-lg, 18px);
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+  transition: transform 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.payables-kpi-mini:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
+}
+
+.payables-kpi-mini__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.payables-kpi-mini--danger .payables-kpi-mini__icon {
+  background: var(--danger-soft, #FFEAEC);
+  color: var(--danger, #E32434);
+}
+
+.payables-kpi-mini--accent .payables-kpi-mini__icon {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
+}
+
+.payables-kpi-mini__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.payables-kpi-mini__value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink, #0A0A0A);
+}
+
+.payables-kpi-mini__label {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 500;
+  color: var(--ink-3, #8B919B);
+  margin-top: 2px;
+}
+
+/* ============================================================================
+ * Zone 2 — Aging Distribution (4 equal cards)
+ * ========================================================================== */
+.payables-aging-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.aging-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--r-lg, 18px);
+  padding: 16px 18px 14px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+  transition: transform 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.aging-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(9, 9, 11, 0.07);
+}
+
+.aging-card__header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
-.payables-summary-dot {
-  width: 7px;
-  height: 7px;
+.aging-card__dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.payables-summary-dot--total { background: var(--accent); }
-.payables-summary-dot--current { background: var(--success); }
-.payables-summary-dot--d30 { background: var(--warning); }
-.payables-summary-dot--d60 { background: var(--warning-text); }
-.payables-summary-dot--over90 { background: var(--danger); }
 
-.payables-summary-label {
+.aging-card__dot--ok     { background: var(--accent, #00B14F); }
+.aging-card__dot--warn   { background: var(--warning, #F5A623); }
+.aging-card__dot--deep   { background: var(--warning-deep, #DD5A1F); }
+.aging-card__dot--danger { background: var(--danger, #E32434); }
+
+.aging-card__label {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  color: var(--ink-3);
+  font-size: var(--fs-2xs, 10px);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-3, #8B919B);
 }
 
-.payables-summary-main {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.payables-summary-value {
+.aging-card__value {
+  display: block;
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink);
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink, #0A0A0A);
+  margin-bottom: 4px;
 }
 
-.payables-summary-unit {
-  font-size: var(--fs-xs);
-  color: var(--ink-3);
-  font-weight: 500;
-  margin-left: 2px;
+.aging-card__count {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs, 10px);
+  color: var(--ink-3, #8B919B);
+  margin-bottom: 10px;
 }
 
-.payables-summary-count {
-  font-family: var(--font-sans);
-  font-size: var(--fs-2xs);
-  color: var(--ink-3);
-  white-space: nowrap;
+/* ── Progress bars ───────────────────────────────────────────────────────── */
+.aging-card__bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--line, #EAECEF);
+  border-radius: 2px;
+  overflow: hidden;
 }
 
+.aging-card__bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.aging-card__bar--ok     { background: var(--accent, #00B14F); }
+.aging-card__bar--warn   { background: var(--warning, #F5A623); }
+.aging-card__bar--deep   { background: var(--warning-deep, #DD5A1F); }
+.aging-card__bar--danger { background: var(--danger, #E32434); }
+
+/* ============================================================================
+ * Zone 3 — Data Card
+ * ========================================================================== */
+.payables-data-card {
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #EAECEF);
+  border-radius: var(--r-lg, 18px);
+  padding: 20px 24px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+}
+
+/* ── Toolbar inside data card ────────────────────────────────────────────── */
+.payables-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.payables-toolbar__spacer {
+  flex: 1;
+}
+
+.payables-toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-1, #F7F8FA);
+  border: 1px solid var(--line, #EAECEF);
+  border-radius: var(--r-sm, 8px);
+  padding: 8px 14px;
+  width: 300px;
+  transition: border-color 0.15s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
+              box-shadow 0.15s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.payables-toolbar__search:focus-within {
+  border-color: var(--accent, #00B14F);
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.1);
+}
+
+.payables-toolbar__search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--fs-sm, 14px);
+  color: var(--ink, #0A0A0A);
+  width: 100%;
+  font-family: inherit;
+}
+
+.payables-toolbar__search input::placeholder {
+  color: var(--ink-3, #8B919B);
+}
+
+/* ============================================================================
+ * Responsive — Tablet (<=1023px)
+ * ========================================================================== */
 @media (max-width: 1023px) {
-  .payables-summary-bar {
+  .payables-hero-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .payables-aging-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 12px 14px;
+    gap: 10px;
   }
-  
-  .payables-summary-item:nth-child(even):not(:last-child)::after {
-    display: none;
+
+  .payables-data-card {
+    padding: 16px;
   }
-  
-  .payables-summary-item:first-child {
-    grid-column: span 2;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 8px;
-    margin-bottom: 4px;
-  }
-  
-  .payables-summary-item:first-child::after {
-    display: none;
+
+  .payables-toolbar__search {
+    width: 240px;
   }
 }
 
 /* ============================================================================
- * Transparent Payables Toolbar Override
+ * Responsive — Phone (<=640px)
  * ========================================================================== */
-.payables-toolbar.toolbar {
-  background: transparent;
-  border: none;
-  padding: 0 0 12px 0;
-  margin-top: -4px;
+@media (max-width: 640px) {
+  .payables-hero-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .payables-hero {
+    padding: 22px 20px 20px;
+    min-height: 120px;
+  }
+
+  .payables-kpi-stack {
+    flex-direction: row;
+  }
+
+  .payables-kpi-mini {
+    padding: 12px 14px;
+    border-radius: var(--r, 12px);
+  }
+
+  .payables-kpi-mini__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .payables-kpi-mini__value {
+    font-size: 18px;
+  }
+
+  .payables-aging-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .aging-card {
+    padding: 12px 14px 10px;
+    border-radius: var(--r, 12px);
+  }
+
+  .aging-card__value {
+    font-size: var(--fs-lg, 18px);
+  }
+
+  .payables-data-card {
+    padding: 14px;
+    border-radius: var(--r, 12px);
+  }
+
+  .payables-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .payables-toolbar__search {
+    width: 100%;
+    order: -1;
+  }
+
+  /* Mobile amount text in card list */
+  .payables-page .m-card .m-card__row-value {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
 }
 
-.payables-toolbar.toolbar .toolbar__search {
-  background: var(--surface);
-  width: 320px;
+/* ============================================================================
+ * Responsive — Narrow phone (<=420px)
+ * ========================================================================== */
+@media (max-width: 420px) {
+  .payables-hero {
+    padding: 18px 16px 16px;
+  }
+
+  .payables-hero__amount {
+    font-size: 26px;
+  }
+
+  .payables-aging-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
-
-

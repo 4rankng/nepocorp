@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import './ForwarderTripsPage.css';
 
 interface TripSummary {
   id: number;
@@ -20,22 +22,46 @@ interface TripSummary {
   containerNumbers: string | null;
 }
 
-
-
 type StatusFilter = '' | TripStatus;
 
 export default function ForwarderTripsPage() {
-  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { data, isLoading: loading, error: queryError } = useForwarderTrips(activeFilter || undefined);
   const trips = (data?.items ?? []) as TripSummary[];
   const counts = data?.counts ?? {};
   const error = queryError ? 'Không thể tải danh sách chuyến đi' : null;
-  const { rootRef } = usePageAnimations({ ready: !loading });
-  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
 
   const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
   const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
+
+  /* ── Page entrance animation ── */
+  const { rootRef } = usePageAnimations({
+    ready: !loading,
+    selectors: ['.page-header', '.ftrip-hero-row', '.fwd-filter-pills', '.ftrip-card'],
+  });
+
+  /* ── List stagger animation ── */
+  const { rootRef: listRef } = useListAnimations({
+    itemSelector: '.ftrip-card',
+    mode: 'cards',
+    deps: [trips],
+  });
+
+  /* ── Counter animation ── */
+  const prefersReduced = usePrefersReducedMotion();
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
+  const heroTotalRef = useRef<HTMLSpanElement>(null);
+  const heroContainersRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (loading || totalTrips === 0 || prefersReduced) return;
+    animateCounters(
+      [
+        { el: heroTotalRef.current!, value: totalTrips, suffix: ' chuyến' },
+        { el: heroContainersRef.current!, value: totalContainers, suffix: ' cont' },
+      ].filter(c => c.el),
+    );
+  }, [loading, totalTrips, totalContainers, animateCounters, prefersReduced]);
 
   if (loading) return (
     <Panel>
@@ -65,9 +91,30 @@ export default function ForwarderTripsPage() {
 
   return (
     <div ref={rootRef}>
-      <PageHeader title="Chuyến đi" description={`Danh sách chuyến đi vận chuyển (${totalTrips} chuyến · ${totalContainers} cont)`} />
+      <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
 
-      {/* Clickable status filter pills */}
+      {/* ── Hero KPI Row ── */}
+      <div className="ftrip-hero-row">
+        <div className="ftrip-hero">
+          <span className="ftrip-hero__eyebrow">Tổng chuyến đi</span>
+          <span className="ftrip-hero__amount" ref={heroTotalRef}>0 chuyến</span>
+          <span className="ftrip-hero__subtitle">Danh sách chuyến đi vận chuyển</span>
+          <Truck size={72} className="ftrip-hero__watermark" aria-hidden="true" />
+        </div>
+        <div className="ftrip-kpi-stack">
+          <div className="ftrip-kpi-mini ftrip-kpi-mini--accent">
+            <div className="ftrip-kpi-mini__icon">
+              <Package size={16} />
+            </div>
+            <div className="ftrip-kpi-mini__body">
+              <span className="ftrip-kpi-mini__value" ref={heroContainersRef}>0</span>
+              <span className="ftrip-kpi-mini__label">container</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Clickable status filter pills ── */}
       <div className="fwd-filter-pills">
         <button
           className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
@@ -94,31 +141,22 @@ export default function ForwarderTripsPage() {
         })}
       </div>
 
+      {/* ── Trip card list ── */}
       <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {trips.map((trip, idx) => (
           <ClickableCard
             key={trip.id}
             to={`/my-forwarder-trips/${trip.id}`}
-            className="panel fade-up driver-trip-card"
+            className="ftrip-card fade-up"
             style={{
-              cursor: 'pointer',
               position: 'relative',
               overflow: 'hidden',
-              transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
               animationDelay: `${idx * 40}ms`,
-              '--strip-top': TRIP_STATUS_COLORS[trip.status],
-              '--strip-bottom': TRIP_STATUS_COLORS[trip.status],
-            } as React.CSSProperties}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
-              (e.currentTarget as HTMLDivElement).style.borderColor = '#D4D4D8';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = '';
-              (e.currentTarget as HTMLDivElement).style.borderColor = '';
             }}
           >
+            <StatusStrip color={TRIP_STATUS_COLORS[trip.status]} />
             <div className="driver-trip-card__body">
+              <div className="ftrip-card__icon"><Truck size={16} /></div>
               <div className="driver-trip-card__main">
                 <div className="driver-trip-card__head">
                   <span className="driver-trip-card__route">
@@ -147,7 +185,6 @@ export default function ForwarderTripsPage() {
                   )}
                 </div>
               </div>
-
               <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
           </ClickableCard>

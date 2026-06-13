@@ -1,10 +1,12 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
+import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel, StatusPill } from '../components/UI';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import './DriverTripsPage.css';
 
 interface TripSummary {
   id: number;
@@ -17,11 +19,11 @@ interface TripSummary {
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
-    case 'IN_TRANSIT': return 'info';      // blue
-    case 'COMPLETED': return 'success';    // green
-    case 'LOCKED': return 'neutral';       // slate gray
-    case 'CANCELED': return 'danger';      // red
-    default: return 'neutral';             // CREATED — slate gray
+    case 'IN_TRANSIT': return 'info';
+    case 'COMPLETED': return 'success';
+    case 'LOCKED': return 'neutral';
+    case 'CANCELED': return 'danger';
+    default: return 'neutral';
   }
 }
 
@@ -30,11 +32,20 @@ export default function DriverTripsPage() {
   const trips = (data?.items ?? []) as TripSummary[];
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
+
+  const [activeFilter, setActiveFilter] = useState<TripStatus | ''>('');
+  const statusCounts = useMemo(() => {
+    const counts: Partial<Record<TripStatus, number>> = {};
+    trips.forEach(t => { counts[t.status] = (counts[t.status] ?? 0) + 1; });
+    return counts;
+  }, [trips]);
+  const filteredTrips = activeFilter ? trips.filter(t => t.status === activeFilter) : trips;
+
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [filteredTrips] });
 
   if (loading) return (
     <Panel>
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
         <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh…</p>
       </div>
@@ -43,7 +54,7 @@ export default function DriverTripsPage() {
 
   if (error) return (
     <div>
-      <PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />
+      <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
         <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
         <h3 className="empty-state-title">{error}</h3>
@@ -56,7 +67,7 @@ export default function DriverTripsPage() {
 
   if (trips.length === 0) return (
     <div>
-      <PageHeader title="Lệnh của tôi" description="Danh sách lệnh vận chuyển đã nhận" />
+      <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
         <img src="/assets/illustrations/empty-trips.svg" alt="No trips" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <h3 className="empty-state-title">Chưa có lệnh vận chuyển nào</h3>
@@ -68,31 +79,43 @@ export default function DriverTripsPage() {
   );
 
   return (
-    <div ref={rootRef}>
-      <PageHeader title="Lệnh của tôi" description={`Danh sách lệnh vận chuyển đã nhận (${trips.length} lệnh)`} />
+    <div ref={rootRef} className="driver-trips-page">
+      <PageHeader title="Hành trình" description={`Danh sách lệnh vận chuyển đã nhận (${trips.length} lệnh)`} />
 
-      <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {trips.map((trip, idx) => (
+      <div className="driver-trips-filter-bar">
+        <div className="fwd-filter-pills fade-up">
+          <button
+            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            onClick={() => setActiveFilter('')}
+          >
+            Tất cả
+            <span className="fwd-filter-pill__count">{trips.length}</span>
+          </button>
+          {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
+            const count = statusCounts[status] ?? 0;
+            if (count === 0) return null;
+            return (
+              <button
+                key={status}
+                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
+              >
+                <span className="fwd-filter-pill__dot" style={{ background: TRIP_STATUS_COLORS[status] }} />
+                {label}
+                <span className="fwd-filter-pill__count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div ref={listRef} className="driver-trips-list">
+        {filteredTrips.map((trip, idx) => (
           <Link
             key={trip.id}
             to={`/my-trips/${trip.id}`}
             className="panel fade-up driver-trip-card"
-            style={{
-              display: 'block',
-              textDecoration: 'none',
-              color: 'inherit',
-              cursor: 'pointer',
-              transition: 'box-shadow 180ms var(--ease), border-color 180ms var(--ease)',
-              animationDelay: `${idx * 40}ms`,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px -8px rgba(9,9,11,0.08)';
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = '#D4D4D8';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '';
-              (e.currentTarget as HTMLAnchorElement).style.borderColor = '';
-            }}
+            style={{ animationDelay: `${idx * 40}ms` }}
           >
             <div className="driver-trip-card__body">
               {/* Route icon */}

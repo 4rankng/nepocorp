@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, createElement } from 'react';
 
 /**
  * Context holding the current `prefers-reduced-motion` value.
@@ -24,11 +24,7 @@ export function ReducedMotionProvider({ children }: { children: React.ReactNode 
     return () => mql.removeEventListener('change', handler);
   }, []);
 
-  return (
-    <ReducedMotionContext.Provider value={reduced}>
-      {children}
-    </ReducedMotionContext.Provider>
-  );
+  return createElement(ReducedMotionContext.Provider, { value: reduced }, children);
 }
 
 /**

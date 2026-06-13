@@ -78,7 +78,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
       ];
     case 'DRIVER':
       return [
-        { key: 'my-trips', label: 'Lệnh của tôi', path: '/my-trips', icon: Route, section: 'operations' },
+        { key: 'my-trips', label: 'Hành trình', path: '/my-trips', icon: Route, section: 'operations' },
         { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'operations' },
         { key: 'my-penalties', label: 'Kỷ luật', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
       ];
@@ -123,7 +123,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/config')) return 'Cấu hình';
   if (pathname === '/users') return 'Người dùng';
   if (pathname === '/audit-logs') return 'Nhật ký người dùng';
-  if (pathname.startsWith('/my-trips')) return 'Lệnh của tôi';
+  if (pathname.startsWith('/my-trips')) return 'Hành trình';
   if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
   if (pathname.startsWith('/my-forwarder-trips')) return 'Chuyến đi';
   if (pathname.startsWith('/my-advances')) return 'Tạm ứng';
@@ -140,7 +140,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const bottomNavRef = useBottomNavAnimations();
+  const bottomNavRef = useBottomNavAnimations({ ready: !!user && user.role === 'DRIVER' });
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);

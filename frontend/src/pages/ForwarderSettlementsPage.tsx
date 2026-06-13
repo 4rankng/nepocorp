@@ -1,15 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Loader2, Plus, ArrowRight } from 'lucide-react';
+import { FileText, Loader2, Plus, ArrowRight, Clock } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
-import { PageHeader, KPI } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
-import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderSettlementsPage.css';
 
 /** Vietnamese fallback labels for expense type codes */
@@ -88,8 +89,15 @@ export default function ForwarderSettlementsPage() {
   const [activeFilter, setActiveFilter] = useState<AdvanceSettlementStatus | ''>('');
 
   const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
-  const { rootRef } = usePageAnimations({ ready: !loadingSettlements });
+  const { rootRef } = usePageAnimations({
+    ready: !loadingSettlements,
+    selectors: ['.page-header', '.fset-hero-row', '.fwd-filter-pills', '.fset-card'],
+  });
   const { data: catalogs } = useCatalogs();
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
+  const heroExpenseRef = useRef<HTMLSpanElement>(null);
+  const heroTotalRef = useRef<HTMLSpanElement>(null);
+  const heroPendingRef = useRef<HTMLSpanElement>(null);
 
   const settlements = (settlementsData?.items ?? settlementsData ?? []) as Settlement[];
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
@@ -99,6 +107,18 @@ export default function ForwarderSettlementsPage() {
   // Derived stats
   const pending = settlements.filter(s => s.status === 'PENDING').length;
   const totalExpenseAll = settlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
+
+  const prefersReduced = usePrefersReducedMotion();
+
+  // Kick counter animations when data is ready
+  useEffect(() => {
+    if (loadingSettlements || settlements.length === 0 || prefersReduced) return;
+    animateCounters([
+      { el: heroExpenseRef.current!, value: totalExpenseAll, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
+      { el: heroTotalRef.current!, value: settlements.length, suffix: ' phiếu' },
+      { el: heroPendingRef.current!, value: pending, suffix: ' chờ xử lý' },
+    ].filter(c => c.el));
+  }, [loadingSettlements, settlements.length, totalExpenseAll, pending, animateCounters, prefersReduced]);
 
   // Status counts & filtered list
   const statusCounts = useMemo(() => {
@@ -144,12 +164,31 @@ export default function ForwarderSettlementsPage() {
         }
       />
 
-      {/* KPI row */}
+      {/* Hero KPI row */}
       {settlements.length > 0 && (
-        <div className="fset-kpi-row">
-          <KPI label="Tổng phiếu" value={settlements.length} icon={FileText} />
-          <KPI label="Chờ xử lý" value={pending} variant={pending > 0 ? 'warn' : 'default'} />
-          <KPI label="Tổng chi phí" value={formatCurrency(totalExpenseAll)} variant={totalExpenseAll > 0 ? 'success' : 'default'} />
+        <div className="fset-hero-row">
+          <div className="fset-hero">
+            <span className="fset-hero__eyebrow">Tổng chi phí thanh toán</span>
+            <span className="fset-hero__amount" ref={heroExpenseRef}>0 ₫</span>
+            <span className="fset-hero__subtitle">{settlements.length} phiếu thanh toán</span>
+            <FileText size={72} className="fset-hero__watermark" aria-hidden />
+          </div>
+          <div className="fset-kpi-stack">
+            <div className="fset-kpi-mini fset-kpi-mini--accent">
+              <div className="fset-kpi-mini__icon"><FileText size={16} /></div>
+              <div className="fset-kpi-mini__body">
+                <span className="fset-kpi-mini__value" ref={heroTotalRef}>0</span>
+                <span className="fset-kpi-mini__label">phiếu</span>
+              </div>
+            </div>
+            <div className="fset-kpi-mini fset-kpi-mini--warn">
+              <div className="fset-kpi-mini__icon"><Clock size={16} /></div>
+              <div className="fset-kpi-mini__body">
+                <span className="fset-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="fset-kpi-mini__label">chờ xử lý</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

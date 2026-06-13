@@ -1,0 +1,219 @@
+.driver-penalty-page {
+  padding-bottom: 40px;
+}
+
+/* ═══ ZONE 1 — Status Banner ═══ */
+.penalty-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+.penalty-status-banner--safe {
+  background: var(--success-soft);
+  border: 1px solid var(--success);
+}
+.penalty-status-banner--violation {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+}
+.penalty-status-banner__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.penalty-status-banner--safe .penalty-status-banner__icon {
+  background: var(--success);
+}
+.penalty-status-banner--violation .penalty-status-banner__icon {
+  background: var(--danger);
+}
+.penalty-status-banner__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.penalty-status-banner__subtitle {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.penalty-status-banner--safe .penalty-status-banner__title {
+  color: var(--success-text);
+}
+.penalty-status-banner--violation .penalty-status-banner__title {
+  color: var(--danger-text);
+}
+
+/* Loading banner */
+.penalty-loading-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* ═══ ZONE 2 — KPI Grid (reuse shared .kpi-grid and .kpi classes) ═══ */
+.penalty-kpi-grid {
+  margin-bottom: 28px;
+}
+
+/* ═══ ZONE 3 — Violations Data Card ═══ */
+.penalty-data-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.penalty-data-card__header {
+  padding: 16px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.penalty-data-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.penalty-month-select {
+  width: 150px;
+  height: 28px;
+  font-size: 12px;
+}
+
+/* Violation rows */
+.penalty-violation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.penalty-violation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  transition: background 120ms ease;
+}
+.penalty-violation-row:hover {
+  background: var(--surface-2);
+}
+.penalty-violation-row__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.penalty-violation-row__content {
+  flex: 1;
+  min-width: 0;
+}
+.penalty-violation-row__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.penalty-violation-row__reason {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.penalty-violation-row__amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--danger);
+  white-space: nowrap;
+}
+.penalty-violation-row__meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.penalty-violation-row__meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.penalty-violation-row__note {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+/* Empty state */
+.penalty-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-3);
+  border-top: 1px solid var(--line);
+}
+.penalty-empty-state__icon {
+  color: var(--success);
+  margin-bottom: 12px;
+}
+.penalty-empty-state__loading-text {
+  margin-top: 12px;
+}
+.penalty-empty-state__title {
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+.penalty-empty-state__desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+/* ═══ ZONE 4 — Footer Note ═══ */
+.penalty-footer-note {
+  margin-top: 24px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 640px) {
+  .penalty-violation-row {
+    padding: 12px 16px;
+  }
+  .penalty-data-card {
+    border-radius: 14px;
+  }
+  .penalty-status-banner {
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+}
