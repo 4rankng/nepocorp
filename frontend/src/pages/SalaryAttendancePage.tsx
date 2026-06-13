@@ -5,6 +5,7 @@ import {
   Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
+import { Money } from '../components/shared/Money';
 import { Panel } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import {
@@ -83,7 +84,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
     <div className="salary-summary-dark">
       <h3 className="salary-summary-dark__label">Tổng kết lương tháng</h3>
       <div className="salary-summary-dark__big mono">
-        {formatCurrency(salary.netSalary)}
+        <Money value={salary.netSalary} />
       </div>
       <div className="salary-summary-dark__mini">Lương thực nhận sau các khoản điều chỉnh</div>
 
@@ -93,7 +94,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
             <DollarSign size={12} /> Lương cứng
           </span>
           <span className="salary-summary-dark__row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {formatCurrency(salary.baseSalary)}
+            <Money value={salary.baseSalary} />
             <Link to="/users" className="salary-edit-link" title="Sửa lương cứng">
               <Edit size={10} />
             </Link>
@@ -105,7 +106,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
             <Info size={12} /> Điều chỉnh công
           </span>
           <span className={`salary-summary-dark__row-val ${salary.adjustment > 0 ? 'salary-summary-dark__row-val--pos' : salary.adjustment < 0 ? 'salary-summary-dark__row-val--neg' : ''}`}>
-            {salary.adjustment > 0 ? '+' : salary.adjustment < 0 ? '-' : ''}{formatCurrency(Math.abs(salary.adjustment))}
+            <Money value={Math.abs(salary.adjustment)} sign={salary.adjustment > 0 ? '+' : salary.adjustment < 0 ? '-' : ''} />
           </span>
         </div>
 
@@ -114,13 +115,13 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
             <XCircle size={12} /> Phạt kỷ luật
           </span>
           <span className={`salary-summary-dark__row-val ${salary.totalPenalties > 0 ? 'salary-summary-dark__row-val--neg' : ''}`}>
-            {salary.totalPenalties > 0 ? '-' : ''}{formatCurrency(salary.totalPenalties)}
+            <Money value={salary.totalPenalties} sign={salary.totalPenalties > 0 ? '-' : ''} />
           </span>
         </div>
 
         <div className="salary-summary-dark__row salary-summary-dark__row--total" style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
           <span className="salary-summary-dark__row-lbl" style={{ color: 'rgba(255,255,255,0.85)' }}>Lương thực nhận</span>
-          <span className="salary-summary-dark__row-val">{formatCurrency(salary.netSalary)}</span>
+          <span className="salary-summary-dark__row-val"><Money value={salary.netSalary} /></span>
         </div>
 
         <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginTop: 16, marginBottom: 8, fontWeight: 600, letterSpacing: '0.5px' }}>
@@ -132,7 +133,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
             <Truck size={12} /> Lương chuyến ({salary.tripDays} ngày)
           </span>
           <span className="salary-summary-dark__row-val">
-            {formatCurrency(salary.totalTripSalary)}
+            <Money value={salary.totalTripSalary} />
           </span>
         </div>
 
@@ -141,7 +142,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
             <Coffee size={12} /> Lương chờ việc ({salary.standbyDays} ngày)
           </span>
           <span className="salary-summary-dark__row-val">
-            {formatCurrency(salary.supplementPay)}
+            <Money value={salary.supplementPay} />
           </span>
         </div>
       </div>
@@ -371,7 +372,7 @@ export default function SalaryAttendancePage() {
         <div className="metrics fade-up-3">
           <div className="metric featured">
             <div className="metric-label">Tổng quỹ lương</div>
-            <div className="metric-value">{formatCurrency(aggregates.totalNet)}</div>
+            <div className="metric-value"><Money value={aggregates.totalNet} /></div>
             <div className="metric-delta delta-flat">Lương thực nhận · tất cả lái xe</div>
             <div className="utilization-bar"><div className="utilization-fill" style={{ width: `${aggregates.total > 0 ? (aggregates.confirmed / aggregates.total) * 100 : 0}%` }} /></div>
             <div className="metric-delta delta-up"><CheckCircle2 size={10} strokeWidth={2.5} /> {aggregates.confirmed}/{aggregates.total} đã xác nhận</div>

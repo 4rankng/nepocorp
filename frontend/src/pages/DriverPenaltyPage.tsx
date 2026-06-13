@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { formatCurrency, formatDate } from '../lib/format';
+import { Money } from '../components/shared/Money';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2, Calendar, Truck } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverPenalties } from '../hooks/useQueries';
@@ -107,7 +108,7 @@ export default function DriverPenaltyPage() {
         <div className={`kpi ${totalMonthAmount > 0 ? 'kpi--warn' : 'kpi--success'}`}>
           <div className="kpi__top"><span className="kpi__label">Khấu trừ {monthLabel}</span></div>
           <div className="kpi__value" style={{ fontSize: totalMonthAmount > 9999999 ? 20 : 28 }}>
-            {totalMonthAmount > 0 ? formatCurrency(totalMonthAmount) : '—'}
+            {totalMonthAmount > 0 ? <Money value={totalMonthAmount} /> : '—'}
           </div>
           <div className="kpi__meta">Trừ vào lương tháng</div>
           <div className="kpi__watermark" aria-hidden="true">

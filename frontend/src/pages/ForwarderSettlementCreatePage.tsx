@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
+import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader } from '../components/UI';
@@ -325,21 +326,21 @@ export default function ForwarderSettlementCreatePage() {
           <div className="fset-summary__grid">
             <div className="fset-summary__row">
               <span className="fset-summary__label">Tổng tạm ứng</span>
-              <span className="fset-summary__value">{formatCurrency(totalAdvance)}</span>
+              <span className="fset-summary__value"><Money value={totalAdvance} /></span>
             </div>
             <div className="fset-summary__row">
               <span className="fset-summary__label">Tổng chi phí</span>
-              <span className="fset-summary__value fset-summary__value--expense">− {formatCurrency(totalExpense)}</span>
+              <span className="fset-summary__value fset-summary__value--expense"><Money value={totalExpense} sign="−" /></span>
             </div>
             <div className="fset-summary__row">
               <span className="fset-summary__label">Tiền hoàn lại</span>
-              <span className="fset-summary__value fset-summary__value--refund">− {formatCurrency(totalRefund)}</span>
+              <span className="fset-summary__value fset-summary__value--refund"><Money value={totalRefund} sign="−" /></span>
             </div>
             <div className="fset-summary__divider" />
             <div className="fset-summary__row fset-summary__row--total">
               <span>Chênh lệch</span>
               <span className={`fset-summary__total ${balance > 0 ? 'fset-summary__total--positive' : balance < 0 ? 'fset-summary__total--negative' : ''}`}>
-                {formatCurrency(Math.abs(balance))}
+                <Money value={Math.abs(balance)} />
               </span>
             </div>
           </div>
