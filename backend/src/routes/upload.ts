@@ -15,6 +15,7 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { getUser } from '../middleware/auth';
 import { sniffImageType } from '../lib/format';
+import { ApiError } from '../errors';
 
 // Maximum dimension for server-side downscale
 const MAX_IMAGE_DIMENSION = 2048;
@@ -24,39 +25,65 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
 });
 
-const uploadRouter = Router();
+export type TripPhotoType = 'CONTAINER' | 'SEAL' | 'OTHER';
 
-uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
-  const file = req.file;
-  const tripId = parseInt(req.body.trip_id);
-  const type = req.body.type as 'CONTAINER' | 'SEAL' | 'OTHER';
+export interface SaveTripPhotoOptions {
+  /** Use the OCR-optimised pipeline (auto-contrast + JPEG q95) instead of the
+   * default q85 pipeline. The processed buffer is returned so the OCR route can
+   * reuse it for recognition instead of re-running sharp. */
+  forOcr?: boolean;
+}
 
-  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
-  if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
-  if (!['CONTAINER', 'SEAL', 'OTHER'].includes(type)) {
-    return res.status(400).json({ error: 'Loại ảnh không hợp lệ' });
-  }
+export interface SavedTripPhoto {
+  storageKey: string;
+  url: string;
+  buffer: Buffer;
+  mimeType: string;
+}
 
-  // 1. Sniff magic bytes
+/**
+ * Sniff → sharp preprocess → storage → insert trip_photos row.
+ *
+ * Storage key keeps the `container-` / `seal-` prefix so the frontend's
+ * `mapUrlsToPhotos` heuristic can categorise the photo by URL.
+ *
+ * Scoped to trip photos only (the expense-photo pipeline in forwarder.ts uses a
+ * different table/key shape and is intentionally not merged here).
+ */
+export async function saveTripPhoto(
+  file: { buffer: Buffer },
+  tripId: number,
+  type: TripPhotoType,
+  userId: number,
+  opts: SaveTripPhotoOptions = {},
+): Promise<SavedTripPhoto> {
   const mime = sniffImageType(file.buffer);
   if (!mime) {
-    return res.status(400).json({ error: 'Định dạng file không được hỗ trợ hoặc file bị hỏng' });
+    throw new ApiError(400, 'Định dạng file không được hỗ trợ hoặc file bị hỏng');
   }
 
-  // 2. Process image with sharp: HEIC→JPEG transcode, EXIF strip, downscale
   let processedBuffer: Buffer;
   let ext: string;
 
-  if (mime === 'image/heic') {
+  if (opts.forOcr) {
+    // OCR pipeline: downscale + auto-contrast so text stands out for the VLM.
+    processedBuffer = await sharp(file.buffer)
+      .rotate() // auto-orient from EXIF, then strip
+      .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+      .normalise() // auto-contrast (helps faded/night/shadowed paint)
+      .jpeg({ quality: 95 })
+      .toBuffer();
+    ext = '.jpg';
+  } else if (mime === 'image/heic') {
     // Transcode HEIC to JPEG
     processedBuffer = await sharp(file.buffer)
-      .rotate() // auto-rotate based on EXIF orientation, then strip it
+      .rotate()
       .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toBuffer();
     ext = '.jpg';
   } else {
-    // For JPEG/PNG/WebP: strip EXIF metadata (GPS, camera info, etc.) + downscale
+    // JPEG/PNG/WebP: strip EXIF + downscale, keep format
     const pipeline = sharp(file.buffer)
       .rotate()
       .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true })
@@ -69,31 +96,49 @@ uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, 
       processedBuffer = await pipeline.png().toBuffer();
       ext = '.png';
     } else {
-      // WebP
       processedBuffer = await pipeline.webp({ quality: 85 }).toBuffer();
       ext = '.webp';
     }
   }
 
-  // 3. Generate UUID storage key
   const uuid = crypto.randomUUID();
   const key = `trips/${tripId}/${type.toLowerCase()}-${uuid}${ext}`;
 
-  // 4. Upload buffer
   await storageService.upload(processedBuffer, key);
-
-  // 5. Persist relation in DB
-  const [photo] = await db.insert(s.tripPhotos).values({
+  await db.insert(s.tripPhotos).values({
     tripId,
     type,
     storageKey: key,
-    uploadedBy: getUser(req).userId,
-  }).returning();
+    uploadedBy: userId,
+  });
+
+  return {
+    storageKey: key,
+    url: `/api/photos/${encodeURIComponent(key)}`,
+    buffer: processedBuffer,
+    mimeType: opts.forOcr ? 'image/jpeg' : mime,
+  };
+}
+
+const uploadRouter = Router();
+
+uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file;
+  const tripId = parseInt(req.body.trip_id);
+  const type = req.body.type as TripPhotoType;
+
+  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
+  if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
+  if (!['CONTAINER', 'SEAL', 'OTHER'].includes(type)) {
+    return res.status(400).json({ error: 'Loại ảnh không hợp lệ' });
+  }
+
+  const saved = await saveTripPhoto(file, tripId, type, getUser(req).userId);
 
   res.status(201).json({
     ok: true,
-    storageKey: key,
-    url: `/api/photos/${encodeURIComponent(key)}`
+    storageKey: saved.storageKey,
+    url: saved.url,
   });
 }));
 
@@ -115,7 +160,7 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
   if (getUser(req).role === Role.DRIVER) {
     const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
       .where(eq(s.drivers.userId, getUser(req).userId)).limit(1);
-    
+
     if (!driver) {
       return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
     }

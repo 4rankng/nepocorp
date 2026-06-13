@@ -49,3 +49,7 @@ p, MANAGER, salary, write
 p, ACCOUNTANT, salary, read
 p, ACCOUNTANT, salary, write
 p, DRIVER, salary, read
+p, MANAGER, ocr, write
+p, ACCOUNTANT, ocr, write
+p, DRIVER, ocr, write
+p, DRIVER, driver_portal, write

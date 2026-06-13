@@ -4,6 +4,7 @@ import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 import { computeSalary } from './attendance.service';
+import { listTripContainers } from './forwarder.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -87,7 +88,11 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
     .where(eq(s.tripLegs.tripId, tripId))
     .orderBy(s.tripLegs.sequence);
 
-  return { ...trip, legs };
+  // Include containers so the driver can review/confirm container & seal numbers
+  // (populated by the OCR flow).
+  const containers = await listTripContainers(tripId);
+
+  return { ...trip, legs, containers };
 }
 
 /**

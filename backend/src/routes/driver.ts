@@ -9,6 +9,8 @@ import {
   getDriverEarnings,
   getDriverPenalties,
 } from '../services/driver.service';
+import { createTripContainer, listTripContainers } from '../services/forwarder.service';
+import { tripContainerSchema } from '@tingting/shared';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../errors';
 
@@ -47,6 +49,40 @@ router.get('/penalties', asyncHandler(async (req: Request, res: Response) => {
   const dateTo = req.query.dateTo as string | undefined;
   const items = await getDriverPenalties(driver.id, dateFrom, dateTo);
   res.json({ items });
+}));
+
+// List containers for the driver's own trip (ownership via getDriverTripDetail)
+router.get('/trips/:id/containers', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const tripId = parseInt(req.params.id as string, 10);
+  const trip = await getDriverTripDetail(driver.id, tripId);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  const items = await listTripContainers(tripId);
+  res.json({ items });
+}));
+
+// Create one container for the driver's own trip — driver confirms/edits the OCR
+// result, then saves through this endpoint (numbers are never auto-committed).
+router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const trip = await getDriverTripDetail(driver.id, tripId);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+
+  const parsed = tripContainerSchema.safeParse({ ...req.body, tripId });
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Dữ liệu không hợp lệ', details: parsed.error.flatten() });
+  }
+  const created = await createTripContainer({
+    tripId,
+    containerTypeId: parsed.data.containerTypeId ?? null,
+    containerNumber: parsed.data.containerNumber,
+    sealNumber: parsed.data.sealNumber ?? null,
+    cargoWeightKg: parsed.data.cargoWeightKg ?? null,
+    notes: parsed.data.notes ?? null,
+    createdBy: getUser(req).userId,
+  });
+  res.status(201).json(created);
 }));
 
 export default router;

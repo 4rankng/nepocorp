@@ -31,6 +31,7 @@ const configSchema = z.object({
   uploadDir: z.string().default('./uploads'),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   googleMapsApiKey: z.string().default(''),
+  geminiApiKey: z.string().default(''),
   corsOrigin: z.string().default(''),
   trustProxy: trustProxySchema.default(isProd ? 1 : false),
 });
@@ -44,6 +45,7 @@ const raw = {
   uploadDir: process.env.UPLOAD_DIR,
   nodeEnv: process.env.NODE_ENV,
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
   corsOrigin: process.env.CORS_ORIGIN,
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
 };
@@ -59,6 +61,7 @@ const withDefaults = {
   uploadDir: raw.uploadDir || './uploads',
   nodeEnv: raw.nodeEnv || 'development',
   googleMapsApiKey: raw.googleMapsApiKey || '',
+  geminiApiKey: raw.geminiApiKey || '',
   corsOrigin: raw.corsOrigin || '',
   trustProxy: raw.trustProxy,
 };
@@ -87,6 +90,7 @@ export const config = result.success ? result.data : configSchema.parse({
   uploadDir: './uploads',
   nodeEnv: 'development',
   googleMapsApiKey: '',
+  geminiApiKey: '',
   corsOrigin: '',
   trustProxy: false,
 });
