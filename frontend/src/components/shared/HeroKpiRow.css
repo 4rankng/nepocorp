@@ -1,0 +1,157 @@
+/* ============================================================================
+ * HeroKpiRow — Shared Hero KPI Row Component
+ * Vantai design system · Used by Debt, Payables, and Forwarder pages
+ * ========================================================================== */
+
+.hero-kpi-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hero-kpi-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #005A2D, #00813F);
+  color: #fff;
+  border-radius: var(--r-lg, 18px);
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 148px;
+  box-shadow: 0 2px 8px rgba(0, 90, 45, 0.15);
+}
+
+.hero-kpi-card__eyebrow {
+  display: block;
+  font-size: var(--fs-xs, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.hero-kpi-card__amount {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.hero-kpi-card__subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.hero-kpi-card__watermark {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.hero-kpi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hero-kpi-mini {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--r-lg, 18px);
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-kpi-mini:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
+}
+
+.hero-kpi-mini__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-kpi-mini--accent .hero-kpi-mini__icon {
+  background: var(--accent-soft, #E6F7EE);
+  color: var(--accent, #00B14F);
+}
+
+.hero-kpi-mini--danger .hero-kpi-mini__icon {
+  background: var(--danger-soft, #FFEAEC);
+  color: var(--danger, #E32434);
+}
+
+.hero-kpi-mini--warn .hero-kpi-mini__icon {
+  background: var(--warn-soft, #FEF3C7);
+  color: var(--warn, #D97706);
+}
+
+.hero-kpi-mini__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hero-kpi-mini__value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink, #0A0A0A);
+}
+
+.hero-kpi-mini__label {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 500;
+  color: var(--ink-3, #8B919B);
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hero-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-kpi-mini {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .hero-kpi-mini__value {
+    font-size: 16px;
+  }
+  .hero-kpi-mini__icon {
+    width: 28px;
+    height: 28px;
+  }
+  .hero-kpi-mini__icon svg {
+    width: 14px;
+    height: 14px;
+  }
+}
