@@ -73,6 +73,14 @@ export type {
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';
+export {
+  normalizeContainerNumber,
+  validateContainerFormat,
+  calculateCheckDigit,
+  validateCheckDigit,
+  validateContainerNumber,
+  suggestCorrections,
+} from './calculations/iso6346';
 export { computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
