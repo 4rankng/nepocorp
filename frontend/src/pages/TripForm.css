@@ -1060,3 +1060,125 @@
   .tc-card-body { padding: 14px; }
   .tc-badge-required, .tc-badge-optional { font-size: var(--fs-2xs); padding: 2px 6px; }
 } /* end 640px */
+
+/* ==========================================================================
+   Trip Create Page — Bento layout
+   Scoped to .tc-create-wrap. Create page ONLY — TripEditPage keeps the legacy
+   .tc-content / .tc-rail layout above and is structurally unaffected here.
+   ========================================================================== */
+
+/* Page scoper: centers hero + bento on a shared max-width so they always align */
+.tc-create-wrap {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 28px 0;
+  width: 100%;
+}
+
+/* ── Hero band ── green gradient: title, progress, live KPI strip */
+.tc-create-hero {
+  background: linear-gradient(135deg, #005A2D, #00813F);
+  color: var(--fg-on-brand);
+  border-radius: var(--r-xl);
+  padding: 22px 26px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.tc-create-hero__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+/* Re-skin the shared header primitives for the dark hero surface */
+.tc-create-hero .tc-back-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.tc-create-hero .tc-back-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.tc-create-hero .tc-page-title { color: #fff; }
+.tc-create-hero .tc-page-sub { color: rgba(255, 255, 255, 0.82); }
+
+/* ── Hero KPI strip ── three translucent chips */
+.tc-hero-kpis {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tc-hero-kpi {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 128px;
+}
+.tc-hero-kpi__label {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.72);
+}
+.tc-hero-kpi__value {
+  font-size: clamp(16px, 1.4vw, 20px);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+}
+.tc-hero-kpi__value .money__unit {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Bento grid ── 12-col; cards size to their own content (align-items: start
+   yields clean whitespace, never stretched-empty cards) */
+.tc-create-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+  padding-bottom: 120px; /* ActionBar clearance */
+}
+.tc-create-bento > * { min-width: 0; }
+.tc-create-bento > .tc-bento-main    { grid-column: span 8; }
+.tc-create-bento > .tc-bento-aside   { grid-column: span 4; }
+.tc-create-bento > .tc-bento-legs    { grid-column: span 12; }
+.tc-create-bento > .tc-bento-finance { grid-column: span 8; }
+.tc-create-bento > .tc-bento-media   { grid-column: span 4; }
+
+/* Right-edge stack: estimate + checklist sit flush (no row-gap quirks) */
+.tc-bento-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Drop the cards' own 16px bottom margin inside tiles (scoped — Edit keeps its margin) */
+.tc-create-bento .tc-card,
+.tc-create-bento .tc-summary-card,
+.tc-create-bento .tc-checklist {
+  margin-bottom: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  /* Collapse the bento to a single column; tiles stack in source order */
+  .tc-create-bento { grid-template-columns: 1fr; }
+  .tc-create-bento > * { grid-column: span 1; }
+}
+@media (max-width: 640px) {
+  .tc-create-wrap { padding: 8px 12px 0; }
+  .tc-create-hero { padding: 16px; margin-bottom: 14px; gap: 14px; }
+  .tc-create-hero__top { gap: 12px; }
+  .tc-create-hero .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-create-hero .tc-progress-pills { order: 99; flex-basis: 100%; justify-content: flex-start; }
+  .tc-hero-kpis { flex-direction: column; gap: 8px; }
+  .tc-hero-kpi { padding: 8px 14px; }
+  .tc-create-bento { padding-bottom: 100px; gap: 16px; }
+}
