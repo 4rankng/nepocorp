@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, Calendar, ArrowRight, Loader2, MapPin, AlertTriangle } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
-import { PageHeader, Panel, StatusPill } from '../components/UI';
+import { PageHeader, Panel } from '../components/UI';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './DriverTripsPage.css';
@@ -15,16 +15,6 @@ interface TripSummary {
   driverSalary: string | null;
   routeName: string | null;
   truckPlate: string | null;
-}
-
-function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'IN_TRANSIT': return 'info';
-    case 'COMPLETED': return 'success';
-    case 'LOCKED': return 'neutral';
-    case 'CANCELED': return 'danger';
-    default: return 'neutral';
-  }
 }
 
 export default function DriverTripsPage() {
@@ -115,47 +105,28 @@ export default function DriverTripsPage() {
             key={trip.id}
             to={`/my-trips/${trip.id}`}
             className="panel fade-up driver-trip-card"
-            style={{ animationDelay: `${idx * 40}ms` }}
+            style={{ '--strip': TRIP_STATUS_COLORS[trip.status], animationDelay: `${idx * 40}ms` } as React.CSSProperties}
           >
-            <div className="driver-trip-card__body">
-              {/* Route icon */}
-              <div className="driver-trip-card__icon">
-                <MapPin size={20} style={{ color: 'var(--brand)' }} />
+            <div className="dt-card">
+              <span className="dt-card__route">
+                {trip.routeName || 'Tuyến không xác định'}
+              </span>
+              <div className="dt-card__salary">
+                {trip.driverSalary ? formatCurrency(trip.driverSalary) : '—'}
               </div>
-
-              {/* Main info */}
-              <div className="driver-trip-card__main">
-                <div className="driver-trip-card__head">
-                  <span className="driver-trip-card__route">
-                    {trip.routeName || 'Tuyến không xác định'}
-                  </span>
-                  <StatusPill variant={tripStatusVariant(trip.status)}>
-                    {TRIP_STATUS_LABELS[trip.status] || trip.status}
-                  </StatusPill>
-                </div>
-                <div className="driver-trip-card__meta">
-                  <span className="driver-trip-card__meta-item">
-                    <Truck size={12} />
-                    {trip.truckPlate || '—'}
-                  </span>
-                  <span className="driver-trip-card__meta-item">
-                    <Calendar size={12} />
-                    {formatDate(trip.departureDate)}
-                  </span>
-                </div>
+              <div className="dt-card__meta">
+                <span className="dt-card__meta-item">
+                  <Truck size={12} />
+                  {trip.truckPlate || '—'}
+                </span>
+                <span className="dt-card__meta-item">
+                  <Calendar size={12} />
+                  {formatDate(trip.departureDate)}
+                </span>
               </div>
-
-              {/* Driver Salary */}
-              <div className="driver-trip-card__salary">
-                {trip.driverSalary && (
-                  <div className="driver-trip-card__salary-value">
-                    {formatCurrency(trip.driverSalary)}
-                  </div>
-                )}
+              <div className="dt-card__arrow">
+                <ArrowRight size={14} />
               </div>
-
-              {/* Arrow */}
-              <ArrowRight size={16} className="driver-trip-card__arrow" />
             </div>
           </Link>
         ))}
