@@ -42,33 +42,22 @@ export default function TripCreatePage() {
     <TripFormProvider form={form}>
       <div ref={rootRef} className="tc-create-wrap">
         <section className="tc-create-hero">
-          <div className="tc-create-hero__top">
+          <div className="tc-hero-top">
             <button className="tc-back-btn" onClick={() => navigate('/trips')} aria-label="Quay lại">
               <ArrowLeft size={18} />
             </button>
-            <div className="tc-title-wrap">
-              <h1 className="tc-page-title">Tạo lệnh vận chuyển mới</h1>
-              <p className="tc-page-sub">
-                Điền các trường bắt buộc để tạo lệnh. Chọn tuyến đường để tự động điền trạm thu phí,
-                định mức dầu và lương sản lượng.
+            <div className="tc-hero-title-block">
+              <div className="tc-hero-eyebrow">Tạo lệnh mới</div>
+              <h1 className="tc-hero-h1">Tạo lệnh vận chuyển mới</h1>
+              <p className="tc-hero-sub">
+                Điền các trường bắt buộc để tạo lệnh. Chọn tuyến đường để tự động điền trạm thu phí, định mức dầu và lương sản lượng.
               </p>
             </div>
-            <ProgressPills current={form.completedSections} total={4} />
           </div>
 
-          <div className="tc-hero-kpis">
-            <div className="tc-hero-kpi">
-              <span className="tc-hero-kpi__label">Doanh thu</span>
-              <Money value={revenue} className="tc-hero-kpi__value" />
-            </div>
-            <div className="tc-hero-kpi">
-              <span className="tc-hero-kpi__label">Chi phí ước tính</span>
-              <Money value={estimatedCost} sign="−" className="tc-hero-kpi__value" />
-            </div>
-            <div className="tc-hero-kpi">
-              <span className="tc-hero-kpi__label">Lợi nhuận dự kiến</span>
-              <Money value={profit} sign="+" className="tc-hero-kpi__value" />
-            </div>
+          <div className="tc-hero-widgets">
+            <TripSummaryCard />
+            <TripChecklistPanel />
           </div>
         </section>
 
@@ -84,11 +73,6 @@ export default function TripCreatePage() {
               cargoTypes={options.cargoTypes}
               loading={options.loading}
             />
-          </div>
-
-          <div className="tc-bento-aside">
-            <TripSummaryCard />
-            <TripChecklistPanel />
           </div>
 
           <div className="tc-bento-legs">

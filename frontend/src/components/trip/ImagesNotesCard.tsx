@@ -28,13 +28,13 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
       collapsible={collapsible}
       defaultCollapsed={defaultCollapsed}
     >
-      <div className="tc-form-row tc-form-row--split-3-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="field">
           <label>Ghi chú chuyến đi</label>
           <textarea
             className="input"
-            style={{ minHeight: 140, resize: 'vertical' }}
-            rows={7}
+            style={{ minHeight: 90, resize: 'vertical' }}
+            rows={4}
             placeholder="Ghi chú chi tiết chuyến đi, các lưu ý đặc biệt, yêu cầu của khách hàng…"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

@@ -1075,110 +1075,233 @@
   width: 100%;
 }
 
-/* ── Hero band ── green gradient: title, progress, live KPI strip */
+/* ── Hero band ── charcoal gradient with glows: title, progress, widgets */
 .tc-create-hero {
-  background: linear-gradient(135deg, #005A2D, #00813F);
+  --d-charcoal-1: #14181A;
+  --d-charcoal-2: #1A2220;
+  --d-charcoal-3: #1F2D27;
+  background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
   color: var(--fg-on-brand);
   border-radius: var(--r-xl);
-  padding: 22px 26px;
-  margin-bottom: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  padding: 26px 30px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
 }
-.tc-create-hero__top {
+.tc-create-hero::before {
+  content: '';
+  position: absolute;
+  right: -120px; top: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.18), transparent 65%);
+  pointer-events: none;
+}
+.tc-create-hero::after {
+  content: '';
+  position: absolute;
+  left: 40%; bottom: -60px;
+  width: 200px; height: 120px;
+  background: radial-gradient(ellipse, rgba(0, 135, 63, 0.14), transparent 70%);
+  pointer-events: none;
+}
+.tc-create-hero .tc-hero-top {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 24px;
 }
+.tc-create-hero .tc-hero-title-block {
+  min-width: 0;
+}
+.tc-create-hero .tc-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-2xs);
+  letter-spacing: 1.8px;
+  font-weight: 700;
+  color: #5EE99B;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.tc-create-hero .tc-hero-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #5EE99B;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18);
+  animation: d-pulse 2s ease-in-out infinite;
+}
+
+@keyframes d-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18); }
+  50% { box-shadow: 0 0 0 7px rgba(94, 233, 155, 0.08); }
+}
+
+.tc-create-hero .tc-hero-h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  color: #fff;
+}
+.tc-create-hero .tc-hero-sub {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
 /* Re-skin the shared header primitives for the dark hero surface */
 .tc-create-hero .tc-back-btn {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
+  transition: all 150ms ease;
 }
 .tc-create-hero .tc-back-btn:hover {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateX(-2px);
 }
-.tc-create-hero .tc-page-title { color: #fff; }
-.tc-create-hero .tc-page-sub { color: rgba(255, 255, 255, 0.82); }
 
-/* ── Hero KPI strip ── three translucent chips */
-.tc-hero-kpis {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+/* ── Hero widgets bento container ── */
+.tc-hero-widgets {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 0;
+  background: transparent;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
-.tc-hero-kpi {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 10px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 128px;
+.tc-hero-widgets .tc-summary-card,
+.tc-hero-widgets .tc-checklist {
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  margin-bottom: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
-.tc-hero-kpi__label {
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.72);
+
+/* Featured summary card has a slightly brighter background and right-divider border */
+.tc-hero-widgets .tc-summary-card {
+  background: rgba(255, 255, 255, 0.045);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
-.tc-hero-kpi__value {
-  font-size: clamp(16px, 1.4vw, 20px);
-  font-weight: 700;
+
+/* Override summary card styles inside the dark bento */
+.tc-hero-widgets .tc-summary-card::before {
+  opacity: 0.15;
+}
+.tc-hero-widgets .tc-summary-card__label {
+  color: rgba(255, 255, 255, 0.45);
+}
+.tc-hero-widgets .tc-summary-card__big {
   color: #fff;
-  line-height: 1.1;
 }
-.tc-hero-kpi__value .money__unit {
-  color: rgba(255, 255, 255, 0.6);
+.tc-hero-widgets .tc-summary-card__currency {
+  color: rgba(255, 255, 255, 0.65);
+}
+.tc-hero-widgets .tc-summary-card__mini {
+  color: rgba(255, 255, 255, 0.55);
+}
+.tc-hero-widgets .tc-summary-rows {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.tc-hero-widgets .tc-summary-row__lbl {
+  color: rgba(255, 255, 255, 0.65);
+}
+.tc-hero-widgets .tc-summary-row__val--neg {
+  color: #FCA5A5;
+}
+.tc-hero-widgets .tc-summary-row__val--pos {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-summary-row--total {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+.tc-hero-widgets .tc-summary-row--total .tc-summary-row__val {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-summary-row--total .tc-summary-row__lbl {
+  color: #fff !important;
 }
 
-/* ── Bento grid ── 12-col; cards size to their own content (align-items: start
-   yields clean whitespace, never stretched-empty cards) */
+/* Override checklist styles inside the dark bento */
+.tc-hero-widgets .tc-checklist__title {
+  color: rgba(255, 255, 255, 0.45);
+}
+.tc-hero-widgets .tc-check-item {
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 120ms ease;
+}
+.tc-hero-widgets .tc-check-item:hover {
+  color: #fff;
+}
+.tc-hero-widgets .tc-check-item__dot {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tc-hero-widgets .tc-check-item--done .tc-check-item__dot {
+  background: #00873F;
+  border-color: #5EE99B;
+  color: #fff;
+}
+.tc-hero-widgets .tc-check-item--active .tc-check-item__dot {
+  border-color: #5EE99B;
+  box-shadow: 0 0 0 3px rgba(94, 233, 155, 0.18);
+}
+.tc-hero-widgets .tc-check-item__name {
+  color: rgba(255, 255, 255, 0.85);
+}
+.tc-hero-widgets .tc-check-item__badge--done {
+  color: #5EE99B;
+}
+.tc-hero-widgets .tc-check-item__badge--pending {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Bento grid ── 12-col; all card sections span 12 for full row width */
 .tc-create-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 20px;
+  gap: 24px;
   align-items: start;
   padding-bottom: 120px; /* ActionBar clearance */
 }
-.tc-create-bento > * { min-width: 0; }
-.tc-create-bento > .tc-bento-main    { grid-column: span 8; }
-.tc-create-bento > .tc-bento-aside   { grid-column: span 4; }
-.tc-create-bento > .tc-bento-legs    { grid-column: span 12; }
-.tc-create-bento > .tc-bento-finance { grid-column: span 8; }
-.tc-create-bento > .tc-bento-media   { grid-column: span 4; }
+.tc-create-bento > * { min-width: 0; grid-column: span 12; }
 
-/* Right-edge stack: estimate + checklist sit flush (no row-gap quirks) */
-.tc-bento-aside {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Drop the cards' own 16px bottom margin inside tiles (scoped — Edit keeps its margin) */
-.tc-create-bento .tc-card,
-.tc-create-bento .tc-summary-card,
-.tc-create-bento .tc-checklist {
+/* Drop the cards' own 16px bottom margin inside tiles */
+.tc-create-bento .tc-card {
   margin-bottom: 0;
 }
 
 /* ── Responsive ── */
-@media (max-width: 1100px) {
-  /* Collapse the bento to a single column; tiles stack in source order */
+@media (max-width: 1200px) {
+  .tc-create-hero {
+    padding: 20px;
+  }
   .tc-create-bento { grid-template-columns: 1fr; }
   .tc-create-bento > * { grid-column: span 1; }
 }
 @media (max-width: 640px) {
   .tc-create-wrap { padding: 8px 12px 0; }
-  .tc-create-hero { padding: 16px; margin-bottom: 14px; gap: 14px; }
-  .tc-create-hero__top { gap: 12px; }
-  .tc-create-hero .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
-  .tc-create-hero .tc-progress-pills { order: 99; flex-basis: 100%; justify-content: flex-start; }
-  .tc-hero-kpis { flex-direction: column; gap: 8px; }
-  .tc-hero-kpi { padding: 8px 14px; }
+  .tc-create-hero { padding: 16px; margin-bottom: 14px; }
+  .tc-create-hero .tc-hero-top { gap: 12px; }
+  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-hero-widgets { grid-template-columns: 1fr; }
+  .tc-hero-widgets .tc-summary-card {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
   .tc-create-bento { padding-bottom: 100px; gap: 16px; }
 }

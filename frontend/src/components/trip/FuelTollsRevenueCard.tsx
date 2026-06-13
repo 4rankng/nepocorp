@@ -37,12 +37,12 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
       )}
 
-      <div className="tc-form-row tc-form-row--three">
+      <div className="tc-form-row">
         <div className="field">
           <label>Số lít bổ sung</label>
           <InputWithPrefix value={form.fuelSupplementLiters} onChange={form.setFuelSupplementLiters} placeholder="0" prefix="L" type="number" />
         </div>
-        <div className="field" style={{ gridColumn: 'span 2' }}>
+        <div className="field">
           <label>Lý do bổ sung</label>
           <input className="input" type="text" placeholder="VD: Chạy máy lạnh kéo dài" value={form.fuelSupplementReason} onChange={(e) => form.setFuelSupplementReason(e.target.value)} />
         </div>
@@ -95,7 +95,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <SectionDivider label="Vé đường bộ & doanh thu" />
 
-      <div className="tc-form-row tc-form-row--three">
+      <div className="tc-form-row">
         <div className="field">
           <label>Tổng tiền đi đường</label>
           <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="2.700.000" prefix="đ" mono type="money" />
@@ -104,9 +104,12 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Tiền vé (công ty) đã thanh toán</label>
           <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="400.000" prefix="đ" mono type="money" />
         </div>
+      </div>
+
+      <div className="tc-form-row" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Số trạm thu phí</label>
-          <input className="input mono" type="number" placeholder="4" value={form.tollsStations} onChange={(e) => form.setTollsStations(e.target.value)} />
+          <input className="input mono" type="number" placeholder="4" value={form.tollsStations} onChange={(e) => form.setTollsStations(e.target.value)} style={{ maxWidth: '200px' }} />
         </div>
       </div>
 
@@ -129,7 +132,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </span>
       </div>
 
-      <div className="tc-form-row tc-form-row--three" style={{ marginTop: 16 }}>
+      <div className="tc-form-row" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Số ngày tính lương</label>
           <input className="input mono" type="number" placeholder="1" min="1" max="31"
@@ -142,6 +145,9 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Tiền lương lái xe</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
+      </div>
+
+      <div className="tc-form-row" style={{ marginTop: 16 }}>
         <CheckboxCard
           checked={form.hasReturnCargo}
           onChange={form.setHasReturnCargo}
