@@ -19,13 +19,11 @@
   --d-charcoal-3: #1F2D27;
   background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
   color: var(--fg-on-brand);
-  border-radius: var(--r-xl);
+  border-radius: 18px;
   padding: 26px 30px;
-  margin-bottom: 24px;
-  display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 32px;
-  align-items: start;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
   position: relative;
   overflow: hidden;
 }
@@ -52,7 +50,7 @@
   position: relative;
   z-index: 1;
 }
-.tc-create-hero__top {
+.tc-hero-top {
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -95,7 +93,7 @@
   50% { box-shadow: 0 0 0 7px rgba(94, 233, 155, 0.08); }
 }
 
-.tc-create-hero .tc-page-title {
+.tc-create-hero .tc-hero-h1 {
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
   font-weight: 800;
@@ -104,7 +102,7 @@
   margin: 0 0 6px;
   color: #fff;
 }
-.tc-create-hero .tc-page-sub {
+.tc-create-hero .tc-hero-sub {
   font-size: var(--fs-sm);
   color: rgba(255, 255, 255, 0.62);
   line-height: 1.5;
@@ -133,20 +131,25 @@
 
 /* ── Hero widgets container ── side-by-side estimate + checklist */
 .tc-hero-widgets {
+  margin-top: 26px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: start;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
   position: relative;
   z-index: 1;
 }
 .tc-hero-widgets .tc-summary-card,
 .tc-hero-widgets .tc-checklist {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  border: none;
+  border-radius: 0;
   backdrop-filter: blur(8px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  padding: 16px 20px;
   margin-bottom: 0;
+  box-shadow: none;
 }
 
 /* Override summary card styles inside the dark hero */
@@ -239,8 +242,6 @@
 /* ── Responsive ── */
 @media (max-width: 1200px) {
   .tc-create-hero {
-    grid-template-columns: 1fr;
-    gap: 24px;
     padding: 20px;
   }
   .tc-create-bento { grid-template-columns: 1fr; }
@@ -248,9 +249,18 @@
 }
 @media (max-width: 640px) {
   .tc-create-wrap { padding: 8px 12px 0; }
-  .tc-create-hero { padding: 16px; margin-bottom: 14px; gap: 14px; }
-  .tc-create-hero__top { gap: 12px; flex-wrap: wrap; }
-  .tc-create-hero .tc-page-title { font-size: var(--fs-xl); line-height: 1.2; }
-  .tc-hero-widgets { grid-template-columns: 1fr; gap: 16px; }
+  .tc-create-hero { padding: 16px; margin-bottom: 14px; }
+  .tc-hero-top { gap: 12px; flex-wrap: wrap; }
+  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-hero-widgets {
+    grid-template-columns: 1fr;
+    gap: 1px;
+    border-radius: 10px;
+    margin-top: 18px;
+  }
+  .tc-hero-widgets .tc-summary-card,
+  .tc-hero-widgets .tc-checklist {
+    padding: 12px 14px;
+  }
   .tc-create-bento { padding-bottom: 100px; gap: 16px; }
 }
