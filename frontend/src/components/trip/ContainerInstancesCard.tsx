@@ -131,8 +131,8 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
           slot[field] = value;
         }
       };
-      // The OCR call returns both container numbers and a seal for every image;
-      // fill whichever are present, regardless of which zone the photo came from.
+      // Extraction is type-specific: a CONTAINER photo yields only container
+      // numbers, a SEAL photo only the seal. Fill whichever the broadcast carries.
       fillEmpty('containerNumber', ocrResult.containerNumbers);
       if (hasSeal) fillEmpty('sealNumber', [ocrResult.sealNumber!]);
       return next;

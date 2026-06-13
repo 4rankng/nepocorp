@@ -10,6 +10,8 @@ export interface SelectFieldProps
   required?: boolean;
   error?: string;
   helpText?: string;
+  /** Shown in the trigger when no option is selected. Defaults to "— Chọn —". */
+  placeholder?: string;
   children: React.ReactNode;
   className?: string;
 }
@@ -38,15 +40,16 @@ export function SelectField({
   const optionsList: { value: string; label: string }[] = [];
   React.Children.forEach(children, (child) => {
     if (React.isValidElement(child) && child.type === 'option') {
-      const val = String(child.props.value ?? '');
-      const lbl = String(child.props.children ?? '');
+      const optionProps = child.props as { value?: unknown; children?: React.ReactNode };
+      const val = String(optionProps.value ?? '');
+      const lbl = String(optionProps.children ?? '');
       optionsList.push({ value: val, label: lbl });
     }
   });
 
   const selectedValue = value !== undefined ? String(value) : '';
   const selectedOption = optionsList.find(opt => opt.value === selectedValue) || optionsList[0];
-  const displayLabel = selectedOption ? selectedOption.label : '— Chọn —';
+  const displayLabel = selectedOption ? selectedOption.label : (placeholder ?? '— Chọn —');
 
   const handleSelect = (val: string) => {
     if (disabled) return;

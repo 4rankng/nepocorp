@@ -45,13 +45,25 @@ Format: A valid container number ALWAYS consists of exactly 4 uppercase letters 
 
 Layout: The letters and digits may be separated by spaces, dashes, or printed across multiple lines. Concatenate them into a single, continuous 11-character alphanumeric string without spaces.
 
-Exclusions: Strictly ignore ISO size/type codes (e.g., 22G1, 45G1, 42G1), company names, and weight/capacity specifications (e.g., MAX GW, TARE, NET, CU CAP, KG, LB).
+Exclusions: Strictly ignore ISO size/type codes (e.g., 22G1, 45G1, 42G1), company names, and weight/capacity specifications (e.g., MAX GW, TARE, NET, CU CAP, KG, LB). Also ignore any seal number — focus on container numbers only.
 
-Common Errors: Pay close attention to characters that look similar (e.g., distinguish the letter O from the number 0, the letter Q from O, and the letter S from the number 5). Remember: the first 4 characters are always letters, and the last 7 are always numbers.
+Common Errors: Pay close attention to characters that look similar (e.g., distinguish the letter O from the number 0, the letter Q from O, and the letter S from the number 5). Remember: the first 4 characters are always letters, and the last 7 are numbers.
 
-Output: Return ONLY a clean JSON object containing the recognized container numbers and the seal number. Do not include any conversational text. Example: {"container_numbers": ["ALLU5216535", "LSQU1077376"], "seal_number": "VN123456"}
+Output: Return ONLY a clean JSON object containing the recognized container numbers. Do not include any conversational text. Example: {"container_numbers": ["ALLU5216535", "LSQU1077376"]}`;
 
-Also extract the seal number printed on the seal. A seal number is alphanumeric, UPPERCASE, no spaces (e.g. "VN123456"). If no seal is visible, return null for seal_number. A seal has no check-digit standard — return it verbatim.`;
+const SEAL_PROMPT = `Role: You are an expert logistics OCR assistant specializing in shipping container seals. Examine the provided image and extract the seal number printed on the container seal.
+
+Extraction Rules:
+
+Format: A seal number is alphanumeric, UPPERCASE, no spaces (e.g., "VN123456", "SL1234567", "ABC12345"). It often appears on a bolt seal, cable seal, or a sticker near the container door handles.
+
+Layout: The characters may be separated by spaces or dashes. Concatenate them into a single continuous string without spaces.
+
+Exclusions: Strictly ignore ISO container numbers (4 letters + 7 digits such as MSKU1234567), ISO size/type codes (e.g., 22G1, 45G1), company names, and weight/capacity specifications (e.g., MAX GW, TARE, NET, CU CAP, KG, LB). Focus on the seal number only.
+
+Common Errors: Pay close attention to characters that look similar (e.g., distinguish the letter O from the number 0, the letter I from the number 1). Seal numbers have no fixed length — return the full value exactly as printed.
+
+Output: Return ONLY a clean JSON object containing the recognized seal number. Do not include any conversational text. Example: {"seal_number": "VN123456"}`;
 
 // JSON schema enforced at the Gemini engine level (Gemini v1beta schema format).
 const CONTAINER_SCHEMA = {
@@ -62,13 +74,20 @@ const CONTAINER_SCHEMA = {
       description: 'List of all valid ISO 6346 container numbers found in the image.',
       items: { type: 'STRING', pattern: '^[A-Z]{4}\\d{7}$' },
     },
+  },
+  required: ['container_numbers'],
+};
+
+const SEAL_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
     seal_number: {
       type: 'STRING',
       nullable: true,
       description: 'Alphanumeric seal number printed on the seal (uppercase, no spaces), or null if none.',
     },
   },
-  required: ['container_numbers'],
+  required: ['seal_number'],
 };
 
 export interface GeminiVisionResult {
@@ -142,8 +161,11 @@ export async function callGeminiVision(
       });
 
       if (!response.ok) {
+        // Keep server-side observability for upstream failures (400/403/429/5xx)
+        // without leaking the API key or spamming dev output — the user-facing
+        // error stays the clean `HTTP <status>` string below.
         const errBody = await response.text().catch(() => '<no body>');
-        console.error(`[ocr] Gemini ${model} → ${response.status}: ${errBody.slice(0, 600)} | keyPrefix=${config.geminiApiKey.slice(0, 6)}… keyLen=${config.geminiApiKey.length} | buffer=${buffer.length}B mime=${mime} schemaKeys=${Object.keys(responseSchema ?? {}).join(',')}`);
+        console.error(`[ocr] Gemini ${model} → ${response.status}: ${errBody.slice(0, 500)}`);
         lastError = `HTTP ${response.status}`;
         continue;
       }
@@ -273,15 +295,18 @@ export interface ExtractResult {
 }
 
 /**
- * Extract ALL container numbers + the seal number from an image.
+ * Extract container or seal numbers from an image based on the requested type.
  *
- * Single deterministic call (temperature 0.0). Container numbers with invalid
- * ISO 6346 check digits are auto-corrected when a near-miss valid number exists;
- * the original→corrected mapping is returned in `checkDigitWarnings` so the UI
- * can show it for manual confirmation.
+ * - `CONTAINER`: extracts ISO 6346 container numbers only.
+ * - `SEAL`: extracts the seal number only.
+ *
+ * Type-specific prompts prevent cross-contamination (e.g. a seal photo being
+ * misread as a container number). Container numbers with invalid ISO 6346 check
+ * digits are auto-corrected when a near-miss valid number exists.
  */
 export async function extractContainerAndSeal(
   imageBuffer: Buffer,
+  type: 'CONTAINER' | 'SEAL' = 'CONTAINER',
   mimeType = 'image/jpeg',
 ): Promise<ExtractResult> {
   let buffer = imageBuffer;
@@ -294,7 +319,9 @@ export async function extractContainerAndSeal(
     // keep raw image if preprocessing fails
   }
 
-  const result = await callGeminiVision(MULTI_CONTAINER_PROMPT, buffer, mime, CONTAINER_SCHEMA);
+  const prompt = type === 'SEAL' ? SEAL_PROMPT : MULTI_CONTAINER_PROMPT;
+  const schema = type === 'SEAL' ? SEAL_SCHEMA : CONTAINER_SCHEMA;
+  const result = await callGeminiVision(prompt, buffer, mime, schema);
 
   if (!result.success || !result.text) {
     return {
@@ -302,13 +329,26 @@ export async function extractContainerAndSeal(
       containerNumbers: [],
       sealNumber: null,
       checkDigitWarnings: [],
-      error: result.error ?? 'Không nhận dạng được số cont',
+      error: result.error ?? (type === 'SEAL' ? 'Không nhận dạng được số seal' : 'Không nhận dạng được số cont'),
       provider: 'gemini',
       model: result.model,
     };
   }
 
   const parsed = parseResponse(result.text);
+
+  if (type === 'SEAL') {
+    return {
+      success: !!parsed.sealNumber,
+      containerNumbers: [],
+      sealNumber: parsed.sealNumber,
+      checkDigitWarnings: [],
+      error: parsed.sealNumber ? null : 'Không nhận dạng được số seal',
+      provider: 'gemini',
+      model: result.model,
+    };
+  }
+
   // Validate FORMAT only (4 letters + 7 digits). We intentionally skip the
   // ISO 6346 check-digit verification here — VLMs misread 1–2 chars. The user
   // visually confirms; checkDigitWarnings surface auto-corrections.
@@ -318,7 +358,7 @@ export async function extractContainerAndSeal(
     return {
       success: false,
       containerNumbers: [],
-      sealNumber: parsed.sealNumber,
+      sealNumber: null,
       checkDigitWarnings: [],
       error: 'Không nhận dạng được số cont',
       provider: 'gemini',
@@ -332,7 +372,7 @@ export async function extractContainerAndSeal(
   return {
     success: true,
     containerNumbers: capped,
-    sealNumber: parsed.sealNumber,
+    sealNumber: null,
     checkDigitWarnings: warnings,
     error: null,
     provider: 'gemini',

@@ -22,7 +22,7 @@ import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
 import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
-import type { OcrResultHandler } from './useTripFormPhotos';
+import type { OcrResultHandler, UploadingState } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
@@ -66,7 +66,7 @@ export interface UseTripFormDispatchReturn {
   completedSections: number;
   requiredFieldsFilled: number;
   totalRequiredFields: number;
-  uploading: boolean;
+  uploading: UploadingState;
   ocrResult: OcrSignal | null;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
   selectedRouteData: RouteOption | null;

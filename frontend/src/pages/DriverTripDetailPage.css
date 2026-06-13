@@ -122,13 +122,27 @@
 .dt-section--LOCKED { border-left: 3px solid #00B14F; }
 .dt-section--CANCELED { border-left: 3px solid #EF4444; }
 
-/* Keep .dcc (DriverContainerCard) — same grouped-card treatment */
-.driver-trip-detail-page .dcc {
-  margin: 8px 16px 0;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  overflow: hidden;
+/* DriverContainerCard — flat section, NO card wrapper. The bento grid (and
+   the entry form) are the visual containers; the section only carries a
+   lightweight title so the bento is never double-wrapped in a card. */
+.dcc-section {
+  margin: 16px 16px 0;
+}
+.dcc-section__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px 10px;
+}
+.dcc-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.dcc-section__body {
+  /* flat — bento / form manage their own containers */
 }
 
 /* Keep fuel card — visually prominent widget, same card frame */
@@ -200,6 +214,24 @@
   font-weight: 700;
   font-size: 17px;
   font-family: var(--font-mono);
+}
+
+/* Income & expenses — two columns side by side with a hairline divider,
+   so Tiền kết hợp and Tiền đi đường read at a glance. */
+.dt-earnings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.dt-earnings-grid .info-row {
+  border-bottom: none;
+  padding: 6px 0;
+}
+.dt-earnings-grid .info-row:first-child {
+  border-right: 1px solid var(--line);
+  padding-right: 14px;
+}
+.dt-earnings-grid .info-row:last-child {
+  padding-left: 14px;
 }
 
 .return-cargo-badge {
@@ -406,13 +438,37 @@
   cursor: progress;
 }
 
+/* Uploaded photos — square thumbnails shown side-by-side so the driver can
+   verify both the cont and seal capture at a glance. */
+.dcc-photos {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.dcc-photo-fig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 .dcc-photo {
-  width: 100%;
-  max-height: 160px;
+  width: 92px;
+  height: 92px;
   object-fit: cover;
   border-radius: 12px;
   border: 1px solid var(--line);
-  margin-bottom: 14px;
+  display: block;
+}
+.dcc-photo-fig figcaption {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-align: center;
+}
+/* Thumbnail strip shown inside the read-only saved-container card */
+.dcc-photos--saved {
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 
 /* Fields — single column, DS TextField/SelectField stacked (touch-friendly) */
@@ -435,4 +491,205 @@
   font-size: 12px;
   color: var(--ink-3);
   line-height: 1.5;
+}
+
+/* ============================================================================
+   Bento read-only view (saved container) — dispatch-style metric strip:
+   a full-width featured hero over a hairline-split 1×2 row (Seal + photos).
+   The 1px gap sits over a shared --line background so dividers are single
+   hairlines, not double borders. Brand accent is a centered 3×20 status
+   strip on the hero (NEVER a full-height bar). Photos are pinned to fixed
+   square dimensions so the grid can never stretch them.
+   ========================================================================== */
+.dcc-bento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Hero — full-width featured tile with the container number as a license-
+   plate badge, type below, Sửa button top-right. Soft brand tint. The
+   centered 3×20 strip carries the accent (NOT full height). */
+.dcc-bento__hero {
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 18px;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 72%);
+}
+
+.dcc-bento__hero::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.dcc-bento__hero-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dcc-bento__eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.dcc-bento__plate {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--surface);
+  padding: 6px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dcc-bento__hero-meta {
+  margin-top: 7px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* Sửa — pill button, top-right of the hero. Hover lifts to brand green so
+   it reads as a discoverable affordance without screaming. */
+.dcc-bento__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.dcc-bento__edit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+.dcc-bento__edit-btn:active { transform: translateY(0); }
+
+/* Seal + photos cells — equal halves, white surface so the 1px grid gap
+   reads as a hairline divider between them. Grid stretch makes both cells
+   share the row height (set by the photos cell). */
+.dcc-bento__seal,
+.dcc-bento__photos {
+  background: var(--surface);
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dcc-bento__seal-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+  word-break: break-all;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.dcc-bento__dash {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* Photo thumbnails — two FIXED square tiles side-by-side inside one cell.
+   Width + height are both pinned (not aspect-ratio on a flexible width),
+   so the bento grid can never stretch them; object-fit crops instead. */
+.dcc-bento__thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.dcc-bento__thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: block;
+  background: var(--surface-3);
+  flex-shrink: 0;
+}
+
+/* Empty thumbnail — dashed square matching the filled thumbnail's footprint
+   so the pair stays balanced when one photo is missing. */
+.dcc-bento__thumb-empty {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   Edit form actions — Save + Cancel as a row; Cancel uses the secondary
+   variant so Save (primary, brand green) keeps the dominant affordance.
+   ========================================================================== */
+.dcc-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.driver-trip-detail-page .dcc-cancel {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 18px;
+}
+
+.driver-trip-detail-page .dcc-save {
+  flex: 1 1 auto;
+  height: 44px;
+  margin-top: 0;
 }

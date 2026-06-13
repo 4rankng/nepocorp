@@ -2,9 +2,13 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "outDir": "dist",
-    "rootDir": "src",
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@tingting/shared": ["../shared/src"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../shared/src"],
+  "exclude": ["../shared/src/**/*.test.ts", "../shared/src/**/__tests__/**"]
 }

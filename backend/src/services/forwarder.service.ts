@@ -163,6 +163,48 @@ export async function createTripContainer(data: {
   return inserted;
 }
 
+// Single-row update used by the driver edit flow (Sửa / change number / seal).
+// Only the fields the caller passes are written; null means "clear this field".
+// Refuses to touch a row on a LOCKED trip — that is the lock's whole purpose.
+export async function updateTripContainer(
+  containerId: number,
+  patch: {
+    containerTypeId?: number | null;
+    containerNumber?: string;
+    sealNumber?: string | null;
+    cargoWeightKg?: string | number | null;
+    notes?: string | null;
+  },
+) {
+  const [row] = await db.select({ id: s.tripContainers.id, tripId: s.tripContainers.tripId })
+    .from(s.tripContainers).where(eq(s.tripContainers.id, containerId)).limit(1);
+  if (!row) throw new ApiError(404, 'Không tìm thấy số cont');
+
+  const [trip] = await db.select({ status: s.trips.status })
+    .from(s.trips).where(eq(s.trips.id, row.tripId)).limit(1);
+  if (trip?.status === 'LOCKED') {
+    throw new ApiError(409, 'Không thể sửa số cont của chuyến đã chốt');
+  }
+
+  const set: Record<string, unknown> = { updatedAt: new Date() };
+  if (patch.containerTypeId !== undefined) set.containerTypeId = patch.containerTypeId ?? null;
+  if (patch.containerNumber !== undefined) set.containerNumber = patch.containerNumber;
+  if (patch.sealNumber !== undefined) set.sealNumber = patch.sealNumber ?? null;
+  if (patch.cargoWeightKg !== undefined) {
+    set.cargoWeightKg = patch.cargoWeightKg != null ? String(patch.cargoWeightKg) : null;
+  }
+  if (patch.notes !== undefined) set.notes = patch.notes ?? null;
+
+  if (Object.keys(set).length === 1) {
+    // No real fields to write — return the existing row unchanged.
+    return listTripContainers(row.tripId).then(rows => rows.find(r => r.id === containerId));
+  }
+
+  await db.update(s.tripContainers).set(set).where(eq(s.tripContainers.id, containerId));
+  const rows = await listTripContainers(row.tripId);
+  return rows.find(r => r.id === containerId);
+}
+
 // ─── Trip-container management (used by accountant/manager via trip edit) ─────
 
 export async function listTripContainers(tripId: number, tx?: Tx) {

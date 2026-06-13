@@ -28,15 +28,26 @@ export type OcrResultHandler = (
   type: 'CONTAINER' | 'SEAL',
 ) => void;
 
+/** Per-zone upload-in-progress flag. Tracks CONTAINER, SEAL, and OTHER
+ *  independently so a pending container upload doesn't grey out the seal
+ *  button (and vice-versa). */
+export type UploadingState = Record<PhotoType, boolean>;
+
+/** True when any zone is currently uploading. Use this for save/submit
+ *  disable checks where any in-flight upload should block the action. */
+export function isAnyUploading(uploading: UploadingState): boolean {
+  return Object.values(uploading).some(Boolean);
+}
+
 export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: OcrResultHandler) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState<UploadingState>({ CONTAINER: false, SEAL: false, OTHER: false });
   // Create-mode OCR photos are kept in RAM (no trip id yet) and uploaded once
   // the trip is created — see flushPendingPhotos.
   const pendingRef = useRef<PendingPhoto[]>([]);
 
   const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: PhotoType = 'OTHER') => {
-    setUploading(true);
+    setUploading(prev => ({ ...prev, [type]: true }));
     try {
       for (const file of Array.from(files)) {
         if (type === 'CONTAINER' || type === 'SEAL') {
@@ -75,7 +86,7 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Lỗi khi tải ảnh.');
     } finally {
-      setUploading(false);
+      setUploading(prev => ({ ...prev, [type]: false }));
     }
   }, [onError, onOcrResult]);
 

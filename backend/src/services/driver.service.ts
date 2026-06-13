@@ -92,7 +92,23 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
   // (populated by the OCR flow).
   const containers = await listTripContainers(tripId);
 
-  return { ...trip, legs, containers };
+  // Latest uploaded photo per type for this trip — shown as thumbnails on the
+  // driver detail page once a container has been saved. Run both lookups
+  // concurrently rather than awaiting them back-to-back.
+  const latestPhotoKey = (type: 'CONTAINER' | 'SEAL') =>
+    db.select({ storageKey: s.tripPhotos.storageKey })
+      .from(s.tripPhotos)
+      .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)))
+      .orderBy(desc(s.tripPhotos.uploadedAt))
+      .limit(1)
+      .then(rows => rows[0]?.storageKey ?? null);
+
+  const [contPhotoKey, sealPhotoKey] = await Promise.all([
+    latestPhotoKey('CONTAINER'),
+    latestPhotoKey('SEAL'),
+  ]);
+
+  return { ...trip, legs, containers, contPhotoKey, sealPhotoKey };
 }
 
 /**

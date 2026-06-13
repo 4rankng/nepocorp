@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, Loader2, Save, Package, AlertCircle } from 'lucide-react';
+import { Camera, Loader2, Save, Package, AlertCircle, Pencil, X, Check, ImageOff } from 'lucide-react';
 import { api, getAuthenticatedPhotoUrl } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
@@ -33,12 +33,19 @@ import {
  *
  * Numbers are NEVER auto-committed (locked design decision #1): the OCR result
  * only pre-fills the form; nothing reaches the DB until the driver taps Lưu.
+ *
+ * After a container is saved, the card switches to a bento read-only view
+ * (license-plate hero + 1/1+1/1 cells for seal / cont photo, wide tile for
+ * seal photo). A Sửa button on the hero re-enters the form pre-filled with
+ * the saved values; saving there PATCHes the existing row instead of creating
+ * a new one.
  */
 
 interface ExistingContainer {
   id: number;
   containerNumber: string;
   sealNumber: string | null;
+  containerTypeId: number | null;
   containerTypeName: string | null;
   containerTypeCode: string | null;
   cargoWeightKg: string | null;
@@ -62,6 +69,10 @@ interface Props {
   tripId: number;
   /** Existing containers for this trip (read-only display; refreshed by parent). */
   containers: ExistingContainer[];
+  /** Storage key of the latest container photo — shown as a thumbnail once saved. */
+  contPhotoKey: string | null;
+  /** Storage key of the latest seal photo — shown as a thumbnail once saved. */
+  sealPhotoKey: string | null;
   onSaved: () => void;
 }
 
@@ -81,14 +92,34 @@ function checkContainerNumber(cn: string): CheckStatus {
   return { warning: 'Số cont sai chữ số kiểm tra — kiểm tra lại.', suggestion: corrections[0] ?? null };
 }
 
-export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
+/** Normalize a stored photo reference to an authenticated `/api/photos/` URL.
+ *  Accepts either a bare storage key (e.g. `trips/154/container-…jpg`, as
+ *  returned by getDriverTripDetail) or an already-formed `/api/photos/…` URL
+ *  (as returned by a fresh OCR upload). Bare keys are encoded so the slashes
+ *  survive as a single path segment that the wildcard photo route decodes. */
+function photoSrc(value: string | null | undefined): string {
+  if (!value) return '';
+  const url = value.startsWith('/api/photos/') ? value : `/api/photos/${encodeURIComponent(value)}`;
+  return getAuthenticatedPhotoUrl(url);
+}
+
+/** One bento thumbnail: the photo if `key` is present, else a labelled empty
+ *  placeholder. Cont and Seal thumbs are identical modulo key + label. */
+function renderThumb(key: string | null, label: string) {
+  return key
+    ? <img className="dcc-bento__thumb" src={photoSrc(key)} alt={`Ảnh ${label.toLowerCase()}`} />
+    : <div className="dcc-bento__thumb-empty"><ImageOff size={15} /><span>{label}</span></div>;
+}
+
+export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhotoKey, onSaved }: Props) {
   const { toast } = useToast();
   const [draft, setDraft] = useState({ containerNumber: '', sealNumber: '', containerTypeId: '' });
-  const [lastPhoto, setLastPhoto] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [lastPhotos, setLastPhotos] = useState<{ cont: string | null; seal: string | null }>({ cont: null, seal: null });
+  const [uploading, setUploading] = useState<{ cont: boolean; seal: boolean }>({ cont: false, seal: false });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scannerType, setScannerType] = useState<'CONTAINER' | 'SEAL' | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
     queryKey: qk.catalogs.containerTypes,
@@ -96,38 +127,73 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
     staleTime: 5 * 60 * 1000,
   });
 
+  const hasSaved = containers.length > 0;
+  const showForm = !hasSaved || editing;
+  const editingExisting = hasSaved && editing;
+
+  const enterEdit = () => {
+    if (!hasSaved) return;
+    const c = containers[0];
+    setDraft({
+      containerNumber: c.containerNumber,
+      sealNumber: c.sealNumber ?? '',
+      containerTypeId: c.containerTypeId ? String(c.containerTypeId) : '',
+    });
+    // Seed the photo strip with the currently-saved photos so the driver can see
+    // what was on file before they decide to re-capture. Re-capture overwrites
+    // these in-place, and the parent refetch updates contPhotoKey/sealPhotoKey.
+    setLastPhotos({ cont: contPhotoKey, seal: sealPhotoKey });
+    setError(null);
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setError(null);
+  };
+
   const onPick = async (file: File | undefined, _type: 'CONTAINER' | 'SEAL') => {
     if (!file) return;
-    setUploading(true);
+    const key = _type === 'CONTAINER' ? 'cont' : 'seal';
+    setUploading(prev => ({ ...prev, [key]: true }));
     setError(null);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      // The OCR call returns both container numbers and a seal regardless of
-      // which zone the photo came from; `type` only categorizes the saved photo.
+      // The backend now uses type-specific extraction: CONTAINER photos only
+      // extract container numbers, SEAL photos only extract seal numbers.
       formData.append('type', _type);
       formData.append('trip_id', String(tripId));
       const result = await api.upload('/ocr', formData) as OcrResponse;
 
-      const cn = result.containerNumbers?.[0];
-      setDraft(prev => ({
-        ...prev,
-        containerNumber: cn ? cn.toUpperCase() : prev.containerNumber,
-        sealNumber: result.sealNumber ? result.sealNumber.toUpperCase() : prev.sealNumber,
-      }));
-      if (result.photoUrl) setLastPhoto(result.photoUrl);
+      if (_type === 'CONTAINER') {
+        const cn = result.containerNumbers?.[0];
+        if (cn) {
+          setDraft(prev => ({ ...prev, containerNumber: cn.toUpperCase() }));
+        }
+      } else {
+        if (result.sealNumber) {
+          setDraft(prev => ({ ...prev, sealNumber: result.sealNumber!.toUpperCase() }));
+        }
+      }
+
+      if (result.photoUrl) {
+        setLastPhotos(prev => ({ ...prev, [key]: result.photoUrl! }));
+      }
 
       if (result.error) {
         setError(result.error);
-      } else if (cn || result.sealNumber) {
+      } else if ((result.containerNumbers?.length ?? 0) > 0 || result.sealNumber) {
         toast({ kind: 'info', message: 'Đã nhận diện số — xem lại rồi bấm Lưu.' });
       } else {
-        setError('Không thấy số cont/seal trên ảnh. Hãy nhập tay hoặc chụp lại.');
+        setError(_type === 'SEAL'
+          ? 'Không thấy số seal trên ảnh. Hãy nhập tay hoặc chụp lại.'
+          : 'Không thấy số cont trên ảnh. Hãy nhập tay hoặc chụp lại.');
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Lỗi nhận diện ảnh.');
     } finally {
-      setUploading(false);
+      setUploading(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -139,15 +205,33 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
     }
     setSaving(true);
     try {
-      await api.post(`/driver/me/trips/${tripId}/containers`, {
+      // Both branches persist the same payload — only the verb + outcome differ.
+      const payload = {
         containerNumber: draft.containerNumber.trim().toUpperCase(),
         sealNumber: draft.sealNumber.trim() || null,
         containerTypeId: draft.containerTypeId ? Number(draft.containerTypeId) : null,
-      });
-      setDraft({ containerNumber: '', sealNumber: '', containerTypeId: '' });
-      setLastPhoto(null);
-      toast({ kind: 'success', message: 'Đã lưu số cont.' });
-      onSaved(); // parent refetches trip detail → list refreshes with the new row
+      };
+      if (editingExisting) {
+        // PATCH the existing row — preserves id, audit history, and updates
+        // updatedAt. Photos are re-persisted by the OCR pipeline (saveTripPhoto)
+        // so the latest photo becomes the canonical one on the next refetch.
+        const id = containers[0].id;
+        await api.patch(`/driver/me/trips/${tripId}/containers/${id}`, payload);
+        toast({ kind: 'success', message: 'Đã cập nhật số cont.' });
+        setEditing(false);
+      } else {
+        // First-time save — creates the row. Numbers are never auto-committed
+        // (locked design decision #1): the OCR result only pre-fills the form;
+        // nothing reaches the DB until the driver taps Lưu.
+        await api.post(`/driver/me/trips/${tripId}/containers`, payload);
+        // Intentionally RETAIN draft + lastPhotos after a successful save:
+        // clearing was discarding the cont number, seal number and both photos
+        // the instant the save went through, so the driver couldn't review what
+        // was captured. The saved row still appears in the read-only list via
+        // onSaved() below.
+        toast({ kind: 'success', message: 'Đã lưu số cont.' });
+      }
+      onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Lỗi lưu số cont.');
     } finally {
@@ -156,149 +240,221 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
   };
 
   const check = checkContainerNumber(draft.containerNumber);
+  const busy = saving || uploading.cont || uploading.seal;
 
   return (
-    <div className="panel panel--solid dcc">
-      <div className="panel__head">
-        <Package size={16} style={{ color: 'var(--ink-3)' }} />
-        <span className="panel__head-title">Số cont & seal</span>
+    <section className="dcc-section">
+      <div className="dcc-section__head">
+        <Package size={15} style={{ color: 'var(--ink-3)' }} />
+        <span className="dcc-section__title">Số cont & seal</span>
       </div>
-      <div className="panel__body">
-        {/* Existing containers (read-only) */}
-        {containers.length > 0 && (
-          <div className="dcc-existing-list">
-            {containers.map(c => (
-              <div key={c.id} className="dcc-existing">
-                <div className="dcc-existing__top">
-                  <span className="dcc-existing__num">{c.containerNumber}</span>
-                  {c.containerTypeName && (
-                    <span className="dcc-existing__type">
-                      {c.containerTypeName}{c.containerTypeCode ? ` (${c.containerTypeCode})` : ''}
-                    </span>
-                  )}
-                </div>
-                {(c.sealNumber || c.cargoWeightKg) && (
-                  <div className="dcc-existing__meta">
-                    {c.sealNumber && <span>Seal: {c.sealNumber}</span>}
-                    {c.cargoWeightKg && <span>{Number(c.cargoWeightKg).toLocaleString('vi-VN')} kg</span>}
+      <div className="dcc-section__body">
+        {/* Bento read-only view — shown when a container has been saved and the
+            driver is NOT currently editing it. Dispatch-style metric strip: a
+            full-width featured hero (cont # + type + Sửa) over a hairline-split
+            1×2 row — Seal on the left, both photos as fixed square thumbnails
+            inside a single "Hình ảnh" cell on the right. A centered 3×20 status
+            strip on the hero carries the brand accent (never a full-height bar),
+            and thumbnails are pinned to fixed square dimensions so the grid can
+            never stretch them. */}
+        {hasSaved && !editing && (
+          <div className="dcc-bento">
+            <div className="dcc-bento__hero">
+              <div className="dcc-bento__hero-content">
+                <div className="dcc-bento__eyebrow">Số cont</div>
+                <div className="dcc-bento__plate">{containers[0].containerNumber}</div>
+                {containers[0].containerTypeName && (
+                  <div className="dcc-bento__hero-meta">
+                    {containers[0].containerTypeName}
+                    {containers[0].containerTypeCode ? ` · ${containers[0].containerTypeCode}` : ''}
                   </div>
                 )}
               </div>
-            ))}
+              <button
+                type="button"
+                className="dcc-bento__edit-btn"
+                onClick={enterEdit}
+                aria-label="Sửa số cont"
+              >
+                <Pencil size={13} /> Sửa
+              </button>
+            </div>
+
+            <div className="dcc-bento__seal">
+              <div className="dcc-bento__eyebrow">Seal</div>
+              <div className="dcc-bento__seal-value">
+                {containers[0].sealNumber || <span className="dcc-bento__dash">—</span>}
+              </div>
+            </div>
+
+            <div className="dcc-bento__photos">
+              <div className="dcc-bento__eyebrow">Hình ảnh</div>
+              <div className="dcc-bento__thumbs">
+                {renderThumb(contPhotoKey, 'Cont')}
+                {renderThumb(sealPhotoKey, 'Seal')}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Inline entry form — pre-filled by OCR, confirmed by the driver */}
-        {error && (
-          <div className="dcc-error">
-            <AlertCircle size={15} /> {error}
-          </div>
-        )}
+        {/* Entry form — shown for the very first save, and re-shown when the
+            driver taps Sửa. PATCH (edit) vs POST (create) is decided inside
+            handleSave based on the editingExisting flag. */}
+        {showForm && (
+          <>
+            {error && (
+              <div className="dcc-error">
+                <AlertCircle size={15} /> {error}
+              </div>
+            )}
 
-        {/* Capture zones — open the fullscreen camera/gallery overlay */}
-        <div className="dcc-capture">
-          <button
-            type="button"
-            className="dcc-capture-btn"
-            disabled={uploading}
-            onClick={() => setScannerType('CONTAINER')}
-          >
-            {uploading ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
-            <span>Ảnh cont</span>
-          </button>
-          <button
-            type="button"
-            className="dcc-capture-btn"
-            disabled={uploading}
-            onClick={() => setScannerType('SEAL')}
-          >
-            {uploading ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
-            <span>Ảnh seal</span>
-          </button>
-        </div>
+            {/* Capture zones — open the fullscreen camera/gallery overlay */}
+            <div className="dcc-capture">
+              <button
+                type="button"
+                className="dcc-capture-btn"
+                disabled={uploading.cont}
+                onClick={() => setScannerType('CONTAINER')}
+              >
+                {uploading.cont ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
+                <span>Ảnh cont</span>
+              </button>
+              <button
+                type="button"
+                className="dcc-capture-btn"
+                disabled={uploading.seal}
+                onClick={() => setScannerType('SEAL')}
+              >
+                {uploading.seal ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
+                <span>Ảnh seal</span>
+              </button>
+            </div>
 
-        {scannerType && (
-          <ContainerScanner
-            onCapture={dataUrl => {
-              void onPick(dataUrlToFile(dataUrl), scannerType);
-              setScannerType(null);
-            }}
-            onClose={() => setScannerType(null)}
-          />
-        )}
+            {scannerType && (
+              <ContainerScanner
+                onCapture={dataUrl => {
+                  void onPick(dataUrlToFile(dataUrl), scannerType);
+                  setScannerType(null);
+                }}
+                onClose={() => setScannerType(null)}
+              />
+            )}
 
-        {lastPhoto && (
-          <img className="dcc-photo" src={getAuthenticatedPhotoUrl(lastPhoto)} alt="Ảnh vừa chụp" />
-        )}
-
-        <div className="dcc-fields">
-          <div>
-            <TextField
-              label="Số container"
-              required
-              placeholder="VD: TCKU1234567"
-              value={draft.containerNumber}
-              onChange={e => setDraft(prev => ({ ...prev, containerNumber: e.target.value.toUpperCase() }))}
-            />
-            {check.warning && (
-              <div className="dcc-warn">
-                <span>⚠ {check.warning}</span>
-                {check.suggestion && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    style={{ minHeight: 26, padding: '0 10px', fontSize: 12 }}
-                    onClick={() => setDraft(prev => ({ ...prev, containerNumber: check.suggestion! }))}
-                  >
-                    Đổi thành {check.suggestion}
-                  </button>
+            {/* Show the most recently uploaded photo for each capture zone so the
+                driver can verify both the cont photo and the seal photo side-by-side
+                before pressing Save. In edit mode this is seeded with the
+                currently-saved photos so the driver can see what was on file
+                before deciding to re-capture. */}
+            {(lastPhotos.cont || lastPhotos.seal) && (
+              <div className="dcc-photos">
+                {lastPhotos.cont && (
+                  <figure className="dcc-photo-fig">
+                    <img className="dcc-photo" src={photoSrc(lastPhotos.cont)} alt="Ảnh cont" />
+                    <figcaption>Ảnh cont</figcaption>
+                  </figure>
+                )}
+                {lastPhotos.seal && (
+                  <figure className="dcc-photo-fig">
+                    <img className="dcc-photo" src={photoSrc(lastPhotos.seal)} alt="Ảnh seal" />
+                    <figcaption>Ảnh seal</figcaption>
+                  </figure>
                 )}
               </div>
             )}
-          </div>
 
-          <TextField
-            label="Số seal"
-            placeholder="VD: AB123456"
-            value={draft.sealNumber}
-            onChange={e => setDraft(prev => ({ ...prev, sealNumber: e.target.value.toUpperCase() }))}
-          />
+            <div className="dcc-fields">
+              <div>
+                <TextField
+                  label="Số container"
+                  required
+                  placeholder="VD: TCKU1234567"
+                  value={draft.containerNumber}
+                  onChange={e => setDraft(prev => ({ ...prev, containerNumber: e.target.value.toUpperCase() }))}
+                />
+                {check.warning && (
+                  <div className="dcc-warn">
+                    <span>⚠ {check.warning}</span>
+                    {check.suggestion && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        style={{ minHeight: 26, padding: '0 10px', fontSize: 12 }}
+                        onClick={() => setDraft(prev => ({ ...prev, containerNumber: check.suggestion! }))}
+                      >
+                        Đổi thành {check.suggestion}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
-          <div className="ds-field">
-            <label className="ds-field__label">Loại cont</label>
-            <Select
-              value={draft.containerTypeId ? String(draft.containerTypeId) : "none"}
-              onValueChange={val => setDraft(prev => ({ ...prev, containerTypeId: val === "none" ? "" : val }))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="— Chọn loại —" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— Chọn loại —</SelectItem>
-                {containerTypes.map(ct => (
-                  <SelectItem key={ct.id} value={String(ct.id)}>
-                    {ct.name} ({ct.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+              <TextField
+                label="Số seal"
+                placeholder="VD: AB123456"
+                value={draft.sealNumber}
+                onChange={e => setDraft(prev => ({ ...prev, sealNumber: e.target.value.toUpperCase() }))}
+              />
 
-        <button
-          type="button"
-          className="btn btn--primary dcc-save"
-          onClick={handleSave}
-          disabled={saving || uploading}
-        >
-          {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
-          {saving ? 'Đang lưu…' : 'Lưu số cont'}
-        </button>
+              <div className="ds-field">
+                <label className="ds-field__label">Loại cont</label>
+                <Select
+                  value={draft.containerTypeId ? String(draft.containerTypeId) : "none"}
+                  onValueChange={val => setDraft(prev => ({ ...prev, containerTypeId: val === "none" ? "" : val }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="— Chọn loại —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Chọn loại —</SelectItem>
+                    {containerTypes.map(ct => (
+                      <SelectItem key={ct.id} value={String(ct.id)}>
+                        {ct.name} ({ct.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <p className="dcc-help">
-          Chụp/tải ảnh vỏ cont hoặc seal — app tự nhận diện số. Hãy kiểm tra lại rồi bấm Lưu.
-        </p>
+            <div className="dcc-actions">
+              {editingExisting && (
+                <button
+                  type="button"
+                  className="btn btn--secondary dcc-cancel"
+                  onClick={cancelEdit}
+                  disabled={busy}
+                >
+                  <X size={16} />
+                  Hủy
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--primary dcc-save"
+                onClick={handleSave}
+                disabled={saving || uploading.cont || uploading.seal}
+              >
+                {saving
+                  ? <Loader2 size={16} className="spin" />
+                  : editingExisting
+                    ? <Check size={16} />
+                    : <Save size={16} />}
+                {saving
+                  ? 'Đang lưu…'
+                  : editingExisting
+                    ? 'Lưu thay đổi'
+                    : 'Lưu số cont'}
+              </button>
+            </div>
+
+            <p className="dcc-help">
+              {editingExisting
+                ? 'Thay đổi số cont, seal hoặc chụp lại ảnh — bấm Lưu thay đổi khi xong.'
+                : 'Chụp/tải ảnh vỏ cont hoặc seal — app tự nhận diện số. Hãy kiểm tra lại rồi bấm Lưu.'}
+            </p>
+          </>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

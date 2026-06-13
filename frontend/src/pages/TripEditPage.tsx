@@ -8,6 +8,7 @@ import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useTripForm } from '../hooks/useTripForm';
+import { isAnyUploading } from '../hooks/useTripFormPhotos';
 import { TripFormProvider } from '../hooks/useTripFormContext';
 import { FuelSection } from '../components/trip/FuelSection';
 import { AllowanceSection } from '../components/trip/AllowanceSection';
@@ -297,7 +298,7 @@ export default function TripEditPage() {
                   type="submit"
                   form="trip-edit-form"
                   className="btn btn--primary"
-                  disabled={submitting || uploading}
+                  disabled={submitting || isAnyUploading(uploading)}
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
                   {submitting ? (
@@ -336,7 +337,7 @@ export default function TripEditPage() {
             type="submit"
             form="trip-edit-form"
             className="btn btn--primary"
-            disabled={submitting || uploading}
+            disabled={submitting || isAnyUploading(uploading)}
             style={{ flex: 2, justifyContent: 'center', minHeight: 44 }}
           >
             {submitting ? <><Loader2 size={16} className="spin" /> Đang lưu…</> : <><Save size={16} /> Lưu</>}

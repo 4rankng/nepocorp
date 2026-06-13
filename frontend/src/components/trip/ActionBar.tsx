@@ -2,6 +2,7 @@ import React from 'react';
 import './ActionBar.css';
 import { AlertTriangle, Check, Save, ArrowRight, Loader2 } from 'lucide-react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
+import { isAnyUploading } from '../../hooks/useTripFormPhotos';
 
 interface ActionBarProps {
   loading?: boolean;
@@ -12,7 +13,7 @@ interface ActionBarProps {
 export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
   const form = useTripFormContext();
   const allFilled = form.requiredFieldsFilled >= form.totalRequiredFields;
-  const disabled = form.submitting || form.uploading || loading;
+  const disabled = form.submitting || isAnyUploading(form.uploading) || loading;
 
   return (
     <>

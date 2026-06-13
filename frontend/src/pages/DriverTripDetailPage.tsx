@@ -23,6 +23,7 @@ interface DriverContainer {
   id: number;
   containerNumber: string;
   sealNumber: string | null;
+  containerTypeId: number | null;
   containerTypeName: string | null;
   containerTypeCode: string | null;
   cargoWeightKg: string | null;
@@ -46,6 +47,8 @@ interface DriverTripDetail {
   hasReturnCargo: boolean | null;
   legs: TripLeg[];
   containers: DriverContainer[];
+  contPhotoKey: string | null;
+  sealPhotoKey: string | null;
   notes: string | null;
   customerReference: string | null;
 }
@@ -76,24 +79,24 @@ export default function DriverTripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [trip, setTrip] = useState<DriverTripDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { rootRef } = usePageAnimations({ ready: !loading });
+  const { rootRef } = usePageAnimations({ ready: !initialLoad });
 
-  const loadTrip = useCallback(() => {
+  const loadTrip = useCallback((isBackground = false) => {
     if (!id) return;
-    setLoading(true);
+    if (!isBackground) setInitialLoad(true);
     api.get<DriverTripDetail>(`/driver/me/trips/${id}`)
       .then(setTrip)
       .catch(() => setError('Không thể tải thông tin lệnh vận chuyển'))
-      .finally(() => setLoading(false));
+      .finally(() => { if (!isBackground) setInitialLoad(false); });
   }, [id]);
 
   useEffect(() => {
-    loadTrip();
+    loadTrip(false);
   }, [loadTrip]);
 
-  if (loading) return (
+  if (initialLoad) return (
     <div className="dt-loader-container">
       <Loader2 size={24} className="spin" style={{ display: 'inline-block' }} />
       <p className="dt-loader-text">Đang tải…</p>
@@ -158,7 +161,13 @@ export default function DriverTripDetailPage() {
           </div>
         </section>
 
-        <DriverContainerCard tripId={trip.id} containers={trip.containers ?? []} onSaved={loadTrip} />
+        <DriverContainerCard
+          tripId={trip.id}
+          containers={trip.containers ?? []}
+          contPhotoKey={trip.contPhotoKey ?? null}
+          sealPhotoKey={trip.sealPhotoKey ?? null}
+          onSaved={() => loadTrip(true)}
+        />
 
         {/* Fuel Allocation Card — prominent for drivers */}
         <div className="fuel-alloc-card">
@@ -193,20 +202,22 @@ export default function DriverTripDetailPage() {
             <span className="dt-section__title">Thu nhập &amp; chi phí</span>
           </div>
           <div className="dt-section__body">
-            <InfoRow
-              icon={<DollarSign size={16} />}
-              label="Tiền kết hợp"
-              value={
-                <span className="earnings-highlight">
-                  {trip.driverSalary ? formatCurrency(trip.driverSalary) : '—'}
-                </span>
-              }
-            />
-            <InfoRow
-              icon={<MapPin size={16} />}
-              label="Tiền đi đường"
-              value={trip.totalRoadAllowance ? formatCurrency(trip.totalRoadAllowance) : '—'}
-            />
+            <div className="dt-earnings-grid">
+              <InfoRow
+                icon={<DollarSign size={16} />}
+                label="Tiền kết hợp"
+                value={
+                  <span className="earnings-highlight">
+                    {trip.driverSalary ? formatCurrency(trip.driverSalary) : '—'}
+                  </span>
+                }
+              />
+              <InfoRow
+                icon={<MapPin size={16} />}
+                label="Tiền đi đường"
+                value={trip.totalRoadAllowance ? formatCurrency(trip.totalRoadAllowance) : '—'}
+              />
+            </div>
             {trip.hasReturnCargo && (
               <div className="return-cargo-badge">
                 <span>✓</span> Chuyến về có hàng (+300.000 đ)

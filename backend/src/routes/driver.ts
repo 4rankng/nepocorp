@@ -9,8 +9,8 @@ import {
   getDriverEarnings,
   getDriverPenalties,
 } from '../services/driver.service';
-import { createTripContainer, listTripContainers } from '../services/forwarder.service';
-import { tripContainerSchema } from '@tingting/shared';
+import { createTripContainer, listTripContainers, updateTripContainer } from '../services/forwarder.service';
+import { tripContainerSchema, tripContainerPatchSchema } from '@tingting/shared';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../errors';
 
@@ -83,6 +83,37 @@ router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: 
     createdBy: getUser(req).userId,
   });
   res.status(201).json(created);
+}));
+
+// PATCH one of the driver's own containers (Sửa / change number / change seal /
+// change type). Ownership is enforced via getDriverTripDetail. The trip must
+// not be LOCKED — updateTripContainer enforces that.
+router.patch('/trips/:tripId/containers/:containerId', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const containerId = parseInt(req.params.containerId as string, 10);
+  const trip = await getDriverTripDetail(driver.id, tripId);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  // The container must belong to THIS driver's trip. Ownership above only
+  // proves the driver owns `tripId`; without this check a driver who owns any
+  // single trip could patch any container row by guessing its id (IDOR).
+  if (!trip.containers.some(c => c.id === containerId)) {
+    return res.status(404).json({ error: 'Không tìm thấy số cont' });
+  }
+
+  const parsed = tripContainerPatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Dữ liệu không hợp lệ', details: parsed.error.flatten() });
+  }
+
+  const updated = await updateTripContainer(containerId, {
+    containerTypeId: parsed.data.containerTypeId,
+    containerNumber: parsed.data.containerNumber,
+    sealNumber: parsed.data.sealNumber,
+    cargoWeightKg: parsed.data.cargoWeightKg,
+    notes: parsed.data.notes,
+  });
+  res.json(updated);
 }));
 
 export default router;

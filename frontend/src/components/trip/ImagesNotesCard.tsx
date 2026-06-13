@@ -15,7 +15,7 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      uploadPhotos(e.target.files);
+      uploadPhotos(e.target.files, undefined, 'OTHER');
       e.target.value = '';
     }
   };
@@ -55,8 +55,8 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
               ))}
             </div>
           )}
-          <label className="tc-upload-zone" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
-            {uploading ? (
+          <label className="tc-upload-zone" style={{ cursor: uploading.OTHER ? 'wait' : 'pointer' }}>
+            {uploading.OTHER ? (
               <div style={{ padding: '20px 0' }}>
                 <Loader2 size={24} className="spin" style={{ color: 'var(--accent)' }} />
                 <div style={{ marginTop: 8, fontSize: 13, color: 'var(--fg-2)' }}>Đang tải lên…</div>
@@ -71,7 +71,7 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
                 <div className="tc-upload-zone__formats">PNG, JPG, HEIC · tối đa 10 ảnh</div>
               </>
             )}
-            <input type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} disabled={uploading} />
+            <input type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} disabled={uploading.OTHER} />
           </label>
         </div>
       </div>

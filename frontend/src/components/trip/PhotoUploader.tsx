@@ -101,13 +101,13 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
             })}
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 48, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
-            {uploading ? (
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 48, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading.CONTAINER ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
+            {uploading.CONTAINER ? (
               <Loader2 size={16} className="spin" />
             ) : (
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Thêm ảnh vỏ</span>
             )}
-            <input type="file" ref={containerInputRef} style={{ display: "none" }} onChange={(e) => handleFileChange(e, "CONTAINER")} disabled={uploading} accept="image/*" />
+            <input type="file" ref={containerInputRef} style={{ display: "none" }} onChange={(e) => handleFileChange(e, "CONTAINER")} disabled={uploading.CONTAINER} accept="image/*" />
           </label>
         </div>
 
@@ -136,13 +136,13 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
             })}
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 48, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
-            {uploading ? (
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 48, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading.SEAL ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
+            {uploading.SEAL ? (
               <Loader2 size={16} className="spin" />
             ) : (
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Thêm ảnh seal</span>
             )}
-            <input type="file" ref={sealInputRef} style={{ display: "none" }} onChange={(e) => handleFileChange(e, "SEAL")} disabled={uploading} accept="image/*" />
+            <input type="file" ref={sealInputRef} style={{ display: "none" }} onChange={(e) => handleFileChange(e, "SEAL")} disabled={uploading.SEAL} accept="image/*" />
           </label>
         </div>
       </div>
@@ -171,13 +171,13 @@ export function PhotoUploader({ requiresPhotos, tripId }: PhotoUploaderProps) {
           })}
         </div>
 
-        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 44, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
-          {uploading ? (
+        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 44, border: "1px dashed var(--fg-3)", borderRadius: "var(--radius-sm)", background: "var(--bg-2)", cursor: uploading.OTHER ? "wait" : "pointer", color: "var(--fg-2)", fontSize: 12 }}>
+          {uploading.OTHER ? (
             <Loader2 size={16} className="spin" />
           ) : (
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Tải ảnh khác lên</span>
           )}
-          <input type="file" ref={otherInputRef} multiple style={{ display: "none" }} onChange={(e) => handleFileChange(e, "OTHER")} disabled={uploading} accept="image/*" />
+          <input type="file" ref={otherInputRef} multiple style={{ display: "none" }} onChange={(e) => handleFileChange(e, "OTHER")} disabled={uploading.OTHER} accept="image/*" />
         </label>
       </div>
     </div>

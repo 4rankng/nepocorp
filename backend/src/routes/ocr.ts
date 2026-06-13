@@ -76,7 +76,7 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
     ocrMime = saved.mimeType;
   }
 
-  const result = await extractContainerAndSeal(ocrBuffer, ocrMime);
+  const result = await extractContainerAndSeal(ocrBuffer, type, ocrMime);
 
   res.status(200).json({
     ok: result.success,

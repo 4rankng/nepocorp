@@ -8,6 +8,7 @@ import type { CompletionStatus } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
 import type { OcrSignal } from './useTripFormDispatch';
+import type { UploadingState } from './useTripFormPhotos';
 
 export type { FuelMode } from '@tingting/shared';
 export type { FormLeg } from './useTripFormLegs';
@@ -116,7 +117,7 @@ export interface UseTripFormReturn {
   totalRequiredFields: number;
 
   submitting: boolean;
-  uploading: boolean;
+  uploading: UploadingState;
   ocrResult: OcrSignal | null;
   error: string;
   setError: (v: string) => void;
