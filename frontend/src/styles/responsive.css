@@ -46,12 +46,14 @@
   .topbar-search { width: 180px; }
   .topbar {
     height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+    padding-top: constant(safe-area-inset-top, 0px);
     padding-top: env(safe-area-inset-top, 0px);
     background: var(--sb-bg);
     border-bottom: 1px solid rgba(0, 0, 0, 0.15);
     color: var(--sb-text);
   }
   .topbar--driver {
+    padding-top: calc(12px + constant(safe-area-inset-top, 0px));
     padding-top: calc(12px + env(safe-area-inset-top, 0px));
     background: var(--sb-bg);
     border-bottom: 1px solid rgba(0, 0, 0, 0.15);
@@ -158,12 +160,14 @@
 
   /* ── Topbar ── */
   .topbar {
+    padding: constant(safe-area-inset-top, 0px) 8px 0;
     padding: env(safe-area-inset-top, 0px) 8px 0;
     gap: 6px;
     height: calc(48px + env(safe-area-inset-top, 0px));
     min-height: calc(48px + env(safe-area-inset-top, 0px));
   }
   .topbar--driver {
+    padding-top: calc(10px + constant(safe-area-inset-top, 0px));
     padding-top: calc(10px + env(safe-area-inset-top, 0px));
   }
   .topbar-search,
