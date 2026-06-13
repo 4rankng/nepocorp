@@ -184,14 +184,24 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
           );
         }
         return (
-          <div className="cons-cell">
+          <div className="cons-cell" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <div className="cons-main">{cons.liters.toFixed(0)} L</div>
-            <div className={`cons-rate ${cons.per100 > warnThreshold ? 'warn' : 'ok'}`}>
+            <div className="cons-rate-val">
               {cons.per100.toFixed(1).replace('.', ',')} L/100km
-              {cons.per100 > warnThreshold && (
-                <> · vượt {Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%</>
-              )}
             </div>
+            {cons.per100 > warnThreshold ? (
+              <div style={{ display: 'flex' }}>
+                <span className="cons-rate warn" style={{ marginTop: 0 }}>
+                  vượt {Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex' }}>
+                <span className="cons-rate ok" style={{ marginTop: 0 }}>
+                  đạt chuẩn
+                </span>
+              </div>
+            )}
           </div>
         );
       },
