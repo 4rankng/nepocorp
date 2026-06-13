@@ -149,9 +149,9 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
 
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
-      <div className="panel__head" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Package size={16} style={{ color: 'var(--fg-3)' }} />
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div className="panel__head">
+        <Package size={16} style={{ color: 'var(--ink-3)' }} />
+        <span className="panel__head-title">
           Số cont & seal
         </span>
       </div>
@@ -164,20 +164,20 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
                 border: '1px solid var(--line)',
                 borderRadius: 10,
                 padding: '10px 12px',
-                background: 'var(--bg-2, #fafafa)',
+                background: 'var(--surface-2)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 14, letterSpacing: '0.04em', color: 'var(--fg-1)' }}>
+                  <strong style={{ fontSize: 14, letterSpacing: '0.04em', color: 'var(--ink)' }}>
                     {c.containerNumber}
                   </strong>
                   {c.containerTypeName && (
-                    <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
                       {c.containerTypeName}{c.containerTypeCode ? ` (${c.containerTypeCode})` : ''}
                     </span>
                   )}
                 </div>
                 {(c.sealNumber || c.cargoWeightKg) && (
-                  <div style={{ marginTop: 4, fontSize: 12, color: 'var(--fg-3)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <div style={{ marginTop: 4, fontSize: 12, color: 'var(--ink-3)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                     {c.sealNumber && <span>Seal: {c.sealNumber}</span>}
                     {c.cargoWeightKg && <span>{Number(c.cargoWeightKg).toLocaleString('vi-VN')} kg</span>}
                   </div>
@@ -230,7 +230,7 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
               Số container <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
@@ -242,8 +242,8 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
             />
             {check.warning && (
               <div style={{
-                marginTop: 6, padding: '6px 8px', fontSize: 11,
-                background: 'var(--warn-soft, #fff7e6)', color: 'var(--warn, #b7791f)',
+                marginTop: 6, padding: '6px 8px', fontSize: 12,
+                background: 'var(--warning-soft)', color: 'var(--warning)',
                 borderRadius: 6, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center',
               }}>
                 <span>⚠ {check.warning}</span>
@@ -251,7 +251,7 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm"
-                    style={{ minHeight: 26, padding: '0 10px', fontSize: 11 }}
+                    style={{ minHeight: 26, padding: '0 10px', fontSize: 12 }}
                     onClick={() => setDraft(prev => ({ ...prev, containerNumber: check.suggestion! }))}
                   >
                     Đổi thành {check.suggestion}
@@ -261,7 +261,7 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
             )}
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
               Số seal
             </label>
             <input
@@ -276,7 +276,7 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'end' }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
               Loại cont
             </label>
             <select
@@ -293,17 +293,17 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
           </div>
           <button
             type="button"
-            className="btn btn--primary btn--sm"
+            className="btn btn--primary"
             onClick={handleSave}
             disabled={saving || uploading}
-            style={{ minHeight: 40 }}
+            style={{ height: 40, padding: '0 16px' }}
           >
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             {saving ? 'Đang lưu…' : 'Lưu'}
           </button>
         </div>
 
-        <p style={{ marginTop: 10, fontSize: 11, color: 'var(--fg-3)', lineHeight: 1.5 }}>
+        <p style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
           Chụp/tải ảnh vỏ cont hoặc seal — app tự nhận diện số. Hãy kiểm tra lại rồi bấm Lưu.
         </p>
       </div>

@@ -1,0 +1,105 @@
+/* ── Mobile: cards instead of table ───────────────────────────────────── */
+.trip-list-page .trip-mobile-list { display: none; }
+.trip-list-page .trip-mcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  position: relative;
+}
+.trip-list-page .trip-mcard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
+}
+.trip-list-page .trip-mcard:hover { border-color: var(--ink-2); }
+.trip-list-page .trip-mcard__top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 10px;
+}
+.trip-list-page .trip-mcard__top .left { min-width: 0; flex: 1; }
+.trip-list-page .trip-mcard__name {
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
+  margin-bottom: 2px;
+}
+.trip-list-page .trip-mcard__id {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs); font-weight: 600; color: var(--ink-3);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.trip-list-page .trip-mcard__route {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.trip-list-page .trip-mcard__route .arr { display: inline-flex; color: var(--ink-3); opacity: 0.6; }
+.trip-list-page .trip-mcard__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.trip-list-page .trip-mcard__meta .mm {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.trip-list-page .trip-mcard__meta .lab {
+  font-size: var(--fs-2xs); letter-spacing: 0.8px;
+  color: var(--ink-3); text-transform: uppercase; font-weight: 600;
+}
+.trip-list-page .trip-mcard__meta .val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
+}
+.trip-list-page .trip-mcard__meta .val.warn { color: var(--d-amber); }
+.trip-list-page .trip-mcard__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
+
+/* ── Mobile card missing indicators ──────────────────────────────────── */
+.trip-list-page .trip-mcard__missing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* ── Data completeness row tinting ────────────────────────────────────── */
+/* Pete (8/6): "nhận diện bằng màu sắc dòng nào đã nhập đủ số liệu"     */
+/* Complete = all financials entered (revenue + fuel + road + salary)     */
+
+/* Color legend in table hint bar */
+.trip-list-page .table-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.trip-list-page .legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.trip-list-page .legend-dot--ok { background: #10B981; }
+.trip-list-page .legend-dot--warn { background: #F59E0B; }
+/* Table row completeness uses edge strip now, removing old background tints */
+/* Hover overrides completeness tint with standard hover */
+.trip-list-page .table-row:hover {
+  background: var(--tbl-green-050);
+}
+/* Mobile cards completeness uses edge strip now, removing old borders */
+

@@ -1,0 +1,219 @@
+/* ============================================================================
+ * TingTing — Salary & Attendance Page
+ * Professional, refined design aligned with the app's charcoal/green language.
+ * ========================================================================== */
+
+/* ─── Local design tokens (charcoal hero gradient) ─── */
+.salary-page {
+  --d-charcoal-1: #14181A;
+  --d-charcoal-2: #1A2220;
+  --d-charcoal-3: #1F2D27;
+  --d-green-500:  #16A34A;
+  --d-green-600:  #00873F;
+  --d-green-800:  #005A2D;
+}
+
+/* ── Hero (charcoal command bar) ─────────────────────────────────────── */
+.salary-page .hero {
+  background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
+  color: var(--fg-on-brand);
+  border-radius: 18px;
+  padding: 26px 30px;
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.salary-page .hero::before {
+  content: '';
+  position: absolute;
+  right: -120px; top: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.18), transparent 65%);
+  pointer-events: none;
+}
+.salary-page .hero::after {
+  content: '';
+  position: absolute;
+  left: 40%; bottom: -60px;
+  width: 200px; height: 120px;
+  background: radial-gradient(ellipse, rgba(0, 135, 63, 0.14), transparent 70%);
+  pointer-events: none;
+}
+.salary-page .hero-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 24px;
+  position: relative;
+}
+.salary-page .hero-title-block { min-width: 0; }
+.salary-page .hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fs-2xs); letter-spacing: 1.8px; font-weight: 700;
+  color: #5EE99B;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.salary-page .hero-eyebrow::before {
+  content: ''; width: 6px; height: 6px;
+  background: #5EE99B; border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18);
+}
+.salary-page .hero-h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-lg); font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+.salary-page .hero-sub {
+  font-size: var(--fs-sm); color: rgba(255,255,255,0.62);
+}
+.salary-page .hero-actions {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.salary-page .hero-month-label {
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: 0 4px;
+  min-width: 72px;
+  text-align: center;
+}
+
+/* Hero buttons */
+.salary-page .btn-d {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: var(--fs-sm); font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  background: transparent;
+  color: inherit;
+}
+.salary-page .btn-d--ghost-dark {
+  background: rgba(255,255,255,0.08); color: var(--fg-on-brand);
+  border-color: rgba(255,255,255,0.12);
+}
+.salary-page .btn-d--ghost-dark:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Metric strip (bento grid) ──────────────────────────────────────── */
+.salary-page .metrics {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+.salary-page .metric {
+  background: rgba(255,255,255,0.025);
+  padding: 16px 20px;
+  backdrop-filter: blur(8px);
+}
+.salary-page .metric.featured {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  background: rgba(94, 233, 155, 0.06);
+}
+.salary-page .metric.featured .metric-label { color: #5EE99B; }
+.salary-page .metric-label {
+  font-size: var(--fs-2xs);
+  letter-spacing: 1.4px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.salary-page .metric-value {
+  font-size: var(--fs-2xl); font-weight: 700;
+  line-height: 1; letter-spacing: -0.5px;
+}
+.salary-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+.salary-page .metric-value-unit {
+  font-size: var(--fs-sm); color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 2px;
+}
+.salary-page .metric-delta {
+  margin-top: 8px;
+  font-size: var(--fs-2xs); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.4;
+}
+.salary-page .delta-up { color: #5EE99B; }
+.salary-page .delta-flat { color: rgba(255,255,255,0.55); }
+.salary-page .utilization-bar {
+  margin-top: 12px;
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+  position: relative; overflow: hidden;
+}
+.salary-page .utilization-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, #16A34A, #5EE99B);
+  border-radius: 99px;
+}
+
+/* ── Driver selector grid ───────────────────────────────────────────── */
+.salary-page .driver-select-row__search {
+  margin-bottom: 12px;
+}
+.salary-page .driver-select-row__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+/* ── Responsive: hero + metrics ─────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .salary-page .metrics { grid-template-columns: 1fr 1fr; }
+  .salary-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+}
+@media (max-width: 1023px) {
+  .salary-page .hero { padding: 20px; }
+  .salary-page .hero-h1 { font-size: var(--fs-xl); }
+  .salary-page .hero-top { flex-direction: column; gap: 14px; }
+  .salary-page .hero-actions { width: 100%; justify-content: center; }
+  .salary-page .driver-select-row__list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    display: flex;
+    gap: 8px;
+    padding: 2px 0 6px;
+  }
+  .salary-page .driver-select-row__list::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 640px) {
+  .salary-page .hero { padding: 18px 16px; }
+  .salary-page .hero-top { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .salary-page .hero-h1 { font-size: var(--fs-2xl); line-height: 1.2; }
+  .salary-page .hero-sub { font-size: var(--fs-xs); }
+  .salary-page .hero-actions { width: 100%; justify-content: center; }
+  .salary-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+  .salary-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+  .salary-page .metric { padding: 10px 12px; }
+  .salary-page .metric-label { font-size: var(--fs-2xs); }
+  .salary-page .metric-value { font-size: var(--fs-md); }
+  .salary-page .metric.featured .metric-value { font-size: var(--fs-lg); }
+  .salary-page .driver-select-row__list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+  }
+}
+@media (max-width: 420px) {
+  .salary-page .metrics { grid-template-columns: 1fr 1fr; }
+  .salary-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+}
+

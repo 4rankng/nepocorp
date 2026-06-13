@@ -1,0 +1,436 @@
+/* ============================================================================
+ * Topbar
+ * ========================================================================== */
+.topbar {
+  height: var(--topbar-h);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: var(--z-sticky, 100);
+  flex-shrink: 0;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+          backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0; /* starts hidden for anime.js entrance */
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease), margin-top 220ms var(--ease);
+}
+
+.topbar--driver {
+  position: relative;
+  z-index: var(--z-sticky, 100);
+  justify-content: flex-start;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  height: auto;
+  gap: 12px;
+}
+
+.topbar__left-driver {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.topbar__welcome {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.topbar__welcome .greeting {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.topbar__welcome .name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.topbar__center-driver {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* MonthNavigator trigger + popover */
+.topbar-date {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.topbar-date__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease);
+}
+.topbar-date__trigger:hover {
+  background: var(--surface-3);
+  border-color: var(--line);
+}
+.topbar-date.is-open .topbar-date__trigger {
+  background: var(--surface-3);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.topbar-date__icon {
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+.topbar-date.is-open .topbar-date__icon {
+  color: var(--accent);
+}
+.topbar-date__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+}
+.topbar-date__label {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.topbar-date__period {
+  font-size: var(--fs-2xs);
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.topbar-date__caret {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: transform 200ms var(--ease);
+}
+.topbar-date.is-open .topbar-date__caret {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.month-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-popover, 50);
+  width: 288px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.05);
+  padding: 14px;
+  animation: month-picker-in 160ms var(--ease);
+}
+@keyframes month-picker-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.month-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.month-picker__year {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.month-picker__year-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+.month-picker__year-nav:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.month-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.month-picker__cell {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: background 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease);
+}
+.month-picker__cell:hover {
+  background: var(--surface-3);
+}
+.month-picker__cell.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.month-picker__cell.is-current:hover {
+  background: var(--surface-3);
+}
+.month-picker__cell.is-selected {
+  background: var(--accent);
+  color: var(--fg-on-brand);
+  border-color: var(--accent);
+}
+.month-picker__cell.is-selected:hover {
+  background: var(--accent);
+}
+.month-picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.month-picker__today {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: background 120ms var(--ease);
+}
+.month-picker__today:hover {
+  background: var(--surface-3);
+}
+.month-picker__hint {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.topbar--driver .icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-2);
+}
+
+.topbar--driver .icon-btn:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .topbar--driver {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .topbar__welcome {
+    line-height: 1.15;
+  }
+
+  .topbar__welcome .greeting {
+    font-size: 11px;
+  }
+
+  .topbar__welcome .name {
+    font-size: var(--fs-sm);
+  }
+
+  .topbar__center-driver {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .topbar-date__trigger {
+    height: 34px;
+    padding: 0 10px;
+    font-size: var(--fs-xs);
+  }
+
+  .topbar-date__icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .month-picker {
+    width: 260px;
+  }
+}
+
+.topbar-divider { width: 1px; height: 20px; background: var(--line); margin: 0 6px; }
+
+/* Wireframe topbar classes */
+.topbar__toggle {
+  width: 36px; height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.topbar__toggle:hover { background: var(--surface-3); color: var(--ink); }
+
+.topbar__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.topbar__breadcrumb strong { color: var(--ink); font-weight: 600; font-size: var(--fs-sm); }
+
+.topbar__search {
+  flex: 1;
+  margin-left: 0;
+  position: relative;
+}
+.topbar__search > svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.topbar__search > input {
+  width: 100%;
+  padding: 9px 48px 9px 38px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.topbar__search > input::placeholder { color: var(--ink-3); }
+.topbar__search > input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.topbar__search > kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.icon-btn .badge {
+  position: absolute;
+  top: 5px; right: 5px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--fg-on-brand);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  display: grid; place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  /* override generic .badge */
+  letter-spacing: 0;
+  height: 16px;
+  line-height: 1;
+}
+
+/* Replaces .date-chip in the topbar — clean slate, no legacy overrides */
+
+.icon-btn {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-2);
+  cursor: pointer;
+  position: relative;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+.icon-btn:hover { background: var(--surface-3); color: var(--ink); }
+
+.user-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 10px 0 4px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+.user-btn:hover { background: var(--surface); border-color: var(--line); }
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.user-btn .role { font-size: 13px; font-weight: 500; }
+

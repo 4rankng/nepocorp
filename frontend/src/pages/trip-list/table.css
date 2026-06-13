@@ -1,0 +1,486 @@
+/* ── Table card (desktop) ─────────────────────────────────────────────── */
+/* Subtle hint that rows are clickable. Sits right above the table card,
+   aligned to the right edge so it reads like a tip chip rather than
+   a banner. Same color family as the search-hint chip. */
+.trip-list-page .table-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px auto;     /* push to right */
+  padding: 5px 11px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+  user-select: none;
+}
+.trip-list-page .table-hint svg {
+  color: var(--tbl-green-600);
+  flex: none;
+}
+.trip-list-page .table-hint b {
+  color: var(--ink-2);
+  font-weight: 700;
+  margin-right: 2px;
+}
+/* Hide on the narrowest viewports where horizontal real-estate is tight */
+@media (max-width: 640px) {
+  .trip-list-page .table-hint { display: none; }
+}
+.trip-list-page .table-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+}
+/* Scroll wrapper — holds buttons + scrollable body. */
+.trip-list-page .table-scroll-wrapper {
+  position: relative;
+}
+/* Scroll body — horizontal scroll, vertical grows with content */
+.trip-list-page .table-scroll-body {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-3) transparent;
+}
+.trip-list-page .table-scroll-body::-webkit-scrollbar { width: 0; height: 6px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
+.trip-list-page .table-scroll-body::-webkit-scrollbar-track { background: transparent; }
+/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | status
+   8 slots — KM merged into route, Loại cont + Số cont merged into Container. */
+.trip-list-page .table-head {
+  display: inline-grid;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
+  padding: 14px 16px;
+  gap: 12px;
+  background: var(--surface-2);
+  border-bottom: 2px solid var(--line-2);
+  min-width: max(1010px, 100%);
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.trip-list-page .table-head > div {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xs); letter-spacing: 0.08em;
+  color: var(--ink-2); font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-list-page .right { text-align: right; justify-self: end; }
+.trip-list-page .center { text-align: center; justify-self: center; }
+
+.trip-list-page .table-row {
+  display: inline-grid;
+  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
+  padding: 14px 16px;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  transition: all 150ms ease;
+  cursor: pointer;
+  min-width: max(1010px, 100%);
+  min-height: 60px;
+  background: var(--surface);
+  position: relative;
+}
+.trip-list-page .table-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
+}
+.trip-list-page .table-row:hover {
+  background: var(--tbl-green-050);
+}
+/* Hover chevron — sits inside the sticky status cell so it stays visible
+   regardless of horizontal scroll. Hidden at rest; fades in + slides on
+   row hover and keyboard focus. */
+.trip-list-page .table-row__chev {
+  flex: 0 0 auto;
+  color: var(--tbl-green-600);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: none;
+}
+.trip-list-page .table-row:hover .table-row__chev,
+.trip-list-page .table-row:focus-visible .table-row__chev {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* Keyboard focus ring */
+.trip-list-page .table-row:focus-visible {
+  outline: none;
+  box-shadow: inset 4px 0 0 var(--tbl-green-600), 0 0 0 2px var(--tbl-green-100);
+}
+.trip-list-page .table-row:last-of-type { border-bottom: none; }
+.trip-list-page .table-row > div {
+  line-height: 1.4;
+  min-width: 0;                   /* allow children to truncate */
+}
+
+.trip-list-page .cb {
+  width: 18px; height: 18px;
+  border: 1.6px solid var(--tbl-line-strong);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.trip-list-page .cb:hover { border-color: var(--tbl-green-600); }
+.trip-list-page .cb.checked { background: var(--ink); border-color: var(--ink); }
+.trip-list-page .cb.checked::after {
+  content: ''; width: 4px; height: 7px;
+  border: solid var(--fg-on-brand);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.trip-list-page .trip-col { min-width: 0; }
+/* Lead with trip code (the canonical identifier); customer name follows in
+   a less-loud second line. Single-line truncation with tooltip on hover. */
+.trip-list-page .trip-name {
+  font-size: var(--fs-sm); font-weight: 700; line-height: 1.35;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.trip-list-page .trip-date {
+  font-size: var(--fs-2xs); font-weight: 500;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.trip-list-page .trip-customer {
+  font-size: var(--fs-xs); color: var(--ink-2);
+  margin-top: 3px;
+  font-weight: 500;
+  line-height: 1.35;
+  word-break: break-word;
+}
+/* Keep old .trip-meta for any remaining uses */
+.trip-list-page .trip-meta {
+  font-size: var(--fs-2xs); color: var(--ink-3);
+  margin-top: 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.trip-list-page .trip-id {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.trip-list-page .trip-meta-sep { color: var(--ink-3); opacity: 0.6; }
+
+/* ── Missing data indicator badges in trip column ────────────────────── */
+.trip-list-page .trip-missing-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.trip-list-page .missing-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--tbl-amber-100);
+  color: var(--tbl-amber-700);
+  cursor: help;
+  flex-shrink: 0;
+}
+
+/* Keyframe animation for pulsing dot on active (In Transit) status */
+@keyframes pulse-blue {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); opacity: 0.8; }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); opacity: 1; }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); opacity: 0.8; }
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); opacity: 0.8; }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); opacity: 1; }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); opacity: 0.8; }
+}
+
+/* License plate — styled block like actual vehicle plates */
+.trip-list-page .plate {
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: var(--fs-xs);
+  color: var(--ink);
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+}
+.trip-list-page .plate::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--accent);
+}
+.trip-list-page .plate.idle {
+  color: var(--ink-3);
+  background: var(--surface-3);
+  border-color: var(--line);
+}
+.trip-list-page .plate.idle::before {
+  background: var(--ink-3);
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* Route column — two-row stacked layout */
+.trip-list-page .route-cell-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  width: 100%;
+}
+.trip-list-page .route-origin-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.trip-list-page .route-origin {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-list-page .route-origin-row { min-width: 0; }
+.trip-list-page .route-arrow-right {
+  display: inline-flex;
+  align-items: center;
+  color: var(--tbl-green-600);
+  flex-shrink: 0;
+}
+.trip-list-page .route-destination {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-list-page .route-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+/* KM shown inline after destination — styles defined near bottom of file */
+
+/* Merged container cell — styles defined near bottom of file */
+
+.trip-list-page .container-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  line-height: 1;
+}
+.trip-list-page .container-tag.multiplier {
+  background: var(--brand-soft);
+  color: var(--brand-hover);
+  border-color: rgba(0, 177, 79, 0.2);
+}
+
+.trip-list-page .km-empty { font-size: var(--fs-sm); color: var(--ink-3); opacity: 0.6; text-align: right; }
+
+.trip-list-page .cons-cell { min-width: 0; }
+.trip-list-page .cons-main {
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: var(--fs-sm);
+  display: flex; align-items: center; gap: 6px;
+  color: var(--ink);
+}
+.trip-list-page .cons-rate {
+  font-size: var(--fs-2xs);
+  color: var(--ink-3);
+  margin-top: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+.trip-list-page .cons-rate.warn {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+  font-weight: 600;
+}
+.trip-list-page .cons-rate.warn::before {
+  content: ''; width: 5px; height: 5px;
+  background: var(--danger); border-radius: 50%;
+}
+.trip-list-page .cons-rate.ok {
+  color: var(--success-text);
+  background: var(--success-soft);
+  font-weight: 600;
+}
+.trip-list-page .cons-rate.ok::before {
+  content: ''; width: 5px; height: 5px;
+  background: var(--success); border-radius: 50%;
+}
+.trip-list-page .cons-rate-val {
+  font-size: 11px;
+  color: var(--fg-3);
+  font-weight: 500;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.trip-list-page .cons-empty {
+  font-size: var(--fs-xs); color: var(--ink-3); opacity: 0.7;
+  font-style: italic;
+}
+.trip-list-page .cons-empty .empty-icon {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* Pending pill — wireframe "Chờ khai báo" style */
+.trip-list-page .pending {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-2xs); font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border: 1px dashed var(--line-3);
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.trip-list-page .money {
+  font-family: var(--font-mono);
+  font-weight: 600; font-size: var(--fs-sm);
+  text-align: right;
+  color: var(--ink);
+}
+.trip-list-page .money-unit { font-size: var(--fs-2xs); color: var(--ink-3); font-weight: 600; margin-left: 2px; }
+.trip-list-page .money-empty {
+  font-size: var(--fs-xs); color: var(--ink-3); opacity: 0.7;
+  text-align: right;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.trip-list-page .status-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+.trip-list-page .status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-2xs); font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
+
+.trip-list-page .pill-moi {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+}
+.trip-list-page .pill-moi .sd { background: #6B7280; }
+
+.trip-list-page .pill-dang {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.trip-list-page .pill-dang .sd {
+  background: #3B82F6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+  animation: pulse-blue 1.8s infinite ease-in-out;
+}
+
+.trip-list-page .pill-htth {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.trip-list-page .pill-htth .sd { background: #10B981; }
+
+.trip-list-page .pill-chot {
+  background: #F1F5F9;
+  color: #0F172A;
+  border: 1px solid rgba(30, 41, 59, 0.2);
+}
+.trip-list-page .pill-chot .sd { background: #1E293B; }
+
+.trip-list-page .pill-huy {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.trip-list-page .pill-huy .sd { background: #EF4444; }
+
+.trip-list-page .actions {
+  display: inline-flex; gap: 4px;
+  justify-content: center;
+}
+.trip-list-page .action-btn {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+.trip-list-page .action-btn:hover {
+  border-color: var(--tbl-green-600);
+  color: var(--tbl-green-700);
+  background: var(--tbl-green-050);
+}
+

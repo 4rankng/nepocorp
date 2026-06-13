@@ -1,0 +1,265 @@
+/* ============================================================================
+ * TripDetailPage Redesign — Wireframe Canonical
+ * ========================================================================== */
+
+/* ── Page Header ─────────────────────────────────────────────────────────── */
+/* Desktop defaults. The mobile overrides live in @media (max-width: 640px)
+   at the bottom of this file. We use explicit media queries (rather than
+   relying on the global responsive.css @media rule) so the cascade is
+   unambiguous regardless of import order — both rules target .page-header
+   with the same selector specificity, but only one of them can match the
+   current viewport at a time. */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.header-left {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.back-btn {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--ink-2);
+  transition: 0.15s ease;
+  box-shadow: var(--sh-sm);
+  margin-top: 4px;
+}
+
+.back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateX(-2px);
+}
+
+.title-block {
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.title-row h1 {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  /* Allow the title to shrink so the status badge can sit on the same
+     line on very narrow phones. Without this, the h1's natural width
+     pushes the badge past the right edge of the page header. */
+  min-width: 0;
+}
+
+/* ── Status Badge ────────────────────────────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 5px 11px 5px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+  background: var(--amber-soft, #FBF1DC);
+  color: var(--amber, #C77F0A);
+}
+
+.status-badge__pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(199, 127, 10, 0.45); }
+  70% { box-shadow: 0 0 0 6px rgba(199, 127, 10, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(199, 127, 10, 0); }
+}
+
+.status-badge--new {
+  background: #F3F4F6;
+  color: #4B5563;
+}
+
+.status-badge--transit {
+  background: var(--info-soft, #DCE9FC);
+  color: var(--info, #1E5BB8);
+}
+
+.status-badge--completed {
+  background: var(--success-soft, #E6F7EE);
+  color: var(--success, #00B14F);
+}
+
+.status-badge--locked {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.status-badge--canceled {
+  background: var(--danger-soft, #FFEAEC);
+  color: var(--danger, #E32434);
+}
+
+/* ── Company ─────────────────────────────────────────────────────────────── */
+.company {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 560px;
+}
+
+.company svg {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+
+/* ── Route Chips ─────────────────────────────────────────────────────────── */
+.route-chips {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 11px;
+  flex-wrap: nowrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  box-shadow: var(--sh-sm);
+}
+
+.chip .pin {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.chip .pin--go {
+  background: var(--accent);
+}
+
+.chip .pin--end {
+  background: var(--danger);
+}
+
+.route-arrow {
+  color: var(--ink-4);
+  display: grid;
+  place-items: center;
+}
+
+/* ── Header Actions ──────────────────────────────────────────────────────── */
+.header-actions {
+  display: flex;
+  gap: 9px;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  padding: 9px 15px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn svg {
+  flex: 0 0 auto;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink-2);
+  box-shadow: var(--sh-sm);
+}
+
+.btn-ghost:hover {
+  border-color: #D4DAD7;
+  color: var(--ink);
+  background: #FCFDFC;
+}
+
+.btn-danger {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--danger);
+  box-shadow: var(--sh-sm);
+}
+
+.btn-danger:hover {
+  background: var(--danger-soft);
+  border-color: #F3C6C6;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--fg-on-brand);
+  border-color: var(--accent);
+  box-shadow: 0 1px 2px rgba(0, 177, 79, 0.25), 0 6px 16px rgba(0, 177, 79, 0.22);
+}
+
+.btn-primary:hover {
+  background: var(--accent-2, #008B3E);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 177, 79, 0.3), 0 10px 22px rgba(0, 177, 79, 0.26);
+}
+
+.btn-soft {
+  background: var(--accent-soft);
+  color: var(--accent-ink, #004D22);
+  border-color: transparent;
+}
+
+.btn-soft:hover {
+  background: #D8F0E2;
+}
+

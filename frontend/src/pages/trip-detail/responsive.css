@@ -1,0 +1,127 @@
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .bento-zone-1,
+  .bento-zone-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .span-3 { grid-column: span 2; }
+  .span-4 { grid-column: span 2; }
+
+  .journey-body {
+    grid-template-columns: 1fr;
+  }
+
+  .map-wrap {
+    border-right: none;
+    border-bottom: 1px solid var(--line-2, #EFF2F0);
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  /* The .company (customer name) is set to max-width: 560px + nowrap on
+     desktop, which forces the entire title-block wider than the viewport
+     on phones. Cap it to the available width and let it ellipsis. */
+  .company {
+    max-width: 100%;
+  }
+
+  /* Action buttons wrap onto their own row below the title and reflow
+     into a multi-row grid. The desktop .header-actions is `flex` (single
+     row) — on phones we want the buttons to fill the width and not get
+     clipped at the right edge. */
+  .header-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: var(--fs-xs);
+  }
+
+  /* Tighter title on phones */
+  .title-row h1 {
+    font-size: var(--fs-xl);
+  }
+
+  .bento-zone-1,
+  .bento-zone-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2, .span-3, .span-4 {
+    grid-column: span 1;
+  }
+}
+
+/* Very narrow phones (≤ 420px) — three buttons per row get cramped, so
+   drop to 2 per row by giving each button a slightly larger basis. */
+@media (max-width: 420px) {
+  .header-actions .btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* ── Journey legs: stack origin / arrow / destination on phones ────────── */
+@media (max-width: 640px) {
+  .leg {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
+  }
+  /* Push the loading-type badge to a second row spanning the full width */
+  .leg-right {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  /* Stack stops on two visual lines so the full stop name fits */
+  .leg-stops {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 8px;
+  }
+  .leg-stops .st {
+    max-width: 100%;
+  }
+  .leg-stops .ar {
+    transform: rotate(90deg);
+  }
+  /* Compact meta line */
+  .leg-meta {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+}
+
+/* ── Journey foot: let it wrap; keep the CTA on one line ───────────────── */
+@media (max-width: 640px) {
+  .journey-foot {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 12px 16px;
+  }
+  .journey-foot .add-note {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+}
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  .trip-detail-cols { flex-direction: column; }
+} /* end 640px */

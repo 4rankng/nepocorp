@@ -1,0 +1,138 @@
+/* ── Responsive collapses ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .trip-list-page .metrics { grid-template-columns: 1fr 1fr; }
+  .trip-list-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+}
+@media (max-width: 1023px) {
+  .trip-list-page .table-head,
+  .trip-list-page .table-row {
+    /* 7 visible cols: trip | truck | route | container | consumption | revenue | status */
+    grid-template-columns: minmax(180px, 1.4fr) 90px minmax(120px, 1.2fr) minmax(70px, 0.6fr) 80px 100px 90px;
+    min-width: unset;
+    gap: 10px;
+  }
+  .trip-list-page .table-head .col-road,
+  .trip-list-page .table-row .col-road { display: none; }
+}
+@media (max-width: 640px) {
+  .trip-list-page .hero { padding: 20px; }
+  .trip-list-page .hero-h1 { font-size: var(--fs-xl); }
+  .trip-list-page .hero-top { flex-direction: column; gap: 14px; }
+  .trip-list-page .hero-actions { width: 100%; }
+  .trip-list-page .hero-actions .btn-d { flex: 1; justify-content: center; }
+  .trip-list-page .metrics { grid-template-columns: 1fr 1fr; }
+  .trip-list-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+  .trip-list-page .filters-row-top { flex-direction: column; align-items: stretch; }
+  .trip-list-page .filters-search { width: 100%; }
+  .trip-list-page .filters-row-bottom { flex-wrap: wrap; }
+
+  /* Hide desktop table, show mobile cards */
+  .trip-list-page .table-card { background: transparent; border: none; border-radius: 0; overflow: visible; }
+  .trip-list-page .table-scroll-wrapper { display: none; }
+  .trip-list-page .table-head { display: none; }
+  .trip-list-page .table-row { display: none; }
+  .trip-list-page .trip-mobile-list { display: block; }
+  .trip-list-page .infinite-sentinel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+}
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── Trip list page — Mobile Pass 2 (2026-06-02) ──
+     Tightens above-the-fold density and adds a scroll affordance to the
+     horizontally-scrollable status-tab strip (was previously cutting "Đang chạy"
+     off the right edge with no swipe hint). */
+  .trip-list-page .hero { padding: 14px 14px 12px; }
+  .trip-list-page .hero-top { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .trip-list-page .hero-h1 { font-size: var(--fs-2xl); line-height: 1.2; }
+  .trip-list-page .hero-sub { font-size: var(--fs-xs); }
+  .trip-list-page .hero-actions { width: 100%; flex-wrap: wrap; }
+  .trip-list-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+
+  .trip-list-page .metrics { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
+  .trip-list-page .metric { padding: 8px 10px; min-width: 0; }
+  .trip-list-page .metric-label {
+    font-size: var(--fs-2xs);
+    /* Force single-line so cards align on the 2-col grid. Long labels like
+       "Tổng KM tháng này" used to wrap to 2 lines, throwing off the rhythm. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* "Tổng giá trị lệnh (tất cả trạng thái)" — drop the parenthetical on phones,
+     it doesn't fit and the metric-delta line below repeats the same info. */
+  .trip-list-page .metric-label > span { display: none; }
+  .trip-list-page .metric-value { font-size: var(--fs-md); }
+  .trip-list-page .metric-value .metric-unit { margin-left: 2px; }
+  .trip-list-page .metric-delta { font-size: var(--fs-2xs); line-height: 1.3; }
+  .trip-list-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
+  .trip-list-page .metric.featured .breakdown-legend { gap: 6px 10px; font-size: var(--fs-2xs); }
+
+  .trip-list-page .stats-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .trip-list-page .section-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
+
+  /* Status-tab strip — was overflowing without any swipe hint. Add a 24px
+     right-edge gradient (sticky-positioned) so users see there's more.
+     Tightened pill sizing to fit one extra option in the visible width. */
+  .trip-list-page .status-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    position: relative;
+  }
+  .trip-list-page .status-tabs::-webkit-scrollbar { display: none; }
+  .trip-list-page .status-tabs > * { flex-shrink: 0; }
+  .trip-list-page .status-tabs .stab-pill {
+    padding: 6px 10px;
+    font-size: var(--fs-xs);
+    gap: 6px;
+  }
+  .trip-list-page .status-tabs .stab-pill .stab-count {
+    font-size: var(--fs-2xs);
+    padding: 1px 6px;
+  }
+  /* Right-edge fade — sits inside the scroll container so it pins to the
+     visible right edge regardless of scroll position. */
+  .trip-list-page .filters-row-top {
+    position: relative;
+    padding-right: 0;
+  }
+  .trip-list-page .filters-row-top::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: 28px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--bg-1, #fff) 75%);
+  }
+} /* end 640px */
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 640px) {
+  /* ── TripListPage: larger filter pill tap targets, breakdown bar fix ── */
+  .trip-list-page .filter-pill {
+    height: 40px;
+    padding: 0 10px;
+    font-size: var(--fs-xs);
+  }
+  .trip-list-page .filter-pill .filter-lbl-wrap { line-height: 1.2; }
+  .trip-list-page .breakdown-bar {
+    height: 6px;
+    border-radius: 99px;
+  }
+  .trip-list-page .breakdown-legend {
+    gap: 4px 8px;
+    font-size: var(--fs-2xs);
+  }
+} /* end 640px */
+
+/* ── Responsive overrides (from responsive.css decomposition) ── */
+@media (max-width: 420px) {
+  .trip-list-page .stats-strip { grid-template-columns: 1fr; }
+} /* end 420px */

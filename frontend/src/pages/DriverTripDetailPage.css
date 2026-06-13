@@ -1,0 +1,267 @@
+/* ============================================================================
+   DriverTripDetailPage — TingTing
+   Clean, polished mobile-responsive detail view for drivers.
+   ========================================================================== */
+
+.driver-trip-detail-wrap {
+  min-height: 100vh;
+  background: linear-gradient(130deg, color-mix(in srgb, var(--accent) 5%, var(--bg-1)) 0%, var(--bg-1) 50%);
+  width: 100%;
+}
+
+.driver-trip-detail-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+  width: 100%;
+}
+
+/* Header bar layout */
+.dt-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 16px;
+  margin-bottom: 16px;
+}
+
+/* Back button */
+.dt-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-1);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  flex-shrink: 0;
+}
+.dt-back-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  transform: translateX(-2px);
+}
+
+.dt-header-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.dt-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dt-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.dt-subtitle {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 4px 0 0;
+  font-weight: 500;
+}
+
+/* Panel customizations for this detail view */
+.driver-trip-detail-page .panel {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.driver-trip-detail-page .panel__head {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.driver-trip-detail-page .panel__head-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.driver-trip-detail-page .panel__body {
+  padding: 16px;
+}
+
+/* Left status strip on status-accented panels */
+.panel--status-accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3.5px;
+  height: 24px;
+  border-radius: 0 3px 3px 0;
+  z-index: 2;
+}
+
+.panel--status-CREATED::before { background: #3B82F6; }
+.panel--status-IN_TRANSIT::before { background: #22C55E; }
+.panel--status-COMPLETED::before { background: #F59E0B; }
+.panel--status-LOCKED::before { background: #00B14F; }
+.panel--status-CANCELED::before { background: #EF4444; }
+
+/* Special Fuel Allocation Card */
+.driver-trip-detail-page .fuel-alloc-card {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+}
+
+.fuel-alloc-card__header {
+  padding: 14px 16px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 177, 79, 0.1);
+}
+
+.fuel-alloc-card__icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.fuel-alloc-card__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fuel-alloc-card__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.fuel-alloc-card__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.fuel-alloc-card__body {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fuel-alloc-card__body strong {
+  color: var(--ink);
+}
+
+/* Earnings card customizations */
+.earnings-highlight {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 17px;
+  font-family: var(--font-mono);
+}
+
+.return-cargo-badge {
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 177, 79, 0.15);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.return-cargo-badge svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Notes Section */
+.notes-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.notes-text {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Error/Loading Views */
+.dt-loader-container {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.dt-loader-text {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.dt-error-container {
+  padding: 24px;
+}
+
+.dt-error-card {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--danger);
+}
+
+.dt-error-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--danger-text);
+}
+
+/* Custom info-row scaling for comfortable reading on mobile driver view */
+.driver-trip-detail-page .info-row__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.driver-trip-detail-page .info-row__value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
