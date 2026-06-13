@@ -1,0 +1,76 @@
+// TingTing service worker — powers Android installability + an offline app shell.
+//
+// Strategy (keeps live data live, ships fresh UI fast):
+//   • HTML navigations        → network-first   (every deploy = newest shell; offline fallback)
+//   • hashed static assets     → cache-first     (immutable: JS/CSS/fonts/images with content hashes)
+//   • /api/* + cross-origin    → never cached     (trip/ledger/financial data always hits network)
+//
+// To force every client onto a new SW after a breaking change, bump `CACHE`
+// (e.g. tingting-shell-v2); the activate step purges any older cache version.
+
+const CACHE = 'tingting-shell-v1';
+
+// Same-origin static asset extensions worth caching long-term.
+const ASSET_RE = /\.(?:js|mjs|css|woff2?|ttf|otf|png|jpe?g|gif|svg|avif|webp|ico)$/i;
+
+self.addEventListener('install', () => {
+  // Skip waiting so a newly deployed SW activates immediately (no stale-shell limbo).
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    // Drop caches left over from any previous SW version.
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    // Take control of all open tabs right away.
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  // Only intercept safe GETs; let POST/PUT/DELETE pass through untouched.
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // API responses and cross-origin requests are never cached — straight to network.
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  // 1) HTML navigations → network-first (always serve the newest app shell).
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(request);
+        const cache = await caches.open(CACHE);
+        cache.put(request, fresh.clone());
+        return fresh;
+      } catch {
+        // Offline (or server down) → fall back to the cached shell or app entry.
+        return (await caches.match(request)) || (await caches.match('/')) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  // 2) Hashed static assets → cache-first (immutable, so never stale).
+  if (ASSET_RE.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      try {
+        const fresh = await fetch(request);
+        if (fresh.ok) cache.put(request, fresh.clone());
+        return fresh;
+      } catch {
+        return cached || Response.error();
+      }
+    })());
+    return;
+  }
+
+  // 3) Everything else (manifest.json, etc.) falls through to the browser default.
+});

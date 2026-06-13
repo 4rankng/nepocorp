@@ -1,6 +1,6 @@
 {
   "name": "TingTing - Quản lý vận tải",
-  "short_name": "NEPO",
+  "short_name": "TingTing",
   "description": "Hệ thống quản lý vận tải container Hải Phòng",
   "start_url": "/",
   "scope": "/",
