@@ -82,7 +82,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.setRevenue(String(emptyReturn + combine));
   }, [s.revenueEmptyReturn, s.revenueCombine]);
 
-  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId);
+  const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
   const { photoUrls, uploading, uploadPhotos, removePhoto } = useTripFormPhotos(s.setError);
 
   useEffect(() => {
@@ -137,14 +137,24 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       const parts = (existingTrip.route?.name || '').split(/\s*[-→]\s*/).filter(Boolean);
       const originGuess = parts[0]?.trim() || '';
       const destGuess = parts.length > 1 ? parts[parts.length - 1].trim() : '';
-      setLegs([{
-        id: Math.random().toString(),
-        sequence: 1,
-        origin: originGuess,
-        destination: destGuess,
-        km: '',
-        loadingType: LoadingType.HANG,
-      }]);
+      setLegs([
+        {
+          id: Math.random().toString(),
+          sequence: 1,
+          origin: originGuess,
+          destination: destGuess,
+          km: '',
+          loadingType: LoadingType.HANG,
+        },
+        {
+          id: Math.random().toString(),
+          sequence: 2,
+          origin: destGuess,
+          destination: originGuess,
+          km: '',
+          loadingType: LoadingType.VO,
+        },
+      ]);
     }
 
     lastPopulatedTripId.current = existingTrip.id;
