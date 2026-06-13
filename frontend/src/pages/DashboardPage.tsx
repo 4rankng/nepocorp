@@ -451,7 +451,7 @@ export default function DashboardPage() {
               {(() => {
                 if (chartRevenue.length === 0) {
                   return (
-                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                    <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, flex: 1 }}>
                       Đang tải dữ liệu...
                     </div>
                   );
@@ -460,7 +460,7 @@ export default function DashboardPage() {
                 const totalGp = chartGross.reduce((a, b) => a + b, 0);
                 if (totalRev === 0 && totalGp === 0) {
                   return (
-                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                    <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, flex: 1 }}>
                       Chưa đủ dữ liệu lịch sử để vẽ biểu đồ.
                     </div>
                   );

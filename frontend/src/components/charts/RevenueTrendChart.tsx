@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 /**
  * Shared revenue + gross-profit trend chart.
@@ -35,9 +35,32 @@ export function RevenueTrendChart({
   formatY,
   formatTooltip,
   currentIdx,
-  width: W = 760,
-  height: H = 280,
+  width: initialW = 760,
+  height: initialH = 280,
 }: RevenueTrendChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: initialW, height: initialH });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        setDimensions({ width, height });
+      }
+    });
+
+    resizeObserver.observe(el);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const W = dimensions.width;
+  const H = dimensions.height;
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const activeIdx = hoverIdx;
 
@@ -73,11 +96,15 @@ export function RevenueTrendChart({
   const fmtTip = formatTooltip ?? ((v: number) => `${v.toFixed(1).replace('.', ',')} Tr`);
 
   return (
-    <div style={{ position: 'relative', width: '100%' }} onMouseLeave={() => setHoverIdx(null)}>
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
+      onMouseLeave={() => setHoverIdx(null)}
+    >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         xmlns="http://www.w3.org/2000/svg"
-        style={{ display: 'block', width: '100%', overflow: 'visible' }}
+        style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', flex: 1 }}
       >
         <defs>
           <linearGradient id="gRevTrend" x1="0" y1="0" x2="0" y2="1">

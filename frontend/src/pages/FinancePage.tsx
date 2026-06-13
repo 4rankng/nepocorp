@@ -314,7 +314,7 @@ export default function FinancePage() {
           <div className="wf-card wf-chart" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div className="wf-card-h">
               <div>
-                <div className="ttl">Xu hướng doanh thu {chartView === 'day' ? `Tháng ${month}/${year}` : year}</div>
+                <div className="ttl">Doanh thu {chartView === 'day' ? `Tháng ${month}/${year}` : year}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="wf-chart-toggle">
@@ -329,11 +329,11 @@ export default function FinancePage() {
             </div>
             <div className="body">
               {yearlyLoading ? (
-                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, flex: 1 }}>
                   Đang tải dữ liệu...
                 </div>
               ) : !hasChartData ? (
-                <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, gap: 8 }}>
+                <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, gap: 8, flex: 1 }}>
                   <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
                     <line x1="3" y1="20" x2="21" y2="20"/>
                     <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
@@ -368,7 +368,7 @@ export default function FinancePage() {
             {loading ? (
               <div style={{ height: 160, background: 'var(--bg-2)', borderRadius: 6 }} />
             ) : costPieData.length > 0 ? (
-              <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                 {(() => {
                   const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
                   const cx = 100, cy = 100, rOuter = 80, rInner = 50;
@@ -387,18 +387,20 @@ export default function FinancePage() {
                   });
                   return (
                     <>
-                      <svg aria-hidden="true" viewBox="0 0 200 200" width={150} height={150} style={{ flexShrink: 0 }} role="img" aria-label="Cơ cấu chi phí">
-                        {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} stroke="#FFFFFF" strokeWidth={2.5} />)}
-                        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="var(--ink-3)" fontFamily="var(--font-sans)">Tổng chi phí</text>
-                        <text x={cx} y={cy + 11} textAnchor="middle" fontSize="14" fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">{compactNum(total)}</text>
-                      </svg>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, flex: '1 1 0', minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        <svg aria-hidden="true" viewBox="0 0 200 200" width={140} height={140} style={{ flexShrink: 0 }} role="img" aria-label="Cơ cấu chi phí">
+                          {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} stroke="#FFFFFF" strokeWidth={2.5} />)}
+                          <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="var(--ink-3)" fontFamily="var(--font-sans)">Tổng chi phí</text>
+                          <text x={cx} y={cy + 11} textAnchor="middle" fontSize="14" fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">{compactNum(total)}</text>
+                        </svg>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, width: '100%' }}>
                         {arcs.map((a, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                             <span style={{ width: 10, height: 10, background: a.fill, borderRadius: 2, flexShrink: 0 }} />
-                            <span style={{ flex: 1, minWidth: 0, color: 'var(--ink-2)' }}>{a.name}</span>
-                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--ink)' }}>{formatNumber(a.value)}₫</span>
-                            <span style={{ color: 'var(--ink-3)', flexShrink: 0, marginLeft: 4 }}>{a.pct.toFixed(0)}%</span>
+                            <span style={{ flex: 1, color: 'var(--ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</span>
+                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--ink)', marginRight: 4 }}>{formatNumber(a.value)}₫</span>
+                            <span style={{ color: 'var(--ink-3)', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>{a.pct.toFixed(0)}%</span>
                           </div>
                         ))}
                       </div>
@@ -438,9 +440,10 @@ export default function FinancePage() {
                 const minProfit = Math.min(...topTrucks.map(t => t['LN gộp']), 0);
                 const totalRange = maxProfit - minProfit;
                 const svgH = topTrucks.length * 32;
-                const plateW = 76;
-                const barTrackW = 280 - plateW;
-                const zeroX = minProfit < 0 ? plateW + (Math.abs(minProfit) / totalRange) * barTrackW : plateW;
+                const plateW = 65;
+                const valW = 75;
+                const barTrackW = 280 - plateW - valW - 10;
+                const zeroX = minProfit < 0 ? (plateW + 5) + (Math.abs(minProfit) / totalRange) * barTrackW : (plateW + 5);
                 return (
                   <svg aria-hidden="true" width="100%" height={svgH} viewBox={`0 0 280 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
                     {topTrucks.map((t, i) => {
@@ -451,12 +454,12 @@ export default function FinancePage() {
                       const fill = isNegative ? 'var(--danger)' : '#059669';
                       return (
                         <g key={i} transform={`translate(0, ${i * 32})`}>
-                          <text x={0} y={15} fontSize="10" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)">{t.name}</text>
+                          <text x={0} y={15} fontSize="10" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)" textAnchor="start">{t.name}</text>
                           <rect x={barX} y={4} width={w} height={14} fill={fill} rx={3} opacity={0.85} />
                           {minProfit < 0 && (
                             <line x1={zeroX} y1={0} x2={zeroX} y2={24} stroke="var(--line-2)" strokeWidth={1} strokeDasharray="2,2" />
                           )}
-                          <text x={barX + w + 5} y={15} fontSize="9.5" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500}>{formatNumber(val)}₫</text>
+                          <text x={280} y={15} fontSize="9.5" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500} textAnchor="end">{formatNumber(val)}₫</text>
                         </g>
                       );
                     })}
