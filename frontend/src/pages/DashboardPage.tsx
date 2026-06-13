@@ -8,6 +8,7 @@ import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
+import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
@@ -52,143 +53,6 @@ const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' })
   const sym = isUp ? '▲' : isDown ? '▼' : '·';
   return <span className={cls}>{sym} {mom.replace(/^[+\-]/, '')}{suffix}</span>;
 };
-
-// ─── 12-month revenue + gross-profit chart (inline SVG) ─────────────────────
-
-interface ChartProps { months: string[]; revenue: number[]; gross: number[]; }
-function RevenueChart({ months, revenue, gross }: ChartProps) {
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const activeIdx = hoverIdx;
-
-  const W = 760, H = 280;
-  const mL = 46, mR = 18, mT = 14, mB = 30;
-  const pW = W - mL - mR, pH = H - mT - mB;
-  // Auto-scale y-axis: pick a nice step size that fits the data
-  const peak = Math.max(...revenue, ...gross, 1);
-  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
-  const step = niceSteps.find(s => s * 4 >= peak) ?? 1000;
-  const yMax = Math.ceil(peak / step) * step || step;
-  const X = (i: number) => mL + pW * (i / Math.max(1, revenue.length - 1));
-  const Y = (v: number) => mT + pH * (1 - v / yMax);
-
-  const path = (arr: number[]) =>
-    arr.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
-
-  const areaPath = (arr: number[]) =>
-    path(arr) + ` L ${X(arr.length - 1)} ${Y(0)} L ${X(0)} ${Y(0)} Z`;
-
-  const gridValues = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
-
-  const ax = activeIdx !== null ? X(activeIdx) : 0;
-  const ay = activeIdx !== null ? Y(revenue[activeIdx] || 0) : 0;
-  const ayGp = activeIdx !== null ? Y(gross[activeIdx] || 0) : 0;
-
-  return (
-    <div style={{ position: 'relative', width: '100%' }} onMouseLeave={() => setHoverIdx(null)}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ display: 'block', width: '100%', overflow: 'visible' }}
-      >
-      <defs>
-        <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#005A2D" stopOpacity={0.16} />
-          <stop offset="100%" stopColor="#005A2D" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      {gridValues.map((v, i) => (
-        <g key={i}>
-          <line x1={mL} y1={Y(v)} x2={W - mR} y2={Y(v)} stroke="#EEF1EF" strokeWidth="1" />
-          <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fontFamily="JetBrains Mono, monospace" fill="#A4B1A9">
-            {v === 0
-              ? <tspan fontSize="10">0</tspan>
-              : <><tspan fontSize="10">{Math.round(v)}</tspan><tspan fontSize="8">tr₫</tspan></>
-            }
-          </text>
-        </g>
-      ))}
-      {months.map((m, i) => (
-        <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10"
-              fill={i === activeIdx ? '#005A2D' : '#8A988F'} fontWeight={i === activeIdx ? '700' : '400'}>
-          {m}
-        </text>
-      ))}
-      <path d={areaPath(revenue)} fill="url(#gRev)" />
-      <path d={path(gross)} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path className="wf-rev-line" d={path(revenue)} fill="none" stroke="#005A2D" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      {activeIdx !== null && (
-        <>
-          {/* active point crosshair */}
-          <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
-          <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
-          <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
-        </>
-      )}
-      {/* Invisible hit areas — one per month column, rendered last so they sit on top */}
-      {months.map((_, i) => {
-        const cx = X(i);
-        const left  = i === 0 ? mL : (X(i - 1) + cx) / 2;
-        const right = i === months.length - 1 ? W - mR : (cx + X(i + 1)) / 2;
-        return (
-          <rect
-            key={i}
-            x={left}
-            y={mT}
-            width={right - left}
-            height={pH}
-            fill="transparent"
-            style={{ cursor: 'crosshair' }}
-            onMouseEnter={() => setHoverIdx(i)}
-          />
-        );
-      })}
-    </svg>
-    {/* HTML dot overlay — createMotionPath targets HTML elements with position:absolute */}
-    <div className="wf-chart-traveler" style={{ position: 'absolute', width: 7, height: 7, background: '#005A2D', borderRadius: '50%', left: -3.5, top: -3.5, opacity: 0, boxShadow: '0 0 4px rgba(0,90,45,0.5)', pointerEvents: 'none', zIndex: 5 }} />
-    {activeIdx !== null && (
-      <div
-        style={{
-          position: 'absolute',
-          left: `${(ax / W) * 100}%`,
-          top: `${(Math.min(ay, ayGp) / H) * 100}%`,
-          transform: `translate(${activeIdx === 0 ? '0' : activeIdx === months.length - 1 ? '-100%' : '-50%'}, calc(-100% - 12px))`,
-          background: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #E2E8E5',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-          padding: '10px 14px',
-          pointerEvents: 'none',
-          minWidth: '160px',
-          zIndex: 10,
-        }}
-      >
-        <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', fontWeight: 600, color: '#6B7B73', marginBottom: '8px' }}>
-          {months[activeIdx]}
-        </div>
-        <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
-            Doanh thu
-          </div>
-          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D' }}>
-            {(revenue[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
-            LN gộp
-          </div>
-          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#2563EB' }}>
-            {(gross[activeIdx] || 0).toFixed(1).replace('.', ',')} Tr
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-  );
-}
 
 // ─── Cost donut (5 slices, computed from cost breakdown) ────────────────────
 
@@ -601,7 +465,7 @@ export default function DashboardPage() {
                     </div>
                   );
                 }
-                return <RevenueChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
+                return <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
               })()}
             </div>
           </div>

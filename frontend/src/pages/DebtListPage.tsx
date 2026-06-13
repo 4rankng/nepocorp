@@ -47,11 +47,11 @@ interface AgingBucket {
   countKey: 'currentCusts' | 'd30Custs' | 'd60Custs' | 'over90Custs';
   dotClass: string;
   color: string;
-  filterMode: 'all' | 'overdue' | 'high-risk';
+  filterMode: 'all' | 'overdue' | 'high-risk' | 'current';
 }
 
 const AGING_BUCKETS: AgingBucket[] = [
-  { key: 'current', label: '0–30 NGÀY', amountKey: 'current', countKey: 'currentCusts', dotClass: 'debt-aging__dot--ok', color: '#00B14F', filterMode: 'all' },
+  { key: 'current', label: '0–30 NGÀY', amountKey: 'current', countKey: 'currentCusts', dotClass: 'debt-aging__dot--ok', color: '#00B14F', filterMode: 'current' },
   { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: '#F5A623', filterMode: 'overdue' },
   { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'overdue' },
   { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'high-risk' },
@@ -66,7 +66,7 @@ export default function DebtListPage() {
   const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
   const rawCustomers = data?.customers ?? [];
   const error = queryError ? (queryError as any).message : null;
-  const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk'>(
+  const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk' | 'current'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
   const { toast: showToast } = useToast();
@@ -146,7 +146,9 @@ export default function DebtListPage() {
 
   const filteredDebts = useMemo(() => {
     let result = customerDebts;
-    if (filterMode === 'overdue') {
+    if (filterMode === 'current') {
+      result = result.filter(d => d.aging.current > 0 && d.totalOutstanding > 0);
+    } else if (filterMode === 'overdue') {
       result = result.filter(d => d.maxOverdueDays > 30 && d.totalOutstanding > 0);
     } else if (filterMode === 'high-risk') {
       result = result.filter(d => d.riskClass === 'high' && d.totalOutstanding > 0);
@@ -169,7 +171,7 @@ export default function DebtListPage() {
       { el: r.d30Amount, value: totals.d30, format: (v) => formatCompact(v) },
       { el: r.d60Amount, value: totals.d60, format: (v) => formatCompact(v) },
       { el: r.over90Amount, value: totals.over90, format: (v) => formatCompact(v) },
-    ].filter((c): c is { el: HTMLElement; value: number; format?: (val: number) => string; suffix?: string } => c.el !== null));
+    ]);
   }, [loading, totals, prefersReduced, animateCounters]);
 
   /* ── Helpers ── */
@@ -216,7 +218,7 @@ export default function DebtListPage() {
             <span className="debt-hero__eyebrow">Tổng công nợ phải thu</span>
             <div className="debt-hero__amount">
               <span ref={(el) => { counterRefs.current.heroTotal = el; }}>
-                {formatCompact(totals.total)}
+                {prefersReduced ? formatCompact(totals.total) : '0'}
               </span>
               <span className="debt-hero__currency">₫</span>
             </div>
@@ -238,7 +240,7 @@ export default function DebtListPage() {
             <div className="debt-kpi-mini__body">
               <span className="debt-kpi-mini__value">
                 <span ref={(el) => { counterRefs.current.overdueCount = el; }}>
-                  {totals.overdueCount}
+                  {prefersReduced ? totals.overdueCount : 0}
                 </span>
               </span>
               <span className="debt-kpi-mini__label">quá hạn</span>
@@ -251,7 +253,7 @@ export default function DebtListPage() {
             <div className="debt-kpi-mini__body">
               <span className="debt-kpi-mini__value">
                 <span ref={(el) => { counterRefs.current.highRiskCount = el; }}>
-                  {totals.highRiskCount}
+                  {prefersReduced ? totals.highRiskCount : 0}
                 </span>
               </span>
               <span className="debt-kpi-mini__label">rủi ro cao</span>
@@ -269,7 +271,7 @@ export default function DebtListPage() {
           const count = totals[bucket.countKey];
           const pct = agingTotal > 0 ? (amount / agingTotal) * 100 : 0;
           const isActive =
-            (bucket.filterMode === 'all' && filterMode === 'all') ||
+            (bucket.filterMode === 'current' && filterMode === 'current') ||
             (bucket.filterMode === 'overdue' && filterMode === 'overdue' && (bucket.amountKey === 'd30' || bucket.amountKey === 'd60')) ||
             (bucket.filterMode === 'high-risk' && filterMode === 'high-risk');
 
@@ -293,7 +295,7 @@ export default function DebtListPage() {
                   else if (bucket.amountKey === 'd60') counterRefs.current.d60Amount = el;
                   else if (bucket.amountKey === 'over90') counterRefs.current.over90Amount = el;
                 }}>
-                  {formatCompact(amount)}
+                  {prefersReduced ? formatCompact(amount) : '0'}
                 </span>
                 <span className="debt-aging-card__unit">₫</span>
               </div>

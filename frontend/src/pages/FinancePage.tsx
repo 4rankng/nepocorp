@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
@@ -10,6 +10,7 @@ import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
+import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
 import './FinancePage.css';
 
 /** Margin percentage — computed once, used in KPI strip, counter animation, and P&L table. */
@@ -28,6 +29,11 @@ function yoyClass(current: number, previous: number): string {
   return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';
 }
 
+const runningSum = (arr: number[]): number[] => {
+  let acc = 0;
+  return arr.map((v) => (acc += v));
+};
+
 const EMPTY_TRIPS: TripDetail[] = [];
 const EMPTY_CAP: CapTableHistory[] = [];
 const EMPTY_YEARLY: (PnlReport | null)[] = [];
@@ -35,6 +41,7 @@ const EMPTY_YEARLY: (PnlReport | null)[] = [];
 export default function FinancePage() {
   const navigate = useNavigate();
   const { month, year } = useMonth();
+  const [chartView, setChartView] = useState<'day' | 'month'>('day');
   const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
   const { rootRef } = usePageAnimations({ ready: !loading });
 
@@ -99,8 +106,8 @@ export default function FinancePage() {
 
     const revenueChartData = yearlyData.map((r, i) => ({
       name: `T${i + 1}`,
-      'Doanh thu': r?.totalRevenue ?? 0,
-      'LN gộp': r?.grossProfit ?? 0,
+      'Doanh thu': (r?.totalRevenue ?? 0) / 1_000_000,
+      'LN gộp': (r?.grossProfit ?? 0) / 1_000_000,
     }));
 
     const costPieData = [
@@ -155,25 +162,71 @@ export default function FinancePage() {
     };
   }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
 
+  const trimmedChartData = useMemo(() => {
+    const firstDataIdx = revenueChartData.findIndex(d => d['Doanh thu'] > 0 || d['LN gộp'] > 0);
+    if (firstDataIdx < 0) return [];
+    const lastDataIdx = [...revenueChartData].reverse().findIndex(d => d['Doanh thu'] > 0 || d['LN gộp'] > 0);
+    return revenueChartData.slice(firstDataIdx, revenueChartData.length - lastDataIdx);
+  }, [revenueChartData]);
+
+  const currentChartMonthIdx = useMemo(() => {
+    return trimmedChartData.findIndex(d => d.name === `T${month}`);
+  }, [trimmedChartData, month]);
+
+  const dailyChartData = useMemo(() => {
+    const dayMap = new Map<string, { revenue: number; gross: number }>();
+    for (const t of allTrips) {
+      if (t.status === 'CANCELED') continue;
+      const dateKey = t.departureDate?.slice(0, 10);
+      if (!dateKey) continue;
+      const rev = Number(t.revenue) || 0;
+      const gp = Number(t.grossProfit) || 0;
+      const existing = dayMap.get(dateKey) ?? { revenue: 0, gross: 0 };
+      existing.revenue += rev;
+      existing.gross += gp;
+      dayMap.set(dateKey, existing);
+    }
+    const sorted = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .filter(([, v]) => v.revenue > 0 || v.gross > 0);
+    return {
+      labels: sorted.map(([d]) => String(parseInt(d.slice(8, 10), 10))),
+      revenue: runningSum(sorted.map(([, v]) => v.revenue / 1_000_000)),
+      gross: runningSum(sorted.map(([, v]) => v.gross / 1_000_000)),
+    };
+  }, [allTrips]);
+
+  const activeChartData = useMemo(() => {
+    if (chartView === 'day') {
+      return {
+        months: dailyChartData.labels,
+        revenue: dailyChartData.revenue,
+        gross: dailyChartData.gross,
+        currentIdx: undefined,
+      };
+    }
+    return {
+      months: trimmedChartData.map(d => d.name as string),
+      revenue: trimmedChartData.map(d => d['Doanh thu'] as number),
+      gross: trimmedChartData.map(d => d['LN gộp'] as number),
+      currentIdx: currentChartMonthIdx >= 0 ? currentChartMonthIdx : undefined,
+    };
+  }, [chartView, dailyChartData, trimmedChartData, currentChartMonthIdx]);
+
+  const hasChartData = chartView === 'day' ? dailyChartData.labels.length > 0 : trimmedChartData.length > 0;
+
   // ── KPI counter animation ──
   const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 100 });
 
   useEffect(() => {
     if (loading || !report || prefersReduced) return;
 
-    const targets: { el: HTMLElement; value: number; format?: (val: number) => string }[] = [
+    animateCounters([
       { el: kpiRefs.current.revenue, value: totalRevenue },
       { el: kpiRefs.current.gross, value: grossProfit },
       { el: kpiRefs.current.net, value: netProfit },
-    ].filter((c): c is { el: HTMLSpanElement; value: number } => c.el !== null);
-
-    // Margin % counter with decimal formatting
-    const marginEl = kpiRefs.current.margin;
-    if (marginEl) {
-      targets.push({ el: marginEl, value: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0, format: (val) => val.toFixed(1) });
-    }
-
-    animateCounters(targets);
+      { el: kpiRefs.current.margin, value: totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0, format: (val) => val.toFixed(1) },
+    ]);
   }, [report, loading, totalRevenue, grossProfit, netProfit, prefersReduced, animateCounters]);
 
   return (
@@ -257,121 +310,52 @@ export default function FinancePage() {
       {/* ── Charts ──────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3 finance-charts-row">
         {/* Revenue trend */}
-        <div className="panel" style={{ padding: '16px 20px', flex: '2 1 400px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
-              Xu hướng doanh thu {year}
+        <div className="dash-wf" style={{ flex: '2 1 400px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div className="wf-card wf-chart" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="wf-card-h">
+              <div>
+                <div className="ttl">Xu hướng doanh thu {chartView === 'day' ? `Tháng ${month}/${year}` : year}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="wf-chart-toggle">
+                  <button className={`wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')}>Ngày</button>
+                  <button className={`wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')}>Tháng</button>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--ink-2)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#059669" strokeWidth="2.5" /></svg> Doanh thu
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="#34D399" strokeWidth="2" strokeDasharray="4 3" /></svg> LN gộp
-              </span>
+            <div className="wf-legend">
+              <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu</span>
+              <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
+            </div>
+            <div className="body">
+              {yearlyLoading ? (
+                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--wf-ink-3)', fontSize: 13 }}>
+                  Đang tải dữ liệu...
+                </div>
+              ) : !hasChartData ? (
+                <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, gap: 8 }}>
+                  <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+                    <line x1="3" y1="20" x2="21" y2="20"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
+                    <line x1="14" y1="20" x2="14" y2="11"/><line x1="18" y1="20" x2="18" y2="4"/>
+                  </svg>
+                  <div>
+                    {chartView === 'day'
+                      ? `Chưa có chuyến nào được khóa trong tháng ${month}/${year}`
+                      : `Chưa có chuyến nào được khóa trong năm ${year}`}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--wf-ink-3)' }}>Khoá lệnh để xem xu hướng doanh thu</div>
+                </div>
+              ) : (
+                <RevenueTrendChart
+                  months={activeChartData.months}
+                  revenue={activeChartData.revenue}
+                  gross={activeChartData.gross}
+                  currentIdx={activeChartData.currentIdx}
+                />
+              )}
             </div>
           </div>
-          {yearlyLoading ? (
-            <div style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 6 }} />
-          ) : revenueChartData.every(d => d['Doanh thu'] === 0 && d['LN gộp'] === 0) ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontSize: 13, gap: 8 }}>
-              <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                <line x1="3" y1="20" x2="21" y2="20"/>
-                <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
-                <line x1="14" y1="20" x2="14" y2="11"/><line x1="18" y1="20" x2="18" y2="4"/>
-              </svg>
-              <div>Chưa có chuyến nào được khóa trong năm {year}</div>
-              <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh để xem xu hướng doanh thu hàng tháng</div>
-            </div>
-          ) : (
-            <div className="finance-revenue-chart" style={{ flex: 1, minHeight: 0, width: '100%' }}>
-              {(() => {
-                const w = 600, h = 300;
-                const padL = 50, padR = 20, padT = 10, padB = 28;
-                const plotW = w - padL - padR, plotH = h - padT - padB;
-                const baseline = padT + plotH;
-                const max = Math.max(1, ...revenueChartData.flatMap(d => [d['Doanh thu'] as number, d['LN gộp'] as number]));
-                const niceMax = Math.ceil(max / 10_000_000) * 10_000_000;
-                const xStep = plotW / 12; // Full year — 12 months
-                const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => niceMax * t);
-                // Data points for active months only
-                const activeData = revenueChartData.filter((_, i) => i + 1 <= month);
-                const revPts: [number, number][] = [];
-                const gpPts: [number, number][] = [];
-                activeData.forEach((d, idx) => {
-                  const cx = padL + idx * xStep + xStep / 2;
-                  revPts.push([cx, baseline - ((d['Doanh thu'] as number) / niceMax) * plotH]);
-                  gpPts.push([cx, baseline - ((d['LN gộp'] as number) / niceMax) * plotH]);
-                });
-                // Straight-line path helpers
-                const toLine = (pts: [number, number][]) => pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x},${y}`).join(' ');
-                const toArea = (pts: [number, number][]) => {
-                  if (pts.length === 0) return '';
-                  return `${toLine(pts)} L ${pts[pts.length - 1][0]},${baseline} L ${pts[0][0]},${baseline} Z`;
-                };
-                return (
-                  <svg className="finance-revenue-svg" width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Xu hướng doanh thu">
-                    <defs>
-                      <linearGradient id="revAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#059669" stopOpacity="0.20" />
-                        <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
-                      </linearGradient>
-                      <linearGradient id="gpAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6EE7B7" stopOpacity="0.14" />
-                        <stop offset="100%" stopColor="#6EE7B7" stopOpacity="0.01" />
-                      </linearGradient>
-                    </defs>
-                    {/* Grid */}
-                    {ticks.map((tv, i) => {
-                      const y = baseline - (tv / niceMax) * plotH;
-                      return (
-                        <g key={i}>
-                          <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="var(--line)" strokeWidth={0.5} strokeDasharray={i === 0 ? undefined : '3 5'} />
-                          <text x={padL - 8} y={y + 3.5} textAnchor="end" fontSize="10.5" fill="var(--ink-3)" fontFamily="var(--font-mono)">{compactNum(tv)}</text>
-                        </g>
-                      );
-                    })}
-                    {/* Revenue area + solid line */}
-                    {revPts.length >= 2 && (
-                      <>
-                        <path d={toArea(revPts)} fill="url(#revAreaGrad)" />
-                        <path d={toLine(revPts)} fill="none" stroke="#059669" strokeWidth={2.5} strokeLinejoin="round" />
-                      </>
-                    )}
-                    {/* Profit area + dashed line */}
-                    {gpPts.length >= 2 && (
-                      <>
-                        <path d={toArea(gpPts)} fill="url(#gpAreaGrad)" />
-                        <path d={toLine(gpPts)} fill="none" stroke="#34D399" strokeWidth={2} strokeDasharray="5 4" strokeLinejoin="round" />
-                      </>
-                    )}
-                    {/* Revenue data dots */}
-                    {revPts.map(([x, y], i) => (
-                      <circle key={`r${i}`} cx={x} cy={y} r={i === revPts.length - 1 ? 4.5 : 3} fill="#059669" stroke="white" strokeWidth={2} />
-                    ))}
-                    {/* Profit data dots */}
-                    {gpPts.map(([x, y], i) => (
-                      <circle key={`g${i}`} cx={x} cy={y} r={i === gpPts.length - 1 ? 4 : 2.5} fill="#34D399" stroke="white" strokeWidth={2} />
-                    ))}
-                    {/* Current month highlight line */}
-                    {revPts.length > 0 && (() => {
-                      const lastX = revPts[revPts.length - 1][0];
-                      return <line x1={lastX} y1={padT} x2={lastX} y2={baseline} stroke="#059669" strokeOpacity={0.15} strokeWidth={1} strokeDasharray="4 3" />;
-                    })()}
-                    {/* X-axis — all 12 months */}
-                    {revenueChartData.map((d, i) => {
-                      const cx = padL + i * xStep + xStep / 2;
-                      const isFuture = i + 1 > month;
-                      const isCurrent = i + 1 === month;
-                      return (
-                        <text key={i} className="finance-chart-xlabel" x={cx} y={h - padB + 16} textAnchor="middle" fontSize="11" fontFamily="var(--font-mono)" fontWeight={isCurrent ? 700 : 400} fill={isFuture ? 'var(--line)' : isCurrent ? 'var(--ink)' : 'var(--ink-3)'}>{d.name as string}</text>
-                      );
-                    })}
-                  </svg>
-                );
-              })()}
-            </div>
-          )}
         </div>
 
         {/* Right column: cost pie + top trucks stacked */}

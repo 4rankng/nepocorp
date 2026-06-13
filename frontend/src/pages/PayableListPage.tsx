@@ -11,6 +11,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './PayableListPage.css';
+import '../components/shared/HeroKpiRow.css';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 
@@ -100,7 +101,7 @@ export default function PayableListPage() {
   useEffect(() => {
     if (loading || payables.length === 0 || prefersReduced) return;
 
-    const counters: { el: HTMLElement | null; value: number; format?: (v: number) => string }[] = [
+    animateCounters([
       { el: heroTotalRef.current, value: totals.total, format: (v) => formatCompact(v) },
       { el: overdueRef.current, value: totals.overdueCount },
       { el: activeSuppliersRef.current, value: totals.supplierCount },
@@ -108,13 +109,7 @@ export default function PayableListPage() {
       { el: agingD30Ref.current, value: totals.d30, format: (v) => formatCompact(v) },
       { el: agingD60Ref.current, value: totals.d60, format: (v) => formatCompact(v) },
       { el: agingOver90Ref.current, value: totals.over90, format: (v) => formatCompact(v) },
-    ];
-
-    // Filter out null refs (safety) and animate
-    const valid = counters.filter((c): c is { el: HTMLElement; value: number; format?: (v: number) => string } => c.el !== null);
-    if (valid.length > 0) {
-      animateCounters(valid);
-    }
+    ]);
   }, [loading, payables.length, totals, animateCounters, prefersReduced]);
 
   /* ── Aging progress percentages ── */

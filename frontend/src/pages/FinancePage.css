@@ -302,3 +302,104 @@
   border-radius: 2px;
   display: inline-block;
 }
+
+/* ============================================================================
+ * Dashboard Card Styles (copied from DashboardPage.css)
+ * ========================================================================== */
+.dash-wf {
+  --wf-bg: #EFF2F0;
+  --wf-card: #FFFFFF;
+  --wf-border: #E5E9E7;
+  --wf-border-2: #DCE2DF;
+  --wf-ink: #0E1F16;
+  --wf-ink-2: #56655C;
+  --wf-ink-3: #8A988F;
+  --wf-green: #005A2D;
+  --wf-green-700: #0A6E3A;
+  --wf-green-500: #16A34A;
+  --wf-green-soft: #E7F2EC;
+  --wf-blue: #2563EB;
+  --wf-blue-soft: #E8EFFD;
+  --wf-amber: #C2780B;
+  --wf-amber-soft: #FBF1DE;
+  --wf-red: #C7372F;
+  --wf-shadow: 0 1px 2px rgba(14, 31, 22, 0.04), 0 1px 1px rgba(14, 31, 22, 0.03);
+  --wf-shadow-hover: 0 4px 16px -4px rgba(9, 9, 11, 0.1), 0 0 0 1px rgba(9, 9, 11, 0.04);
+  --wf-radius: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-wf .wf-card {
+  background: var(--wf-card);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius);
+  box-shadow: var(--wf-shadow);
+  overflow: hidden;
+  min-width: 0;
+  position: relative;
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), border-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dash-wf .wf-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wf-shadow-hover);
+}
+
+.dash-wf .wf-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; }
+.dash-wf .wf-card-h .ttl { font-size: var(--fs-sm); font-weight: 700; letter-spacing: -0.01em; color: var(--wf-ink); }
+.dash-wf .wf-card-h .sub { font-size: var(--fs-2xs); color: var(--wf-ink-3); margin-top: 2px; }
+
+.dash-wf .wf-legend { display: flex; gap: 16px; padding: 10px 12px 0; }
+.dash-wf .wf-legend .li { display: flex; align-items: center; gap: 7px; font-size: var(--fs-xs); color: var(--wf-ink-2); font-weight: 500; }
+.dash-wf .wf-legend .sw { width: 14px; height: 3px; border-radius: 2px; }
+
+.dash-wf .wf-chart { display: flex; flex-direction: column; }
+.dash-wf .wf-chart .body { padding: 8px 8px 6px; flex: 1; min-height: 0; }
+.dash-wf .wf-chart .body svg { display: block; width: 100%; height: 100%; }
+
+.dash-wf svg {
+  width: 16px !important;
+  height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.dash-wf .wf-chart .body svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+}
+
+/* ── Chart day/month toggle ── */
+.dash-wf .wf-chart-toggle {
+  display: inline-flex;
+  border: 1px solid var(--wf-border-2);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--wf-card);
+}
+.dash-wf .wf-chart-toggle__btn {
+  padding: 3px 12px;
+  font-family: var(--font-body);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  line-height: 1.5;
+}
+.dash-wf .wf-chart-toggle__btn:hover {
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+}
+.dash-wf .wf-chart-toggle__btn.is-active {
+  color: var(--fg-on-brand);
+  background: var(--wf-green);
+  box-shadow: 0 1px 3px rgba(0,90,45,0.2);
+}
