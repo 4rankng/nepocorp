@@ -23,7 +23,7 @@ function loadingTypeLabel(t: string) {
 export default function TripLegsPanel({ legs, emptyMessage = 'Chưa có thông tin hành trình' }: TripLegsPanelProps) {
   if (legs.length === 0) {
     return (
-      <div className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel trip-legs">
         <div className="panel__head">
           <span className="trip-legs__title">Hành trình chi tiết</span>
         </div>
@@ -41,7 +41,7 @@ export default function TripLegsPanel({ legs, emptyMessage = 'Chưa có thông t
   const lastIdx = stops.length - 1;
 
   return (
-    <div className="panel trip-legs" style={{ marginBottom: 16 }}>
+    <div className="panel trip-legs">
       <div className="panel__head">
         <span className="trip-legs__title">Hành trình chi tiết</span>
         <span className="trip-legs__count">{legs.length} chặng</span>

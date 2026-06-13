@@ -53,3 +53,4 @@ p, MANAGER, ocr, write
 p, ACCOUNTANT, ocr, write
 p, DRIVER, ocr, write
 p, DRIVER, driver_portal, write
+p, DRIVER, config, read

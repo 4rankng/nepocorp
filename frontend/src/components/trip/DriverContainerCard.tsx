@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Camera, Loader2, Save, Package, AlertCircle } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, getAuthenticatedPhotoUrl } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 import { useToast } from '../shared/Toast';
+import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import {
   normalizeContainerNumber,
   validateContainerFormat,
   validateCheckDigit,
   suggestCorrections,
 } from '@tingting/shared';
+import { TextField } from '../../design-system';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/Select';
 
 /**
  * Container & seal section for the driver trip-detail page.
@@ -79,6 +88,7 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scannerType, setScannerType] = useState<'CONTAINER' | 'SEAL' | null>(null);
 
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
     queryKey: qk.catalogs.containerTypes,
@@ -148,36 +158,27 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
   const check = checkContainerNumber(draft.containerNumber);
 
   return (
-    <div className="panel" style={{ marginBottom: 16 }}>
+    <div className="panel panel--solid dcc">
       <div className="panel__head">
         <Package size={16} style={{ color: 'var(--ink-3)' }} />
-        <span className="panel__head-title">
-          Số cont & seal
-        </span>
+        <span className="panel__head-title">Số cont & seal</span>
       </div>
       <div className="panel__body">
         {/* Existing containers (read-only) */}
         {containers.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          <div className="dcc-existing-list">
             {containers.map(c => (
-              <div key={c.id} style={{
-                border: '1px solid var(--line)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                background: 'var(--surface-2)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 14, letterSpacing: '0.04em', color: 'var(--ink)' }}>
-                    {c.containerNumber}
-                  </strong>
+              <div key={c.id} className="dcc-existing">
+                <div className="dcc-existing__top">
+                  <span className="dcc-existing__num">{c.containerNumber}</span>
                   {c.containerTypeName && (
-                    <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                    <span className="dcc-existing__type">
                       {c.containerTypeName}{c.containerTypeCode ? ` (${c.containerTypeCode})` : ''}
                     </span>
                   )}
                 </div>
                 {(c.sealNumber || c.cargoWeightKg) && (
-                  <div style={{ marginTop: 4, fontSize: 12, color: 'var(--ink-3)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <div className="dcc-existing__meta">
                     {c.sealNumber && <span>Seal: {c.sealNumber}</span>}
                     {c.cargoWeightKg && <span>{Number(c.cargoWeightKg).toLocaleString('vi-VN')} kg</span>}
                   </div>
@@ -189,63 +190,58 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
 
         {/* Inline entry form — pre-filled by OCR, confirmed by the driver */}
         {error && (
-          <div style={{
-            marginBottom: 10, padding: '8px 10px', fontSize: 12,
-            background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
-            <AlertCircle size={14} /> {error}
+          <div className="dcc-error">
+            <AlertCircle size={15} /> {error}
           </div>
         )}
 
-        {/* Upload zones — camera capture on mobile */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-          <label className="btn btn--secondary btn--sm" style={{ justifyContent: 'center', cursor: uploading ? 'wait' : 'pointer' }}>
-            <Camera size={14} /> {uploading ? <Loader2 size={14} className="spin" /> : 'Ảnh cont'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              hidden
-              disabled={uploading}
-              onChange={e => onPick(e.target.files?.[0], 'CONTAINER')}
-            />
-          </label>
-          <label className="btn btn--secondary btn--sm" style={{ justifyContent: 'center', cursor: uploading ? 'wait' : 'pointer' }}>
-            <Camera size={14} /> {uploading ? <Loader2 size={14} className="spin" /> : 'Ảnh seal'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              hidden
-              disabled={uploading}
-              onChange={e => onPick(e.target.files?.[0], 'SEAL')}
-            />
-          </label>
+        {/* Capture zones — open the fullscreen camera/gallery overlay */}
+        <div className="dcc-capture">
+          <button
+            type="button"
+            className="dcc-capture-btn"
+            disabled={uploading}
+            onClick={() => setScannerType('CONTAINER')}
+          >
+            {uploading ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
+            <span>Ảnh cont</span>
+          </button>
+          <button
+            type="button"
+            className="dcc-capture-btn"
+            disabled={uploading}
+            onClick={() => setScannerType('SEAL')}
+          >
+            {uploading ? <Loader2 size={20} className="spin" /> : <Camera size={20} />}
+            <span>Ảnh seal</span>
+          </button>
         </div>
 
-        {lastPhoto && (
-          <img src={lastPhoto} alt="Ảnh vừa chụp" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 12 }} />
+        {scannerType && (
+          <ContainerScanner
+            onCapture={dataUrl => {
+              void onPick(dataUrlToFile(dataUrl), scannerType);
+              setScannerType(null);
+            }}
+            onClose={() => setScannerType(null)}
+          />
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+        {lastPhoto && (
+          <img className="dcc-photo" src={getAuthenticatedPhotoUrl(lastPhoto)} alt="Ảnh vừa chụp" />
+        )}
+
+        <div className="dcc-fields">
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
-              Số container <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input
-              className="input"
-              style={{ width: '100%' }}
+            <TextField
+              label="Số container"
+              required
               placeholder="VD: TCKU1234567"
               value={draft.containerNumber}
               onChange={e => setDraft(prev => ({ ...prev, containerNumber: e.target.value.toUpperCase() }))}
             />
             {check.warning && (
-              <div style={{
-                marginTop: 6, padding: '6px 8px', fontSize: 12,
-                background: 'var(--warning-soft)', color: 'var(--warning)',
-                borderRadius: 6, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center',
-              }}>
+              <div className="dcc-warn">
                 <span>⚠ {check.warning}</span>
                 {check.suggestion && (
                   <button
@@ -260,50 +256,46 @@ export function DriverContainerCard({ tripId, containers, onSaved }: Props) {
               </div>
             )}
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
-              Số seal
-            </label>
-            <input
-              className="input"
-              style={{ width: '100%' }}
-              placeholder="VD: AB123456"
-              value={draft.sealNumber}
-              onChange={e => setDraft(prev => ({ ...prev, sealNumber: e.target.value.toUpperCase() }))}
-            />
-          </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
-              Loại cont
-            </label>
-            <select
-              className="input"
-              style={{ width: '100%' }}
-              value={draft.containerTypeId}
-              onChange={e => setDraft(prev => ({ ...prev, containerTypeId: e.target.value }))}
+          <TextField
+            label="Số seal"
+            placeholder="VD: AB123456"
+            value={draft.sealNumber}
+            onChange={e => setDraft(prev => ({ ...prev, sealNumber: e.target.value.toUpperCase() }))}
+          />
+
+          <div className="ds-field">
+            <label className="ds-field__label">Loại cont</label>
+            <Select
+              value={draft.containerTypeId ? String(draft.containerTypeId) : "none"}
+              onValueChange={val => setDraft(prev => ({ ...prev, containerTypeId: val === "none" ? "" : val }))}
             >
-              <option value="">— Chọn loại —</option>
-              {containerTypes.map(ct => (
-                <option key={ct.id} value={ct.id}>{ct.name} ({ct.code})</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="— Chọn loại —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Chọn loại —</SelectItem>
+                {containerTypes.map(ct => (
+                  <SelectItem key={ct.id} value={String(ct.id)}>
+                    {ct.name} ({ct.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={handleSave}
-            disabled={saving || uploading}
-            style={{ height: 40, padding: '0 16px' }}
-          >
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {saving ? 'Đang lưu…' : 'Lưu'}
-          </button>
         </div>
 
-        <p style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+        <button
+          type="button"
+          className="btn btn--primary dcc-save"
+          onClick={handleSave}
+          disabled={saving || uploading}
+        >
+          {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+          {saving ? 'Đang lưu…' : 'Lưu số cont'}
+        </button>
+
+        <p className="dcc-help">
           Chụp/tải ảnh vỏ cont hoặc seal — app tự nhận diện số. Hãy kiểm tra lại rồi bấm Lưu.
         </p>
       </div>

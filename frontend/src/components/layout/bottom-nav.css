@@ -14,6 +14,15 @@
   .driver-mode .app-body {
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 12px));
   }
+
+  /* Driver full-bleed: strip the app-main gradient so driver pages own their bg */
+  .app.is-driver .app-main {
+    background: none;
+  }
+  /* Zero padding only when the driver detail page is rendered (full-bleed card layout) */
+  .app.is-driver .app-body:has(.driver-trip-detail-page) {
+    padding: 0;
+  }
   
   .bottom-nav {
     display: flex;

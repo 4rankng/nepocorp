@@ -276,7 +276,7 @@ export default function ForwarderTripDetailPage() {
       </div>
 
       {/* Containers Section */}
-      <div className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Số Container / Seal ({containers.length})
@@ -379,7 +379,7 @@ export default function ForwarderTripDetailPage() {
       </div>
 
       {/* Expenses Section */}
-      <div className="panel" style={{ marginBottom: 16 }}>
+      <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Chi phí phát sinh ({expenses.length})

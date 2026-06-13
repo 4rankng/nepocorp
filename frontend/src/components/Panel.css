@@ -12,6 +12,12 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
+.panel--solid {
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--line) !important;
+}
 .panel:hover {
   box-shadow: var(--sh);
   border-color: rgba(255, 255, 255, 0.9);
@@ -94,3 +100,61 @@
   gap: 6px;
 }
 .subsection-card__title svg { width: 13px; height: 13px; }
+
+/* ============================================================================
+ * Mobile Grouped Card — iOS settings-style list pattern
+ *
+ * Usage:
+ *   <div class="m-group">
+ *     <div class="m-group__card">…</div>
+ *     <div class="m-group__card">…</div>
+ *   </div>
+ *
+ * The parent page should set background: var(--surface-2) to show the gray
+ * inset that makes the white cards "pop". Use .m-group__card--accent-* for
+ * a coloured left-border status variant.
+ * ========================================================================== */
+.m-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.m-group__card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: none;
+  width: 100%;
+}
+
+/* Section header row inside a grouped card */
+.m-group__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px 8px;
+  border-bottom: 1px solid var(--line-3);
+}
+
+.m-group__head-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Content area */
+.m-group__body {
+  padding: 10px 16px 14px;
+}
+
+/* Status accent variants — 3px left border */
+.m-group__card--accent-blue   { border-left: 3px solid #3B82F6; }
+.m-group__card--accent-green  { border-left: 3px solid #22C55E; }
+.m-group__card--accent-amber  { border-left: 3px solid #F59E0B; }
+.m-group__card--accent-accent { border-left: 3px solid var(--accent); }
+.m-group__card--accent-red    { border-left: 3px solid #EF4444; }

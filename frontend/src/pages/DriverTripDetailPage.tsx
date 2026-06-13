@@ -113,8 +113,7 @@ export default function DriverTripDetailPage() {
   );
 
   return (
-    <div className="driver-trip-detail-wrap">
-      <div ref={rootRef} className="driver-trip-detail-page">
+    <div ref={rootRef} className="driver-trip-detail-page">
         {/* Back button + Header */}
         <div className="dt-header">
           <button
@@ -125,30 +124,26 @@ export default function DriverTripDetailPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="dt-header-title-block">
-            <div className="dt-header-row">
-              <h1 className="dt-title">
-                {trip.routeName || 'Lệnh vận chuyển'}
-              </h1>
-              <span style={{ flexShrink: 0 }}>
-                <StatusPill variant={tripStatusVariant(trip.status)}>
-                  {TRIP_STATUS_LABELS[trip.status] || trip.status}
-                </StatusPill>
-              </span>
+            <h1 className="dt-title">
+              {trip.routeName || 'Lệnh vận chuyển'}
+            </h1>
+            <div className="dt-meta">
+              <StatusPill variant={tripStatusVariant(trip.status)}>
+                {TRIP_STATUS_LABELS[trip.status] || trip.status}
+              </StatusPill>
+              {trip.customerName && (
+                <span className="dt-subtitle">{trip.customerName}</span>
+              )}
             </div>
-            {trip.customerName && (
-              <p className="dt-subtitle">{trip.customerName}</p>
-            )}
           </div>
         </div>
 
-        {/* Trip Info Card — status strip indicator on left */}
-        <div className={`panel panel--status-accent panel--status-${trip.status}`}>
-          <div className="panel__head">
-            <span className="panel__head-title">
-              Thông tin chuyến
-            </span>
+        {/* Trip Info — flat section */}
+        <section className={`dt-section dt-section--status-${trip.status}`}>
+          <div className="dt-section__head">
+            <span className="dt-section__title">Thông tin chuyến</span>
           </div>
-          <div className="panel__body">
+          <div className="dt-section__body">
             <InfoRow icon={<Truck size={16} />} label="Xe đầu kéo" value={trip.truckPlate} />
             <InfoRow icon={<Truck size={16} />} label="Rơ moóc" value={
               trip.trailerPlate ? `${trip.trailerPlate}${trip.trailerType ? ` (${trip.trailerType})` : ''}` : null
@@ -161,7 +156,7 @@ export default function DriverTripDetailPage() {
               <InfoRow icon={<Navigation size={16} />} label="Mã tham chiếu" value={trip.customerReference} />
             )}
           </div>
-        </div>
+        </section>
 
         <DriverContainerCard tripId={trip.id} containers={trip.containers ?? []} onSaved={loadTrip} />
 
@@ -192,14 +187,12 @@ export default function DriverTripDetailPage() {
           </div>
         </div>
 
-        {/* Earnings Card */}
-        <div className="panel">
-          <div className="panel__head">
-            <span className="panel__head-title">
-              Thu nhập & chi phí
-            </span>
+        {/* Earnings — flat section */}
+        <section className="dt-section">
+          <div className="dt-section__head">
+            <span className="dt-section__title">Thu nhập &amp; chi phí</span>
           </div>
-          <div className="panel__body">
+          <div className="dt-section__body">
             <InfoRow
               icon={<DollarSign size={16} />}
               label="Tiền kết hợp"
@@ -220,22 +213,19 @@ export default function DriverTripDetailPage() {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         <TripLegsPanel legs={trip.legs || []} />
 
         {/* Notes */}
         {trip.notes && (
-          <div className="panel">
-            <div className="panel__body">
-              <div className="notes-title">
-                Ghi chú
-              </div>
+          <section className="dt-section">
+            <div className="dt-section__body">
+              <div className="notes-title">Ghi chú</div>
               <p className="notes-text">{trip.notes}</p>
             </div>
-          </div>
+          </section>
         )}
-      </div>
     </div>
   );
 }

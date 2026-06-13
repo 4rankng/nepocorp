@@ -142,6 +142,8 @@ export async function callGeminiVision(
       });
 
       if (!response.ok) {
+        const errBody = await response.text().catch(() => '<no body>');
+        console.error(`[ocr] Gemini ${model} → ${response.status}: ${errBody.slice(0, 600)} | keyPrefix=${config.geminiApiKey.slice(0, 6)}… keyLen=${config.geminiApiKey.length} | buffer=${buffer.length}B mime=${mime} schemaKeys=${Object.keys(responseSchema ?? {}).join(',')}`);
         lastError = `HTTP ${response.status}`;
         continue;
       }

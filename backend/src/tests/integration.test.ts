@@ -73,10 +73,10 @@ before(async () => {
       username: 'admin', passwordHash: await bcrypt.hash('admin123', 10), role: Role.ADMIN,
     }).returning();
   }
-  let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'thu')).limit(1);
   if (!drvUser) {
     [drvUser] = await db.insert(s.users).values({
-      username: 'laixe', passwordHash: await bcrypt.hash('laixe123', 10), role: Role.DRIVER,
+      username: 'thu', passwordHash: await bcrypt.hash('admin123', 10), role: Role.DRIVER,
     }).returning();
   }
 

@@ -1,132 +1,146 @@
 /* ============================================================================
    DriverTripDetailPage — TingTing
-   Clean, polished mobile-responsive detail view for drivers.
+   iOS grouped-list style: gray page bg, white rounded cards with gaps.
    ========================================================================== */
-
-.driver-trip-detail-wrap {
-  min-height: 100vh;
-  background: linear-gradient(130deg, color-mix(in srgb, var(--accent) 5%, var(--bg-1)) 0%, var(--bg-1) 50%);
-  width: 100%;
-}
 
 .driver-trip-detail-page {
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px 16px 40px;
+  padding: 0 0 calc(80px + env(safe-area-inset-bottom, 12px));
   width: 100%;
+  min-height: 100%;
+  background: var(--surface-2);  /* subtle gray to frame the white cards */
 }
 
-/* Header bar layout */
+/* Header bar layout — sits directly on gray bg */
 .dt-header {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 0 16px;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px 8px;
+  margin-bottom: 0;
 }
 
-/* Back button */
+/* Back button — 40px glass tile, 44px-equivalent touch zone */
 .dt-back-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border-1);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid var(--border-glass);
   color: var(--ink-2);
   display: grid;
   place-items: center;
   cursor: pointer;
   transition: all var(--t-fast) var(--ease);
   flex-shrink: 0;
+  margin-top: 2px;
 }
 .dt-back-btn:hover {
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--ink);
   transform: translateX(-2px);
+  border-color: var(--line-2);
 }
+.dt-back-btn:active { transform: translateX(0) scale(0.96); }
 
 .dt-header-title-block {
   flex: 1;
   min-width: 0;
 }
 
-.dt-header-row {
+.dt-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 9px;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  word-break: break-word;
+}
+
+/* Meta row: status pill + customer, sit neatly under the route title */
+.dt-meta {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.dt-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
 .dt-subtitle {
   font-size: 13px;
   color: var(--ink-3);
-  margin: 4px 0 0;
   font-weight: 500;
 }
 
-/* Panel customizations for this detail view */
-.driver-trip-detail-page .panel {
-  margin-bottom: 16px;
+/* ============================================================================
+   Grouped-list card sections
+   Each section is a white rounded card with side margins — iOS settings pattern.
+   ========================================================================== */
+
+.dt-section {
   position: relative;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  margin: 8px 16px 0;
+  overflow: hidden;
 }
 
-.driver-trip-detail-page .panel__head {
-  padding: 12px 16px;
+/* Divider between rows inside a section */
+.dt-section + .dt-section {
+  /* gap handled by margin-top on each */
+}
+
+.dt-section__head {
+  padding: 12px 16px 4px;
   display: flex;
   align-items: center;
   gap: 8px;
+  border-bottom: 1px solid var(--line-3);
 }
 
-.driver-trip-detail-page .panel__head-title {
-  font-size: 12px;
-  font-weight: 600;
+.dt-section__title {
+  font-size: 11px;
+  font-weight: 700;
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
-.driver-trip-detail-page .panel__body {
-  padding: 16px;
+.dt-section__body {
+  padding: 8px 16px 14px;
 }
 
-/* Left status strip on status-accented panels */
-.panel--status-accent::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3.5px;
-  height: 24px;
-  border-radius: 0 3px 3px 0;
-  z-index: 2;
+/* Status accent — 3px left border on the card */
+.dt-section--CREATED { border-left: 3px solid #3B82F6; }
+.dt-section--IN_TRANSIT { border-left: 3px solid #22C55E; }
+.dt-section--COMPLETED { border-left: 3px solid #F59E0B; }
+.dt-section--LOCKED { border-left: 3px solid #00B14F; }
+.dt-section--CANCELED { border-left: 3px solid #EF4444; }
+
+/* Keep .dcc (DriverContainerCard) — same grouped-card treatment */
+.driver-trip-detail-page .dcc {
+  margin: 8px 16px 0;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
 }
 
-.panel--status-CREATED::before { background: #3B82F6; }
-.panel--status-IN_TRANSIT::before { background: #22C55E; }
-.panel--status-COMPLETED::before { background: #F59E0B; }
-.panel--status-LOCKED::before { background: #00B14F; }
-.panel--status-CANCELED::before { background: #EF4444; }
-
+/* Keep fuel card — visually prominent widget, same card frame */
 /* Special Fuel Allocation Card */
 .driver-trip-detail-page .fuel-alloc-card {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
+  border: 1px solid rgba(0, 177, 79, 0.18);
+  background: var(--surface);
+  backdrop-filter: none;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  margin-bottom: 16px;
+  box-shadow: none;
+  margin: 8px 16px 0;
 }
 
 .fuel-alloc-card__header {
@@ -135,7 +149,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(0, 177, 79, 0.1);
+  border-bottom: 1px solid rgba(0, 177, 79, 0.12);
 }
 
 .fuel-alloc-card__icon {
@@ -173,6 +187,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--surface);
 }
 
 .fuel-alloc-card__body strong {
@@ -252,6 +267,7 @@
 }
 
 /* Custom info-row scaling for comfortable reading on mobile driver view */
+.dt-section .info-row__label,
 .driver-trip-detail-page .info-row__label {
   font-size: 11px;
   font-weight: 600;
@@ -260,8 +276,163 @@
   text-transform: uppercase;
 }
 
+.dt-section .info-row__value,
 .driver-trip-detail-page .info-row__value {
   font-size: 15px;
   font-weight: 500;
   color: var(--ink);
+}
+
+/* ============================================================================
+   Driver Container Card — Số cont &amp; seal
+   Photo-capture entry card. Solid surface so the white inputs/tiles read
+   cleanly; dashed drop-tiles for capture, stacked single-column fields.
+   ========================================================================== */
+/* .dcc margin/border handled above in dt-section override */
+
+/* Override TripLegsPanel to use the same grouped-card style */
+.driver-trip-detail-page .trip-legs.panel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: none;
+  background: var(--surface);
+  margin: 8px 16px 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+/* Existing (saved) containers */
+.dcc-existing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.dcc-existing {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+}
+.dcc-existing__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dcc-existing__num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.dcc-existing__type {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.dcc-existing__meta {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Error + warning banners */
+.dcc-error {
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.12);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dcc-error svg { flex-shrink: 0; }
+.dcc-warn {
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Capture zones — dashed drop-tiles (full-width feel, clear affordance) */
+.dcc-capture {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.dcc-capture-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 80px;
+  padding: 14px 10px;
+  border: 1.5px dashed var(--line-2);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+}
+.dcc-capture-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+.dcc-capture-btn:active:not(:disabled) { transform: translateY(0); }
+.dcc-capture-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.dcc-photo {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+
+/* Fields — single column, DS TextField/SelectField stacked (touch-friendly) */
+.dcc-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Save — full-width primary, 44px touch target */
+.driver-trip-detail-page .dcc-save {
+  width: 100%;
+  height: 44px;
+  margin-top: 16px;
+}
+
+/* Helper text */
+.dcc-help {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.5;
 }
