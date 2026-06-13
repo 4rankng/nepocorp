@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency, formatCompact } from '../lib/format';
+import { formatCurrency, moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { PayableSummary } from '@tingting/shared';
 import { Search, ChevronRight, Wallet, AlertTriangle, Users } from 'lucide-react';
@@ -10,6 +10,7 @@ import { usePayablesSummary } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -34,6 +35,7 @@ export default function PayableListPage() {
   const error = queryError ? (queryError as Error).message : null;
   const [search, setSearch] = useState('');
   const prefersReduced = usePrefersReducedMotion();
+  const compact = useMediaQuery('(max-width: 640px)');
 
   /* ── Page entrance animation (custom selectors for bento zones) ── */
   const { rootRef } = usePageAnimations({
@@ -102,15 +104,15 @@ export default function PayableListPage() {
     if (loading || payables.length === 0 || prefersReduced) return;
 
     animateCounters([
-      { el: heroTotalRef.current, value: totals.total, format: (v) => formatCompact(v) },
+      { el: heroTotalRef.current, value: totals.total, format: moneyParts(totals.total, false).format },
       { el: overdueRef.current, value: totals.overdueCount },
       { el: activeSuppliersRef.current, value: totals.supplierCount },
-      { el: agingCurrentRef.current, value: totals.current, format: (v) => formatCompact(v) },
-      { el: agingD30Ref.current, value: totals.d30, format: (v) => formatCompact(v) },
-      { el: agingD60Ref.current, value: totals.d60, format: (v) => formatCompact(v) },
-      { el: agingOver90Ref.current, value: totals.over90, format: (v) => formatCompact(v) },
+      { el: agingCurrentRef.current, value: totals.current, format: moneyParts(totals.current, compact).format },
+      { el: agingD30Ref.current, value: totals.d30, format: moneyParts(totals.d30, compact).format },
+      { el: agingD60Ref.current, value: totals.d60, format: moneyParts(totals.d60, compact).format },
+      { el: agingOver90Ref.current, value: totals.over90, format: moneyParts(totals.over90, compact).format },
     ]);
-  }, [loading, payables.length, totals, animateCounters, prefersReduced]);
+  }, [loading, payables.length, totals, animateCounters, prefersReduced, compact]);
 
   /* ── Aging progress percentages ── */
   const agingTotal = totals.current + totals.d30 + totals.d60 + totals.over90 || 1;
@@ -118,6 +120,13 @@ export default function PayableListPage() {
   const pctD30 = (totals.d30 / agingTotal) * 100;
   const pctD60 = (totals.d60 / agingTotal) * 100;
   const pctOver90 = (totals.over90 / agingTotal) * 100;
+
+  /* ── Money display parts (hero always full; aging compact on narrow cards) ── */
+  const heroMoney = moneyParts(totals.total, false);
+  const currentMoney = moneyParts(totals.current, compact);
+  const d30Money = moneyParts(totals.d30, compact);
+  const d60Money = moneyParts(totals.d60, compact);
+  const over90Money = moneyParts(totals.over90, compact);
 
   /* ── CSV export ── */
   const handleExport = () => {
@@ -154,7 +163,8 @@ export default function PayableListPage() {
         <div className="hero-kpi-card">
           <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
           <span className="hero-kpi-card__amount">
-            <span ref={heroTotalRef}>{formatCompact(totals.total)}</span>{' '}₫
+            <span ref={heroTotalRef}>{prefersReduced ? heroMoney.num : 0}</span>
+            <span className="hero-kpi-card__currency">{heroMoney.unit}</span>
           </span>
           <span className="hero-kpi-card__subtitle">
             {totals.supplierCount} nhà cung cấp · cập nhật vừa xong
@@ -169,26 +179,22 @@ export default function PayableListPage() {
         {/* Stacked mini-KPI cards — span 1 */}
         <div className="hero-kpi-stack">
           <div className="hero-kpi-mini hero-kpi-mini--danger">
-            <div className="hero-kpi-mini__icon">
-              <AlertTriangle size={16} />
-            </div>
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value" ref={overdueRef}>
                 {prefersReduced ? totals.overdueCount : 0}
               </span>
               <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
+            <AlertTriangle size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
           </div>
           <div className="hero-kpi-mini hero-kpi-mini--accent">
-            <div className="hero-kpi-mini__icon">
-              <Users size={16} />
-            </div>
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value" ref={activeSuppliersRef}>
                 {prefersReduced ? totals.supplierCount : 0}
               </span>
               <span className="hero-kpi-mini__label">nhà cung cấp</span>
             </div>
+            <Users size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -202,7 +208,7 @@ export default function PayableListPage() {
             <span className="aging-card__label">0–30 ngày</span>
           </div>
           <span className="aging-card__value">
-            <span ref={agingCurrentRef}>{formatCompact(totals.current)}</span>{' '}₫
+            <span ref={agingCurrentRef}>{prefersReduced ? currentMoney.num : 0}</span><span className="aging-card__unit">{currentMoney.unit}</span>
           </span>
           <span className="aging-card__count">{totals.currentCount} NCC</span>
           <div className="aging-card__bar-track">
@@ -217,7 +223,7 @@ export default function PayableListPage() {
             <span className="aging-card__label">31–60 ngày</span>
           </div>
           <span className="aging-card__value">
-            <span ref={agingD30Ref}>{formatCompact(totals.d30)}</span>{' '}₫
+            <span ref={agingD30Ref}>{prefersReduced ? d30Money.num : 0}</span><span className="aging-card__unit">{d30Money.unit}</span>
           </span>
           <span className="aging-card__count">{totals.d30Count} NCC</span>
           <div className="aging-card__bar-track">
@@ -232,7 +238,7 @@ export default function PayableListPage() {
             <span className="aging-card__label">61–90 ngày</span>
           </div>
           <span className="aging-card__value">
-            <span ref={agingD60Ref}>{formatCompact(totals.d60)}</span>{' '}₫
+            <span ref={agingD60Ref}>{prefersReduced ? d60Money.num : 0}</span><span className="aging-card__unit">{d60Money.unit}</span>
           </span>
           <span className="aging-card__count">{totals.d60Count} NCC</span>
           <div className="aging-card__bar-track">
@@ -247,7 +253,7 @@ export default function PayableListPage() {
             <span className="aging-card__label">Trên 90 ngày</span>
           </div>
           <span className="aging-card__value">
-            <span ref={agingOver90Ref}>{formatCompact(totals.over90)}</span>{' '}₫
+            <span ref={agingOver90Ref}>{prefersReduced ? over90Money.num : 0}</span><span className="aging-card__unit">{over90Money.unit}</span>
           </span>
           <span className="aging-card__count">{totals.over90Count} NCC</span>
           <div className="aging-card__bar-track">

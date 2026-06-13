@@ -67,7 +67,9 @@
 }
 
 .aging-card__value {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 600;
@@ -75,6 +77,15 @@
   line-height: 1;
   color: var(--ink, #0A0A0A);
   margin-bottom: 4px;
+}
+
+/* Currency unit / compact suffix rendered at subtitle size */
+.aging-card__unit {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3, #8B919B);
+  white-space: nowrap;
 }
 
 .aging-card__count {
@@ -206,10 +217,9 @@
     border-radius: var(--r, 12px);
   }
 
-  .payables-page .hero-kpi-mini__icon {
+  .payables-page .hero-kpi-mini__watermark svg {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
   }
 
   .payables-page .hero-kpi-mini__value {

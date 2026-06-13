@@ -50,6 +50,14 @@
   line-height: 1.4;
 }
 
+/* Currency unit rendered at subtitle size next to the hero amount digits */
+.hero-kpi-card__currency {
+  font-size: clamp(15px, 1.8vw, 20px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 6px;
+}
+
 .hero-kpi-card__watermark {
   position: absolute;
   right: 20px;
@@ -66,6 +74,8 @@
 
 .hero-kpi-mini {
   flex: 1;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -84,30 +94,23 @@
   box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
 }
 
-.hero-kpi-mini__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+/* Overlay watermark icon (replaces the old inline icon box) */
+.hero-kpi-mini__watermark {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  pointer-events: none;
+  color: rgba(9, 9, 11, 0.06);
 }
 
-.hero-kpi-mini--accent .hero-kpi-mini__icon {
-  background: var(--accent-soft, #E6F7EE);
-  color: var(--accent, #00B14F);
+.hero-kpi-mini__watermark svg {
+  width: 40px;
+  height: 40px;
 }
 
-.hero-kpi-mini--danger .hero-kpi-mini__icon {
-  background: var(--danger-soft, #FFEAEC);
-  color: var(--danger, #E32434);
-}
-
-.hero-kpi-mini--warn .hero-kpi-mini__icon {
-  background: var(--warn-soft, #FEF3C7);
-  color: var(--warn, #D97706);
-}
+.hero-kpi-mini--accent .hero-kpi-mini__watermark { color: rgba(0, 177, 79, 0.14); }
+.hero-kpi-mini--danger .hero-kpi-mini__watermark { color: rgba(227, 36, 52, 0.14); }
+.hero-kpi-mini--warn   .hero-kpi-mini__watermark { color: rgba(217, 119, 6, 0.14); }
 
 .hero-kpi-mini__body {
   display: flex;
@@ -146,12 +149,8 @@
   .hero-kpi-mini__value {
     font-size: 16px;
   }
-  .hero-kpi-mini__icon {
+  .hero-kpi-mini__watermark svg {
     width: 28px;
     height: 28px;
-  }
-  .hero-kpi-mini__icon svg {
-    width: 14px;
-    height: 14px;
   }
 }

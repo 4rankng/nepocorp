@@ -41,11 +41,9 @@
   opacity: 0.6;
 }
 
-/* Debt page: warning variant for mini KPIs */
-.debt-kpi-mini--warning .hero-kpi-mini__icon {
-  background: var(--warning-soft);
-  color: var(--warning-text);
-}
+/* Debt page: watermark tints for danger/warning mini KPIs */
+.debt-kpi-mini--danger .hero-kpi-mini__watermark { color: rgba(227, 36, 52, 0.14); }
+.debt-kpi-mini--warning .hero-kpi-mini__watermark { color: rgba(217, 119, 6, 0.14); }
 
 /* Debt page: colored values for danger/warning mini KPIs */
 .debt-kpi-mini--danger .hero-kpi-mini__value {
@@ -322,10 +320,9 @@
   .debt-list-page .hero-kpi-mini__value {
     font-size: 18px;
   }
-  .debt-list-page .hero-kpi-mini__icon {
+  .debt-list-page .hero-kpi-mini__watermark svg {
     width: 30px;
     height: 30px;
-    border-radius: 8px;
   }
 
   /* Aging: 2x2 compact */
@@ -386,13 +383,9 @@
   .debt-list-page .hero-kpi-mini__value {
     font-size: 16px;
   }
-  .debt-list-page .hero-kpi-mini__icon {
-    width: 28px;
-    height: 28px;
-  }
-  .debt-list-page .hero-kpi-mini__icon svg {
-    width: 14px;
-    height: 14px;
+  .debt-list-page .hero-kpi-mini__watermark svg {
+    width: 26px;
+    height: 26px;
   }
   .debt-aging-card__amount {
     font-size: 15px;
