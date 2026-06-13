@@ -10,6 +10,7 @@ import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND, formatNumber } from '../lib/format';
+import { Money } from '../components/shared/Money';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@tingting/shared';
@@ -66,7 +67,7 @@ export default function ProfitPage() {
   useEffect(() => {
     if (!report || !heroValueRef.current) return;
     animateCounters([
-      { el: heroValueRef.current, value: netProfit, suffix: '₫' },
+      { el: heroValueRef.current, value: netProfit },
     ]);
   }, [report, netProfit]);
 
@@ -140,268 +141,281 @@ export default function ProfitPage() {
       ) : (
         <div className="profit-layout">
 
-          {/* Row 1, Col 1: Monthly Profit Hero & Shareholder cards */}
-          <div>
-            <div className="profit-hero">
+          {/* Bento Item 1: Profit Hero */}
+          <div className="profit-bento-hero">
+            <div className="profit-hero" style={{ height: '100%', marginBottom: 0 }}>
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
               <div className="profit-hero__value">
-                <span ref={heroValueRef}>0₫</span>
+                <span ref={heroValueRef}>0</span>
+                <span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">
                 Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa
               </div>
             </div>
-
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={14} style={{ color: 'var(--brand)' }} />
-              Phân chia theo tỷ lệ cổ phần
-            </h3>
-
-            <div className="partner-grid">
-              {activeCapTable.map((partner, i) => {
-                const isPrimary = i === 0;
-                const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
-                const partnerShare = Math.round(netProfit * partner.percentage / 100);
-
-                return (
-                  <div key={i} className={`partner-card ${isPrimary ? 'partner-card--primary' : ''}`}>
-                    <div className="partner-card__head">
-                      <div className={`partner-card__avatar ${isPrimary ? 'partner-card__avatar--primary' : 'partner-card__avatar--secondary'}`}>
-                        {avatarChar}
-                      </div>
-                      <div className="partner-card__info">
-                        <div className="partner-card__name">
-                          {partner.partnerName}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
-                          <span className="partner-card__role">{isPrimary ? 'Đối tác chính' : 'Đối tác góp vốn'}</span>
-                          <div className="partner-card__pct" style={{ marginLeft: 'auto' }}>
-                            {partner.percentage}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="partner-card__amount-label">Phần lợi nhuận tháng {selectedMonth}</div>
-                    <div className="partner-card__amount" style={{ color: isPrimary ? 'var(--brand)' : 'var(--info)' }}>
-                      {formatVND(partnerShare)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {activeCapTable.length === 0 && (
-              <div style={{
-                padding: 24,
-                background: 'var(--bg-2)',
-                borderRadius: 8,
-                textAlign: 'center',
-                color: 'var(--fg-3)',
-                fontSize: 13,
-              }}>
-                <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--fg-2)' }}>Chưa cấu hình tỷ lệ cổ phần</p>
-                <p style={{ margin: 0 }}>
-                  Vui lòng thêm bản ghi tại{' '}
-                  <a href="/config/cap-table" style={{ color: 'var(--brand)', fontWeight: 600 }}>
-                    Cấu hình Cổ đông
-                  </a>{' '}
-                  để hiển thị phân chia lợi nhuận.
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Row 1, Col 2: Operating breakdown */}
-          <div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrendingUp size={14} style={{ color: 'var(--brand)' }} />
-              Diễn giải kế toán
-            </h3>
-
-            <div className="calc-breakdown">
-              <div className="calc-row">
-                <div className="calc-row__label calc-row__label--bold">Doanh thu vận hành</div>
-                <div className="calc-row__value">{formatVND(report?.totalRevenue || 0)}</div>
-              </div>
-              <div className="calc-row">
-                <div className="calc-row__label">
-                  <span className="calc-row__op">-</span>
-                  Chi phí vận hành đội xe
+          {/* Bento Item 2: Accounting Breakdown */}
+          <div className="profit-bento-breakdown">
+            <Card
+              title={
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <TrendingUp size={16} style={{ color: 'var(--brand)' }} />
+                  Diễn giải kế toán
+                </span>
+              }
+              subtitle={`Thực tế ghi nhận trong tháng ${selectedMonth}/${selectedYear}`}
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              noPadding
+            >
+              <div className="calc-breakdown" style={{ border: 'none', borderRadius: 0, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div className="calc-row">
+                  <div className="calc-row__label calc-row__label--bold">Doanh thu vận hành</div>
+                  <div className="calc-row__value"><Money value={report?.totalRevenue || 0} /></div>
                 </div>
-                <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.totalCosts || 0)}</div>
-              </div>
-              <div className="calc-row calc-row--total">
-                <div className="calc-row__label calc-row__label--bold">Lợi nhuận gộp hoạt động</div>
-                <div className="calc-row__value">{formatVND(report?.grossProfit || 0)}</div>
-              </div>
-              {((report?.maintenanceExpensesTotal ?? 0) > 0) && (
                 <div className="calc-row">
                   <div className="calc-row__label">
                     <span className="calc-row__op">-</span>
-                    Chi phí bảo dưỡng, đăng kiểm xe
+                    Chi phí vận hành đội xe
                   </div>
-                  <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.maintenanceExpensesTotal || 0)}</div>
+                  <div className="calc-row__value calc-row__value--neg"><Money value={report?.totalCosts || 0} sign="-" /></div>
                 </div>
-              )}
-              <div className="calc-row">
-                <div className="calc-row__label">
-                  <span className="calc-row__op">-</span>
-                  Phí quản lý văn phòng định mức
+                <div className="calc-row calc-row--total">
+                  <div className="calc-row__label calc-row__label--bold">Lợi nhuận gộp hoạt động</div>
+                  <div className="calc-row__value"><Money value={report?.grossProfit || 0} /></div>
                 </div>
-                <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.managementFee || 0)}</div>
-              </div>
-              <div className="calc-row">
-                <div className="calc-row__label">
-                  <span className="calc-row__op">-</span>
-                  Chi phí chung công ty
-                </div>
-                <div className="calc-row__value calc-row__value--neg">-{formatVND(report?.companyExpenses || 0)}</div>
-              </div>
-              <div className="calc-row">
-                <div className="calc-row__label">
-                  <span className="calc-row__op">+</span>
-                  Thu nhập phạt vi phạm (Deduction)
-                </div>
-                <div className="calc-row__value calc-row__value--positive">+{formatVND(report?.otherIncome || 0)}</div>
-              </div>
-              <div className="calc-row calc-row--total calc-row--final">
-                <div className="calc-row__label calc-row__label--bold">Lợi nhuận ròng chia cổ đông</div>
-                <div className="calc-row__value">{formatVND(netProfit)}</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16, padding: '14px 18px', background: 'var(--bg-3)', borderRadius: 8, fontSize: 11.5, color: 'var(--fg-3)', lineHeight: 1.5 }}>
-              <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>* Nguyên tắc ghi nhận:</p>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                <li>Doanh thu và chi phí chỉ được ghi nhận sau khi chuyến đi đã chuyển sang trạng thái <strong>Đã khóa (LOCKED)</strong>.</li>
-                <li>Phí phạt lái xe được tính trực tiếp vào thu nhập tài chính khác của doanh nghiệp (Salary Deduction Ledger).</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Row 2, Col 1: Quarterly Settlement Action Card */}
-          <Card
-            style={history.length === 0 ? { gridColumn: '1 / -1' } : undefined}
-            title="Quyết toán & Chốt Quý"
-            subtitle="Khóa sổ kế toán và tạo bản ghi phân phối lợi nhuận chính thức."
-          >
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <FormGroup label="Chọn Quý">
-                  <select
-                    className="input"
-                    style={{ minWidth: 120, flex: '1 1 auto' }}
-                    value={selectedQuarter}
-                    onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); }}
-                  >
-                    {[1, 2, 3, 4].map(q => <option key={q} value={q}>Quý {q}</option>)}
-                  </select>
-                </FormGroup>
-                <FormGroup label="Năm quyết toán">
-                  <select
-                    className="input"
-                    style={{ minWidth: 120, flex: '1 1 auto' }}
-                    value={distQuarterYear}
-                    onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); }}
-                  >
-                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>Năm {y}</option>)}
-                  </select>
-                </FormGroup>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-                <button
-                  className="btn btn--secondary"
-                  style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
-                  onClick={handlePreview}
-                  disabled={previewing}
-                >
-                  <Eye size={14} />
-                  {previewing ? 'Đang tính...' : 'Xem trước'}
-                </button>
-                <button
-                  className="btn btn--primary"
-                  style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
-                  onClick={handleDistributeProfit}
-                  disabled={distributing}
-                >
-                  <CheckSquare size={14} />
-                  {distributing ? 'Đang xử lý...' : 'Chốt & phân bổ'}
-                </button>
-              </div>
-            </div>
-
-            {preview && !distResult && (
-              <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
-                <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>
-                  Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong>{formatVND(preview.netProfit)}</strong>
-                </p>
-                <table style={{ width: '100%', fontSize: 12.5 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
-                      <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
-                      <th style={{ textAlign: 'right', paddingBottom: 6 }}>Tỷ lệ</th>
-                      <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.distributions.map((d, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                        <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
-                        <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
-                        <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {distResult && (
-              <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
-                <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
-                <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong>{formatVND(distResult.netProfit)}</strong></p>
-                <table style={{ width: '100%', fontSize: 12.5 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
-                      <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
-                      <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {distResult.distributions.map((d, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                        <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
-                        <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
-              </div>
-            )}
-          </Card>
-
-          {/* Row 2, Col 2: Historical Distribution View */}
-          {history.length > 0 && (
-            <Card title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện">
-              <div className="profit-history-scroll">
-                <div className="profit-history-list">
-                  {history.map((d: any) => (
-                    <div key={d.id} className="profit-history-item">
-                      <div className="profit-history-item__top">
-                        <span className="profit-history-item__period">Q{d.quarter}/{d.year}</span>
-                        <span className="profit-history-item__partner">{d.partnerName}</span>
-                      </div>
-                      <div className="profit-history-item__bottom">
-                        <span className="profit-history-item__amount">{formatVND(Number(d.amount))}</span>
-                        <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN')}</span>
-                      </div>
+                {((report?.maintenanceExpensesTotal ?? 0) > 0) && (
+                  <div className="calc-row">
+                    <div className="calc-row__label">
+                      <span className="calc-row__op">-</span>
+                      Chi phí bảo dưỡng, đăng kiểm xe
                     </div>
-                  ))}
+                    <div className="calc-row__value calc-row__value--neg"><Money value={report?.maintenanceExpensesTotal || 0} sign="-" /></div>
+                  </div>
+                )}
+                <div className="calc-row">
+                  <div className="calc-row__label">
+                    <span className="calc-row__op">-</span>
+                    Phí quản lý văn phòng định mức
+                  </div>
+                  <div className="calc-row__value calc-row__value--neg"><Money value={report?.managementFee || 0} sign="-" /></div>
+                </div>
+                <div className="calc-row">
+                  <div className="calc-row__label">
+                    <span className="calc-row__op">-</span>
+                    Chi phí chung công ty
+                  </div>
+                  <div className="calc-row__value calc-row__value--neg"><Money value={report?.companyExpenses || 0} sign="-" /></div>
+                </div>
+                <div className="calc-row">
+                  <div className="calc-row__label">
+                    <span className="calc-row__op">+</span>
+                    Thu nhập phạt vi phạm (Deduction)
+                  </div>
+                  <div className="calc-row__value calc-row__value--positive"><Money value={report?.otherIncome || 0} sign="+" /></div>
+                </div>
+                <div className="calc-row calc-row--total calc-row--final" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <div className="calc-row__label calc-row__label--bold">Lợi nhuận ròng chia cổ đông</div>
+                  <div className="calc-row__value"><Money value={netProfit} /></div>
                 </div>
               </div>
             </Card>
+          </div>
+
+          {/* Bento Item 3: Shareholders */}
+          <div className="profit-bento-shareholders">
+            <Card
+              title={
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Users size={16} style={{ color: 'var(--brand)' }} />
+                  Phân chia theo tỷ lệ cổ phần
+                </span>
+              }
+              subtitle="Phân chia lợi nhuận ròng theo tỷ lệ góp vốn cổ đông"
+              style={{ height: '100%' }}
+            >
+              <div className="partner-grid">
+                {activeCapTable.map((partner, i) => {
+                  const isPrimary = i === 0;
+                  const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
+                  const partnerShare = Math.round(netProfit * partner.percentage / 100);
+
+                  return (
+                    <div key={i} className={`partner-card ${isPrimary ? 'partner-card--primary' : ''}`}>
+                      <div className="partner-card__head">
+                        <div className={`partner-card__avatar ${isPrimary ? 'partner-card__avatar--primary' : 'partner-card__avatar--secondary'}`}>
+                          {avatarChar}
+                        </div>
+                        <div className="partner-card__info">
+                          <div className="partner-card__name">
+                            {partner.partnerName}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'nowrap' }}>
+                            <span className="partner-card__role">{isPrimary ? 'Đối tác chính' : 'Đối tác góp vốn'}</span>
+                            <div className="partner-card__pct" style={{ marginLeft: 'auto' }}>
+                              {partner.percentage}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="partner-card__amount-label">Phần lợi nhuận tháng {selectedMonth}</div>
+                      <div className="partner-card__amount" style={{ color: isPrimary ? 'var(--brand)' : 'var(--info)' }}>
+                        <Money value={partnerShare} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {activeCapTable.length === 0 && (
+                <div style={{
+                  padding: 24,
+                  background: 'var(--bg-2)',
+                  borderRadius: 8,
+                  textAlign: 'center',
+                  color: 'var(--fg-3)',
+                  fontSize: 13,
+                }}>
+                  <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--fg-2)' }}>Chưa cấu hình tỷ lệ cổ phần</p>
+                  <p style={{ margin: 0 }}>
+                    Vui lòng thêm bản ghi tại{' '}
+                    <a href="/config/cap-table" style={{ color: 'var(--brand)', fontWeight: 600 }}>
+                      Cấu hình Cổ đông
+                    </a>{' '}
+                    để hiển thị phân chia lợi nhuận.
+                  </p>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Bento Item 4: Quarterly Settlement */}
+          <div className={history.length === 0 ? "profit-bento-settlement profit-bento-settlement--full" : "profit-bento-settlement"}>
+            <Card
+              style={{ height: '100%' }}
+              title="Quyết toán & Chốt Quý"
+              subtitle="Khóa sổ kế toán và tạo bản ghi phân phối lợi nhuận chính thức."
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <FormGroup label="Chọn Quý">
+                    <select
+                      className="input"
+                      style={{ minWidth: 120, flex: '1 1 auto' }}
+                      value={selectedQuarter}
+                      onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); }}
+                    >
+                      {[1, 2, 3, 4].map(q => <option key={q} value={q}>Quý {q}</option>)}
+                    </select>
+                  </FormGroup>
+                  <FormGroup label="Năm quyết toán">
+                    <select
+                      className="input"
+                      style={{ minWidth: 120, flex: '1 1 auto' }}
+                      value={distQuarterYear}
+                      onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); }}
+                    >
+                      {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>Năm {y}</option>)}
+                    </select>
+                  </FormGroup>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+                  <button
+                    className="btn btn--secondary"
+                    style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                    onClick={handlePreview}
+                    disabled={previewing}
+                  >
+                    <Eye size={14} />
+                    {previewing ? 'Đang tính...' : 'Xem trước'}
+                  </button>
+                  <button
+                    className="btn btn--primary"
+                    style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                    onClick={handleDistributeProfit}
+                    disabled={distributing}
+                  >
+                    <CheckSquare size={14} />
+                    {distributing ? 'Đang xử lý...' : 'Chốt & phân bổ'}
+                  </button>
+                </div>
+              </div>
+
+              {preview && !distResult && (
+                <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>
+                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong>{formatVND(preview.netProfit)}</strong>
+                  </p>
+                  <table style={{ width: '100%', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Tỷ lệ</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.distributions.map((d, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {distResult && (
+                <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong>{formatVND(distResult.netProfit)}</strong></p>
+                  <table style={{ width: '100%', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {distResult.distributions.map((d, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Bento Item 5: Distribution History */}
+          {history.length > 0 && (
+            <div className="profit-bento-history">
+              <Card title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện" style={{ height: '100%' }}>
+                <div className="profit-history-scroll">
+                  <div className="profit-history-list">
+                    {history.map((d: any) => (
+                      <div key={d.id} className="profit-history-item">
+                        <div className="profit-history-item__top">
+                          <span className="profit-history-item__period">Q{d.quarter}/{d.year}</span>
+                          <span className="profit-history-item__partner">{d.partnerName}</span>
+                        </div>
+                        <div className="profit-history-item__bottom">
+                          <span className="profit-history-item__amount"><Money value={Number(d.amount)} /></span>
+                          <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </div>
           )}
 
         </div>

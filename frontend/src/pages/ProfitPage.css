@@ -6,14 +6,46 @@
  * ========================================================================== */
 .profit-layout {
   display: grid;
-  /* Right column needs ~320px minimum to fit "17.500.000 ₫"-class numbers
-     next to their labels without clipping. */
-  grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
+.profit-layout > * {
+  min-width: 0;
+}
+.profit-bento-hero {
+  grid-column: span 8;
+}
+.profit-bento-breakdown {
+  grid-column: span 4;
+  grid-row: span 2;
+}
+.profit-bento-shareholders {
+  grid-column: span 8;
+}
+.profit-bento-settlement {
+  grid-column: span 8;
+}
+.profit-bento-history {
+  grid-column: span 4;
+}
+.profit-bento-settlement--full {
+  grid-column: span 12;
+}
+
 @media (max-width: 1100px) {
-  .profit-layout { grid-template-columns: 1fr; }
+  .profit-layout {
+    grid-template-columns: 1fr;
+  }
+  .profit-bento-hero,
+  .profit-bento-breakdown,
+  .profit-bento-shareholders,
+  .profit-bento-settlement,
+  .profit-bento-history,
+  .profit-bento-settlement--full {
+    grid-column: span 1 / auto;
+    grid-row: span 1 / auto;
+  }
 }
 
 .profit-hero {
