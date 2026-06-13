@@ -11,7 +11,6 @@ export default function LoginPage() {
   const prefersReducedRef = useRef(prefersReduced);
   prefersReducedRef.current = prefersReduced;
   const rootRef = useRef<HTMLDivElement>(null);
-  const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -22,6 +21,12 @@ export default function LoginPage() {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+
+    // Skip animation setup entirely when reduced motion is preferred
+    if (prefersReducedRef.current) {
+      utils.set(root.querySelectorAll('.brand-logo, .login-brand h1, .login-brand p, .login-card, .login-divider, .login-form h2, .login-form .sub, .login-form .field, .login-submit, .login-footer'), { opacity: 1, translateY: 0, scale: 1, rotate: 0 });
+      return;
+    }
 
     const scope = createScope({ root }).add(() => {
       // All selectors target elements guaranteed present in the login page DOM.
@@ -36,14 +41,6 @@ export default function LoginPage() {
       const fields = root.querySelectorAll('.login-form .field');
       const submitBtn = root.querySelector('.login-submit')!;
       const footer = root.querySelector('.login-footer')!;
-
-      if (prefersReducedRef.current) {
-        utils.set(
-          [logo, brandTitle, brandSub, card, divider, heading, subtext, submitBtn, footer, ...fields],
-          { opacity: 1, translateY: 0, scale: 1, rotate: 0 },
-        );
-        return;
-      }
 
       // Set initial hidden states
       utils.set(card, { opacity: 0, translateY: 40 });
@@ -128,10 +125,8 @@ export default function LoginPage() {
       });
     });
 
-    scopeRef.current = scope;
     return () => {
       scope.revert();
-      scopeRef.current = null;
     };
   }, []);
 
