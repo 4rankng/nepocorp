@@ -124,8 +124,8 @@ export function TripInfoCard(props: TripInfoCardProps) {
               <Field label="Loại rơ moóc" required>
                 {selStatic(form.trailerType, form.setTrailerType, props.trailerTypes, 'Chọn loại rơ moóc')}
               </Field>
-              <Field label="Tài xế" required>
-                {sel(form.driverId, form.setDriverId, props.drivers, 'Chọn tài xế')}
+              <Field label="Lái xe" required>
+                {sel(form.driverId, form.setDriverId, props.drivers, 'Chọn lái xe')}
               </Field>
             </>
           )}

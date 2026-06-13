@@ -25,7 +25,7 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | 04 | [Công nợ & Thanh toán](./04-CONG_NO_VA_THANH_TOAN.md) | Aging buckets, sao kê khách hàng, ghi nhận thanh toán FIFO, điều chỉnh nợ | `/debt`, `/debt/:id` |
 | 05 | [Phân bổ Lợi nhuận](./05-PHAN_BO_LOI_NHUAN.md) | Bảng chia cổ phần, phân bổ lợi nhuận theo quý | `/profit` |
 | 06 | [Kỷ luật & Phạt](./06-KY_LUAT_VA_PHAT.md) | Bảng xếp hạng an toàn, tạo phạt, nhật ký vi phạm, lý do phạt | `/penalties` |
-| 07 | [Đội xe & Điều vận](./07-DOI_XE_VA_FLEET.md) | Điều vận chuyến, quản lý xe đầu kéo, rơ moóc, tài xế (CRUD) | `/dispatch`, `/fleet` |
+| 07 | [Đội xe & Điều vận](./07-DOI_XE_VA_FLEET.md) | Điều vận chuyến, quản lý xe đầu kéo, rơ moóc, lái xe (CRUD) | `/dispatch`, `/fleet` |
 | 08 | [Khách hàng](./08-KHACH_HANG.md) | CRUD khách hàng, chỉ số rủi ro, hạn mức tín dụng | `/customers` |
 | 09 | [Cấu hình Hệ thống](./09-CAU_HINH_HE_THONG.md) | 12 trang cấu hình: nhiên liệu, phụ phí đường, tuyến đường, loại hàng, bảng giá, lý do phạt, phí quản lý, cap table | `/config`, `/config/*` |
 | 10 | [Quản trị Hệ thống](./10-QUAN_TRI_HE_THONG.md) | Quản lý tài khoản người dùng, nhật ký hoạt động | `/users`, `/audit-logs` |

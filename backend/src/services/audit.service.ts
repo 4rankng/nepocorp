@@ -93,7 +93,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
       if (penalty) {
         const amt = Number(penalty.amount).toLocaleString('vi-VN') + ' ₫';
         const reason = penalty.reasonText || penalty.customReason || 'Không rõ lý do';
-        return `tài xế ${penalty.driverName} với số tiền ${amt} (Lý do: ${reason}${penalty.tripCode ? `, Chuyến: ${penalty.tripCode}` : ''})`;
+        return `lái xe ${penalty.driverName} với số tiền ${amt} (Lý do: ${reason}${penalty.tripCode ? `, Chuyến: ${penalty.tripCode}` : ''})`;
       }
     } catch {}
   }

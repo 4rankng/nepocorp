@@ -15,7 +15,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
   const [pendingDate, setPendingDate] = useState(trip.departureDate);
   const rows = [
     { icon: <Truck size={17} />, label: 'Xe đầu', value: trip.truck?.licensePlate ?? '—', mono: true },
-    { icon: <User size={17} />, label: 'Tài xế', value: trip.driver?.name ?? '—' },
+    { icon: <User size={17} />, label: 'Lái xe', value: trip.driver?.name ?? '—' },
     {
       icon: (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

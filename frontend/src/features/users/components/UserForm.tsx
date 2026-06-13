@@ -57,7 +57,7 @@ function DriverFields({ baseSalary, setBaseSalary, socialInsurance, setSocialIns
   return (
     <>
       <div className="users-form-divider" />
-      <div className="users-form-section__title"><TruckIcon size={12} /> Thông tin tài xế</div>
+      <div className="users-form-section__title"><TruckIcon size={12} /> Thông tin lái xe</div>
       <div className="users-form-cards">
         <div className="users-form-card">
           <FormGroup label="Lương cơ bản (đ)">
@@ -165,7 +165,7 @@ export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEdi
 
   const displayName = user.fullName || user.username || user.email || 'Tài khoản';
   const subtitle = isMe ? `${displayName} (bạn)` : displayName;
-  const title = role === Role.DRIVER ? `Chỉnh sửa tài xế ${displayName}` : 'Chỉnh sửa tài khoản';
+  const title = role === Role.DRIVER ? `Chỉnh sửa lái xe ${displayName}` : 'Chỉnh sửa tài khoản';
 
   return (
     <Drawer
@@ -353,14 +353,14 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
     if (ok) onClose();
   };
 
-  const title = role === Role.DRIVER ? 'Thêm tài xế' : 'Tạo tài khoản mới';
+  const title = role === Role.DRIVER ? 'Thêm lái xe' : 'Tạo tài khoản mới';
 
   return (
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      subtitle={role === Role.DRIVER ? 'Tài khoản đăng nhập + hồ sơ tài xế' : 'Điền thông tin bên dưới'}
+      subtitle={role === Role.DRIVER ? 'Tài khoản đăng nhập + hồ sơ lái xe' : 'Điền thông tin bên dưới'}
       onConfirm={handleSubmit}
       footer={
         <>
@@ -371,7 +371,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
             disabled={saving}
             onClick={handleSubmit}
           >
-            {role === Role.DRIVER ? 'Thêm tài xế' : 'Tạo tài khoản'}
+            {role === Role.DRIVER ? 'Thêm lái xe' : 'Tạo tài khoản'}
           </Btn>
         </>
       }

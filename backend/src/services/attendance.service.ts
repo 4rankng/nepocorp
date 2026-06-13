@@ -269,7 +269,7 @@ export async function computeSalary(
     .where(eq(s.drivers.id, driverId)).limit(1);
 
   if (!driver) {
-    throw new ApiError(404, 'Không tìm thấy tài xế');
+    throw new ApiError(404, 'Không tìm thấy lái xe');
   }
   const baseSalary = parseFloat(driver.baseSalary || '0');
   // Social insurance from drivers.social_insurance column (was hardcoded to 0)
@@ -401,7 +401,7 @@ export async function confirmSalary(
     .from(s.drivers)
     .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt)))
     .limit(1);
-  if (!driver) throw new ApiError(404, 'Không tìm thấy tài xế');
+  if (!driver) throw new ApiError(404, 'Không tìm thấy lái xe');
 
   const now = new Date();
   const [confirmation] = await db.insert(s.salaryConfirmations)

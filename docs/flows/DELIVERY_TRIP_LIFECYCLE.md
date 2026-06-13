@@ -56,7 +56,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 | Tài chính (P&L) | ✅ | ✅ | ❌ |
 | Phân bổ lợi nhuận | ✅ | ❌ | ❌ |
 | Công nợ | ✅ | ✅ | ❌ |
-| Phạt tài xế | ✅ | ✅ | ❌ |
+| Phạt lái xe | ✅ | ✅ | ❌ |
 | Cấu hình hệ thống | ✅ | ✅ | ❌ |
 | Quản lý người dùng | ❌* | ❌ | ❌ |
 | Nhật ký hoạt động | ❌* | ❌ | ❌ |
@@ -92,7 +92,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Khách hàng (bắt buộc)
   - Tuyến đường (bắt buộc)
   - Xe đầu kéo (bắt buộc)
-  - Tài xế (bắt buộc)
+  - Lái xe (bắt buộc)
   - Ro-mooc
   - Loại hàng hóa
   - Ngày xuất phát (bắt buộc)
@@ -143,7 +143,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   2. Nếu doanh thu = 0 → hiện cảnh báo "Doanh thu bằng 0. Xác nhận chốt?" → cần xác nhận
   3. Hệ thống ghi sổ cái:
      - **Nợ Khách hàng** (TRIP_REVENUE): tăng công nợ = doanh thu (gồm VAT). Doanh thu thực tế nội bộ = freightExVat − customerCommission.
-     - **Có Tài xế** (DRIVER_SALARY): tăng lương = lương chuyến quy đổi
+     - **Có Lái xe** (DRIVER_SALARY): tăng lương = lương chuyến quy đổi
   4. Ghi nhật ký kiểm toán
 - **Kết quả:** Trạng thái `LOCKED` — **không thể sửa đổi**, số liệu đã ghi sổ
 
@@ -178,7 +178,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 
 **Biểu đồ:**
 - **Biểu đồ đường 12 tháng:** Doanh thu & Lợi nhuận gộp
-- **Biểu đồ donut cơ cấu chi phí:** Nhiên liệu / Lương tài xế / Tiền đi đường / Phí quản lý / Bảo dưỡng / Khác
+- **Biểu đồ donut cơ cấu chi phí:** Nhiên liệu / Lương lái xe / Tiền đi đường / Phí quản lý / Bảo dưỡng / Khác
 - **Biểu đồ ngang lợi nhuận theo xe:** Top 5 xe đầu kéo
 - **Bảng xếp hạng tuyến sinh lời:** Top 5 tuyến đường
 
@@ -198,14 +198,14 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 | 1 | Vào `/dispatch` | Hiện 5 KPI: Tỷ lệ vận dụng, Tổng đội xe, Đang chạy, Sẵn sàng, Cần lưu ý |
 | 2 | Nhấn tab **"Đang chạy"** | Chỉ hiện xe đang IN_TRANSIT |
 | 3 | Nhấn tab **"Sẵn sàng"** | Chỉ hiện xe sẵn sàng nhận lệnh |
-| 4 | Nhấn tab **"Chưa giao tài xế"** | Xe chưa phân công tài xế |
+| 4 | Nhấn tab **"Chưa giao lái xe"** | Xe chưa phân công lái xe |
 
 #### Phân công xe và xuất phát
 
 | Bước | Hành động | Kết quả mong đợi |
 |------|-----------|-------------------|
 | 1 | Tại phần **"Đơn hàng cần điều vận"**, xem chuyến ở trạng thái CREATED | Hiện danh sách chuyến chờ xuất phát |
-| 2 | Nếu chưa gắn xe → nhấn **"Đổi xe"** → chọn xe và tài xế | Cập nhật phân công |
+| 2 | Nếu chưa gắn xe → nhấn **"Đổi xe"** → chọn xe và lái xe | Cập nhật phân công |
 | 3 | Nhấn nút xanh **"Khởi hành"** | Hộp thoại xác nhận |
 | 4 | Xác nhận | Chuyến chuyển sang IN_TRANSIT, xe chuyển sang "Đang chạy" |
 
@@ -214,7 +214,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 | Bước | Hành động | Kết quả mong đợi |
 |------|-----------|-------------------|
 | 1 | Nhấn **"Tạo chuyến mới"** | Chuyển đến `/trips/new` |
-| 2 | Chọn Khách hàng, Tuyến đường, Xe, Tài xế | Các dropdown populate từ danh mục |
+| 2 | Chọn Khách hàng, Tuyến đường, Xe, Lái xe | Các dropdown populate từ danh mục |
 | 3 | Nhập Ngày xuất phát, chọn Ro-mooc, Loại hàng | |
 | 4 | Thêm chặng (origin, destination, km, hàng/vỏ) | Hệ thống tự tính nhiên liệu |
 | 5 | Nhấn **"Tạo chuyến"** | Tạo thành công → chuyển đến `/trips/:id` |
@@ -279,7 +279,7 @@ Chi phí nhiên liệu      (−) Xăng dầu (dùng giá thực tế nếu có,
 Tiền đi đường           (−) Lái xe thực nhận (đã trừ vé công ty)
 Tiền vé BOT             (−) Trạm thu phí: số trạm × phí/trạm
 Tiền vé công ty         (−) Công ty thanh toán hộ lái xe (tollsDiscount)
-Lương tài xế            (−) Lương chuyến quy đổi (driver_salary)
+Lương lái xe            (−) Lương chuyến quy đổi (driver_salary)
 Thưởng giao 2 điểm      (−) Nếu có
 Lưu ca xe               (−) Nếu có
 ─────────────────────────────────────
@@ -333,17 +333,17 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý − Bảo
 | 4 | Nhập số tiền, chọn chuyến phân bổ | Ghi nhận → sổ cái cập nhật |
 | 5 | Nhấn **"Điều chỉnh"** | Tạo bút toán điều chỉnh (ghi nợ / ghi có) |
 
-### 3.8 Kỷ luật tài xế
+### 3.8 Kỷ luật lái xe
 
 **Trang:** `/penalties`
 
 | Bước | Hành động | Kết quả mong đợi |
 |------|-----------|-------------------|
-| 1 | Vào `/penalties` | KPI: số vi phạm tháng, tổng tiền phạt, tài xế tuân thủ |
-| 2 | Xem bảng xếp hạng tài xế | Hạng, tên, chuỗi an toàn, vi phạm, điểm xếp loại (A+/A/B/C) |
-| 3 | Xem lịch sử vi phạm | Tài xế, chuyến, lý do, số tiền, ngày |
+| 1 | Vào `/penalties` | KPI: số vi phạm tháng, tổng tiền phạt, lái xe tuân thủ |
+| 2 | Xem bảng xếp hạng lái xe | Hạng, tên, chuỗi an toàn, vi phạm, điểm xếp loại (A+/A/B/C) |
+| 3 | Xem lịch sử vi phạm | Lái xe, chuyến, lý do, số tiền, ngày |
 | 4 | Nhấn **"Tạo phạt mới"** | Mở drawer form |
-| 5 | Chọn tài xế, chuyến, lý do, nhập số tiền | Tạo phạt → ghi sổ cái DRIVER |
+| 5 | Chọn lái xe, chuyến, lý do, nhập số tiền | Tạo phạt → ghi sổ cái DRIVER |
 
 ### 3.9 Cấu hình hệ thống
 
@@ -357,7 +357,7 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý − Bảo
 | Tuyến đường | Tên, km, núi/đồng bằng, phụ cấp nhiên liệu fixed | Tạo chuyến, tra giá |
 | Xe đầu kéo | Biển số, trạng thái (Hoạt động/Bảo trì/Ngưng) | Điều vận |
 | Ro-mooc | Biển số, loại (20FT/40FT) | Tạo chuyến |
-| Tài xế | Tên, SĐT, lương cơ bản, xe phân công | Điều vận, tính lương |
+| Lái xe | Tên, SĐT, lương cơ bản, xe phân công | Điều vận, tính lương |
 | Khách hàng | Tên, MST, liên hệ, hạn mức tín dụng | Tạo chuyến, công nợ |
 | Loại hàng hóa | Phân loại hàng (vd: chè yêu cầu ảnh) | Tạo chuyến, validation ảnh |
 | Loại container | Mã, tên hiển thị, kích thước nhóm (20FT/40FT), trạng thái | Nhập container trong chuyến (20'DC, 20'OT, 20'RF, 40'DC, 40'HC...) |
@@ -371,9 +371,9 @@ LỢI NHUẬN RÒNG          = Lợi nhuận gộp − Phí quản lý − Bảo
 **Trang:** `/fleet`
 
 Quản lý 3 loại thực thể trong 1 trang:
-- **Xe đầu kéo:** Thêm/sửa/xóa, trạng thái, tài xế gắn
+- **Xe đầu kéo:** Thêm/sửa/xóa, trạng thái, lái xe gắn
 - **Ro-mooc:** Thêm/sửa/xóa, loại 20FT/40FT
-- **Tài xế:** Thêm/sửa/xóa, SĐT, lương cơ bản, xe phân công, tìm kiếm
+- **Lái xe:** Thêm/sửa/xóa, SĐT, lương cơ bản, xe phân công, tìm kiếm
 
 ---
 
@@ -396,7 +396,7 @@ Quản lý 3 loại thực thể trong 1 trang:
 | 2 | Chọn **Khách hàng** | Dropdown từ danh mục | Hiện tên khách hàng |
 | 3 | Chọn **Tuyến đường** | Dropdown từ danh mục | Hiện km, loại (núi/đồng bằng) |
 | 4 | Chọn **Xe đầu kéo** | Chỉ hiện xe ACTIVE | Biển số hiển thị |
-| 5 | Chọn **Tài xế** | Gợi ý tài xế gắn xe đã chọn (nếu có) | |
+| 5 | Chọn **Lái xe** | Gợi ý lái xe gắn xe đã chọn (nếu có) | |
 | 6 | Chọn **Ro-mooc** | 20FT hoặc 40FT | |
 | 7 | Chọn **Loại hàng hóa** | | |
 | 8 | Nhập **Ngày xuất phát** | | |
@@ -438,7 +438,7 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 
 **Sổ cái ghi nhận khi chốt:**
 - **Khách hàng:** Nợ TRIP_REVENUE = doanh thu chuyến
-- **Tài xế:** Có DRIVER_SALARY = lương chuyến
+- **Lái xe:** Có DRIVER_SALARY = lương chuyến
 
 ### 4.5 Ghi nhận thanh toán
 
@@ -461,15 +461,15 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 3 | Nhập lý do (bắt buộc) | |
 | 4 | Xác nhận | ✅ Ghi sổ cái ADJUSTMENT |
 
-### 4.7 Kỷ luật tài xế
+### 4.7 Kỷ luật lái xe
 
 | Bước | Hành động | Kết quả mong đợi |
 |------|-----------|-------------------|
 | 1 | Vào `/penalties` → nhấn **"Tạo phạt mới"** | Mở drawer |
-| 2 | Chọn tài xế, chuyến liên quan | |
+| 2 | Chọn lái xe, chuyến liên quan | |
 | 3 | Chọn lý do từ danh mục hoặc nhập tay | |
 | 4 | Nhập số tiền phạt | |
-| 5 | Xác nhận | ✅ Ghi sổ cái PENALTY, tăng nợ tài xế |
+| 5 | Xác nhận | ✅ Ghi sổ cái PENALTY, tăng nợ lái xe |
 
 ### 4.8 Những gì Kế toán KHÔNG thể làm
 
@@ -598,7 +598,7 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 | Xuất phát | `/api/trips/:id/dispatch` | POST |
 | Chốt chuyến | `/api/trips/:id/lock` | POST |
 | Hủy chuyến | `/api/trips/:id/cancel` | POST |
-| Đổi xe/tài xế | `/api/trips/:id/reassign` | PATCH |
+| Đổi xe/lái xe | `/api/trips/:id/reassign` | PATCH |
 | Báo cáo P&L | `/api/reports/pnl` | GET |
 | Phân bổ lợi nhuận | `/api/reports/distribute-profit` | POST |
 | Danh sách công nợ | `/api/ledger?entity_type=CUSTOMER` | GET |
@@ -620,7 +620,7 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 |----|-------|---------|
 | `TRIP_REVENUE` | Doanh thu chuyến | Chốt chuyến (LOCK) |
 | `PAYMENT_RECEIVED` | Khách thanh toán | Ghi nhận thanh toán |
-| `DRIVER_SALARY` | Lương tài xế | Chốt chuyến (LOCK) |
+| `DRIVER_SALARY` | Lương lái xe | Chốt chuyến (LOCK) |
 | `PENALTY` | Tiền phạt | Tạo phạt |
 | `MANAGEMENT_FEE` | Phí quản lý | Cấu hình phí |
 | `ADJUSTMENT` | Điều chỉnh thủ công | Tạo điều chỉnh |
@@ -639,7 +639,7 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 
 ### 7.2 Test vòng đời chuyến đầy đủ
 
-**Chuẩn bị:** Đảm bảo có sẵn danh mục (khách hàng, tuyến, xe, tài xế, ro-mooc, bảng giá).
+**Chuẩn bị:** Đảm bảo có sẵn danh mục (khách hàng, tuyến, xe, lái xe, ro-mooc, bảng giá).
 
 - [ ] **Tạo chuyến:** `/trips/new` → điền đủ trường → tạo thành công, mã `TRP-YYYYMM-NNNN`
 - [ ] **Kiểm tra tự động điền giá:** Chọn khách hàng + tuyến → doanh thu tự populating từ bảng giá
@@ -648,7 +648,7 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 - [ ] **Nhập actuals:** Sửa chuyến → cập nhật km thực tế → lưu → trạng thái COMPLETED (nếu đủ ảnh)
 - [ ] **Kiểm tra yêu cầu ảnh:** Hàng hóa `requiresPhotos=true` → thiếu ảnh CONTAINER/SEAL → lỗi
 - [ ] **Chốt chuyến:** Nhấn "Chốt" → trạng thái LOCKED
-- [ ] **Kiểm tra sổ cái:** Sau khi chốt → kiểm tra ledger có TRIP_REVENUE (khách hàng) và DRIVER_SALARY (tài xế)
+- [ ] **Kiểm tra sổ cái:** Sau khi chốt → kiểm tra ledger có TRIP_REVENUE (khách hàng) và DRIVER_SALARY (lái xe)
 - [ ] **Không sửa khi LOCKED:** Mở chuyến đã chốt → không thể chỉnh sửa
 
 ### 7.3 Test phân quyền
@@ -676,7 +676,7 @@ Lái xe cố gắng truy cập bất kỳ trang quản lý nào → tự động
 
 ### 7.6 Test kỷ luật
 
-- [ ] Tạo phạt → kiểm tra sổ cái tài xế tăng nợ
+- [ ] Tạo phạt → kiểm tra sổ cái lái xe tăng nợ
 - [ ] Kiểm tra `/my-earnings` → tổng phạt phản ánh đúng
 - [ ] Kiểm tra `/my-penalties` → lái xe xem được phạt của mình
 

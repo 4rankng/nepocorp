@@ -84,7 +84,7 @@ export function UserTable({
         <div>
           <h1 className="page-title">Quản lý <em>người dùng</em></h1>
           <p className="page-subtitle">
-            {total} tài khoản · {staffCount} nhân sự · {driverCount} tài xế
+            {total} tài khoản · {staffCount} nhân sự · {driverCount} lái xe
           </p>
         </div>
         {canManage && (
@@ -132,7 +132,7 @@ export function UserTable({
         </div>
         <div className="kpi kpi--success">
           <div className="kpi__top">
-            <span className="kpi__label">Tài xế</span>
+            <span className="kpi__label">Lái xe</span>
             <div className="kpi__icon"><ShieldCheck size={18} /></div>
           </div>
           <div className="kpi__value">{driverCount}</div>
@@ -140,7 +140,7 @@ export function UserTable({
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: 'rgb(5, 150, 105)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
               Hiện trường
             </span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Có quyền app tài xế</span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Có quyền app lái xe</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
         </div>
@@ -332,7 +332,7 @@ export function UserTable({
         }}>
           <KeyRound size={14} />
           {canEditDriversOnly
-            ? 'Bạn chỉ có thể chỉnh sửa thông tin tài xế (lương, xe phân công, liên hệ).'
+            ? 'Bạn chỉ có thể chỉnh sửa thông tin lái xe (lương, xe phân công, liên hệ).'
             : 'Chỉ quản trị viên hoặc giám đốc mới có thể tạo, sửa hoặc xóa tài khoản.'}
         </div>
       )}

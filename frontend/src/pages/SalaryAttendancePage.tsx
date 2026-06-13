@@ -360,7 +360,7 @@ export default function SalaryAttendancePage() {
           <div className="hero-title-block">
             <div className="hero-eyebrow">Kỳ lương</div>
             <h1 className="hero-h1">Lương & Chấm công</h1>
-            <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} tài xế</div>
+            <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} lái xe</div>
           </div>
           <div className="hero-actions">
             <button className="btn-d btn-d--ghost-dark" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
@@ -372,12 +372,12 @@ export default function SalaryAttendancePage() {
           <div className="metric featured">
             <div className="metric-label">Tổng quỹ lương</div>
             <div className="metric-value">{formatCurrency(aggregates.totalNet)}</div>
-            <div className="metric-delta delta-flat">Lương thực nhận · tất cả tài xế</div>
+            <div className="metric-delta delta-flat">Lương thực nhận · tất cả lái xe</div>
             <div className="utilization-bar"><div className="utilization-fill" style={{ width: `${aggregates.total > 0 ? (aggregates.confirmed / aggregates.total) * 100 : 0}%` }} /></div>
             <div className="metric-delta delta-up"><CheckCircle2 size={10} strokeWidth={2.5} /> {aggregates.confirmed}/{aggregates.total} đã xác nhận</div>
           </div>
           <div className="metric">
-            <div className="metric-label">Tổng tài xế</div>
+            <div className="metric-label">Tổng lái xe</div>
             <div className="metric-value d-mono">{aggregates.total}</div>
             <div className="metric-delta delta-flat">— trong kỳ</div>
           </div>
@@ -404,13 +404,13 @@ export default function SalaryAttendancePage() {
         <div className="driver-select-row__search">
           <div className="input-icon" style={{ width: '100%', maxWidth: 340 }}>
             <Search size={14} />
-            <input type="text" className="input" placeholder="Tìm tài xế..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <input type="text" className="input" placeholder="Tìm lái xe..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
         </div>
         {listLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', padding: '16px 24px' }}>
             <Loader2 size={20} className="spin" style={{ color: 'var(--fg-3)', marginRight: 8 }} />
-            <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>Đang tải danh sách tài xế…</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>Đang tải danh sách lái xe…</span>
           </div>
         ) : (
           <div className="driver-select-row__list">
@@ -438,7 +438,7 @@ export default function SalaryAttendancePage() {
             })}
             {filteredDrivers.length === 0 && (
               <div style={{ padding: 24, color: 'var(--fg-3)', fontSize: 13 }}>
-                Không tìm thấy tài xế
+                Không tìm thấy lái xe
               </div>
             )}
           </div>
@@ -454,7 +454,7 @@ export default function SalaryAttendancePage() {
             <Panel>
               <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <Users size={40} style={{ opacity: 0.3 }} />
-                <p style={{ margin: 0, fontSize: 14 }}>Chọn tài xế ở trên để xem lịch chấm công</p>
+                <p style={{ margin: 0, fontSize: 14 }}>Chọn lái xe ở trên để xem lịch chấm công</p>
               </div>
             </Panel>
           ) : (

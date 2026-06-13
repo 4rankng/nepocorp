@@ -550,7 +550,7 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
   return await db.transaction(async (tx) => {
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
-    if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi tài xế/xe cho chuyến chưa xuất phát');
+    if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi lái xe/xe cho chuyến chưa xuất phát');
 
     // Validate truck/driver exist before attempting the update — otherwise the
     // raw postgres FK constraint error ("insert or update on table trips
@@ -561,7 +561,7 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
     if (!newTruck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
     const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
       .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
-    if (!driver) throw new ApiError(400, 'Tài xế không tồn tại hoặc đã bị xóa');
+    if (!driver) throw new ApiError(400, 'Lái xe không tồn tại hoặc đã bị xóa');
 
     const resolved = await resolveTrailer(tx, newTruck.currentTrailerId);
     const trailerId = resolved.trailerId;

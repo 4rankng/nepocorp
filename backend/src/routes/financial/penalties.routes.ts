@@ -30,7 +30,7 @@ router.post('/penalties', asyncHandler(async (req: Request, res: Response) => {
   emitNotification({
     type: NotificationType.PENALTY_CREATED,
     title: 'Phạt mới',
-    message: `Phạt cho tài xế ID ${data.driverId} đã được tạo`,
+    message: `Phạt cho lái xe ID ${data.driverId} đã được tạo`,
     relatedEntityType: 'penalties',
     relatedEntityId: penalty.id,
     targetDriverId: data.driverId,

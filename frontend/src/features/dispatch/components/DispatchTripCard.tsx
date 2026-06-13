@@ -91,7 +91,7 @@ export function DispatchTripCard({
             </span>
             <div className="ai">
               <div className="dn">
-                {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân tài xế</span>}
+                {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân lái xe</span>}
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ export function DispatchTripCard({
           <button
             type="button"
             className="swap-btn"
-            title="Đổi xe / tài xế"
+            title="Đổi xe / lái xe"
             onClick={onOpenReassign}
             disabled={dispatching || actionLoadingId === trip.id}
           >

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, FormGroup } from '../UI';
+import { User, Mail, Phone, UserCheck } from 'lucide-react';
 import type { ProfileModalProps } from './types';
 
 const errorBoxStyle: React.CSSProperties = {
@@ -42,37 +43,49 @@ function ProfileModal({
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <FormGroup label="Tên đăng nhập">
-          <input
-            className="input"
-            value={form.username}
-            onChange={e => onFormChange({ ...form, username: e.target.value })}
-            placeholder="username"
-          />
+          <div className="input-icon">
+            <User size={16} />
+            <input
+              className="input"
+              value={form.username}
+              onChange={e => onFormChange({ ...form, username: e.target.value })}
+              placeholder="username"
+            />
+          </div>
         </FormGroup>
         <FormGroup label="Họ và tên">
-          <input
-            className="input"
-            value={form.fullName}
-            onChange={e => onFormChange({ ...form, fullName: e.target.value })}
-            placeholder="Nguyễn Văn A"
-          />
+          <div className="input-icon">
+            <UserCheck size={16} />
+            <input
+              className="input"
+              value={form.fullName}
+              onChange={e => onFormChange({ ...form, fullName: e.target.value })}
+              placeholder="Nguyễn Văn A"
+            />
+          </div>
         </FormGroup>
         <FormGroup label="Email">
-          <input
-            className="input"
-            type="email"
-            value={form.email}
-            onChange={e => onFormChange({ ...form, email: e.target.value })}
-            placeholder="email@example.com"
-          />
+          <div className="input-icon">
+            <Mail size={16} />
+            <input
+              className="input"
+              type="email"
+              value={form.email}
+              onChange={e => onFormChange({ ...form, email: e.target.value })}
+              placeholder="email@example.com"
+            />
+          </div>
         </FormGroup>
         <FormGroup label="Số điện thoại">
-          <input
-            className="input"
-            value={form.phone}
-            onChange={e => onFormChange({ ...form, phone: e.target.value })}
-            placeholder="0912345678"
-          />
+          <div className="input-icon">
+            <Phone size={16} />
+            <input
+              className="input"
+              value={form.phone}
+              onChange={e => onFormChange({ ...form, phone: e.target.value })}
+              placeholder="0912345678"
+            />
+          </div>
         </FormGroup>
       </div>
     </Modal>

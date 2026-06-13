@@ -87,7 +87,7 @@ function ctx(payload: AuditPayload): TemplateContext {
   const actorL = actor.toLowerCase();
   const roleL = roleLabel.toLowerCase();
   // Use word-boundary matching to avoid false positives on Vietnamese names.
-  // E.g. role "tài" must not match actor "tài xế lê văn tài" unless the actor
+  // E.g. role "tài" must not match actor "lái xe lê văn tài" unless the actor
   // IS the role label. Only exact match or prefix-with-space counts.
   const overlaps = actorL === roleL
     || actorL.startsWith(roleL + ' ')
@@ -137,7 +137,7 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} đã tạo bút toán điều chỉnh công nợ${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} đã ghi nhận quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} đã hủy bỏ quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
-  [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} đã ghi nhận bảng tính lương cho tài xế${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} đã ghi nhận bảng tính lương cho lái xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
 
   [AuditEvent.TRIP_EXPENSE_APPROVED]: (c) => `${subj(c)} đã phê duyệt ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.TRIP_EXPENSE_REJECTED]: (c) => `${subj(c)} đã từ chối ${c.entityLabel}${c.entityKey ? `: ${c.entityKey}` : ''}`,

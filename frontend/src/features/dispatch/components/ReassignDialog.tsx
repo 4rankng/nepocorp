@@ -44,7 +44,7 @@ export function ReassignDialog({
           }
           disabled={reassignState.loading}
         >
-          <option value="">Chọn tài xế</option>
+          <option value="">Chọn lái xe</option>
           {drivers.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}

@@ -62,7 +62,7 @@ export default function RoadAllowancesConfigPage() {
       pageSlug="road-allowances"
       emptyIllustration="empty-routes.svg"
       emptyTitle="Chưa có định mức"
-      emptyHint="Thêm tiền đi đường cho từng tuyến để hệ thống tính lương tài xế."
+      emptyHint="Thêm tiền đi đường cho từng tuyến để hệ thống tính lương lái xe."
       columns={[
         { header: 'Tuyến đường', render: (ra) => routeMap.get(ra.routeId) || '—' },
         { header: 'Loại rơ-moóc', render: (ra) => <span className="badge badge-outline">{TRAILER_TYPE_LABELS[ra.trailerType] || ra.trailerType}</span> },

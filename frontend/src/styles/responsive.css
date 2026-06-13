@@ -265,6 +265,27 @@
     max-height: calc(100dvh - 180px);
     -webkit-overflow-scrolling: touch;
   }
+  .modal__body .field .input {
+    height: 48px;
+    border-radius: 12px;
+    font-size: 14px;
+    border-color: var(--line-2);
+  }
+  .modal__body .input-icon > svg {
+    width: 18px;
+    height: 18px;
+    left: 14px;
+    color: var(--ink-3);
+  }
+  .modal__body .input-icon .input {
+    padding-left: 44px;
+  }
+  .modal__body .field label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    margin-bottom: 2px;
+  }
   .modal__foot {
     padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0));
     gap: 8px;

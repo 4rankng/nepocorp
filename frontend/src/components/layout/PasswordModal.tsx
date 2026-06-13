@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, FormGroup } from '../UI';
+import { Lock } from 'lucide-react';
 import type { PasswordModalProps } from './types';
 
 const errorBoxStyle: React.CSSProperties = {
@@ -42,31 +43,40 @@ function PasswordModal({
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <FormGroup label="Mật khẩu hiện tại">
-          <input
-            className="input"
-            type="password"
-            value={form.currentPassword}
-            onChange={e => onFormChange({ ...form, currentPassword: e.target.value })}
-            placeholder="Nhập mật khẩu hiện tại"
-          />
+          <div className="input-icon">
+            <Lock size={16} />
+            <input
+              className="input"
+              type="password"
+              value={form.currentPassword}
+              onChange={e => onFormChange({ ...form, currentPassword: e.target.value })}
+              placeholder="Nhập mật khẩu hiện tại"
+            />
+          </div>
         </FormGroup>
         <FormGroup label="Mật khẩu mới">
-          <input
-            className="input"
-            type="password"
-            value={form.newPassword}
-            onChange={e => onFormChange({ ...form, newPassword: e.target.value })}
-            placeholder="Ít nhất 6 ký tự"
-          />
+          <div className="input-icon">
+            <Lock size={16} />
+            <input
+              className="input"
+              type="password"
+              value={form.newPassword}
+              onChange={e => onFormChange({ ...form, newPassword: e.target.value })}
+              placeholder="Ít nhất 6 ký tự"
+            />
+          </div>
         </FormGroup>
         <FormGroup label="Xác nhận mật khẩu mới">
-          <input
-            className="input"
-            type="password"
-            value={form.confirmPassword}
-            onChange={e => onFormChange({ ...form, confirmPassword: e.target.value })}
-            placeholder="Nhập lại mật khẩu mới"
-          />
+          <div className="input-icon">
+            <Lock size={16} />
+            <input
+              className="input"
+              type="password"
+              value={form.confirmPassword}
+              onChange={e => onFormChange({ ...form, confirmPassword: e.target.value })}
+              placeholder="Nhập lại mật khẩu mới"
+            />
+          </div>
         </FormGroup>
       </div>
     </Modal>

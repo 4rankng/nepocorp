@@ -18,9 +18,9 @@ Trang danh sách chuyến đi — xem, tìm kiếm, lọc trạng thái, sắp x
 |-----------|--------|
 | Header | Tiêu đề "Chuyến đi" + nút Xuất CSV + nút Tạo chuyến |
 | Hero Metrics | 4 KPI: Tổng chuyến, Đang chạy, Hoàn thành, Doanh thu |
-| Thanh tìm kiếm | Tìm theo mã chuyến, tuyến, khách hàng, tài xế |
+| Thanh tìm kiếm | Tìm theo mã chuyến, tuyến, khách hàng, lái xe |
 | Status Pills | 6 nút: Tất cả, Đã tạo, Đang chạy, Hoàn thành, Đã khóa, Đã hủy |
-| Bảng dữ liệu | Mã chuyến, Tuyến, Khách hàng, Xe, Tài xế, Trạng thái, Tổng tiền, Ngày tạo, Actions |
+| Bảng dữ liệu | Mã chuyến, Tuyến, Khách hàng, Xe, Lái xe, Trạng thái, Tổng tiền, Ngày tạo, Actions |
 | Phân trang | 10 dòng/trang |
 
 ### 1.3 Phân quyền
@@ -58,7 +58,7 @@ Trang danh sách chuyến đi — xem, tìm kiếm, lọc trạng thái, sắp x
 
 ### 2.2 Tìm kiếm
 
-Gõ vào ô tìm kiếm → lọc real-time theo: mã chuyến, tuyến (origin → destination), tên KH, tên tài xế, số container. Không phân biệt hoa/thường. Bấm X để xóa.
+Gõ vào ô tìm kiếm → lọc real-time theo: mã chuyến, tuyến (origin → destination), tên KH, tên lái xe, số container. Không phân biệt hoa/thường. Bấm X để xóa.
 
 ### 2.3 Lọc trạng thái
 
@@ -165,7 +165,7 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | TC-TS-014 | Tìm theo mã | Có "TRIP-001" | Gõ "TRIP-001" | Chỉ hiện TRIP-001 | High |
 | TC-TS-015 | Tìm theo tuyến | Có chuyến → "Đà Nẵng" | Gõ "Đà Nẵng" | Hiện đúng chuyến | High |
 | TC-TS-016 | Tìm theo KH | Có KH "Công ty ABC" | Gõ "Công ty ABC" | Hiện đúng chuyến | High |
-| TC-TS-017 | Tìm theo tài xế | Có TX "Nguyễn Văn A" | Gõ "Nguyễn Văn A" | Hiện đúng chuyến | High |
+| TC-TS-017 | Tìm theo lái xe | Có TX "Nguyễn Văn A" | Gõ "Nguyễn Văn A" | Hiện đúng chuyến | High |
 | TC-TS-018 | Không kết quả | Không có "ZZZZZ" | Gõ "ZZZZZ" | Bảng trống, thông báo | Medium |
 | TC-TS-019 | Xóa tìm kiếm | Đang tìm | Click X | Hiện lại toàn bộ | Medium |
 | TC-TS-020 | Tìm + Lọc kết hợp | Dữ liệu đa dạng | Gõ "ABC" + pill "Hoàn thành" | Kết quả khớp cả hai | High |
@@ -228,4 +228,4 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | TC-TS-047 | Format ngày đúng | createdAt "2026-05-15T08:30Z" | Xem cột Ngày tạo | Định dạng vi-VN | Medium |
 | TC-TS-048 | Badge đúng màu | 5 trạng thái | Xem cột Trạng thái | Màu đúng bảng tra cứu | Medium |
 | TC-TS-049 | Danh sách trống | DB không có chuyến | Mở /trips | "Chưa có chuyến đi nào", KPI = 0 | Medium |
-| TC-TS-050 | DRIVER xem chuyến người khác | DRIVER (tài xế A) | GET /api/trips/:id (tài xế B) | 403 Forbidden | High |
+| TC-TS-050 | DRIVER xem chuyến người khác | DRIVER (lái xe A) | GET /api/trips/:id (lái xe B) | 403 Forbidden | High |

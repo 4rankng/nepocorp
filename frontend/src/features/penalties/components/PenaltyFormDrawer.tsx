@@ -100,9 +100,9 @@ export function PenaltyFormDrawer({
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <FormGroup label="Tài xế vi phạm *">
+        <FormGroup label="Lái xe vi phạm *">
           <select className="input" value={formDriverId} onChange={e => setFormDriverId(e.target.value)}>
-            <option value="">-- Chọn tài xế --</option>
+            <option value="">-- Chọn lái xe --</option>
             {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </FormGroup>

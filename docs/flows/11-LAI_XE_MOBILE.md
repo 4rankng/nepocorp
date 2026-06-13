@@ -10,7 +10,7 @@
 
 ### 1.1 Mô tả
 
-Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành riêng cho vai trò DRIVER. Tài xế xem lệnh vận chuyển, thu nhập và phạt của chính mình — read-only, không thể sửa.
+Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành riêng cho vai trò DRIVER. Lái xe xem lệnh vận chuyển, thu nhập và phạt của chính mình — read-only, không thể sửa.
 
 ### 1.2 Nguyên tắc
 
@@ -45,7 +45,7 @@ Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành ri�
 
 ### 2.1 Danh sách chuyến (/my-trips)
 
-- Card list: icon Route, tên tuyến, status pill, biển số xe, ngày khởi hành, lương tài xế
+- Card list: icon Route, tên tuyến, status pill, biển số xe, ngày khởi hành, lương lái xe
 - Click card → `/my-trips/:id`
 - Empty state: "Chưa có lệnh vận chuyển nào"
 
@@ -150,8 +150,8 @@ DRIVER xem ảnh chuyến người khác → GET /api/photos/{path} → 403
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-LX-010 | Hiển thị danh sách | Tài xế có ≥ 3 chuyến | Mở /my-trips | Card list với: tên tuyến, status, biển số, ngày, lương | High |
-| TC-LX-011 | Empty state | Tài xế chưa có chuyến | Mở /my-trips | "Chưa có lệnh vận chuyển nào" | Medium |
+| TC-LX-010 | Hiển thị danh sách | Lái xe có ≥ 3 chuyến | Mở /my-trips | Card list với: tên tuyến, status, biển số, ngày, lương | High |
+| TC-LX-011 | Empty state | Lái xe chưa có chuyến | Mở /my-trips | "Chưa có lệnh vận chuyển nào" | Medium |
 | TC-LX-012 | Click → chi tiết | Có chuyến | Click card | Chuyển đến /my-trips/:id | High |
 
 ### 5.3 Chi tiết chuyến (/my-trips/:id)
@@ -161,7 +161,7 @@ DRIVER xem ảnh chuyến người khác → GET /api/photos/{path} → 403
 | TC-LX-020 | Hiển thị đầy đủ | Chuyến có đủ data | Mở /my-trips/:id | Header, info xe, nhiên liệu, thu nhập, legs, ghi chú | High |
 | TC-LX-021 | Card nhiên liệu nổi bật | Có fuelLiters | Xem card | Viền nổi bật, hiển thị lít + chế độ | Medium |
 | TC-LX-022 | Thưởng hàng về | hasReturnCargo=true | Xem thu nhập | Hiển thị "+300,000 ₫" | Medium |
-| TC-LX-023 | Chuyến không thuộc mình | Trip của tài xế khác | Mở /my-trips/:id | 403 Forbidden | High |
+| TC-LX-023 | Chuyến không thuộc mình | Trip của lái xe khác | Mở /my-trips/:id | 403 Forbidden | High |
 | TC-LX-024 | Nút quay lại | Đang xem chi tiết | Nhấn quay lại | Về /my-trips | Medium |
 
 ### 5.4 Thu nhập (/my-earnings)
@@ -187,7 +187,7 @@ DRIVER xem ảnh chuyến người khác → GET /api/photos/{path} → 403
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-LX-050 | Xem ảnh chuyến mình | DRIVER có chuyến với ảnh | GET /api/photos/{path} (trip mình) | 200 OK, trả về file ảnh | Medium |
-| TC-LX-051 | Không xem ảnh người khác | Ảnh thuộc chuyến tài xế khác | GET /api/photos/{path} | 403 Forbidden | High |
+| TC-LX-051 | Không xem ảnh người khác | Ảnh thuộc chuyến lái xe khác | GET /api/photos/{path} | 403 Forbidden | High |
 
 ### 5.7 Mobile UX
 
@@ -204,6 +204,6 @@ DRIVER xem ảnh chuyến người khác → GET /api/photos/{path} → 403
 - Tất cả API `/api/driver/me/*` scope tự động theo `req.user.userId` — frontend KHÔNG gửi driverId
 - `tripIncome` chỉ tính chuyến **LOCKED** — chuyến COMPLETED chưa khóa không tính
 - `netIncome` có thể âm nếu penalties > tripIncome
-- Card nhiên liệu có viền nổi bật (branded border) để tài xế dễ nhận diện
+- Card nhiên liệu có viền nổi bật (branded border) để lái xe dễ nhận diện
 - Thưởng hàng về (+300K) chỉ hiện khi `hasReturnCargo = true`
 - DRIVER KHÔNG thể upload ảnh qua portal — ảnh do ADMIN upload

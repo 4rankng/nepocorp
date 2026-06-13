@@ -23,7 +23,7 @@
 
 Module **Đội xe & Điều vận** gồm hai trang:
 - **Điều vận** (`/dispatch`) — Trung tâm chỉ huy điều vận chuyến đi, xem trạng thái đội xe, xuất phát chuyến, phân xe lại.
-- **Đội xe** (`/fleet`) — Quản lý CRUD xe đầu kéo (kèm thông tin rơ-mooc ghép cặp) và tài xế. Không có bảng rơ-mooc riêng — biển số và loại rơ-mooc lưu trên bản ghi xe đầu kéo.
+- **Đội xe** (`/fleet`) — Quản lý CRUD xe đầu kéo (kèm thông tin rơ-mooc ghép cặp) và lái xe. Không có bảng rơ-mooc riêng — biển số và loại rơ-mooc lưu trên bản ghi xe đầu kéo.
 
 ### 1.2 Vai trò truy cập
 
@@ -42,7 +42,7 @@ Module **Đội xe & Điều vận** gồm hai trang:
 |--------|------|------|-------|
 | `GET` | `/api/trips?status=CREATED` | JWT + trips:read | Danh sách chuyến chờ xuất phát |
 | `GET` | `/api/trips?status=IN_TRANSIT` | JWT + trips:read | Danh sách chuyến đang chạy |
-| `GET` | `/api/drivers` | JWT + config:read | Danh sách tài xế |
+| `GET` | `/api/drivers` | JWT + config:read | Danh sách lái xe |
 | `GET` | `/api/trucks` | JWT + config:read | Danh sách xe đầu kéo |
 | `POST` | `/api/trips/:id/dispatch` | JWT + trips:write | Xuất phát chuyến (CREATED → IN_TRANSIT) |
 | `PATCH` | `/api/trips/:id/reassign` | JWT + trips:write | Phân xe lại (chỉ CREATED) |
@@ -57,15 +57,15 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | `DELETE` | `/api/trucks/:id` | JWT + config:delete | Xóa mềm xe |
 
 
-#### Quản lý Đội xe — Tài xế
+#### Quản lý Đội xe — Lái xe
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
-| `GET` | `/api/drivers` | JWT + config:read | Danh sách tài xế |
-| `POST` | `/api/drivers` | JWT + config:write | Thêm tài xế |
-| `PUT` | `/api/drivers/:id` | JWT + config:write | Cập nhật tài xế |
+| `GET` | `/api/drivers` | JWT + config:read | Danh sách lái xe |
+| `POST` | `/api/drivers` | JWT + config:write | Thêm lái xe |
+| `PUT` | `/api/drivers/:id` | JWT + config:write | Cập nhật lái xe |
 
-> **Lưu ý:** Drivers KHÔNG có endpoint DELETE (không thể xóa tài xế).
+> **Lưu ý:** Drivers KHÔNG có endpoint DELETE (không thể xóa lái xe).
 
 ---
 
@@ -85,13 +85,13 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | Sẵn sàng | Số xe status=CREATED, sẵn sàng xuất phát |
 | Cần chú ý | Số xe cần xử lý (maintenance, no driver) |
 
-**Lưới xe (Fleet Vehicle Grid):** Thẻ cho mỗi xe hiển thị biển số, trạng thái (Running/Ready/Maintenance/No driver), avatar tài xế, tuyến đường, ngày khởi hành.
+**Lưới xe (Fleet Vehicle Grid):** Thẻ cho mỗi xe hiển thị biển số, trạng thái (Running/Ready/Maintenance/No driver), avatar lái xe, tuyến đường, ngày khởi hành.
 
-**Hàng đợi lệnh (Orders Queue):** Danh sách chuyến chờ xuất phát với tuyến, khách hàng, xe + tài xế được phân, ngày khởi hành.
+**Hàng đợi lệnh (Orders Queue):** Danh sách chuyến chờ xuất phát với tuyến, khách hàng, xe + lái xe được phân, ngày khởi hành.
 
 **Hành động:**
 1. **Xuất phát chuyến:** Nhấn nút "Khởi hành" → hộp thoại xác nhận → `POST /api/trips/:id/dispatch`
-2. **Phân xe lại:** Nhấn nút "Đổi xe" → chọn xe + tài xế → `PATCH /api/trips/:id/reassign`
+2. **Phân xe lại:** Nhấn nút "Đổi xe" → chọn xe + lái xe → `PATCH /api/trips/:id/reassign`
 3. **Tạo chuyến mới:** Nhấn nút → chuyển đến `/trips/new`
 4. **Xem chuyến đang chạy:** Nhấn vào thẻ xe → chuyển đến `/trips/:id`
 5. **Lọc:** Tab all/running/ready/noassign/maintenance
@@ -102,7 +102,7 @@ Module **Đội xe & Điều vận** gồm hai trang:
 
 **3 thẻ KPI:**
 - Tổng xe đầu kéo (active/maintenance)
-- Tổng tài xế
+- Tổng lái xe
 - Sẵn sàng chạy
 
 **Bảng Xe đầu kéo:**
@@ -112,15 +112,15 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | Biển số đầu kéo | License plate |
 | Biển số rơ-mooc | Plate ghép cặp hoặc "--" |
 | Loại rơ-mooc | 20FT / 40FT hoặc "--" |
-| Tài xế được phân | Tên tài xế hoặc "--" |
+| Lái xe được phân | Tên lái xe hoặc "--" |
 | Trạng thái | Active/Maintenance/Inactive |
 | Thao tác | Nút Sửa + Xóa |
 
-**Bảng Tài xế:**
+**Bảng Lái xe:**
 
 | Cột | Nội dung |
 |-----|----------|
-| Tên | Họ tên tài xế |
+| Tên | Họ tên lái xe |
 | Điện thoại | Số điện thoại |
 | Xe được phân | Biển số xe hoặc "--" |
 | Lương cơ bản | Base salary (VND) |
@@ -158,11 +158,11 @@ Giám đốc nhấn "Khởi hành" trên chuyến CREATED
 Giám đốc nhấn "Đổi xe" trên chuyến CREATED
         │
         ▼
-  Hiển thị inline editor: dropdown Xe + dropdown Tài xế
+  Hiển thị inline editor: dropdown Xe + dropdown Lái xe
         │
         ├── Hủy → Đóng editor
         │
-        └── Chọn xe + tài xế mới → PATCH /api/trips/:id/reassign
+        └── Chọn xe + lái xe mới → PATCH /api/trips/:id/reassign
                                       Body: { truck_id, driver_id }
                                       │
                                       ├── 200 OK → Cập nhật chuyến
@@ -193,14 +193,14 @@ XÓA XE (mềm):
   → 200 { ok: true } → Xe biến mất (soft delete)
 ```
 
-### 3.4 CRUD Tài xế
+### 3.4 CRUD Lái xe
 
 ```
-THÊM TÀI XẾ:
+THÊM LÁI XE:
   POST /api/drivers { name, phone?, assigned_truck_id?, base_salary?, status? }
   → 201 Created
 
-SỬA TÀI XẾ:
+SỬA LÁI XE:
   PUT /api/drivers/:id { name?, phone?, assigned_truck_id?, base_salary?, status? }
   → 200 OK
 
@@ -208,7 +208,7 @@ THÊM/SỬA RƠ-MOOC: Dùng API xe đầu kéo:
   PUT /api/trucks/:id { trailer_plate_number?, trailer_type?: "20FT"|"40FT" }
   → Rơ-mooc không có endpoint riêng
 
-XÓA TÀI XẾ: KHÔNG HỖ TRỢ
+XÓA LÁI XE: KHÔNG HỖ TRỢ
   → Không có endpoint DELETE cho drivers
 ```
 
@@ -229,7 +229,7 @@ XÓA TÀI XẾ: KHÔNG HỖ TRỢ
 
 | Trường | Kiểu | Ràng buộc | Mô tả |
 |--------|------|-----------|-------|
-| `name` | string | Bắt buộc, min 1 ký tự | Họ tên tài xế |
+| `name` | string | Bắt buộc, min 1 ký tự | Họ tên lái xe |
 | `phone` | string | Tùy chọn | Số điện thoại |
 | `assigned_truck_id` | integer | Tùy chọn, FK → trucks.id | Xe được phân công |
 | `base_salary` | numeric | Tùy chọn, không âm | Lương cơ bản (VND) |
@@ -258,7 +258,7 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | Entity | Số lượng | Chi tiết |
 |--------|----------|----------|
 | Xe đầu kéo | 4 | Mỗi xe có biển số rơ-mooc ghép cặp và loại (20FT/40FT) |
-| Tài xế | Nhiều | Lương cơ bản 7.5M-8.5M VND |
+| Lái xe | Nhiều | Lương cơ bản 7.5M-8.5M VND |
 
 ---
 
@@ -269,7 +269,7 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-DP-001 | Xuất phát chuyến CREATED | Có chuyến status=CREATED | 1. Nhấn "Khởi hành"<br>2. Xác nhận dialog | Chuyển IN_TRANSIT, lưới xe cập nhật, badge sidebar cập nhật | High |
-| TC-DP-002 | Phân xe lại chuyến CREATED | Có chuyến CREATED với xe A + tài xế X | 1. Nhấn "Đổi xe"<br>2. Chọn xe B + tài xế Y<br>3. Lưu | Chuyến cập nhật xe B + tài xế Y | High |
+| TC-DP-002 | Phân xe lại chuyến CREATED | Có chuyến CREATED với xe A + lái xe X | 1. Nhấn "Đổi xe"<br>2. Chọn xe B + lái xe Y<br>3. Lưu | Chuyến cập nhật xe B + lái xe Y | High |
 | TC-DP-003 | Xem lưới xe trạng thái | Có xe ở nhiều trạng thái | 1. Xem trang dispatch | Thẻ xe hiển thị đúng trạng thái: Running/Ready/Maintenance/No driver | High |
 | TC-DP-004 | Lọc tab running | Có xe đang chạy và xe sẵn sàng | 1. Click tab "Running" | Chỉ hiển thị xe đang chạy | Medium |
 | TC-DP-005 | Lọc tab ready | Có xe ở nhiều trạng thái | 1. Click tab "Ready" | Chỉ hiển thị xe sẵn sàng | Medium |
@@ -315,16 +315,16 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | TC-TRL-004 | Xóa thông tin rơ-mooc | Xe đang có rơ-mooc | 1. Sửa xe → xóa trắng biển số rơ-mooc → Lưu | trailer_plate_number=null, trailer_type=null | Medium |
 | TC-TRL-005 | Tiền đi đường tự tra đúng loại | Xe ghép 40FT | 1. Tạo chuyến với xe đó | Tiền đi đường chuẩn tra theo cặp (tuyến × 40FT) | High |
 
-### 5.6 Happy Path — CRUD Tài xế
+### 5.6 Happy Path — CRUD Lái xe
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-DRV-001 | Thêm tài xế đầy đủ | Đăng nhập ADMIN | 1. Nhập tên, phone, lương, chọn xe → Lưu | Tạo thành công | High |
+| TC-DRV-001 | Thêm lái xe đầy đủ | Đăng nhập ADMIN | 1. Nhập tên, phone, lương, chọn xe → Lưu | Tạo thành công | High |
 | TC-TRV-002 | Thêm chỉ tên (bắt buộc) | Đăng nhập ADMIN | 1. Chỉ nhập tên → Lưu | Tạo thành công, các trường khác null | High |
-| TC-DRV-003 | Sửa lương cơ bản | Có tài xế cần sửa | 1. Đổi base_salary → Lưu | Lương cập nhật | Medium |
-| TC-DRV-004 | Phân xe cho tài xế | Tài xế chưa có xe | 1. Chọn assigned_truck → Lưu | Tài xế được phân xe | High |
-| TC-DRV-005 | Không có nút xóa tài xế | Xem bảng tài xế | 1. Kiểm tra cột thao tác | Chỉ có nút Sửa, KHÔNG có nút Xóa | High |
-| TC-DRV-006 | Sửa status → INACTIVE | Tài xế đang ACTIVE | 1. Đổi status → INACTIVE | Tài xế không còn hiển thị trong dropdown phân xe | Medium |
+| TC-DRV-003 | Sửa lương cơ bản | Có lái xe cần sửa | 1. Đổi base_salary → Lưu | Lương cập nhật | Medium |
+| TC-DRV-004 | Phân xe cho lái xe | Lái xe chưa có xe | 1. Chọn assigned_truck → Lưu | Lái xe được phân xe | High |
+| TC-DRV-005 | Không có nút xóa lái xe | Xem bảng lái xe | 1. Kiểm tra cột thao tác | Chỉ có nút Sửa, KHÔNG có nút Xóa | High |
+| TC-DRV-006 | Sửa status → INACTIVE | Lái xe đang ACTIVE | 1. Đổi status → INACTIVE | Lái xe không còn hiển thị trong dropdown phân xe | Medium |
 
 ### 5.7 Permission Tests
 
@@ -342,8 +342,8 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-EDGE-001 | Phân xe đang MAINTENANCE vào chuyến | Xe status=MAINTENANCE | 1. Phân xe đang bảo trì | Cảnh báo hoặc cho phép (kiểm tra behavior) | Medium |
-| TC-EDGE-002 | Phân tài xế INACTIVE vào chuyến | Tài xế status=INACTIVE | 1. Phân tài xế không hoạt động | Cảnh báo hoặc cho phép | Medium |
-| TC-EDGE-003 | Xóa xe đang được tài xế tham chiếu | Xe được assigned_truck_id | 1. Xóa xe | Xóa thành công (soft delete, không cascade) | Medium |
+| TC-EDGE-002 | Phân lái xe INACTIVE vào chuyến | Lái xe status=INACTIVE | 1. Phân lái xe không hoạt động | Cảnh báo hoặc cho phép | Medium |
+| TC-EDGE-003 | Xóa xe đang được lái xe tham chiếu | Xe được assigned_truck_id | 1. Xóa xe | Xóa thành công (soft delete, không cascade) | Medium |
 | TC-EDGE-004 | Thanh command bar không có chuyến | Không có chuyến CREATED/IN_TRANSIT | 1. Xem trang dispatch | Hiển thị 0 trên các KPI, không crash | Medium |
 | TC-EDGE-005 | Dispatch trang rỗng | Không có chuyến CREATED | 1. Xem orders queue | Hiển thị empty state | Low |
 
@@ -358,7 +358,7 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 
 ### Hạn chế
 
-- **Tài xế không thể xóa:** Endpoint DELETE `/api/drivers/:id` không tồn tại. Đổi status sang INACTIVE để "vô hiệu hóa".
+- **Lái xe không thể xóa:** Endpoint DELETE `/api/drivers/:id` không tồn tại. Đổi status sang INACTIVE để "vô hiệu hóa".
 - **ACCOUNTANT không xóa được xe:** Chỉ có `config:read` + `config:write`, không có `config:delete`.
 - **Phân xe lại chỉ cho CREATED:** Chuyến IN_TRANSIT/COMPLETED/LOCKED không thể phân xe lại.
 - **Dispatch idempotent:** Nếu chuyến đã IN_TRANSIT, gọi dispatch lần nữa trả về 200 mà không side effect.
@@ -366,4 +366,4 @@ Không có request body. Response là trip đã cập nhật với status = IN_T
 ### Dữ liệu Seed
 
 - 4 xe đầu kéo, mỗi xe ghi sẵn biển số rơ-mooc ghép cặp + loại (20FT/40FT)
-- Tài xế với lương cơ bản 7,500,000 — 8,500,000 VND
+- Lái xe với lương cơ bản 7,500,000 — 8,500,000 VND

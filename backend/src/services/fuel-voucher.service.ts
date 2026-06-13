@@ -113,7 +113,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
   </div>
 
   <div class="meta">
-    <span><strong>Tài xế:</strong> ${escapeHtml(data.driverName ?? '—')}</span>
+    <span><strong>Lái xe:</strong> ${escapeHtml(data.driverName ?? '—')}</span>
   </div>
 
   <table>
@@ -245,7 +245,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const meta3 = ws.getRow(row);
   meta3.height = 18;
   ws.mergeCells(`A${row}:E${row}`);
-  meta3.getCell(1).value = `Tài xế: ${data.driverName ?? '—'}`;
+  meta3.getCell(1).value = `Lái xe: ${data.driverName ?? '—'}`;
   meta3.getCell(1).font = { name: F, size: 10, color: { argb: CLR.dark } };
   row++;
 

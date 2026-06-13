@@ -233,7 +233,7 @@ export function TotalsPanel() {
         )}
         <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
           <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-            <Users size={13} style={{ color: "#10B981" }} /> Tiền lương tài xế
+            <Users size={13} style={{ color: "#10B981" }} /> Tiền lương lái xe
           </span>
           <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
             −{fmt(Number(driverSalary) || 0)}

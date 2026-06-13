@@ -274,7 +274,7 @@ export default function ProfitPage() {
               <p style={{ margin: 0, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>* Nguyên tắc ghi nhận:</p>
               <ul style={{ margin: 0, paddingLeft: 16 }}>
                 <li>Doanh thu và chi phí chỉ được ghi nhận sau khi chuyến đi đã chuyển sang trạng thái <strong>Đã khóa (LOCKED)</strong>.</li>
-                <li>Phí phạt tài xế được tính trực tiếp vào thu nhập tài chính khác của doanh nghiệp (Salary Deduction Ledger).</li>
+                <li>Phí phạt lái xe được tính trực tiếp vào thu nhập tài chính khác của doanh nghiệp (Salary Deduction Ledger).</li>
               </ul>
             </div>
           </div>

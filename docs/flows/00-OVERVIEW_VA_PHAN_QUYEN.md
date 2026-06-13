@@ -172,7 +172,7 @@ Authorization: Bearer <token>
 |------|-------|------|-------|-------|
 | Tổng quan | `/dashboard` | LayoutDashboard | — | Dashboard KPI |
 | Phân xe | `/dispatch` | Compass | Số chuyến CREATED | Điều vận chuyến |
-| Đội xe | `/fleet` | Layers | — | Quản lý xe & tài xế |
+| Đội xe | `/fleet` | Layers | — | Quản lý xe & lái xe |
 | Sổ chuyến đi | `/trips` | Truck | — | Danh sách chuyến |
 | Kỷ luật | `/penalties` | AlertTriangle | Số phạt tháng này | Quản lý phạt |
 

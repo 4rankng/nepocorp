@@ -154,13 +154,13 @@ export function PenaltyTable({
               </span>
             </div>
             <p className="page-subtitle">
-              Theo dõi vi phạm nghiệp vụ, mức phạt khấu trừ trực tiếp vào bảng lương tài xế
+              Theo dõi vi phạm nghiệp vụ, mức phạt khấu trừ trực tiếp vào bảng lương lái xe
             </p>
           </div>
         </div>
         <div className="page-actions">
           <Btn variant="secondary" icon={<Download size={14} />} onClick={() => {
-            const headers = ['Tài xế', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
+            const headers = ['Lái xe', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
             const rows = filteredPenalties.map(p => [
               p.driverName || '—',
               p.tripId ? String(p.tripId) : '—',
@@ -214,7 +214,7 @@ export function PenaltyTable({
         <KPI
           label="Lái xe đạt chuẩn"
           value={safeCount}
-          unit={`/${drivers.length} tài xế`}
+          unit={`/${drivers.length} lái xe`}
           icon={Users}
           variant="info"
           meta={
@@ -252,7 +252,7 @@ export function PenaltyTable({
             </div>
             <div style={{ minWidth: 0 }}>
               <div className="penalty-card-title">
-                Bảng xếp hạng tài xế
+                Bảng xếp hạng lái xe
                 <span className="count-pill">{drivers.length}</span>
               </div>
               <div className="penalty-card-sub">Sắp xếp theo chuỗi ngày an toàn và mức vi phạm nghiệp vụ</div>
@@ -336,7 +336,7 @@ export function PenaltyTable({
                 <thead>
                   <tr>
                     <th style={{ width: 48, textAlign: 'center' }}>#</th>
-                    <th>Tài xế</th>
+                    <th>Lái xe</th>
                     <th>Chuỗi an toàn</th>
                     <th>Vi phạm {scoreFilter === '90d' ? '90N' : scoreFilter.toUpperCase()}</th>
                     <th>Phạt YTD</th>
@@ -407,9 +407,9 @@ export function PenaltyTable({
             <div className="legend">
               <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
               <span style={{ opacity: 0.5 }}>·</span>
-              <span>{driversOver90} tài xế đạt mốc 90 ngày</span>
+              <span>{driversOver90} lái xe đạt mốc 90 ngày</span>
               <span style={{ opacity: 0.5 }}>·</span>
-              <span>{driversOver6m} tài xế vượt 6 tháng</span>
+              <span>{driversOver6m} lái xe vượt 6 tháng</span>
             </div>
             <span>Hiển thị {drivers.length}/{drivers.length}</span>
           </div>
@@ -513,7 +513,7 @@ export function PenaltyTable({
                         {getInitials(p.driverName || 'T')}
                       </div>
                       <div className="plog-body">
-                        <div className="plog-name">{p.driverName || 'Tài xế'}</div>
+                        <div className="plog-name">{p.driverName || 'Lái xe'}</div>
                         <div className="plog-meta">
                           <span className="plog-reason">{p.reasonText || p.customReason || '—'}</span>
                           <span className="plog-sep">·</span>

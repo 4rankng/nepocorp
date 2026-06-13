@@ -47,7 +47,7 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
       {/* Header */}
       <div className="fleet-head">
         <div>Biển số</div>
-        <div>Tài xế</div>
+        <div>Lái xe</div>
         <div className="fleet-col-route">Tuyến đường</div>
         <div className="fleet-col-cust">Khách hàng</div>
       </div>
@@ -73,7 +73,7 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
               <span className={`plate${isMaint ? ' maint' : ''}`}>{truck.licensePlate}</span>
             </div>
 
-            {/* Tài xế — name only, no avatar */}
+            {/* Lái xe — name only, no avatar */}
             <div className="fleet-cell fleet-driver">
               {isMaint ? <span className="no-driver"><Wrench size={13} /> Bảo dưỡng</span>
               : isRunning ? <span className="driver-name">{activeTrip.driverName}</span>

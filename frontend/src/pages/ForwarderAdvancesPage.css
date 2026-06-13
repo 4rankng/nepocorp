@@ -4,131 +4,6 @@
  * filter pills.  Tokens from styles/tokens.css; BEM with `fadv-` prefix.
  * ========================================================================== */
 
-/* ── Hero KPI Row ────────────────────────────────────────────────────────── */
-.fadv-hero-row {
-  display: grid;
-  grid-template-columns: 3fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.fadv-hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #005A2D, #00813F);
-  color: #fff;
-  border-radius: var(--r-lg, 18px);
-  padding: 28px 32px 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 148px;
-  box-shadow: 0 2px 8px rgba(0, 90, 45, 0.15);
-}
-
-.fadv-hero__eyebrow {
-  font-size: var(--fs-xs, 12px);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 10px;
-}
-
-.fadv-hero__amount {
-  font-family: var(--font-display);
-  font-size: clamp(28px, 4vw, 36px);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  color: #fff;
-  margin-bottom: 8px;
-}
-
-.fadv-hero__subtitle {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.4;
-}
-
-.fadv-hero__watermark {
-  position: absolute;
-  right: 20px;
-  bottom: 12px;
-  color: rgba(255, 255, 255, 0.1);
-  pointer-events: none;
-}
-
-/* ── Mini-KPI stack ──────────────────────────────────────────────────────── */
-.fadv-kpi-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.fadv-kpi-mini {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--r-lg, 18px);
-  padding: 16px 18px;
-  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
-  transition: transform 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
-              box-shadow 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
-}
-
-.fadv-kpi-mini:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.06);
-}
-
-.fadv-kpi-mini__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.fadv-kpi-mini--accent .fadv-kpi-mini__icon {
-  background: var(--accent-soft, #E6F7EE);
-  color: var(--accent, #00B14F);
-}
-
-.fadv-kpi-mini--warn .fadv-kpi-mini__icon {
-  background: var(--warning-soft, #FFFBEB);
-  color: var(--warning, #D97706);
-}
-
-.fadv-kpi-mini__body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.fadv-kpi-mini__value {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink, #0A0A0A);
-}
-
-.fadv-kpi-mini__label {
-  font-size: var(--fs-xs, 12px);
-  font-weight: 500;
-  color: var(--ink-3, #8B919B);
-  margin-top: 2px;
-}
-
 /* ── Card list ──────────────────────────────────────────────────────────── */
 .fadv-page .fadv-list {
   display: flex;
@@ -388,22 +263,22 @@
     font-size: 15px;
   }
 
-  .fadv-hero-row {
+  .fadv-page .hero-kpi-row {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  .fadv-hero {
+  .fadv-page .hero-kpi-card {
     padding: 22px 20px 20px;
     min-height: 120px;
   }
-  .fadv-kpi-stack {
+  .fadv-page .hero-kpi-stack {
     flex-direction: row;
   }
-  .fadv-kpi-mini {
+  .fadv-page .hero-kpi-mini {
     padding: 12px 14px;
     border-radius: var(--r, 12px);
   }
-  .fadv-kpi-mini__value {
+  .fadv-page .hero-kpi-mini__value {
     font-size: 18px;
   }
   .fadv-card-trip__icon {

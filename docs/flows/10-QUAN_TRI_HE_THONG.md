@@ -22,7 +22,7 @@ Module Quản trị hệ thống bao gồm 2 trang:
 | ADMIN (Quản trị) | Đầy đủ: xem, tạo, sửa, xoá | Xem đầy đủ |
 | MANAGER (Quản lý) | Chỉ xem (không CRUD) | Xem đầy đủ |
 | ACCOUNTANT (Kế toán) | Chỉ xem (không CRUD) | Xem đầy đủ |
-| DRIVER (Tài xế) | Không truy cập → redirect | Không truy cập → redirect |
+| DRIVER (Lái xe) | Không truy cập → redirect | Không truy cập → redirect |
 
 ---
 
@@ -33,7 +33,7 @@ Module Quản trị hệ thống bao gồm 2 trang:
 #### Header
 
 - Tiêu đề: **"Tài khoản người dùng"**
-- Phụ đề hiển thị tổng số tài khoản, số nhân sự văn phòng, số tài xế
+- Phụ đề hiển thị tổng số tài khoản, số nhân sự văn phòng, số lái xe
 - Nút **"Thêm tài khoản"** — chỉ hiển thị cho ADMIN
 
 #### 4 KPI Cards
@@ -42,7 +42,7 @@ Module Quản trị hệ thống bao gồm 2 trang:
 |---|-----|--------|-----|
 | 1 | Tổng tài khoản | Tổng số user trong hệ thống | Mặc định |
 | 2 | Nhân sự văn phòng | ADMIN + MANAGER + ACCOUNTANT | warn (vàng) |
-| 3 | Tài xế | Số user có role DRIVER | success (xanh lá) |
+| 3 | Lái xe | Số user có role DRIVER | success (xanh lá) |
 | 4 | Bị khoá / Ngưng | Số user trạng thái INACTIVE | danger (đỏ) |
 
 #### Bộ lọc (Filter Toolbar)
@@ -52,7 +52,7 @@ Module Quản trị hệ thống bao gồm 2 trang:
   - Quản trị (số ADMIN)
   - Quản lý (số MANAGER)
   - Kế toán (số ACCOUNTANT)
-  - Tài xế (số DRIVER)
+  - Lái xe (số DRIVER)
 - **Ô tìm kiếm**: tìm theo username, email, hoặc SĐT
 
 #### Form thêm tài khoản (ADMIN only)
@@ -108,7 +108,7 @@ Mỗi tài khoản hiển thị dạng card với đầy đủ thông tin: avata
 | ADMIN | Quản trị | danger (đỏ) |
 | MANAGER | Quản lý | warn (vàng) |
 | ACCOUNTANT | Kế toán | neutral (xám) |
-| DRIVER | Tài xế | success (xanh lá) |
+| DRIVER | Lái xe | success (xanh lá) |
 
 ---
 
@@ -249,7 +249,7 @@ User truy cập /users hoặc /audit-logs
 | `TRIP_COMPLETED` | Hoàn thành | trip | Tím (#7c3aed) |
 | `TRIP_LOCKED` | Khóa chuyến | trip | Tím (#7c3aed) |
 | `TRIP_CANCELED` | Hủy chuyến | trip | Tím (#7c3aed) |
-| `TRIP_REASSIGNED` | Đổi xe / tài xế | trip | Tím (#7c3aed) |
+| `TRIP_REASSIGNED` | Đổi xe / lái xe | trip | Tím (#7c3aed) |
 | `PAYMENT_RECEIVED` | Thanh toán | finance | Vàng (warning) |
 | `ADJUSTMENT_CREATED` | Điều chỉnh | finance | Vàng (warning) |
 | `PROFIT_DISTRIBUTED` | Chia lợi nhuận | finance | Vàng (warning) |
@@ -289,7 +289,7 @@ User truy cập /users hoặc /audit-logs
 
 **Expected:**
 
-- Header hiển thị "Tài khoản người dùng" + phụ đề (tổng số, nhân sự, tài xế)
+- Header hiển thị "Tài khoản người dùng" + phụ đề (tổng số, nhân sự, lái xe)
 - 4 KPI cards hiển thị đúng số liệu
 - Bảng danh sách user hiển thị đầy đủ cột
 - Nút "Thêm tài khoản" hiển thị
@@ -309,7 +309,7 @@ User truy cập /users hoặc /audit-logs
 
 - Card "Tổng tài khoản" = tổng số user
 - Card "Nhân sự văn phòng" = số ADMIN + MANAGER + ACCOUNTANT, màu warn (vàng)
-- Card "Tài xế" = số DRIVER, màu success (xanh lá)
+- Card "Lái xe" = số DRIVER, màu success (xanh lá)
 - Card "Bị khoá / Ngưng" = số user INACTIVE, màu danger (đỏ)
 
 ---
@@ -323,7 +323,7 @@ User truy cập /users hoặc /audit-logs
 1. Click pill "Quản trị"
 2. Click pill "Quản lý"
 3. Click pill "Kế toán"
-4. Click pill "Tài xế"
+4. Click pill "Lái xe"
 5. Click pill "Tất cả"
 
 **Expected:**
@@ -456,7 +456,7 @@ User truy cập /users hoặc /audit-logs
 
 1. Click nút Edit trên một user
 2. Dòng chuyển sang chế độ inline edit
-3. Đổi vai trò từ "Tài xế" sang "Quản lý"
+3. Đổi vai trò từ "Lái xe" sang "Quản lý"
 4. Click Lưu
 
 **Expected:**
@@ -583,7 +583,7 @@ User truy cập /users hoặc /audit-logs
 - ADMIN → pill đỏ (danger), label "Quản trị"
 - MANAGER → pill vàng (warn), label "Quản lý"
 - ACCOUNTANT → pill xám (neutral), label "Kế toán"
-- DRIVER → pill xanh lá (success), label "Tài xế"
+- DRIVER → pill xanh lá (success), label "Lái xe"
 
 ---
 
@@ -773,7 +773,7 @@ User truy cập /users hoặc /audit-logs
 - TRIP_COMPLETED → "Hoàn thành" (chấm tím)
 - TRIP_LOCKED → "Khóa chuyến" (chấm tím)
 - TRIP_CANCELED → "Hủy chuyến" (chấm tím)
-- TRIP_REASSIGNED → "Đổi xe / tài xế" (chấm tím)
+- TRIP_REASSIGNED → "Đổi xe / lái xe" (chấm tím)
 - PAYMENT_RECEIVED → "Thanh toán" (chấm vàng)
 - ADJUSTMENT_CREATED → "Điều chỉnh" (chấm vàng)
 - PROFIT_DISTRIBUTED → "Chia lợi nhuận" (chấm vàng)

@@ -12,6 +12,7 @@ import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './DebtListPage.css';
+import '../components/shared/HeroKpiRow.css';
 
 interface CustomerDebtInfo {
   customerId: number;
@@ -75,7 +76,7 @@ export default function DebtListPage() {
   const prefersReduced = usePrefersReducedMotion();
   const { rootRef } = usePageAnimations({
     ready: !loading,
-    selectors: ['.debt-hero', '.debt-kpi-mini', '.debt-aging-card', '.debt-data-card'],
+    selectors: ['.hero-kpi-card', '.hero-kpi-mini', '.debt-aging-card', '.debt-data-card'],
   });
   const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 80 });
 
@@ -211,52 +212,52 @@ export default function DebtListPage() {
       {/* ══════════════════════════════════════════════════════════════════════
         *  ZONE 1 — Hero KPI Row (bento: 3-col hero + 1-col stacked minis)
         * ══════════════════════════════════════════════════════════════════════ */}
-      <div className="debt-hero-row">
+      <div className="hero-kpi-row debt-hero-row">
         {/* Hero card — spans 3 columns */}
-        <div className="debt-hero">
+        <div className="hero-kpi-card debt-hero">
           <div className="debt-hero__content">
-            <span className="debt-hero__eyebrow">Tổng công nợ phải thu</span>
-            <div className="debt-hero__amount">
+            <span className="hero-kpi-card__eyebrow">Tổng công nợ phải thu</span>
+            <div className="hero-kpi-card__amount debt-hero__amount">
               <span ref={(el) => { counterRefs.current.heroTotal = el; }}>
                 {prefersReduced ? formatCompact(totals.total) : '0'}
               </span>
               <span className="debt-hero__currency">₫</span>
             </div>
-            <span className="debt-hero__subtitle">
+            <span className="hero-kpi-card__subtitle">
               {rawCustomers.length} khách hàng · cập nhật vừa xong
             </span>
           </div>
-          <div className="debt-hero__watermark" aria-hidden="true">
+          <div className="hero-kpi-card__watermark" aria-hidden="true">
             <Wallet size={72} strokeWidth={1} />
           </div>
         </div>
 
         {/* Stacked mini-KPI cards — span 1 column */}
-        <div className="debt-kpi-stack">
-          <div className="debt-kpi-mini debt-kpi-mini--danger">
-            <div className="debt-kpi-mini__icon">
+        <div className="hero-kpi-stack debt-kpi-stack">
+          <div className="hero-kpi-mini debt-kpi-mini--danger">
+            <div className="hero-kpi-mini__icon">
               <AlertTriangle size={16} />
             </div>
-            <div className="debt-kpi-mini__body">
-              <span className="debt-kpi-mini__value">
+            <div className="hero-kpi-mini__body">
+              <span className="hero-kpi-mini__value">
                 <span ref={(el) => { counterRefs.current.overdueCount = el; }}>
                   {prefersReduced ? totals.overdueCount : 0}
                 </span>
               </span>
-              <span className="debt-kpi-mini__label">quá hạn</span>
+              <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
           </div>
-          <div className="debt-kpi-mini debt-kpi-mini--warning">
-            <div className="debt-kpi-mini__icon">
+          <div className="hero-kpi-mini debt-kpi-mini--warning">
+            <div className="hero-kpi-mini__icon">
               <AlertCircle size={16} />
             </div>
-            <div className="debt-kpi-mini__body">
-              <span className="debt-kpi-mini__value">
+            <div className="hero-kpi-mini__body">
+              <span className="hero-kpi-mini__value">
                 <span ref={(el) => { counterRefs.current.highRiskCount = el; }}>
                   {prefersReduced ? totals.highRiskCount : 0}
                 </span>
               </span>
-              <span className="debt-kpi-mini__label">rủi ro cao</span>
+              <span className="hero-kpi-mini__label">rủi ro cao</span>
             </div>
           </div>
         </div>

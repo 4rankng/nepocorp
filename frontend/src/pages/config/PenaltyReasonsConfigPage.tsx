@@ -358,7 +358,7 @@ export default function PenaltyReasonsConfigPage() {
           <div>
             <h1 className="page-title">Danh mục lỗi vi phạm</h1>
             <p className="page-subtitle">
-              Quản lý các loại lỗi vi phạm của tài xế và quy định mức phạt mặc định để áp dụng nhanh chóng.
+              Quản lý các loại lỗi vi phạm của lái xe và quy định mức phạt mặc định để áp dụng nhanh chóng.
             </p>
           </div>
         </div>

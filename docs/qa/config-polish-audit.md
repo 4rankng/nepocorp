@@ -96,7 +96,7 @@ Order = alphabetical by slug.
 
 ### `drivers`
 
-- **Issue:** Title `Tài xế` mismatched hub label `Người dùng & tài xế`. Description thin. No per-topic empty illustration. Row height 72 px (root cause = global `!important`).
+- **Issue:** Title `Lái xe` mismatched hub label `Người dùng & lái xe`. Description thin. No per-topic empty illustration. Row height 72 px (root cause = global `!important`).
 - **Changes:** Title aligned. Description rewritten. `pageSlug="drivers"`, `emptyIllustration="empty-users.svg"`, friendly empty hint. Row height now 52 px (via root fix).
 - **Files:** `frontend/src/pages/config/DriversConfigPage.tsx`.
 
@@ -144,7 +144,7 @@ Order = alphabetical by slug.
 ### `road-allowances`
 
 - **Issue:** Description thin, no empty illustration.
-- **Changes:** Description includes the actual computation rules from the business docs. `pageSlug="road-allowances"`, `emptyIllustration="empty-routes.svg"`, hint linking to tài xế salary.
+- **Changes:** Description includes the actual computation rules from the business docs. `pageSlug="road-allowances"`, `emptyIllustration="empty-routes.svg"`, hint linking to lái xe salary.
 - **Files:** `frontend/src/pages/config/RoadAllowancesConfigPage.tsx`.
 
 ### `routes`
@@ -194,7 +194,7 @@ After all 18 sub-pages, the surfaces share:
 
 ## Hub (`/config`) — re-verified
 
-The hub itself was already polished in mobile pass 17 (S1936 / 12410). Re-screenshotting after this pass: tiles unchanged, status counts read correctly ("Đã cấu hình", "8 quy tắc", "8 tài xế", "2 cổ đông", etc.). All 18 tiles linked to surfaces that now share the polish.
+The hub itself was already polished in mobile pass 17 (S1936 / 12410). Re-screenshotting after this pass: tiles unchanged, status counts read correctly ("Đã cấu hình", "8 quy tắc", "8 lái xe", "2 cổ đông", etc.). All 18 tiles linked to surfaces that now share the polish.
 
 ## Files changed (summary)
 

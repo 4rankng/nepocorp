@@ -80,7 +80,7 @@ export const createTripSchema = z.object({
       ctx.addIssue({ code: 'custom', path: ['truckId'], message: 'Xe đầu kéo là bắt buộc cho chuyến xe nội bộ' });
     }
     if (!data.driverId) {
-      ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Tài xế là bắt buộc cho chuyến xe nội bộ' });
+      ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho chuyến xe nội bộ' });
     }
   } else {
     if (!data.externalCarrierId) {

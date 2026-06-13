@@ -8,7 +8,7 @@
 
 Hệ thống chấm công & tính lương giải quyết bài toán cân đối giữa:
 - **Chi phí phân bổ theo chuyến** (ghi nhận vào P&L từng chuyến)
-- **Lương tháng thực nhận** (bao gồm những ngày sửa xe, chờ việc mà tài xế vẫn hưởng lương)
+- **Lương tháng thực nhận** (bao gồm những ngày sửa xe, chờ việc mà lái xe vẫn hưởng lương)
 
 Hai luồng song song:
 1. **Chuyến đi thực tế** — tự động từ dữ liệu vận hành
@@ -22,12 +22,12 @@ Hai luồng song song:
 
 | Mã | Tên | Mô tả | Ai ghi |
 |---|---|---|---|
-| `TRIP_DAY` | Ngày đi chuyến | Hệ thống tự ghi khi tài xế có chuyến bắt đầu/đang chạy trong ngày | Tự động |
+| `TRIP_DAY` | Ngày đi chuyến | Hệ thống tự ghi khi lái xe có chuyến bắt đầu/đang chạy trong ngày | Tự động |
 | `STANDBY` | Chờ việc / Sửa xe | Trực bãi, xe hỏng, không có hàng — vẫn hưởng lương đầy đủ | Kế toán |
 | `PERSONAL_LEAVE` | Nghỉ việc riêng | Tự xin nghỉ không lương | Kế toán |
 | `WEEKLY_OFF` | Nghỉ tuần | Mặc định Chủ nhật hoặc nghỉ bù theo lịch — hệ thống tự tạo | Tự động |
 
-> **Lưu ý Chủ nhật xuyên chuyến:** Nếu tài xế đang chạy chuyến kéo dài qua ngày Chủ nhật, ngày đó được tính là `TRIP_DAY` (ngày làm việc bình thường, không phải nghỉ tuần).
+> **Lưu ý Chủ nhật xuyên chuyến:** Nếu lái xe đang chạy chuyến kéo dài qua ngày Chủ nhật, ngày đó được tính là `TRIP_DAY` (ngày làm việc bình thường, không phải nghỉ tuần).
 
 ### 2.2 Bảng `driver_work_days`
 
@@ -87,12 +87,12 @@ daily_rate = (base_salary + social_insurance) / standard_work_days
 
 net_salary = base_salary + adjustment - penalties
 
-*Lưu ý: Các khoản Lương chuyến (total_trip_salary) và Chi phí chờ việc (standby_cost) là các khoản phân bổ để hạch toán chi phí công ty, KHÔNG cộng vào `net_salary` của tài xế.*
+*Lưu ý: Các khoản Lương chuyến (total_trip_salary) và Chi phí chờ việc (standby_cost) là các khoản phân bổ để hạch toán chi phí công ty, KHÔNG cộng vào `net_salary` của lái xe.*
 ```
 
-> **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe trên trang Cấu hình → Lái xe, lưu trong cột `drivers.social_insurance`. Cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho tài xế (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp. *(Pete xác nhận 11/6)*
+> **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe trên trang Cấu hình → Lái xe, lưu trong cột `drivers.social_insurance`. Cộng vào `base_salary` trước khi tính `daily_rate` để phân bổ đúng chi phí vào từng chuyến và khoản chờ việc. Lương thực trả cho lái xe (`net_salary`) vẫn dùng `base_salary` gốc — khoản BHXH được hạch toán riêng vào chi phí doanh nghiệp. *(Pete xác nhận 11/6)*
 
-> **Điều chỉnh ngày công:** Khi tài xế nghỉ không lương (`PERSONAL_LEAVE`), số ngày công hưởng lương sẽ giảm xuống dưới chuẩn, hệ thống tự động trừ tiền qua `adjustment`. Ngược lại, nếu tài xế đi làm vào ngày Chủ nhật (WEEKLY_OFF) và không nghỉ bù, số ngày công sẽ lớn hơn chuẩn, hệ thống tự động cộng tiền thêm (hệ số 1).
+> **Điều chỉnh ngày công:** Khi lái xe nghỉ không lương (`PERSONAL_LEAVE`), số ngày công hưởng lương sẽ giảm xuống dưới chuẩn, hệ thống tự động trừ tiền qua `adjustment`. Ngược lại, nếu lái xe đi làm vào ngày Chủ nhật (WEEKLY_OFF) và không nghỉ bù, số ngày công sẽ lớn hơn chuẩn, hệ thống tự động cộng tiền thêm (hệ số 1).
 
 ### 3.2 Số ngày công chuẩn (`standard_work_days`)
 
@@ -238,8 +238,8 @@ Driver mở /my-earnings?month=2026-06
 
 | Method | Endpoint | Quyền | Mô tả |
 |---|---|---|---|
-| GET | `/api/salary` | MANAGER | Danh sách kỳ lương tất cả tài xế (lọc theo tháng) |
-| GET | `/api/salary/:driverId/:year/:month` | ACCOUNTANT, MANAGER | Xem tổng kết lương tháng của tài xế |
+| GET | `/api/salary` | MANAGER | Danh sách kỳ lương tất cả lái xe (lọc theo tháng) |
+| GET | `/api/salary/:driverId/:year/:month` | ACCOUNTANT, MANAGER | Xem tổng kết lương tháng của lái xe |
 | PUT | `/api/salary/:driverId/:year/:month/workdays` | ACCOUNTANT | Cập nhật hàng loạt ngày công (array diff) |
 | POST | `/api/salary/:driverId/:year/:month/confirm` | ACCOUNTANT, MANAGER | Xác nhận kỳ lương (DRAFT → CONFIRMED) |
 | GET | `/api/driver/me/earnings` | DRIVER | Xem thu nhập cá nhân (scope theo userId) |
@@ -269,7 +269,7 @@ Sau khi xác nhận kỳ lương:
 | Chỉnh sửa ngày công | Không | Có | Có |
 | Xác nhận kỳ lương | Không | Có | Có |
 | Xem thu nhập (của mình) | /my-earnings | Có | Có |
-| Xem thu nhập tất cả tài xế | Không | Có | Có |
+| Xem thu nhập tất cả lái xe | Không | Có | Có |
 
 ---
 
@@ -279,7 +279,7 @@ Sau khi xác nhận kỳ lương:
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |---|---|---|---|---|---|
-| TC-LC-001 | Chuyến → TRIP_DAY tự điền | Chuyến IN_TRANSIT, tài xế A | Chuyển sang IN_TRANSIT | Ngày xuất phát ghi TRIP_DAY cho tài xế A | High |
+| TC-LC-001 | Chuyến → TRIP_DAY tự điền | Chuyến IN_TRANSIT, lái xe A | Chuyển sang IN_TRANSIT | Ngày xuất phát ghi TRIP_DAY cho lái xe A | High |
 | TC-LC-002 | Chuyến dài xuyên CN | Chuyến T7→T2 (3 ngày), xuyên CN | Xem lịch | CN được ghi TRIP_DAY, không phải WEEKLY_OFF | High |
 | TC-LC-003 | Hủy chuyến → xóa TRIP_DAY | Chuyến đã ghi TRIP_DAY | Hủy chuyến | Các ngày TRIP_DAY của chuyến đó bị xóa | High |
 | TC-LC-004 | CN không có chuyến | Chủ nhật không có chuyến | Xem lịch | Ghi WEEKLY_OFF | Medium |
@@ -323,7 +323,7 @@ Sau khi xác nhận kỳ lương:
 |---|---|---|---|
 | 1 | BHXH phần doanh nghiệp cộng vào tổng lương trước khi tính daily_rate để phân bổ đúng | Pete | 4/6/2026 |
 | 2 | `standard_work_days` tính theo số ngày thực tế từng tháng trừ Chủ nhật (không cố định 26) | Pete | 4/6/2026 |
-| 3 | Chỉ kế toán mới được chấm công; tài xế chỉ có quyền xem | Pete | 4/6/2026 |
+| 3 | Chỉ kế toán mới được chấm công; lái xe chỉ có quyền xem | Pete | 4/6/2026 |
 | 4 | Chủ nhật đang trong chuyến → tính là `TRIP_DAY` (ngày làm việc bình thường) | Pete | 4/6/2026 |
 | 5 | Lương chuyến quy đổi: **hệ thống tự điền** theo công thức `(base+BHXH)/26×days`, kế toán có thể sửa/ghi đè | Pete | 11/6/2026 |
 | 6 | Chi phí chờ việc (standby_cost) hạch toán vào chi phí chung, không gán vào chuyến cụ thể | Thiết kế | 4/6/2026 |

@@ -23,6 +23,8 @@ import {
   KeyRound,
   ChevronRight,
   Shield,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -135,6 +137,14 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
   return 'NEPO';
 }
+
+const getInitials = (name?: string | null) => {
+  if (!name) return 'TX';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return 'TX';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 // ─── Layout component ─────────────────────────────────────────────────────
 
@@ -435,39 +445,64 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {/* Drag handle */}
             <div className="mobile-user-sheet-handle" />
 
-            {/* Profile hero with brand gradient */}
-            <div className="mobile-user-sheet-hero">
-              <div className="mobile-user-sheet-header">
-                <div className="avatar">
-                  <User size={24} />
+            {/* Profile Bento Grid Layout */}
+            <div className="profile-bento-grid">
+              {/* Avatar & Role Card (Vertical Span) */}
+              <div className="profile-bento-card profile-bento-card--avatar">
+                <div className="bento-avatar">
+                  {getInitials(user.fullName)}
                 </div>
-                <div className="meta">
-                  <div className="name">{user.fullName || getRoleLabel(user.role)}</div>
-                  <div className="email">{user.email || user.username}</div>
-                  <div className="mobile-user-sheet-role-badge">
-                    <Shield size={10} />
-                    {getRoleLabel(user.role)}
+                <div className="bento-role-badge">
+                  <Shield size={10} />
+                  <span>{getRoleLabel(user.role)}</span>
+                </div>
+              </div>
+
+              {/* Full Name Card */}
+              <div className="profile-bento-card profile-bento-card--name">
+                <span className="bento-label">Họ và tên</span>
+                <div className="bento-value">{user.fullName || getRoleLabel(user.role)}</div>
+              </div>
+
+              {/* Contact Info Row */}
+              <div className="profile-bento-row">
+                {/* Username Card */}
+                <div className="profile-bento-card profile-bento-card--username">
+                  <span className="bento-label">Tài khoản</span>
+                  <div className="bento-value">
+                    <User size={12} />
+                    <span>{user.username || '—'}</span>
+                  </div>
+                </div>
+
+                {/* Phone Card */}
+                <div className="profile-bento-card profile-bento-card--phone">
+                  <span className="bento-label">Điện thoại</span>
+                  <div className="bento-value">
+                    <Phone size={12} />
+                    <span>{user.phone || '—'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mobile-user-sheet-divider" />
-
-            {/* Menu items with icon tiles + trailing chevrons */}
+            {/* Menu items with card tiles + trailing chevrons */}
             <div className="mobile-user-sheet-body">
-              <button className="mobile-user-sheet-btn" onClick={openProfileModal}>
+              <div className="mobile-user-sheet-section-title">Tài khoản & Thiết lập</div>
+              
+              <button className="mobile-user-sheet-btn profile" onClick={openProfileModal}>
                 <span className="icon-tile"><UserCog size={18} /></span>
                 <span className="btn-label">Thông tin cá nhân</span>
                 <ChevronRight size={16} className="btn-chevron" />
               </button>
-              <button className="mobile-user-sheet-btn" onClick={openPasswordModal}>
+              
+              <button className="mobile-user-sheet-btn password" onClick={openPasswordModal}>
                 <span className="icon-tile"><KeyRound size={18} /></span>
                 <span className="btn-label">Đổi mật khẩu</span>
                 <ChevronRight size={16} className="btn-chevron" />
               </button>
 
-              <div className="mobile-user-sheet-divider" />
+              <div className="mobile-user-sheet-section-title">Hệ thống</div>
 
               <button className="mobile-user-sheet-btn danger" onClick={() => { closeUserMenu(); logout(); }}>
                 <span className="icon-tile"><LogOut size={18} /></span>
@@ -476,7 +511,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="mobile-user-sheet-footer" />
+            <div className="mobile-user-sheet-footer">
+              <span className="app-version">TingTing Logistics v1.2.0</span>
+            </div>
           </div>
         </div>
       )}

@@ -321,7 +321,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <th className="num">#</th>
                 <th>Biển số xe đầu</th>
                 <th>Rơ-moóc</th>
-                <th>Tài xế gán</th>
+                <th>Lái xe gán</th>
                 <th className="center">Trạng thái</th>
               </tr>
             </thead>
@@ -394,7 +394,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                   <span className="m-card__row-value">{trailer ? trailer.licensePlate : '—'}</span>
                 </div>
                 <div className="m-card__row">
-                  <span className="m-card__row-label">Tài xế</span>
+                  <span className="m-card__row-label">Lái xe</span>
                   <span className="m-card__row-value">{driver ? driver.name : '— Chưa phân —'}</span>
                 </div>
                 <div className="fleet-card-actions">
@@ -430,7 +430,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
           return [
             { label: 'Biển số xe đầu', value: <Plate plate={t.licensePlate} tag="VN" /> },
             { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
-            { label: 'Tài xế gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
+            { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
           ];
         })()}
@@ -474,7 +474,7 @@ function DriverCard({ drivers, truckMap, crud }: {
           </div>
           <div>
             <div className="fleet-card-title">
-              Tài xế <span className="count-pill">{drivers.length}</span>
+              Lái xe <span className="count-pill">{drivers.length}</span>
             </div>
             <div className="fleet-card-sub">Nhân sự lái xe, lương cơ bản và phân công xe</div>
           </div>
@@ -486,7 +486,7 @@ function DriverCard({ drivers, truckMap, crud }: {
           </div>
           <Btn variant="ghost" size="sm" icon={<Filter size={13} />} disabled title="Sắp ra mắt">Lọc</Btn>
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
-            <Plus size={13} /> Thêm tài xế
+            <Plus size={13} /> Thêm lái xe
           </button>
         </div>
       </div>
@@ -496,7 +496,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             <thead>
               <tr>
                 <th className="num">#</th>
-                <th>Tên tài xế</th>
+                <th>Tên lái xe</th>
                 <th>SĐT</th>
                 <th>Xe phân công</th>
                 <th>Lương CB</th>
@@ -545,7 +545,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             {unassigned > 0 && (
               <>
                 <span style={styles.dotSep}>·</span>
-                <span>{unassigned} tài xế chưa được phân xe</span>
+                <span>{unassigned} lái xe chưa được phân xe</span>
               </>
             )}
           </div>
@@ -596,7 +596,7 @@ function DriverCard({ drivers, truckMap, crud }: {
             {unassigned > 0 && (
               <>
                 <span style={styles.dotSep}>·</span>
-                <span>{unassigned} tài xế chưa được phân xe</span>
+                <span>{unassigned} lái xe chưa được phân xe</span>
               </>
             )}
           </div>
@@ -606,7 +606,7 @@ function DriverCard({ drivers, truckMap, crud }: {
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <DetailModal
         isOpen={viewingId != null}
-        title={viewingId != null ? `Tài xế ${drivers.find(d => d.id === viewingId)?.name ?? ''}` : ''}
+        title={viewingId != null ? `Lái xe ${drivers.find(d => d.id === viewingId)?.name ?? ''}` : ''}
         onClose={() => setViewingId(null)}
         itemId={viewingId ?? 0}
         deleting={crud.deleting}
@@ -693,11 +693,11 @@ export default function FleetPage() {
     <div className="fleet-page" ref={rootRef}>
       <PageHeader
         title="Đội xe"
-        description="Quản lý xe đầu kéo, rơ-moóc và tài xế trong một trang"
+        description="Quản lý xe đầu kéo, rơ-moóc và lái xe trong một trang"
         action={
           <div style={styles.actionRow}>
             <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => {
-              const headers = ['Loại', 'Biển số', 'Trạng thái', 'Tài xế gán'];
+              const headers = ['Loại', 'Biển số', 'Trạng thái', 'Lái xe gán'];
               const rows = [
                 ...trucks.map(t => ['Xe đầu kéo', t.licensePlate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
               ];
@@ -741,7 +741,7 @@ export default function FleetPage() {
           }
         />
         <KPI
-          label="Tài xế"
+          label="Lái xe"
           value={activeDrivers}
           unit="người"
           icon={UserCheck}
@@ -764,7 +764,7 @@ export default function FleetPage() {
           meta={
             <span style={styles.metaRow}>
               {readyToRun >= activeTrucks ? (
-                <span style={styles.textSuccess}>Đủ xe + tài xế</span>
+                <span style={styles.textSuccess}>Đủ xe + lái xe</span>
               ) : (
                 <>
                   <span>{readyToRun} xe sẵn sàng</span>

@@ -94,7 +94,7 @@ export default function ConfigPage() {
     'road-allowances':          { status: countLabel(roadAllowances.data?.total, 'tuyến') },
     'trip-expense':             { status: '5 mục', statusColor: '#10B981' },
     'penalty-reasons':          { status: countLabel(penaltyReasons.data?.total, 'quy tắc') },
-    'drivers':                  { status: countLabel(drivers.data?.total, 'tài xế') },
+    'drivers':                  { status: countLabel(drivers.data?.total, 'lái xe') },
     'cap-table':                { status: countLabel(capTable.data?.total, 'cổ đông') },
     'customers':                { status: countLabel(customers.data?.total, 'khách hàng') },
     'routes':                   { status: countLabel(routes.data?.total, 'tuyến chặng') },

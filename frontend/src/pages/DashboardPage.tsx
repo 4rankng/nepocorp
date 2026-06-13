@@ -223,7 +223,7 @@ export default function DashboardPage() {
     if (realTotal <= 0) return [];
     const slices: DonutSlice[] = [
       { name: 'Nhiên liệu', pct: Math.round(((d.fuelCost || 0) / realTotal) * 100), color: '#005A2D' },
-      { name: 'Lương tài xế', pct: Math.round(((d.driverCost || 0) / realTotal) * 100), color: '#16A34A' },
+      { name: 'Lương lái xe', pct: Math.round(((d.driverCost || 0) / realTotal) * 100), color: '#16A34A' },
       { name: 'Phí cầu đường', pct: Math.round(((d.roadCost || 0) / realTotal) * 100), color: '#2563EB' },
       { name: 'Phí quản lý', pct: Math.round(((d.mgmtCost || 0) / realTotal) * 100), color: '#C2780B' },
     ].filter(s => s.pct > 0);
@@ -475,7 +475,7 @@ export default function DashboardPage() {
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Tình trạng đội xe</div>
-                <div className="sub">{fleet.total} đầu kéo · {fleet.drivers} tài xế</div>
+                <div className="sub">{fleet.total} đầu kéo · {fleet.drivers} lái xe</div>
               </div>
               <button className="wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
             </div>

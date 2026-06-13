@@ -10,7 +10,7 @@
 
 ### 1.1 Mô tả
 
-Module Chuyến đi quản lý toàn bộ vòng đời vận tải: tạo → xuất phát → hoàn thành → khóa sổ. Là module trung tâm kết nối tất cả module khác (tài chính, xe, tài xế, khách hàng).
+Module Chuyến đi quản lý toàn bộ vòng đời vận tải: tạo → xuất phát → hoàn thành → khóa sổ. Là module trung tâm kết nối tất cả module khác (tài chính, xe, lái xe, khách hàng).
 
 ### 1.2 Vòng đời trạng thái
 
@@ -29,8 +29,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 |-----------|:-----:|:-------:|:----------:|:------:|
 | Xem tất cả chuyến | ✅ | ✅ | ✅ | ❌ (chỉ mình) |
 | Tạo chuyến | ✅ | ✅ | ❌ | ❌ |
-| Sửa thông tin cấu trúc (khách hàng, tuyến, xe, tài xế) trên CREATED | ✅ | ✅ | ❌ | ❌ |
-| Sửa số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương tài xế) trên IN_TRANSIT/COMPLETED | ✅ | ✅ | ✅ | ❌ |
+| Sửa thông tin cấu trúc (khách hàng, tuyến, xe, lái xe) trên CREATED | ✅ | ✅ | ❌ | ❌ |
+| Sửa số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương lái xe) trên IN_TRANSIT/COMPLETED | ✅ | ✅ | ✅ | ❌ |
 | Xóa (chỉ CREATED) | ✅ | ✅ | ❌ | ❌ |
 | Xem tài chính | ✅ | ✅ | ✅ | ❌ |
 
@@ -59,8 +59,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
    - **Tuyến đường** (dropdown từ danh sách tuyến)
    - **VAT Rate** (tỷ lệ thuế, mặc định 8% hoặc 10%)
    - **Chế độ điều xe**: Chọn **Xe nhà** (OWN) hoặc **Xe ngoài** (EXTERNAL)
-     - *Nếu Xe nhà*: Chọn **Xe đầu kéo** (ACTIVE) và **Tài xế**.
-     - *Nếu Xe ngoài*: Chọn **Đối tác vận chuyển** (NCC), nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe**, **Tên tài xế**, **SĐT tài xế**.
+     - *Nếu Xe nhà*: Chọn **Xe đầu kéo** (ACTIVE) và **Lái xe**.
+     - *Nếu Xe ngoài*: Chọn **Đối tác vận chuyển** (NCC), nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe**, **Tên lái xe**, **SĐT lái xe**.
    - **Ngày xuất phát** (date picker)
    - **Ngày dự kiến đến** (date picker)
    - **Loại hàng** (tùy chọn)
@@ -74,7 +74,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 ### 2.2 Chỉnh sửa chuyến (PUT /api/trips/:id)
 
 **Trước khi xuất phát (CREATED):** Manager/Admin sửa được mọi trường. Kế toán không sửa (chỉ manager/admin tạo + chỉnh cấu trúc).
-**Đang chạy (IN_TRANSIT):** Manager/Admin + Kế toán sửa được số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương tài xế). Nút "Nhập số liệu" hiển thị cho cả hai role.
+**Đang chạy (IN_TRANSIT):** Manager/Admin + Kế toán sửa được số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương lái xe). Nút "Nhập số liệu" hiển thị cho cả hai role.
 **Hoàn thành (COMPLETED):** Manager/Admin + Kế toán sửa được số liệu tài chính. Manager/Admin thấy nút "Chỉnh sửa", kế toán thấy nút "Nhập số liệu" (cùng form, cùng endpoint `PUT /actuals`).
 **Đã khóa (LOCKED):** KHÔNG sửa được — nút Sửa bị ẩn.
 
@@ -84,7 +84,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 
 | Từ → Đến | Điều kiện | Ai thực hiện |
 |----------|-----------|-------------|
-| CREATED → IN_TRANSIT | Xe + tài xế đã gán | ADMIN/MANAGER |
+| CREATED → IN_TRANSIT | Xe + lái xe đã gán | ADMIN/MANAGER |
 | IN_TRANSIT → COMPLETED | actualArrival đã nhập | ADMIN/MANAGER/DRIVER |
 | COMPLETED → LOCKED | Chi phí đầy đủ | ADMIN/MANAGER |
 | CREATED/IN_TRANSIT/COMPLETED → CANCELLED | Lý do hủy | ADMIN/MANAGER |
@@ -110,7 +110,7 @@ Chỉ xóa được chuyến ở trạng thái **CREATED**. Chuyến IN_TRANSIT,
 [ADMIN/MANAGER tạo chuyến]
     │
     ▼ CREATED
-    │  Chọn KH + Tuyến + Xe + Tài xế
+    │  Chọn KH + Tuyến + Xe + Lái xe
     │  Giá cước tự điền
     │  Hoa hồng chi KH (nhập tay)
     │  Lương chuyến quy đổi tự điền (khi có lái xe + ngày)
@@ -119,7 +119,7 @@ Chỉ xóa được chuyến ở trạng thái **CREATED**. Chuyến IN_TRANSIT,
     ▼ Nhấn "Xuất phát"
     │
 IN_TRANSIT
-    │  Tài xế vận chuyển
+    │  Lái xe vận chuyển
     │  Cập nhật chi phí thực tế
     │
     ▼ Nhấn "Hoàn thành" + nhập actualArrival

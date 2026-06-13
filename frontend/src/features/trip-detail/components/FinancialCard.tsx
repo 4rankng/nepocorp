@@ -58,7 +58,7 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
             <span className={`v ${tollCost === 0 ? 'zero' : ''}`}>{tollCost > 0 ? `− ${fmtCurrency(tollCost)}` : '0 đ'}</span>
           </div>
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền lương tài xế</span>
+            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền lương lái xe</span>
             <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}>{driverSalary > 0 ? `− ${fmtCurrency(driverSalary)}` : '0 đ'}</span>
           </div>
           <div className="pl-row">

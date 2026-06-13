@@ -73,7 +73,7 @@
 | Lãi dịch vụ đi kèm | Σ serviceMargin (giá bán ex-VAT − giá mua incl. VAT) |
 | II. Chi phí nhiên liệu | Σ fuel_cost **incl. VAT** (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
 | Chi phí cầu đường | Σ toll_cost **incl. VAT** |
-| Công lương tài xế | Σ driver_pay |
+| Công lương lái xe | Σ driver_pay |
 | Chi phí bốc xếp | Σ loading_cost **incl. VAT** |
 | Chi phí dỡ hàng | Σ unloading_cost **incl. VAT** |
 | Chi phí thuê xe ngoài | Σ externalFreightCost **incl. VAT** (chỉ cho báo cáo gộp, thường lấy margin trực tiếp) |
@@ -143,7 +143,7 @@
 |----|-------------|---------|
 | FUEL | Nhiên liệu | fuel_cost |
 | TOLL | Cầu đường | toll_cost |
-| DRIVER_PAY | Công lương tài xế | driver_pay |
+| DRIVER_PAY | Công lương lái xe | driver_pay |
 | LOADING | Bốc xếp | loading_cost |
 | UNLOADING | Dỡ hàng | unloading_cost |
 | OTHER | Khác | other_cost |

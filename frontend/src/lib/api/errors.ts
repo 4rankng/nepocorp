@@ -55,7 +55,7 @@ const FIELD_VI: Record<string, string> = {
   customerId: 'Khách hàng',
   routeId: 'Tuyến đường',
   truckId: 'Xe đầu kéo',
-  driverId: 'Tài xế',
+  driverId: 'Lái xe',
   cargoTypeId: 'Loại hàng',
   departureDate: 'Ngày xuất phát',
   containerCount: 'Số container',

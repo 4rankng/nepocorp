@@ -125,7 +125,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.ADMIN]: 'Quản trị viên',
   [Role.MANAGER]: 'Quản lý',
   [Role.ACCOUNTANT]: 'Kế toán',
-  [Role.DRIVER]: 'Tài xế',
+  [Role.DRIVER]: 'Lái xe',
   [Role.FORWARDER]: 'Giao nhận',
 };
 

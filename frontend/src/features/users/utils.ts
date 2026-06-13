@@ -47,7 +47,7 @@ export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
   [Role.ADMIN]:      { cls: 'pill pill--danger',  label: 'Quản trị' },
   [Role.MANAGER]:    { cls: 'pill pill--warn',    label: 'Quản lý' },
   [Role.ACCOUNTANT]: { cls: 'pill pill--neutral', label: 'Kế toán' },
-  [Role.DRIVER]:     { cls: 'pill pill--success', label: 'Tài xế' },
+  [Role.DRIVER]:     { cls: 'pill pill--success', label: 'Lái xe' },
   [Role.FORWARDER]:  { cls: 'pill pill--info',    label: 'Giao nhận' },
 };
 

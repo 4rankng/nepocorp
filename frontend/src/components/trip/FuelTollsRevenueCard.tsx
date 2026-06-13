@@ -139,7 +139,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           </div>
         </div>
         <div className="field">
-          <label>Tiền lương tài xế</label>
+          <label>Tiền lương lái xe</label>
           <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
         </div>
         <CheckboxCard

@@ -34,7 +34,7 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
   return (
     <Modal
       isOpen={isOpen}
-      title={item ? `Sửa tài xế ${item.name}` : 'Thêm tài xế'}
+      title={item ? `Sửa lái xe ${item.name}` : 'Thêm lái xe'}
       onClose={oncancel}
       onConfirm={handleSave}
       footer={
@@ -44,7 +44,7 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
           </button>
           <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {item ? 'Cập nhật' : 'Thêm tài xế'}
+            {item ? 'Cập nhật' : 'Thêm lái xe'}
           </button>
         </>
       }

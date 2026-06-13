@@ -70,7 +70,7 @@ export function useReassignMutations() {
 
   const handleReassign = useCallback(async (tripId: number) => {
     if (!reassignState.truckId || !reassignState.driverId) {
-      setReassignState((s) => ({ ...s, error: 'Vui lòng chọn xe và tài xế' }));
+      setReassignState((s) => ({ ...s, error: 'Vui lòng chọn xe và lái xe' }));
       return;
     }
     setReassignState((s) => ({ ...s, loading: true, error: '' }));

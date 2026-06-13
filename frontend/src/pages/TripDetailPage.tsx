@@ -174,9 +174,9 @@ export default function TripDetailPage() {
           </select>
         </div>
         <div className="field">
-          <label>Tài xế</label>
+          <label>Lái xe</label>
           <select className="input" value={ui.reassignDriverId} onChange={e => page.setReassignDriverId(e.target.value)}>
-            <option value="">-- Chọn tài xế --</option>
+            <option value="">-- Chọn lái xe --</option>
             {page.reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
         </div>

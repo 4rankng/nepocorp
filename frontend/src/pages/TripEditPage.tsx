@@ -190,7 +190,7 @@ export default function TripEditPage() {
                   <div className="tc-card-num">3</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Chi phí & Doanh thu</div>
-                    <div className="tc-card-sub">VéBOT, phụ cấp, lương tài xế</div>
+                    <div className="tc-card-sub">VéBOT, phụ cấp, lương lái xe</div>
                   </div>
                 </div>
                 <div className="tc-card-body">

@@ -19,7 +19,7 @@ Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ l
 | 1 | Định mức nhiên liệu | `/config/fuel` | Tiêu hao NL theo loại xe + tuyến |
 | 2 | Tiền đi đường | `/config/road-allowances` | Phụ cấp đường theo tuyến × loại rơ-mooc (20FT/40FT) |
 | 3 | Quy tắc kỷ luật & phạt | `/config/penalty-reasons` | Danh mục lý do phạt |
-| 4 | Người dùng & Tài xế | `/config/drivers` | CRUD người dùng + hồ sơ tài xế |
+| 4 | Người dùng & Lái xe | `/config/drivers` | CRUD người dùng + hồ sơ lái xe |
 | 5 | Thông tin công ty & Cổ phần | `/config/cap-table` | Cổ đông, tỷ lệ chia lợi nhuận |
 | 6 | Khách hàng & Đối tác | `/config/customers` | CRUD khách hàng (xem 08-KHACH_HANG.md) |
 | 7 | Tuyến đường & Cự ly | `/config/routes` | Tuyến đường, khoảng cách |
@@ -55,7 +55,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | GET/POST/PUT/DELETE | `/catalog/ports[/:id]` | CRUD cảng/bãi |
 | GET/POST/PUT/DELETE | `/catalog/route-configs[/:id]` | CRUD tuyến đường |
 | GET/POST/PUT/DELETE | `/fleet/trucks[/:id]` | CRUD xe đầu kéo (kèm trailer_plate_number + trailer_type) |
-| GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD tài xế |
+| GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD lái xe |
 | GET/PUT | `/config/cap-table` | Xem/cập nhật cổ phần |
 | GET | `/catalog/fuel-price-history` | Lịch sử giá nhiên liệu (append-only, sắp xếp giảm theo ngày) |
 
@@ -102,7 +102,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 **Trường:** Tên lý do (bắt buộc, duy nhất), Số tiền phạt (>=0), Mô tả, Trạng thái (active/inactive).
 
-### 2.5 Người dùng & Tài xế `/config/drivers`
+### 2.5 Người dùng & Lái xe `/config/drivers`
 
 **Trường:** Họ tên (bắt buộc), SĐT (bắt buộc, duy nhất), Email (duy nhất), Vai trò, Mật khẩu (bắt buộc khi tạo), Biển số xe mặc định (DRIVER), **Lương cơ bản (VNĐ)** — `baseSalary`, số không âm, bắt buộc cho DRIVER role, **BHXH doanh nghiệp đóng (VNĐ)** — `social_insurance`, số không âm, mặc định 0 *(dùng để tính `daily_rate` và lương chuyến quy đổi — Pete xác nhận 4/6)*, Trạng thái.
 
@@ -169,7 +169,7 @@ Tuyến đường ─────────┐
                       ├──→ Bảng giá cước ──→ Chuyến đi
 Loại hàng hóa ───────┘                    │
 Xe đầu kéo ─────────────────────────────→ Chuyến đi (loại rơ-mooc tự tra từ xe)
-Tài xế ─────────────────────────────────→ Chuyến đi
+Lái xe ─────────────────────────────────→ Chuyến đi
 Khách hàng ─────────────────────────────→ Chuyến đi
 Loại container ────────────────────────→ Container trong chuyến
 Cảng/Bãi ─────────────────────────────→ Chặng chuyến (origin/destination dropdown)
@@ -249,13 +249,13 @@ Loại rơ-moóc là trường trên bảng `trucks` (`trailer_type`), dùng là
 | TC-CH-010 | Tạo lý do phạt | ADMIN | Nhập "Đi muộn", 200000 → Lưu | Tạo thành công | High |
 | TC-CH-011 | Trùng tên lý do | Có "Đi muộn" | Tạo lại "Đi muộn" → Lưu | Lỗi trùng lặp | High |
 
-### 5.5 Người dùng & Tài xế (TC-CH-012 → TC-CH-014)
+### 5.5 Người dùng & Lái xe (TC-CH-012 → TC-CH-014)
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-CH-012 | Tạo tài xế | ADMIN | Nhập họ tên, SĐT, role DRIVER → Lưu | Tạo thành công | High |
+| TC-CH-012 | Tạo lái xe | ADMIN | Nhập họ tên, SĐT, role DRIVER → Lưu | Tạo thành công | High |
 | TC-CH-013 | Trùng SĐT | Có SĐT 0901234567 | Tạo mới cùng SĐT → Lưu | Lỗi trùng lặp | High |
-| TC-CH-014 | Deactivate thay vì xóa | Tài xế có chuyến | Click deactivate | Trạng thái → inactive, không xóa | High |
+| TC-CH-014 | Deactivate thay vì xóa | Lái xe có chuyến | Click deactivate | Trạng thái → inactive, không xóa | High |
 
 ### 5.6 Cổ phần (TC-CH-015 → TC-CH-016)
 

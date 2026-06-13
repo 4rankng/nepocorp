@@ -137,7 +137,7 @@ Already redesigned in commit `7b703068` before this session. No new code changes
 - `frontend/src/styles/responsive.css` (new ~12-line block, page-scoped, in the `@media (max-width: 640px)` section)
 
 **Verification:**
-- Mobile (390): all 4 KPI labels single-line (TỔNG TÀI KHOẢN, NHÂN SỰ VĂN PHÒNG, TÀI XẾ, BỊ KHOÁ / NGƯNG), no watermark icons crowding the value. Tiles slightly taller because the icon got pushed below the label — acceptable trade-off.
+- Mobile (390): all 4 KPI labels single-line (TỔNG TÀI KHOẢN, NHÂN SỰ VĂN PHÒNG, LÁI XE, BỊ KHOÁ / NGƯNG), no watermark icons crowding the value. Tiles slightly taller because the icon got pushed below the label — acceptable trade-off.
 - Desktop (1148): watermarks still visible, side-by-side `flex` layout unchanged.
 
 **Gotcha:** Chrome MCP extension disconnected mid-pass for ~60s; had to wait it out. The on-disk CSS edit landed cleanly and was already correct when extension recovered.
@@ -609,7 +609,7 @@ Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ
 
 ### 20a — UserForm drawer (AddPanel + EditPanel)
 
-**Issue:** both panels contained `<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>` for the "Vai trò / Mật khẩu" (AddPanel) and "Vai trò / Trạng thái" (EditPanel) rows. Inline grid wins over CSS class rules — at 390px the drawer's inner width is ~334px, splitting that 50/50 gives ~155px columns. The role `<select>` could just barely render the longest option label ("Quản trị viên" or "Tài xế") but the AddPanel's password input + eye toggle was cramped, and the role select label rendered "Tài x..." (clipped "Tài xế").
+**Issue:** both panels contained `<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>` for the "Vai trò / Mật khẩu" (AddPanel) and "Vai trò / Trạng thái" (EditPanel) rows. Inline grid wins over CSS class rules — at 390px the drawer's inner width is ~334px, splitting that 50/50 gives ~155px columns. The role `<select>` could just barely render the longest option label ("Quản trị viên" or "Lái xe") but the AddPanel's password input + eye toggle was cramped, and the role select label rendered "Tài x..." (clipped "Lái xe").
 
 **Fix:** replaced both inline grids with `className="row-2"`. The base `.row-2` rule (`utilities.css:4`) gives the same 2-col 16px-gap on desktop, and the existing `responsive.css:254` override (`.row-2 { grid-template-columns: 1fr }`) collapses to a stack on phone — fields rendering full-width (323px) on mobile.
 
@@ -626,7 +626,7 @@ Same `CrudTable` scaffold. 5-column table (#/KHÁCH HÀNG/TUYẾN ĐƯỜNG/GIÁ
 
 ### 20d — Fleet DetailModal (FleetPage.tsx)
 
-**Verification only.** It's a thin wrapper around the shared `Modal` component (FleetPage.tsx:80), so it inherits all the responsive.css mobile rules from 20c. Tapping a truck card on `/fleet` at 390×844 opens a 390×844 bottom-sheet with header `Xe đầu kéo 15C-136.31` + X close, 4 detail rows (Biển số / Rơ-mooc / Tài xế gán / Trạng thái), and a 3-button footer (× Đóng / ✏ Sửa / 🗑 Xóa) all in single row — footer buttons flex 1:1:1 and stay above the safe-area inset.
+**Verification only.** It's a thin wrapper around the shared `Modal` component (FleetPage.tsx:80), so it inherits all the responsive.css mobile rules from 20c. Tapping a truck card on `/fleet` at 390×844 opens a 390×844 bottom-sheet with header `Xe đầu kéo 15C-136.31` + X close, 4 detail rows (Biển số / Rơ-mooc / Lái xe gán / Trạng thái), and a 3-button footer (× Đóng / ✏ Sửa / 🗑 Xóa) all in single row — footer buttons flex 1:1:1 and stay above the safe-area inset.
 
 ### 20e — PenaltyFormDrawer
 

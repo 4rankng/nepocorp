@@ -151,7 +151,7 @@ function buildDriverValues(userId: number, opts: {
 }) {
   return {
     userId,
-    name: opts.fullName || opts.username || opts.phone || 'Tài xế',
+    name: opts.fullName || opts.username || opts.phone || 'Lái xe',
     phone: opts.phone || null,
     baseSalary: opts.baseSalary != null ? String(opts.baseSalary) : null,
     socialInsurance: opts.socialInsurance != null ? String(opts.socialInsurance) : null,
@@ -185,7 +185,7 @@ export async function updateUser(id: number, data: {
 
     // Driver-target check inside the transaction to avoid TOCTOU race.
     if (data.requireDriverTarget && existing.role !== Role.DRIVER) {
-      throw new ApiError(403, 'Kế toán chỉ có thể chỉnh sửa tài xế');
+      throw new ApiError(403, 'Kế toán chỉ có thể chỉnh sửa lái xe');
     }
 
     const updates: Record<string, unknown> = { updatedAt: sql`now()` };

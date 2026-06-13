@@ -92,7 +92,7 @@ export default function DispatchPage() {
           </div>
           <div className="o-tools desktop-only"><button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Download size={13} /> Xuất CSV</button></div>
         </div>
-        {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Tài xế</div><div className="right">Thao tác</div></div>}
+        {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
           <div className="orders-empty">
             <img src="/assets/illustrations/empty-dispatch.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />

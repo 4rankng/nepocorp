@@ -39,8 +39,8 @@ export default function PayableListPage() {
   const { rootRef } = usePageAnimations({
     ready: !loading,
     selectors: [
-      '.payables-hero',
-      '.payables-kpi-mini',
+      '.hero-kpi-card',
+      '.hero-kpi-mini',
       '.aging-card',
       '.payables-data-card',
     ],
@@ -149,45 +149,45 @@ export default function PayableListPage() {
       />
 
       {/* ── Zone 1: Hero KPI Row ────────────────────────────────────────── */}
-      <div className="payables-hero-row">
+      <div className="hero-kpi-row">
         {/* Hero card — span 3 */}
-        <div className="payables-hero">
-          <span className="payables-hero__eyebrow">Tổng công nợ phải trả</span>
-          <span className="payables-hero__amount">
+        <div className="hero-kpi-card">
+          <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
+          <span className="hero-kpi-card__amount">
             <span ref={heroTotalRef}>{formatCompact(totals.total)}</span>{' '}₫
           </span>
-          <span className="payables-hero__subtitle">
+          <span className="hero-kpi-card__subtitle">
             {totals.supplierCount} nhà cung cấp · cập nhật vừa xong
           </span>
           <Wallet
             size={72}
-            className="payables-hero__watermark"
+            className="hero-kpi-card__watermark"
             aria-hidden="true"
           />
         </div>
 
         {/* Stacked mini-KPI cards — span 1 */}
-        <div className="payables-kpi-stack">
-          <div className="payables-kpi-mini payables-kpi-mini--danger">
-            <div className="payables-kpi-mini__icon">
+        <div className="hero-kpi-stack">
+          <div className="hero-kpi-mini hero-kpi-mini--danger">
+            <div className="hero-kpi-mini__icon">
               <AlertTriangle size={16} />
             </div>
-            <div className="payables-kpi-mini__body">
-              <span className="payables-kpi-mini__value" ref={overdueRef}>
+            <div className="hero-kpi-mini__body">
+              <span className="hero-kpi-mini__value" ref={overdueRef}>
                 {prefersReduced ? totals.overdueCount : 0}
               </span>
-              <span className="payables-kpi-mini__label">quá hạn</span>
+              <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
           </div>
-          <div className="payables-kpi-mini payables-kpi-mini--accent">
-            <div className="payables-kpi-mini__icon">
+          <div className="hero-kpi-mini hero-kpi-mini--accent">
+            <div className="hero-kpi-mini__icon">
               <Users size={16} />
             </div>
-            <div className="payables-kpi-mini__body">
-              <span className="payables-kpi-mini__value" ref={activeSuppliersRef}>
+            <div className="hero-kpi-mini__body">
+              <span className="hero-kpi-mini__value" ref={activeSuppliersRef}>
                 {prefersReduced ? totals.supplierCount : 0}
               </span>
-              <span className="payables-kpi-mini__label">nhà cung cấp</span>
+              <span className="hero-kpi-mini__label">nhà cung cấp</span>
             </div>
           </div>
         </div>

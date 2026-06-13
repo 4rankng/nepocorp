@@ -43,7 +43,7 @@ const TXN_LABELS: Record<string, string> = {
   PENALTY: 'Phạt',
   MANAGEMENT_FEE: 'Phí quản lý',
   ADJUSTMENT: 'Điều chỉnh',
-  DRIVER_SALARY: 'Lương tài xế',
+  DRIVER_SALARY: 'Lương lái xe',
   UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
   EXTERNAL_CARRIER_COST: 'Cước thuê ngoài',
 };
