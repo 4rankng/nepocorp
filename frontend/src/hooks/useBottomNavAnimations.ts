@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { animate, createScope, stagger, utils } from 'animejs';
+import { animate, createScope, cubicBezier, stagger, utils } from 'animejs';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /**
@@ -35,7 +35,7 @@ export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {
         animate(activeItem, {
           scaleX: [0, 1],
           duration: 400,
-          ease: 'cubicBezier(0.34, 1.56, 0.64, 1)', // --ease-spring
+          ease: cubicBezier(0.34, 1.56, 0.64, 1), // --ease-spring
         });
       }
 
@@ -55,7 +55,7 @@ export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {
           animate(item, {
             scale: 1,
             duration: 250,
-            ease: 'cubicBezier(0.34, 1.56, 0.64, 1)', // spring settle
+            ease: cubicBezier(0.34, 1.56, 0.64, 1), // spring settle
           });
         };
 
