@@ -115,7 +115,7 @@ export default function ForwarderSettlementsPage() {
   useEffect(() => {
     if (loadingSettlements || settlements.length === 0 || prefersReduced) return;
     animateCounters([
-      { el: heroExpenseRef.current, value: totalExpenseAll, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
+      { el: heroExpenseRef.current, value: totalExpenseAll, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
       { el: heroTotalRef.current, value: settlements.length, suffix: ' phiếu' },
       { el: heroPendingRef.current, value: pending, suffix: ' chờ xử lý' },
     ]);
@@ -170,24 +170,24 @@ export default function ForwarderSettlementsPage() {
         <div className="hero-kpi-row">
           <div className="hero-kpi-card">
             <span className="hero-kpi-card__eyebrow">Tổng chi phí thanh toán</span>
-            <span className="hero-kpi-card__amount" ref={heroExpenseRef}>0 ₫</span>
+            <span className="hero-kpi-card__amount"><span ref={heroExpenseRef}>0</span><span className="hero-kpi-card__currency">₫</span></span>
             <span className="hero-kpi-card__subtitle">{settlements.length} phiếu thanh toán</span>
             <FileText size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
-              <div className="hero-kpi-mini__icon"><FileText size={16} /></div>
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__value" ref={heroTotalRef}>0</span>
                 <span className="hero-kpi-mini__label">phiếu</span>
               </div>
+              <FileText size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
-              <div className="hero-kpi-mini__icon"><Clock size={16} /></div>
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__value" ref={heroPendingRef}>0</span>
                 <span className="hero-kpi-mini__label">chờ xử lý</span>
               </div>
+              <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
           </div>
         </div>

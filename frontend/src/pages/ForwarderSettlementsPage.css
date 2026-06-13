@@ -846,7 +846,8 @@
     min-height: 120px;
   }
   .fset-page .hero-kpi-stack {
-    flex-direction: row;
+    flex-direction: column;
+    gap: 10px;
   }
   .fset-page .hero-kpi-mini {
     padding: 12px 14px;

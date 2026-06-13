@@ -104,13 +104,11 @@ export default function ForwarderTripsPage() {
         </div>
         <div className="hero-kpi-stack">
           <div className="hero-kpi-mini hero-kpi-mini--accent">
-            <div className="hero-kpi-mini__icon">
-              <Package size={16} />
-            </div>
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value" ref={heroContainersRef}>0</span>
               <span className="hero-kpi-mini__label">container</span>
             </div>
+            <Package size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
           </div>
         </div>
       </div>
