@@ -303,17 +303,7 @@
 .dispatch-page .fleet-row {
   position: relative;
 }
-.dispatch-page .fleet-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  border-radius: 0 2px 2px 0;
-  background: var(--strip-color, transparent);
-}
+
 
 .dispatch-page .driver-name { font-size: var(--fs-sm); font-weight: 600; line-height: 1.2; color: var(--ink); }
 .dispatch-page .driver-meta { font-size: var(--fs-2xs); color: var(--ink-3); }
@@ -672,13 +662,6 @@
     border: 1px solid var(--line);
     border-radius: 12px;
     align-items: center;
-  }
-  .dispatch-page .fleet-row::before {
-    height: 100%;
-    top: 0;
-    transform: none;
-    border-radius: 12px 0 0 12px;
-    width: 4px;
   }
   .dispatch-page .fleet-cell:nth-child(1) { grid-area: plate; }
   .dispatch-page .fleet-cell:nth-child(2) { grid-area: driver; justify-self: end; }

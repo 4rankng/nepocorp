@@ -12,31 +12,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01", "cv11";
-  /* iOS PWA standalone: respect notch + home indicator.
-     When launched from "Add to Home Screen" the viewport extends edge-to-edge
-     (viewport-fit=cover in index.html), so we must reserve the inset gutters
-     or the topbar slides under the notch and the bottom nav under the home bar. */
-  padding-top: env(safe-area-inset-top, 0);
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  padding-left: env(safe-area-inset-left, 0);
-  padding-right: env(safe-area-inset-right, 0);
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */
   overscroll-behavior-y: contain;
-}
-/* Paint the iOS status-bar / notch area with the page background so it
-   doesn't appear as a white strip above the topbar. Works in both
-   regular Safari and standalone (PWA) mode.
-   z-index: 0 (background layer) — must NOT use --z-modal (300) here or it
-   floats above modals and breaks stacking. The topbar (z-sticky: 100)
-   and any modal (z-modal: 300) sit above this background paint. */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: env(safe-area-inset-top, 0);
-  background: var(--bg);
-  z-index: 0;
-  pointer-events: none;
 }
 button { font: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; }

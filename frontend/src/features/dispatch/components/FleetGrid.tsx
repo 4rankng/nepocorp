@@ -1,6 +1,7 @@
 import { UserX, Wrench } from 'lucide-react';
 import type { Driver, Truck } from '../utils';
 import type { NormalizedTrip } from '../../../hooks/useTripQueries';
+import { StatusStrip } from '../../../components/shared/StatusStrip';
 
 interface FleetGridProps {
   trucks: Truck[];
@@ -66,8 +67,8 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
             key={truck.id}
             className={`fleet-row${onClickRow ? ' is-clickable' : ''}`}
             onClick={onClickRow}
-            style={{ '--strip-color': status.color } as React.CSSProperties}
           >
+            <StatusStrip color={status.color} />
             {/* Biển số */}
             <div className="fleet-cell">
               <span className={`plate${isMaint ? ' maint' : ''}`}>{truck.licensePlate}</span>

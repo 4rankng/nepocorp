@@ -32,12 +32,107 @@
   }
   .sidebar.open { transform: translateX(0); }
   .sidebar-overlay.open { display: block; }
+  .sidebar-brand {
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  }
+  .sidebar-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* ── Content ── */
-  .app-body, .content { padding: 20px 16px 40px; }
+  .app-body, .content { padding: 20px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Topbar ── */
   .topbar-search { width: 180px; }
+  .topbar {
+    height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    background: var(--sb-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--sb-text);
+  }
+  .topbar--driver {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    background: var(--sb-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Hamburger menu and icon buttons in green header */
+  .topbar__toggle,
+  .topbar .icon-btn {
+    color: var(--sb-text);
+  }
+  .topbar__toggle:hover,
+  .topbar .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+  
+  /* Month Navigator in green header */
+  .topbar-date__trigger {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+  }
+  .topbar-date__trigger:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  .topbar-date.is-open .topbar-date__trigger {
+    background: var(--surface);
+    border-color: var(--surface);
+    color: var(--sb-bg);
+  }
+  .topbar-date.is-open .topbar-date__trigger .topbar-date__icon,
+  .topbar-date.is-open .topbar-date__trigger .topbar-date__caret {
+    color: var(--sb-bg);
+  }
+  .topbar-date__icon,
+  .topbar-date__caret {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .topbar-date__period {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* Driver Topbar text contrast */
+  .topbar__welcome .greeting {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .topbar__welcome .name {
+    color: #ffffff;
+  }
+
+  /* Search input inside green topbar on tablet */
+  .topbar__search > input {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+  }
+  .topbar__search > input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .topbar__search > input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  }
+  .topbar__search > svg {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .topbar__search > kbd {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  /* ── Drawers ── */
+  .drawer__head {
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  }
+  .drawer__foot {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* ── Layouts ── */
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
@@ -59,10 +154,18 @@
 @media (max-width: 640px) {
 
   /* ── App shell ── */
-  .app-body, .content { padding: 10px 10px 24px; }
+  .app-body, .content { padding: 10px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Topbar ── */
-  .topbar { padding: 0 8px; gap: 6px; height: 48px; min-height: 48px; }
+  .topbar {
+    padding: env(safe-area-inset-top, 0px) 8px 0;
+    gap: 6px;
+    height: calc(48px + env(safe-area-inset-top, 0px));
+    min-height: calc(48px + env(safe-area-inset-top, 0px));
+  }
+  .topbar--driver {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  }
   .topbar-search,
   .topbar__search,
   .topbar__breadcrumb { display: none; }
