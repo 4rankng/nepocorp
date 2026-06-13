@@ -1,31 +1,122 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
 
-export function useTripFormPhotos(onError: (msg: string) => void) {
+type PhotoType = 'CONTAINER' | 'SEAL' | 'OTHER';
+
+/** Result shape from POST /api/ocr. */
+interface OcrResponse {
+  ok: boolean;
+  containerNumbers?: string[];
+  sealNumber?: string | null;
+  checkDigitWarnings?: string[];
+  photoUrl?: string;
+  storageKey?: string;
+  model?: string | null;
+  error?: string | null;
+}
+
+/** A create-mode OCR photo held in RAM until the trip has an id. */
+interface PendingPhoto {
+  file: File;
+  type: 'CONTAINER' | 'SEAL';
+  objectUrl: string;
+}
+
+export type OcrResultHandler = (
+  containerNumbers: string[],
+  sealNumber: string | null,
+  type: 'CONTAINER' | 'SEAL',
+) => void;
+
+export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: OcrResultHandler) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  // Create-mode OCR photos are kept in RAM (no trip id yet) and uploaded once
+  // the trip is created — see flushPendingPhotos.
+  const pendingRef = useRef<PendingPhoto[]>([]);
 
-  const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: 'CONTAINER' | 'SEAL' | 'OTHER' = 'OTHER') => {
+  const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: PhotoType = 'OTHER') => {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (tripId) formData.append("trip_id", String(tripId));
-        formData.append("type", type);
-        const result = await api.upload("/upload", formData) as { url: string };
-        setPhotoUrls((prev) => [...prev, result.url]);
+        if (type === 'CONTAINER' || type === 'SEAL') {
+          // Route container/seal uploads through OCR (auto-fill + persist when trip exists).
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('type', type);
+          if (tripId) formData.append('trip_id', String(tripId));
+
+          const result = await api.upload('/ocr', formData) as OcrResponse;
+          onOcrResult?.(result.containerNumbers ?? [], result.sealNumber ?? null, type);
+
+          if (result.photoUrl) {
+            // Edit branch: photo persisted server-side.
+            setPhotoUrls(prev => [...prev, result.photoUrl!]);
+          } else if (!tripId) {
+            // Create branch: hold the file in RAM + local preview until the trip exists.
+            const objectUrl = URL.createObjectURL(file);
+            pendingRef.current.push({ file, type, objectUrl });
+            setPhotoUrls(prev => [...prev, objectUrl]);
+          }
+
+          // Surface a friendly OCR error (e.g. key not configured, no numbers) —
+          // the photo may still have been saved (Edit) so this is informational.
+          if (result.error) onError(result.error);
+        } else {
+          // OTHER → existing upload endpoint.
+          const formData = new FormData();
+          formData.append('file', file);
+          if (tripId) formData.append('trip_id', String(tripId));
+          formData.append('type', type);
+          const result = await api.upload('/upload', formData) as { url: string };
+          setPhotoUrls(prev => [...prev, result.url]);
+        }
       }
-    } catch (err: any) {
-      onError(err.message || "Lỗi khi tải ảnh.");
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Lỗi khi tải ảnh.');
     } finally {
       setUploading(false);
     }
-  }, [onError]);
+  }, [onError, onOcrResult]);
 
   const removePhoto = useCallback((idx: number) => {
-    setPhotoUrls((prev) => prev.filter((_, i) => i !== idx));
+    setPhotoUrls(prev => {
+      const url = prev[idx];
+      // Revoke any local object-URL preview we were holding.
+      if (url && url.startsWith('blob:')) {
+        pendingRef.current = pendingRef.current.filter(p => p.objectUrl !== url);
+        URL.revokeObjectURL(url);
+      }
+      return prev.filter((_, i) => i !== idx);
+    });
   }, []);
 
-  return { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto };
+  /**
+   * After a trip is created (create mode), upload the held OCR photos with the
+   * new trip id and replace their local object-URL previews with real server
+   * URLs. Returns the final photoUrls array so the caller can use it directly
+   * in the create payload (state updates are async).
+   */
+  const flushPendingPhotos = useCallback(async (tripId: number): Promise<string[]> => {
+    const pending = pendingRef.current;
+    if (pending.length === 0) return photoUrls;
+    pendingRef.current = [];
+
+    const objToReal = new Map<string, string>();
+    for (const p of pending) {
+      const formData = new FormData();
+      formData.append('file', p.file);
+      formData.append('trip_id', String(tripId));
+      formData.append('type', p.type);
+      const result = await api.upload('/upload', formData) as { url: string };
+      objToReal.set(p.objectUrl, result.url);
+      URL.revokeObjectURL(p.objectUrl);
+    }
+
+    const finalUrls = photoUrls.map(u => objToReal.get(u) ?? u);
+    setPhotoUrls(finalUrls);
+    return finalUrls;
+  }, [photoUrls]);
+
+  return { photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos };
 }

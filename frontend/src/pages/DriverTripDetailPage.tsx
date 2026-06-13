@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Calendar, MapPin, Fuel, DollarSign, Navigation, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
+import { DriverContainerCard } from '../components/trip/DriverContainerCard';
 import { usePageAnimations } from '../hooks/animations';
 
 interface TripLeg {
@@ -15,6 +16,15 @@ interface TripLeg {
   destination: string;
   km: number;
   loadingType: string;
+}
+
+interface DriverContainer {
+  id: number;
+  containerNumber: string;
+  sealNumber: string | null;
+  containerTypeName: string | null;
+  containerTypeCode: string | null;
+  cargoWeightKg: string | null;
 }
 
 interface DriverTripDetail {
@@ -34,6 +44,7 @@ interface DriverTripDetail {
   driverSalary: string | null;
   hasReturnCargo: boolean | null;
   legs: TripLeg[];
+  containers: DriverContainer[];
   notes: string | null;
   customerReference: string | null;
 }
@@ -68,7 +79,7 @@ export default function DriverTripDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const { rootRef } = usePageAnimations({ ready: !loading });
 
-  useEffect(() => {
+  const loadTrip = useCallback(() => {
     if (!id) return;
     setLoading(true);
     api.get<DriverTripDetail>(`/driver/me/trips/${id}`)
@@ -76,6 +87,10 @@ export default function DriverTripDetailPage() {
       .catch(() => setError('Không thể tải thông tin lệnh vận chuyển'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    loadTrip();
+  }, [loadTrip]);
 
   if (loading) return (
     <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
@@ -144,6 +159,8 @@ export default function DriverTripDetailPage() {
           )}
         </div>
       </div>
+
+      <DriverContainerCard tripId={trip.id} containers={trip.containers ?? []} onSaved={loadTrip} />
 
       {/* Fuel Allocation Card — prominent for drivers */}
       <div className="panel fuel-alloc-card" style={{ marginBottom: 16 }}>

@@ -5,6 +5,13 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
+import { useTripFormContext } from '../../hooks/useTripFormContext';
+import {
+  normalizeContainerNumber,
+  validateContainerFormat,
+  validateCheckDigit,
+  suggestCorrections,
+} from '@tingting/shared';
 
 /**
  * Card section embedded in `TripEditPage` / `TripCreatePage` that lets the
@@ -59,6 +66,34 @@ function emptyRow(): ContainerRow {
   };
 }
 
+type ContainerCheckStatus = {
+  warning: string | null;
+  suggestion: string | null;
+};
+
+/**
+ * Validate a container number against ISO 6346. Returns a Vietnamese warning
+ * and, when a single 1-character correction would fix the check digit, the
+ * suggested value so the user can apply it with one click. `null` warning
+ * means the number looks fine (or the cell is empty). Catches both OCR
+ * misreads and manual typos — the number is never auto-committed, so this is
+ * advisory only.
+ */
+function checkContainerNumber(cn: string): ContainerCheckStatus {
+  const trimmed = cn.trim();
+  if (!trimmed) return { warning: null, suggestion: null };
+  const norm = normalizeContainerNumber(trimmed);
+  if (!validateContainerFormat(norm)) {
+    return { warning: 'Số cont sai định dạng (4 chữ cái + 7 số).', suggestion: null };
+  }
+  if (validateCheckDigit(norm)) return { warning: null, suggestion: null };
+  const corrections = suggestCorrections(norm, 1);
+  return {
+    warning: 'Số cont sai chữ số kiểm tra — kiểm tra lại.',
+    suggestion: corrections[0] ?? null,
+  };
+}
+
 export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -67,6 +102,43 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   const [pageError, setPageError] = useState<string | null>(null);
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
+
+  // OCR results are broadcast from the photo uploader (container/seal zone)
+  // through the trip-form context. Fill recognized numbers into the first
+  // empty cell — never overwriting a value the user already entered. Each
+  // upload carries a fresh `nonce`; the ref guard prevents double-filling
+  // (incl. React 18 StrictMode's dev double-invoke).
+  const { ocrResult } = useTripFormContext();
+  const consumedNonceRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (!ocrResult) return;
+    if (ocrResult.nonce === consumedNonceRef.current) return;
+    consumedNonceRef.current = ocrResult.nonce;
+
+    const hasContainers = ocrResult.containerNumbers.length > 0;
+    const hasSeal = !!ocrResult.sealNumber;
+    if (!hasContainers && !hasSeal) return;
+
+    setRows(prev => {
+      const next = prev.map(r => ({ ...r }));
+      const fillEmpty = (field: 'containerNumber' | 'sealNumber', values: string[]) => {
+        for (const value of values) {
+          let slot = next.find(r => !r[field].trim());
+          if (!slot) {
+            slot = emptyRow();
+            next.push(slot);
+          }
+          slot[field] = value;
+        }
+      };
+      // The OCR call returns both container numbers and a seal for every image;
+      // fill whichever are present, regardless of which zone the photo came from.
+      fillEmpty('containerNumber', ocrResult.containerNumbers);
+      if (hasSeal) fillEmpty('sealNumber', [ocrResult.sealNumber!]);
+      return next;
+    });
+    toast({ kind: 'info', message: 'Đã nhận diện số cont/seal — xem lại trước khi lưu.' });
+  }, [ocrResult, toast]);
 
   // Container types from the global config catalog
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
@@ -218,8 +290,38 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
                     style={{ width: '100%' }}
                     placeholder="VD: TCKU1234567"
                     value={row.containerNumber}
-                    onChange={e => updateRow(row._key, 'containerNumber', e.target.value)}
+                    onChange={e => updateRow(row._key, 'containerNumber', e.target.value.toUpperCase())}
                   />
+                  {(() => {
+                    const st = checkContainerNumber(row.containerNumber);
+                    if (!st.warning) return null;
+                    return (
+                      <div style={{
+                        marginTop: 6,
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 6,
+                        alignItems: 'center',
+                        padding: '6px 8px',
+                        background: 'var(--warn-soft, #fff7e6)',
+                        color: 'var(--warn, #b7791f)',
+                        borderRadius: 6,
+                        fontSize: 11,
+                      }}>
+                        <span>⚠ {st.warning}</span>
+                        {st.suggestion && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--sm"
+                            style={{ minHeight: 26, padding: '0 10px', fontSize: 11 }}
+                            onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
+                          >
+                            Đổi thành {st.suggestion}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>

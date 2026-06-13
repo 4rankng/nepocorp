@@ -6,7 +6,7 @@
  * toll cost, profit, completion), orchestrates effects (route auto-fill,
  * pricing, driver salary), and exposes the submit handler.
  */
-import { useEffect, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import {
@@ -22,6 +22,7 @@ import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
 import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
+import type { OcrResultHandler } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
@@ -30,6 +31,16 @@ const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
 
 function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
+}
+
+/** OCR recognition result broadcast to container-aware components (e.g. the
+ *  container instances card) via the trip-form context. `nonce` lets consumers
+ *  detect a fresh result even when the values are identical. */
+export interface OcrSignal {
+  containerNumbers: string[];
+  sealNumber: string | null;
+  type: 'CONTAINER' | 'SEAL';
+  nonce: number;
 }
 
 export interface UseTripFormDispatchParams {
@@ -56,6 +67,7 @@ export interface UseTripFormDispatchReturn {
   requiredFieldsFilled: number;
   totalRequiredFields: number;
   uploading: boolean;
+  ocrResult: OcrSignal | null;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
   selectedRouteData: RouteOption | null;
   roadAllowanceBaseApplied?: number;
@@ -70,6 +82,12 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   const queryClient = useQueryClient();
   const lastPopulatedTripId = useRef<number | undefined>(undefined);
 
+  // Broadcast OCR results to container-aware components via context.
+  const [ocrResult, setOcrResult] = useState<OcrSignal | null>(null);
+  const onOcrResult = useCallback<OcrResultHandler>((containerNumbers, sealNumber, type) => {
+    setOcrResult({ containerNumbers, sealNumber, type, nonce: Math.random() });
+  }, []);
+
   const { data: roadConfig } = useQuery({
     queryKey: qk.catalogs.roadConfig,
     queryFn: () => configClient.getRoadConfig(),
@@ -83,7 +101,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   }, [s.revenueEmptyReturn, s.revenueCombine]);
 
   const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
-  const { photoUrls, uploading, uploadPhotos, removePhoto } = useTripFormPhotos(s.setError);
+  const { photoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos } = useTripFormPhotos(s.setError, onOcrResult);
 
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
@@ -519,6 +537,15 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         createPayload.containerCount = count;
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
+        // Upload any create-mode OCR photos now that we have a trip id,
+        // replacing their local previews with real server URLs.
+        let finalPhotoUrls = photoUrls;
+        try {
+          finalPhotoUrls = await flushPendingPhotos(trip.id);
+        } catch {
+          // Photos are optional — don't abort the freshly-created trip.
+        }
+
         if (hasOptionalData) {
           const legsToSubmit = legs.filter(
             (leg) => leg.origin.trim() !== '' || leg.destination.trim() !== '' || leg.km.trim() !== '',
@@ -577,7 +604,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             revenueEmptyReturn: s.revenueEmptyReturn ? Number(s.revenueEmptyReturn) : 0,
             revenueCombine: s.revenueCombine ? Number(s.revenueCombine) : 0,
             notes: s.notes.trim() || undefined,
-            photoUrls,
+            photoUrls: finalPhotoUrls,
             fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,
             fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
             customerCommission: Number(s.customerCommission) || 0,
@@ -616,6 +643,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       s.fuelSupplierId,
       s.customerCommission, s.tripWageDays,
       s.revenue, s.revenueEmptyReturn, s.revenueCombine, s.notes, photoUrls,
+      flushPendingPhotos,
       s.carrierType, s.vatRate, s.externalCarrierId, s.externalFreightCost,
       s.externalPlateNumber, s.externalDriverName, s.externalDriverPhone,
       queryClient,
@@ -625,6 +653,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   return {
     legs, addLeg, removeLeg, updateLeg,
     photoUrls, uploading, uploadPhotos, removePhoto,
+    ocrResult,
     suggestedPrice,
     estimatedFuelCost,
     estimatedTollCost,

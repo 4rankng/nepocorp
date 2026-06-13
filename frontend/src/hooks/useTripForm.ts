@@ -7,6 +7,7 @@ import type { FormLeg } from './useTripFormLegs';
 import type { CompletionStatus } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
+import type { OcrSignal } from './useTripFormDispatch';
 
 export type { FuelMode } from '@tingting/shared';
 export type { FormLeg } from './useTripFormLegs';
@@ -116,6 +117,7 @@ export interface UseTripFormReturn {
 
   submitting: boolean;
   uploading: boolean;
+  ocrResult: OcrSignal | null;
   error: string;
   setError: (v: string) => void;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
@@ -193,7 +195,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     completedSections: d.completedSections,
     requiredFieldsFilled: d.requiredFieldsFilled,
     totalRequiredFields: d.totalRequiredFields,
-    submitting: s.submitting, uploading: d.uploading, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit,
+    submitting: s.submitting, uploading: d.uploading, ocrResult: d.ocrResult, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit,
     tripId: isEditMode ? existingTrip?.id : undefined,
     tripStatus: isEditMode ? existingTrip?.status : undefined,
     version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,
