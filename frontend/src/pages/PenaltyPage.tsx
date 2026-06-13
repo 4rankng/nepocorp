@@ -6,6 +6,7 @@ import { PenaltyTable } from '../features/penalties/components/PenaltyTable';
 import { PenaltyFormDrawer } from '../features/penalties/components/PenaltyFormDrawer';
 import { CancelPenaltyDialog } from '../features/penalties/components/CancelPenaltyDialog';
 import type { PenaltyRow } from '../hooks/usePenalties';
+import './PenaltyPage.css';
 
 export default function PenaltyPage() {
   const { data: penaltiesData, isLoading: listLoading } = usePenalties();

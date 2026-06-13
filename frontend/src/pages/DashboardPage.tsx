@@ -12,6 +12,7 @@ import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget'
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
+import './DashboardPage.css';
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -35,6 +36,12 @@ const greeting = () => {
 };
 
 const fmtVN = (n: number) => Math.round(n).toLocaleString('vi-VN');
+
+/** Convert a per-period series into cumulative running totals (lũy kế). */
+const runningSum = (arr: number[]): number[] => {
+  let acc = 0;
+  return arr.map((v) => (acc += v));
+};
 
 interface DeltaProps { mom: string | null; suffix?: string; flatLabel?: string; }
 const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' }) => {
@@ -297,8 +304,8 @@ export default function DashboardPage() {
     if (chartView === 'day') {
       return {
         chartMonths: dailyChartData.labels,
-        chartRevenue: dailyChartData.revenue,
-        chartGross: dailyChartData.gross,
+        chartRevenue: runningSum(dailyChartData.revenue),
+        chartGross: runningSum(dailyChartData.gross),
       };
     }
     // Monthly view — trim leading months with no data
@@ -312,8 +319,8 @@ export default function DashboardPage() {
     if (firstDataIdx < 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
     return {
       chartMonths: allMonths.slice(firstDataIdx),
-      chartRevenue: allRev.slice(firstDataIdx),
-      chartGross: allGross.slice(firstDataIdx),
+      chartRevenue: runningSum(allRev.slice(firstDataIdx)),
+      chartGross: runningSum(allGross.slice(firstDataIdx)),
     };
   }, [chartView, dailyChartData, yearlySeries, currentMonth]);
 

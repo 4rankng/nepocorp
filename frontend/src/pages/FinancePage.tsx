@@ -8,6 +8,7 @@ import { PageHeader, Panel } from '../components/UI';
 import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
+import './FinancePage.css';
 
 function formatRawNumber(num: number | string | null): string {
   return formatNumber(num);
@@ -583,7 +584,7 @@ export default function FinancePage() {
             </Link>
           </p>
 
-          {/* Per-truck breakdown table */}
+          {/* Per-truck breakdown */}
           {report?.trucks && report.trucks.length > 0 && (
             <Panel
               title="Phân tích lãi gộp theo phương tiện"
@@ -591,48 +592,110 @@ export default function FinancePage() {
               style={{ marginTop: 20 }}
               flush
             >
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Biển số xe</th>
-                      <th className="num">Lệnh</th>
-                      <th className="num">Doanh thu chặng</th>
-                      <th className="num">Tổng chi phí</th>
-                      {maintenanceCost > 0 && (
-                        <>
-                          <th className="num">BD đầu kéo</th>
-                          <th className="num">BD rơ-mooc</th>
-                        </>
-                      )}
-                      <th className="num">Lợi nhuận gộp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.trucks.map(t => (
-                        <tr key={t.id}>
-                          <td style={{ fontWeight: 600, color: t.id === 0 ? 'var(--fg-3)' : 'var(--fg-1)', fontStyle: t.id === 0 ? 'italic' : 'normal' }}>
+              {/* ── Mobile card list (≤640px) ──────────────────────────────── */}
+              <div className="mobile-only">
+                <div className="truck-card-list">
+                  {report.trucks.map(t => {
+                    const margin = t.revenue > 0 ? ((t.profit / t.revenue) * 100).toFixed(1) : '0.0';
+                    const barPct = t.revenue > 0 ? Math.min(100, Math.max(0, (t.profit / t.revenue) * 100)) : 0;
+                    return (
+                      <div key={t.id} className="truck-card">
+                        <div className="truck-card__header">
+                          <span className="truck-card__plate">
                             {t.id === 0 ? 'Xe ngoài' : t.plate}
-                          </td>
-                          <td className="num">{t.trips}</td>
-                          <td className="num">{formatRawNumber(t.revenue)}</td>
-                          <td className="num">{formatRawNumber(t.costs)}</td>
+                          </span>
+                          <span className={`truck-card__profit ${t.profit >= 0 ? 'truck-card__profit--up' : 'truck-card__profit--down'}`}>
+                            {formatRawNumber(t.profit)}₫
+                          </span>
+                        </div>
+                        <div className="truck-card__stats">
+                          <div className="truck-card__stat">
+                            <span className="truck-card__stat-label">Lệnh</span>
+                            <span className="truck-card__stat-value">{t.trips}</span>
+                          </div>
+                          <div className="truck-card__stat">
+                            <span className="truck-card__stat-label">Doanh thu</span>
+                            <span className="truck-card__stat-value">{formatRawNumber(t.revenue)}</span>
+                          </div>
+                          <div className="truck-card__stat">
+                            <span className="truck-card__stat-label">Chi phí</span>
+                            <span className="truck-card__stat-value">{formatRawNumber(t.costs)}</span>
+                          </div>
                           {maintenanceCost > 0 && (() => {
                             const comp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
-                            return (
-                              <>
-                                <td className="num">{comp.truck > 0 ? formatRawNumber(comp.truck) : '—'}</td>
-                                <td className="num">{comp.trailer > 0 ? formatRawNumber(comp.trailer) : '—'}</td>
-                              </>
+                            if (comp.truck > 0 || comp.trailer > 0) return (
+                              <div className="truck-card__stat">
+                                <span className="truck-card__stat-label">Bảo dưỡng</span>
+                                <span className="truck-card__stat-value">
+                                  {comp.truck > 0 ? `${formatRawNumber(comp.truck)} ĐK` : ''}
+                                  {comp.truck > 0 && comp.trailer > 0 ? ' · ' : ''}
+                                  {comp.trailer > 0 ? `${formatRawNumber(comp.trailer)} RM` : ''}
+                                </span>
+                              </div>
                             );
+                            return null;
                           })()}
-                          <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
-                            {formatRawNumber(t.profit)}
-                          </td>
-                        </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                        <div className="truck-card__bar-track">
+                          <div
+                            className={`truck-card__bar-fill ${t.profit >= 0 ? 'truck-card__bar-fill--up' : 'truck-card__bar-fill--down'}`}
+                            style={{ width: `${Math.min(100, Math.abs(barPct))}%` }}
+                          />
+                        </div>
+                        <div className="truck-card__margin">
+                          Biên LN {margin}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Desktop table (>640px) ─────────────────────────────────── */}
+              <div className="desktop-only">
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Biển số xe</th>
+                        <th className="num">Lệnh</th>
+                        <th className="num">Doanh thu chặng</th>
+                        <th className="num">Tổng chi phí</th>
+                        {maintenanceCost > 0 && (
+                          <>
+                            <th className="num">BD đầu kéo</th>
+                            <th className="num">BD rơ-mooc</th>
+                          </>
+                        )}
+                        <th className="num">Lợi nhuận gộp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.trucks.map(t => (
+                          <tr key={t.id}>
+                            <td style={{ fontWeight: 600, color: t.id === 0 ? 'var(--fg-3)' : 'var(--fg-1)', fontStyle: t.id === 0 ? 'italic' : 'normal' }}>
+                              {t.id === 0 ? 'Xe ngoài' : t.plate}
+                            </td>
+                            <td className="num">{t.trips}</td>
+                            <td className="num">{formatRawNumber(t.revenue)}</td>
+                            <td className="num">{formatRawNumber(t.costs)}</td>
+                            {maintenanceCost > 0 && (() => {
+                              const comp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
+                              return (
+                                <>
+                                  <td className="num">{comp.truck > 0 ? formatRawNumber(comp.truck) : '—'}</td>
+                                  <td className="num">{comp.trailer > 0 ? formatRawNumber(comp.trailer) : '—'}</td>
+                                </>
+                              );
+                            })()}
+                            <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
+                              {formatRawNumber(t.profit)}
+                            </td>
+                          </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </Panel>
           )}

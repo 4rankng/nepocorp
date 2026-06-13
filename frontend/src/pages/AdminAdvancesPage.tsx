@@ -14,6 +14,7 @@ import {
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
+import './AdminAdvancesPage.css';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 

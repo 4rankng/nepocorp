@@ -8,6 +8,7 @@ import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary } from '../hooks/useQueries';
 import { splitKpi } from '../features/dashboard/utils';
+import './PayableListPage.css';
 
 interface PayablesResponse {
   items: PayableSummary[];

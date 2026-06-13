@@ -1,0 +1,66 @@
+/* ============================================================================
+ * FwdFilterPills — TingTing
+ * Extracted from UI.css during architecture refactoring (Phase 4)
+ * ========================================================================== */
+.fwd-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 0 16px;
+  margin-bottom: 4px;
+}
+.fwd-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+.fwd-filter-pill:hover {
+  border-color: var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.fwd-filter-pill--active {
+  background: var(--ink);
+  color: var(--fg-on-brand);
+  border-color: var(--ink);
+}
+.fwd-filter-pill--active:hover {
+  background: var(--ink);
+  color: var(--fg-on-brand);
+  opacity: 0.9;
+}
+.fwd-filter-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.fwd-filter-pill--active .fwd-filter-pill__dot {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+.fwd-filter-pill__count {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: rgba(0,0,0,0.08);
+  padding: 0 5px;
+  line-height: 1;
+}
+.fwd-filter-pill--active .fwd-filter-pill__count {
+  background: rgba(255,255,255,0.25);
+}

@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
 import { expenseSchema } from '@tingting/shared';
 import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
+import './ExpenseEntryPage.css';
 
 type FormState = {
   expenseDate: string;

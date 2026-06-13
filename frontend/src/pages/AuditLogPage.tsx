@@ -10,6 +10,7 @@ import { Panel, KPI, Drawer } from '../components/UI';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
 import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../lib/audit-helpers';
+import './AuditLogPage.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 

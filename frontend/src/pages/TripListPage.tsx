@@ -36,6 +36,7 @@ import {
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
   type StatusFilter, type StatusCounts,
 } from '../features/trips';
+import './TripListPage.css';
 
 export default function TripListPage() {
   const navigate = useNavigate();

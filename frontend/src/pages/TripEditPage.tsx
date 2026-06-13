@@ -17,6 +17,7 @@ import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import type { TripOptions } from '../hooks/useTripOptions';
+import './TripForm.css';
 
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();

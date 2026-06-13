@@ -8,6 +8,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
+import './DebtListPage.css';
 
 interface CustomerDebtInfo {
   customerId: number;

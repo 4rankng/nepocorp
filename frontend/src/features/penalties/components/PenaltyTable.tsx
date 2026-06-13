@@ -570,6 +570,24 @@ export function PenaltyTable({
               </div>
             </div>
           </div>
+          {reasons.length === 0 ? (
+            <div className="penalty-empty-reasons">
+              <img
+                src="/assets/illustrations/empty-penalty-reasons.svg"
+                alt=""
+                aria-hidden="true"
+                className="penalty-empty-reasons__img"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="penalty-empty-reasons__title">Chưa có phân loại vi phạm</div>
+              <div className="penalty-empty-reasons__desc">
+                Thêm các mức phạt nội quy để hệ thống tự động áp dụng khi lập biên bản kỷ luật.
+              </div>
+              <Btn variant="secondary" icon={<Plus size={13} />} onClick={() => navigate('/config/penalty-reasons')}>
+                Thêm nội quy đầu tiên
+              </Btn>
+            </div>
+          ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {reasons.map((r, idx) => {
               const amount = Number(r.defaultAmount);
@@ -595,6 +613,7 @@ export function PenaltyTable({
               );
             })}
           </div>
+          )}
           <div className="penalty-table-foot">
             <div className="legend">
               <span>Cập nhật lần cuối: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{formatDate(new Date().toISOString().slice(0, 10))}</strong></span>

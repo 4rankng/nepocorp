@@ -1,0 +1,480 @@
+/* ============================================================================
+ * Table — TingTing
+ * Extracted from UI.css during architecture refactoring (Phase 4)
+ * ========================================================================== */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table-wrap--standalone {
+  border-radius: 12px;
+}
+.table-scroll { overflow-x: auto; overflow-y: hidden; }
+
+/* Ancillary-fees grid: 8 cols (Loại phí · Hình thức · Mua · Bán · Lãi DV
+   · Nhà CC · Chứng từ · Trạng thái). Settlement method got its own column
+   so the fee name doesn't get crowded; status cell hosts the pill + the
+   inline hover-revealed approve/reject icons. */
+.ancillary-fees__table { min-width: 0; table-layout: fixed; width: 100%; }
+.ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-2xs); }
+.ancillary-fees__table tbody td { padding: 7px 6px; font-size: var(--fs-xs); vertical-align: top; }
+.ancillary-fees__table tbody td.num { font-size: var(--fs-xs); }
+.ancillary-fees__table thead th:nth-child(1) { width: 30%; }   /* Loại phí + Hình thức */
+.ancillary-fees__table thead th:nth-child(2) { width: 12%; }   /* Mua vào */
+.ancillary-fees__table thead th:nth-child(3) { width: 12%; }   /* Bán ra */
+.ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* Lãi DV */
+.ancillary-fees__table thead th:nth-child(5) { width: 12%; }   /* Nhà cung cấp */
+.ancillary-fees__table thead th:nth-child(6) { width: 12%; }   /* Chứng từ */
+.ancillary-fees__table thead th:nth-child(7) { width: 11%; }   /* Trạng thái (sticky) */
+
+/* Clip long text in body cells so numbers/labels never bleed into the
+   next column. Col 1 keeps the natural wrap (it stacks name + container). */
+.ancillary-fees__table tbody td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ancillary-fees__table tbody td.num {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Non-sticky last column */
+.ancillary-fees__table thead th:nth-child(7) {
+  background: var(--surface-2);
+}
+.ancillary-fees__table tfoot td:nth-child(7) {
+  background: var(--surface-2);
+}
+
+/* Decision cell: status pill + hover action icons */
+.fee-decision-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.fee-decision-cell__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+/* Reveal on row hover — keyboard focus also reveals for accessibility. */
+.ancillary-fees__table tbody tr:hover .fee-decision-cell__actions,
+.ancillary-fees__table tbody tr:focus-within .fee-decision-cell__actions,
+.ancillary-fees__table tbody tr:focus .fee-decision-cell__actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* Icon-only action buttons */
+.fee-decision-cell__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+}
+.fee-decision-cell__btn:active:not(:disabled) { transform: scale(0.88); }
+.fee-decision-cell__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Approve: solid green — the primary action */
+.fee-decision-cell__btn--approve {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+.fee-decision-cell__btn--approve:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent-2);
+  color: var(--fg-on-brand);
+}
+/* Reject: ghost — invisible until hovered, then red */
+.fee-decision-cell__btn--reject {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-3);
+}
+.fee-decision-cell__btn--reject:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Total row */
+.ancillary-fees__table tfoot tr {
+  border-top: 2px solid var(--line-2);
+  background: var(--surface-2);
+}
+.ancillary-fees__table tfoot td {
+  padding: 10px 5px;
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  /* Match body .num cells: clip long totals so they
+     never bleed into the next column on narrow viewports. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dashed "Thêm phí" row */
+.ancillary-fees__add-row td {
+  border: 1.5px dashed var(--line-2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.ancillary-fees__add-row:hover td {
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+
+/* Responsive: hide low-priority columns on narrow viewports */
+/* Tablet — drop Chứng từ (invoice/date numbers; rarely needed in field) */
+@media (max-width: 1023px) {
+  .ancillary-fees__table thead th:nth-child(6),
+  .ancillary-fees__table tbody td:nth-child(6),
+  .ancillary-fees__table tfoot td:nth-child(6) { display: none; }
+  /* Re-distribute freed width: give it to the fee-name column (col 1) */
+  .ancillary-fees__table thead th:nth-child(1),
+  .ancillary-fees__table tbody td:nth-child(1) { width: 34%; }
+  .ancillary-fees__table thead th:nth-child(2),
+  .ancillary-fees__table thead th:nth-child(3),
+  .ancillary-fees__table thead th:nth-child(4),
+  .ancillary-fees__table thead th:nth-child(5) { width: 13%; }
+}
+
+/* Mobile: swap table for cards */
+/* Default: show table, hide mobile cards */
+.ancillary-fees__mobile { display: none; }
+
+@media (max-width: 640px) {
+  .ancillary-fees__desktop { display: none !important; }
+  .ancillary-fees__mobile { display: block; }
+}
+
+/* Mobile fee cards */
+.ancillary-fees__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ancillary-fee-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  transition: box-shadow 0.15s ease;
+}
+.ancillary-fee-card:active {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.ancillary-fee-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ancillary-fee-card__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.ancillary-fee-card__badge {
+  display: inline-flex;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  background: var(--surface-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.ancillary-fee-card__status {
+  flex-shrink: 0;
+}
+
+.ancillary-fee-card__amounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.ancillary-fee-card__amount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ancillary-fee-card__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ancillary-fee-card__value {
+  font-size: 13px;
+  color: var(--ink);
+}
+.ancillary-fee-card__value--margin {
+  font-weight: 700;
+}
+
+.ancillary-fee-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+.ancillary-fee-card__meta > span::before {
+  content: '\00b7';
+  margin-right: 4px;
+  color: var(--ink-3);
+  opacity: 0.5;
+}
+.ancillary-fee-card__meta > span:first-child::before {
+  display: none;
+}
+
+.ancillary-fee-card__actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+.ancillary-fee-card__btn--approve {
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  border-color: var(--accent);
+}
+.ancillary-fee-card__btn--approve:hover {
+  background: var(--accent);
+  color: var(--fg-on-brand);
+}
+.ancillary-fee-card__btn--reject {
+  color: var(--ink-3);
+}
+.ancillary-fee-card__btn--reject:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* Mobile totals bar */
+.ancillary-fees__mobile-totals {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.ancillary-fees__mobile-totals-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ancillary-fees__mobile-totals-nums {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  justify-content: flex-end;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+}
+.ancillary-fees__mobile-totals-nums > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+/* Mobile add button */
+.ancillary-fees__mobile-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1.5px dashed var(--line-2);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.ancillary-fees__mobile-add:hover,
+.ancillary-fees__mobile-add:active {
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+
+
+/* Base table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 900px;
+}
+thead th {
+  text-align: left;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-bottom: 2px solid var(--line-2);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+thead th.num,
+td.num {
+  text-align: right;
+  font-family: var(--font-mono);
+}
+tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: background 150ms ease;
+}
+tbody tr {
+  background: var(--surface);
+  transition: background 150ms ease;
+}
+tbody tr.is-clickable { cursor: pointer; }
+tbody tr:hover td {
+  background-color: var(--surface-accent);
+}
+/* Explicitly override sticky td cells on hover to ensure sync */
+tbody tr:hover td[style*="position: sticky"],
+tbody tr:hover td.sticky {
+  background-color: var(--surface-accent) !important;
+}
+tbody tr:last-child td { border-bottom: none; }
+
+.table-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.page-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  font-family: var(--font-mono);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.page-btn:hover { background: var(--surface); color: var(--ink); }
+.page-btn.is-active { background: var(--ink); color: var(--fg-on-brand); }
+
+/* Premium .tt-table */
+.tt-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 13px; }
+.tt-table thead th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 14px 18px;
+  background: rgba(247, 248, 250, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line-2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tt-table tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.tt-table tbody tr { cursor: pointer; transition: background 0.2s ease; }
+.tt-table tbody tr:hover { background: rgba(0, 177, 79, 0.04); }
+.tt-table tbody tr:last-child td { border-bottom: none; }
+.tt-table td.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Misc table helpers */
+.ttbq-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.ttbq-cell__bar { width: 36px; height: 4px; background: var(--surface-3); border-radius: 999px; position: relative; overflow: hidden; }
+.ttbq-cell__bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
+.ttbq-cell--ok .ttbq-cell__bar-fill { background: var(--accent); width: 78%; }
+.ttbq-cell--warn .ttbq-cell__bar-fill { background: var(--warning); width: 92%; }
+.ttbq-cell--danger .ttbq-cell__bar-fill { background: var(--danger); width: 100%; }
+
+.missing-flag { display: inline-flex; align-items: center; gap: 4px; color: var(--danger); font-size: 11px; font-weight: 600; margin-left: 4px; }
+
+.row-strong { font-weight: 600; color: var(--ink); font-size: 13px; }
+.row-meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+.row-actions { display: flex; gap: 2px; justify-content: flex-end; }
+.row-action {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.row-action:hover { background: var(--surface-3); color: var(--ink); }

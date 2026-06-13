@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 import { Modal } from '../components/UI';
 import { DebtOffsetModal } from '../components/DebtOffsetModal';
 import { useAuth } from '../hooks/useAuth';
+import './DebtDetailPage.css';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
 

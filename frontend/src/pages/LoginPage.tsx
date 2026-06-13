@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import './LoginPage.css';
 
 export default function LoginPage() {
   const { login } = useAuth();

@@ -14,6 +14,7 @@ import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQ
 import { useToast } from '../components/shared/Toast';
 import type { CapTableHistory } from '@tingting/shared';
 import { useMonth } from '../hooks/useMonth';
+import './ProfitPage.css';
 
 interface DistributionResult {
   quarter: number;

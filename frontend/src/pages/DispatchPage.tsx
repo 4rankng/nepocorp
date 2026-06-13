@@ -10,6 +10,7 @@ import { DispatchFilters } from '../features/dispatch/components/DispatchFilters
 import { FleetGrid } from '../features/dispatch/components/FleetGrid';
 import { formatFullDate } from '../features/dispatch/utils';
 import type { Driver, Truck, FleetFilter } from '../features/dispatch/utils';
+import './DispatchPage.css';
 
 export default function DispatchPage() {
   const navigate = useNavigate();
