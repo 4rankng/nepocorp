@@ -317,7 +317,6 @@
   text-align: left;
   margin-bottom: 2px;
   position: relative;
-  will-change: transform;
 }
 .sidebar-item::before {
   content: "";

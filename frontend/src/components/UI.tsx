@@ -7,6 +7,9 @@ import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAn
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
 
+const BTN_PRESS_IN = { scaleX: [1, 0.97], duration: 100, ease: 'out(3)' } as const;
+const BTN_PRESS_OUT = { scaleX: [0.97, 1], duration: 300, ease: spring({ stiffness: 400, damping: 18 }) };
+
 const overlayEntrance: EntranceFn = (overlay, content, prefersReduced) => {
   if (prefersReduced) {
     utils.set(overlay, { opacity: 1 });
@@ -257,22 +260,14 @@ export function Btn({
     const el = btnRef.current;
     if (!el || prefersReduced) return;
     pressAnimRef.current?.pause();
-    pressAnimRef.current = animate(el, {
-      scaleX: [1, 0.97],
-      duration: 100,
-      ease: 'out(3)',
-    });
+    pressAnimRef.current = animate(el, BTN_PRESS_IN);
   }, [prefersReduced]);
 
   const handlePointerUp = useCallback(() => {
     const el = btnRef.current;
     if (!el || prefersReduced) return;
     pressAnimRef.current?.pause();
-    pressAnimRef.current = animate(el, {
-      scaleX: [0.97, 1],
-      duration: 300,
-      ease: spring({ stiffness: 400, damping: 18 }),
-    });
+    pressAnimRef.current = animate(el, BTN_PRESS_OUT);
   }, [prefersReduced]);
 
   return (
