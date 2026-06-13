@@ -75,7 +75,8 @@
   border-radius: var(--radius-md);
   font-size: var(--fs-sm);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
   color: var(--fg-2);
   border: 1px solid var(--border-2);
 }

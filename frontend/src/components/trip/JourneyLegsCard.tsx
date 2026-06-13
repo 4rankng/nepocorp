@@ -78,7 +78,7 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
               />
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 16 }}>
             <div className="form-summary" style={{ margin: 0 }}>
               <span>Tổng số chặng: <strong>{legs.length}</strong></span>
               <span>Tổng cự ly: <strong>{totalKm.toLocaleString('vi-VN')} Km</strong></span>
