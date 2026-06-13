@@ -9,6 +9,7 @@ import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/u
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderAdvancesPage.css';
+import '../components/shared/HeroKpiRow.css';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#D97706',
@@ -24,7 +25,7 @@ export default function ForwarderAdvancesPage() {
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
   const { rootRef } = usePageAnimations({
     ready: !loading,
-    selectors: ['.page-header', '.fadv-hero-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
+    selectors: ['.page-header', '.hero-kpi-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
   });
   const createAdvanceRequest = useCreateAdvanceRequest();
   const requests = (data?.items ?? []) as AdvanceRequestWithRefs[];
@@ -51,10 +52,10 @@ export default function ForwarderAdvancesPage() {
   useEffect(() => {
     if (loading || totalRequests === 0 || prefersReduced) return;
     animateCounters([
-      { el: heroAmountRef.current!, value: totalAmount, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
-      { el: heroTotalRef.current!, value: totalRequests, suffix: ' yêu cầu' },
-      { el: heroPendingRef.current!, value: pendingCount, suffix: ' chờ duyệt' },
-    ].filter(c => c.el));
+      { el: heroAmountRef.current, value: totalAmount, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
+      { el: heroTotalRef.current, value: totalRequests, suffix: ' yêu cầu' },
+      { el: heroPendingRef.current, value: pendingCount, suffix: ' chờ duyệt' },
+    ]);
   }, [loading, totalRequests, totalAmount, pendingCount, animateCounters, prefersReduced]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -109,26 +110,26 @@ export default function ForwarderAdvancesPage() {
 
       {/* Hero KPI row */}
       {totalRequests > 0 && (
-        <div className="fadv-hero-row">
-          <div className="fadv-hero">
-            <span className="fadv-hero__eyebrow">Tổng tạm ứng</span>
-            <span className="fadv-hero__amount" ref={heroAmountRef}>0 ₫</span>
-            <span className="fadv-hero__subtitle">{totalRequests} yêu cầu tạm ứng</span>
-            <Wallet size={72} className="fadv-hero__watermark" aria-hidden />
+        <div className="hero-kpi-row">
+          <div className="hero-kpi-card">
+            <span className="hero-kpi-card__eyebrow">Tổng tạm ứng</span>
+            <span className="hero-kpi-card__amount" ref={heroAmountRef}>0 ₫</span>
+            <span className="hero-kpi-card__subtitle">{totalRequests} yêu cầu tạm ứng</span>
+            <Wallet size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
-          <div className="fadv-kpi-stack">
-            <div className="fadv-kpi-mini fadv-kpi-mini--accent">
-              <div className="fadv-kpi-mini__icon"><Wallet size={16} /></div>
-              <div className="fadv-kpi-mini__body">
-                <span className="fadv-kpi-mini__value" ref={heroTotalRef}>0</span>
-                <span className="fadv-kpi-mini__label">yêu cầu</span>
+          <div className="hero-kpi-stack">
+            <div className="hero-kpi-mini hero-kpi-mini--accent">
+              <div className="hero-kpi-mini__icon"><Wallet size={16} /></div>
+              <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__value" ref={heroTotalRef}>0</span>
+                <span className="hero-kpi-mini__label">yêu cầu</span>
               </div>
             </div>
-            <div className="fadv-kpi-mini fadv-kpi-mini--warn">
-              <div className="fadv-kpi-mini__icon"><Clock size={16} /></div>
-              <div className="fadv-kpi-mini__body">
-                <span className="fadv-kpi-mini__value" ref={heroPendingRef}>0</span>
-                <span className="fadv-kpi-mini__label">chờ duyệt</span>
+            <div className="hero-kpi-mini hero-kpi-mini--warn">
+              <div className="hero-kpi-mini__icon"><Clock size={16} /></div>
+              <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="hero-kpi-mini__label">chờ duyệt</span>
               </div>
             </div>
           </div>

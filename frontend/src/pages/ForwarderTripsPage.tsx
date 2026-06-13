@@ -9,6 +9,7 @@ import { useForwarderTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderTripsPage.css';
+import '../components/shared/HeroKpiRow.css';
 
 interface TripSummary {
   id: number;
@@ -37,7 +38,7 @@ export default function ForwarderTripsPage() {
   /* ── Page entrance animation ── */
   const { rootRef } = usePageAnimations({
     ready: !loading,
-    selectors: ['.page-header', '.ftrip-hero-row', '.fwd-filter-pills', '.ftrip-card'],
+    selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.ftrip-card'],
   });
 
   /* ── List stagger animation ── */
@@ -57,9 +58,9 @@ export default function ForwarderTripsPage() {
     if (loading || totalTrips === 0 || prefersReduced) return;
     animateCounters(
       [
-        { el: heroTotalRef.current!, value: totalTrips, suffix: ' chuyến' },
-        { el: heroContainersRef.current!, value: totalContainers, suffix: ' cont' },
-      ].filter(c => c.el),
+        { el: heroTotalRef.current, value: totalTrips, suffix: ' chuyến' },
+        { el: heroContainersRef.current, value: totalContainers, suffix: ' cont' },
+      ],
     );
   }, [loading, totalTrips, totalContainers, animateCounters, prefersReduced]);
 
@@ -94,21 +95,21 @@ export default function ForwarderTripsPage() {
       <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
 
       {/* ── Hero KPI Row ── */}
-      <div className="ftrip-hero-row">
-        <div className="ftrip-hero">
-          <span className="ftrip-hero__eyebrow">Tổng chuyến đi</span>
-          <span className="ftrip-hero__amount" ref={heroTotalRef}>0 chuyến</span>
-          <span className="ftrip-hero__subtitle">Danh sách chuyến đi vận chuyển</span>
-          <Truck size={72} className="ftrip-hero__watermark" aria-hidden="true" />
+      <div className="hero-kpi-row">
+        <div className="hero-kpi-card">
+          <span className="hero-kpi-card__eyebrow">Tổng chuyến đi</span>
+          <span className="hero-kpi-card__amount" ref={heroTotalRef}>0 chuyến</span>
+          <span className="hero-kpi-card__subtitle">Danh sách chuyến đi vận chuyển</span>
+          <Truck size={72} className="hero-kpi-card__watermark" aria-hidden="true" />
         </div>
-        <div className="ftrip-kpi-stack">
-          <div className="ftrip-kpi-mini ftrip-kpi-mini--accent">
-            <div className="ftrip-kpi-mini__icon">
+        <div className="hero-kpi-stack">
+          <div className="hero-kpi-mini hero-kpi-mini--accent">
+            <div className="hero-kpi-mini__icon">
               <Package size={16} />
             </div>
-            <div className="ftrip-kpi-mini__body">
-              <span className="ftrip-kpi-mini__value" ref={heroContainersRef}>0</span>
-              <span className="ftrip-kpi-mini__label">container</span>
+            <div className="hero-kpi-mini__body">
+              <span className="hero-kpi-mini__value" ref={heroContainersRef}>0</span>
+              <span className="hero-kpi-mini__label">container</span>
             </div>
           </div>
         </div>

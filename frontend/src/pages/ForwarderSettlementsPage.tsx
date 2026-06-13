@@ -12,6 +12,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderSettlementsPage.css';
+import '../components/shared/HeroKpiRow.css';
 
 /** Vietnamese fallback labels for expense type codes */
 const EXPENSE_TYPE_VI: Record<string, string> = {
@@ -91,7 +92,7 @@ export default function ForwarderSettlementsPage() {
   const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
   const { rootRef } = usePageAnimations({
     ready: !loadingSettlements,
-    selectors: ['.page-header', '.fset-hero-row', '.fwd-filter-pills', '.fset-card'],
+    selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.fset-card'],
   });
   const { data: catalogs } = useCatalogs();
   const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
@@ -114,10 +115,10 @@ export default function ForwarderSettlementsPage() {
   useEffect(() => {
     if (loadingSettlements || settlements.length === 0 || prefersReduced) return;
     animateCounters([
-      { el: heroExpenseRef.current!, value: totalExpenseAll, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
-      { el: heroTotalRef.current!, value: settlements.length, suffix: ' phiếu' },
-      { el: heroPendingRef.current!, value: pending, suffix: ' chờ xử lý' },
-    ].filter(c => c.el));
+      { el: heroExpenseRef.current, value: totalExpenseAll, format: (v: number) => `${Math.round(v).toLocaleString('vi-VN')} ₫` },
+      { el: heroTotalRef.current, value: settlements.length, suffix: ' phiếu' },
+      { el: heroPendingRef.current, value: pending, suffix: ' chờ xử lý' },
+    ]);
   }, [loadingSettlements, settlements.length, totalExpenseAll, pending, animateCounters, prefersReduced]);
 
   // Status counts & filtered list
@@ -166,26 +167,26 @@ export default function ForwarderSettlementsPage() {
 
       {/* Hero KPI row */}
       {settlements.length > 0 && (
-        <div className="fset-hero-row">
-          <div className="fset-hero">
-            <span className="fset-hero__eyebrow">Tổng chi phí thanh toán</span>
-            <span className="fset-hero__amount" ref={heroExpenseRef}>0 ₫</span>
-            <span className="fset-hero__subtitle">{settlements.length} phiếu thanh toán</span>
-            <FileText size={72} className="fset-hero__watermark" aria-hidden />
+        <div className="hero-kpi-row">
+          <div className="hero-kpi-card">
+            <span className="hero-kpi-card__eyebrow">Tổng chi phí thanh toán</span>
+            <span className="hero-kpi-card__amount" ref={heroExpenseRef}>0 ₫</span>
+            <span className="hero-kpi-card__subtitle">{settlements.length} phiếu thanh toán</span>
+            <FileText size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
-          <div className="fset-kpi-stack">
-            <div className="fset-kpi-mini fset-kpi-mini--accent">
-              <div className="fset-kpi-mini__icon"><FileText size={16} /></div>
-              <div className="fset-kpi-mini__body">
-                <span className="fset-kpi-mini__value" ref={heroTotalRef}>0</span>
-                <span className="fset-kpi-mini__label">phiếu</span>
+          <div className="hero-kpi-stack">
+            <div className="hero-kpi-mini hero-kpi-mini--accent">
+              <div className="hero-kpi-mini__icon"><FileText size={16} /></div>
+              <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__value" ref={heroTotalRef}>0</span>
+                <span className="hero-kpi-mini__label">phiếu</span>
               </div>
             </div>
-            <div className="fset-kpi-mini fset-kpi-mini--warn">
-              <div className="fset-kpi-mini__icon"><Clock size={16} /></div>
-              <div className="fset-kpi-mini__body">
-                <span className="fset-kpi-mini__value" ref={heroPendingRef}>0</span>
-                <span className="fset-kpi-mini__label">chờ xử lý</span>
+            <div className="hero-kpi-mini hero-kpi-mini--warn">
+              <div className="hero-kpi-mini__icon"><Clock size={16} /></div>
+              <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="hero-kpi-mini__label">chờ xử lý</span>
               </div>
             </div>
           </div>

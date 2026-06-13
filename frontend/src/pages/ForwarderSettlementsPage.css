@@ -1033,32 +1033,6 @@
   }
 }
 
-/* ── Responsive overrides (from responsive.css decomposition) ── */
-@media (max-width: 640px) {
-  /* ── Earnings page ── */
-  .panel.earnings-hero { padding: 0; }
-  .earnings-hero__inner { padding: 14px 16px 12px; }
-  .earnings-hero__label { font-size: var(--fs-2xs); margin-bottom: 4px; letter-spacing: 0.06em; }
-  .earnings-hero__value { font-size: var(--fs-2xl); letter-spacing: -0.02em; }
-  .earnings-hero__icon { width: 40px; height: 40px; }
-  .earnings-hero__icon svg { width: 20px; height: 20px; }
-
-  /* Prevent KPI text truncation on mobile for driver portal */
-  .is-driver .kpi__value {
-    white-space: normal !important;
-    font-size: clamp(14px, 4.5vw, 18px) !important;
-    word-break: break-all;
-  }
-} /* end 640px */
-
-/* ── Responsive overrides (from responsive.css decomposition) ── */
-@media (max-width: 640px) {
-  /* ── Fuel allocation card mobile overrides ── */
-  .fuel-alloc-card { padding: 0 !important; }
-  .fuel-alloc-card__header { padding: 10px 14px; gap: 10px; }
-  .fuel-alloc-card__value { font-size: var(--fs-2xl); }
-  .fuel-alloc-card__body { padding: 10px 14px; gap: 4px; }
-} /* end 640px */
 
 /* ── Reduced motion ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
