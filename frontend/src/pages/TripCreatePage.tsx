@@ -15,7 +15,6 @@ import { TipCard } from '../components/trip/TipCard';
 import { ActionBar } from '../components/trip/ActionBar';
 import { SectionDivider } from '../components/trip/SectionDivider';
 import { usePageAnimations } from '../hooks/animations';
-import './TripCreatePage.css';
 import './TripForm.css';
 
 export default function TripCreatePage() {

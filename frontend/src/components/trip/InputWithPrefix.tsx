@@ -1,4 +1,5 @@
 import React from 'react';
+import './InputWithPrefix.css';
 
 interface InputWithPrefixProps {
   value: string;
