@@ -6,8 +6,8 @@
  * population effect. The parent useTripForm composes this hook
  * with sub-hooks (legs, photos), derived values, and submit logic.
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { FuelMode, LoadingType } from '@tingting/shared';
+import { useState, useCallback, useRef } from 'react';
+import { FuelMode } from '@tingting/shared';
 import type { TripDetail } from '@tingting/shared';
 
 // ─── Types ────────────────────────────────────────────────────────────────

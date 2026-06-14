@@ -8,18 +8,18 @@ export const userClient = {
   },
 
   getUser: async (id: number) => {
-    return api.get<any>(AUTH.USER(id));
+    return api.get<UserRow>(AUTH.USER(id));
   },
 
   createUser: async (data: unknown) => {
-    return api.post<any>(AUTH.USERS, data);
+    return api.post<UserRow>(AUTH.USERS, data);
   },
 
   updateUser: async (id: number, data: unknown) => {
-    return api.patch<any>(AUTH.USER(id), data);
+    return api.patch<UserRow>(AUTH.USER(id), data);
   },
 
   deleteUser: async (id: number) => {
-    return api.delete<any>(AUTH.USER(id));
+    return api.delete<UserRow>(AUTH.USER(id));
   },
 };

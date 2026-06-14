@@ -20,7 +20,7 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
       setTruckId(item?.assignedTruckId || 0);
       setStatus(item?.status || 'ACTIVE');
     }
-  }, [isOpen, item?.id]);
+  }, [isOpen, item?.id, item?.name, item?.phone, item?.baseSalary, item?.assignedTruckId, item?.status]);
   const handleSave = () => {
     if (!name.trim()) return;
     onsave({

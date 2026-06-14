@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCompact } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import type { Role } from '@tingting/shared';
+import type { Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
@@ -51,7 +51,7 @@ const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' })
   const isDown = mom.startsWith('-');
   const cls = isUp ? 'delta up' : isDown ? 'delta down' : 'delta flat';
   const sym = isUp ? '▲' : isDown ? '▼' : '·';
-  return <span className={cls}>{sym} {mom.replace(/^[+\-]/, '')}{suffix}</span>;
+  return <span className={cls}>{sym} {mom.replace(/^[+-]/, '')}{suffix}</span>;
 };
 
 // ─── Cost donut (5 slices, computed from cost breakdown) ────────────────────
@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
   const {
     stats, loading, prevPnlReport,
-    createdTrips, createdTripsCount,
+    createdTripsCount,
     renewalReminders, receivablesSummary,
     yearlySeries, fuelWarnings,
     recentAudit,
@@ -144,7 +144,7 @@ export default function DashboardPage() {
 
   const dailyChartData = useMemo(() => {
     if (!allTrips || allTrips.length === 0) return { labels: [] as string[], revenue: [] as number[], gross: [] as number[] };
-    const activeTrips = allTrips.filter((t: any) => t.status !== 'CANCELED');
+    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
     const dayMap = new Map<string, { revenue: number; gross: number }>();
     for (const t of activeTrips) {
       const dateKey = t.departureDate?.slice(0, 10);

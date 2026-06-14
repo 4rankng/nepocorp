@@ -7,7 +7,6 @@ import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
-import { useToast } from '../components/shared/Toast';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -33,7 +32,7 @@ interface CustomerDebtInfo {
   riskClass: 'high' | 'med' | 'low';
 }
 
-function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], maxOverdueDays: number): 'high' | 'med' | 'low' {
+function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], _maxOverdueDays: number): 'high' | 'med' | 'low' {
   if (totalOutstanding <= 0) return 'low';
   if (aging.over90 > 0 || totalOutstanding > 100_000_000) return 'high';
   if (aging.d30 > 0 || aging.d60 > 0) return 'med';
@@ -66,12 +65,11 @@ export default function DebtListPage() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
-  const rawCustomers = data?.customers ?? [];
-  const error = queryError ? (queryError as any).message : null;
+  const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
+  const error = queryError ? (queryError as Error).message : null;
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk' | 'current'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
   );
-  const { toast: showToast } = useToast();
 
   /* ── Animation hooks ── */
   const prefersReduced = usePrefersReducedMotion();
@@ -103,18 +101,26 @@ export default function DebtListPage() {
 
   /* ── Data processing (preserved exactly) ── */
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
-    return rawCustomers.map(c => ({
+    return rawCustomers.map(c => {
+      // API returns these alongside the typed CustomerAging fields but they
+      // aren't declared on the interface yet; cast to a typed extension.
+      const ext = c as CustomerAging & {
+        linkedSupplierApBalance?: number;
+        netBalance?: number;
+      };
+      return {
       customerId: c.customerId,
       customerName: c.customerName,
       contactInfo: c.contactInfo,
       linkedSupplierId: c.linkedSupplierId ?? null,
-      linkedSupplierApBalance: (c as any).linkedSupplierApBalance ?? 0,
-      netBalance: (c as any).netBalance ?? c.totalOutstanding,
+      linkedSupplierApBalance: ext.linkedSupplierApBalance ?? 0,
+      netBalance: ext.netBalance ?? c.totalOutstanding,
       totalOutstanding: c.totalOutstanding,
       aging: c.aging,
       maxOverdueDays: c.maxOverdueDays,
       riskClass: classifyRisk(c.totalOutstanding, c.aging, c.maxOverdueDays),
-    }));
+      };
+    });
   }, [rawCustomers]);
 
   const totals = useMemo(() => {

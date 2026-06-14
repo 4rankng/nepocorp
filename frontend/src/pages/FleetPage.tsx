@@ -12,6 +12,7 @@ import { useCRUD } from '../hooks/useCRUD';
 import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { configClient } from '../api/configClient';
+import { qk } from '../api/keys';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
 import type { Truck as TruckType, Driver } from '@tingting/shared';
 
@@ -207,7 +208,7 @@ function TrailerCard({ trailers, trucks, crud }: {
           {trailers.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có rơ-moóc nào</div>
           )}
-          {trailers.map((t, i) => {
+          {trailers.map((t) => {
             const coupledTruck = truckByTrailer.get(t.id);
             return (
               <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
@@ -377,7 +378,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
           {trucks.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có dữ liệu</div>
           )}
-          {trucks.map((t, i) => {
+          {trucks.map((t) => {
             const trailer = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;
             const driver = driverByTruck.get(t.id);
             return (
@@ -557,7 +558,7 @@ function DriverCard({ drivers, truckMap, crud }: {
           {filteredDrivers.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có dữ liệu</div>
           )}
-          {filteredDrivers.map((d, i) => {
+          {filteredDrivers.map((d) => {
             const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
             return (
               <div key={d.id} className="m-card" onClick={() => setViewingId(d.id)}>
@@ -647,15 +648,15 @@ export default function FleetPage() {
   const { rootRef } = usePageAnimations({ ready: true });
   const { data: fleetData } = useTrucksAndDrivers();
   const { data: trailers = [] } = useQuery({
-    queryKey: ['trailers'],
+    queryKey: qk.catalogs.trailers,
     queryFn: () => configClient.getTrailers(),
     staleTime: 60_000,
   });
-  const trucks = fleetData?.trucks ?? [];
-  const drivers = fleetData?.drivers ?? [];
+  const trucks = useMemo(() => fleetData?.trucks ?? [], [fleetData?.trucks]);
+  const drivers = useMemo(() => fleetData?.drivers ?? [], [fleetData?.drivers]);
 
   const invalidateFleet = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['trucks-drivers'] });
+    await queryClient.invalidateQueries({ queryKey: qk.catalogs.trucksDrivers });
   }, [queryClient]);
 
   const truckCrud = useCRUD('/trucks', invalidateFleet);
@@ -664,7 +665,7 @@ export default function FleetPage() {
   // đầu kéo over time. Invalidate both the trailers list AND fleet (since
   // the truck rows display the coupled trailer's plate).
   const trailerCrud = useCRUD('/trailers', async () => {
-    await queryClient.invalidateQueries({ queryKey: ['trailers'] });
+    await queryClient.invalidateQueries({ queryKey: qk.catalogs.trailers });
     await invalidateFleet();
   });
 

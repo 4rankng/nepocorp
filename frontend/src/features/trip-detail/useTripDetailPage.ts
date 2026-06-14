@@ -196,7 +196,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     try {
       await api.post(`/trips/${trip.id}/lock`, {});
       await refetchTrip();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
         const confirmed = await confirm(
           'Doanh thu chuyến đi này bằng 0 đ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?'
@@ -206,8 +206,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
           try {
             await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true });
             await refetchTrip();
-          } catch (retryErr: any) {
-            setActionError(retryErr.message || 'Lỗi khi khóa chuyến đi.');
+          } catch (retryErr: unknown) {
+            setActionError((retryErr as Error).message || 'Lỗi khi khóa chuyến đi.');
           } finally {
             setActionLoading(false);
           }
@@ -215,7 +215,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       } else if (err instanceof ApiError) {
         setActionError(err.message);
       } else {
-        setActionError(err.message || 'Có lỗi xảy ra khi khóa chuyến đi.');
+        setActionError((err as Error).message || 'Có lỗi xảy ra khi khóa chuyến đi.');
       }
     } finally {
       setActionLoading(false);
@@ -233,8 +233,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     try {
       await api.post(`/trips/${trip.id}/unlock`, {});
       await refetchTrip();
-    } catch (err: any) {
-      setActionError(err.message || 'Lỗi khi mở khóa chuyến đi.');
+    } catch (err: unknown) {
+      setActionError((err as Error).message || 'Lỗi khi mở khóa chuyến đi.');
     } finally {
       setActionLoading(false);
     }
@@ -251,8 +251,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     try {
       await api.patch(`/trips/${trip.id}/departure-date`, { departureDate: newDate });
       await refetchTrip();
-    } catch (err: any) {
-      setActionError(err.message || 'Lỗi khi thay đổi ngày khởi hành.');
+    } catch (err: unknown) {
+      setActionError((err as Error).message || 'Lỗi khi thay đổi ngày khởi hành.');
     } finally {
       setActionLoading(false);
     }
@@ -276,8 +276,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       });
       setShowReassign(false);
       await refetchTrip();
-    } catch (e: any) {
-      setReassignError(e.message || 'Lỗi khi phân xe lại');
+    } catch (e: unknown) {
+      setReassignError((e as Error).message || 'Lỗi khi phân xe lại');
     } finally {
       setReassignLoading(false);
     }
@@ -306,8 +306,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       setAdjustAmount('');
       setAdjustNote('');
       setAdjustRef('');
-    } catch (e: any) {
-      setAdjustError(e.message || 'Lỗi khi tạo điều chỉnh');
+    } catch (e: unknown) {
+      setAdjustError((e as Error).message || 'Lỗi khi tạo điều chỉnh');
     } finally {
       setAdjustSubmitting(false);
     }

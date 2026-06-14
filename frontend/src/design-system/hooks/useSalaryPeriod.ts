@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { salaryClient } from '../../api/salaryClient';
 import { configClient } from '../../api/configClient';
+import { qk } from '../../api/keys';
 
 /**
  * Returns the salary period for a given (month, year). Same shape as the
@@ -18,7 +19,7 @@ export interface SalaryPeriod {
 
 export function useSalaryPeriod(month: number, year: number) {
   return useQuery<SalaryPeriod>({
-    queryKey: ['salary-period', month, year],
+    queryKey: qk.catalogs.salaryPeriod(month, year),
     queryFn: () => configClient.getSalaryPeriodResolve(month, year),
     staleTime: 30 * 60 * 1000,
     enabled: month >= 1 && month <= 12 && year >= 2000,

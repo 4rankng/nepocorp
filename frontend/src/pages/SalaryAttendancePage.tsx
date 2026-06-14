@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Loader2, AlertTriangle, Users,
+  ChevronLeft, ChevronRight, Loader2, Users,
   Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
@@ -11,16 +11,11 @@ import { usePageAnimations } from '../hooks/animations';
 import {
   useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary,
 } from '../hooks/useSalaryQueries';
-import { useCatalogs } from '../hooks/useCatalogs';
-import { getInitials, avatarColorById } from '../lib/avatar';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
 import './SalaryAttendancePage.css';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
-
-const MONTHS_VI = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
 const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -45,7 +40,7 @@ interface CalCellProps {
   onCycle: (date: string, current: WorkDayRecord | undefined) => void;
 }
 
-function CalCell({ dateStr, day, isSunday, dayLabel, workDay, isUpdating, isLocked, onCycle }: CalCellProps) {
+function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpdating, isLocked, onCycle }: CalCellProps) {
   const status = workDay?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
   const cfg = status ? STATUS_CONFIG[status] : null;
   const isClickable = !isUpdating && !isLocked && status !== 'TRIP_DAY';
@@ -161,7 +156,7 @@ interface MobileDayListProps {
   parseLocalDate: (s: string) => Date;
 }
 
-function MobileDayList({ dates, workDayMap, isUpdating, isConfirmed, onCycle, parseLocalDate }: MobileDayListProps) {
+function MobileDayList({ dates, workDayMap, isUpdating: _isUpdating, isConfirmed, onCycle, parseLocalDate }: MobileDayListProps) {
   return (
     <div className="mobile-day-list">
       {dates.map(dateStr => {
@@ -237,8 +232,7 @@ export default function SalaryAttendancePage() {
 
   const isConfirmed = salary?.confirmationStatus === 'CONFIRMED';
 
-  const drivers = salaryList?.items ?? [];
-  const selectedDriver = drivers.find(d => d.id === selectedDriverId);
+  const drivers = useMemo(() => salaryList?.items ?? [], [salaryList?.items]);
 
   // Cross-driver aggregates for hero metrics
   const aggregates = useMemo(() => {
@@ -306,7 +300,7 @@ export default function SalaryAttendancePage() {
     } catch {
       // Error is surfaced via mutation.error state; suppress unhandled rejection
     }
-  }, [selectedDriverId, updateMutation]);
+  }, [selectedDriverId, updateMutation, isConfirmed]);
 
   // Parse a YYYY-MM-DD string using local timezone (avoids UTC midnight parsing issue)
   const parseLocalDate = useCallback((s: string): Date => {
@@ -596,10 +590,10 @@ export default function SalaryAttendancePage() {
                           disabled={confirmMutation.isPending}
                           onClick={() => {
                             confirmMutation.mutate(undefined, {
-                              onError: (err: any) => {
+                              onError: (err: unknown) => {
                                 toast({
                                   kind: 'error',
-                                  message: err?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
+                                  message: (err as Error)?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
                                 });
                               },
                             });

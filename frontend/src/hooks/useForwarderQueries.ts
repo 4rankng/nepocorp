@@ -55,7 +55,7 @@ export function useCreateForwarderExpense() {
 export function useDeleteForwarderExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, tripId }: { id: number; tripId: number }) =>
+    mutationFn: ({ id, tripId: _tripId }: { id: number; tripId: number }) =>
       forwarderClient.deleteExpense(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.forwarder.tripDetailAll });

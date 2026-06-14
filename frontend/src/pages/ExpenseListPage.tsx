@@ -9,11 +9,11 @@ import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
-import { useToast } from '../components/shared/Toast';
 import { useQuery } from '@tanstack/react-query';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
-import { FINANCIAL, CONFIG } from '@tingting/shared';
+import { FINANCIAL } from '@tingting/shared';
 import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
+import { qk } from '../api/keys';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
@@ -23,6 +23,7 @@ const EXPENSE_STATUS_COLORS: Record<string, string> = {
   UNPAID: '#D97706',
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- page-scoped query hook co-located with its consumer page
 export function useExpenses(params: {
   page: number;
   supplierId?: number;
@@ -42,14 +43,13 @@ export function useExpenses(params: {
   if (params.dateTo) qs.set('dateTo', params.dateTo);
 
   return useQuery<PaginatedResponse<ExpenseWithRefs>>({
-    queryKey: ['expenses', params],
+    queryKey: qk.financial.expenses(params),
     queryFn: () => api.get(`${FINANCIAL.EXPENSES}?${qs}`),
   });
 }
 
 export default function ExpenseListPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [page, setPage] = useState(1);
   const [supplierId, setSupplierId] = useState<number | ''>('');
@@ -77,6 +77,7 @@ export default function ExpenseListPage() {
   const [catalogsLoaded, setCatalogsLoaded] = useState(false);
 
   useQuery({
+    // eslint-disable-next-line @tingting/no-bare-query-key -- compound query combining suppliers + expense categories; no single qk domain key fits
     queryKey: ['expense-catalogs'],
     queryFn: async () => {
       const [suppliers, categories] = await Promise.all([
@@ -97,12 +98,12 @@ export default function ExpenseListPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const error = queryError ? 'Không thể tải dữ liệu' : null;
 
-  const { rootRef: desktopListRef } = useListAnimations({
+  useListAnimations({
     itemSelector: '.expense-table tbody tr',
     mode: 'rows',
     deps: [expenses, isLoading],
   });
-  const { rootRef: mobileListRef } = useListAnimations({
+  useListAnimations({
     itemSelector: '.m-card',
     mode: 'cards',
     deps: [expenses, isLoading],
@@ -312,13 +313,13 @@ export default function ExpenseListPage() {
                     {formatCurrency(e.amount)}
                   </span>
                 </div>
-                {(e.truck || (e as any).trailer) && (
+                {(e.truck || e.trailer) && (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Xe</span>
                     <span className="m-card__row-value">
                       <span className="expense-plate">
                         {e.vehicleComponent === 'TRAILER'
-                          ? ((e as any).trailer?.licensePlate || '—')
+                          ? (e.trailer?.licensePlate || '—')
                           : (e.truck?.licensePlate || '—')
                         }
                       </span>

@@ -1,9 +1,10 @@
 import { api } from './api';
 import { NOTIFICATIONS } from '@tingting/shared';
+import type { Notification } from '@tingting/shared';
 
 export const notificationClient = {
   list: (page = 1, limit = 20) =>
-    api.get<{ items: any[]; total: number; page: number; limit: number }>(
+    api.get<{ items: Notification[]; total: number; page: number; limit: number }>(
       `${NOTIFICATIONS.LIST}?page=${page}&limit=${limit}`,
     ),
 
@@ -11,8 +12,8 @@ export const notificationClient = {
     api.get<{ count: number }>(NOTIFICATIONS.UNREAD_COUNT),
 
   markAsRead: (id: number) =>
-    api.post<any>(NOTIFICATIONS.MARK_READ(id), {}),
+    api.post<void>(NOTIFICATIONS.MARK_READ(id), {}),
 
   markAllAsRead: () =>
-    api.post<any>(NOTIFICATIONS.MARK_ALL_READ, {}),
+    api.post<void>(NOTIFICATIONS.MARK_ALL_READ, {}),
 };

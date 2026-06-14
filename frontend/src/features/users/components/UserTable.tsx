@@ -343,8 +343,8 @@ export function UserTable({
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
 function DesktopTable({
-  filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId,
-  onEdit, onDelete,
+  filtered, canManage, canDelete: _canDelete, canEditDriversOnly, truckMap, deleting: _deleting, currentUserId,
+  onEdit, onDelete: _onDelete,
   sortBy, sortOrder, onSort,
 }: {
   filtered: UserRow[];
@@ -549,7 +549,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                           {canManage && canDelete && (
                             <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                               disabled={!!deleting || isMe}
-                              onClick={() => { setActiveMenuId(null); !isMe && onDelete(u.id); }}>
+                              onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
                               {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
                             </button>
                           )}

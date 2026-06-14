@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
-import type { CustomerStatement, LedgerEntry, AgingBucket, DebtOffset } from '@tingting/shared';
+import type { LedgerEntry, AgingBucket, DebtOffset } from '@tingting/shared';
 import { AlertTriangle, Download, FileSpreadsheet, FileText, Receipt, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
@@ -12,6 +12,7 @@ import { Modal } from '../components/UI';
 import { DebtOffsetModal } from '../components/DebtOffsetModal';
 import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
+import { qk } from '../api/keys';
 import './DebtDetailPage.css';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
@@ -88,12 +89,12 @@ export default function DebtDetailPage() {
   const handleApproveOffset = async (oid: number) => {
     try {
       await api.post(`/finance/debt-offsets/${oid}/approve`, {});
-      queryClient.invalidateQueries({ queryKey: ['debt-offsets', customerId] });
-      queryClient.invalidateQueries({ queryKey: ['customer-statement', String(customerId)] });
-      queryClient.invalidateQueries({ queryKey: ['customer-aging'] });
+      queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsets(customerId!) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(customerId) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
       refetch();
-    } catch (err: any) {
-      alert(err.message || 'Lỗi khi duyệt đối trừ.');
+    } catch (err: unknown) {
+      alert((err as Error).message || 'Lỗi khi duyệt đối trừ.');
     }
   };
 
@@ -107,7 +108,7 @@ export default function DebtDetailPage() {
   const { data: dualEntities } = useQuery<Array<{
     customerId: number; supplierId: number; arBalance: number; apBalance: number;
   }>>({
-    queryKey: ['dual-entities'],
+    queryKey: qk.tripForm.dualEntities,
     queryFn: () => api.get('/finance/dual-entities'),
     staleTime: 2 * 60 * 1000,
   });
@@ -121,7 +122,7 @@ export default function DebtDetailPage() {
 
   // Offset history
   const { data: offsetHistory = [] } = useQuery<DebtOffset[]>({
-    queryKey: ['debt-offsets', customerId],
+    queryKey: qk.financial.debtOffsets(customerId!),
     queryFn: () => api.get(`/finance/debt-offsets?customerId=${customerId}`),
     enabled: !!customerId && !!linkedSupplierId,
     staleTime: 60 * 1000,
@@ -180,7 +181,7 @@ export default function DebtDetailPage() {
   const initials = getInitials(customer.name);
   const hasDebt = totalOutstanding > 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
-  const unpaidTrips = (statement as any).unpaidTrips ?? [];
+  const unpaidTrips = statement.unpaidTrips ?? [];
 
   // FIFO-distribute the entered amount across the oldest unpaid trips,
   // then POST. The backend also re-applies FIFO inside the transaction
@@ -225,12 +226,12 @@ export default function DebtDetailPage() {
         receiptId: payReceipt.trim(),
         payments,
       });
-      await queryClient.invalidateQueries({ queryKey: ['customer-statement'] });
-      await queryClient.invalidateQueries({ queryKey: ['debt'] });
+      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(undefined) });
+      await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
       await refetch();
       setShowPay(false);
-    } catch (e: any) {
-      setPayError(e?.message || 'Lỗi khi ghi nhận thanh toán.');
+    } catch (e: unknown) {
+      setPayError((e as Error)?.message || 'Lỗi khi ghi nhận thanh toán.');
     } finally {
       setPaySubmitting(false);
     }

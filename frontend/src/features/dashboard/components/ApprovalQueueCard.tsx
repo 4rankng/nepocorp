@@ -6,7 +6,6 @@ import { api } from '../../../lib/api';
 import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
-import { useAuth } from '../../../hooks/useAuth';
 import { qk } from '../../../api/keys';
 
 const TYPE_LABEL: Record<ApprovalItemType, string> = {
@@ -60,7 +59,7 @@ interface Props {
 
 export function ApprovalQueueCard({ data, loading, navigate }: Props) {
   const total = data?.total ?? 0;
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
   const groupedView = items.length > 5;
 
   // Single-pass groupBy instead of O(n*k) filter per type
@@ -133,7 +132,6 @@ function Row({
   showTypeLabel: boolean;
 }) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const [approving, setApproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,8 +200,8 @@ function Row({
       queryClient.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
       queryClient.invalidateQueries({ queryKey: qk.forwarder.settlements });
       queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsetsAll });
-    } catch (err: any) {
-      setError(err?.message || 'Lỗi khi duyệt');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Lỗi khi duyệt');
     } finally {
       setApproving(false);
     }

@@ -9,6 +9,8 @@ import type {
   SupplierStatement,
   ExpenseWithRefs,
   PaginatedResponse,
+  Penalty,
+  AdvanceSettlementWithRefs,
 } from '@tingting/shared';
 
 export interface CustomerAging {
@@ -40,7 +42,7 @@ export const financialClient = {
     api.get<SupplierStatement>(FINANCIAL.SUPPLIER_STATEMENT(id)),
 
   getPenalties: (params?: Record<string, string>) =>
-    api.get<PaginatedResponse<any>>(
+    api.get<PaginatedResponse<Penalty>>(
       `${FINANCIAL.PENALTIES}${toQuery(params as Record<string, string | number | undefined>)}`,
     ),
 
@@ -75,7 +77,7 @@ export const financialClient = {
   },
 
   getAdminSettlementDetail: (id: number) =>
-    api.get<any>(FINANCIAL.ADVANCE_SETTLEMENT_DETAIL(id)),
+    api.get<AdvanceSettlementWithRefs>(FINANCIAL.ADVANCE_SETTLEMENT_DETAIL(id)),
 
   getSettlementExportUrl: (id: number, format: 'xlsx' | 'pdf') =>
     `/api${FINANCIAL.ADVANCE_SETTLEMENT_EXPORT(id, format)}`,

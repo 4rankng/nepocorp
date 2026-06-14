@@ -26,6 +26,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components -- context hook, not a component
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error('useToast must be used within ToastProvider');
@@ -94,7 +95,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       });
       animationsRef.current.push(anim);
     });
-  }, [toasts]);
+  }, [toasts, prefersReduced]);
 
   const dismiss = useCallback((id: string) => {
     const el = toastRefs.current.get(id);
@@ -144,10 +145,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   // Clean up all timers and animations on unmount
   useEffect(() => {
+    // Snapshot the ref values so the cleanup uses the maps as they are at
+    // effect-run time, not the (possibly mutated) values when unmounting.
+    const currentTimers = timers.current;
+    const currentExitTimers = exitTimers.current;
+    const currentAnimations = animationsRef.current;
     return () => {
-      for (const t of timers.current.values()) clearTimeout(t);
-      for (const t of exitTimers.current.values()) clearTimeout(t);
-      animationsRef.current.forEach(a => a.pause());
+      for (const t of currentTimers.values()) clearTimeout(t);
+      for (const t of currentExitTimers.values()) clearTimeout(t);
+      currentAnimations.forEach(a => a.pause());
       animationsRef.current = [];
     };
   }, []);

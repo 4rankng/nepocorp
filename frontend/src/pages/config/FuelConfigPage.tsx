@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { Save, Loader2 } from 'lucide-react';
-import { Clock, User } from 'lucide-react';
 import { configClient } from '../../api/configClient';
 import { useFuelConfig, useSaveFuelConfig } from '../../hooks/useCatalogQueries';
 import { PageHeader, Panel } from '../../components/UI';
@@ -25,7 +24,8 @@ export default function FuelConfigPage() {
 
   useEffect(() => {
     if (fuelConfig) {
-      const f = fuelConfig as any;
+      // Accept both camelCase and legacy snake_case field names from the API.
+      const f = fuelConfig as unknown as Record<string, string | null>;
       setForm({
         loadedNorm: f.loadedNorm ?? f.loaded_norm ?? '',
         emptyNorm: f.emptyNorm ?? f.empty_norm ?? '',
@@ -54,7 +54,7 @@ export default function FuelConfigPage() {
         criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
       navigate('/config');
-    } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Lỗi lưu'); } finally { setSaving(false); }
   };
 
   return (

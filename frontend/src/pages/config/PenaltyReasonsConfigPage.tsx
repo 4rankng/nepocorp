@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
+import { qk } from '../../api/keys';
 import { useCRUD } from '../../hooks/useCRUD';
 import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
 import type { PenaltyReason } from '@tingting/shared';
@@ -163,14 +164,6 @@ const SEV_OPTIONS: { value: Severity; label: string; color: string }[] = [
 const sevLabel: Record<string, string> = { high: 'Nghiêm trọng', mid: 'Trung bình', low: 'Nhẹ' };
 const sevPill: Record<string, string> = { high: 'danger', mid: 'warn', low: 'neutral' };
 
-const ShieldIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <line x1="12" y1="8" x2="12" y2="12"/>
-    <line x1="12" y1="16" x2="12.01" y2="16"/>
-  </svg>
-);
-
 function PenaltyReasonForm({
   saving, item, onSave, onCancel, existingReasons,
 }: {
@@ -275,12 +268,12 @@ export default function PenaltyReasonsConfigPage() {
   }, []);
 
   const { data, refetch, isLoading } = useQuery({
-    queryKey: ['penalty-reasons'],
+    queryKey: qk.penalties.list,
     queryFn: () => configClient.getPenaltyReasons(),
   });
 
   const { data: statsData, refetch: refetchStats } = useQuery({
-    queryKey: ['/penalty-reasons/stats'],
+    queryKey: qk.penalties.stats,
     queryFn: async () =>
       await api.get<{
         totalCount: number;
@@ -295,7 +288,7 @@ export default function PenaltyReasonsConfigPage() {
     await refetchStats();
   });
 
-  const items = data || [];
+  const items = useMemo(() => data || [], [data]);
 
   const filteredItems = useMemo(() => {
     const list = items.filter((d) => {

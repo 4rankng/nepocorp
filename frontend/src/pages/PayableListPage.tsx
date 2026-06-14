@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { PayableSummary } from '@tingting/shared';
@@ -26,9 +25,11 @@ interface PayablesResponse {
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
 export default function PayableListPage() {
-  const navigate = useNavigate();
   const { data, isLoading: loading, error: queryError } = usePayablesSummary();
-  const payables = (data as unknown as PayablesResponse | undefined)?.items ?? [];
+  const payables = useMemo(
+    () => (data as unknown as PayablesResponse | undefined)?.items ?? [],
+    [data],
+  );
   const apiTotal = (data as unknown as PayablesResponse | undefined)?.totalOutstanding;
   const apiSupplierCount = (data as unknown as PayablesResponse | undefined)?.totalSuppliers ?? 0;
   const apiOverdueCount = (data as unknown as PayablesResponse | undefined)?.overdueSuppliers ?? 0;

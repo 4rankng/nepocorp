@@ -3,8 +3,8 @@ import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
-import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
+import { qk } from '../../api/keys';
 import { useCRUD } from '../../hooks/useCRUD';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { Port } from '@tingting/shared';
@@ -190,7 +190,7 @@ export default function PortsConfigPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data, refetch } = useQuery({
-    queryKey: ['ports'],
+    queryKey: qk.catalogs.ports,
     queryFn: () => configClient.getPorts(),
   });
 

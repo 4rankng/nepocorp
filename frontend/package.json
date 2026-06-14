@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "size-check": "node scripts/check-size.mjs",
-    "lint": "eslint . --flag unstable_config_from_file"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.17",

@@ -76,10 +76,13 @@ export default function ForwarderSettlementCreatePage() {
 
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
-  const unlinkedExpenses = (unlinkedData?.items ?? []) as Array<{
+  const unlinkedExpenses = useMemo(() => (unlinkedData?.items ?? []) as Array<{
     id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null; containerNumbers: string | null;
-  }>;
-  const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
+  }>, [unlinkedData]);
+  const expenseTypeOptions = useMemo(
+    () => catalogs?.forwarderExpenseTypes ?? [],
+    [catalogs],
+  );
 
   const totalAdvance = useMemo(() => {
     return approvedRequests

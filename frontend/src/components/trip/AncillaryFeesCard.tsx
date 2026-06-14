@@ -175,8 +175,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpenses(tripId) });
       setForm(EMPTY_FORM);
       setShowForm(false);
-    } catch (e: any) {
-      setFormError(e.message || 'Lỗi khi thêm phí.');
+    } catch (e: unknown) {
+      setFormError((e as Error).message || 'Lỗi khi thêm phí.');
     } finally {
       setSubmitting(false);
     }

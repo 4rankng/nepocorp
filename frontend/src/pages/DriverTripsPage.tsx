@@ -19,7 +19,7 @@ interface TripSummary {
 
 export default function DriverTripsPage() {
   const { data, isLoading: loading, error: queryError } = useDriverTrips();
-  const trips = (data?.items ?? []) as TripSummary[];
+  const trips = useMemo(() => (data?.items ?? []) as TripSummary[], [data?.items]);
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
 

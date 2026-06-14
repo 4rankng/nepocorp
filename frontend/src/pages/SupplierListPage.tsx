@@ -7,7 +7,7 @@ import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
-import type { Supplier, Customer, PaginatedResponse } from '@tingting/shared';
+import type { Supplier, Customer } from '@tingting/shared';
 import { CONFIG } from '@tingting/shared';
 import { useSuppliers } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -45,6 +45,9 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
       setLinkedCustomerId(item?.linkedCustomerId ?? null);
       setIsFuelSupplier(item?.isFuelSupplier ?? false);
     }
+    // Reset form fields only when the modal opens or switches item; field-level
+    // deps intentionally omitted to avoid clobbering in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item?.id]);
 
   const handleSave = () => {
@@ -159,13 +162,13 @@ export default function SupplierListPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data: suppliersData, isLoading: loading, error: queryError, refetch: refetchSuppliers } = useSuppliers(page, search);
-  const suppliers = suppliersData?.items ?? [];
+  const suppliers = useMemo(() => suppliersData?.items ?? [], [suppliersData]);
   const total = suppliersData?.total ?? 0;
   const { rootRef } = usePageAnimations({ ready: !loading });
   // Use the bootstrap catalog for the full active-customer list (not the
   // paginated /customers endpoint which only returns page 1 by default).
   const { data: catalogData } = useCatalogs();
-  const allCustomers = catalogData?.customers ?? [];
+  const allCustomers = useMemo(() => catalogData?.customers ?? [], [catalogData]);
   const customerLookup = useMemo(() => {
     const map = new Map<number, string>();
     for (const c of allCustomers) map.set(c.id, c.name);

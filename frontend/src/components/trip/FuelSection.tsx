@@ -1,5 +1,6 @@
 import React from "react";
 import { FuelMode } from "@tingting/shared";
+import type { Supplier } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
 import { useCatalogs } from "../../hooks/useCatalogs";
@@ -97,7 +98,7 @@ export function FuelSection() {
             }}
           >
             <option value="">-- Chọn nhà cung cấp nhiên liệu --</option>
-            {catalogData?.suppliers?.filter(s => (s as any).isFuelSupplier).map((s) => (
+            {catalogData?.suppliers?.filter(s => (s as Supplier).isFuelSupplier).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>

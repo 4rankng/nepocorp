@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
@@ -39,7 +39,6 @@ const EMPTY_CAP: CapTableHistory[] = [];
 const EMPTY_YEARLY: (PnlReport | null)[] = [];
 
 export default function FinancePage() {
-  const navigate = useNavigate();
   const { month, year } = useMonth();
   const [chartView, setChartView] = useState<'day' | 'month'>('day');
   const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
@@ -72,9 +71,9 @@ export default function FinancePage() {
     activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
   } = useMemo(() => {
     const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-    const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-    const realRoadCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-    const realDriverCost = activeTrips.reduce((s, t) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalFuelCost || '0'), 0);
+    const realRoadCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
+    const realDriverCost = activeTrips.reduce((s, t) => s + parseFloat(t.driverSalary || '0'), 0);
     const totalCosts = report?.totalCosts ?? 0;
     
     const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;

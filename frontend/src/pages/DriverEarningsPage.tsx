@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
@@ -7,21 +7,6 @@ import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import type { CounterTarget } from '../hooks/animations';
 import './DriverEarningsPage.css';
-
-interface EarningsSummary {
-  baseSalary: string;
-  tripIncome: string;
-  penalties: string;
-  netIncome: string;
-  adjustment?: number;
-  supplementPay?: number;
-  leaveDeduction?: number;
-  standardWorkDays?: number;
-  paidDays?: number;
-  dailyRate?: number;
-  periodStart?: string;
-  periodEnd?: string;
-}
 
 interface PenaltyEntry {
   id: number;
@@ -37,7 +22,16 @@ export default function DriverEarningsPage() {
   const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
   const penaltyParams = period ? { dateFrom: period.start, dateTo: period.end } : undefined;
   const { data: penaltiesData, isLoading: penaltiesLoading } = useDriverPenalties(penaltyParams);
-  const penalties: PenaltyEntry[] = Array.isArray(penaltiesData) ? penaltiesData : (penaltiesData as any)?.items ?? [];
+  const rawPenalties = Array.isArray(penaltiesData)
+    ? penaltiesData
+    : (penaltiesData && !Array.isArray(penaltiesData) && 'items' in penaltiesData ? penaltiesData.items : []);
+  const penalties: PenaltyEntry[] = rawPenalties.map((p) => ({
+    id: p.id,
+    amount: p.amount,
+    date: p.date,
+    customReason: p.customReason ?? null,
+    reasonText: p.reasonText ?? null,
+  }));
   const loading = earningsLoading || penaltiesLoading;
   const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
@@ -94,7 +88,6 @@ export default function DriverEarningsPage() {
 
   const netNum = parseFloat(earnings.netIncome);
   const isPositive = netNum >= 0;
-  const salaryNum = parseFloat(earnings.baseSalary);
   const penaltyNum = parseFloat(earnings.penalties);
 
   return (

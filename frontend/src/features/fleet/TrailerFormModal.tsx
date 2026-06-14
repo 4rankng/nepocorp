@@ -27,6 +27,10 @@ export function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
       setType(item?.type || TrailerType.FT40);
       setStatus(item?.status || 'ACTIVE');
     }
+    // Sync form fields from the edited item when the modal opens or the
+    // selected item changes. We intentionally key on isOpen/item?.id so
+    // typing in the inputs doesn't reset the form mid-edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item?.id]);
   const handleSave = () => {
     if (!plate.trim()) return;

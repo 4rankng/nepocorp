@@ -35,7 +35,7 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
     () =>
       entries.map((e) => ({
         ...e,
-        category: (e.category as any) || resolveCategory(e.action || ''),
+        category: e.category || resolveCategory(e.action || ''),
       })),
     [entries],
   );

@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Upload, X, Image as ImageIcon, Plus, Check } from 'lucide-react';
+import { Loader2, Upload, X, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
-import { formatCurrency } from '../lib/format';
-import { PageHeader, FormGroup } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useToast } from '../components/shared/Toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePageAnimations } from '../hooks/animations';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
 import { expenseSchema } from '@tingting/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
+import type { ExpenseWithRefs, Supplier, ExpenseCategory } from '@tingting/shared';
+import { qk } from '../api/keys';
 import './ExpenseEntryPage.css';
 
 type FormState = {
@@ -76,7 +76,7 @@ export default function ExpenseEntryPage() {
   const [creatingCategory, setCreatingCategory] = useState(false);
 
   useQuery({
-    queryKey: ['expense-form-catalogs'],
+    queryKey: qk.tripForm.expenseFormCatalogs,
     queryFn: async () => {
       const [suppliers, categories] = await Promise.all([
         configClient.getAllSuppliers(),
@@ -92,7 +92,7 @@ export default function ExpenseEntryPage() {
   });
 
   const { data: existingExpense, isLoading: loadingExpense } = useQuery<ExpenseWithRefs>({
-    queryKey: ['expense', id],
+    queryKey: qk.tripForm.expense(id!),
     queryFn: () => api.get(`${FINANCIAL.EXPENSE(Number(id))}`),
     enabled: isEdit,
   });
@@ -301,6 +301,9 @@ export default function ExpenseEntryPage() {
       }
       // Invalidate every cached expenses page so the list refetches with the new row.
       // ExpenseListPage uses queryKey ['expenses', params], so we match the prefix.
+      // qk.financial.expenses(filters) is a per-filter key; there is no broad
+      // expensesAll prefix in the factory, so we match the raw prefix here.
+      // eslint-disable-next-line @tingting/no-bare-query-key
       await queryClient.invalidateQueries({ queryKey: ['expenses'] });
       navigate('/expenses');
     } catch (err: unknown) {

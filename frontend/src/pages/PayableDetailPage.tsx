@@ -4,12 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType, FINANCIAL } from '@tingting/shared';
 import type { SupplierStatement as SupplierStatementType, LedgerEntry, AgingBucket, VendorPaymentRequest } from '@tingting/shared';
-import { AlertTriangle, Phone, Building2, ArrowLeft, X, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { AlertTriangle, Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
 import { useConfirm, Modal } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
+import { qk } from '../api/keys';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -124,9 +125,9 @@ export default function PayableDetailPage() {
       setShowPaymentModal(false);
       setPaymentAmount('');
       setPaymentReceiptId('');
-      queryClient.invalidateQueries({ queryKey: ['supplier-statement', id] });
-      queryClient.invalidateQueries({ queryKey: ['payables-summary'] });
-    } catch (err: any) {
+      queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatement(id ? Number(id) : undefined) });
+      queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummary });
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
         setSubmitting(false);
         const isConfirmed = await confirm(err.message, {
@@ -138,7 +139,7 @@ export default function PayableDetailPage() {
           await handlePaymentSubmit(true);
         }
       } else {
-        showToast({ kind: 'error', message: err.message || 'Lỗi ghi thanh toán' });
+        showToast({ kind: 'error', message: (err as Error).message || 'Lỗi ghi thanh toán' });
       }
     } finally {
       setSubmitting(false);

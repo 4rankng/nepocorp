@@ -55,6 +55,16 @@ interface OcrResponse {
   error?: string | null;
 }
 
+/** Container instance as returned by the trips API. */
+interface ServerContainer {
+  id: number;
+  containerTypeId?: number | null;
+  containerNumber?: string | null;
+  sealNumber?: string | null;
+  cargoWeightKg?: string | number | null;
+  notes?: string | null;
+}
+
 interface Props {
   tripId: number;
   /** Expected container count from trip header (Số cont). New cards auto-fill
@@ -167,7 +177,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
 
   // Existing container instances for this trip. Also carries the trip's latest
   // cont/seal photo keys (trip-level storage) so persisted photos can render.
-  const { data: existing, isLoading } = useQuery<{ items: any[]; contPhotoKey?: string | null; sealPhotoKey?: string | null }>({
+  const { data: existing, isLoading } = useQuery<{ items: ServerContainer[]; contPhotoKey?: string | null; sealPhotoKey?: string | null }>({
     queryKey: qk.tripForm.tripContainers(tripId),
     queryFn: () => api.get(`/trips/${tripId}/containers`),
     enabled: !!tripId,
@@ -181,13 +191,13 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     // Skip if we've already seeded for this trip and it hasn't changed.
     if (seededTripRef.current === tripId) return;
     seededTripRef.current = tripId;
-    const fromServer: ContainerRow[] = (existing.items || []).map((c: any) => ({
+    const fromServer: ContainerRow[] = (existing.items || []).map((c) => ({
       id: c.id,
       _key: rowKey(),
       containerTypeId: c.containerTypeId ?? '',
       containerNumber: c.containerNumber ?? '',
       sealNumber: c.sealNumber ?? '',
-      cargoWeightKg: c.cargoWeightKg ?? '',
+      cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : '',
       notes: c.notes ?? '',
     }));
     // Top up empty rows to match the expected container count.

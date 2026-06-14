@@ -39,6 +39,7 @@ describe('useTableQueryState', () => {
       () =>
         useTableQueryState<Row, { status?: string }>({
           endpoint,
+          // eslint-disable-next-line @tingting/no-bare-query-key -- test fixture key; not a domain key
           queryKey: ['test'],
           defaultPageSize: 10,
         }),
@@ -59,6 +60,7 @@ describe('useTableQueryState', () => {
       () =>
         useTableQueryState<Row, { status?: string }>({
           endpoint,
+          // eslint-disable-next-line @tingting/no-bare-query-key -- test fixture key; not a domain key
           queryKey: ['test'],
         }),
       { wrapper: withQueryClient() },

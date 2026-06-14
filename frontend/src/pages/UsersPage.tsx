@@ -23,11 +23,12 @@ export default function UsersPage() {
 
   const { data: usersData, isLoading: loading, refetch: refetchUsers } = useUsers();
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const users = (usersData?.items ?? []) as UserRow[];
+  const users = useMemo(() => (usersData?.items ?? []) as UserRow[], [usersData]);
 
   // Load trucks once for the driver "Xe phân công" field + the table "Xe" plate column.
   // Shares cache with useTrucksAndDrivers by using a common query key prefix.
   const { data: truckList = [] } = useQuery<Truck[]>({
+    // eslint-disable-next-line @tingting/no-bare-query-key -- standalone trucks list; no matching qk domain key exists
     queryKey: ['trucks'],
     queryFn: () => configClient.getTrucks(),
     staleTime: 5 * 60 * 1000,
@@ -93,8 +94,8 @@ export default function UsersPage() {
 
     if (sortBy) {
       filtered = [...filtered].sort((a, b) => {
-        let valA: any = '';
-        let valB: any = '';
+        let valA: string | number = '';
+        let valB: string | number = '';
         if (sortBy === 'name') {
           valA = (a.fullName || a.username || '').toLowerCase();
           valB = (b.fullName || b.username || '').toLowerCase();

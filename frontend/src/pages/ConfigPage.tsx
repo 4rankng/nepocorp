@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
 import { usePageAnimations } from '../hooks/animations';
+import { qk } from '../api/keys';
 import './ConfigPage.css';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
@@ -50,23 +51,23 @@ export default function ConfigPage() {
     forwarderExpenseTypes,
   ] = useQueries({
     queries: [
-      { queryKey: ['cfg-count', 'penalty-reasons'],    queryFn: () => api.get<ListResponse>('/penalty-reasons?limit=1'),    staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'road-allowances'],    queryFn: () => api.get<ListResponse>('/road-allowances?limit=1'),    staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'drivers'],            queryFn: () => api.get<ListResponse>('/drivers?limit=1'),            staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'cap-table'],          queryFn: () => api.get<ListResponse>('/cap-table?limit=1'),          staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'customers'],          queryFn: () => api.get<ListResponse>('/customers?limit=1'),          staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'routes'],             queryFn: () => api.get<ListResponse>('/routes?limit=1'),             staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'trucks'],             queryFn: () => api.get<ListResponse>('/trucks?limit=1'),             staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'trailers'],            queryFn: () => api.get<ListResponse>('/trailers?limit=1'),            staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'cargo-types'],        queryFn: () => api.get<ListResponse>('/cargo-types?limit=1'),        staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'pricing-tables'],     queryFn: () => api.get<ListResponse>('/pricing-tables?limit=1'),     staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'management-fees'],    queryFn: () => api.get<ListResponse>('/management-fees?limit=1'),    staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'salary-default'],     queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'expense-categories'], queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'fuel-config'],        queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'container-types'],    queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'ports'],              queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
-      { queryKey: ['cfg-count', 'forwarder-expense-types'], queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
+      { queryKey: qk.configCounts.penaltyReasons,        queryFn: () => api.get<ListResponse>('/penalty-reasons?limit=1'),    staleTime: 60_000 },
+      { queryKey: qk.configCounts.roadAllowances,        queryFn: () => api.get<ListResponse>('/road-allowances?limit=1'),    staleTime: 60_000 },
+      { queryKey: qk.configCounts.drivers,               queryFn: () => api.get<ListResponse>('/drivers?limit=1'),            staleTime: 60_000 },
+      { queryKey: qk.configCounts.capTable,              queryFn: () => api.get<ListResponse>('/cap-table?limit=1'),          staleTime: 60_000 },
+      { queryKey: qk.configCounts.customers,             queryFn: () => api.get<ListResponse>('/customers?limit=1'),          staleTime: 60_000 },
+      { queryKey: qk.configCounts.routes,                queryFn: () => api.get<ListResponse>('/routes?limit=1'),             staleTime: 60_000 },
+      { queryKey: qk.configCounts.trucks,                queryFn: () => api.get<ListResponse>('/trucks?limit=1'),             staleTime: 60_000 },
+      { queryKey: qk.configCounts.trailers,              queryFn: () => api.get<ListResponse>('/trailers?limit=1'),            staleTime: 60_000 },
+      { queryKey: qk.configCounts.cargoTypes,            queryFn: () => api.get<ListResponse>('/cargo-types?limit=1'),        staleTime: 60_000 },
+      { queryKey: qk.configCounts.pricingTables,         queryFn: () => api.get<ListResponse>('/pricing-tables?limit=1'),     staleTime: 60_000 },
+      { queryKey: qk.configCounts.managementFees,        queryFn: () => api.get<ListResponse>('/management-fees?limit=1'),    staleTime: 60_000 },
+      { queryKey: qk.configCounts.salaryDefault,         queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
+      { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
+      { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
+      { queryKey: qk.configCounts.containerTypes,        queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
+      { queryKey: qk.configCounts.ports,                 queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
+      { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
     ],
   });
 

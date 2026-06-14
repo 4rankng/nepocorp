@@ -6,11 +6,12 @@ import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowL
 import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
-import { PageHeader, useConfirm, Modal } from '../../components/UI';
+import { useConfirm, Modal } from '../../components/UI';
 import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
 import { useCRUD } from '../../hooks/useCRUD';
+import { qk } from '../../api/keys';
 import type { Route as RouteType, RoadAllowance } from '@tingting/shared';
 import { LoadingType } from '@tingting/shared';
 import './config-page.css';
@@ -72,6 +73,9 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
         setDefaultLegs([]);
       }
     }
+    // Reset form fields only when the modal opens or switches item; field-level
+    // deps intentionally omitted to avoid clobbering in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item?.id]);
 
   const handleSave = () => {
@@ -272,7 +276,7 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
               <div style={{ padding: '16px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--line)' }}>
                 <span style={{ color: 'var(--fg-3)', fontSize: 13 }}>Chưa có chặng mặc định</span>
               </div>
-            ) : defaultLegs.map((leg, i) => (
+            ) : defaultLegs.map((leg) => (
               <div key={leg.id} className="flex flex-wrap lg:grid lg:grid-cols-[1fr_1fr_70px_100px_30px] gap-2 items-center p-2 rounded-md" style={{ background: 'var(--bg-2)' }}>
                 <div className="flex-1 min-w-[140px]">
                   <LocationAutocomplete className="input input--sm w-full" placeholder="Điểm đi" value={leg.origin} onChange={val => updateLeg(leg.id, 'origin', val)} />
@@ -331,13 +335,13 @@ export default function RoutesConfigPage() {
   const [routeFilter, setRouteFilter] = useState<'all' | 'plain' | 'mountain'>('all');
   const [search, setSearch] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
-  const [selectedRouteLegs, setSelectedRouteLegs] = useState<any[]>([]);
+  const [selectedRouteLegs, setSelectedRouteLegs] = useState<Array<{ origin: string; destination: string; km: number; loadingType: string; polylinePath: string | null }>>([]);
 
   const fetchData = useCallback(async () => {
     const [routeList, tripRes, allowances] = await Promise.all([
       configClient.getRoutesList(search || undefined),
-      tripClient.fetchAllTrips({}).then(r => r.items).catch(() => [] as any[]),
-      configClient.getRoadAllowances().catch(() => [] as any[]),
+      tripClient.fetchAllTrips({}).then(r => r.items).catch(() => [] as Array<{ routeId?: number | null; departureDate?: string }>),
+      configClient.getRoadAllowances().catch(() => [] as RoadAllowance[]),
     ]);
     return {
       routes: routeList,
@@ -347,12 +351,12 @@ export default function RoutesConfigPage() {
   }, [search]);
 
   const { data, refetch } = useQuery({
-    queryKey: ['routes-config', search],
+    queryKey: qk.tripForm.routesConfig(search),
     queryFn: fetchData,
     staleTime: 2 * 60 * 1000,
   });
 
-  const routes = data?.routes ?? [];
+  const routes = useMemo(() => data?.routes ?? [], [data]);
 
   const selectedRoute = useMemo(() => {
     return routes.find(r => r.id === selectedRouteId);
@@ -373,7 +377,7 @@ export default function RoutesConfigPage() {
             if (res.polylinePath) {
               setSelectedRouteLegs(prev => prev.map((l, i) => i === idx ? { ...l, polylinePath: res.polylinePath } : l));
             }
-          } catch (e) {}
+          } catch { /* polyline fetch is decorative */ }
         }
       });
     } else {
@@ -386,7 +390,7 @@ export default function RoutesConfigPage() {
     if (!data?.trips) return stats;
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    data.trips.forEach((t: any) => {
+    data.trips.forEach((t) => {
       const dep = t.departureDate || '';
       if (dep.startsWith(thisMonth)) {
         const rid = t.routeId;
@@ -399,13 +403,12 @@ export default function RoutesConfigPage() {
   const routePriceMap = useMemo(() => {
     const priceMap = new Map<number, { ft20?: number; ft40?: number }>();
     if (!data?.allowances) return priceMap;
-    data.allowances.forEach((ra: any) => {
-      const rid = ra.routeId ?? ra.routeId;
-      const type = ra.trailer_type ?? ra.trailerType;
+    data.allowances.forEach((ra) => {
+      const rid = ra.routeId;
       if (!rid) return;
       const p = priceMap.get(rid) || {};
-      if (type === '20FT') p.ft20 = parseFloat(ra.base_amount ?? ra.baseAmount ?? '0');
-      if (type === '40FT') p.ft40 = parseFloat(ra.base_amount ?? ra.baseAmount ?? '0');
+      if (ra.trailerType === '20FT') p.ft20 = parseFloat(ra.baseAmount ?? '0');
+      if (ra.trailerType === '40FT') p.ft40 = parseFloat(ra.baseAmount ?? '0');
       priceMap.set(rid, p);
     });
     return priceMap;

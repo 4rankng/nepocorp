@@ -41,8 +41,8 @@ export function useUserMutations(refetch: () => void) {
       refetch();
       showToast({ kind: 'success', message: 'Tạo tài khoản thành công' });
       return true;
-    } catch (e: any) {
-      setPanelError(e.message || 'Lỗi khi tạo tài khoản');
+    } catch (e: unknown) {
+      setPanelError(e instanceof Error ? e.message : 'Lỗi khi tạo tài khoản');
       return false;
     } finally {
       setSaving(false);
@@ -67,8 +67,8 @@ export function useUserMutations(refetch: () => void) {
       refetch();
       showToast({ kind: 'success', message: 'Cập nhật tài khoản thành công' });
       return true;
-    } catch (e: any) {
-      setPanelError(e.message || 'Lỗi khi cập nhật');
+    } catch (e: unknown) {
+      setPanelError(e instanceof Error ? e.message : 'Lỗi khi cập nhật');
       return false;
     } finally {
       setSaving(false);
@@ -81,8 +81,8 @@ export function useUserMutations(refetch: () => void) {
     try {
       await userClient.deleteUser(id);
       refetch();
-    } catch (e: any) {
-      showToast({ kind: 'error', message: e.message || 'Lỗi khi xóa' });
+    } catch (e: unknown) {
+      showToast({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi khi xóa' });
     } finally {
       setDeleting(null);
     }

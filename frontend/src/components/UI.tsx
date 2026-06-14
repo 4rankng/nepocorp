@@ -66,6 +66,7 @@ function usePortalTarget() {
  * focus is inside a <textarea> or contenteditable element so multi-line
  * editing still works naturally.
  * -------------------------------------------------------------------------- */
+// eslint-disable-next-line react-refresh/only-export-components -- shared hook, not a component
 export function useConfirmShortcuts(opts: {
   isOpen: boolean;
   onConfirm?: () => void;
@@ -618,7 +619,7 @@ export function DataTable<T extends { id?: number | string }>({
                 >
                   {columns.map((col) => (
                     <td key={col.key} className={col.numeric ? 'num' : ''}>
-                      {col.render ? col.render(row) : (row as any)[col.key]}
+                      {col.render ? col.render(row) : (row as Record<string, unknown>)[col.key] as React.ReactNode}
                     </td>
                   ))}
                 </tr>
@@ -722,6 +723,7 @@ interface ConfirmState extends ConfirmOptions {
   resolve: (value: boolean) => void;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- shared hook, not a component
 export function useConfirm() {
   const [state, setState] = useState<ConfirmState | null>(null);
   const resolveRef = useRef<((v: boolean) => void) | null>(null);

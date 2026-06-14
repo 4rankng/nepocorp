@@ -106,7 +106,7 @@ async function migrateServiceMargin() {
       .where(eq(s.trips.id, trip.tripId));
 
     console.log(
-      `  Trip ${trip.tripCode || trip.tripId}: grossProfit ${currentGp.toLocaleString('vi-VN')} → ${newGrossProfit.toLocaleString('vi-VN')} (Δ${delta.toLocaleString('vi-VN'})`,
+      `  Trip ${trip.tripCode || trip.tripId}: grossProfit ${currentGp.toLocaleString('vi-VN')} → ${newGrossProfit.toLocaleString('vi-VN')} (Δ${delta.toLocaleString('vi-VN')})`,
     );
 
     updated++;

@@ -84,7 +84,7 @@ export const salaryClient = {
 
   // Batch update work days
   updateWorkDays: (driverId: number, year: number, month: number, items: WorkDayUpdate[]) =>
-    api.put<{ results: any[]; salary: AttendanceSalary }>(
+    api.put<{ results: Array<{ date: string; action: string; reason?: string }>; salary: AttendanceSalary }>(
       SALARY.WORK_DAYS(driverId, year, month),
       { items }
     ),

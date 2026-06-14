@@ -24,7 +24,9 @@ export default function DriverPenaltyPage() {
 
   const { data: allPenaltiesData, isLoading: loading } = useDriverPenalties();
   const allPenalties = useMemo((): DriverPenaltyRow[] => {
-    return Array.isArray(allPenaltiesData) ? allPenaltiesData : (allPenaltiesData as any)?.items ?? [];
+    if (Array.isArray(allPenaltiesData)) return allPenaltiesData;
+    if (allPenaltiesData && 'items' in allPenaltiesData) return allPenaltiesData.items;
+    return [];
   }, [allPenaltiesData]);
   const { rootRef } = usePageAnimations({ ready: !loading });
 
@@ -37,7 +39,9 @@ export default function DriverPenaltyPage() {
   );
   const filteredPenalties = useMemo((): DriverPenaltyRow[] => {
     if (!monthFilter) return allPenalties;
-    return Array.isArray(filteredPenaltiesData) ? filteredPenaltiesData : (filteredPenaltiesData as any)?.items ?? allPenalties;
+    if (Array.isArray(filteredPenaltiesData)) return filteredPenaltiesData;
+    if (filteredPenaltiesData && 'items' in filteredPenaltiesData) return filteredPenaltiesData.items;
+    return allPenalties;
   }, [monthFilter, filteredPenaltiesData, allPenalties]);
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.penalty-violation-row', mode: 'rows', deps: [filteredPenalties] });
 

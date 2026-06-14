@@ -1,10 +1,9 @@
-import { Fragment, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { PageHeader, Panel, Modal, useConfirm } from '../UI';
-import { ActionBtns } from './ActionBtns';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { PaginatedResponse } from '@tingting/shared';
 import { qk } from '../../api/keys';
@@ -91,7 +90,6 @@ export function CrudTable<T extends { id: number }>({
   })();
 
   const handleDelete = onDelete ?? ((id: number) => crud.doDelete(id));
-  const actionWidth = showDelete ? 100 : 80;
 
   const wrapperClass = ['fade-up', 'cfg-page', pageSlug ? `cfg-page--${pageSlug}` : ''].filter(Boolean).join(' ');
 

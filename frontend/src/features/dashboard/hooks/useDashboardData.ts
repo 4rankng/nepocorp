@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { qk } from '../../../api/keys';
 import { formatCompact } from '../../../lib/format';
-import type { TripDetail, CapTableHistory } from '@tingting/shared';
-import { Role, FINANCIAL_ROLES, TripStatus, parseThreshold } from '@tingting/shared';
+import type { TripDetail, TripLeg } from '@tingting/shared';
+import { FINANCIAL_ROLES, parseThreshold } from '@tingting/shared';
 import { useAuth } from '../../../hooks/useAuth';
 import {
   useDashboardStats,
@@ -15,7 +15,6 @@ import {
   useFuelConfig,
   useRenewalReminders,
   type PnlReport,
-  type ExtendedDashboardStats,
 } from '../../../hooks/useQueries';
 import { CATEGORY_COLORS, FALLBACK_COLORS, buildPieSlices } from '../utils';
 
@@ -109,7 +108,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
       let m = currentMonth - i;
       let yArr = thisYearRaw;
       while (m <= 0) { m += 12; yArr = lastYearRaw; }
-      const r: any = yArr[m - 1];
+      const r: PnlReport | null | undefined = yArr[m - 1];
       out.push({
         revenue: Number(r?.totalRevenue ?? 0),
         grossProfit: Number(r?.grossProfit ?? 0),
@@ -129,7 +128,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const flagged: FuelWarning[] = [];
     for (const t of allTrips) {
       const trip: TripDetail = t;
-      const totalKm = trip.legs?.reduce((s: number, l: any) => s + Number(l.km), 0) ?? 0;
+      const totalKm = trip.legs?.reduce((s: number, l: TripLeg) => s + Number(l.km), 0) ?? 0;
       const totalLiters = Number(trip.fuelLiters) || 0;
       if (totalKm <= 0 || totalLiters <= 0) continue;
       const ttbq = (totalLiters / totalKm) * 100;
@@ -201,9 +200,9 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     }));
 
     const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-    const realFuelCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalFuelCost || '0'), 0);
-    const realRoadCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).totalRoadAllowance || '0'), 0);
-    const realDriverCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat((t as any).driverSalary || '0'), 0);
+    const realFuelCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalFuelCost || '0'), 0);
+    const realRoadCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
+    const realDriverCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.driverSalary || '0'), 0);
     const mgmtCost = pnlReport?.managementFee ?? 0;
     const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
     const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);

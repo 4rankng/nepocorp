@@ -46,7 +46,19 @@ export const driverClient = {
           date: string;
           reasonText?: string;
         }>
-      | { items: Array<any> }
+      | {
+          items: Array<{
+            id: number;
+            driverId: number;
+            tripId: number | null;
+            tripCode?: string | null;
+            reasonId: number | null;
+            customReason: string | null;
+            amount: string;
+            date: string;
+            reasonText?: string;
+          }>;
+        }
     >(`${DRIVER.PENALTIES}${toQuery(params)}`);
   },
 };

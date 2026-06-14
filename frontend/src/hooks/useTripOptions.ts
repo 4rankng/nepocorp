@@ -50,7 +50,7 @@ interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean }>;
   trucks: Array<{ id: number; licensePlate: string; currentTrailerId: number | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
-  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: any[] | null }>;
+  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: string }> | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
   trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
 }

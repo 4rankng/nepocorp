@@ -23,17 +23,14 @@ import {
   KeyRound,
   ChevronRight,
   Shield,
-  Mail,
   Phone,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useClickOutside } from '../hooks/useClickOutside';
 import { api } from '../lib/api';
 import { useBadgeCounts } from '../hooks/useQueries';
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
 import { useUnreadCount } from '../hooks/useNotificationQueries';
-import { MonthProvider } from '../hooks/useMonth';
 import { NotificationDrawer } from './NotificationDrawer';
 import { Sidebar } from './layout/Sidebar';
 import { Topbar } from './layout/Topbar';
@@ -197,8 +194,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       const updated = await api.patch<{ email: string; phone: string; username: string; fullName: string | null }>('/auth/me', profileForm);
       updateUser({ email: updated.email, phone: updated.phone, username: updated.username, fullName: updated.fullName ?? undefined });
       setProfileModalOpen(false);
-    } catch (err: any) {
-      setProfileError(err?.message || 'Không thể lưu thông tin.');
+    } catch (err: unknown) {
+      setProfileError((err as Error)?.message || 'Không thể lưu thông tin.');
     } finally {
       setProfileSaving(false);
     }
@@ -230,8 +227,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         newPassword: passwordForm.newPassword,
       });
       setPasswordModalOpen(false);
-    } catch (err: any) {
-      setPasswordError(err?.message || 'Không thể đổi mật khẩu.');
+    } catch (err: unknown) {
+      setPasswordError((err as Error)?.message || 'Không thể đổi mật khẩu.');
     } finally {
       setPasswordSaving(false);
     }

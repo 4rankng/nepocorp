@@ -99,6 +99,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     const emptyReturn = Number(s.revenueEmptyReturn) || 0;
     const combine = Number(s.revenueCombine) || 0;
     s.setRevenue(String(emptyReturn + combine));
+    // 's' object omitted: individual s.* fields listed are the correct granularity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.revenueEmptyReturn, s.revenueCombine]);
 
   const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
@@ -177,6 +179,9 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     }
 
     lastPopulatedTripId.current = existingTrip.id;
+    // 's' and 'setLegs' omitted: this effect populates form fields once when
+    // existingTrip changes (guarded by lastPopulatedTripId ref); setters are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, existingTrip, s.resetToggle]);
 
   useEffect(() => {
@@ -189,6 +194,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         }
       }
     }
+    // 's' omitted: individual s.* fields listed are the correct granularity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.truckId, options?.trucks, options?.trailers]);
 
   const pricingQuery = useQuery({
@@ -224,6 +231,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       }
       s.setRevenueCombine("0");
     }
+    // 's' omitted: individual s.* fields listed are the correct granularity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricingQuery.data, s.containerCount, isEditMode]);
 
   const selectedRouteData = useMemo((): RouteOption | null => {
@@ -268,6 +277,10 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (roadConfig?.vehicleShiftDefault && Number(roadConfig.vehicleShiftDefault) > 0) {
       s.setVehicleShiftAllowance(String(roadConfig.vehicleShiftDefault));
     }
+    // 's' and roadConfig fields omitted: this effect applies road-config defaults
+    // only when the route changes; adding roadConfig deps would re-fire and
+    // overwrite user edits on every config refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRouteData, isEditMode, existingTrip]);
 
   useEffect(() => {
@@ -298,6 +311,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     const standardWorkDays = daysInMonth - sundays;
     const dailyRate = Math.round(baseSalary / standardWorkDays);
     s.setDriverSalary(String(dailyRate * days));
+    // 's' omitted: individual s.* fields listed are the correct granularity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.driverId, s.departureDate, s.completedAt, selectedRouteData, roadConfig, isEditMode, options?.drivers]);
 
   const estimatedFuelCost = useMemo(() => {
@@ -490,7 +505,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
               cargoWeightKg: r.cargoWeightKg === '' ? null : Number(r.cargoWeightKg),
               notes: r.notes.trim() || null,
             }));
-          const result = await api.put<{ items: any[] }>(`/trips/${id}/containers`, { containers });
+          const result = await api.put<{ items: Array<{ id: number; containerTypeId: number | null; containerNumber: string; sealNumber: string | null; cargoWeightKg: string | null; notes: string | null }> }>(`/trips/${id}/containers`, { containers });
           await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(id) });
           // Re-sync local rows with the server-assigned ids so a subsequent
           // save UPDATES instead of re-INSERTING (the reconcile keys off id).
@@ -498,7 +513,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           // in-session thumbnail — attached to the right row.
           const items = Array.isArray(result?.items) ? result.items : [];
           const usedKeys = new Set<string>();
-          s.setContainerRows(items.map((c: any): ContainerFormRow => {
+          s.setContainerRows(items.map((c): ContainerFormRow => {
             const match = s.containerRows.find(r =>
               !usedKeys.has(r._key) &&
               r.containerNumber.trim() &&
@@ -704,6 +719,9 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         s.setSubmitting(false);
       }
     },
+    // 's' object omitted: individual s.* fields listed below are the correct
+    // granularity for this submit handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isEditMode, existingTrip, requiredFieldsFilled, s.containerRows,
       s.customerId, s.routeId, s.truckId, s.trailerType,

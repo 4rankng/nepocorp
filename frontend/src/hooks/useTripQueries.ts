@@ -25,7 +25,7 @@ export interface NormalizedTrip {
   tripCode?: string;
 }
 
-export function normalizeTrip(t: any): NormalizedTrip {
+export function normalizeTrip(t: TripDetail): NormalizedTrip {
   return {
     id: t.id,
     customerId: t.customerId,

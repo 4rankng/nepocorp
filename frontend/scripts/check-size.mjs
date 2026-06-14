@@ -19,7 +19,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MAX_LINES = Number(process.env.MAX_LINES ?? 600);
+let MAX_LINES = Number(process.env.MAX_LINES ?? 600);
 const SKIP = process.env.SKIP_SIZE_CHECK === '1';
 const SRC = fileURLToPath(new URL('../src', import.meta.url));
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', 'graphify-out']);

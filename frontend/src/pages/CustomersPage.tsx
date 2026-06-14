@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import { formatCurrency, formatCompact } from '../lib/format';
-import type { Customer, Supplier, PaginatedResponse } from '@tingting/shared';
+import type { Customer, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
@@ -39,10 +39,10 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }
   item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; suppliers: Supplier[];
 }) {
   const [name, setName] = useState(item?.name || '');
-  const [taxCode, setTaxCode] = useState((item as any)?.taxCode || (item as any)?.tax_code || '');
-  const [contactPerson, setContactPerson] = useState((item as any)?.contactPerson || (item as any)?.contact_person || '');
+  const [taxCode, setTaxCode] = useState(item?.taxCode || '');
+  const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
   const [phone, setPhone] = useState(item?.phone || '');
-  const [creditLimit, setCreditLimit] = useState((item as any)?.creditLimit || (item as any)?.credit_limit || '');
+  const [creditLimit, setCreditLimit] = useState(item?.creditLimit || '');
   const [status, setStatus] = useState<string>(item?.status || CustomerStatus.ACTIVE);
   const [isCarrier, setIsCarrier] = useState(item?.isCarrier ?? false);
   const [debitNoteMode, setDebitNoteMode] = useState<string>(item?.debitNoteMode ?? 'MONTHLY');
@@ -51,15 +51,16 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }
   useEffect(() => {
     if (isOpen) {
       setName(item?.name || '');
-      setTaxCode((item as any)?.taxCode || (item as any)?.tax_code || '');
-      setContactPerson((item as any)?.contactPerson || (item as any)?.contact_person || '');
+      setTaxCode(item?.taxCode || '');
+      setContactPerson(item?.contactPerson || '');
       setPhone(item?.phone || '');
-      setCreditLimit((item as any)?.creditLimit || (item as any)?.credit_limit || '');
+      setCreditLimit(item?.creditLimit || '');
       setStatus(item?.status || CustomerStatus.ACTIVE);
       setIsCarrier(item?.isCarrier ?? false);
       setDebitNoteMode(item?.debitNoteMode ?? 'MONTHLY');
       setLinkedSupplierId(item?.linkedSupplierId ?? null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-sync only when the target customer ID changes, not on every prop update
   }, [isOpen, item?.id]);
 
   const handleSave = () => {
@@ -189,7 +190,7 @@ export default function CustomersPage() {
   const { data: ledgerEntries } = useCustomerLedgerEntries();
   const { data: suppliersData } = useSuppliers(1, '');
   const allSuppliers = suppliersData?.items ?? [];
-  const customers = customersData?.items ?? [];
+  const customers = useMemo(() => customersData?.items ?? [], [customersData]);
   const total = customersData?.total ?? 0;
   const [mutationError, setMutationError] = useState<string | null>(null);
   const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
@@ -213,7 +214,7 @@ export default function CustomersPage() {
     const map = new Map<number, number>();
     if (!ledgerEntries) return map;
     for (const entry of ledgerEntries) {
-      if (entry.entityType === 'CUSTOMER' && (entry as any).txnType === 'TRIP_REVENUE') {
+      if (entry.entityType === 'CUSTOMER' && entry.txnType === 'TRIP_REVENUE') {
         const current = map.get(entry.entityId) || 0;
         const amount = parseFloat(entry.debit || '0') || 0;
         map.set(entry.entityId, current + amount);
@@ -246,7 +247,7 @@ export default function CustomersPage() {
       if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
       if (filter === 'risk') {
         const debt = debtMap.get(c.id) ?? 0;
-        const limit = Number((c as any).creditLimit || c.creditLimit || 0);
+        const limit = Number(c.creditLimit || 0);
         if (debt <= 0) return false;
         // No credit limit + outstanding debt = unlimited risk exposure
         if (limit <= 0) return true;
@@ -265,7 +266,7 @@ export default function CustomersPage() {
       await api.post('/customers', body);
       setShowAddForm(false);
       await refetchCustomers();
-    } catch (e: any) { setMutationError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
+    } catch (e: unknown) { setMutationError(e instanceof Error ? e.message : 'Lỗi lưu'); } finally { setSaving(false); }
   }
 
   async function doUpdate(id: number, body: Record<string, unknown>) {
@@ -275,7 +276,7 @@ export default function CustomersPage() {
       await refetchCustomers();
       setEditingId(null);
       setMenuOpenId(null);
-    } catch (e: any) { setMutationError(e?.message || 'Lỗi cập nhật'); } finally { setSaving(false); }
+    } catch (e: unknown) { setMutationError(e instanceof Error ? e.message : 'Lỗi cập nhật'); } finally { setSaving(false); }
   }
 
   async function doDelete(id: number) {
@@ -284,7 +285,7 @@ export default function CustomersPage() {
       await api.delete(`/customers/${id}`);
       setMenuOpenId(null);
       await refetchCustomers();
-    } catch (e: any) { setMutationError(e?.message || 'Lỗi xóa'); } finally { setDeleting(null); }
+    } catch (e: unknown) { setMutationError(e instanceof Error ? e.message : 'Lỗi xóa'); } finally { setDeleting(null); }
   }
 
   return (
@@ -300,10 +301,10 @@ export default function CustomersPage() {
               const headers = ['Tên KH', 'MST', 'Người liên hệ', 'Điện thoại', 'Hạn mức TD', 'Trạng thái'];
               const rows = filtered.map(c => [
                 c.name,
-                (c as any).tax_code || (c as any).taxCode || '',
-                (c as any).contact_person || (c as any).contactPerson || '',
+                c.taxCode || '',
+                c.contactPerson || '',
                 c.phone || '',
-                (c as any).credit_limit || (c as any).creditLimit || '',
+                c.creditLimit || '',
                 STATUS_LABELS[c.status] || c.status,
               ]);
               downloadCSV(`khach-hang-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
@@ -393,9 +394,9 @@ export default function CustomersPage() {
                 <StatusStrip status={c.status} />
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number((c as any).creditLimit || c.creditLimit || 0))}`} />
+                    <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number(c.creditLimit || 0))}`} />
                     {c.name}
-                    {((c as any).linkedSupplierId || c.linkedSupplierId) && (
+                    {c.linkedSupplierId && (
                       <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
                         2 chiều
                       </span>
@@ -405,21 +406,21 @@ export default function CustomersPage() {
                     {STATUS_LABELS[c.status] || c.status}
                   </StatusPill>
                 </div>
-                {((c as any).taxCode || c.taxCode) && (
+                {c.taxCode && (
                   <div className="m-card__meta" style={{ fontFamily: 'var(--font-mono)' }}>
-                    MST {(c as any).taxCode || c.taxCode}
+                    MST {c.taxCode}
                   </div>
                 )}
-                {((c as any).contactPerson || c.contactPerson || c.phone) && (
+                {(c.contactPerson || c.phone) && (
                   <div className="m-card__meta">
-                    {(c as any).contactPerson || c.contactPerson}
+                    {c.contactPerson}
                     {c.phone && <><span className="m-card__meta-sep">·</span>{c.phone}</>}
                   </div>
                 )}
-                {((c as any).creditLimit || c.creditLimit) && (
+                {c.creditLimit && (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Hạn mức tín dụng</span>
-                    <span className="m-card__row-value">{formatCurrency((c as any).creditLimit || c.creditLimit)}</span>
+                    <span className="m-card__row-value">{formatCurrency(c.creditLimit)}</span>
                   </div>
                 )}
                 <div className="m-card-edit-row">
@@ -476,25 +477,25 @@ export default function CustomersPage() {
                       <StatusStrip status={c.status} />
                       <div style={{ fontWeight: 600 }}>
                         {c.name}
-                        {((c as any).linkedSupplierId || c.linkedSupplierId) && (
+                        {c.linkedSupplierId && (
                           <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
                             2 chiều
                           </span>
                         )}
                       </div>
-                      {((c as any).taxCode || c.taxCode) && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {(c as any).taxCode || c.taxCode}</div>}
+                      {c.taxCode && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {c.taxCode}</div>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                      {((c as any).contactPerson || c.contactPerson) && <div style={{ fontWeight: 600 }}>{(c as any).contactPerson || c.contactPerson}</div>}
-                      {(c.phone || (c as any).contact_info || (c as any).contactInfo) && (
+                      {c.contactPerson && <div style={{ fontWeight: 600 }}>{c.contactPerson}</div>}
+                      {(c.phone || c.contactInfo) && (
                         <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
-                          {c.phone || (c as any).contact_info || (c as any).contactInfo}
+                          {c.phone || c.contactInfo}
                         </div>
                       )}
-                      {!((c as any).contactPerson || c.contactPerson) && !c.phone && !(c as any).contact_info && !(c as any).contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
+                      {!c.contactPerson && !c.phone && !c.contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                      {((c as any).creditLimit || c.creditLimit) ? formatCurrency((c as any).creditLimit || c.creditLimit) : '—'}
+                      {c.creditLimit ? formatCurrency(c.creditLimit) : '—'}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
                       <div className="row-actions">

@@ -108,6 +108,9 @@ export function useTableQueryState<
   // for ensuring that; this is intentional — manual control keeps things simple.
 
   const query = useQuery({
+    // queryKey is caller-provided (arbitrary domain key); appending the applied
+    // params keeps the cache scoped per filter/search/page combination.
+    // eslint-disable-next-line @tingting/no-bare-query-key
     queryKey: [...opts.queryKey, appliedParams],
     queryFn: () => opts.endpoint(appliedParams),
     staleTime: 30_000,

@@ -1,7 +1,7 @@
 import { api } from '../lib/api';
 import { toQuery } from '../lib/http/query';
 import { REPORTS } from '@tingting/shared';
-import type { DashboardStats, PnlReport, RenewalReminder } from '@tingting/shared';
+import type { DashboardStats, PnlReport, RenewalReminder, Distribution } from '@tingting/shared';
 
 export interface ExtendedDashboardStats extends DashboardStats {
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
@@ -19,17 +19,10 @@ export const reportClient = {
 
   getDistributionHistory: async () => {
     const res = await api.get<
-      | Array<{
-          id: number;
-          quarter: number;
-          year: number;
-          partnerName: string;
-          amount: string;
-          createdAt: string;
-        }>
-      | { items: Array<any> }
+      | Distribution[]
+      | { items: Distribution[] }
     >('/reports/distribution-history');
-    return Array.isArray(res) ? res : (res as any).items ?? [];
+    return Array.isArray(res) ? res : res.items ?? [];
   },
 
   getRenewals: async () => {

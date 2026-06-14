@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMonth } from '../../../hooks/useMonth';
 import {
-  Shield, ShieldCheck, Download, Plus, Eye, FileText,
+  Shield, ShieldCheck, Download, Plus, FileText,
   Zap, Trophy, Users, AlertTriangle, Clock,
   DollarSign, XCircle, Loader2,
 } from 'lucide-react';

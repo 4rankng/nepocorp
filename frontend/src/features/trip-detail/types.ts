@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import type { TripDetail } from '@tingting/shared';
-import type { TripStatus, Role } from '@tingting/shared';
 
 /** Derived financial & operational data computed from a TripDetail. */
 export interface TripDerivedData {

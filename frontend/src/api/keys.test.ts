@@ -64,6 +64,7 @@ describe('invalidateAllCatalogs', () => {
     await invalidateAllCatalogs(qc);
 
     for (const key of qk.allCatalogKeys) {
+      // eslint-disable-next-line @tingting/no-bare-query-key -- test assertion verifying invalidateAllCatalogs wraps each catalog prefix in [key]
       expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: [key] });
     }
   });

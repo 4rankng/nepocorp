@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
-import { CheckCircle2, Plus, Download, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Download, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { useDispatchData } from '../hooks/useQueries';
 import type { NormalizedTrip } from '../hooks/useTripQueries';
 import { useDispatchMutations, useReassignMutations } from '../features/dispatch/hooks/useDispatchMutations';
@@ -17,10 +17,10 @@ export default function DispatchPage() {
   const navigate = useNavigate();
   const { data, isLoading: loading, error: queryError } = useDispatchData();
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const drivers = (data?.drivers ?? []) as Driver[];
-  const trucks: Truck[] = (data?.trucks ?? []).map((t: any) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' }));
+  const drivers = useMemo(() => (data?.drivers ?? []) as Driver[], [data]);
+  const trucks: Truck[] = useMemo(() => (data?.trucks ?? []).map((t) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' })), [data]);
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
-  const activeTrips: NormalizedTrip[] = data?.activeTrips ?? [];
+  const activeTrips = useMemo<NormalizedTrip[]>(() => data?.activeTrips ?? [], [data]);
   const pendingTotal: number = data?.pendingTotal ?? 0;
   const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
 
@@ -28,14 +28,14 @@ export default function DispatchPage() {
   const { reassignOpen, reassignState, setReassignState, openReassign, closeReassign, handleReassign } = useReassignMutations();
   const [fleetFilter, setFleetFilter] = useState<FleetFilter>('all');
 
-  const getActive = (id: number) => activeTrips.find((t) => t.truckId === id);
-  const getDefault = (id: number) => drivers.find((d) => d.assignedTruckId === id);
+  const getActive = useCallback((id: number) => activeTrips.find((t) => t.truckId === id), [activeTrips]);
+  const getDefault = useCallback((id: number) => drivers.find((d) => d.assignedTruckId === id), [drivers]);
 
   const fleetCounts = useMemo(() => {
     let running = 0, ready = 0, noassign = 0, maint = 0;
     for (const t of trucks) { if (t.status === 'MAINTENANCE') { maint++; continue; } if (getActive(t.id)) running++; else if (getDefault(t.id)) ready++; else noassign++; }
     return { running, ready, noassign, maint, all: trucks.length };
-  }, [trucks, activeTrips, drivers]);
+  }, [trucks, getActive, getDefault]);
 
   const utilizationPct = useMemo(() => { const a = fleetCounts.all - fleetCounts.maint; return a <= 0 ? 0 : Math.round((fleetCounts.running / a) * 100); }, [fleetCounts]);
   const noteCount = fleetCounts.maint + fleetCounts.noassign;
@@ -43,7 +43,7 @@ export default function DispatchPage() {
   const filteredTrucks = useMemo(() => {
     if (fleetFilter === 'all') return trucks;
     return trucks.filter((t) => { if (fleetFilter === 'maint') return t.status === 'MAINTENANCE'; if (t.status === 'MAINTENANCE') return false; const ha = !!getActive(t.id); if (fleetFilter === 'running') return ha; const hd = !!getDefault(t.id); if (fleetFilter === 'ready') return !ha && hd; if (fleetFilter === 'noassign') return !ha && !hd; return true; });
-  }, [trucks, activeTrips, drivers, fleetFilter]);
+  }, [trucks, fleetFilter, getActive, getDefault]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div className="spin" style={{ width: 32, height: 32, border: '4px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} /></div>;
 

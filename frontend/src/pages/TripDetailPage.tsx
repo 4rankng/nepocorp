@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, XCircle, Shuffle, FilePen, X } from 'lucide-react';
+import { Loader2, Shuffle, FilePen, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal, Drawer } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
@@ -222,7 +222,7 @@ export default function TripDetailPage() {
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Đã phát hành
             </div>
-            {(adjustments as any[]).map((a, i) => (
+            {(adjustments as Array<{ note: string; amount: string | number }>).map((a, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-2)', fontSize: 13 }}>
                 <span style={{ color: 'var(--fg-2)' }}>{a.note}</span>
                 <span style={{ fontWeight: 600, color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)' }}>

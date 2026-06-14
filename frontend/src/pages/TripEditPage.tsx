@@ -51,7 +51,7 @@ export default function TripEditPage() {
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
-  const { error, setError, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt, tripId: formTripId, isEditMode } = form;
+  const { error, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt } = form;
 
   const onSubmit = async (e: React.FormEvent) => {
     try {
@@ -61,7 +61,7 @@ export default function TripEditPage() {
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 409) {
         if (await confirm("Có người khác đã cập nhật chuyến này. Tải lại?")) {
           await refetchTrip();

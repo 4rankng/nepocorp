@@ -12,7 +12,7 @@ export interface AuditEntry {
   path?: string;
   message: string;
   category?: 'trip' | 'config' | 'finance' | 'auth' | 'penalty';
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
   ipAddress?: string;
 }
 

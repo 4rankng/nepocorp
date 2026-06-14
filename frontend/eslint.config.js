@@ -102,11 +102,30 @@ const tingtingPlugin = {
 export default defineConfig([
   // Global ignores
   {
-    ignores: ['dist/**', 'build/**', '*.config.js', '*.config.mjs'],
+    ignores: [
+      'dist/**',
+      'build/**',
+      // Static assets copied verbatim by Vite (incl. the service worker, which
+      // uses browser globals like self/caches and isn't app source to lint).
+      'public/**',
+      '*.config.js',
+      '*.config.mjs',
+      // Config .ts files aren't in tsconfig include → projectService can't resolve them
+      '*.config.ts',
+      'vite.config.ts.test.js',
+      // Throwaway QA/puppeteer scripts at the repo root (use node+browser globals)
+      'qa-*.js',
+      'screenshot.spec.js',
+    ],
   },
 
   // Base JS recommended
   js.configs.recommended,
+
+  // TypeScript recommended (disables base no-unused-vars/no-undef for TS files).
+  // NOTE: spread the array itself — `tseslint.configs.recommended.rules` is
+  // `undefined` because `configs.recommended` is an array, not a single config.
+  ...tseslint.configs.recommended,
 
   // TypeScript + React files
   {
@@ -130,8 +149,12 @@ export default defineConfig([
     },
     rules: {
       // ---- TypeScript rules ----
-      ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // TS already catches undefined identifiers; base no-undef fires on JSX
+      // globals and ambient types, so disable it for TS/TSX.
+      'no-undef': 'off',
+      // Honor the project's "any is a warning" stance (@tingting/no-any: warn).
+      '@typescript-eslint/no-explicit-any': 'warn',
 
       // ---- React rules ----
       ...reactHooks.configs.recommended.rules,
@@ -146,9 +169,13 @@ export default defineConfig([
     },
   },
 
-  // Disable type-aware rules for plain JS files (config scripts etc.)
+  // Plain JS/MJS files (build scripts like scripts/check-size.mjs): no
+  // type-checked rules, and node globals so process/console/URL resolve.
   {
     files: ['**/*.js', '**/*.mjs'],
     ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      globals: globals.node,
+    },
   },
 ]);

@@ -38,8 +38,8 @@ export default function PenaltyPage() {
     try {
       await cancelMutation.mutateAsync({ id: cancelTarget.id, reason });
       setCancelTarget(null);
-    } catch (e: any) {
-      alert(e.message || 'Lỗi khi hủy kỷ luật');
+    } catch (e: unknown) {
+      alert((e as Error).message || 'Lỗi khi hủy kỷ luật');
     }
   }, [cancelTarget, cancelMutation]);
 

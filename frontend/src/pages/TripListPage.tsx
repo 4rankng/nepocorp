@@ -24,6 +24,7 @@ import {
 } from '@tanstack/react-table';
 import { Download, Plus, MousePointerClick } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
+import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
 import { parseThreshold, TripStatus, type TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
@@ -45,17 +46,19 @@ export default function TripListPage() {
     selectors: ['.hero', '.status-tabs', '.filters-card', '.table-card', '.table-foot'],
     staggerDelay: 80,
   });
-  const { rootRef: tableRef, replay: replayRows } = useListAnimations({
+  // Animation hooks called for side effects (attach observers / register
+  // animations). Their return values are not needed on this page.
+  useListAnimations({
     itemSelector: '.table-row',
     mode: 'rows',
-    deps: [/* re-runs replayRows() below when rows change */],
+    deps: [],
   });
-  const { rootRef: metricsRef } = useListAnimations({
+  useListAnimations({
     itemSelector: '.metric',
     mode: 'cards',
     staggerDelay: 60,
   });
-  const { rootRef: filtersRef } = useListAnimations({
+  useListAnimations({
     itemSelector: '.filter-pill, .status-tab',
     mode: 'rows',
     staggerDelay: 40,
@@ -105,7 +108,7 @@ export default function TripListPage() {
       dateFrom: params.dateFrom,
       dateTo: params.dateTo,
     }),
-    queryKey: ['trips', 'list'],
+    queryKey: qk.trips.all,
     defaultPageSize: PAGE_SIZE,
     initialSearch: '',
   });
@@ -131,7 +134,7 @@ export default function TripListPage() {
 
   // ── Summary query ──
   const { data: summary } = useQuery({
-    queryKey: ['trips-summary', dateFrom, dateTo],
+    queryKey: qk.trips.summary(dateFrom, dateTo),
     queryFn: () => tripClient.getTripsSummary({ dateFrom, dateTo }),
     enabled: !!dateFrom && !!dateTo,
     staleTime: 30 * 1000,

@@ -35,7 +35,7 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   const totalPages = Math.ceil(first.total / first.pageSize);
   if (totalPages > 1) {
     const remaining = await Promise.all(
-      Array.from({ length: totalPages - 1 }, (_, i) =>
+      Array.from({ length: totalPages - 1 }, () =>
         opts.fetcher({ ...commonParams }).then((r) => r.items),
       ),
     );

@@ -3,9 +3,9 @@ import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Loader2, Save, X } from 'lucide-react';
-import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { useCRUD } from '../../hooks/useCRUD';
+import { qk } from '../../api/keys';
 import { PageHeader, Modal, useConfirm } from '../../components/UI';
 import type { ContainerType } from '@tingting/shared';
 import './config-list.css';
@@ -165,7 +165,7 @@ export default function ContainerTypesConfigPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data, refetch } = useQuery({
-    queryKey: ['container-types'],
+    queryKey: qk.catalogs.containerTypes,
     queryFn: () => configClient.getContainerTypes(),
   });
 

@@ -58,8 +58,8 @@ export function PenaltyFormDrawer({
     try {
       await onSubmit(body);
       onClose();
-    } catch (e: any) {
-      setSubmitError(e.message || 'Lỗi khi tạo phạt');
+    } catch (e: unknown) {
+      setSubmitError((e as Error).message || 'Lỗi khi tạo phạt');
     } finally {
       setSubmitting(false);
     }

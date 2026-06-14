@@ -1,5 +1,6 @@
 import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { configClient } from '../../api/configClient';
+import { qk } from '../../api/keys';
 
 /**
  * Generic hook for any "fetch this month/year's slice" query. Owns:
@@ -49,13 +50,16 @@ export function useMonthlyQuery<TData>(opts: UseMonthlyQueryOpts<TData>): UseMon
   const { month, year, queryKey, fetcher, select, staleTimeMs = 2 * 60 * 1000 } = opts;
 
   const salaryQuery = useQuery<SalaryPeriodRange>({
-    queryKey: ['salary-period', month, year],
+    queryKey: qk.catalogs.salaryPeriod(month, year),
     queryFn: () => configClient.getSalaryPeriodResolve(month, year),
     staleTime: 30 * 60 * 1000,
     enabled: month >= 1 && month <= 12 && year >= 2000,
   });
 
   const dataQuery = useQuery({
+    // queryKey is caller-provided (arbitrary domain key); appending the salary
+    // period start keeps it scoped per month.
+    // eslint-disable-next-line @tingting/no-bare-query-key
     queryKey: [...queryKey, salaryQuery.data?.start],
     enabled: !!salaryQuery.data,
     queryFn: () => fetcher(salaryQuery.data as SalaryPeriodRange),

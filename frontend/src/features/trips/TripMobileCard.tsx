@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, AlertCircle, X as XIcon, Banknote, Fuel, type LucideIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import {
   TripStatus, TRIP_STATUS_LABELS,
   type TripDetail,
@@ -8,7 +8,7 @@ import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
 import { formatCurrency } from '../../lib/format';
 import {
-  buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness,
+  buildTripCode, calcConsumption, getMissingIndicators,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
 } from './tripHelpers';
 

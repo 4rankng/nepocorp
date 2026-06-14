@@ -59,7 +59,7 @@ export const tripClient = {
 
   getTrip: (id: number) => api.get<TripDetail>(TRIPS.DETAIL(id)),
 
-  getAdjustments: (id: number) => api.get<{ items: any[] }>(TRIPS.ADJUSTMENTS(id)),
+  getAdjustments: (id: number) => api.get<{ items: Record<string, unknown>[] }>(TRIPS.ADJUSTMENTS(id)),
 
   createTrip: (data: CreateTripRequest) => api.post<Trip>(TRIPS.CREATE, data),
 
@@ -90,6 +90,9 @@ export const tripClient = {
       `${CATALOGS.PRICING}${toQuery({ customerId, routeId, date })}`,
     ),
 
+  // Bootstrap returns the full catalog blob; typed at the query layer via
+  // useCatalogs's CatalogData interface (cannot import here without a cycle).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getBootstrap: () => api.get<any>(CATALOGS.BOOTSTRAP),
 
   listTripExpenses: (tripId: number) =>

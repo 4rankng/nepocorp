@@ -97,7 +97,7 @@ export function useAnimatedOverlay({
         isClosingRef.current = false;
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally mirrors original Drawer/ConfirmDialog deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable; intentionally mirrors original Drawer/ConfirmDialog deps
   }, [isOpen, wasOpen, prefersReduced]);
 
   // Entrance animation when DOM is mounted (visible && wasOpen)
@@ -117,7 +117,7 @@ export function useAnimatedOverlay({
       scope.revert();
       scopeRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps — intentionally mirrors original Drawer/ConfirmDialog deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable; intentionally mirrors original Drawer/ConfirmDialog deps
   }, [visible, wasOpen, prefersReduced]);
 
   // Cleanup scope on unmount

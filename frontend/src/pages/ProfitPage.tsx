@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Calendar,
   TrendingUp,
   Users,
   CheckSquare,
@@ -9,11 +8,10 @@ import {
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
-import { formatCurrency as formatVND, formatNumber } from '../lib/format';
+import { formatCurrency as formatVND } from '../lib/format';
 import { Money } from '../components/shared/Money';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
-import type { CapTableHistory } from '@tingting/shared';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import './ProfitPage.css';
@@ -28,15 +26,6 @@ interface DistributionResult {
     percentage?: string;
     amount: string;
   }>;
-}
-
-interface DistributionRecord {
-  id: number;
-  quarter: number;
-  year: number;
-  partnerName: string;
-  amount: string;
-  createdAt: string;
 }
 
 export default function ProfitPage() {
@@ -69,7 +58,7 @@ export default function ProfitPage() {
     animateCounters([
       { el: heroValueRef.current, value: netProfit },
     ]);
-  }, [report, netProfit]);
+  }, [report, netProfit, animateCounters]);
 
   const handlePreview = async () => {
     setPreviewing(true);
@@ -80,8 +69,8 @@ export default function ProfitPage() {
         year: distQuarterYear,
       });
       setPreview(res);
-    } catch (err: any) {
-      showToast({ kind: 'error', message: err.message || 'Lỗi khi xem trước phân phối.' });
+    } catch (err) {
+      showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xem trước phân phối.' });
     } finally {
       setPreviewing(false);
     }
@@ -103,8 +92,8 @@ export default function ProfitPage() {
       setPreview(null);
       showToast({ kind: 'success', message: 'Đã thực hiện phân chia lợi nhuận thành công!' });
       refetchHistory();
-    } catch (err: any) {
-      showToast({ kind: 'error', message: err.message || 'Lỗi khi phân chia lợi nhuận.' });
+    } catch (err) {
+      showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi phân chia lợi nhuận.' });
     } finally {
       setDistributing(false);
     }
@@ -400,7 +389,7 @@ export default function ProfitPage() {
               <Card title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện" style={{ height: '100%' }}>
                 <div className="profit-history-scroll">
                   <div className="profit-history-list">
-                    {history.map((d: any) => (
+                    {history.map((d) => (
                       <div key={d.id} className="profit-history-item">
                         <div className="profit-history-item__top">
                           <span className="profit-history-item__period">Q{d.quarter}/{d.year}</span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { animate, createScope, createAnimatable, utils } from 'animejs';
+import { animate, createScope, createAnimatable } from 'animejs';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 /**

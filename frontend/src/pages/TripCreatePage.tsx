@@ -4,7 +4,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useTripOptions } from '../hooks/useTripOptions';
 import { useTripForm } from '../hooks/useTripForm';
 import { TripFormProvider } from '../hooks/useTripFormContext';
-import { ProgressPills } from '../components/trip/ProgressPills';
 import { TripInfoCard } from '../components/trip/TripInfoCard';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { FuelTollsRevenueCard } from '../components/trip/FuelTollsRevenueCard';
@@ -12,7 +11,6 @@ import { ImagesNotesCard } from '../components/trip/ImagesNotesCard';
 import { TripSummaryCard } from '../components/trip/TripSummaryCard';
 import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
 import { ActionBar } from '../components/trip/ActionBar';
-import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
 import './TripForm.css';
 import './TripCreatePage.css';
@@ -25,12 +23,6 @@ export default function TripCreatePage() {
     ready: !options.loading,
     selectors: ['.tc-create-hero', '.tc-create-bento'],
   });
-
-  // Same figures TripSummaryCard shows — surfaced as a live KPI strip in the hero.
-  const revenue = Number(form.revenue) || 0;
-  const estimatedCost =
-    (form.estimatedFuelCost || 0) + (form.estimatedTollCost || 0) + (Number(form.driverSalary) || 0);
-  const profit = form.estimatedProfit || 0;
 
   const handleSubmit = async () => {
     const tripId = await form.handleSubmit();

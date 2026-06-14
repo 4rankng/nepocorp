@@ -1,5 +1,5 @@
 import React from 'react';
-import { Receipt, Plus } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { AncillaryFeesCard } from '../../../components/trip/AncillaryFeesCard';
 
 interface ServiceCostsCardProps {

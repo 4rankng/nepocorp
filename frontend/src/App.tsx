@@ -95,7 +95,6 @@ function AppRoutes() {
   const adminOnly = (el: ReactElement) => (isPortalUser ? <Navigate to={portalHome} replace /> : el);
   const driverOnly = (el: ReactElement) => (isDriver ? el : <Navigate to={isForwarder ? forwarderHome : adminHome} replace />);
   const forwarderOnly = (el: ReactElement) => (isForwarder ? el : <Navigate to={isDriver ? driverHome : adminHome} replace />);
-  const superAdminOnly = (el: ReactElement) => (isAdmin ? el : <Navigate to={adminHome} replace />);
   const managerOrAdminOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
   // /users is the single home for everyone; accountants get scoped (driver-only) access.
   const officeStaffOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER || user?.role === Role.ACCOUNTANT ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);

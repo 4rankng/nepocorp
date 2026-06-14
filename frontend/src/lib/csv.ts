@@ -18,7 +18,7 @@ export async function downloadCSV(filename: string, headers: string[], rows: (st
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
 
-    row.eachCell((cell, colNumber) => {
+    row.eachCell((cell, _colNumber) => {
       if (cell.value === null || cell.value === undefined) return;
 
       const rawVal = String(cell.value).trim();

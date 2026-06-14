@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
@@ -253,10 +253,14 @@ export default function AdminAdvancesPage() {
   const approveMutation = useApproveAdvanceRequest();
   const rejectMutation = useRejectAdvanceRequest();
 
-  const allRequests: AdvanceRequest[] = (data?.items ?? []) as AdvanceRequest[];
+  const allRequests: AdvanceRequest[] = useMemo(
+    () => (data?.items ?? []) as AdvanceRequest[],
+    [data],
+  );
 
   /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
-  const focusId = useFocusDeepLink('adv');
+  // Called for its side effect (scrolling to the focused item); return value unused.
+  useFocusDeepLink('adv');
 
   /* ── Derived counts & totals ─────────────────────────────────────────── */
   const stats = useMemo(() => {

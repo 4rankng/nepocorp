@@ -3,15 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign, Camera } from 'lucide-react';
 import { formatDate, formatCurrency } from '../lib/format';
 import { api } from '../lib/api';
-import { FORWARDER, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
+import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
-import { StatusPill, Panel, FormGroup } from '../components/UI';
+import { StatusPill, FormGroup } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
+import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useQuery } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { usePageAnimations } from '../hooks/animations';
+
+/** Forwarder container instance shape returned by the trip-detail API. */
+interface ForwarderContainer {
+  id: number;
+  containerNumber?: string;
+  sealNumber?: string | null;
+  containerTypeName?: string | null;
+  notes?: string | null;
+}
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
   switch (status) {
@@ -40,7 +50,7 @@ export default function ForwarderTripDetailPage() {
   const forwarderExpenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
   const { data: suppliersResp } = useQuery({
-    queryKey: ['forwarder-suppliers'],
+    queryKey: qk.forwarder.suppliers,
     queryFn: () => forwarderClient.listSuppliers(),
     staleTime: 5 * 60 * 1000,
   });
@@ -71,7 +81,7 @@ export default function ForwarderTripDetailPage() {
   async function loadExpensePhotos(expenseId: number) {
     try {
       const res = await api.get<{ items: Array<{ id: number; storageKey: string }> }>(`/forwarder/me/expenses/${expenseId}/photos`);
-      const urls = res.items.map((p: any) => `/api/photos/${p.storageKey}`);
+      const urls = res.items.map((p) => `/api/photos/${p.storageKey}`);
       setExpensePhotos(prev => ({ ...prev, [expenseId]: urls }));
     } catch { /* ignore */ }
   }
@@ -198,9 +208,9 @@ export default function ForwarderTripDetailPage() {
     deleteExpenseMut.mutate({ id: expenseId, tripId });
   };
 
-  const containers: any[] = trip.containers || [];
-  const expenses: any[] = trip.expenses || [];
-  const legs: any[] = trip.legs || [];
+  const containers = (trip.containers || []) as ForwarderContainer[];
+  const expenses = trip.expenses || [];
+  const legs = (trip.legs || []) as Array<{ id: number; sequence: number; origin: string; destination: string; km: number; loadingType: string; polylinePath?: string | null }>;
 
   return (
     <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
@@ -348,7 +358,7 @@ export default function ForwarderTripDetailPage() {
           </div>
         ) : (
           <div style={{ padding: '4px 0' }}>
-            {containers.map((c: any) => (
+            {containers.map((c) => (
               <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
                 <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
@@ -579,7 +589,7 @@ export default function ForwarderTripDetailPage() {
           </div>
         ) : (
           <div style={{ padding: '4px 0' }}>
-            {expenses.map((exp: any) => (
+            {expenses.map((exp) => (
               <div key={exp.id} style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <DollarSign size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
@@ -607,7 +617,7 @@ export default function ForwarderTripDetailPage() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
-                      {formatCurrency(exp.buyAmount ?? exp.amount)}
+                      {formatCurrency(exp.buyAmount)}
                     </div>
                     {exp.settlementMethod === 'COMPANY_DIRECT' && (
                       <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Công ty trả</div>

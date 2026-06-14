@@ -3,7 +3,7 @@ import { getInitials } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import {
   Search, Activity, Users, Clock, TrendingUp, Download, FileText,
-  Truck, Settings, DollarSign, LogIn, ChevronLeft, ChevronRight,
+  Truck, Settings, DollarSign, LogIn,
   Globe, Terminal, Copy, Check, Info, ShieldAlert,
 } from 'lucide-react';
 import { Panel, KPI, Drawer } from '../components/UI';
@@ -21,8 +21,17 @@ type NormalizedEntry = AuditEntry & {
   category: NonNullable<AuditEntry['category']>;
 };
 
+// Raw audit entries may arrive with camelCase or snake_case actor fields
+// depending on the API version, so accept a loose record here.
+type RawAuditEntry = AuditEntry & {
+  actorName?: string;
+  actor_name?: string;
+  username?: string;
+  actorEmail?: string;
+};
+
 // Map raw API entry → canonical shape
-function normalizeEntry(e: any): NormalizedEntry {
+function normalizeEntry(e: RawAuditEntry): NormalizedEntry {
   const name = e.userName || e.actorName || e.actor_name || e.username || e.userEmail || 'Người dùng';
   const email = e.userEmail || e.actorEmail || '';
   const action: string = e.action || '';
@@ -139,13 +148,7 @@ export default function AuditLogPage() {
   }, [entries]);
 
   // Category counts
-  const catCounts = useMemo(() => {
-    const m: Record<string, number> = { all: total };
-    entries.forEach(e => { m[e.category] = (m[e.category] || 0) + 1; });
-    return m;
-  }, [entries, total]);
-
-  const handleCopyPayload = (payload: any) => {
+  const handleCopyPayload = (payload: Record<string, unknown> | undefined) => {
     navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

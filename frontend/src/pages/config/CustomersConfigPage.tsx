@@ -2,14 +2,15 @@ import { useState, useMemo } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Users, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Plus, Loader2 } from 'lucide-react';
 import { useConfirm, Modal } from '../../components/UI';
 import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
-import type { Customer } from '@tingting/shared';
+import { qk } from '../../api/keys';
+import type { Customer, TripDetail } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import './config-page.css';
 
@@ -53,7 +54,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
           <input className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
         </Field>
         <Field label="Trạng thái">
-          <select className="input" value={status} onChange={e => setStatus(e.target.value as any)}>
+          <select className="input" value={status} onChange={e => setStatus(e.target.value as CustomerStatus)}>
             <option value="ACTIVE">Hoạt động</option>
             <option value="LOCKED">Tạm khoá</option>
           </select>
@@ -93,16 +94,16 @@ export default function CustomersConfigPage() {
   const [search, setSearch] = useState('');
 
   const { data, refetch } = useQuery({
-    queryKey: ['customers-config', search],
+    queryKey: qk.tripForm.customersConfig(search),
     queryFn: async () => {
       const [custList, tripRes] = await Promise.all([
         configClient.getAllCustomers(search || undefined),
-        tripClient.fetchAllTrips({}).catch(() => ({ items: [] as any[], total: 0 })),
+        tripClient.fetchAllTrips({}).catch(() => ({ items: [] as TripDetail[], total: 0 })),
       ]);
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const statsMap = new Map<number, { trips: number; revenue: number }>();
-      tripRes.items.forEach((t: any) => {
+      tripRes.items.forEach((t: TripDetail) => {
         const dep = t.departureDate || '';
         if (dep.startsWith(thisMonth)) {
           const cid = t.customerId;
@@ -119,7 +120,7 @@ export default function CustomersConfigPage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const customers = data?.customers ?? [];
+  const customers = useMemo(() => data?.customers ?? [], [data?.customers]);
   const customerTripStats = data?.customerTripStats ?? new Map<number, { trips: number; revenue: number }>();
 
   const crud = useCRUD('/customers', async () => { await refetch(); });

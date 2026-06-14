@@ -63,7 +63,6 @@ export function TotalsPanel() {
   ]);
 
   const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
-  const fmtSigned = (v: number) => (v >= 0 ? '+' : '−') + fmt(v);
 
   // Road-allowance breakdown — what makes up "Tiền đi đường thực nhận"
   const roadBreakdown = useMemo(() => {

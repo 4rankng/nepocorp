@@ -27,6 +27,9 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
       setCurrentTrailerId(item?.currentTrailerId ?? null);
       setStatus(item?.status || 'ACTIVE');
     }
+    // Reset form fields only when the modal opens or switches item; field-level
+    // deps intentionally omitted to avoid clobbering in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item?.id]);
   const handleSave = () => {
     if (!plate.trim()) return;

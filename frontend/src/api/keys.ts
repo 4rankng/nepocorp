@@ -279,8 +279,8 @@ export const qk = {
 // ── Compile-time guard: allCatalogKeys must cover every qk.catalogs prefix ────
 // If this errors, a catalog key was added to qk.catalogs but not allCatalogKeys.
 type _CatVal = typeof qk.catalogs;
-type _ExtractPrefix<T> = T extends readonly [infer F, ...any[]] ? F
-  : T extends (...a: any[]) => readonly [infer F, ...any[]] ? F
+type _ExtractPrefix<T> = T extends readonly [infer F, ...unknown[]] ? F
+  : T extends (...a: unknown[]) => readonly [infer F, ...unknown[]] ? F
   : never;
 type _CatalogPrefixes = _ExtractPrefix<_CatVal[keyof _CatVal]>;
 // Compile-time guard: allCatalogKeys must cover every qk.catalogs prefix.
@@ -300,6 +300,7 @@ export function invalidateAllCatalogs(qc: {
 }): Promise<void[]> {
   return Promise.all(
     qk.allCatalogKeys.map((key) =>
+      // eslint-disable-next-line @tingting/no-bare-query-key -- key is a canonical catalog prefix from allCatalogKeys, not an arbitrary string
       qc.invalidateQueries({ queryKey: [key] }),
     ),
   );

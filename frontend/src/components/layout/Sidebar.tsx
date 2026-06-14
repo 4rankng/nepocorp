@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
-import type { SidebarProps, NavItem, SectionName } from './types';
+import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 
 function getRoleLabel(role: Role): string {
@@ -33,7 +33,7 @@ function Sidebar({
   onOpenPasswordModal,
   onLogout,
   navRef,
-  activeSection,
+  activeSection: _activeSection,
   toggleSection,
 }: SidebarProps) {
   const animRef = useSidebarAnimations();

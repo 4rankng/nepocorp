@@ -45,7 +45,7 @@ export default function TripExpenseConfigPage() {
         vehicleShiftDefault: Number(form.vehicleShiftDefault),
       });
       navigate('/config');
-    } catch (e: any) { setError(e?.message || 'Lỗi lưu'); } finally { setSaving(false); }
+    } catch (e: unknown) { setError((e as Error)?.message || 'Lỗi lưu'); } finally { setSaving(false); }
   };
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
