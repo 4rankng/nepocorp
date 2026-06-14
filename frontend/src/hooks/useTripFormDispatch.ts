@@ -24,6 +24,7 @@ import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
+import type { ContainerFormRow } from './useTripFormState';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
 const LOADED_RATE = FUEL_LOADED_NORM_FALLBACK;
@@ -463,6 +464,60 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
       s.setSubmitting(true);
       try {
+        // Containers share the unified save; validate up front so a row that
+        // has seal/weight/type but no Số container aborts BEFORE any trip
+        // figures are written (avoids partial saves + a confusing backend
+        // error). Mirrors the old per-card validation.
+        for (const r of s.containerRows) {
+          const hasAny = r.containerNumber.trim() || r.sealNumber.trim() || r.cargoWeightKg || r.containerTypeId;
+          if (hasAny && !r.containerNumber.trim()) {
+            s.setError('Mỗi cont phải có Số container. Xoá dòng trống nếu chưa nhập.');
+            return;
+          }
+        }
+
+        // Persist container instances as part of the unified save (the
+        // standalone "Lưu danh sách container" button was removed). Full
+        // reconcile: insert/update by id, delete rows not in the list.
+        const saveContainers = async (id: number) => {
+          const containers = s.containerRows
+            .filter(r => r.containerNumber.trim() || r.sealNumber.trim() || r.cargoWeightKg || r.containerTypeId)
+            .map(r => ({
+              id: r.id,
+              containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
+              containerNumber: r.containerNumber.trim(),
+              sealNumber: r.sealNumber.trim() || null,
+              cargoWeightKg: r.cargoWeightKg === '' ? null : Number(r.cargoWeightKg),
+              notes: r.notes.trim() || null,
+            }));
+          const result = await api.put<{ items: any[] }>(`/trips/${id}/containers`, { containers });
+          await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(id) });
+          // Re-sync local rows with the server-assigned ids so a subsequent
+          // save UPDATES instead of re-INSERTING (the reconcile keys off id).
+          // Match by containerNumber to keep each row's _key — and its
+          // in-session thumbnail — attached to the right row.
+          const items = Array.isArray(result?.items) ? result.items : [];
+          const usedKeys = new Set<string>();
+          s.setContainerRows(items.map((c: any): ContainerFormRow => {
+            const match = s.containerRows.find(r =>
+              !usedKeys.has(r._key) &&
+              r.containerNumber.trim() &&
+              r.containerNumber.trim().toUpperCase() === (c.containerNumber ?? '').toUpperCase(),
+            );
+            const _key = match?._key ?? Math.random().toString(36).slice(2, 9);
+            if (match) usedKeys.add(_key);
+            return {
+              id: c.id,
+              _key,
+              containerTypeId: c.containerTypeId ?? '',
+              containerNumber: c.containerNumber ?? '',
+              sealNumber: c.sealNumber ?? '',
+              cargoWeightKg: c.cargoWeightKg ?? '',
+              notes: c.notes ?? '',
+            };
+          }));
+        };
+
         if (isEditMode && existingTrip) {
           const payload = {
             routeId: s.routeId ? Number(s.routeId) : undefined,
@@ -499,11 +554,28 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
-          const updatedTrip = await api.put<Record<string, unknown>>(endpoint, payload);
+          const putFigures = (version: number) =>
+            api.put<Record<string, unknown>>(endpoint, { ...payload, version });
+          let updatedTrip: Record<string, unknown>;
+          try {
+            updatedTrip = await putFigures(existingTrip.version);
+          } catch (err) {
+            // Stale client version (e.g. the figures were saved in another
+            // tab/session and this tab's cache still holds an older version).
+            // Refetch the latest trip and retry once with the fresh version
+            // before surfacing a real "changed by someone else" conflict.
+            if (!(err instanceof ApiError && err.status === 409)) throw err;
+            await queryClient.refetchQueries({ queryKey: qk.trips.detail(existingTrip.id) });
+            const fresh = queryClient.getQueryData<TripDetail>(qk.trips.detail(existingTrip.id));
+            if (!fresh) throw err;
+            updatedTrip = await putFigures(fresh.version);
+          }
           queryClient.invalidateQueries({ queryKey: qk.trips.all });
           queryClient.setQueryData(qk.trips.detail(existingTrip.id), updatedTrip);
           queryClient.invalidateQueries({ queryKey: qk.trips.detail(existingTrip.id) });
           queryClient.invalidateQueries({ queryKey: qk.trips.adjustments(existingTrip.id) });
+
+          await saveContainers(existingTrip.id);
           return existingTrip.id;
         }
 
@@ -612,6 +684,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
+        await saveContainers(trip.id);
         await queryClient.invalidateQueries({ queryKey: qk.trips.all });
         return trip.id;
       } catch (err) {
@@ -632,7 +705,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       }
     },
     [
-      isEditMode, existingTrip, requiredFieldsFilled,
+      isEditMode, existingTrip, requiredFieldsFilled, s.containerRows,
       s.customerId, s.routeId, s.truckId, s.trailerType,
       s.driverId, s.cargoTypeId, s.departureDate, s.customerReference, s.containerCount,
       hasOptionalData, legs, s.fuelMode, s.fuelLitersOverride,

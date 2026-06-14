@@ -5,6 +5,7 @@ import type { TripOptions } from './useTripOptions';
 import type { RouteOption } from './useTripOptions';
 import type { FormLeg } from './useTripFormLegs';
 import type { CompletionStatus } from './useTripFormState';
+import type { ContainerFormRow } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
 import type { OcrSignal } from './useTripFormDispatch';
@@ -107,6 +108,11 @@ export interface UseTripFormReturn {
   uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
   removePhoto: (idx: number) => void;
 
+  // Container instances — edited via ContainerInstancesCard, saved by the
+  // unified "Lưu cập nhật" submit alongside the trip figures.
+  containerRows: ContainerFormRow[];
+  setContainerRows: (rows: ContainerFormRow[] | ((prev: ContainerFormRow[]) => ContainerFormRow[])) => void;
+
   suggestedPrice: number | null;
   estimatedFuelCost: number;
   estimatedTollCost: number;
@@ -188,6 +194,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     revenueCombine: s.revenueCombine, setRevenueCombine: s.setRevenueCombine,
     notes: s.notes, setNotes: s.setNotes,
     photoUrls: d.photoUrls, uploadPhotos: d.uploadPhotos, removePhoto: d.removePhoto,
+    containerRows: s.containerRows, setContainerRows: s.setContainerRows,
     suggestedPrice: d.suggestedPrice,
     estimatedFuelCost: d.estimatedFuelCost,
     estimatedTollCost: d.estimatedTollCost,

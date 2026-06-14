@@ -19,6 +19,20 @@ export interface CompletionStatus {
   images: number;
 }
 
+/** A container row being edited in the trip form. Existing rows keep their
+ *  server `id`; new rows get a client-only `_key`. Owned by the form state so
+ *  the unified "Lưu cập nhật" submit can persist containers alongside the
+ *  trip figures (the per-card save button was removed). */
+export interface ContainerFormRow {
+  id?: number;
+  _key: string;
+  containerTypeId: number | '';
+  containerNumber: string;
+  sealNumber: string;
+  cargoWeightKg: string;
+  notes: string;
+}
+
 export interface TripFormStateParams {
   isEditMode: boolean;
   existingTrip: TripDetail | undefined;
@@ -108,6 +122,11 @@ export interface UseTripFormStateReturn {
   setNotes: (v: string) => void;
   photoUrls: string[];
   setPhotoUrls: (urls: string[] | ((prev: string[]) => string[])) => void;
+
+  // Container instances (mirrored from ContainerInstancesCard so the unified
+  // "Lưu cập nhật" submit persists them with the trip figures).
+  containerRows: ContainerFormRow[];
+  setContainerRows: (rows: ContainerFormRow[] | ((prev: ContainerFormRow[]) => ContainerFormRow[])) => void;
 
   // Submission state
   submitting: boolean;
@@ -214,6 +233,10 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
   // ── Photos (state only; upload logic in useTripFormPhotos) ──
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
+  // ── Container instances (editor lives in ContainerInstancesCard; this state
+  //    is the single source the unified submit reads from) ──
+  const [containerRows, setContainerRows] = useState<ContainerFormRow[]>([]);
+
   // ── Submission state ──
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -266,6 +289,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     revenueCombine, setRevenueCombine,
     notes, setNotes,
     photoUrls, setPhotoUrls,
+    containerRows, setContainerRows,
     submitting, setSubmitting,
     error, setError,
     resetForm,

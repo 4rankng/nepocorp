@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2, Save, Camera, ImageOff } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, Plus, Trash2, Camera, ImageOff } from 'lucide-react';
 import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
 import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
+import type { ContainerFormRow } from '../../hooks/useTripFormState';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import { PhotoViewer } from '../PhotoViewer';
 import {
@@ -21,20 +22,18 @@ import {
  * accountant or manager manage the per-container instances for a trip:
  * container number, seal number, container type, and cargo weight.
  *
- * Pete asked specifically for these to be enter-by-hand alongside the photo
- * upload. Data lives in the `trip_containers` table; reads/writes go through
- * `GET /api/trips/:id/containers` and `PUT /api/trips/:id/containers`.
- *
- * State is local — the card has its own "Lưu container" button independent
- * from the main "Lưu cập nhật" save. Keeping the two flows separate avoids
- * tangling the existing useTripForm hook.
+ * The row state is owned by the form (`containerRows` in `useTripFormState`)
+ * and saved by the unified "Lưu cập nhật" submit alongside the trip figures —
+ * there is no separate "Lưu danh sách container" button anymore. (The old
+ * standalone save desynced the trip `version` cache and caused false 409s on
+ * the next figures save.) This card is purely the editor.
  *
  * Each container row also has a "Số cont" / "Số seal" photo capture button:
  * tapping it opens `ContainerScanner`, the captured frame is OCR'd via
  * `POST /api/ocr` (which persists the photo at trip level in `trip_photos`),
  * and the recognized number fills THAT row for review — mirroring the driver
  * flow in `DriverContainerCard`. Numbers are never auto-committed: the user
- * still presses "Lưu danh sách container" to persist them.
+ * still presses "Lưu cập nhật" to persist them.
  */
 
 interface ContainerType {
@@ -43,16 +42,9 @@ interface ContainerType {
   name: string;
 }
 
-interface ContainerRow {
-  // Existing row from server keeps its id; new rows have a client-only `_key`.
-  id?: number;
-  _key: string;
-  containerTypeId: number | '';
-  containerNumber: string;
-  sealNumber: string;
-  cargoWeightKg: string;
-  notes: string;
-}
+/** Edited container row. Aliased from the form-state type so this card and the
+ *  unified "Lưu cập nhật" submit share one shape. */
+type ContainerRow = ContainerFormRow;
 
 /** Shape returned by `POST /api/ocr` (photo persist + Gemini recognition). */
 interface OcrResponse {
@@ -114,11 +106,10 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
 }
 
 export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [rows, setRows] = useState<ContainerRow[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
+  // Rows live in the form state so the unified "Lưu cập nhật" submit persists
+  // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
+  const { ocrResult, containerRows: rows, setContainerRows: setRows } = useTripFormContext();
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
 
@@ -136,7 +127,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   // empty cell — never overwriting a value the user already entered. Each
   // upload carries a fresh `nonce`; the ref guard prevents double-filling
   // (incl. React 18 StrictMode's dev double-invoke).
-  const { ocrResult } = useTripFormContext();
   const consumedNonceRef = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!ocrResult) return;
@@ -166,7 +156,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
       return next;
     });
     toast({ kind: 'info', message: 'Đã nhận diện số cont/seal — xem lại trước khi lưu.' });
-  }, [ocrResult, toast]);
+  }, [ocrResult, setRows, toast]);
 
   // Container types from the global config catalog
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
@@ -183,7 +173,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     enabled: !!tripId,
   });
 
-  // Seed the local rows from the server data once per trip (or after save).
+  // Seed the local rows from the server data once per trip. After the unified
+  // save invalidates this query, `seededTripRef` is reset (see handleSubmit in
+  // useTripFormDispatch) so the next refetch re-seeds the saved rows.
   useEffect(() => {
     if (!existing) return;
     // Skip if we've already seeded for this trip and it hasn't changed.
@@ -210,7 +202,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     if (firstKey) {
       setThumbs({ [firstKey]: { cont: existing.contPhotoKey ?? null, seal: existing.sealPhotoKey ?? null } });
     }
-  }, [existing, expectedCount, tripId]);
+  }, [existing, expectedCount, tripId, setRows]);
 
   const updateRow = (key: string, field: keyof ContainerRow, value: string | number) => {
     setRows(prev => prev.map(r => (r._key === key ? { ...r, [field]: value } : r)));
@@ -275,47 +267,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     }
   };
 
-  const handleSave = async () => {
-    setPageError(null);
-    // Validate: every row needs a non-empty container number
-    const cleaned = rows.filter(r =>
-      r.containerNumber.trim() ||
-      r.sealNumber.trim() ||
-      r.cargoWeightKg ||
-      r.containerTypeId
-    );
-    for (const r of cleaned) {
-      if (!r.containerNumber.trim()) {
-        setPageError('Mỗi cont phải có Số container. Xoá dòng trống nếu chưa nhập.');
-        return;
-      }
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        containers: cleaned.map(r => ({
-          id: r.id,
-          containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
-          containerNumber: r.containerNumber.trim(),
-          sealNumber: r.sealNumber.trim() || null,
-          cargoWeightKg: r.cargoWeightKg === '' ? null : Number(r.cargoWeightKg),
-          notes: r.notes.trim() || null,
-        })),
-      };
-      await api.put(`/trips/${tripId}/containers`, payload);
-      // Allow the next refetch to re-seed rows with the saved data.
-      seededTripRef.current = null;
-      await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(tripId) });
-      await queryClient.invalidateQueries({ queryKey: qk.trips.detail(tripId) });
-      toast({ kind: 'success', message: 'Đã lưu danh sách container.' });
-    } catch (e: any) {
-      setPageError(e?.message || 'Lỗi lưu container');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div style={{ padding: 16, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -326,19 +277,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
 
   return (
     <div>
-      {pageError && (
-        <div style={{
-          padding: '10px 14px',
-          background: 'var(--danger-soft)',
-          color: 'var(--danger)',
-          borderRadius: 8,
-          fontSize: 13,
-          marginBottom: 12,
-        }}>
-          {pageError}
-        </div>
-      )}
-
       {rows.length === 0 ? (
         <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)' }}>
           <p style={{ marginBottom: 12 }}>Chưa có cont nào. Bấm "Thêm cont" để bắt đầu.</p>
@@ -499,7 +437,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           type="button"
           className="btn btn--secondary btn--sm"
@@ -507,15 +445,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
         >
           <Plus size={14} /> Thêm cont
         </button>
-        <button
-          type="button"
-          className="btn btn--primary btn--sm"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-          {saving ? 'Đang lưu…' : 'Lưu danh sách container'}
-        </button>
+        <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+          Container lưu cùng nút "Lưu cập nhật" ở dưới.
+        </span>
       </div>
 
       {scanner && (
