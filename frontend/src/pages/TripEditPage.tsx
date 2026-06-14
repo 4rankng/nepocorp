@@ -105,7 +105,7 @@ export default function TripEditPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="tc-title-wrap">
-            <h1 className="tc-page-title">Cập nhật số liệu</h1>
+            <h1 className="tc-page-title">{trip.tripCode || 'Cập nhật số liệu'}</h1>
             <p className="tc-page-sub">{trip.customer?.name ?? ''} · {trip.route?.name ?? ''}</p>
           </div>
         </header>

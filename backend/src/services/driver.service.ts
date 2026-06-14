@@ -4,7 +4,7 @@ import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 import { computeSalary } from './attendance.service';
-import { listTripContainers } from './forwarder.service';
+import { listTripContainers, latestTripPhotoKey } from './forwarder.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -95,17 +95,9 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
   // Latest uploaded photo per type for this trip — shown as thumbnails on the
   // driver detail page once a container has been saved. Run both lookups
   // concurrently rather than awaiting them back-to-back.
-  const latestPhotoKey = (type: 'CONTAINER' | 'SEAL') =>
-    db.select({ storageKey: s.tripPhotos.storageKey })
-      .from(s.tripPhotos)
-      .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)))
-      .orderBy(desc(s.tripPhotos.uploadedAt))
-      .limit(1)
-      .then(rows => rows[0]?.storageKey ?? null);
-
   const [contPhotoKey, sealPhotoKey] = await Promise.all([
-    latestPhotoKey('CONTAINER'),
-    latestPhotoKey('SEAL'),
+    latestTripPhotoKey(tripId, 'CONTAINER'),
+    latestTripPhotoKey(tripId, 'SEAL'),
   ]);
 
   return { ...trip, legs, containers, contPhotoKey, sealPhotoKey };

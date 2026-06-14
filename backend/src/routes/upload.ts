@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import sharp from 'sharp';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import { Role } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
@@ -118,6 +118,49 @@ export async function saveTripPhoto(
     buffer: processedBuffer,
     mimeType: opts.forOcr ? 'image/jpeg' : mime,
   };
+}
+
+/**
+ * Remove every `trip_photos` row of a given (tripId, type) — the driver Sửa
+ * flow's "remove photo" affordance. Storage files are deleted best-effort (a
+ * missing/unreadable file is logged, not fatal) and the rows are removed via
+ * Drizzle. Returns the count removed.
+ *
+ * `contPhotoKey`/`sealPhotoKey` resolve to the LATEST photo of a type, so
+ * clearing ALL rows of that type is what actually makes the thumbnail
+ * disappear — deleting only the latest would just resurface the previous one.
+ */
+export async function deleteTripPhotosByType(
+  tripId: number,
+  type: TripPhotoType,
+): Promise<number> {
+  // Capture the row ids up front and scope BOTH the file delete and the row
+  // delete to this exact snapshot. A row inserted concurrently (e.g. a capture
+  // landing mid-operation) is in neither `rows` nor `ids`, so it survives — its
+  // file is not orphaned on disk and the driver's fresh upload is not silently
+  // wiped. Scoping the DELETE to ids (rather than tripId+type) also makes the
+  // returned count match what was actually removed.
+  const rows = await db.select({ id: s.tripPhotos.id, storageKey: s.tripPhotos.storageKey })
+    .from(s.tripPhotos)
+    .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)));
+
+  // Best-effort file deletion: never let one bad file abort the row delete.
+  await Promise.all(rows.map(row =>
+    storageService.delete(row.storageKey).catch(err => {
+      console.warn(
+        `[deleteTripPhotosByType] failed to delete ${row.storageKey}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }),
+  ));
+
+  const ids = rows.map(r => r.id);
+  if (ids.length > 0) {
+    await db.delete(s.tripPhotos)
+      .where(inArray(s.tripPhotos.id, ids));
+  }
+
+  return ids.length;
 }
 
 const uploadRouter = Router();

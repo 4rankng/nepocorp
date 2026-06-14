@@ -120,6 +120,7 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
   const [error, setError] = useState<string | null>(null);
   const [scannerType, setScannerType] = useState<'CONTAINER' | 'SEAL' | null>(null);
   const [editing, setEditing] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState<'CONTAINER' | 'SEAL' | null>(null);
 
   const { data: containerTypes = [] } = useQuery<ContainerType[]>({
     queryKey: qk.catalogs.containerTypes,
@@ -194,6 +195,26 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
       setError(e instanceof Error ? e.message : 'Lỗi nhận diện ảnh.');
     } finally {
       setUploading(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // Remove a single photo type (cont or seal) immediately — consistent with
+  // capture being immediate (each capture already persists via OCR). Clears the
+  // thumbnail from the strip and refetches via onSaved so the read-only view
+  // stays correct even if the driver later cancels.
+  const removePhoto = async (type: 'CONTAINER' | 'SEAL') => {
+    const key = type === 'CONTAINER' ? 'cont' : 'seal';
+    setRemovingPhoto(type);
+    setError(null);
+    try {
+      await api.delete(`/driver/me/trips/${tripId}/photos/${type.toLowerCase()}`);
+      setLastPhotos(prev => ({ ...prev, [key]: null }));
+      toast({ kind: 'success', message: type === 'CONTAINER' ? 'Đã xóa ảnh cont.' : 'Đã xóa ảnh seal.' });
+      onSaved();
+    } catch (e) {
+      toast({ kind: 'error', message: e instanceof Error ? e.message : 'Không xóa được ảnh.' });
+    } finally {
+      setRemovingPhoto(null);
     }
   };
 
@@ -349,12 +370,30 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
               <div className="dcc-photos">
                 {lastPhotos.cont && (
                   <figure className="dcc-photo-fig">
+                    <button
+                      type="button"
+                      className="dcc-photo-remove"
+                      onClick={() => void removePhoto('CONTAINER')}
+                      disabled={removingPhoto !== null}
+                      aria-label="Xóa ảnh cont"
+                    >
+                      {removingPhoto === 'CONTAINER' ? <Loader2 size={12} className="spin" /> : <X size={12} />}
+                    </button>
                     <img className="dcc-photo" src={photoSrc(lastPhotos.cont)} alt="Ảnh cont" />
                     <figcaption>Ảnh cont</figcaption>
                   </figure>
                 )}
                 {lastPhotos.seal && (
                   <figure className="dcc-photo-fig">
+                    <button
+                      type="button"
+                      className="dcc-photo-remove"
+                      onClick={() => void removePhoto('SEAL')}
+                      disabled={removingPhoto !== null}
+                      aria-label="Xóa ảnh seal"
+                    >
+                      {removingPhoto === 'SEAL' ? <Loader2 size={12} className="spin" /> : <X size={12} />}
+                    </button>
                     <img className="dcc-photo" src={photoSrc(lastPhotos.seal)} alt="Ảnh seal" />
                     <figcaption>Ảnh seal</figcaption>
                   </figure>

@@ -10,6 +10,7 @@ import {
   getDriverPenalties,
 } from '../services/driver.service';
 import { createTripContainer, listTripContainers, updateTripContainer } from '../services/forwarder.service';
+import { deleteTripPhotosByType, type TripPhotoType } from './upload';
 import { tripContainerSchema, tripContainerPatchSchema } from '@tingting/shared';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../errors';
@@ -114,6 +115,33 @@ router.patch('/trips/:tripId/containers/:containerId', asyncHandler(async (req: 
     notes: parsed.data.notes,
   });
   res.json(updated);
+}));
+
+// Remove all photos of one type (CONTAINER | SEAL) for the driver's own trip —
+// the Sửa flow's "remove photo" affordance. Ownership is enforced via
+// getDriverTripDetail (same IDOR-safe pattern as the PATCH route above): a
+// driver can only touch photos of trips they own. The trip must not be LOCKED,
+// mirroring updateTripContainer's guard — a settled trip's evidence is
+// immutable. Casbin maps DELETE → a distinct `delete` action, granted to DRIVER
+// on driver_portal in policy.csv (separate from `write` so destructive ops are
+// never implicitly permitted alongside create/mutate).
+router.delete('/trips/:tripId/photos/:type', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const trip = await getDriverTripDetail(driver.id, tripId);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+
+  const photoType = String(req.params.type).toUpperCase();
+  if (photoType !== 'CONTAINER' && photoType !== 'SEAL') {
+    return res.status(400).json({ error: 'Loại ảnh không hợp lệ (container hoặc seal)' });
+  }
+
+  if (trip.status === 'LOCKED') {
+    throw new ApiError(409, 'Không thể xóa ảnh của chuyến đã chốt');
+  }
+
+  const removed = await deleteTripPhotosByType(tripId, photoType as TripPhotoType);
+  res.json({ ok: true, removed });
 }));
 
 export default router;

@@ -446,6 +446,7 @@
   margin-bottom: 14px;
 }
 .dcc-photo-fig {
+  position: relative; /* anchor for the remove-photo overlay button */
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -465,6 +466,35 @@
   color: var(--ink-3);
   text-align: center;
 }
+
+/* Remove-photo overlay — edit flow only. Small circular X badge pinned to the
+   top-right corner of each thumbnail. Destructive intent is signalled by a
+   danger border/soft fill on hover only, so the resting state stays calm. */
+.dcc-photo-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  z-index: 1;
+  box-shadow: var(--shadow-sm);
+}
+.dcc-photo-remove:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.dcc-photo-remove:active:not(:disabled) { transform: scale(0.92); }
+.dcc-photo-remove:disabled { opacity: 0.6; cursor: progress; }
 /* Thumbnail strip shown inside the read-only saved-container card */
 .dcc-photos--saved {
   margin-top: 12px;

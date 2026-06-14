@@ -58,6 +58,24 @@ export async function getForwarderTrips(status?: string) {
     .orderBy(desc(s.trips.departureDate));
 }
 
+/**
+ * Latest uploaded photo storage key for a trip + type (CONTAINER | SEAL), or
+ * null when none exists. Shared by the driver portal and the office-staff
+ * trip view so both render the same "most recent upload" thumbnail. Photos
+ * live at trip level in `trip_photos`, not per container.
+ */
+export async function latestTripPhotoKey(
+  tripId: number,
+  type: 'CONTAINER' | 'SEAL',
+): Promise<string | null> {
+  const rows = await db.select({ storageKey: s.tripPhotos.storageKey })
+    .from(s.tripPhotos)
+    .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)))
+    .orderBy(desc(s.tripPhotos.uploadedAt))
+    .limit(1);
+  return rows[0]?.storageKey ?? null;
+}
+
 export async function getForwarderTripCounts() {
   const rows = await db.select({
     status: s.trips.status,
