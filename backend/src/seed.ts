@@ -223,7 +223,7 @@ async function seed() {
   // reset to the canonical 60/40 split.
   const existingCap = await db.select().from(schema.capTableHistory);
   const distinctPartners = new Set(existingCap.map(r => r.partnerName));
-  const hasNonZeroPct = existingCap.some(r => parseFloat(r.percentage as any) > 0);
+  const hasNonZeroPct = existingCap.some(r => parseFloat(r.percentage) > 0);
   const needsReset =
     existingCap.length === 0 ||
     distinctPartners.size < 2 ||
@@ -271,14 +271,14 @@ async function seed() {
 
   let backfilledLedger = 0;
   for (const exp of unpaidExpenses) {
-    const amount = parseFloat(exp.amount as any);
+    const amount = parseFloat(exp.amount);
     if (!Number.isFinite(amount) || amount <= 0) continue;
     const existingLedger = await db.select({ id: schema.ledger.id })
       .from(schema.ledger)
       .where(and(
         eq(schema.ledger.entityType, 'VENDOR'),
         eq(schema.ledger.entityId, exp.supplierId),
-        eq(schema.ledger.credit, exp.amount as any),
+        eq(schema.ledger.credit, exp.amount),
       ))
       .limit(1);
     if (existingLedger.length > 0) continue;
@@ -292,7 +292,7 @@ async function seed() {
       ))
       .orderBy(desc(schema.ledger.id))
       .limit(1);
-    const prevBalance = lastEntry ? parseFloat(lastEntry.balance as any) : 0;
+    const prevBalance = lastEntry ? parseFloat(lastEntry.balance) : 0;
     // Vendor: credit increases payable balance.
     const newBalance = prevBalance + amount;
     await db.insert(schema.ledger).values({
@@ -304,7 +304,7 @@ async function seed() {
       balance: String(newBalance),
       timestamp: exp.createdAt ?? new Date(),
       note: `Backfill: chi phí #${exp.id}`,
-    } as any);
+    });
     backfilledLedger++;
   }
   if (backfilledLedger > 0) {

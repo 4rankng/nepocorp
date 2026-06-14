@@ -22,7 +22,6 @@ import { resolveForwarder } from '../middleware/forwarder';
 import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq } from 'drizzle-orm';
 import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
 import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
@@ -39,7 +38,6 @@ const router = Router();
 router.use(resolveForwarder);
 
 router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = req.forwarder!;
   const status = req.query.status as string | undefined;
   const [items, counts] = await Promise.all([
     getForwarderTrips(status),
@@ -217,7 +215,6 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
 // ── Expense Photos ──
 
 router.get('/expenses/:id/photos', asyncHandler(async (req: Request, res: Response) => {
-  const forwarder = req.forwarder!;
   const expenseId = parseInt(req.params.id as string, 10);
   const photos = await getExpensePhotos(expenseId);
   res.json({ items: photos });

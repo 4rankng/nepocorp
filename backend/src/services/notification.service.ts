@@ -3,7 +3,7 @@ import { db } from '../db';
 import { notifications } from '../db/schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as s from '../db/schema';
-import { Role, NotificationType, FINANCIAL_ROLES } from '@tingting/shared';
+import { NotificationType, FINANCIAL_ROLES } from '@tingting/shared';
 
 const eventBus = new EventEmitter();
 eventBus.setMaxListeners(50);
@@ -71,7 +71,7 @@ export function initNotificationService() {
 
       const rows = userIds.map(uid => ({
         userId: uid,
-        type: payload.type as any,
+        type: payload.type as (typeof notifications.type.enumValues)[number],
         title: payload.title,
         message: payload.message,
         relatedEntityType: payload.relatedEntityType ?? null,
@@ -101,7 +101,7 @@ async function resolveTargetUsers(payload: NotificationPayload): Promise<number[
   const roles = payload.targetRoles ?? [...FINANCIAL_ROLES];
   const roleUsers = await db.select({ id: s.users.id })
     .from(s.users)
-    .where(and(inArray(s.users.role, roles as any[]), eq(s.users.status, 'ACTIVE')));
+    .where(and(inArray(s.users.role, roles as (typeof s.users.role.enumValues)[number][]), eq(s.users.status, 'ACTIVE')));
   for (const u of roleUsers) {
     userIds.add(u.id);
   }

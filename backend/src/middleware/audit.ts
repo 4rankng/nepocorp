@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { emitAudit } from '../services/audit.service';
 import { AuditEvent } from '../services/audit-types';
-import type { AuditEventType } from '../services/audit-types';
 import { resolveAuditEvent } from '../services/audit-registry';
 
 function extractEntityType(path: string): string | null {
@@ -44,7 +43,10 @@ function extractEntityId(path: string, body: Record<string, unknown>): number | 
 
 function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!body) return {};
-  const { password, passwordHash, password_hash, ...rest } = body;
+  const rest: Record<string, unknown> = { ...body };
+  delete rest.password;
+  delete rest.passwordHash;
+  delete rest.password_hash;
   return rest;
 }
 
@@ -56,7 +58,7 @@ function extractEntityKey(
   const pick = (obj: Record<string, unknown> | null, ...keys: string[]): string | undefined => {
     if (!obj) return undefined;
     for (const k of keys) {
-      const v = (obj as any)[k];
+      const v = obj[k];
       if (typeof v === 'string' && v.trim()) return v.trim();
       if (typeof v === 'number') return String(v);
     }
@@ -110,7 +112,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
   // for the actual audit write trigger.
   let capturedBody: Record<string, unknown> | null = null;
   const originalJson = res.json.bind(res);
-  res.json = function (body: any) {
+  res.json = function (body: unknown) {
     if (body && typeof body === 'object' && !Array.isArray(body)) {
       capturedBody = body as Record<string, unknown>;
     }
@@ -165,7 +167,7 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
       emitAudit({
         event: AuditEvent.LOGIN_FAILED,
         entityType: 'auth',
-        entityKey: (req.body as any)?.identifier as string,
+        entityKey: (req.body as Record<string, unknown> | undefined)?.identifier as string,
         ipAddress: req.ip,
         metadata: {
           method: req.method,

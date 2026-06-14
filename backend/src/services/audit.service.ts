@@ -27,10 +27,10 @@ export interface AuditEntry extends AuditPayload {
  * This runs async out-of-band so it doesn't block the API response.
  */
 async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined> {
-  const body = (payload.metadata?.body || {}) as Record<string, any>;
+  const body = (payload.metadata?.body || {}) as Record<string, unknown>;
 
   // 1. Resolve based on entity type first
-  
+
   // Expenses entity
   if (payload.entityType === 'expenses' && payload.entityId) {
     try {
@@ -114,17 +114,18 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
       try {
         const [customer] = await db.select({ name: s.customers.name })
           .from(s.customers).where(eq(s.customers.id, Number(body.customerId))).limit(1);
-        const ids = body.payments.map((p: any) => p?.tripId || p?.trip_id).filter((x: any) => typeof x === 'number');
+        const payments = body.payments as Array<Record<string, unknown>>;
+        const ids = payments.map((p) => p?.tripId || p?.trip_id).filter((x): x is number => typeof x === 'number');
         let tripDetail = '';
         if (ids.length > 0) {
           const rows = await db.select({ tripCode: s.trips.tripCode })
             .from(s.trips).where(inArray(s.trips.id, ids));
-          const codes = rows.map(r => r.tripCode).filter(Boolean) as string[];
+          const codes = rows.map(r => r.tripCode).filter((c): c is string => Boolean(c));
           if (codes.length > 0) {
             tripDetail = ` cho ${codes.length === 1 ? `chuyến ${codes[0]}` : `${codes.length} chuyến (${codes.join(', ')})`}`;
           }
         }
-        const totalAmt = body.payments.reduce((sum: number, p: any) => sum + Number(p?.amount || 0), 0);
+        const totalAmt = payments.reduce((sum: number, p: Record<string, unknown>) => sum + Number(p?.amount || 0), 0);
         const amtStr = totalAmt > 0 ? ` số tiền ${totalAmt.toLocaleString('vi-VN')} ₫` : '';
         return `từ khách hàng ${customer?.name || `ID ${body.customerId}`}${amtStr}${tripDetail}${body.receiptId ? ` (Số hóa đơn: ${body.receiptId})` : ''}`;
       } catch {}
@@ -161,12 +162,13 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
 
   // 4. Multi-trip ref fallback
   if (Array.isArray(body.payments)) {
-    const ids = body.payments.map((p: any) => p?.trip_id || p?.tripId).filter((x: any) => typeof x === 'number');
+    const payments = body.payments as Array<Record<string, unknown>>;
+    const ids = payments.map((p) => p?.trip_id || p?.tripId).filter((x): x is number => typeof x === 'number');
     if (ids.length > 0) {
       try {
         const rows = await db.select({ tripCode: s.trips.tripCode })
           .from(s.trips).where(inArray(s.trips.id, ids));
-        const codes = rows.map(r => r.tripCode).filter(Boolean) as string[];
+        const codes = rows.map(r => r.tripCode).filter((c): c is string => Boolean(c));
         if (codes.length > 0) return `cho ${codes.length === 1 ? `chuyến ${codes[0]}` : `${codes.length} chuyến (${codes.join(', ')})`}`;
       } catch {}
     }

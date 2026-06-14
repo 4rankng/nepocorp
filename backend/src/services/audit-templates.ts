@@ -67,7 +67,7 @@ interface TemplateContext {
   ipAddress: string;
 }
 
-function ctx(payload: AuditPayload): TemplateContext {
+function ctx(payload: AuditPayload & { ipAddress?: string }): TemplateContext {
   const roleLabel = payload.actorRole
     ? ROLE_LABELS[payload.actorRole as Role] || payload.actorRole
     : 'Hệ thống';
@@ -101,7 +101,7 @@ function ctx(payload: AuditPayload): TemplateContext {
   const entityKey = (payload.entityKey || '').trim()
     || (payload.entityId ? String(payload.entityId) : '');
 
-  const ipAddress = (payload as any).ipAddress || '';
+  const ipAddress = payload.ipAddress || '';
 
   return {
     role,
@@ -115,11 +115,6 @@ function ctx(payload: AuditPayload): TemplateContext {
 /** Compose "<role> <actor>" with single space, collapsed when role is empty. */
 function subj(c: TemplateContext): string {
   return c.role ? `${c.role} ${c.actor}` : c.actor;
-}
-
-/** Returns " <key>" with a leading space when key is non-empty, else "". */
-function withKey(key: string): string {
-  return key ? ` ${key}` : '';
 }
 
 const templates: Record<string, (c: TemplateContext) => string> = {
@@ -154,7 +149,7 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.PROFIT_DISTRIBUTED]: (c) => `${subj(c)} đã thực hiện phân phối lợi nhuận cho các cổ đông của ${c.entityKey || 'hệ thống'}`,
 };
 
-export function renderAuditMessage(payload: AuditPayload): string {
+export function renderAuditMessage(payload: AuditPayload & { ipAddress?: string }): string {
   const template = templates[payload.event];
   if (template) return template(ctx(payload));
   const c = ctx(payload);

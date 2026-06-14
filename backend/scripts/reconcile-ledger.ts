@@ -20,7 +20,7 @@
 
 import { db } from '../src/db';
 import * as s from '../src/db/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { TripStatus, TxnType } from '@tingting/shared';
 
 const FIX_MODE = process.argv.includes('--fix');

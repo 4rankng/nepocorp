@@ -1,15 +1,14 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert';
 import http from 'http';
+import type { AddressInfo } from 'net';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { db, client } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, desc } from 'drizzle-orm';
-import { Role, TripStatus, FuelMode, TxnType, LoadingType } from '@tingting/shared';
-import * as tripService from '../services/trip.service';
-import { LedgerService } from '../services/ledger.service';
+import { eq, and, isNull } from 'drizzle-orm';
+import { Role, TripStatus, FuelMode, LoadingType } from '@tingting/shared';
 import { config } from '../config';
 import { initEnforcer } from '../casbin/enforcer';
 import { initAuditService } from '../services/audit.service';
@@ -39,7 +38,6 @@ let server: http.Server;
 let baseUrl: string;
 
 let adminToken: string;
-let accountantToken: string;
 let driverToken: string;
 
 let customerId: number;
@@ -47,11 +45,10 @@ let driverId: number;
 let truckId: number;
 let routeId: number;
 let cargoTypeId: number;
-let driverUserId: number;
 let adminUserId: number;
 let tripId: number;
-let allTrucks: any[];
-let allDrivers: any[];
+let allTrucks: typeof s.trucks.$inferSelect[];
+let allDrivers: typeof s.drivers.$inferSelect[];
 
 before(async () => {
   await initAuditService();
@@ -60,7 +57,7 @@ before(async () => {
   await new Promise<void>((resolve) => {
     server = http.createServer(app);
     server.listen(0, () => {
-      const address = server.address() as any;
+      const address = server.address() as AddressInfo;
       baseUrl = `http://localhost:${address.port}`;
       resolve();
     });
@@ -71,12 +68,6 @@ before(async () => {
   if (!adm) {
     [adm] = await db.insert(s.users).values({
       username: 'admin', passwordHash: await bcrypt.hash('admin123', 10), role: Role.ADMIN,
-    }).returning();
-  }
-  let [act] = await db.select().from(s.users).where(eq(s.users.username, 'ketoan')).limit(1);
-  if (!act) {
-    [act] = await db.insert(s.users).values({
-      username: 'ketoan', email: 'ketoan@nepo.vn', passwordHash: await bcrypt.hash('ketoan123', 10), role: Role.ACCOUNTANT,
     }).returning();
   }
   let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
@@ -110,7 +101,6 @@ before(async () => {
   customerId = cust.id;
   routeId = rte.id;
   cargoTypeId = crg.id;
-  driverUserId = drvUser.id;
   adminUserId = adm.id;
 
   // Cancel stale IN_TRANSIT trips left from previous test runs / seed data
@@ -121,8 +111,8 @@ before(async () => {
 
   const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
     .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
-  const busyTrucks = new Set(activeTrips.map((t: any) => t.truckId));
-  const busyDrivers = new Set(activeTrips.map((t: any) => t.driverId));
+  const busyTrucks = new Set(activeTrips.map((t) => t.truckId));
+  const busyDrivers = new Set(activeTrips.map((t) => t.driverId));
   allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
   allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
   const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
@@ -131,7 +121,6 @@ before(async () => {
   driverId = freeDriver?.id ?? drvr.id;
 
   adminToken = jwt.sign({ userId: adm.id, username: adm.username, role: Role.ADMIN }, config.jwtSecret);
-  accountantToken = jwt.sign({ userId: act.id, username: act.username, role: Role.ACCOUNTANT }, config.jwtSecret);
   driverToken = jwt.sign({ userId: drvUser.id, username: drvUser.username, role: Role.DRIVER }, config.jwtSecret);
 });
 
@@ -141,14 +130,23 @@ after(async () => {
   await disconnectRedis();
 });
 
-async function testFetch(urlPath: string, options: any = {}) {
-  const headers = {
+interface TestFetchOptions {
+  method?: string;
+  body?: string;
+  token?: string;
+  headers?: Record<string, string>;
+}
+
+async function testFetch(urlPath: string, options: TestFetchOptions = {}) {
+  const { method, body, token, headers: optHeaders } = options;
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-    ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...optHeaders,
   };
   const res = await fetch(`${baseUrl}${urlPath}`, {
-    ...options,
+    method,
+    body,
     headers,
   });
   const data = await res.json().catch(() => ({}));
@@ -193,7 +191,7 @@ test('E2E — Auth flow (Login, Me, User List, Create, Delete)', async () => {
   // Test 1.4: User list retrieval
   const listRes = await testFetch('/api/auth/users', { token: adminToken });
   assert.strictEqual(listRes.status, 200);
-  assert.ok(listRes.data.items.some((u: any) => u.id === createdUserId));
+  assert.ok(listRes.data.items.some((u: { id: number }) => u.id === createdUserId));
 
   // Test 1.5: User deletion
   const deleteRes = await testFetch(`/api/auth/users/${createdUserId}`, {
@@ -246,8 +244,8 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
   // 2. Reassign truck/driver
   const currentActive = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
     .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
-  const curBusyTrucks = new Set(currentActive.map((t: any) => t.truckId));
-  const curBusyDrivers = new Set(currentActive.map((t: any) => t.driverId));
+  const curBusyTrucks = new Set(currentActive.map((t) => t.truckId));
+  const curBusyDrivers = new Set(currentActive.map((t) => t.driverId));
   const currentTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
   const currentDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
   const altTruck = currentTrucks.find(t => !curBusyTrucks.has(t.id) && t.id !== truckId)

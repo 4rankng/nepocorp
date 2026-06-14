@@ -446,7 +446,7 @@ export class LedgerService {
       ORDER BY entity_type, entity_id, id DESC
     `);
 
-    const rows = Array.isArray(result) ? result : (result as any).rows ?? [];
+    const rows = result as unknown as Array<{ entity_type: string; entity_id: number; balance: string }>;
     const map = new Map<string, number>();
     for (const row of rows) {
       map.set(`${row.entity_type}:${row.entity_id}`, Number(row.balance));

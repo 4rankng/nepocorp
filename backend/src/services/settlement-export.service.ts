@@ -1,5 +1,5 @@
 import { getAdvanceSettlement } from './advance.service';
-import { AdvanceError, validateSettlementInputs } from './settlement-validation';
+import { validateSettlementInputs } from './settlement-validation';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, inArray } from 'drizzle-orm';
@@ -15,7 +15,30 @@ const EXPENSE_TYPE_LABELS: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-import { escapeHtml, formatVND, formatLocalDate, formatDateShort } from '../lib/format';
+import { escapeHtml, formatVND, formatDateShort } from '../lib/format';
+
+// ── Linked-data contracts (fields consumed by the print/export renderers) ──
+
+/** Shape of a linked advance request used in settlement print rendering. */
+export interface LinkedRequest {
+  amount: string | number;
+  reason: string | null;
+  createdAt: Date | string;
+}
+
+/** Shape of a linked trip expense (joined with trip/customer) used in print rendering. */
+export interface LinkedExpense {
+  id: number;
+  tripId: number;
+  expenseType: string;
+  amount: string | number;
+  containerNumber: string | null;
+  invoiceNumber: string | null;
+  note: string | null;
+  createdAt: Date | string;
+  departureDate?: string | null;
+  customerName?: string | null;
+}
 
 interface PrintRow {
   date: string;
@@ -26,8 +49,8 @@ interface PrintRow {
   invoice: string;
 }
 
-function buildPrintRows(expenses: any[]): PrintRow[] {
-  const grouped = new Map<string, Map<string, any[]>>();
+function buildPrintRows(expenses: LinkedExpense[]): PrintRow[] {
+  const grouped = new Map<string, Map<string, LinkedExpense[]>>();
   for (const exp of expenses) {
     const dateKey = exp.departureDate || 'unknown';
     const containerKey = exp.containerNumber || '-';
@@ -65,8 +88,8 @@ export interface SettlementExportData {
   forwarderName: string | null;
   refundAmount: string | number;
   note: string | null;
-  linkedRequests: any[];
-  linkedExpenses: any[];
+  linkedRequests: LinkedRequest[];
+  linkedExpenses: LinkedExpense[];
 }
 
 // ── Data loading ──
@@ -105,18 +128,18 @@ const PRINT_CSS = `
 `;
 
 export function renderSettlementHtml(data: SettlementExportData): string {
-  const expenses: any[] = data.linkedExpenses || [];
-  const requests: any[] = data.linkedRequests || [];
-  const totalAdvance = requests.reduce((sum: number, r: any) => sum + Number(r.amount), 0);
-  const totalExpense = expenses.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+  const expenses: LinkedExpense[] = data.linkedExpenses || [];
+  const requests: LinkedRequest[] = data.linkedRequests || [];
+  const totalAdvance = requests.reduce((sum: number, r) => sum + Number(r.amount), 0);
+  const totalExpense = expenses.reduce((sum: number, e) => sum + Number(e.amount), 0);
   const refund = Number(data.refundAmount || 0);
   const balance = totalAdvance - totalExpense - refund;
   const rows = buildPrintRows(expenses);
   const docCode = data.code || `PT-${String(data.id).padStart(4, '0')}`;
 
-  const advanceRows = requests.map((r: any) => `
+  const advanceRows = requests.map((r) => `
     <div class="advance-item">
-      <span>${formatVND(Number(r.amount))} — ${escapeHtml(r.reason)}</span>
+      <span>${formatVND(Number(r.amount))} — ${escapeHtml(r.reason || '')}</span>
       <span>${new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
     </div>`).join('');
 
@@ -189,10 +212,10 @@ ${data.note ? `<div class="note"><strong>Ghi chú:</strong> ${escapeHtml(data.no
 // ── XLSX rendering ──
 
 export function renderSettlementXlsx(data: SettlementExportData, writable: import('stream').Writable): Promise<boolean> {
-  const expenses: any[] = data.linkedExpenses || [];
-  const requests: any[] = data.linkedRequests || [];
-  const totalAdvance = requests.reduce((sum: number, r: any) => sum + Number(r.amount), 0);
-  const totalExpense = expenses.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+  const expenses: LinkedExpense[] = data.linkedExpenses || [];
+  const requests: LinkedRequest[] = data.linkedRequests || [];
+  const totalAdvance = requests.reduce((sum: number, r) => sum + Number(r.amount), 0);
+  const totalExpense = expenses.reduce((sum: number, e) => sum + Number(e.amount), 0);
   const refund = Number(data.refundAmount || 0);
   const balance = totalAdvance - totalExpense - refund;
   const rows = buildPrintRows(expenses);
@@ -200,7 +223,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
 
   return (async () => {
     const ExcelJSMod = await import('exceljs');
-    const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
+    const ExcelJS = (ExcelJSMod as unknown as { default?: typeof ExcelJSMod }).default ?? ExcelJSMod;
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'TingTing';
     workbook.created = new Date();
@@ -245,7 +268,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
       const f = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb } };
       for (let c = 1; c <= LAST_COL; c++) sheet.getRow(r).getCell(c).fill = f;
     }
-    function setBorders(r: number, b: any) {
+    function setBorders(r: number, b: Partial<import('exceljs').Borders>) {
       for (let c = 1; c <= LAST_COL; c++) sheet.getRow(r).getCell(c).border = b;
     }
 
@@ -365,7 +388,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
     // Data rows
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      const vals: Array<{ v: any; align?: string; fmt?: string }> = [
+      const vals: Array<{ v: string | number; align?: 'left' | 'center' | 'right'; fmt?: string }> = [
         { v: r.date, align: 'center' },
         { v: r.expenseType },
         { v: r.customer },
@@ -374,16 +397,17 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
         { v: r.invoice },
       ];
       for (let c = 0; c < vals.length; c++) {
+        const col = vals[c];
         const cell = sheet.getRow(row).getCell(c + 1);
-        cell.value = vals[c].v;
+        cell.value = col.v;
         cell.font = { name: F, size: 10, color: { argb: CLR.dark } };
         cell.border = thinB;
         cell.alignment = {
-          horizontal: (vals[c].align || 'left') as any,
+          horizontal: (col.align || 'left'),
           vertical: 'middle',
           wrapText: true,
         };
-        if (vals[c].fmt) cell.numFmt = vals[c].fmt;
+        if (col.fmt) cell.numFmt = col.fmt;
       }
       if (i % 2 === 1) fillRow(row, CLR.stripe);
       row++;
@@ -542,8 +566,10 @@ async function buildPreviewSettlementData(input: {
 }): Promise<SettlementExportData> {
   const { forwarderId, advanceRequestIds, tripExpenseIds, refundAmount, note } = input;
 
-  // Shared validation: existence, ownership, and status checks
-  const { advanceRequests: requests, tripExpenses: expenseRows } =
+  // Shared validation: existence, ownership, and status checks.
+  // Note: tripExpenses from validation is intentionally unused here — the
+  // print renderer enriches expenses independently via its own join below.
+  const { advanceRequests: requests } =
     await validateSettlementInputs({
       dbOrTx: db,
       forwarderId,
@@ -553,7 +579,7 @@ async function buildPreviewSettlementData(input: {
     });
 
   // Enrich expenses with trip/customer join for print display
-  let linkedExpenses: any[] = [];
+  let linkedExpenses: LinkedExpense[] = [];
   if (tripExpenseIds && tripExpenseIds.length > 0) {
     linkedExpenses = await db.select({
       id: s.tripExpenses.id,

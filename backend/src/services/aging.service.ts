@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, sql, inArray, like } from 'drizzle-orm';
 import { computeFifoAging } from '@tingting/shared';
-import type { PayableSummary } from '@tingting/shared';
+import type { PayableSummary, Supplier } from '@tingting/shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -288,7 +288,7 @@ export async function getPayablesSummary(opts: { asOfDate?: string } = {}) {
     if (r.maxOverdueDays > 30) overdueSuppliers++;
 
     items.push({
-      supplier: supplier as any,
+      supplier: supplier as unknown as Supplier,
       totalOutstanding: r.totalOutstanding,
       aging: r.aging,
       maxOverdueDays: r.maxOverdueDays,

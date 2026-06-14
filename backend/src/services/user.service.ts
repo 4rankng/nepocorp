@@ -71,6 +71,7 @@ export async function authenticate(identifier: string, password: string) {
   }
 
   const { passwordHash, deletedAt, ...userPublic } = user;
+  void passwordHash; void deletedAt;
   return userPublic;
 }
 
@@ -81,12 +82,6 @@ export async function listUsers(requesterRole?: string) {
     : isNull(users.deletedAt);
   const items = await selectUserWithDriver(db, where);
   return { items, total: items.length };
-}
-
-/** Fetch a single user row with its optional driver profile (LEFT JOIN). */
-async function getUserWithDriver(id: number) {
-  const [row] = await selectUserWithDriver(db, and(eq(users.id, id), isNull(users.deletedAt))).limit(1);
-  return row ?? null;
 }
 
 /** Create a new user with hashed password. DRIVER-role users also get a linked drivers row. */
@@ -110,7 +105,7 @@ export async function createUser(data: {
       phone: data.phone || null,
       fullName: data.fullName || null,
       passwordHash,
-      role: data.role as any,
+      role: data.role as (typeof users.role.enumValues)[number],
       status: data.status ?? 'ACTIVE',
     }).returning(USER_FIELDS);
 
@@ -189,7 +184,7 @@ export async function updateUser(id: number, data: {
     }
 
     const updates: Record<string, unknown> = { updatedAt: sql`now()` };
-    if (data.role !== undefined) updates.role = data.role as any;
+    if (data.role !== undefined) updates.role = data.role as (typeof users.role.enumValues)[number];
     if (data.status !== undefined) updates.status = data.status;
     if (passwordHash) updates.passwordHash = passwordHash;
     if (data.username !== undefined) updates.username = data.username;

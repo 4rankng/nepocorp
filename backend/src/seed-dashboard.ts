@@ -20,17 +20,6 @@ function dateStr(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-// Salary period with default startDay=25, endDay=24
-// For month M, year Y: period is (Y, M-1, 25) → (Y, M, 24)
-function periodStart(y: number, m: number): string {
-  const pm = m - 1 || 12;
-  const py = m === 1 ? y - 1 : y;
-  return dateStr(py, pm, 25);
-}
-function periodEnd(y: number, m: number): string {
-  return dateStr(y, m, 24);
-}
-
 // ─── Config data ────────────────────────────────────────────────────────────
 
 async function seedConfig() {
@@ -488,9 +477,6 @@ async function seedExpenses() {
   // Get category IDs
   const cats = await db.select().from(s.expenseCategories);
   const catMap = new Map(cats.map(c => [c.name, c.id]));
-
-  // Get existing expenses count
-  const existingExpenses = await db.select({ id: s.expenses.id }).from(s.expenses);
 
   // Renewable expenses approaching expiry (insurance, registration, toll)
   const renewableExpenses = [

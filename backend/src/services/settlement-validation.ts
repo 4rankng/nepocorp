@@ -22,12 +22,8 @@ export class AdvanceError extends Error {
 // ─── Shared validation ──────────────────────────────────────────────────────
 
 export interface ValidatedSettlementInputs {
-  advanceRequests: Awaited<ReturnType<typeof db.select>> extends infer R
-    ? R extends any[] ? R : never
-    : never;
-  tripExpenses: Awaited<ReturnType<typeof db.select>> extends infer R
-    ? R extends any[] ? R : never
-    : never;
+  advanceRequests: typeof s.advanceRequests.$inferSelect[];
+  tripExpenses: typeof s.tripExpenses.$inferSelect[];
 }
 
 /**
@@ -43,7 +39,7 @@ export async function validateSettlementInputs(opts: {
   advanceRequestIds: number[];
   tripExpenseIds?: number[];
   checkAlreadyLinked?: boolean;
-}): Promise<{ advanceRequests: any[]; tripExpenses: any[] }> {
+}): Promise<{ advanceRequests: typeof s.advanceRequests.$inferSelect[]; tripExpenses: typeof s.tripExpenses.$inferSelect[] }> {
   const { dbOrTx, forwarderId, advanceRequestIds, tripExpenseIds, checkAlreadyLinked } = opts;
 
   // 1. Validate advance requests exist
@@ -80,7 +76,7 @@ export async function validateSettlementInputs(opts: {
   }
 
   // 3. Validate trip expenses (if provided)
-  let expenseRows: any[] = [];
+  let expenseRows: typeof s.tripExpenses.$inferSelect[] = [];
   if (tripExpenseIds && tripExpenseIds.length > 0) {
     expenseRows = await dbOrTx.select()
       .from(s.tripExpenses)

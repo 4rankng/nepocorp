@@ -19,7 +19,7 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
   await financialService.recordPayment({
     customerId: data.customerId,
     receiptId: data.receiptId,
-    payments: data.payments.map((p: any) => ({ tripId: p.tripId, amount: p.amount })),
+    payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
   });
   await cacheInvalidate('reports:dashboard');
   emitNotification({

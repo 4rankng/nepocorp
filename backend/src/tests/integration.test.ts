@@ -1,6 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert';
 import http from 'http';
+import type { AddressInfo } from 'net';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -47,9 +48,6 @@ let driverId: number;
 let truckId: number;
 let routeId: number;
 let cargoTypeId: number;
-let driverUserId: number;
-let truckId2: number;
-let driverId2: number;
 let adminUserId: number;
 
 before(async () => {
@@ -60,7 +58,7 @@ before(async () => {
   await new Promise<void>((resolve) => {
     server = http.createServer(app);
     server.listen(0, () => {
-      const address = server.address() as any;
+      const address = server.address() as AddressInfo;
       baseUrl = `http://localhost:${address.port}`;
       resolve();
     });
@@ -109,7 +107,6 @@ before(async () => {
   truckId = trck.id;
   routeId = rte.id;
   cargoTypeId = crg.id;
-  driverUserId = drvUser.id;
   adminUserId = adm.id;
 
   // Ensure fuelConfig exists
@@ -158,24 +155,10 @@ before(async () => {
     }).returning();
   }
 
-  const [trck2] = await db.select().from(s.trucks).offset(1).limit(1);
   let [drvr2] = await db.select().from(s.drivers).offset(1).limit(1);
   if (!drvr2) {
     [drvr2] = await db.insert(s.drivers).values({ name: 'Lái xe E2E 2' }).returning();
   }
-
-  // Second truck/driver for tests that need fresh state after prior tests dispatch
-  // Find a truck+driver without any existing IN_TRANSIT trips
-  const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
-    .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
-  const busyTrucks = new Set(activeTrips.map(t => t.truckId));
-  const busyDrivers = new Set(activeTrips.map(t => t.driverId));
-  const allTrucks = await db.select().from(s.trucks).where(isNull(s.trucks.deletedAt));
-  const allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
-  const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
-  const freeDriver = allDrivers.find(d => !busyDrivers.has(d.id));
-  truckId2 = freeTruck?.id ?? trck.id;
-  driverId2 = freeDriver?.id ?? drvr.id;
 
   // Generate tokens
   adminToken = jwt.sign({ userId: adm.id, username: adm.username, role: Role.ADMIN }, config.jwtSecret);
@@ -205,7 +188,14 @@ after(async () => {
 });
 
 // Helper to make fetch requests
-async function testFetch(urlPath: string, options: any = {}) {
+interface TestFetchOptions {
+  method?: string;
+  token?: string;
+  body?: string;
+  headers?: Record<string, string>;
+}
+
+async function testFetch(urlPath: string, options: TestFetchOptions = {}) {
   const headers = {
     'Content-Type': 'application/json',
     ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
@@ -288,8 +278,8 @@ test('T4.3 — Lock Atomicity: Forced mid-transaction failure triggers full roll
       // Force failure mid-transaction
       throw new Error('Forced transactional failure');
     });
-  } catch (err: any) {
-    assert.strictEqual(err.message, 'Forced transactional failure');
+  } catch (err: unknown) {
+    assert.strictEqual((err as Error).message, 'Forced transactional failure');
   }
 
   // Verify that the entry was rolled back and is NOT present in the DB
@@ -474,8 +464,8 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
   const allDrivers = await db.select().from(s.drivers).where(isNull(s.drivers.deletedAt));
   const activeTrips = await db.select({ truckId: s.trips.truckId, driverId: s.trips.driverId })
     .from(s.trips).where(eq(s.trips.status, TripStatus.IN_TRANSIT));
-  const busyTrucks = new Set(activeTrips.map((t: any) => t.truckId));
-  const busyDrivers = new Set(activeTrips.map((t: any) => t.driverId));
+  const busyTrucks = new Set(activeTrips.map((t) => t.truckId));
+  const busyDrivers = new Set(activeTrips.map((t) => t.driverId));
   const freeTruck = allTrucks.find(t => !busyTrucks.has(t.id));
   const freeDriver = allDrivers.find(d => !busyDrivers.has(d.id));
   const tTruck = freeTruck?.id ?? truckId;
@@ -772,7 +762,7 @@ test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async
   assert.ok(Array.isArray(listRes.data.items), 'Salary summaries list items should be an array');
 
   // Find our driver in the list
-  const driverSummaryItem = listRes.data.items.find((item: any) => item.id === driverId);
+  const driverSummaryItem = listRes.data.items.find((item: { id: number }) => item.id === driverId);
   assert.ok(driverSummaryItem, 'Seeded driver should be present in the salary summaries list');
 
   // 2. Fetch raw workdays list for our driver
@@ -842,7 +832,7 @@ test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async
     method: 'GET',
     token: accountantToken,
   });
-  const dispatchDay = workdaysAfterDispatch.data.workDays.find((wd: any) => wd.date === '2026-06-10');
+  const dispatchDay = workdaysAfterDispatch.data.workDays.find((wd: { date: string; status: string; tripId: number | null }) => wd.date === '2026-06-10');
   assert.ok(dispatchDay, 'A workday record should be created for the dispatch date');
   assert.strictEqual(dispatchDay.status, 'TRIP_DAY', 'Status of workday should be TRIP_DAY');
   assert.strictEqual(dispatchDay.tripId, trip.id, 'Workday record should link to the correct trip ID');
@@ -858,7 +848,7 @@ test('T4.11 — Attendance/Salary and Driver Portal Earnings Integration', async
     method: 'GET',
     token: accountantToken,
   });
-  const cancelDay = workdaysAfterCancel.data.workDays.find((wd: any) => wd.date === '2026-06-10');
+  const cancelDay = workdaysAfterCancel.data.workDays.find((wd: { date: string }) => wd.date === '2026-06-10');
   assert.ok(!cancelDay, 'Workday record for canceled trip should be deleted');
 });
 

@@ -66,7 +66,7 @@ export async function getPricing(customerId: number, routeId: number, date: stri
   return { price: pricing ? Number(pricing.price) : 0 };
 }
 
-export async function getFuelConfig(): Promise<any> {
+export async function getFuelConfig(): Promise<typeof s.fuelConfig.$inferSelect | null> {
   const row = await cacheGet('config:fuel', 300, async () => {
     const [r] = await db.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
     return r || null;
@@ -81,7 +81,7 @@ export async function upsertFuelConfig(data: {
   unitPrice: number;
   warningThreshold: number;
   criticalThreshold: number;
-}, userId?: number): Promise<any> {
+}, userId?: number): Promise<{ result: typeof s.fuelConfig.$inferSelect; status: number }> {
   const values = {
     loadedNorm: String(data.loadedNorm),
     emptyNorm: String(data.emptyNorm),
@@ -122,7 +122,7 @@ export async function upsertFuelConfig(data: {
   return { result, status };
 }
 
-export async function getFuelPriceHistory(): Promise<any[]> {
+export async function getFuelPriceHistory(): Promise<typeof s.fuelPriceHistory.$inferSelect[]> {
   return cacheGet('config:fuel-price-history', 300, async () => {
     return db.select().from(s.fuelPriceHistory).orderBy(desc(s.fuelPriceHistory.effectiveDate));
   });

@@ -3,7 +3,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, or, isNull, sql, desc, lte, gte, inArray } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'drizzle-orm';
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { config } from '../config';
@@ -25,16 +25,23 @@ const TRIP_RELATION_FIELDS = {
   fuelSupplierName: s.suppliers.name,
 };
 
-const TRIP_RELATION_JOINS = (query: any) => query
+/** Minimal structural type for the leftJoin method so we can chain joins generically. */
+type WithLeftJoin = { leftJoin: (table: typeof s.customers | typeof s.drivers | typeof s.trucks | typeof s.routes | typeof s.trailers | typeof s.suppliers, on: SQL) => WithLeftJoin };
+
+/**
+ * Apply the 6 standard relation LEFT JOINs to a trip select query.
+ * Generic over T to preserve the builder's row type for downstream .where/.orderBy chains.
+ */
+const TRIP_RELATION_JOINS = <T extends WithLeftJoin>(query: T): T => (query as WithLeftJoin)
   .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
   .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
   .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
   .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
   .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
-  .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id));
+  .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id)) as unknown as T;
 
 /** Shape flat joined rows into nested relation objects. */
-function shapeTripRelations(item: Record<string, any>, extras?: { legs?: any[]; photoUrls?: string[] }) {
+function shapeTripRelations(item: Record<string, unknown>, extras?: { legs?: unknown[]; photoUrls?: string[] }) {
   return {
     ...item,
     customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
@@ -74,7 +81,7 @@ export async function getTrips(filters: TripListFilters) {
   // on trip_containers / trip_expenses) so the total-row-count query stays
   // cheap on the full table. The list query still uses the full OR — and
   // it's bounded by LIMIT 50 so the per-row EXISTS probes are fine.
-  const countConditions: any[] = [isNull(s.trips.deletedAt)];
+  const countConditions: SQL<unknown>[] = [isNull(s.trips.deletedAt)];
   const conditions = [...countConditions];
   if (filters.status) {
     const c = eq(s.trips.status, filters.status as TripStatus);
@@ -174,7 +181,7 @@ export async function getTrips(filters: TripListFilters) {
   // Batch-load container instances for this page so the list can show
   // "Loại container" + "Số container" columns (Pete's request 2026-06).
   // One extra query keyed by the page's trip ids — keeps the main JOIN small.
-  const tripIds = items.map((it: any) => it.id);
+  const tripIds = items.map((it) => it.id);
   const containersByTrip = new Map<number, Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>>();
   if (tripIds.length > 0) {
     const containerRows = await db.select({
@@ -198,7 +205,7 @@ export async function getTrips(filters: TripListFilters) {
   }
 
   return {
-    items: items.map((item: any) => ({
+    items: items.map((item) => ({
       ...shapeTripRelations(item),
       containers: containersByTrip.get(item.id) ?? [],
     })),

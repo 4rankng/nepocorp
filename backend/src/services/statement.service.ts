@@ -4,11 +4,13 @@ import { eq } from 'drizzle-orm';
 import { TxnType, computeFifoAging } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
-import { escapeHtml, formatLocalDate } from '../lib/format';
+import { escapeHtml } from '../lib/format';
+
+type LedgerRow = typeof s.ledger.$inferSelect;
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null };
-  ledgerRows: any[];
+  ledgerRows: LedgerRow[];
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
   agingBuckets: Array<{ range: string; amount: number }>;
@@ -16,7 +18,7 @@ export interface CustomerStatementData {
 
 export interface SupplierStatementData {
   supplier: { id: number; name: string; phone: string | null; contactPerson: string | null };
-  ledgerRows: any[];
+  ledgerRows: LedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
 }
@@ -28,7 +30,7 @@ interface StatementExportConfig {
   entityName: string;
   contactLines: string[];
   txnLabels: Record<string, string>;
-  ledgerRows: any[];
+  ledgerRows: LedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
 }
@@ -75,8 +77,8 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
 
   const now = new Date();
   const { aging, openInvoices } = computeFifoAging(
-    ledgerRows.map((r: any) => ({
-      timestamp: r.timestamp,
+    ledgerRows.map((r) => ({
+      timestamp: r.timestamp.toISOString(),
       debit: r.debit ?? '0',
       credit: r.credit ?? '0',
     })),
@@ -85,7 +87,7 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
 
   const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
-  const revenueEntries = ledgerRows.filter((r: any) => r.txnType === TxnType.TRIP_REVENUE);
+  const revenueEntries = ledgerRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
   const tripNotes = new Map<number, string>();
   for (const entry of revenueEntries) {
     if (entry.txnId && !tripNotes.has(entry.txnId)) {
@@ -125,7 +127,7 @@ export async function getStatementData(customerId: number): Promise<CustomerStat
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return {
-    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: (customer as any).debitNoteMode ?? 'MONTHLY' },
+    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY' },
     ledgerRows,
     totalOutstanding,
     unpaidTrips,
@@ -179,8 +181,8 @@ export async function getSupplierStatement(supplierId: number): Promise<Supplier
 
   const now = new Date();
   const { aging } = computeFifoAging(
-    ledgerRows.map((r: any) => ({
-      timestamp: r.timestamp,
+    ledgerRows.map((r) => ({
+      timestamp: r.timestamp.toISOString(),
       debit: r.credit ?? '0',
       credit: r.debit ?? '0',
     })),
@@ -244,7 +246,9 @@ export function exportSupplierStatementHtml(
 
 async function buildStatementXlsx(config: StatementExportConfig, dateStr: string, writable: import('stream').Writable): Promise<void> {
   const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
 
@@ -279,7 +283,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   sheet.getRow(headerRow).font = { bold: true };
   sheet.getRow(headerRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
 
-  config.ledgerRows.forEach((row: any, i: number) => {
+  config.ledgerRows.forEach((row, i: number) => {
     const r = headerRow + 1 + i;
     const debit = parseFloat(row.debit || '0');
     const credit = parseFloat(row.credit || '0');
@@ -306,7 +310,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
 }
 
 function buildStatementHtml(config: StatementExportConfig, dateStr: string): string {
-  const rows = config.ledgerRows.map((row: any) => {
+  const rows = config.ledgerRows.map((row) => {
     const debit = parseFloat(row.debit || '0');
     const credit = parseFloat(row.credit || '0');
     const balance = parseFloat(row.balance || '0');

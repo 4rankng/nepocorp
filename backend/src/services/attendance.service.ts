@@ -259,7 +259,7 @@ export async function computeSalary(
   confirmationMap?: ConfirmationMap,
 ) {
   const attendance = await computeAttendanceSummary(driverId, year, month);
-  const { periodStart: start, periodEnd: end, standardWorkDays, tripDays, standbyDays, personalLeaveDays, paidDays } = attendance;
+  const { periodStart: start, periodEnd: end, standardWorkDays, tripDays, standbyDays, paidDays } = attendance;
 
   // Get driver base salary
   const [driver] = await db.select({

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, gte, lte, isNull, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, inArray, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 export interface DebitNoteLine {
@@ -42,9 +42,9 @@ export async function getDebitNoteData(
   if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
 
   // 2. Build trip filter conditions
-  const tripConditions: ReturnType<typeof eq>[] = [
+  const tripConditions: SQL<unknown>[] = [
     eq(s.trips.customerId, customerId),
-    eq(s.trips.status, 'LOCKED' as any),
+    eq(s.trips.status, 'LOCKED'),
     isNull(s.trips.deletedAt),
   ];
 
@@ -56,13 +56,13 @@ export async function getDebitNoteData(
     const from = `${opts.year}-${monthStr}-01`;
     const lastDay = new Date(opts.year, opts.month, 0).getDate();
     const to = `${opts.year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
-    tripConditions.push(gte(s.trips.departureDate, from) as any);
-    tripConditions.push(lte(s.trips.departureDate, to) as any);
+    tripConditions.push(gte(s.trips.departureDate, from));
+    tripConditions.push(lte(s.trips.departureDate, to));
   } else if (opts.mode === 'PER_BATCH') {
     if (!opts.tripIds?.length) {
       throw new ApiError(400, 'PER_BATCH mode requires at least one trip ID');
     }
-    tripConditions.push(inArray(s.trips.id, opts.tripIds) as any);
+    tripConditions.push(inArray(s.trips.id, opts.tripIds));
   }
 
   const trips = await db.select({
@@ -73,7 +73,7 @@ export async function getDebitNoteData(
     routeName: s.routes.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-    .where(and(...(tripConditions as any[])))
+    .where(and(...tripConditions))
     .orderBy(s.trips.departureDate);
 
   const lines: DebitNoteLine[] = [];
@@ -123,8 +123,7 @@ export async function getDebitNoteData(
 }
 
 export async function buildDebitNoteXlsx(data: DebitNoteData): Promise<Buffer> {
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as any).default ?? ExcelJSMod;
+  const ExcelJS = await import('exceljs');
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Giấy báo nợ');
 
@@ -144,7 +143,7 @@ export async function buildDebitNoteXlsx(data: DebitNoteData): Promise<Buffer> {
   const headerRow = ws.getRow(6);
   headerRow.values = ['Mã chuyến', 'Ngày', 'Diễn giải', 'ĐVT', 'Số tiền (VNĐ)'];
   headerRow.font = { bold: true };
-  headerRow.eachCell((cell: any) => {
+  headerRow.eachCell((cell) => {
     cell.border = { bottom: { style: 'thin' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
   });

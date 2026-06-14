@@ -99,7 +99,6 @@ export async function createTrip(data: {
     const fuelSupplementNormApplied = fuelCfg ? Number(fuelCfg.supplement) : 0;
     const tollPerStationApplied = roadCfg ? Number(roadCfg.tollPerStation) : 0;
     const returnCargoBonusApplied = roadCfg ? Number(roadCfg.returnCargoBonus) : 0;
-    const defaultDriverSalary = roadCfg ? Number(roadCfg.defaultDriverSalary || 0) : 0;
 
     // 3. Atomic tripCode generation
     const departureDate = new Date(data.departureDate);
@@ -258,7 +257,7 @@ export async function updateTripFigures(
     let fuelPriceApplied = Number(trip.fuelPriceApplied || 0);
     let fuelLoadedNormApplied = Number(trip.fuelLoadedNormApplied || 0);
     let fuelEmptyNormApplied = Number(trip.fuelEmptyNormApplied || 0);
-    let fuelSupplementNormApplied = Number((trip as any).fuelSupplementNormApplied || 0);
+    let fuelSupplementNormApplied = Number(trip.fuelSupplementNormApplied || 0);
     let tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
     let returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
 
@@ -487,7 +486,7 @@ export async function updateTripFigures(
     await tx.delete(s.tripLegs).where(eq(s.tripLegs.tripId, tripId));
     if (normalizedLegs.length > 0) {
       await tx.insert(s.tripLegs).values(
-        normalizedLegs.map((leg, i) => {
+        normalizedLegs.map((leg, _i) => {
           const calcLeg = totals.legCalculations.find(cl => cl.sequence === leg.sequence);
           return {
             tripId,

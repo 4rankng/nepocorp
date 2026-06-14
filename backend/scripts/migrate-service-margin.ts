@@ -14,7 +14,7 @@
  */
 import { db } from '../src/db/index.js';
 import * as s from '../src/db/schema.js';
-import { eq, and, isNull, sql } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 
 const DEFAULT_FEE_VAT = 0.080;
 

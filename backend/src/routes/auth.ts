@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+
+/** ms-compatible duration string (e.g. '7d', '24h', '3600s') for jwt SignOptions.expiresIn. */
+type DurationString = `${number}` | `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}`;
 import { config } from '../config';
 import { Role, loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema } from '@tingting/shared';
 import { authMiddleware, getUser } from '../middleware/auth';
@@ -41,7 +44,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const token = jwt.sign(
     { userId: user.id, username: user.username, email: user.email, fullName: displayName, role: user.role, jti: crypto.randomUUID() },
     config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn as any }
+    { expiresIn: config.jwtExpiresIn as DurationString }
   );
 
   const capabilities = await userService.getCapabilities(user.role);

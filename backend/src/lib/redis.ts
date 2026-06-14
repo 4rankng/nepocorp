@@ -3,7 +3,7 @@ import { config } from '../config';
 
 let redis: Redis | null = null;
 
-const inflightCacheRequests = new Map<string, Promise<any>>();
+const inflightCacheRequests = new Map<string, Promise<unknown>>();
 
 export function getRedis(): Redis {
   if (!redis) {

@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import {
-  TripStatus, FuelMode, LoadingType, Role, TxnType,
+  FuelMode, LoadingType, Role,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
-  AdvanceRequestStatus, AdvanceSettlementStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types

@@ -34,7 +34,7 @@ describe('computeFifoAging', () => {
       { timestamp: daysAgo(10, ref), debit: '300000', credit: '0' },
       { timestamp: daysAgo(5, ref), debit: '0', credit: '400000' },
     ];
-    const { aging, openInvoices } = computeFifoAging(entries, ref);
+    const { aging } = computeFifoAging(entries, ref);
 
     // 45-day invoice: 500k - 400k (FIFO applied) = 100k remaining → d30 bucket
     assert.strictEqual(aging.d30, 100000);
@@ -218,7 +218,7 @@ describe('computeFifoAging', () => {
       { timestamp: daysAgo(10, ref), debit: '500000', credit: '0' },
       { timestamp: daysAgo(5, ref), debit: '0', credit: '100000' },
     ];
-    const { aging, openInvoices } = computeFifoAging(entries, ref);
+    const { aging } = computeFifoAging(entries, ref);
 
     // 200k unapplied credit + 500k debit → 300k remaining, then 100k credit applied → 200k
     assert.strictEqual(aging.current, 200000);

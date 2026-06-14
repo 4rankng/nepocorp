@@ -5,7 +5,7 @@ import { config } from '../config';
 export function globalErrorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   // Zod validation errors → 400
   if (err.name === 'ZodError') {
-    const issues = (err as any).errors as Array<{ message: string; path?: Array<string | number> }>;
+    const issues = (err as unknown as { errors?: Array<{ message: string; path?: Array<string | number> }> }).errors;
     const first = issues?.[0];
     // Surface a user-readable top-level message including field path so the UI doesn't
     // have to inspect `details`. Fall back to the generic message if no issues.
@@ -29,13 +29,13 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, _nex
   }
 
   // Custom errors with numeric status property (e.g., NoForwarderProfileError)
-  if ('status' in err && typeof (err as any).status === 'number' && (err as any).status >= 400 && (err as any).status < 600) {
-    res.status((err as any).status).json({ error: err.message });
+  if ('status' in err && typeof (err as { status?: unknown }).status === 'number' && (err as { status: number }).status >= 400 && (err as { status: number }).status < 600) {
+    res.status((err as { status: number }).status).json({ error: err.message });
     return;
   }
 
   // PostgreSQL unique constraint violation
-  if ('code' in err && (err as any).code === '23505') {
+  if ('code' in err && (err as { code?: unknown }).code === '23505') {
     res.status(409).json({ error: 'Dữ liệu đã tồn tại' });
     return;
   }

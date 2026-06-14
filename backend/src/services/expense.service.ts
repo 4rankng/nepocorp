@@ -93,7 +93,7 @@ export async function createExpense(tx: Tx, data: ExpenseCreateInput, userId?: n
   return expense;
 }
 
-export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput, userId?: number) {
+export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput, _userId?: number) {
   const [existing] = await tx.select()
     .from(s.expenses)
     .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))
@@ -153,7 +153,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
     });
   }
 
-  const updateValues: Record<string, any> = { updatedAt: new Date() };
+  const updateValues: Record<string, unknown> = { updatedAt: new Date() };
   if (data.expenseDate !== undefined) updateValues.expenseDate = data.expenseDate;
   if (data.supplierId !== undefined) updateValues.supplierId = data.supplierId;
   if (data.categoryId !== undefined) updateValues.categoryId = data.categoryId;
@@ -181,7 +181,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
   return updated;
 }
 
-export async function deleteExpense(tx: Tx, id: number, userId?: number) {
+export async function deleteExpense(tx: Tx, id: number, _userId?: number) {
   const [existing] = await tx.select()
     .from(s.expenses)
     .where(and(eq(s.expenses.id, id), isNull(s.expenses.deletedAt)))

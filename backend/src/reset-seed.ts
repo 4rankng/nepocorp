@@ -1,6 +1,5 @@
 import { db } from './db';
 import * as s from './db/schema';
-import { sql } from 'drizzle-orm';
 
 async function resetAndSeed() {
   console.log('🗑️ Clearing existing data...');

@@ -12,6 +12,7 @@ import {
   getRenewalReminders,
   getExpense,
 } from '../services/expense.service';
+import type { ExpenseUpdateInput } from '../services/expense.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 
 registerAuditEvent('POST', '/api/expenses', AuditEvent.ENTITY_CREATED);
@@ -63,10 +64,13 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const validatedData = expenseSchema.partial().parse(req.body);
   const userId = req.user?.userId;
-  const serviceData: Record<string, any> = { ...validatedData };
-  if (validatedData.amount !== undefined) serviceData.amount = String(validatedData.amount);
+  const { amount, ...rest } = validatedData;
+  const serviceData: Partial<ExpenseUpdateInput> = {
+    ...rest,
+    ...(amount !== undefined ? { amount: String(amount) } : {}),
+  };
   const result = await db.transaction(async (tx) => {
-    return updateExpense(tx, Number(req.params.id), serviceData as any, userId);
+    return updateExpense(tx, Number(req.params.id), serviceData, userId);
   });
   res.json(result);
 }));

@@ -11,8 +11,8 @@ if (!config.googleMapsApiKey) {
 
 /** Handle maps service errors — 503 for missing API key, rethrow everything else. */
 function handleMapsError(err: unknown, res: Response): boolean {
-  if (err && typeof err === 'object' && 'status' in err && (err as any).status === 503) {
-    res.status(503).json({ error: (err as any).message ?? 'Google Maps API key not configured' });
+  if (err && typeof err === 'object' && 'status' in err && (err as { status?: unknown }).status === 503) {
+    res.status(503).json({ error: (err as { message?: string }).message ?? 'Google Maps API key not configured' });
     return true;
   }
   return false;

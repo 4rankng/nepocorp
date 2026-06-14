@@ -5,7 +5,6 @@ import { requireRoles } from '../middleware/casbin';
 import { getUser } from '../middleware/auth';
 import { Role } from '@tingting/shared';
 import {
-  computeAttendanceSummary,
   computeSalary,
   batchUpsertWorkDays,
   getWorkDays,

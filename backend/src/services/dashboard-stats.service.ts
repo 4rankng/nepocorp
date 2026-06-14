@@ -73,10 +73,10 @@ export async function getDashboardStats() {
       lockedTrips: Number(stats?.lockedTrips || 0),
       completedTrips: Number(stats?.completedTrips || 0),
       inTransitTrips: Number(inTransitResult?.count || 0),
-      totalTrucks: truckStatusCounts.reduce((sum: number, r: any) => sum + Number(r.count), 0),
+      totalTrucks: truckStatusCounts.reduce((sum: number, r: { status: string | null; count: number }) => sum + r.count, 0),
       totalDrivers: Number(driverCount?.count || 0),
       fleetStatus: Object.fromEntries(
-        truckStatusCounts.map((r: any) => [r.status, Number(r.count)])
+        truckStatusCounts.map((r: { status: string | null; count: number }) => [r.status, Number(r.count)])
       ) as Record<string, number>,
       topOverdueCustomer,
       topShareholder,

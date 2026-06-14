@@ -6,6 +6,13 @@ import type { GuardedResult } from './approval.service';
 import { eq, and, isNull, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
+/**
+ * Either the singleton db client or an in-flight transaction client. Both
+ * expose the same query-builder surface (select/insert/update/delete), so the
+ * expense helpers accept either and route through whichever the caller holds.
+ */
+type DbOrTx = typeof db | Tx;
+
 export class NoForwarderProfileError extends Error {
   status = 404;
   constructor() {
@@ -91,7 +98,7 @@ export async function getForwarderTripCounts() {
   return counts;
 }
 
-export async function getForwarderTripDetail(tripId: number, forwarderId: number) {
+export async function getForwarderTripDetail(tripId: number, _forwarderId: number) {
   const [trip] = await db.select({
     id: s.trips.id,
     tripCode: s.trips.tripCode,
@@ -309,7 +316,7 @@ export async function batchUpsertTripContainers(
 }
 
 export async function createTripExpense(
-  txOrDb: typeof db | Tx,
+  txOrDb: DbOrTx,
   data: {
     tripId: number;
     forwarderId: number | null;
@@ -326,7 +333,7 @@ export async function createTripExpense(
   },
 ) {
   // Spec §4.9: locked trips are immutable — reject expense creation on LOCKED trips.
-  const [trip] = await (txOrDb as any).select({ status: s.trips.status })
+  const [trip] = await txOrDb.select({ status: s.trips.status })
     .from(s.trips).where(eq(s.trips.id, data.tripId)).limit(1);
   if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
   if (trip.status === 'LOCKED') {
@@ -337,7 +344,7 @@ export async function createTripExpense(
   // forwarderId set means forwarder-created → requires manager approval.
   const approvalStatus = data.forwarderId == null ? 'APPROVED' : 'PENDING';
 
-  const [inserted] = await (txOrDb as any).insert(s.tripExpenses).values({
+  const [inserted] = await txOrDb.insert(s.tripExpenses).values({
     tripId: data.tripId,
     forwarderId: data.forwarderId,
     expenseType: data.expenseType,
@@ -356,7 +363,7 @@ export async function createTripExpense(
 }
 
 export async function updateTripExpense(
-  txOrDb: typeof db | Tx,
+  txOrDb: DbOrTx,
   id: number,
   patch: {
     expenseType?: string;
@@ -374,7 +381,7 @@ export async function updateTripExpense(
   // Fetch existing to check forwarderId — if forwarder-owned and sellAmount
   // is being updated, re-pend for manager review.
   // Also check parent trip status (spec §4.9: locked trips are immutable).
-  const [existing] = await (txOrDb as any)
+  const [existing] = await txOrDb
     .select({
       forwarderId: s.tripExpenses.forwarderId,
       tripId: s.tripExpenses.tripId,
@@ -386,7 +393,7 @@ export async function updateTripExpense(
   if (!existing) return null;
 
   // Guard: reject edits on expenses belonging to LOCKED trips
-  const [trip] = await (txOrDb as any).select({ status: s.trips.status })
+  const [trip] = await txOrDb.select({ status: s.trips.status })
     .from(s.trips).where(eq(s.trips.id, existing.tripId)).limit(1);
   if (trip?.status === 'LOCKED') {
     throw new ApiError(409, 'Không thể sửa chi phí của chuyến đã chốt');
@@ -398,7 +405,7 @@ export async function updateTripExpense(
     setPatch.approvalStatus = 'PENDING';
   }
 
-  const [updated] = await (txOrDb as any)
+  const [updated] = await txOrDb
     .update(s.tripExpenses)
     .set(setPatch)
     .where(eq(s.tripExpenses.id, id))
@@ -406,8 +413,8 @@ export async function updateTripExpense(
   return updated;
 }
 
-export async function getTripExpenses(txOrDb: typeof db | Tx, tripId: number) {
-  return (txOrDb as any).select({
+export async function getTripExpenses(txOrDb: DbOrTx, tripId: number) {
+  return txOrDb.select({
     id: s.tripExpenses.id,
     tripId: s.tripExpenses.tripId,
     forwarderId: s.tripExpenses.forwarderId,
