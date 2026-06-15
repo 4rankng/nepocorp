@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
-import { TripStatus } from '@tingting/shared';
+import { TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
@@ -105,7 +105,15 @@ export default function TripEditPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="tc-title-wrap">
-            <h1 className="tc-page-title">{trip.tripCode || 'Cập nhật số liệu'}</h1>
+            <h1 className="tc-page-title">
+              {trip.tripCode || 'Cập nhật số liệu'}
+              <span
+                className={`tc-status-pill tc-status-pill--${trip.status === TripStatus.IN_TRANSIT ? 'in-transit' : trip.status === TripStatus.COMPLETED ? 'completed' : 'draft'}`}
+                aria-label={`Trạng thái: ${trip.status}`}
+              >
+                {TRIP_STATUS_LABELS[trip.status]}
+              </span>
+            </h1>
             <p className="tc-page-sub">{trip.customer?.name ?? ''} · {trip.route?.name ?? ''}</p>
           </div>
         </header>
@@ -117,14 +125,14 @@ export default function TripEditPage() {
                 <div className="tc-card-head">
                   <div className="tc-card-num">1</div>
                   <div className="tc-card-text">
-                    <div className="tc-card-title">Hành trình</div>
-                    <div className="tc-card-sub">Thông tin chặng đường</div>
+                    <div className="tc-card-title">Tuyến đường</div>
+                    <div className="tc-card-sub">Thông tin ngày và tuyến</div>
                   </div>
                 </div>
                 <div className="tc-card-body">
 
-                  <div className="field" style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Ngày khởi hành</label>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Ngày khởi hành</label>
                     <input
                       className="input"
                       type="date"
@@ -135,8 +143,8 @@ export default function TripEditPage() {
                   </div>
 
                   {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
-                    <div className="field" style={{ marginBottom: 20 }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Ngày hoàn thành</label>
+                    <div className="tc-field">
+                      <label className="tc-field-label">Ngày hoàn thành</label>
                       <input
                         className="input"
                         type="date"
@@ -144,12 +152,12 @@ export default function TripEditPage() {
                         onChange={(e) => setCompletedAt(e.target.value)}
                         max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
                       />
-                      <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>Để trống nếu chưa hoàn thành</div>
+                      <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
                     </div>
                   )}
 
-                  <div className="field" style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Tuyến đường</label>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Tuyến đường</label>
                     <select
                       className="input"
                       value={routeId}
@@ -162,21 +170,25 @@ export default function TripEditPage() {
                       ))}
                     </select>
                   </div>
-
-                  {/*
-                    Embedded as a sub-card inside section 1 "Hành trình".
-                    Pass number={null} so the JourneyLegsCard doesn't render
-                    its own "2" badge — the outer card already owns the
-                    section number for this page (and the next sibling card
-                    is also "2", which was confusing users).
-                  */}
-                  <JourneyLegsCard number={null} />
                 </div>
               </div>
 
               <div className="tc-card">
                 <div className="tc-card-head">
                   <div className="tc-card-num">2</div>
+                  <div className="tc-card-text">
+                    <div className="tc-card-title">Hành trình chi tiết</div>
+                    <div className="tc-card-sub">Khai báo các chặng đường, cự ly và tải trọng</div>
+                  </div>
+                </div>
+                <div className="tc-card-body">
+                  <JourneyLegsCard number={null} />
+                </div>
+              </div>
+
+              <div className="tc-card">
+                <div className="tc-card-head">
+                  <div className="tc-card-num">3</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Nhiên liệu</div>
                     <div className="tc-card-sub">Chế độ tính và bổ sung</div>
@@ -189,7 +201,7 @@ export default function TripEditPage() {
 
               <div className="tc-card">
                 <div className="tc-card-head">
-                  <div className="tc-card-num">3</div>
+                  <div className="tc-card-num">4</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Chi phí & Doanh thu</div>
                     <div className="tc-card-sub">VéBOT, phụ cấp, lương lái xe</div>
@@ -202,7 +214,7 @@ export default function TripEditPage() {
 
               <div className="tc-card">
                 <div className="tc-card-head">
-                  <div className="tc-card-num">4</div>
+                  <div className="tc-card-num">5</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Chi tiết container</div>
                     <div className="tc-card-sub">Số container, số seal, loại cont, trọng lượng — nhập tay từng cont</div>
@@ -218,7 +230,7 @@ export default function TripEditPage() {
 
               <div className="tc-card">
                 <div className="tc-card-head">
-                  <div className="tc-card-num">5</div>
+                  <div className="tc-card-num">6</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Ảnh & Ghi chú</div>
                     <div className="tc-card-sub">Ảnh cont, seal và ghi chú</div>
@@ -229,11 +241,10 @@ export default function TripEditPage() {
                     requiresPhotos={!!trip.cargoType?.requiresPhotos}
                     tripId={trip.id}
                   />
-                  <div className="field" style={{ marginTop: 16 }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>Ghi chú chuyến đi</label>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Ghi chú chuyến đi</label>
                     <textarea
-                      className="input"
-                      style={{ minHeight: 80, resize: 'vertical', width: '100%' }}
+                      className="input tc-textarea"
                       placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh…"
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
@@ -244,7 +255,7 @@ export default function TripEditPage() {
 
               <div className="tc-card">
                 <div className="tc-card-head">
-                  <div className="tc-card-num">6</div>
+                  <div className="tc-card-num">7</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Chi phí dịch vụ đi kèm</div>
                     <div className="tc-card-sub">Phí nâng/hạ, hải quan, cân hàng, kiểm hóa…</div>
@@ -259,37 +270,15 @@ export default function TripEditPage() {
             <aside className="tc-rail">
               <TotalsPanel />
 
-              <div
-                className="tc-rail-actions desktop-only"
-                style={{
-                  marginTop: 12,
-                  padding: 14,
-                  border: '1px solid var(--line)',
-                  borderRadius: 14,
-                  background: '#fff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}
-              >
+              <div className="tc-rail-actions desktop-only">
                 {error ? (
-                  <div
-                    role="alert"
-                    style={{
-                      padding: '10px 12px',
-                      background: 'var(--danger-soft)',
-                      borderRadius: 8,
-                      color: 'var(--danger)',
-                      fontSize: 12.5,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>Không lưu được</div>
+                  <div role="alert" className="tc-rail-error">
+                    <div className="tc-rail-error-title">Không lưu được</div>
                     <div>{error}</div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.4 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--fg-2)' }}>Cập nhật số liệu</div>
+                  <div className="tc-rail-notice">
+                    <div className="tc-rail-notice-title">Cập nhật số liệu</div>
                     <div>Lệnh vận chuyển {trip.tripCode || 'Lệnh vận chuyển'}</div>
                   </div>
                 )}
@@ -297,9 +286,8 @@ export default function TripEditPage() {
                 <button
                   type="submit"
                   form="trip-edit-form"
-                  className="btn btn--primary"
+                  className="btn btn--primary tc-rail-btn tc-rail-btn--primary"
                   disabled={submitting || isAnyUploading(uploading)}
-                  style={{ width: '100%', justifyContent: 'center' }}
                 >
                   {submitting ? (
                     <><Loader2 size={16} className="spin" /> Đang lưu…</>
@@ -309,10 +297,9 @@ export default function TripEditPage() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--secondary"
+                  className="btn btn--secondary tc-rail-btn tc-rail-btn--secondary"
                   onClick={() => navigate(`/trips/${trip.id}`)}
                   disabled={submitting}
-                  style={{ width: '100%', justifyContent: 'center' }}
                 >
                   Hủy bỏ
                 </button>
@@ -326,19 +313,17 @@ export default function TripEditPage() {
         <div className="tc-edit-mobile-bar">
           <button
             type="button"
-            className="btn btn--secondary"
+            className="btn btn--secondary tc-mobile-btn"
             onClick={() => navigate(`/trips/${trip.id}`)}
             disabled={submitting}
-            style={{ flex: 1, justifyContent: 'center', minHeight: 44 }}
           >
             Hủy
           </button>
           <button
             type="submit"
             form="trip-edit-form"
-            className="btn btn--primary"
+            className="btn btn--primary tc-mobile-btn tc-mobile-btn--primary"
             disabled={submitting || isAnyUploading(uploading)}
-            style={{ flex: 2, justifyContent: 'center', minHeight: 44 }}
           >
             {submitting ? <><Loader2 size={16} className="spin" /> Đang lưu…</> : <><Save size={16} /> Lưu</>}
           </button>

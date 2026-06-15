@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet, Receipt, Tag, Gauge } from 'lucide-react';
-import { fmtCurrency } from '../formatters';
+import { Money } from '../../../components/shared/Money';
 
 interface KpiStripProps {
   revenue: number;
@@ -18,8 +18,7 @@ export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStri
           Doanh thu
         </div>
         <div className="kpi-value">
-          {fmtCurrency(revenue).replace('₫', '').trim()}
-          <span className="u">đ</span>
+          <Money value={revenue} />
         </div>
         <div className="kpi-sub">Cước vận chuyển hợp đồng</div>
       </div>
@@ -30,8 +29,7 @@ export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStri
           Tổng chi phí
         </div>
         <div className="kpi-value">
-          {fmtCurrency(totalCost).replace('₫', '').trim()}
-          <span className="u">đ</span>
+          <Money value={totalCost} />
         </div>
         <div className="kpi-sub">100% từ nhiên liệu</div>
       </div>
@@ -42,8 +40,7 @@ export function KpiStrip({ revenue, totalCost, grossProfit, marginPct }: KpiStri
           Lợi nhuận gộp
         </div>
         <div className="kpi-value">
-          {fmtCurrency(grossProfit).replace('₫', '').trim()}
-          <span className="u">đ</span>
+          <Money value={grossProfit} />
         </div>
         <div className="kpi-sub">Doanh thu − Tổng chi phí</div>
       </div>

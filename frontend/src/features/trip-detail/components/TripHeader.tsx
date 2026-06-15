@@ -23,16 +23,15 @@ interface TripHeaderProps {
 
 function StatusBadge({ status }: { status: TripStatus }) {
   const labels: Record<TripStatus, { text: string; className: string }> = {
-    [TripStatus.CREATED]: { text: 'Mới tạo', className: 'status-badge--new' },
-    [TripStatus.IN_TRANSIT]: { text: 'Đang chạy', className: 'status-badge--transit' },
-    [TripStatus.COMPLETED]: { text: 'Hoàn thành', className: 'status-badge--completed' },
-    [TripStatus.LOCKED]: { text: 'Đã khóa', className: 'status-badge--locked' },
-    [TripStatus.CANCELED]: { text: 'Đã hủy', className: 'status-badge--canceled' },
+    [TripStatus.CREATED]: { text: 'Mới tạo', className: 'tc-status-pill--draft' },
+    [TripStatus.IN_TRANSIT]: { text: 'Đang chạy', className: 'tc-status-pill--in-transit' },
+    [TripStatus.COMPLETED]: { text: 'Hoàn thành', className: 'tc-status-pill--completed' },
+    [TripStatus.LOCKED]: { text: 'Đã khóa', className: 'tc-status-pill--locked' },
+    [TripStatus.CANCELED]: { text: 'Đã hủy', className: 'tc-status-pill--canceled' },
   };
   const { text, className } = labels[status] ?? { text: status, className: '' };
   return (
-    <span className={`status-badge ${className}`}>
-      <span className="status-badge__pulse" />
+    <span className={`tc-status-pill ${className}`}>
       {text}
     </span>
   );
@@ -45,41 +44,41 @@ export function TripHeader({
   const { canEdit, canEditActuals, canCancel, canDispatch, canLock, canReassign, canAdjust, canUnlock, needsPhotos } = permissions;
 
   return (
-    <header className="page-header anim d1">
+    <header className="tc-page-head anim d1">
       <div className="header-left">
-        <button className="back-btn" onClick={onBack} aria-label="Quay lại">
+        <button className="tc-back-btn" onClick={onBack} aria-label="Quay lại">
           <ArrowLeft size={18} />
         </button>
-        <div className="title-block">
-          <div className="title-row">
-            <h1>{trip.tripCode || 'Lệnh vận chuyển'}</h1>
+        <div className="tc-title-wrap">
+          <h1 className="tc-page-title">
+            {trip.tripCode || 'Lệnh vận chuyển'}
             <StatusBadge status={trip.status} />
-          </div>
-          <div className="company">
+          </h1>
+          <p className="tc-page-sub company">
             <Building2 size={15} />
             {trip.customer?.name ?? '—'}
-          </div>
+          </p>
         </div>
       </div>
 
       <div className="header-actions">
         {canEdit && (
-          <button className="btn btn-ghost" onClick={onEdit}>
+          <button className="btn btn--ghost" onClick={onEdit}>
             <Pencil size={15} />Chỉnh sửa
           </button>
         )}
         {canReassign && (
-          <button className="btn btn-ghost" onClick={onReassign}>
+          <button className="btn btn--ghost" onClick={onReassign}>
             <Shuffle size={15} />Phân xe lại
           </button>
         )}
         {canCancel && (
-          <button className="btn btn-danger" onClick={onCancel}>
+          <button className="btn btn--danger" onClick={onCancel}>
             <XCircle size={15} />Hủy chuyến
           </button>
         )}
         {canDispatch && (
-          <button className="btn btn-primary" onClick={onDispatch} disabled={actionLoading}>
+          <button className="btn btn--primary" onClick={onDispatch} disabled={actionLoading}>
             {actionLoading ? <Loader2 size={14} className="spin" /> : <Play size={14} />}
             Xuất phát
           </button>
@@ -94,19 +93,19 @@ export function TripHeader({
           entry point to the actuals form on completed trips.
         */}
         {canEditActuals && !canEdit && (
-          <button className="btn btn-primary" onClick={onEdit}>
+          <button className="btn btn--primary" onClick={onEdit}>
             <Pencil size={14} />Nhập số liệu
           </button>
         )}
         {canUnlock && (
-          <button className="btn btn-ghost" onClick={onUnlock} disabled={actionLoading}>
+          <button className="btn btn--ghost" onClick={onUnlock} disabled={actionLoading}>
             {actionLoading ? <Loader2 size={14} className="spin" /> : <LockOpen size={15} />}
             Mở khóa
           </button>
         )}
         {canLock && (
           <button
-            className="btn btn-primary"
+            className="btn btn--primary"
             disabled={actionLoading || needsPhotos}
             title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
             onClick={onLock}
@@ -116,7 +115,7 @@ export function TripHeader({
           </button>
         )}
         {canAdjust && (
-          <button className="btn btn-ghost" onClick={onAdjust}>
+          <button className="btn btn--ghost" onClick={onAdjust}>
             <FilePen size={15} />Điều chỉnh
           </button>
         )}

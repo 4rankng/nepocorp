@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Truck, Wallet, TrendingUp } from 'lucide-react';
-import { fmtVND } from '../formatters';
+import { Money } from '../../../components/shared/Money';
 import type { TripDerivedData } from '../types';
 
 interface ExternalCarrierCardProps {
@@ -18,7 +18,7 @@ export function ExternalCarrierCard({
   const { externalMargin } = derived;
 
   return (
-    <section className="card anim d4" style={{ marginBottom: 20 }}>
+    <section className="card anim d4">
       <div className="card-head">
         <h2><span className="hicon"><Truck size={15} /></span>Xe ngoài</h2>
       </div>
@@ -49,7 +49,7 @@ export function ExternalCarrierCard({
             <span className="ri"><Wallet size={17} /></span>
             <div className="info-meta">
               <div className="lbl">Cước thuê ngoài</div>
-              <div className="val mono">{freightCost != null ? `${fmtVND(freightCost)} đ` : '—'}</div>
+              <div className="val mono">{freightCost != null ? <Money value={freightCost} /> : '—'}</div>
             </div>
           </div>
           {externalMargin !== null && (
@@ -57,8 +57,8 @@ export function ExternalCarrierCard({
               <span className="ri"><TrendingUp size={17} /></span>
               <div className="info-meta">
                 <div className="lbl">Lãi điều xe ngoài</div>
-                <div className="val" style={{ color: externalMargin >= 0 ? 'var(--accent)' : 'var(--danger)', fontWeight: 700 }}>
-                  {externalMargin >= 0 ? '+' : ''}{fmtVND(externalMargin)} đ
+                <div className={`val ${externalMargin >= 0 ? 'muted-pos' : 'muted-neg'}`}>
+                  <Money value={Math.abs(externalMargin)} sign={externalMargin >= 0 ? '+' : '−'} />
                 </div>
               </div>
             </div>

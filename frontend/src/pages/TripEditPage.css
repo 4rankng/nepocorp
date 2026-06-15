@@ -1,36 +1,353 @@
 /* ==========================================================================
-   TripEditPage — legacy 2-column content + right rail layout
+   TripEditPage — bento layout with hero header, numbered cards, sticky rail
    ========================================================================== */
 
-/* Content grid: form + rail */
+/* ── Hero header ── */
+.tc-page-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 28px 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.tc-page-head::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line) 20%,
+    var(--line) 80%,
+    transparent 100%
+  );
+}
+
+.tc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.tc-back-btn:hover {
+  background: var(--surface-2, var(--surface));
+  color: var(--fg-1, var(--fg-2));
+  transform: translateX(-1px);
+}
+
+.tc-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tc-page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg-1, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tc-page-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--surface-2, #f1f5f4);
+  color: var(--fg-2);
+  border: 1px solid var(--line);
+}
+.tc-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-3);
+}
+.tc-status-pill--draft::before { background: #94a3b8; }
+.tc-status-pill--in-transit::before { background: #0ea5e9; }
+.tc-status-pill--completed::before { background: #10b981; }
+.tc-status-pill--locked::before { background: #0f172a; }
+.tc-status-pill--canceled::before { background: #E32434; }
+.tc-status-pill--locked { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
+.tc-status-pill--canceled { color: #E32434; background: #FFEAEC; border-color: #f3c6c6; }
+
+/* ── Bento grid ── */
 .tc-content {
-  padding: 12px 28px 120px;
+  padding: 20px 28px 140px;
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
   align-items: start;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
 }
 
-/* Right rail */
-.tc-rail {
-  position: sticky;
-  top: 76px;
+.tc-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Span-1 cards by default; some cards break the grid for visual rhythm */
+.tc-card--span-2 {
+  grid-column: span 2;
+}
+
+/* ── Bento card ── */
+.tc-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.tc-card:hover {
+  border-color: var(--line-strong, var(--line));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.tc-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-2, transparent) 0%, transparent 100%);
+}
+
+.tc-card-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #4f8a6f 0%, #6ba88a 100%);
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(79, 138, 111, 0.25);
+}
+
+.tc-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tc-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-1, #0f172a);
+}
+
+.tc-card-sub {
+  font-size: 12px;
+  color: var(--fg-3);
+  line-height: 1.4;
+}
+
+.tc-card-body {
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* ── Trip edit mobile save bar ── */
-/* Uses a dedicated class instead of inline styles + .mobile-only,
-   because inline display:flex would override .mobile-only's display:none
-   on desktop (specificity: inline > class). */
+/* ── Field labels (extract from inline styles) ── */
+.tc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tc-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-2);
+}
+.tc-field-hint {
+  font-size: 11px;
+  color: var(--fg-3);
+  margin-top: 2px;
+}
+.tc-textarea {
+  min-height: 80px;
+  resize: vertical;
+  width: 100%;
+}
+
+/* ── Right rail ── */
+.tc-rail {
+  position: sticky;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tc-rail-actions {
+  margin-top: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.tc-rail-notice {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  line-height: 1.45;
+}
+.tc-rail-notice-title {
+  font-weight: 600;
+  color: var(--fg-2);
+  margin-bottom: 2px;
+}
+
+.tc-rail-error {
+  padding: 10px 12px;
+  background: rgba(199, 123, 92, 0.08);            /* copper-tinted, matches the deep-luxe palette */
+  border: 1px solid rgba(199, 123, 92, 0.25);
+  border-radius: 10px;
+  color: var(--copper, #C77B5C);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.tc-rail-error-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: var(--copper, #C77B5C);
+}
+
+.tc-rail-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Primary action: brass-tinted instead of brand green — keeps the luxe palette */
+.tc-rail-btn--primary {
+  background: var(--brass-3, #D4A574);
+  color: var(--ink, #0A0A0A);
+  border: none;
+  box-shadow: none;
+}
+.tc-rail-btn--primary:hover:not(:disabled) {
+  background: var(--brass-2, #B8895A);
+  box-shadow: none;
+}
+.tc-rail-btn--primary:disabled {
+  background: var(--brass-1, #8B6F47);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Secondary action (Hủy bỏ): outline with brass accent — bridges to the primary
+   brass above without competing with it. The base .btn--secondary is invisible
+   on the .tc-rail-actions surface (both use var(--surface)), so we override. */
+.tc-rail-btn--secondary {
+  background: transparent;
+  color: var(--ink, #0A0A0A);
+  border: 1px solid var(--line-2, #D4D4D4);
+  box-shadow: none;
+}
+.tc-rail-btn--secondary:hover:not(:disabled) {
+  background: rgba(212, 165, 116, 0.10);
+  border-color: var(--brass-3, #D4A574);
+  color: var(--ink, #0A0A0A);
+  box-shadow: none;
+}
+.tc-rail-btn--secondary:active:not(:disabled) {
+  background: rgba(212, 165, 116, 0.16);
+}
+.tc-rail-btn--secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Mobile save bar ── */
 .tc-edit-mobile-bar {
   display: none;
 }
+
+@media (max-width: 1100px) {
+  .tc-form-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tc-card--span-2 {
+    grid-column: span 1;
+  }
+  .tc-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tc-rail {
+    position: static;
+  }
+}
+
 @media (max-width: 640px) {
+  .tc-content {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px 14px 100px;
+  }
+  .tc-page-head {
+    padding: 16px 14px 14px;
+  }
+  .tc-page-head::after {
+    left: 14px;
+    right: 14px;
+  }
+  .tc-card-body {
+    padding: 14px;
+  }
   .tc-edit-mobile-bar {
     display: flex;
     position: fixed;
@@ -38,26 +355,34 @@
     left: 0;
     right: 0;
     background: var(--surface);
-    border-top: 1px solid var(--border-1, var(--line));
+    border-top: 1px solid var(--line);
     padding: 12px 16px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     gap: 8px;
     z-index: 40;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  }
+  .tc-mobile-btn {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .tc-mobile-btn--primary {
+    flex: 2;
   }
 }
 
-/* ── Responsive ── */
-@media (max-width: 1100px) {
-  /* `minmax(0, 1fr)` lets the form column shrink below its widest option
-   * (the Tuyến đường <select> can have very long route names) instead of
-   * pushing the card past the viewport. */
-  .tc-content { grid-template-columns: minmax(0, 1fr); }
-  .tc-rail { position: static; }
+/* ── Subtle entrance ── */
+.tc-card {
+  animation: tcCardIn 0.32s ease-out both;
 }
-@media (max-width: 640px) {
-  .tc-content { grid-template-columns: 1fr; gap: 16px; padding: 0; }
-  /* Content scrolls behind action bar — give it bottom padding */
-  .tc-content.tc-content { padding-bottom: 100px; }
-  .tc-rail { position: static; }
+@keyframes tcCardIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.tc-card:nth-child(2) { animation-delay: 0.04s; }
+.tc-card:nth-child(3) { animation-delay: 0.08s; }
+.tc-card:nth-child(4) { animation-delay: 0.12s; }
+.tc-card:nth-child(5) { animation-delay: 0.16s; }
+.tc-card:nth-child(6) { animation-delay: 0.20s; }
+.tc-card:nth-child(7) { animation-delay: 0.24s; }

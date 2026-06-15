@@ -1,7 +1,7 @@
 import React from 'react';
 import { Fuel, AlertTriangle, Printer, FileSpreadsheet } from 'lucide-react';
 import { FUEL_MODE_LABELS, roundInt } from '@tingting/shared';
-import { fmtVND } from '../formatters';
+import { Money } from '../../../components/shared/Money';
 import { api } from '../../../lib/api';
 import type { TripDetail } from '@tingting/shared';
 import type { TripDerivedData } from '../types';
@@ -59,7 +59,11 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
           </div>
           <div className="pl-row">
             <span className="k">Đơn giá cấu hình</span>
-            <span className="v">{fuelPriceConfig != null ? `${fmtVND(fuelPriceConfig)} đ/lít` : '—'}</span>
+            <span className="v">
+              {fuelPriceConfig != null
+                ? <><Money value={fuelPriceConfig} /> <span className="v-unit">/lít</span></>
+                : '—'}
+            </span>
           </div>
           <div className="pl-row">
             <span className="k">Tiêu thụ bình quân</span>
@@ -68,13 +72,13 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
           {trip.fuelSupplier && (
             <div className="pl-row">
               <span className="k">Nhà cung cấp</span>
-              <span className="v" style={{ fontWeight: 600, color: 'var(--brand, #10B981)' }}>{trip.fuelSupplier.name}</span>
+              <span className="v fuel-supplier-name">{trip.fuelSupplier.name}</span>
             </div>
           )}
         </div>
 
         {trip.fuelSupplier && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div className="fuel-actions">
             <button
               className="btn btn--secondary btn--sm"
               onClick={handlePrintVoucher}

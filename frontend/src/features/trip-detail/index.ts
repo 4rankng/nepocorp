@@ -7,6 +7,7 @@ export { fmtVND, fmtVNDWithUnit, fmtCurrency, fmtLiters, fmtKM, fmtPercent, fmtD
 export { TripHeader } from './components/TripHeader';
 export { KpiStrip } from './components/KpiStrip';
 export { BasicInfoCard } from './components/BasicInfoCard';
+export { ContainersCard } from './components/ContainersCard';
 export { FinancialCard } from './components/FinancialCard';
 export { FuelCard } from './components/FuelCard';
 export { ServiceCostsCard } from './components/ServiceCostsCard';

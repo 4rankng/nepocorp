@@ -3,12 +3,13 @@ import { Loader2, Shuffle, FilePen, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal, Drawer } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
+import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
 
 // Feature: logic (.ts) + UI (.tsx)
 import { useTripDetailPage } from '../features/trip-detail';
 import {
-  TripHeader, KpiStrip, BasicInfoCard, FinancialCard,
+  TripHeader, KpiStrip, BasicInfoCard, ContainersCard, FinancialCard,
   FuelCard, ServiceCostsCard, JourneyCard,
   ExternalCarrierCard, PhotosCard,
 } from '../features/trip-detail';
@@ -24,9 +25,9 @@ export default function TripDetailPage() {
   /* ── Loading / Error / Empty guards ────────────────────────────────── */
   if (page.loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
+      <div className="tdp-loading">
         <Spinner size={20} />
-        <span style={{ fontSize: 14 }}>Đang tải dữ liệu…</span>
+        <span>Đang tải dữ liệu…</span>
       </div>
     );
   }
@@ -71,48 +72,50 @@ export default function TripDetailPage() {
       />
 
       {displayError && (
-        <div style={{
-          padding: '10px 14px', background: 'var(--danger-soft)', color: 'var(--danger-text)',
-          borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 16,
-          border: '1px solid rgba(220,38,38,0.12)',
-        }}>
+        <div className="tdp-error-banner">
           {displayError}
         </div>
       )}
 
-      {/* ── Zone 1: At a Glance ──────────────────────────────────────────── */}
-      <section className="bento-zone-1 anim d2">
+      {/* ── KPI Strip (full width) ───────────────────────────────────────── */}
+      <section className="trip-kpi-strip anim d2">
         <KpiStrip
           revenue={derived.revenue}
           totalCost={derived.totalCost}
           grossProfit={derived.grossProfit}
           marginPct={derived.marginPct}
         />
-        {trip.legs && trip.legs.length > 0 && (
-          <div className="span-3">
-            <JourneyCard trip={trip} derived={derived} />
-          </div>
-        )}
-        <div className="row-2">
+      </section>
+
+      {/* ── Journey (full width) ─────────────────────────────────────────── */}
+      {trip.legs && trip.legs.length > 0 && (
+        <section className="anim d3 trip-journey">
+          <JourneyCard trip={trip} derived={derived} />
+        </section>
+      )}
+
+      {/* ── Service Costs (full width) ──────────────────────────────────── */}
+      <section className="anim d4 trip-services">
+        <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
+      </section>
+
+      {/* ── Two-column grid: Basic info | Financial detail ──────────────── */}
+      <section className="trip-grid anim d3">
+        <div className="trip-col trip-col--left">
           <BasicInfoCard
             trip={trip}
             canChangeDate={permissions.canChangeDate}
             onChangeDepartureDate={page.handleChangeDepartureDate}
             actionLoading={ui.actionLoading}
           />
+          <ContainersCard tripId={trip.id} />
+          <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
         </div>
-      </section>
 
-      {/* ── Zone 2: Financial Detail ─────────────────────────────────────── */}
-      <section className="bento-zone-2 anim d3">
-        <div className="span-2">
+        <div className="trip-col trip-col--right">
           <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
-        </div>
-        <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
-        <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
 
-        {trip.carrierType === 'EXTERNAL' && (
-          <div className="span-2">
+          {trip.carrierType === 'EXTERNAL' && (
             <ExternalCarrierCard
               derived={derived}
               carrierName={derived.externalCarrierName}
@@ -121,21 +124,19 @@ export default function TripDetailPage() {
               driverPhone={trip.externalDriverPhone}
               freightCost={trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null}
             />
-          </div>
-        )}
+          )}
 
-        {(trip.photoUrls?.length ?? 0) > 0 && (
-          <div className="span-2">
+          {(trip.photoUrls?.length ?? 0) > 0 && (
             <PhotosCard photoUrls={trip.photoUrls} />
-          </div>
-        )}
+          )}
 
-        {trip.notes && (
-          <section className="span-4 card" style={{ padding: 20 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Ghi chú</h3>
-            <p style={{ whiteSpace: 'pre-wrap', fontSize: 14, color: 'var(--fg-2)', margin: 0 }}>{trip.notes}</p>
-          </section>
-        )}
+          {trip.notes && (
+            <section className="tdp-notes-card">
+              <h3 className="tdp-notes-title">Ghi chú</h3>
+              <p className="tdp-notes-body">{trip.notes}</p>
+            </section>
+          )}
+        </div>
       </section>
 
       {/* ── Reassign Modal ──────────────────────────────────────────────── */}
@@ -162,7 +163,7 @@ export default function TripDetailPage() {
         }
       >
         {ui.reassignError && (
-          <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>
+          <div className="tdp-modal-error">
             {ui.reassignError}
           </div>
         )}
@@ -184,11 +185,11 @@ export default function TripDetailPage() {
 
       {/* ── Adjustment Drawer ───────────────────────────────────────────── */}
       <Drawer isOpen={ui.showAdjust} onClose={() => page.setShowAdjust(false)} title="Hóa đơn điều chỉnh">
-        <p style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 16, lineHeight: 1.5 }}>
+        <p className="tdp-drawer-hint">
           Số âm = Giảm doanh thu (Credit Note) · Số dương = Tăng doanh thu (Debit Note)
         </p>
         {ui.adjustError && (
-          <div style={{ padding: '8px 12px', marginBottom: 12, background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 13 }}>
+          <div className="tdp-modal-error">
             {ui.adjustError}
           </div>
         )}
@@ -199,9 +200,8 @@ export default function TripDetailPage() {
         </div>
         <div className="field">
           <label>Lý do điều chỉnh *</label>
-          <textarea className="input" rows={3} placeholder="Mô tả lý do…"
-            value={ui.adjustNote} onChange={e => page.setAdjustNote(e.target.value)}
-            style={{ resize: 'vertical' }} />
+          <textarea className="input tdp-drawer-textarea" rows={3} placeholder="Mô tả lý do…"
+            value={ui.adjustNote} onChange={e => page.setAdjustNote(e.target.value)} />
         </div>
         <div className="field">
           <label>Mã biên bản thỏa thuận *</label>
@@ -209,8 +209,7 @@ export default function TripDetailPage() {
             value={ui.adjustRef} onChange={e => page.setAdjustRef(e.target.value)} />
         </div>
         <button
-          className="btn btn--primary"
-          style={{ width: '100%', marginTop: 4 }}
+          className="btn btn--primary tdp-drawer-submit"
           disabled={ui.adjustSubmitting || !ui.adjustNote.trim() || !ui.adjustRef.trim() || ui.adjustAmount === ''}
           onClick={page.handleAdjustSubmit}
         >
@@ -218,18 +217,22 @@ export default function TripDetailPage() {
           Xác nhận phát hành
         </button>
         {adjustments.length > 0 && (
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div>
+            <div className="tdp-adjustments-title">
               Đã phát hành
             </div>
-            {(adjustments as Array<{ note: string; amount: string | number }>).map((a, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-2)', fontSize: 13 }}>
-                <span style={{ color: 'var(--fg-2)' }}>{a.note}</span>
-                <span style={{ fontWeight: 600, color: Number(a.amount) >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                  {Number(a.amount) > 0 ? '+' : ''}{Number(a.amount).toLocaleString('vi-VN')} đ
-                </span>
-              </div>
-            ))}
+            {(adjustments as Array<{ note: string; amount: string | number }>).map((a, i) => {
+              const amount = Number(a.amount);
+              const isPos = amount >= 0;
+              return (
+                <div key={i} className="tdp-adjustment-row">
+                  <span className="tdp-adjustment-note">{a.note}</span>
+                  <span className={`tdp-adjustment-amount ${isPos ? 'tdp-adjustment-amount--pos' : 'tdp-adjustment-amount--neg'}`}>
+                    <Money value={Math.abs(amount)} sign={isPos && amount > 0 ? '+' : '−'} />
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </Drawer>

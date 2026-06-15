@@ -26,10 +26,10 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
       value: trip.trailer ? `${trip.trailer.licensePlate} · ${trip.trailer.type || (trip.trailerType ?? '—')}` : (trip.trailerType ?? '—'),
       mono: true,
     },
+    { icon: <Package size={17} />, label: 'Số container', value: String(trip.containerCount ?? 1), mono: true },
     { icon: <Calendar size={17} />, label: 'Ngày khởi hành', value: fmtDate(trip.departureDate), mono: true, isDate: true },
     { icon: <CheckCircle size={17} />, label: 'Ngày hoàn thành', value: trip.completedAt ? fmtDate(trip.completedAt) : '—', mono: true },
-    { icon: <Package size={17} />, label: 'Số container', value: String(trip.containerCount ?? 1), mono: true },
-    { icon: <Hash size={17} />, label: 'Mã tham chiếu', value: trip.customerReference ?? 'Chưa có', muted: !trip.customerReference },
+    { icon: <Hash size={17} />, label: 'Mã tham chiếu', value: trip.customerReference ?? 'Chưa có', muted: !trip.customerReference, full: true },
   ];
 
   return (
@@ -40,7 +40,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
       <div className="card-body">
         <div className="info-list">
           {rows.map((row, i) => (
-            <div className="info-row" key={i}>
+            <div className={`info-row${row.full ? ' info-row--full' : ''}`} key={i}>
               <span className="ri">{row.icon}</span>
               <div className="info-meta">
                 <div className="lbl">{row.label}</div>

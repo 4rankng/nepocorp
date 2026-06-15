@@ -1,11 +1,22 @@
 import React from 'react';
 import { Wallet } from 'lucide-react';
-import { fmtCurrency } from '../formatters';
+import { Money } from '../../../components/shared/Money';
 import type { TripDerivedData } from '../types';
 
 interface FinancialCardProps {
   derived: TripDerivedData;
   customerCommission?: number;
+}
+
+/**
+ * A cost-row amount: renders the negative sign + styled ₫ when the value is
+ * > 0, and a muted "0 ₫" when it is zero. Encapsulates the duplicate
+ * `Math.abs(x)` + `<Money sign="−">` pattern that was repeated 5 times in
+ * FinancialCard's body.
+ */
+function NegMoney({ value }: { value: number }) {
+  if (value > 0) return <Money value={value} sign="−" />;
+  return <Money value={0} />;
 }
 
 export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
@@ -16,8 +27,6 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
   } = derived;
 
   const showCommission = customerCommission > 0;
-
-  // Only show bonus/allowance rows when they have values
   const showTwoPointBonus = twoPointDeliveryBonus > 0;
   const showShiftAllowance = vehicleShiftAllowance > 0;
 
@@ -30,61 +39,61 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
         <div className="pl">
           <div className="pl-row">
             <span className="k">Doanh thu</span>
-            <span className="v">{fmtCurrency(revenue)}</span>
+            <span className="v"><Money value={revenue} /></span>
           </div>
           {showCommission && (
             <div className="pl-row">
-              <span className="k"><span className="swatch" style={{ background: '#E8A87C' }} />Hoa hồng khách hàng</span>
-              <span className="v neg">− {fmtCurrency(customerCommission)}</span>
+              <span className="k"><span className="swatch swatch--commission" />Hoa hồng khách hàng</span>
+              <span className="v neg"><NegMoney value={customerCommission} /></span>
             </div>
           )}
           <div className="pl-divider dashed" />
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: 'var(--accent)' }} />Chi phí nhiên liệu</span>
-            <span className="v neg">{fuelCost > 0 ? `− ${fmtCurrency(fuelCost)}` : '0 đ'}</span>
+            <span className="k"><span className="swatch swatch--fuel" />Chi phí nhiên liệu</span>
+            <span className="v neg"><NegMoney value={fuelCost} /></span>
           </div>
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền đi đường</span>
-            <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}>{roadAllowance > 0 ? `− ${fmtCurrency(roadAllowance)}` : '0 đ'}</span>
+            <span className="k"><span className="swatch swatch--road" />Tiền đi đường</span>
+            <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}><NegMoney value={roadAllowance} /></span>
           </div>
           {tollsDiscount > 0 && (
             <div className="pl-row">
-              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền vé (công ty thanh toán)</span>
-              <span className="v neg">− {fmtCurrency(tollsDiscount)}</span>
+              <span className="k"><span className="swatch swatch--road" />Tiền vé (công ty thanh toán)</span>
+              <span className="v neg"><NegMoney value={tollsDiscount} /></span>
             </div>
           )}
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền vé (trạm thu phí)</span>
-            <span className={`v ${tollCost === 0 ? 'zero' : ''}`}>{tollCost > 0 ? `− ${fmtCurrency(tollCost)}` : '0 đ'}</span>
+            <span className="k"><span className="swatch swatch--road" />Tiền vé (trạm thu phí)</span>
+            <span className={`v ${tollCost === 0 ? 'zero' : ''}`}><NegMoney value={tollCost} /></span>
           </div>
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Tiền lương lái xe</span>
-            <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}>{driverSalary > 0 ? `− ${fmtCurrency(driverSalary)}` : '0 đ'}</span>
+            <span className="k"><span className="swatch swatch--road" />Tiền lương lái xe</span>
+            <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}><NegMoney value={driverSalary} /></span>
           </div>
           <div className="pl-row">
-            <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Chi phí dịch vụ</span>
-            <span className={`v ${serviceCost === 0 ? 'zero' : ''}`}>{serviceCost > 0 ? `− ${fmtCurrency(serviceCost)}` : '0 đ'}</span>
+            <span className="k"><span className="swatch swatch--road" />Chi phí dịch vụ</span>
+            <span className={`v ${serviceCost === 0 ? 'zero' : ''}`}><NegMoney value={serviceCost} /></span>
           </div>
           {showTwoPointBonus && (
             <div className="pl-row">
-              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Thưởng giao 2 điểm</span>
-              <span className="v neg">− {fmtCurrency(twoPointDeliveryBonus)}</span>
+              <span className="k"><span className="swatch swatch--road" />Thưởng giao 2 điểm</span>
+              <span className="v neg"><NegMoney value={twoPointDeliveryBonus} /></span>
             </div>
           )}
           {showShiftAllowance && (
             <div className="pl-row">
-              <span className="k"><span className="swatch" style={{ background: '#C2CAC6' }} />Lưu ca xe</span>
-              <span className="v neg">− {fmtCurrency(vehicleShiftAllowance)}</span>
+              <span className="k"><span className="swatch swatch--road" />Lưu ca xe</span>
+              <span className="v neg"><NegMoney value={vehicleShiftAllowance} /></span>
             </div>
           )}
           <div className="pl-divider" />
           <div className="pl-row subtotal">
             <span className="k">Tổng chi phí</span>
-            <span className="v">{fmtCurrency(totalCost)}</span>
+            <span className="v"><Money value={totalCost} /></span>
           </div>
           <div className="pl-total">
             <span className="k">Lợi nhuận gộp</span>
-            <span className="v">{fmtCurrency(grossProfit).replace('₫', '').trim()}<span className="u"> đ</span></span>
+            <span className="v"><Money value={Math.abs(grossProfit)} sign={grossProfit > 0 ? '+' : grossProfit < 0 ? '−' : undefined} /></span>
           </div>
         </div>
       </div>

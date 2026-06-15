@@ -1,12 +1,10 @@
 /* ── Responsive ─────────────────────────────────────────────────────────── */
+
+/* Tablet (≤ 1023px): KPIs go 2×2, main grid stays 2-col, journey unchanged */
 @media (max-width: 1023px) {
-  .bento-zone-1,
-  .bento-zone-2 {
+  .trip-kpi-strip {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .span-3 { grid-column: span 2; }
-  .span-4 { grid-column: span 2; }
 
   .journey-body {
     grid-template-columns: 1fr;
@@ -19,8 +17,18 @@
   }
 }
 
+/* Narrow tablet / small laptop (≤ 860px): collapse main grid to single column */
+@media (max-width: 860px) {
+  .trip-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Inside BasicInfoCard, keep the 2-col field layout — cards are wide enough */
+}
+
+/* Mobile (≤ 640px): everything stacks */
 @media (max-width: 640px) {
-  .page-header {
+  .tc-page-head {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
@@ -54,18 +62,25 @@
   }
 
   /* Tighter title on phones */
-  .title-row h1 {
+  .tc-page-title {
     font-size: var(--fs-xl);
   }
 
-  .bento-zone-1,
-  .bento-zone-2 {
+  .trip-kpi-strip {
     grid-template-columns: 1fr;
   }
 
-  .span-2, .span-3, .span-4 {
-    grid-column: span 1;
+  /* On phones, BasicInfoCard fields stack to a single column too */
+  .info-list {
+    grid-template-columns: 1fr;
   }
+
+  /* Container fields stack to a single column on phones */
+  .container-fields {
+    grid-template-columns: 1fr;
+  }
+
+  /* Container/seal photo thumbs stay 2-up on phones — they're small enough */
 }
 
 /* Very narrow phones (≤ 420px) — three buttons per row get cramped, so

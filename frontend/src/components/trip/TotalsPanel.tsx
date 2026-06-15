@@ -1,10 +1,20 @@
 import React, { useMemo, useState } from "react";
 import './TripSummaryCard.css';
-import { DollarSign, Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import { computeTripTotals } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
+import { Money } from '../shared/Money';
 
+/**
+ * Deep-luxe right-rail finance card for the trip edit page.
+ *
+ * Visual hierarchy:
+ *   1. Header band       (eyebrow + title)
+ *   2. Revenue hero      (inset surface, 32px number, brass unit)
+ *   3. Allocation bar    (brass spectrum, brass legend)
+ *   4. Cost rows + profit (clickable road breakdown, brass/copper profit)
+ */
 export function TotalsPanel() {
   const form = useTripFormContext();
   const { data: fuelConfig } = useFuelConfig();
@@ -62,8 +72,6 @@ export function TotalsPanel() {
     form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission,
   ]);
 
-  const fmt = (v: number) => Math.abs(Math.round(v)).toLocaleString("vi-VN");
-
   // Road-allowance breakdown — what makes up "Tiền đi đường thực nhận"
   const roadBreakdown = useMemo(() => {
     const base = Number(roadAllowanceBaseApplied) || 0;
@@ -96,201 +104,195 @@ export function TotalsPanel() {
   const otherPct = totalCost > 0 ? ((twoPointAmount + vehicleShiftAmount) / totalCost) * 100 : 0;
 
   return (
-    <div className="tc-summary-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div>
-        <h3 className="tc-summary-card__label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          Ước tính doanh thu & lợi nhuận live
-        </h3>
-        <div className="tc-summary-card__big mono" style={{ fontSize: 24, fontWeight: 800 }}>
-          {fmt(revenueNum)}
-          <span className="tc-summary-card__currency" style={{ fontSize: 13, marginLeft: 4 }}>đ</span>
-        </div>
-        {(revenueEmpty > 0 || revenueComb > 0) && (
-          <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", gap: 2 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>DT trả hàng</span>
-              <span className="mono">{fmt(revenueEmpty)}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>+ DT kết hợp đóng hàng</span>
-              <span className="mono" style={{ color: revenueComb > 0 ? "#10B981" : undefined }}>
-                {revenueComb > 0 ? "+" : ""}{fmt(revenueComb)}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+    <article className="tc-totals">
+      {/* 1. Header band */}
+      <header className="tc-totals__head">
+        <h3 className="tc-totals__title">Doanh thu &amp; Lợi nhuận</h3>
+      </header>
 
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>
+      {/* 2. Revenue hero (inset) */}
+      <section className="tc-totals__revenue">
+        <p className="tc-totals__revenue-label">Doanh thu (Expected)</p>
+        <p className="tc-totals__revenue-value">
+          <Money value={revenueNum} />
+        </p>
+        {(revenueEmpty > 0 || revenueComb > 0) && (
+          <dl className="tc-totals__revenue-split">
+            <div>
+              <dt>DT trả hàng</dt>
+              <dd><Money value={revenueEmpty} /></dd>
+            </div>
+            <div>
+              <dt>+ DT kết hợp đóng hàng</dt>
+              <dd>
+                <Money value={Math.abs(revenueComb)} sign={revenueComb >= 0 ? "+" : undefined} />
+              </dd>
+            </div>
+          </dl>
+        )}
+      </section>
+
+      {/* 3. Allocation bar */}
+      <section className="tc-totals__alloc">
+        <div className="tc-totals__alloc-head">
           <span>Phân bổ chi phí</span>
-          <span>{fmt(totalCost)} đ</span>
+          <Money value={totalCost} />
         </div>
-        <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", background: "rgba(255,255,255,0.15)", marginBottom: 12 }}>
-          <div style={{ width: `${fuelPct}%`, background: "#3B82F6" }} title={`Dầu: ${fuelPct.toFixed(0)}%`} />
-          <div style={{ width: `${roadPct}%`, background: "#F59E0B" }} title={`Đường bộ: ${roadPct.toFixed(0)}%`} />
-          <div style={{ width: `${salaryPct}%`, background: "#10B981" }} title={`Lương tài: ${salaryPct.toFixed(0)}%`} />
-          {otherPct > 0 && <div style={{ width: `${otherPct}%`, background: "#8B5CF6" }} title={`Khác: ${otherPct.toFixed(0)}%`} />}
-        </div>
-        <div style={{ display: "flex", gap: 12, fontSize: 10, color: "rgba(255,255,255,0.6)" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#3B82F6" }} /> Dầu ({totals.totalFuelLiters.toFixed(0)}L)
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F59E0B" }} /> Đường
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} /> Lương tài
-          </span>
+        <div className="tc-totals__alloc-bar" role="img" aria-label="Phân bổ chi phí">
+          <span
+            className="tc-totals__alloc-seg tc-totals__alloc-seg--fuel"
+            style={{ width: `${fuelPct}%` }}
+            title={`Dầu: ${Math.round(fuelPct)}%`}
+          />
+          <span
+            className="tc-totals__alloc-seg tc-totals__alloc-seg--road"
+            style={{ width: `${roadPct}%` }}
+            title={`Đường bộ: ${Math.round(roadPct)}%`}
+          />
+          <span
+            className="tc-totals__alloc-seg tc-totals__alloc-seg--salary"
+            style={{ width: `${salaryPct}%` }}
+            title={`Lương tài: ${Math.round(salaryPct)}%`}
+          />
           {otherPct > 0 && (
-            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#8B5CF6" }} /> Khác
-            </span>
+            <span
+              className="tc-totals__alloc-seg tc-totals__alloc-seg--other"
+              style={{ width: `${otherPct}%` }}
+              title={`Khác: ${Math.round(otherPct)}%`}
+            />
           )}
         </div>
-      </div>
+        <ul className="tc-totals__alloc-legend">
+          <li>
+            <i className="tc-totals__legend-dot--fuel" />
+            Dầu ({Math.round(totals.totalFuelLiters)}L) · <strong>{Math.round(fuelPct)}%</strong>
+          </li>
+          <li>
+            <i className="tc-totals__legend-dot--road" />
+            Đường · <strong>{Math.round(roadPct)}%</strong>
+          </li>
+          <li>
+            <i className="tc-totals__legend-dot--salary" />
+            Lương tài · <strong>{Math.round(salaryPct)}%</strong>
+          </li>
+          {otherPct > 0 && (
+            <li>
+              <i className="tc-totals__legend-dot--other" />
+              Khác · <strong>{Math.round(otherPct)}%</strong>
+            </li>
+          )}
+        </ul>
+      </section>
 
-      <div className="tc-summary-rows" style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 16 }}>
-        <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-          <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-            <Clock size={13} style={{ color: "#3B82F6" }} /> Chi phí nhiên liệu (Lớp dầu)
+      {/* 4. Cost rows + profit */}
+      <section className="tc-totals__rows">
+        <div className="tc-totals-row">
+          <span className="tc-totals-row__lbl">
+            <Clock size={13} /> Chi phí nhiên liệu
           </span>
-          <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
-            −{fmt(totals.totalFuelCost)}
+          <span className="tc-totals-row__val">
+            <Money value={Math.abs(totals.totalFuelCost)} sign="−" />
           </span>
         </div>
+
         <div
-          className="tc-summary-row"
-          style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13, cursor: "pointer", userSelect: "none" }}
+          className="tc-totals-row tc-totals-row--clickable"
           onClick={() => setShowRoadBreakdown(v => !v)}
           role="button"
           aria-expanded={showRoadBreakdown}
           title="Bấm để xem chi tiết"
         >
-          <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-            <DollarSign size={13} style={{ color: "#F59E0B" }} /> Chi phí đường bộ
-            {showRoadBreakdown ? <ChevronUp size={12} style={{ opacity: 0.6 }} /> : <ChevronDown size={12} style={{ opacity: 0.6 }} />}
+          <span className="tc-totals-row__lbl">
+            <span aria-hidden style={{ display: 'inline-flex' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21h18" />
+                <path d="M5 21V8l4-3 4 3v13" />
+                <path d="M13 21V12l4-2 4 2v9" />
+              </svg>
+            </span>
+            Chi phí đường bộ
+            {showRoadBreakdown ? <ChevronUp size={12} className="tc-totals-row__chev" /> : <ChevronDown size={12} className="tc-totals-row__chev" />}
             {roadBreakdown.overridden && (
-              <span style={{
-                fontSize: 9,
-                padding: '1px 6px',
-                borderRadius: 999,
-                background: 'rgba(245,158,11,0.18)',
-                color: '#FBBF24',
-                fontWeight: 600,
-                letterSpacing: 0.3,
-              }}>
-                ĐÃ ĐIỀU CHỈNH
-              </span>
+              <span className="tc-totals-row__adjusted-pill">Đã điều chỉnh</span>
             )}
           </span>
-          <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
-            −{fmt(fullRoadCost)}
+          <span className="tc-totals-row__val">
+            <Money value={Math.abs(fullRoadCost)} sign="−" />
           </span>
         </div>
 
         {showRoadBreakdown && (
-          <div
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.62)",
-              paddingLeft: 22,
-              marginBottom: 8,
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              marginLeft: 6,
-              paddingTop: 2,
-              paddingBottom: 2,
-            }}
-          >
+          <div className="tc-totals-breakdown">
             {roadBreakdown.returnBonus > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div className="tc-totals-breakdown__row">
                 <span>Chuyến về có hàng</span>
-                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.returnBonus)}</span>
+                <Money value={Math.abs(roadBreakdown.returnBonus)} sign="−" />
               </div>
             )}
             {roadBreakdown.discount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div className="tc-totals-breakdown__row">
                 <span>Tiền vé (công ty) đã thanh toán</span>
-                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.discount)}</span>
+                <Money value={Math.abs(roadBreakdown.discount)} sign="−" />
               </div>
             )}
             {roadBreakdown.stations > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Trạm BOT ({roadBreakdown.stations} × {fmt(roadBreakdown.perStation)})</span>
-                <span className="mono" style={{ color: "#EF4444" }}>−{fmt(roadBreakdown.stationCost)}</span>
+              <div className="tc-totals-breakdown__row">
+                <span>Trạm BOT ({roadBreakdown.stations} × {Math.round(roadBreakdown.perStation).toLocaleString('vi-VN')})</span>
+                <Money value={Math.abs(roadBreakdown.stationCost)} sign="−" />
               </div>
             )}
-
             {roadBreakdown.overridden && (
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 4, borderTop: "1px dashed rgba(255,255,255,0.18)", marginTop: 2 }}>
-                <span style={{ color: "#FBBF24" }}>Đã điều chỉnh tay tổng chi phí</span>
-                <span className="mono" style={{ color: "#FBBF24", fontWeight: 700 }}>{fmt(roadBreakdown.overrideRaw!)}</span>
+              <div className="tc-totals-breakdown__row tc-totals-breakdown__row--override">
+                <span>Đã điều chỉnh tay tổng chi phí</span>
+                <Money value={Math.abs(roadBreakdown.overrideRaw!)} />
               </div>
             )}
           </div>
         )}
-        <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-          <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-            <Users size={13} style={{ color: "#10B981" }} /> Tiền lương lái xe
+
+        <div className="tc-totals-row">
+          <span className="tc-totals-row__lbl">
+            <Users size={13} /> Tiền lương lái xe
           </span>
-          <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
-            −{fmt(Number(driverSalary) || 0)}
+          <span className="tc-totals-row__val">
+            <Money value={Math.abs(Number(driverSalary) || 0)} sign="−" />
           </span>
         </div>
+
         {twoPointAmount > 0 && (
-          <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-            <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-              <MapPin size={13} style={{ color: "#8B5CF6" }} /> Trả hàng 2 điểm
+          <div className="tc-totals-row">
+            <span className="tc-totals-row__lbl">
+              <MapPin size={13} /> Trả hàng 2 điểm
             </span>
-            <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
-              −{fmt(twoPointAmount)}
-            </span>
-          </div>
-        )}
-        {vehicleShiftAmount > 0 && (
-          <div className="tc-summary-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-            <span className="tc-summary-row__lbl" style={{ display: "flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-              <Clock size={13} style={{ color: "#F97316" }} /> Lưu ca xe
-            </span>
-            <span className="tc-summary-row__val tc-summary-row__val--neg" style={{ fontWeight: 700, color: "#EF4444" }}>
-              −{fmt(vehicleShiftAmount)}
+            <span className="tc-totals-row__val">
+              <Money value={Math.abs(twoPointAmount)} sign="−" />
             </span>
           </div>
         )}
 
-        <div
-          className="tc-summary-row tc-summary-row--total"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: 12,
-            paddingTop: 12,
-            borderTop: "1px dashed rgba(255,255,255,0.2)",
-            alignItems: "center",
-          }}
-        >
-          <span className="tc-summary-row__lbl" style={{ color: "rgba(255,255,255,0.95)", fontWeight: 700, fontSize: 14 }}>
-            Lợi nhuận dự kiến
-          </span>
+        {vehicleShiftAmount > 0 && (
+          <div className="tc-totals-row">
+            <span className="tc-totals-row__lbl">
+              <Clock size={13} /> Lưu ca xe
+            </span>
+            <span className="tc-totals-row__val">
+              <Money value={Math.abs(vehicleShiftAmount)} sign="−" />
+            </span>
+          </div>
+        )}
+
+        <div className="tc-totals__profit">
+          <span className="tc-totals__profit-label">Lợi nhuận dự kiến</span>
           <span
-            className={`tc-summary-row__val ${isProfitPositive ? "tc-summary-row__val--pos" : "tc-summary-row__val--neg"}`}
-            style={{
-              fontSize: 16,
-              fontWeight: 800,
-              color: isProfitPositive ? "#10B981" : "#EF4444",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            className={`tc-totals__profit-val ${isProfitPositive ? 'is-pos' : 'is-neg'}`}
           >
-            {isProfitPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-            {isProfitPositive ? "+" : "−"}
-            {fmt(totals.grossProfit)} đ
+            <span className="tc-totals__profit-pill" aria-hidden>
+              {isProfitPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+            </span>
+            <Money value={Math.abs(totals.grossProfit)} sign={isProfitPositive ? '+' : '−'} />
           </span>
         </div>
-      </div>
-    </div>
+      </section>
+    </article>
   );
 }
