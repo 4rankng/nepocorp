@@ -77,67 +77,81 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {/* ── KPI Strip (full width) ───────────────────────────────────────── */}
-      <section className="trip-kpi-strip anim d2">
-        <KpiStrip
-          revenue={derived.revenue}
-          totalCost={derived.totalCost}
-          grossProfit={derived.grossProfit}
-          marginPct={derived.marginPct}
-        />
-      </section>
+      {/* ── 2-column body: main (operational) | rail (financial) ────────── */}
+      <div className="trip-body anim d2">
+        {/* ── Main column — operational story ─────────────────────────── */}
+        <div className="trip-col trip-col--main">
+          {trip.legs && trip.legs.length > 0 && (
+            <div className="anim d3 tdp-card tdp-m1">
+              <JourneyCard trip={trip} derived={derived} />
+            </div>
+          )}
 
-      {/* ── Journey (full width) ─────────────────────────────────────────── */}
-      {trip.legs && trip.legs.length > 0 && (
-        <section className="anim d3 trip-journey">
-          <JourneyCard trip={trip} derived={derived} />
-        </section>
-      )}
+          <div className="anim d3 tdp-card tdp-m2">
+            <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
+          </div>
 
-      {/* ── Service Costs (full width) ──────────────────────────────────── */}
-      <section className="anim d4 trip-services">
-        <ServiceCostsCard tripId={trip.id} readOnly={permissions.readOnly} />
-      </section>
-
-      {/* ── Two-column grid: Basic info | Financial detail ──────────────── */}
-      <section className="trip-grid anim d3">
-        <div className="trip-col trip-col--left">
-          <BasicInfoCard
-            trip={trip}
-            canChangeDate={permissions.canChangeDate}
-            onChangeDepartureDate={page.handleChangeDepartureDate}
-            actionLoading={ui.actionLoading}
-          />
-          <ContainersCard tripId={trip.id} />
-          <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
-        </div>
-
-        <div className="trip-col trip-col--right">
-          <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
-
-          {trip.carrierType === 'EXTERNAL' && (
-            <ExternalCarrierCard
-              derived={derived}
-              carrierName={derived.externalCarrierName}
-              plateNumber={trip.externalPlateNumber}
-              driverName={trip.externalDriverName}
-              driverPhone={trip.externalDriverPhone}
-              freightCost={trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null}
+          <div className="anim d3 tdp-card tdp-m3">
+            <BasicInfoCard
+              trip={trip}
+              canChangeDate={permissions.canChangeDate}
+              onChangeDepartureDate={page.handleChangeDepartureDate}
+              actionLoading={ui.actionLoading}
             />
-          )}
+          </div>
 
-          {(trip.photoUrls?.length ?? 0) > 0 && (
-            <PhotosCard photoUrls={trip.photoUrls} />
-          )}
+          <div className="anim d4 tdp-card tdp-m4">
+            <ContainersCard tripId={trip.id} />
+          </div>
 
           {trip.notes && (
-            <section className="tdp-notes-card">
+            <section className="tdp-notes-card anim d4 tdp-card tdp-m6">
               <h3 className="tdp-notes-title">Ghi chú</h3>
               <p className="tdp-notes-body">{trip.notes}</p>
             </section>
           )}
         </div>
-      </section>
+
+        {/* ── Right rail — financial summary (sticky on desktop) ──────── */}
+        <div className="trip-col trip-col--rail trip-rail-bg">
+          <div className="anim d3 tdp-card tdp-r1">
+            <KpiStrip
+              variant="rail"
+              revenue={derived.revenue}
+              totalCost={derived.totalCost}
+              grossProfit={derived.grossProfit}
+              marginPct={derived.marginPct}
+            />
+          </div>
+
+          <div className="anim d3 tdp-card tdp-r2">
+            <FinancialCard derived={derived} customerCommission={Number(trip.customerCommission) || 0} />
+          </div>
+
+          <div className="anim d4 tdp-card tdp-r3">
+            <FuelCard trip={trip} derived={derived} fuelPriceConfig={fuelPriceConfig} />
+          </div>
+
+          {trip.carrierType === 'EXTERNAL' && (
+            <div className="anim d4 tdp-card tdp-r4">
+              <ExternalCarrierCard
+                derived={derived}
+                carrierName={derived.externalCarrierName}
+                plateNumber={trip.externalPlateNumber}
+                driverName={trip.externalDriverName}
+                driverPhone={trip.externalDriverPhone}
+                freightCost={trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null}
+              />
+            </div>
+          )}
+
+          {(trip.photoUrls?.length ?? 0) > 0 && (
+            <div className="anim d4 tdp-card tdp-r5">
+              <PhotosCard photoUrls={trip.photoUrls} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── Reassign Modal ──────────────────────────────────────────────── */}
       <Modal

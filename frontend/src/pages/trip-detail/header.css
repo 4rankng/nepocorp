@@ -5,7 +5,126 @@
  * across /trips/:id and /trips/:id/edit; this file only carries the parts
  * that are unique to the detail page (customer name row, action cluster,
  * route chips).
+ *
+ * The .tc-page-title / .tc-page-sub / .tc-status-pill rules below are
+ * duplicated here from TripEditPage.css because TripDetailPage.css does not
+ * import TripEditPage.css — without these the detail page's title collapses
+ * to Tailwind's preflight (display: block) and the status pill renders as
+ * plain text. Keep this block in sync with TripEditPage.css.
  * ========================================================================== */
+
+.td-page-head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 28px 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.td-page-head .header-actions {
+  align-self: flex-end;
+}
+
+.tc-page-head::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line) 20%,
+    var(--line) 80%,
+    transparent 100%
+  );
+}
+
+.tc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tc-back-btn:hover {
+  background: var(--surface-2, var(--surface));
+  color: var(--fg-1, var(--fg-2));
+  transform: translateX(-1px);
+}
+
+.tc-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tc-page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg-1, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tc-page-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--surface-2, #f1f5f4);
+  color: var(--fg-2);
+  border: 1px solid var(--line);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.tc-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-3);
+}
+.tc-status-pill--draft::before { background: #94a3b8; }
+.tc-status-pill--in-transit::before { background: #0ea5e9; }
+.tc-status-pill--completed::before { background: #10b981; }
+.tc-status-pill--locked::before { background: #0f172a; }
+.tc-status-pill--canceled::before { background: #E32434; }
+.tc-status-pill--locked { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
+.tc-status-pill--canceled { color: #E32434; background: #FFEAEC; border-color: #f3c6c6; }
+
 
 .header-left {
   display: flex;
@@ -108,50 +227,50 @@
   flex: 0 0 auto;
 }
 
-.btn-ghost {
+.btn--ghost {
   background: var(--surface);
   border-color: var(--line);
   color: var(--ink-2);
   box-shadow: var(--sh-sm);
 }
 
-.btn-ghost:hover {
+.btn--ghost:hover {
   border-color: #D4DAD7;
   color: var(--ink);
   background: #FCFDFC;
 }
 
-.btn-danger {
+.btn--danger {
   background: var(--surface);
   border-color: var(--line);
   color: var(--danger);
   box-shadow: var(--sh-sm);
 }
 
-.btn-danger:hover {
+.btn--danger:hover {
   background: var(--danger-soft);
   border-color: #F3C6C6;
 }
 
-.btn-primary {
+.btn--primary {
   background: var(--accent);
   color: var(--fg-on-brand);
   border-color: var(--accent);
   box-shadow: 0 1px 2px rgba(0, 177, 79, 0.25), 0 6px 16px rgba(0, 177, 79, 0.22);
 }
 
-.btn-primary:hover {
+.btn--primary:hover {
   background: var(--accent-2, #008B3E);
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 177, 79, 0.3), 0 10px 22px rgba(0, 177, 79, 0.26);
 }
 
-.btn-soft {
+.btn--soft {
   background: var(--accent-soft);
   color: var(--accent-ink, #004D22);
   border-color: transparent;
 }
 
-.btn-soft:hover {
+.btn--soft:hover {
   background: #D8F0E2;
 }

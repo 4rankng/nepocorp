@@ -32,6 +32,10 @@ export interface SaveTripPhotoOptions {
    * default q85 pipeline. The processed buffer is returned so the OCR route can
    * reuse it for recognition instead of re-running sharp. */
   forOcr?: boolean;
+  /** Phase 2: optional container row to link this photo to. The container
+   *  must belong to `tripId`. Null/undefined leaves the photo at trip level
+   *  (legacy behaviour), which is also the fallback for older callers. */
+  containerId?: number | null;
 }
 
 export interface SavedTripPhoto {
@@ -110,6 +114,9 @@ export async function saveTripPhoto(
     type,
     storageKey: key,
     uploadedBy: userId,
+    // Phase 2: link to a specific container when provided. Caller is
+    // responsible for ownership validation; we only set the FK if present.
+    tripContainerId: opts.containerId ?? null,
   });
 
   return {
@@ -133,6 +140,13 @@ export async function saveTripPhoto(
 export async function deleteTripPhotosByType(
   tripId: number,
   type: TripPhotoType,
+  /**
+   * Phase 2: when provided, scope the delete to only photos linked to this
+   * specific container row (via trip_photos.trip_container_id). When omitted,
+   * deletes ALL photos of this type for the trip — the legacy "remove all"
+   * behaviour, which is what the editor's "Xoá ảnh" affordance expects.
+   */
+  containerId?: number,
 ): Promise<number> {
   // Capture the row ids up front and scope BOTH the file delete and the row
   // delete to this exact snapshot. A row inserted concurrently (e.g. a capture
@@ -140,9 +154,13 @@ export async function deleteTripPhotosByType(
   // file is not orphaned on disk and the driver's fresh upload is not silently
   // wiped. Scoping the DELETE to ids (rather than tripId+type) also makes the
   // returned count match what was actually removed.
+  const conditions = [eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)];
+  if (containerId !== undefined) {
+    conditions.push(eq(s.tripPhotos.tripContainerId, containerId));
+  }
   const rows = await db.select({ id: s.tripPhotos.id, storageKey: s.tripPhotos.storageKey })
     .from(s.tripPhotos)
-    .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)));
+    .where(and(...conditions));
 
   // Best-effort file deletion: never let one bad file abort the row delete.
   await Promise.all(rows.map(row =>

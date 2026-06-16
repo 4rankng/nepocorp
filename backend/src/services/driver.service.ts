@@ -4,7 +4,7 @@ import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 import { computeSalary } from './attendance.service';
-import { listTripContainers, latestTripPhotoKey } from './forwarder.service';
+import { listTripContainers, latestTripPhotoKey, listTripPhotoKeys } from './forwarder.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -93,14 +93,18 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
   const containers = await listTripContainers(tripId);
 
   // Latest uploaded photo per type for this trip — shown as thumbnails on the
-  // driver detail page once a container has been saved. Run both lookups
-  // concurrently rather than awaiting them back-to-back.
-  const [contPhotoKey, sealPhotoKey] = await Promise.all([
+  // driver detail page once a container has been saved. Also fetch the full
+  // list (newest first) so the driver UI can surface every captured photo,
+  // not just the latest. Singular fields kept for back-compat with the
+  // existing driver app build; contPhotoKeys[0] === contPhotoKey.
+  const [contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys] = await Promise.all([
     latestTripPhotoKey(tripId, 'CONTAINER'),
     latestTripPhotoKey(tripId, 'SEAL'),
+    listTripPhotoKeys(tripId, 'CONTAINER'),
+    listTripPhotoKeys(tripId, 'SEAL'),
   ]);
 
-  return { ...trip, legs, containers, contPhotoKey, sealPhotoKey };
+  return { ...trip, legs, containers, contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys };
 }
 
 /**

@@ -9,9 +9,9 @@ import {
   getDriverEarnings,
   getDriverPenalties,
 } from '../services/driver.service';
-import { createTripContainer, listTripContainers, updateTripContainer } from '../services/forwarder.service';
+import { createTripContainer, listTripContainers, updateTripContainer, batchUpsertContainerSeals } from '../services/forwarder.service';
 import { deleteTripPhotosByType, type TripPhotoType } from './upload';
-import { tripContainerSchema, tripContainerPatchSchema } from '@tingting/shared';
+import { tripContainerSchema, tripContainerPatchSchema, tripContainerSealBatchSchema } from '@tingting/shared';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../errors';
 
@@ -82,6 +82,8 @@ router.post('/trips/:tripId/containers', asyncHandler(async (req: Request, res: 
     cargoWeightKg: parsed.data.cargoWeightKg ?? null,
     notes: parsed.data.notes ?? null,
     createdBy: getUser(req).userId,
+    // Phase 2: optional initial seals list (e.g. customs + carrier).
+    seals: parsed.data.seals,
   });
   res.status(201).json(created);
 }));
@@ -113,8 +115,32 @@ router.patch('/trips/:tripId/containers/:containerId', asyncHandler(async (req: 
     sealNumber: parsed.data.sealNumber,
     cargoWeightKg: parsed.data.cargoWeightKg,
     notes: parsed.data.notes,
+    // Phase 2: driver's one-at-a-time seal add flow.
+    addSeals: parsed.data.addSeals,
+    userId: getUser(req).userId,
   });
   res.json(updated);
+}));
+
+// Phase 2: full reconcile of one container's seals. Driver UI sends the
+// desired full list; backend matches by id (insert new, update existing,
+// delete the rest). Refuses on a LOCKED trip — same guard as PATCH above.
+router.put('/trips/:tripId/containers/:containerId/seals', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const containerId = parseInt(req.params.containerId as string, 10);
+  const trip = await getDriverTripDetail(driver.id, tripId);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  if (!trip.containers.some(c => c.id === containerId)) {
+    return res.status(404).json({ error: 'Không tìm thấy số cont' });
+  }
+
+  const parsed = tripContainerSealBatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Dữ liệu không hợp lệ', details: parsed.error.flatten() });
+  }
+  const seals = await batchUpsertContainerSeals(containerId, parsed.data.seals, getUser(req).userId);
+  res.json({ seals });
 }));
 
 // Remove all photos of one type (CONTAINER | SEAL) for the driver's own trip —
@@ -140,7 +166,21 @@ router.delete('/trips/:tripId/photos/:type', asyncHandler(async (req: Request, r
     throw new ApiError(409, 'Không thể xóa ảnh của chuyến đã chốt');
   }
 
-  const removed = await deleteTripPhotosByType(tripId, photoType as TripPhotoType);
+  // Phase 2: optional container_id scopes the delete to one container's
+  // photos only. Without it, we wipe ALL of this type (legacy behaviour).
+  let containerId: number | undefined;
+  const containerIdRaw = req.query.container_id;
+  if (containerIdRaw !== undefined && containerIdRaw !== '') {
+    containerId = parseInt(String(containerIdRaw), 10);
+    if (isNaN(containerId)) {
+      return res.status(400).json({ error: 'container_id không hợp lệ' });
+    }
+    if (!trip.containers.some(c => c.id === containerId)) {
+      return res.status(404).json({ error: 'Không tìm thấy số cont' });
+    }
+  }
+
+  const removed = await deleteTripPhotosByType(tripId, photoType as TripPhotoType, containerId);
   res.json({ ok: true, removed });
 }));
 

@@ -44,7 +44,7 @@ export function TripHeader({
   const { canEdit, canEditActuals, canCancel, canDispatch, canLock, canReassign, canAdjust, canUnlock, needsPhotos } = permissions;
 
   return (
-    <header className="tc-page-head anim d1">
+    <header className="tc-page-head td-page-head anim d1">
       <div className="header-left">
         <button className="tc-back-btn" onClick={onBack} aria-label="Quay lại">
           <ArrowLeft size={18} />

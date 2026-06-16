@@ -16,6 +16,19 @@ function extractEntityType(path: string): string | null {
     return 'forwarder';
   }
 
+  // Driver portal — mirror forwarder's container-instances mapping so driver
+  // mutations on /api/driver/me/trips/:id/containers[/:cid[/seals]] audit
+  // with the correct entity label ("thông tin container"), not the generic
+  // "lái xe" label derived from the /driver prefix.
+  if (parts.length >= 2 && parts[0] === 'driver' && parts[1] === 'me') {
+    if (parts.length > 2) {
+      if (parts[2] === 'trips' && parts[4] === 'containers') return 'container-instances';
+      if (parts[2] === 'trips' && parts[4] === 'photos') return 'photos';
+      return parts[2];
+    }
+    return 'driver';
+  }
+
   // Handle accountant/admin trip expenses: /api/trips/:id/expenses/...
   if (parts.length >= 3 && parts[0] === 'trips' && parts[2] === 'expenses') {
     return 'trip-expenses';

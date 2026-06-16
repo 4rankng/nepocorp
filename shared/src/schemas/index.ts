@@ -432,6 +432,21 @@ export const tripContainerSchema = z.object({
   sealNumber: z.string().optional().nullable(),
   cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable(),
+  // Phase 2: optional initial seals list (customs seal, carrier seal, …).
+  // When present, each entry becomes a row in trip_container_seals.
+  seals: z.lazy(() => z.array(tripContainerSealSchema)).optional(),
+});
+
+// ─── Multi-seal (Phase 2) ───────────────────────────────────────────────
+// A container can have multiple seals (customs seal, carrier seal, etc.).
+// sealType is a free-form string ("Customs", "Carrier", …) — no enum, since
+// drivers may write whatever label fits. Each seal is its own row in
+// trip_container_seals and may carry its own photo (via trip_photos.trip_container_id).
+export const tripContainerSealSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  sealNumber: z.string().min(1, 'Số seal không được để trống').max(50),
+  sealType: z.string().max(30).optional().nullable().transform(v => (v === '' ? null : v)),
+  notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
 });
 
 // Patch payload used by the driver when correcting an existing container
@@ -443,11 +458,18 @@ export const tripContainerPatchSchema = z.object({
   sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
   cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
+  // New seals to add. Driver one-at-a-time flow sends a single-element list;
+  // office flow may send many. Existing seals are reconciled via the
+  // dedicated PUT /seals endpoint, not this patch.
+  addSeals: z.array(tripContainerSealSchema).optional(),
 });
 
 // Batch upsert payload used by the trip-edit form: the client sends the full
 // desired list of container instances for a trip, and the backend reconciles
-// (insert new, update existing by id, delete the rest).
+// (insert new, update existing by id, delete the rest). Each container may
+// carry a full seals[] list, reconciled the same way by id. sealNumber
+// (scalar) is kept for back-compat — when seals[] is absent, backend writes
+// the scalar value as the container's first seal row.
 export const tripContainerBatchSchema = z.object({
   containers: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
@@ -456,7 +478,15 @@ export const tripContainerBatchSchema = z.object({
     sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
     cargoWeightKg: nonNegNumeric.optional().nullable(),
     notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
+    seals: z.array(tripContainerSealSchema).optional(),
   })),
+});
+
+// Full reconcile payload for one container's seals. PUT /containers/:id/seals
+// accepts this — incoming seals[] becomes the desired full list (matched by
+// id; the rest are inserted; missing existing ids are deleted).
+export const tripContainerSealBatchSchema = z.object({
+  seals: z.array(tripContainerSealSchema),
 });
 
 export const ANCILLARY_EXPENSE_TYPES = [

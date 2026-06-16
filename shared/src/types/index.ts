@@ -467,6 +467,25 @@ export interface Port {
 
 // ─── Forwarder ────────────────────────────────────────────────────────────────────
 
+export interface TripContainerSeal {
+  id: number;
+  tripContainerId: number;
+  sealNumber: string;
+  sealType: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Per-container photo (storage-key + type), grouped under each container. */
+export interface TripContainerPhoto {
+  id: number;
+  type: 'CONTAINER' | 'SEAL';
+  storageKey: string;
+  uploadedAt: string;
+}
+
 export interface TripContainer {
   id: number;
   tripId: number;
@@ -478,6 +497,14 @@ export interface TripContainer {
   notes: string | null;
   createdBy: number;
   createdAt: string;
+  /** Phase 2: per-container seals (newest-first by id). The legacy
+   *  `sealNumber` field is kept as the "primary" seal (first child row)
+   *  for back-compat with older clients. */
+  seals?: TripContainerSeal[];
+  /** Phase 2: photos explicitly linked to this container via
+   *  trip_photos.trip_container_id. Photos with null container_id remain
+   *  trip-level (surfaced separately in the response, not here). */
+  photos?: TripContainerPhoto[];
 }
 
 export interface TripExpense {

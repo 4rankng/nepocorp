@@ -61,3 +61,5 @@ qa/
 
 # Runtime uploads
 backend/uploads/
+kilo.json
+*.pen

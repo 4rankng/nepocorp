@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
-import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo, latestTripPhotoKey } from '../services/forwarder.service';
+import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo, latestTripPhotoKey, listTripPhotoKeys } from '../services/forwarder.service';
 import { processExpenseApproval } from '../services/approval.service';
 import { requireRoles } from '../middleware/casbin';
 import { getUser } from '../middleware/auth';
@@ -291,12 +291,23 @@ router.get('/:id/containers', asyncHandler(async (req: Request, res: Response) =
   const tripId = parseInt(req.params.id as string, 10);
   // Include the trip's latest cont/seal photo keys so the office-staff editor
   // can render persisted thumbnails (mirrors the driver detail response).
-  const [items, contPhotoKey, sealPhotoKey] = await Promise.all([
+  // Also include the FULL list (newest first) so the trip detail page can
+  // surface every captured photo, not just the latest. The singular fields
+  // are kept for back-compat with older clients; contPhotoKeys[0] === contPhotoKey.
+  const [
+    items,
+    contPhotoKey,
+    sealPhotoKey,
+    contPhotoKeys,
+    sealPhotoKeys,
+  ] = await Promise.all([
     listTripContainers(tripId),
     latestTripPhotoKey(tripId, 'CONTAINER'),
     latestTripPhotoKey(tripId, 'SEAL'),
+    listTripPhotoKeys(tripId, 'CONTAINER'),
+    listTripPhotoKeys(tripId, 'SEAL'),
   ]);
-  res.json({ items, contPhotoKey, sealPhotoKey });
+  res.json({ items, contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys });
 }));
 
 // Batch upsert container instances. Body shape: { containers: [...] }

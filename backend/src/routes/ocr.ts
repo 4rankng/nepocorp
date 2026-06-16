@@ -35,6 +35,7 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
   const file = req.file;
   const type = req.body.type as 'CONTAINER' | 'SEAL';
   const tripIdRaw = req.body.trip_id;
+  const containerIdRaw = req.body.container_id;
 
   if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
   if (type !== 'CONTAINER' && type !== 'SEAL') {
@@ -62,6 +63,27 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
     }
   }
 
+  // Phase 2: optional container_id → link the persisted photo to a specific
+  // container row so the detail page can render it under that container.
+  // We validate that the container actually belongs to the trip before
+  // accepting the link; a mismatch is a client bug, not a security issue,
+  // so we 400 rather than silently storing a dangling FK.
+  let containerId: number | null = null;
+  if (containerIdRaw !== undefined && containerIdRaw !== '') {
+    containerId = parseInt(containerIdRaw, 10);
+    if (isNaN(containerId)) return res.status(400).json({ error: 'container_id không hợp lệ' });
+    if (tripId === null) {
+      return res.status(400).json({ error: 'container_id yêu cầu trip_id' });
+    }
+    const [container] = await db.select({ tripId: s.tripContainers.tripId })
+      .from(s.tripContainers)
+      .where(eq(s.tripContainers.id, containerId))
+      .limit(1);
+    if (!container || container.tripId !== tripId) {
+      return res.status(400).json({ error: 'Container không thuộc chuyến này' });
+    }
+  }
+
   let photoUrl: string | undefined;
   let storageKey: string | undefined;
   let ocrBuffer = file.buffer;
@@ -69,7 +91,10 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
 
   if (tripId !== null) {
     // Persist (OCR pipeline) and reuse the processed buffer for recognition.
-    const saved = await saveTripPhoto(file, tripId, type, user.userId, { forOcr: true });
+    const saved = await saveTripPhoto(file, tripId, type, user.userId, {
+      forOcr: true,
+      containerId,
+    });
     photoUrl = saved.url;
     storageKey = saved.storageKey;
     ocrBuffer = saved.buffer;

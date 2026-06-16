@@ -9,7 +9,7 @@ import type { ContainerFormRow } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
 import type { OcrSignal } from './useTripFormDispatch';
-import type { UploadingState } from './useTripFormPhotos';
+import type { UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 
 export type { FuelMode } from '@tingting/shared';
 export type { FormLeg } from './useTripFormLegs';
@@ -107,6 +107,8 @@ export interface UseTripFormReturn {
   photoUrls: string[];
   uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
   removePhoto: (idx: number) => void;
+  uploadContainerPhoto: (file: File, tripId: number | undefined, rowKey: string, type: 'CONTAINER' | 'SEAL', containerId?: number) => Promise<ContainerPhotoUploadResult>;
+  revokeRowPhotos: (rowKey: string) => void;
 
   // Container instances — edited via ContainerInstancesCard, saved by the
   // unified "Lưu cập nhật" submit alongside the trip figures.
@@ -194,6 +196,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     revenueCombine: s.revenueCombine, setRevenueCombine: s.setRevenueCombine,
     notes: s.notes, setNotes: s.setNotes,
     photoUrls: d.photoUrls, uploadPhotos: d.uploadPhotos, removePhoto: d.removePhoto,
+    uploadContainerPhoto: d.uploadContainerPhoto, revokeRowPhotos: d.revokeRowPhotos,
     containerRows: s.containerRows, setContainerRows: s.setContainerRows,
     suggestedPrice: d.suggestedPrice,
     estimatedFuelCost: d.estimatedFuelCost,
