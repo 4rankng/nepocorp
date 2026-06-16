@@ -501,6 +501,9 @@ export const tripContainers = pgTable('trip_containers', {
   tripId: integer('trip_id').references(() => trips.id).notNull(),
   containerTypeId: integer('container_type_id').references(() => containerTypes.id),
   containerNumber: varchar('container_number', { length: 50 }).notNull(),
+  // Kept for back-compat during the Phase 2 multi-seal migration. New writes
+  // also maintain this as the "primary seal" mirror (= first child row in
+  // trip_container_seals). To be dropped in a follow-up once no client reads it.
   sealNumber: varchar('seal_number', { length: 50 }),
   // Cargo weight in kilograms. Added 2026-06 per Pete's request to capture
   // trọng lượng hàng per container; report aggregations can sum/avg as needed.
@@ -513,6 +516,26 @@ export const tripContainers = pgTable('trip_containers', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_containers_trip_id_idx').on(table.tripId),
+]);
+
+// ─── Multi-seal per container (Phase 2) ───────────────────────────────────
+// A container may carry multiple seals (customs seal, carrier seal, …).
+// Each row is one seal. Cascade on delete so removing a container row also
+// cleans up its seals — never leaves orphans.
+export const tripContainerSeals = pgTable('trip_container_seals', {
+  id: serial('id').primaryKey(),
+  tripContainerId: integer('trip_container_id')
+    .references(() => tripContainers.id, { onDelete: 'cascade' }).notNull(),
+  sealNumber: varchar('seal_number', { length: 50 }).notNull(),
+  // Free-form string ("Customs", "Carrier", …). No enum — drivers may label
+  // however makes sense in the field.
+  sealType: varchar('seal_type', { length: 30 }),
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('trip_container_seals_container_idx').on(table.tripContainerId),
 ]);
 
 export const tripExpenses = pgTable('trip_expenses', {
@@ -649,7 +672,16 @@ export const tripPhotos = pgTable('trip_photos', {
   storageKey: varchar('storage_key', { length: 255 }).notNull(),
   uploadedBy: integer('uploaded_by').references(() => users.id).notNull(),
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
-});
+  // Phase 2: optional link to a specific container row, so each container's
+  // cont/seal photo(s) can be displayed under that container. ON DELETE SET
+  // NULL so deleting a container row keeps the photo as trip-level evidence
+  // (rather than destroying the file reference).
+  tripContainerId: integer('trip_container_id').references(() => tripContainers.id, { onDelete: 'set null' }),
+}, (table) => [
+  // Phase 2: index the per-container photo lookups (listTripContainers joins
+  // trip_photos by trip_container_id; container-scoped deletes filter by it).
+  index('trip_photos_trip_container_id_idx').on(table.tripContainerId),
+]);
 
 export const routeDistanceCache = pgTable('route_distance_cache', {
   id: serial('id').primaryKey(),

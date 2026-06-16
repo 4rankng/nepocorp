@@ -21,6 +21,35 @@ export class NoForwarderProfileError extends Error {
   }
 }
 
+/**
+ * Derive the legacy `trip_containers.seal_number` mirror from the current
+ * set of child seals in the database.
+ *
+ * Rule (locked): the mirror is the seal with the **lowest id** (oldest row)
+ * for the container, or `null` when the container has no seals. "Oldest
+ * wins" is deterministic and matches the typical workflow (customs seal
+ * affixed at origin, carrier seal affixed at destination). Centralising
+ * this rule here means every writer (`createTripContainer`,
+ * `updateTripContainer.addSeals`, `batchUpsertContainerSeals`,
+ * `batchUpsertTripContainers`) computes the same value, so the legacy
+ * mirror never drifts from the child table.
+ *
+ * @param client The `db` instance or an in-flight `tx` — must see writes
+ *   that happened earlier in the same call.
+ * @param tripContainerId The container whose mirror to refresh.
+ */
+export async function derivePrimarySealNumber(
+  client: DbOrTx,
+  tripContainerId: number,
+): Promise<string | null> {
+  const [row] = await client.select({ sealNumber: s.tripContainerSeals.sealNumber })
+    .from(s.tripContainerSeals)
+    .where(eq(s.tripContainerSeals.tripContainerId, tripContainerId))
+    .orderBy(s.tripContainerSeals.id)
+    .limit(1);
+  return row?.sealNumber ?? null;
+}
+
 export async function getForwarderByUserId(userId: number) {
   const [user] = await db.select({
     id: s.users.id,
@@ -81,6 +110,26 @@ export async function latestTripPhotoKey(
     .orderBy(desc(s.tripPhotos.uploadedAt))
     .limit(1);
   return rows[0]?.storageKey ?? null;
+}
+
+/**
+ * All stored photo keys for a trip + type, newest first. Phase-1 helper so
+ * the trip detail / driver detail pages can surface every captured photo,
+ * not just the latest. `array[0]` is identical to `latestTripPhotoKey()`
+ * for back-compat.
+ *
+ * Photos still live at trip level in `trip_photos`; per-container linking
+ * arrives in Phase 2 via a nullable `trip_container_id` FK on this table.
+ */
+export async function listTripPhotoKeys(
+  tripId: number,
+  type: 'CONTAINER' | 'SEAL',
+): Promise<string[]> {
+  const rows = await db.select({ storageKey: s.tripPhotos.storageKey })
+    .from(s.tripPhotos)
+    .where(and(eq(s.tripPhotos.tripId, tripId), eq(s.tripPhotos.type, type)))
+    .orderBy(desc(s.tripPhotos.uploadedAt));
+  return rows.map(r => r.storageKey);
 }
 
 export async function getForwarderTripCounts() {
@@ -175,22 +224,58 @@ export async function createTripContainer(data: {
   cargoWeightKg?: string | number | null;
   notes: string | null;
   createdBy: number | null;
+  /** Phase 2: optional initial seals list. Each becomes a row in
+   *  trip_container_seals. `sealNumber` (scalar) is also mirrored as the
+   *  first seal when present, for back-compat. */
+  seals?: Array<{
+    sealNumber: string;
+    sealType?: string | null;
+    notes?: string | null;
+  }>;
 }) {
+  // Phase 2: insert the container row first with a null mirror, then
+  // append the initial seals (if any), then derive the legacy sealNumber
+  // mirror from the oldest child seal. `derivePrimarySealNumber` is the
+  // single source of truth for the mirror value across all writers.
+  const initialSeals = data.seals ?? [];
+
   const [inserted] = await db.insert(s.tripContainers).values({
     tripId: data.tripId,
     containerTypeId: data.containerTypeId ?? null,
     containerNumber: data.containerNumber,
-    sealNumber: data.sealNumber,
+    sealNumber: null,
     cargoWeightKg: data.cargoWeightKg != null ? String(data.cargoWeightKg) : null,
     notes: data.notes,
     createdBy: data.createdBy,
   }).returning();
-  return inserted;
+
+  if (initialSeals.length > 0) {
+    await db.insert(s.tripContainerSeals).values(
+      initialSeals.map(seal => ({
+        tripContainerId: inserted.id,
+        sealNumber: seal.sealNumber,
+        sealType: seal.sealType ?? null,
+        notes: seal.notes ?? null,
+        createdBy: data.createdBy,
+      })),
+    );
+  }
+  const primarySeal = await derivePrimarySealNumber(db, inserted.id);
+  if (primarySeal !== null) {
+    await db.update(s.tripContainers)
+      .set({ sealNumber: primarySeal, updatedAt: new Date() })
+      .where(eq(s.tripContainers.id, inserted.id));
+  }
+  return { ...inserted, sealNumber: primarySeal };
 }
 
 // Single-row update used by the driver edit flow (Sửa / change number / seal).
 // Only the fields the caller passes are written; null means "clear this field".
 // Refuses to touch a row on a LOCKED trip — that is the lock's whole purpose.
+//
+// Phase 2 also supports `addSeals` for the driver's one-at-a-time seal add
+// flow. Full seal reconciliation (delete/replace) goes through
+// `batchUpsertContainerSeals` instead — this patch only appends.
 export async function updateTripContainer(
   containerId: number,
   patch: {
@@ -199,6 +284,13 @@ export async function updateTripContainer(
     sealNumber?: string | null;
     cargoWeightKg?: string | number | null;
     notes?: string | null;
+    addSeals?: Array<{
+      sealNumber: string;
+      sealType?: string | null;
+      notes?: string | null;
+    }>;
+    /** Actor for the audit / createdBy stamp on appended seals. */
+    userId?: number | null;
   },
 ) {
   const [row] = await db.select({ id: s.tripContainers.id, tripId: s.tripContainers.tripId })
@@ -220,12 +312,36 @@ export async function updateTripContainer(
   }
   if (patch.notes !== undefined) set.notes = patch.notes ?? null;
 
-  if (Object.keys(set).length === 1) {
+  const hasScalarChanges = Object.keys(set).length > 1;
+  const hasSealsToAdd = (patch.addSeals?.length ?? 0) > 0;
+
+  if (!hasScalarChanges && !hasSealsToAdd) {
     // No real fields to write — return the existing row unchanged.
     return listTripContainers(row.tripId).then(rows => rows.find(r => r.id === containerId));
   }
 
-  await db.update(s.tripContainers).set(set).where(eq(s.tripContainers.id, containerId));
+  if (hasScalarChanges) {
+    await db.update(s.tripContainers).set(set).where(eq(s.tripContainers.id, containerId));
+  }
+
+  if (hasSealsToAdd) {
+    await db.insert(s.tripContainerSeals).values(
+      (patch.addSeals ?? []).map(seal => ({
+        tripContainerId: containerId,
+        sealNumber: seal.sealNumber,
+        sealType: seal.sealType ?? null,
+        notes: seal.notes ?? null,
+        createdBy: patch.userId ?? null,
+      })),
+    );
+    // Re-mirror the legacy seal_number column. See derivePrimarySealNumber
+    // for the rule (oldest seal wins) — same as every other writer.
+    const primarySeal = await derivePrimarySealNumber(db, containerId);
+    await db.update(s.tripContainers)
+      .set({ sealNumber: primarySeal, updatedAt: new Date() })
+      .where(eq(s.tripContainers.id, containerId));
+  }
+
   const rows = await listTripContainers(row.tripId);
   return rows.find(r => r.id === containerId);
 }
@@ -233,7 +349,8 @@ export async function updateTripContainer(
 // ─── Trip-container management (used by accountant/manager via trip edit) ─────
 
 export async function listTripContainers(tripId: number, tx?: Tx) {
-  const rows = await (tx ?? db).select({
+  const client = tx ?? db;
+  const rows = await client.select({
     id: s.tripContainers.id,
     tripId: s.tripContainers.tripId,
     containerTypeId: s.tripContainers.containerTypeId,
@@ -250,7 +367,161 @@ export async function listTripContainers(tripId: number, tx?: Tx) {
     .leftJoin(s.containerTypes, eq(s.tripContainers.containerTypeId, s.containerTypes.id))
     .where(eq(s.tripContainers.tripId, tripId))
     .orderBy(s.tripContainers.id);
-  return rows;
+
+  if (rows.length === 0) return rows;
+
+  // Phase 2: fetch seals + per-container photos in two bulk queries and
+  // group them in JS. Keeps the main select simple and avoids N+1.
+  const containerIds = rows.map(r => r.id);
+
+  const sealRows = await client.select({
+    id: s.tripContainerSeals.id,
+    tripContainerId: s.tripContainerSeals.tripContainerId,
+    sealNumber: s.tripContainerSeals.sealNumber,
+    sealType: s.tripContainerSeals.sealType,
+    notes: s.tripContainerSeals.notes,
+    createdBy: s.tripContainerSeals.createdBy,
+    createdAt: s.tripContainerSeals.createdAt,
+    updatedAt: s.tripContainerSeals.updatedAt,
+  }).from(s.tripContainerSeals)
+    .where(inArray(s.tripContainerSeals.tripContainerId, containerIds))
+    .orderBy(s.tripContainerSeals.id);
+
+  const photoRows = await client.select({
+    id: s.tripPhotos.id,
+    tripContainerId: s.tripPhotos.tripContainerId,
+    type: s.tripPhotos.type,
+    storageKey: s.tripPhotos.storageKey,
+    uploadedAt: s.tripPhotos.uploadedAt,
+  }).from(s.tripPhotos)
+    .where(and(
+      inArray(s.tripPhotos.tripContainerId, containerIds),
+      // Only CONTAINER / SEAL photos link to a specific container; OTHER
+      // photos stay trip-level and are not included here.
+      inArray(s.tripPhotos.type, ['CONTAINER', 'SEAL'] as const),
+    ))
+    .orderBy(desc(s.tripPhotos.uploadedAt));
+
+  const sealsByContainer = new Map<number, typeof sealRows>();
+  for (const sr of sealRows) {
+    const list = sealsByContainer.get(sr.tripContainerId) ?? [];
+    list.push(sr);
+    sealsByContainer.set(sr.tripContainerId, list);
+  }
+
+  const photosByContainer = new Map<number, typeof photoRows>();
+  for (const pr of photoRows) {
+    if (pr.tripContainerId == null) continue;
+    const list = photosByContainer.get(pr.tripContainerId) ?? [];
+    list.push(pr);
+    photosByContainer.set(pr.tripContainerId, list);
+  }
+
+  // Attach seals[] + photos[] to each container row.
+  return rows.map(r => ({
+    ...r,
+    seals: sealsByContainer.get(r.id) ?? [],
+    photos: photosByContainer.get(r.id) ?? [],
+  }));
+}
+
+/**
+ * Reconcile the full seals list for one container. Mirrors `batchUpsertTripContainers`
+ * semantics: incoming seals[] is the desired full list. We match by id,
+ * insert new, update existing, delete the rest. The container's
+ * denormalized `seal_number` is rewritten from the oldest surviving child
+ * row via `derivePrimarySealNumber` so older clients keep seeing a sensible
+ * value during the Phase 2 deprecation window.
+ *
+ * Refuses to mutate a row on a LOCKED trip — same guard as `updateTripContainer`.
+ *
+ * New seals are inserted in a single batched `values([...])` call (not
+ * one INSERT per seal) and updates run in parallel.
+ */
+export async function batchUpsertContainerSeals(
+  containerId: number,
+  seals: Array<{
+    id?: number;
+    sealNumber: string;
+    sealType?: string | null;
+    notes?: string | null;
+  }>,
+  userId: number | null,
+) {
+  return db.transaction(async (tx) => {
+    // Joined lookup: confirm the container exists AND read trip status in
+    // one round-trip so we can short-circuit on LOCKED trips before any
+    // seal writes. Replaces the previous two pre-transaction `db.select` calls.
+    const [row] = await tx.select({
+      tripId: s.tripContainers.tripId,
+      tripStatus: s.trips.status,
+    })
+      .from(s.tripContainers)
+      .leftJoin(s.trips, eq(s.trips.id, s.tripContainers.tripId))
+      .where(eq(s.tripContainers.id, containerId))
+      .limit(1);
+    if (!row) throw new ApiError(404, 'Không tìm thấy số cont');
+    if (row.tripStatus === 'LOCKED') {
+      throw new ApiError(409, 'Không thể sửa seal của cont trong chuyến đã chốt');
+    }
+
+    const existing = await tx.select({ id: s.tripContainerSeals.id })
+      .from(s.tripContainerSeals)
+      .where(eq(s.tripContainerSeals.tripContainerId, containerId));
+    const existingIds = new Set(existing.map(r => r.id));
+    const incomingIds = new Set(seals.filter(s2 => s2.id).map(s2 => s2.id as number));
+
+    const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
+    if (toDelete.length > 0) {
+      await tx.delete(s.tripContainerSeals).where(inArray(s.tripContainerSeals.id, toDelete));
+    }
+
+    // Partition: updates (existing ids) and inserts (everything else). Run
+    // updates in parallel and inserts in a single batched call.
+    const toUpdate = seals.filter(s2 => s2.id && existingIds.has(s2.id));
+    const toInsert = seals.filter(s2 => !(s2.id && existingIds.has(s2.id)));
+    await Promise.all(toUpdate.map(seal => tx.update(s.tripContainerSeals)
+      .set({
+        tripContainerId: containerId,
+        sealNumber: seal.sealNumber,
+        sealType: seal.sealType ?? null,
+        notes: seal.notes ?? null,
+        updatedAt: new Date(),
+      })
+      .where(eq(s.tripContainerSeals.id, seal.id!))));
+    if (toInsert.length > 0) {
+      await tx.insert(s.tripContainerSeals).values(toInsert.map(seal => ({
+        tripContainerId: containerId,
+        sealNumber: seal.sealNumber,
+        sealType: seal.sealType ?? null,
+        notes: seal.notes ?? null,
+        createdBy: userId,
+        updatedAt: new Date(),
+      })));
+    }
+
+    // Re-denormalize the mirror from the oldest surviving child row. See
+    // derivePrimarySealNumber for the locked rule.
+    const primarySeal = await derivePrimarySealNumber(tx, containerId);
+    await tx.update(s.tripContainers)
+      .set({ sealNumber: primarySeal, updatedAt: new Date() })
+      .where(eq(s.tripContainers.id, containerId));
+
+    // Return refreshed seals.
+    const refreshed = await tx.select({
+      id: s.tripContainerSeals.id,
+      tripContainerId: s.tripContainerSeals.tripContainerId,
+      sealNumber: s.tripContainerSeals.sealNumber,
+      sealType: s.tripContainerSeals.sealType,
+      notes: s.tripContainerSeals.notes,
+      createdBy: s.tripContainerSeals.createdBy,
+      createdAt: s.tripContainerSeals.createdAt,
+      updatedAt: s.tripContainerSeals.updatedAt,
+    }).from(s.tripContainerSeals)
+      .where(eq(s.tripContainerSeals.tripContainerId, containerId))
+      .orderBy(s.tripContainerSeals.id);
+    return refreshed;
+  });
 }
 
 /**
@@ -274,6 +545,16 @@ export async function batchUpsertTripContainers(
     sealNumber?: string | null;
     cargoWeightKg?: string | number | null;
     notes?: string | null;
+    /** Phase 2: optional full seals list per container. When present, this
+     *  list becomes the desired state — reconciled by id (insert new,
+     *  update existing, delete the rest). When absent, the legacy
+     *  `sealNumber` scalar is mirrored as the single seal (back-compat). */
+    seals?: Array<{
+      id?: number;
+      sealNumber: string;
+      sealType?: string | null;
+      notes?: string | null;
+    }>;
   }>,
 ) {
   return db.transaction(async (tx) => {
@@ -283,34 +564,141 @@ export async function batchUpsertTripContainers(
     const existingIds = new Set(existing.map(r => r.id));
     const incomingIds = new Set(containers.filter(c => c.id).map(c => c.id as number));
 
-    // Deletes: existing - incoming
+    // Deletes: existing - incoming. Cascade on trip_container_seals FK takes
+    // care of orphaned seal rows automatically; trip_photos.trip_container_id
+    // is SET NULL so the photos remain as trip-level evidence.
     const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
     if (toDelete.length > 0) {
       await tx.delete(s.tripContainers).where(inArray(s.tripContainers.id, toDelete));
     }
 
-    // Upserts
+    // Upserts. Each container's `seal_number` mirror is rewritten in a single
+    // pass AFTER its seal reconciliation (see derivePrimarySealNumber) so
+    // every writer agrees on the value — Phase 2 deprecation window safety.
+    const upsertedContainerIds: number[] = [];
     for (const c of containers) {
       const payload = {
         containerTypeId: c.containerTypeId ?? null,
         containerNumber: c.containerNumber,
-        sealNumber: c.sealNumber ?? null,
+        // Mirror is set to null here; re-derived after seal reconciliation
+        // (or unconditionally, for back-compat with clients that pass only
+        // the legacy `sealNumber` scalar).
+        sealNumber: null,
         cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : null,
         notes: c.notes ?? null,
         updatedAt: new Date(),
       };
+      let containerId: number;
       if (c.id && existingIds.has(c.id)) {
         await tx.update(s.tripContainers)
           .set(payload)
           .where(eq(s.tripContainers.id, c.id));
+        containerId = c.id;
       } else {
-        await tx.insert(s.tripContainers).values({
+        const [inserted] = await tx.insert(s.tripContainers).values({
           tripId,
           createdBy: userId,
           ...payload,
-        });
+        }).returning({ id: s.tripContainers.id });
+        containerId = inserted.id;
+      }
+      upsertedContainerIds.push(containerId);
+    }
+
+    // Back-compat: callers that don't know about `seals[]` pass only the
+    // legacy `sealNumber` scalar. Treat it as a single implicit seal so
+    // derivePrimarySealNumber sees it and the mirror doesn't drift to null.
+    // (Containers that pass an explicit empty `seals: []` are asking to
+    // clear the mirror — we honour that by leaving seals undefined below.)
+    const sealInputs = new Map<number, Array<{
+      id?: number; sealNumber: string; sealType?: string | null; notes?: string | null;
+    }> | undefined>();
+    for (let i = 0; i < containers.length; i++) {
+      const c = containers[i];
+      const containerId = upsertedContainerIds[i];
+      if (c.seals !== undefined) {
+        sealInputs.set(containerId, c.seals);
+      } else if (c.sealNumber) {
+        sealInputs.set(containerId, [{ sealNumber: c.sealNumber }]);
       }
     }
+
+    // Hoist the per-container existing-seal fetch into one bulk query
+    // (F2: replaces the previous N+1 inside the loop). Skip the fetch when
+    // no container has a seals[] input — brand-new containers have no
+    // existing child rows to match against.
+    const containersWithSealInput = [...sealInputs.entries()]
+      .filter(([containerId, seals]) => seals !== undefined && existingIds.has(containerId))
+      .map(([containerId]) => containerId);
+    const existingSealsByContainer = new Map<number, Set<number>>();
+    if (containersWithSealInput.length > 0) {
+      const existingSealRows = await tx.select({
+        id: s.tripContainerSeals.id,
+        tripContainerId: s.tripContainerSeals.tripContainerId,
+      })
+        .from(s.tripContainerSeals)
+        .where(inArray(s.tripContainerSeals.tripContainerId, containersWithSealInput));
+      for (const row of existingSealRows) {
+        const set = existingSealsByContainer.get(row.tripContainerId) ?? new Set<number>();
+        set.add(row.id);
+        existingSealsByContainer.set(row.tripContainerId, set);
+      }
+    }
+
+    // Reconcile seals per container, using the pre-fetched existing-id sets
+    // and batched inserts (F3: replaces one-INSERT-per-seal).
+    for (const [containerId, seals] of sealInputs) {
+      if (seals === undefined) continue; // back-compat: no seals[] passed and no scalar
+      const existingSealIds = existingSealsByContainer.get(containerId) ?? new Set<number>();
+      const incomingSealIds = new Set(seals.filter(x => x.id).map(x => x.id as number));
+
+      const sealsToDelete = [...existingSealIds].filter(id => !incomingSealIds.has(id));
+      if (sealsToDelete.length > 0) {
+        await tx.delete(s.tripContainerSeals).where(inArray(s.tripContainerSeals.id, sealsToDelete));
+      }
+
+      const toUpdate = seals.filter(s2 => s2.id && existingSealIds.has(s2.id));
+      const toInsert = seals.filter(s2 => !(s2.id && existingSealIds.has(s2.id)));
+      await Promise.all(toUpdate.map(seal => tx.update(s.tripContainerSeals)
+        .set({
+          tripContainerId: containerId,
+          sealNumber: seal.sealNumber,
+          sealType: seal.sealType ?? null,
+          notes: seal.notes ?? null,
+          updatedAt: new Date(),
+        })
+        .where(eq(s.tripContainerSeals.id, seal.id!))));
+      if (toInsert.length > 0) {
+        await tx.insert(s.tripContainerSeals).values(toInsert.map(seal => ({
+          tripContainerId: containerId,
+          sealNumber: seal.sealNumber,
+          sealType: seal.sealType ?? null,
+          notes: seal.notes ?? null,
+          createdBy: userId,
+          updatedAt: new Date(),
+        })));
+      }
+
+      // Re-derive the legacy mirror from the oldest surviving child row.
+      const primarySeal = await derivePrimarySealNumber(tx, containerId);
+      await tx.update(s.tripContainers)
+        .set({ sealNumber: primarySeal, updatedAt: new Date() })
+        .where(eq(s.tripContainers.id, containerId));
+    }
+
+    // Containers with NO seal input at all still get their mirror re-derived
+    // so any pre-existing child rows (from a prior call) keep the mirror
+    // consistent. Skipped when no upsert happened.
+    if (existingIds.size > 0) {
+      for (const containerId of upsertedContainerIds) {
+        if (sealInputs.has(containerId)) continue; // already handled above
+        const primarySeal = await derivePrimarySealNumber(tx, containerId);
+        await tx.update(s.tripContainers)
+          .set({ sealNumber: primarySeal, updatedAt: new Date() })
+          .where(eq(s.tripContainers.id, containerId));
+      }
+    }
+
     return listTripContainers(tripId, tx);
   });
 }
