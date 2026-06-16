@@ -19,18 +19,43 @@ export interface CompletionStatus {
   images: number;
 }
 
+/** A seal sub-row within a container. Existing seals keep their server `id`;
+ *  new seals get a client-only `_key`. `sealType` is free-form (datalist
+ *  suggestions, not an enum) — drivers write whatever label fits. */
+export interface SealFormRow {
+  id?: number;
+  _key: string;
+  sealNumber: string;
+  sealType: string;
+  notes: string;
+}
+
 /** A container row being edited in the trip form. Existing rows keep their
  *  server `id`; new rows get a client-only `_key`. Owned by the form state so
  *  the unified "Lưu cập nhật" submit can persist containers alongside the
- *  trip figures (the per-card save button was removed). */
+ *  trip figures (the per-card save button was removed).
+ *
+ *  Phase 3: each row carries a `seals[]` sub-list (customs seal, carrier
+ *  seal, …) and per-type photo galleries (`photoKeys`). The legacy
+ *  `sealNumber` scalar is kept for back-compat but is now DERIVED from
+ *  `seals[0]?.sealNumber` — it is kept in sync by every mutation that touches
+ *  `seals`. New edits go through the seal sub-list, never the scalar. */
 export interface ContainerFormRow {
   id?: number;
   _key: string;
   containerTypeId: number | '';
   containerNumber: string;
+  /** @deprecated Derived from `seals[0]?.sealNumber ?? ''`. Kept in sync by
+   *  every mutation that touches `seals`. Source of truth is `seals[]`. */
   sealNumber: string;
   cargoWeightKg: string;
   notes: string;
+  seals: SealFormRow[];
+  /** Server-persisted photo keys per type (bare storage keys from the
+   *  containers API) PLUS in-flight `blob:` previews for create-mode / unsaved
+   *  rows. `photoSrc()` renders both. A `blob:` prefix marks a photo as
+   *  pending flush ("chưa lưu"). */
+  photoKeys: { cont: string[]; seal: string[] };
 }
 
 export interface TripFormStateParams {

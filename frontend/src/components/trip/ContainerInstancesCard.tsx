@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2, Camera, ImageOff } from 'lucide-react';
+import { Loader2, Plus, Trash2, Camera, ImageOff, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
 import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
-import type { ContainerFormRow } from '../../hooks/useTripFormState';
+import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import { PhotoViewer } from '../PhotoViewer';
 import {
@@ -20,7 +20,8 @@ import {
 /**
  * Card section embedded in `TripEditPage` / `TripCreatePage` that lets the
  * accountant or manager manage the per-container instances for a trip:
- * container number, seal number, container type, and cargo weight.
+ * container number, a list of seals (customs, carrier, …), container type,
+ * cargo weight, notes, and per-type photo galleries (cont / seal).
  *
  * The row state is owned by the form (`containerRows` in `useTripFormState`)
  * and saved by the unified "Lưu cập nhật" submit alongside the trip figures —
@@ -28,12 +29,18 @@ import {
  * standalone save desynced the trip `version` cache and caused false 409s on
  * the next figures save.) This card is purely the editor.
  *
- * Each container row also has a "Số cont" / "Số seal" photo capture button:
- * tapping it opens `ContainerScanner`, the captured frame is OCR'd via
- * `POST /api/ocr` (which persists the photo at trip level in `trip_photos`),
- * and the recognized number fills THAT row for review — mirroring the driver
- * flow in `DriverContainerCard`. Numbers are never auto-committed: the user
- * still presses "Lưu cập nhật" to persist them.
+ * Each container row has two "Số cont" / "Số seal" photo capture buttons: one
+ * targets CONTAINER photos (fills `containerNumber`), the other targets SEAL
+ * photos (appends a new seal sub-row). Tapping opens `ContainerScanner`; the
+ * captured frame is OCR'd via `POST /api/ocr`. When both `trip_id` and
+ * `container_id` are present (edit mode, saved row) the photo persists
+ * directly. When the row has no id yet (create mode, or an unsaved new row)
+ * the file is buffered in RAM and flushed after the unified save assigns ids.
+ * Numbers are never auto-committed: the user still presses "Lưu cập nhật".
+ *
+ * The side-panel trip-level `ocrResult` broadcast (from the standalone photo
+ * card) still fills the first empty containerNumber / appends a seal — kept
+ * for parity with the driver flow.
  */
 
 interface ContainerType {
@@ -46,16 +53,8 @@ interface ContainerType {
  *  unified "Lưu cập nhật" submit share one shape. */
 type ContainerRow = ContainerFormRow;
 
-/** Shape returned by `POST /api/ocr` (photo persist + Gemini recognition). */
-interface OcrResponse {
-  ok: boolean;
-  containerNumbers?: string[];
-  sealNumber?: string | null;
-  photoUrl?: string;
-  error?: string | null;
-}
-
-/** Container instance as returned by the trips API. */
+/** Container instance as returned by the trips API (Phase 2 includes
+ *  `seals[]` and `photos[]` sub-collections). */
 interface ServerContainer {
   id: number;
   containerTypeId?: number | null;
@@ -63,6 +62,8 @@ interface ServerContainer {
   sealNumber?: string | null;
   cargoWeightKg?: string | number | null;
   notes?: string | null;
+  seals?: Array<{ id: number; sealNumber: string; sealType?: string | null; notes?: string | null }>;
+  photos?: Array<{ id: number; type: 'CONTAINER' | 'SEAL'; storageKey: string; uploadedAt: string }>;
 }
 
 interface Props {
@@ -84,7 +85,17 @@ function emptyRow(): ContainerRow {
     sealNumber: '',
     cargoWeightKg: '',
     notes: '',
+    seals: [],
+    photoKeys: { cont: [], seal: [] },
   };
+}
+
+function sealKey() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function emptySeal(): SealFormRow {
+  return { _key: sealKey(), sealNumber: '', sealType: '', notes: '' };
 }
 
 type ContainerCheckStatus = {
@@ -119,24 +130,25 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   const { toast } = useToast();
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
-  const { ocrResult, containerRows: rows, setContainerRows: setRows } = useTripFormContext();
+  const { ocrResult, containerRows: rows, setContainerRows: setRows,
+    uploadContainerPhoto, revokeRowPhotos } = useTripFormContext();
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
 
   // Per-container photo capture. `scanner` holds the row + type awaiting a
   // capture; `uploading` is keyed by row `_key` + cont/seal so each button
-  // spins independently (a shared flag would spin every row — see S3251);
-  // `thumbs` caches the latest captured/persisted photo URL per row + type.
+  // spins independently; `lightbox` is scoped per row + type so cont and
+  // seal galleries don't cross-pollinate.
   const [scanner, setScanner] = useState<{ rowKey: string; type: 'CONTAINER' | 'SEAL' } | null>(null);
   const [uploading, setUploading] = useState<Record<string, { cont: boolean; seal: boolean }>>({});
-  const [thumbs, setThumbs] = useState<Record<string, { cont: string | null; seal: string | null }>>({});
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{ rowKey: string; type: 'CONTAINER' | 'SEAL'; urls: string[]; index: number } | null>(null);
 
-  // OCR results are broadcast from the photo uploader (container/seal zone)
-  // through the trip-form context. Fill recognized numbers into the first
-  // empty cell — never overwriting a value the user already entered. Each
-  // upload carries a fresh `nonce`; the ref guard prevents double-filling
-  // (incl. React 18 StrictMode's dev double-invoke).
+  // OCR results are broadcast from the side-panel photo uploader through the
+  // trip-form context. Fill recognized container numbers into the first empty
+  // cell and append a new seal for a recognized seal number — never
+  // overwriting values the user already entered. Each upload carries a fresh
+  // `nonce`; the ref guard prevents double-filling (incl. React 18
+  // StrictMode's dev double-invoke).
   const consumedNonceRef = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!ocrResult) return;
@@ -149,20 +161,29 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
 
     setRows(prev => {
       const next = prev.map(r => ({ ...r }));
-      const fillEmpty = (field: 'containerNumber' | 'sealNumber', values: string[]) => {
-        for (const value of values) {
-          let slot = next.find(r => !r[field].trim());
-          if (!slot) {
-            slot = emptyRow();
-            next.push(slot);
-          }
-          slot[field] = value;
+      // Fill the first empty containerNumber cell for each recognized number;
+      // if there are no rows or no empty slots, push a fresh row.
+      for (const value of ocrResult.containerNumbers) {
+        let slot = next.find(r => !r.containerNumber.trim());
+        if (!slot) {
+          slot = emptyRow();
+          next.push(slot);
         }
-      };
-      // Extraction is type-specific: a CONTAINER photo yields only container
-      // numbers, a SEAL photo only the seal. Fill whichever the broadcast carries.
-      fillEmpty('containerNumber', ocrResult.containerNumbers);
-      if (hasSeal) fillEmpty('sealNumber', [ocrResult.sealNumber!]);
+        slot.containerNumber = value;
+      }
+      // Append a new seal sub-row to the first container (or push a new
+      // container first) — deduped by case-insensitive seal number.
+      if (hasSeal) {
+        const sn = ocrResult.sealNumber!;
+        if (!next.length) next.push(emptyRow());
+        const target = next[0];
+        const dupe = target.seals.some(sl => sl.sealNumber.trim().toUpperCase() === sn.toUpperCase());
+        if (!dupe) {
+          const newSeal = { ...emptySeal(), sealNumber: sn.toUpperCase() };
+          target.seals = [...target.seals, newSeal];
+          target.sealNumber = target.seals[0]?.sealNumber ?? '';
+        }
+      }
       return next;
     });
     toast({ kind: 'info', message: 'Đã nhận diện số cont/seal — xem lại trước khi lưu.' });
@@ -175,43 +196,69 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Existing container instances for this trip. Also carries the trip's latest
-  // cont/seal photo keys (trip-level storage) so persisted photos can render.
-  const { data: existing, isLoading } = useQuery<{ items: ServerContainer[]; contPhotoKey?: string | null; sealPhotoKey?: string | null }>({
+  // Existing container instances for this trip. Phase 2 also returns per-type
+  // photo keys but we ignore the trip-level keys — photos now live in
+  // `c.photos[]` and render from `row.photoKeys` once seeded.
+  const { data: existing, isLoading } = useQuery<{
+    items: ServerContainer[];
+    contPhotoKey?: string | null;
+    sealPhotoKey?: string | null;
+    contPhotoKeys?: string[];
+    sealPhotoKeys?: string[];
+  }>({
     queryKey: qk.tripForm.tripContainers(tripId),
     queryFn: () => api.get(`/trips/${tripId}/containers`),
     enabled: !!tripId,
   });
 
   // Seed the local rows from the server data once per trip. After the unified
-  // save invalidates this query, `seededTripRef` is reset (see handleSubmit in
-  // useTripFormDispatch) so the next refetch re-seeds the saved rows.
+  // save invalidates this query, `seededTripRef` is reset so the next refetch
+  // re-seeds the saved rows.
   useEffect(() => {
     if (!existing) return;
-    // Skip if we've already seeded for this trip and it hasn't changed.
     if (seededTripRef.current === tripId) return;
     seededTripRef.current = tripId;
-    const fromServer: ContainerRow[] = (existing.items || []).map((c) => ({
-      id: c.id,
-      _key: rowKey(),
-      containerTypeId: c.containerTypeId ?? '',
-      containerNumber: c.containerNumber ?? '',
-      sealNumber: c.sealNumber ?? '',
-      cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : '',
-      notes: c.notes ?? '',
-    }));
+    const fromServer: ContainerRow[] = (existing.items || []).map((c) => {
+      // Phase 2 server rows may carry `seals[]` (preferred) or a legacy
+      // `sealNumber` scalar — migrate the scalar into a single seal so the
+      // editor works the same for old + new data.
+      let seals: SealFormRow[];
+      if (c.seals && c.seals.length > 0) {
+        seals = c.seals.map(sl => ({
+          id: sl.id,
+          _key: sealKey(),
+          sealNumber: sl.sealNumber,
+          sealType: sl.sealType ?? '',
+          notes: sl.notes ?? '',
+        }));
+      } else if (c.sealNumber) {
+        seals = [{ _key: sealKey(), sealNumber: c.sealNumber, sealType: '', notes: '' }];
+      } else {
+        seals = [];
+      }
+      const photos = c.photos ?? [];
+      const photoKeys = {
+        cont: photos.filter(p => p.type === 'CONTAINER').map(p => p.storageKey),
+        seal: photos.filter(p => p.type === 'SEAL').map(p => p.storageKey),
+      };
+      return {
+        id: c.id,
+        _key: rowKey(),
+        containerTypeId: c.containerTypeId ?? '',
+        containerNumber: c.containerNumber ?? '',
+        // Deprecated scalar — kept in sync with seals[0] for back-compat.
+        sealNumber: seals[0]?.sealNumber ?? '',
+        cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : '',
+        notes: c.notes ?? '',
+        seals,
+        photoKeys,
+      };
+    });
     // Top up empty rows to match the expected container count.
     while (fromServer.length < expectedCount) {
       fromServer.push(emptyRow());
     }
     setRows(fromServer);
-    // Seed the trip's latest cont/seal photos onto the first row. Photos are
-    // stored at trip level (trip_photos), so they belong to the whole trip;
-    // row 1 is the natural home for the common single-container case.
-    const firstKey = fromServer[0]?._key;
-    if (firstKey) {
-      setThumbs({ [firstKey]: { cont: existing.contPhotoKey ?? null, seal: existing.sealPhotoKey ?? null } });
-    }
   }, [existing, expectedCount, tripId, setRows]);
 
   const updateRow = (key: string, field: keyof ContainerRow, value: string | number) => {
@@ -221,13 +268,46 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   const addRow = () => setRows(prev => [...prev, emptyRow()]);
 
   const removeRow = (key: string) => {
+    // Free any buffered blob: URLs for this row (they'd never resolve
+    // because the row's id is going away).
+    revokeRowPhotos(key);
     setRows(prev => prev.filter(r => r._key !== key));
   };
 
-  /** Scanner captured a frame → run OCR → fill the originating row + thumbnail. */
+  const addSeal = (rowKeyValue: string) => {
+    setRows(prev => prev.map(r => (
+      r._key === rowKeyValue ? { ...r, seals: [...r.seals, emptySeal()] } : r
+    )));
+  };
+
+  const updateSeal = (
+    rowKeyValue: string,
+    sealKeyValue: string,
+    field: 'sealNumber' | 'sealType' | 'notes',
+    value: string,
+  ) => {
+    setRows(prev => prev.map(r => {
+      if (r._key !== rowKeyValue) return r;
+      const seals = r.seals.map(sl => sl._key === sealKeyValue ? { ...sl, [field]: value } : sl);
+      // Keep the deprecated sealNumber scalar synced to seals[0].
+      return { ...r, seals, sealNumber: seals[0]?.sealNumber ?? '' };
+    }));
+  };
+
+  const removeSeal = (rowKeyValue: string, sealKeyValue: string) => {
+    setRows(prev => prev.map(r => {
+      if (r._key !== rowKeyValue) return r;
+      const seals = r.seals.filter(sl => sl._key !== sealKeyValue);
+      return { ...r, seals, sealNumber: seals[0]?.sealNumber ?? '' };
+    }));
+  };
+
+  /** Scanner captured a frame → run OCR → fill the originating row + photo gallery. */
   const handleCapture = async (dataUrl: string) => {
     const target = scanner;
     if (!target) return;
+    const row = rows.find(r => r._key === target.rowKey);
+    if (!row) { setScanner(null); return; }
     const field = target.type === 'CONTAINER' ? 'cont' : 'seal';
     // Close the camera overlay immediately; OCR runs in the background and
     // writes back into the row when it resolves.
@@ -237,13 +317,17 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
       [target.rowKey]: { ...(prev[target.rowKey] ?? { cont: false, seal: false }), [field]: true },
     }));
     try {
-      const formData = new FormData();
-      formData.append('file', dataUrlToFile(dataUrl));
-      formData.append('type', target.type);
-      formData.append('trip_id', String(tripId));
-      const result = await api.upload('/ocr', formData) as OcrResponse;
+      const file = dataUrlToFile(dataUrl);
+      const { url, ocrResult: ocr, pending } = await uploadContainerPhoto(
+        file, tripId, target.rowKey, target.type, row.id,
+      );
+      // Append the photo to this row's gallery (server URL or blob: preview).
+      setRows(prev => prev.map(r => r._key === target.rowKey
+        ? { ...r, photoKeys: { ...r.photoKeys, [field]: [...r.photoKeys[field], url] } }
+        : r));
+      // Row-scoped OCR fill.
       if (target.type === 'CONTAINER') {
-        const cn = result.containerNumbers?.[0];
+        const cn = ocr.containerNumbers?.[0];
         if (cn) updateRow(target.rowKey, 'containerNumber', cn.toUpperCase());
         toast({
           kind: cn ? 'info' : 'error',
@@ -252,8 +336,17 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
             : 'Không thấy số cont trong ảnh, nhập tay hoặc chụp lại.',
         });
       } else {
-        const sn = result.sealNumber ?? null;
-        if (sn) updateRow(target.rowKey, 'sealNumber', sn.toUpperCase());
+        const sn = ocr.sealNumber ?? null;
+        if (sn) {
+          setRows(prev => prev.map(r => {
+            if (r._key !== target.rowKey) return r;
+            const dupe = r.seals.some(sl => sl.sealNumber.trim().toUpperCase() === sn.toUpperCase());
+            if (dupe) return r;
+            const newSeal = { ...emptySeal(), sealNumber: sn.toUpperCase() };
+            const seals = [...r.seals, newSeal];
+            return { ...r, seals, sealNumber: seals[0]?.sealNumber ?? '' };
+          }));
+        }
         toast({
           kind: sn ? 'info' : 'error',
           message: sn
@@ -261,12 +354,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
             : 'Không thấy số seal trong ảnh, nhập tay hoặc chụp lại.',
         });
       }
-      if (result.photoUrl) {
-        setThumbs(prev => ({
-          ...prev,
-          [target.rowKey]: { ...(prev[target.rowKey] ?? { cont: null, seal: null }), [field]: result.photoUrl! },
-        }));
-      }
+      if (ocr.error) toast({ kind: 'info', message: ocr.error });
+      // `pending` is implicit: blob: URLs render with a "chưa lưu" badge.
+      void pending;
     } catch {
       toast({ kind: 'error', message: 'Lỗi tải ảnh lên — thử lại.' });
     } finally {
@@ -362,18 +452,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
-                    Số seal
-                  </label>
-                  <input
-                    className="input"
-                    style={{ width: '100%' }}
-                    placeholder="VD: AB123456"
-                    value={row.sealNumber}
-                    onChange={e => updateRow(row._key, 'sealNumber', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
                     Loại cont
                   </label>
                   <select
@@ -403,44 +481,168 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
                     max={99999999.99}
                   />
                 </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                    Ghi chú
+                  </label>
+                  <input
+                    className="input"
+                    style={{ width: '100%' }}
+                    placeholder="Ghi chú cont (tuỳ chọn)"
+                    value={row.notes}
+                    onChange={e => updateRow(row._key, 'notes', e.target.value)}
+                  />
+                </div>
               </div>
 
-              {/* Per-row photo capture: OCR a cont/seal photo and fill THIS row. */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                {(['CONTAINER', 'SEAL'] as const).map(pType => {
-                  const field = pType === 'CONTAINER' ? 'cont' : 'seal';
-                  const thumb = thumbs[row._key]?.[field] ?? null;
-                  const busy = uploading[row._key]?.[field] ?? false;
-                  return (
-                    <div key={pType} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Per-type photo galleries (cont + seal) — each captures
+                  against THIS row only (the originating row's id, when known). */}
+              {(['CONTAINER', 'SEAL'] as const).map(pType => {
+                const field = pType === 'CONTAINER' ? 'cont' : 'seal';
+                const urls = row.photoKeys[field];
+                const busy = uploading[row._key]?.[field] ?? false;
+                return (
+                  <div key={pType} style={{ marginTop: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)' }}>
+                        {pType === 'CONTAINER' ? 'Ảnh cont' : 'Ảnh seal'} ({urls.length})
+                      </span>
                       <button
                         type="button"
                         className="btn btn--ghost btn--sm"
-                        style={{ minHeight: 34 }}
+                        style={{ minHeight: 30 }}
                         disabled={busy}
                         onClick={() => setScanner({ rowKey: row._key, type: pType })}
                       >
                         {busy ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}
-                        {pType === 'CONTAINER' ? 'Số cont' : 'Số seal'}
+                        {pType === 'CONTAINER' ? 'Chụp cont' : 'Chụp seal'}
                       </button>
-                      {thumb ? (
-                        <img
-                          src={photoSrc(thumb)}
-                          alt={`Ảnh ${field}`}
-                          onClick={() => setLightbox({ urls: [photoSrc(thumb)], index: 0 })}
-                          style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', cursor: 'pointer', border: '1px solid var(--line)' }}
-                        />
-                      ) : (
-                        <div
-                          style={{ width: 40, height: 40, borderRadius: 6, border: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)' }}
-                          aria-label={`Chưa có ảnh ${field}`}
-                        >
-                          <ImageOff size={14} />
-                        </div>
-                      )}
                     </div>
-                  );
-                })}
+                    {urls.length === 0 ? (
+                      <div
+                        style={{
+                          width: 44, height: 44, borderRadius: 6,
+                          border: '1px dashed var(--line)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'var(--fg-3)',
+                        }}
+                        aria-label={`Chưa có ảnh ${field}`}
+                      >
+                        <ImageOff size={14} />
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {urls.map((u, uIdx) => {
+                          const isPending = u.startsWith('blob:');
+                          return (
+                            <div key={`${u}-${uIdx}`} style={{ position: 'relative' }}>
+                              <img
+                                src={photoSrc(u)}
+                                alt={`Ảnh ${field} ${uIdx + 1}`}
+                                onClick={() => setLightbox({
+                                  rowKey: row._key,
+                                  type: pType,
+                                  urls: row.photoKeys[field].map(photoSrc),
+                                  index: uIdx,
+                                })}
+                                style={{
+                                  width: 44, height: 44, borderRadius: 6, objectFit: 'cover',
+                                  cursor: 'pointer', border: '1px solid var(--line)',
+                                }}
+                              />
+                              {isPending && (
+                                <span
+                                  title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật"
+                                  style={{
+                                    position: 'absolute', top: -4, right: -4,
+                                    background: 'var(--warn, #b7791f)',
+                                    color: '#fff',
+                                    fontSize: 9, fontWeight: 600,
+                                    padding: '1px 4px', borderRadius: 4,
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  chưa lưu
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Seals sub-list: customs, carrier, … — multiple per container. */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)' }}>
+                    Seal ({row.seals.length})
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    style={{ minHeight: 30 }}
+                    onClick={() => addSeal(row._key)}
+                  >
+                    <Plus size={14} /> Thêm seal
+                  </button>
+                </div>
+                {row.seals.length === 0 ? (
+                  <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Chưa có seal nào.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {row.seals.map((sl, sIdx) => (
+                      <div
+                        key={sl._key}
+                        style={{
+                          display: 'flex', flexWrap: 'wrap', gap: 6,
+                          alignItems: 'center',
+                          padding: 6, borderRadius: 6,
+                          border: '1px solid var(--line)',
+                          background: 'var(--bg-1, #fff)',
+                        }}
+                      >
+                        <span style={{ fontSize: 11, color: 'var(--fg-3)', minWidth: 36 }}>
+                          #{sIdx + 1}
+                        </span>
+                        <input
+                          className="input"
+                          style={{ width: 110 }}
+                          list="seal-types"
+                          placeholder="Loại seal"
+                          value={sl.sealType}
+                          onChange={e => updateSeal(row._key, sl._key, 'sealType', e.target.value)}
+                        />
+                        <input
+                          className="input"
+                          style={{ width: 160 }}
+                          placeholder="Số seal"
+                          value={sl.sealNumber}
+                          onChange={e => updateSeal(row._key, sl._key, 'sealNumber', e.target.value.toUpperCase())}
+                        />
+                        <input
+                          className="input"
+                          style={{ width: 180, flex: 1, minWidth: 120 }}
+                          placeholder="Ghi chú (tuỳ chọn)"
+                          value={sl.notes}
+                          onChange={e => updateSeal(row._key, sl._key, 'notes', e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--icon btn--sm"
+                          style={{ minWidth: 32, minHeight: 32 }}
+                          onClick={() => removeSeal(row._key, sl._key)}
+                          aria-label="Xoá seal"
+                          title="Xoá seal"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -470,6 +672,17 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
           onClose={() => setLightbox(null)}
         />
       )}
+
+      {/* Shared datalist for sealType — defined once at the bottom of the
+          component tree so the per-row <input list="seal-types"> references
+          resolve. Free-form; values are suggestions, not an enum. */}
+      <datalist id="seal-types">
+        <option value="Customs" />
+        <option value="Carrier" />
+        <option value="Truck" />
+        <option value="Viettel" />
+        <option value="Bản in" />
+      </datalist>
     </div>
   );
 }

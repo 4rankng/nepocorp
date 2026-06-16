@@ -22,9 +22,9 @@ import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
 import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
-import type { OcrResultHandler, UploadingState } from './useTripFormPhotos';
+import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
-import type { ContainerFormRow } from './useTripFormState';
+import type { ContainerFormRow, SealFormRow } from './useTripFormState';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
 const LOADED_RATE = FUEL_LOADED_NORM_FALLBACK;
@@ -33,6 +33,19 @@ const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
 function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
 }
+
+/** Shape returned by PUT /api/trips/:id/containers — same as Phase 2
+ *  `TripContainer` with the new `seals[]` and `photos[]` sub-collections. */
+type ServerContainerAfterSave = {
+  id: number;
+  containerTypeId?: number | null;
+  containerNumber?: string | null;
+  sealNumber?: string | null;
+  cargoWeightKg?: string | number | null;
+  notes?: string | null;
+  seals?: Array<{ id: number; sealNumber: string; sealType?: string | null; notes?: string | null }>;
+  photos?: Array<{ id: number; type: 'CONTAINER' | 'SEAL'; storageKey: string; uploadedAt: string }>;
+};
 
 /** OCR recognition result broadcast to container-aware components (e.g. the
  *  container instances card) via the trip-form context. `nonce` lets consumers
@@ -59,6 +72,8 @@ export interface UseTripFormDispatchReturn {
   photoUrls: string[];
   uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
   removePhoto: (idx: number) => void;
+  uploadContainerPhoto: (file: File, tripId: number | undefined, rowKey: string, type: 'CONTAINER' | 'SEAL', containerId?: number) => Promise<ContainerPhotoUploadResult>;
+  revokeRowPhotos: (rowKey: string) => void;
   suggestedPrice: number | null;
   estimatedFuelCost: number;
   estimatedTollCost: number;
@@ -104,7 +119,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   }, [s.revenueEmptyReturn, s.revenueCombine]);
 
   const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
-  const { photoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos } = useTripFormPhotos(s.setError, onOcrResult);
+  const { photoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos,
+    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos } = useTripFormPhotos(s.setError, onOcrResult);
 
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
@@ -484,10 +500,22 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // figures are written (avoids partial saves + a confusing backend
         // error). Mirrors the old per-card validation.
         for (const r of s.containerRows) {
-          const hasAny = r.containerNumber.trim() || r.sealNumber.trim() || r.cargoWeightKg || r.containerTypeId;
+          const hasAny =
+            r.containerNumber.trim() ||
+            r.seals.some(sl => sl.sealNumber.trim()) ||
+            r.cargoWeightKg ||
+            r.containerTypeId;
           if (hasAny && !r.containerNumber.trim()) {
             s.setError('Mỗi cont phải có Số container. Xoá dòng trống nếu chưa nhập.');
             return;
+          }
+          // No half-filled seal rows: if any seal field is present, the number is required.
+          for (const sl of r.seals) {
+            const hasPartial = sl.sealNumber.trim() || sl.sealType.trim() || sl.notes.trim();
+            if (hasPartial && !sl.sealNumber.trim()) {
+              s.setError('Mỗi seal phải có số seal. Xoá seal trống nếu chưa nhập.');
+              return;
+            }
           }
         }
 
@@ -496,23 +524,40 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // reconcile: insert/update by id, delete rows not in the list.
         const saveContainers = async (id: number) => {
           const containers = s.containerRows
-            .filter(r => r.containerNumber.trim() || r.sealNumber.trim() || r.cargoWeightKg || r.containerTypeId)
+            .filter(r =>
+              r.containerNumber.trim() ||
+              r.seals.some(sl => sl.sealNumber.trim()) ||
+              r.cargoWeightKg ||
+              r.containerTypeId,
+            )
             .map(r => ({
               id: r.id,
               containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
               containerNumber: r.containerNumber.trim(),
-              sealNumber: r.sealNumber.trim() || null,
+              // seals[] is the source of truth; backend mirrors seals[0] into legacy sealNumber.
+              seals: r.seals
+                .filter(sl => sl.sealNumber.trim())
+                .map(sl => ({
+                  id: sl.id,
+                  sealNumber: sl.sealNumber.trim(),
+                  sealType: sl.sealType.trim() || null,
+                  notes: sl.notes.trim() || null,
+                })),
               cargoWeightKg: r.cargoWeightKg === '' ? null : Number(r.cargoWeightKg),
               notes: r.notes.trim() || null,
             }));
-          const result = await api.put<{ items: Array<{ id: number; containerTypeId: number | null; containerNumber: string; sealNumber: string | null; cargoWeightKg: string | null; notes: string | null }> }>(`/trips/${id}/containers`, { containers });
+          const result = await api.put<{ items: ServerContainerAfterSave[] }>(`/trips/${id}/containers`, { containers });
           await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(id) });
-          // Re-sync local rows with the server-assigned ids so a subsequent
-          // save UPDATES instead of re-INSERTING (the reconcile keys off id).
-          // Match by containerNumber to keep each row's _key — and its
-          // in-session thumbnail — attached to the right row.
+
           const items = Array.isArray(result?.items) ? result.items : [];
           const usedKeys = new Set<string>();
+          const usedSealKeys = new Set<string>();
+          // Track `_key` per post-save item so the flush below can build a
+          // map from pre-save `_key` → server-assigned container id (needed
+          // for create mode where pre-save ids are all undefined).
+          const itemToKey: Array<{ key: string; containerId: number }> = [];
+          // Match containers by containerNumber (preserve _key + its buffered photos).
+          // Match seals within each container by sealNumber (preserve seal _key).
           s.setContainerRows(items.map((c): ContainerFormRow => {
             const match = s.containerRows.find(r =>
               !usedKeys.has(r._key) &&
@@ -521,16 +566,80 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             );
             const _key = match?._key ?? Math.random().toString(36).slice(2, 9);
             if (match) usedKeys.add(_key);
+            itemToKey.push({ key: _key, containerId: c.id });
+            // Build seals, matching by sealNumber to preserve client _key.
+            const serverSeals = c.seals ?? [];
+            const seals: SealFormRow[] = serverSeals.map((sl): SealFormRow => {
+              const matchedSeal = match?.seals.find(x =>
+                !usedSealKeys.has(x._key) &&
+                x.sealNumber.trim().toUpperCase() === (sl.sealNumber ?? '').toUpperCase(),
+              );
+              const sealKey = matchedSeal?._key ?? Math.random().toString(36).slice(2, 9);
+              if (matchedSeal) usedSealKeys.add(sealKey);
+              return {
+                id: sl.id,
+                _key: sealKey,
+                sealNumber: sl.sealNumber ?? '',
+                sealType: sl.sealType ?? '',
+                notes: sl.notes ?? '',
+              };
+            });
+            // Group server photos by type into photoKeys, then carry over any
+            // `blob:` previews that were captured before this row was saved.
+            // The pre-save `match.photoKeys` still has them (form state is
+            // closure-captured at handleSubmit time). Carry-over is safe
+            // because `revokeRowPhotos` already removed deleted rows' pending
+            // entries from the buffer — so a blob here is still buffered and
+            // will be flushed below. Without this, the subsequent swap would
+            // miss (post-save rows only have server keys, not the blob keys
+            // the swap map uses as lookup keys).
+            const photos = c.photos ?? [];
+            const pendingBlobsCont = (match?.photoKeys.cont ?? []).filter(u => u.startsWith('blob:'));
+            const pendingBlobsSeal = (match?.photoKeys.seal ?? []).filter(u => u.startsWith('blob:'));
+            const photoKeys = {
+              cont: [
+                ...photos.filter(p => p.type === 'CONTAINER').map(p => p.storageKey),
+                ...pendingBlobsCont,
+              ],
+              seal: [
+                ...photos.filter(p => p.type === 'SEAL').map(p => p.storageKey),
+                ...pendingBlobsSeal,
+              ],
+            };
             return {
               id: c.id,
               _key,
               containerTypeId: c.containerTypeId ?? '',
               containerNumber: c.containerNumber ?? '',
-              sealNumber: c.sealNumber ?? '',
-              cargoWeightKg: c.cargoWeightKg ?? '',
+              sealNumber: seals[0]?.sealNumber ?? '',
+              cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : '',
               notes: c.notes ?? '',
+              seals,
+              photoKeys,
             };
           }));
+
+          // Flush per-container photos captured before the row had an id.
+          // Build the map from the post-save items (which carry the new
+          // server-assigned ids) — using the pre-save `s.containerRows`
+          // snapshot would miss ids in create mode (where pre-save ids are
+          // all undefined).
+          const rowKeyToContainerId = new Map<string, number>();
+          for (const { key, containerId } of itemToKey) {
+            rowKeyToContainerId.set(key, containerId);
+          }
+          if (rowKeyToContainerId.size > 0) {
+            const swaps = await flushPendingContainerPhotos(id, rowKeyToContainerId);
+            if (swaps.size > 0) {
+              s.setContainerRows(prev => prev.map(r => ({
+                ...r,
+                photoKeys: {
+                  cont: r.photoKeys.cont.map(u => swaps.get(u) ?? u),
+                  seal: r.photoKeys.seal.map(u => swaps.get(u) ?? u),
+                },
+              })));
+            }
+          }
         };
 
         if (isEditMode && existingTrip) {
@@ -735,6 +844,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       s.customerCommission, s.tripWageDays,
       s.revenue, s.revenueEmptyReturn, s.revenueCombine, s.notes, photoUrls,
       flushPendingPhotos,
+      flushPendingContainerPhotos,
       s.carrierType, s.vatRate, s.externalCarrierId, s.externalFreightCost,
       s.externalPlateNumber, s.externalDriverName, s.externalDriverPhone,
       queryClient,
@@ -744,6 +854,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   return {
     legs, addLeg, removeLeg, updateLeg,
     photoUrls, uploading, uploadPhotos, removePhoto,
+    uploadContainerPhoto, revokeRowPhotos,
     ocrResult,
     suggestedPrice,
     estimatedFuelCost,
