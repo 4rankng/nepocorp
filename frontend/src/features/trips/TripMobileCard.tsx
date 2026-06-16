@@ -10,6 +10,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
+  getTripDistance,
 } from './tripHelpers';
 
 const formatMoney = (n: number): string =>
@@ -27,7 +28,7 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
   const isCanceled = trip.status === TripStatus.CANCELED;
   const isCreated = trip.status === TripStatus.CREATED;
   const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
-  const km = Number(trip.route?.distanceKm ?? 0);
+  const km = getTripDistance(trip);
   const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
   const revenue = Number(trip.revenue ?? 0);
   const missingIndicators = getMissingIndicators(trip);

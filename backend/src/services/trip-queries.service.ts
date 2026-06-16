@@ -204,9 +204,22 @@ export async function getTrips(filters: TripListFilters) {
     }
   }
 
+  // Batch-load legs for the trips on this page to calculate correct distance and fuel average in list views
+  const legsByTrip = new Map<number, Array<typeof s.tripLegs.$inferSelect>>();
+  if (tripIds.length > 0) {
+    const legRows = await db.select().from(s.tripLegs)
+      .where(inArray(s.tripLegs.tripId, tripIds))
+      .orderBy(s.tripLegs.sequence);
+    for (const row of legRows) {
+      const list = legsByTrip.get(row.tripId) || [];
+      list.push(row);
+      legsByTrip.set(row.tripId, list);
+    }
+  }
+
   return {
     items: items.map((item) => ({
-      ...shapeTripRelations(item),
+      ...shapeTripRelations(item, { legs: legsByTrip.get(item.id) ?? [] }),
       containers: containersByTrip.get(item.id) ?? [],
     })),
     total: Number(countRow?.count ?? 0),
@@ -242,7 +255,7 @@ export async function getTripsSummary(dateFrom?: string, dateTo?: string): Promi
     completed: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
     locked: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
     canceled: sql<number>`count(*) filter (where ${s.trips.status} = 'CANCELED')`,
-    totalKm: sql<number>`coalesce(sum(${s.routes.distanceKm}), 0)`,
+    totalKm: sql<number>`coalesce(sum(coalesce((SELECT sum(${s.tripLegs.km}) FROM ${s.tripLegs} WHERE ${s.tripLegs.tripId} = ${s.trips.id}), ${s.routes.distanceKm})), 0)`,
     totalFuel: sql<number>`coalesce(sum(${s.trips.fuelLiters}), 0)`,
     totalRoad: sql<number>`coalesce(sum(${s.trips.totalRoadAllowance}), 0)`,
     totalRevenue: sql<number>`coalesce(sum(${s.trips.revenue}), 0)`,

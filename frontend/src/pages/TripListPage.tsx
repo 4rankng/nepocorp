@@ -36,6 +36,7 @@ import {
   TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts,
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
   type StatusFilter, type StatusCounts,
+  getTripDistance,
 } from '../features/trips';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './TripListPage.css';
@@ -198,7 +199,7 @@ export default function TripListPage() {
         t.route?.name ?? '',
         t.truck?.licensePlate ?? '',
         t.departureDate ?? '',
-        Number(t.route?.distanceKm ?? 0) || '',
+        getTripDistance(t) || '',
         typeCodes, numbers,
         t.fuelLiters ?? '',
         t.fuelSupplier?.name ?? '',

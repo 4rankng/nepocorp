@@ -1,6 +1,6 @@
 import { TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
 import { downloadCSV } from '../../lib/csv';
-import { buildTripCode, type TripListRow } from './tripHelpers';
+import { buildTripCode, type TripListRow, getTripDistance } from './tripHelpers';
 
 export type TripExportFilters = {
   status?: string;
@@ -52,7 +52,7 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
       t.route?.name ?? '',
       t.truck?.licensePlate ?? '',
       t.departureDate ?? '',
-      Number(t.route?.distanceKm ?? 0) || '',
+      getTripDistance(t) || '',
       typeCodes,
       numbers,
       t.fuelLiters ?? '',

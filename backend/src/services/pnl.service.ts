@@ -276,6 +276,9 @@ export async function getFuelVarianceReport(month: number, year: number) {
       departureDate: s.trips.departureDate,
       fuelLiters: s.trips.fuelLiters,
       fuelMode: s.trips.fuelMode,
+      fuelLitersOverride: s.trips.fuelLitersOverride,
+      fuelFixedAllowanceApplied: s.trips.fuelFixedAllowanceApplied,
+      fuelSupplementNormApplied: s.trips.fuelSupplementNormApplied,
       totalFuelCost: s.trips.totalFuelCost,
       truckId: s.trips.truckId,
       routeId: s.trips.routeId,
@@ -322,8 +325,21 @@ export async function getFuelVarianceReport(month: number, year: number) {
     const tripData = trips.map(t => {
       const actual = parseFloat(t.fuelLiters || '0');
       const normInfo = normByTrip.get(t.id);
-      const norm = normInfo?.normLiters ?? 0;
+      const legsNorm = normInfo?.normLiters ?? 0;
       const totalKm = normInfo?.totalKm ?? 0;
+
+      const norm = (() => {
+        if (t.fuelMode === 'FLAT_RATE') {
+          return parseFloat(t.fuelLitersOverride || '0');
+        }
+        const fixedAllowance = parseFloat(t.fuelFixedAllowanceApplied || '0');
+        if (fixedAllowance > 0) {
+          return fixedAllowance;
+        }
+        const tripSupplement = parseFloat(t.fuelSupplementNormApplied || '0');
+        return legsNorm + tripSupplement;
+      })();
+
       const variance = actual - norm;
 
       totalActual += actual;

@@ -11,6 +11,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
+  getTripDistance,
 } from './tripHelpers';
 
 const formatMoney = (n: number): string =>
@@ -89,7 +90,7 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
         const fullRoute = trip.route?.name ?? '';
-        const km = Number(trip.route?.distanceKm ?? 0);
+        const km = getTripDistance(trip);
         return (
           <div className="route-cell-flex" title={fullRoute}>
             {route ? (

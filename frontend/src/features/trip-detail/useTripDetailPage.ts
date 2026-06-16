@@ -116,7 +116,18 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     const vehicleShiftAllowance = Number(trip.vehicleShiftAllowance || 0);
     const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
     const fuelLiters = Number(trip.fuelLiters) || 0;
-    const computedLiters = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
+    const computedLiters = (() => {
+      if (trip.fuelMode === 'FLAT_RATE') {
+        return Number(trip.fuelLitersOverride || 0);
+      }
+      const fixedAllowance = Number(trip.fuelFixedAllowanceApplied || 0);
+      if (trip.route?.isMountain && fixedAllowance > 0) {
+        return fixedAllowance;
+      }
+      const legsLitersTotal = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
+      const tripSupplement = Number(trip.fuelSupplementNormApplied || 0);
+      return legsLitersTotal + tripSupplement;
+    })();
     const ttbq = totalKm > 0 && fuelLiters > 0 ? (fuelLiters / totalKm) * 100 : 0;
     const fuelVarianceLiters = fuelLiters - computedLiters;
     const fuelVarianceOver = fuelVarianceLiters > 0;

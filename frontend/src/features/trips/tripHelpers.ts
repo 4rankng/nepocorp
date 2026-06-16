@@ -43,9 +43,16 @@ export interface ConsumptionInfo {
   per100: number;
 }
 
+export function getTripDistance(trip: TripDetail): number {
+  if (trip.legs && trip.legs.length > 0) {
+    return trip.legs.reduce((sum, leg) => sum + Number(leg.km), 0);
+  }
+  return Number(trip.route?.distanceKm ?? 0);
+}
+
 export function calcConsumption(trip: TripDetail): ConsumptionInfo | null {
   const fuel = trip.fuelLiters ? Number(trip.fuelLiters) : null;
-  const distance = Number(trip.route?.distanceKm ?? 0);
+  const distance = getTripDistance(trip);
   if (!fuel || !distance) return null;
   return { liters: fuel, per100: (fuel / distance) * 100 };
 }
