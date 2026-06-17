@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
+import { eq, ne, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { computeVehicleAlerts, type VehicleAlert } from '@tingting/shared';
 
@@ -140,14 +140,16 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
  * actually drove last), then falling back to `drivers.assignedTruckId`.
  * Returns only overdue/due alerts (the helper already filters out 'ok').
  *
- * Returns `null` when no truck is resolvable so the caller can 404 cleanly
- * rather than emit an empty alerts list that looks like a bug.
+ * Returns `null` when no truck is resolvable; the route maps that to an empty
+ * alerts list (no reminders to show) rather than 404.
  */
 export async function getDriverVehicleAlerts(driverId: number): Promise<VehicleAlert[] | null> {
-  // 1. Most-recent trip's truck.
+  // 1. Most-recent trip's truck. Exclude CANCELED trips — a canceled trip was
+  // never driven, so its truck shouldn't shadow the truck the driver actually
+  // last used (a later-dated canceled trip would otherwise win on departureDate).
   const [recent] = await db.select({ truckId: s.trips.truckId })
     .from(s.trips)
-    .where(and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
+    .where(and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt), ne(s.trips.status, 'CANCELED')))
     .orderBy(desc(s.trips.departureDate))
     .limit(1);
 
@@ -169,7 +171,7 @@ export async function getDriverVehicleAlerts(driverId: number): Promise<VehicleA
     insuranceExpiryDate: s.trucks.insuranceExpiryDate,
     lastOilServiceDate: s.trucks.lastOilServiceDate,
   }).from(s.trucks)
-    .where(eq(s.trucks.id, truckId))
+    .where(and(eq(s.trucks.id, truckId), isNull(s.trucks.deletedAt)))
     .limit(1);
 
   if (!truck) return null;
