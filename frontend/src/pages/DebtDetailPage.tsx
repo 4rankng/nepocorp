@@ -92,6 +92,8 @@ export default function DebtDetailPage() {
       queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsets(customerId!) });
       queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(customerId) });
       queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
+      // V1: a debt-offset also changes AR, so refresh the Dashboard overdue KPI.
+      queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
       refetch();
     } catch (err: unknown) {
       alert((err as Error).message || 'Lỗi khi duyệt đối trừ.');
@@ -228,6 +230,11 @@ export default function DebtDetailPage() {
       });
       await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(undefined) });
       await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
+      // V1: a payment also changes AR aging + the Dashboard overdue KPI, which
+      // live under separate query keys — without these the DebtListPage hero
+      // cards and the Dashboard attention chip go stale until staleTime (2m).
+      await queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
+      await queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
       await refetch();
       setShowPay(false);
     } catch (e: unknown) {
