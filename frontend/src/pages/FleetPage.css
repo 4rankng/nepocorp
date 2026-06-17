@@ -369,3 +369,46 @@
 @media (max-width: 420px) {
   .fleet-page .fleet-two-col { grid-template-columns: 1fr; }
 } /* end 420px */
+
+/* ── N5 / A12: truck compliance & service date alert badges ──────────────────
+   Shown inside TruckFormModal next to each date field. Scoped by the
+   truck-alert-* class prefix (unique to this feature) so they don't leak;
+   the modal renders in a portal outside .fleet-page, so a class scope is
+   used instead of nesting under .fleet-page.
+   Colors reuse --danger / --warning / their -soft variants (tokens.css). */
+.truck-alert-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .truck-alert-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.truck-alert-field__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-2);
+  margin-bottom: 6px;
+}
+.truck-alert-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.truck-alert-badge--overdue {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.truck-alert-badge--due {
+  background: var(--warning-soft);
+  color: var(--warning);
+}

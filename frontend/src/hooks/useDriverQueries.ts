@@ -23,3 +23,14 @@ export function useDriverPenalties(params?: { dateFrom: string; dateTo: string }
     queryFn: () => driverClient.getPenalties(params),
   });
 }
+
+/** N5 / B4 — the driver's truck compliance/service reminders (overdue/due). */
+export function useDriverVehicleAlerts() {
+  return useQuery({
+    queryKey: qk.driver.vehicleAlerts,
+    queryFn: () => driverClient.getVehicleAlerts(),
+    // Reminders are not urgent enough to refetch frequently; stale for an hour
+    // is fine (a manager edits the dates, the driver sees them next visit).
+    staleTime: 60 * 60 * 1000,
+  });
+}

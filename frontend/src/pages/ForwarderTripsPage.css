@@ -96,3 +96,106 @@
   .ftrip-card { transition: none; }
   .hero-kpi-mini { transition: none; }
 }
+
+/* ============================================================================
+ * N4: Search + date-range filter bar and payment/approval row coloring.
+ * Row colors use design-system tokens (--success-soft / --warning-soft) and
+ * higher-specificity compound selectors (.ftrip-card.fwd-row--*) so they win
+ * over the base translucent card background without `!important`.
+ * ========================================================================== */
+
+/* ── Filter bar ── */
+.fwd-trip-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.fwd-trip-filters__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 280px;
+  min-width: 220px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-3, var(--fg-3, #6b7280));
+}
+
+.fwd-trip-filters__search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--ink, var(--fg, #111827));
+}
+
+.fwd-trip-filters__dates {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fwd-trip-filters__date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-3, var(--fg-3, #6b7280));
+}
+
+.fwd-trip-filters__date input {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  color: var(--ink, var(--fg, #111827));
+  outline: none;
+}
+
+.fwd-trip-filters__date input:focus {
+  border-color: var(--accent, #00B14F);
+}
+
+@media (max-width: 640px) {
+  .fwd-trip-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fwd-trip-filters__search {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .fwd-trip-filters__dates {
+    justify-content: space-between;
+  }
+}
+
+/* ── Row coloring by derived payment/approval status ── */
+/* paid (green tint): at least one expense on an APPROVED settlement */
+.ftrip-card.fwd-row--paid {
+  background: var(--success-soft, #E6F7EE);
+  border-color: var(--success, #00B14F);
+}
+
+/* pending (yellow tint): PENDING expense or non-APPROVED settlement */
+.ftrip-card.fwd-row--pending {
+  background: var(--warning-soft, #FFF4E0);
+  border-color: var(--warning, #F5A623);
+}
+
+/* Keep the hover lift but tint the border to match the row state */
+.ftrip-card.fwd-row--paid:hover {
+  border-color: var(--success, #00B14F);
+}
+
+.ftrip-card.fwd-row--pending:hover {
+  border-color: var(--warning, #F5A623);
+}

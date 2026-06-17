@@ -723,3 +723,45 @@
   height: 44px;
   margin-top: 0;
 }
+
+/* ─── Contact & guidance (N2 / B1.3) — read-only instructions section ─── */
+.driver-trip-detail-page .dt-section--instructions {
+  border-left: 3px solid var(--accent, #c79a3a);
+}
+
+.driver-trip-detail-page .dt-tel-link {
+  color: var(--accent, #c79a3a);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.driver-trip-detail-page .dt-tel-link:hover,
+.driver-trip-detail-page .dt-tel-link:active {
+  text-decoration: underline;
+}
+
+.driver-trip-detail-page .dt-instructions-notes {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-2, rgba(0, 0, 0, 0.03));
+  border-radius: 8px;
+}
+
+.driver-trip-detail-page .dt-instructions-notes__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-2, #555);
+  margin-bottom: 6px;
+}
+
+.driver-trip-detail-page .dt-instructions-notes__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-1, #222);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

@@ -114,12 +114,17 @@ export const qk = {
       ['driver-earnings', month, year] as const,
     penalties: (params: { dateFrom: string; dateTo: string } | undefined) =>
       ['driver-penalties', params] as const,
+    /** N5 / B4: the driver's truck compliance/service reminders. */
+    vehicleAlerts: ['driver-vehicle-alerts'],
   },
 
   /* ── Forwarder portal ──────────────────────────────────────────────── */
 
   forwarder: {
-    trips: (status?: string) => ['forwarder-trips', status] as const,
+    trips: (
+      status?: string,
+      filters?: { search?: string; dateFrom?: string; dateTo?: string },
+    ) => ['forwarder-trips', status, filters] as const,
     tripDetail: (id: number) => ['forwarder-trip-detail', id] as const,
     /** Broad prefix — matches all forwarder-trip-detail queries. */
     tripDetailAll: ['forwarder-trip-detail'] as const,

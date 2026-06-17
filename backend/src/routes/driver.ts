@@ -8,6 +8,7 @@ import {
   getDriverTripDetail,
   getDriverEarnings,
   getDriverPenalties,
+  getDriverVehicleAlerts,
 } from '../services/driver.service';
 import { createTripContainer, listTripContainers, updateTripContainer, batchUpsertContainerSeals } from '../services/forwarder.service';
 import { deleteTripPhotosByType, type TripPhotoType } from './upload';
@@ -22,6 +23,17 @@ router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
   const driver = await getDriverByUserId(getUser(req).userId);
   const items = await getDriverTrips(driver.id);
   res.json({ items });
+}));
+
+// N5 / B4 — vehicle compliance/service reminders for the driver's truck.
+// Mounted under driver_portal (DRIVER already has read), so no new Casbin line.
+// Always returns 200 with { items: [...] } — an empty list means either no
+// truck is resolvable or all dates are 'ok'. The frontend hides the reminder
+// section when items is empty.
+router.get('/vehicle-alerts', asyncHandler(async (req: Request, res: Response) => {
+  const driver = await getDriverByUserId(getUser(req).userId);
+  const alerts = await getDriverVehicleAlerts(driver.id);
+  res.json({ items: alerts ?? [] });
 }));
 
 // Trip detail (ownership-enforced)

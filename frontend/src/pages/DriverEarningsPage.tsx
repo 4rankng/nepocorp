@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader } from '../components/UI';
-import { useSalaryPeriod, useDriverEarnings, useDriverPenalties } from '../hooks/useQueries';
+import { useSalaryPeriod, useDriverEarnings, useDriverPenalties, useDriverVehicleAlerts } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import type { CounterTarget } from '../hooks/animations';
@@ -22,6 +22,11 @@ export default function DriverEarningsPage() {
   const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
   const penaltyParams = period ? { dateFrom: period.start, dateTo: period.end } : undefined;
   const { data: penaltiesData, isLoading: penaltiesLoading } = useDriverPenalties(penaltyParams);
+  // N5 / B4: truck compliance/service reminders (overdue/due). Fetched
+  // unconditionally; the section is only rendered when there's at least one
+  // non-'ok' alert, so drivers with everything in order see nothing.
+  const { data: vehicleAlertsData } = useDriverVehicleAlerts();
+  const vehicleAlerts = vehicleAlertsData?.items ?? [];
   const rawPenalties = Array.isArray(penaltiesData)
     ? penaltiesData
     : (penaltiesData && !Array.isArray(penaltiesData) && 'items' in penaltiesData ? penaltiesData.items : []);
@@ -96,6 +101,32 @@ export default function DriverEarningsPage() {
         title="Thu nhập"
         description="Tổng hợp thu nhập và khấu trừ"
       />
+
+      {/* ═══ N5 / B4 — Vehicle reminders (only when overdue/due) ═══ */}
+      {vehicleAlerts.length > 0 && (
+        <div className="vehicle-alerts-strip fade-up" role="status" aria-live="polite">
+          <div className="vehicle-alerts-strip__head">
+            <AlertTriangle size={16} />
+            <span className="vehicle-alerts-strip__title">Nhắc nhở xe</span>
+          </div>
+          <ul className="vehicle-alerts-strip__list">
+            {vehicleAlerts.map(a => (
+              <li
+                key={a.field}
+                className={`vehicle-alerts-strip__item vehicle-alerts-strip__item--${a.status}`}
+              >
+                <span className="vehicle-alerts-strip__label">{a.label}</span>
+                <span className="vehicle-alerts-strip__date">{formatDate(a.date)}</span>
+                <span className="vehicle-alerts-strip__days">
+                  {a.daysUntil < 0
+                    ? `Quá hạn ${Math.abs(a.daysUntil)} ngày`
+                    : `Còn ${a.daysUntil} ngày`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ═══ Zone 1 — Gradient Hero Card ═══ */}
       <div className={`earnings-hero-bento fade-up ${isPositive ? 'earnings-hero-bento--positive' : 'earnings-hero-bento--negative'}`}>

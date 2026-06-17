@@ -337,6 +337,20 @@
       "when": 1781669936092,
       "tag": "0047_photo_storage_key_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1781683094043,
+      "tag": "0048_cute_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1781685251288,
+      "tag": "0049_slim_terrax",
+      "breakpoints": true
     }
   ]
 }

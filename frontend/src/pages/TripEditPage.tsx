@@ -17,6 +17,7 @@ import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
+import { TripInstructionsCard } from '../components/trip/TripInstructionsCard';
 import { usePageAnimations } from '../hooks/animations';
 import type { TripOptions } from '../hooks/useTripOptions';
 import './TripForm.css';
@@ -261,6 +262,19 @@ export default function TripEditPage() {
                 </div>
                 <div className="tc-card-body">
                   <AncillaryFeesCard tripId={trip.id} />
+                </div>
+              </div>
+
+              <div className="tc-card">
+                <div className="tc-card-head">
+                  <div className="tc-card-num">8</div>
+                  <div className="tc-card-text">
+                    <div className="tc-card-title">Liên hệ &amp; hướng dẫn</div>
+                    <div className="tc-card-sub">Thông tin liên hệ và dặn dò cho lái xe (N2)</div>
+                  </div>
+                </div>
+                <div className="tc-card-body">
+                  <TripInstructionsCard tripId={trip.id} />
                 </div>
               </div>
             </div>

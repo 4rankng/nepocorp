@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Truck, Calendar, ArrowRight, Loader2, Package } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
@@ -8,6 +8,7 @@ import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useDebouncedValue } from '../design-system';
 import './ForwarderTripsPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -21,13 +22,39 @@ interface TripSummary {
   customerName: string | null;
   containerCount: number | null;
   containerNumbers: string | null;
+  /** N4: derived payment/approval state for row coloring. */
+  statusColor: 'paid' | 'pending' | 'none';
 }
 
 type StatusFilter = '' | TripStatus;
 
+/** Build the className suffix for a row from its derived statusColor. */
+function rowColorClass(statusColor: TripSummary['statusColor']): string {
+  if (statusColor === 'paid') return 'fwd-row--paid';
+  if (statusColor === 'pending') return 'fwd-row--pending';
+  return '';
+}
+
 export default function ForwarderTripsPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
-  const { data, isLoading: loading, error: queryError } = useForwarderTrips(activeFilter || undefined);
+  // N4: search + date-range filters. Passed into the trips query so the
+  // backend filters (ilike on container/customer + departure_date range).
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  // Debounce the free-text search so we don't fire a backend query per keystroke
+  // (matches the TripListPage pattern). Date pickers are discrete — no debounce.
+  const debouncedSearch = useDebouncedValue(search, 300);
+
+  const { data, isLoading: loading, error: queryError } = useForwarderTrips(
+    activeFilter || undefined,
+    {
+      search: debouncedSearch || undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    },
+  );
   const trips = (data?.items ?? []) as TripSummary[];
   const counts = data?.counts ?? {};
   const error = queryError ? 'Không thể tải danh sách chuyến đi' : null;
@@ -113,6 +140,37 @@ export default function ForwarderTripsPage() {
         </div>
       </div>
 
+      {/* ── Search + date-range filter (N4) ── */}
+      <div className="fwd-trip-filters">
+        <div className="fwd-trip-filters__search">
+          <Search size={14} />
+          <input
+            type="text"
+            placeholder="Tìm theo container, khách hàng..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="fwd-trip-filters__dates">
+          <label className="fwd-trip-filters__date">
+            <span>Từ ngày</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+            />
+          </label>
+          <label className="fwd-trip-filters__date">
+            <span>Đến ngày</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+            />
+          </label>
+        </div>
+      </div>
+
       {/* ── Clickable status filter pills ── */}
       <div className="fwd-filter-pills">
         <button
@@ -146,7 +204,7 @@ export default function ForwarderTripsPage() {
           <ClickableCard
             key={trip.id}
             to={`/my-forwarder-trips/${trip.id}`}
-            className="ftrip-card fade-up"
+            className={`ftrip-card fade-up ${rowColorClass(trip.statusColor)}`}
             style={{
               position: 'relative',
               overflow: 'hidden',

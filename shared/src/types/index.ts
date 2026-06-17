@@ -76,9 +76,33 @@ export interface Truck {
   trailerType: TrailerType | null;
   currentTrailerId: number | null;
   status: TruckStatus;
+  // N5 / A12 + B4: user-keyed compliance/service dates (ISO 'YYYY-MM-DD' or null).
+  nextInspectionDate: string | null;
+  insuranceExpiryDate: string | null;
+  lastOilServiceDate: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+// ─── N5 / A12 + B4: vehicle compliance/service date alerts ───────────────────
+// A non-null user-keyed date on a truck that computeVehicleAlerts evaluates.
+export type VehicleAlertField =
+  | 'nextInspectionDate'
+  | 'insuranceExpiryDate'
+  | 'lastOilServiceDate';
+
+export type VehicleAlertStatus = 'overdue' | 'due' | 'ok';
+
+export interface VehicleAlert {
+  field: VehicleAlertField;
+  /** Vietnamese display label for the date field. */
+  label: string;
+  /** ISO date string 'YYYY-MM-DD'. */
+  date: string;
+  /** Whole days from `today` until `date` (negative = past). */
+  daysUntil: number;
+  status: VehicleAlertStatus;
 }
 
 export interface Trailer {
@@ -628,6 +652,20 @@ export interface TripExpenseWithSupplier extends TripExpense {
 
 // ─── API types ───────────────────────────────────────────────────────────────
 
+/**
+ * Manager-authored contact + free-text guidance for a trip (N2 / B1.3).
+ * One row per trip. Manager writes via TripEdit; driver reads read-only via
+ * DriverTripDetailPage. `instructions` is null when no row exists yet.
+ */
+export interface TripInstruction {
+  id: number;
+  tripId: number;
+  contactName: string | null;
+  contactPhone: string | null;
+  notes: string | null;
+  updatedAt: string;
+}
+
 export interface TripDetail extends Trip {
   legs: TripLeg[];
   driver?: Driver;
@@ -637,6 +675,7 @@ export interface TripDetail extends Trip {
   customer?: Customer;
   cargoType?: CargoType;
   fuelSupplier?: { id: number; name: string } | null;
+  instructions?: TripInstruction | null;
 }
 
 export interface CreateTripRequest {

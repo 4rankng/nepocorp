@@ -1,0 +1,60 @@
+/* TripInstructionsCard (N2 / B1.3) — manager-authored contact + guidance block.
+   Page-scoped under .ti-* to avoid colliding with the rest of the trip form. */
+
+.ti-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ti-row {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 12px;
+}
+
+.ti-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ti-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-2, #444);
+}
+
+.ti-textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.ti-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ti-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ti-saved-ok {
+  font-size: 13px;
+  color: var(--success, #2e7d32);
+}
+
+.ti-saved-err {
+  font-size: 13px;
+  color: var(--danger, #c62828);
+}
+
+@media (max-width: 560px) {
+  .ti-row {
+    grid-template-columns: 1fr;
+  }
+}

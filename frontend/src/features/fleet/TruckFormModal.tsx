@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Save, X, Loader2 } from 'lucide-react';
 import { Modal } from '../../components/UI';
-import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
-import type { Truck as TruckType } from '@tingting/shared';
+import { TrailerType, TRAILER_TYPE_LABELS, computeVehicleAlerts } from '@tingting/shared';
+import type { Truck as TruckType, VehicleAlert } from '@tingting/shared';
 import { TRUCK_STATUS } from './constants';
 
 /**
  * TruckForm rendered inside a Modal — the previous tr-based inline edit row
  * was visually cramped and easy to miss when toggled. Modal gives the form
  * proper breathing room, focused labels, and an obvious save/cancel footer.
+ *
+ * N5 / A12: includes three user-keyed compliance/service date fields
+ * (inspection / insurance / oil). Each shows a live alert badge derived from
+ * computeVehicleAlerts — red (overdue) or amber (due within 30 days).
  */
 export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpen }: {
   saving: boolean;
@@ -21,22 +25,46 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
   const [plate, setPlate] = useState(item?.licensePlate || '');
   const [currentTrailerId, setCurrentTrailerId] = useState<number | null>(item?.currentTrailerId ?? null);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  // N5: date fields kept as '' when empty so <input type="date"> is controlled.
+  const [nextInspectionDate, setNextInspectionDate] = useState(item?.nextInspectionDate ?? '');
+  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState(item?.insuranceExpiryDate ?? '');
+  const [lastOilServiceDate, setLastOilServiceDate] = useState(item?.lastOilServiceDate ?? '');
   useEffect(() => {
     if (isOpen) {
       setPlate(item?.licensePlate || '');
       setCurrentTrailerId(item?.currentTrailerId ?? null);
       setStatus(item?.status || 'ACTIVE');
+      setNextInspectionDate(item?.nextInspectionDate ?? '');
+      setInsuranceExpiryDate(item?.insuranceExpiryDate ?? '');
+      setLastOilServiceDate(item?.lastOilServiceDate ?? '');
     }
     // Reset form fields only when the modal opens or switches item; field-level
     // deps intentionally omitted to avoid clobbering in-progress edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item?.id]);
+
+  // Live alert badges for the in-form values (fall back to the persisted item
+  // when the field hasn't been touched yet, so opening the modal still shows
+  // the current alert state).
+  const alerts = computeVehicleAlerts({
+    nextInspectionDate: (nextInspectionDate || item?.nextInspectionDate) ?? null,
+    insuranceExpiryDate: (insuranceExpiryDate || item?.insuranceExpiryDate) ?? null,
+    lastOilServiceDate: (lastOilServiceDate || item?.lastOilServiceDate) ?? null,
+  });
+  const alertFor = (field: 'nextInspectionDate' | 'insuranceExpiryDate' | 'lastOilServiceDate') =>
+    alerts.find(a => a.field === field);
+
   const handleSave = () => {
     if (!plate.trim()) return;
     onsave({
       licensePlate: plate.trim(),
       currentTrailerId,
       status,
+      // Empty string → null so the backend stores NULL (clears the date)
+      // rather than failing the YYYY-MM-DD regex.
+      nextInspectionDate: nextInspectionDate || null,
+      insuranceExpiryDate: insuranceExpiryDate || null,
+      lastOilServiceDate: lastOilServiceDate || null,
     });
   };
   return (
@@ -95,7 +123,69 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
             {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
+
+        {/* N5 / A12: compliance & service date reminders. type=date gives a native
+            picker; the badge surfaces overdue/due state next to each field. */}
+        <div className="truck-alert-fields">
+          <TruckDateField
+            id="truck-inspection"
+            label="Hạn đăng kiểm"
+            value={nextInspectionDate}
+            onChange={setNextInspectionDate}
+            alert={alertFor('nextInspectionDate')}
+          />
+          <TruckDateField
+            id="truck-insurance"
+            label="Hạn bảo hiểm"
+            value={insuranceExpiryDate}
+            onChange={setInsuranceExpiryDate}
+            alert={alertFor('insuranceExpiryDate')}
+          />
+          <TruckDateField
+            id="truck-oil"
+            label="Thay dầu kế tiếp"
+            value={lastOilServiceDate}
+            onChange={setLastOilServiceDate}
+            alert={alertFor('lastOilServiceDate')}
+          />
+        </div>
       </div>
     </Modal>
+  );
+}
+
+/** One labelled date input with an optional overdue/due badge. */
+function TruckDateField({ id, label, value, onChange, alert }: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  // computeVehicleAlerts only returns non-'ok' entries, so this is always
+  // overdue/due — typed as the full VehicleAlert for simplicity.
+  alert?: VehicleAlert;
+}) {
+  const badgeText = alert
+    ? alert.daysUntil < 0
+      ? `Quá hạn ${Math.abs(alert.daysUntil)} ngày`
+      : `Còn ${alert.daysUntil} ngày`
+    : null;
+  return (
+    <div className="field truck-alert-field">
+      <label htmlFor={id} className="truck-alert-field__label">
+        {label}
+        {badgeText && (
+          <span className={`truck-alert-badge truck-alert-badge--${alert!.status}`}>
+            {badgeText}
+          </span>
+        )}
+      </label>
+      <input
+        id={id}
+        type="date"
+        className="input"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
   );
 }

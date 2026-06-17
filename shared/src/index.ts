@@ -16,7 +16,7 @@ export {
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
   PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig,
-  Trip, TripLeg, TripDetail, LedgerEntry, Penalty,
+  Trip, TripLeg, TripDetail, TripInstruction, LedgerEntry, Penalty,
   CapTableHistory, Distribution, ManagementFee, AuditLog, Notification,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
@@ -28,6 +28,7 @@ export type {
   ContainerType, Port,
   DebtOffset,
   ApprovalItemType,
+  VehicleAlertField, VehicleAlertStatus, VehicleAlert,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -44,6 +45,7 @@ export {
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
   tripContainerSchema, tripContainerBatchSchema, tripContainerPatchSchema, tripContainerSealSchema, tripContainerSealBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema,
+  upsertTripInstructionsSchema,
   containerTypeSchema, portSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
 } from './schemas';
@@ -85,4 +87,6 @@ export { computeTripTotals, computeRoadAllowance } from './calculations/tripTota
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
+export { computeVehicleAlerts, VEHICLE_ALERT_LABELS } from './calculations/vehicleAlerts';
+export type { VehicleAlertInput } from './calculations/vehicleAlerts';
 

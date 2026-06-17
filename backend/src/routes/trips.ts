@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo, latestTripPhotoKey, listTripPhotoKeys } from '../services/forwarder.service';
@@ -340,6 +340,34 @@ router.put('/:id/containers', asyncHandler(async (req: Request, res: Response) =
   const items = await batchUpsertTripContainers(tripId, userId, parsed.containers);
   await invalidateReportCaches();
   res.json({ items });
+}));
+
+// ─── Trip instructions (N2 / B1.3) ──────────────────────────────────────────
+// Manager-authored contact + free-text guidance. One row per trip; upsert on
+// conflict. No new casbin line — MANAGER/ACCOUNTANT already have `trips write`
+// and ADMIN has the wildcard policy.
+
+// GET /api/trips/:id/instructions — returns null when no row exists yet.
+router.get('/:id/instructions', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  res.json(await tripService.getTripInstructions(tripId));
+}));
+
+// PUT /api/trips/:id/instructions — upsert contact + guidance for a trip.
+router.put('/:id/instructions', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(tripId) || tripId <= 0) {
+    return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  }
+  const parsed = upsertTripInstructionsSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  // Existence guard — otherwise a missing/hard-deleted trip would surface as an
+  // opaque 500 (Postgres FK violation) from the upsert.
+  const [trip] = await db.select({ id: dbSchema.trips.id })
+    .from(dbSchema.trips).where(eq(dbSchema.trips.id, tripId)).limit(1);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  const row = await tripService.upsertTripInstructions(tripId, parsed.data, getUser(req).userId);
+  res.json(row);
 }));
 
 // ─── Trip Expenses (ancillary fees) ──────────────────────────────────────────

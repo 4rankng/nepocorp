@@ -304,3 +304,82 @@
     transform: none;
   }
 }
+
+/* ── N5 / B4: vehicle reminders strip ──────────────────────────────────────
+   Surfaces overdue/due compliance dates for the driver's truck. Scoped under
+   .driver-earnings-page (page-scoped, no !important). Reuses --danger /
+   --warning + their -soft variants from tokens.css. */
+.driver-earnings-page .vehicle-alerts-strip {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+}
+.driver-earnings-page .vehicle-alerts-strip__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--warning);
+  margin-bottom: 10px;
+}
+.driver-earnings-page .vehicle-alerts-strip__title {
+  font-size: 13px;
+  font-weight: 700;
+}
+.driver-earnings-page .vehicle-alerts-strip__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.driver-earnings-page .vehicle-alerts-strip__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+}
+.driver-earnings-page .vehicle-alerts-strip__item--overdue {
+  border-left: 3px solid var(--danger);
+}
+.driver-earnings-page .vehicle-alerts-strip__item--due {
+  border-left: 3px solid var(--warning);
+}
+.driver-earnings-page .vehicle-alerts-strip__label {
+  font-weight: 600;
+  color: var(--fg-1, #1a1a1a);
+}
+.driver-earnings-page .vehicle-alerts-strip__date {
+  color: var(--fg-2, #666);
+  font-variant-numeric: tabular-nums;
+}
+.driver-earnings-page .vehicle-alerts-strip__days {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.driver-earnings-page .vehicle-alerts-strip__item--overdue .vehicle-alerts-strip__days {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.driver-earnings-page .vehicle-alerts-strip__item--due .vehicle-alerts-strip__days {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+@media (max-width: 480px) {
+  .driver-earnings-page .vehicle-alerts-strip__item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label days"
+      "date  days";
+  }
+  .driver-earnings-page .vehicle-alerts-strip__label { grid-area: label; }
+  .driver-earnings-page .vehicle-alerts-strip__date { grid-area: date; }
+  .driver-earnings-page .vehicle-alerts-strip__days { grid-area: days; align-self: center; }
+}

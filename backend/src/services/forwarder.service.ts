@@ -3,7 +3,7 @@ import type { Tx } from './trip-shared';
 export type { Tx };
 import * as s from '../db/schema';
 import type { GuardedResult } from './approval.service';
-import { eq, and, isNull, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
+import { eq, and, isNull, desc, inArray, notInArray, sql, count, ilike, gte, lte, or } from 'drizzle-orm';
 import { ApiError } from '../errors';
 
 /**
@@ -63,10 +63,72 @@ export async function getForwarderByUserId(userId: number) {
   return user;
 }
 
-export async function getForwarderTrips(status?: string) {
+/**
+ * Derived payment/approval status for a forwarder trip row, used for row
+ * coloring on the forwarder trips list (N4).
+ *
+ *   'paid'    — at least one expense on this trip is linked to an APPROVED
+ *               settlement (i.e. money has flowed back to the forwarder).
+ *   'pending' — no APPROVED-settled expense yet, but at least one expense is
+ *               PENDING approval, OR linked to a not-yet-APPROVED settlement
+ *               (PENDING / CHECKED_BY_ACCOUNTANT / REJECTED).
+ *   'none'    — no expenses, or all expenses APPROVED and not yet linked to
+ *               any settlement (waiting for settlement creation).
+ *
+ * Computed as two correlated EXISTS subqueries on the main trip select so the
+ * derivation rides along in one round-trip — no N+1 per row.
+ */
+const hasApprovedSettlement = sql<boolean>`EXISTS (
+  SELECT 1
+  FROM settlement_expenses se
+  INNER JOIN advance_settlements a ON a.id = se.settlement_id
+  WHERE se.trip_expense_id IN (SELECT id FROM trip_expenses WHERE trip_id = ${s.trips.id})
+    AND a.status = 'APPROVED'
+)`;
+
+const hasPendingExpenseOrSettlement = sql<boolean>`EXISTS (
+  SELECT 1 FROM trip_expenses te
+  WHERE te.trip_id = ${s.trips.id}
+    AND (
+      te.approval_status = 'PENDING'
+      OR EXISTS (
+        SELECT 1
+        FROM settlement_expenses se2
+        INNER JOIN advance_settlements a2 ON a2.id = se2.settlement_id
+        WHERE se2.trip_expense_id = te.id
+          AND a2.status IN ('PENDING', 'CHECKED_BY_ACCOUNTANT', 'REJECTED')
+      )
+    )
+)`;
+
+export async function getForwarderTrips(
+  status?: string,
+  filters?: { search?: string; dateFrom?: string; dateTo?: string },
+) {
   const conditions = [isNull(s.trips.deletedAt)];
   if (status) {
     conditions.push(eq(s.trips.status, status as 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'LOCKED' | 'CANCELED'));
+  }
+  if (filters?.search) {
+    // Escape LIKE/ILIKE metacharacters (\ % _) so a literal '%' or '_' in the
+    // search term is matched as-is instead of acting as a wildcard. Postgres'
+    // default LIKE escape character is the backslash.
+    const term = `%${filters.search.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+    // Search matches container number OR customer name, case-insensitive (ilike).
+    // Container numbers live on trip_containers; customer name on customers.
+    conditions.push(or(
+      ilike(s.customers.name, term),
+      sql`EXISTS (
+        SELECT 1 FROM trip_containers tc
+        WHERE tc.trip_id = ${s.trips.id} AND tc.container_number ILIKE ${term}
+      )`,
+    )!);
+  }
+  if (filters?.dateFrom) {
+    conditions.push(gte(s.trips.departureDate, filters.dateFrom));
+  }
+  if (filters?.dateTo) {
+    conditions.push(lte(s.trips.departureDate, filters.dateTo));
   }
 
   return db.select({
@@ -85,6 +147,13 @@ export async function getForwarderTrips(status?: string) {
       WHERE tc.trip_id = ${s.trips.id}
     )`,
     cargoTypeName: s.cargoTypes.name,
+    // N4: derived payment/approval state for row coloring. APPROVED settlement
+    // wins; otherwise PENDING expense or non-APPROVED settlement; else none.
+    statusColor: sql<'paid' | 'pending' | 'none'>`CASE
+      WHEN ${hasApprovedSettlement} THEN 'paid'
+      WHEN ${hasPendingExpenseOrSettlement} THEN 'pending'
+      ELSE 'none'
+    END`,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))

@@ -1,6 +1,7 @@
 import { api } from '../lib/api';
 import { toQuery } from '../lib/http/query';
 import { DRIVER } from '@tingting/shared';
+import type { VehicleAlert } from '@tingting/shared';
 
 export const driverClient = {
   getTrips: async () => {
@@ -60,5 +61,10 @@ export const driverClient = {
           }>;
         }
     >(`${DRIVER.PENALTIES}${toQuery(params)}`);
+  },
+
+  /** N5 / B4 — overdue/due reminders for the driver's truck. */
+  getVehicleAlerts: async () => {
+    return api.get<{ items: VehicleAlert[] }>(DRIVER.VEHICLE_ALERTS);
   },
 };

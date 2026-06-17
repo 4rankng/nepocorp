@@ -5,6 +5,7 @@ import type {
   Trip,
   TripDetail,
   TripExpense,
+  TripInstruction,
   CreateTripRequest,
   UpdateTripFiguresRequest,
   PaginatedResponse,
@@ -109,4 +110,15 @@ export const tripClient = {
 
   rejectTripExpense: (tripId: number, eid: number) =>
     api.post<{ ok: boolean }>(TRIPS.EXPENSE_REJECT(tripId, eid), {}),
+
+  // ─── Trip instructions (N2 / B1.3) ──────────────────────────────────────────
+  // Manager-authored contact + free-text guidance. Returns null when no row
+  // exists yet.
+  getTripInstructions: (tripId: number) =>
+    api.get<TripInstruction | null>(TRIPS.INSTRUCTIONS(tripId)),
+
+  upsertTripInstructions: (
+    tripId: number,
+    data: { contactName?: string | null; contactPhone?: string | null; notes?: string | null },
+  ) => api.put<TripInstruction>(TRIPS.INSTRUCTIONS(tripId), data),
 };

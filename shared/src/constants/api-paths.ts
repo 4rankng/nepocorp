@@ -27,6 +27,7 @@ export const TRIPS = {
   ADJUSTMENT: (id: number) => `/trips/${id}/adjustment`,
   DEPARTURE_DATE: (id: number) => `/trips/${id}/departure-date`,
   CONTAINERS: (id: number) => `/trips/${id}/containers`,
+  INSTRUCTIONS: (id: number) => `/trips/${id}/instructions`,
   EXPENSES: (id: number) => `/trips/${id}/expenses`,
   EXPENSE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}`,
   EXPENSE_APPROVE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/approve`,
@@ -122,6 +123,7 @@ export const DRIVER = {
   TRIP_DETAIL: (id: number) => `/driver/me/trips/${id}`,
   EARNINGS: '/driver/me/earnings',
   PENALTIES: '/driver/me/penalties',
+  VEHICLE_ALERTS: '/driver/me/vehicle-alerts',
 } as const;
 
 // ─── Forwarder portal ───────────────────────────────────────────────────────────

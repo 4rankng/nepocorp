@@ -3,10 +3,13 @@ import { forwarderClient } from '../api/forwarderClient';
 import { financialClient } from '../api/financialClient';
 import { qk } from '../api/keys';
 
-export function useForwarderTrips(status?: string) {
+export function useForwarderTrips(
+  status?: string,
+  filters?: { search?: string; dateFrom?: string; dateTo?: string },
+) {
   return useQuery({
-    queryKey: qk.forwarder.trips(status),
-    queryFn: () => forwarderClient.getTrips(status),
+    queryKey: qk.forwarder.trips(status, filters),
+    queryFn: () => forwarderClient.getTrips(status, filters),
   });
 }
 

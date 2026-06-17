@@ -2,9 +2,11 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, desc, gte, lte } from 'drizzle-orm';
 import { ApiError } from '../errors';
+import { computeVehicleAlerts, type VehicleAlert } from '@tingting/shared';
 
 import { computeSalary } from './attendance.service';
 import { listTripContainers, latestTripPhotoKey, listTripPhotoKeys } from './forwarder.service';
+import { getTripInstructions } from './trip-instructions.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -97,14 +99,15 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
   // list (newest first) so the driver UI can surface every captured photo,
   // not just the latest. Singular fields kept for back-compat with the
   // existing driver app build; contPhotoKeys[0] === contPhotoKey.
-  const [contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys] = await Promise.all([
+  const [contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys, instructions] = await Promise.all([
     latestTripPhotoKey(tripId, 'CONTAINER'),
     latestTripPhotoKey(tripId, 'SEAL'),
     listTripPhotoKeys(tripId, 'CONTAINER'),
     listTripPhotoKeys(tripId, 'SEAL'),
+    getTripInstructions(tripId),
   ]);
 
-  return { ...trip, legs, containers, contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys };
+  return { ...trip, legs, containers, contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys, instructions };
 }
 
 /**
@@ -127,6 +130,55 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
     periodStart: salaryData.periodStart,
     periodEnd: salaryData.periodEnd,
   };
+}
+
+/**
+ * N5 / B4 — vehicle compliance/service reminders for a driver.
+ *
+ * Resolves the driver's truck by preferring the truck on their most-recent
+ * non-deleted trip (so a driver reassigned mid-period sees the truck they
+ * actually drove last), then falling back to `drivers.assignedTruckId`.
+ * Returns only overdue/due alerts (the helper already filters out 'ok').
+ *
+ * Returns `null` when no truck is resolvable so the caller can 404 cleanly
+ * rather than emit an empty alerts list that looks like a bug.
+ */
+export async function getDriverVehicleAlerts(driverId: number): Promise<VehicleAlert[] | null> {
+  // 1. Most-recent trip's truck.
+  const [recent] = await db.select({ truckId: s.trips.truckId })
+    .from(s.trips)
+    .where(and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
+    .orderBy(desc(s.trips.departureDate))
+    .limit(1);
+
+  let truckId = recent?.truckId ?? null;
+
+  // 2. Fall back to the driver's assigned truck.
+  if (!truckId) {
+    const [driver] = await db.select({ assignedTruckId: s.drivers.assignedTruckId })
+      .from(s.drivers)
+      .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt)))
+      .limit(1);
+    truckId = driver?.assignedTruckId ?? null;
+  }
+
+  if (!truckId) return null;
+
+  const [truck] = await db.select({
+    nextInspectionDate: s.trucks.nextInspectionDate,
+    insuranceExpiryDate: s.trucks.insuranceExpiryDate,
+    lastOilServiceDate: s.trucks.lastOilServiceDate,
+  }).from(s.trucks)
+    .where(eq(s.trucks.id, truckId))
+    .limit(1);
+
+  if (!truck) return null;
+
+  return computeVehicleAlerts({
+    nextInspectionDate: truck.nextInspectionDate,
+    insuranceExpiryDate: truck.insuranceExpiryDate,
+    lastOilServiceDate: truck.lastOilServiceDate,
+  });
 }
 
 /**

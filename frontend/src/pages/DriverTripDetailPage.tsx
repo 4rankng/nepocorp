@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Calendar, MapPin, Fuel, DollarSign, Navigation, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Truck, Calendar, MapPin, Fuel, DollarSign, Navigation, AlertCircle, Loader2, Phone, MessageSquare } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
@@ -51,6 +51,12 @@ interface DriverTripDetail {
   sealPhotoKey: string | null;
   notes: string | null;
   customerReference: string | null;
+  /** Manager-authored contact + guidance (N2 / B1.3). Null when none set. */
+  instructions?: {
+    contactName: string | null;
+    contactPhone: string | null;
+    notes: string | null;
+  } | null;
 }
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
@@ -227,6 +233,39 @@ export default function DriverTripDetailPage() {
         </section>
 
         <TripLegsPanel legs={trip.legs || []} />
+
+        {/* Contact & guidance (N2 / B1.3) — read-only, only when manager set it */}
+        {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
+          <section className="dt-section dt-section--instructions">
+            <div className="dt-section__head">
+              <span className="dt-section__title">Liên hệ &amp; hướng dẫn</span>
+            </div>
+            <div className="dt-section__body">
+              {trip.instructions.contactName && (
+                <InfoRow icon={<Navigation size={16} />} label="Người liên hệ" value={trip.instructions.contactName} />
+              )}
+              {trip.instructions.contactPhone && (
+                <InfoRow
+                  icon={<Phone size={16} />}
+                  label="SĐT liên hệ"
+                  value={
+                    <a href={`tel:${trip.instructions.contactPhone}`} className="dt-tel-link">
+                      {trip.instructions.contactPhone}
+                    </a>
+                  }
+                />
+              )}
+              {trip.instructions.notes && (
+                <div className="dt-instructions-notes">
+                  <div className="dt-instructions-notes__title">
+                    <MessageSquare size={14} /> Ghi chú hướng dẫn
+                  </div>
+                  <p className="dt-instructions-notes__text">{trip.instructions.notes}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Notes */}
         {trip.notes && (

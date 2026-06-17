@@ -55,6 +55,10 @@ export const trucks = pgTable('trucks', {
   trailerType: trailerTypeEnum('trailer_type'),
   currentTrailerId: integer('current_trailer_id').references(() => trailers.id),
   status: truckStatusEnum('status').default('ACTIVE'),
+  // N5 / A12 + B4: user-keyed compliance/service dates for alerts.
+  nextInspectionDate: date('next_inspection_date'),
+  insuranceExpiryDate: date('insurance_expiry_date'),
+  lastOilServiceDate: date('last_oil_service_date'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -540,6 +544,22 @@ export const tripContainerSeals = pgTable('trip_container_seals', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_container_seals_container_idx').on(table.tripContainerId),
+]);
+
+// ─── Trip instructions (N2 / B1.3) ─────────────────────────────────────────
+// Manager-authored contact + free-text guidance for a trip. Manager writes via
+// TripEdit; driver reads read-only via DriverTripDetailPage. One row per trip.
+export const tripInstructions = pgTable('trip_instructions', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id, { onDelete: 'cascade' }).notNull(),
+  contactName: varchar('contact_name', { length: 100 }),
+  contactPhone: varchar('contact_phone', { length: 20 }),
+  notes: text('notes'),
+  updatedBy: integer('updated_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('trip_instructions_trip_id_unq').on(table.tripId),
 ]);
 
 export const tripExpenses = pgTable('trip_expenses', {

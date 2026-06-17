@@ -253,6 +253,10 @@ export const truckSchema = z.object({
   trailerType: z.nativeEnum(TrailerType).optional().nullable(),
   currentTrailerId: z.number().optional().nullable(),
   status: z.nativeEnum(TruckStatus).optional().default(TruckStatus.ACTIVE),
+  // N5 / A12 + B4: ISO 'YYYY-MM-DD' or null/empty. Accepted on create + update.
+  nextInspectionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  insuranceExpiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  lastOilServiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 });
 
 export const trailerSchema = z.object({
@@ -563,6 +567,18 @@ export const createAdvanceSettlementSchema = z.object({
   note: z.string().optional().nullable(),
   tripExpenseIds: z.array(z.coerce.number().int().positive()).optional(),
   advanceRequestIds: z.array(z.coerce.number().int().positive()).min(1, 'Phải chọn ít nhất 1 yêu cầu tạm ứng'),
+});
+
+// ─── Trip instructions (N2 / B1.3) ─────────────────────────────────────────
+// Upsert payload for PUT /api/trips/:id/instructions. All fields optional —
+// omitted fields clear to null so managers can wipe guidance.
+export const upsertTripInstructionsSchema = z.object({
+  contactName: z.string().max(100).nullish(),
+  // Phone renders as a tel: href on the driver page — constrain to plausible
+  // dial characters to keep the href well-formed.
+  contactPhone: z.string().max(20).regex(/^[0-9+()\-\s]*$/).nullish(),
+  // Capped to avoid unbounded text payloads on an unbounded `text` column.
+  notes: z.string().max(2000).nullish(),
 });
 
 // ─── Inferred types ──────────────────────────────────────────────────────────

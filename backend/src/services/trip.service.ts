@@ -6,3 +6,4 @@ export * from './trip-queries.service';
 export * from './trip-status-machine.service';
 export * from './trip-attendance-sync.service';
 export * from './trip-mutations.service';
+export * from './trip-instructions.service';

@@ -9,7 +9,10 @@ import type {
 } from '@tingting/shared';
 
 export const forwarderClient = {
-  getTrips: async (status?: string) => {
+  getTrips: async (
+    status?: string,
+    filters?: { search?: string; dateFrom?: string; dateTo?: string },
+  ) => {
     return api.get<{
       items: Array<{
         id: number;
@@ -23,9 +26,11 @@ export const forwarderClient = {
         containerCount: number | null;
         containerNumbers: string | null;
         cargoTypeName: string | null;
+        /** N4: derived payment/approval state for row coloring. */
+        statusColor: 'paid' | 'pending' | 'none';
       }>;
       counts: Record<string, number>;
-    }>(`${FORWARDER.TRIPS}${toQuery({ status })}`);
+    }>(`${FORWARDER.TRIPS}${toQuery({ status, search: filters?.search, dateFrom: filters?.dateFrom, dateTo: filters?.dateTo })}`);
   },
 
   getTripDetail: async (id: number) => {
