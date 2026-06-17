@@ -205,7 +205,7 @@ export default function DriverTripDetailPage() {
             <div className="dt-earnings-grid">
               <InfoRow
                 icon={<DollarSign size={16} />}
-                label="Tiền kết hợp"
+                label="Lương phân bổ chuyến"
                 value={
                   <span className="earnings-highlight">
                     {trip.driverSalary ? formatCurrency(trip.driverSalary) : '—'}

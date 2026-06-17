@@ -349,6 +349,7 @@ router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) =>
       invoiceDate: parsed.data.invoiceDate ?? null,
       declarationNumber: parsed.data.declarationNumber ?? null,
       containerNumber: parsed.data.containerNumber ?? null,
+      tripContainerId: parsed.data.tripContainerId ?? null,
       note: parsed.data.note ?? null,
     }),
   );
@@ -372,6 +373,7 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
       ...(parsed.data.invoiceDate !== undefined ? { invoiceDate: parsed.data.invoiceDate ?? null } : {}),
       ...(parsed.data.declarationNumber !== undefined ? { declarationNumber: parsed.data.declarationNumber ?? null } : {}),
       ...(parsed.data.containerNumber !== undefined ? { containerNumber: parsed.data.containerNumber ?? null } : {}),
+      ...(parsed.data.tripContainerId !== undefined ? { tripContainerId: parsed.data.tripContainerId ?? null } : {}),
       ...(parsed.data.note !== undefined ? { note: parsed.data.note ?? null } : {}),
     }),
   );

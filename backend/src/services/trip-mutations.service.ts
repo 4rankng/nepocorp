@@ -11,6 +11,7 @@ import { AuditEvent } from './audit-types';
 import { computeTripTotals } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { resolveTrailer } from './trip-shared';
+import { computeStandardWorkDays } from './attendance.service';
 
 // ─── createTrip ─────────────────────────────────────────────────────────────
 
@@ -348,7 +349,17 @@ export async function updateTripFigures(
       }).from(s.drivers).where(eq(s.drivers.id, trip.driverId)).limit(1);
       if (driver?.baseSalary) {
         const base = parseFloat(driver.baseSalary);
-        driverSalary = Math.round(base / 26 * (tripWageDays ?? 1));
+        // Cost-allocation daily rate uses the same divisor as the monthly
+        // attendance salary (standardWorkDays for the departure month) so the
+        // per-trip allocation ties to the attendance dailyRate. A hardcoded
+        // /26 diverged from attendance.service — B8.
+        // Use the same effective departure date as the wage-day window above
+        // (data.departureDate ?? trip.departureDate) so the divisor's month and
+        // the wage-day count can't reference different months when a PATCH
+        // moves the trip into a new month.
+        const depDate = new Date(data.departureDate ?? trip.departureDate);
+        const swd = computeStandardWorkDays(depDate.getFullYear(), depDate.getMonth() + 1);
+        driverSalary = Math.round((base / swd) * (tripWageDays ?? 1));
       }
     }
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);

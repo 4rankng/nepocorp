@@ -507,6 +507,10 @@ export const baseTripExpenseSchema = z.object({
   invoiceDate: z.string().optional(),
   declarationNumber: z.string().max(50).optional(),
   containerNumber: z.string().max(20).optional(),
+  /** B5: authoritative container FK (id of a trip_containers row on this trip).
+   *  When present the server mirrors `containerNumber` from it so the label
+   *  can never drift from a real container. */
+  tripContainerId: z.number().int().positive().nullish(),
   note: z.string().optional(),
 });
 

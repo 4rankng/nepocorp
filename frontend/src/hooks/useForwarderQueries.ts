@@ -43,6 +43,8 @@ export function useCreateForwarderExpense() {
       invoiceDate?: string;
       declarationNumber?: string;
       containerNumber?: string;
+      /** B5: authoritative container FK (id). When set the server mirrors containerNumber. */
+      tripContainerId?: number;
       note?: string;
     }) =>
       forwarderClient.createExpense(data),

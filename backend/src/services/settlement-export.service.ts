@@ -61,7 +61,15 @@ function buildPrintRows(expenses: LinkedExpense[]): PrintRow[] {
   }
 
   const rows: PrintRow[] = [];
-  for (const [dateKey, containerMap] of grouped) {
+  // Date keys (ISO 'YYYY-MM-DD') sort chronologically as strings; push the
+  // 'unknown' bucket last so rows are ordered by transport date ascending (B6).
+  const sortedDateKeys = [...grouped.keys()].sort((a, b) => {
+    if (a === 'unknown') return 1;
+    if (b === 'unknown') return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+  for (const dateKey of sortedDateKeys) {
+    const containerMap = grouped.get(dateKey)!;
     for (const [containerKey, exps] of containerMap) {
       const sorted = [...exps].sort((a, b) => a.expenseType.localeCompare(b.expenseType));
       for (const exp of sorted) {
