@@ -127,6 +127,28 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | Trạng thái | Active/Inactive |
 | Thao tác | Nút Sửa (KHÔNG có nút Xóa) |
 
+### 2.3 Cảnh báo phương tiện (Vehicle alerts) (A12)
+
+Hệ thống nhắc trước khi tới hạn các mốc vận hành của xe, hiển thị trên **Dashboard quản lý**, trang **Đội xe**, và trang **cá nhân lái xe** (chỉ phương tiện đang vận hành).
+
+**4 loại cảnh báo + lead_days mặc định:**
+
+| Loại | Mã | Lead-days mặc định |
+|------|-----|---------------------|
+| Thay dầu | `OIL_CHANGE` | **7 ngày** |
+| Đăng kiểm | `INSPECTION` | **30 ngày** |
+| Bảo hiểm TNDS | `INSURANCE` | **30 ngày** |
+| Phí đường bộ | `ROAD_FEE` | **15 ngày** |
+
+Mỗi loại có `lead_days` cấu hình được (override mặc định).
+
+**Điều kiện kích hoạt:** `hôm nay >= hạn_cuối − lead_days` HOẶC đã quá hạn. Hệ thống dùng `hạn_cuối` mới nhất theo từng (xe × loại cảnh báo) — tức là khi nhập phiếu gia hạn mới với `valid_to` xa hơn, cảnh báo tự động cập nhật theo dòng mới.
+
+**Hiển thị:**
+- Dashboard: card tổng số cảnh báo + danh sách xe sắp/đã quá hạn.
+- Trang Đội xe: cột "Cảnh báo" trong bảng xe — biểu tượng 🔔 + số ngày còn lại (âm nếu quá hạn).
+- Lái xe: card "Cảnh báo phương tiện" trên cổng lái xe — chỉ hiện cho xe đang vận hành (`assigned_truck_id` của lái xe).
+
 ---
 
 ## 3. Luồng nghiệp vụ

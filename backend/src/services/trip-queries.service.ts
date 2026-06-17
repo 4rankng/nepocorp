@@ -355,7 +355,12 @@ export async function getTripById(id: number) {
 
   const [legs, photos] = await Promise.all([
     db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
-    db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos).where(eq(s.tripPhotos.tripId, id)),
+    // Only general (`OTHER`) photos belong in the trip-level `photoUrls`.
+    // CONTAINER/SEAL photos are surfaced separately by the "Container & Seal"
+    // card via GET /trips/:id/containers (contPhotoKeys/sealPhotoKeys), so
+    // including them here would duplicate them across both sections.
+    db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos)
+      .where(and(eq(s.tripPhotos.tripId, id), eq(s.tripPhotos.type, 'OTHER'))),
   ]);
 
   const uniquePairs = [...new Set(legs.map(l => `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`))];

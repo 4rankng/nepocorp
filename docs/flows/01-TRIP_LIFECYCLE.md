@@ -34,7 +34,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 | Xóa (chỉ CREATED) | ✅ | ✅ | ❌ | ❌ |
 | Xem tài chính | ✅ | ✅ | ✅ | ❌ |
 
-> Phân biệt rõ "sửa thông tin cấu trúc" (chỉ manager/admin, chỉ trên CREATED) và "sửa số liệu tài chính" (manager/admin + kế toán, trên IN_TRANSIT/COMPLETED). Backend đã luôn cho phép kế toán ghi số liệu tài chính (RBAC `trips:write` + `updateTripFigures` chỉ chặn LOCKED/CANCELED) — chi tiết xem `CONTEXT.md` Phase 2–4 và use case test `T4.10` trong `backend/src/tests/integration.test.ts`.
+> Phân biệt rõ "sửa thông tin cấu trúc" (chỉ manager/admin, chỉ trên CREATED) và "sửa số liệu tài chính" (manager/admin + kế toán, trên IN_TRANSIT/COMPLETED). Backend đã luôn cho phép kế toán ghi số liệu tài chính (RBAC `trips:write` + `updateTripFigures` chỉ chặn LOCKED/CANCELED) — chi tiết xem `CONTEXT.md` và use case test `T4.10` trong `backend/src/tests/integration.test.ts`.
 
 ### 1.4 API Endpoints
 
@@ -89,14 +89,31 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 | COMPLETED → LOCKED | Chi phí đầy đủ | ADMIN/MANAGER |
 | CREATED/IN_TRANSIT/COMPLETED → CANCELLED | Lý do hủy | ADMIN/MANAGER |
 
-### 2.4 Khóa chuyến (LOCKED)
+> **Lưu ý 409 (A3.2):** Khi hai người dùng cùng chuyển trạng thái / nhập số liệu tài chính trên cùng chuyến, API trả 409. UI phải hiển thị thông báo "Dữ liệu đã thay đổi — tải lại" thay vì âm thầm nuốt lỗi. Xem chi tiết ở §2.5.
 
-Khi chuyến hoàn thành và chi phí đã được xác minh:
-1. ADMIN/MANAGER nhấn **"Khóa chuyến"**
+### 2.4 Hoàn thành chuyến (IN_TRANSIT → COMPLETED) & Khóa chuyến (LOCKED)
+
+**Hoàn thành — chỉ qua nút bấm thủ công:**
+- Khi chuyến đã về, ADMIN/MANAGER/DRIVER nhấn nút **"Hoàn thành"** + nhập `actualArrival` → chuyển sang `COMPLETED`.
+- **Hệ thống KHÔNG tự động chuyển sang `COMPLETED`** khi kế toán upload ảnh container/seal, khi kết thúc chặng, hay khi đến ngày dự kiến. Upload ảnh chỉ lưu hồ sơ, không tác động trạng thái. (A3.1)
+- Việc hoàn thành do người dùng quyết định — tránh trường hợp chuyến bị đánh dấu hoàn thành trong khi xe thực tế chưa về.
+
+**Khóa chuyến — chỉ từ COMPLETED:**
+1. Khi chuyến hoàn thành và chi phí đã được xác minh, ADMIN/MANAGER nhấn **"Khóa chuyến"**
 2. Hệ thống tính toán `computeTripTotals()` → tạo TRIP_REVENUE ledger
 3. Chuyến chuyển sang LOCKED — không thể sửa
 
-### 2.5 Xóa chuyến
+### 2.5 Trạng thái concurrent (409 recovery)
+
+Khi hai người dùng cùng chỉnh sửa một chuyến đi (hoặc nhập liệu tài chính), backend sử dụng cơ chế phát hiện xung đột (optimistic concurrency / advisory lock per trip). Khi phát hiện xung đột:
+
+- API trả về HTTP **409 Conflict** với thông báo "Dữ liệu đã thay đổi — tải lại".
+- **UI phải hiển thị thông báo rõ ràng** cho người dùng, kèm hành động tải lại dữ liệu mới nhất. Không được âm thầm nuốt lỗi 409 hoặc ghi đè dữ liệu của người khác. (A3.2)
+- Người dùng xem lại số liệu mới, áp dụng lại thay đổi của mình rồi ghi lại.
+
+Áp dụng cho: cập nhật số liệu tài chính, chuyển trạng thái, sửa container, đăng ký tạm ứng.
+
+### 2.6 Xóa chuyến
 
 Chỉ xóa được chuyến ở trạng thái **CREATED**. Chuyến IN_TRANSIT, COMPLETED, LOCKED, CANCELLED không thể xóa.
 

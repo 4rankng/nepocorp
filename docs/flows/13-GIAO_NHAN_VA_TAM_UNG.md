@@ -72,6 +72,20 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 - Empty state: "Chưa có chuyến đi nào"
 - Mọi chuyến trong hệ thống hiển thị (không giới hạn theo phân công)
 
+**Tìm kiếm & lọc (C1.1):**
+- **Ô tìm kiếm:** gõ theo **số container**, **tên khách hàng**, hoặc **ngày** (YYYY-MM-DD). Hỗ trợ tìm gần đúng (contains).
+- **Bộ lọc ngày:** date range picker (từ ngày → đến ngày). Lọc theo `departureDate` hoặc `arrivalDate`.
+
+**Mã màu theo trạng thái chi phí (C1.2):**
+
+| Màu | Trạng thái | Ý nghĩa |
+|------|------------|---------|
+| 🟢 Xanh | Đã thanh toán | Phiếu chi đã được tất toán với khách/NCC |
+| 🟡 Vàng | Chờ duyệt / chờ thanh toán | Phiếu yêu cầu hoàn ứng đã tạo, chờ kế toán duyệt |
+| ⚪ Trắng (mặc định) | Chưa làm | Phiếu chi phí phát sinh chưa được tạo / tạm ứng chưa yêu cầu |
+
+Mỗi card chuyến có **badge nhỏ** ở góc trên phải hiển thị màu tổng hợp của trạng thái chi phí.
+
 ### 2.2 Chi tiết chuyến (/my-forwarder-trips/:id)
 
 - **Header:** Tên tuyến + status pill + tên khách + mã chuyến
@@ -94,6 +108,8 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 6. Click **"Lưu"**
 7. Container mới xuất hiện trong danh sách
 
+> **Lưu ý readonly (C1.3):** Khi giao nhận mở form nhập chi phí từ một **dòng container đã chọn** (click row container để mở phiếu chi), trường `containerNumber` hiển thị ở chế độ **readonly + auto-fill** từ container đã chọn. Hệ thống vẫn ghi nhận FK `tripContainerId` để phiếu thanh toán group theo container chính xác, không phụ thuộc chuỗi text. Giao nhận xác nhận lại bằng mắt trước khi nhập số tiền — tránh click nhầm dòng.
+
 ### 2.4 Ghi nhận chi phí phát sinh
 
 1. Mở chi tiết chuyến `/my-forwarder-trips/:id`
@@ -107,12 +123,45 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 9. Click **"Lưu"**
 10. Chi phí mới xuất hiện trong danh sách
 
+**Phiếu thanh toán theo số container (C1.4):** Khi in/xem phiếu thanh toán cho kế toán, mỗi phiếu hiển thị **rõ số container** mà khoản chi phí đó phát sinh (từ `tripContainerId` FK). Nếu 1 chuyến có nhiều container và mỗi container phát sinh chi phí riêng, hệ thống nhóm theo container — phiếu thanh toán **per-container** (mỗi container 1 block, header ghi rõ containerNumber).
+
 ### 2.5 Xóa chi phí
 
 1. Tìm chi phí cần xóa trong danh sách chi phí phát sinh
 2. Click icon **thùng rác** bên cạnh chi phí
 3. Chi phí bị xóa, danh sách cập nhật
 4. **Lưu ý:** Chỉ xóa được chi phí do chính mình tạo. Thử xóa chi phí của người khác → 403
+
+### 2.6 Tạm ứng (Advances) — 4 KPI
+
+Trang "Tạm ứng" của giao nhận hiển thị 4 KPI tổng quan (C2.1–C2.3):
+
+| KPI | Nguồn |
+|-----|-------|
+| **Tổng tạm ứng đã nhận** | Σ tất cả phiếu tạm ứng đã duyệt của giao nhận |
+| **Đã yêu cầu hoàn ứng** | Σ phiếu yêu cầu hoàn ứng (trạng thái Yêu cầu) |
+| **Đã thanh toán (tất toán)** | Σ phiếu hoàn ứng đã thanh toán (trạng thái Đã thanh toán) |
+| **Số dư còn tạm ứng** | `Tổng đã nhận − Đã thanh toán` (= KPI quan trọng nhất) |
+
+Click mỗi KPI → lọc danh sách phiếu tương ứng.
+
+### 2.7 Phiếu thanh toán (Vouchers) — sắp xếp theo ngày vận chuyển (C3)
+
+Trang "Phiếu thanh toán" hiển thị danh sách phiếu thanh toán đã tạo:
+
+- **Sắp xếp mặc định:** theo **ngày vận chuyển** (`departureDate` của chuyến) **tăng dần** (cũ → mới). Hành vi này khớp với FIFO trong quy trình duyệt.
+- Click header "Ngày vận chuyển" để đảo chiều.
+- Mỗi phiếu hiển thị: Mã chuyến, Tuyến, Ngày vận chuyển, Số tiền, Trạng thái, Số container liên quan.
+
+### 2.8 Duyệt hoàn ứng (D3)
+
+Kế toán/giám đốc duyệt phiếu yêu cầu hoàn ứng từ giao nhận:
+
+1. Truy cập `/payables/forwarder-advances` (hoặc menu tương đương) → danh sách phiếu yêu cầu hoàn ứng.
+2. Mỗi phiếu hiển thị: giao nhận, số tiền, container/lô liên quan, ngày yêu cầu, lý do.
+3. Bấm **Duyệt** → chuyển trạng thái Yêu cầu → **Đã duyệt** (ghi nhận ledger FORWARDER_ADVANCE_SETTLED).
+4. Sau khi chi tiền → bấm **Đã thanh toán** → trạng thái **Đã thanh toán** (ghi nhận FORWARDER_PAYMENT).
+5. Số dư tạm ứng của giao nhận giảm tương ứng sau bước 4.
 
 ---
 
@@ -404,14 +453,6 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 - API `/api/forwarder/me/trips` loại trừ các trường tài chính: revenue, totalCost, grossProfit, totalFuelCost, driverSalary
 - Chi phí phát sinh là **hard delete** (không có deletedAt) — nhưng audit log middleware vẫn ghi lại thao tác DELETE
 - Mỗi chi phí ghi nhận `forwarderId` (user.id) để kiểm tra ownership khi xóa
-
-### Giai đoạn triển khai
-
-| Giai đoạn | Nội dung | Trạng thái |
-|-----------|----------|-----------|
-| Phase 1 | Xem chuyến, nhập container/seal, ghi chi phí phát sinh | ✅ Đã triển khai |
-| Phase 2 | Yêu cầu tạm ứng (advance requests) + duyệt + ledger posting | 🔲 Kế hoạch |
-| Phase 3 | Thanh toán tất toán (settlements) 1:N với tạm ứng + ledger reconcile | 🔲 Kế hoạch |
 
 ### API Response Format
 

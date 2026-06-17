@@ -23,18 +23,9 @@ Sản phẩm là một nền tảng web thống nhất nhằm thay thế quy tr�
 
 ---
 
-## 3. PHẠM VI SẢN PHẨM & LỘ TRÌNH MVP (PRODUCT SCOPE)
+## 3. PHẠM VI NGHIỆP VỤ (BUSINESS SCOPE)
 
-Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa giá trị mang lại:
-
-| Giai đoạn | Module | Giá trị cốt lõi |
-| :--- | :--- | :--- |
-| **MVP 1** | **Ghi nhận chuyến đi** | Giải quyết khối lượng nhập liệu Excel lớn nhất, số hóa dữ liệu gốc. |
-| **MVP 2** | **Dashboard Doanh thu - Chi phí** | Cung cấp cái nhìn tổng hợp và trực quan về sức khỏe tài chính. |
-| **MVP 3** | **Công nợ phải thu** | Kiểm soát rủi ro tài chính tập trung (71% nợ ở 4 KH), tự động hóa theo dõi nợ. |
-| **Hậu MVP** | **Nhận đơn, Phân chia LN, Kỷ luật** | Hoàn thiện quy trình vận hành khép kín và quản trị nâng cao. |
-| **Hậu MVP** | **Chi phí vận hành & Công nợ phải trả** | Số hóa chi phí sửa chữa/vật tư/bảo hiểm/đăng kiểm/phí đường bộ, quản lý nợ Nhà cung cấp, nhắc gia hạn. |
-| **Hậu MVP** | **Lương & Chấm công lái xe** | Hệ thống chấm công ngày công (TRIP_DAY / STANDBY / PERSONAL_LEAVE), tính lương thực nhận tháng, phân bổ chi phí nhân công trực tiếp/gián tiếp vào P&L. |
+Sản phẩm bao gồm các module nghiệp vụ: Ghi nhận chuyến đi; Quản lý nhiên liệu & tiền đi đường; Dashboard doanh thu – chi phí; Công nợ phải thu; Phân chia lợi nhuận; Kỷ luật; Chi phí vận hành & công nợ phải trả; Lương & chấm công lái xe; Quản lý lốp xe; Quản lý đội xe & điều vận; Cấu hình hệ thống. Lộ trình triển khai và phân kỳ ưu tiên được quản lý tại `docs/plans/feedback-fix-plan.md`.
 
 **Ngoài phạm vi:** GPS tracking, variable pricing.
 
@@ -45,7 +36,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
 ### 4.1 Chuyến đi (Trips)
 
 * **Trip (Chuyến xe)** là đơn vị vận hành cốt lõi — mỗi chuyến là một lần xe chạy độc lập. Khách hàng và tuyến đường được chọn trực tiếp trên Trip.
-* **Customer Reference (Tham chiếu KH):** Trường tùy chọn trên Trip để nhóm các chuyến phục vụ cùng một yêu cầu của khách hàng. Khái niệm Order/Đơn hàng chính thức được hoãn sang hậu MVP.
+* **Customer Reference (Tham chiếu KH):** Trường tùy chọn trên Trip để nhóm các chuyến phục vụ cùng một yêu cầu của khách hàng. Khái niệm Order/Đơn hàng chính thức hiện chưa có mặt trong sản phẩm (xem `docs/plans/feedback-fix-plan.md`).
 * **Trạng thái chuyến đi (5 trạng thái):**
     1. **Mới tạo**: Quản lý tạo thông tin cơ bản (chọn Xe nhà hoặc Xe ngoài, điền thuế VAT). Kế toán nhập các số liệu dự kiến (km, dầu, vé).
     2. **Đang chạy**: Lái xe đã xuất phát. Kế toán có thể cập nhật số liệu bất kỳ lúc nào.
@@ -53,6 +44,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
     4. **Đã chốt**: Khóa sổ, hệ thống tạo bản ghi Sổ cái (Ledger). Cấm sửa đổi.
     5. **Đã hủy**: Chuyến xe bị hủy bỏ giữa chừng, lưu lại lịch sử.
 * **Quy trình nhập liệu:** Quản lý tạo chuyến -> Kế toán điền số dự kiến -> Xe chạy -> Xe về, kế toán chốt số thực tế -> Quản lý/Kế toán khóa chuyến (Đã chốt).
+* **Quy tắc chuyển trạng thái (quan trọng):** Trạng thái chuyến đi chỉ thay đổi khi người dùng (Quản lý/Kế toán) **chủ động bấm nút** tương ứng. Hệ thống **không tự động** chuyển sang `Hoàn thành` khi upload ảnh container/seal — ảnh chỉ để lưu hồ sơ. Việc hoàn thành chuyến do người dùng quyết định sau khi chuyến kết thúc. *(Phản hồi người dùng 2026-06, mục A3.1.)*
 
 ### 4.1.1 Thuế VAT, Hoa hồng & Doanh thu vận tải
 * Giá cước bán cho khách hàng luôn được nhập **bao gồm VAT** (INCL VAT). 
@@ -106,6 +98,7 @@ Hệ thống được triển khai theo từng giai đoạn để tối ưu hóa
     4. Chênh lệch hiển thị trên thẻ chuyến và tổng hợp trong báo cáo P&L.
 * **Ràng buộc:** Chỉ được nhập/sửa giá thực tế khi chuyến chưa khóa (trạng thái Mới tạo, Đang chạy, Hoàn thành). Chuyến đã chốt — giá bất biến. Chuyến cũ (trước khi có tính năng này) để trống giá thực tế → dùng giá cấu hình snapshotted như hiện tại.
 * **Cập nhật giá cấu hình:** Mỗi lần kế toán thay đổi đơn giá trong Cấu hình hệ thống, hệ thống tự ghi một dòng mới vào bảng `fuel_price_history` (append-only, không sửa/xóa). Giá cấu hình hiện tại luôn đồng bộ với dòng mới nhất trong lịch sử.
+* **Snapshot giá tại chuyến:** Mỗi chuyến đi **phải** lưu `fuel_price_applied` tại thời điểm tạo hoặc lần đầu nhập số liệu tài chính. Thay đổi đơn giá cấu hình **không** làm thay đổi chi phí nhiên liệu của các chuyến đã tạo (kể cả khi chưa khóa, nếu đã có `fuel_price_applied` ≥ 0). Chuyến đã chốt (`LOCKED`) tuyệt đối không bị recompute — sai sót được sửa bằng bút toán `ADJUSTMENT` (xem §4.9).
 
 ### 4.3.2 Lựa chọn Nhà cung cấp nhiên liệu & Ghi nhận công nợ
 
@@ -172,6 +165,16 @@ net_salary = base_salary + adjustment − penalties
 
 * **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe (thêm trường `social_insurance` trên bảng `drivers`). Cộng vào trước khi tính `daily_rate` để phân bổ chi phí đúng. Lương thực trả lái xe vẫn dùng `base_salary` gốc; BHXH hạch toán chi phí riêng. *(Pete xác nhận 4/6, 11/6)*
 * **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `(base_salary + social_insurance) / standard_work_days × trip_wage_days`. Đây là khoản PHÂN BỔ chi phí vào chuyến, không cộng thêm vào thu nhập lái xe. Kế toán có thể sửa/ghi đè.
+* **Dashboard thu nhập lái xe (5 thẻ):** Cổng lái xe hiển thị 5 thẻ tổng hợp thu nhập cộng dồn từ đầu tháng đến hiện tại:
+    1. **Lương cơ bản tháng** (`base_salary_mtd`) — lương cứng tháng hiện tại.
+    2. **Lương sản xuất (chuyến) cộng dồn** (`trip_salary_mtd`) — tổng `driver_salary` từ các chuyến đã chốt trong tháng.
+    3. **Tiền đi đường đã lĩnh** (`road_allowance_mtd`) — tổng tiền đi đường thực lĩnh từ các chuyến LOCKED trong tháng.
+    4. **Đã tạm ứng + đã thanh toán** (`total_paid_mtd`) — cộng gộp từ sổ cái (`entity_type='DRIVER'`, áp dụng quy ước dấu `credit − debit`).
+    5. **Còn lại** (`remaining_mtd`) = `(Lương CB + Lương SX + Tiền đi đường) − (Tạm ứng + Kỷ luật + Đã thanh toán)`.
+
+    **Không tách STANDBY riêng** trong dashboard — lương STANDBY đã nằm trong Lương CB tháng qua `daily_rate × (trip_days + standby_days)` (xem công thức trên). Tách riêng sẽ gây hiểu nhầm là khoản cộng thêm → double-count.
+
+    **Lưu ý hiển thị:** Thẻ "Lương SX" trên giao diện lái xe ghi rõ "Lương phân bổ chuyến — không cộng vào thu nhập thực nhận" để lái xe hiểu đúng bản chất phân bổ chi phí (không phải thu nhập cộng thêm).
 * **Trường `trip_wage_days`:** Hệ thống tự tính từ khoảng ngày đi → ngày về (`daysBetween(departure, arrival) + 1`). Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ.
 * **Chi phí chờ việc (Standby Cost):** Tính bằng `standby_days × daily_rate`. Đây là khoản PHÂN BỔ chi phí gián tiếp vào P&L chung, không cộng thêm vào thu nhập lái xe.
 * **Khấu trừ / Thưởng ngày công (Adjustment):** Hệ thống so sánh tổng ngày làm việc (`trip_days + standby_days`) với `standard_work_days`. Nếu lái xe nghỉ không lương (`PERSONAL_LEAVE`), ngày làm việc sẽ giảm và bị trừ lương. Nếu lái xe làm thêm ngày Chủ nhật mà không nghỉ bù, ngày làm việc sẽ tăng và được cộng thêm lương (theo `daily_rate`).
@@ -238,6 +241,7 @@ net_salary = base_salary + adjustment − penalties
     * **COMPANY_DIRECT**: Công ty trả trực tiếp cho NCC/Cảng → Tạo công nợ phải trả NCC.
     * **FORWARDER_ADVANCE**: Giao nhận trả hộ bằng tiền tạm ứng → Trừ vào số dư tạm ứng của giao nhận; không tạo công nợ NCC. (Mặc định).
 * Các khoản phí cần lưu trữ: Số hóa đơn, Ngày hóa đơn, Số tờ khai (hải quan), và Số container.
+* **Ghi chú defensive (form giao nhận):** Khi giao nhận mở form nhập chi phí từ một dòng container đã chọn, trường `containerNumber` hiển thị ở chế độ **readonly + auto-fill** từ container đã chọn — giao nhận xác nhận lại bằng mắt trước khi nhập số tiền, tránh click nhầm dòng. Hệ thống vẫn ghi nhận FK `tripContainerId` để phiếu thanh toán group theo container chính xác, không phụ thuộc chuỗi text.
 
 ### 4.7 Lợi nhuận
 
@@ -246,12 +250,27 @@ net_salary = base_salary + adjustment − penalties
 * **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung, gồm VAT)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
 * **Thu nhập khác (Other Income):** Ghi nhận doanh thu phạt kỷ luật. Lương lái xe ghi nhận đầy đủ, không trừ phạt.
+* **Đối chiếu P&L:** Trước khi đưa vào vận hành chính thức, kế toán cần đối chiếu lại số liệu P&L bằng tay cho mỗi bộ chuyến mẫu (reconcile từng dòng doanh thu / chi phí / lãi gộp với `pnl.service.ts` và `computeTripTotals`). Sai lệch > 0.01 VNĐ phải được truy vết và sửa trước khi ký chốt báo cáo.
 
 ### 4.8 Phân chia lợi nhuận
 
 * **Mô hình Kết hợp (Hybrid Approach)**:
   * **Đầu vào (CapTableHistory)**: Theo dõi lịch sử thay đổi tỷ lệ cổ phần (VD hiện tại: Ông Thương 29.55%, Ông Phụng 70.45%).
   * **Đầu ra (Distribution Snapshot)**: Khi phân chia (theo quý/năm), hệ thống tính toán dựa trên tỷ lệ lịch sử hiện hành và khóa chết kết quả thành các bản ghi phân bổ (distributions) bất biến. Báo cáo năm chỉ cần `SUM` các bản ghi này.
+
+### 4.8.1 Phân chia lợi nhuận cho nhà đầu tư theo xe (Truck-level Investor Equity)
+
+Ngoài phân chia cổ tức tổng công ty theo `capTableHistory` (§4.8 trên), hệ thống còn hỗ trợ phân chia lợi nhuận ròng cho **nhà đầu tư góp vốn vào từng xe cụ thể**. Bản chất: "góp vốn theo xe" = đầu tư trên tài sản cụ thể, nhà đầu tư sở hữu một phần lợi nhuận ròng sinh ra từ chính xe đó.
+
+**Schema mới:** `truck_profit_distribution`
+- `id`, `truck_id` (FK→trucks), `partner_id` (FK→forwarders/partners, nullable cho trường hợp 1 nhà đầu tư góp nhiều xe), `period` (tháng/quý), `gross_profit`, `net_profit`, `share_pct` (decimal 5,2), `amount`, `created_at`, `status` (DRAFT/CONFIRMED).
+
+**Tách bạch 3 dòng tiền** (không gộp):
+1. **Chi phí vận hành theo xe** → trừ vào LN gộp của xe (sửa chữa, bảo dưỡng, lốp, bảo hiểm, đăng kiểm, phí đường bộ).
+2. **Cổ tức nhà đầu tư theo xe** → chia từ LN ròng công ty cho từng xe theo `share_pct` của xe đó (dòng tiền này).
+3. **Cổ tức cổ đông tổng công ty** → `capTableHistory` (§4.8), chia theo tỷ lệ sở hữu toàn công ty.
+
+Một cá nhân có thể vừa là cổ đông công ty (capTable), vừa là nhà đầu tư riêng cho 1 xe (truck_profit_distribution) — hai dòng tiền độc lập.
 
 ### 4.9 Khóa chuyến đi & Điều chỉnh (Trip Locking & Corrections)
 
@@ -267,6 +286,7 @@ net_salary = base_salary + adjustment − penalties
 * **Ghi nhận thanh toán:** Thanh toán được khớp (match) với từng chuyến đi cụ thể. Một khoản chuyển khoản ngân hàng (có `receipt_id` chung) sẽ tạo ra nhiều dòng ghi có (mỗi dòng tương ứng với số tiền trả cho một `txn_id` cụ thể). Hệ thống cho phép thanh toán một phần (partial payment).
 * **Tính nợ động:** Số dư nợ hiện tại là cột `balance` ở dòng cuối cùng của thực thể đó. Tình trạng nợ của từng chuyến đi được tính bằng tổng debit trừ tổng credit của chuyến đó.
 * Kế toán xuất sao kê cho khách hàng ghi tổng công nợ. Cảnh báo: Quá hạn 30/60/90 ngày.
+* **Làm mới tức thời:** Số liệu công nợ phải thu (số dư, tuổi nợ, KPI tổng hợp) phải được làm mới **tức thời** mỗi khi có ghi nhận ledger mới — không cần người dùng tải lại trang. Cơ chế: server push invalidation + client `queryClient.invalidateQueries` cho các query liên quan đến công nợ.
 * **Giấy báo nợ (Debit Note):** Bản xuất ra PDF/Excel gửi cho khách hàng, bao gồm Cước vận tải + Chi phí dịch vụ đi kèm. Tùy chọn xuất theo tháng (MONTHLY) hoặc theo từng lô (PER_BATCH) cấu hình theo khách hàng.
 * **Đối trừ công nợ (Debt Netting):** Đối với khách hàng đồng thời là đối tác/nhà cung cấp. Kế toán lập Bảng đối chiếu công nợ hàng tháng, lấy min(Công nợ phải thu, Công nợ phải trả) để cấn trừ (Full offset). Giám đốc duyệt mới ghi nhận vào Sổ cái.
 
@@ -312,6 +332,45 @@ net_salary = base_salary + adjustment − penalties
 * **Thanh toán công nợ:** kế toán nhập tổng tiền trả cho một NCC → `VENDOR_PAYMENT` (debit) giảm số dư. **Khớp FIFO theo tổng số dư, không khớp từng khoản chi.**
 * **Sửa/Xóa phiếu đã ghi nợ:** dùng bút toán **ADJUSTMENT** bù trừ (Sổ cái append-only); dòng phiếu soft-delete.
 * **Bảng `expenses`** là bảng vận hành mới (không phải bảng cấu hình), kèm bảng `expense_photos` cho ảnh hóa đơn.
+* **Phân loại Nhà cung cấp theo bản chất công nợ:**
+    - `FUEL_SUPPLIER` — NCC nhiên liệu (gắn cờ `is_fuel_supplier`). Công nợ phát sinh tự động khi chuyến LOCKED (xem §4.3.2).
+    - `EXTERNAL_CARRIER` — Đối tác vận tải thuê ngoài. Công nợ ghi nhận khi chuyến EXTERNAL LOCKED.
+    - `COMMISSION_PAYABLE` — Hoa hồng phải trả (môi giới/chiết khấu). Phân loại chi tiết theo `commission_type`:
+        - `PARTNER_REFERRAL` — Hoa hồng trả cho cá nhân/tổ chức môi giới giới thiệu khách. Hạch toán là **chi phí bán hàng**, cộng vào P&L.
+        - `CUSTOMER_REBATE` — Chiết khấu/hoàn tiền trả cho khách hàng theo doanh số. Hạch toán là **giảm doanh thu** (phát sinh công nợ phải trả cho khách hàng) — khác với `customerCommission` (đã trừ ngay khi nhập chuyến). `CUSTOMER_REBATE` là khoản trả sau.
+    - `OTHER_VENDOR` — NCC một lần (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ) — phát sinh khi phiếu UNPAID.
+
+    Báo cáo công nợ phải trả (`/payables`) cung cấp filter chip theo các loại trên.
+* **Back-dating chi phí:** Mỗi phiếu chi phí có 2 mốc thời gian:
+    - `expense_date` (Ngày phát sinh) — ngày thực tế phát sinh chi phí tại NCC. Mặc định = ngày nhập.
+    - `recorded_at` (Ngày nhập) — ngày hệ thống ghi nhận (auto).
+
+    **Ràng buộc validation:** `expense_date <= today()`. Hệ thống **không cho phép** nhập `expense_date` ở tương lai — tránh gõ nhầm năm và đảm bảo dòng tiền thực tế. Cho phép chỉnh `expense_date` về mọi ngày trong quá khứ + hôm nay (back-dating cho trường hợp NCC báo về sau).
+* **Số dư tạm ứng & hoàn ứng:** Đối với tạm ứng giao nhận (forwarder advances), hệ thống hiển thị:
+    - **Số dư tạm ứng hiện tại** = Σ tạm ứng đã duyệt − Σ tất toán đã duyệt.
+    - **Chi tiết hoàn ứng theo từng container/lô** — cho phép kế toán/giám đốc duyệt các phiếu yêu cầu hoàn ứng, xem phiếu đã duyệt/đã thanh toán, còn dư bao nhiêu.
+
+### 4.16 Quản lý lốp xe (Tire management)
+
+Mỗi đầu kéo có tối đa 22 lốp + 2 lốp dự phòng, mỗi lốp có **số series riêng biệt** để nhận diện. Bảng `tires` (id, truck_id, serial_no [unique], size, position, installed_at, removed_at, supplier_id, warranty_until, status). Theo dõi: lốp chạy được bao nhiêu ngày, mua của NCC nào, còn bảo hành không. Cảnh báo khi lốp sắp tới hạn bảo hành / hết hạn.
+
+### 4.17 Cảnh báo đội xe (Vehicle alerts)
+
+Hệ thống nhắc trước khi tới hạn các mốc vận hành của xe:
+- Thay dầu (mặc định nhắc trước **7 ngày**).
+- Đăng kiểm (mặc định **30 ngày**).
+- Bảo hiểm TNDS (mặc định **30 ngày**).
+- Phí đường bộ (mặc định **15 ngày**).
+
+Mỗi loại cảnh báo có `lead_days` cấu hình được (override mặc định). Cảnh báo hiển thị trên Dashboard quản lý, trang Đội xe, và trang cá nhân lái xe (chỉ phương tiện đang vận hành).
+
+Điều kiện kích hoạt: `hôm nay >= hạn_cuối − lead_days` HOẶC đã quá hạn. Dùng `hạn_cuối` mới nhất theo từng (xe × loại cảnh báo).
+
+### 4.18 Hướng dẫn cho lái xe (Trip instructions for drivers)
+
+Quản lý nhập hướng dẫn riêng cho từng chuyến: tên + SĐT người liên hệ, lưu ý đặc biệt (hun trùng, cân hàng, kẹp seal tạm, lấy mẫu kiểm dịch…). Lái xe chỉ đọc, không sửa.
+
+Bảng `trip_instructions` (id, trip_id, contact_name, contact_phone, notes, manager_id, created_at). Quyền: Quản lý tạo/sửa; Lái xe/Kế toán chỉ đọc trên chi tiết chuyến.
 
 ---
 
@@ -322,6 +381,9 @@ net_salary = base_salary + adjustment − penalties
 2. **[Quản lý]** Tôi muốn chuyển trạng thái chuyến đi (Mới tạo → Đang chạy → Hoàn thành → Đã chốt).
 4. **[Lái xe]** Tôi muốn xem lịch trình chuyến đi của mình trên điện thoại (chỉ xem).
 5. **[Lái xe]** Tôi muốn xem số dầu được cấp cho chuyến đi trên điện thoại (chỉ xem).
+6. **[Lái xe]** Tôi muốn danh sách chuyến của mình hiển thị **số container** và **tên khách hàng** để dễ nhận diện.
+7. **[Quản lý]** Tôi muốn nhập **hướng dẫn riêng cho từng chuyến** (tên + SĐT người liên hệ, lưu ý đặc biệt) để lái xe xem khi cần.
+8. **[Lái xe]** Tôi muốn xem **hướng dẫn** của quản lý cho chuyến của mình (chỉ đọc).
 
 ### MODULE 2: GHI NHẬN CHUYẾN ĐI & CHI PHÍ
 1. **[Kế toán]** Tôi muốn nhập số liệu thực tế cho chuyến đi: km, số lít dầu, loại tải (hàng/vỏ), điều chỉnh vé đường, số trạm, lương chuyến quy đổi, doanh thu.
@@ -344,10 +406,13 @@ net_salary = base_salary + adjustment − penalties
 2. **[Kế toán/Quản lý]** Tôi muốn nhận cảnh báo tự động khi khách hàng quá hạn 30/60/90 ngày.
 3. **[Kế toán]** Tôi muốn ghi nhận thanh toán (toàn bộ hoặc một phần) vào tổng số dư của khách hàng. Hệ thống gợi ý FIFO (chuyến cũ nhất trước), nhưng tôi có thể chọn chuyến cụ thể để thanh toán.
 4. **[Kế toán]** Tôi muốn xuất sao kê công nợ cho khách hàng.
+5. **[Kế toán/Quản lý]** Tôi muốn lọc/xuất **báo cáo công nợ phải thu chi tiết** theo từng khách hàng và **khoảng thời gian** tùy chọn.
+6. **[Quản lý/Kế toán]** Tôi muốn trang chi tiết khách hàng hiển thị **công nợ phải thu hiện tại** (số dư + tuổi nợ) ngay tại header, không phải vào trang công nợ riêng.
 
 ### MODULE 6: PHÂN CHIA LỢI NHUẬN
 1. **[Quản lý]** Tôi muốn hệ thống tự động tính lợi nhuận ròng (= Tổng LN gộp - Phí quản lý + Thu nhập khác) và phân bổ theo tỷ lệ vốn góp.
 2. **[Quản lý]** Tôi muốn cấu hình cổ đông: thêm/đổi/rút cổ phần và điều chỉnh tỷ lệ.
+3. **[Quản lý]** Tôi muốn cấu hình **tỷ lệ góp vốn theo từng xe** và xem **phân chia lợi nhuận theo xe** (cổ tức nhà đầu tư góp vốn vào từng xe riêng lẻ, tách biệt với cổ tức tổng công ty).
 
 ### MODULE 7: KỶ LUẬT
 1. **[Kế toán]** Tôi muốn ghi nhận vi phạm dựa trên danh mục có sẵn hoặc nhập lý do mới (hệ thống kiểm tra trùng lặp) và ghi số tiền phạt.
@@ -374,6 +439,12 @@ net_salary = base_salary + adjustment − penalties
 4. **[Kế toán]** Tôi muốn ghi nhận thanh toán cho NCC (giảm tổng số dư, FIFO).
 5. **[Quản lý]** Tôi muốn lợi nhuận gộp theo xe đã trừ chi phí bảo dưỡng của xe đó (bao gồm chi phí rơ-mooc ghép cặp), và lợi nhuận ròng đã trừ chi phí chung (không gắn xe). Báo cáo phân tách chi phí đầu kéo vs rơ-mooc.
 6. **[Quản lý/Kế toán]** Tôi muốn Dashboard nhắc khi bảo hiểm/đăng kiểm/phí đường bộ của xe sắp tới hạn hoặc đã quá hạn.
+7. **[Kế toán]** Tôi muốn ghi nhận **hoa hồng phải trả** cho đối tác môi giới (`PARTNER_REFERRAL`, hạch toán chi phí bán hàng) hoặc cho khách hàng (`CUSTOMER_REBATE`, hạch toán giảm doanh thu). Hệ thống phát sinh công nợ phải trả tương ứng.
+8. **[Kế toán]** Tôi muốn nhập **ngày phát sinh chi phí** (`expense_date`) khác ngày nhập khi NCC báo về sau. Hệ thống chỉ cho phép ngày trong quá khứ hoặc hôm nay, không cho tương lai.
+9. **[Quản lý/Kế toán]** Tôi muốn xem **số dư tạm ứng hiện tại** của từng giao nhận, kèm chi tiết các phiếu yêu cầu hoàn ứng / đã duyệt / đã thanh toán.
+10. **[Kế toán]** Tôi muốn duyệt **phiếu hoàn ứng** theo từng container/lô của chuyến, và xem lịch sử duyệt/chi trả chi tiết.
+11. **[Quản lý/Kế toán]** Tôi muốn Dashboard / trang Đội xe **cảnh báo** khi thay dầu, đăng kiểm, bảo hiểm TNDS, phí đường bộ của xe sắp tới hạn hoặc đã quá hạn (lead-days cấu hình được).
+12. **[Quản lý/Kế toán]** Tôi muốn trang chi tiết nhà cung cấp hiển thị **công nợ phải trả hiện tại** (số dư + tuổi nợ) ngay tại header, không phải vào trang công nợ phải trả riêng.
 
 ### MODULE 10: LƯƠNG & CHẤM CÔNG LÁI XE
 1. **[Kế toán]** Tôi muốn xem lịch chấm công tháng của từng lái xe — các ngày đi chuyến (`TRIP_DAY`) được hệ thống tự điền; tôi chỉ cần click vào ngày còn lại để gán `STANDBY` (chờ việc/sửa xe) hoặc `PERSONAL_LEAVE` (nghỉ không lương).
@@ -384,6 +455,12 @@ net_salary = base_salary + adjustment − penalties
 6. **[Lái xe]** Tôi muốn xem lịch chấm công và thu nhập của mình (lương cứng, lương chuyến, lương bổ sung, khấu trừ nghỉ việc riêng, điều chỉnh, phạt, lương thực nhận) trên điện thoại. Chỉ xem, không sửa.
 7. **[Kế toán]** Tôi muốn cấu hình **BHXH/BHYT** cho từng lái xe (trường `social_insurance` trên trang cấu hình Lái xe) để hệ thống tính đúng `daily_rate` và lương chuyến quy đổi. *(Mới)*
 8. **[Kế toán]** Tôi muốn xem **lương bổ sung** (từ ngày STANDBY do lỗi công ty) và **khấu trừ nghỉ việc riêng** (vượt 4 ngày Chủ nhật miễn trừ) trên bảng tổng kết lương tháng. *(Mới)*
+
+### MODULE 11: QUẢN LÝ LỐP XE
+1. **[Quản lý/Kế toán]** Tôi muốn quản lý **lốp xe** cho từng đầu kéo: thêm lốp mới (số series, kích cỡ, vị trí, ngày lắp), sửa, xóa (soft delete), xem lịch sử thay lốp.
+2. **[Quản lý/Kế toán]** Tôi muốn xem **danh sách lốp** theo xe dạng grid, biết lốp nào đang lắp, lốp nào dự phòng, lốp nào đã tháo.
+3. **[Quản lý/Kế toán]** Tôi muốn nhận **cảnh báo bảo hành** khi lốp sắp tới hạn bảo hành hoặc đã hết hạn (lead-days cấu hình được).
+4. **[Kế toán]** Tôi muốn mỗi lốp gắn **NCC mua** để biết lốp mua từ đâu và còn bảo hành không.
 
 ---
 
@@ -411,6 +488,10 @@ net_salary = base_salary + adjustment − penalties
 | 18 | **Danh mục Chi phí Giao nhận** | Cấu hình các loại phí tại cảng, cờ mặc định xuất hóa đơn, cờ mặc định tính lãi | Nâng hạ, Cân xe, Kiểm hóa... |
 | 19 | **Ngày công lái xe (`driver_work_days`)** | Mỗi dòng = 1 ngày của 1 lái xe. Trạng thái: `TRIP_DAY` (tự động) / `STANDBY` / `PERSONAL_LEAVE` / `WEEKLY_OFF`. Liên kết `trip_id` nếu TRIP_DAY. | Tự động + kế toán chấm |
 | 20 | **Kỳ lương (`salary_periods`)** | Tổng kết lương tháng: ngày công chuẩn, daily_rate, trip_days, standby_days, total_trip_salary, adjustment, penalties, BHXH, net_salary, standby_cost. Status: DRAFT → CONFIRMED | 1 bản ghi / lái xe / tháng |
+| 21 | **Lốp xe (`tires`)** | id, truck_id, serial_no (unique), size, position, installed_at, removed_at, supplier_id, warranty_until, status | Mỗi đầu kéo 22 lốp + 2 dự phòng |
+| 22 | **Cảnh báo đội xe (`vehicle_alerts`)** | alert_type (`OIL_CHANGE` / `INSPECTION` / `INSURANCE` / `ROAD_FEE`), truck_id, valid_to, lead_days, last_checked_at | 4 loại × 4 xe |
+| 23 | **Hướng dẫn chuyến (`trip_instructions`)** | id, trip_id, contact_name, contact_phone, notes, manager_id, created_at | 0–n bản ghi/chuyến |
+| 24 | **Phân chia lợi nhuận theo xe (`truck_profit_distribution`)** | id, truck_id, partner_id (nullable), period, gross_profit, net_profit, share_pct, amount, created_at, status (`DRAFT` / `CONFIRMED`) | 1–n bản ghi/(xe × kỳ) |
 
 ---
 

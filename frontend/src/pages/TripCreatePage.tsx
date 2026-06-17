@@ -8,6 +8,8 @@ import { TripInfoCard } from '../components/trip/TripInfoCard';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { FuelTollsRevenueCard } from '../components/trip/FuelTollsRevenueCard';
 import { ImagesNotesCard } from '../components/trip/ImagesNotesCard';
+import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
+import { CardSection } from '../components/trip/CardSection';
 import { TripSummaryCard } from '../components/trip/TripSummaryCard';
 import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
 import { ActionBar } from '../components/trip/ActionBar';
@@ -74,6 +76,19 @@ export default function TripCreatePage() {
 
           <div className="tc-bento-finance">
             <FuelTollsRevenueCard collapsible defaultCollapsed />
+          </div>
+
+          <div className="tc-bento-containers">
+            <CardSection
+              number={4}
+              title="Container & Seal"
+              subtitle="Số cont, seal và ảnh chụp từng cont"
+              badge="optional"
+              collapsible
+              defaultCollapsed
+            >
+              <ContainerInstancesCard />
+            </CardSection>
           </div>
 
           <div className="tc-bento-media">

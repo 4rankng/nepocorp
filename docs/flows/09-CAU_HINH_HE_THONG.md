@@ -1,7 +1,7 @@
 # Cấu hình hệ thống
 
 > Tài liệu QA testing & Hướng dẫn sử dụng — Quản lý cấu hình toàn hệ thống
-> **Route:** `/config` (hub) + 18 sub-pages
+> **Route:** `/config` (hub) + 13 sub-pages
 > **Roles:** ADMIN (CRUD), MANAGER (view + limited edit), ACCOUNTANT (view only), DRIVER (no access)
 
 ---
@@ -10,9 +10,9 @@
 
 ### 1.1 Mô tả
 
-Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 18 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 13 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
 
-### 1.2 18 Sub-pages
+### 1.2 13 Sub-pages
 
 | # | Tên | Route | Mô tả |
 |---|-----|-------|-------|
@@ -29,6 +29,12 @@ Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ l
 | 11 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
 | 12 | Loại container | `/config/container-types` | Danh mục loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC...) |
 | 13 | Cảng / Bãi | `/config/ports` | Danh mục cảng, bãi (chủ yếu tại Hải Phòng) |
+
+> **Module bổ sung (xem tài liệu riêng):**
+> - **Quản lý lốp xe** → [`15-QUAN_LY_LOP_XE.md`](./15-QUAN_LY_LOP_XE.md) — CRUD lốp, grid theo xe, cảnh báo bảo hành.
+> - **Cảnh báo đội xe** (`vehicle_alerts`) — cấu hình `lead_days` cho từng loại cảnh báo (thay dầu, đăng kiểm, bảo hiểm, phí đường bộ). Xem `07-DOI_XE_VA_FLEET.md §2.3` và `PRODUCT-SPECS §4.17`.
+> - **Hướng dẫn cho lái xe** (`trip_instructions`) — quản lý nhập từ chi tiết chuyến, không phải sub-page riêng. Xem `11-LAI_XE_MOBILE.md §2.5`.
+> - **Phân chia lợi nhuận theo xe** (`truck_profit_distribution`) — cấu hình `share_pct` cho từng xe. Xem `05-PHAN_BO_LOI_NHUAN.md §2.4` và `PRODUCT-SPECS §4.8.1`.
 
 ### 1.3 Phân quyền
 

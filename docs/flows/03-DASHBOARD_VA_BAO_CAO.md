@@ -207,6 +207,25 @@
 |--------|------|-------|
 | GET | `/api/reports/fuel-variance?month=M&year=YYYY` | Tổng hợp + chi tiết chênh lệch giá nhiên liệu theo kỳ |
 
+### 4.5 Đối chiếu P&L (P&L Reconciliation) (A6)
+
+Trước khi ký chốt báo cáo P&L, kế toán cần **đối chiếu lại số liệu P&L bằng tay** cho mỗi bộ chuyến mẫu (reconcile từng dòng doanh thu / chi phí / lãi gộp với source-of-truth):
+
+| Bước | Hành động |
+|------|-----------|
+| 1 | Chọn một bộ chuyến LOCKED của cùng 1 xe trong tháng. |
+| 2 | Tổng hợp doanh thu ex-VAT, tổng chi phí incl. VAT **bằng tay** (tính từ dữ liệu thô). |
+| 3 | So với kết quả của `pnl.service.ts` + `computeTripTotals`. |
+| 4 | Sai lệch > 0.01 VNĐ → truy vết, sửa trước khi ký chốt. |
+
+**Nguyên nhân sai lệch phổ biến cần kiểm tra:**
+- Thiếu `fuel_price_applied` snapshot → chi phí NL dùng giá cấu hình hiện tại thay vì giá tại ngày chốt.
+- Phiếu chi phí bảo dưỡng gắn `vehicle_component` sai.
+- Phân bổ STANDBY sang P&L chung không khớp với kỳ lương CONFIRMED.
+- Phí quản lý cấu hình trễ 1 tháng.
+
+**Tần suất:** thực hiện khi đưa vào vận hành chính thức + mỗi khi có thay đổi lớn (rule tính, schema, cấu hình).
+
 ---
 
 ## 5. QA Test Checklist

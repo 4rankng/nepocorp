@@ -224,6 +224,7 @@ export default function TripEditPage() {
                   <ContainerInstancesCard
                     tripId={trip.id}
                     expectedCount={trip.containerCount ?? 1}
+                    requiresPhotos={!!trip.cargoType?.requiresPhotos}
                   />
                 </div>
               </div>
@@ -233,14 +234,11 @@ export default function TripEditPage() {
                   <div className="tc-card-num">6</div>
                   <div className="tc-card-text">
                     <div className="tc-card-title">Ảnh & Ghi chú</div>
-                    <div className="tc-card-sub">Ảnh cont, seal và ghi chú</div>
+                    <div className="tc-card-sub">Ảnh đính kèm & ghi chú</div>
                   </div>
                 </div>
                 <div className="tc-card-body">
-                  <PhotoUploader
-                    requiresPhotos={!!trip.cargoType?.requiresPhotos}
-                    tripId={trip.id}
-                  />
+                  <PhotoUploader tripId={trip.id} />
                   <div className="tc-field">
                     <label className="tc-field-label">Ghi chú chuyến đi</label>
                     <textarea

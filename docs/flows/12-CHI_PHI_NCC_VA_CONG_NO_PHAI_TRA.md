@@ -10,7 +10,7 @@
 
 ### 1.1 Mô tả
 
-Module bổ sung phần chi phí vận hành mà quy trình Excel cũ vẫn theo dõi nhưng web MVP còn thiếu: **sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ**. Gồm 4 phần:
+Module bổ sung phần chi phí vận hành mà quy trình Excel cũ vẫn theo dõi nhưng sản phẩm web trước đây còn thiếu: **sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ**. Gồm 4 phần:
 
 1. **Nhà cung cấp (NCC)** — danh mục mọi bên nhận tiền (gara, trạm lốp, cửa hàng phụ tùng, công ty bảo hiểm, trung tâm đăng kiểm, đơn vị thu phí đường bộ).
 2. **Hạng mục chi phí** — danh mục cấu hình được; mỗi hạng mục là **một lần** hoặc **định kỳ** (có nhắc gia hạn).
@@ -49,6 +49,17 @@ Module bổ sung phần chi phí vận hành mà quy trình Excel cũ vẫn theo
 
 CRUD đơn giản (theo mẫu Khách hàng): Tên, Người liên hệ, SĐT, Mã số thuế, Ghi chú, Trạng thái, **Cờ "Là NCC nhiên liệu"** (`isFuelSupplier`, checkbox). Không có trường "phân loại" — phân loại nằm ở hạng mục của từng phiếu chi. NCC được đánh dấu `isFuelSupplier` sẽ xuất hiện trong dropdown chọn NCC nhiên liệu trên form nhập liệu chuyến đi (§6).
 
+**Phân loại NCC theo bản chất công nợ (A9):**
+
+| Loại | Mô tả | Cách tạo công nợ |
+|------|-------|------------------|
+| `FUEL_SUPPLIER` | NCC nhiên liệu (gắn cờ `is_fuel_supplier`) | Tự động khi chuyến LOCKED (xem §6) |
+| `EXTERNAL_CARRIER` | Đối tác vận tải thuê ngoài | Tự động khi chuyến EXTERNAL LOCKED |
+| `COMMISSION_PAYABLE` | Hoa hồng phải trả (môi giới/KH rebate) | Kế toán tạo thủ công qua form phiếu chi |
+| `OTHER_VENDOR` | NCC một lần (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ) | Khi phiếu UNPAID |
+
+Báo cáo công nợ phải trả (`/payables`) cung cấp **filter chip** theo các loại trên.
+
 ### 2.2 Hạng mục chi phí (trong /config)
 
 - Tạo hạng mục tự do theo nhu cầu (VD: Sửa chữa, Phụ tùng, Vật tư, Bảo hiểm, Đăng kiểm, Phí đường bộ).
@@ -58,16 +69,20 @@ CRUD đơn giản (theo mẫu Khách hàng): Tên, Người liên hệ, SĐT, M�
 ### 2.3 Nhập Phiếu chi phí (/expenses)
 
 Form nhập:
-1. **Ngày** (bắt buộc)
-2. **Nhà cung cấp** (bắt buộc, từ danh mục)
-3. **Hạng mục** (bắt buộc, từ danh mục)
-4. **Xe** — chọn xe đầu kéo, **hoặc để trống** (chi phí chung). Khi chọn xe, đánh dấu chi phí thuộc **đầu kéo** hay **rơ-mooc** (dropdown `vehicle_component`: "Đầu kéo" / "Rơ-mooc", mặc định "Đầu kéo"). Chi phí rơ-mooc tự gộp vào lãi gộp của đầu kéo ghép cặp; phân loại chỉ dùng cho báo cáo phân tách.
-5. **Số tiền** (bắt buộc, VND)
-6. **Trạng thái:** Trả ngay (PAID) / Ghi nợ (UNPAID)
-7. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**
-8. **Ghi chú**, **Ảnh hóa đơn** (upload)
+1. **Ngày phát sinh (`expense_date`)** (bắt buộc) — ngày thực tế phát sinh chi phí tại NCC. Mặc định = hôm nay. **Ràng buộc: `expense_date <= today()`** — không cho phép ngày tương lai (A10.2).
+2. **Ngày nhập (`recorded_at`)** — auto, ngày hệ thống ghi nhận. Hai mốc này tách biệt để hỗ trợ back-dating khi NCC báo về sau.
+3. **Nhà cung cấp** (bắt buộc, từ danh mục)
+4. **Hạng mục** (bắt buộc, từ danh mục)
+5. **Xe** — chọn xe đầu kéo, **hoặc để trống** (chi phí chung). Khi chọn xe, đánh dấu chi phí thuộc **đầu kéo** hay **rơ-mooc** (dropdown `vehicle_component`: "Đầu kéo" / "Rơ-mooc", mặc định "Đầu kéo"). Chi phí rơ-mooc tự gộp vào lãi gộp của đầu kéo ghép cặp; phân loại chỉ dùng cho báo cáo phân tách.
+6. **Số tiền** (bắt buộc, VND)
+7. **Trạng thái:** Trả ngay (PAID) / Ghi nợ (UNPAID)
+8. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**
+9. **Ghi chú**, **Ảnh hóa đơn** (upload)
+10. **`commission_type`** (chỉ với `COMMISSION_PAYABLE`): `PARTNER_REFERRAL` (chi phí bán hàng) hoặc `CUSTOMER_REBATE` (giảm doanh thu). Hạch toán khác nhau (xem `PRODUCT-SPECS §4.15`).
 
 > Một hóa đơn gara nhiều khoản → nhập nhiều phiếu (mỗi hạng mục một phiếu), cùng NCC + cùng ngày.
+
+**RBAC (A10.1):** Cả ADMIN, MANAGER, ACCOUNTANT đều có quyền tạo phiếu chi (Casbin `financial:write`). Nếu manager gặp lỗi 403/404 khi tạo, kiểm tra Casbin policy cho role MANAGER với resource `expenses` action `create`.
 
 ### 2.4 Công nợ phải trả (/payables, /payables/:id)
 
@@ -78,6 +93,47 @@ Form nhập:
 ### 2.5 Nhắc gia hạn (Dashboard)
 
 Widget liệt kê xe có bảo hiểm/đăng kiểm/phí đường bộ **sắp tới hạn** (trong `reminder_lead_days`) hoặc **đã quá hạn**, dựa trên `valid_to` mới nhất theo (xe × hạng mục).
+
+### 2.6 Công nợ phải trả trên trang chi tiết NCC (A14)
+
+Trang chi tiết NCC (`/suppliers/:id`) hiển thị **widget Công nợ phải trả** ngay tại header, mirror với widget AR trên trang KH (xem `08-KHACH_HANG.md §2.6`):
+
+| Thành phần | Mô tả |
+|------------|-------|
+| **Số dư hiện tại** | Tổng `balance` của dòng ledger `entity_type='VENDOR'` mới nhất (VND) — viền đỏ nếu > 0 |
+| **Tuổi nợ lớn nhất** | Số ngày kể từ dòng `VENDOR_EXPENSE` chưa thanh toán cũ nhất |
+| **4 aging buckets** | 0–30 / 31–60 / 61–90 / 90+ |
+| **Nút "Xem chi tiết"** | Chuyển sang `/payables/:id` |
+
+**Cập nhật:** số liệu làm mới tức thời khi có ledger post mới.
+
+### 2.7 Số dư tạm ứng giao nhận (A11.1)
+
+Đối với tạm ứng giao nhận (forwarder advances), mỗi giao nhận có **số dư tạm ứng hiện tại**:
+
+> **Số dư tạm ứng** = Σ tạm ứng đã duyệt − Σ tất toán (hoàn ứng) đã duyệt.
+
+Hiển thị:
+- Trên **danh sách giao nhận** (cột "Số dư tạm ứng").
+- Trên **trang chi tiết giao nhận** (header).
+- Ứng với `entity_type='FORWARDER'` trong sổ cái (hoặc tương đương).
+
+### 2.8 Hoàn ứng theo từng container/lô (A11.2)
+
+Kế toán/giám đốc duyệt **phiếu yêu cầu hoàn ứng** theo từng container/lô của chuyến:
+
+1. Phiếu yêu cầu hoàn ứng gắn với `tripContainerId` cụ thể (FK).
+2. Trang chi tiết giao nhận hiển thị bảng **"Lịch sử hoàn ứng theo container/lô"**:
+    - Cột: Số container, tuyến, ngày vận chuyển, số tiền tạm ứng, số tiền hoàn ứng, trạng thái (Yêu cầu / Đã duyệt / Đã thanh toán).
+3. Kế toán bấm **Duyệt** → chuyển trạng thái Yêu cầu → Đã duyệt.
+4. Khi đã chi tiền → chuyển Đã duyệt → Đã thanh toán.
+
+### 2.9 Troubleshooting (D1, D2)
+
+| Vấn đề | Triệu chứng | Nguyên nhân & Cách xử lý |
+|--------|-------------|---------------------------|
+| **D1 — Dropdown hạng mục/NCC cũ** | Kế toán mở form nhập phiếu chi, danh sách NCC hoặc hạng mục không chứa NCC/hạng mục vừa tạo | Cache client hoặc chưa invalidate query. Form nhập phiếu phải `queryClient.invalidateQueries` cho `['suppliers']` và `['expense-categories']` khi mount. Refresh trang một lần cũng khắc phục tạm thời. |
+| **D2 — Upload ảnh hóa đơn lỗi** | Kế toán tải ảnh lên phiếu chi, báo lỗi dù ảnh đã giảm dung lượng | Kế toán đang dùng sai endpoint. Phiếu chi (expense) dùng `/api/expense-photos/upload` (hoặc tương đương), **không** dùng `/api/trip-photos/upload` (chỉ dành cho ảnh container/seal trên chuyến). Kiểm tra FE form wiring. |
 
 ---
 

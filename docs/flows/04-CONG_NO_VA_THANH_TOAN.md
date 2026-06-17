@@ -51,6 +51,8 @@ Module Công nợ & Thanh toán cho phép theo dõi công nợ khách hàng, ghi
 
 **Hành động:** Filter pills (All/Overdue/High risk), Tìm kiếm, Export CSV, Nhắc nợ hàng loạt, Click KH → chi tiết.
 
+> **Làm mới tức thời (A8):** Số liệu công nợ (số dư, tuổi nợ, KPI) được làm mới tức thời khi có ghi nhận ledger mới — không cần người dùng tải lại trang. Cơ chế: server push invalidation + `queryClient.invalidateQueries` cho các query liên quan đến công nợ.
+
 ### 2.2 Chi tiết Công nợ (/debt/:id)
 
 **Header:** Tên KH + thông tin liên hệ.
@@ -74,13 +76,47 @@ Dành cho thực thể vừa là khách hàng (phải thu) vừa là đối tác
 3. Nhập Ngày đối trừ và Ghi chú.
 4. Gửi yêu cầu (trạng thái PENDING). Quản lý/Giám đốc duyệt để chính thức tạo 2 dòng ADJUSTMENT giảm cả 2 đầu nợ.
 
-### 2.4 Ghi nhận Thanh toán (Modal)
+### 2.3a Nhập thanh toán từ báo có NH / phiếu thu (A8.1)
 
-1. Nhấn "Ghi nhận thanh toán" → mở modal
-2. Nhập **Mã phiếu thu** (receipt_id, bắt buộc)
-3. Danh sách chuyến chưa TT (FIFO): mỗi chuyến hiển thị mã, tuyến, tổng tiền, còn lại
-4. Nhập số tiền thanh toán cho mỗi chuyến
-5. Nhấn "Xác nhận" → POST /api/payments/receive
+Kế toán ghi nhận khoản thanh toán mới từ ngân hàng (báo có NH) hoặc phiếu thu tiền mặt:
+
+1. Nhấn **"Ghi nhận thanh toán"** tại trang chi tiết KH → mở modal.
+2. Nhập **Mã phiếu thu** (`receipt_id`, bắt buộc) — dùng để nhóm các khoản thanh toán từ cùng một lệnh chuyển khoản ngân hàng.
+3. Danh sách chuyến chưa thanh toán (FIFO): mỗi chuyến hiển thị mã, tuyến, tổng tiền, còn lại.
+4. Nhập số tiền thanh toán cho mỗi chuyến (một lần có thể trả nhiều chuyến cùng `receipt_id`).
+5. Nhấn **"Xác nhận"** → `POST /api/payments/receive` → mỗi chuyến tạo 1 dòng `PAYMENT_RECEIVED` ledger (credit, giảm nợ).
+
+> Endpoint: `POST /api/payments/receive` (đã có sẵn). Quy trình này chỉ là cách ghi nhận tường minh — bản chất nghiệp vụ không thay đổi.
+
+### 2.4 Sao kê & Báo cáo công nợ phải thu
+
+#### 2.4.1 Sao kê chi tiết theo khách hàng (A8.2)
+
+Trang chi tiết KH (`/debt/:id`) hiển thị toàn bộ dòng sổ cái + cho phép lọc theo **khoảng thời gian** tùy chọn:
+
+1. Truy cập `/debt/:id` → Hero card tổng nợ + 4 aging KPIs.
+2. **Bộ lọc khoảng thời gian:** 2 ô date picker (từ ngày → đến ngày). Mặc định = toàn bộ lịch sử.
+3. Bảng ledger tự lọc theo `date BETWEEN from AND to`. Cột Ngày, Loại GD, Debit, Credit, Balance, Ghi chú.
+4. **Xuất sao kê chi tiết:** CSV/PDF với tiêu đề "Sao kê công nợ [Tên KH] từ [dateFrom] đến [dateTo]" + các dòng ledger.
+
+#### 2.4.2 Báo cáo tổng hợp công nợ (A8.3)
+
+Báo cáo tổng hợp tất cả khách hàng theo thời điểm (snapshot):
+
+1. Truy cập `/debt` → bảng tổng hợp KH × số dư × tuổi nợ × than aging bar.
+2. **Bộ lọc thời điểm:** chọn "Tính đến ngày" → số dư được tính đến thời điểm đó (running balance cut-off).
+3. **Export CSV** toàn bộ bảng — phục vụ đối chiếu cuối kỳ.
+
+### 2.5 AR KPI card trên Dashboard (A8)
+
+Dashboard quản lý/kế toán hiển thị **2 KPI card riêng cho AR**:
+
+| Card | Nội dung | Đơn vị |
+|------|----------|--------|
+| **Tổng công nợ phải thu** | Tổng số dư hiện tại của tất cả KH có nợ > 0 | VND |
+| **Số KH quá hạn** | Đếm KH có bất kỳ khoản nào > 30 ngày tuổi nợ | KH |
+
+Click mỗi card → chuyển đến `/debt` đã lọc sẵn. Số liệu làm mới tức thời khi có ledger post mới (xem §2.1).
 
 ---
 

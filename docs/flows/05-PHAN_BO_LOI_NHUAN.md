@@ -65,6 +65,44 @@ Phân bổ mỗi đối tác = Lợi nhuận ròng × Tỷ lệ (%)
 3. Xác nhận dialog
 4. Kết quả: bảng chi tiết mỗi đối tác + số tiền
 
+### 2.4 Phân chia lợi nhuận theo xe (truck_profit_distribution) (A7)
+
+Ngoài phân chia cổ tức tổng công ty theo `capTableHistory` (§4.8 PRODUCT-SPECS), hệ thống hỗ trợ **phân chia lợi nhuận ròng cho nhà đầu tư góp vốn vào từng xe cụ thể**. Bản chất: "góp vốn theo xe" = đầu tư trên tài sản cụ thể, nhà đầu tư sở hữu một phần lợi nhuận ròng sinh ra từ chính xe đó.
+
+**Phân biệt 2 dòng tiền độc lập:**
+
+| Dòng tiền | Bảng / Module | Đối tượng | Cách chia |
+|-----------|---------------|-----------|-----------|
+| Cổ tức cổ đông tổng công ty | `capTableHistory` (§2.2) | Tất cả cổ đông | Theo tỷ lệ sở hữu toàn công ty |
+| Cổ tức nhà đầu tư theo xe | `truck_profit_distribution` (§2.4) | Nhà đầu tư góp vốn vào 1 xe | Theo `share_pct` của riêng xe đó |
+
+Một cá nhân có thể vừa là cổ đông công ty (capTable) vừa là nhà đầu tư riêng cho 1 xe (truck_profit_distribution) — hai dòng tiền tách bạch, không cộng dồn.
+
+**Cấu hình `truck_profit_distribution`:**
+
+| Trường | Mô tả |
+|--------|-------|
+| `truck_id` | FK → xe đầu kéo |
+| `partner_id` | FK → forwarders/partners (nullable: 1 nhà đầu tư có thể góp nhiều xe) |
+| `period` | Tháng/quý |
+| `gross_profit` | Lãi gộp của xe trong kỳ |
+| `net_profit` | Lãi ròng của xe trong kỳ (sau chi phí vận hành theo xe) |
+| `share_pct` | Tỷ lệ % nhà đầu tư được hưởng trên xe (decimal 5,2) |
+| `amount` | Số tiền thực nhận = `net_profit × share_pct / 100` |
+| `status` | `DRAFT` / `CONFIRMED` |
+
+**Tách bạch chi phí vận hành theo xe (không gộp vào cổ tức tổng):**
+- Chi phí sửa chữa, bảo dưỡng, lốp, bảo hiểm, đăng kiểm, phí đường bộ **của riêng xe đó** → trừ vào `gross_profit` xe → ra `net_profit` xe.
+- Cổ tức cổ đông tổng công ty (capTable) chia từ **LN ròng toàn công ty** (đã trừ chi phí chung) — KHÔNG trừ thêm chi phí theo xe.
+
+**Luồng nghiệp vụ:**
+
+1. ADMIN/MANAGER mở `/profit` → tab **"Phân chia theo xe"**.
+2. Chọn **Kỳ** (tháng/quý) + **Năm**.
+3. Hệ thống tính `gross_profit` và `net_profit` cho từng xe trong kỳ (từ chuyến LOCKED + phiếu chi phí theo xe).
+4. Với mỗi xe có `truck_profit_distribution` cấu hình, hiển thị `share_pct` × `net_profit` = `amount`.
+5. ADMIN/MANAGER nhấn **"Chốt & phân bổ"** → tạo bản ghi `truck_profit_distribution` với `status='CONFIRMED'` (bất biến, không sửa).
+
 ---
 
 ## 3. Luồng nghiệp vụ

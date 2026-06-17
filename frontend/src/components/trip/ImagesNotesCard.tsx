@@ -22,7 +22,7 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
 
   return (
     <CardSection
-      number={4}
+      number={5}
       title="Hình ảnh & ghi chú"
       subtitle="Ảnh đính kèm và lưu ý chuyến đi"
       badge="optional"

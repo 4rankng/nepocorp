@@ -45,7 +45,7 @@ Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành ri�
 
 ### 2.1 Danh sách chuyến (/my-trips)
 
-- Card list: icon Route, tên tuyến, status pill, biển số xe, ngày khởi hành, lương lái xe
+- Card list: icon Route, tên tuyến, status pill, biển số xe, ngày khởi hành, lương lái xe, **số container**, **tên khách hàng** (B1.1)
 - Click card → `/my-trips/:id`
 - Empty state: "Chưa có lệnh vận chuyển nào"
 
@@ -57,11 +57,23 @@ Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành ri�
 - **Card thu nhập:** Lương sản xuất, phụ phí đường, thưởng hàng về (+300K)
 - **Chân tuyến:** Legs numbered, origin → destination, km, badge Hàng/Vô
 - **Ghi chú:** Nội dung ghi chú
+- **Hướng dẫn (B1.3):** phần read-only hiển thị tên + SĐT người liên hệ và lưu ý đặc biệt do quản lý nhập (xem §2.5). Nếu không có hướng dẫn → ẩn phần này.
 
-### 2.3 Thu nhập (/my-earnings)
+### 2.3 Thu nhập (/my-earnings) — 5 thẻ dashboard
 
 - **Hero card:** Thu nhập ròng (xanh nếu ≥ 0, đỏ nếu < 0)
-- **3 KPI:** Lương cơ bản, Thu nhập sản xuất, Khấu trừ (phạt)
+- **5 thẻ KPI cộng dồn từ đầu tháng (B2.1–B2.5):**
+
+| # | Thẻ | Nguồn |
+|---|-----|-------|
+| 1 | **Lương cơ bản tháng** | `base_salary` của lái xe |
+| 2 | **Lương phân bổ chuyến** (B1.2 — relabel, ghi rõ "không cộng vào thu nhập thực nhận") | Σ `driver_salary` chuyến LOCKED trong tháng |
+| 3 | **Tiền đi đường đã lĩnh** | Σ `totalRoadAllowance` chuyến LOCKED trong tháng |
+| 4 | **Đã tạm ứng + đã thanh toán** | Từ sổ cái `entity_type='DRIVER'`, áp dụng quy ước `credit − debit` |
+| 5 | **Còn lại** | `(Lương CB + Lương SX + Tiền đi đường) − (Tạm ứng + Kỷ luật + Đã thanh toán)` |
+
+> **Quan trọng:** Không tách STANDBY riêng — STANDBY đã nằm trong Lương CB tháng qua `daily_rate × (trip_days + standby_days)`. Tách riêng sẽ double-count. (B1.2)
+
 - **Danh sách phạt:** Ngày, lý do, số tiền
 
 ### 2.4 Vi phạm (/my-penalties)
@@ -70,6 +82,24 @@ Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành ri�
 - **3 KPI:** Vi phạm tháng này, Tiền phạt tháng này, Tổng bản ghi
 - **Danh sách:** Lý do, số tiền, ngày, mã chuyến
 - **Lọc tháng:** Dropdown
+
+### 2.5 Hướng dẫn cho lái xe (B1.3)
+
+Quản lý nhập hướng dẫn riêng cho từng chuyến (bảng `trip_instructions`). Trên cổng lái xe:
+
+- Hiển thị ở trang chi tiết chuyến `/my-trips/:id` (xem §2.2).
+- Read-only — lái xe không sửa được.
+- **Trường hiển thị:**
+    - **Người liên hệ:** Tên + SĐT
+    - **Lưu ý đặc biệt:** free text (hun trùng, cân hàng, kẹp seal tạm, lấy mẫu kiểm dịch…)
+
+### 2.6 Cảnh báo phương tiện (B4)
+
+Lái xe xem cảnh báo hạn vận hành của xe **đang vận hành** (xe gắn với lái xe qua `assigned_truck_id`):
+
+- **4 loại cảnh báo:** Thay dầu (7 ngày), Đăng kiểm (30 ngày), Bảo hiểm TNDS (30 ngày), Phí đường bộ (15 ngày).
+- **Hiển thị:** card trên cổng lái xe, badge màu (vàng = sắp tới hạn, đỏ = quá hạn).
+- **Mục đích:** nhắc lái xe chủ động báo cho quản lý kế hoạch gia hạn.
 
 ---
 

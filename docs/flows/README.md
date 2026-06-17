@@ -31,8 +31,9 @@ Mọi tài liệu được viết bằng **tiếng Việt**.
 | 10 | [Quản trị Hệ thống](./10-QUAN_TRI_HE_THONG.md) | Quản lý tài khoản người dùng, nhật ký hoạt động | `/users`, `/audit-logs` |
 | 11 | [Cổng thông tin Lái xe](./11-LAI_XE_MOBILE.md) | Lệnh vận chuyển, chi tiết chuyến, thu nhập, phạt (mobile-first) | `/my-trips`, `/my-trips/:id`, `/my-earnings`, `/my-penalties` |
 | 12 | [Chi phí, NCC & Công nợ phải trả](./12-CHI_PHI_NCC_VA_CONG_NO_PHAI_TRA.md) | Danh mục Nhà cung cấp, hạng mục chi phí (một lần/định kỳ), nhập phiếu chi phí, công nợ phải trả, nhắc gia hạn | `/suppliers`, `/expenses`, `/payables`, `/payables/:id` |
-| 13 | [Nhân viên giao nhận & Tạm ứng](./13-GIAO_NHAN_VA_TAM_UNG.md) | Xem chuyến, nhập container/seal, ghi chi phí phát sinh, tạm ứng (Phase 2/3) | `/my-forwarder-trips`, `/my-forwarder-trips/:id` |
+| 13 | [Nhân viên giao nhận & Tạm ứng](./13-GIAO_NHAN_VA_TAM_UNG.md) | Xem chuyến, nhập container/seal, ghi chi phí phát sinh, tạm ứng, duyệt hoàn ứng | `/my-forwarder-trips`, `/my-forwarder-trips/:id` |
 | 14 | [Lương & Chấm công](./14-LUONG_VA_CHAM_CONG.md) | Lịch chấm công tháng, tính lương thực nhận, lương bổ sung, khấu trừ nghỉ việc riêng, xác nhận kỳ lương | `/salary` |
+| 15 | [Quản lý Lốp xe](./15-QUAN_LY_LOP_XE.md) | CRUD lốp, grid theo xe, cảnh báo bảo hành | `/config/tires` |
 
 ---
 

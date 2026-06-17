@@ -67,10 +67,16 @@ interface ServerContainer {
 }
 
 interface Props {
-  tripId: number;
+  /** Trip id. Omitted on the create page (/trips/new): the card then seeds
+   *  empty rows and buffers captured photos in RAM until the trip is saved
+   *  (flushed by `flushPendingContainerPhotos` after `POST /trips`). */
+  tripId?: number;
   /** Expected container count from trip header (Số cont). New cards auto-fill
    *  enough rows to match — the user can still add/remove freely. */
   expectedCount?: number;
+  /** When the cargo type requires cont/seal evidence, show a warning banner
+   *  until at least one row has a cont or seal photo. */
+  requiresPhotos?: boolean;
 }
 
 function rowKey() {
@@ -126,7 +132,7 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
   };
 }
 
-export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
+export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
   const { toast } = useToast();
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
@@ -134,6 +140,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     uploadContainerPhoto, revokeRowPhotos } = useTripFormContext();
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
+  // Create-page (/trips/new) guard: seed initial empty rows exactly once,
+  // since there is no server trip to seed from until the form is saved.
+  const createSeededRef = useRef(false);
 
   // Per-container photo capture. `scanner` holds the row + type awaiting a
   // capture; `uploading` is keyed by row `_key` + cont/seal so each button
@@ -206,7 +215,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     contPhotoKeys?: string[];
     sealPhotoKeys?: string[];
   }>({
-    queryKey: qk.tripForm.tripContainers(tripId),
+    // On the create page tripId is undefined; the query is disabled below, and
+    // a sentinel key (0) keeps the helper's `number` signature satisfied.
+    queryKey: qk.tripForm.tripContainers(tripId ?? 0),
     queryFn: () => api.get(`/trips/${tripId}/containers`),
     enabled: !!tripId,
   });
@@ -215,6 +226,16 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
   // save invalidates this query, `seededTripRef` is reset so the next refetch
   // re-seeds the saved rows.
   useEffect(() => {
+    // Create page (/trips/new): no trip id yet. Seed `expectedCount` empty
+    // rows once so the user has a starting row to fill; per-row cont/seal
+    // photos buffer in RAM and flush after `POST /trips` + `saveContainers`.
+    // Edit mode (tripId set) seeds from `existing` server data below.
+    if (!tripId) {
+      if (createSeededRef.current) return;
+      createSeededRef.current = true;
+      setRows(prev => prev.length > 0 ? prev : Array.from({ length: expectedCount }, () => emptyRow()));
+      return;
+    }
     if (!existing) return;
     if (seededTripRef.current === tripId) return;
     seededTripRef.current = tripId;
@@ -375,8 +396,28 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1 }: Props) {
     );
   }
 
+  const hasAnyContainerPhoto = rows.some(
+    r => r.photoKeys.cont.length > 0 || r.photoKeys.seal.length > 0,
+  );
+  const showRequiresWarning = !!requiresPhotos && !hasAnyContainerPhoto;
+
   return (
     <div>
+      {showRequiresWarning && (
+        <div style={{
+          padding: '10px 14px',
+          background: 'var(--warning-soft, #fff7e6)',
+          color: 'var(--warning-text, #b7791f)',
+          border: '1px solid rgba(217, 119, 6, 0.18)',
+          borderRadius: 'var(--radius-md, 10px)',
+          fontSize: 12,
+          marginBottom: 12,
+          fontWeight: 600,
+          lineHeight: 1.4,
+        }}>
+          ⚠️ Loại hàng này yêu cầu đính kèm ảnh vỏ Container và Niêm phong (Seal) để hoàn thành chuyến đi.
+        </div>
+      )}
       {rows.length === 0 ? (
         <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)' }}>
           <p style={{ marginBottom: 12 }}>Chưa có cont nào. Bấm "Thêm cont" để bắt đầu.</p>

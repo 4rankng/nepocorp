@@ -62,6 +62,21 @@ Trang Quản lý Khách hàng cho phép CRUD khách hàng vận tải, hiển th
 - **Tìm kiếm:** Debounce 300ms, tìm theo tên/MST
 - **Filter pills:** All/Risk/Active/Locked
 
+### 2.6 Công nợ phải thu trên trang chi tiết KH (A13)
+
+Trang chi tiết khách hàng (`/customers/:id`) hiển thị **widget Công nợ phải thu** ngay tại header (phía dưới thông tin liên hệ), giúp quản lý/kế toán nắm được tình trạng nợ mà không cần chuyển sang trang `/debt/:id`.
+
+**Nội dung widget:**
+
+| Thành phần | Mô tả |
+|------------|-------|
+| **Số dư hiện tại** | Tổng `balance` của dòng ledger mới nhất (VND) — viền đỏ nếu > 0, xanh nếu = 0 |
+| **Tuổi nợ lớn nhất** | Số ngày kể từ dòng `TRIP_REVENUE` chưa thanh toán cũ nhất |
+| **4 aging buckets** | Hiển thị 4 ô: 0–30 / 31–60 / 61–90 / 90+ với số tiền từng bucket |
+| **Nút "Xem chi tiết"** | Chuyển sang `/debt/:id` để xem sao kê + ghi thanh toán |
+
+**Cập nhật:** số liệu làm mới tức thời khi có ledger post mới (xem `04-CONG_NO_VA_THANH_TOAN.md §2.1`).
+
 ---
 
 ## 3. Luồng nghiệp vụ
