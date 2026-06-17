@@ -116,25 +116,18 @@ export async function transitionTripStatus(
 
       return unlockedTrip;
     } else if (targetStatus === TripStatus.COMPLETED) {
+      if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
+        throw new ApiError(403, 'Chỉ Quản lý hoặc Quản trị viên mới có quyền hoàn thành chuyến đi');
+      }
       if (currentStatus !== TripStatus.IN_TRANSIT) {
         throw new ApiError(409, 'Chỉ có thể hoàn thành chuyến đi đang chạy');
       }
-
-      // Enforce photo completion requirements
-      const photos = await tx.select().from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId));
-      const [cargoType] = await tx.select().from(s.cargoTypes).where(eq(s.cargoTypes.id, trip.cargoTypeId)).limit(1);
-
-      if (photos.length === 0) {
-        throw new ApiError(400, 'Cần tải lên ít nhất 1 ảnh (CONTAINER/SEAL) để hoàn thành chuyến đi');
-      }
-
-      if (cargoType && cargoType.requiresPhotos) {
-        const containerPhotos = photos.filter(p => p.type === 'CONTAINER');
-        const sealPhotos = photos.filter(p => p.type === 'SEAL');
-        if (containerPhotos.length === 0 || sealPhotos.length === 0) {
-          throw new ApiError(400, 'Yêu cầu phải có ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL đối với loại hàng chè');
-        }
-      }
+      // B2: completion is permissive — a trip may be marked "Hoàn thành"
+      // without photos, and photo evidence (CONTAINER/SEAL) can be added or
+      // edited afterwards ("allow to complete, user can edit later"). The
+      // previous ≥1-photo / cargo-type CONTAINER+SEAL gate is removed; the
+      // explicit POST /trips/:id/complete endpoint is the permissive path.
+      // Falls through to the generic status update below.
     } else if (targetStatus === TripStatus.LOCKED) {
       if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
         throw new ApiError(

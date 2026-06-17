@@ -172,6 +172,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
         && (isManagerOrAdmin || isAccountant),
       canCancel: s !== TripStatus.LOCKED && s !== TripStatus.CANCELED && isManagerOrAdmin,
       canDispatch: s === TripStatus.CREATED && isManagerOrAdmin,
+      canComplete: s === TripStatus.IN_TRANSIT && isManagerOrAdmin,
       canLock: s === TripStatus.COMPLETED && isManagerOrAdmin,
       canReassign: s === TripStatus.CREATED && isManagerOrAdmin,
       canAdjust: s === TripStatus.LOCKED && isManagerOrAdmin,

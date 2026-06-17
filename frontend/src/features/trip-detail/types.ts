@@ -43,6 +43,7 @@ export interface TripPermissions {
   canEditActuals: boolean;
   canCancel: boolean;
   canDispatch: boolean;
+  canComplete: boolean;
   canLock: boolean;
   canReassign: boolean;
   canAdjust: boolean;

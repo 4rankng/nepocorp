@@ -36,7 +36,7 @@ const TRANSITION_RULES: TransitionRule[] = [
   { from: 'CANCELED', to: 'IN_TRANSIT', allowed: false, roles: [], description: 'Cannot dispatch a canceled trip' },
 
   // COMPLETED target (from IN_TRANSIT — normal completion)
-  { from: 'IN_TRANSIT', to: 'COMPLETED', allowed: true, roles: [], description: 'Complete a running trip (requires photos)' },
+  { from: 'IN_TRANSIT', to: 'COMPLETED', allowed: true, roles: [], description: 'Complete a running trip (permissive — photos optional, B2)' },
   // COMPLETED target (from LOCKED — unlock)
   { from: 'LOCKED', to: 'COMPLETED', allowed: true, roles: ['ADMIN', 'MANAGER'], description: 'Unlock a locked trip' },
   { from: 'CREATED', to: 'COMPLETED', allowed: false, roles: [], description: 'Cannot complete a trip that was never dispatched' },

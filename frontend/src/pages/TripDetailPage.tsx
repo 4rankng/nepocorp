@@ -60,6 +60,7 @@ export default function TripDetailPage() {
         onBack={() => navigate('/trips')}
         onEdit={() => navigate(`/trips/${trip.id}/edit`)}
         onDispatch={() => page.handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
+        onComplete={() => page.handleAction('complete', () => api.post(`/trips/${trip.id}/complete`, {}))}
         onLock={page.handleLockClick}
         onCancel={async () => {
           if (await page.confirm('Bạn có chắc muốn hủy chuyến này?', { variant: 'danger', confirmLabel: 'Hủy chuyến' })) {

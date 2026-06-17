@@ -6,8 +6,6 @@ import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc, lte, ne } from 'drizzle-orm';
 import { TripStatus, FuelMode, Role } from '@tingting/shared';
 import type { TripLegInput } from '@tingting/shared';
-import { emitAudit } from './audit.service';
-import { AuditEvent } from './audit-types';
 import { computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { resolveTrailer } from './trip-shared';
@@ -518,34 +516,12 @@ export async function updateTripFigures(
     totals.grossProfit = frozenFuel.grossProfit;
     totals.totalFuelLiters = frozenFuel.totalFuelLiters;
 
-    // 5. If still IN_TRANSIT when actuals are submitted, auto-complete
-    //    only when photos are already present. Otherwise, save actuals but
-    //    leave the trip IN_TRANSIT — the user can upload photos and complete
-    //    from the trip detail page.
-    if (trip.status === TripStatus.IN_TRANSIT) {
-      const photos = await tx.select({ id: s.tripPhotos.id })
-        .from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId)).limit(1);
-      if (photos.length > 0) {
-        await tx.update(s.trips)
-          .set({ status: TripStatus.COMPLETED, completedAt: data.completedAt ? new Date(data.completedAt) : new Date(), updatedAt: new Date() })
-          .where(eq(s.trips.id, tripId));
-
-        // Emit a dedicated audit event for the auto-completion.
-        // The middleware already records TRIP_UPDATED_ACTUALS for the PUT request;
-        // this supplements it with the specific status change.
-        emitAudit({
-          event: AuditEvent.TRIP_COMPLETED,
-          entityType: 'trips',
-          entityId: tripId,
-          entityKey: trip.tripCode || undefined,
-          userId: data.userId,
-          metadata: {
-            source: 'auto-complete',
-            triggeredBy: 'updateTripFigures',
-          },
-        });
-      }
-    }
+    // B2: completion is no longer auto-triggered from actuals entry. Saving
+    // figures keeps the trip in its current lifecycle status; the user marks
+    // the trip "Hoàn thành" explicitly via POST /trips/:id/complete (permissive
+    // — photos may be added/edited afterwards). This removes the surprise
+    // IN_TRANSIT → COMPLETED jump that previously fired whenever any photo
+    // existed (A3.1).
 
         // 6. Update derived fields and increment version
     const nextVersion = trip.version + 1;

@@ -24,6 +24,7 @@ registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
 registerAuditEvent('PUT', '/api/trips/', '/pre-departure', AuditEvent.TRIP_UPDATED_PRE_DEPARTURE);
 registerAuditEvent('PUT', '/api/trips/', '/actuals', AuditEvent.TRIP_UPDATED_ACTUALS);
 registerAuditEvent('POST', '/api/trips/', '/dispatch', AuditEvent.TRIP_DISPATCHED);
+registerAuditEvent('POST', '/api/trips/', '/complete', AuditEvent.TRIP_COMPLETED);
 registerAuditEvent('POST', '/api/trips/', '/lock', AuditEvent.TRIP_LOCKED);
 registerAuditEvent('POST', '/api/trips/', '/cancel', AuditEvent.TRIP_CANCELED);
 registerAuditEvent('POST', '/api/trips/', '/adjustment', AuditEvent.ADJUSTMENT_CREATED);
@@ -113,22 +114,12 @@ router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response
 router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const data = updateTripFiguresSchema.parse(req.body);
-  // Check status before update to detect auto-complete
-  const [prevRow] = await db.select({ status: dbSchema.trips.status })
-    .from(dbSchema.trips).where(eq(dbSchema.trips.id, id)).limit(1);
   const updated = await tripService.updateTripFigures(id, {
     ...data,
     expectedVersion: data.version,
     userId: getUser(req).userId,
   });
   await invalidateReportCaches();
-  // Sync attendance when trip auto-completes (IN_TRANSIT → COMPLETED)
-  if (prevRow?.status === TripStatus.IN_TRANSIT && updated.status === TripStatus.COMPLETED) {
-    await tripService.syncAttendanceAfterStatusChange(
-      updated.id, TripStatus.COMPLETED, updated.driverId ?? null,
-      updated.departureDate ?? null, null, getUser(req).userId,
-    );
-  }
   res.json(updated);
 }));
 
@@ -150,6 +141,35 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
     type: NotificationType.TRIP_DISPATCHED,
     title: 'Chuyến được điều phối',
     message: `Chuyến ${trip.tripCode} đã được điều phối`,
+    relatedEntityType: 'trips',
+    relatedEntityId: trip.id,
+    targetDriverId: trip.driverId ?? undefined,
+  });
+  res.json(trip);
+}));
+
+// Complete trip (IN_TRANSIT → COMPLETED). Permissive — photos optional (B2):
+// a trip may be marked "Hoàn thành" without photos; evidence can be added or
+// edited afterwards. This is the explicit replacement for the old auto-complete
+// that previously fired inside updateTripFigures whenever any photo existed.
+router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const trip = await tripService.transitionTripStatus(
+    id,
+    TripStatus.COMPLETED,
+    getUser(req).userId,
+    getUser(req).role,
+  );
+  await invalidateReportCaches();
+  // Sync attendance: completion closes the trip's wage window.
+  await tripService.syncAttendanceAfterStatusChange(
+    trip.id, TripStatus.COMPLETED, trip.driverId ?? null,
+    trip.departureDate ?? null, null, getUser(req).userId,
+  );
+  emitNotification({
+    type: NotificationType.TRIP_COMPLETED,
+    title: 'Chuyến hoàn thành',
+    message: `Chuyến ${trip.tripCode} đã hoàn thành`,
     relatedEntityType: 'trips',
     relatedEntityId: trip.id,
     targetDriverId: trip.driverId ?? undefined,

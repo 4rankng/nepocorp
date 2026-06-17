@@ -493,21 +493,8 @@ test('T4.7 — State-Machine: Transition matrices, photo gates, and lock validat
   let updated = await tripService.transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, adminUserId, Role.ADMIN);
   assert.strictEqual(updated.status, TripStatus.IN_TRANSIT);
 
-  // Test invalid transition IN_TRANSIT -> COMPLETED with zero uploaded photos
-  await assert.rejects(
-    tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN),
-    /Cần tải lên ít nhất 1 ảnh/
-  );
-
-  // Add mock photo upload to allow completion
-  await db.insert(s.tripPhotos).values({
-    tripId: trip.id,
-    type: 'CONTAINER',
-    storageKey: 'mock-trip-container-photo.jpg',
-    uploadedBy: adminUserId,
-  });
-
-  // Test valid transition IN_TRANSIT -> COMPLETED (photo uploaded)
+  // B2: completion is now permissive — IN_TRANSIT → COMPLETED succeeds with
+  // zero uploaded photos (photo evidence can be added/edited afterwards).
   updated = await tripService.transitionTripStatus(trip.id, TripStatus.COMPLETED, adminUserId, Role.ADMIN);
   assert.strictEqual(updated.status, TripStatus.COMPLETED);
 
