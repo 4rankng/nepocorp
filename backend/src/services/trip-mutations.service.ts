@@ -8,10 +8,73 @@ import { TripStatus, FuelMode, Role } from '@tingting/shared';
 import type { TripLegInput } from '@tingting/shared';
 import { emitAudit } from './audit.service';
 import { AuditEvent } from './audit-types';
-import { computeTripTotals } from '@tingting/shared';
+import { computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { resolveTrailer } from './trip-shared';
 import { computeStandardWorkDays } from './attendance.service';
+
+// ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
+
+export interface CommittedLegacyFuelInput {
+  status: TripStatus;
+  fuelPriceApplied: number;
+  fuelLoadedNormApplied: number;
+  fuelEmptyNormApplied: number;
+  storedFuelCost: number;
+  storedFuelLiters: number;
+}
+
+type FuelTotals = Pick<ComputeTripTotalsOutput, 'totalFuelCost' | 'totalCost' | 'grossProfit' | 'totalFuelLiters'>;
+
+/**
+ * Pin the fuel component of a committed legacy trip's totals to its stored
+ * values (B3 / D4).
+ *
+ * Legacy trips created before fuel snapshots have `fuel_price_applied` /
+ * `fuel_loaded_norm_applied` / `fuel_empty_norm_applied` all at 0. Their rows
+ * predate `fuel_price_history`, so the effective price they were costed at
+ * CANNOT be reconstructed (qa/feedback-repro-log.md §3/§7). The old behaviour
+ * read LIVE fuel config on update, which recosts stored totals against today's
+ * price the moment the price moves — a silent retroactive P&L rewrite.
+ *
+ * For committed trips (IN_TRANSIT / COMPLETED / LOCKED) with missing fuel
+ * snapshots, `updateTripFigures` now skips the live fallback, so
+ * `computeTripTotals` runs with the 0 sentinel price and its fuel outputs are
+ * ~0. This helper restores the stored cost, propagates the delta to totalCost
+ * / grossProfit, and holds litres at the stored value — guaranteeing the
+ * stored `totalFuelCost` is preserved exactly (tolerance 0 VND) regardless of
+ * the recomputed litres (which round to integers and can diverge from a stored
+ * decimal value). Revenue, tolls and salary still flow through
+ * `computeTripTotals` normally; only the unreconstructable fuel cost is frozen.
+ *
+ * Pure (no DB / req) so it is exercised by a data-driven unit test. Returns a
+ * fresh object rather than mutating, so the caller stays explicit.
+ *
+ * (The road / allowance live-fallbacks share this latent shape but are outside
+ * D4's fuel scope — see repro log §8.)
+ */
+export function applyCommittedLegacyFuelFreeze(
+  trip: CommittedLegacyFuelInput,
+  computed: FuelTotals,
+): FuelTotals {
+  const isCommitted = trip.status === TripStatus.IN_TRANSIT
+    || trip.status === TripStatus.COMPLETED
+    || trip.status === TripStatus.LOCKED;
+  const snapshotMissing = trip.fuelPriceApplied === 0
+    && trip.fuelLoadedNormApplied === 0
+    && trip.fuelEmptyNormApplied === 0;
+  if (!isCommitted || !snapshotMissing) {
+    return { ...computed };
+  }
+
+  const delta = trip.storedFuelCost - computed.totalFuelCost;
+  return {
+    totalFuelCost: trip.storedFuelCost,
+    totalCost: computed.totalCost + delta,
+    grossProfit: computed.grossProfit - delta,
+    totalFuelLiters: trip.storedFuelLiters,
+  };
+}
 
 // ─── createTrip ─────────────────────────────────────────────────────────────
 
@@ -262,10 +325,24 @@ export async function updateTripFigures(
     let tollPerStationApplied = Number(trip.tollPerStationApplied || 0);
     let returnCargoBonusApplied = Number(trip.returnCargoBonusApplied || 0);
 
-    // If snapshotted fuel rates are all zero, the trip was created before fuel
-    // config was available. Re-fetch live config so the update computes correct
-    // costs instead of permanently zero fuel calculations.
-    if (fuelPriceApplied === 0 && fuelLoadedNormApplied === 0 && fuelEmptyNormApplied === 0) {
+    // If snapshotted fuel rates are all zero, the trip predates fuel config.
+    // B3 / D4: for trips NOT yet financially committed we still re-fetch LIVE
+    // fuel config so in-progress trips compute against today's rates. For
+    // COMMITTED trips (IN_TRANSIT / COMPLETED / LOCKED) we deliberately do NOT
+    // read live — the price they were costed at cannot be reconstructed
+    // (fuel_price_history predates them; qa/feedback-repro-log.md §3/§7), so a
+    // live read would recost stored totals the moment the price moves
+    // (Principle 4 / LOCKED-invariant). The fuel component is instead pinned
+    // to stored totals after computeTripTotals (see applyCommittedLegacyFuelFreeze).
+    // `trip.status` is drizzle-inferred as a narrow literal union that omits
+    // LOCKED/CANCELED (and includes null); normalise to the full enum so the
+    // committed-state checks type-check — LOCKED/CANCELED do occur at runtime.
+    const tripStatus: TripStatus = (trip.status ?? TripStatus.CREATED) as TripStatus;
+    const isCommittedTrip = tripStatus === TripStatus.IN_TRANSIT
+      || tripStatus === TripStatus.COMPLETED
+      || tripStatus === TripStatus.LOCKED;
+    if (!isCommittedTrip
+        && fuelPriceApplied === 0 && fuelLoadedNormApplied === 0 && fuelEmptyNormApplied === 0) {
       const [liveFuelCfg] = await tx.select().from(s.fuelConfig).where(isNull(s.fuelConfig.deletedAt)).limit(1);
       if (liveFuelCfg) {
         fuelPriceApplied = Number(liveFuelCfg.unitPrice);
@@ -418,6 +495,28 @@ export async function updateTripFigures(
     };
 
     const totals = computeTripTotals(totalsInput);
+
+    // B3 / D4: pin the fuel component of committed legacy trips to stored
+    // totals. computeTripTotals ran with the 0 sentinel price for these trips
+    // (no live fallback above), so its fuel outputs are ~0; restore the stored
+    // cost and propagate to totalCost / grossProfit, holding litres at the
+    // stored value. Revenue / tolls / salary still flow through normally — only
+    // the unreconstructable fuel cost is frozen (tolerance 0 VND).
+    const frozenFuel = applyCommittedLegacyFuelFreeze(
+      {
+        status: tripStatus,
+        fuelPriceApplied: Number(trip.fuelPriceApplied || 0),
+        fuelLoadedNormApplied: Number(trip.fuelLoadedNormApplied || 0),
+        fuelEmptyNormApplied: Number(trip.fuelEmptyNormApplied || 0),
+        storedFuelCost: Number(trip.totalFuelCost || 0),
+        storedFuelLiters: Number(trip.fuelLiters || 0),
+      },
+      totals,
+    );
+    totals.totalFuelCost = frozenFuel.totalFuelCost;
+    totals.totalCost = frozenFuel.totalCost;
+    totals.grossProfit = frozenFuel.grossProfit;
+    totals.totalFuelLiters = frozenFuel.totalFuelLiters;
 
     // 5. If still IN_TRANSIT when actuals are submitted, auto-complete
     //    only when photos are already present. Otherwise, save actuals but
