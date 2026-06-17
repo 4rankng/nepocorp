@@ -24,7 +24,7 @@ import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
-import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement } from '../services/advance.service';
+import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
@@ -150,6 +150,14 @@ router.post('/advance-requests', asyncHandler(async (req: Request, res: Response
   if (!parsed.success) throwValidation(parsed.error);
   const result = await createAdvanceRequest(forwarder.id, parsed.data);
   res.status(201).json(result);
+}));
+
+// ── Advance Balance (F1) ──
+
+router.get('/advance-balance', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const outstanding = await getOutstandingAdvanceBalance(forwarder.id);
+  res.json({ outstanding: String(outstanding) });
 }));
 
 // ── Advance Settlements ──

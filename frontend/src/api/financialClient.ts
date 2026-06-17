@@ -81,4 +81,10 @@ export const financialClient = {
 
   getSettlementExportUrl: (id: number, format: 'xlsx' | 'pdf') =>
     `/api${FINANCIAL.ADVANCE_SETTLEMENT_EXPORT(id, format)}`,
+
+  getAdvanceBalances: () =>
+    api.get<{
+      totalOutstanding: string;
+      items: Array<{ forwarderId: number; name: string | null; outstanding: string }>;
+    }>(FINANCIAL.ADVANCE_BALANCES),
 };

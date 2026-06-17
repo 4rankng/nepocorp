@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, inArray, sql, count } from 'drizzle-orm';
-import { TxnType } from '@tingting/shared';
+import { eq, and, desc, inArray, notInArray, sql, count } from 'drizzle-orm';
+import { TxnType, round2dp } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { AdvanceError, validateSettlementInputs } from './settlement-validation';
 import type { Tx } from './trip-shared';
@@ -444,4 +444,74 @@ export async function rejectAdvanceSettlement(id: number, rejectedBy: number) {
     const [enriched] = await enrichWithNames([updated]);
     return enrichSettlementWithRequests(enriched);
   });
+}
+
+// ── Outstanding advance balance (F1) ─────────────────────────────────────────
+//
+// Locked formula (Option 1, customer-confirmed):
+//   outstanding = Σ APPROVED advance_requests.amount
+//                 NOT linked to any APPROVED advance_settlement.
+// A request is "settled" only when its id appears in
+// advance_settlement_requests.advance_request_id AND the linked
+// advance_settlements.status = 'APPROVED'. PENDING / CHECKED_BY_ACCOUNTANT
+// settlements do NOT reduce the balance (conservative). LedgerService is
+// intentionally NOT used — forwarder ancillary-fee debits pollute it.
+
+// Subquery: advance_request_ids that are linked to an APPROVED settlement.
+// Reused by both balance functions so the "settled" definition stays in one place.
+const settledRequestIds = db.select({ advanceRequestId: s.advanceSettlementRequests.advanceRequestId })
+  .from(s.advanceSettlementRequests)
+  .innerJoin(
+    s.advanceSettlements,
+    eq(s.advanceSettlementRequests.settlementId, s.advanceSettlements.id),
+  )
+  .where(eq(s.advanceSettlements.status, 'APPROVED'));
+
+/**
+ * Sum of APPROVED advance_requests.amount not covered by any APPROVED settlement.
+ * Pass `forwarderUserId` to scope to one forwarder; omit for the cross-forwarder total.
+ */
+export async function getOutstandingAdvanceBalance(forwarderUserId?: number): Promise<number> {
+  const conditions = [
+    eq(s.advanceRequests.status, 'APPROVED'),
+    notInArray(s.advanceRequests.id, settledRequestIds),
+  ];
+  if (forwarderUserId) {
+    conditions.push(eq(s.advanceRequests.requesterId, forwarderUserId));
+  }
+
+  const [row] = await db.select({
+    total: sql<string>`coalesce(sum(${s.advanceRequests.amount}::numeric), 0)`,
+  }).from(s.advanceRequests)
+    .where(and(...conditions));
+
+  return round2dp(Number(row?.total ?? 0));
+}
+
+/**
+ * Per-forwarder breakdown of outstanding advance balances across ALL forwarders.
+ * Drops zero-outstanding rows. `totalOutstanding` is the sum of all items.
+ */
+export async function getOutstandingAdvanceBalances(): Promise<{
+  totalOutstanding: number;
+  items: Array<{ forwarderId: number; name: string | null; outstanding: number }>;
+}> {
+  const rows = await db.select({
+    forwarderId: s.advanceRequests.requesterId,
+    name: s.users.fullName,
+    outstanding: sql<string>`sum(${s.advanceRequests.amount}::numeric)`,
+  }).from(s.advanceRequests)
+    .innerJoin(s.users, eq(s.advanceRequests.requesterId, s.users.id))
+    .where(and(
+      eq(s.advanceRequests.status, 'APPROVED'),
+      notInArray(s.advanceRequests.id, settledRequestIds),
+    ))
+    .groupBy(s.advanceRequests.requesterId, s.users.fullName);
+
+  const items = rows
+    .map(r => ({ forwarderId: r.forwarderId, name: r.name, outstanding: round2dp(Number(r.outstanding)) }))
+    .filter(r => r.outstanding > 0);
+
+  const totalOutstanding = round2dp(items.reduce((sum, r) => sum + r.outstanding, 0));
+  return { totalOutstanding, items };
 }

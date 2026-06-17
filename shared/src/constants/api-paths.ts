@@ -100,6 +100,7 @@ export const FINANCIAL = {
   ADVANCE_SETTLEMENT_REJECT: (id: number) => `/advance-settlements/${id}/reject`,
   ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/advance-settlements/${id}`,
   ADVANCE_SETTLEMENT_EXPORT: (id: number, format: string) => `/advance-settlements/${id}/export?format=${format}`,
+  ADVANCE_BALANCES: '/advance-balances',
   DASHBOARD_APPROVAL_QUEUE: '/dashboard/approval-queue',
   LEDGER_BALANCES: '/ledger/balances',
 } as const;
@@ -138,6 +139,7 @@ export const FORWARDER = {
   ADVANCE_SETTLEMENTS: '/forwarder/me/advance-settlements',
   ADVANCE_SETTLEMENT_PREVIEW: '/forwarder/me/advance-settlements/preview',
   ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/forwarder/me/advance-settlements/${id}`,
+  ADVANCE_BALANCE: '/forwarder/me/advance-balance',
   UNLINKED_EXPENSES: '/forwarder/me/unlinked-expenses',
   SUPPLIERS: '/forwarder/me/suppliers',
 } as const;

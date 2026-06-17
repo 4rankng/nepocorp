@@ -10,6 +10,7 @@ import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import {
   useAdminAdvanceRequests,
+  useAdminAdvanceBalances,
   useApproveAdvanceRequest,
   useRejectAdvanceRequest,
 } from '../hooks/useQueries';
@@ -249,6 +250,7 @@ export default function AdminAdvancesPage() {
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
   const { data, isLoading } = useAdminAdvanceRequests();
+  const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const approveMutation = useApproveAdvanceRequest();
   const rejectMutation = useRejectAdvanceRequest();
@@ -324,6 +326,15 @@ export default function AdminAdvancesPage() {
           variant="danger"
           active={statusFilter === AdvanceRequestStatus.REJECTED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
+        />
+        <AdvKPI
+          label="Tồn tạm ứng"
+          value={balancesData?.items.length ?? 0}
+          meta={`${formatCompact(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
+          variant="success"
+          active={false}
+          hasItems={(balancesData?.items.length ?? 0) > 0}
+          onClick={() => { /* summary only — no filter */ }}
         />
       </div>
 

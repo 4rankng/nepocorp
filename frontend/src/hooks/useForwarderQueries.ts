@@ -77,6 +77,13 @@ export function useForwarderAdvanceRequests(status?: string) {
   });
 }
 
+export function useForwarderAdvanceBalance() {
+  return useQuery({
+    queryKey: qk.forwarder.advanceBalance,
+    queryFn: () => forwarderClient.getAdvanceBalance(),
+  });
+}
+
 export function useCreateAdvanceRequest() {
   const qc = useQueryClient();
   return useMutation({
@@ -131,6 +138,13 @@ export function useAdminAdvanceRequests(filters?: { status?: string }) {
   return useQuery({
     queryKey: qk.adminForwarder.advanceRequests(filters),
     queryFn: () => forwarderClient.listAllAdvanceRequests(filters),
+  });
+}
+
+export function useAdminAdvanceBalances() {
+  return useQuery({
+    queryKey: qk.adminForwarder.advanceBalances,
+    queryFn: () => financialClient.getAdvanceBalances(),
   });
 }
 

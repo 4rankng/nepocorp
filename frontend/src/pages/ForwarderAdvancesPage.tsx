@@ -5,7 +5,7 @@ import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@tingt
 import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
-import { useForwarderAdvanceRequests, useCreateAdvanceRequest } from '../hooks/useQueries';
+import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderAdvancesPage.css';
@@ -23,6 +23,7 @@ type StatusFilter = '' | AdvanceRequestStatus;
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
+  const { data: balanceData } = useForwarderAdvanceBalance();
   const { rootRef } = usePageAnimations({
     ready: !loading,
     selectors: ['.page-header', '.hero-kpi-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
@@ -42,12 +43,14 @@ export default function ForwarderAdvancesPage() {
   const totalRequests = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
   const totalAmount = requests.reduce((sum, r) => sum + Number(r.amount), 0);
   const pendingCount = requests.filter(r => r.status === 'PENDING').length;
+  const outstanding = balanceData ? Number(balanceData.outstanding) : 0;
 
   const prefersReduced = usePrefersReducedMotion();
   const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
   const heroAmountRef = useRef<HTMLSpanElement>(null);
   const heroTotalRef = useRef<HTMLSpanElement>(null);
   const heroPendingRef = useRef<HTMLSpanElement>(null);
+  const heroOutstandingRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (loading || totalRequests === 0 || prefersReduced) return;
@@ -55,8 +58,9 @@ export default function ForwarderAdvancesPage() {
       { el: heroAmountRef.current, value: totalAmount, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
       { el: heroTotalRef.current, value: totalRequests, suffix: ' yêu cầu' },
       { el: heroPendingRef.current, value: pendingCount, suffix: ' chờ duyệt' },
+      { el: heroOutstandingRef.current, value: outstanding, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
     ]);
-  }, [loading, totalRequests, totalAmount, pendingCount, animateCounters, prefersReduced]);
+  }, [loading, totalRequests, totalAmount, pendingCount, outstanding, animateCounters, prefersReduced]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,8 +124,8 @@ export default function ForwarderAdvancesPage() {
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
-                <span className="hero-kpi-mini__value" ref={heroTotalRef}>0</span>
-                <span className="hero-kpi-mini__label">yêu cầu</span>
+                <span className="hero-kpi-mini__value" ref={heroOutstandingRef}>0</span>
+                <span className="hero-kpi-mini__label">tồn tạm ứng (₫)</span>
               </div>
               <Wallet size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>

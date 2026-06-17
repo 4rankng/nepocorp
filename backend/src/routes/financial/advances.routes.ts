@@ -6,7 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
-import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement } from '../../services/advance.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, getOutstandingAdvanceBalances } from '../../services/advance.service';
 import { formatLocalDate } from '../../lib/format';
 
 const router = Router();
@@ -29,6 +29,16 @@ router.post('/advance-requests/:id/reject', requireRoles(Role.ADMIN, Role.MANAGE
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceRequest(id, getUser(req).userId);
   res.json(result);
+}));
+
+// ─── Advance Balances (admin) — F1 outstanding per forwarder ──────────────────
+
+router.get('/advance-balances', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
+  const { totalOutstanding, items } = await getOutstandingAdvanceBalances();
+  res.json({
+    totalOutstanding: String(totalOutstanding),
+    items: items.map(i => ({ forwarderId: i.forwarderId, name: i.name, outstanding: String(i.outstanding) })),
+  });
 }));
 
 // ─── Advance Settlements (admin) ──────────────────────────────────────────────

@@ -137,6 +137,7 @@ export const qk = {
     settlementDetail: (id: number) =>
       ['forwarder-settlement-detail', id] as const,
     unlinkedExpenses: ['forwarder-unlinked-expenses'],
+    advanceBalance: ['forwarder-advance-balance'] as const,
   },
 
   /* ── Admin forwarder views ─────────────────────────────────────────── */
@@ -152,6 +153,7 @@ export const qk = {
     settlementsAll: ['admin-settlements'] as const,
     settlementDetail: (id: number) =>
       ['admin-settlement-detail', id] as const,
+    advanceBalances: ['admin-advance-balances'] as const,
   },
 
   /* ── Dashboard / reports ────────────────────────────────────────────── */

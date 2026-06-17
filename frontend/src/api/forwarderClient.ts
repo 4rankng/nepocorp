@@ -74,6 +74,10 @@ export const forwarderClient = {
     return api.post(FORWARDER.ADVANCE_REQUESTS, data);
   },
 
+  getAdvanceBalance: async () => {
+    return api.get<{ outstanding: string }>(FORWARDER.ADVANCE_BALANCE);
+  },
+
   getAdvanceSettlements: async () => {
     return api.get<{ items: AdvanceSettlementWithRefs[] }>(FORWARDER.ADVANCE_SETTLEMENTS);
   },
