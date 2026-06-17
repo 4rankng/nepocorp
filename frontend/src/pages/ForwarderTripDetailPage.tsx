@@ -713,6 +713,32 @@ export default function ForwarderTripDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Liên hệ & hướng dẫn — manager-authored guidance for the field user */}
+      {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
+        <div className="panel" style={{ marginBottom: 16 }}>
+          <div style={{ padding: '12px 20px' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              Liên hệ & hướng dẫn
+            </div>
+            {trip.instructions.contactName && (
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>Liên hệ</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{trip.instructions.contactName}</span>
+              </div>
+            )}
+            {trip.instructions.contactPhone && (
+              <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>SĐT</span>
+                <a href={`tel:${trip.instructions.contactPhone}`} style={{ color: 'var(--brand, #00B14F)', textDecoration: 'none', fontWeight: 500 }}>{trip.instructions.contactPhone}</a>
+              </div>
+            )}
+            {trip.instructions.notes && (
+              <p style={{ fontSize: 13, color: 'var(--fg-2)', margin: '8px 0 0', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{trip.instructions.notes}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -667,6 +667,8 @@ export interface ForwarderTripDetail {
   containerCount: number | null;
   cargoTypeName: string | null;
   notes: string | null;
+  /** Manager-authored contact + delivery guidance. null when no row exists. */
+  instructions: TripInstruction | null;
   legs: TripLeg[];
   containers: Array<{
     id: number;

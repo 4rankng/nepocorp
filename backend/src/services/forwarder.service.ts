@@ -5,6 +5,7 @@ import * as s from '../db/schema';
 import type { GuardedResult } from './approval.service';
 import { eq, and, isNull, desc, inArray, notInArray, sql, count, ilike, gte, lte, or } from 'drizzle-orm';
 import { ApiError } from '../errors';
+import { getTripInstructions } from './trip-instructions.service';
 
 /**
  * Either the singleton db client or an in-flight transaction client. Both
@@ -282,7 +283,9 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
     .where(and(eq(s.tripExpenses.tripId, tripId)))
     .orderBy(desc(s.tripExpenses.createdAt));
 
-  return { ...trip, legs, containers, expenses };
+  const instructions = await getTripInstructions(tripId);
+
+  return { ...trip, legs, containers, expenses, instructions };
 }
 
 export async function createTripContainer(data: {
