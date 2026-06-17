@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Loader2, FileText, CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatCompact, formatDate } from '../lib/format';
+import { useAuth } from '../hooks/useAuth';
 import {
   ADVANCE_SETTLEMENT_STATUS_LABELS,
   AdvanceSettlementStatus,
+  Role,
 } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
@@ -79,12 +81,14 @@ function SettlementGridRow({
   approveMutation,
   rejectMutation,
   focusId,
+  canApproveReject,
 }: {
   s: Settlement;
   checkMutation: ReturnType<typeof useCheckSettlement>;
   approveMutation: ReturnType<typeof useApproveSettlement>;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
+  canApproveReject: boolean;
 }) {
   const isChecking = checkMutation.isPending && checkMutation.variables === s.id;
   const isApproving = approveMutation.isPending && approveMutation.variables === s.id;
@@ -150,7 +154,7 @@ function SettlementGridRow({
                 {isChecking ? <Loader2 size={16} className="spin" /> : <ClipboardCheck size={16} />}
               </button>
             )}
-            {isChecked && (
+            {isChecked && canApproveReject && (
               <button
                 className="btn btn--ghost btn--icon btn--sm"
                 onClick={() => approveMutation.mutate(s.id)}
@@ -161,15 +165,17 @@ function SettlementGridRow({
                 {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
               </button>
             )}
-            <button
-              className="btn btn--ghost btn--icon btn--sm"
-              onClick={() => rejectMutation.mutate(s.id)}
-              disabled={busy}
-              title="Từ chối hoàn ứng"
-              style={{ color: 'var(--danger)' }}
-            >
-              {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-            </button>
+            {canApproveReject && (
+              <button
+                className="btn btn--ghost btn--icon btn--sm"
+                onClick={() => rejectMutation.mutate(s.id)}
+                disabled={busy}
+                title="Từ chối hoàn ứng"
+                style={{ color: 'var(--danger)' }}
+              >
+                {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
+              </button>
+            )}
           </>
         ) : s.approverName || s.checkerName ? (
           <div className="as-approver">
@@ -189,12 +195,14 @@ function SettlementMobileCard({
   approveMutation,
   rejectMutation,
   focusId,
+  canApproveReject,
 }: {
   s: Settlement;
   checkMutation: ReturnType<typeof useCheckSettlement>;
   approveMutation: ReturnType<typeof useApproveSettlement>;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
+  canApproveReject: boolean;
 }) {
   const isChecking = checkMutation.isPending && checkMutation.variables === s.id;
   const isApproving = approveMutation.isPending && approveMutation.variables === s.id;
@@ -261,7 +269,7 @@ function SettlementMobileCard({
               Kiểm tra
             </button>
           )}
-          {isChecked && (
+          {isChecked && canApproveReject && (
             <button
               className="btn btn--primary"
               onClick={() => approveMutation.mutate(s.id)}
@@ -271,14 +279,16 @@ function SettlementMobileCard({
               Duyệt
             </button>
           )}
-          <button
-            className="btn btn--danger"
-            onClick={() => rejectMutation.mutate(s.id)}
-            disabled={busy}
-          >
-            {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-            Từ chối
-          </button>
+          {canApproveReject && (
+            <button
+              className="btn btn--danger"
+              onClick={() => rejectMutation.mutate(s.id)}
+              disabled={busy}
+            >
+              {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
+              Từ chối
+            </button>
+          )}
         </div>
       ) : (s.approverName || s.checkerName) ? (
         <div className="as-mcard__meta-row" style={{ marginTop: 4 }}>
@@ -304,6 +314,10 @@ export default function AdminAdvanceSettlementsPage() {
   const checkMutation = useCheckSettlement();
   const approveMutation = useApproveSettlement();
   const rejectMutation = useRejectSettlement();
+  const { user } = useAuth();
+  // Approve / Reject are ADMIN+MANAGER only (see advances.routes.ts:28,64).
+  // Accountant role is restricted to Check; the API would 403 the others.
+  const canApproveReject = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
 
   const allSettlements: Settlement[] = useMemo(
     () => (data?.items ?? []) as Settlement[],
@@ -448,6 +462,7 @@ export default function AdminAdvanceSettlementsPage() {
                   approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
                   focusId={`as-${s.id}`}
+                  canApproveReject={canApproveReject}
                 />
               ))}
             </div>
@@ -462,6 +477,7 @@ export default function AdminAdvanceSettlementsPage() {
                   approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
                   focusId={`as-${s.id}`}
+                  canApproveReject={canApproveReject}
                 />
               ))}
             </div>
