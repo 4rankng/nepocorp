@@ -81,7 +81,7 @@ export default function ForwarderTripDetailPage() {
   async function loadExpensePhotos(expenseId: number) {
     try {
       const res = await api.get<{ items: Array<{ id: number; storageKey: string }> }>(`/forwarder/me/expenses/${expenseId}/photos`);
-      const urls = res.items.map((p) => `/api/photos/${p.storageKey}`);
+      const urls = res.items.map((p) => `/api/photos/${encodeURIComponent(p.storageKey)}`);
       setExpensePhotos(prev => ({ ...prev, [expenseId]: urls }));
     } catch { /* ignore */ }
   }

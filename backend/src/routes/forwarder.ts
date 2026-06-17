@@ -11,6 +11,7 @@ import {
   listUnlinkedTripExpenses,
   addExpensePhoto,
   getExpensePhotos,
+  getForwarderOwnedExpenseId,
   deleteExpensePhoto,
   listActiveSuppliersForForwarder,
   getTripExpenseAuditInfo,
@@ -30,7 +31,8 @@ import sharp from 'sharp';
 import { sniffImageType } from '../lib/format';
 
 const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
-const MAX_IMAGE_DIMENSION = 1600;
+// Unify with upload.ts / expense.ts (2048). Was 1600 — inconsistent downscale ceiling.
+const MAX_IMAGE_DIMENSION = 2048;
 
 const router = Router();
 
@@ -216,7 +218,13 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
 // ── Expense Photos ──
 
 router.get('/expenses/:id/photos', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
   const expenseId = parseInt(req.params.id as string, 10);
+  // N1: gate on expense ownership before listing — unowned → 404 (not 403),
+  // so a forwarder cannot enumerate another forwarder's photo metadata.
+  if (!(await getForwarderOwnedExpenseId(expenseId, forwarder.id))) {
+    return res.status(404).json({ error: 'Không tìm thấy chi phí' });
+  }
   const photos = await getExpensePhotos(expenseId);
   res.json({ items: photos });
 }));
@@ -228,19 +236,31 @@ router.post('/expenses/:id/photos', expensePhotoUpload.single('file'), asyncHand
 
   const expenseId = parseInt(req.params.id as string, 10);
 
+  // N1: ownership precheck BEFORE any processing — unowned → 404 (not 403),
+  // so a forwarder cannot attach photos to another forwarder's trip_expense.
+  if (!(await getForwarderOwnedExpenseId(expenseId, forwarder.id))) {
+    return res.status(404).json({ error: 'Không tìm thấy chi phí' });
+  }
+
   // Validate image type
   const mime = sniffImageType(file.buffer);
   if (!mime) return res.status(400).json({ error: 'Định dạng file không được hỗ trợ' });
 
-  // Process: strip EXIF, downscale
+  // Process: strip EXIF, downscale. Wrapped in try/catch (parity with
+  // expense.ts) so a corrupt/unsupported codec yields a clean 400, not a 500.
   let processedBuffer: Buffer;
   let ext: string;
-  if (mime === 'image/png') {
-    processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).png().toBuffer();
-    ext = '.png';
-  } else {
-    processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
-    ext = '.jpg';
+  try {
+    if (mime === 'image/png') {
+      processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).png().toBuffer();
+      ext = '.png';
+    } else {
+      processedBuffer = await sharp(file.buffer).rotate().resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+      ext = '.jpg';
+    }
+  } catch (err) {
+    console.warn('[forwarder] expense-photo processing failed:', err instanceof Error ? err.message : err);
+    return res.status(400).json({ error: 'Xử lý ảnh thất bại' });
   }
 
   const storageKey = `expense-photos/${expenseId}/${Date.now()}${ext}`;
@@ -253,8 +273,8 @@ router.delete('/expense-photos/:id', asyncHandler(async (req: Request, res: Resp
   const forwarder = req.forwarder!;
   const photoId = parseInt(req.params.id as string, 10);
   const result = await deleteExpensePhoto(photoId, forwarder.id);
-  if (result === null) return res.status(404).json({ error: 'Không tìm thấy ảnh' });
-  if (result === 'FORBIDDEN') return res.status(403).json({ error: 'Không có quyền xóa ảnh này' });
+  // Unowned and not-found both surface as 404 (N1) — no FORBIDDEN/403 oracle.
+  if (!result) return res.status(404).json({ error: 'Không tìm thấy ảnh' });
   // Try to remove from storage (best-effort)
   try { await storageService.delete(result.storageKey); } catch {}
   res.json({ success: true });

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { Role } from '@tingting/shared';
 
 /**
@@ -37,24 +37,20 @@ export interface PhotoAuthDecision {
 
 const FINANCE_ROLES: ReadonlySet<Role> = new Set([Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT]);
 
-/** Single indexed PK probe; closes the disabled-forwarder JWT window (N5). */
-async function isUserActive(userId: number): Promise<boolean> {
-  const [row] = await db.select({ id: s.users.id })
-    .from(s.users)
-    .where(and(eq(s.users.id, userId), eq(s.users.status, 'ACTIVE')))
-    .limit(1);
-  return !!row;
-}
-
 export async function authorizeExpensePhoto(
   storageKey: string,
   user: { userId: number; role: Role },
 ): Promise<PhotoAuthDecision> {
   // 1. Parallel exact-storage_key lookups against both receipt tables.
   const [tripRows, expenseRows] = await Promise.all([
-    db.select({ forwarderId: s.tripExpenses.forwarderId })
+    db.select({ forwarderId: s.tripExpenses.forwarderId, ownerStatus: s.users.status })
       .from(s.tripExpensePhotos)
       .innerJoin(s.tripExpenses, eq(s.tripExpensePhotos.tripExpenseId, s.tripExpenses.id))
+      // LEFT JOIN (not INNER, no status filter) so `tripMatch` stays a pure
+      // existence test — finance roles must still see keys owned by a disabled
+      // forwarder. The FORWARDER branch reads ownerStatus inline below (N5),
+      // avoiding a second round-trip to re-probe ACTIVE.
+      .leftJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
       .where(eq(s.tripExpensePhotos.storageKey, storageKey))
       .limit(1),
     db.select({ id: s.expensePhotos.id })
@@ -72,9 +68,10 @@ export async function authorizeExpensePhoto(
     if (FINANCE_ROLES.has(user.role)) return true;
     if (user.role === Role.FORWARDER) {
       // forwarderId is NULLABLE (accountants also create trip_expenses);
-      // null !== userId denies naturally. Re-validate ACTIVE (N5).
-      const owner = tripRows[0].forwarderId;
-      return owner != null && owner === user.userId && await isUserActive(user.userId);
+      // null !== userId denies naturally. Owner's ACTIVE status was folded
+      // into the trip lookup above (N5) — no separate probe needed.
+      return tripRows[0].forwarderId === user.userId
+        && tripRows[0].ownerStatus === 'ACTIVE';
     }
     return false; // DRIVER
   };

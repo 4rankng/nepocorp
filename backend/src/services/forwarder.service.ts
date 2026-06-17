@@ -1022,8 +1022,28 @@ export async function getExpensePhotos(tripExpenseId: number) {
     .orderBy(desc(s.tripExpensePhotos.uploadedAt));
 }
 
+/**
+ * N1 ownership precheck for the forwarder expense-photo endpoints. Returns the
+ * expense id when `tripExpenses.forwarderId === forwarderId`, else null. A NULL
+ * forwarderId (accountant/manager-created) never matches a forwarder. GET-list
+ * and POST gate on this so an unowned expense yields 404 — not 403 — which
+ * removes the photo-id existence oracle on a security-sensitive path.
+ */
+export async function getForwarderOwnedExpenseId(
+  expenseId: number,
+  forwarderId: number,
+): Promise<number | null> {
+  const [row] = await db.select({ id: s.tripExpenses.id })
+    .from(s.tripExpenses)
+    .where(and(eq(s.tripExpenses.id, expenseId), eq(s.tripExpenses.forwarderId, forwarderId)))
+    .limit(1);
+  return row?.id ?? null;
+}
+
 export async function deleteExpensePhoto(photoId: number, forwarderId: number) {
-  // Verify the photo belongs to an expense owned by this forwarder
+  // Verify the photo belongs to an expense owned by this forwarder. Unowned and
+  // not-found both return null → route maps to 404 (N1: no existence oracle).
+  // (NULL forwarderId → accountant-created → null !== forwarderId → null.)
   const [photo] = await db.select({
     id: s.tripExpensePhotos.id,
     storageKey: s.tripExpensePhotos.storageKey,
@@ -1032,10 +1052,9 @@ export async function deleteExpensePhoto(photoId: number, forwarderId: number) {
     .innerJoin(s.tripExpenses, eq(s.tripExpensePhotos.tripExpenseId, s.tripExpenses.id))
     .where(eq(s.tripExpensePhotos.id, photoId))
     .limit(1);
-  if (!photo) return null;
-  if (photo.forwarderId !== forwarderId) return 'FORBIDDEN';
+  if (!photo || photo.forwarderId !== forwarderId) return null;
   await db.delete(s.tripExpensePhotos).where(eq(s.tripExpensePhotos.id, photoId));
-  return { deleted: true, storageKey: photo.storageKey };
+  return { storageKey: photo.storageKey };
 }
 
 export async function listActiveSuppliersForForwarder() {

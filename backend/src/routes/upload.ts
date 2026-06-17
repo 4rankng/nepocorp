@@ -10,6 +10,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import { Role } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
+import { authorizeExpensePhoto } from '../services/photo-authz.service';
 import { config } from '../config';
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -249,42 +250,33 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
     }
   } else if (expenseMatch) {
     // Expense receipt photos are financial evidence. The `expense-photos/<id>/`
-    // prefix is SHARED by two pipelines: company receipts (expense.ts:159, FK→
-    // expenses.id, stored in expense_photos) and forwarder receipts (forwarder.ts:246,
-    // FK→trip_expenses.id, stored in trip_expense_photos). So <id> alone is
-    // ambiguous — distinguish by ownership, not by the key.
-    const role = getUser(req).role;
+    // prefix is SHARED by two pipelines (company receipts → expense_photos, and
+    // forwarder receipts → trip_expense_photos), so <id> alone is ambiguous.
+    // Delegate to authorizeExpensePhoto, which resolves the domain by EXACT
+    // storage_key and applies strictest-match (ADR 0042). Replaces the prior
+    // inline block (N2) so the full decision matrix — incl. collision detection
+    // and a clean not_found → 404 — lives in one pure, tested function.
+    const user = getUser(req);
+    const decision = await authorizeExpensePhoto(key, user);
 
-    // Drivers never read expense receipts.
-    if (role === Role.DRIVER) {
+    if (decision.reason === 'not_found') {
+      return res.status(404).json({ error: 'Không tìm thấy ảnh' });
+    }
+    if (decision.reason === 'collision') {
+      // Both tables hold this key and the caller isn't authorized under both.
+      // A full-key collision is a write-path integrity signal (near-impossible
+      // given keys embed Date.now()+ext), not normal traffic — surface it (N6)
+      // rather than silently 403.
+      console.warn(`[photos] storage_key collision denied: key=${key} role=${user.role} userId=${user.userId}`);
       return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
     }
-
-    // A forwarder may read ONLY the exact receipt key that belongs to a
-    // trip_expense they own (tripExpenses.forwarderId = their users.id).
-    // Company receipts are not in trip_expense_photos, so they stay blocked.
-    //
-    // ACTIVE is folded into the join (N5, per docs/plans/forwarder-photo-ownership-plan.md):
-    // /api/photos sits behind assetAuthMiddleware (JWT sig + jti only — NOT
-    // resolveForwarder), so a disabled forwarder with an unexpired JWT would
-    // otherwise bypass the status gate. Joining users on the owner and requiring
-    // status='ACTIVE' denies a disabled forwarder in the same round-trip.
-    if (role === Role.FORWARDER) {
-      const [owned] = await db.select({ id: s.tripExpensePhotos.id })
-        .from(s.tripExpensePhotos)
-        .innerJoin(s.tripExpenses, eq(s.tripExpensePhotos.tripExpenseId, s.tripExpenses.id))
-        .innerJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
-        .where(and(
-          eq(s.tripExpensePhotos.storageKey, key),
-          eq(s.tripExpenses.forwarderId, getUser(req).userId),
-          eq(s.users.status, 'ACTIVE'),
-        ))
-        .limit(1);
-      if (!owned) {
-        return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
-      }
+    if (!decision.allow) {
+      // forbidden — includes DRIVER (drivers never read expense receipts),
+      // unowned forwarder keys, and company-only receipts requested by non-finance.
+      return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
     }
-    // MANAGER / ACCOUNTANT / ADMIN: any authenticated staff — fall through to serve.
+    // allow → fall through to serve (MANAGER/ACCOUNTANT/ADMIN, or an ACTIVE
+    // forwarder reading an own-owned trip-expense receipt).
   }
 
   const uploadDir = path.resolve(config.uploadDir || path.join(process.cwd(), 'uploads'));
