@@ -7,7 +7,7 @@ import {
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
   fuelConfigSchema, penaltyReasonSchema, driverSchema,
-  managementFeeSchema, capTableSchema,
+  managementFeeSchema, capTableSchema, truckCapSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, portSchema,
@@ -99,6 +99,10 @@ router.use('/management-fees', createCrudRouter(s.managementFees, managementFeeS
 // contribution_amount / sum(contribution_amount) per snapshot, so totals are
 // always 100% by construction and there's no separate over-allocation check.
 router.use('/cap-table', createCrudRouter(s.capTableHistory, capTableSchema));
+// F3 — per-vehicle cap table. Same CRUD pattern; clients filter by truckId via
+// the `search`-style list query (the factory's GET passes through query
+// params, and the per-truck editor fetches `/config/truck-cap?truckId=X`).
+router.use('/truck-cap', createCrudRouter(s.truckCapTable, truckCapSchema));
 router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, {
   searchableField: 'name',
   afterCreate: mirrorSupplierLink,

@@ -386,6 +386,17 @@ export const capTableSchema = z.object({
   effectiveDate: z.string().min(1),
 });
 
+// F3 — per-vehicle cap-table write. `truckId` scopes the entry to a truck;
+// `percentage` is the explicit owner share (0–100) of that truck's profit.
+export const truckCapSchema = z.object({
+  truckId: z.union([z.number(), z.string()]).transform(v => Number(v))
+    .refine(v => Number.isInteger(v) && v > 0, { message: 'truckId không hợp lệ' }),
+  partnerName: z.string().min(1),
+  percentage: z.union([z.number(), z.string()]).transform(v => Number(v))
+    .refine(v => v >= 0 && v <= 100, { message: 'Tỷ lệ phải trong khoảng 0–100' }),
+  effectiveDate: z.string().min(1),
+});
+
 // ─── Salary Period ──────────────────────────────────────────────────────────────
 
 /** Per-month salary period override */
@@ -644,6 +655,7 @@ export type PenaltyReasonInput = z.infer<typeof penaltyReasonSchema>;
 export type DriverInput = z.infer<typeof driverSchema>;
 export type ManagementFeeInput = z.infer<typeof managementFeeSchema>;
 export type CapTableInput = z.infer<typeof capTableSchema>;
+export type TruckCapInput = z.infer<typeof truckCapSchema>;
 export type SalaryPeriodInput = z.infer<typeof salaryPeriodSchema>;
 export type SalaryPeriodDefaultInput = z.infer<typeof salaryPeriodDefaultSchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;

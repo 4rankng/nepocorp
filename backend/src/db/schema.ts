@@ -381,12 +381,33 @@ export const capTableHistory = pgTable('cap_table_history', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// ─── Per-vehicle ownership (F3) ─────────────────────────────────────────────
+// History-based mirrors of `cap_table_history`, but scoped per truck. Each row
+// is a snapshot of one partner's stake at an `effectiveDate` for a truck; the
+// latest effectiveDate ≤ cutoff (deduped by partner) resolves the active
+// owners whose % share that truck's profit. `percentage` is explicit (0–100);
+// contribution amount is not tracked per-vehicle.
+export const truckCapTable = pgTable('truck_cap_table', {
+  id: serial('id').primaryKey(),
+  truckId: integer('truck_id').references(() => trucks.id).notNull(),
+  partnerName: varchar('partner_name', { length: 255 }).notNull(),
+  percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull().default('0'),
+  effectiveDate: date('effective_date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('truck_cap_table_truck_effective_idx').on(table.truckId, table.effectiveDate),
+]);
+
 export const distributions = pgTable('distributions', {
   id: serial('id').primaryKey(),
   quarter: integer('quarter').notNull(),
   year: integer('year').notNull(),
   partnerName: varchar('partner_name', { length: 255 }).notNull(),
   amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  // F3 — per-vehicle attribution. NULL on legacy entity-wide rows; set to the
+  // owning truck's id on new per-vehicle distribution rows.
+  truckId: integer('truck_id').references(() => trucks.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

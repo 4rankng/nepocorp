@@ -360,12 +360,26 @@ export interface CapTableHistory {
   updatedAt: string;
 }
 
+// F3 — per-vehicle ownership snapshot. Mirrors CapTableHistory but scoped to a
+// truck; `percentage` is an explicit owner share (0–100) of that truck's profit.
+export interface TruckCapEntry {
+  id: number;
+  truckId: number;
+  partnerName: string;
+  percentage: string;
+  effectiveDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Distribution {
   id: number;
   quarter: number;
   year: number;
   partnerName: string;
   amount: string;
+  /** F3 — owning truck for per-vehicle distribution rows; NULL on legacy entity rows. */
+  truckId?: number | null;
   createdAt: string;
   updatedAt: string;
 }

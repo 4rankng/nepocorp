@@ -25,7 +25,18 @@ interface DistributionResult {
     partnerName: string;
     percentage?: string;
     amount: string;
+    truckId?: number | null;
   }>;
+  /** F3 — entity-grouped view (partner → Σ across trucks). */
+  entity?: Array<{ partnerName: string; amount: number }>;
+  /** F3 — per-truck breakdown. */
+  perTruck?: Array<{
+    truckId: number;
+    profit: number;
+    partners: Array<{ partnerName: string; percentage: number; amount: number }>;
+  }>;
+  /** F3 — Σ profit of ownerless trucks (held aside, not distributed). */
+  undistributedProfit?: number;
 }
 
 export default function ProfitPage() {
@@ -336,24 +347,74 @@ export default function ProfitPage() {
                   <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>
                     Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong>{formatVND(preview.netProfit)}</strong>
                   </p>
-                  <table style={{ width: '100%', fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
-                        <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
-                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Tỷ lệ</th>
-                        <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preview.distributions.map((d, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+
+                  {(preview.undistributedProfit ?? 0) > 0 && (
+                    <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 12.5 }}>
+                      ⚠️ <strong>{formatVND(preview.undistributedProfit ?? 0)}</strong> lợi nhuận từ xe chưa cấu hình đối tác sở hữu sẽ <strong>không được phân phối</strong>. Cài đặt tại <a href="/config/trucks" style={{ color: 'var(--warn)', fontWeight: 700 }}>Cấu hình → Xe → Sở hữu</a>.
+                    </div>
+                  )}
+
+                  {preview.entity && preview.entity.length > 0 ? (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
+                      <table style={{ width: '100%', fontSize: 12.5 }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                            <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                            <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {preview.entity.map((d, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                              <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                              <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(d.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  ) : (
+                    <table style={{ width: '100%', fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
+                          <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
+                          <th style={{ textAlign: 'right', paddingBottom: 6 }}>Tỷ lệ</th>
+                          <th style={{ textAlign: 'right', paddingBottom: 6 }}>Số tiền nhận</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {preview.distributions.map((d, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
+                            <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                            <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
+                            <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {preview.perTruck && preview.perTruck.filter(t => t.partners.length > 0).length > 0 && (
+                    <details style={{ marginTop: 10 }}>
+                      <summary style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg-3)', cursor: 'pointer', letterSpacing: '0.04em' }}>CHI TIẾT THEO XE</summary>
+                      <div style={{ marginTop: 8 }}>
+                        {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
+                          <div key={t.truckId} style={{ marginBottom: 8, padding: '6px 8px', background: 'var(--bg-1)', borderRadius: 6 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                              Xe #{t.truckId} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
+                            </div>
+                            {t.partners.map((p, i) => (
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-3)', padding: '2px 0' }}>
+                                <span>{p.partnerName} ({p.percentage}%)</span>
+                                <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{formatVND(p.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </div>
               )}
 

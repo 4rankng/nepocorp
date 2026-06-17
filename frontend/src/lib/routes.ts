@@ -56,6 +56,7 @@ export const routes = {
   config: '/config',
   configTrailers: '/config/trailers',
   configTrucks: '/config/trucks',
+  configTruckOwners: (truckId: number | string) => `/config/trucks/${truckId}/owners`,
   configRoutes: '/config/routes',
   configCargoTypes: '/config/cargo-types',
   configPricingTables: '/config/pricing-tables',

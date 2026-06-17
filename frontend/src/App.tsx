@@ -41,6 +41,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const FleetPage = lazy(() => import('./pages/FleetPage'));
 const TruckTiresPage = lazy(() => import('./pages/TruckTiresPage'));
 const TrucksConfigPage = lazy(() => import('./pages/config/TrucksConfigPage'));
+const TruckOwnersConfigPage = lazy(() => import('./pages/config/TruckOwnersConfigPage'));
 const RoutesConfigPage = lazy(() => import('./pages/config/RoutesConfigPage'));
 const CargoTypesConfigPage = lazy(() => import('./pages/config/CargoTypesConfigPage'));
 const PricingTablesConfigPage = lazy(() => import('./pages/config/PricingTablesConfigPage'));
@@ -142,6 +143,7 @@ function AppRoutes() {
           <Route path="/config" element={adminOnly(page(<ConfigPage />))} />
           <Route path="/config/trailers" element={adminOnly(page(<TrailersConfigPage />))} />
           <Route path="/config/trucks" element={adminOnly(page(<TrucksConfigPage />))} />
+          <Route path="/config/trucks/:truckId/owners" element={adminOnly(page(<TruckOwnersConfigPage />))} />
           <Route path="/config/routes" element={adminOnly(page(<RoutesConfigPage />))} />
           <Route path="/config/cargo-types" element={adminOnly(page(<CargoTypesConfigPage />))} />
           <Route path="/config/pricing-tables" element={adminOnly(page(<PricingTablesConfigPage />))} />

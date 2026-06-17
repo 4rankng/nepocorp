@@ -68,6 +68,33 @@ export async function quarterDateRange(quarter: number, year: number) {
 type CapRow = { partnerName: string; effectiveDate: string; createdAt: Date | string; contributionAmount: string | null; percentage: string | null };
 
 /**
+ * Core snapshot resolution: pick the latest effectiveDate ≤ cutoff (falling
+ * back to all rows if none have been reached yet), then dedupe by partner name
+ * keeping the row with the newest createdAt. Returns the raw deduped rows so
+ * callers can decide how to interpret percentage vs contribution amount.
+ *
+ * Shared by `resolveCapTableSnapshot` (entity-wide, amount-or-percentage) and
+ * `resolveTruckCapSnapshot` (per-vehicle, explicit percentage).
+ */
+function resolveSnapshotRows<T extends { partnerName: string; effectiveDate: string; createdAt: Date | string }>(
+  rows: T[],
+  cutoffDate: string,
+): T[] {
+  const named = rows.filter(c => c.partnerName);
+  if (named.length === 0) return [];
+  const reached = named.filter(c => c.effectiveDate <= cutoffDate);
+  const pool = reached.length > 0 ? reached : named;
+  const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
+  const snapshot = pool.filter(c => c.effectiveDate === latestDate);
+  const byName = new Map<string, T>();
+  for (const row of snapshot) {
+    const prev = byName.get(row.partnerName);
+    if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
+  }
+  return Array.from(byName.values());
+}
+
+/**
  * Resolve the active cap-table snapshot as of a cutoff date.
  * Picks the latest effective date ≤ cutoff, deduplicates by partner name
  * (keeping the row with the newest createdAt), then auto-calculates
@@ -77,19 +104,8 @@ export function resolveCapTableSnapshot(
   capRows: CapRow[],
   cutoffDate: string,
 ): Array<{ partnerName: string; contributionAmount: number; percentage: number }> {
-  const reached = capRows.filter(c => c.partnerName && c.effectiveDate <= cutoffDate);
-  const pool = reached.length > 0 ? reached : capRows;
-  if (pool.length === 0) return [];
-
-  const latestDate = pool.reduce((acc, c) => (c.effectiveDate > acc ? c.effectiveDate : acc), pool[0].effectiveDate);
-  const snapshot = pool.filter(c => c.effectiveDate === latestDate);
-  const byName = new Map<string, CapRow>();
-  for (const row of snapshot) {
-    const prev = byName.get(row.partnerName);
-    if (!prev || new Date(row.createdAt) > new Date(prev.createdAt)) byName.set(row.partnerName, row);
-  }
-
-  const rows = Array.from(byName.values());
+  const rows = resolveSnapshotRows(capRows, cutoffDate);
+  if (rows.length === 0) return [];
 
   // Use stored percentage if all partners have explicit percentages set;
   // otherwise fall back to calculating from contributionAmount.
@@ -112,4 +128,26 @@ export function resolveCapTableSnapshot(
     ...p,
     percentage: total > 0 ? Math.round((p.contributionAmount / total) * 10000) / 100 : 0,
   }));
+}
+
+/**
+ * F3 — Resolve the active per-vehicle cap-table snapshot as of a cutoff date.
+ * Same history semantics as `resolveCapTableSnapshot` (latest effectiveDate
+ * ≤ cutoff, dedupe by partner keeping newest createdAt), but the percentage is
+ * explicit (read directly from the row — owners are named per truck with
+ * their % share, not derived from a contribution amount).
+ *
+ * `capRows` must already be scoped to one truck (caller filters by truckId).
+ */
+export function resolveTruckCapSnapshot(
+  capRows: Array<{ partnerName: string; effectiveDate: string; createdAt: Date | string; percentage: string | null }>,
+  cutoffDate: string,
+): Array<{ partnerName: string; percentage: number }> {
+  const rows = resolveSnapshotRows(capRows, cutoffDate);
+  return rows
+    .map(r => ({
+      partnerName: r.partnerName,
+      percentage: parseFloat(r.percentage ?? '0') || 0,
+    }))
+    .filter(p => p.percentage > 0);
 }
