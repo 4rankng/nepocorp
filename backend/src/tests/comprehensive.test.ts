@@ -321,7 +321,17 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     })
   });
   assert.strictEqual(actualsRes.status, 200);
-  assert.strictEqual(actualsRes.data.status, TripStatus.COMPLETED);
+  // B2: saving actuals no longer auto-completes the trip — it stays IN_TRANSIT
+  // until an explicit completion call (POST /complete). Photos are optional.
+  assert.strictEqual(actualsRes.data.status, TripStatus.IN_TRANSIT);
+
+  // 6b. Explicit completion (B2): IN_TRANSIT -> COMPLETED via dedicated endpoint.
+  const completeRes = await testFetch(`/api/trips/${tripId}/complete`, {
+    method: 'POST',
+    token: adminToken,
+  });
+  assert.strictEqual(completeRes.status, 200);
+  assert.strictEqual(completeRes.data.status, TripStatus.COMPLETED);
 
   // 7. Lock the trip (immutable ledger generation)
   const lockRes = await testFetch(`/api/trips/${tripId}/lock`, {
