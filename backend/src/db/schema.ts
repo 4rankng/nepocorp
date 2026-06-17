@@ -455,7 +455,11 @@ export const expensePhotos = pgTable('expense_photos', {
   storageKey: varchar('storage_key', { length: 255 }).notNull(),
   uploadedBy: integer('uploaded_by'),
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
-});
+}, (table) => [
+  // Receipt-photo serving (/api/photos) resolves ownership by exact storage_key
+  // lookup; this index makes that O(log n) instead of a seq scan. See ADR 0042.
+  index('expense_photos_storage_key_idx').on(table.storageKey),
+]);
 
 // ─── Forwarder catalogs ──────────────────────────────────────────────────────────
 
@@ -574,7 +578,11 @@ export const tripExpensePhotos = pgTable('trip_expense_photos', {
   storageKey: varchar('storage_key', { length: 255 }).notNull(),
   uploadedBy: integer('uploaded_by'),
   uploadedAt: timestamp('uploaded_at').defaultNow().notNull(),
-});
+}, (table) => [
+  // Receipt-photo serving (/api/photos) resolves ownership by exact storage_key
+  // lookup; this index makes that O(log n) instead of a seq scan. See ADR 0042.
+  index('trip_expense_photos_storage_key_idx').on(table.storageKey),
+]);
 
 export const advanceRequests = pgTable('advance_requests', {
   id: serial('id').primaryKey(),
