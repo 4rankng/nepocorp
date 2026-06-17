@@ -54,7 +54,7 @@ export default function ExpenseEntryPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [pageError, setPageError] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ id: number; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const { data: catalogData } = useCatalogs();
@@ -63,7 +63,6 @@ export default function ExpenseEntryPage() {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [catalogsLoaded, setCatalogsLoaded] = useState(false);
 
   // Quick-create supplier
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -75,6 +74,10 @@ export default function ExpenseEntryPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
+  // Catalog query is always enabled and short-stale so invalidations (after a
+  // quick-create, below) reliably refetch — the previous `enabled: !catalogsLoaded`
+  // gate permanently disabled refetch after first load, leaving the dropdown stale
+  // until a manual page refresh (B7 / D1).
   useQuery({
     queryKey: qk.tripForm.expenseFormCatalogs,
     queryFn: async () => {
@@ -84,11 +87,9 @@ export default function ExpenseEntryPage() {
       ]);
       setSuppliers(suppliers);
       setCategories(categories);
-      setCatalogsLoaded(true);
       return { suppliers, categories };
     },
-    enabled: !catalogsLoaded,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 
   const { data: existingExpense, isLoading: loadingExpense } = useQuery<ExpenseWithRefs>({
@@ -118,6 +119,19 @@ export default function ExpenseEntryPage() {
     }
   }, [existingExpense]);
 
+  // B1: load persisted receipt photos when editing (photos attach to the saved row).
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    let cancelled = false;
+    api.get<{ items: Array<{ id: number; storageKey: string }> }>(`/expenses/${id}/photos`)
+      .then(res => {
+        if (cancelled) return;
+        setPhotos(res.items.map(p => ({ id: p.id, url: `/api/photos/${encodeURIComponent(p.storageKey)}` })));
+      })
+      .catch(() => { /* leave photos empty on error */ });
+    return () => { cancelled = true; };
+  }, [isEdit, id]);
+
   const selectedCategory = useMemo(
     () => categories.find(c => c.id === form.categoryId),
     [categories, form.categoryId],
@@ -138,14 +152,15 @@ export default function ExpenseEntryPage() {
 
   const handlePhotoUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
+    if (!id) return; // edit-mode only — photos attach to a saved expense (B1)
     const file = files[0];
     const formData = new FormData();
     formData.append('file', file);
 
     setUploading(true);
     try {
-      const result = await api.upload('/upload', formData) as { url: string };
-      setPhotoUrls(prev => [...prev, result.url]);
+      const result = await api.upload(`/expenses/${id}/photos`, formData) as { id: number; url: string };
+      setPhotos(prev => [...prev, result]);
     } catch {
       toast({ kind: 'error', message: 'Lỗi khi tải ảnh. Vui lòng thử lại.' });
     } finally {
@@ -153,8 +168,17 @@ export default function ExpenseEntryPage() {
     }
   };
 
-  const removePhoto = (index: number) => {
-    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+  const removePhoto = async (index: number) => {
+    const photo = photos[index];
+    if (!photo || !id) return;
+    try {
+      await api.delete(`/expenses/${id}/photos/${photo.id}`);
+      // Filter by id, not the captured index: if two deletes are in flight the
+      // second's stale index would otherwise drop the wrong thumbnail.
+      setPhotos(prev => prev.filter(p => p.id !== photo.id));
+    } catch {
+      toast({ kind: 'error', message: 'Không xóa được ảnh.' });
+    }
   };
 
   const formatAmountDisplay = (val: string) => {
@@ -175,6 +199,7 @@ export default function ExpenseEntryPage() {
       const created = await api.post<Supplier>(CONFIG.SUPPLIERS, { name: newSupplierName.trim(), status: 'ACTIVE' });
       setSuppliers(prev => [...prev, created]);
       set('supplierId', created.id);
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.expenseFormCatalogs });
       setShowNewSupplier(false);
       setNewSupplierName('');
       toast({ kind: 'success', message: `Đã tạo nhà cung cấp "${created.name}".` });
@@ -192,6 +217,7 @@ export default function ExpenseEntryPage() {
       const created = await api.post<ExpenseCategory>(CONFIG.EXPENSE_CATEGORIES, { name: newCategoryName.trim(), isRenewable: false, reminderLeadDays: 30 });
       setCategories(prev => [...prev, created]);
       set('categoryId', created.id);
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.expenseFormCatalogs });
       setShowNewCategory(false);
       setNewCategoryName('');
       toast({ kind: 'success', message: `Đã tạo hạng mục "${created.name}".` });
@@ -618,11 +644,11 @@ export default function ExpenseEntryPage() {
                   <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm biên lai / chứng từ nếu có</p>
                 </div>
                 <div className="expense-panel__body expense-photo-body">
-                  {photoUrls.length > 0 && (
+                  {photos.length > 0 && (
                     <div className="expense-photo-grid">
-                      {photoUrls.map((url, idx) => (
-                        <div key={idx} className="expense-photo-thumb">
-                          <img src={url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {photos.map((p, idx) => (
+                        <div key={p.id} className="expense-photo-thumb">
+                          <img src={p.url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           <button
                             type="button"
                             onClick={() => removePhoto(idx)}
@@ -637,25 +663,32 @@ export default function ExpenseEntryPage() {
                     </div>
                   )}
 
-                  <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
-                    {uploading ? (
-                      <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 14, marginTop: 8 }}>Đang tải ảnh lên…</span></>
-                    ) : (
-                      <>
-                        <Upload size={28} style={{ color: 'var(--accent)', marginBottom: 6 }} />
-                        <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
-                        <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa 5MB</span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      style={{ display: 'none' }}
-                      onChange={e => e.target.files && handlePhotoUpload(e.target.files)}
-                      disabled={uploading}
-                    />
-                  </label>
+                  {isEdit ? (
+                    <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
+                      {uploading ? (
+                        <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 14, marginTop: 8 }}>Đang tải ảnh lên…</span></>
+                      ) : (
+                        <>
+                          <Upload size={28} style={{ color: 'var(--accent)', marginBottom: 6 }} />
+                          <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
+                          <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa 5MB</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={e => e.target.files && handlePhotoUpload(e.target.files)}
+                        disabled={uploading}
+                      />
+                    </label>
+                  ) : (
+                    <div className="expense-upload-zone" style={{ cursor: 'default', opacity: 0.7 }}>
+                      <Upload size={28} style={{ color: 'var(--ink-3)', marginBottom: 6 }} />
+                      <span style={{ fontSize: 14, color: 'var(--ink-3)', fontWeight: 500 }}>Lưu phiếu chi để đính kèm ảnh hóa đơn</span>
+                      <span style={{ fontSize: 12, color: 'var(--ink-4)', fontWeight: 400 }}>Ảnh được thêm sau khi tạo phiếu</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

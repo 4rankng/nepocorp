@@ -66,7 +66,7 @@ export default function ForwarderTripDetailPage() {
     sellAmount: '',
     settlementMethod: 'FORWARDER_ADVANCE' as 'FORWARDER_ADVANCE' | 'COMPANY_DIRECT',
     supplierId: '',
-    containerNumber: '',
+    tripContainerId: '',
     invoiceNumber: '',
     invoiceDate: '',
     declarationNumber: '',
@@ -180,7 +180,7 @@ export default function ForwarderTripDetailPage() {
         invoiceNumber: expenseForm.invoiceNumber.trim() || undefined,
         invoiceDate: expenseForm.invoiceDate || undefined,
         declarationNumber: expenseForm.declarationNumber.trim() || undefined,
-        containerNumber: expenseForm.containerNumber.trim().toUpperCase() || undefined,
+        tripContainerId: expenseForm.tripContainerId ? parseInt(expenseForm.tripContainerId, 10) : undefined,
         note: expenseForm.note.trim() || undefined,
       },
       {
@@ -191,7 +191,7 @@ export default function ForwarderTripDetailPage() {
             sellAmount: '',
             settlementMethod: 'FORWARDER_ADVANCE',
             supplierId: '',
-            containerNumber: '',
+            tripContainerId: '',
             invoiceNumber: '',
             invoiceDate: '',
             declarationNumber: '',
@@ -500,13 +500,16 @@ export default function ForwarderTripDetailPage() {
               )}
 
               <FormGroup label="Số container" style={{ flex: '1 1 160px', minWidth: 140 }}>
-                <input
+                <select
                   className="input"
-                  value={expenseForm.containerNumber}
-                  onChange={e => setExpenseForm(f => ({ ...f, containerNumber: e.target.value }))}
-                  placeholder="MSKU1234567"
-                  style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}
-                />
+                  value={expenseForm.tripContainerId}
+                  onChange={e => setExpenseForm(f => ({ ...f, tripContainerId: e.target.value }))}
+                >
+                  <option value="">{containers.length === 0 ? '-- Chưa có cont --' : '-- Chọn cont --'}</option>
+                  {containers.map(c => (
+                    <option key={c.id} value={String(c.id)}>{c.containerNumber}</option>
+                  ))}
+                </select>
               </FormGroup>
             </div>
 
