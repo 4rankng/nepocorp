@@ -145,6 +145,15 @@ export interface UseTripFormStateReturn {
   // Notes & photos (state only; upload logic stays in useTripFormPhotos)
   notes: string;
   setNotes: (v: string) => void;
+  /** Manager-authored contact + guidance (N2 / B1.3). Persisted by the unified
+   *  "Lưu cập nhật" submit via PUT /api/trips/:id/instructions — the
+   *  TripInstructionsCard no longer owns its own save button. */
+  contactName: string;
+  setContactName: (v: string) => void;
+  contactPhone: string;
+  setContactPhone: (v: string) => void;
+  instructionsNotes: string;
+  setInstructionsNotes: (v: string) => void;
   photoUrls: string[];
   setPhotoUrls: (urls: string[] | ((prev: string[]) => string[])) => void;
 
@@ -255,6 +264,13 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
   // ── Notes ──
   const [notes, setNotes] = useState(isEditMode && existingTrip?.notes ? existingTrip.notes : "");
 
+  // ── Instructions (N2 / B1.3) — contact + guidance persisted via the
+  //    separate `trip_instructions` row, written by the unified submit. ──
+  const existingInstructions = isEditMode && existingTrip ? existingTrip.instructions : null;
+  const [contactName, setContactName] = useState(existingInstructions?.contactName ?? "");
+  const [contactPhone, setContactPhone] = useState(existingInstructions?.contactPhone ?? "");
+  const [instructionsNotes, setInstructionsNotes] = useState(existingInstructions?.notes ?? "");
+
   // ── Photos (state only; upload logic in useTripFormPhotos) ──
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
@@ -313,6 +329,9 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     revenueEmptyReturn, setRevenueEmptyReturn,
     revenueCombine, setRevenueCombine,
     notes, setNotes,
+    contactName, setContactName,
+    contactPhone, setContactPhone,
+    instructionsNotes, setInstructionsNotes,
     photoUrls, setPhotoUrls,
     containerRows, setContainerRows,
     submitting, setSubmitting,

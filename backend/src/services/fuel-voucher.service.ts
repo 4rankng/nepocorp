@@ -68,27 +68,79 @@ export async function buildFuelVoucherData(tripId: number): Promise<FuelVoucherD
 // ── HTML rendering ──
 
 const PRINT_CSS = `
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 800px; margin: 24px auto; padding: 0 16px; font-size: 13px; }
-  h1 { font-size: 18px; text-align: center; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .subtitle { text-align: center; font-size: 13px; color: #6b7280; margin: 0 0 20px; }
-  .meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #374151; }
-  .meta span { display: block; margin-bottom: 2px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-  th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; font-size: 13px; }
-  th { background: #f3f4f6; font-weight: 600; white-space: nowrap; }
-  .amount { text-align: right; font-weight: 600; }
-  .vendor { margin-bottom: 20px; padding: 10px 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; }
-  .vendor-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
-  .vendor-detail { font-size: 13px; color: #4b5563; }
-  .signatures { display: flex; justify-content: space-between; margin-top: 48px; padding-top: 12px; }
-  .sig-block { text-align: center; width: 30%; }
-  .sig-title { font-size: 13px; font-weight: 600; margin-bottom: 48px; }
-  .sig-line { border-top: 1px solid #9ca3af; margin: 0 10px; }
-  @media print { body { margin: 0; } }
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Times New Roman', 'Times', 'Noto Serif', serif;
+    color: #000;
+    background: #e5e7eb;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    background: #0f172a; color: #fff;
+    padding: 10px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-shadow: 0 1px 0 rgba(0,0,0,.1);
+  }
+  .toolbar .label { font-size: 13px; opacity: .85; }
+  .toolbar .actions { display: flex; gap: 8px; }
+  .toolbar button {
+    background: #10b981; color: #fff; border: 0; cursor: pointer;
+    padding: 7px 14px; border-radius: 4px; font-size: 13px; font-weight: 600;
+  }
+  .toolbar button.secondary { background: #475569; }
+  .toolbar button:hover { filter: brightness(1.08); }
+  .sheet {
+    background: #fff;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 16px auto;
+    padding: 18mm 16mm;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .voucher-no { text-align: right; font-size: 12px; color: #4b5563; margin-bottom: 8px; }
+  h1 {
+    font-size: 22px; text-align: center; margin: 0 0 18px;
+    letter-spacing: 0.08em; font-weight: 700;
+  }
+  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  .meta-table td { padding: 3px 0; font-size: 13.5px; vertical-align: top; }
+  .meta-table td.k { width: 130px; color: #374151; }
+  .meta-table td.v { color: #111827; font-weight: 600; }
+  table.items { width: 100%; border-collapse: collapse; margin: 14px 0; }
+  table.items th, table.items td { border: 1px solid #111827; padding: 8px 10px; font-size: 13px; }
+  table.items th { background: #f1f5f9; font-weight: 700; text-align: center; }
+  table.items td.center { text-align: center; }
+  table.items td.right { text-align: right; }
+  table.items tr.total td { font-weight: 700; background: #f8fafc; }
+  .vendor { margin: 14px 0; padding: 8px 12px; border: 1px solid #111827; }
+  .vendor .vrow { display: flex; justify-content: space-between; padding: 2px 0; font-size: 13.5px; }
+  .vendor .vrow .k { color: #374151; }
+  .signatures {
+    display: flex; justify-content: space-between;
+    margin-top: 36px; page-break-inside: avoid;
+  }
+  .sig-block { text-align: center; width: 30%; font-size: 13.5px; }
+  .sig-block .title { font-weight: 700; margin-bottom: 4px; }
+  .sig-block .hint { font-style: italic; color: #6b7280; font-size: 11.5px; margin-bottom: 60px; }
+  .sig-block .line { border-top: 1px solid #111827; margin: 0 6px; padding-top: 4px; font-size: 12px; color: #6b7280; }
+  .footer { margin-top: 18px; text-align: center; font-size: 11px; color: #6b7280; font-style: italic; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .sheet { box-shadow: none; margin: 0; padding: 0; width: 100%; }
+    .sheet { padding: 0; }
+    .no-print { display: none !important; }
+    .signatures { margin-top: 28px; }
+  }
 `;
 
 export function renderFuelVoucherHtml(data: FuelVoucherData): string {
   const dateStr = formatDateVi(data.departureDate);
+  const voucherNo = `PCNL-${data.tripCode ?? ''}`;
+  const today = new Date().toLocaleDateString('vi-VN');
 
   return `<!doctype html>
 <html lang="vi">
@@ -98,68 +150,87 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
   <style>${PRINT_CSS}</style>
 </head>
 <body>
-  <h1>Phiếu cấp nhiên liệu</h1>
-  <p class="subtitle">FUEL ISSUANCE VOUCHER</p>
-
-  <div class="meta">
-    <div>
-      <span><strong>Mã chuyến:</strong> ${escapeHtml(data.tripCode ?? '—')}</span>
-      <span><strong>Ngày xuất phát:</strong> ${dateStr}</span>
-    </div>
-    <div>
-      <span><strong>Tuyến:</strong> ${escapeHtml(data.routeName ?? '—')}</span>
-      <span><strong>Biển số xe:</strong> ${escapeHtml(data.truckPlate ?? '—')}</span>
+  <div class="toolbar no-print">
+    <span class="label">Xem trước bản in &middot; Phiếu cấp nhiên liệu ${escapeHtml(data.tripCode ?? '')}</span>
+    <div class="actions">
+      <button class="secondary" onclick="window.close()">Đóng</button>
+      <button onclick="window.print()">In phiếu</button>
     </div>
   </div>
 
-  <div class="meta">
-    <span><strong>Lái xe:</strong> ${escapeHtml(data.driverName ?? '—')}</span>
-  </div>
+  <div class="sheet">
+    <div class="voucher-no">Số phiếu: ${escapeHtml(voucherNo)} &nbsp;&middot;&nbsp; Ngày in: ${today}</div>
+    <h1>PHIẾU CẤP NHIÊN LIỆU</h1>
 
-  <table>
-    <thead>
+    <table class="meta-table">
       <tr>
-        <th>STT</th>
-        <th>Hạng mục</th>
-        <th>Số lượng (Lít)</th>
-        <th>Đơn giá (đ/Lít)</th>
-        <th>Thành tiền (đ)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>Nhiên liệu (Diesel)</td>
-        <td>${formatVND(data.fuelLiters)}</td>
-        <td>${formatVND(data.fuelActualUnitPrice)}</td>
-        <td class="amount">${formatVND(data.totalFuelCost)}</td>
+        <td class="k">Mã chuyến:</td>
+        <td class="v">${escapeHtml(data.tripCode ?? '—')}</td>
+        <td class="k" style="width: 140px;">Ngày xuất phát:</td>
+        <td class="v">${dateStr}</td>
       </tr>
       <tr>
-        <td colspan="4" style="text-align: right; font-weight: 700;">Tổng cộng</td>
-        <td class="amount" style="font-weight: 700;">${formatVND(data.totalFuelCost)}</td>
+        <td class="k">Tuyến:</td>
+        <td class="v">${escapeHtml(data.routeName ?? '—')}</td>
+        <td class="k">Biển số xe:</td>
+        <td class="v">${escapeHtml(data.truckPlate ?? '—')}</td>
       </tr>
-    </tbody>
-  </table>
+      <tr>
+        <td class="k">Lái xe:</td>
+        <td class="v" colspan="3">${escapeHtml(data.driverName ?? '—')}</td>
+      </tr>
+    </table>
 
-  <div class="vendor">
-    <div class="vendor-title">Nhà cung cấp: ${escapeHtml(data.supplierName ?? '—')}</div>
-    ${data.supplierNote ? `<div class="vendor-detail">Ghi chú: ${escapeHtml(data.supplierNote)}</div>` : ''}
-    <div class="vendor-detail">Giá áp dụng: ${formatVND(data.fuelPriceApplied)} đ/Lít</div>
-  </div>
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width: 50px;">STT</th>
+          <th>Hạng mục</th>
+          <th style="width: 110px;">Số lượng (Lít)</th>
+          <th style="width: 120px;">Đơn giá (đ/Lít)</th>
+          <th style="width: 140px;">Thành tiền (đ)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>Nhiên liệu (Diesel)</td>
+          <td class="right">${formatVND(data.fuelLiters)}</td>
+          <td class="right">${formatVND(data.fuelActualUnitPrice)}</td>
+          <td class="right">${formatVND(data.totalFuelCost)}</td>
+        </tr>
+        <tr class="total">
+          <td colspan="4" class="right">Tổng cộng</td>
+          <td class="right">${formatVND(data.totalFuelCost)}</td>
+        </tr>
+      </tbody>
+    </table>
 
-  <div class="signatures">
-    <div class="sig-block">
-      <div class="sig-title">Người lập phiếu</div>
-      <div class="sig-line"></div>
+    <div class="vendor">
+      <div class="vrow"><span class="k">Nhà cung cấp:</span><span><strong>${escapeHtml(data.supplierName ?? '—')}</strong></span></div>
+      ${data.supplierNote ? `<div class="vrow"><span class="k">Ghi chú:</span><span>${escapeHtml(data.supplierNote)}</span></div>` : ''}
+      <div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.fuelPriceApplied)} đ/Lít</span></div>
     </div>
-    <div class="sig-block">
-      <div class="sig-title">Kế toán trưởng</div>
-      <div class="sig-line"></div>
+
+    <div class="signatures">
+      <div class="sig-block">
+        <div class="title">Người lập phiếu</div>
+        <div class="hint">(Ký, ghi rõ họ tên)</div>
+        <div class="line">&nbsp;</div>
+      </div>
+      <div class="sig-block">
+        <div class="title">Kế toán trưởng</div>
+        <div class="hint">(Ký, ghi rõ họ tên)</div>
+        <div class="line">&nbsp;</div>
+      </div>
+      <div class="sig-block">
+        <div class="title">Người nhận</div>
+        <div class="hint">(Ký, ghi rõ họ tên)</div>
+        <div class="line">&nbsp;</div>
+      </div>
     </div>
-    <div class="sig-block">
-      <div class="sig-title">Người nhận</div>
-      <div class="sig-line"></div>
-    </div>
+
+    <div class="footer">In bởi TingTing &middot; Ngày in: ${today}</div>
   </div>
 </body>
 </html>`;
@@ -196,6 +267,17 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
 
   let row = 1;
 
+  // Số phiếu / ngày in (top right)
+  const noRow = ws.getRow(row);
+  noRow.height = 16;
+  ws.mergeCells(`A${row}:E${row}`);
+  const voucherNo = `PCNL-${data.tripCode ?? ''}`;
+  const today = new Date().toLocaleDateString('vi-VN');
+  noRow.getCell(1).value = `Số phiếu: ${voucherNo}    Ngày in: ${today}`;
+  noRow.getCell(1).font = { name: F, size: 9, italic: true, color: { argb: 'FF4B5563' } };
+  noRow.getCell(1).alignment = { horizontal: 'right' };
+  row++;
+
   // Title
   const titleRow = ws.getRow(row);
   titleRow.height = 28;
@@ -204,16 +286,6 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   titleCell.value = 'PHIẾU CẤP NHIÊN LIỆU';
   titleCell.font = { name: F, size: 14, bold: true, color: { argb: CLR.dark } };
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  row++;
-
-  // Subtitle
-  const subRow = ws.getRow(row);
-  subRow.height = 18;
-  ws.mergeCells(`A${row}:E${row}`);
-  const subCell = subRow.getCell(1);
-  subCell.value = 'FUEL ISSUANCE VOUCHER';
-  subCell.font = { name: F, size: 10, color: { argb: 'FF6B7280' } };
-  subCell.alignment = { horizontal: 'center' };
   row++;
 
   // Blank spacer
@@ -371,7 +443,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const footerRow = ws.getRow(row);
   footerRow.height = 14;
   ws.mergeCells(`A${row}:E${row}`);
-  footerRow.getCell(1).value = `In bởi TingTing Logistics — ${new Date().toLocaleDateString('vi-VN')}`;
+  footerRow.getCell(1).value = `In bởi TingTing — ${new Date().toLocaleDateString('vi-VN')}`;
   footerRow.getCell(1).font = { name: F, size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
   footerRow.getCell(1).alignment = { horizontal: 'center' };
 

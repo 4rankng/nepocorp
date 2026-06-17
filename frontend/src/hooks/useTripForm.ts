@@ -104,6 +104,12 @@ export interface UseTripFormReturn {
 
   notes: string;
   setNotes: (v: string) => void;
+  contactName: string;
+  setContactName: (v: string) => void;
+  contactPhone: string;
+  setContactPhone: (v: string) => void;
+  instructionsNotes: string;
+  setInstructionsNotes: (v: string) => void;
   photoUrls: string[];
   uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
   removePhoto: (idx: number) => void;
@@ -195,6 +201,9 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     revenueEmptyReturn: s.revenueEmptyReturn, setRevenueEmptyReturn: s.setRevenueEmptyReturn,
     revenueCombine: s.revenueCombine, setRevenueCombine: s.setRevenueCombine,
     notes: s.notes, setNotes: s.setNotes,
+    contactName: s.contactName, setContactName: s.setContactName,
+    contactPhone: s.contactPhone, setContactPhone: s.setContactPhone,
+    instructionsNotes: s.instructionsNotes, setInstructionsNotes: s.setInstructionsNotes,
     photoUrls: d.photoUrls, uploadPhotos: d.uploadPhotos, removePhoto: d.removePhoto,
     uploadContainerPhoto: d.uploadContainerPhoto, revokeRowPhotos: d.revokeRowPhotos,
     containerRows: s.containerRows, setContainerRows: s.setContainerRows,

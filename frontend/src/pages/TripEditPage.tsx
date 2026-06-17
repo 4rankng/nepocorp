@@ -274,7 +274,7 @@ export default function TripEditPage() {
                   </div>
                 </div>
                 <div className="tc-card-body">
-                  <TripInstructionsCard tripId={trip.id} />
+                  <TripInstructionsCard />
                 </div>
               </div>
             </div>

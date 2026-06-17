@@ -10,6 +10,7 @@ import { useTripFormContext } from '../../hooks/useTripFormContext';
 import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import { PhotoViewer } from '../PhotoViewer';
+import './ContainerInstancesCard.css';
 import {
   normalizeContainerNumber,
   validateContainerFormat,
@@ -448,9 +449,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+              <div className="ci-row">
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                  <label className="ci-label">
                     Số container <span style={{ color: 'var(--danger)' }}>*</span>
                   </label>
                   <input
@@ -492,7 +493,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   })()}
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                  <label className="ci-label">
                     Loại cont
                   </label>
                   <select
@@ -508,7 +509,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                  <label className="ci-label">
                     Trọng lượng (kg)
                   </label>
                   <input
@@ -523,7 +524,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
+                  <label className="ci-label">
                     Ghi chú
                   </label>
                   <input

@@ -1,0 +1,23 @@
+/* ContainerInstancesCard — per-row 2-column field grid for the container editor.
+   The rest of the card uses inline styles; this file only owns the shared label
+   + 2-col grid primitives so the row layout stays consistent and responsive. */
+
+.ci-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ci-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-2);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 560px) {
+  .ci-row {
+    grid-template-columns: 1fr;
+  }
+}

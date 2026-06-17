@@ -1,5 +1,7 @@
 /* TripInstructionsCard (N2 / B1.3) — manager-authored contact + guidance block.
-   Page-scoped under .ti-* to avoid colliding with the rest of the trip form. */
+   Page-scoped under .ti-* to avoid colliding with the rest of the trip form.
+   The card has no save button — its fields are part of the trip form state
+   and are persisted by the unified "Lưu cập nhật" submit. */
 
 .ti-card {
   display: flex;
@@ -30,27 +32,9 @@
   resize: vertical;
 }
 
-.ti-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.ti-save-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ti-saved-ok {
-  font-size: 13px;
-  color: var(--success, #2e7d32);
-}
-
-.ti-saved-err {
-  font-size: 13px;
-  color: var(--danger, #c62828);
+.ti-hint {
+  font-size: 12px;
+  color: var(--fg-3, #888);
 }
 
 @media (max-width: 560px) {

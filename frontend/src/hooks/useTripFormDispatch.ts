@@ -149,6 +149,16 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.setCustomerCommission(existingTrip.customerCommission ? String(existingTrip.customerCommission) : '0');
     s.setTripWageDays(existingTrip.tripWageDays ? String(existingTrip.tripWageDays) : '');
     s.setNotes(existingTrip.notes || '');
+    // Instructions (N2 / B1.3) arrive on the same detail payload as the rest of
+    // the trip. Set them here — NOT just in useState — so the fields repopulate
+    // when existingTrip resolves after mount (useState initializers run once,
+    // before the query returns) and when navigating between two edit trips or
+    // retrying after a 409 refetch. Without this the inputs stay blank and the
+    // next save would overwrite the stored row with nulls.
+    const inst = existingTrip.instructions;
+    s.setContactName(inst?.contactName ?? '');
+    s.setContactPhone(inst?.contactPhone ?? '');
+    s.setInstructionsNotes(inst?.notes ?? '');
     s.setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     s.setFuelSupplierId(existingTrip.fuelSupplierId ?? null);
     s.setPhotoUrls(existingTrip.photoUrls || []);
@@ -700,6 +710,27 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           queryClient.invalidateQueries({ queryKey: qk.trips.adjustments(existingTrip.id) });
 
           await saveContainers(existingTrip.id);
+          // Manager-authored contact + guidance (N2 / B1.3) — persisted via the
+          // existing PUT /api/trips/:id/instructions route. Always called so
+          // a manager can blank a previously-typed contact. The trip figures
+          // above are already committed, so this is best-effort and must never
+          // roll them back — but if it fails we surface the error and stay on
+          // the page (return undefined) so the manager actually sees it and can
+          // retry. Navigating to the detail page on success would otherwise
+          // discard the message before it renders.
+          try {
+            await tripClient.upsertTripInstructions(existingTrip.id, {
+              contactName: s.contactName.trim() || null,
+              contactPhone: s.contactPhone.trim() || null,
+              notes: s.instructionsNotes.trim() || null,
+            });
+          } catch (instErr) {
+            console.error('Trip instructions upsert failed:', instErr);
+            s.setError(instErr instanceof ApiError
+              ? `Hướng dẫn chưa lưu: ${instErr.message}`
+              : 'Hướng dẫn chưa lưu. Vui lòng thử lại.');
+            return undefined;
+          }
           return existingTrip.id;
         }
 
@@ -809,6 +840,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);
         }
         await saveContainers(trip.id);
+        // Skip the instructions upsert in the create flow — TripCreatePage
+        // doesn't mount the instructions card, so the fields are guaranteed
+        // empty and a no-op upsert would still create an empty row + an
+        // audit entry. The user fills the instructions later on the edit
+        // page, where the upsert runs.
         await queryClient.invalidateQueries({ queryKey: qk.trips.all });
         return trip.id;
       } catch (err) {
@@ -843,6 +879,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       s.fuelSupplierId,
       s.customerCommission, s.tripWageDays,
       s.revenue, s.revenueEmptyReturn, s.revenueCombine, s.notes, photoUrls,
+      s.contactName, s.contactPhone, s.instructionsNotes,
       flushPendingPhotos,
       flushPendingContainerPhotos,
       s.carrierType, s.vatRate, s.externalCarrierId, s.externalFreightCost,

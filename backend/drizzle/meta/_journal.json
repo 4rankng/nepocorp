@@ -351,6 +351,13 @@
       "when": 1781685251288,
       "tag": "0049_slim_terrax",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1781714138427,
+      "tag": "0050_worried_gladiator",
+      "breakpoints": true
     }
   ]
 }

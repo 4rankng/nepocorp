@@ -7,6 +7,7 @@ import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'dri
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { config } from '../config';
+import { getTripInstructions } from './trip-instructions.service';
 
 // ─── Query helpers ─────────────────────────────────────────────────────────
 
@@ -353,7 +354,7 @@ export async function getTripById(id: number) {
 
   if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
 
-  const [legs, photos] = await Promise.all([
+  const [legs, photos, instructions] = await Promise.all([
     db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
     // Only general (`OTHER`) photos belong in the trip-level `photoUrls`.
     // CONTAINER/SEAL photos are surfaced separately by the "Container & Seal"
@@ -361,6 +362,10 @@ export async function getTripById(id: number) {
     // including them here would duplicate them across both sections.
     db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos)
       .where(and(eq(s.tripPhotos.tripId, id), eq(s.tripPhotos.type, 'OTHER'))),
+    // Manager-authored contact + guidance (N2 / B1.3). Included here so the
+    // edit form can populate the TripInstructionsCard fields from the same
+    // detail payload (one row per trip; null when none exists yet).
+    getTripInstructions(id),
   ]);
 
   const uniquePairs = [...new Set(legs.map(l => `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`))];
@@ -432,5 +437,5 @@ export async function getTripById(id: number) {
   }
 
   const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
-  return shapeTripRelations(trip, { legs: legsWithPaths, photoUrls });
+  return { ...shapeTripRelations(trip, { legs: legsWithPaths, photoUrls }), instructions };
 }
