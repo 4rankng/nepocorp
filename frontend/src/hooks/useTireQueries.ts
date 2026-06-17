@@ -15,8 +15,9 @@ function useInvalidateTires() {
   const queryClient = useQueryClient();
   return () => {
     // Invalidate the broad 'tires' prefix so every per-truck view + the
-    // unfiltered stock list refetch.
-    queryClient.invalidateQueries({ queryKey: ['tires'] });
+    // unfiltered stock list refetch. Routed through qk so a key rename can't
+    // silently break invalidation. (code-review MEDIUM)
+    queryClient.invalidateQueries({ queryKey: qk.catalogs.tiresAll });
   };
 }
 

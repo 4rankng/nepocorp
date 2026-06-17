@@ -94,9 +94,9 @@ router.get('/reports/payables-summary', asyncHandler(async (req: Request, res: R
 
 router.post('/commissions', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const data = commissionSchema.parse(req.body);
-  await recordCommission(data);
+  const result = await recordCommission(data);
   await cacheInvalidate('reports:dashboard');
-  res.status(201).json({ ok: true });
+  res.status(201).json(result);
 }));
 
 export default router;

@@ -7,6 +7,7 @@ import { PageHeader, Modal } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -66,12 +67,17 @@ function CommissionModal({
     if (isOpen) setForm({ supplierId: '', amount: '', tripId: '', note: '' });
   }, [isOpen]);
 
+  // Mirror the commissionSchema upper bound (≤ 1 tỷ VND) client-side so a typo
+  // like 2,000,000,000 is caught here instead of surfacing as a generic 422.
+  const amountNum = Number(form.amount);
+  const overLimit = Number.isFinite(amountNum) && amountNum > 1_000_000_000;
   const canSubmit =
     !isPending &&
     form.supplierId !== '' &&
     form.amount.trim() !== '' &&
-    Number.isFinite(Number(form.amount)) &&
-    Number(form.amount) > 0;
+    Number.isFinite(amountNum) &&
+    amountNum > 0 &&
+    !overLimit;
 
   const handleSubmit = () => {
     if (!canSubmit || form.supplierId === '') return;
@@ -126,11 +132,15 @@ function CommissionModal({
             id="commission-amount"
             type="number"
             min="0"
+            max="1000000000"
             step="1000"
             placeholder="VD: 500000"
             value={form.amount}
             onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
           />
+          {overLimit && (
+            <div className="commission-form__error" role="note">Số tiền vượt quá giới hạn tối đa 1 tỷ VND.</div>
+          )}
         </div>
         <div className="field">
           <label htmlFor="commission-trip">Mã chuyến (tuỳ chọn)</label>
@@ -182,6 +192,13 @@ export default function PayableListPage() {
   const commissionError = postCommission.error
     ? (postCommission.error as Error).message
     : null;
+
+  /* ── Role gate: commission posting is ADMIN/MANAGER/ACCOUNTANT (matches the
+     backend requireRoles). Hide the button for other roles so they don't fill
+     the form only to hit a 403. (defense in depth, code-review HIGH) ── */
+  const { user } = useAuth();
+  const canPostCommission =
+    user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'ACCOUNTANT';
 
   /* ── Page entrance animation (custom selectors for bento zones) ── */
   const { rootRef } = usePageAnimations({
@@ -300,14 +317,16 @@ export default function PayableListPage() {
         description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} NCC · cập nhật vừa xong`}
         action={
           <div className="page-actions">
-            <button
-              className="btn btn--secondary btn--sm"
-              onClick={() => setCommissionOpen(true)}
-              title="Ghi nhận khoản hoa hồng cho nhà cung cấp"
-            >
-              <Gift size={14} style={{ marginRight: 6 }} aria-hidden="true" />
-              Ghi hoa hồng
-            </button>
+            {canPostCommission && (
+              <button
+                className="btn btn--secondary btn--sm"
+                onClick={() => setCommissionOpen(true)}
+                title="Ghi nhận khoản hoa hồng cho nhà cung cấp"
+              >
+                <Gift size={14} style={{ marginRight: 6 }} aria-hidden="true" />
+                Ghi hoa hồng
+              </button>
+            )}
             <button className="btn btn--secondary btn--sm" onClick={handleExport}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo

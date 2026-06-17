@@ -57,6 +57,17 @@ export async function installTire(tireId: number, input: InstallTireInput) {
     if (!existing) {
       throw new HttpError(404, 'Không tìm thấy lốp');
     }
+    // Guard the lifecycle: a tire already IN_USE must be removed first.
+    // Silently re-installing it on another truck would orphan the prior
+    // assignment with no removed_at (history loss). (code-review CRITICAL)
+    if (existing.status === 'IN_USE') {
+      throw new HttpError(
+        409,
+        existing.truckId != null
+          ? `Lốp đang lắp trên xe khác — vui lòng tháo ra trước`
+          : 'Lốp đang sử dụng — vui lòng tháo ra trước',
+      );
+    }
 
     const patch: Partial<typeof s.tires.$inferSelect> = {
       truckId: input.truckId,
@@ -81,6 +92,12 @@ export async function removeTire(tireId: number, input: RemoveTireInput) {
       .limit(1);
     if (!existing) {
       throw new HttpError(404, 'Không tìm thấy lốp');
+    }
+    // Guard the lifecycle: only an IN_USE tire can be removed. Removing an
+    // IN_STOCK/RETIRED tire would fabricate a removed_at with no install, or
+    // resurrect a RETIRED tire — corrupting lifecycle history. (code-review CRITICAL)
+    if (existing.status !== 'IN_USE') {
+      throw new HttpError(409, 'Lốp không đang lắp trên xe — không thể tháo');
     }
 
     const patch: Partial<typeof s.tires.$inferSelect> = {

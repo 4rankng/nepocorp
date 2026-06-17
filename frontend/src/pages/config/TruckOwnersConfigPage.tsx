@@ -162,7 +162,7 @@ export default function TruckOwnersConfigPage() {
   return (
     <div ref={pageRef}>
       <PageHeader
-        title={`Sở hữu xe — ${truck?.licensePlate ?? `#${id}`}`}
+        title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
         description="Danh sách đối tác sở hữu xe và tỷ lệ chia lợi nhuận của xe này."
       />
 

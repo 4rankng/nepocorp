@@ -169,6 +169,31 @@ function AddTireForm({ saving, onsave }: {
 
 // ─── Tire table ─────────────────────────────────────────────────────────────
 
+/** Inline position picker + install button for a spare. A spare's stored
+ *  position is just its last slot — let the manager choose where it mounts
+ *  NOW (was previously always reusing the stale/OTHER slot). (code-review MEDIUM) */
+function InstallControl({ tire, oninstall }: {
+  tire: Tire;
+  oninstall: (id: number, position: TirePosition | null) => void;
+}) {
+  const [pos, setPos] = useState<TirePosition>(tire.position ?? TirePosition.OTHER);
+  return (
+    <>
+      <select
+        className="input ttp-pos-select"
+        value={pos}
+        onChange={(e) => setPos(e.target.value as TirePosition)}
+        aria-label="Vị trí lắp lốp"
+      >
+        {POSITION_OPTIONS.map((p) => <option key={p} value={p}>{TIRE_POSITION_LABELS[p]}</option>)}
+      </select>
+      <button className="ttp-btn ttp-btn-primary" onClick={() => oninstall(tire.id, pos)}>
+        Lắp lên xe
+      </button>
+    </>
+  );
+}
+
 function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ondelete }: {
   tires: Tire[];
   loading: boolean;
@@ -222,14 +247,7 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
               </td>
               <td>
                 <div className="ttp-row-actions">
-                  {oninstall && (
-                    <button
-                      className="ttp-btn ttp-btn-primary"
-                      onClick={() => oninstall(t.id, t.position)}
-                    >
-                      Lắp lên xe
-                    </button>
-                  )}
+                  {oninstall && <InstallControl tire={t} oninstall={oninstall} />}
                   {onremove && (
                     <>
                       <button className="ttp-btn" onClick={() => onremove(t.id, false)}>Tháo (về kho)</button>

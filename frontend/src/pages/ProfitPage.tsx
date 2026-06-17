@@ -32,6 +32,8 @@ interface DistributionResult {
   /** F3 — per-truck breakdown. */
   perTruck?: Array<{
     truckId: number;
+    /** Business label — backend joins trucks.license_plate so we never show #id. */
+    licensePlate?: string;
     profit: number;
     partners: Array<{ partnerName: string; percentage: number; amount: number }>;
   }>;
@@ -402,7 +404,7 @@ export default function ProfitPage() {
                         {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
                           <div key={t.truckId} style={{ marginBottom: 8, padding: '6px 8px', background: 'var(--bg-1)', borderRadius: 6 }}>
                             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
-                              Xe #{t.truckId} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
+                              Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
                             </div>
                             {t.partners.map((p, i) => (
                               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-3)', padding: '2px 0' }}>

@@ -57,6 +57,8 @@ export const qk = {
     allExpenseCategories: ['all-expense-categories'],
     capTable: ['cap-table'],
     tires: (truckId?: number) => ['tires', truckId] as const,
+    /** Broad prefix — matches every tires query regardless of truckId. */
+    tiresAll: ['tires'] as const,
   },
 
   /** All catalog-shaped keys, for one-shot invalidation after a config CRUD. */

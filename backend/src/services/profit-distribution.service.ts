@@ -34,6 +34,8 @@ export interface DistributionRow {
 /** Per-truck profit + its computed partner distributions. */
 export interface PerTruckDistribution {
   truckId: number;
+  /** Business label for UI display — never expose the raw truckId. */
+  licensePlate: string;
   profit: number;
   partners: Array<{ partnerName: string; percentage: number; amount: number }>;
 }
@@ -66,6 +68,18 @@ export async function distributeProfit(quarter: number, year: number) {
   // instead of stuck half-distributed with the idempotency guard blocking
   // every retry. (Architect CRITICAL #1.)
   await db.transaction(async (tx) => {
+    // Serialize concurrent distributeProfit for the same quarter/year. Two
+    // admins (or a double-click) could both pass the SELECT-then-INSERT
+    // idempotency check under READ COMMITTED and double-distribute. A
+    // transaction-scoped advisory lock keyed by (year, quarter) makes the
+    // second caller BLOCK until the first commits — then its SELECT sees the
+    // persisted rows and returns 409. Auto-releases on commit/rollback.
+    // (A UNIQUE(quarter,year) index would be WRONG here: the table stores one
+    // row per truck×partner, so many rows legitimately share quarter+year.)
+    // (code-review CRITICAL #1 — corrected fix)
+    const lockKey = year * 4 + quarter;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey}::bigint)`);
+
     const [existing] = await tx.select({ id: s.distributions.id })
       .from(s.distributions)
       .where(and(eq(s.distributions.quarter, quarter), eq(s.distributions.year, year)))
@@ -127,7 +141,10 @@ export async function getDistributionHistory() {
 
 /**
  * Distribute a single truck's profit across its owners by %.
- * Uses floor + remainder-to-last so the row amounts sum exactly to `profit`.
+ * Uses round + remainder-to-last so the row amounts sum exactly to `profit`
+ * (the last owner absorbs the sub-1 residual). Round (not floor) keeps each
+ * owner's share within ±0.5 of their contractual % for BOTH positive profit
+ * and loss quarters — floor biased non-last owners under losses.
  * Pure function — exported for unit testing of the exactness invariant.
  */
 export function distributeTruckProfit(
@@ -135,12 +152,13 @@ export function distributeTruckProfit(
   profit: number,
   owners: Array<{ partnerName: string; percentage: number }>,
 ): { partners: Array<{ partnerName: string; percentage: number; amount: number }> } {
+  void truckId; // accepted for API symmetry; caller re-attaches truckId to rows
   if (owners.length === 0) return { partners: [] };
   let allocated = 0;
   const partners = owners.map((owner, i) => {
     const isLast = i === owners.length - 1;
     const raw = profit * owner.percentage / 100;
-    const amount = isLast ? Math.round(profit - allocated) : Math.floor(raw);
+    const amount = isLast ? Math.round(profit - allocated) : Math.round(raw);
     allocated += amount;
     return { partnerName: owner.partnerName, percentage: owner.percentage, amount };
   });
@@ -194,6 +212,11 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
     ? await db.select().from(s.truckCapTable).where(inArray(s.truckCapTable.truckId, truckIds))
     : [];
 
+  // Plates for display — never expose the raw truckId in the UI.
+  const trucks = await db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate })
+    .from(s.trucks).where(inArray(s.trucks.id, truckIds));
+  const plateById = new Map(trucks.map(t => [t.id, t.licensePlate]));
+
   const today = localDateStr();
   const cutoff = qEnd > today ? today : qEnd;
 
@@ -203,14 +226,27 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
 
   for (const truckId of truckIds) {
     const profit = profitByTruck.get(truckId) ?? 0;
+    const plate = plateById.get(truckId) ?? '(không rõ biển số)';
     const rowsForTruck = capRows.filter(r => r.truckId === truckId);
     const owners = resolveTruckCapSnapshot(rowsForTruck, cutoff);
 
     if (owners.length === 0) {
       // Q1 default — ownerless truck: hold its profit aside, do not distribute.
       undistributedProfit += profit;
-      perTruck.push({ truckId, profit, partners: [] });
+      perTruck.push({ truckId, licensePlate: plate, profit, partners: [] });
       continue;
+    }
+
+    // Guard: ownership % must sum to 100, else the split is silently wrong
+    // (the exactness reconcile only checks the row TOTAL, not whether each
+    // owner got their contractual share). Abort loudly with the plate so the
+    // operator fixes the config before any money is persisted. (code-review HIGH)
+    const pctSum = owners.reduce((sum, o) => sum + o.percentage, 0);
+    if (Math.abs(pctSum - 100) > 0.01) {
+      throw new ApiError(
+        400,
+        `Tỷ lệ sở hữu xe ${plate} tổng ${pctSum}% ≠ 100% — không thể phân phối. Sửa tại Cấu hình → Xe → Sở hữu.`,
+      );
     }
 
     const { partners } = distributeTruckProfit(truckId, profit, owners);
@@ -224,7 +260,7 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
         amount: String(p.amount),
       });
     }
-    perTruck.push({ truckId, profit, partners });
+    perTruck.push({ truckId, licensePlate: plate, profit, partners });
   }
 
   // Exactness reconcile guard — Σ rows must equal Σ_t P_t (== netProfit).
