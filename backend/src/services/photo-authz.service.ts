@@ -29,7 +29,7 @@ import { Role } from '@tingting/shared';
  *                integrity signal, not normal traffic)
  *   not_found  → 404
  */
-export type PhotoAuthzReason = 'forbidden' | 'collision' | 'not_found';
+export type PhotoAuthzReason = 'allowed' | 'forbidden' | 'collision' | 'not_found';
 export interface PhotoAuthDecision {
   allow: boolean;
   reason: PhotoAuthzReason;
@@ -82,6 +82,8 @@ export async function authorizeExpensePhoto(
   const okExpense = !expenseMatch || authzExpense();
   const allow = okTrip && okExpense;
 
-  if (!allow && tripMatch && expenseMatch) return { allow: false, reason: 'collision' };
-  return { allow, reason: 'forbidden' };
+  if (allow) return { allow: true, reason: 'allowed' };
+  // A both-tables match that denies is a write-path integrity signal (N6).
+  if (tripMatch && expenseMatch) return { allow: false, reason: 'collision' };
+  return { allow: false, reason: 'forbidden' };
 }
