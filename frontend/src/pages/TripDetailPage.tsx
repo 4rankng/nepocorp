@@ -111,6 +111,29 @@ export default function TripDetailPage() {
               <p className="tdp-notes-body">{trip.notes}</p>
             </section>
           )}
+
+          {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
+            <section className="tdp-notes-card anim d4 tdp-card tdp-m7">
+              <h3 className="tdp-notes-title">Liên hệ & hướng dẫn</h3>
+              <div className="tdp-instructions-body">
+                {trip.instructions.contactName && (
+                  <div className="tdp-instructions-row">
+                    <span className="tdp-instructions-label">Liên hệ</span>
+                    <span className="tdp-instructions-value">{trip.instructions.contactName}</span>
+                  </div>
+                )}
+                {trip.instructions.contactPhone && (
+                  <div className="tdp-instructions-row">
+                    <span className="tdp-instructions-label">SĐT</span>
+                    <a className="tdp-instructions-value" href={`tel:${trip.instructions.contactPhone}`}>{trip.instructions.contactPhone}</a>
+                  </div>
+                )}
+                {trip.instructions.notes && (
+                  <p className="tdp-notes-body" style={{ marginTop: 8 }}>{trip.instructions.notes}</p>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* ── Right rail — financial summary (sticky on desktop) ──────── */}

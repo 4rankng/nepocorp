@@ -52,6 +52,40 @@
   line-height: 1.55;
 }
 
+/* ── Instructions card (Liên hệ & hướng dẫn) ── */
+.tdp-instructions-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tdp-instructions-row {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  align-items: baseline;
+}
+.tdp-instructions-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+.tdp-instructions-value {
+  color: var(--ink);
+  font-weight: 500;
+}
+a.tdp-instructions-value {
+  color: var(--brand, #00B14F);
+  text-decoration: none;
+}
+a.tdp-instructions-value:hover {
+  text-decoration: underline;
+}
+
 /* ── Error & action-panel buttons (Modal + Drawer) ── */
 .tdp-modal-error {
   padding: 8px 12px;
