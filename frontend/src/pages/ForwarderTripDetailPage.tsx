@@ -358,8 +358,22 @@ export default function ForwarderTripDetailPage() {
           </div>
         ) : (
           <div style={{ padding: '4px 0' }}>
-            {containers.map((c) => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
+            {containers.map((c) => {
+              const isActive = expenseForm.tripContainerId === String(c.id);
+              return (
+              <div
+                key={c.id}
+                className={isActive ? 'fwd-cont-row fwd-cont-row--active' : 'fwd-cont-row'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 20px', borderBottom: '1px solid var(--border-1)',
+                  cursor: 'pointer',
+                  background: isActive ? 'var(--brand-subtle, rgba(0,177,79,0.08))' : undefined,
+                  boxShadow: isActive ? 'inset 3px 0 0 var(--brand)' : undefined,
+                }}
+                onClick={() => setExpenseForm(prev => ({ ...prev, tripContainerId: String(c.id) }))}
+                title="Chọn container này cho chi phí"
+              >
                 <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   {c.containerTypeName && (
@@ -383,7 +397,8 @@ export default function ForwarderTripDetailPage() {
                   <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>{c.notes}</span>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

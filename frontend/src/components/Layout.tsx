@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Shield,
   Phone,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
@@ -62,6 +63,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
         { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
         { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
         { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
+        { key: 'advance-settlements', label: 'Duyệt hoàn ứng', path: '/admin/advance-settlements', icon: ClipboardCheck, section: 'financials' },
 
 
         { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'master-data' },
@@ -131,6 +133,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/my-settlements\/\d+$/)) return 'Chi tiết phiếu thanh toán';
   if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
   if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
+  if (pathname.startsWith('/admin/advance-settlements')) return 'Duyệt hoàn ứng';
   if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
   return 'NEPO';
 }

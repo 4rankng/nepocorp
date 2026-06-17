@@ -411,6 +411,13 @@ export default function DashboardPage() {
             Sau phí quản lý · <button className="wf-link" onClick={() => navigate('/profit')}>Phân chia →</button>
           </div>
         </div>
+        <div className="wf-kpi">
+          <div className="row1">
+            <span className="lbl">Công nợ phải thu</span>
+          </div>
+          <div className="val"><span>{fmtVN(receivablesSummary?.totalOutstanding ?? 0)}</span> <i>đ</i></div>
+          <div className="foot">{receivablesSummary?.overdueCustomers ?? 0} khách quá hạn</div>
+        </div>
       </div>
 
       {/* ── Bento grid (12-col, 2 hero tiles) ──

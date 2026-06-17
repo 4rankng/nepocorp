@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, UserCheck, Plus, Download, Search,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
@@ -11,7 +12,9 @@ import type { Supplier, Customer } from '@tingting/shared';
 import { CONFIG } from '@tingting/shared';
 import { useSuppliers } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { usePayablesSummary } from '../hooks/useFinancialQueries';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { Money } from '../components/shared/Money';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
 import { usePageAnimations } from '../hooks/animations';
 
@@ -148,6 +151,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
 }
 
 export default function SupplierListPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -165,6 +169,17 @@ export default function SupplierListPage() {
   const suppliers = useMemo(() => suppliersData?.items ?? [], [suppliersData]);
   const total = suppliersData?.total ?? 0;
   const { rootRef } = usePageAnimations({ ready: !loading });
+
+  // AP outstanding per supplier — fetched once from the payables summary.
+  // Each PayableSummary item exposes a nested `supplier.id` + `totalOutstanding`.
+  const { data: payablesData } = usePayablesSummary();
+  const payableBySupplier = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of payablesData?.items ?? []) {
+      map.set(item.supplier.id, item.totalOutstanding);
+    }
+    return map;
+  }, [payablesData]);
   // Use the bootstrap catalog for the full active-customer list (not the
   // paginated /customers endpoint which only returns page 1 by default).
   const { data: catalogData } = useCatalogs();
@@ -302,7 +317,7 @@ export default function SupplierListPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(s => (
-              <ClickableCard key={s.id} className="m-card" style={{ position: 'relative' }} onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
+              <ClickableCard key={s.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/payables/${s.id}`)}>
                 <StatusStrip status={s.status} />
                 <div className="m-card__top">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -323,6 +338,10 @@ export default function SupplierListPage() {
                     {s.phone && <><span className="m-card__meta-sep">·</span>{s.phone}</>}
                   </div>
                 )}
+                <div className="m-card__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span>Công nợ</span>
+                  <Money value={payableBySupplier.get(s.id) ?? 0} />
+                </div>
                 {s.taxCode && (
                   <div className="m-card__meta" style={{ fontFamily: 'var(--font-mono)' }}>
                     MST {s.taxCode}
@@ -352,32 +371,33 @@ export default function SupplierListPage() {
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>SĐT</th>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Mã số thuế</th>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>KH liên kết</th>
+                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                   <p style={{ fontSize: 13 }}>Đang tải…</p>
                 </td></tr>
               )}
               {error && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
                   <p>{error}</p>
                   <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchSuppliers()}>Thử lại</button>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(s => (
                   <tr key={s.id} role="button" tabIndex={0}
                     style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
-                    onClick={() => { setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); }}
+                    onClick={() => navigate(`/payables/${s.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingId(s.id); setShowAddForm(false); setMenuOpenId(null); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/payables/${s.id}`); } }}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', whiteSpace: 'nowrap', fontWeight: 600 }}>
                       <StatusStrip status={s.status} />
@@ -408,6 +428,9 @@ export default function SupplierListPage() {
                       ) : (
                         <span style={{ color: 'var(--ink-3)' }}>—</span>
                       )}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                      <Money value={payableBySupplier.get(s.id) ?? 0} />
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
                       <div className="row-actions">

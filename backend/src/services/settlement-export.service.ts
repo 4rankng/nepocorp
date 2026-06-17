@@ -2,7 +2,7 @@ import { getAdvanceSettlement } from './advance.service';
 import { validateSettlementInputs } from './settlement-validation';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 const EXPENSE_TYPE_LABELS: Record<string, string> = {
   LIFTING: 'Phí nâng container',
@@ -589,12 +589,20 @@ async function buildPreviewSettlementData(input: {
   // Enrich expenses with trip/customer join for print display
   let linkedExpenses: LinkedExpense[] = [];
   if (tripExpenseIds && tripExpenseIds.length > 0) {
+    // F1-2b: resolve the container label via the authoritative FK
+    // (tripExpenses.tripContainerId → tripContainers.containerNumber), falling
+    // back to the loose denormalised containerNumber string ONLY for legacy rows
+    // where the FK is null. `tripContainers.containerNumber` is NOT NULL, so when
+    // the join matches it is always the canonical value; COALESCE covers the
+    // leftJoin-no-match (null FK) case by returning the stored string, and
+    // finally '-' if both are absent. Grouping in buildPrintRows then operates
+    // on this resolved key.
     linkedExpenses = await db.select({
       id: s.tripExpenses.id,
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
       amount: s.tripExpenses.buyAmount,
-      containerNumber: s.tripExpenses.containerNumber,
+      containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`.as('resolved_container_number'),
       invoiceNumber: s.tripExpenses.invoiceNumber,
       note: s.tripExpenses.note,
       createdAt: s.tripExpenses.createdAt,
@@ -603,6 +611,7 @@ async function buildPreviewSettlementData(input: {
     }).from(s.tripExpenses)
       .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
       .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+      .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
       .where(inArray(s.tripExpenses.id, tripExpenseIds));
   }
 

@@ -140,3 +140,61 @@
 - **P0:** B1, B4(+B2.a), B5, B6, B7, B8, B2(completion bundle), Phase-0a reproduce, B3 fuel gated. *(B3 is P0-urgency but gated/risky — its own PR.)*
 - **P1:** V1/V2/V3, F1/F2/F3, N2/N3/N4/N5/N6, schemas (tires/alerts/instructions/container_advances), services, routes, RBAC, shared-types.
 - **P2:** N1 tire epic (own plan), performance pass.
+
+---
+
+## Status Tracker — `feedback202606.docx` (verified 2026-06-17)
+
+> Source: `docs/feedback202606.docx` (4 sections: A=Manager / B=Driver / C=Forwarder / D=Accountant).
+> Status verified against codebase (wired vs stub), not just commit messages. Update this table as phases ship.
+
+### ✅ Implemented (wired end-to-end)
+
+| Doc item | ID | Key evidence (file:line) |
+|---|---|---|
+| A3.1 trip completion (no auto-complete) | B2 | `trips.ts:155`, `trip-status-machine.service.ts:71`, auto-complete block removed `trip-mutations.service.ts:519`, button `TripHeader.tsx:87` |
+| A3.2 revenue-persist (409 surfaced) | B4 | `useTripFormDispatch.ts:684` retry-once + `TripEditPage.tsx:65` confirm |
+| A8 record customer payment | — | `payments.routes.ts:17` → `financial.service.ts:26`; modal `DebtDetailPage.tsx:226` |
+| A8 per-customer + consolidated AR reports | — | pre-existing: DebtListPage / statements / export |
+| A12 fleet alerts (oil/inspection/insurance) | N5 | migration 0049; `computeVehicleAlerts` (`vehicleAlerts.ts:54`); badges `TruckFormModal.tsx:49` |
+| B1.1 driver detail shows container + customer | — | `DriverTripDetailPage.tsx:143,170` |
+| B1.2 driver salary label | B8 | relabeled "Lương phân bổ chuyến" (`DriverTripDetailPage.tsx:214`) |
+| B1.3 manager→driver guidance | N2 | migration 0048; GET/PUT `trips.ts:351,357`; manager card + driver read `DriverTripDetailPage.tsx:237` |
+| B4 driver registration/insurance reminder | N5 | `driver.ts:33`; strip `DriverEarningsPage.tsx:106`; excludes CANCELED+deleted `driver.service.ts:146` |
+| C1.1 forwarder search (container/customer/date) | N4 | `forwarder.service.ts:112-132`; `ForwarderTripsPage.tsx:143` |
+| C1.2 color-coded cost status | N4 | `forwarder.service.ts:152`; CSS `fwd-row--paid/--pending` (`ForwarderTripsPage.css:183`) |
+| C3 voucher chronological order | B6 | ascending date sort FE+BE (`SettlementPrintPage.tsx:99`, `settlement-export.service.ts:66`) |
+| D1 category/supplier missing-until-refresh | B7 | `invalidateQueries` (`ExpenseEntryPage.tsx:202,220`) |
+| D1 photo upload error | B1 | `POST /:id/photos` no trip_id/type (`expense.ts:118`); sharp try-catch→400 (`:140`) |
+| D3 fuel price retroactive | B3/D4 | `fuel_price_applied` snapshot (`schema.ts:239`); committed/locked skip recalc (`trip-mutations.service.ts:338`) |
+| *(bonus)* multi-seal + per-container photos | — | `tripContainerSeals` (`schema.ts:537`); `tripPhotos.tripContainerId` |
+| *(bonus)* Gemini OCR container/seal | — | `ocr.ts:34`, `ocr.service.ts` |
+
+### ⚠️ Partial — real gaps to close
+
+| Doc item | ID | What's done | What's missing |
+|---|---|---|---|
+| A8 AR real-time + KPI | V1 | cache invalidation (`DebtDetailPage.tsx:94,236`) | **no AR KPI card** — only attention text (`DashboardPage.tsx:259`) |
+| C1.3 double-container removal | B5 | FK + dropdown (`schema.ts:588`, `ForwarderTripDetailPage.tsx:505`) | **no click-to-auto-fill** from container row |
+| A6 P&L check | V3 | accurate | `pnl.service.ts` duplicates (doesn't call) `computeTripTotals` — fragile |
+| A11 advance balance + per-container | F1 | `FORWARDER_SETTLEMENT` posts (`advance.service.ts:408`) | balance surfaces + container-level settlement not built |
+
+### ❌ Not started / blocked
+
+| Doc item | ID | Blocker |
+|---|---|---|
+| A7 profit-share per vehicle | F3 | cap-table audit / product disambiguation |
+| A9 payables (fuel/carrier/commission) | V2/F1 | irreversible `COMMISSION` enum migration + sign-off |
+| A10.2 back-dating | N3 | — (medium, no migration) |
+| A10.3 tire management | N1 | own epic; plan doc `tire-management.md` not written |
+| A13 customer → AR; A14 supplier → AP | N6 | — (medium) |
+| B2 driver earnings 5-card | F2 | 3/5 cards; blocked on "advances paid" txn-type question |
+| C2 / D2 forwarder advance settlement + accountant view | F1 | surfaces not built (no migration) |
+
+### Next-up priority
+1. **F2** driver earnings — resolve 1 product question, then build
+2. **V2 + A9** payables — needs COMMISSION migration sign-off
+3. **F1 surfaces** (A11, C2, D2) — balance read-out + accountant view, no migration
+4. **B5** click-to-fill + **V1** AR KPI card — quick partial-fix closures
+5. **N3, N6** — medium, no migration
+6. **F3** profit per vehicle; **N1** tires (epic)

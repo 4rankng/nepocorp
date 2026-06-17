@@ -110,7 +110,7 @@ async function enrichSettlementWithRequests(settlement: typeof s.advanceSettleme
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
       amount: s.tripExpenses.buyAmount,
-      containerNumber: s.tripExpenses.containerNumber,
+      containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`.as('resolved_container_number'),
       invoiceNumber: s.tripExpenses.invoiceNumber,
       note: s.tripExpenses.note,
       createdAt: s.tripExpenses.createdAt,
@@ -120,6 +120,7 @@ async function enrichSettlementWithRequests(settlement: typeof s.advanceSettleme
     }).from(s.tripExpenses)
       .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
       .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+      .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
       .where(inArray(s.tripExpenses.id, expenseIds));
   }
 

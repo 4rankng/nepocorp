@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users, UserCheck, BarChart3, Lock, Plus, Download, Search,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
@@ -13,6 +14,7 @@ import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/u
 import { usePageAnimations } from '../hooks/animations';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
+import { Money } from '../components/shared/Money';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -182,6 +184,7 @@ export default function CustomersPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const pageSize = 10;
 
@@ -390,7 +393,7 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(c => (
-              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
+              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/debt/${c.id}`)}>
                 <StatusStrip status={c.status} />
                 <div className="m-card__top">
                   <span className="m-card__title">
@@ -423,6 +426,12 @@ export default function CustomersPage() {
                     <span className="m-card__row-value">{formatCurrency(c.creditLimit)}</span>
                   </div>
                 )}
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Công nợ</span>
+                  <span className="m-card__row-value" style={debtMap.get(c.id) ? { color: 'var(--danger)' } : undefined}>
+                    <Money value={debtMap.get(c.id) ?? 0} compact />
+                  </span>
+                </div>
                 <div className="m-card-edit-row">
                   <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setShowAddForm(false); }}>
                     Sửa
@@ -446,32 +455,33 @@ export default function CustomersPage() {
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Liên hệ</th>
                 <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Hạn mức TD</th>
+                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                   <p style={{ fontSize: 13 }}>Đang tải…</p>
                 </td></tr>
               )}
               {error && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
                   <p>{error}</p>
                   <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchCustomers()}>Thử lại</button>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
               )}
               {filtered.map(c => (
                   <tr key={c.id} role="button" tabIndex={0}
                     style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
-                    onClick={() => { setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); }}
+                    onClick={() => navigate(`/debt/${c.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingId(c.id); setShowAddForm(false); setMenuOpenId(null); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/debt/${c.id}`); } }}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <StatusStrip status={c.status} />
@@ -496,6 +506,11 @@ export default function CustomersPage() {
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                       {c.creditLimit ? formatCurrency(c.creditLimit) : '—'}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                      <span style={debtMap.get(c.id) ? { color: 'var(--danger)', fontFamily: 'var(--font-mono)' } : { color: 'var(--ink-3)' }}>
+                        <Money value={debtMap.get(c.id) ?? 0} compact />
+                      </span>
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
                       <div className="row-actions">
