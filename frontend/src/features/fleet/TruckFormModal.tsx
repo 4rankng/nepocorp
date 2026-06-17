@@ -29,6 +29,11 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
   const [nextInspectionDate, setNextInspectionDate] = useState(item?.nextInspectionDate ?? '');
   const [insuranceExpiryDate, setInsuranceExpiryDate] = useState(item?.insuranceExpiryDate ?? '');
   const [lastOilServiceDate, setLastOilServiceDate] = useState(item?.lastOilServiceDate ?? '');
+  // Oil helper inputs (NOT persisted): last change date + interval months. When
+  // both are set they compute a next-due that overwrites lastOilServiceDate.
+  // Managers can also ignore these and type next-due directly.
+  const [lastOilChangeDate, setLastOilChangeDate] = useState('');
+  const [oilIntervalMonths, setOilIntervalMonths] = useState(0);
   useEffect(() => {
     if (isOpen) {
       setPlate(item?.licensePlate || '');
@@ -37,6 +42,9 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
       setNextInspectionDate(item?.nextInspectionDate ?? '');
       setInsuranceExpiryDate(item?.insuranceExpiryDate ?? '');
       setLastOilServiceDate(item?.lastOilServiceDate ?? '');
+      // Clear the oil helper so a stale computed value doesn't carry over.
+      setLastOilChangeDate('');
+      setOilIntervalMonths(0);
     }
     // Reset form fields only when the modal opens or switches item; field-level
     // deps intentionally omitted to avoid clobbering in-progress edits.
@@ -148,10 +156,74 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
             onChange={setLastOilServiceDate}
             alert={alertFor('lastOilServiceDate')}
           />
+          {/* Oil next-due can also be DERIVED from a last-change date + an
+              interval (months). Selecting both writes the computed next-due
+              into the field above; nothing extra is persisted. */}
+          <div className="field" style={{ marginTop: -4 }}>
+            <label htmlFor="truck-oil-last" className="truck-alert-field__label">
+              Hoặc tính từ lần thay gần nhất
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                id="truck-oil-last"
+                type="date"
+                className="input"
+                aria-label="Lần thay dầu gần nhất"
+                value={lastOilChangeDate}
+                onChange={e => {
+                  const v = e.target.value;
+                  setLastOilChangeDate(v);
+                  if (v && oilIntervalMonths) {
+                    const next = addMonthsIso(v, oilIntervalMonths);
+                    if (next) setLastOilServiceDate(next);
+                  }
+                }}
+              />
+              <select
+                id="truck-oil-interval"
+                className="input"
+                style={{ flex: '0 0 130px' }}
+                aria-label="Chu kỳ thay dầu (tháng)"
+                value={oilIntervalMonths ? String(oilIntervalMonths) : ''}
+                onChange={e => {
+                  const n = e.target.value ? Number(e.target.value) : 0;
+                  setOilIntervalMonths(n);
+                  if (lastOilChangeDate && n) {
+                    const next = addMonthsIso(lastOilChangeDate, n);
+                    if (next) setLastOilServiceDate(next);
+                  }
+                }}
+              >
+                <option value="">Chu kỳ…</option>
+                <option value="3">3 tháng</option>
+                <option value="6">6 tháng</option>
+                <option value="9">9 tháng</option>
+                <option value="12">12 tháng</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
     </Modal>
   );
+}
+
+/**
+ * Add `months` to an ISO 'YYYY-MM-DD' date, clamping the day to the target
+ * month's length (e.g. Jan 31 + 1 month → Feb 28). Returns null for invalid /
+ * partial input. Pure — no Date.now()/string parsing side effects.
+ */
+function addMonthsIso(iso: string, months: number): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  const total = Number(m[1]) * 12 + (Number(m[2]) - 1) + months;
+  const year = Math.floor(total / 12);
+  const month = (total % 12) + 1; // 1-12
+  // day 0 of (month+1) → last day of `month`. month is 1-based here.
+  const lastDay = new Date(year, month, 0).getDate();
+  const dd = String(Math.min(Number(m[3]), lastDay)).padStart(2, '0');
+  const mm = String(month).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
 }
 
 /** One labelled date input with an optional overdue/due badge. */

@@ -58,6 +58,9 @@ export const trucks = pgTable('trucks', {
   // N5 / A12 + B4: user-keyed compliance/service dates for alerts.
   nextInspectionDate: date('next_inspection_date'),
   insuranceExpiryDate: date('insurance_expiry_date'),
+  // NEXT oil-service due date (YYYY-MM-DD). The form lets a manager set it
+  // directly OR compute it from "last change + N months"; only the resolved
+  // next-due is persisted. Legacy column name retained (deployed in 0049).
   lastOilServiceDate: date('last_oil_service_date'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

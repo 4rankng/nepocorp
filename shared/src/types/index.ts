@@ -79,6 +79,8 @@ export interface Truck {
   // N5 / A12 + B4: user-keyed compliance/service dates (ISO 'YYYY-MM-DD' or null).
   nextInspectionDate: string | null;
   insuranceExpiryDate: string | null;
+  // NEXT oil-service due date (legacy name). Set directly or computed by the
+  // form from last-change + N months; only next-due is persisted.
   lastOilServiceDate: string | null;
   createdAt: string;
   updatedAt: string;
