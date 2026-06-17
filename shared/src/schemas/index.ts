@@ -179,6 +179,20 @@ export const createAdjustmentSchema = z.object({
   signedAgreementRef: z.string().min(1),
 });
 
+// ─── Commission (manual posting) ────────────────────────────────────────────
+// Records a commission payable owed to a supplier (VENDOR ledger, COMMISSION
+// txnType). Not trip-scoped — `tripId` is optional context only.
+
+export const commissionSchema = z.object({
+  supplierId: z.coerce.number().int().positive(),
+  amount: z.union([z.number(), z.string()]).transform(Number)
+    .refine((v) => Number.isFinite(v) && v > 0, { message: 'Số tiền hoa hồng không hợp lệ' }),
+  tripId: z.coerce.number().int().positive().optional(),
+  note: z.string().trim().max(500).optional(),
+});
+
+export type CommissionInput = z.infer<typeof commissionSchema>;
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const loginSchema = z.object({

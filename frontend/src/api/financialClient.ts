@@ -6,6 +6,7 @@ import type {
   LedgerEntry,
   CustomerStatement,
   PayableSummary,
+  PayablesCategory,
   SupplierStatement,
   ExpenseWithRefs,
   PaginatedResponse,
@@ -59,13 +60,16 @@ export const financialClient = {
       `${FINANCIAL.EXPENSES}${toQuery(filters)}`,
     ),
 
-  getPayablesSummary: () =>
+  getPayablesSummary: (category?: PayablesCategory) =>
     api.get<{
       items: PayableSummary[];
       totalOutstanding: string;
       totalSuppliers: number;
       overdueSuppliers: number;
-    }>(REPORTS.PAYABLES_SUMMARY),
+    }>(`${REPORTS.PAYABLES_SUMMARY}${toQuery({ category })}`),
+
+  postCommission: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) =>
+    api.post<{ ok: true }>(FINANCIAL.COMMISSIONS, data),
 
   getCustomerAging: (search?: string) => {
     const trimmed = search?.trim();

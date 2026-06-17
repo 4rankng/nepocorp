@@ -439,7 +439,19 @@ export interface PayableSummary {
     over90: number;
   };
   maxOverdueDays: number;
+  /**
+   * Origin of the payable row.
+   * - 'vendor': a normal supplier (VENDOR ledger) — click-through goes to the
+   *   supplier statement page.
+   * - 'carrier': an external carrier (CUSTOMER ledger, EXTERNAL_CARRIER_COST) —
+   *   click-through goes to the customer debt page.
+   * Undefined for legacy responses that did not distinguish the two.
+   */
+  kind?: 'vendor' | 'carrier';
 }
+
+/** Payables category filter — drives the server-side txnType/entityType scoping. */
+export type PayablesCategory = 'fuel' | 'ancillary' | 'commission' | 'carrier';
 
 export interface SupplierStatement {
   supplier: Pick<Supplier, 'id' | 'name' | 'phone' | 'contactPerson'>;

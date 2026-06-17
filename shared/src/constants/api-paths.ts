@@ -103,6 +103,7 @@ export const FINANCIAL = {
   ADVANCE_BALANCES: '/advance-balances',
   DASHBOARD_APPROVAL_QUEUE: '/dashboard/approval-queue',
   LEDGER_BALANCES: '/ledger/balances',
+  COMMISSIONS: '/commissions',
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

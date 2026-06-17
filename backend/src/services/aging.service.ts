@@ -1,8 +1,8 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, sql, inArray, like } from 'drizzle-orm';
-import { computeFifoAging } from '@tingting/shared';
-import type { PayableSummary, Supplier } from '@tingting/shared';
+import { computeFifoAging, TxnType } from '@tingting/shared';
+import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +19,8 @@ interface FetchOptions {
   asOfDate?: string;
   /** Restrict to a single entity — avoids fetching all entities when only one is needed */
   entityId?: number;
+  /** Restrict to a subset of transaction types (e.g. fuel-only payables). */
+  txnTypes?: TxnType[];
 }
 
 interface EntityAgingResult {
@@ -38,6 +40,9 @@ async function fetchLedgerGrouped(
   const conditions = [eq(s.ledger.entityType, config.entityType)];
   if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
   if (opts.asOfDate) conditions.push(sql`${s.ledger.timestamp} <= ${opts.asOfDate}::timestamptz`);
+  if (opts.txnTypes && opts.txnTypes.length > 0) {
+    conditions.push(inArray(s.ledger.txnType, opts.txnTypes));
+  }
 
   const ledgerRows = await db.select({
     entityId: s.ledger.entityId,
@@ -265,34 +270,108 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
 
 // ─── Accounts Payable (Vendor aging) ─────────────────────────────────────────
 
-export async function getPayablesSummary(opts: { asOfDate?: string } = {}) {
-  const grouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true }, opts);
-  const results = computeEntityResults(grouped, { entityType: 'VENDOR', invertSigns: true });
+export async function getPayablesSummary(opts: { asOfDate?: string; category?: PayablesCategory } = {}) {
+  // Category → ledger scoping. `undefined` preserves the legacy behavior of
+  // aggregating every VENDOR row regardless of txnType.
+  type Scope = { entityType: 'CUSTOMER' | 'VENDOR'; txnTypes?: TxnType[]; invertSigns: boolean; kind: 'vendor' | 'carrier' };
+  const scope: Scope = (() => {
+    switch (opts.category) {
+      case 'fuel':
+        return { entityType: 'VENDOR', txnTypes: [TxnType.FUEL_EXPENSE], invertSigns: true, kind: 'vendor' as const };
+      case 'ancillary':
+        return { entityType: 'VENDOR', txnTypes: [TxnType.VENDOR_EXPENSE], invertSigns: true, kind: 'vendor' as const };
+      case 'commission':
+        return { entityType: 'VENDOR', txnTypes: [TxnType.COMMISSION], invertSigns: true, kind: 'vendor' as const };
+      case 'carrier':
+        // Carriers live in the `customers` catalog (D-F). They are credited
+        // cước via EXTERNAL_CARRIER_COST on their CUSTOMER ledger; invertSigns
+        // mirrors the vendor (credit-positive) convention so aging math lines up.
+        return { entityType: 'CUSTOMER', txnTypes: [TxnType.EXTERNAL_CARRIER_COST], invertSigns: true, kind: 'carrier' as const };
+      default:
+        return { entityType: 'VENDOR', invertSigns: true, kind: 'vendor' as const };
+    }
+  })();
 
-  const vendorIds = results.map(r => r.entityId);
-  const suppliers = vendorIds.length > 0
-    ? await db.select().from(s.suppliers)
-        .where(sql`${s.suppliers.id} IN (${sql.join(vendorIds.map(id => sql`${id}`), sql`, `)})`)
-    : [];
-  const supplierById = new Map(suppliers.map(sup => [sup.id, sup]));
+  const grouped = await fetchLedgerGrouped(
+    { entityType: scope.entityType, invertSigns: scope.invertSigns },
+    { asOfDate: opts.asOfDate, txnTypes: scope.txnTypes },
+  );
+  const results = computeEntityResults(grouped, { entityType: scope.entityType, invertSigns: scope.invertSigns });
 
   let totalOutstanding = 0;
   let overdueSuppliers = 0;
 
   const items: PayableSummary[] = [];
-  for (const r of results) {
-    const supplier = supplierById.get(r.entityId);
-    if (!supplier) continue;
 
-    totalOutstanding += r.totalOutstanding;
-    if (r.maxOverdueDays > 30) overdueSuppliers++;
+  if (scope.kind === 'carrier') {
+    // Carrier branch: resolve names/phone from `customers` (NOT suppliers).
+    //
+    // Carrier settlements are NOT auto-recorded against EXTERNAL_CARRIER_COST —
+    // trip-lock only posts the credit side. So `outstanding` here reflects
+    // trip-lock credits until an ADJUSTMENT (or vendor-payment-style entry)
+    // offsets them. Honest by design: this is what we currently owe carriers
+    // based on locked trips.
+    const carrierIds = results.map(r => r.entityId);
+    const carriers = carrierIds.length > 0
+      ? await db.select({
+          id: s.customers.id,
+          name: s.customers.name,
+          phone: s.customers.phone,
+          contactInfo: s.customers.contactInfo,
+        }).from(s.customers).where(inArray(s.customers.id, carrierIds))
+      : [];
+    const carrierById = new Map(carriers.map(c => [c.id, c]));
 
-    items.push({
-      supplier: supplier as unknown as Supplier,
-      totalOutstanding: r.totalOutstanding,
-      aging: r.aging,
-      maxOverdueDays: r.maxOverdueDays,
-    });
+    for (const r of results) {
+      const carrier = carrierById.get(r.entityId);
+      if (!carrier) continue;
+      totalOutstanding += r.totalOutstanding;
+      if (r.maxOverdueDays > 30) overdueSuppliers++;
+      // Build a Supplier-shaped object so the frontend can render uniformly.
+      // Fields not present on customers are nulled to satisfy the type.
+      const supplierLike = {
+        id: carrier.id,
+        name: carrier.name,
+        contactPerson: null,
+        phone: carrier.phone ?? null,
+        taxCode: null,
+        note: carrier.contactInfo ?? null,
+        status: 'ACTIVE',
+        linkedCustomerId: null,
+        isFuelSupplier: false,
+        createdAt: '',
+        updatedAt: '',
+        deletedAt: null,
+      } as unknown as Supplier;
+      items.push({
+        supplier: supplierLike,
+        totalOutstanding: r.totalOutstanding,
+        aging: r.aging,
+        maxOverdueDays: r.maxOverdueDays,
+        kind: 'carrier',
+      });
+    }
+  } else {
+    const vendorIds = results.map(r => r.entityId);
+    const suppliers = vendorIds.length > 0
+      ? await db.select().from(s.suppliers)
+          .where(sql`${s.suppliers.id} IN (${sql.join(vendorIds.map(id => sql`${id}`), sql`, `)})`)
+      : [];
+    const supplierById = new Map(suppliers.map(sup => [sup.id, sup]));
+
+    for (const r of results) {
+      const supplier = supplierById.get(r.entityId);
+      if (!supplier) continue;
+      totalOutstanding += r.totalOutstanding;
+      if (r.maxOverdueDays > 30) overdueSuppliers++;
+      items.push({
+        supplier: supplier as unknown as Supplier,
+        totalOutstanding: r.totalOutstanding,
+        aging: r.aging,
+        maxOverdueDays: r.maxOverdueDays,
+        kind: 'vendor',
+      });
+    }
   }
 
   return { items, totalOutstanding, totalSuppliers: items.length, overdueSuppliers };

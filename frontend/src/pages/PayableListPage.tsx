@@ -1,11 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import type { PayableSummary } from '@tingting/shared';
-import { Search, ChevronRight, Wallet, AlertTriangle, Users } from 'lucide-react';
-import { PageHeader } from '../components/UI';
+import type { PayableSummary, PayablesCategory } from '@tingting/shared';
+import { Search, ChevronRight, Wallet, AlertTriangle, Users, Gift } from 'lucide-react';
+import { PageHeader, Modal } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
-import { usePayablesSummary } from '../hooks/useQueries';
+import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 import { usePageAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -22,10 +23,147 @@ interface PayablesResponse {
   overdueSuppliers: number;
 }
 
+/* ─── Category chips ──────────────────────────────────────────────────────── */
+
+const CATEGORY_CHIPS: Array<{ value: PayablesCategory | undefined; label: string }> = [
+  { value: undefined, label: 'Tất cả' },
+  { value: 'fuel', label: 'Xăng dầu' },
+  { value: 'ancillary', label: 'Phí dịch vụ' },
+  { value: 'commission', label: 'Hoa hồng' },
+  { value: 'carrier', label: 'Chuyên xe' },
+];
+
+/* ─── Commission modal ────────────────────────────────────────────────────── */
+
+interface CommissionForm {
+  supplierId: number | '';
+  amount: string;
+  tripId: string;
+  note: string;
+}
+
+function CommissionModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isPending,
+  error,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) => void;
+  isPending: boolean;
+  error: string | null;
+}) {
+  const { data: catalogData } = useCatalogs();
+  const suppliers = useMemo(
+    () => (catalogData?.suppliers ?? []).slice().sort((a, b) => a.name.localeCompare(b.name, 'vi')),
+    [catalogData?.suppliers],
+  );
+  const [form, setForm] = useState<CommissionForm>({ supplierId: '', amount: '', tripId: '', note: '' });
+
+  useEffect(() => {
+    if (isOpen) setForm({ supplierId: '', amount: '', tripId: '', note: '' });
+  }, [isOpen]);
+
+  const canSubmit =
+    !isPending &&
+    form.supplierId !== '' &&
+    form.amount.trim() !== '' &&
+    Number.isFinite(Number(form.amount)) &&
+    Number(form.amount) > 0;
+
+  const handleSubmit = () => {
+    if (!canSubmit || form.supplierId === '') return;
+    const tripIdRaw = form.tripId.trim();
+    onSubmit({
+      supplierId: Number(form.supplierId),
+      amount: Number(form.amount),
+      tripId: tripIdRaw && Number.isFinite(Number(tripIdRaw)) ? Number(tripIdRaw) : undefined,
+      note: form.note.trim() || undefined,
+    });
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      title="Ghi hoa hồng"
+      onClose={onClose}
+      onConfirm={handleSubmit}
+      maxWidth={480}
+      footer={
+        <>
+          <button className="btn btn--secondary btn--sm" onClick={onClose} disabled={isPending}>
+            Hủy bỏ
+          </button>
+          <button className="btn btn--primary btn--sm" onClick={handleSubmit} disabled={!canSubmit}>
+            {isPending ? 'Đang ghi...' : 'Ghi nhận'}
+          </button>
+        </>
+      }
+    >
+      <div className="commission-form">
+        {error && (
+          <div className="commission-form__error" role="alert">{error}</div>
+        )}
+        <div className="field">
+          <label htmlFor="commission-supplier">Nhà cung cấp <span className="req" aria-hidden="true">*</span></label>
+          <select
+            id="commission-supplier"
+            className="form-select"
+            value={form.supplierId}
+            onChange={e => setForm(f => ({ ...f, supplierId: e.target.value === '' ? '' : Number(e.target.value) }))}
+          >
+            <option value="">— Chọn nhà cung cấp —</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="commission-amount">Số tiền hoa hồng <span className="req" aria-hidden="true">*</span></label>
+          <input
+            id="commission-amount"
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="VD: 500000"
+            value={form.amount}
+            onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="commission-trip">Mã chuyến (tuỳ chọn)</label>
+          <input
+            id="commission-trip"
+            type="number"
+            min="1"
+            placeholder="VD: 1234"
+            value={form.tripId}
+            onChange={e => setForm(f => ({ ...f, tripId: e.target.value }))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="commission-note">Ghi chú (tuỳ chọn)</label>
+          <input
+            id="commission-note"
+            type="text"
+            maxLength={500}
+            placeholder="VD: Hoa hồng giới thiệu khách"
+            value={form.note}
+            onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
 export default function PayableListPage() {
-  const { data, isLoading: loading, error: queryError } = usePayablesSummary();
+  const [category, setCategory] = useState<PayablesCategory | undefined>(undefined);
+  const { data, isLoading: loading, error: queryError } = usePayablesSummary(category);
   const payables = useMemo(
     () => (data as unknown as PayablesResponse | undefined)?.items ?? [],
     [data],
@@ -37,6 +175,13 @@ export default function PayableListPage() {
   const [search, setSearch] = useState('');
   const prefersReduced = usePrefersReducedMotion();
   const compact = useMediaQuery('(max-width: 640px)');
+
+  /* ── Commission modal ── */
+  const [commissionOpen, setCommissionOpen] = useState(false);
+  const postCommission = usePostCommission();
+  const commissionError = postCommission.error
+    ? (postCommission.error as Error).message
+    : null;
 
   /* ── Page entrance animation (custom selectors for bento zones) ── */
   const { rootRef } = usePageAnimations({
@@ -100,6 +245,11 @@ export default function PayableListPage() {
     return result;
   }, [payables, search]);
 
+  /* ── Row click-through destination ── */
+  // Vendor rows → supplier statement page; carrier rows → customer debt page.
+  const rowHref = (d: PayableSummary) =>
+    d.kind === 'carrier' ? `/debt/${d.supplier.id}` : `/payables/${d.supplier.id}`;
+
   /* ── Kick counter animations when data settles ── */
   useEffect(() => {
     if (loading || payables.length === 0 || prefersReduced) return;
@@ -150,6 +300,14 @@ export default function PayableListPage() {
         description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} NCC · cập nhật vừa xong`}
         action={
           <div className="page-actions">
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={() => setCommissionOpen(true)}
+              title="Ghi nhận khoản hoa hồng cho nhà cung cấp"
+            >
+              <Gift size={14} style={{ marginRight: 6 }} aria-hidden="true" />
+              Ghi hoa hồng
+            </button>
             <button className="btn btn--secondary btn--sm" onClick={handleExport}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất báo cáo
@@ -265,6 +423,25 @@ export default function PayableListPage() {
 
       {/* ── Zone 3: Data Card ───────────────────────────────────────────── */}
       <div className="payables-data-card">
+        {/* Category chips */}
+        <div className="payables-category-chips" role="tablist" aria-label="Lọc theo loại công nợ">
+          {CATEGORY_CHIPS.map(chip => {
+            const isActive = chip.value === category;
+            return (
+              <button
+                key={chip.label}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`payables-category-chip${isActive ? ' is-active' : ''}`}
+                onClick={() => setCategory(chip.value)}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Toolbar row */}
         <div className="payables-toolbar">
           <div className="payables-toolbar__spacer" />
@@ -307,7 +484,7 @@ export default function PayableListPage() {
                     const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
                     const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                     return (
-                      <ClickableCard key={d.supplier.id} to={`/payables/${d.supplier.id}`} className="m-card">
+                      <ClickableCard key={d.supplier.id} to={rowHref(d)} className="m-card">
                         <div className="m-card__top">
                           <span className="m-card__title">{d.supplier.name}</span>
                           <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
@@ -362,7 +539,7 @@ export default function PayableListPage() {
                       <ClickableCard
                         as="tr"
                         key={d.supplier.id}
-                        to={`/payables/${d.supplier.id}`}
+                        to={rowHref(d)}
                         style={{ cursor: 'pointer' }}
                       >
                         <td>
@@ -414,6 +591,21 @@ export default function PayableListPage() {
           </>
         )}
       </div>
+
+      {/* ── Commission posting modal ── */}
+      <CommissionModal
+        isOpen={commissionOpen}
+        onClose={() => {
+          if (!postCommission.isPending) setCommissionOpen(false);
+        }}
+        onSubmit={(data) => {
+          postCommission.mutate(data, {
+            onSuccess: () => setCommissionOpen(false),
+          });
+        }}
+        isPending={postCommission.isPending}
+        error={commissionError}
+      />
     </div>
   );
 }

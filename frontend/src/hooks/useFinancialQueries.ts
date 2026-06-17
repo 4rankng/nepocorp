@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialClient, type CustomerAging } from '../api/financialClient';
 import { qk } from '../api/keys';
-import type { LedgerEntry, CustomerStatement, SupplierStatement } from '@tingting/shared';
+import type { LedgerEntry, CustomerStatement, PayablesCategory, SupplierStatement } from '@tingting/shared';
 
 export type { CustomerAging };
 
@@ -29,10 +29,28 @@ export function useCustomerLedgerEntries() {
   });
 }
 
-export function usePayablesSummary() {
+export function usePayablesSummary(category?: PayablesCategory) {
   return useQuery({
-    queryKey: qk.financial.payablesSummary,
-    queryFn: () => financialClient.getPayablesSummary(),
+    queryKey: qk.financial.payablesSummary(category),
+    queryFn: () => financialClient.getPayablesSummary(category),
+  });
+}
+
+/** Invalidate every cached payables-summary query, regardless of category. */
+export function useInvalidatePayablesSummary() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
+}
+
+/** Records a manual commission payable owed to a supplier. */
+export function usePostCommission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) =>
+      financialClient.postCommission(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
+    },
   });
 }
 

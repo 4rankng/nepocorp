@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role, NotificationType, createPaymentSchema, createAdjustmentSchema, vendorPaymentSchema } from '@tingting/shared';
+import { Role, NotificationType, createPaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema } from '@tingting/shared';
+import type { PayablesCategory } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { emitNotification } from '../../services/notification.service';
@@ -9,6 +10,9 @@ import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatem
 import { formatLocalDate } from '../../lib/format';
 import { cacheInvalidate } from '../../lib/redis';
 import { getPayablesSummary } from '../../services/payables.service';
+import { recordCommission } from '../../services/commission.service';
+
+const PAYABLES_CATEGORIES = new Set<string>(['fuel', 'ancillary', 'commission', 'carrier']);
 
 const router = Router();
 
@@ -78,7 +82,21 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
 
 router.get('/reports/payables-summary', asyncHandler(async (req: Request, res: Response) => {
   const asOfDate = typeof req.query.asOfDate === 'string' ? req.query.asOfDate : undefined;
-  res.json(await getPayablesSummary({ asOfDate }));
+  const rawCategory = typeof req.query.category === 'string' ? req.query.category : undefined;
+  const category: PayablesCategory | undefined =
+    rawCategory && PAYABLES_CATEGORIES.has(rawCategory) ? (rawCategory as PayablesCategory) : undefined;
+  res.json(await getPayablesSummary({ asOfDate, category }));
+}));
+
+// ─── Commission (manual posting) ────────────────────────────────────────────
+// Records a commission payable owed to a supplier (VENDOR ledger, COMMISSION
+// txnType). ADMIN/MANAGER/ACCOUNTANT only.
+
+router.post('/commissions', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const data = commissionSchema.parse(req.body);
+  await recordCommission(data);
+  await cacheInvalidate('reports:dashboard');
+  res.status(201).json({ ok: true });
 }));
 
 export default router;

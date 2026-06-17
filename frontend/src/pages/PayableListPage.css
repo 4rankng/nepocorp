@@ -280,3 +280,88 @@
     gap: 8px;
   }
 }
+
+/* ============================================================================
+ * V2 — Category filter chips + commission posting form
+ * ========================================================================== */
+
+/* Category chip row above the table (inside data card). */
+.payables-page .payables-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.payables-page .payables-category-chip {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  background: var(--surface-2, #fff);
+  color: var(--fg-2, #475569);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.payables-page .payables-category-chip:hover {
+  background: var(--surface-3, #f1f5f9);
+  color: var(--fg-1, #1e293b);
+}
+
+.payables-page .payables-category-chip.is-active {
+  background: var(--primary, #0f766e);
+  border-color: var(--primary, #0f766e);
+  color: #fff;
+}
+
+.payables-page .payables-category-chip:focus-visible {
+  outline: 2px solid var(--primary, #0f766e);
+  outline-offset: 2px;
+}
+
+/* Commission posting form (inside Modal). */
+.payables-page .commission-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.payables-page .commission-form .form-select,
+.payables-page .commission-form input[type='number'],
+.payables-page .commission-form input[type='text'] {
+  width: 100%;
+}
+
+.payables-page .commission-form__error {
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger, #dc2626);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.payables-page .commission-form .req {
+  color: var(--danger, #dc2626);
+  margin-left: 2px;
+}
+
+@media (max-width: 420px) {
+  .payables-page .payables-category-chips {
+    gap: 6px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .payables-page .payables-category-chips::-webkit-scrollbar {
+    display: none;
+  }
+}

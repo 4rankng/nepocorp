@@ -126,7 +126,7 @@ export default function PayableDetailPage() {
       setPaymentAmount('');
       setPaymentReceiptId('');
       queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatement(id ? Number(id) : undefined) });
-      queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummary });
+      queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
         setSubmitting(false);

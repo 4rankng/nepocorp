@@ -180,7 +180,9 @@ export const qk = {
     customerStatement: (id: string | number | undefined) =>
       ['customer-statement', id] as const,
     customerLedgerEntries: ['customer-ledger-entries'],
-    payablesSummary: ['payables-summary'],
+    payablesSummary: (category: string | undefined) => ['payables-summary', category ?? 'all'] as const,
+    /** Broad prefix — matches all payablesSummary queries regardless of category. */
+    payablesSummaryAll: ['payables-summary'] as const,
     supplierStatement: (supplierId: number | undefined) =>
       ['supplier-statement', supplierId] as const,
     expenses: (filters: unknown) => ['expenses', filters] as const,
