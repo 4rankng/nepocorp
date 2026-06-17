@@ -56,6 +56,7 @@ export const qk = {
     allSuppliers: ['all-suppliers'],
     allExpenseCategories: ['all-expense-categories'],
     capTable: ['cap-table'],
+    tires: (truckId?: number) => ['tires', truckId] as const,
   },
 
   /** All catalog-shaped keys, for one-shot invalidation after a config CRUD. */
@@ -80,6 +81,7 @@ export const qk = {
     'all-suppliers',
     'all-expense-categories',
     'salary-period',
+    'tires',
   ] as const,
 
   /* ── Trips ──────────────────────────────────────────────────────────── */

@@ -12,11 +12,15 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
+  tireSchema, installTireSchema, removeTireSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields } from '../services/config.service';
 import { cacheInvalidatePattern } from '../lib/redis';
+import { Role } from '@tingting/shared';
+import { requireRoles } from '../middleware/casbin';
+import { installTire, removeTire, isHttpError } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -106,6 +110,42 @@ router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseC
 router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
   searchableField: 'name',
   disableDelete: true,
+}));
+
+// ─── N1 — Tires ────────────────────────────────────────────────────────────
+// Generic CRUD for the catalog (list/create/update/soft-delete). The lifecycle
+// transitions (install/remove) are dedicated endpoints below because they touch
+// multiple fields atomically and validate the target truck exists.
+router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, { searchableField: 'serial' }));
+
+// Lifecycle endpoints — MANAGER/ADMIN only (writes). The mount-level config
+// Casbin gate already restricts broadly; requireRoles tightens write actions.
+export const tireLifecycleRouter = Router();
+tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+  const data = installTireSchema.parse(req.body);
+  try {
+    const tire = await installTire(id, { truckId: data.truckId, position: data.position ?? null });
+    await cacheInvalidatePattern('catalogs:*');
+    res.json(tire);
+  } catch (e) {
+    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+tireLifecycleRouter.post('/:id/remove', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+  const data = removeTireSchema.parse(req.body);
+  try {
+    const tire = await removeTire(id, { retire: data.retire });
+    await cacheInvalidatePattern('catalogs:*');
+    res.json(tire);
+  } catch (e) {
+    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
 }));
 
 // Road config — singleton GET/PUT

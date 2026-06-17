@@ -27,6 +27,14 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
+// N1 — tire management: axle/wheel slot + lifecycle status.
+export const tirePositionEnum = pgEnum('tire_position', [
+  'FRONT_LEFT', 'FRONT_RIGHT',
+  'REAR_OUTER_LEFT', 'REAR_OUTER_RIGHT',
+  'REAR_INNER_LEFT', 'REAR_INNER_RIGHT',
+  'SPARE', 'OTHER',
+]);
+export const tireStatusEnum = pgEnum('tire_status', ['IN_STOCK', 'IN_USE', 'RETIRED']);
 
 
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -109,6 +117,30 @@ export const suppliers = pgTable('suppliers', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 });
+
+// ─── N1 — Tires ──────────────────────────────────────────────────────────────
+// Tracks individual tires by serial across their lifecycle (stock → in-use on
+// a truck → retired). `serial` is the immutable identity; install/remove just
+// flip truck_id + status + installed_at/removed_at. Soft-deleted via deletedAt
+// (the CRUD factory relies on it).
+export const tires = pgTable('tires', {
+  id: serial('id').primaryKey(),
+  serial: varchar('serial', { length: 64 }).notNull().unique(),
+  truckId: integer('truck_id').references(() => trucks.id),
+  position: tirePositionEnum('position'),
+  size: varchar('size', { length: 32 }),
+  installedAt: date('installed_at'),
+  removedAt: date('removed_at'),
+  supplierId: integer('supplier_id').references(() => suppliers.id),
+  cost: numeric('cost', { precision: 15, scale: 0 }).default('0'),
+  warrantyUntil: date('warranty_until'),
+  status: tireStatusEnum('status').default('IN_STOCK'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (t) => ({
+  truckIdx: index('tires_truck_id_idx').on(t.truckId),
+}));
 
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),

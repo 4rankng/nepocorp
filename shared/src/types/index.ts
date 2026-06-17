@@ -2,6 +2,7 @@ import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus,
+  TirePosition, TireStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -115,6 +116,37 @@ export interface Trailer {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+// ─── N1 — Tires ───────────────────────────────────────────────────────────
+// A single tire tracked by its immutable `serial`. truckId null = in stock /
+// spare; cost is VND (numeric(15,0) serializes as a string).
+export interface Tire {
+  id: number;
+  serial: string;
+  truckId: number | null;
+  position: TirePosition | null;
+  size: string | null;
+  installedAt: string | null;
+  removedAt: string | null;
+  supplierId: number | null;
+  cost: string;
+  warrantyUntil: string | null;
+  status: TireStatus;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+/** Warranty-expiry alert for a tire (mirrors VehicleAlert shape). */
+export interface VehicleTireAlert {
+  tireId: number;
+  serial: string;
+  /** ISO date string 'YYYY-MM-DD'. */
+  date: string;
+  /** Whole days from `today` until `date` (negative = past). */
+  daysUntil: number;
+  status: VehicleAlertStatus;
 }
 
 export interface Route {

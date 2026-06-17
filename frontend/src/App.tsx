@@ -39,6 +39,7 @@ const DispatchPage = lazy(() => import('./pages/DispatchPage'));
 const ProfitPage = lazy(() => import('./pages/ProfitPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const FleetPage = lazy(() => import('./pages/FleetPage'));
+const TruckTiresPage = lazy(() => import('./pages/TruckTiresPage'));
 const TrucksConfigPage = lazy(() => import('./pages/config/TrucksConfigPage'));
 const RoutesConfigPage = lazy(() => import('./pages/config/RoutesConfigPage'));
 const CargoTypesConfigPage = lazy(() => import('./pages/config/CargoTypesConfigPage'));
@@ -120,6 +121,7 @@ function AppRoutes() {
           />
           <Route path="/dispatch" element={adminOnly(page(<DispatchPage />))} />
           <Route path="/fleet" element={adminOnly(page(<FleetPage />))} />
+<Route path="/fleet/:id/tires" element={managerOrAdminOnly(page(<TruckTiresPage />))} />
           <Route path="/trips" element={adminOnly(page(<TripListPage />))} />
           <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />
           <Route path="/trips/:id" element={adminOnly(page(<TripDetailPage />))} />

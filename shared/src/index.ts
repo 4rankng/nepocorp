@@ -2,6 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
+  TirePosition, TireStatus, TIRE_POSITION_LABELS, TIRE_STATUS_LABELS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
@@ -11,6 +12,7 @@ export {
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
+  TIRES,
 } from './constants';
 
 export type {
@@ -29,6 +31,7 @@ export type {
   DebtOffset,
   ApprovalItemType,
   VehicleAlertField, VehicleAlertStatus, VehicleAlert,
+  Tire, VehicleTireAlert,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -49,6 +52,7 @@ export {
   containerTypeSchema, portSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
+  tireSchema, installTireSchema, removeTireSchema,
 } from './schemas';
 
 export {
@@ -74,6 +78,7 @@ export type {
   AncillaryExpenseType,
   UpdateProfileInput,
   CommissionInput,
+  TireInput, InstallTireInput, RemoveTireInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';
@@ -89,6 +94,6 @@ export { computeTripTotals, computeRoadAllowance } from './calculations/tripTota
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
-export { computeVehicleAlerts, VEHICLE_ALERT_LABELS } from './calculations/vehicleAlerts';
+export { computeVehicleAlerts, VEHICLE_ALERT_LABELS, computeTireAlerts } from './calculations/vehicleAlerts';
 export type { VehicleAlertInput } from './calculations/vehicleAlerts';
 

@@ -28,6 +28,7 @@ export const routes = {
   dashboard: '/dashboard',
   dispatch: '/dispatch',
   fleet: '/fleet',
+  fleetTires: (truckId: number | string) => `/fleet/${truckId}/tires`,
   trips: '/trips',
   tripNew: '/trips/new',
   tripDetail: (id: number | string) => `/trips/${id}`,

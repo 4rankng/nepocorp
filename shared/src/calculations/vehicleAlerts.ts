@@ -1,4 +1,4 @@
-import type { VehicleAlert, VehicleAlertField } from '../types';
+import type { VehicleAlert, VehicleAlertField, VehicleTireAlert, Tire } from '../types';
 
 /**
  * N5 / A12 + B4 — pure helper that turns a truck's user-keyed compliance /
@@ -90,6 +90,51 @@ export function computeVehicleAlerts(
       field,
       label: VEHICLE_ALERT_LABELS[field],
       date: raw as string,
+      daysUntil,
+      status,
+    });
+  }
+
+  alerts.sort((a, b) => a.daysUntil - b.daysUntil);
+  return alerts;
+}
+
+/**
+ * N1 — tire warranty-expiry alerts. Pure sibling of `computeVehicleAlerts`
+ * reusing the same `parseLocalMidnight` + day-diff logic so the two stay
+ * consistent. Source date = `warrantyUntil`.
+ *
+ * Accepts one tire or an array; returns ONLY non-'ok' alerts (overdue +
+ * due), sorted by daysUntil asc. Today + leadDays are injectable for tests.
+ */
+export function computeTireAlerts(
+  input: Tire | Tire[] | null | undefined,
+  today: Date = new Date(),
+  leadDays = 30,
+): VehicleTireAlert[] {
+  if (!input) return [];
+  const tires = Array.isArray(input) ? input : [input];
+
+  const todayMs = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    0, 0, 0, 0,
+  ).getTime();
+
+  const alerts: VehicleTireAlert[] = [];
+  for (const tire of tires) {
+    const targetMs = parseLocalMidnight(tire.warrantyUntil);
+    if (!Number.isFinite(targetMs)) continue;
+
+    const daysUntil = Math.ceil((targetMs - todayMs) / MS_PER_DAY);
+    const status = daysUntil < 0 ? 'overdue' : daysUntil <= leadDays ? 'due' : 'ok';
+    if (status === 'ok') continue;
+
+    alerts.push({
+      tireId: tire.id,
+      serial: tire.serial,
+      date: tire.warrantyUntil as string,
       daysUntil,
       status,
     });

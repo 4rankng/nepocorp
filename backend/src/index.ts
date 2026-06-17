@@ -11,7 +11,7 @@ import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
 import { initNotificationService } from './services/notification.service';
 import authRoutes from './routes/auth';
-import configRoutes, { auditLogRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter } from './routes/config';
+import configRoutes, { auditLogRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
 import expenseRoutes from './routes/expense';
@@ -91,6 +91,10 @@ app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes);
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
+// N1 — tire lifecycle (install/remove). CRUD lives under the config catch-all
+// at /api/fleet/tires; these dedicated endpoints need the same auth + config
+// gating + MANAGER/ADMIN role (enforced inside the router).
+app.use('/api/fleet/tires', authMiddleware, casbinAuthz('config'), tireLifecycleRouter);
 app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 
 // ── 404 catch-all (before error handler so unmatched API routes get 404, not 500) ──

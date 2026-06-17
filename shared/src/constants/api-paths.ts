@@ -78,6 +78,17 @@ export const CONFIG = {
   FUEL_PRICE_HISTORY: '/fuel-price-history',
 } as const;
 
+// ─── Fleet / Tires (N1) ──────────────────────────────────────────────────────
+// Tire CRUD + lifecycle (install/remove). Mounted under the config catch-all
+// so existing config Casbin gating applies; writes additionally requireRoles
+// MANAGER/ADMIN.
+export const TIRES = {
+  LIST: '/fleet/tires',
+  DETAIL: (id: number) => `/fleet/tires/${id}`,
+  INSTALL: (id: number) => `/fleet/tires/${id}/install`,
+  REMOVE: (id: number) => `/fleet/tires/${id}/remove`,
+} as const;
+
 // ─── Financial ──────────────────────────────────────────────────────────────────
 export const FINANCIAL = {
   LEDGER: '/ledger',

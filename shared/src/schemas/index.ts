@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   FuelMode, LoadingType, Role,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
+  TirePosition, TireStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -277,6 +278,29 @@ export const trailerSchema = z.object({
   licensePlate: z.string().min(1),
   type: z.nativeEnum(TrailerType),
   status: z.nativeEnum(TrailerStatus).optional().default(TrailerStatus.ACTIVE),
+});
+
+// ─── N1 — Tires ───────────────────────────────────────────────────────────
+// `serial` is the immutable identity; the rest is optional lifecycle metadata.
+// cost is coerced (form inputs send strings) into a number for storage.
+export const tireSchema = z.object({
+  serial: z.string().min(1, 'Số serial lốp không được để trống').max(64),
+  truckId: z.coerce.number().int().positive().optional().nullable(),
+  position: z.nativeEnum(TirePosition).optional().nullable(),
+  size: z.string().max(32).optional().nullable(),
+  supplierId: z.coerce.number().int().positive().optional().nullable(),
+  cost: numericMoney.optional().default(0),
+  warrantyUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  status: z.nativeEnum(TireStatus).optional().default(TireStatus.IN_STOCK),
+});
+
+export const installTireSchema = z.object({
+  truckId: z.coerce.number().int().positive(),
+  position: z.nativeEnum(TirePosition).optional().nullable(),
+});
+
+export const removeTireSchema = z.object({
+  retire: z.boolean().optional().default(false),
 });
 
 export const routeSchema = z.object({
@@ -608,6 +632,9 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type TruckInput = z.infer<typeof truckSchema>;
 export type TrailerInput = z.infer<typeof trailerSchema>;
+export type TireInput = z.infer<typeof tireSchema>;
+export type InstallTireInput = z.infer<typeof installTireSchema>;
+export type RemoveTireInput = z.infer<typeof removeTireSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;
 export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;
 export type PricingTableInput = z.infer<typeof pricingTableSchema>;

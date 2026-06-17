@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, memo } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Truck, UserCheck, Plus, Search,
@@ -15,6 +16,7 @@ import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
 import type { Truck as TruckType, Driver } from '@tingting/shared';
+import { routes } from '../lib/routes';
 
 // Extracted form modals + shared fleet constants
 import {
@@ -433,6 +435,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
             { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
+            { label: 'Lốp', value: <Link to={routes.fleetTires(t.id)} className="btn btn--ghost btn--sm">Quản lý lốp →</Link> },
           ];
         })()}
       />
