@@ -23,6 +23,10 @@ export const driverClient = {
       tripIncome: string;
       penalties: string;
       netIncome: string;
+      // F2 / B2 — trip-based income + outstanding payable.
+      productionSalary: string;
+      roadAllowance: string;
+      payableBalance: string;
       adjustment?: number;
       supplementPay?: number;
       leaveDeduction?: number;

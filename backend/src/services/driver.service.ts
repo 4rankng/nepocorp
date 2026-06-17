@@ -1,10 +1,11 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, ne, and, isNull, desc, gte, lte } from 'drizzle-orm';
+import { eq, ne, and, isNull, desc, gte, lte, sql } from 'drizzle-orm';
 import { ApiError } from '../errors';
-import { computeVehicleAlerts, type VehicleAlert } from '@tingting/shared';
+import { computeVehicleAlerts, type VehicleAlert, round2dp } from '@tingting/shared';
 
 import { computeSalary } from './attendance.service';
+import { LedgerService } from './ledger.service';
 import { listTripContainers, latestTripPhotoKey, listTripPhotoKeys } from './forwarder.service';
 import { getTripInstructions } from './trip-instructions.service';
 
@@ -116,6 +117,30 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
  */
 export async function getDriverEarnings(driverId: number, month: number, year: number) {
   const salaryData = await computeSalary(driverId, year, month);
+
+  // F2 / B2 — trip-based income for the salary period:
+  //   • Lương SX (production pay)      = Σ trip.driverSalary
+  //   • Tiền đi đường (road allowance) = Σ trip.totalRoadAllowance
+  // over the driver's non-canceled trips departing within the period.
+  const [tripAgg] = await db.select({
+    productionSalary: sql<string>`coalesce(sum(${s.trips.driverSalary}::numeric), 0)`,
+    roadAllowance: sql<string>`coalesce(sum(${s.trips.totalRoadAllowance}::numeric), 0)`,
+  }).from(s.trips)
+    .where(and(
+      eq(s.trips.driverId, driverId),
+      isNull(s.trips.deletedAt),
+      ne(s.trips.status, 'CANCELED'),
+      gte(s.trips.departureDate, salaryData.periodStart),
+      lte(s.trips.departureDate, salaryData.periodEnd),
+    ));
+  const productionSalary = round2dp(parseFloat(tripAgg?.productionSalary ?? '0'));
+  const roadAllowance = round2dp(parseFloat(tripAgg?.roadAllowance ?? '0'));
+
+  // F2 / B2 — outstanding payable: what the company still owes this driver,
+  // read from the DRIVER ledger (Σ DRIVER_SALARY credits − reversals − payouts).
+  // Customer chose "show payable balance" over a new advance-tracking model.
+  const payableBalance = round2dp(await LedgerService.getBalance('DRIVER', driverId));
+
   return {
     baseSalary: String(salaryData.baseSalary),
     tripIncome: String(salaryData.totalTripSalary),
@@ -129,6 +154,9 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
     dailyRate: salaryData.dailyRate,
     periodStart: salaryData.periodStart,
     periodEnd: salaryData.periodEnd,
+    productionSalary: String(productionSalary),
+    roadAllowance: String(roadAllowance),
+    payableBalance: String(payableBalance),
   };
 }
 

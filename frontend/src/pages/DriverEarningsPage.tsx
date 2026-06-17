@@ -45,7 +45,10 @@ export default function DriverEarningsPage() {
     baseSalary: HTMLSpanElement | null;
     adjustment: HTMLSpanElement | null;
     penalties: HTMLSpanElement | null;
-  }>({ baseSalary: null, adjustment: null, penalties: null });
+    productionSalary: HTMLSpanElement | null;
+    roadAllowance: HTMLSpanElement | null;
+    payableBalance: HTMLSpanElement | null;
+  }>({ baseSalary: null, adjustment: null, penalties: null, productionSalary: null, roadAllowance: null, payableBalance: null });
   const { animateCounters } = useCounterAnimation({ delay: 100 });
 
   useEffect(() => {
@@ -59,6 +62,13 @@ export default function DriverEarningsPage() {
       targets.push({ el: heroValueRef.current, value: Math.abs(net), prefix: net < 0 ? '-' : '' });
     }
     if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum });
+    // F2 / B2 — trip-income cards always animate (headline breakdown).
+    const productionNum = parseFloat(earnings.productionSalary);
+    const roadNum = parseFloat(earnings.roadAllowance);
+    const payableNum = parseFloat(earnings.payableBalance);
+    if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum });
+    if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum });
+    if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '' });
     if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum });
     if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
       targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-' });
@@ -145,6 +155,31 @@ export default function DriverEarningsPage() {
         </div>
         <div className="earnings-hero-bento__watermark">
           <DollarSign size={120} />
+        </div>
+      </div>
+
+      {/* ═══ F2 / B2 — Trip income: production pay · road allowance · payable ═══ */}
+      <div className="earnings-kpi-grid fade-up-2">
+        <div className="earnings-kpi-card">
+          <span className="earnings-kpi-card__label">Lương sản xuất</span>
+          <span className="earnings-kpi-card__value">
+            <span ref={(el) => { kpiRefs.current.productionSalary = el; }}>{formatNumber(earnings.productionSalary)}</span>
+            <span className="earnings-kpi-card__unit">đ</span>
+          </span>
+        </div>
+        <div className="earnings-kpi-card">
+          <span className="earnings-kpi-card__label">Tiền đi đường</span>
+          <span className="earnings-kpi-card__value">
+            <span ref={(el) => { kpiRefs.current.roadAllowance = el; }}>{formatNumber(earnings.roadAllowance)}</span>
+            <span className="earnings-kpi-card__unit">đ</span>
+          </span>
+        </div>
+        <div className={`earnings-kpi-card ${parseFloat(earnings.payableBalance) > 0 ? 'earnings-kpi-card--success' : ''}`}>
+          <span className="earnings-kpi-card__label">Còn được nhận</span>
+          <span className="earnings-kpi-card__value">
+            <span ref={(el) => { kpiRefs.current.payableBalance = el; }}>{formatNumber(earnings.payableBalance)}</span>
+            <span className="earnings-kpi-card__unit">đ</span>
+          </span>
         </div>
       </div>
 
