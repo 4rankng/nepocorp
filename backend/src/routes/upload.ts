@@ -248,13 +248,43 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
       }
     }
   } else if (expenseMatch) {
-    // Expense receipt photos are financial evidence. DRIVER/FORWARDER hold
-    // `photos:read` in Casbin but must NOT read company expense receipts — the
-    // mutation endpoints inherit casbinAuthz('financial'), so reads are
-    // restricted to finance roles too (B1 authz).
-    if (getUser(req).role === Role.DRIVER || getUser(req).role === Role.FORWARDER) {
+    // Expense receipt photos are financial evidence. The `expense-photos/<id>/`
+    // prefix is SHARED by two pipelines: company receipts (expense.ts:159, FK→
+    // expenses.id, stored in expense_photos) and forwarder receipts (forwarder.ts:246,
+    // FK→trip_expenses.id, stored in trip_expense_photos). So <id> alone is
+    // ambiguous — distinguish by ownership, not by the key.
+    const role = getUser(req).role;
+
+    // Drivers never read expense receipts.
+    if (role === Role.DRIVER) {
       return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
     }
+
+    // A forwarder may read ONLY the exact receipt key that belongs to a
+    // trip_expense they own (tripExpenses.forwarderId = their users.id).
+    // Company receipts are not in trip_expense_photos, so they stay blocked.
+    //
+    // ACTIVE is folded into the join (N5, per docs/plans/forwarder-photo-ownership-plan.md):
+    // /api/photos sits behind assetAuthMiddleware (JWT sig + jti only — NOT
+    // resolveForwarder), so a disabled forwarder with an unexpired JWT would
+    // otherwise bypass the status gate. Joining users on the owner and requiring
+    // status='ACTIVE' denies a disabled forwarder in the same round-trip.
+    if (role === Role.FORWARDER) {
+      const [owned] = await db.select({ id: s.tripExpensePhotos.id })
+        .from(s.tripExpensePhotos)
+        .innerJoin(s.tripExpenses, eq(s.tripExpensePhotos.tripExpenseId, s.tripExpenses.id))
+        .innerJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
+        .where(and(
+          eq(s.tripExpensePhotos.storageKey, key),
+          eq(s.tripExpenses.forwarderId, getUser(req).userId),
+          eq(s.users.status, 'ACTIVE'),
+        ))
+        .limit(1);
+      if (!owned) {
+        return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
+      }
+    }
+    // MANAGER / ACCOUNTANT / ADMIN: any authenticated staff — fall through to serve.
   }
 
   const uploadDir = path.resolve(config.uploadDir || path.join(process.cwd(), 'uploads'));
