@@ -187,7 +187,11 @@ export const createAdjustmentSchema = z.object({
 export const commissionSchema = z.object({
   supplierId: z.coerce.number().int().positive(),
   amount: z.union([z.number(), z.string()]).transform(Number)
-    .refine((v) => Number.isFinite(v) && v > 0, { message: 'Số tiền hoa hồng không hợp lệ' }),
+    // > 0 + upper-bound backstop (≤ 1 billion VND) against catastrophic typos
+    // (e.g. extra zeros / VND-vs-thousands confusion) on a manual money entry
+    // with no approval workflow. A formatted-amount confirm step in the UI is
+    // the recommended further guard. (Architect CRITICAL #2.)
+    .refine((v) => Number.isFinite(v) && v > 0 && v <= 1_000_000_000, { message: 'Số tiền hoa hồng không hợp lệ (phải > 0 và ≤ 1 tỷ VND)' }),
   tripId: z.coerce.number().int().positive().optional(),
   note: z.string().trim().max(500).optional(),
 });

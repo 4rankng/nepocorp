@@ -56,26 +56,34 @@ export interface DistributionPlan {
  * Distribute net profit for a quarter to cap-table partners (per-vehicle).
  */
 export async function distributeProfit(quarter: number, year: number) {
-  // Idempotency guard: prevent duplicate distributions for the same quarter/year.
-  const existing = await db.select({ id: s.distributions.id })
-    .from(s.distributions)
-    .where(and(eq(s.distributions.quarter, quarter), eq(s.distributions.year, year)))
-    .limit(1);
-  if (existing.length > 0) {
-    throw new ApiError(409, `Phân chia lợi nhuận Q${quarter}/${year} đã tồn tại`);
-  }
-
+  // Read-only computation + exactness reconcile guard (throws BEFORE any write
+  // if the math is off).
   const plan = await computeDistribution(quarter, year);
 
-  if (plan.distributions.length > 0) {
-    await db.insert(s.distributions).values(plan.distributions.map(d => ({
-      quarter: d.quarter,
-      year: d.year,
-      truckId: d.truckId,
-      partnerName: d.partnerName,
-      amount: d.amount,
-    })));
-  }
+  // Atomic write: the idempotency check + the multi-row insert run in ONE
+  // transaction so a partial-insert failure (connection drop, constraint
+  // violation) rolls back ALL rows — leaving the quarter cleanly retryable
+  // instead of stuck half-distributed with the idempotency guard blocking
+  // every retry. (Architect CRITICAL #1.)
+  await db.transaction(async (tx) => {
+    const [existing] = await tx.select({ id: s.distributions.id })
+      .from(s.distributions)
+      .where(and(eq(s.distributions.quarter, quarter), eq(s.distributions.year, year)))
+      .limit(1);
+    if (existing) {
+      throw new ApiError(409, `Phân chia lợi nhuận Q${quarter}/${year} đã tồn tại`);
+    }
+
+    if (plan.distributions.length > 0) {
+      await tx.insert(s.distributions).values(plan.distributions.map(d => ({
+        quarter: d.quarter,
+        year: d.year,
+        truckId: d.truckId,
+        partnerName: d.partnerName,
+        amount: d.amount,
+      })));
+    }
+  });
 
   return {
     quarter,

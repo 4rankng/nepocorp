@@ -120,7 +120,7 @@ router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
 // Generic CRUD for the catalog (list/create/update/soft-delete). The lifecycle
 // transitions (install/remove) are dedicated endpoints below because they touch
 // multiple fields atomically and validate the target truck exists.
-router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, { searchableField: 'serial' }));
+router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, { searchableField: 'serial', maxLimit: 2000 }));
 
 // Lifecycle endpoints — MANAGER/ADMIN only (writes). The mount-level config
 // Casbin gate already restricts broadly; requireRoles tightens write actions.

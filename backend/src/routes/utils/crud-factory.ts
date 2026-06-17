@@ -32,6 +32,9 @@ export interface CrudRouterOptions<
 > {
   searchableField?: string;
   disableDelete?: boolean;
+  /** Override the default list-page maxLimit (100) for catalogs that may exceed
+   *  it (e.g. tires), so list endpoints don't silently truncate. */
+  maxLimit?: number;
   beforeCreate?: (data: TData, req: Request) => Promise<Partial<TData>> | Partial<TData>;
   afterCreate?: (item: TRow, data: Partial<TData>, req: Request) => Promise<void> | void;
   beforeUpdate?: (id: number, data: Partial<TData>, req: Request) => Promise<Partial<TData>> | Partial<TData>;
@@ -51,6 +54,7 @@ export function createCrudRouter<
   const {
     searchableField,
     disableDelete = false,
+    maxLimit,
     beforeCreate,
     afterCreate,
     beforeUpdate,
@@ -68,7 +72,7 @@ export function createCrudRouter<
   const tbl = table as AnyPgTable;
 
   sub.get('/', asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit, offset } = parsePagination(req);
+    const { page, limit, offset } = parsePagination(req, maxLimit ? { maxLimit } : undefined);
     const search = req.query.search as string;
 
     const conditions = [];
