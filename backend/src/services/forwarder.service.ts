@@ -717,6 +717,9 @@ export async function createTripExpense(
     invoiceDate?: string | null;
     declarationNumber?: string | null;
     containerNumber?: string | null;
+    /** B5: authoritative container FK. When set, the loose containerNumber is
+     *  mirrored from this row so settlement grouping never drifts. */
+    tripContainerId?: number | null;
     note: string | null;
   },
 ) {
@@ -726,6 +729,27 @@ export async function createTripExpense(
   if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
   if (trip.status === 'LOCKED') {
     throw new ApiError(409, 'Không thể thêm chi phí cho chuyến đã chốt');
+  }
+
+  // B5: resolve an authoritative container FK when provided. The container must
+  // belong to this trip; we also mirror its label into the (deprecated)
+  // free-text column so legacy grouping keeps working until fully migrated.
+  const tripContainerId = data.tripContainerId ?? null;
+  let containerLabel = data.containerNumber ?? null;
+  if (tripContainerId != null) {
+    const [container] = await txOrDb
+      .select({
+        id: s.tripContainers.id,
+        cTripId: s.tripContainers.tripId,
+        containerNumber: s.tripContainers.containerNumber,
+      })
+      .from(s.tripContainers)
+      .where(eq(s.tripContainers.id, tripContainerId))
+      .limit(1);
+    if (!container || container.cTripId !== data.tripId) {
+      throw new ApiError(400, 'Container không thuộc chuyến này');
+    }
+    containerLabel = container.containerNumber;
   }
 
   // forwarderId=null means accountant/manager-created → auto-approve.
@@ -743,7 +767,8 @@ export async function createTripExpense(
     invoiceNumber: data.invoiceNumber ?? null,
     invoiceDate: data.invoiceDate ?? null,
     declarationNumber: data.declarationNumber ?? null,
-    containerNumber: data.containerNumber ?? null,
+    containerNumber: containerLabel,
+    tripContainerId,
     approvalStatus,
     note: data.note,
   }).returning();
@@ -763,6 +788,8 @@ export async function updateTripExpense(
     invoiceDate?: string | null;
     declarationNumber?: string | null;
     containerNumber?: string | null;
+    /** B5: authoritative container FK; validated against the expense's trip. */
+    tripContainerId?: number | null;
     note?: string | null;
   },
 ) {
@@ -791,6 +818,30 @@ export async function updateTripExpense(
 
   if (patch.sellAmount !== undefined && existing.forwarderId != null) {
     setPatch.approvalStatus = 'PENDING';
+  }
+
+  // B5: resolve an authoritative container change against this trip. An
+  // explicit null clears the link (and the mirrored free-text label); a number
+  // is validated against the trip and its label mirrored.
+  if (patch.tripContainerId !== undefined) {
+    if (patch.tripContainerId == null) {
+      setPatch.tripContainerId = null;
+      setPatch.containerNumber = null;
+    } else {
+      const [container] = await txOrDb
+        .select({
+          id: s.tripContainers.id,
+          cTripId: s.tripContainers.tripId,
+          containerNumber: s.tripContainers.containerNumber,
+        })
+        .from(s.tripContainers)
+        .where(eq(s.tripContainers.id, patch.tripContainerId))
+        .limit(1);
+      if (!container || container.cTripId !== existing.tripId) {
+        throw new ApiError(400, 'Container không thuộc chuyến này');
+      }
+      setPatch.containerNumber = container.containerNumber;
+    }
   }
 
   const [updated] = await txOrDb

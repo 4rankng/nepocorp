@@ -89,6 +89,7 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
     invoiceDate: parsed.data.invoiceDate ?? null,
     declarationNumber: parsed.data.declarationNumber ?? null,
     containerNumber: parsed.data.containerNumber ?? null,
+    tripContainerId: parsed.data.tripContainerId ?? null,
     note: parsed.data.note ?? null,
   });
   res.status(201).json(expense);

@@ -550,7 +550,14 @@ export const tripExpenses = pgTable('trip_expenses', {
   invoiceNumber: varchar('invoice_number', { length: 50 }),
   invoiceDate: date('invoice_date'),
   declarationNumber: varchar('declaration_number', { length: 50 }),
+  // Free-text container label (DEPRECATED for B5). Kept for back-compat with
+  // rows written before the FK existed and as a denormalised mirror; new writes
+  // should set `tripContainerId` so the label always matches a real container.
   containerNumber: varchar('container_number', { length: 20 }),
+  // B5: authoritative link to the trip's container row. ON DELETE SET NULL so
+  // deleting a container row downgrades the expense to trip-level (loose
+  // containerNumber still present) instead of orphaning or failing the delete.
+  tripContainerId: integer('trip_container_id').references(() => tripContainers.id, { onDelete: 'set null' }),
   approvalStatus: varchar('approval_status', { length: 20 }).notNull().default('APPROVED'),
   note: text('note'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -558,6 +565,7 @@ export const tripExpenses = pgTable('trip_expenses', {
 }, (table) => [
   index('trip_expenses_trip_id_idx').on(table.tripId),
   index('trip_expenses_container_idx').on(table.containerNumber),
+  index('trip_expenses_trip_container_id_idx').on(table.tripContainerId),
 ]);
 
 export const tripExpensePhotos = pgTable('trip_expense_photos', {

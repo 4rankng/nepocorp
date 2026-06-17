@@ -230,6 +230,7 @@ export interface Trip {
   fuelLoadedNormApplied: string | null;
   fuelEmptyNormApplied: string | null;
   fuelFixedAllowanceApplied: string | null;
+  fuelSupplementNormApplied: string | null;
   tollPerStationApplied: string | null;
   returnCargoBonusApplied: string | null;
   vatRate: string;

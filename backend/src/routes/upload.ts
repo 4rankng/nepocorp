@@ -210,29 +210,50 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
   const rawKey = typeof req.params.path === 'string' ? req.params.path : Array.isArray(req.params.path) ? req.params.path.join('/') : '';
   const key = decodeURIComponent(rawKey);
 
-  // Parse trip ID
-  const match = key.match(/^trips\/(\d+)\//);
-  if (!match) {
+  // Defense-in-depth: no storage key ever contains a path segment; reject
+  // traversal attempts up front (the resolved-path guard below also covers it).
+  if (key.includes('..')) {
     return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
   }
-  const tripId = parseInt(match[1]);
 
-  // Check permissions
-  if (getUser(req).role === Role.DRIVER) {
-    const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-      .where(eq(s.drivers.userId, getUser(req).userId)).limit(1);
+  // Two valid key shapes: trip photos (trips/<id>/…) and expense receipt
+  // photos (expense-photos/<id>/…, B1). Trip photos get a driver ownership
+  // check; expense photos are readable by any authenticated staff member
+  // (this router is mounted behind assetAuthMiddleware).
+  const tripMatch = key.match(/^trips\/(\d+)\//);
+  const expenseMatch = key.match(/^expense-photos\/(\d+)\//);
+  if (!tripMatch && !expenseMatch) {
+    return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
+  }
 
-    if (!driver) {
-      return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
+  if (tripMatch) {
+    const tripId = parseInt(tripMatch[1]);
+
+    // Check permissions
+    if (getUser(req).role === Role.DRIVER) {
+      const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
+        .where(eq(s.drivers.userId, getUser(req).userId)).limit(1);
+
+      if (!driver) {
+        return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
+      }
+
+      const [trip] = await db.select()
+        .from(s.trips)
+        .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
+        .limit(1);
+
+      if (!trip) {
+        return res.status(403).json({ error: 'Không có quyền truy cập ảnh của chuyến đi này' });
+      }
     }
-
-    const [trip] = await db.select()
-      .from(s.trips)
-      .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
-      .limit(1);
-
-    if (!trip) {
-      return res.status(403).json({ error: 'Không có quyền truy cập ảnh của chuyến đi này' });
+  } else if (expenseMatch) {
+    // Expense receipt photos are financial evidence. DRIVER/FORWARDER hold
+    // `photos:read` in Casbin but must NOT read company expense receipts — the
+    // mutation endpoints inherit casbinAuthz('financial'), so reads are
+    // restricted to finance roles too (B1 authz).
+    if (getUser(req).role === Role.DRIVER || getUser(req).role === Role.FORWARDER) {
+      return res.status(403).json({ error: 'Không có quyền truy cập ảnh chi phí' });
     }
   }
 

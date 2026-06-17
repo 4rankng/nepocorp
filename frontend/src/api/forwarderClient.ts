@@ -51,6 +51,8 @@ export const forwarderClient = {
     invoiceDate?: string;
     declarationNumber?: string;
     containerNumber?: string;
+    /** B5: authoritative container FK (id). When set the server mirrors containerNumber. */
+    tripContainerId?: number;
     note?: string;
   }) => {
     return api.post(FORWARDER.EXPENSES, data);

@@ -337,6 +337,7 @@ export async function getTripById(id: number) {
     fuelLoadedNormApplied: s.trips.fuelLoadedNormApplied,
     fuelEmptyNormApplied: s.trips.fuelEmptyNormApplied,
     fuelFixedAllowanceApplied: s.trips.fuelFixedAllowanceApplied,
+    fuelSupplementNormApplied: s.trips.fuelSupplementNormApplied,
     vatRate: s.trips.vatRate,
     carrierType: s.trips.carrierType, externalCarrierId: s.trips.externalCarrierId,
     externalFreightCost: s.trips.externalFreightCost,
