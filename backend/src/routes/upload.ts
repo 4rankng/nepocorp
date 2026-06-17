@@ -208,7 +208,8 @@ uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, 
 const photosRouter = Router();
 
 photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) => {
-  const rawKey = typeof req.params.path === 'string' ? req.params.path : Array.isArray(req.params.path) ? req.params.path.join('/') : '';
+  // Express types `{*path}` params as string | string[]; collapse to a single path.
+  const rawKey = Array.isArray(req.params.path) ? req.params.path.join('/') : (req.params.path ?? '');
   const key = decodeURIComponent(rawKey);
 
   // Defense-in-depth: no storage key ever contains a path segment; reject

@@ -63,23 +63,19 @@ export async function authorizeExpensePhoto(
   const expenseMatch = expenseRows.length > 0;
   if (!tripMatch && !expenseMatch) return { allow: false, reason: 'not_found' };
 
-  // 2. Per-table authorization.
-  const authzTrip = async (): Promise<boolean> => {
-    if (FINANCE_ROLES.has(user.role)) return true;
-    if (user.role === Role.FORWARDER) {
-      // forwarderId is NULLABLE (accountants also create trip_expenses);
-      // null !== userId denies naturally. Owner's ACTIVE status was folded
-      // into the trip lookup above (N5) — no separate probe needed.
-      return tripRows[0].forwarderId === user.userId
-        && tripRows[0].ownerStatus === 'ACTIVE';
-    }
-    return false; // DRIVER
-  };
-  const authzExpense = (): boolean => FINANCE_ROLES.has(user.role);
-
-  // 3. STRICTEST-MATCH: allow only if authorized under every matching table.
-  const okTrip = !tripMatch || await authzTrip();
-  const okExpense = !expenseMatch || authzExpense();
+  // 2. Per-table authorization, then 3. STRICTEST-MATCH: allow only if
+  // authorized under every matching table.
+  //   - trip side: finance always; FORWARDER must own the row AND the owner
+  //     is ACTIVE (status folded into the lookup above, N5); DRIVER never.
+  //     forwarderId is NULLABLE (accountants also create trip_expenses), so
+  //     null !== userId denies an accountant-created receipt naturally.
+  //   - expense side: finance only (company receipts are B1-confidential).
+  const okTrip = !tripMatch
+    || FINANCE_ROLES.has(user.role)
+    || (user.role === Role.FORWARDER
+      && tripRows[0].forwarderId === user.userId
+      && tripRows[0].ownerStatus === 'ACTIVE');
+  const okExpense = !expenseMatch || FINANCE_ROLES.has(user.role);
   const allow = okTrip && okExpense;
 
   if (allow) return { allow: true, reason: 'allowed' };

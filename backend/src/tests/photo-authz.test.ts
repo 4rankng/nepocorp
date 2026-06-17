@@ -213,7 +213,7 @@ test('ACCOUNTANT can read a receipt owned by a DISABLED forwarder (financial evi
   // Guards the N5 design choice: ACTIVE is validated only on the forwarder-self
   // path, NOT folded into the shared trip lookup (which would corrupt tripMatch
   // for finance reading disabled-owner receipts).
-  const d = await authorizeExpensePhoto(KEY.tripOwnedF2, { userId: accountantId, role: 'ACCOUNTANT' as Role });
+  const d = await authorizeExpensePhoto(KEY.tripOwnedF2, { userId: accountantId, role: Role.ACCOUNTANT });
   assert.strictEqual(d.allow, true);
 });
 
