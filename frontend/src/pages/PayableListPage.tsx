@@ -338,7 +338,7 @@ export default function PayableListPage() {
       {/* ── Zone 1: Hero KPI Row ────────────────────────────────────────── */}
       <div className="hero-kpi-row">
         {/* Hero card — span 3 */}
-        <div className="hero-kpi-card">
+        <div className="hero-kpi-card asset-ledger-watermark">
           <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
           <span className="hero-kpi-card__amount">
             <span ref={heroTotalRef}>{prefersReduced ? heroMoney.num : 0}</span>

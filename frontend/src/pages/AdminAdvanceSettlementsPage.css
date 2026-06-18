@@ -11,7 +11,7 @@
   border-radius: 14px;       /* matches dashboard --wf-radius */
   overflow: hidden;
   box-shadow: var(--sh-sm);
-  min-height: 280px;
+  min-height: clamp(360px, 46vh, 460px);
 }
 
 /* ── KPI row grid ──────────────────────────────────────────────────────── */

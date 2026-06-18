@@ -14,8 +14,26 @@ import type { Role } from '@tingting/shared';
 import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 
+const NAV_ICON_BASE = '/assets/icons/nepo';
+
 function getRoleLabel(role: Role): string {
   return ROLE_LABELS[role] || role;
+}
+
+function NavIcon({ item }: { item: SidebarProps['navItems'][number] }) {
+  if (item.assetIcon) {
+    return (
+      <img
+        className="sidebar-item-icon-img"
+        src={`${NAV_ICON_BASE}/${item.assetIcon}.svg`}
+        alt=""
+        aria-hidden="true"
+      />
+    );
+  }
+
+  const IconC = item.icon;
+  return <IconC size={16} />;
 }
 
 function Sidebar({
@@ -43,7 +61,6 @@ function Sidebar({
     if (items.length === 0) return null;
 
     return items.map(item => {
-      const IconC = item.icon;
       const isActive = item.key === activeKey;
       const isDanger = item.key === 'penalties';
       return (
@@ -54,7 +71,7 @@ function Sidebar({
           title={item.label}
           aria-label={item.label}
         >
-          <IconC size={16} />
+          <NavIcon item={item} />
           <span className="sidebar-item-label">{item.label}</span>
 
           {item.count !== undefined && item.count > 0 && (
@@ -93,7 +110,6 @@ function Sidebar({
           />
         </button>
         {!isCollapsed && items.map(item => {
-          const IconC = item.icon;
           const isActive = item.key === activeKey;
           const isDanger = item.key === 'penalties';
           return (
@@ -104,7 +120,7 @@ function Sidebar({
               title={item.label}
               aria-label={item.label}
             >
-              <IconC size={16} />
+              <NavIcon item={item} />
               <span className="sidebar-item-label">{item.label}</span>
 
               {item.count !== undefined && item.count > 0 && (

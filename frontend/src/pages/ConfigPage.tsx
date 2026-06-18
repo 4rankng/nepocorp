@@ -10,6 +10,29 @@ import { qk } from '../api/keys';
 import './ConfigPage.css';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
+const ICON_BASE = '/assets/icons/nepo';
+
+const CONFIG_ICON_MAP: Record<string, string> = {
+  fuel: 'fleet',
+  'road-allowances': 'routes',
+  'trip-expense': 'expenses',
+  'penalty-reasons': 'penalties',
+  drivers: 'customers',
+  'cap-table': 'finance',
+  customers: 'customers',
+  routes: 'routes',
+  trucks: 'trips',
+  trailers: 'fleet',
+  'cargo-types': 'trips',
+  'pricing-tables': 'finance',
+  'management-fees': 'payables',
+  'salary-periods': 'salary',
+  'expense-categories': 'expenses',
+  'container-types': 'trips',
+  'seal-types': 'settlements',
+  ports: 'routes',
+  'forwarder-expense-types': 'settlements',
+};
 
 type ListResponse = { total: number };
 
@@ -116,10 +139,15 @@ export default function ConfigPage() {
 
   const cards = CONFIG_ITEMS.map(item => {
     const Icon = item.icon;
+    const assetName = CONFIG_ICON_MAP[item.id];
     return {
       title: item.label,
       desc: item.description ?? '',
-      icon: <Icon size={20} />,
+      icon: assetName ? (
+        <img src={`${ICON_BASE}/${assetName}.svg`} alt="" aria-hidden="true" />
+      ) : (
+        <Icon size={20} />
+      ),
       path: item.path,
       action: item.action ?? 'Sửa',
       ...(statusInfo[item.id] ?? { status: '—' }),
@@ -161,7 +189,7 @@ export default function ConfigPage() {
           <p style={{ fontSize: 13 }}>Hãy thử tìm kiếm với từ khóa khác.</p>
         </div>
       ) : (
-        <div className="settings-grid">
+        <div className="settings-grid asset-route-grid">
           {filteredCards.map((card, idx) => (
             <button key={idx} className="setting-card" onClick={() => navigate(card.path)}>
               <div className="setting-card__icon">{card.icon}</div>

@@ -223,7 +223,7 @@ export default function DebtListPage() {
         * ══════════════════════════════════════════════════════════════════════ */}
       <div className="hero-kpi-row debt-hero-row">
         {/* Hero card — spans 3 columns */}
-        <div className="hero-kpi-card debt-hero">
+        <div className="hero-kpi-card debt-hero asset-ledger-watermark">
           <div className="debt-hero__content">
             <span className="hero-kpi-card__eyebrow">Tổng công nợ phải thu</span>
             <div className="hero-kpi-card__amount debt-hero__amount">

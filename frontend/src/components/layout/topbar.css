@@ -267,55 +267,6 @@
 }
 
 @media (max-width: 640px) {
-  .topbar--driver {
-    padding: 2px 8px;
-    gap: 8px;
-    min-height: 48px;
-    align-items: center;
-  }
-
-  .topbar__welcome {
-    line-height: 1.15;
-  }
-
-  .topbar__welcome .greeting {
-    font-size: 11px;
-  }
-
-  .topbar__welcome .name {
-    font-size: var(--fs-sm);
-  }
-
-  .topbar__center-driver {
-    flex: 0 0 auto;
-    margin-left: auto;
-  }
-
-  .topbar-date__trigger {
-    min-height: 44px;
-    height: 44px;
-    padding: 0 9px;
-    font-size: var(--fs-xs);
-    border-radius: 12px;
-  }
-
-  .topbar-date__body {
-    gap: 0;
-  }
-
-  .topbar-date__label {
-    line-height: 1.05;
-  }
-
-  .topbar-date__period {
-    font-size: 9.5px;
-  }
-
-  .topbar-date__icon {
-    width: 13px;
-    height: 13px;
-  }
-
   .month-picker {
     width: 260px;
   }
