@@ -378,10 +378,27 @@
 .commission-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 4px;
+  gap: 16px;
+  padding-top: 2px;
 }
-.commission-form .field { margin-bottom: 0; }
+.commission-form .field {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.commission-form .field label {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.commission-form .input {
+  height: 44px;
+  font-size: 15px;
+}
 
 .commission-form__error {
   background: rgba(220, 38, 38, 0.08);
@@ -395,6 +412,17 @@
 .commission-form .req {
   color: var(--danger, #dc2626);
   margin-left: 2px;
+}
+
+@media (max-width: 640px) {
+  .commission-form {
+    gap: 15px;
+  }
+
+  .commission-form .input {
+    height: 46px;
+    font-size: 16px;
+  }
 }
 
 @media (max-width: 420px) {

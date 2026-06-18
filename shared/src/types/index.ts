@@ -421,6 +421,14 @@ export interface Notification {
   createdAt: string;
 }
 
+/** A Web Push subscription delivered to the backend for storage. Mirrors the
+ *  browser's `PushSubscription.toJSON()` shape (endpoint + encryption keys). */
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  deviceType?: 'ios' | 'android' | 'web';
+}
+
 // ─── Vendor & Expense ───────────────────────────────────────────────────────────
 
 export interface Supplier {

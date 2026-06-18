@@ -13,10 +13,10 @@ import type { TopbarProps } from './types';
 import { useTopbarEntrance } from '../../hooks/useTopbarEntrance';
 
 const MONTHS = [
-  { m: 1, short: 'T1' }, { m: 2, short: 'T2' }, { m: 3, short: 'T3' },
-  { m: 4, short: 'T4' }, { m: 5, short: 'T5' }, { m: 6, short: 'T6' },
-  { m: 7, short: 'T7' }, { m: 8, short: 'T8' }, { m: 9, short: 'T9' },
-  { m: 10, short: 'T10' }, { m: 11, short: 'T11' }, { m: 12, short: 'T12' },
+  { m: 1, short: 'T1', name: 'Tháng 1' }, { m: 2, short: 'T2', name: 'Tháng 2' }, { m: 3, short: 'T3', name: 'Tháng 3' },
+  { m: 4, short: 'T4', name: 'Tháng 4' }, { m: 5, short: 'T5', name: 'Tháng 5' }, { m: 6, short: 'T6', name: 'Tháng 6' },
+  { m: 7, short: 'T7', name: 'Tháng 7' }, { m: 8, short: 'T8', name: 'Tháng 8' }, { m: 9, short: 'T9', name: 'Tháng 9' },
+  { m: 10, short: 'T10', name: 'Tháng 10' }, { m: 11, short: 'T11', name: 'Tháng 11' }, { m: 12, short: 'T12', name: 'Tháng 12' },
 ];
 
 /** Clickable month chip in the topbar — opens a month/year grid picker */
@@ -64,6 +64,10 @@ function MonthNavigator() {
 
       {open && (
         <div className="month-picker" role="dialog" aria-label="Chọn tháng" ref={pickerRef}>
+          <div className="month-picker__title">
+            <span>Chọn kỳ làm việc</span>
+            <small>Đổi tháng cho toàn bộ báo cáo</small>
+          </div>
           <div className="month-picker__header">
             <button
               type="button"
@@ -73,7 +77,7 @@ function MonthNavigator() {
             >
               <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
             </button>
-            <span className="month-picker__year">{pickerYear}</span>
+            <span className="month-picker__year">Năm {pickerYear}</span>
             <button
               type="button"
               className="month-picker__year-nav"
@@ -84,7 +88,7 @@ function MonthNavigator() {
             </button>
           </div>
           <div className="month-picker__grid">
-            {months.map(({ m, short }) => {
+            {months.map(({ m, short, name }) => {
               const isSelected = m === month && pickerYear === year;
               const isThisMonth = pickerYear === now.getFullYear() && m === now.getMonth() + 1;
               return (
@@ -101,7 +105,8 @@ function MonthNavigator() {
                     setOpen(false);
                   }}
                 >
-                  {short}
+                  <span className="month-picker__cell-code">{short}</span>
+                  <span className="month-picker__cell-name">{name}</span>
                 </button>
               );
             })}
@@ -119,7 +124,7 @@ function MonthNavigator() {
               Hôm nay
             </button>
             <span className="month-picker__hint">
-              {isCurrentMonth ? 'Đang chọn tháng hiện tại' : ' '}
+              {isCurrentMonth ? 'Đang chọn tháng hiện tại' : `Đang xem T${month}/${year}`}
             </span>
           </div>
         </div>

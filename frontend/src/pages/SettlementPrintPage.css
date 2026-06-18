@@ -341,7 +341,7 @@
 
 .print-preview-body {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   justify-content: center;
   padding: 24px;
@@ -360,6 +360,57 @@
 
 /* ─── Mobile ─── */
 @media (max-width: 640px) {
+  .print-preview-overlay {
+    background: #e5e7eb;
+  }
+
+  .print-preview-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-items: stretch;
+    gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+  }
+
+  .print-preview-title {
+    min-width: 0;
+    align-self: center;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .print-preview-actions {
+    flex-shrink: 0;
+    gap: 6px;
+  }
+
+  .print-preview-actions .btn {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .print-preview-actions .btn svg {
+    display: none;
+  }
+
+  .print-preview-body {
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 10px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .print-preview-iframe {
+    min-width: 100%;
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - 56px - env(safe-area-inset-top));
+    border-radius: 4px;
+  }
+
   .settlement-detail__header {
     flex-direction: column;
     gap: 12px;

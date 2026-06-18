@@ -64,3 +64,4 @@ backend/uploads/
 kilo.json
 *.pen
 .agents
+.claude-tmp/

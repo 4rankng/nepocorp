@@ -10,6 +10,7 @@ import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
 import { initNotificationService } from './services/notification.service';
+import { initPushService } from './services/push.service';
 import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
@@ -26,6 +27,7 @@ import salaryRoutes from './routes/salary';
 
 await initAuditService();
 await initNotificationService();
+await initPushService();
 await initEnforcer();
 
 const app = express();

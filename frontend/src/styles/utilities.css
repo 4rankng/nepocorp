@@ -96,7 +96,7 @@
 /* Show/hide helpers */
 .mobile-only  { display: none; }
 .desktop-only { display: block; }
-@media (max-width: 640px) {
+@media (max-width: 820px) {
   .mobile-only  { display: block; }
   .desktop-only { display: none !important; }
 }
@@ -186,7 +186,7 @@
 .m-card__fuel-fill--danger { background: var(--danger); }
 
 /* Wrap table-wrap on mobile too */
-@media (max-width: 640px) {
+@media (max-width: 820px) {
   .mobile-table-wrap {
     background: var(--surface);
     border: 1px solid var(--line-2);

@@ -136,13 +136,13 @@
 .expense-filter-bar {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 20px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 0.9fr) minmax(160px, 0.8fr) auto minmax(150px, 0.7fr) minmax(150px, 0.7fr) auto;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 12px;
   transition: box-shadow 0.2s ease;
 }
 
@@ -168,7 +168,8 @@
   background-position: right 10px center;
   background-repeat: no-repeat;
   background-size: 16px 16px;
-  min-width: 150px;
+  min-width: 0;
+  width: 100%;
 }
 
 .expense-filter-bar__select:hover,
@@ -475,18 +476,21 @@
 
   .expense-filter-bar {
     padding: 12px;
-    gap: 8px;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .expense-filter-bar__select,
   .expense-filter-bar__date {
     min-width: 0;
-    flex: 1;
-    min-width: 120px;
   }
 
   .expense-filter-bar__divider {
     display: none;
+  }
+
+  .expense-filter-bar__reset {
+    justify-content: center;
   }
 }
 
@@ -593,28 +597,30 @@
   }
 
   .expense-list-page .expense-filter-bar {
-    padding: 8px;
-    gap: 6px;
-    border-radius: 12px;
+    padding: 10px;
+    gap: 8px;
+    border-radius: 14px;
     margin-bottom: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .expense-list-page .expense-filter-bar__select,
   .expense-list-page .expense-filter-bar__date {
-    height: 34px;
-    font-size: 12px;
-    padding: 0 26px 0 10px;
+    height: 40px;
+    font-size: 13px;
+    padding: 0 28px 0 11px;
     background-size: 14px 14px;
     background-position: right 8px center;
-    flex: 1 1 calc(50% - 6px);
-    border-radius: 9px;
+    border-radius: 10px;
+    border-color: rgba(16, 24, 20, 0.05);
   }
   .expense-list-page .expense-filter-bar__date {
     padding-right: 10px;
   }
   .expense-list-page .expense-filter-bar__reset {
-    height: 34px;
+    height: 40px;
     padding: 0 11px;
     font-size: var(--fs-xs);
+    grid-column: 1 / -1;
   }
 
   .expense-list-page .mobile-table-wrap {

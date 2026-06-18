@@ -14,6 +14,25 @@
   .trip-list-page .table-head .col-road,
   .trip-list-page .table-row .col-road { display: none; }
 }
+
+@media (max-width: 900px) {
+  .trip-list-page .table-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .trip-list-page .table-hint,
+  .trip-list-page .table-scroll-wrapper,
+  .trip-list-page .table-head,
+  .trip-list-page .table-row {
+    display: none;
+  }
+  .trip-list-page .trip-mobile-list {
+    display: block;
+  }
+}
+
 @media (max-width: 640px) {
   .trip-list-page .hero { padding: 20px; }
   .trip-list-page .hero-h1 { font-size: var(--fs-xl); }

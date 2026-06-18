@@ -34,6 +34,10 @@ const configSchema = z.object({
   geminiApiKey: z.string().default(''),
   corsOrigin: z.string().default(''),
   trustProxy: trustProxySchema.default(isProd ? 1 : false),
+  // Web Push (VAPID). Optional — push silently no-ops when these are empty.
+  vapidPublicKey: z.string().default(''),
+  vapidPrivateKey: z.string().default(''),
+  vapidSubject: z.string().default('mailto:admin@tingting.vip'),
 });
 
 const raw = {
@@ -48,6 +52,9 @@ const raw = {
   geminiApiKey: process.env.GEMINI_API_KEY,
   corsOrigin: process.env.CORS_ORIGIN,
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+  vapidSubject: process.env.VAPID_SUBJECT,
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -64,6 +71,9 @@ const withDefaults = {
   geminiApiKey: raw.geminiApiKey || '',
   corsOrigin: raw.corsOrigin || '',
   trustProxy: raw.trustProxy,
+  vapidPublicKey: raw.vapidPublicKey || '',
+  vapidPrivateKey: raw.vapidPrivateKey || '',
+  vapidSubject: raw.vapidSubject || 'mailto:admin@tingting.vip',
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -93,4 +103,7 @@ export const config = result.success ? result.data : configSchema.parse({
   geminiApiKey: '',
   corsOrigin: '',
   trustProxy: false,
+  vapidPublicKey: '',
+  vapidPrivateKey: '',
+  vapidSubject: 'mailto:admin@tingting.vip',
 });

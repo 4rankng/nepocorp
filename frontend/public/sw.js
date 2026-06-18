@@ -28,6 +28,64 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+// ─── Web Push ───────────────────────────────────────────────────────────────
+// Surface server-pushed notifications as OS notifications and forward them to
+// any open app windows so the in-app drawer can refresh. Clicking focuses an
+// open window (and asks it to navigate) or opens a new one.
+
+function stripHtml(html) {
+  return String(html || '').replace(/<[^>]*>/g, '').trim();
+}
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let data;
+  try { data = event.data.json(); }
+  catch { data = { body: event.data.text() }; }
+
+  const title = data.title || 'TingTing';
+  const url = data.url || '/';
+  const body = stripHtml(data.body);
+  const options = {
+    body,
+    icon: data.icon || '/assets/logo-192.png',
+    badge: '/assets/logo-192.png',
+    tag: data.tag || 'tingting-notification',
+    data: { url },
+    vibrate: [100, 50, 100],
+    requireInteraction: false,
+    renotify: true,
+  };
+
+  const notifyClients = self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((clients) => {
+      for (const client of clients) {
+        client.postMessage({ type: 'PUSH_NOTIFICATION', payload: { title, body, url } });
+      }
+    });
+
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title, options),
+    notifyClients,
+  ]));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.postMessage({ type: 'NOTIFICATION_CLICK', payload: { url: urlToOpen } });
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(urlToOpen);
+    }),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 

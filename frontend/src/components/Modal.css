@@ -65,6 +65,7 @@
 .modal__body {
   padding: 20px 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: calc(100vh - 220px);
   overscroll-behavior: contain;
 }
@@ -76,4 +77,40 @@
   justify-content: flex-end;
   gap: 10px;
   flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .modal {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal__content {
+    max-width: 100%;
+    max-height: calc(100dvh - 20px);
+    border-radius: 18px;
+  }
+
+  .modal__head {
+    padding: 16px 18px 12px;
+  }
+
+  .modal__title {
+    font-size: 22px;
+    letter-spacing: -0.03em;
+  }
+
+  .modal__body {
+    padding: 16px 18px;
+    max-height: calc(100dvh - 168px);
+  }
+
+  .modal__foot {
+    padding: 12px 18px max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .modal__foot .btn {
+    min-height: 40px;
+  }
 }

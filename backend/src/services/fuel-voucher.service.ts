@@ -128,6 +128,108 @@ const PRINT_CSS = `
   .sig-block .hint { font-style: italic; color: #6b7280; font-size: 11.5px; margin-bottom: 60px; }
   .sig-block .line { border-top: 1px solid #111827; margin: 0 6px; padding-top: 4px; font-size: 12px; color: #6b7280; }
   .footer { margin-top: 18px; text-align: center; font-size: 11px; color: #6b7280; font-style: italic; }
+  @media screen and (max-width: 720px) {
+    body {
+      background: #f3f4f6;
+      font-size: 14px;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      gap: 8px;
+      padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+    }
+    .toolbar .label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+    .toolbar .actions {
+      flex-shrink: 0;
+    }
+    .toolbar button {
+      min-height: 34px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .sheet {
+      width: min(100% - 20px, 520px);
+      min-height: auto;
+      margin: 10px auto 24px;
+      padding: 18px 14px 24px;
+      border-radius: 4px;
+      overflow-x: auto;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+    .voucher-no {
+      text-align: left;
+      font-size: 10.5px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      margin-bottom: 14px;
+    }
+    .meta-table,
+    .meta-table tbody,
+    .meta-table tr,
+    .meta-table td {
+      display: block;
+      width: 100% !important;
+    }
+    .meta-table tr {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 2px 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .meta-table td {
+      padding: 0;
+      font-size: 12px;
+    }
+    .meta-table td.k {
+      color: #6b7280;
+    }
+    .meta-table td.v {
+      font-size: 12.5px;
+    }
+    table.items {
+      min-width: 560px;
+      margin: 12px 0;
+    }
+    table.items th,
+    table.items td {
+      padding: 7px 8px;
+      font-size: 12px;
+    }
+    .vendor {
+      padding: 8px 10px;
+    }
+    .vendor .vrow {
+      gap: 10px;
+      font-size: 12px;
+    }
+    .signatures {
+      gap: 10px;
+      margin-top: 26px;
+    }
+    .sig-block {
+      width: 33.33%;
+      font-size: 11px;
+    }
+    .sig-block .hint {
+      font-size: 9.5px;
+      margin-bottom: 42px;
+    }
+    .sig-block .line {
+      margin: 0;
+    }
+  }
   @media print {
     body { background: #fff; }
     .toolbar, .sheet { box-shadow: none; margin: 0; padding: 0; width: 100%; }
@@ -146,6 +248,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
 <html lang="vi">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Phiếu cấp nhiên liệu - ${escapeHtml(data.tripCode ?? '')}</title>
   <style>${PRINT_CSS}</style>
 </head>

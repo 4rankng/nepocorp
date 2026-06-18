@@ -3,7 +3,8 @@ import { db } from '../db';
 import { notifications } from '../db/schema';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as s from '../db/schema';
-import { NotificationType, FINANCIAL_ROLES } from '@tingting/shared';
+import { NotificationType, FINANCIAL_ROLES, PUSH_RULES, Role, isFinancialRole } from '@tingting/shared';
+import * as pushService from './push.service';
 
 const eventBus = new EventEmitter();
 eventBus.setMaxListeners(50);
@@ -66,11 +67,11 @@ export async function markAllAsRead(userId: number) {
 export function initNotificationService() {
   eventBus.on(NOTIFICATION_EVENT, async (payload: NotificationPayload) => {
     try {
-      const userIds = await resolveTargetUsers(payload);
-      if (userIds.length === 0) return;
+      const targets = await resolveTargets(payload);
+      if (targets.length === 0) return;
 
-      const rows = userIds.map(uid => ({
-        userId: uid,
+      const rows = targets.map(t => ({
+        userId: t.userId,
         type: payload.type as (typeof notifications.type.enumValues)[number],
         title: payload.title,
         message: payload.message,
@@ -79,6 +80,21 @@ export function initNotificationService() {
         isRead: false,
       }));
       await db.insert(notifications).values(rows);
+
+      // High-value push whitelist: only listed event types wake a device, and
+      // only the configured audience. Best-effort — must never block in-app
+      // delivery, and push failures are swallowed inside sendToUser.
+      const audience = PUSH_RULES[payload.type];
+      if (audience) {
+        const pushable = targets.filter(t =>
+          audience === 'all' ||
+          (audience === 'driver' && t.role === Role.DRIVER) ||
+          (audience === 'financial' && isFinancialRole(t.role)),
+        );
+        await Promise.allSettled(pushable.map(t =>
+          pushService.sendToUser(t.userId, payload.title, payload.message, urlFor(payload, t.role)),
+        ));
+      }
     } catch (err) {
       console.error('Notification generation failed:', err);
     }
@@ -91,30 +107,46 @@ export function emitNotification(payload: NotificationPayload) {
 
 // ─── Target resolution ─────────────────────────────────────────────────────
 
-async function resolveTargetUsers(payload: NotificationPayload): Promise<number[]> {
-  const userIds = new Set<number>();
+async function resolveTargets(payload: NotificationPayload): Promise<{ userId: number; role: Role }[]> {
+  const byId = new Map<number, Role | undefined>();
 
-  if (payload.targetUserId) {
-    userIds.add(payload.targetUserId);
-  }
+  if (payload.targetUserId) byId.set(payload.targetUserId, undefined);
 
   const roles = payload.targetRoles ?? [...FINANCIAL_ROLES];
-  const roleUsers = await db.select({ id: s.users.id })
+  const roleUsers = await db.select({ id: s.users.id, role: s.users.role })
     .from(s.users)
     .where(and(inArray(s.users.role, roles as (typeof s.users.role.enumValues)[number][]), eq(s.users.status, 'ACTIVE')));
-  for (const u of roleUsers) {
-    userIds.add(u.id);
-  }
+  for (const u of roleUsers) byId.set(u.id, u.role as Role);
 
   if (payload.targetDriverId) {
     const [driver] = await db.select({ userId: s.drivers.userId })
       .from(s.drivers)
       .where(eq(s.drivers.id, payload.targetDriverId))
       .limit(1);
-    if (driver?.userId) {
-      userIds.add(driver.userId);
-    }
+    if (driver?.userId) byId.set(driver.userId, Role.DRIVER);
   }
 
-  return Array.from(userIds);
+  // Resolve roles for any explicitly-targeted user ids we don't yet know.
+  const unknown = [...byId.entries()].filter(([, r]) => r === undefined).map(([uid]) => uid);
+  if (unknown.length > 0) {
+    const found = await db.select({ id: s.users.id, role: s.users.role })
+      .from(s.users).where(inArray(s.users.id, unknown));
+    for (const u of found) byId.set(u.id, u.role as Role);
+  }
+
+  return [...byId.entries()]
+    .filter(([, role]) => role !== undefined)
+    .map(([userId, role]) => ({ userId, role: role as Role }));
+}
+
+/** Best-effort deep link for a DRIVER push; office pushes open at home ('/'). */
+function urlFor(payload: NotificationPayload, role: Role): string | undefined {
+  if (role !== Role.DRIVER) return undefined;
+  const id = payload.relatedEntityId;
+  switch (payload.relatedEntityType) {
+    case 'trips':     return id ? `/my-trips/${id}` : '/my-trips';
+    case 'penalties': return '/my-penalties';
+    case 'payments':  return '/my-earnings';
+    default:          return undefined;
+  }
 }

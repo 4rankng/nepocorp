@@ -1,5 +1,6 @@
-import React, { lazy, Suspense, type ReactElement } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, type ReactElement } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';
@@ -8,6 +9,32 @@ import { Role } from '@tingting/shared';
 import Layout from './components/Layout';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { ToastProvider } from './components/shared/Toast';
+
+/**
+ * Bridges service-worker push messages to the app: a notification CLICK
+ * (message type NOTIFICATION_CLICK from sw.js) navigates to the deep link so
+ * the focused tab actually opens the relevant screen; an incoming PUSH while
+ * the app is open (PUSH_NOTIFICATION) refreshes the notification badge/list.
+ */
+function PushMessageHandler() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      const msg = event.data;
+      if (!msg || typeof msg !== 'object') return;
+      if (msg.type === 'NOTIFICATION_CLICK' && typeof msg.payload?.url === 'string') {
+        navigate(msg.payload.url);
+      } else if (msg.type === 'PUSH_NOTIFICATION') {
+        queryClient.invalidateQueries();
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [navigate, queryClient]);
+  return null;
+}
 
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -115,6 +142,7 @@ function AppRoutes() {
 
   return (
     <ToastProvider>
+      <PushMessageHandler />
       <Layout>
         <Routes>
           <Route path="/" element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />} />

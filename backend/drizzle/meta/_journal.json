@@ -365,6 +365,20 @@
       "when": 1781748292075,
       "tag": "0051_daily_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1781788568503,
+      "tag": "0052_tranquil_sway",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1781790445216,
+      "tag": "0053_moaning_jigsaw",
+      "breakpoints": true
     }
   ]
 }

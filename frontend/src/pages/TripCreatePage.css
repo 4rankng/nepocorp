@@ -193,7 +193,7 @@
 
 /* Override checklist styles inside the light hero */
 .tc-hero-widgets .tc-checklist__title {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .tc-hero-widgets .tc-check-item {
   color: var(--ink-2);
@@ -216,13 +216,14 @@
   box-shadow: 0 0 0 3px rgba(94, 233, 155, 0.18);
 }
 .tc-hero-widgets .tc-check-item__name {
-  color: var(--ink-2);
+  color: var(--ink);
 }
 .tc-hero-widgets .tc-check-item__badge--done {
-  color: #5EE99B;
+  color: var(--accent-ink);
 }
 .tc-hero-widgets .tc-check-item__badge--pending {
-  color: var(--ink-3);
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 /* ── Unified panel ── 12-col; all card sections span 12 for full row width */

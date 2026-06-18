@@ -163,6 +163,9 @@ export const NOTIFICATIONS = {
   UNREAD_COUNT: '/notifications/unread-count',
   MARK_READ: (id: number) => `/notifications/${id}/read`,
   MARK_ALL_READ: '/notifications/read-all',
+  VAPID_KEY: '/notifications/vapid-key',
+  SUBSCRIBE: '/notifications/subscribe',
+  UNSUBSCRIBE: '/notifications/unsubscribe',
 } as const;
 
 // ─── System ─────────────────────────────────────────────────────────────────────

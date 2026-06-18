@@ -72,22 +72,23 @@
   
   /* Month Navigator in green header */
   .topbar-date__trigger {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: transparent;
+    border-color: transparent;
     color: #ffffff;
+    box-shadow: none;
   }
   .topbar-date__trigger:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: transparent;
   }
   .topbar-date.is-open .topbar-date__trigger {
-    background: var(--surface);
-    border-color: var(--surface);
-    color: var(--sb-bg);
+    background: rgba(255, 255, 255, 0.10);
+    border-color: transparent;
+    color: #ffffff;
   }
   .topbar-date.is-open .topbar-date__trigger .topbar-date__icon,
   .topbar-date.is-open .topbar-date__trigger .topbar-date__caret {
-    color: var(--sb-bg);
+    color: rgba(255, 255, 255, 0.88);
   }
   .topbar-date__icon,
   .topbar-date__caret {
@@ -194,9 +195,9 @@
   .topbar-date__trigger {
     min-height: 44px;
     height: 44px;
-    padding: 0 9px;
+    padding: 0 11px;
     font-size: var(--fs-xs);
-    border-radius: 12px;
+    border-radius: 10px;
   }
   .topbar-date__body { gap: 0; }
   .topbar-date__label { line-height: 1.05; }

@@ -562,33 +562,41 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   const busy = uploading[row._key]?.[field] ?? false;
                   const isCont = pType === 'CONTAINER';
                   return (
-                    <div key={pType} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minHeight: 36 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', minWidth: 65 }}>
-                        {isCont ? 'Ảnh cont' : 'Ảnh seal'} ({urls.length})
-                      </span>
+                    <div key={pType} className="ci-photo-lane">
+                      <div className="ci-photo-lane__head">
+                        <span className="ci-photo-lane__title">
+                          {isCont ? 'Container' : 'Seal'}
+                        </span>
+                        <button
+                          type="button"
+                          className="ci-photo-lane__capture"
+                          disabled={busy}
+                          onClick={() => setScanner({ rowKey: row._key, type: pType })}
+                          aria-label={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
+                          title={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
+                        >
+                          {busy ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
+                          <span>{isCont ? 'Chụp cont' : 'Chụp seal'}</span>
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        className="btn btn--ghost btn--sm"
-                        style={{ minHeight: 28, padding: '0 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        className="ci-photo-lane__drop"
                         disabled={busy}
                         onClick={() => setScanner({ rowKey: row._key, type: pType })}
-                        aria-label={isCont ? 'Chụp ảnh cont' : 'Chụp ảnh seal'}
-                        title={isCont ? 'Chụp ảnh cont' : 'Chụp ảnh seal'}
+                        aria-label={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
                       >
-                        {busy ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
-                        <span>{isCont ? 'Chụp cont' : 'Chụp seal'}</span>
-                      </button>
-
-                      {urls.length === 0 ? (
-                        <div className="ci-photo-empty" aria-label={`Chưa có ảnh ${field}`}>
-                          <ImageOff size={12} />
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginLeft: 4 }}>
+                        {urls.length === 0 ? (
+                          <span className="ci-photo-empty" aria-hidden="true">
+                            <ImageOff size={16} />
+                            <span>Chưa có ảnh</span>
+                          </span>
+                        ) : (
+                          <span className="ci-photo-thumbs">
                           {urls.map((u, uIdx) => {
                             const isPending = u.startsWith('blob:');
                             return (
-                              <div key={`${u}-${uIdx}`} style={{ position: 'relative', display: 'flex' }}>
+                              <span key={`${u}-${uIdx}`} className="ci-photo-thumb">
                                 <img
                                   src={photoSrc(u)}
                                   alt={`Ảnh ${field} ${uIdx + 1}`}
@@ -598,31 +606,18 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                                     urls: row.photoKeys[field].map(photoSrc),
                                     index: uIdx,
                                   })}
-                                  style={{
-                                    width: 32, height: 32, borderRadius: 6, objectFit: 'cover',
-                                    cursor: 'pointer', border: '1px solid var(--line)',
-                                  }}
                                 />
                                 {isPending && (
-                                  <span
-                                    title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật"
-                                    style={{
-                                      position: 'absolute', top: -4, right: -4,
-                                      background: 'var(--warn, #b7791f)',
-                                      color: '#fff',
-                                      fontSize: 10, fontWeight: 600,
-                                      padding: '1px 4px', borderRadius: 4,
-                                      lineHeight: 1.2,
-                                    }}
-                                  >
+                                  <span className="ci-photo-thumb__pending" title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật">
                                     chưa lưu
                                   </span>
                                 )}
-                              </div>
+                              </span>
                             );
                           })}
-                        </div>
-                      )}
+                          </span>
+                        )}
+                      </button>
                     </div>
                   );
                 })}

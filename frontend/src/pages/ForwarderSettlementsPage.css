@@ -75,7 +75,7 @@
 }
 
 .fset-card__code-text {
-  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
+  font-family: var(--font-display);
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
@@ -164,7 +164,7 @@
 
 /* Container number badge — license plate badge pattern */
 .fset-cont-badge {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: var(--fs-2xs);
   color: var(--ink-2);
@@ -265,7 +265,7 @@
 }
 
 .fset-step-header__title {
-  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
+  font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 600;
   letter-spacing: -0.015em;
@@ -778,7 +778,7 @@
 }
 
 .fset-create-success__title {
-  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
+  font-family: var(--font-display);
   font-size: var(--fs-xl);
   font-weight: 700;
   color: var(--ink);
@@ -790,7 +790,7 @@
   font-size: var(--fs-md);
   color: var(--ink-3);
   margin: 0 0 28px;
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--font-mono);
 }
 
 .fset-create-success__actions {
@@ -829,7 +829,7 @@
 }
 
 .fset-empty__title {
-  font-family: var(--font-display, 'Plus Jakarta Sans', 'Inter', sans-serif);
+  font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 600;
   color: var(--ink);

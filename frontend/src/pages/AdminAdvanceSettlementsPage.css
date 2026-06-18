@@ -385,8 +385,8 @@
   min-height: 44px;
 }
 
-/* ── Responsive: ≤760px ───────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* ── Responsive: compact tablets and phones ───────────────────────────── */
+@media (max-width: 820px) {
   /* KPI row collapses to 2 cols */
   .as-page .as-kpi-row {
     grid-template-columns: repeat(2, 1fr);

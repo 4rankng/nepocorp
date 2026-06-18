@@ -283,4 +283,22 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.SYSTEM_ANNOUNCEMENT]: 'Thông báo hệ thống',
 };
 
+/**
+ * High-value push whitelist — the ONLY notification types that wake a device,
+ * and the role audience each pushes to. Everything else stays in-app only
+ * (still recorded in the notification drawer) so low-signal events don't spam
+ * every role. Absent types => no push. This is the single knob to tune.
+ */
+export type PushAudience = 'driver' | 'financial' | 'all';
+export const PUSH_RULES: Partial<Record<NotificationType, PushAudience>> = {
+  // Driver must act now:
+  [NotificationType.TRIP_DISPATCHED]: 'driver',
+  [NotificationType.TRIP_CANCELED]: 'driver',
+  [NotificationType.PENALTY_CREATED]: 'driver',
+  [NotificationType.PENALTY_CANCELED]: 'driver',
+  // Office action needed:
+  [NotificationType.PAYMENT_RECEIVED]: 'financial',
+  [NotificationType.TRIP_UNLOCKED]: 'financial',
+};
+
 export * from './api-paths';

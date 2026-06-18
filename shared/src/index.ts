@@ -7,7 +7,7 @@ export {
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
-  NotificationType, NOTIFICATION_TYPE_LABELS,
+  NotificationType, NOTIFICATION_TYPE_LABELS, PUSH_RULES,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
@@ -15,11 +15,13 @@ export {
   TIRES,
 } from './constants';
 
+export type { PushAudience } from './constants';
+
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
   PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig,
   Trip, TripLeg, TripDetail, TripInstruction, LedgerEntry, Penalty,
-  CapTableHistory, TruckCapEntry, Distribution, ManagementFee, AuditLog, Notification,
+  CapTableHistory, TruckCapEntry, Distribution, ManagementFee, AuditLog, Notification, PushSubscriptionPayload,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,

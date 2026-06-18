@@ -619,13 +619,20 @@
   }
 }
 
-@container (max-width: 760px) {
+@container (max-width: 820px) {
   .dash-wf .wf-head h1 {
     font-size: 28px;
   }
 
   .dash-wf .wf-head .wf-acts {
     flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .dash-wf .wf-head .wf-acts .wf-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
   }
 
   .dash-wf .wf-kpis {

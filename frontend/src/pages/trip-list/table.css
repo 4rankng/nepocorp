@@ -3,8 +3,9 @@
    aligned to the right edge so it reads like a tip chip rather than
    a banner. Same color family as the search-hint chip. */
 .trip-list-page .table-hint {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 10px auto;     /* push to right */
   padding: 5px 11px;
@@ -14,9 +15,10 @@
   background: transparent;
   border: 1px dashed var(--line);
   border-radius: 999px;
-  white-space: nowrap;
+  max-width: 100%;
   letter-spacing: -0.005em;
   user-select: none;
+  width: fit-content;
 }
 .trip-list-page .table-hint svg {
   color: var(--tbl-green-600);
@@ -26,6 +28,23 @@
   color: var(--ink-2);
   font-weight: 700;
   margin-right: 2px;
+}
+.trip-list-page .table-hint > span:first-of-type {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.trip-list-page .table-hint .table-legend {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
+}
+.trip-list-page .table-hint .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 /* Hide on the narrowest viewports where horizontal real-estate is tight */
 @media (max-width: 640px) {
@@ -483,4 +502,3 @@
   color: var(--tbl-green-700);
   background: var(--tbl-green-050);
 }
-

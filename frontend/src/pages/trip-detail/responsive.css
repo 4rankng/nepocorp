@@ -83,21 +83,26 @@
      on phones we keep the buttons at their natural size and let them
      flow into multiple rows if the viewport is narrow. */
   .header-actions {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     gap: 8px;
-    justify-content: flex-end;
-    padding-top: 12px;
-    padding-bottom: 12px;
+    justify-content: stretch;
+    padding-top: 8px;
+    padding-bottom: 6px;
   }
 
   .header-actions .btn {
-    flex: 0 0 auto;
+    width: 100%;
     min-width: 0;
     justify-content: center;
-    min-height: 40px;
+    min-height: 42px;
     padding: 8px 14px;
     font-size: var(--fs-xs);
+  }
+
+  .header-actions .btn--primary {
+    grid-column: span 2;
   }
 
   /* Tighter title on phones */
@@ -174,7 +179,7 @@
    drop to 2 per row by giving each button a slightly larger basis. */
 @media (max-width: 420px) {
   .header-actions .btn {
-    flex: 1 1 100%;
+    grid-column: span 2;
   }
 }
 

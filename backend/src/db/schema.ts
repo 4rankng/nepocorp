@@ -23,7 +23,7 @@ export const advanceRequestStatusEnum = pgEnum('advance_request_status', ['PENDI
 export const advanceSettlementStatusEnum = pgEnum('advance_settlement_status', ['PENDING', 'CHECKED_BY_ACCOUNTANT', 'APPROVED', 'REJECTED']);
 export const notificationTypeEnum = pgEnum('notification_type', [
   'TRIP_CREATED', 'TRIP_DISPATCHED', 'TRIP_IN_TRANSIT', 'TRIP_COMPLETED',
-  'TRIP_LOCKED', 'TRIP_CANCELED', 'PAYMENT_RECEIVED', 'PENALTY_CREATED',
+  'TRIP_LOCKED', 'TRIP_UNLOCKED', 'TRIP_CANCELED', 'PAYMENT_RECEIVED', 'PENALTY_CREATED',
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
@@ -814,6 +814,24 @@ export const notifications = pgTable('notifications', {
 }, (table) => [
   index('notifications_user_unread_idx').on(table.userId, table.isRead),
   index('notifications_user_created_idx').on(table.userId, table.createdAt),
+]);
+
+// ─── Push subscriptions (Web Push) ──────────────────────────────────────────
+// One row per (user, browser endpoint). Upserted on subscribe; auto-removed
+// when the push service returns 410/404 (stale endpoint). device_type is
+// sniffed client-side (ios/android/web) for reporting only.
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  endpoint: varchar('endpoint', { length: 500 }).notNull(),
+  keysP256dh: varchar('keys_p256dh', { length: 200 }).notNull(),
+  keysAuth: varchar('keys_auth', { length: 100 }).notNull(),
+  deviceType: varchar('device_type', { length: 20 }).default('web').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('push_sub_user_endpoint_idx').on(table.userId, table.endpoint),
+  index('push_sub_user_idx').on(table.userId),
 ]);
 
 

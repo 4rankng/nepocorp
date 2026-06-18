@@ -13,7 +13,6 @@ body {
     linear-gradient(135deg, #F9FBFA 0%, var(--bg) 42%, #EDF2EF 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "ss01", "cv11";
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */
   overscroll-behavior-y: contain;
 }
