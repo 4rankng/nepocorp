@@ -16,17 +16,20 @@
 /* Ancillary-fees grid: 8 cols (Loại phí · Hình thức · Mua · Bán · Lãi DV
    · Nhà CC · Chứng từ · Trạng thái). Settlement method got its own column
    so the fee name doesn't get crowded; status cell hosts the pill + the
-   inline hover-revealed approve/reject icons. */
-.ancillary-fees__table { min-width: 0; table-layout: fixed; width: 100%; }
+   inline hover-revealed approve/reject icons.
+   `min-width: 720px` keeps money cells wide enough to fit "1.350.000 ₫"
+   without ellipsis; the .table-scroll wrapper provides horizontal
+   scrolling on narrow containers. */
+.ancillary-fees__table { min-width: 720px; table-layout: fixed; width: 100%; }
 .ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-2xs); }
 .ancillary-fees__table tbody td { padding: 7px 6px; font-size: var(--fs-xs); vertical-align: top; }
 .ancillary-fees__table tbody td.num { font-size: var(--fs-xs); }
-.ancillary-fees__table thead th:nth-child(1) { width: 30%; }   /* Loại phí + Hình thức */
-.ancillary-fees__table thead th:nth-child(2) { width: 12%; }   /* Mua vào */
-.ancillary-fees__table thead th:nth-child(3) { width: 12%; }   /* Bán ra */
+.ancillary-fees__table thead th:nth-child(1) { width: 25%; }   /* Loại phí + Hình thức */
+.ancillary-fees__table thead th:nth-child(2) { width: 13%; }   /* Mua vào */
+.ancillary-fees__table thead th:nth-child(3) { width: 13%; }   /* Bán ra */
 .ancillary-fees__table thead th:nth-child(4) { width: 11%; }   /* Lãi DV */
-.ancillary-fees__table thead th:nth-child(5) { width: 12%; }   /* Nhà cung cấp */
-.ancillary-fees__table thead th:nth-child(6) { width: 12%; }   /* Chứng từ */
+.ancillary-fees__table thead th:nth-child(5) { width: 13%; }   /* Nhà cung cấp */
+.ancillary-fees__table thead th:nth-child(6) { width: 14%; }   /* Chứng từ */
 .ancillary-fees__table thead th:nth-child(7) { width: 11%; background: var(--surface-2); }   /* Trạng thái */
 
 /* Clip long text in body cells so numbers/labels never bleed into the
@@ -138,8 +141,9 @@
 }
 
 /* Responsive: hide low-priority columns on narrow viewports */
-/* Tablet — drop Chứng từ (invoice/date numbers; rarely needed in field) */
-@media (max-width: 1023px) {
+/* Tablet & Small Desktop (≤ 1200px): hide the 'Chứng từ' column to fit the remaining space */
+@media (max-width: 1200px) {
+  .ancillary-fees__table { min-width: 600px; }
   .ancillary-fees__table thead th:nth-child(6),
   .ancillary-fees__table tbody td:nth-child(6),
   .ancillary-fees__table tfoot td:nth-child(6) { display: none; }
@@ -416,7 +420,7 @@ tbody tr:last-child td { border-bottom: none; }
 .page-btn.is-active { background: var(--ink); color: var(--fg-on-brand); }
 
 /* Premium .tt-table */
-.tt-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 13px; }
+.tt-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .tt-table thead th {
   text-align: left;
   font-family: var(--font-mono);

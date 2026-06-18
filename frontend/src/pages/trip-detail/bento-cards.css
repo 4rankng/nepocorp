@@ -1,8 +1,8 @@
-/* ── Two-column body layout (1.6fr main + 1fr sticky rail) ────────────── */
+/* ── Two-column body layout (main + sticky rail) ────────────── */
 .trip-body {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
   align-items: start;
   margin-bottom: 20px;
 }

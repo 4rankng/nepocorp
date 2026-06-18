@@ -224,13 +224,17 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* ── Bento grid ── 12-col; all card sections span 12 for full row width */
+/* ── Unified panel ── 12-col; all card sections span 12 for full row width */
 .tc-create-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 24px;
+  gap: 32px;
   align-items: start;
-  padding-bottom: 120px; /* ActionBar clearance */
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  margin-bottom: 120px; /* ActionBar clearance */
 }
 .tc-create-bento > * { min-width: 0; grid-column: span 12; }
 
@@ -262,5 +266,5 @@
   .tc-hero-widgets .tc-checklist {
     padding: 12px 14px;
   }
-  .tc-create-bento { padding-bottom: 100px; gap: 16px; }
+  .tc-create-bento { padding: 16px; margin-bottom: 100px; gap: 16px; }
 }

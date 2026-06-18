@@ -138,8 +138,6 @@
 
   /* ── Layouts ── */
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .row-2 { grid-template-columns: 1fr; }
-  .row-3 { grid-template-columns: 1fr; }
   .page-title { font-size: var(--fs-2xl); }
 
   /* ── Trip hero / metric-strip on tablet ── */

@@ -1,8 +1,8 @@
 /* ============================================================================
  * Layout utilities + animations
  * ========================================================================== */
-.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.row-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.row-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; margin-bottom: 16px; }
+.row-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; margin-bottom: 16px; }
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .section-gap { margin-bottom: 16px; }
 
@@ -43,8 +43,6 @@
   .page-title { font-size: 22px; }
   .page-subtitle { font-size: var(--fs-xs); }
   .app-body, .content { padding: 16px 12px 32px; }
-  /* Single col form grids on phone */
-  .row-2 { grid-template-columns: 1fr; }
 
   /* ── Page header: stack title above actions on mobile ── */
   .page-header { flex-direction: column; gap: 10px; }

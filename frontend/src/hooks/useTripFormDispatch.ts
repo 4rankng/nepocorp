@@ -124,7 +124,28 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
+    // resetForm() (called on the 409 silent-retry path) bumps s.resetToggle.
+    // Clear the populate-guard so the form re-syncs from the freshly-refetched
+    // trip data — without this the same trip id would short-circuit the
+    // re-population and leave the fields blank after a 409 reset.
+    if (s.resetToggle) lastPopulatedTripId.current = undefined;
     if (existingTrip.id === lastPopulatedTripId.current) return;
+
+    // Main info fields — useState initializers run once before the query
+    // resolves, so any field read at mount time ends up empty when
+    // existingTrip arrives after first render. Mirror every main-info setter
+    // here so the form repopulates correctly on mount, on 409 refetch, and on
+    // navigating between two edit trips. Same pattern as the instructions
+    // sync below.
+    s.setDepartureDate(existingTrip.departureDate || '');
+    s.setCustomerId(existingTrip.customerId != null ? String(existingTrip.customerId) : '');
+    s.setTruckId(existingTrip.truckId != null ? String(existingTrip.truckId) : '');
+    s.setTrailerType(existingTrip.trailerType ?? '');
+    s.setDriverId(existingTrip.driverId != null ? String(existingTrip.driverId) : '');
+    s.setCargoTypeId(existingTrip.cargoTypeId != null ? String(existingTrip.cargoTypeId) : '');
+    s.setCustomerReference(existingTrip.customerReference ?? '');
+    s.setContainerCount(existingTrip.containerCount != null ? String(existingTrip.containerCount) : '1');
+    s.setCompletedAt(existingTrip.completedAt ? existingTrip.completedAt.slice(0, 10) : '');
 
     s.setRouteId(String(existingTrip.routeId));
     s.setFuelMode(existingTrip.fuelMode);

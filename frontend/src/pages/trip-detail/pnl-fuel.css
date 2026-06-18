@@ -8,7 +8,7 @@
 
 .pl-row {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
@@ -21,6 +21,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .pl-row .k .swatch {
@@ -41,6 +42,9 @@
   font-weight: 600;
   color: var(--ink);
   font-feature-settings: "tnum" 1;
+  text-align: right;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .pl-row .v.neg {
@@ -72,6 +76,7 @@
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .pl-divider {

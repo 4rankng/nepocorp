@@ -449,7 +449,14 @@ export default function CustomersPage() {
       {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
       <div className="desktop-only table-wrap">
         <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 900 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 900, tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '44%' }} />
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: 60 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 10.5, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
@@ -483,31 +490,33 @@ export default function CustomersPage() {
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/debt/${c.id}`); } }}
                   >
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                       <StatusStrip status={c.status} />
-                      <div style={{ fontWeight: 600 }}>
-                        {c.name}
+                      <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: '1 1 auto' }}>
+                          {c.name}
+                        </span>
                         {c.linkedSupplierId && (
-                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
                             2 chiều
                           </span>
                         )}
                       </div>
-                      {c.taxCode && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {c.taxCode}</div>}
+                      {c.taxCode && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>MST {c.taxCode}</div>}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                      {c.contactPerson && <div style={{ fontWeight: 600 }}>{c.contactPerson}</div>}
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.contactPerson && <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.contactPerson}</div>}
                       {(c.phone || c.contactInfo) && (
-                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {c.phone || c.contactInfo}
                         </div>
                       )}
                       {!c.contactPerson && !c.phone && !c.contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {c.creditLimit ? formatCurrency(c.creditLimit) : '—'}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       <span style={debtMap.get(c.id) ? { color: 'var(--danger)', fontFamily: 'var(--font-mono)' } : { color: 'var(--ink-3)' }}>
                         <Money value={debtMap.get(c.id) ?? 0} compact />
                       </span>

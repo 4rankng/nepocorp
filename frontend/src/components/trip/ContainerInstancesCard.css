@@ -1,11 +1,11 @@
-/* ContainerInstancesCard — per-row 2-column field grid for the container editor.
-   The rest of the card uses inline styles; this file only owns the shared label
-   + 2-col grid primitives so the row layout stays consistent and responsive. */
+/* ContainerInstancesCard — compact container editor styling */
 
+/* 4-col on wide desktop, gracefully degrading */
 .ci-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+  gap: 12px;
+  align-items: start;
 }
 
 .ci-label {
@@ -16,8 +16,73 @@
   margin-bottom: 4px;
 }
 
-@media (max-width: 560px) {
+/* Higher-specificity selector overrides the global `.input` baseline without
+   `!important` (project rule). Inputs/selects sit inside `.ci-row` or the
+   photos grid, so we anchor specificity at the row parent. */
+.ci-row .input.ci-input-sm,
+.ci-photos-grid .input.ci-input-sm {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.ci-row select.ci-input-sm,
+.ci-photos-grid select.ci-input-sm {
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* Side-by-side photos strip (cont | seal) */
+.ci-photos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+  border-top: 1px solid var(--line-light, rgba(0, 0, 0, 0.05));
+  padding-top: 12px;
+}
+
+.ci-seal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* Empty-photos placeholder so the cell has a visible affordance before the
+   driver takes the first shot. Small footprint to match the compact chrome. */
+.ci-photo-empty {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px dashed var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-3);
+}
+
+@container (max-width: 600px) {
+  .ci-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@container (max-width: 400px) {
   .ci-row {
     grid-template-columns: 1fr;
+  }
+  .ci-photos-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .ci-seal-row {
+    flex-wrap: wrap;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 8px;
+  }
+  .ci-seal-row:last-child {
+    border-bottom: none;
   }
 }

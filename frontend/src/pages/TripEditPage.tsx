@@ -121,42 +121,41 @@ export default function TripEditPage() {
 
         <form id="trip-edit-form" onSubmit={onSubmit}>
           <div className="tc-content">
-            <div className="tc-form-col">
-              <div className="tc-card">
+            <div className="tc-bento">
+              <section className="tc-card tc-card--span-1">
                 <div className="tc-card-head">
                   <div className="tc-card-num">1</div>
                   <div className="tc-card-text">
-                    <div className="tc-card-title">Tuyến đường</div>
-                    <div className="tc-card-sub">Thông tin ngày và tuyến</div>
+                    <div className="tc-card-title">Tuyến đường &amp; ngày</div>
+                    <div className="tc-card-sub">Thời gian và tuyến vận chuyển</div>
                   </div>
                 </div>
                 <div className="tc-card-body">
-
-                  <div className="tc-field">
-                    <label className="tc-field-label">Ngày khởi hành</label>
-                    <input
-                      className="input"
-                      type="date"
-                      value={departureDate}
-                      onChange={(e) => setDepartureDate(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
+                  <div className="tc-field-row tc-field-row--2">
                     <div className="tc-field">
-                      <label className="tc-field-label">Ngày hoàn thành</label>
+                      <label className="tc-field-label">Ngày khởi hành</label>
                       <input
                         className="input"
                         type="date"
-                        value={completedAt}
-                        onChange={(e) => setCompletedAt(e.target.value)}
-                        max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
+                        value={departureDate}
+                        onChange={(e) => setDepartureDate(e.target.value)}
+                        required
                       />
-                      <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
                     </div>
-                  )}
-
+                    {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
+                      <div className="tc-field">
+                        <label className="tc-field-label">Ngày hoàn thành</label>
+                        <input
+                          className="input"
+                          type="date"
+                          value={completedAt}
+                          onChange={(e) => setCompletedAt(e.target.value)}
+                          max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
+                        />
+                        <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
+                      </div>
+                    )}
+                  </div>
                   <div className="tc-field">
                     <label className="tc-field-label">Tuyến đường</label>
                     <select
@@ -172,22 +171,11 @@ export default function TripEditPage() {
                     </select>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">2</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Hành trình chi tiết</div>
-                    <div className="tc-card-sub">Khai báo các chặng đường, cự ly và tải trọng</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <JourneyLegsCard number={null} />
-                </div>
-              </div>
+              <JourneyLegsCard number={2} />
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-1">
                 <div className="tc-card-head">
                   <div className="tc-card-num">3</div>
                   <div className="tc-card-text">
@@ -198,22 +186,22 @@ export default function TripEditPage() {
                 <div className="tc-card-body">
                   <FuelSection />
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-1">
                 <div className="tc-card-head">
                   <div className="tc-card-num">4</div>
                   <div className="tc-card-text">
-                    <div className="tc-card-title">Chi phí & Doanh thu</div>
+                    <div className="tc-card-title">Chi phí &amp; Doanh thu</div>
                     <div className="tc-card-sub">VéBOT, phụ cấp, lương lái xe</div>
                   </div>
                 </div>
                 <div className="tc-card-body">
                   <AllowanceSection />
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-2">
                 <div className="tc-card-head">
                   <div className="tc-card-num">5</div>
                   <div className="tc-card-text">
@@ -228,14 +216,14 @@ export default function TripEditPage() {
                     requiresPhotos={!!trip.cargoType?.requiresPhotos}
                   />
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-1">
                 <div className="tc-card-head">
                   <div className="tc-card-num">6</div>
                   <div className="tc-card-text">
-                    <div className="tc-card-title">Ảnh & Ghi chú</div>
-                    <div className="tc-card-sub">Ảnh đính kèm & ghi chú</div>
+                    <div className="tc-card-title">Ảnh &amp; Ghi chú</div>
+                    <div className="tc-card-sub">Ảnh đính kèm &amp; ghi chú chuyến</div>
                   </div>
                 </div>
                 <div className="tc-card-body">
@@ -250,9 +238,9 @@ export default function TripEditPage() {
                     />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-2">
                 <div className="tc-card-head">
                   <div className="tc-card-num">7</div>
                   <div className="tc-card-text">
@@ -263,9 +251,9 @@ export default function TripEditPage() {
                 <div className="tc-card-body">
                   <AncillaryFeesCard tripId={trip.id} />
                 </div>
-              </div>
+              </section>
 
-              <div className="tc-card">
+              <section className="tc-card tc-card--span-2">
                 <div className="tc-card-head">
                   <div className="tc-card-num">8</div>
                   <div className="tc-card-text">
@@ -276,7 +264,7 @@ export default function TripEditPage() {
                 <div className="tc-card-body">
                   <TripInstructionsCard />
                 </div>
-              </div>
+              </section>
             </div>
 
             <aside className="tc-rail">

@@ -1,5 +1,7 @@
 /* ==========================================================================
-   TripEditPage — bento layout with hero header, numbered cards, sticky rail
+   TripEditPage — Soft Bento layout (Deep-Luxe brass + Forest Sage)
+   2-col bento grid with sticky right rail; refines visual rhythm,
+   card chrome, and entrance choreography.
    ========================================================================== */
 
 /* ── Hero header ── */
@@ -8,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 24px 28px 20px;
+  padding: 26px 32px 22px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
@@ -17,15 +19,15 @@
 .tc-page-head::after {
   content: '';
   position: absolute;
-  left: 28px;
-  right: 28px;
+  left: 32px;
+  right: 32px;
   bottom: 0;
   height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--line) 20%,
-    var(--line) 80%,
+    var(--line) 18%,
+    var(--line) 82%,
     transparent 100%
   );
 }
@@ -34,37 +36,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--fg-2);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 .tc-back-btn:hover {
   background: var(--surface-2, var(--surface));
   color: var(--fg-1, var(--fg-2));
+  border-color: var(--brass-3, #D4A574);
   transform: translateX(-1px);
 }
 
 .tc-title-wrap {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .tc-page-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--fg-1, #0f172a);
+  letter-spacing: -0.015em;
+  color: var(--fg-1, #0A0A0A);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  line-height: 1.15;
 }
 
 .tc-page-sub {
@@ -74,19 +78,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.005em;
 }
 
 .tc-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: var(--surface-2, #f1f5f4);
+  background: var(--surface-2, #F7F8FA);
   color: var(--fg-2);
   border: 1px solid var(--line);
 }
@@ -105,69 +110,50 @@
 .tc-status-pill--locked { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
 .tc-status-pill--canceled { color: #E32434; background: #FFEAEC; border-color: #f3c6c6; }
 
-/* ── Bento grid ── */
+/* ── Bento grid shell ── */
 .tc-content {
-  padding: 20px 28px 140px;
+  padding: 24px 32px 140px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
   align-items: start;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
 }
 
-.tc-form-col {
+.tc-bento {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 36px;
   min-width: 0;
-}
-
-/* Span-1 cards by default; some cards break the grid for visual rhythm */
-.tc-card--span-2 {
-  grid-column: span 2;
-}
-
-/* ── Bento card ── */
-.tc-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 0;
+  border-radius: 12px;
+  padding: 32px;
+}
+
+/* Span classes no longer needed for flex layout, but kept to avoid breaking TSX */
+.tc-card--span-1 { }
+.tc-card--span-2 { }
+
+/* ── Flat Section (Formerly Bento card) ── */
+.tc-card {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.tc-card:hover {
-  border-color: var(--line-strong, var(--line));
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  position: relative;
 }
 
 .tc-card-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 18px 12px;
+  padding: 0 0 12px 0;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--surface-2, transparent) 0%, transparent 100%);
+  margin-bottom: 16px;
 }
 
 .tc-card-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #4f8a6f 0%, #6ba88a 100%);
-  letter-spacing: 0.02em;
-  box-shadow: 0 1px 2px rgba(79, 138, 111, 0.25);
+  display: none; /* Hide numbers in the flat layout */
 }
 
 .tc-card-text {
@@ -175,102 +161,154 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .tc-card-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--fg-1, #0f172a);
+  color: var(--fg-1, #0A0A0A);
+  letter-spacing: -0.005em;
 }
 
 .tc-card-sub {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-3);
-  line-height: 1.4;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
 }
 
 .tc-card-body {
-  padding: 18px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  container-type: inline-size;
 }
 
-/* ── Field labels (extract from inline styles) ── */
+/* ── Field layout primitives ── */
 .tc-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 .tc-field-label {
   font-size: 12px;
   font-weight: 600;
   color: var(--fg-2);
+  letter-spacing: 0.01em;
 }
 .tc-field-hint {
   font-size: 11px;
   color: var(--fg-3);
   margin-top: 2px;
+  font-style: italic;
 }
 .tc-textarea {
-  min-height: 80px;
+  min-height: 88px;
   resize: vertical;
   width: 100%;
+  line-height: 1.5;
 }
 
-/* ── Right rail ── */
+.tc-field-row {
+  display: grid;
+  gap: 14px;
+}
+.tc-field-row--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+
+/* Input polish — match the deep-luxe palette */
+.tc-card .input {
+  border-color: var(--line);
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.tc-card .input:hover {
+  border-color: var(--line-2, var(--line));
+}
+.tc-card .input:focus,
+.tc-card select.input:focus,
+.tc-card textarea.input:focus {
+  border-color: var(--brass-3, #D4A574);
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.18);
+  outline: none;
+}
+.tc-card textarea.input {
+  font-family: inherit;
+}
+
+/* ── Right rail (sticky) ── */
 .tc-rail {
   position: sticky;
-  top: 76px;
+  top: 80px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .tc-rail-actions {
   margin-top: 0;
-  padding: 18px;
+  padding: 20px 20px 22px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  position: relative;
+  overflow: hidden;
+}
+.tc-rail-actions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%);
+  opacity: 0.5;
 }
 
 .tc-rail-notice {
   font-size: 12.5px;
   color: var(--fg-3);
-  line-height: 1.45;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
 }
 .tc-rail-notice-title {
   font-weight: 600;
   color: var(--fg-2);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  font-size: 13px;
 }
 
 .tc-rail-error {
-  padding: 10px 12px;
-  background: rgba(199, 123, 92, 0.08);            /* copper-tinted, matches the deep-luxe palette */
+  padding: 11px 13px;
+  background: rgba(199, 123, 92, 0.08);
   border: 1px solid rgba(199, 123, 92, 0.25);
   border-radius: 10px;
   color: var(--copper, #C77B5C);
   font-size: 12.5px;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 .tc-rail-error-title {
   font-weight: 700;
   margin-bottom: 2px;
   color: var(--copper, #C77B5C);
+  font-size: 13px;
 }
 
 .tc-rail-btn {
   width: 100%;
   justify-content: center;
+  min-height: 42px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
 }
 
-/* Primary action: brass-tinted instead of brand green — keeps the luxe palette */
+/* Primary action: brass-tinted (Deep-Luxe) */
 .tc-rail-btn--primary {
   background: var(--brass-3, #D4A574);
   color: var(--ink, #0A0A0A);
@@ -279,22 +317,21 @@
 }
 .tc-rail-btn--primary:hover:not(:disabled) {
   background: var(--brass-2, #B8895A);
+  color: #fff;
   box-shadow: none;
 }
 .tc-rail-btn--primary:disabled {
   background: var(--brass-1, #8B6F47);
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
   cursor: not-allowed;
   box-shadow: none;
 }
 
-/* Secondary action (Hủy bỏ): outline with brass accent — bridges to the primary
-   brass above without competing with it. The base .btn--secondary is invisible
-   on the .tc-rail-actions surface (both use var(--surface)), so we override. */
+/* Secondary (Hủy bỏ): outline with brass accent */
 .tc-rail-btn--secondary {
   background: transparent;
   color: var(--ink, #0A0A0A);
-  border: 1px solid var(--line-2, #D4D4D4);
+  border: 1px solid var(--line-2, #D6D9DE);
   box-shadow: none;
 }
 .tc-rail-btn--secondary:hover:not(:disabled) {
@@ -317,27 +354,31 @@
   display: none;
 }
 
-@media (max-width: 1100px) {
-  .tc-form-col {
-    grid-template-columns: minmax(0, 1fr);
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+  .tc-content {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    padding: 22px 24px 140px;
   }
-  .tc-card--span-2 {
-    grid-column: span 1;
-  }
+  .tc-bento { gap: 24px; padding: 24px; }
+}
+
+@media (max-width: 1023px) {
   .tc-content {
     grid-template-columns: minmax(0, 1fr);
+    padding: 18px 20px 140px;
   }
-  .tc-rail {
-    position: static;
-  }
+  .tc-rail { position: static; }
 }
 
 @media (max-width: 640px) {
   .tc-content {
     grid-template-columns: 1fr;
     gap: 14px;
-    padding: 14px 14px 100px;
+    padding: 14px 14px 110px;
   }
+  .tc-bento { gap: 24px; padding: 16px; }
   .tc-page-head {
     padding: 16px 14px 14px;
   }
@@ -345,8 +386,15 @@
     left: 14px;
     right: 14px;
   }
+  .tc-page-title { font-size: 19px; }
+  
+  .tc-card-head {
+    margin-bottom: 12px;
+  }
+  .tc-card-title { font-size: 15px; }
+  .tc-card-sub { font-size: 12px; }
   .tc-card-body {
-    padding: 14px;
+    gap: 12px;
   }
   .tc-edit-mobile-bar {
     display: flex;
@@ -372,17 +420,24 @@
   }
 }
 
-/* ── Subtle entrance ── */
+/* ── Staggered entrance ── */
 .tc-card {
-  animation: tcCardIn 0.32s ease-out both;
+  animation: tcCardIn 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 @keyframes tcCardIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px) scale(0.992); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);     }
 }
-.tc-card:nth-child(2) { animation-delay: 0.04s; }
-.tc-card:nth-child(3) { animation-delay: 0.08s; }
-.tc-card:nth-child(4) { animation-delay: 0.12s; }
-.tc-card:nth-child(5) { animation-delay: 0.16s; }
-.tc-card:nth-child(6) { animation-delay: 0.20s; }
-.tc-card:nth-child(7) { animation-delay: 0.24s; }
+.tc-bento > .tc-card:nth-child(1)  { animation-delay: 0.00s; }
+.tc-bento > .tc-card:nth-child(2)  { animation-delay: 0.05s; }
+.tc-bento > .tc-card:nth-child(3)  { animation-delay: 0.10s; }
+.tc-bento > .tc-card:nth-child(4)  { animation-delay: 0.15s; }
+.tc-bento > .tc-card:nth-child(5)  { animation-delay: 0.20s; }
+.tc-bento > .tc-card:nth-child(6)  { animation-delay: 0.25s; }
+.tc-bento > .tc-card:nth-child(7)  { animation-delay: 0.30s; }
+.tc-bento > .tc-card:nth-child(8)  { animation-delay: 0.35s; }
+.tc-rail { animation: tcRailIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.10s both; }
+@keyframes tcRailIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}

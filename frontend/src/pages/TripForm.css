@@ -53,29 +53,26 @@
 
 /* ── Card system (CardSection + hand-rolled .tc-card markup in TripEditPage) ── */
 .tc-card {
-  background: var(--surface);
-  border: 1px solid var(--border-1);
-  border-radius: var(--r-lg);
-  margin-bottom: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border-1);
+}
+.tc-card:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .tc-card-head {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-1);
+  padding: 0 0 16px 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 .tc-card-num {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  display: grid;
-  place-items: center;
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-sm);
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  display: none;
 }
 .tc-card-text { flex: 1; min-width: 0; }
 .tc-card-title {
@@ -88,7 +85,10 @@
   color: var(--fg-3);
   margin-top: 1px;
 }
-.tc-card-body { padding: 20px; }
+.tc-card-body { 
+  padding: 0; 
+  container-type: inline-size;
+}
 
 /* ── Collapsible section variant ───────────────────────────────────────── */
 /* When `collapsible` is true on CardSection, the head becomes a full-width
@@ -151,15 +151,14 @@
 }
 .tc-form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 16px;
 }
-.tc-form-row--three { grid-template-columns: 1fr 1fr 1fr; }
+.tc-form-row--three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
 .tc-form-row--split-3-2 { grid-template-columns: 1.4fr 1fr; }
 
 /* ── Responsive (cross-cutting) ── */
 @media (max-width: 1023px) {
-  .tc-form-row,
   .tc-form-row--three { grid-template-columns: minmax(0, 1fr); }
   /* Same min-width:0 trick on the form rows — selects with long option
    * text would otherwise expand the column. */
@@ -177,11 +176,11 @@
   .tc-back-btn { width: 32px; height: 32px; }
   .tc-form-row,
   .tc-form-row--three { grid-template-columns: 1fr; }
-  .tc-card { margin-bottom: 12px; border-radius: 12px; }
-  .tc-card-head { padding: 12px 14px; gap: 10px; }
-  .tc-card-num { width: 24px; height: 24px; font-size: var(--fs-xs); border-radius: 6px; }
+  .tc-card { margin-bottom: 24px; padding-bottom: 24px; border-radius: 0; }
+  .tc-card-head { padding: 0 0 12px 0; gap: 10px; }
+  .tc-card-num { display: none; }
   .tc-card-title { font-size: var(--fs-sm); }
   .tc-card-sub { font-size: var(--fs-xs); }
-  .tc-card-body { padding: 14px; }
+  .tc-card-body { padding: 0; }
   .tc-badge-required, .tc-badge-optional { font-size: var(--fs-2xs); padding: 2px 6px; }
 }

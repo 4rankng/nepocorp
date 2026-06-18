@@ -1,11 +1,16 @@
 /* ── Responsive (TripDetailPage 2-col body layout) ─────────────────────── */
 
-/* Tablet (≤ 1023px): 2-col body keeps both columns, but the rail is no
-   longer sticky (the viewport is short enough that a sticky rail crowds
-   the main column when scrolling). Gap tightens. */
+@media (max-width: 1200px) {
+  .trip-body {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+  }
+}
+
+/* Tablet (≤ 1023px): Collapse to a single column. */
 @media (max-width: 1023px) {
   .trip-body {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
 

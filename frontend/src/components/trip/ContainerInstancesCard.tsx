@@ -440,12 +440,12 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 <button
                   type="button"
                   className="btn btn--ghost btn--icon btn--sm"
-                  style={{ minWidth: 44, minHeight: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   onClick={() => removeRow(row._key)}
                   aria-label="Xoá dòng"
                   title="Xoá cont"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={15} style={{ color: 'var(--danger)' }} />
                 </button>
               </div>
 
@@ -455,7 +455,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     Số container <span style={{ color: 'var(--danger)' }}>*</span>
                   </label>
                   <input
-                    className="input"
+                    className="input ci-input-sm"
                     style={{ width: '100%' }}
                     placeholder="VD: TCKU1234567"
                     value={row.containerNumber}
@@ -466,12 +466,12 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     if (!st.warning) return null;
                     return (
                       <div style={{
-                        marginTop: 6,
+                        marginTop: 4,
                         display: 'flex',
                         flexWrap: 'wrap',
-                        gap: 6,
+                        gap: 4,
                         alignItems: 'center',
-                        padding: '6px 8px',
+                        padding: '4px 6px',
                         background: 'var(--warn-soft, #fff7e6)',
                         color: 'var(--warn, #b7791f)',
                         borderRadius: 6,
@@ -482,7 +482,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                           <button
                             type="button"
                             className="btn btn--ghost btn--sm"
-                            style={{ minHeight: 26, padding: '0 10px', fontSize: 11 }}
+                            style={{ minHeight: 22, padding: '0 8px', fontSize: 10 }}
                             onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
                           >
                             Đổi thành {st.suggestion}
@@ -497,7 +497,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     Loại cont
                   </label>
                   <select
-                    className="input"
+                    className="input ci-input-sm"
                     style={{ width: '100%' }}
                     value={row.containerTypeId}
                     onChange={e => updateRow(row._key, 'containerTypeId', e.target.value ? Number(e.target.value) : '')}
@@ -514,7 +514,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   </label>
                   <input
                     type="number"
-                    className="input"
+                    className="input ci-input-sm"
                     style={{ width: '100%' }}
                     placeholder="VD: 24500"
                     value={row.cargoWeightKg}
@@ -528,7 +528,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     Ghi chú
                   </label>
                   <input
-                    className="input"
+                    className="input ci-input-sm"
                     style={{ width: '100%' }}
                     placeholder="Ghi chú cont (tuỳ chọn)"
                     value={row.notes}
@@ -537,87 +537,82 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </div>
               </div>
 
-              {/* Per-type photo galleries (cont + seal) — each captures
-                  against THIS row only (the originating row's id, when known). */}
-              {(['CONTAINER', 'SEAL'] as const).map(pType => {
-                const field = pType === 'CONTAINER' ? 'cont' : 'seal';
-                const urls = row.photoKeys[field];
-                const busy = uploading[row._key]?.[field] ?? false;
-                return (
-                  <div key={pType} style={{ marginTop: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)' }}>
-                        {pType === 'CONTAINER' ? 'Ảnh cont' : 'Ảnh seal'} ({urls.length})
+              {/* Per-type photo galleries (cont + seal) */}
+              <div className="ci-photos-grid">
+                {(['CONTAINER', 'SEAL'] as const).map(pType => {
+                  const field = pType === 'CONTAINER' ? 'cont' : 'seal';
+                  const urls = row.photoKeys[field];
+                  const busy = uploading[row._key]?.[field] ?? false;
+                  const isCont = pType === 'CONTAINER';
+                  return (
+                    <div key={pType} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minHeight: 36 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', minWidth: 65 }}>
+                        {isCont ? 'Ảnh cont' : 'Ảnh seal'} ({urls.length})
                       </span>
                       <button
                         type="button"
                         className="btn btn--ghost btn--sm"
-                        style={{ minHeight: 30 }}
+                        style={{ minHeight: 28, padding: '0 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         disabled={busy}
                         onClick={() => setScanner({ rowKey: row._key, type: pType })}
+                        aria-label={isCont ? 'Chụp ảnh cont' : 'Chụp ảnh seal'}
+                        title={isCont ? 'Chụp ảnh cont' : 'Chụp ảnh seal'}
                       >
-                        {busy ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}
-                        {pType === 'CONTAINER' ? 'Chụp cont' : 'Chụp seal'}
+                        {busy ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
+                        <span>{isCont ? 'Chụp cont' : 'Chụp seal'}</span>
                       </button>
-                    </div>
-                    {urls.length === 0 ? (
-                      <div
-                        style={{
-                          width: 44, height: 44, borderRadius: 6,
-                          border: '1px dashed var(--line)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: 'var(--fg-3)',
-                        }}
-                        aria-label={`Chưa có ảnh ${field}`}
-                      >
-                        <ImageOff size={14} />
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {urls.map((u, uIdx) => {
-                          const isPending = u.startsWith('blob:');
-                          return (
-                            <div key={`${u}-${uIdx}`} style={{ position: 'relative' }}>
-                              <img
-                                src={photoSrc(u)}
-                                alt={`Ảnh ${field} ${uIdx + 1}`}
-                                onClick={() => setLightbox({
-                                  rowKey: row._key,
-                                  type: pType,
-                                  urls: row.photoKeys[field].map(photoSrc),
-                                  index: uIdx,
-                                })}
-                                style={{
-                                  width: 44, height: 44, borderRadius: 6, objectFit: 'cover',
-                                  cursor: 'pointer', border: '1px solid var(--line)',
-                                }}
-                              />
-                              {isPending && (
-                                <span
-                                  title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật"
+
+                      {urls.length === 0 ? (
+                        <div className="ci-photo-empty" aria-label={`Chưa có ảnh ${field}`}>
+                          <ImageOff size={12} />
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginLeft: 4 }}>
+                          {urls.map((u, uIdx) => {
+                            const isPending = u.startsWith('blob:');
+                            return (
+                              <div key={`${u}-${uIdx}`} style={{ position: 'relative', display: 'flex' }}>
+                                <img
+                                  src={photoSrc(u)}
+                                  alt={`Ảnh ${field} ${uIdx + 1}`}
+                                  onClick={() => setLightbox({
+                                    rowKey: row._key,
+                                    type: pType,
+                                    urls: row.photoKeys[field].map(photoSrc),
+                                    index: uIdx,
+                                  })}
                                   style={{
-                                    position: 'absolute', top: -4, right: -4,
-                                    background: 'var(--warn, #b7791f)',
-                                    color: '#fff',
-                                    fontSize: 9, fontWeight: 600,
-                                    padding: '1px 4px', borderRadius: 4,
-                                    lineHeight: 1.2,
+                                    width: 32, height: 32, borderRadius: 6, objectFit: 'cover',
+                                    cursor: 'pointer', border: '1px solid var(--line)',
                                   }}
-                                >
-                                  chưa lưu
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                                />
+                                {isPending && (
+                                  <span
+                                    title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật"
+                                    style={{
+                                      position: 'absolute', top: -4, right: -4,
+                                      background: 'var(--warn, #b7791f)',
+                                      color: '#fff',
+                                      fontSize: 9, fontWeight: 600,
+                                      padding: '1px 4px', borderRadius: 4,
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    chưa lưu
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Seals sub-list: customs, carrier, … — multiple per container. */}
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 12, borderTop: '1px solid var(--line-light, rgba(0, 0, 0, 0.05))', paddingTop: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)' }}>
                     Seal ({row.seals.length})
@@ -625,47 +620,38 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm"
-                    style={{ minHeight: 30 }}
+                    style={{ minHeight: 26, padding: '0 8px', fontSize: 11 }}
                     onClick={() => addSeal(row._key)}
                   >
-                    <Plus size={14} /> Thêm seal
+                    <Plus size={13} /> Thêm seal
                   </button>
                 </div>
                 {row.seals.length === 0 ? (
-                  <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Chưa có seal nào.</div>
+                  <div style={{ fontSize: 11, color: 'var(--fg-3)', paddingLeft: 4 }}>Chưa có seal nào.</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {row.seals.map((sl, sIdx) => (
-                      <div
-                        key={sl._key}
-                        style={{
-                          display: 'flex', flexWrap: 'wrap', gap: 6,
-                          alignItems: 'center',
-                          padding: 6, borderRadius: 6,
-                          border: '1px solid var(--line)',
-                          background: 'var(--bg-1, #fff)',
-                        }}
-                      >
-                        <span style={{ fontSize: 11, color: 'var(--fg-3)', minWidth: 36 }}>
+                      <div key={sl._key} className="ci-seal-row">
+                        <span style={{ fontSize: 11, color: 'var(--fg-3)', minWidth: 28, fontWeight: 600 }}>
                           #{sIdx + 1}
                         </span>
                         <input
-                          className="input"
-                          style={{ width: 110 }}
+                          className="input ci-input-sm"
+                          style={{ width: 100 }}
                           list="seal-types"
                           placeholder="Loại seal"
                           value={sl.sealType}
                           onChange={e => updateSeal(row._key, sl._key, 'sealType', e.target.value)}
                         />
                         <input
-                          className="input"
-                          style={{ width: 160 }}
+                          className="input ci-input-sm"
+                          style={{ width: 140 }}
                           placeholder="Số seal"
                           value={sl.sealNumber}
                           onChange={e => updateSeal(row._key, sl._key, 'sealNumber', e.target.value.toUpperCase())}
                         />
                         <input
-                          className="input"
+                          className="input ci-input-sm"
                           style={{ width: 180, flex: 1, minWidth: 120 }}
                           placeholder="Ghi chú (tuỳ chọn)"
                           value={sl.notes}
@@ -674,12 +660,12 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                         <button
                           type="button"
                           className="btn btn--ghost btn--icon btn--sm"
-                          style={{ minWidth: 32, minHeight: 32 }}
+                          style={{ minWidth: 28, minHeight: 28 }}
                           onClick={() => removeSeal(row._key, sl._key)}
                           aria-label="Xoá seal"
                           title="Xoá seal"
                         >
-                          <X size={14} />
+                          <X size={13} />
                         </button>
                       </div>
                     ))}
