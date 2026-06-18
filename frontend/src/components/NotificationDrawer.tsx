@@ -64,7 +64,16 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--ink-3)' }}>Đang tải…</div>
       ) : items.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--ink-3)' }}>Không có thông báo</div>
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--ink-3)' }}>
+          <img
+            src="/assets/illustrations/empty-notifications.svg"
+            alt=""
+            aria-hidden="true"
+            style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div>Không có thông báo</div>
+        </div>
       ) : (
         <>
           {unread.length > 0 && (

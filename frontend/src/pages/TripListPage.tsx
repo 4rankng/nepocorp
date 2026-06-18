@@ -246,7 +246,7 @@ export default function TripListPage() {
 
   return (
     <div ref={rootRef} className="trip-list-page" style={{ paddingBottom: 40 }}>
-      <section className="hero">
+      <section className="hero hero--route-network">
         <div className="hero-top">
           <div className="hero-title-block">
             <div className="hero-eyebrow">Sổ chuyến · {todayLabel}</div>

@@ -6,8 +6,9 @@ import { computeVehicleAlerts, type VehicleAlert, round2dp } from '@tingting/sha
 
 import { computeSalary } from './attendance.service';
 import { LedgerService } from './ledger.service';
-import { listTripContainers, latestTripPhotoKey, listTripPhotoKeys } from './forwarder.service';
+import { listTripContainers, listTripPhotoKeys } from './forwarder.service';
 import { getTripInstructions } from './trip-instructions.service';
+import { storageService } from './storage.service';
 
 /**
  * Resolve an auth-user ID to the corresponding driver record.
@@ -28,6 +29,17 @@ export async function getDriverByUserId(userId: number) {
     .limit(1);
   if (!driver) throw new NoDriverProfileError();
   return driver;
+}
+
+async function existingStorageKeys(keys: string[]): Promise<string[]> {
+  const checked = await Promise.all(keys.map(async key => {
+    try {
+      return await storageService.exists(key) ? key : null;
+    } catch {
+      return null;
+    }
+  }));
+  return checked.filter((key): key is string => Boolean(key));
 }
 
 /**
@@ -100,13 +112,17 @@ export async function getDriverTripDetail(driverId: number, tripId: number) {
   // list (newest first) so the driver UI can surface every captured photo,
   // not just the latest. Singular fields kept for back-compat with the
   // existing driver app build; contPhotoKeys[0] === contPhotoKey.
-  const [contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys, instructions] = await Promise.all([
-    latestTripPhotoKey(tripId, 'CONTAINER'),
-    latestTripPhotoKey(tripId, 'SEAL'),
+  const [contPhotoKeysRaw, sealPhotoKeysRaw, instructions] = await Promise.all([
     listTripPhotoKeys(tripId, 'CONTAINER'),
     listTripPhotoKeys(tripId, 'SEAL'),
     getTripInstructions(tripId),
   ]);
+  const [contPhotoKeys, sealPhotoKeys] = await Promise.all([
+    existingStorageKeys(contPhotoKeysRaw),
+    existingStorageKeys(sealPhotoKeysRaw),
+  ]);
+  const contPhotoKey = contPhotoKeys[0] ?? null;
+  const sealPhotoKey = sealPhotoKeys[0] ?? null;
 
   return { ...trip, legs, containers, contPhotoKey, sealPhotoKey, contPhotoKeys, sealPhotoKeys, instructions };
 }

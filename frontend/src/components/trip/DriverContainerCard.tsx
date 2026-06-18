@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Camera, Loader2, Save, Package, AlertCircle, Pencil, X, Check, ImageOff } from 'lucide-react';
 import { api, getAuthenticatedPhotoUrl } from '../../lib/api';
@@ -103,12 +103,44 @@ function photoSrc(value: string | null | undefined): string {
   return getAuthenticatedPhotoUrl(url);
 }
 
-/** One bento thumbnail: the photo if `key` is present, else a labelled empty
- *  placeholder. Cont and Seal thumbs are identical modulo key + label. */
+function EmptyThumb({ label }: { label: string }) {
+  return <div className="dcc-bento__thumb-empty"><ImageOff size={15} /><span>{label}</span></div>;
+}
+
+/** One bento thumbnail: preflight the protected photo URL so missing files render
+ *  as a calm placeholder instead of a broken browser image on the driver phone. */
+function BentoThumb({ photoKey, label }: { photoKey: string | null; label: string }) {
+  const [src, setSrc] = useState('');
+
+  useEffect(() => {
+    if (!photoKey) {
+      setSrc('');
+      return;
+    }
+
+    const nextSrc = photoSrc(photoKey);
+    const controller = new AbortController();
+
+    fetch(nextSrc, { method: 'HEAD', signal: controller.signal })
+      .then(response => {
+        setSrc(response.ok ? nextSrc : '');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSrc('');
+      });
+
+    return () => controller.abort();
+  }, [photoKey]);
+
+  return src
+    ? <img className="dcc-bento__thumb" src={src} alt={`Ảnh ${label.toLowerCase()}`} onError={() => setSrc('')} />
+    : <EmptyThumb label={label} />;
+}
+
+/** One bento thumbnail: the photo if `key` is present and valid, else a labelled
+ *  empty placeholder. Cont and Seal thumbs are identical modulo key + label. */
 function renderThumb(key: string | null, label: string) {
-  return key
-    ? <img className="dcc-bento__thumb" src={photoSrc(key)} alt={`Ảnh ${label.toLowerCase()}`} />
-    : <div className="dcc-bento__thumb-empty"><ImageOff size={15} /><span>{label}</span></div>;
+  return <BentoThumb photoKey={key} label={label} />;
 }
 
 export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhotoKey, onSaved }: Props) {

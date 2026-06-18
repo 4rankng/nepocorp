@@ -54,6 +54,15 @@
   position: relative;
   overflow: hidden;
 }
+.trip-list-page .hero.hero--route-network {
+  background-image:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    url("/assets/illustrations/hero-route-network.svg");
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+  background-position: left top, right 24px bottom 10px;
+  background-size: auto, min(260px, 24vw) auto;
+}
 .trip-list-page .hero::before {
   content: '';
   position: absolute;

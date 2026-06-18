@@ -6,7 +6,6 @@ export interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
-  assetIcon?: string;
   section?: 'operations' | 'hr' | 'financials' | 'master-data' | 'system';
   count?: number;
 }

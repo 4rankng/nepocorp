@@ -453,9 +453,13 @@ export default function PenaltyReasonsConfigPage() {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <img
+            src="/assets/illustrations/empty-penalties.svg"
+            alt=""
+            aria-hidden="true"
+            style={{ width: 160, height: 132, objectFit: 'contain' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
           <p className="empty-state-title">Không tìm thấy lỗi vi phạm</p>
           <p className="empty-state-desc">Thử từ khóa khác hoặc thay đổi bộ lọc.</p>
         </div>

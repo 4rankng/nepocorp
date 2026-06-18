@@ -313,7 +313,10 @@ export default function SupplierListPage() {
           {loading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+              <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <div>Chưa có dữ liệu</div>
+            </div>
           ) : (
             filtered.map(s => (
               <ClickableCard key={s.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/suppliers/${s.id}`)}>
@@ -397,7 +400,10 @@ export default function SupplierListPage() {
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <div>Chưa có dữ liệu</div>
+                </td></tr>
               )}
               {filtered.map(s => (
                   <tr key={s.id} role="button" tabIndex={0}

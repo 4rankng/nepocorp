@@ -200,9 +200,7 @@ export default function ForwarderSettlementCreatePage() {
           <div className="fset-step-body">
             {approvedRequests.length === 0 ? (
               <div className="fset-empty-inline">
-                <div className="fset-empty-inline__icon">
-                  <Wallet size={18} />
-                </div>
+                <img className="fset-empty-inline__asset" src="/assets/illustrations/empty-matching.svg" alt="" aria-hidden="true" />
                 <span>Không có tạm ứng nào đã duyệt</span>
               </div>
             ) : (
@@ -245,9 +243,7 @@ export default function ForwarderSettlementCreatePage() {
           <div className="fset-step-body">
             {unlinkedExpenses.length === 0 ? (
               <div className="fset-empty-inline">
-                <div className="fset-empty-inline__icon">
-                  <Info size={18} />
-                </div>
+                <img className="fset-empty-inline__asset" src="/assets/illustrations/empty-matching.svg" alt="" aria-hidden="true" />
                 <span>Không có chi phí nào chưa thanh toán. Các chi phí đã nằm trong phiếu khác sẽ không hiện ở đây.</span>
               </div>
             ) : (

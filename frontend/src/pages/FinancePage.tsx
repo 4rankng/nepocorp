@@ -333,11 +333,7 @@ export default function FinancePage() {
                 </div>
               ) : !hasChartData ? (
                 <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, gap: 8, flex: 1 }}>
-                  <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                    <line x1="3" y1="20" x2="21" y2="20"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/><line x1="10" y1="20" x2="10" y2="8"/>
-                    <line x1="14" y1="20" x2="14" y2="11"/><line x1="18" y1="20" x2="18" y2="4"/>
-                  </svg>
+                  <img src="/assets/illustrations/empty-pricing.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   <div>
                     {chartView === 'day'
                       ? `Chưa có chuyến nào được khóa trong tháng ${month}/${year}`
@@ -409,10 +405,7 @@ export default function FinancePage() {
               </div>
             ) : (
               <div style={{ height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
-                <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
-                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                  <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                </svg>
+                <img src="/assets/illustrations/empty-pie.svg" alt="" aria-hidden="true" style={{ width: 126, height: 104, objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 <div>Chưa có dữ liệu chi phí</div>
                 <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
               </div>

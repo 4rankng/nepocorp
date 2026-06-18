@@ -76,6 +76,7 @@
   }
 
   .app.sidebar-closed .sidebar-item {
+    min-height: 40px;
     padding: 10px 0;
     justify-content: center;
     gap: 0;
@@ -85,11 +86,12 @@
     display: none;
   }
 
-  /* Hide text label, badge, and chevron in collapsed mode */
-  .app.sidebar-closed .sidebar-item > *:not(svg) {
+  /* Hide text, badges, and active chevrons in collapsed mode. */
+  .app.sidebar-closed .sidebar-item-label,
+  .app.sidebar-closed .nav-item__badge {
     display: none;
   }
-  /* Chevron is also an SVG — hide any svg that isn't the first (main icon) */
+
   .app.sidebar-closed .sidebar-item > svg:not(:first-child) {
     display: none;
   }

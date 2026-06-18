@@ -168,6 +168,12 @@ export default function LoginPage() {
             </div>
             <h1>TingTing</h1>
             <p>Hệ thống Quản lý Vận tải</p>
+            <img
+              src="/assets/illustrations/empty-welcome.svg"
+              alt=""
+              aria-hidden="true"
+              className="login-welcome-illustration"
+            />
           </div>
 
           <div className="login-divider" />

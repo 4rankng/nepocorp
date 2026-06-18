@@ -33,6 +33,10 @@ export class LocalStorageService {
       await fs.promises.unlink(filePath);
     }
   }
+
+  async exists(key: string): Promise<boolean> {
+    return fs.existsSync(path.join(this.uploadDir, key));
+  }
 }
 
 export const storageService = new LocalStorageService();

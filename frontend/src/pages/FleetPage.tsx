@@ -165,7 +165,10 @@ function TrailerCard({ trailers, trucks, crud }: {
             </thead>
             <tbody>
               {trailers.length === 0 && (
-                <tr><td colSpan={5} style={styles.emptyRow}>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</td></tr>
+                <tr><td colSpan={5} style={styles.emptyRow}>
+                  <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <div>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</div>
+                </td></tr>
               )}
               {trailers.map((t, i) => {
                 const coupledTruck = truckByTrailer.get(t.id);
@@ -208,7 +211,10 @@ function TrailerCard({ trailers, trucks, crud }: {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {trailers.length === 0 && (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có rơ-moóc nào</div>
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+              <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <div>Chưa có rơ-moóc nào</div>
+            </div>
           )}
           {trailers.map((t) => {
             const coupledTruck = truckByTrailer.get(t.id);
@@ -330,7 +336,10 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             </thead>
             <tbody>
               {trucks.length === 0 && (
-                <tr><td colSpan={5} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={5} style={styles.emptyRow}>
+                  <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <div>Chưa có dữ liệu</div>
+                </td></tr>
               )}
               {trucks.map((t, i) => (
                 <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => setViewingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(t.id); } }}>
@@ -378,7 +387,10 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {trucks.length === 0 && (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>Chưa có dữ liệu</div>
+            <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+              <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <div>Chưa có dữ liệu</div>
+            </div>
           )}
           {trucks.map((t) => {
             const trailer = t.currentTrailerId ? trailers.find(x => x.id === t.currentTrailerId) : null;

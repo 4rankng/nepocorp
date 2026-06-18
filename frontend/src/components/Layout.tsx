@@ -42,41 +42,6 @@ import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
-const NAV_ICON_ASSETS: Record<string, string> = {
-  dashboard: 'dashboard',
-  dispatch: 'dispatch',
-  trips: 'trips',
-  salary: 'salary',
-  penalties: 'penalties',
-  finance: 'finance',
-  profit: 'finance',
-  debt: 'debt',
-  payables: 'payables',
-  expenses: 'expenses',
-  advances: 'advances',
-  'advance-settlements': 'settlements',
-  fleet: 'fleet',
-  customers: 'customers',
-  suppliers: 'customers',
-  routes: 'routes',
-  users: 'customers',
-  'audit-logs': 'audit',
-  config: 'config',
-  'my-trips': 'routes',
-  'my-earnings': 'salary',
-  'my-penalties': 'penalties',
-  'my-forwarder-trips': 'trips',
-  'my-advances': 'advances',
-  'my-settlements': 'settlements',
-};
-
-function withAssetIcons(items: NavItem[]): NavItem[] {
-  return items.map(item => ({
-    ...item,
-    assetIcon: NAV_ICON_ASSETS[item.key],
-  }));
-}
-
 function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
   const normRole = String(role || '').toUpperCase();
   switch (normRole) {
@@ -292,7 +257,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const penaltiesCount = badgeData?.penaltiesCount;
 
   // Nav items and active state
-  const navItems = user ? withAssetIcons(getNavItems(user.role, dispatchCount, penaltiesCount)) : [];
+  const navItems = user ? getNavItems(user.role, dispatchCount, penaltiesCount) : [];
   const activeKey = navItems
     .filter(item => location.pathname.startsWith(item.path))
     .sort((a, b) => b.path.length - a.path.length)[0]?.key || '';

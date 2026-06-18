@@ -14,26 +14,13 @@ import type { Role } from '@tingting/shared';
 import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 
-const NAV_ICON_BASE = '/assets/icons/nepo';
-
 function getRoleLabel(role: Role): string {
   return ROLE_LABELS[role] || role;
 }
 
 function NavIcon({ item }: { item: SidebarProps['navItems'][number] }) {
-  if (item.assetIcon) {
-    return (
-      <img
-        className="sidebar-item-icon-img"
-        src={`${NAV_ICON_BASE}/${item.assetIcon}.svg`}
-        alt=""
-        aria-hidden="true"
-      />
-    );
-  }
-
   const IconC = item.icon;
-  return <IconC size={16} />;
+  return <IconC size={16} aria-hidden="true" />;
 }
 
 function Sidebar({

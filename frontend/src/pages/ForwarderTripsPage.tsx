@@ -115,7 +115,7 @@ export default function ForwarderTripsPage() {
     <div>
       <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
       <div className="empty-state">
-        <img src="/assets/illustrations/empty-trips.svg" alt="No trips" />
+        <img src="/assets/illustrations/empty-forwarder.svg" alt="No trips" />
         <h3 className="empty-state-title">Chưa có chuyến đi nào</h3>
         <p className="empty-state-desc">
           Hiện chưa có chuyến đi nào trong hệ thống. Khi có chuyến đi mới, thông tin sẽ xuất hiện tại đây.

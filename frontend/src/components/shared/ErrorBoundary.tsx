@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { AlertTriangle, RotateCw } from 'lucide-react';
+import { RotateCw } from 'lucide-react';
 
 interface Props {
   children: React.ReactNode;
@@ -34,12 +34,13 @@ export class ErrorBoundary extends Component<Props, State> {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           padding: 'var(--space-3xl, 48px)', gap: 'var(--space-lg, 16px)', textAlign: 'center',
         }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%', background: 'var(--danger-soft)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <AlertTriangle size={24} style={{ color: 'var(--danger)' }} />
-          </div>
+          <img
+            src="/assets/illustrations/empty-error.svg"
+            alt=""
+            aria-hidden="true"
+            style={{ width: 156, height: 124, objectFit: 'contain' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: 'var(--ink)' }}>Đã xảy ra lỗi</h3>
             <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>

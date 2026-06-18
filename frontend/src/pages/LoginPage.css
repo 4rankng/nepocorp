@@ -93,6 +93,16 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+.login-welcome-illustration {
+  width: 156px;
+  height: 106px;
+  object-fit: contain;
+  margin-top: 14px;
+  opacity: 0.92;
+  filter: drop-shadow(0 16px 22px rgba(0, 90, 45, 0.12));
+  pointer-events: none;
+  user-select: none;
+}
 .login-divider {
   height: 1px;
   background: radial-gradient(circle, rgba(10, 10, 10, 0.08) 0%, transparent 100%);
@@ -243,6 +253,7 @@
   .login-brand .brand-logo { width: 48px; height: 48px; border-radius: 12px; margin-bottom: 10px; }
   .login-brand h1 { font-size: var(--fs-lg); }
   .login-brand p { font-size: var(--fs-2xs); }
+  .login-welcome-illustration { width: 124px; height: 84px; margin-top: 10px; }
   .login-divider { margin-bottom: 18px; }
   .login-form h2 { font-size: var(--fs-lg); }
   .login-form .sub { margin-bottom: 18px; font-size: var(--fs-sm); }
