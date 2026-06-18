@@ -234,38 +234,45 @@ export default function DriverTripDetailPage() {
 
         <TripLegsPanel legs={trip.legs || []} />
 
-        {/* Contact & guidance (N2 / B1.3) — read-only, only when manager set it */}
-        {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
-          <section className="dt-section dt-section--instructions">
-            <div className="dt-section__head">
-              <span className="dt-section__title">Liên hệ &amp; hướng dẫn</span>
-            </div>
-            <div className="dt-section__body">
-              {trip.instructions.contactName && (
-                <InfoRow icon={<Navigation size={16} />} label="Người liên hệ" value={trip.instructions.contactName} />
-              )}
-              {trip.instructions.contactPhone && (
-                <InfoRow
-                  icon={<Phone size={16} />}
-                  label="SĐT liên hệ"
-                  value={
-                    <a href={`tel:${trip.instructions.contactPhone}`} className="dt-tel-link">
-                      {trip.instructions.contactPhone}
-                    </a>
-                  }
-                />
-              )}
-              {trip.instructions.notes && (
-                <div className="dt-instructions-notes">
-                  <div className="dt-instructions-notes__title">
-                    <MessageSquare size={14} /> Ghi chú hướng dẫn
+        {/* Contact & guidance (N2 / B1.3) — read-only. Always shown so the
+            driver sees the section exists even before a manager fills it
+            (feedback202606 B1:60 — previously hidden when blank, which read as
+            "missing" in UAT). */}
+        <section className="dt-section dt-section--instructions">
+          <div className="dt-section__head">
+            <span className="dt-section__title">Liên hệ &amp; hướng dẫn</span>
+          </div>
+          <div className="dt-section__body">
+            {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) ? (
+              <>
+                {trip.instructions.contactName && (
+                  <InfoRow icon={<Navigation size={16} />} label="Người liên hệ" value={trip.instructions.contactName} />
+                )}
+                {trip.instructions.contactPhone && (
+                  <InfoRow
+                    icon={<Phone size={16} />}
+                    label="SĐT liên hệ"
+                    value={
+                      <a href={`tel:${trip.instructions.contactPhone}`} className="dt-tel-link">
+                        {trip.instructions.contactPhone}
+                      </a>
+                    }
+                  />
+                )}
+                {trip.instructions.notes && (
+                  <div className="dt-instructions-notes">
+                    <div className="dt-instructions-notes__title">
+                      <MessageSquare size={14} /> Ghi chú hướng dẫn
+                    </div>
+                    <p className="dt-instructions-notes__text">{trip.instructions.notes}</p>
                   </div>
-                  <p className="dt-instructions-notes__text">{trip.instructions.notes}</p>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+                )}
+              </>
+            ) : (
+              <p className="dt-instructions-notes__text">Chưa có hướng dẫn liên hệ cho chuyến này.</p>
+            )}
+          </div>
+        </section>
 
         {/* Notes */}
         {trip.notes && (
