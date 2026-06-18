@@ -347,6 +347,45 @@ export async function listAdvanceSettlements(filters?: { forwarderId?: number; s
           .filter((r): r is typeof s.advanceRequests.$inferSelect => Boolean(r));
       }
     }
+
+    // Attach linked trip expenses (with resolved container number) so the list
+    // card can group the breakdown by container (feedback202606 C3). Mirrors the
+    // per-settlement detail serializer; batched across all settlements (2 queries).
+    const expenseLinks = await db.select()
+      .from(s.settlementExpenses)
+      .where(inArray(s.settlementExpenses.settlementId, settlementIds));
+    if (expenseLinks.length > 0) {
+      const expenseIds = [...new Set(expenseLinks.map(l => l.tripExpenseId))];
+      const expenses = await db.select({
+        id: s.tripExpenses.id,
+        tripId: s.tripExpenses.tripId,
+        expenseType: s.tripExpenses.expenseType,
+        buyAmount: s.tripExpenses.buyAmount,
+        containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`.as('resolved_container_number'),
+        note: s.tripExpenses.note,
+        createdAt: s.tripExpenses.createdAt,
+        tripCode: s.trips.tripCode,
+        departureDate: s.trips.departureDate,
+        truckPlate: s.trucks.licensePlate,
+      }).from(s.tripExpenses)
+        .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+        .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+        .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
+        .where(inArray(s.tripExpenses.id, expenseIds));
+      const expenseById = new Map(expenses.map(e => [e.id, e]));
+      const bySettlement = new Map<number, typeof expenses>();
+      for (const l of expenseLinks) {
+        const exp = expenseById.get(l.tripExpenseId);
+        if (!exp) continue;
+        const arr = bySettlement.get(l.settlementId);
+        if (arr) arr.push(exp); else bySettlement.set(l.settlementId, [exp]);
+      }
+      for (const settlement of enriched) {
+        (settlement as typeof s.advanceSettlements.$inferSelect & {
+          linkedExpenses?: typeof expenses;
+        }).linkedExpenses = bySettlement.get(settlement.id) ?? [];
+      }
+    }
   }
 
   return enriched;

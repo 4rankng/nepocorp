@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, ArrowRight, Clock } from 'lucide-react';
 import { EmptyState } from '../design-system';
 import { formatCurrency, formatDate } from '../lib/format';
-import { groupExpensesByType } from '../lib/expense-breakdown';
+import { groupExpensesByContainer } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
@@ -41,6 +41,7 @@ interface LinkedExpense {
   tripId: number;
   expenseType: string;
   buyAmount: string;
+  containerNumber: string | null;
   note: string | null;
   createdAt: string;
   tripCode: string | null;
@@ -217,7 +218,7 @@ export default function ForwarderSettlementsPage() {
         <div ref={listRef} className="fset-list">
           {filteredSettlements.map((s, idx) => {
             const hasBreakdown = s.linkedExpenses && s.linkedExpenses.length > 0;
-            const groups = hasBreakdown ? groupExpensesByType(s.linkedExpenses!, expenseTypeOptions) : null;
+            const containerGroups = hasBreakdown ? groupExpensesByContainer(s.linkedExpenses!, expenseTypeOptions) : [];
 
             return (
               <ClickableCard
@@ -258,11 +259,22 @@ export default function ForwarderSettlementsPage() {
                       )}
                     </div>
 
-                    {/* Breakdown chips — compact inline */}
-                    {groups && groups.size > 0 && (
-                      <div className="fset-card__chips">
-                        {[...groups.entries()].map(([label, amount]) => (
-                          <span key={label} className="fset-chip">{label}: {formatCurrency(amount)}</span>
+                    {/* Breakdown grouped by container (chronological), each with
+                        per-type chips — mirrors the printed settlement (C3). */}
+                    {containerGroups.length > 0 && (
+                      <div className="fset-card__containers">
+                        {containerGroups.map(g => (
+                          <div key={g.containerNumber} className="fset-container-group" style={{ marginTop: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>{g.containerNumber}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-2)' }}>{formatCurrency(g.total)}</span>
+                            </div>
+                            <div className="fset-card__chips">
+                              {[...g.byType.entries()].map(([label, amount]) => (
+                                <span key={label} className="fset-chip">{label}: {formatCurrency(amount)}</span>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}

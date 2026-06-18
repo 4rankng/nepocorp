@@ -37,3 +37,60 @@ export function groupExpensesByType(
   }
   return groups;
 }
+
+/** An expense that also carries its container + trip departure date, so it can
+ *  be grouped by container and ordered chronologically (feedback202606 C3). */
+interface ContainerExpenseLike extends ExpenseLike {
+  containerNumber?: string | null;
+  departureDate?: string | null;
+}
+
+/** Fallback label for expenses with no resolved container number. */
+const NO_CONTAINER = 'Không rõ container';
+
+/** One container's grouped expenses: total + per-type breakdown + the earliest
+ *  trip departure date (used to order containers chronologically). */
+export interface ContainerExpenseGroup {
+  containerNumber: string;
+  total: number;
+  minDepartureDate: string | null;
+  byType: Map<string, number>;
+}
+
+/**
+ * Group expenses by container number, each with a per-type sub-breakdown.
+ * Containers are returned sorted by earliest trip departure date ascending
+ * (chronological, matching the print/export path). Mirrors the print grouping so
+ * the on-screen list and the printed settlement read identically.
+ */
+export function groupExpensesByContainer(
+  expenses: readonly ContainerExpenseLike[],
+  expenseTypeOptions: readonly ExpenseTypeOption[],
+): ContainerExpenseGroup[] {
+  const byContainer = new Map<string, ContainerExpenseGroup>();
+  const typeLabel = (code: string) =>
+    expenseTypeOptions.find(t => t.code === code)?.name ?? EXPENSE_TYPE_VI[code] ?? code;
+
+  for (const exp of expenses) {
+    const key = exp.containerNumber?.trim() || NO_CONTAINER;
+    let group = byContainer.get(key);
+    if (!group) {
+      group = { containerNumber: key, total: 0, minDepartureDate: exp.departureDate ?? null, byType: new Map() };
+      byContainer.set(key, group);
+    }
+    const amount = Number(exp.buyAmount);
+    group.total += amount;
+    const label = typeLabel(exp.expenseType);
+    group.byType.set(label, (group.byType.get(label) ?? 0) + amount);
+    if (exp.departureDate && (!group.minDepartureDate || exp.departureDate < group.minDepartureDate)) {
+      group.minDepartureDate = exp.departureDate;
+    }
+  }
+
+  return [...byContainer.values()].sort((a, b) => {
+    if (a.minDepartureDate && b.minDepartureDate) return a.minDepartureDate < b.minDepartureDate ? -1 : 1;
+    if (a.minDepartureDate) return -1;
+    if (b.minDepartureDate) return 1;
+    return 0;
+  });
+}
