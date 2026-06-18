@@ -268,6 +268,15 @@
 
 /* ─── Inline edit row ─────────────────────────────────────────────────────── */
 
+/* Pin the STT (#) column to a compact width. .tt-table uses table-layout: fixed,
+   so without an explicit width the first numeric column gets ~1/N of the table
+   (way too wide for a 1–3 digit index). 56px holds up to 3 digits comfortably. */
+.fleet-page .tt-table th.num:first-child,
+.fleet-page .tt-table td.num:first-child {
+  width: 56px;
+  text-align: center;
+}
+
 .fleet-page .fleet-edit-row td {
   background: var(--surface-2);
   border-top: 1px solid var(--accent);

@@ -263,23 +263,8 @@
     font-size: 15px;
   }
 
-  .fadv-page .hero-kpi-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .fadv-page .hero-kpi-card {
-    padding: 18px 18px 16px;
-    min-height: 104px;
-  }
   .fadv-page .hero-kpi-stack {
     flex-direction: row;
-  }
-  .fadv-page .hero-kpi-mini {
-    padding: 12px 14px;
-    border-radius: var(--r, 12px);
-  }
-  .fadv-page .hero-kpi-mini__value {
-    font-size: 18px;
   }
   .fadv-card-trip__icon {
     width: 32px;

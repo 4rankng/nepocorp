@@ -18,10 +18,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 140px;
-  padding: 28px 32px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 108px;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
 }
 
 .debt-hero__content {
@@ -266,12 +266,12 @@
   }
   .debt-list-page .hero-kpi-card.debt-hero {
     grid-column: 1 / -1;
-    min-height: 110px;
-    padding: 22px 24px;
+    min-height: 96px;
+    padding: 20px 22px;
   }
   .debt-list-page .hero-kpi-card__watermark svg {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
   }
   /* Mini KPIs: side by side on tablet */
   .debt-list-page .hero-kpi-stack.debt-kpi-stack {
@@ -280,7 +280,6 @@
   }
   .debt-list-page .hero-kpi-mini {
     flex: 1;
-    padding: 14px 16px;
   }
   /* Aging: 2x2 grid */
   .debt-aging-grid {
@@ -299,10 +298,9 @@
     grid-column: auto;
     min-height: auto;
     padding: 18px;
-    border-radius: 16px;
   }
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
-    font-size: 26px;
+    font-size: 24px;
   }
   .debt-list-page .hero-kpi-card__watermark svg {
     width: 48px;
@@ -312,17 +310,6 @@
     flex-direction: row;
     grid-column: auto;
     gap: 10px;
-  }
-  .debt-list-page .hero-kpi-mini {
-    padding: 12px 14px;
-    border-radius: 14px;
-  }
-  .debt-list-page .hero-kpi-mini__value {
-    font-size: 18px;
-  }
-  .debt-list-page .hero-kpi-mini__watermark svg {
-    width: 30px;
-    height: 30px;
   }
 
   /* Aging: 2x2 compact */

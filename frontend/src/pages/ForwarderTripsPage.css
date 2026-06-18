@@ -51,27 +51,8 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .hero-kpi-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .hero-kpi-card {
-    padding: 18px 18px 16px;
-    min-height: 104px;
-  }
-
   .hero-kpi-stack {
     flex-direction: row;
-  }
-
-  .hero-kpi-mini {
-    padding: 12px 14px;
-    border-radius: var(--r, 12px);
-  }
-
-  .hero-kpi-mini__value {
-    font-size: 18px;
   }
 
   .driver-trip-card__body {

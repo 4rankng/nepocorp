@@ -198,32 +198,8 @@
  * Responsive — Phone (<=640px)
  * ========================================================================== */
 @media (max-width: 640px) {
-  .payables-page .hero-kpi-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .payables-page .hero-kpi-card {
-    padding: 18px 18px 16px;
-    min-height: 104px;
-  }
-
   .payables-page .hero-kpi-stack {
     flex-direction: row;
-  }
-
-  .payables-page .hero-kpi-mini {
-    padding: 12px 14px;
-    border-radius: var(--r, 12px);
-  }
-
-  .payables-page .hero-kpi-mini__watermark svg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .payables-page .hero-kpi-mini__value {
-    font-size: 18px;
   }
 
   .payables-aging-grid {
@@ -267,14 +243,6 @@
  * Responsive — Narrow phone (<=420px)
  * ========================================================================== */
 @media (max-width: 420px) {
-  .payables-page .hero-kpi-card {
-    padding: 18px 16px 16px;
-  }
-
-  .payables-page .hero-kpi-card__amount {
-    font-size: 26px;
-  }
-
   .payables-aging-grid {
     grid-template-columns: 1fr;
     gap: 8px;

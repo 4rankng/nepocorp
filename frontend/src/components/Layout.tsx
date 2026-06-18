@@ -324,6 +324,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // In icons-only (collapsed) mode the section chevrons + labels are hidden,
+  // so per-section collapse just hides icons the user can no longer click
+  // back to. Force all sections expanded so every menu item stays reachable.
+  useEffect(() => {
+    if (sidebarOpen) return;
+    setCollapsed(prev => (prev.size === 0 ? prev : new Set<string>()));
+  }, [sidebarOpen]);
+
   // Update browser tab title on route change
   useEffect(() => {
     document.title = `${pageTitle} · TingTing`;
