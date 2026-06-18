@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, Upload, X, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
+import { formatDate } from '../lib/format';
 import { configClient } from '../api/configClient';
 import { PageHeader } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -267,7 +268,7 @@ export default function ExpenseEntryPage() {
         supplierId: 'Vui lòng chọn nhà cung cấp',
         categoryId: 'Vui lòng chọn hạng mục chi phí',
         amount: 'Số tiền phải là số dương',
-        expenseDate: 'Vui lòng chọn ngày chi',
+        expenseDate: 'Vui lòng chọn ngày phát sinh chi phí',
         paymentStatus: 'Vui lòng chọn trạng thái thanh toán',
       };
       // Some validation errors don't map to a visible field (e.g.
@@ -376,7 +377,7 @@ export default function ExpenseEntryPage() {
 
                 <div className="expense-panel__body expense-grid">
               <div className="expense-group">
-                <label className="expense-label">Ngày chi <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="expense-label">Ngày phát sinh chi phí <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input
                   type="date"
                   name="expenseDate"
@@ -386,6 +387,22 @@ export default function ExpenseEntryPage() {
                   onChange={e => set('expenseDate', e.target.value)}
                 />
                 {errors.expenseDate && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.expenseDate}</p>}
+              </div>
+
+              {/* A4 / A10 — system-stamped entry date, read-only. Distinct from the
+                  user-editable "Ngày phát sinh chi phí" above. Auto-recorded on save,
+                  so it is unknown (placeholder) until the row exists. */}
+              <div className="expense-group">
+                <label className="expense-label">Ngày nhập dữ liệu</label>
+                <div
+                  className="expense-input"
+                  style={{ color: 'var(--ink-3)', background: 'rgba(0,0,0,0.03)', cursor: 'default', display: 'flex', alignItems: 'center' }}
+                  title="Hệ thống tự ghi ngày nhập, không chỉnh sửa được"
+                >
+                  {isEdit && existingExpense?.createdAt
+                    ? formatDate(existingExpense.createdAt)
+                    : 'Tự động ghi khi lưu'}
+                </div>
               </div>
 
               <div className="expense-group">
