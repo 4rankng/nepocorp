@@ -40,7 +40,7 @@ interface LinkedExpense {
   id: number;
   tripId: number;
   expenseType: string;
-  amount: string;
+  buyAmount: string;
   containerNumber: string | null;
   invoiceNumber: string | null;
   note: string | null;
@@ -111,7 +111,7 @@ function buildPrintRows(expenses: LinkedExpense[]) {
           container: containerKey !== '-' ? containerKey : '—',
           customer: exp.customerName || '—',
           expenseType: EXPENSE_TYPE_LABELS[exp.expenseType] || exp.expenseType,
-          amount: exp.amount,
+          amount: exp.buyAmount,
           invoice: exp.invoiceNumber || '',
           tripCode: exp.tripCode || '',
         });
@@ -179,7 +179,7 @@ export default function SettlementPrintPage() {
   const expenses = s.linkedExpenses || [];
   const requests = s.linkedRequests || [];
   const totalAdvance = requests.reduce((sum, r) => sum + Number(r.amount), 0);
-  const totalExpense = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalExpense = expenses.reduce((sum, e) => sum + Number(e.buyAmount), 0);
   const refund = Number(s.refundAmount || 0);
   const balance = totalAdvance - totalExpense - refund;
 

@@ -172,7 +172,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     } else {
       s.setRevenueEmptyReturn('');
     }
-    s.setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '0');
+    s.setRevenueCombine(existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : '');
     s.setCustomerCommission(existingTrip.customerCommission ? String(existingTrip.customerCommission) : '0');
     s.setTripWageDays(existingTrip.tripWageDays ? String(existingTrip.tripWageDays) : '');
     s.setNotes(existingTrip.notes || '');

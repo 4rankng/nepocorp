@@ -95,7 +95,7 @@ async function enrichSettlementWithRequests(settlement: typeof s.advanceSettleme
     id: number;
     tripId: number;
     expenseType: string;
-    amount: string;
+    buyAmount: string;
     containerNumber: string | null;
     invoiceNumber: string | null;
     note: string | null;
@@ -109,7 +109,7 @@ async function enrichSettlementWithRequests(settlement: typeof s.advanceSettleme
       id: s.tripExpenses.id,
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
-      amount: s.tripExpenses.buyAmount,
+      buyAmount: s.tripExpenses.buyAmount,
       containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`.as('resolved_container_number'),
       invoiceNumber: s.tripExpenses.invoiceNumber,
       note: s.tripExpenses.note,

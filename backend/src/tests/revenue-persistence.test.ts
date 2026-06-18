@@ -73,6 +73,17 @@ describe('resolveRevenue — undefined = not-provided, 0 = explicit-zero', () =>
     assert.strictEqual(resolveRevenue({ revenueEmptyReturn: 5 }, emptyStored), 5);
   });
 
+  test('blank combine (undefined) preserves stored revenue even when stored combine is NULL (legacy-row guard)', () => {
+    // Pins the useTripFormDispatch populate fix: a legacy trip with a NULL
+    // revenueCombine must seed the combine field blank (→ undefined on save),
+    // NOT '0' (explicit-zero). With combine undefined, resolveRevenue falls
+    // through to stored.revenue — preserving it. The old '0' seeding would
+    // have sent combine:0 and, with a blank emptyReturn, zeroed the revenue.
+    const legacyStored = { revenue: '1000', revenueEmptyReturn: null, revenueCombine: null };
+    assert.strictEqual(resolveRevenue({ revenueCombine: undefined }, legacyStored), 1000);
+    assert.strictEqual(resolveRevenue({ revenueEmptyReturn: undefined, revenueCombine: undefined }, legacyStored), 1000);
+  });
+
   test('(d.2) idempotent: re-applying the same not-provided payload preserves revenue', () => {
     // Models the 409 silent-retry path — re-submitting the same payload must
     // not drift the resolved value.
