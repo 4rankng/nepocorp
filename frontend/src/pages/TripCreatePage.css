@@ -14,13 +14,16 @@
 
 /* ── Hero band ── charcoal gradient with glows: title, progress, widgets */
 .tc-create-hero {
-  --d-charcoal-1: #14181A;
-  --d-charcoal-2: #1A2220;
-  --d-charcoal-3: #1F2D27;
-  background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
+  --d-charcoal-1: #101613;
+  --d-charcoal-2: #16231D;
+  --d-charcoal-3: #063A22;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 28px 28px,
+    radial-gradient(420px 260px at 86% -8%, rgba(94, 233, 155, 0.2), transparent 62%),
+    linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 62%, var(--d-charcoal-3) 100%);
   color: var(--fg-on-brand);
-  border-radius: 18px;
-  padding: 26px 30px;
+  border-radius: 16px;
+  padding: 24px 28px;
   margin-bottom: 22px;
   display: flex;
   flex-direction: column;
@@ -32,7 +35,7 @@
   position: absolute;
   right: -120px; top: -80px;
   width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(22, 163, 74, 0.18), transparent 65%);
+  background: radial-gradient(circle, rgba(22, 163, 74, 0.14), transparent 65%);
   pointer-events: none;
 }
 .tc-create-hero::after {
@@ -131,12 +134,12 @@
 
 /* ── Hero widgets container ── side-by-side estimate + checklist */
 .tc-hero-widgets {
-  margin-top: 26px;
+  margin-top: 22px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -228,12 +231,13 @@
 .tc-create-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 32px;
+  gap: 24px;
   align-items: start;
-  padding: 32px;
-  background: var(--surface);
-  border: 1px solid var(--border-1);
-  border-radius: 12px;
+  padding: 28px;
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--sh-sm);
   margin-bottom: 120px; /* ActionBar clearance */
 }
 .tc-create-bento > * { min-width: 0; grid-column: span 12; }

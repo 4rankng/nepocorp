@@ -63,3 +63,4 @@ qa/
 backend/uploads/
 kilo.json
 *.pen
+.agents

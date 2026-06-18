@@ -3,17 +3,18 @@
  * ========================================================================== */
 .topbar {
   height: var(--topbar-h);
-  padding: 0 24px;
+  padding: 0 26px;
   display: flex;
   align-items: center;
   gap: 16px;
-  background: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.78) 100%);
+  border-bottom: 1px solid rgba(203, 211, 206, 0.72);
   position: relative;
   z-index: var(--z-sticky, 100);
   flex-shrink: 0;
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-          backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82) inset, 0 8px 24px rgba(16, 24, 20, 0.035);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+          backdrop-filter: blur(18px) saturate(150%);
   opacity: 0; /* starts hidden for anime.js entrance */
   transition: transform 220ms var(--ease), opacity 220ms var(--ease), margin-top 220ms var(--ease);
 }
@@ -80,8 +81,8 @@
   gap: 8px;
   height: 40px;
   padding: 0 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(203, 211, 206, 0.85);
   border-radius: 10px;
   color: var(--ink);
   font-size: 13px;
@@ -89,11 +90,13 @@
   font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease);
+  box-shadow: var(--sh-sm);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 .topbar-date__trigger:hover {
-  background: var(--surface-3);
-  border-color: var(--line);
+  background: var(--surface);
+  border-color: var(--line-strong);
+  box-shadow: var(--sh);
 }
 .topbar-date.is-open .topbar-date__trigger {
   background: var(--surface-3);
@@ -315,9 +318,9 @@
   cursor: pointer;
   flex-shrink: 0;
   display: grid; place-items: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
-.topbar__toggle:hover { background: var(--surface-3); color: var(--ink); }
+.topbar__toggle:hover { background: var(--surface); color: var(--ink); box-shadow: var(--sh-sm); }
 
 .topbar__breadcrumb {
   display: flex;
@@ -433,4 +436,3 @@
   flex-shrink: 0;
 }
 .user-btn .role { font-size: 13px; font-weight: 500; }
-

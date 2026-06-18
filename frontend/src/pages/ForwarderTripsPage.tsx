@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
 import { formatDate } from '../lib/format';
-import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
+import { TripStatus, TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
@@ -27,6 +27,12 @@ interface TripSummary {
 }
 
 type StatusFilter = '' | TripStatus;
+
+const FORWARDER_STATUS_COLORS: Record<TripStatus, string> = {
+  ...TRIP_STATUS_COLORS,
+  [TripStatus.CREATED]: '#0284C7',
+  [TripStatus.LOCKED]: '#7C3AED',
+};
 
 /** Build the className suffix for a row from its derived statusColor. */
 function rowColorClass(statusColor: TripSummary['statusColor']): string {
@@ -61,6 +67,7 @@ export default function ForwarderTripsPage() {
 
   const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
   const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
+  const hasPaymentHighlights = trips.some((trip) => trip.statusColor === 'paid' || trip.statusColor === 'pending');
 
   /* ── Page entrance animation ── */
   const { rootRef } = usePageAnimations({
@@ -190,13 +197,27 @@ export default function ForwarderTripsPage() {
               data-status={status}
               onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
             >
-              <span className="fwd-filter-pill__dot" style={{ background: TRIP_STATUS_COLORS[status] }} />
+              <span className="fwd-filter-pill__dot" style={{ background: FORWARDER_STATUS_COLORS[status] }} />
               {label}
               <span className="fwd-filter-pill__count">{count}</span>
             </button>
           );
         })}
       </div>
+
+      {hasPaymentHighlights && (
+        <div className="fwd-row-legend" aria-label="Giải thích màu thẻ chuyến đi">
+          <span className="fwd-row-legend__label">Màu thẻ</span>
+          <span className="fwd-row-legend__item">
+            <span className="fwd-row-legend__swatch fwd-row-legend__swatch--pending" />
+            Chờ duyệt chi phí / phiếu thanh toán
+          </span>
+          <span className="fwd-row-legend__item">
+            <span className="fwd-row-legend__swatch fwd-row-legend__swatch--paid" />
+            Đã duyệt thanh toán
+          </span>
+        </div>
+      )}
 
       {/* ── Trip card list ── */}
       <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -211,7 +232,7 @@ export default function ForwarderTripsPage() {
               animationDelay: `${idx * 40}ms`,
             }}
           >
-            <StatusStrip color={TRIP_STATUS_COLORS[trip.status]} />
+            <StatusStrip color={FORWARDER_STATUS_COLORS[trip.status]} />
             <div className="driver-trip-card__body">
               <div className="ftrip-card__icon"><Truck size={16} /></div>
               <div className="driver-trip-card__main">

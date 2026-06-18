@@ -2,7 +2,7 @@
 .trip-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 24px;
+  gap: 26px;
   align-items: start;
   margin-bottom: 20px;
 }
@@ -32,11 +32,11 @@
    reads as a "secondary column" instead of just a list of cards. */
 .trip-rail-bg {
   position: relative;
-  background-image: radial-gradient(circle, var(--accent) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image: radial-gradient(circle, rgba(0, 177, 79, 0.38) 1px, transparent 1.5px);
+  background-size: 20px 20px;
   background-position: 0 0;
   opacity: 1;
-  border-radius: 20px;
+  border-radius: 18px;
   padding: 2px;
 }
 
@@ -44,9 +44,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--bg);
-  border-radius: 18px;
-  opacity: 0.92;
+  background: linear-gradient(180deg, rgba(245, 247, 246, 0.94), rgba(245, 247, 246, 0.84));
+  border-radius: 16px;
+  opacity: 0.96;
   z-index: 0;
 }
 
@@ -57,10 +57,10 @@
 
 /* ── KPI rail (2×2 micro-grid inside one glass card) ──────────────────── */
 .kpi-rail {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  box-shadow: var(--sh-sm);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
+  border: 1px solid rgba(203, 211, 206, 0.82);
+  border-radius: 16px;
+  box-shadow: var(--sh);
   padding: 14px 16px 12px;
 }
 
@@ -213,16 +213,16 @@
 
 /* ── Card ───────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0.94));
+  border: 1px solid rgba(203, 211, 206, 0.82);
+  border-radius: 16px;
   box-shadow: var(--sh-sm);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card:hover {
   border-color: var(--line-strong, var(--line));
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), var(--sh-sm);
+  box-shadow: var(--sh);
 }
 
 .card-head {
@@ -234,7 +234,7 @@
   border-bottom: 1px solid var(--line-2, #EFF2F0);
   /* Mirrors the .tc-card-head gradient on TripEditPage — a faint surface-2
      fade at the top of the header to add depth without color noise. */
-  background: linear-gradient(180deg, var(--surface-2, transparent) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--surface-2, transparent) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 .card-head h2 {
@@ -258,7 +258,7 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  box-shadow: 0 1px 2px rgba(79, 138, 111, 0.25);
+  box-shadow: 0 5px 12px rgba(79, 138, 111, 0.22);
 }
 
 /* Smaller hicon variant — used by ServiceCostsCard and similar compact headers. */
@@ -282,7 +282,7 @@
 }
 
 .card-body {
-  padding: 8px 20px 18px;
+  padding: 10px 20px 20px;
 }
 
 /* ── Info List (2-col grid inside BasicInfoCard) ────────────────────────── */
@@ -314,8 +314,8 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: var(--bg-3, #EFF1F5);
-  color: var(--ink-3);
+  background: linear-gradient(180deg, var(--surface-3, #EFF1F5), var(--surface-2));
+  color: var(--ink-2);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -454,7 +454,8 @@
   padding: 12px;
   border: 1px solid var(--line-2, #EFF2F0);
   border-radius: var(--r-md, 14px);
-  background: var(--bg-2, #FAFBFC);
+  background: linear-gradient(180deg, var(--bg-2, #FAFBFC), var(--surface-2));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
 .container-no {
@@ -506,4 +507,3 @@
 .cf-value.mono {
   font-family: var(--font-mono);
 }
-

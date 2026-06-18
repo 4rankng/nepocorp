@@ -11,7 +11,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 0;
+  padding: 10px 0;
 }
 
 .pl-row .k {
@@ -81,7 +81,7 @@
 
 .pl-divider {
   height: 1px;
-  background: var(--line-2, #EFF2F0);
+  background: linear-gradient(90deg, transparent, var(--line-2, #EFF2F0), transparent);
   margin: 4px 0;
 }
 
@@ -104,11 +104,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: #F1FBF5;
-  border: 1px solid #D8F0E2;
+  background: linear-gradient(135deg, #F1FBF5 0%, #E8F7EE 100%);
+  border: 1px solid #CFEBDD;
   border-radius: var(--r-md, 14px);
-  padding: 13px 15px;
+  padding: 14px 15px;
   margin-top: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .pl-total .k {
@@ -142,9 +143,10 @@
 
 .fuel-compare {
   margin-top: 14px;
-  background: var(--bg-3, #EFF1F5);
+  background: linear-gradient(180deg, var(--bg-3, #EFF1F5), var(--surface-2));
   border-radius: var(--r-md, 14px);
   padding: 14px 15px;
+  border: 1px solid var(--line);
 }
 
 .fc-title {
@@ -221,4 +223,3 @@
 .fc-flag svg {
   flex: 0 0 auto;
 }
-

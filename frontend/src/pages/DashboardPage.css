@@ -197,23 +197,20 @@
   line-height: 1.45;
 }
 
-/* ── Entrance animation initial states ──
-   Elements start hidden; anime.js animates them in.
-   Reduced-motion users see everything immediately via scope mediaQueries. */
+/* ── Entrance animation targets ──
+   Keep dashboard sections visible by default. The animation hook applies
+   temporary opacity/transform only after it confirms the elements exist, so
+   query timing cannot leave the hero/KPIs hidden on a soft reload. */
 .dash-wf .wf-head {
-  opacity: 0;
   will-change: opacity, transform;
 }
 .dash-wf .wf-kpi {
-  opacity: 0;
   will-change: opacity, transform;
 }
 .dash-wf .wf-bento > * {
-  opacity: 0;
   will-change: opacity, transform;
 }
 .dash-wf .wf-arow {
-  opacity: 0;
   will-change: opacity, transform;
 }
 .dash-wf .wf-aurow {
@@ -332,6 +329,7 @@
   font-size: var(--fs-xs); font-weight: 600; color: var(--wf-green); cursor: pointer;
   display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
   background: none; border: 0; padding: 0;
+  border-radius: 8px;
 }
 .dash-wf .wf-link svg { width: 13px; height: 13px; }
 .dash-wf .wf-link:hover { color: var(--wf-green-700); }
@@ -930,6 +928,16 @@
 
 /* ── Mobile overrides for new styles ── */
 @media (max-width: 640px) {
+  .dash-wf .wf-link {
+    min-height: 36px;
+    padding: 7px 2px;
+  }
+
+  .dash-wf .wf-chart-toggle__btn {
+    min-height: 34px;
+    padding: 6px 12px;
+  }
+
   .dash-wf .wf-kpi .val {
     font-size: 15px;
     letter-spacing: -0.02em;

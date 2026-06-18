@@ -3,13 +3,13 @@
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
 .panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.9) 100%);
+  backdrop-filter: blur(14px) saturate(125%);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  border: 1px solid rgba(203, 211, 206, 0.78);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--sh-sm);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .panel--solid {
@@ -20,14 +20,15 @@
 }
 .panel:hover {
   box-shadow: var(--sh);
-  border-color: rgba(255, 255, 255, 0.9);
+  border-color: var(--line-strong);
 }
 .panel__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px 16px;
-  border-bottom: 1px solid var(--line);
+  padding: 17px 22px 15px;
+  border-bottom: 1px solid rgba(203, 211, 206, 0.72);
+  background: linear-gradient(180deg, rgba(248, 250, 249, 0.92) 0%, rgba(255, 255, 255, 0) 100%);
   gap: 12px;
 }
 .panel__title {
@@ -44,7 +45,7 @@
   margin-top: 2px;
 }
 .panel__body {
-  padding: 18px 24px 22px;
+  padding: 18px 22px 22px;
 }
 .panel__body--flush { padding: 0 !important; }
 
@@ -52,8 +53,9 @@
 .card-shell {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: var(--sh-sm);
 }
 .card-header {
   display: flex;

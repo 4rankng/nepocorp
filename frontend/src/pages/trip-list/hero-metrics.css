@@ -42,28 +42,32 @@
 
 /* ── Hero (same pattern as dispatch) ──────────────────────────────────── */
 .trip-list-page .hero {
-  background: linear-gradient(135deg, var(--d-charcoal-1) 0%, var(--d-charcoal-2) 60%, var(--d-charcoal-3) 100%);
-  color: var(--fg-on-brand);
-  border-radius: 18px;
-  padding: 26px 30px;
-  margin-bottom: 22px;
+  background:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -22px rgba(0, 90, 45, 0.45);
+  padding: 22px 24px;
+  margin-bottom: 18px;
   position: relative;
   overflow: hidden;
 }
 .trip-list-page .hero::before {
   content: '';
   position: absolute;
-  right: -120px; top: -80px;
-  width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(22, 163, 74, 0.18), transparent 65%);
+  right: -110px; top: -120px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(0, 177, 79, 0.10), transparent 68%);
   pointer-events: none;
 }
 .trip-list-page .hero::after {
   content: '';
   position: absolute;
-  left: 40%; bottom: -60px;
-  width: 200px; height: 120px;
-  background: radial-gradient(ellipse, rgba(0, 135, 63, 0.14), transparent 70%);
+  left: 24px; right: 24px; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 90, 45, 0.18), transparent 72%);
   pointer-events: none;
 }
 .trip-list-page .hero-top {
@@ -74,14 +78,14 @@
 .trip-list-page .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: var(--fs-2xs); letter-spacing: 1.8px; font-weight: 700;
-  color: #5EE99B;
+  color: var(--accent-ink);
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 9px;
 }
 .trip-list-page .hero-eyebrow::before {
   content: ''; width: 6px; height: 6px;
-  background: #5EE99B; border-radius: 50%;
-  box-shadow: 0 0 0 4px rgba(94, 233, 155, 0.18);
+  background: var(--accent); border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(0, 177, 79, 0.12);
   animation: d-pulse 2s ease-in-out infinite;
 }
 .trip-list-page .hero-h1 {
@@ -91,7 +95,7 @@
   line-height: 1.15;
   margin: 0 0 6px;
 }
-.trip-list-page .hero-sub { font-size: var(--fs-sm); color: rgba(255,255,255,0.62); }
+.trip-list-page .hero-sub { font-size: var(--fs-sm); color: var(--ink-2); }
 .trip-list-page .hero-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
 .trip-list-page .btn-d {
@@ -107,42 +111,44 @@
   background: transparent;
   color: inherit;
 }
-.trip-list-page .btn-d--primary { background: var(--d-green-500); color: var(--fg-on-brand); }
+.trip-list-page .btn-d--primary { background: var(--accent); color: var(--fg-on-brand); box-shadow: 0 8px 20px -12px rgba(0, 177, 79, 0.65); }
 .trip-list-page .btn-d--primary:hover { background: var(--d-green-600); transform: translateY(-1px); }
 .trip-list-page .btn-d--ghost-dark {
-  background: rgba(255,255,255,0.08); color: var(--fg-on-brand);
-  border-color: rgba(255,255,255,0.12);
+  background: var(--surface-2); color: var(--ink);
+  border-color: var(--line);
 }
-.trip-list-page .btn-d--ghost-dark:hover { background: rgba(255,255,255,0.14); }
+.trip-list-page .btn-d--ghost-dark:hover { background: var(--surface); border-color: var(--line-strong); }
 
 /* ── Metric bento grid ─────────────────────────────────────────────────
    Layout: featured card spans 2 rows on the left, 4 tiles in 2×2 on the right.
    gap: 1px with rgba background creates hairline dividers (same pattern as before). */
 .trip-list-page .metrics {
-  margin-top: 26px;
+  margin-top: 18px;
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 1px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 14px;
-  overflow: hidden;
+  grid-template-columns: minmax(260px, 1.35fr) repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
   position: relative;
 }
 .trip-list-page .metric {
-  background: rgba(255,255,255,0.025);
-  padding: 16px 20px;
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
 }
 .trip-list-page .metric.featured {
-  grid-row: 1 / 3;
-  grid-column: 1;
-  background: rgba(94, 233, 155, 0.06);
+  grid-row: auto;
+  grid-column: auto;
+  background: linear-gradient(135deg, rgba(0, 177, 79, 0.10), rgba(255, 255, 255, 0.86));
+  border-color: rgba(0, 177, 79, 0.18);
 }
-.trip-list-page .metric.featured .metric-label { color: #5EE99B; }
+.trip-list-page .metric.featured .metric-label { color: var(--accent-ink); }
 .trip-list-page .metric-label {
   font-size: var(--fs-2xs); letter-spacing: 1.4px;
-  color: rgba(255,255,255,0.5);
+  color: var(--ink-3);
   font-weight: 600;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -150,9 +156,10 @@
 .trip-list-page .metric-value {
   font-size: var(--fs-2xl); font-weight: 700;
   line-height: 1; letter-spacing: -0.5px;
+  color: var(--ink);
 }
 .trip-list-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
-.trip-list-page .metric-unit { font-size: var(--fs-sm); color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; }
+.trip-list-page .metric-unit { font-size: var(--fs-sm); color: var(--ink-3); font-weight: 500; margin-left: 4px; }
 .trip-list-page .metric-delta {
   margin-top: 8px;
   font-size: var(--fs-2xs); font-weight: 600;
@@ -160,15 +167,15 @@
   line-height: 1.4;
   word-break: break-word;
 }
-.trip-list-page .delta-up { color: #5EE99B; }
+.trip-list-page .delta-up { color: var(--accent-ink); }
 .trip-list-page .delta-down { color: var(--danger-soft); }
-.trip-list-page .delta-flat { color: rgba(255,255,255,0.55); }
-.trip-list-page .delta-warn { color: #FCD34D; }
+.trip-list-page .delta-flat { color: var(--ink-3); }
+.trip-list-page .delta-warn { color: var(--warning-text); }
 
 .trip-list-page .breakdown-bar {
   margin-top: 12px;
   height: 6px;
-  background: rgba(255,255,255,0.06);
+  background: var(--surface-3);
   border-radius: 99px;
   display: flex; overflow: hidden;
 }
@@ -181,8 +188,7 @@
 .trip-list-page .breakdown-legend {
   margin-top: 8px;
   display: flex; flex-wrap: wrap; gap: 10px 14px;
-  font-size: var(--fs-2xs); color: rgba(255,255,255,0.7);
+  font-size: var(--fs-2xs); color: var(--ink-2);
 }
 .trip-list-page .legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .trip-list-page .legend-dot { width: 7px; height: 7px; border-radius: 2px; }
-

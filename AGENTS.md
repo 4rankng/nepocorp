@@ -254,3 +254,5 @@ Usage notes:
 <!-- SKILLS_TABLE_END -->
 
 </skills_system>
+
+## Imported Claude Cowork project instructions

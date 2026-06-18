@@ -40,15 +40,23 @@ export function useDashboardAnimations(ready: boolean) {
     hasAnimated.current = true;
 
     const scope = createScope({ root }).add(() => {
+      const entranceElements = root.querySelectorAll(
+        '.wf-head, .wf-kpi, .wf-bento > *, .wf-arow',
+      );
+
       if (prefersReduced) {
         utils.set(
-          root.querySelectorAll(
-            '.wf-head, .wf-kpi, .wf-bento > *, .wf-arow, .wf-aurow',
-          ),
+          root.querySelectorAll('.wf-head, .wf-kpi, .wf-bento > *, .wf-arow, .wf-aurow'),
           { opacity: 1, translateY: 0, translateX: 0 },
         );
         return;
       }
+
+      utils.set(entranceElements, {
+        opacity: 0,
+        translateY: 0,
+        translateX: 0,
+      });
 
       // ── Phase 1: Header entrance ──
       const header = root.querySelector('.wf-head');

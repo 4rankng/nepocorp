@@ -8,7 +8,9 @@ body {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   color: var(--ink);
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 12px 12px, rgba(0, 90, 45, 0.035) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    linear-gradient(135deg, #F9FBFA 0%, var(--bg) 42%, #EDF2EF 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01", "cv11";
@@ -19,3 +21,8 @@ button { font: inherit; cursor: pointer; }
 input, select, textarea { font: inherit; }
 img { display: block; }
 ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 2px;
+}

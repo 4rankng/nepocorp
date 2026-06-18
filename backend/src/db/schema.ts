@@ -92,7 +92,8 @@ export const drivers = pgTable('drivers', {
   phone: varchar('phone', { length: 20 }),
   assignedTruckId: integer('assigned_truck_id').references(() => trucks.id),
   baseSalary: numeric('base_salary', { precision: 15, scale: 0 }),
-  // BHXH/BHYT monthly contribution — used for salary auto-fill: (baseSalary + socialInsurance) / 26 × tripWageDays
+  // BHXH/BHYT monthly contribution — tracked SEPARATELY for cost allocation; NOT part of daily_rate
+  // or trip-salary auto-fill (Pete 2026-06: baseSalary only — base/std_days, no socialInsurance)
   socialInsurance: numeric('social_insurance', { precision: 15, scale: 0 }).default('0'),
   status: driverStatusEnum('status').default('ACTIVE'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

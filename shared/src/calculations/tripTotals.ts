@@ -51,8 +51,8 @@ export interface ComputeTripTotalsOutput {
   serviceMargin: number;       // sum(sellExVat - buyInclVat) across ancillary fees; 0 when none
   totalServiceBuy: number;     // sum buyAmount incl-VAT (cost component, per spec section 4.6.1)
   totalServiceSell: number;    // sum sellAmount ex-VAT (revenue component)
-  externalMargin: number;      // freightExVat - externalFreightExVat; 0 for OWN trips
-  externalFreightExVat: number; // externalFreightCost/(1+vatRate); 0 for OWN trips
+  externalMargin: number;      // freightExVat - externalFreightCost(incl-VAT) per §4.7; 0 for OWN trips
+  externalFreightExVat: number; // informational: externalFreightCost/(1+vatRate); 0 for OWN trips (display only — margin uses incl-VAT cost)
 }
 
 export function computeRoadAllowance(params: {
@@ -170,9 +170,10 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
   let externalFreightExVat = 0;
 
   if (carrierType === 'EXTERNAL') {
-    const extCost = input.externalFreightCost ?? 0;
-    externalFreightExVat = vatRate > 0 ? Math.round(extCost / (1 + vatRate)) : extCost;
-    externalMargin = freightExVat - externalFreightExVat;
+    const extCost = input.externalFreightCost ?? 0;  // incl-VAT, stored as-paid
+    externalFreightExVat = vatRate > 0 ? Math.round(extCost / (1 + vatRate)) : extCost;  // informational ex-VAT (display only)
+    // §4.7: costs recorded INCL VAT — margin = revenue ex-VAT − hire cost incl-VAT (no input-VAT deduction)
+    externalMargin = freightExVat - extCost;
     // For external trips: cost = external freight only (no fuel/allowance/salary)
     totalCost = extCost;
     grossProfit = externalMargin + serviceMargin;

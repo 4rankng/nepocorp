@@ -6,6 +6,17 @@
   gap: 20px;
 }
 
+.fleet-page .kpi {
+  background:
+    radial-gradient(120px 80px at 92% 50%, rgba(0, 177, 79, 0.08), transparent 72%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 249, 0.94));
+}
+
+.fleet-page .kpi__watermark {
+  right: 14px;
+  bottom: 10px;
+}
+
 /* Two-column layout for trucks + trailers */
 .fleet-page .fleet-two-col {
   display: grid;
@@ -34,16 +45,17 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--accent-soft);
+  background: linear-gradient(180deg, var(--accent-soft), #DDF7E8);
   color: var(--accent-2);
   display: grid;
   place-items: center;
-  border: 1px solid rgba(0, 177, 79, 0.15);
+  border: 1px solid rgba(0, 177, 79, 0.22);
+  box-shadow: 0 8px 18px -12px rgba(0, 90, 45, 0.45);
   flex-shrink: 0;
 }
 
 .fleet-page .fleet-card-icon.alt {
-  background: var(--surface-3);
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
   color: var(--ink-2);
   border-color: var(--line-2);
 }
@@ -145,13 +157,13 @@
 }
 
 .fleet-page .fleet-type-chip.ft40 {
-  background: #EFF6FF;
+  background: linear-gradient(180deg, #EFF6FF, #E6F0FF);
   color: var(--info);
   border-color: #DBEAFE;
 }
 
 .fleet-page .fleet-type-chip.ft20 {
-  background: var(--accent-soft);
+  background: linear-gradient(180deg, var(--accent-soft), #DDF7E8);
   color: var(--accent-2);
   border-color: rgba(0, 177, 79, 0.15);
 }

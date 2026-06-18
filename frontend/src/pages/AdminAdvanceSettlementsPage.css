@@ -6,11 +6,12 @@
  * ========================================================================== */
 
 .as-page .as-panel {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
   border: 1px solid var(--line);
   border-radius: 14px;       /* matches dashboard --wf-radius */
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
+  box-shadow: var(--sh-sm);
+  min-height: 280px;
 }
 
 /* ── KPI row grid ──────────────────────────────────────────────────────── */
@@ -23,10 +24,10 @@
 
 /* ── AsKPI component — same sizing as AdminAdvancesPage .adv-kpi ───────── */
 .as-page .as-kpi {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.03);
+  box-shadow: var(--sh-sm);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;

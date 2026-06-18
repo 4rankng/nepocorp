@@ -15,8 +15,8 @@
   display: none;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   margin-left: auto;
   background: rgba(255, 255, 255, 0.08);
   border: none;
@@ -29,7 +29,12 @@
 .sidebar-close:hover { background: rgba(255, 255, 255, 0.16); }
 .sidebar-close:active { background: rgba(255, 255, 255, 0.24); }
 @media (max-width: 1023px) {
-  .sidebar-close { display: inline-flex; }
+  .sidebar-close {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
   /* Drawer width is 248px — the close button shaves ~40px of brand-meta room.
    * Constrain the brand-meta so it can shrink, and keep the subtitle on one line. */
   .sidebar-brand-meta { min-width: 0; flex: 1 1 auto; }
@@ -114,4 +119,3 @@
   margin-top: 3px;
   font-family: var(--font-mono);
 }
-

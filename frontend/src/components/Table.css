@@ -5,8 +5,9 @@
 .table-wrap {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: var(--sh-sm);
 }
 .table-wrap--standalone {
   border-radius: 12px;
@@ -22,7 +23,18 @@
    scrolling on narrow containers. */
 .ancillary-fees__table { min-width: 720px; table-layout: fixed; width: 100%; }
 .ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-2xs); }
-.ancillary-fees__table tbody td { padding: 7px 6px; font-size: var(--fs-xs); vertical-align: top; }
+.ancillary-fees__table thead th {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-3));
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line-2);
+}
+.ancillary-fees__table tbody tr {
+  transition: background 120ms var(--ease);
+}
+.ancillary-fees__table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent-soft) 38%, white);
+}
+.ancillary-fees__table tbody td { padding: 8px 6px; font-size: var(--fs-xs); vertical-align: top; }
 .ancillary-fees__table tbody td.num { font-size: var(--fs-xs); }
 .ancillary-fees__table thead th:nth-child(1) { width: 25%; }   /* Loại phí + Hình thức */
 .ancillary-fees__table thead th:nth-child(2) { width: 13%; }   /* Mua vào */
@@ -138,6 +150,7 @@
 .ancillary-fees__add-row:hover td {
   border-color: var(--accent);
   color: var(--accent-2);
+  background: var(--accent-soft);
 }
 
 /* Responsive: hide low-priority columns on narrow viewports */

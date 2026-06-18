@@ -210,10 +210,9 @@ export async function getPnlReport(month: number, year: number) {
       const extMgmtMargin = extTrips.reduce((sum, t) => {
         const vat = Number(t.vatRate ?? 0);
         const rev = Number(t.revenue ?? 0);
-        const cost = Number(t.externalFreightCost ?? 0);
+        const cost = Number(t.externalFreightCost ?? 0);  // incl-VAT per §4.7
         const revExVat = vat > 0 ? Math.round(rev / (1 + vat)) : rev;
-        const costExVat = vat > 0 ? Math.round(cost / (1 + vat)) : cost;
-        return sum + (revExVat - costExVat);
+        return sum + (revExVat - cost);  // §4.7: revenue ex-VAT − cost incl-VAT
       }, 0);
 
       const extRevenue = extTrips.reduce((s, t) => {

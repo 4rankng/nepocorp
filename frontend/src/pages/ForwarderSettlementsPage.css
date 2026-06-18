@@ -842,8 +842,8 @@
     gap: 12px;
   }
   .fset-page .hero-kpi-card {
-    padding: 22px 20px 20px;
-    min-height: 120px;
+    padding: 18px 18px 16px;
+    min-height: 104px;
   }
   .fset-page .hero-kpi-stack {
     flex-direction: column;

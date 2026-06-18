@@ -298,7 +298,7 @@
   .debt-list-page .hero-kpi-card.debt-hero {
     grid-column: auto;
     min-height: auto;
-    padding: 20px;
+    padding: 18px;
     border-radius: 16px;
   }
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {

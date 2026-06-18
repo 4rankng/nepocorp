@@ -36,6 +36,13 @@
     border-bottom: 1px solid var(--line-2, #EFF2F0);
     min-height: 280px;
   }
+
+  .leaflet-touch .leaflet-control-zoom a,
+  .leaflet-control-zoom a {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+  }
 }
 
 /* Narrow tablet / small laptop (≤ 860px): gap tightens more, but the 2-col
