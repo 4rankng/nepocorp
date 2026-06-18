@@ -260,11 +260,11 @@ export default function TripListPage() {
             </div>
           </div>
           <div className="hero-actions">
-            <button type="button" className="btn-d btn-d--ghost-dark" onClick={handleExport}>
+            <button type="button" className="btn btn--secondary" onClick={handleExport}>
               <Download size={15} />
               Xuất Excel
             </button>
-            <button type="button" className="btn-d btn-d--primary" onClick={() => navigate('/trips/new')}>
+            <button type="button" className="btn btn--primary" onClick={() => navigate('/trips/new')}>
               <Plus size={15} strokeWidth={2.4} />
               Thêm chuyến
             </button>
@@ -385,10 +385,7 @@ export default function TripListPage() {
             {table.isLoading ? (
               <div className="table-empty">Đang tải danh sách chuyến đi…</div>
             ) : table.rows.length === 0 ? (
-              <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
-                <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                Không tìm thấy chuyến đi nào.
-              </div>
+              <EmptyState illustration="/assets/illustrations/empty-trips.svg" title="Không tìm thấy chuyến đi nào." />
             ) : (
               tableInstance.getRowModel().rows.map((row) => (
                 <ClickableCard
@@ -477,7 +474,4 @@ export default function TripListPage() {
   );
 }
 
-// Re-use the EmptyState primitive in the future to replace the two inline
-// empty-state blocks above (kept in place to avoid behavior changes here).
-void EmptyState;
 void formatCurrency;

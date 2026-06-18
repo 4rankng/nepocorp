@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, ArrowRight, Clock } from 'lucide-react';
+import { EmptyState } from '../design-system';
 import { formatCurrency, formatDate } from '../lib/format';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
@@ -206,11 +207,12 @@ export default function ForwarderSettlementsPage() {
 
       {/* Empty state */}
       {settlements.length === 0 ? (
-        <div className="fset-empty fade-up">
-          <div className="fset-empty__icon"><FileText size={48} /></div>
-          <h3 className="fset-empty__title">Chưa có phiếu thanh toán</h3>
-          <p className="fset-empty__desc">Nhấn "Thêm phiếu" để lập phiếu mới.</p>
-        </div>
+        <EmptyState
+          className="fade-up"
+          title="Chưa có phiếu thanh toán"
+          description="Lập phiếu thanh toán tạm ứng đầu tiên của bạn."
+          action={<button className="btn btn--primary" onClick={() => navigate('/my-settlements/new')}><Plus size={16} /> Thêm phiếu</button>}
+        />
       ) : (
         <div ref={listRef} className="fset-list">
           {filteredSettlements.map((s, idx) => {

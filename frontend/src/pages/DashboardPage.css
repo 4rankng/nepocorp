@@ -308,8 +308,22 @@
 }
 .dash-wf .wf-btn svg { width: 15px; height: 15px; }
 .dash-wf .wf-btn:hover { border-color: var(--wf-ink-3); }
-.dash-wf .wf-btn--primary { background: var(--wf-green); border-color: var(--wf-green); color: var(--fg-on-brand); box-shadow: 0 2px 6px rgba(0, 90, 45, 0.22); }
-.dash-wf .wf-btn--primary:hover { background: var(--wf-green-700); border-color: var(--wf-green-700); }
+.dash-wf .wf-btn--primary {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-color: transparent;
+  color: var(--fg-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+.dash-wf .wf-btn--primary:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-color: transparent;
+  box-shadow: var(--shadow-brand);
+  transform: translateY(-1px);
+}
 
 .dash-wf .wf-card {
   background: var(--wf-card);
@@ -969,25 +983,13 @@
   opacity: 0.7;
 }
 
-/* ── 2B. Shimmer on primary button ── */
+/* ── 2B. Primary button polish ── */
 .dash-wf .wf-btn--primary {
   position: relative;
   overflow: hidden;
 }
 .dash-wf .wf-btn--primary::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  animation: wf-shimmer 3s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes wf-shimmer {
-  0%   { left: -100%; }
-  100% { left: 200%; }
+  content: none;
 }
 
 /* ── 2C. Warning glow on attention items ── */

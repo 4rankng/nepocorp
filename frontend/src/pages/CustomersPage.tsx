@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { labelStyle } from '../utils/formStyles';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
+import { EmptyState } from '../design-system';
 import { formatCurrency, formatCompact } from '../lib/format';
 import type { Customer, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
@@ -390,10 +391,12 @@ export default function CustomersPage() {
           {loading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
-              <EmptyIllustration name="empty-clients" width={150} height={124} style={{ margin: '0 auto 8px', display: 'block' }} />
-              <div>Chưa có dữ liệu</div>
-            </div>
+            <EmptyState
+              illustration="/assets/illustrations/empty-clients.svg"
+              title="Chưa có khách hàng"
+              description="Thêm khách hàng đầu tiên để bắt đầu quản lý công nợ."
+              action={<button className="btn btn--primary" onClick={() => { setShowAddForm(true); setEditingId(null); }}><Plus size={14} /> Thêm khách hàng</button>}
+            />
           ) : (
             filtered.map(c => (
               <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/customers/${c.id}`)}>

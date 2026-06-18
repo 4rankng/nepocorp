@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { EmptyState } from '../../design-system';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { PageHeader, Panel, Modal, useConfirm } from '../UI';
@@ -125,18 +126,18 @@ export function CrudTable<T extends { id: number }>({
             </thead>
             <tbody>
               {items.length === 0 && !crud.showAddForm && (
-                <tr>
+                <tr className="cfg-empty-row">
                   <td colSpan={colSpan + 1} style={{ textAlign: 'center' }}>
-                    <div className="cfg-empty">
-                      <img
-                        src={`/assets/illustrations/${emptyIllustration}`}
-                        alt=""
-                        aria-hidden="true"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                      <div className="cfg-empty__title">{emptyTitle}</div>
-                      {emptyHint && <div className="cfg-empty__hint">{emptyHint}</div>}
-                    </div>
+                    <EmptyState
+                      illustration={`/assets/illustrations/${emptyIllustration}`}
+                      title={emptyTitle}
+                      description={emptyHint}
+                      action={
+                        <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+                          <Plus size={14} /> Thêm mới
+                        </button>
+                      }
+                    />
                   </td>
                 </tr>
               )}
@@ -151,7 +152,7 @@ export function CrudTable<T extends { id: number }>({
                   >
                     <td className="num">{i + 1}</td>
                     {columns.map(col => (
-                      <td key={col.header} className={col.className}>
+                      <td key={col.header} className={col.className} data-label={col.header}>
                         {col.render(item, i, isActive, items)}
                       </td>
                     ))}

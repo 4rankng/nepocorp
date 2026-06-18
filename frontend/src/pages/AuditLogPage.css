@@ -144,7 +144,7 @@
   max-width: 100%;
 }
 
-/* ── Mobile (≤640px): table → vertical card list ──
+/* ── Compact screens (≤820px): table → vertical card list ──
  *
  * The desktop table is unscannable on phone because the Nội dung column
  * (the action label + message — the actually useful content) is behind
@@ -152,7 +152,7 @@
  *   row 1: relative time chip · user avatar + name
  *   row 2: action label + full message (wraps)
  * ========================================================================== */
-@media (max-width: 640px) {
+@media (max-width: 820px) {
   .audit-log-page .kpi__watermark { display: none; }
   .audit-log-page .kpi { overflow: hidden; }
 
@@ -217,7 +217,7 @@
 
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */
-@media (max-width: 640px) {
+@media (max-width: 820px) {
   /* ── Audit log ── */
   .audit-grid { grid-template-columns: 1fr; }
 } /* end 640px */

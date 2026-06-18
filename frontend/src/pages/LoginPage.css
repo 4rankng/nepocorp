@@ -164,21 +164,8 @@
   width: 100%;
   margin-top: 4px;
   font-weight: 700;
-  font-size: 15px;
   height: 48px;
-  background: var(--accent);
-  color: var(--fg-on-brand);
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 177, 79, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  transition: background var(--t-normal), transform var(--t-normal), box-shadow var(--t-normal);
 }
-.login-submit:hover:not(:disabled) {
-  background: var(--accent-2);
-  transform: translateY(-0.5px);
-}
-.login-submit:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 .login-footer {
   position: absolute;
   bottom: 16px;

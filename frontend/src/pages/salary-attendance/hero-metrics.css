@@ -9,7 +9,6 @@
   --d-charcoal-2: #1A2220;
   --d-charcoal-3: #1F2D27;
   --d-green-500:  #16A34A;
-  --d-green-600:  #00873F;
   --d-green-800:  #005A2D;
 }
 
@@ -84,25 +83,9 @@
   text-align: center;
 }
 
-/* Hero buttons */
-.salary-page .btn-d {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: var(--fs-sm); font-weight: 600;
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
-  border: 1px solid transparent;
-  white-space: nowrap;
-  background: transparent;
-  color: inherit;
-}
-.salary-page .btn-d--ghost-dark {
-  background: var(--surface-2); color: var(--ink);
-  border-color: var(--line);
-}
-.salary-page .btn-d--ghost-dark:hover { background: var(--surface); border-color: var(--line-strong); }
+/* Hero month-nav buttons use the Global .btn / .btn--secondary / .btn--icon
+   system (components/Button.css). The page-scoped .btn-d* recipes were
+   retired during CTA unification. */
 
 /* ── Metric strip (bento grid) ──────────────────────────────────────── */
 .salary-page .metrics {
@@ -198,11 +181,8 @@
   .salary-page .hero-top { flex-direction: column; gap: 14px; }
   .salary-page .hero-actions { width: 100%; justify-content: center; }
   .salary-page .driver-select-row__list {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    overflow: visible;
     display: flex;
     gap: 8px;
     padding: 2px 0 6px;
@@ -225,7 +205,7 @@
     justify-content: flex-end;
     gap: 4px;
   }
-  .salary-page .btn-d {
+  .salary-page .hero-actions .btn {
     width: 34px;
     height: 34px;
     padding: 0;
@@ -266,8 +246,8 @@
   .salary-page .driver-select-row__search { margin-bottom: 8px; }
   .salary-page .driver-select-row__list {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    overflow: visible;
     gap: 8px;
   }
 }

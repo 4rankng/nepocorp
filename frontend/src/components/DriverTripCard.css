@@ -28,9 +28,11 @@
   display: flex; align-items: center; gap: 16px;
   font-size: var(--fs-xs); color: var(--fg-3);
   flex-wrap: wrap;
+  min-width: 0;
 }
 .driver-trip-card__meta-item {
   display: inline-flex; align-items: center; gap: 4px;
+  min-width: 0;
 }
 .driver-trip-card__salary { text-align: right; flex-shrink: 0; }
 .driver-trip-card__salary-value {
@@ -62,5 +64,15 @@
   gap: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
   font-feature-settings: "tnum";
+  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.driver-trip-card__badge-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }

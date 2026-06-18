@@ -252,7 +252,7 @@ export default function CustomersConfigPage() {
           Nhấn vào một hàng để xem chi tiết và chỉnh sửa khách hàng
         </div>
         <div className="table-scroll">
-          <table>
+          <table className="cfg-customer-table">
             <thead>
               <tr>
                 <th>Khách hàng</th><th>Liên hệ</th><th className="num">Chuyến {monthLabel}</th>
@@ -260,7 +260,7 @@ export default function CustomersConfigPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
+              {filtered.length === 0 && <tr className="cfg-empty-row"><td colSpan={6} style={{ textAlign: 'center', padding: '48px 12px', color: 'var(--ink-3)' }}>Chưa có dữ liệu</td></tr>}
               {filtered.map(c => {
                 const risk = getRiskLevel(c);
                 const stats = customerTripStats.get(c.id);
@@ -272,18 +272,18 @@ export default function CustomersConfigPage() {
                     style={{ cursor: 'pointer' }}
                     title="Nhấp để chỉnh sửa hoặc xóa"
                   >
-                    <td>
+                    <td data-label="Khách hàng">
                       <div className="row-strong"><span className={`risk-dot risk-dot--${risk}`} />{c.name}</div>
                       {c.taxCode && <div className="row-meta">MST {c.taxCode}</div>}
                     </td>
-                    <td>
+                    <td data-label="Liên hệ">
                       {c.contactPerson && <div className="row-strong">{c.contactPerson}</div>}
                       <div className="row-meta">{c.phone || c.contactInfo || '—'}</div>
                     </td>
-                    <td className="num">{stats?.trips ?? '—'}</td>
-                    <td className="num big">{stats?.revenue ? formatCurrency(stats.revenue) : '—'}</td>
-                    <td className="num">{creditLimit > 0 ? formatCurrency(creditLimit) : '—'}</td>
-                    <td>
+                    <td className="num" data-label={`Chuyến ${monthLabel}`}>{stats?.trips ?? '—'}</td>
+                    <td className="num big" data-label={`Doanh thu ${monthLabel}`}>{stats?.revenue ? formatCurrency(stats.revenue) : '—'}</td>
+                    <td className="num" data-label="Hạn mức TD">{creditLimit > 0 ? formatCurrency(creditLimit) : '—'}</td>
+                    <td data-label="Trạng thái">
                       {c.status === CustomerStatus.LOCKED
                         ? <span className="pill pill--danger"><span className="dot" />Tạm khoá</span>
                         : <span className="pill pill--success"><span className="dot" />Hoạt động</span>}

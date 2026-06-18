@@ -479,9 +479,6 @@ export default function DebtDetailPage() {
                                 style={{
                                   padding: '2px 8px',
                                   fontSize: 11,
-                                  background: '#16a34a',
-                                  borderColor: '#16a34a',
-                                  color: '#fff',
                                   borderRadius: 4,
                                   fontWeight: 600,
                                   cursor: 'pointer',

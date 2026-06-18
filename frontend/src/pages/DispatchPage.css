@@ -13,7 +13,6 @@
   --d-green-50:   #F0FDF4;
   --d-green-100:  #DCFCE7;
   --d-green-500:  #16A34A;
-  --d-green-600:  #00873F;
   --d-green-700:  #007038;
   --d-green-800:  #005A2D;
   --d-amber:      #B45309;
@@ -90,29 +89,9 @@
 }
 .dispatch-page .hero-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
-.dispatch-page .btn-d {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: var(--fs-sm); font-weight: 600;
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease, color 120ms ease;
-  border: 1px solid transparent;
-  white-space: nowrap;
-  background: transparent;
-  color: inherit;
-}
-.dispatch-page .btn-d--primary {
-  background: var(--accent); color: var(--fg-on-brand);
-  box-shadow: 0 8px 20px -12px rgba(0, 177, 79, 0.65);
-}
-.dispatch-page .btn-d--primary:hover { background: var(--d-green-600); transform: translateY(-1px); }
-.dispatch-page .btn-d--ghost-dark {
-  background: var(--surface-2); color: var(--ink);
-  border-color: var(--line);
-}
-.dispatch-page .btn-d--ghost-dark:hover { background: var(--surface); border-color: var(--line-strong); }
+/* Hero action buttons use the Global .btn / .btn--primary / .btn--secondary
+   system (components/Button.css). The page-scoped .btn-d* recipes were
+   retired during CTA unification. */
 
 /* ── Metric strip ──────────────────────────────────────────────────────── */
 .dispatch-page .metrics {
@@ -607,21 +586,8 @@
 }
 .dispatch-page .orders-foot a:hover { color: var(--d-green-800); }
 
-.dispatch-page .orders-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 20px;
-  text-align: center;
-  color: var(--ink-3);
-  font-size: var(--fs-sm);
-}
-.dispatch-page .orders-empty .ico {
-  display: inline-flex; margin-bottom: 12px;
-  color: var(--accent);
-}
-.dispatch-page .orders-empty .title { color: var(--ink-2); font-weight: 600; margin-bottom: 4px; }
+/* Empty state uses the shared <EmptyState> (design-system); the page-scoped
+   .orders-empty* rules were retired during CTA unification. */
 
 /* Responsive: collapse the assign column on narrower screens */
 @media (max-width: 1100px) {
@@ -720,7 +686,7 @@
   .dispatch-page .hero-h1 { font-size: var(--fs-xl); line-height: 1.2; }
   .dispatch-page .hero-sub { font-size: var(--fs-xs); }
   .dispatch-page .hero-actions { width: 100%; flex-wrap: wrap; }
-  .dispatch-page .hero-actions .btn-d { flex: 1 1 auto; justify-content: center; min-height: 38px; }
+  .dispatch-page .hero-actions .btn { flex: 1 1 auto; justify-content: center; min-height: 38px; }
   .dispatch-page .metrics {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -738,7 +704,7 @@
   }
   .dispatch-page .metric-value { font-size: var(--fs-md); }
   .dispatch-page .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .dispatch-page .filter-tabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .dispatch-page .filter-tabs { width: 100%; overflow: visible; flex-wrap: wrap; }
   .dispatch-page .filter-tabs::-webkit-scrollbar { display: none; }
   .dispatch-page .fleet-grid { grid-template-columns: 1fr; }
   .dispatch-page .orders-head { display: none; }

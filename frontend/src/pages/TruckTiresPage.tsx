@@ -160,7 +160,7 @@ function AddTireForm({ saving, onsave }: {
         <label>Hạn bảo hành</label>
         <input className="input" type="date" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
       </div>
-      <button className="ttp-btn ttp-btn-primary" disabled={saving || !serial.trim()} onClick={submit}>
+      <button className="btn btn--primary" disabled={saving || !serial.trim()} onClick={submit}>
         {saving ? 'Đang lưu…' : 'Thêm lốp'}
       </button>
     </div>
@@ -187,7 +187,7 @@ function InstallControl({ tire, oninstall }: {
       >
         {POSITION_OPTIONS.map((p) => <option key={p} value={p}>{TIRE_POSITION_LABELS[p]}</option>)}
       </select>
-      <button className="ttp-btn ttp-btn-primary" onClick={() => oninstall(tire.id, pos)}>
+      <button className="btn btn--primary" onClick={() => oninstall(tire.id, pos)}>
         Lắp lên xe
       </button>
     </>
@@ -250,15 +250,15 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
                   {oninstall && <InstallControl tire={t} oninstall={oninstall} />}
                   {onremove && (
                     <>
-                      <button className="ttp-btn" onClick={() => onremove(t.id, false)}>Tháo (về kho)</button>
-                      <button className="ttp-btn ttp-btn-danger" onClick={() => onremove(t.id, true)}>Thanh lý</button>
+                      <button className="btn btn--secondary" onClick={() => onremove(t.id, false)}>Tháo (về kho)</button>
+                      <button className="btn btn--danger" onClick={() => onremove(t.id, true)}>Thanh lý</button>
                     </>
                   )}
-                  <button className="ttp-btn" onClick={() => {
+                  <button className="btn btn--secondary" onClick={() => {
                     const sz = prompt('Kích cỡ mới', t.size ?? '');
                     if (sz !== null) onedit(t.id, { size: sz });
                   }}>Sửa</button>
-                  <button className="ttp-btn ttp-btn-danger" onClick={() => {
+                  <button className="btn btn--danger" onClick={() => {
                     if (confirm(`Xóa lốp "${t.serial}"?`)) ondelete(t.id);
                   }}>Xóa</button>
                 </div>

@@ -6,6 +6,7 @@ import { configClient } from '../api/configClient';
 import { formatCurrency, formatCompact, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
+import { EmptyState } from '../design-system';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -142,10 +143,11 @@ export default function ExpenseListPage() {
   );
 
   const renderEmptyState = () => (
-    <div className="expense-empty">
-      <img src="/assets/illustrations/empty-expenses.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-      <p className="expense-empty__text">Chưa có khoản chi phí nào.</p>
-    </div>
+    <EmptyState
+      illustration="/assets/illustrations/empty-expenses.svg"
+      title="Chưa có khoản chi phí nào."
+      action={<button className="btn btn--primary" onClick={() => navigate('/expenses/new')}><Plus size={15} /> Thêm phiếu chi</button>}
+    />
   );
 
   const renderLoadingState = () => (

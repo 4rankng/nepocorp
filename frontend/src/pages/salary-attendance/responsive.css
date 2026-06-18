@@ -49,17 +49,14 @@
     width: 100% !important;
   }
 
-  /* --- Driver strip: horizontal scroll, no wrap --- */
+  /* --- Driver selector: wrap instead of requiring a horizontal swipe --- */
   .driver-select-row {
     margin-bottom: 12px;
   }
 
   .driver-select-row__list {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    overflow: visible;
     padding: 2px 0 6px;
     gap: 8px;
   }
@@ -69,8 +66,7 @@
   }
 
   .driver-select-card {
-    scroll-snap-align: start;
-    flex-shrink: 0;
+    flex: 1 1 150px;
     min-width: auto;
     padding: 8px 14px;
     border-radius: 10px;

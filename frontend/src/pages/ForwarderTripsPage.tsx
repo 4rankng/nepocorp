@@ -244,12 +244,12 @@ export default function ForwarderTripsPage() {
                 <div className="driver-trip-card__meta">
                   <span className="driver-trip-card__plate-badge">
                     <Truck size={12} />
-                    {trip.truckPlate || '—'}
+                    <span className="driver-trip-card__badge-text">{trip.truckPlate || '—'}</span>
                   </span>
                   {trip.containerNumbers && (
                     <span className="driver-trip-card__plate-badge">
                       <Package size={12} />
-                      {trip.containerNumbers}
+                      <span className="driver-trip-card__badge-text">{trip.containerNumbers}</span>
                     </span>
                   )}
                   <span className="driver-trip-card__meta-item">

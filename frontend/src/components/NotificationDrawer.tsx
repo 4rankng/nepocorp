@@ -118,24 +118,23 @@ function PushNotificationToggle() {
 
   const rowStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-    padding: '10px 4px', borderBottom: '1px solid var(--border-1, rgba(0,0,0,0.08))',
+    padding: '10px 4px', borderBottom: '1px solid var(--border-1)',
   };
-  const labelStyle: React.CSSProperties = { fontSize: 14, fontWeight: 600, color: 'var(--ink-1, #111)' };
-  const hintStyle: React.CSSProperties = { fontSize: 12, color: 'var(--ink-3, #888)', textAlign: 'right' };
+  const labelStyle: React.CSSProperties = { fontSize: 14, fontWeight: 600, color: 'var(--ink)' };
+  const hintStyle: React.CSSProperties = { fontSize: 12, color: 'var(--ink-3)', textAlign: 'right' };
 
-  if (!isSupported) {
+  // Single early-return for the two states that can't toggle (unsupported /
+  // denied). Same row/label, only the hint text differs.
+  const hint = !isSupported
+    ? 'Trình duyệt không hỗ trợ'
+    : permissionStatus === 'denied'
+      ? 'Bật lại quyền trong cài đặt trình duyệt'
+      : null;
+  if (hint) {
     return (
       <div style={rowStyle}>
         <span style={labelStyle}>Thông báo đẩy</span>
-        <span style={hintStyle}>Trình duyệt không hỗ trợ</span>
-      </div>
-    );
-  }
-  if (permissionStatus === 'denied') {
-    return (
-      <div style={rowStyle}>
-        <span style={labelStyle}>Thông báo đẩy</span>
-        <span style={hintStyle}>Bật lại quyền trong cài đặt trình duyệt</span>
+        <span style={hintStyle}>{hint}</span>
       </div>
     );
   }
@@ -152,7 +151,7 @@ function PushNotificationToggle() {
       <span aria-hidden style={{
         width: 38, height: 22, borderRadius: 999, padding: 2, flexShrink: 0,
         display: 'inline-flex', alignItems: 'center',
-        background: on ? 'var(--accent, #00B14F)' : 'var(--ink-4, #c8c8c8)',
+        background: on ? 'var(--accent)' : 'var(--ink-4)',
         transition: 'background .15s ease',
       }}>
         <span style={{

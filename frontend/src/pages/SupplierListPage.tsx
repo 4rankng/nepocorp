@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { labelStyle } from '../utils/formStyles';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
+import { EmptyState } from '../design-system';
 import type { Supplier, Customer } from '@tingting/shared';
 import { CONFIG } from '@tingting/shared';
 import { useSuppliers } from '../hooks/useQueries';
@@ -313,10 +314,12 @@ export default function SupplierListPage() {
           {loading ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
-              <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-              <div>Chưa có dữ liệu</div>
-            </div>
+            <EmptyState
+              illustration="/assets/illustrations/empty-clients.svg"
+              title="Chưa có nhà cung cấp"
+              description="Thêm nhà cung cấp đầu tiên để bắt đầu quản lý chi phí."
+              action={<button className="btn btn--primary" onClick={() => { setShowAddForm(true); setEditingId(null); }}><Plus size={14} /> Thêm nhà cung cấp</button>}
+            />
           ) : (
             filtered.map(s => (
               <ClickableCard key={s.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/suppliers/${s.id}`)}>

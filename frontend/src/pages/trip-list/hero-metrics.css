@@ -12,7 +12,6 @@
   --d-green-50:   #F0FDF4;
   --d-green-100:  #DCFCE7;
   --d-green-500:  #16A34A;
-  --d-green-600:  #00873F;
   --d-green-700:  #007038;
   --d-green-800:  #005A2D;
   --d-amber:      #B45309;
@@ -107,26 +106,9 @@
 .trip-list-page .hero-sub { font-size: var(--fs-sm); color: var(--ink-2); }
 .trip-list-page .hero-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
-.trip-list-page .btn-d {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: var(--fs-sm); font-weight: 600;
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
-  border: 1px solid transparent;
-  white-space: nowrap;
-  background: transparent;
-  color: inherit;
-}
-.trip-list-page .btn-d--primary { background: var(--accent); color: var(--fg-on-brand); box-shadow: 0 8px 20px -12px rgba(0, 177, 79, 0.65); }
-.trip-list-page .btn-d--primary:hover { background: var(--d-green-600); transform: translateY(-1px); }
-.trip-list-page .btn-d--ghost-dark {
-  background: var(--surface-2); color: var(--ink);
-  border-color: var(--line);
-}
-.trip-list-page .btn-d--ghost-dark:hover { background: var(--surface); border-color: var(--line-strong); }
+/* Hero action buttons use the Global .btn / .btn--primary / .btn--secondary
+   system (components/Button.css). The page-scoped .btn-d* recipes were
+   retired during CTA unification. */
 
 /* ── Metric bento grid ─────────────────────────────────────────────────
    Layout: featured card spans 2 rows on the left, 4 tiles in 2×2 on the right.

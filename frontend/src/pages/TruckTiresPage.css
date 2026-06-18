@@ -129,29 +129,6 @@
   color: var(--fg-1);
 }
 
-.ttp-btn {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border-2);
-  background: var(--bg-1, #fff);
-  color: var(--fg-1);
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.ttp-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.ttp-btn-primary {
-  background: var(--brand, #2563eb);
-  color: #fff;
-  border-color: var(--brand, #2563eb);
-}
-
-.ttp-btn-danger {
-  color: var(--danger, #dc2626);
-  border-color: var(--border-2);
-}
+/* Tire action buttons use the Global .btn / .btn--primary / .btn--danger /
+   .btn--secondary system (components/Button.css). The page-scoped .ttp-btn*
+   recipes were retired during CTA unification. */

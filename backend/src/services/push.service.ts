@@ -47,16 +47,13 @@ export async function subscribe(userId: number, sub: PushSubscriptionPayload) {
     });
 }
 
-/** Remove a user's subscription for a given endpoint. */
+/**
+ * Remove a user's subscription for a given endpoint. Scoped by (userId,
+ * endpoint): a single browser endpoint can be registered under multiple
+ * userIds on a shared device, so deleting by endpoint alone would wipe other
+ * users' still-valid subscriptions.
+ */
 export async function unsubscribe(userId: number, endpoint: string) {
-  await db.delete(pushSubscriptions)
-    .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
-}
-
-async function deleteSubscription(userId: number, endpoint: string) {
-  // Scope by (userId, endpoint): a single browser endpoint can be registered
-  // under multiple userIds on a shared device, so deleting by endpoint alone
-  // would wipe other users' still-valid subscriptions.
   await db.delete(pushSubscriptions)
     .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
 }
@@ -116,7 +113,7 @@ export async function sendToUser(userId: number, title: string, body: string, ur
       // so we stop attempting to send to a dead endpoint. Other codes (400/401/
       // 403/413/429…) are sender-side/transient — keep the row and retry later.
       if (code === 410 || code === 404) {
-        await deleteSubscription(userId, s.endpoint).catch(() => { /* best-effort */ });
+        await unsubscribe(userId, s.endpoint).catch(() => { /* best-effort */ });
       } else {
         console.warn(`Push send failed (status=${code ?? '?'} user=${userId}):`,
           err instanceof Error ? err.message : err);

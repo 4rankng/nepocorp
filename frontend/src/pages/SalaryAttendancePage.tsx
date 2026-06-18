@@ -364,9 +364,9 @@ export default function SalaryAttendancePage() {
             <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} lái xe</div>
           </div>
           <div className="hero-actions">
-            <button className="btn-d btn-d--ghost-dark" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
+            <button className="btn btn--secondary btn--icon" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
             <span className="hero-month-label">Tháng {month}</span>
-            <button className="btn-d btn-d--ghost-dark" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
+            <button className="btn btn--secondary btn--icon" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
           </div>
         </div>
         <div className="metrics fade-up-3">

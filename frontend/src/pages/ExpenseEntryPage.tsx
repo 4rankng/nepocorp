@@ -426,7 +426,7 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="expense-btn-save" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
+                    <button type="button" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
                       {creatingSupplier ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
                     <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
@@ -473,7 +473,7 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="expense-btn-save" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
+                    <button type="button" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
                       {creatingCategory ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
                     <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
@@ -702,7 +702,7 @@ export default function ExpenseEntryPage() {
                 </button>
                 <button
                   type="submit"
-                  className="expense-btn-save expense-btn-submit"
+                  className="btn btn--primary expense-btn-submit"
                   disabled={submitting || uploading}
                 >
                   {submitting ? (

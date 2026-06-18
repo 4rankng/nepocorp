@@ -32,8 +32,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow-x: visible;
   scrollbar-width: none;
   flex: 1;
   min-width: 0;

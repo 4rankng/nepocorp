@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Download, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { EmptyState } from '../design-system';
 import { useDispatchData } from '../hooks/useQueries';
 import type { NormalizedTrip } from '../hooks/useTripQueries';
 import { useDispatchMutations, useReassignMutations } from '../features/dispatch/hooks/useDispatchMutations';
@@ -63,8 +64,8 @@ export default function DispatchPage() {
             <div className="hero-sub">{formatFullDate(new Date())} · {pendingTotal} đơn hàng chờ phân xe</div>
           </div>
           <div className="hero-actions">
-            <button className="btn-d btn-d--ghost-dark" type="button" disabled><Download size={15} /> Xuất báo cáo</button>
-            <button className="btn-d btn-d--primary" type="button" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>
+            <button className="btn btn--secondary" type="button" disabled><Download size={15} /> Xuất báo cáo</button>
+            <button className="btn btn--primary" type="button" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>
           </div>
         </div>
         <div className="metrics fade-up-3">
@@ -94,11 +95,12 @@ export default function DispatchPage() {
         </div>
         {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
-          <div className="orders-empty">
-            <img src="/assets/illustrations/empty-dispatch.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 8 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <div className="title">Không có đơn hàng nào chờ khởi hành</div>
-            <div>Tất cả các chuyến đi đã xuất phát hoặc chưa tạo.</div>
-          </div>
+          <EmptyState
+            illustration="/assets/illustrations/empty-dispatch.svg"
+            title="Không có đơn hàng nào chờ khởi hành"
+            description="Tất cả các chuyến đi đã xuất phát hoặc chưa tạo."
+            action={<button className="btn btn--primary" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>}
+          />
         ) : pendingTrips.map((trip) => (
           <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
         ))}

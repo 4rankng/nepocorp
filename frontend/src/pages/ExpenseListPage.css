@@ -432,34 +432,8 @@
   cursor: not-allowed;
 }
 
-/* ── Empty / Loading States ─────────────────────────────────────────────── */
-
-.expense-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 24px;
-  text-align: center;
-}
-
-.expense-empty__icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: var(--surface-3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  color: var(--ink-3);
-}
-
-.expense-empty__text {
-  font-size: var(--fs-sm);
-  color: var(--ink-3);
-  font-weight: 500;
-}
+/* Empty state uses the shared <EmptyState> (design-system); the page-scoped
+   .expense-empty* rules were retired during CTA unification. */
 
 .expense-loading {
   padding: 48px 24px;

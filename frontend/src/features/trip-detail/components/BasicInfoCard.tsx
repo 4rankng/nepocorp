@@ -49,7 +49,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       {row.value}
                       <button
-                        className="btn-icon"
+                        className="btn btn--icon"
                         title="Thay đổi ngày khởi hành"
                         onClick={() => { setPendingDate(trip.departureDate); setEditingDate(true); }}
                         style={{ padding: 2 }}
@@ -67,7 +67,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
                         style={{ width: 150, padding: '2px 6px', fontSize: 13 }}
                       />
                       <button
-                        className="btn btn-sm btn-primary"
+                        className="btn btn--sm btn--primary"
                         disabled={actionLoading || pendingDate === trip.departureDate}
                         onClick={async () => {
                           if (onChangeDepartureDate) {
@@ -84,7 +84,7 @@ export function BasicInfoCard({ trip, canChangeDate, onChangeDepartureDate, acti
                         {actionLoading ? '...' : 'Lưu'}
                       </button>
                       <button
-                        className="btn btn-sm btn-ghost"
+                        className="btn btn--sm btn--ghost"
                         onClick={() => setEditingDate(false)}
                         style={{ padding: '2px 8px', fontSize: 12 }}
                       >

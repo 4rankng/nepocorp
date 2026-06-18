@@ -220,24 +220,8 @@ select.expense-input {
   background: var(--bg-2);
 }
 
-/* Save button */
-.expense-btn-save {
-  background: var(--brand-grad);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 24px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.expense-btn-save:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* Save button — uses Global .btn--primary (components/Button.css). Only the
+   full-width layout modifier (.expense-btn-submit) is defined here. */
 
 .expense-btn-submit {
   width: 100%;
@@ -260,7 +244,7 @@ select.expense-input {
     font-size: var(--fs-md); /* prevents iOS zoom */
     min-height: 44px;
   }
-  .expense-btn-save,
+  .expense-btn-submit,
   .expense-btn-cancel {
     min-height: 44px;
   }

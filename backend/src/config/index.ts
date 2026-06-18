@@ -5,6 +5,10 @@ dotenv.config({ override: true });
 
 const isProd = process.env.NODE_ENV === 'production';
 
+// Default VAPID subject (RFC 8030 "from" contact). Single source — referenced
+// by the schema default, the dev fallback, and the parse-failure recovery below.
+const VAPID_SUBJECT_DEFAULT = 'mailto:admin@tingting.vip';
+
 // Express `trust proxy` setting — controls how `req.ip` reads X-Forwarded-For.
 // Number = hop count (typical: 1 when a single reverse proxy like nginx sits
 // in front), boolean = trust all / trust none. Default 1 in production, false
@@ -37,7 +41,7 @@ const configSchema = z.object({
   // Web Push (VAPID). Optional — push silently no-ops when these are empty.
   vapidPublicKey: z.string().default(''),
   vapidPrivateKey: z.string().default(''),
-  vapidSubject: z.string().default('mailto:admin@tingting.vip'),
+  vapidSubject: z.string().default(VAPID_SUBJECT_DEFAULT),
 });
 
 const raw = {
@@ -73,7 +77,7 @@ const withDefaults = {
   trustProxy: raw.trustProxy,
   vapidPublicKey: raw.vapidPublicKey || '',
   vapidPrivateKey: raw.vapidPrivateKey || '',
-  vapidSubject: raw.vapidSubject || 'mailto:admin@tingting.vip',
+  vapidSubject: raw.vapidSubject || VAPID_SUBJECT_DEFAULT,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -105,5 +109,5 @@ export const config = result.success ? result.data : configSchema.parse({
   trustProxy: false,
   vapidPublicKey: '',
   vapidPrivateKey: '',
-  vapidSubject: 'mailto:admin@tingting.vip',
+  vapidSubject: VAPID_SUBJECT_DEFAULT,
 });

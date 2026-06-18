@@ -308,46 +308,9 @@
   letter-spacing: 0.005em;
 }
 
-/* Primary action: brass-tinted (Deep-Luxe) */
-.tc-rail-btn--primary {
-  background: var(--brass-3);
-  color: var(--ink, #0A0A0A);
-  border: none;
-  box-shadow: none;
-}
-.tc-rail-btn--primary:hover:not(:disabled) {
-  background: var(--brass-2);
-  color: #fff;
-  box-shadow: none;
-}
-.tc-rail-btn--primary:disabled {
-  background: var(--brass-1);
-  color: rgba(255, 255, 255, 0.78);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Secondary (Hủy bỏ): outline with brass accent */
-.tc-rail-btn--secondary {
-  background: transparent;
-  color: var(--ink, #0A0A0A);
-  border: 1px solid var(--line-2, #D6D9DE);
-  box-shadow: none;
-}
-.tc-rail-btn--secondary:hover:not(:disabled) {
-  background: rgba(212, 165, 116, 0.10);
-  border-color: var(--brass-3);
-  color: var(--ink, #0A0A0A);
-  box-shadow: none;
-}
-.tc-rail-btn--secondary:active:not(:disabled) {
-  background: rgba(212, 165, 116, 0.16);
-}
-.tc-rail-btn--secondary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
+/* Primary + secondary rail/mobile actions inherit the Global .btn--primary /
+ * .btn--secondary recipe (green gradient + --shadow-brand). tc-rail-btn and
+ * tc-mobile-btn remain layout-only (full width / flex sizing). */
 
 /* ── Mobile save bar ── */
 .tc-edit-mobile-bar {

@@ -38,10 +38,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   const [permissionStatus, setPermissionStatus] = useState<PushPermissionStatus>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSupported] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-  });
+  // Static feature-detection — never changes after first render, so a plain
+  // const (not state) suffices and avoids a needless state slot.
+  const isSupported =
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window;
 
   // Sync current OS permission + existing subscription on mount.
   useEffect(() => {
