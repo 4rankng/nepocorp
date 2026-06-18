@@ -4,28 +4,21 @@
  * Two coexisting card families:
  *  1. .tc-summary-card* — used by TripSummaryCard.tsx (trip create page).
  *  2. .tc-totals*      — used by TotalsPanel.tsx (trip edit page, right rail).
- *                         Deep-luxe aesthetic: dark hero, brass/amber accents.
  *
- * Brass/amber/copper tokens are declared at :root so the right-rail action
- * panel (TripEditPage.css) can reuse the same palette.
+ * Color tokens are reused from the global design system (--ink, --line,
+ * --accent, --danger, --warning) so both families match the rest of the app.
  * ========================================================================== */
 
-:root {
-  /* Brass/amber accent spectrum — single warm hue, multiple depths. */
-  --brass-1: #8B6F47; /* deep brass — darkest segment, ambient shadow */
-  --brass-2: #B8895A; /* mid brass   — road segment, default accent */
-  --brass-3: #D4A574; /* standard brass — fuel segment, profit positive, primary accent */
-  --brass-4: #E8C896; /* light brass — salary segment, hover, secondary */
-  --copper:  #C77B5C; /* muted copper — profit negative, error accent */
-}
-
 /* ============================================================================
- * 1. TripSummaryCard — legacy dark summary card (used by TripSummaryCard.tsx).
+ * 1. TripSummaryCard — light surface summary card (used by TripSummaryCard.tsx).
  * ========================================================================== */
 
 .tc-summary-card {
-  background: var(--ink);
-  color: var(--fg-on-brand);
+  background:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.06), rgba(255, 255, 255, 0) 48%),
+    var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 20px;
   position: relative;
@@ -38,8 +31,8 @@
   right: -40px;
   width: 160px;
   height: 160px;
-  background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
-  opacity: 0.35;
+  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 70%);
+  opacity: 1;
   pointer-events: none;
 }
 .tc-summary-card__label {
@@ -47,7 +40,7 @@
   font-size: var(--fs-xs);
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: var(--accent-ink);
   font-weight: var(--fw-semibold);
 }
 .tc-summary-card__big {
@@ -59,17 +52,18 @@
 }
 .tc-summary-card__currency {
   font-size: var(--fs-sm);
-  opacity: 0.6;
+  opacity: 0.7;
   margin-left: 6px;
+  color: var(--ink-3);
 }
 .tc-summary-card__mini {
   font-size: var(--fs-xs);
-  color: rgba(255,255,255,0.55);
+  color: var(--ink-3);
 }
 .tc-summary-rows {
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -83,7 +77,7 @@
   font-size: var(--fs-xs);
 }
 .tc-summary-row__lbl {
-  color: rgba(255,255,255,0.65);
+  color: var(--ink-2);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -92,12 +86,12 @@
   font-family: var(--font-mono);
   font-weight: var(--fw-semibold);
 }
-.tc-summary-row__val--neg { color: var(--danger-soft); }
+.tc-summary-row__val--neg { color: var(--danger); }
 .tc-summary-row__val--pos { color: var(--accent); }
 .tc-summary-row--total {
   margin-top: 6px;
   padding-top: 12px;
-  border-top: 1px dashed rgba(255,255,255,0.15);
+  border-top: 1px dashed var(--line);
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
 }
@@ -107,13 +101,15 @@
 }
 
 /* ============================================================================
- * 2. TotalsPanel — deep-luxe dark hero for the right rail of /trips/:id/edit.
- *    Aesthetic: layered dark surfaces, brass/amber accents, refined typography.
+ * 2. TotalsPanel — light surface right-rail summary for /trips/:id/edit.
  * ========================================================================== */
 
 .tc-totals {
-  background: var(--ink);
-  color: var(--fg-on-brand);
+  background:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.06), rgba(255, 255, 255, 0) 48%),
+    var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: 20px;
   padding: 22px 22px 18px;
   position: relative;
@@ -129,8 +125,8 @@
   right: -50px;
   width: 180px;
   height: 180px;
-  background: radial-gradient(circle, var(--brass-3) 0%, transparent 70%);
-  opacity: 0.22;
+  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 70%);
+  opacity: 1;
   pointer-events: none;
   z-index: 0;
 }
@@ -147,21 +143,21 @@
   font-size: var(--fs-2xs);
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: var(--brass-4);
+  color: var(--accent-ink);
   font-weight: var(--fw-semibold);
 }
 .tc-totals__title {
   margin: 0;
   font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
-  color: #fff;
+  color: var(--ink);
   letter-spacing: var(--tracking-tight);
 }
 
 /* ── Revenue hero (inset) ── */
 .tc-totals__revenue {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(212, 165, 116, 0.18);
+  background: rgba(0, 177, 79, 0.06);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
   border-radius: 14px;
   padding: 14px 16px 12px;
   display: flex;
@@ -171,7 +167,7 @@
 .tc-totals__revenue-label {
   margin: 0;
   font-size: var(--fs-xs);
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ink-2);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
 }
@@ -180,12 +176,12 @@
   font-family: var(--font-mono);
   font-size: 32px;
   font-weight: var(--fw-extrabold);
-  color: #fff;
+  color: var(--ink);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
 }
 .tc-totals__revenue-value .money__unit {
-  color: var(--brass-3);
+  color: var(--ink-3);
   opacity: 1;
   font-weight: var(--fw-semibold);
   margin-left: 4px;
@@ -193,7 +189,7 @@
 .tc-totals__revenue-split {
   margin: 6px 0 0;
   padding: 8px 0 0;
-  border-top: 1px solid rgba(212, 165, 116, 0.12);
+  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -207,17 +203,17 @@
 }
 .tc-totals__revenue-split dt {
   margin: 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ink-3);
 }
 .tc-totals__revenue-split dd {
   margin: 0;
   font-family: var(--font-mono);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
   font-weight: var(--fw-semibold);
 }
 .tc-totals__revenue-split dd .money__unit {
-  color: var(--brass-4);
-  opacity: 0.9;
+  color: var(--ink-3);
+  opacity: 1;
 }
 
 /* ── Allocation bar ── */
@@ -231,24 +227,24 @@
   justify-content: space-between;
   align-items: baseline;
   font-size: var(--fs-xs);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ink-2);
   font-weight: var(--fw-semibold);
 }
 .tc-totals__alloc-head .money {
   font-family: var(--font-mono);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
   font-weight: var(--fw-bold);
 }
 .tc-totals__alloc-head .money__unit {
-  color: var(--brass-4);
-  opacity: 0.95;
+  color: var(--ink-3);
+  opacity: 1;
 }
 .tc-totals__alloc-bar {
   display: flex;
   height: 12px;
   border-radius: 6px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   gap: 0;
 }
 .tc-totals__alloc-seg {
@@ -257,10 +253,10 @@
   display: block;
   transition: width var(--t-normal, 180ms);
 }
-.tc-totals__alloc-seg--fuel   { background: var(--brass-3); }
-.tc-totals__alloc-seg--road   { background: var(--brass-2); }
-.tc-totals__alloc-seg--salary { background: var(--brass-4); }
-.tc-totals__alloc-seg--other  { background: var(--brass-1); }
+.tc-totals__alloc-seg--fuel   { background: var(--accent, #00B14F); }
+.tc-totals__alloc-seg--road   { background: #1D4ED8; }
+.tc-totals__alloc-seg--salary { background: #B45309; }
+.tc-totals__alloc-seg--other  { background: var(--ink-4, #BABDC3); }
 
 .tc-totals__alloc-legend {
   list-style: none;
@@ -270,7 +266,7 @@
   flex-wrap: wrap;
   gap: 10px 12px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ink-3);
 }
 .tc-totals__alloc-legend li {
   display: inline-flex;
@@ -284,14 +280,14 @@
   display: inline-block;
   flex: 0 0 auto;
 }
-.tc-totals__alloc-legend .tc-totals__legend-dot--fuel   { background: var(--brass-3); }
-.tc-totals__alloc-legend .tc-totals__legend-dot--road   { background: var(--brass-2); }
-.tc-totals__alloc-legend .tc-totals__legend-dot--salary { background: var(--brass-4); }
-.tc-totals__alloc-legend .tc-totals__legend-dot--other  { background: var(--brass-1); }
+.tc-totals__alloc-legend .tc-totals__legend-dot--fuel   { background: var(--accent, #00B14F); }
+.tc-totals__alloc-legend .tc-totals__legend-dot--road   { background: #1D4ED8; }
+.tc-totals__alloc-legend .tc-totals__legend-dot--salary { background: #B45309; }
+.tc-totals__alloc-legend .tc-totals__legend-dot--other  { background: var(--ink-4, #BABDC3); }
 .tc-totals__alloc-legend strong {
   font-family: var(--font-mono);
   font-weight: var(--fw-semibold);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
 }
 
 /* ── Cost rows + profit ── */
@@ -309,7 +305,7 @@
   border-radius: 6px;
   transition: background var(--t-fast, 120ms);
 }
-.tc-totals-row:hover { background: rgba(255, 255, 255, 0.04); }
+.tc-totals-row:hover { background: var(--surface-2); }
 .tc-totals-row--clickable {
   cursor: pointer;
   user-select: none;
@@ -318,32 +314,32 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--ink-2);
   min-width: 0;
 }
 .tc-totals-row__lbl svg {
-  color: var(--brass-3);
+  color: var(--accent, #00B14F);
   flex: 0 0 auto;
 }
 .tc-totals-row__val {
   font-family: var(--font-mono);
   font-weight: var(--fw-bold);
-  color: var(--copper);
+  color: var(--danger);
   white-space: nowrap;
   display: inline-flex;
   align-items: baseline;
   gap: 0.15em;
 }
 .tc-totals-row__val .money__unit {
-  color: var(--copper);
-  opacity: 0.85;
+  color: var(--danger);
+  opacity: 1;
 }
 .tc-totals-row__adjusted-pill {
   font-size: 9px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(212, 165, 116, 0.18);
-  color: var(--brass-3);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -351,7 +347,7 @@
 }
 .tc-totals-row__chev {
   opacity: 0.55;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ink-3);
   flex: 0 0 auto;
 }
 
@@ -361,9 +357,9 @@
   gap: 4px;
   padding: 4px 0 8px 26px;
   margin-left: 6px;
-  border-left: 1px dashed rgba(212, 165, 116, 0.18);
+  border-left: 1px dashed var(--line);
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-3);
 }
 .tc-totals-breakdown__row {
   display: flex;
@@ -379,20 +375,20 @@
 }
 .tc-totals-breakdown__row .money {
   font-family: var(--font-mono);
-  color: var(--copper);
+  color: var(--danger);
   font-weight: var(--fw-semibold);
   flex: 0 0 auto;
 }
 .tc-totals-breakdown__row--override {
   padding-top: 6px;
   margin-top: 2px;
-  border-top: 1px dashed rgba(212, 165, 116, 0.22);
+  border-top: 1px dashed var(--line);
 }
 .tc-totals-breakdown__row--override span:first-child {
-  color: var(--brass-3);
+  color: var(--accent);
 }
 .tc-totals-breakdown__row--override .money {
-  color: var(--brass-3);
+  color: var(--accent);
   font-weight: var(--fw-bold);
 }
 
@@ -402,12 +398,12 @@
   align-items: center;
   margin-top: 8px;
   padding-top: 14px;
-  border-top: 1px dashed rgba(212, 165, 116, 0.28);
+  border-top: 1px dashed var(--line);
 }
 .tc-totals__profit-label {
   font-size: 13px;
   font-weight: var(--fw-bold);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
   letter-spacing: 0.01em;
 }
 .tc-totals__profit-val {
@@ -425,13 +421,13 @@
   font-size: 0.55em;
 }
 .tc-totals__profit-val.is-pos {
-  color: var(--brass-3);
+  color: var(--accent);
 }
-.tc-totals__profit-val.is-pos .money__unit { color: var(--brass-3); }
+.tc-totals__profit-val.is-pos .money__unit { color: var(--accent); }
 .tc-totals__profit-val.is-neg {
-  color: var(--copper);
+  color: var(--danger);
 }
-.tc-totals__profit-val.is-neg .money__unit { color: var(--copper); }
+.tc-totals__profit-val.is-neg .money__unit { color: var(--danger); }
 .tc-totals__profit-pill {
   display: inline-flex;
   align-items: center;
@@ -439,13 +435,13 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  background: rgba(212, 165, 116, 0.18);
-  color: var(--brass-3);
+  background: var(--accent-soft);
+  color: var(--accent);
   flex: 0 0 auto;
 }
 .tc-totals__profit-val.is-neg .tc-totals__profit-pill {
-  background: rgba(199, 123, 92, 0.20);
-  color: var(--copper);
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 /* ── Responsive ── */

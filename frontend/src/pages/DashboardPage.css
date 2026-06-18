@@ -855,9 +855,26 @@
   box-shadow: 0 1px 3px rgba(0,90,45,0.2);
 }
 
-/* ── 1F. Donut center lift ── */
+/* ── 1F. Donut center lift (white disc behind text so it sits above the ring) ── */
+.dash-wf .wf-donut .ctr::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70px;
+  height: 70px;
+  transform: translate(-50%, -50%);
+  background: var(--surface, #fff);
+  border-radius: 50%;
+  z-index: 0;
+}
 .dash-wf .wf-donut .ctr .big {
-  text-shadow: 0 0 8px rgba(255,255,255,0.8);
+  position: relative;
+  z-index: 1;
+}
+.dash-wf .wf-donut .ctr .sm {
+  position: relative;
+  z-index: 1;
 }
 
 /* ── 2A. Hero card top gradient bar (3px accent) ── */

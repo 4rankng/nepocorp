@@ -9,14 +9,16 @@
   /* wrapper */
 }
 
-/* Dark premium card */
+/* Light premium card — matches app-wide hero treatment */
 .salary-summary-dark {
-  background: #0f1117;
-  color: #f1f5f9;
-  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    var(--surface);
+  color: var(--ink);
+  border-radius: 16px;
   padding: 22px 22px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   position: relative;
   overflow: hidden;
 }
@@ -29,7 +31,7 @@
   right: -60px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.12) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -38,7 +40,7 @@
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--accent-ink);
   margin-bottom: 12px;
   position: relative;
 }
@@ -48,7 +50,7 @@
   font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #f8fafc;
+  color: var(--ink);
   line-height: 1;
   margin-bottom: 4px;
   position: relative;
@@ -56,7 +58,7 @@
 
 .salary-summary-dark__mini {
   font-size: var(--fs-2xs);
-  color: #475569;
+  color: var(--ink-3);
   margin-bottom: 0;
   position: relative;
 }
@@ -64,7 +66,7 @@
 .salary-summary-dark__rows {
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -79,7 +81,7 @@
 }
 
 .salary-summary-dark__row-lbl {
-  color: #94a3b8;
+  color: var(--ink-2);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -93,12 +95,12 @@
 .salary-summary-dark__row-val {
   font-family: var(--font-mono);
   font-weight: 600;
-  color: #cbd5e1;
+  color: var(--ink-2);
   font-size: var(--fs-xs);
 }
 
 .salary-edit-link {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ink-3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -106,36 +108,36 @@
 }
 
 .salary-edit-link:hover {
-  color: var(--fg-on-brand);
+  color: var(--accent);
 }
 
 .salary-summary-dark__row-val--neg {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .salary-summary-dark__row-val--pos {
-  color: #34d399;
+  color: var(--accent);
 }
 
 .salary-summary-dark__row--total {
   margin-top: 4px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--line);
   font-size: var(--fs-sm);
 }
 
 .salary-summary-dark__row--total .salary-summary-dark__row-lbl {
-  color: #f1f5f9;
+  color: var(--ink);
   font-weight: 700;
 }
 
 .salary-summary-dark__row--total .salary-summary-dark__row-val {
-  color: #4ade80;
+  color: var(--accent);
   font-size: var(--fs-md);
   font-weight: 700;
 }
 
-/* Standby callout inside dark card */
+/* Standby callout inside summary card */
 .payslip-callout {
   display: flex;
   gap: 10px;
@@ -143,12 +145,12 @@
   padding: 10px 14px;
   margin-top: 14px;
   align-items: flex-start;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.16);
+  background: var(--warning-soft, #FFFBEB);
+  border: 1px solid color-mix(in srgb, var(--warning, #D97706) 25%, transparent);
 }
 
 .payslip-callout-icon {
-  color: #f59e0b;
+  color: var(--warning, #D97706);
   flex-shrink: 0;
   margin-top: 1px;
   opacity: 0.9;
@@ -157,7 +159,7 @@
 .payslip-callout-text {
   font-size: var(--fs-2xs);
   line-height: 1.5;
-  color: #d97706;
+  color: var(--warning-text, #92400E);
 }
 
 /* ─── Mobile back button ─── */

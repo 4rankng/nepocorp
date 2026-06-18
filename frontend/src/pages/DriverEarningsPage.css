@@ -25,19 +25,21 @@
   border-radius: 20px;
   overflow: hidden;
   margin-bottom: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    var(--surface);
 }
 
 .earnings-hero-bento--positive {
-  background: linear-gradient(135deg, #005A2D, #00813F);
-  color: #fff;
-  box-shadow: 0 8px 24px -8px rgba(0, 177, 79, 0.3);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -22px rgba(0, 90, 45, 0.45);
 }
 
 .earnings-hero-bento--negative {
-  background: linear-gradient(135deg, #7F1D1D, #B91C1C);
-  color: #fff;
-  box-shadow: 0 8px 24px -8px rgba(185, 28, 28, 0.3);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--danger) 20%, var(--line));
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .earnings-hero-bento__content {
@@ -50,7 +52,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  opacity: 0.8;
+  color: var(--accent-ink);
   margin-bottom: 8px;
 }
 
@@ -61,11 +63,12 @@
   line-height: 1.1;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 .earnings-hero-bento__currency {
   font-size: 0.6em;
-  opacity: 0.7;
+  color: var(--ink-3);
   margin-left: 4px;
 }
 
@@ -73,7 +76,8 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--accent-soft);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,8 +91,9 @@
   right: 24px;
   top: 50%;
   transform: translateY(-50%);
-  opacity: 0.08;
+  opacity: 0.06;
   z-index: 0;
+  color: var(--ink);
 }
 
 /* ============================================================================
