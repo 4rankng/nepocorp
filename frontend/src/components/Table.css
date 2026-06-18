@@ -3,7 +3,7 @@
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
 .table-wrap {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.92));
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
@@ -12,7 +12,17 @@
 .table-wrap--standalone {
   border-radius: 12px;
 }
-.table-scroll { overflow-x: auto; overflow-y: hidden; }
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: rgba(0, 90, 45, 0.25) transparent;
+  scrollbar-width: thin;
+}
+.table-scroll::-webkit-scrollbar { height: 8px; }
+.table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 90, 45, 0.22);
+  border-radius: 999px;
+}
 
 /* Ancillary-fees grid: 8 cols (Loại phí · Hình thức · Mua · Bán · Lãi DV
    · Nhà CC · Chứng từ · Trạng thái). Settlement method got its own column
@@ -24,9 +34,14 @@
 .ancillary-fees__table { min-width: 720px; table-layout: fixed; width: 100%; }
 .ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-2xs); }
 .ancillary-fees__table thead th {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface-3));
-  color: var(--ink-3);
+  background:
+    linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, var(--surface-2), var(--surface-3));
+  color: var(--ink-2);
   border-bottom: 1px solid var(--line-2);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .ancillary-fees__table tbody tr {
   transition: background 120ms var(--ease);

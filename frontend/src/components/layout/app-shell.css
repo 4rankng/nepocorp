@@ -62,6 +62,13 @@
   /* Collapsed nav: show icons only */
   .app.sidebar-closed .sidebar-nav {
     padding: 8px 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+
+  .app.sidebar-closed .sidebar-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .app.sidebar-closed .sidebar-section-label {

@@ -103,6 +103,38 @@
   /* color already set inline via success/danger var */
 }
 
+.salary-empty-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.salary-empty-inline img {
+  width: 56px;
+  height: 46px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.salary-empty-panel {
+  padding: 42px 24px 46px;
+  text-align: center;
+  color: var(--fg-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.salary-empty-panel img {
+  width: 168px;
+  height: 140px;
+  object-fit: contain;
+}
+
 @media (max-width: 640px) {
   .driver-select-card {
     padding: 7px 12px;
@@ -134,7 +166,7 @@
 }
 
 .calendar-container {
-  padding: 16px;
+  padding: 14px;
 }
 
 /* ─── Day-of-Week Header ─── */
@@ -163,20 +195,20 @@
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 5px;
 }
 
 /* ─── Calendar Day Cell ─── */
 .cal-cell {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 7px;
+  border-radius: 9px;
   border: 1px solid var(--border-1);
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.86));
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 5px 4px 4px;
+  padding: 6px 5px 5px;
   transition: border-color 140ms ease, background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
   min-width: 0;
   user-select: none;
@@ -196,9 +228,9 @@
 
 .cal-cell.is-clickable:hover {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.92));
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 18px -16px rgba(0, 90, 45, 0.55);
 }
 
 .cal-cell.is-clickable:active {
@@ -227,6 +259,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
   opacity: 0.85;
   transition: transform 140ms ease;
 }
@@ -264,7 +299,7 @@
 /* ─── Status Variants ─── */
 /* Đi chuyến — subtle green tint */
 .cal-cell.status-trip_day {
-  background: #f0fdf4;
+  background: linear-gradient(180deg, #f0fdf4, #ffffff);
   border-color: #bbf7d0;
 }
 .cal-cell.status-trip_day .cal-cell-day-num {
@@ -272,11 +307,12 @@
 }
 .cal-cell.status-trip_day .cal-cell-icon-wrap {
   color: #16a34a;
+  background: rgba(34, 197, 94, 0.10);
 }
 
 /* Chờ việc — subtle amber tint */
 .cal-cell.status-standby {
-  background: #fefce8;
+  background: linear-gradient(180deg, #fffbea, #ffffff);
   border-color: #fde68a;
 }
 .cal-cell.status-standby .cal-cell-day-num {
@@ -284,11 +320,12 @@
 }
 .cal-cell.status-standby .cal-cell-icon-wrap {
   color: #ca8a04;
+  background: rgba(245, 158, 11, 0.11);
 }
 
 /* Nghỉ riêng — subtle rose tint */
 .cal-cell.status-personal_leave {
-  background: #fff1f2;
+  background: linear-gradient(180deg, #fff1f2, #ffffff);
   border-color: #fecdd3;
 }
 .cal-cell.status-personal_leave .cal-cell-day-num {
@@ -296,11 +333,12 @@
 }
 .cal-cell.status-personal_leave .cal-cell-icon-wrap {
   color: #e11d48;
+  background: rgba(225, 29, 72, 0.10);
 }
 
 /* Nghỉ tuần — neutral slate */
 .cal-cell.status-weekly_off {
-  background: var(--bg-2);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border-color: var(--border-1);
 }
 .cal-cell.status-weekly_off .cal-cell-day-num {
@@ -309,6 +347,7 @@
 .cal-cell.status-weekly_off .cal-cell-icon-wrap {
   color: var(--fg-3);
   opacity: 0.6;
+  background: var(--surface-3);
 }
 
 /* ─── Calendar Footer: Legend + Instruction ─── */
@@ -374,4 +413,3 @@
   gap: 7px;
   line-height: 1.4;
 }
-

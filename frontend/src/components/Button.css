@@ -19,8 +19,8 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: none;
-  transition: background 120ms var(--ease), border-color 120ms var(--ease),
-              box-shadow 120ms var(--ease), color 120ms var(--ease),
+  transition: background 140ms var(--ease), border-color 140ms var(--ease),
+              box-shadow 140ms var(--ease), color 140ms var(--ease),
               transform 80ms var(--ease);
 }
 .btn:focus-visible {
@@ -31,7 +31,9 @@
 
 /* wireframe variants */
 .btn--primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   color: var(--fg-on-brand);
   border-color: transparent;
   box-shadow: var(--shadow-brand);
@@ -52,18 +54,18 @@
   transform: translateY(-1px);
 }
 .btn--secondary {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
   color: var(--ink);
   border-color: var(--line-2);
   box-shadow: var(--sh-sm);
 }
-.btn--secondary:hover { border-color: var(--line-strong); box-shadow: var(--sh); }
+.btn--secondary:hover { border-color: var(--line-strong); box-shadow: var(--sh-sm); }
 .btn--ghost {
   background: transparent;
   color: var(--ink-2);
   padding: 9px 10px;
 }
-.btn--ghost:hover { background: var(--surface); color: var(--ink); box-shadow: var(--sh-sm); }
+.btn--ghost:hover { background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft)); color: var(--ink); box-shadow: var(--sh-sm); }
 .btn--danger {
   background: var(--surface);
   color: var(--danger);

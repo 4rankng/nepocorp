@@ -22,6 +22,19 @@ input, select, textarea { font: inherit; }
 img { display: block; }
 ::selection { background: var(--accent-soft); color: var(--accent-ink); }
 
+.asset-route-grid {
+  background-image: url("/assets/illustrations/pattern-route-grid.svg");
+  background-size: 240px 240px;
+  background-repeat: repeat;
+}
+
+.asset-ledger-watermark {
+  background-image: url("/assets/illustrations/watermark-ledger.svg");
+  background-position: right 16px bottom 12px;
+  background-repeat: no-repeat;
+  background-size: 96px 96px;
+}
+
 :focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
   outline-offset: 2px;

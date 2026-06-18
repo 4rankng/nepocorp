@@ -286,7 +286,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!sidebarOpen || navClientHeight === 0) return;
+    if (!sidebarOpen || navClientHeight === 0) {
+      setCollapsed(prev => (prev.size === 0 ? prev : new Set<string>()));
+      return;
+    }
     const nav = navRef.current;
     if (!nav) return;
     const item = nav.querySelector('.sidebar-item') as HTMLElement | null;
@@ -316,13 +319,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [navClientHeight, sidebarOpen, activeSection, user?.role]);
 
   const toggleSection = useCallback((key: string) => {
+    if (!sidebarOpen) return;
     setCollapsed(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
     });
-  }, []);
+  }, [sidebarOpen]);
 
   // In icons-only (collapsed) mode the section chevrons + labels are hidden,
   // so per-section collapse just hides icons the user can no longer click

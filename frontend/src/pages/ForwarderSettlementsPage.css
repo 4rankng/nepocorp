@@ -397,18 +397,25 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .fset-check-item__amount {
+  display: inline-flex;
+  align-items: baseline;
+  flex-shrink: 0;
   font-weight: 600;
   font-size: var(--fs-sm);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .fset-check-item__reason {
   font-size: var(--fs-sm);
   color: var(--ink-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fset-check-item__date {
@@ -425,6 +432,8 @@
   font-weight: 600;
   font-size: var(--fs-sm);
   color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fset-check-item__meta {
@@ -439,6 +448,7 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .fset-check-item__sub {
@@ -868,6 +878,23 @@
 
   .fset-step-body {
     padding: 12px 16px;
+  }
+
+  .fset-check-item__row {
+    flex-wrap: wrap;
+    align-items: baseline;
+    row-gap: 2px;
+  }
+
+  .fset-check-item--expense .fset-check-item__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+    align-items: baseline;
+  }
+
+  .fset-check-item--expense .fset-check-item__meta {
+    grid-column: 1 / -1;
   }
 
   .fset-expense-toolbar {

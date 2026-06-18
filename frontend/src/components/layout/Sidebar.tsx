@@ -76,7 +76,7 @@ function Sidebar({
   const renderNavSection = (label: string, sectionName: SectionName) => {
     const items = navItems.filter(i => i.section === sectionName);
     if (items.length === 0) return null;
-    const isCollapsed = collapsed.has(sectionName);
+    const isCollapsed = sidebarOpen && collapsed.has(sectionName);
 
     return (
       <div key={sectionName}>
@@ -84,6 +84,7 @@ function Sidebar({
           className="sidebar-section-label sidebar-section-toggle"
           onClick={() => toggleSection(sectionName)}
           aria-expanded={!isCollapsed}
+          tabIndex={sidebarOpen ? 0 : -1}
         >
           <span>{label}</span>
           <ChevronDown

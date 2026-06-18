@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
@@ -65,6 +65,8 @@ function normalizeAging(buckets: AgingBucket[]): number[] {
 export default function DebtDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backPath = location.pathname.startsWith('/customers/') ? '/customers' : '/debt';
   const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
   const error = queryError ? (queryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
@@ -165,7 +167,7 @@ export default function DebtDetailPage() {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
-          <button className="dd-back" onClick={() => navigate('/debt')}>
+          <button className="dd-back" onClick={() => navigate(backPath)}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -248,7 +250,7 @@ export default function DebtDetailPage() {
     <div ref={rootRef} className="debt-detail-page">
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
-        <button className="dd-back" onClick={() => navigate('/debt')}>
+        <button className="dd-back" onClick={() => navigate(backPath)}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar">{initials}</div>

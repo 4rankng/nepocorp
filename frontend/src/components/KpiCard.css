@@ -12,7 +12,9 @@
 .kpi-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
 .kpi {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 249, 0.92));
+  background:
+    linear-gradient(135deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 249, 0.92));
   backdrop-filter: blur(14px) saturate(125%);
   -webkit-backdrop-filter: blur(14px) saturate(125%);
   border: 1px solid rgba(203, 211, 206, 0.75);
@@ -26,8 +28,9 @@
   overflow: hidden;
 }
 .kpi[role="button"], .kpi.kpi--clickable { cursor: pointer; }
-.kpi:hover {
-  transform: translateY(-2px);
+.kpi[role="button"]:hover,
+.kpi.kpi--clickable:hover {
+  transform: translateY(-1px);
   box-shadow: var(--sh);
   border-color: var(--line-strong);
 }

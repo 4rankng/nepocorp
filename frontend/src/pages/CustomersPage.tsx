@@ -392,7 +392,7 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Chưa có dữ liệu</div>
           ) : (
             filtered.map(c => (
-              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/debt/${c.id}`)}>
+              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/customers/${c.id}`)}>
                 <StatusStrip status={c.status} />
                 <div className="m-card__top">
                   <span className="m-card__title">
@@ -484,10 +484,10 @@ export default function CustomersPage() {
               {filtered.map(c => (
                   <tr key={c.id} role="button" tabIndex={0}
                     style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
-                    onClick={() => navigate(`/debt/${c.id}`)}
+                    onClick={() => navigate(`/customers/${c.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/debt/${c.id}`); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/customers/${c.id}`); } }}
                   >
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle' }}>
                       <StatusStrip status={c.status} />

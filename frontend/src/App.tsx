@@ -139,6 +139,7 @@ function AppRoutes() {
 
           <Route path="/my-penalties" element={driverOnly(page(<DriverPenaltyPage />))} />
           <Route path="/customers" element={adminOnly(page(<CustomersPage />))} />
+          <Route path="/customers/:id" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
           <Route path="/trucks" element={<Navigate to="/fleet" replace />} />
           <Route path="/drivers" element={<Navigate to="/fleet" replace />} />
@@ -164,6 +165,7 @@ function AppRoutes() {
           <Route path="/config/ports" element={adminOnly(page(<PortsConfigPage />))} />
           <Route path="/config/forwarder-expense-types" element={adminOnly(page(<ForwarderExpenseTypesConfigPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
+          <Route path="/suppliers/:id" element={adminOnly(page(<PayableDetailPage />))} />
           <Route path="/expenses" element={adminOnly(page(<ExpenseListPage />))} />
           <Route path="/expenses/new" element={adminOnly(page(<ExpenseEntryPage />))} />
           <Route path="/expenses/:id/edit" element={adminOnly(page(<ExpenseEntryPage />))} />

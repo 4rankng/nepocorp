@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType, FINANCIAL } from '@tingting/shared';
@@ -49,6 +49,8 @@ function normalizeAging(buckets: AgingBucket[]): number[] {
 export default function PayableDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backPath = location.pathname.startsWith('/suppliers/') ? '/suppliers' : '/payables';
   const queryClient = useQueryClient();
   const { data: statement, isLoading: loading, error: queryError } = useSupplierStatement(id ? Number(id) : undefined);
   const typedStatement = statement as SupplierStatementType | undefined;
@@ -158,7 +160,7 @@ export default function PayableDetailPage() {
     return (
       <div>
         <div className="dd-header">
-          <button className="dd-back" onClick={() => navigate('/payables')}>
+          <button className="dd-back" onClick={() => navigate(backPath)}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -185,7 +187,7 @@ export default function PayableDetailPage() {
     <div ref={rootRef}>
       {/* Supplier Header */}
       <div className="dd-header">
-        <button className="dd-back" onClick={() => navigate('/payables')}>
+        <button className="dd-back" onClick={() => navigate(backPath)}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar" style={{ background: 'var(--warning)', color: '#fff' }}>

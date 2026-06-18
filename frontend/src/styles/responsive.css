@@ -154,7 +154,7 @@
 @media (max-width: 640px) {
 
   /* ── App shell ── */
-  .app-body, .content { padding: 10px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .app-body, .content { padding: 6px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Topbar ── */
   .topbar {

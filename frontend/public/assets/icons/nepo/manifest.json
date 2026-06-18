@@ -1,0 +1,122 @@
+{
+  "name": "NEPO logistics icon set",
+  "version": 1,
+  "sizes": {
+    "svg": "88x88 viewBox",
+    "png": "256x256 transparent"
+  },
+  "icons": [
+    {
+      "name": "dashboard",
+      "label": "Dashboard",
+      "svg": "/assets/icons/nepo/dashboard.svg",
+      "png": "/assets/icons/nepo/dashboard.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "dispatch",
+      "label": "Dispatch",
+      "svg": "/assets/icons/nepo/dispatch.svg",
+      "png": "/assets/icons/nepo/dispatch.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "trips",
+      "label": "Trips",
+      "svg": "/assets/icons/nepo/trips.svg",
+      "png": "/assets/icons/nepo/trips.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "fleet",
+      "label": "Fleet",
+      "svg": "/assets/icons/nepo/fleet.svg",
+      "png": "/assets/icons/nepo/fleet.png",
+      "accent": "#008B3E"
+    },
+    {
+      "name": "customers",
+      "label": "Customers",
+      "svg": "/assets/icons/nepo/customers.svg",
+      "png": "/assets/icons/nepo/customers.png",
+      "accent": "#1E5BB8"
+    },
+    {
+      "name": "routes",
+      "label": "Routes",
+      "svg": "/assets/icons/nepo/routes.svg",
+      "png": "/assets/icons/nepo/routes.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "salary",
+      "label": "Salary",
+      "svg": "/assets/icons/nepo/salary.svg",
+      "png": "/assets/icons/nepo/salary.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "penalties",
+      "label": "Penalties",
+      "svg": "/assets/icons/nepo/penalties.svg",
+      "png": "/assets/icons/nepo/penalties.png",
+      "accent": "#E32434"
+    },
+    {
+      "name": "finance",
+      "label": "Finance",
+      "svg": "/assets/icons/nepo/finance.svg",
+      "png": "/assets/icons/nepo/finance.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "debt",
+      "label": "Receivables",
+      "svg": "/assets/icons/nepo/debt.svg",
+      "png": "/assets/icons/nepo/debt.png",
+      "accent": "#1E5BB8"
+    },
+    {
+      "name": "payables",
+      "label": "Payables",
+      "svg": "/assets/icons/nepo/payables.svg",
+      "png": "/assets/icons/nepo/payables.png",
+      "accent": "#F5A623"
+    },
+    {
+      "name": "expenses",
+      "label": "Expenses",
+      "svg": "/assets/icons/nepo/expenses.svg",
+      "png": "/assets/icons/nepo/expenses.png",
+      "accent": "#F5A623"
+    },
+    {
+      "name": "advances",
+      "label": "Advances",
+      "svg": "/assets/icons/nepo/advances.svg",
+      "png": "/assets/icons/nepo/advances.png",
+      "accent": "#00B14F"
+    },
+    {
+      "name": "settlements",
+      "label": "Settlements",
+      "svg": "/assets/icons/nepo/settlements.svg",
+      "png": "/assets/icons/nepo/settlements.png",
+      "accent": "#008B3E"
+    },
+    {
+      "name": "audit",
+      "label": "Audit",
+      "svg": "/assets/icons/nepo/audit.svg",
+      "png": "/assets/icons/nepo/audit.png",
+      "accent": "#1E5BB8"
+    },
+    {
+      "name": "config",
+      "label": "Config",
+      "svg": "/assets/icons/nepo/config.svg",
+      "png": "/assets/icons/nepo/config.png",
+      "accent": "#4D5852"
+    }
+  ]
+}

@@ -172,6 +172,15 @@
 .salary-page .driver-select-row__search {
   margin-bottom: 12px;
 }
+.salary-page .driver-select-row {
+  padding: 12px;
+  border: 1px solid rgba(203, 211, 206, 0.72);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 42%),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(16, 24, 20, 0.035);
+}
 .salary-page .driver-select-row__list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -201,28 +210,60 @@
   .salary-page .driver-select-row__list::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 640px) {
-  .salary-page .hero { padding: 14px 14px 12px; }
-  .salary-page .hero-top { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .salary-page .hero-h1 { font-size: var(--fs-xl); line-height: 1.2; }
+  .salary-page .hero {
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+  .salary-page .hero-top { flex-direction: row; gap: 10px; align-items: flex-start; }
+  .salary-page .hero-h1 { font-size: var(--fs-lg); line-height: 1.15; margin-bottom: 3px; }
+  .salary-page .hero-eyebrow { font-size: 9px; margin-bottom: 6px; letter-spacing: 1.4px; }
   .salary-page .hero-sub { font-size: var(--fs-xs); }
-  .salary-page .hero-actions { width: 100%; justify-content: center; }
+  .salary-page .hero-actions {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+  .salary-page .btn-d {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+  }
+  .salary-page .hero-month-label {
+    min-width: 54px;
+    font-size: var(--fs-xs);
+    padding: 0;
+  }
   .salary-page .metrics {
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin: 14px 0 0;
+    gap: 6px;
+    margin: 10px 0 0;
     padding: 0;
     overflow: visible;
   }
   .salary-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
-  .salary-page .metric { padding: 9px 10px; min-width: 0; }
+  .salary-page .metric { padding: 8px 9px; min-width: 0; border-radius: 10px; }
   .salary-page .metric-label {
-    font-size: var(--fs-2xs);
+    font-size: 9px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: 1.1px;
+    margin-bottom: 5px;
   }
   .salary-page .metric-value { font-size: var(--fs-md); }
   .salary-page .metric.featured .metric-value { font-size: var(--fs-lg); }
+  .salary-page .metric-delta { margin-top: 5px; }
+  .salary-page .metric.featured .metric-delta.delta-flat { display: none; }
+  .salary-page .utilization-bar { margin-top: 8px; height: 4px; }
+  .salary-page .driver-select-row {
+    padding: 8px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+  .salary-page .driver-select-row__search { margin-bottom: 8px; }
   .salary-page .driver-select-row__list {
     display: flex;
     flex-wrap: nowrap;

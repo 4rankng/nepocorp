@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Loader2, Users,
+  ChevronLeft, ChevronRight, Loader2,
   Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
@@ -73,11 +73,16 @@ function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpdating, 
   );
 }
 
-// ── Salary Summary Card (Dark Theme) ──────────────────────────────────────────
+// ── Salary Summary Card ───────────────────────────────────────────────────────
 function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
   return (
     <div className="salary-summary-dark">
-      <h3 className="salary-summary-dark__label">Tổng kết lương tháng</h3>
+      <div className="salary-summary-dark__topline">
+        <h3 className="salary-summary-dark__label">Tổng kết lương tháng</h3>
+        <span className={`salary-summary-dark__status ${salary.confirmationStatus === 'CONFIRMED' ? 'is-confirmed' : ''}`}>
+          {salary.confirmationStatus === 'CONFIRMED' ? 'Đã chốt' : 'Bản nháp'}
+        </span>
+      </div>
       <div className="salary-summary-dark__big mono">
         <Money value={salary.netSalary} />
       </div>
@@ -114,16 +119,16 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           </span>
         </div>
 
-        <div className="salary-summary-dark__row salary-summary-dark__row--total" style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
-          <span className="salary-summary-dark__row-lbl" style={{ color: 'rgba(255,255,255,0.85)' }}>Lương thực nhận</span>
+        <div className="salary-summary-dark__row salary-summary-dark__row--total">
+          <span className="salary-summary-dark__row-lbl">Lương thực nhận</span>
           <span className="salary-summary-dark__row-val"><Money value={salary.netSalary} /></span>
         </div>
 
-        <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginTop: 16, marginBottom: 8, fontWeight: 600, letterSpacing: '0.5px' }}>
+        <div className="salary-summary-dark__section">
           Phân bổ chi phí (Nội bộ)
         </div>
         
-        <div className="salary-summary-dark__row" style={{ opacity: 0.7 }}>
+        <div className="salary-summary-dark__row salary-summary-dark__row--muted">
           <span className="salary-summary-dark__row-lbl">
             <Truck size={12} /> Lương chuyến ({salary.tripDays} ngày)
           </span>
@@ -132,7 +137,7 @@ function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           </span>
         </div>
 
-        <div className="salary-summary-dark__row" style={{ opacity: 0.7 }}>
+        <div className="salary-summary-dark__row salary-summary-dark__row--muted">
           <span className="salary-summary-dark__row-lbl">
             <Coffee size={12} /> Lương chờ việc ({salary.standbyDays} ngày)
           </span>
@@ -432,8 +437,9 @@ export default function SalaryAttendancePage() {
               );
             })}
             {filteredDrivers.length === 0 && (
-              <div style={{ padding: 24, color: 'var(--fg-3)', fontSize: 13 }}>
-                Không tìm thấy lái xe
+              <div className="salary-empty-inline">
+                <img src="/assets/illustrations/empty-salary.svg" alt="" aria-hidden="true" />
+                <span>Không tìm thấy lái xe</span>
               </div>
             )}
           </div>
@@ -447,8 +453,8 @@ export default function SalaryAttendancePage() {
           {/* Calendar Card (middle/bottom) */}
           {!selectedDriverId ? (
             <Panel>
-              <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                <Users size={40} style={{ opacity: 0.3 }} />
+              <div className="salary-empty-panel">
+                <img src="/assets/illustrations/empty-salary.svg" alt="" aria-hidden="true" />
                 <p style={{ margin: 0, fontSize: 14 }}>Chọn lái xe ở trên để xem lịch chấm công</p>
               </div>
             </Panel>
@@ -570,11 +576,7 @@ export default function SalaryAttendancePage() {
                     {/* Confirm button & status badge */}
                     <div style={{ marginTop: 12 }}>
                       {isConfirmed ? (
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                          borderRadius: 8, background: 'var(--success-soft)', color: 'var(--success)',
-                          fontSize: 13, fontWeight: 500,
-                        }}>
+                        <div className="salary-confirm-status">
                           <CheckCircle2 size={16} />
                           <span>Đã xác nhận</span>
                           {salary.confirmedAt && (
