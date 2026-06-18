@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, Calendar, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { Truck, Calendar, ArrowRight, Loader2, AlertTriangle, Building2, Package } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
@@ -15,6 +15,15 @@ interface TripSummary {
   driverSalary: string | null;
   routeName: string | null;
   truckPlate: string | null;
+  customerName: string | null;
+  containerNumbers: string[] | null;
+}
+
+/** Comma-join container numbers, capping at 2 with a "+N" overflow (no IDs). */
+function formatContainerList(nums: string[] | null | undefined): string {
+  if (!nums || nums.length === 0) return '';
+  if (nums.length <= 2) return nums.join(', ');
+  return `${nums.slice(0, 2).join(', ')} +${nums.length - 2}`;
 }
 
 export default function DriverTripsPage() {
@@ -122,6 +131,16 @@ export default function DriverTripsPage() {
                 <span className="dt-card__meta-item">
                   <Calendar size={12} />
                   {formatDate(trip.departureDate)}
+                </span>
+              </div>
+              <div className="dt-card__meta">
+                <span className="dt-card__meta-item">
+                  <Building2 size={12} />
+                  {trip.customerName || '—'}
+                </span>
+                <span className="dt-card__meta-item">
+                  <Package size={12} />
+                  {formatContainerList(trip.containerNumbers) || '—'}
                 </span>
               </div>
               <div className="dt-card__arrow">

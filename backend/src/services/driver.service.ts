@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, ne, and, isNull, desc, gte, lte, sql } from 'drizzle-orm';
+import { eq, ne, and, isNull, desc, gte, lte, sql, inArray } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { computeVehicleAlerts, type VehicleAlert, round2dp } from '@tingting/shared';
 
@@ -44,9 +44,15 @@ async function existingStorageKeys(keys: string[]): Promise<string[]> {
 
 /**
  * List trips assigned to a driver (allowlisted fields for mobile portal).
+ *
+ * Includes the customer name (customers join, mirroring getDriverTripDetail)
+ * and a comma-joined container-number list per trip. Containers are fetched in
+ * ONE batched query (`WHERE tripId IN (...)`, grouped in memory) rather than
+ * per-trip, so a driver with many trips stays O(1) queries, not O(N+1)
+ * (feedback202606 B1 — driver list card must show customer + container).
  */
 export async function getDriverTrips(driverId: number) {
-  return db.select({
+  const trips = await db.select({
     id: s.trips.id,
     tripCode: s.trips.tripCode,
     departureDate: s.trips.departureDate,
@@ -56,11 +62,31 @@ export async function getDriverTrips(driverId: number) {
     driverSalary: s.trips.driverSalary,
     routeName: s.routes.name,
     truckPlate: s.trucks.licensePlate,
+    customerName: s.customers.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .where(and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
     .orderBy(desc(s.trips.departureDate));
+
+  if (trips.length === 0) return trips;
+
+  // Batched container fetch — single query for all trips on this list.
+  const tripIds = trips.map(t => t.id);
+  const containerRows = await db.select({
+    tripId: s.tripContainers.tripId,
+    containerNumber: s.tripContainers.containerNumber,
+  }).from(s.tripContainers).where(inArray(s.tripContainers.tripId, tripIds));
+
+  const containersByTrip = new Map<number, string[]>();
+  for (const c of containerRows) {
+    const list = containersByTrip.get(c.tripId);
+    if (list) list.push(c.containerNumber);
+    else containersByTrip.set(c.tripId, [c.containerNumber]);
+  }
+
+  return trips.map(t => ({ ...t, containerNumbers: containersByTrip.get(t.id) ?? [] }));
 }
 
 /**
