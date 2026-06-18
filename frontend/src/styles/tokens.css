@@ -206,4 +206,30 @@
    * 1023px — tablet
    * 1100px — small desktop
    * No other breakpoint values without updating this list. --- */
+
+  /* --- Accent ramp: brass / copper / Forest Sage ---
+   * Used by trip-card number badges, hairline gradients, and the bento
+   * active-state. Values match the hex fallbacks that were previously
+   * inlined in TripEditPage.css / trip-detail/details.css /
+   * TripSummaryCard.css, so the bare var() refs that previously resolved
+   * to nothing now pick up these colors. Note the ramp runs DARK→LIGHT
+   * (--brass-1 dark → --brass-3 light); do not invert. */
+  --brass-1: #8B6F47;
+  --brass-2: #B8895A;
+  --brass-3: #D4A574;
+  --copper:  #C77B5C;
+  --brass-grad: linear-gradient(135deg, var(--brass-1) 0%, var(--brass-3) 100%);
+
+  --sage-1: #4F8A6F;
+  --sage-2: #6BA88A;
+  --sage-grad:  linear-gradient(135deg, var(--sage-1) 0%, var(--sage-2) 100%);
+
+  /* Status-pill palette — Tailwind canonical values previously hardcoded
+   * in the trip-edit status-pill rules. */
+  --slate-1: #94A3B8;  /* slate-400 */
+  --slate-2: #0EA5E9;  /* sky-500   */
+  --slate-3: #10B981;  /* emerald-500 */
+  --slate-4: #0F172A;  /* slate-900 */
+  --slate-5: #F1F5F9;  /* slate-100 */
+  --slate-6: #E2E8F0;  /* slate-200 */
 }

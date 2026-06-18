@@ -10,7 +10,7 @@ import {
   managementFeeSchema, capTableSchema, truckCapSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema,
-  containerTypeSchema, portSchema,
+  containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
   tireSchema, installTireSchema, removeTireSchema,
 } from '@tingting/shared';
@@ -81,6 +81,7 @@ router.use('/trailers', createCrudRouter(s.trailers, trailerSchema, { searchable
 router.use('/routes', createCrudRouter(s.routes, routeSchema, { searchableField: 'name' }));
 router.use('/cargo-types', createCrudRouter(s.cargoTypes, cargoTypeSchema));
 router.use('/container-types', createCrudRouter(s.containerTypes, containerTypeSchema, { searchableField: 'name' }));
+router.use('/seal-types', createCrudRouter(s.sealTypes, sealTypeSchema, { searchableField: 'name' }));
 router.use('/ports', createCrudRouter(s.ports, portSchema, { searchableField: 'name' }));
 router.use('/forwarder-expense-types', createCrudRouter(s.forwarderExpenseTypes, forwarderExpenseTypeSchema, { searchableField: 'name' }));
 router.use('/pricing-tables', createCrudRouter(s.pricingTables, pricingTableSchema));

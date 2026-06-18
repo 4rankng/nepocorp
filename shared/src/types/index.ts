@@ -538,6 +538,15 @@ export interface ContainerType {
   deletedAt: string | null;
 }
 
+export interface SealType {
+  id: number;
+  name: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
 export interface Port {
   id: number;
   name: string;

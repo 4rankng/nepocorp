@@ -533,6 +533,15 @@ export const containerTypes = pgTable('container_types', {
   deletedAt: timestamp('deleted_at'),
 });
 
+export const sealTypes = pgTable('seal_types', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 50 }).notNull(),          // e.g. "Customs", "Carrier"
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 export const ports = pgTable('ports', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),   // e.g. "Cảng Hải Phòng"

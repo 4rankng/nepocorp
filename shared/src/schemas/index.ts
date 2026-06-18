@@ -472,6 +472,11 @@ export const containerTypeSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+export const sealTypeSchema = z.object({
+  name: z.string().min(1, 'Tên loại seal không được để trống').max(50),
+  notes: z.string().optional().nullable(),
+});
+
 export const portSchema = z.object({
   name: z.string().min(1, 'Tên cảng/bãi không được để trống').max(255),
   code: z.string().max(20).optional().nullable(),
@@ -676,5 +681,6 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
 export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;
+export type SealTypeInput = z.infer<typeof sealTypeSchema>;
 export type PortInput = z.infer<typeof portSchema>;
 

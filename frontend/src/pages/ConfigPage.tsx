@@ -47,6 +47,7 @@ export default function ConfigPage() {
     expenseCategories,
     fuelConfig,
     containerTypes,
+    sealTypes,
     ports,
     forwarderExpenseTypes,
   ] = useQueries({
@@ -66,6 +67,7 @@ export default function ConfigPage() {
       { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
       { queryKey: qk.configCounts.containerTypes,        queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
+      { queryKey: qk.configCounts.sealTypes,             queryFn: () => api.get<ListResponse>('/seal-types?limit=1'),        staleTime: 60_000 },
       { queryKey: qk.configCounts.ports,                 queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
       { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
     ],
@@ -107,6 +109,7 @@ export default function ConfigPage() {
     'salary-periods':           { status: salaryStatus() },
     'expense-categories':       { status: countLabel(expenseCategories.data?.total, 'hạng mục') },
     'container-types':          { status: countLabel(containerTypes.data?.total, 'loại') },
+    'seal-types':               { status: countLabel(sealTypes.data?.total, 'loại') },
     'ports':                    { status: countLabel(ports.data?.total, 'cảng/bãi') },
     'forwarder-expense-types':  { status: countLabel(forwarderExpenseTypes.data?.total, 'loại') },
   };

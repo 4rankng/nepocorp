@@ -15,6 +15,7 @@ import { AllowanceSection } from '../components/trip/AllowanceSection';
 import { TotalsPanel } from '../components/trip/TotalsPanel';
 import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
+import { CardSection } from '../components/trip/CardSection';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import { TripInstructionsCard } from '../components/trip/TripInstructionsCard';
@@ -122,149 +123,86 @@ export default function TripEditPage() {
         <form id="trip-edit-form" onSubmit={onSubmit}>
           <div className="tc-content">
             <div className="tc-bento">
-              <section className="tc-card tc-card--span-1">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">1</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Tuyến đường &amp; ngày</div>
-                    <div className="tc-card-sub">Thời gian và tuyến vận chuyển</div>
+              <CardSection number={1} title="Tuyến đường & ngày" subtitle="Thời gian và tuyến vận chuyển">
+                <div className="tc-field-row tc-field-row--2">
+                  <div className="tc-field">
+                    <label className="tc-field-label">Ngày khởi hành</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={departureDate}
+                      onChange={(e) => setDepartureDate(e.target.value)}
+                      required
+                    />
                   </div>
-                </div>
-                <div className="tc-card-body">
-                  <div className="tc-field-row tc-field-row--2">
+                  {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
                     <div className="tc-field">
-                      <label className="tc-field-label">Ngày khởi hành</label>
+                      <label className="tc-field-label">Ngày hoàn thành</label>
                       <input
                         className="input"
                         type="date"
-                        value={departureDate}
-                        onChange={(e) => setDepartureDate(e.target.value)}
-                        required
+                        value={completedAt}
+                        onChange={(e) => setCompletedAt(e.target.value)}
+                        max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
                       />
+                      <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
                     </div>
-                    {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
-                      <div className="tc-field">
-                        <label className="tc-field-label">Ngày hoàn thành</label>
-                        <input
-                          className="input"
-                          type="date"
-                          value={completedAt}
-                          onChange={(e) => setCompletedAt(e.target.value)}
-                          max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
-                        />
-                        <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="tc-field">
-                    <label className="tc-field-label">Tuyến đường</label>
-                    <select
-                      className="input"
-                      value={routeId}
-                      onChange={(e) => setRouteId(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Chọn tuyến đường --</option>
-                      {catalogData?.routes.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  )}
                 </div>
-              </section>
+                <div className="tc-field">
+                  <label className="tc-field-label">Tuyến đường</label>
+                  <select
+                    className="input"
+                    value={routeId}
+                    onChange={(e) => setRouteId(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Chọn tuyến đường --</option>
+                    {catalogData?.routes.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </CardSection>
 
               <JourneyLegsCard number={2} />
 
-              <section className="tc-card tc-card--span-1">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">3</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Nhiên liệu</div>
-                    <div className="tc-card-sub">Chế độ tính và bổ sung</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <FuelSection />
-                </div>
-              </section>
+              <CardSection number={3} title="Nhiên liệu" subtitle="Chế độ tính và bổ sung">
+                <FuelSection />
+              </CardSection>
 
-              <section className="tc-card tc-card--span-1">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">4</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Chi phí &amp; Doanh thu</div>
-                    <div className="tc-card-sub">VéBOT, phụ cấp, lương lái xe</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <AllowanceSection />
-                </div>
-              </section>
+              <CardSection number={4} title="Chi phí & Doanh thu" subtitle="VéBOT, phụ cấp, lương lái xe">
+                <AllowanceSection />
+              </CardSection>
 
-              <section className="tc-card tc-card--span-2">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">5</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Chi tiết container</div>
-                    <div className="tc-card-sub">Số container, số seal, loại cont, trọng lượng — nhập tay từng cont</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <ContainerInstancesCard
-                    tripId={trip.id}
-                    expectedCount={trip.containerCount ?? 1}
-                    requiresPhotos={!!trip.cargoType?.requiresPhotos}
+              <CardSection number={5} span={2} title="Chi tiết container" subtitle="Số container, số seal, loại cont, trọng lượng — nhập tay từng cont">
+                <ContainerInstancesCard
+                  tripId={trip.id}
+                  expectedCount={trip.containerCount ?? 1}
+                  requiresPhotos={!!trip.cargoType?.requiresPhotos}
+                />
+              </CardSection>
+
+              <CardSection number={6} title="Ảnh & Ghi chú" subtitle="Ảnh đính kèm & ghi chú chuyến">
+                <PhotoUploader tripId={trip.id} />
+                <div className="tc-field">
+                  <label className="tc-field-label">Ghi chú chuyến đi</label>
+                  <textarea
+                    className="input tc-textarea"
+                    placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh…"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
                   />
                 </div>
-              </section>
+              </CardSection>
 
-              <section className="tc-card tc-card--span-1">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">6</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Ảnh &amp; Ghi chú</div>
-                    <div className="tc-card-sub">Ảnh đính kèm &amp; ghi chú chuyến</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <PhotoUploader tripId={trip.id} />
-                  <div className="tc-field">
-                    <label className="tc-field-label">Ghi chú chuyến đi</label>
-                    <textarea
-                      className="input tc-textarea"
-                      placeholder="Ghi chú chi tiết chuyến đi, các sự cố phát sinh…"
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </section>
+              <CardSection number={7} span={2} title="Chi phí dịch vụ đi kèm" subtitle="Phí nâng/hạ, hải quan, cân hàng, kiểm hóa…">
+                <AncillaryFeesCard tripId={trip.id} />
+              </CardSection>
 
-              <section className="tc-card tc-card--span-2">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">7</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Chi phí dịch vụ đi kèm</div>
-                    <div className="tc-card-sub">Phí nâng/hạ, hải quan, cân hàng, kiểm hóa…</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <AncillaryFeesCard tripId={trip.id} />
-                </div>
-              </section>
-
-              <section className="tc-card tc-card--span-2">
-                <div className="tc-card-head">
-                  <div className="tc-card-num">8</div>
-                  <div className="tc-card-text">
-                    <div className="tc-card-title">Liên hệ &amp; hướng dẫn</div>
-                    <div className="tc-card-sub">Thông tin liên hệ và dặn dò cho lái xe (N2)</div>
-                  </div>
-                </div>
-                <div className="tc-card-body">
-                  <TripInstructionsCard />
-                </div>
-              </section>
+              <CardSection number={8} span={2} title="Liên hệ & hướng dẫn" subtitle="Thông tin liên hệ và dặn dò cho lái xe (N2)">
+                <TripInstructionsCard />
+              </CardSection>
             </div>
 
             <aside className="tc-rail">

@@ -78,7 +78,7 @@
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--fg-1, #0f172a);
+  color: var(--fg-1);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -117,13 +117,13 @@
   border-radius: 50%;
   background: var(--fg-3);
 }
-.tc-status-pill--draft::before { background: #94a3b8; }
-.tc-status-pill--in-transit::before { background: #0ea5e9; }
-.tc-status-pill--completed::before { background: #10b981; }
-.tc-status-pill--locked::before { background: #0f172a; }
-.tc-status-pill--canceled::before { background: #E32434; }
-.tc-status-pill--locked { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
-.tc-status-pill--canceled { color: #E32434; background: #FFEAEC; border-color: #f3c6c6; }
+.tc-status-pill--draft::before { background: var(--slate-1); }
+.tc-status-pill--in-transit::before { background: var(--slate-2); }
+.tc-status-pill--completed::before { background: var(--slate-3); }
+.tc-status-pill--locked::before { background: var(--slate-4); }
+.tc-status-pill--canceled::before { background: var(--danger); }
+.tc-status-pill--locked { color: var(--slate-4); background: var(--slate-5); border-color: var(--slate-6); }
+.tc-status-pill--canceled { color: var(--danger); background: var(--danger-soft); border-color: #f3c6c6; }
 
 
 .header-left {

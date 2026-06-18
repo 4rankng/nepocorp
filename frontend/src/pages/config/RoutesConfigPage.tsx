@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { labelStyle } from '../../utils/formStyles';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
 import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
@@ -131,7 +132,6 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     setDefaultLegs(defaultLegs.filter(l => l.id !== id));
   };
 
-  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
   const hintStyle = { fontSize: 11, color: 'var(--fg-3)', marginTop: 4 } as const;
   const sectionLabelStyle = {
     fontSize: 10.5, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,

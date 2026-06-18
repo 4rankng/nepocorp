@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useConfirm } from '../components/UI';
 import { api } from '../lib/api';
+import { labelStyle } from '../utils/formStyles';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
 import type { Supplier, Customer } from '@tingting/shared';
@@ -66,8 +67,6 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
       isFuelSupplier,
     });
   };
-  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 } as const;
-
   return (
     <Modal
       isOpen={isOpen}
@@ -408,20 +407,20 @@ export default function SupplierListPage() {
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/payables/${s.id}`); } }}
                   >
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', whiteSpace: 'nowrap', fontWeight: 600, overflow: 'hidden' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle', fontWeight: 600 }}>
                       <StatusStrip status={s.status} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0 }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: '1 1 auto' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, width: '100%', minWidth: 0, flexWrap: 'wrap' }}>
+                        <span style={{ wordBreak: 'break-word', whiteSpace: 'normal', minWidth: 0 }}>
                           {s.name}
                         </span>
                         {s.isFuelSupplier && (
-                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px' }}>
+                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px', marginTop: 1 }}>
                             Nhiên liệu
                           </span>
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                       {s.contactPerson || <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>

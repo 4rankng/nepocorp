@@ -48,7 +48,7 @@
 .tc-back-btn:hover {
   background: var(--surface-2, var(--surface));
   color: var(--fg-1, var(--fg-2));
-  border-color: var(--brass-3, #D4A574);
+  border-color: var(--brass-3);
   transform: translateX(-1px);
 }
 
@@ -102,13 +102,13 @@
   border-radius: 50%;
   background: var(--fg-3);
 }
-.tc-status-pill--draft::before { background: #94a3b8; }
-.tc-status-pill--in-transit::before { background: #0ea5e9; }
-.tc-status-pill--completed::before { background: #10b981; }
-.tc-status-pill--locked::before { background: #0f172a; }
-.tc-status-pill--canceled::before { background: #E32434; }
-.tc-status-pill--locked { color: #0f172a; background: #f1f5f9; border-color: #e2e8f0; }
-.tc-status-pill--canceled { color: #E32434; background: #FFEAEC; border-color: #f3c6c6; }
+.tc-status-pill--draft::before { background: var(--slate-1); }
+.tc-status-pill--in-transit::before { background: var(--slate-2); }
+.tc-status-pill--completed::before { background: var(--slate-3); }
+.tc-status-pill--locked::before { background: var(--slate-4); }
+.tc-status-pill--canceled::before { background: var(--danger); }
+.tc-status-pill--locked { color: var(--slate-4); background: var(--slate-5); border-color: var(--slate-6); }
+.tc-status-pill--canceled { color: var(--danger); background: var(--danger-soft); border-color: #f3c6c6; }
 
 /* ── Bento grid shell ── */
 .tc-content {
@@ -230,7 +230,7 @@
 .tc-card .input:focus,
 .tc-card select.input:focus,
 .tc-card textarea.input:focus {
-  border-color: var(--brass-3, #D4A574);
+  border-color: var(--brass-3);
   box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.18);
   outline: none;
 }
@@ -289,14 +289,14 @@
   background: rgba(199, 123, 92, 0.08);
   border: 1px solid rgba(199, 123, 92, 0.25);
   border-radius: 10px;
-  color: var(--copper, #C77B5C);
+  color: var(--copper);
   font-size: 12.5px;
   line-height: 1.45;
 }
 .tc-rail-error-title {
   font-weight: 700;
   margin-bottom: 2px;
-  color: var(--copper, #C77B5C);
+  color: var(--copper);
   font-size: 13px;
 }
 
@@ -310,18 +310,18 @@
 
 /* Primary action: brass-tinted (Deep-Luxe) */
 .tc-rail-btn--primary {
-  background: var(--brass-3, #D4A574);
+  background: var(--brass-3);
   color: var(--ink, #0A0A0A);
   border: none;
   box-shadow: none;
 }
 .tc-rail-btn--primary:hover:not(:disabled) {
-  background: var(--brass-2, #B8895A);
+  background: var(--brass-2);
   color: #fff;
   box-shadow: none;
 }
 .tc-rail-btn--primary:disabled {
-  background: var(--brass-1, #8B6F47);
+  background: var(--brass-1);
   color: rgba(255, 255, 255, 0.78);
   cursor: not-allowed;
   box-shadow: none;
@@ -336,7 +336,7 @@
 }
 .tc-rail-btn--secondary:hover:not(:disabled) {
   background: rgba(212, 165, 116, 0.10);
-  border-color: var(--brass-3, #D4A574);
+  border-color: var(--brass-3);
   color: var(--ink, #0A0A0A);
   box-shadow: none;
 }

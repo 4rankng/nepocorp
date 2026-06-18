@@ -165,17 +165,17 @@ a.tdp-instructions-value:hover {
 }
 
 .tdp-header-btn--primary {
-  background: var(--brass-3, #D4A574);
+  background: var(--brass-3);
   color: var(--ink, #0A0A0A);
   border: none;
   box-shadow: none;
 }
 .tdp-header-btn--primary:hover:not(:disabled) {
-  background: var(--brass-2, #B8895A);
+  background: var(--brass-2);
   box-shadow: none;
 }
 .tdp-header-btn--primary:disabled {
-  background: var(--brass-1, #8B6F47);
+  background: var(--brass-1);
   color: rgba(255, 255, 255, 0.75);
   cursor: not-allowed;
   box-shadow: none;

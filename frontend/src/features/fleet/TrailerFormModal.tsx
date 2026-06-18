@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, X, Loader2 } from 'lucide-react';
 import { Modal } from '../../components/UI';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
+import { labelStyle } from '../../utils/formStyles';
 
 /**
  * Modal for creating/editing a trailer (rơ-moóc).
@@ -36,7 +37,6 @@ export function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
     if (!plate.trim()) return;
     onsave({ licensePlate: plate.trim(), type, status });
   };
-  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 } as const;
   return (
     <Modal
       isOpen={isOpen}

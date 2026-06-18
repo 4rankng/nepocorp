@@ -14,6 +14,7 @@ import type {
   PaginatedResponse,
   Port,
   ContainerType,
+  SealType,
   Route,
   Customer,
   PenaltyReason,
@@ -62,6 +63,9 @@ export const configClient = {
   getPorts: () => fetchAllPaginated<Port>(CONFIG.PORTS),
 
   getContainerTypes: () => fetchAllPaginated<ContainerType>(CONFIG.CONTAINER_TYPES),
+
+  getSealTypes: () => fetchAllPaginated<SealType>(CONFIG.SEAL_TYPES),
+  createSealType: (data: { name: string }) => api.post<SealType>(CONFIG.SEAL_TYPES, data),
 
   getRoutesList: (search?: string) =>
     fetchAllPaginated<Route>(CONFIG.ROUTES, search ? { search } : undefined),

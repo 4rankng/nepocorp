@@ -65,6 +65,7 @@ const SalaryAttendancePage = lazy(() => import('./pages/SalaryAttendancePage'));
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
 const ContainerTypesConfigPage = lazy(() => import('./pages/config/ContainerTypesConfigPage'));
 const PortsConfigPage = lazy(() => import('./pages/config/PortsConfigPage'));
+const SealTypesConfigPage = lazy(() => import('./pages/config/SealTypesConfigPage'));
 const ForwarderExpenseTypesConfigPage = lazy(() => import('./pages/config/ForwarderExpenseTypesConfigPage'));
 
 function PageLoader() {
@@ -159,6 +160,7 @@ function AppRoutes() {
           <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
           <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
           <Route path="/config/container-types" element={adminOnly(page(<ContainerTypesConfigPage />))} />
+          <Route path="/config/seal-types" element={adminOnly(page(<SealTypesConfigPage />))} />
           <Route path="/config/ports" element={adminOnly(page(<PortsConfigPage />))} />
           <Route path="/config/forwarder-expense-types" element={adminOnly(page(<ForwarderExpenseTypesConfigPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />

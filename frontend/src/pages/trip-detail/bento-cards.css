@@ -253,7 +253,7 @@
   /* Mirrors the .tc-card-num gradient on TripEditPage so the two pages read
      as a unified family. The hue is forest-sage (--accent-2); the icon
      glyph stays in the soft accent tint for legibility on the gradient. */
-  background: linear-gradient(135deg, #4f8a6f 0%, #6ba88a 100%);
+  background: var(--sage-grad);
   color: var(--accent-soft, #D8F0E2);
   display: grid;
   place-items: center;

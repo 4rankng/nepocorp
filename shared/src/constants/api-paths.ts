@@ -75,6 +75,7 @@ export const CONFIG = {
   EXPENSE_CATEGORY: (id: number) => `/expense-categories/${id}`,
   PORTS: '/ports',
   CONTAINER_TYPES: '/container-types',
+  SEAL_TYPES: '/seal-types',
   FUEL_PRICE_HISTORY: '/fuel-price-history',
 } as const;
 

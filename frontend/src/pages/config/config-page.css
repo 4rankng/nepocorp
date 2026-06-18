@@ -209,6 +209,24 @@
   .cfg-page .table-scroll table { min-width: 600px; }
 }
 
+/* ── Desktop: routes-table layout ────────────────────────────────────
+   Uses table-layout: fixed + explicit widths so the first column
+   ("Tuyến đường") doesn't over-expand to 600+px (it has unbreakable
+   city names like "Hải Phòng - Tân Vũ - Thượng Bằng La, Lào Cai")
+   and leave 300px+ of whitespace on the right of the card. */
+.routes-table { table-layout: fixed; width: 100%; }
+.routes-table thead th:nth-child(1) { width: 38%; }   /* Tuyến đường */
+.routes-table thead th:nth-child(2) { width: 7%;  }   /* KM */
+.routes-table thead th:nth-child(3) { width: 11%; }   /* Loại */
+.routes-table thead th:nth-child(4) { width: 11%; }   /* Trạm thu phí */
+.routes-table thead th:nth-child(5) { width: 8%;  }   /* Tiền KH */
+.routes-table thead th:nth-child(6) { width: 9%;  }   /* Chuẩn 20ft */
+.routes-table thead th:nth-child(7) { width: 9%;  }   /* Chuẩn 40ft */
+.routes-table thead th:nth-child(8) { width: 7%;  }   /* Sử dụng 06/26 */
+/* Match widths in body cells too so columns stay aligned */
+.routes-table tbody td:nth-child(1) { word-break: break-word; }
+.routes-table tbody td:nth-child(n+2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 640px) {
   /* ── Routes config page — Mobile Pass 1 (2026-06-02) ──

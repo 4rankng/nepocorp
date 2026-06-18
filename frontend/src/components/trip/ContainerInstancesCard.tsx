@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Trash2, Camera, ImageOff, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
@@ -16,6 +16,7 @@ import {
   validateContainerFormat,
   validateCheckDigit,
   suggestCorrections,
+  SealType,
 } from '@tingting/shared';
 
 /**
@@ -139,6 +140,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
   const { ocrResult, containerRows: rows, setContainerRows: setRows,
     uploadContainerPhoto, revokeRowPhotos } = useTripFormContext();
+  const queryClient = useQueryClient();
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
   // Create-page (/trips/new) guard: seed initial empty rows exactly once,
@@ -204,6 +206,21 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     queryKey: qk.catalogs.containerTypes,
     queryFn: () => configClient.getContainerTypes(),
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: sealTypes = [] } = useQuery<SealType[]>({
+    queryKey: qk.catalogs.sealTypes,
+    queryFn: () => configClient.getSealTypes(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { mutate: addSealType, isPending: addingSealType } = useMutation({
+    mutationFn: (name: string) => configClient.createSealType({ name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.sealTypes });
+      toast({ kind: 'success', message: 'Đã thêm loại seal mới vào Cấu hình' });
+    },
+    onError: () => toast({ kind: 'error', message: 'Không thể thêm loại seal' }),
   });
 
   // Existing container instances for this trip. Phase 2 also returns per-type
@@ -411,7 +428,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
           color: 'var(--warning-text, #b7791f)',
           border: '1px solid rgba(217, 119, 6, 0.18)',
           borderRadius: 'var(--radius-md, 10px)',
-          fontSize: 12,
+          fontSize: 13,
           marginBottom: 12,
           fontWeight: 600,
           lineHeight: 1.4,
@@ -436,7 +453,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)' }}>Cont #{idx + 1}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-2)' }}>Cont #{idx + 1}</div>
                 <button
                   type="button"
                   className="btn btn--ghost btn--icon btn--sm"
@@ -475,14 +492,14 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                         background: 'var(--warn-soft, #fff7e6)',
                         color: 'var(--warn, #b7791f)',
                         borderRadius: 6,
-                        fontSize: 11,
+                        fontSize: 13,
                       }}>
                         <span>⚠ {st.warning}</span>
                         {st.suggestion && (
                           <button
                             type="button"
                             className="btn btn--ghost btn--sm"
-                            style={{ minHeight: 22, padding: '0 8px', fontSize: 10 }}
+                            style={{ minHeight: 22, padding: '0 8px', fontSize: 12 }}
                             onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
                           >
                             Đổi thành {st.suggestion}
@@ -546,7 +563,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                   const isCont = pType === 'CONTAINER';
                   return (
                     <div key={pType} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minHeight: 36 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)', minWidth: 65 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)', minWidth: 65 }}>
                         {isCont ? 'Ảnh cont' : 'Ảnh seal'} ({urls.length})
                       </span>
                       <button
@@ -593,7 +610,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                                       position: 'absolute', top: -4, right: -4,
                                       background: 'var(--warn, #b7791f)',
                                       color: '#fff',
-                                      fontSize: 9, fontWeight: 600,
+                                      fontSize: 10, fontWeight: 600,
                                       padding: '1px 4px', borderRadius: 4,
                                       lineHeight: 1.2,
                                     }}
@@ -614,35 +631,49 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               {/* Seals sub-list: customs, carrier, … — multiple per container. */}
               <div style={{ marginTop: 12, borderTop: '1px solid var(--line-light, rgba(0, 0, 0, 0.05))', paddingTop: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-2)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>
                     Seal ({row.seals.length})
                   </span>
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm"
-                    style={{ minHeight: 26, padding: '0 8px', fontSize: 11 }}
+                    style={{ minHeight: 26, padding: '0 8px', fontSize: 13 }}
                     onClick={() => addSeal(row._key)}
                   >
                     <Plus size={13} /> Thêm seal
                   </button>
                 </div>
                 {row.seals.length === 0 ? (
-                  <div style={{ fontSize: 11, color: 'var(--fg-3)', paddingLeft: 4 }}>Chưa có seal nào.</div>
+                  <div style={{ fontSize: 13, color: 'var(--fg-3)', paddingLeft: 4 }}>Chưa có seal nào.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {row.seals.map((sl, sIdx) => (
                       <div key={sl._key} className="ci-seal-row">
-                        <span style={{ fontSize: 11, color: 'var(--fg-3)', minWidth: 28, fontWeight: 600 }}>
+                        <span style={{ fontSize: 13, color: 'var(--fg-3)', minWidth: 28, fontWeight: 600 }}>
                           #{sIdx + 1}
                         </span>
-                        <input
-                          className="input ci-input-sm"
-                          style={{ width: 100 }}
-                          list="seal-types"
-                          placeholder="Loại seal"
-                          value={sl.sealType}
-                          onChange={e => updateSeal(row._key, sl._key, 'sealType', e.target.value)}
-                        />
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <input
+                            className="input ci-input-sm"
+                            style={{ width: 140, paddingRight: sl.sealType && !sealTypes.some(st => st.name.toLowerCase() === sl.sealType.toLowerCase()) ? 28 : undefined }}
+                            list="seal-types"
+                            placeholder="Loại seal"
+                            value={sl.sealType}
+                            onChange={e => updateSeal(row._key, sl._key, 'sealType', e.target.value)}
+                          />
+                          {sl.sealType && !sealTypes.some(st => st.name.toLowerCase() === sl.sealType.toLowerCase()) && (
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              style={{ position: 'absolute', right: 2, top: '50%', transform: 'translateY(-50%)', padding: '0 4px', minHeight: 24, minWidth: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                              onClick={() => addSealType(sl.sealType)}
+                              disabled={addingSealType}
+                              title="Thêm loại seal này vào Cấu hình chung"
+                            >
+                              {addingSealType ? <Loader2 size={13} className="spin" /> : <Plus size={13} style={{ color: 'var(--primary)' }} />}
+                            </button>
+                          )}
+                        </div>
                         <input
                           className="input ci-input-sm"
                           style={{ width: 140 }}
@@ -685,7 +716,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         >
           <Plus size={14} /> Thêm cont
         </button>
-        <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+        <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>
           Container lưu cùng nút "Lưu cập nhật" ở dưới.
         </span>
       </div>
@@ -705,11 +736,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
           component tree so the per-row <input list="seal-types"> references
           resolve. Free-form; values are suggestions, not an enum. */}
       <datalist id="seal-types">
-        <option value="Customs" />
-        <option value="Carrier" />
-        <option value="Truck" />
-        <option value="Viettel" />
-        <option value="Bản in" />
+        {sealTypes.map(st => (
+          <option key={st.id} value={st.name} />
+        ))}
       </datalist>
     </div>
   );

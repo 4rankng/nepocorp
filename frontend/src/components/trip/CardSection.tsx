@@ -15,6 +15,8 @@ interface CardSectionProps {
   collapsible?: boolean;
   /** Initial state when `collapsible` is true. Defaults to expanded. */
   defaultCollapsed?: boolean;
+  /** Grid column span in the bento grid. 1 = half-width (default), 2 = full-width. */
+  span?: 1 | 2;
   children: React.ReactNode;
 }
 
@@ -25,6 +27,7 @@ export function CardSection({
   badge,
   collapsible = false,
   defaultCollapsed = false,
+  span = 1,
   children,
 }: CardSectionProps) {
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
@@ -56,7 +59,7 @@ export function CardSection({
   );
 
   return (
-    <section className={`tc-card${collapsible ? ' is-collapsible' : ''}${collapsed ? ' is-collapsed' : ''}`}>
+    <section className={`tc-card${span === 2 ? ' tc-card--span-2' : ''}${collapsible ? ' is-collapsible' : ''}${collapsed ? ' is-collapsed' : ''}`}>
       {collapsible ? (
         <button
           type="button"
