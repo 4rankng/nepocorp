@@ -445,15 +445,17 @@
     margin: 14px 0;
   }
 
-  /* Stack form cards vertically on mobile */
   .users-form-cards {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .users-form-card {
-    padding: 10px;
-    gap: 8px;
+    padding: 0;
+    gap: 10px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
   }
 
   .users-form-card .form-group > label,
@@ -462,22 +464,27 @@
     font-size: 12px;
   }
 
+  .drawer:has(.users-form-cards) .field {
+    gap: 4px !important;
+  }
+
   .drawer:has(.users-form-cards) .row-2 {
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
     margin-bottom: 10px;
   }
 
   .drawer:has(.users-form-cards) .input,
   .drawer:has(.users-form-cards) select.input {
-    min-height: 36px;
-    height: 36px;
-    padding-top: 7px;
-    padding-bottom: 7px;
+    min-height: 40px;
+    height: 40px;
+    padding-top: 8px;
+    padding-bottom: 8px;
     font-size: 13px;
   }
 
   .icon-input {
-    height: 34px;
+    height: 40px;
   }
 
   .icon-input__icon {
@@ -486,6 +493,15 @@
 
   .icon-input__field {
     padding-inline: 10px;
+  }
+
+  .drawer:has(.users-form-cards) .input,
+  .drawer:has(.users-form-cards) .icon-input__field {
+    font-size: 12.5px;
+  }
+
+  .drawer:has(.users-form-cards) select.input {
+    padding-inline: 10px 30px;
   }
 
   .user-avatar {
