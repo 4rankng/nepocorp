@@ -111,6 +111,12 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   });
 
   useEffect(() => {
+    // Only derive revenue from splits when at least one split is populated.
+    // When both are blank, leave the seeded stored value intact so an untouched
+    // form neither displays nor serializes a misleading 0. The persisted value
+    // is resolved server-side from whatever splits are actually sent
+    // (undefined = not-provided; feedback202606 A3 §9).
+    if (!s.revenueEmptyReturn.trim() && !s.revenueCombine.trim()) return;
     const emptyReturn = Number(s.revenueEmptyReturn) || 0;
     const combine = Number(s.revenueCombine) || 0;
     s.setRevenue(String(emptyReturn + combine));
@@ -697,9 +703,13 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             driverSalary: s.driverSalary ? Number(s.driverSalary) : undefined,
             twoPointDeliveryBonus: s.twoPointDeliveryBonus ? Number(s.twoPointDeliveryBonus) : 0,
             vehicleShiftAllowance: s.vehicleShiftAllowance ? Number(s.vehicleShiftAllowance) : 0,
-            revenue: s.revenue ? Number(s.revenue) : undefined,
-            revenueEmptyReturn: s.revenueEmptyReturn ? Number(s.revenueEmptyReturn) : 0,
-            revenueCombine: s.revenueCombine ? Number(s.revenueCombine) : 0,
+            // Revenue is split-based; `revenue` is derived and recomputed
+            // server-side from the splits. Send splits as `undefined` when
+            // untouched (NOT 0) so resolveRevenue preserves stored revenue, and
+            // omit the derived `revenue` copy — sending it would zero stored
+            // revenue whenever both splits are blank. feedback202606 A3 §9.
+            revenueEmptyReturn: s.revenueEmptyReturn.trim() ? Number(s.revenueEmptyReturn) : undefined,
+            revenueCombine: s.revenueCombine.trim() ? Number(s.revenueCombine) : undefined,
             notes: s.notes.trim() || undefined,
             roadAllowanceOverride: s.roadAllowanceOverride !== '' ? Number(s.roadAllowanceOverride) : null,
             fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,
@@ -848,9 +858,13 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             driverSalary: s.driverSalary ? Number(s.driverSalary) : undefined,
             twoPointDeliveryBonus: s.twoPointDeliveryBonus ? Number(s.twoPointDeliveryBonus) : 0,
             vehicleShiftAllowance: s.vehicleShiftAllowance ? Number(s.vehicleShiftAllowance) : 0,
-            revenue: s.revenue ? Number(s.revenue) : undefined,
-            revenueEmptyReturn: s.revenueEmptyReturn ? Number(s.revenueEmptyReturn) : 0,
-            revenueCombine: s.revenueCombine ? Number(s.revenueCombine) : 0,
+            // Revenue is split-based; `revenue` is derived and recomputed
+            // server-side from the splits. Send splits as `undefined` when
+            // untouched (NOT 0) so resolveRevenue preserves stored revenue, and
+            // omit the derived `revenue` copy — sending it would zero stored
+            // revenue whenever both splits are blank. feedback202606 A3 §9.
+            revenueEmptyReturn: s.revenueEmptyReturn.trim() ? Number(s.revenueEmptyReturn) : undefined,
+            revenueCombine: s.revenueCombine.trim() ? Number(s.revenueCombine) : undefined,
             notes: s.notes.trim() || undefined,
             photoUrls: finalPhotoUrls,
             fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,

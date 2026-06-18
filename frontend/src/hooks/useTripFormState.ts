@@ -251,15 +251,24 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     }
     return "";
   });
+  // Default "" (not "0"): an untouched combine must serialize as `undefined`
+  // (resolveRevenue: not-provided) so saving preserves stored revenue. "0" is a
+  // truthy string that would serialize as an explicit-zero split and zero out
+  // stored revenue on save (feedback202606 A3 §9).
   const [revenueCombine, setRevenueCombine] = useState(() => {
     if (isEditMode && existingTrip) {
-      return existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : "0";
+      return existingTrip.revenueCombine ? String(existingTrip.revenueCombine) : "";
     }
-    return "0";
+    return "";
   });
   const [customerCommission, setCustomerCommission] = useState(isEditMode && existingTrip?.customerCommission ? String(existingTrip.customerCommission) : "0");
   const [tripWageDays, setTripWageDays] = useState(isEditMode && existingTrip?.tripWageDays ? String(existingTrip.tripWageDays) : "");
-  const [revenue, setRevenue] = useState("");
+  // Seed from stored revenue so the derived field shows the persisted value
+  // before the derivation effect runs, and survives when both splits are blank
+  // (the derivation effect is guarded not to overwrite a blank-split state).
+  const [revenue, setRevenue] = useState(
+    isEditMode && existingTrip?.revenue ? String(existingTrip.revenue) : ""
+  );
 
   // ── Notes ──
   const [notes, setNotes] = useState(isEditMode && existingTrip?.notes ? existingTrip.notes : "");

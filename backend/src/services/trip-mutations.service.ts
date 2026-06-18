@@ -74,6 +74,65 @@ export function applyCommittedLegacyFuelFreeze(
   };
 }
 
+// ─── Revenue resolution (pure, unit-tested) ────────────────────────────────
+
+/** Revenue fields a trip-figures update may carry. The signaling contract is
+ *  load-bearing: `undefined` means "not provided / leave stored alone", `0`
+ *  means "explicit zero". The frontend must send `undefined` (never `0`) for
+ *  untouched split fields — otherwise every save zeroes stored revenue
+ *  (feedback202606 A3 §9; see tests/revenue-persistence). */
+export interface RevenueUpdateInput {
+  revenue?: number;
+  revenueEmptyReturn?: number;
+  revenueCombine?: number;
+}
+
+/** Stored trip revenue fields (drizzle numeric columns → string | null). */
+export interface StoredRevenue {
+  revenue?: string | number | null;
+  revenueEmptyReturn?: string | number | null;
+  revenueCombine?: string | number | null;
+}
+
+/**
+ * Resolve the persisted trip `revenue` from a figures update. Revenue is
+ * split-based in the UI (empty-return leg + combined-load leg); the `revenue`
+ * field itself is derived. Rules:
+ *   - any split provided  → sum(provided splits; unprovided use stored value)
+ *   - else direct revenue → use it (non-UI callers)
+ *   - else                → preserve stored revenue (nothing changed)
+ * `undefined` = not-provided throughout; `0` is an explicit zero. Pure so the
+ * contract is unit-testable.
+ */
+export function resolveRevenue(data: RevenueUpdateInput, stored: StoredRevenue): number {
+  const splitProvided = data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined;
+  if (splitProvided) {
+    const emptyReturn = data.revenueEmptyReturn !== undefined
+      ? data.revenueEmptyReturn
+      : Number(stored.revenueEmptyReturn || 0);
+    const combine = data.revenueCombine !== undefined
+      ? data.revenueCombine
+      : Number(stored.revenueCombine || 0);
+    return emptyReturn + combine;
+  }
+  if (data.revenue !== undefined) return data.revenue;
+  return Number(stored.revenue || 0);
+}
+
+/**
+ * Whether this update should stamp the revenue-override audit fields
+ * (`revenueOriginal` / `revenueOverriddenBy` / `revenueOverriddenAt`). Fires
+ * only when a provided revenue value actually differs from stored — sending
+ * `undefined` (untouched) never fires. Pure for testability.
+ */
+export function shouldMarkRevenueOverride(data: RevenueUpdateInput, stored: StoredRevenue): boolean {
+  return (
+    (data.revenue !== undefined && data.revenue !== Number(stored.revenue || 0)) ||
+    (data.revenueEmptyReturn !== undefined && data.revenueEmptyReturn !== Number(stored.revenueEmptyReturn || 0)) ||
+    (data.revenueCombine !== undefined && data.revenueCombine !== Number(stored.revenueCombine || 0))
+  );
+}
+
 // ─── createTrip ─────────────────────────────────────────────────────────────
 
 export async function createTrip(data: {
@@ -373,21 +432,18 @@ export async function updateTripFigures(
       }
     }
 
+    // Revenue is split-based (empty-return + combined-load legs); `revenue` is
+    // derived. resolveRevenue honors the `undefined`=not-provided contract so
+    // untouched splits preserve stored revenue (feedback202606 A3 §9).
     const revenueEmptyReturn = data.revenueEmptyReturn !== undefined ? data.revenueEmptyReturn : Number(trip.revenueEmptyReturn || 0);
     const revenueCombine = data.revenueCombine !== undefined ? data.revenueCombine : Number(trip.revenueCombine || 0);
-    const revenue = data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined
-      ? (revenueEmptyReturn + revenueCombine)
-      : (data.revenue !== undefined ? data.revenue : Number(trip.revenue || 0));
+    const revenue = resolveRevenue(data, trip);
 
     let revenueOriginal = Number(trip.revenueOriginal || 0);
     let revenueOverriddenBy = trip.revenueOverriddenBy;
     let revenueOverriddenAt = trip.revenueOverriddenAt ? new Date(trip.revenueOverriddenAt) : null;
 
-    if (
-      (data.revenue !== undefined && data.revenue !== Number(trip.revenue || 0)) ||
-      (data.revenueEmptyReturn !== undefined && data.revenueEmptyReturn !== Number(trip.revenueEmptyReturn || 0)) ||
-      (data.revenueCombine !== undefined && data.revenueCombine !== Number(trip.revenueCombine || 0))
-    ) {
+    if (shouldMarkRevenueOverride(data, trip)) {
       revenueOriginal = revenueOriginal || Number(trip.revenue || 0);
       revenueOverriddenBy = data.userId ?? null;
       revenueOverriddenAt = new Date();
