@@ -116,6 +116,46 @@ export default function ForwarderSettlementCreatePage() {
     });
   }, [unlinkedExpenses, searchQuery]);
 
+  // A6 / C3 — group the selectable expenses by container number; expenses with
+  // no container are grouped under their trip code. Each section is ordered
+  // chronologically by earliest departure. The free-text filter above applies
+  // within these groups; submit still sends a flat tripExpenseId set, so the
+  // grouping is presentational only.
+  const groupedExpenses = useMemo(() => {
+    type Exp = typeof filteredUnlinkedExpenses[number];
+    const map = new Map<string, { key: string; label: string; expenses: Exp[]; minDeparture: string | null; total: number }>();
+    for (const exp of filteredUnlinkedExpenses) {
+      const key = exp.containerNumbers?.trim() || exp.tripCode || `trip-${exp.tripId}`;
+      const label = exp.containerNumbers?.trim() || exp.tripCode || 'Không rõ chuyến';
+      let g = map.get(key);
+      if (!g) {
+        g = { key, label, expenses: [], minDeparture: exp.departureDate ?? null, total: 0 };
+        map.set(key, g);
+      }
+      g.expenses.push(exp);
+      g.total += Number(exp.buyAmount);
+      if (exp.departureDate && (!g.minDeparture || exp.departureDate < g.minDeparture)) {
+        g.minDeparture = exp.departureDate;
+      }
+    }
+    return [...map.values()].sort((a, b) => {
+      if (a.minDeparture && b.minDeparture) return a.minDeparture < b.minDeparture ? -1 : 1;
+      if (a.minDeparture) return -1;
+      if (b.minDeparture) return 1;
+      return 0;
+    });
+  }, [filteredUnlinkedExpenses]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  function toggleGroup(key: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   function toggleRequest(id: number) {
     setSelectedRequestIds(prev => {
       const next = new Set(prev);
@@ -285,32 +325,66 @@ export default function ForwarderSettlementCreatePage() {
                   </div>
                 </div>
                 <div className="fset-check-list">
-                  {filteredUnlinkedExpenses.map(exp => (
-                    <label key={exp.id} className={`fset-check-item fset-check-item--expense ${selectedExpenseIds.has(exp.id) ? 'fset-check-item--selected' : ''}`}>
-                      <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
-                      <div className="fset-check-item__body">
-                        <div className="fset-check-item__row">
-                          <span className="fset-check-item__label">
-                            {expenseLabel(exp.expenseType, expenseTypeOptions)}
-                          </span>
-                          {exp.tripCode && (
-                            <span className="fset-check-item__meta">({exp.tripCode})</span>
-                          )}
-                          <span className="fset-check-item__price">
-                            {formatCurrency(Number(exp.buyAmount))}
-                          </span>
+                  {groupedExpenses.map(g => {
+                    const allSelected = g.expenses.length > 0 && g.expenses.every(e => selectedExpenseIds.has(e.id));
+                    const collapsed = collapsedGroups.has(g.key);
+                    return (
+                      <div key={g.key} className="fset-expense-group">
+                        <div className="fset-expense-group__head">
+                          <label className="fset-check-all">
+                            <input
+                              type="checkbox"
+                              checked={allSelected}
+                              onChange={() => {
+                                setSelectedExpenseIds(prev => {
+                                  const next = new Set(prev);
+                                  if (allSelected) g.expenses.forEach(e => next.delete(e.id));
+                                  else g.expenses.forEach(e => next.add(e.id));
+                                  return next;
+                                });
+                              }}
+                            />
+                            <span>{g.label}</span>
+                            <span className="fset-check-all__count">{g.expenses.length}</span>
+                          </label>
+                          <button
+                            type="button"
+                            className="fset-expense-group__toggle"
+                            onClick={() => toggleGroup(g.key)}
+                            aria-label={collapsed ? 'Mở rộng' : 'Thu gọn'}
+                          >
+                            {g.minDeparture ? formatDate(g.minDeparture) : '—'} · {formatCurrency(g.total)} {collapsed ? '▸' : '▾'}
+                          </button>
                         </div>
-                        <span className="fset-check-item__sub">
-                          {exp.departureDate ? formatDate(exp.departureDate) : formatDate(exp.createdAt)}
-                          {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
-                          {exp.containerNumbers && (
-                            <span className="fset-cont-badge">{exp.containerNumbers}</span>
-                          )}
-                          {exp.note && ` · ${exp.note}`}
-                        </span>
+                        {!collapsed && g.expenses.map(exp => (
+                          <label key={exp.id} className={`fset-check-item fset-check-item--expense ${selectedExpenseIds.has(exp.id) ? 'fset-check-item--selected' : ''}`}>
+                            <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
+                            <div className="fset-check-item__body">
+                              <div className="fset-check-item__row">
+                                <span className="fset-check-item__label">
+                                  {expenseLabel(exp.expenseType, expenseTypeOptions)}
+                                </span>
+                                {exp.tripCode && (
+                                  <span className="fset-check-item__meta">({exp.tripCode})</span>
+                                )}
+                                <span className="fset-check-item__price">
+                                  {formatCurrency(Number(exp.buyAmount))}
+                                </span>
+                              </div>
+                              <span className="fset-check-item__sub">
+                                {exp.departureDate ? formatDate(exp.departureDate) : formatDate(exp.createdAt)}
+                                {exp.truckPlate ? ` · ${exp.truckPlate}` : ''}
+                                {exp.containerNumbers && (
+                                  <span className="fset-cont-badge">{exp.containerNumbers}</span>
+                                )}
+                                {exp.note && ` · ${exp.note}`}
+                              </span>
+                            </div>
+                          </label>
+                        ))}
                       </div>
-                    </label>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}
