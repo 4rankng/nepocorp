@@ -175,13 +175,17 @@ export default function DriverEarningsPage() {
           </span>
         </div>
         <div className={`earnings-kpi-card ${parseFloat(earnings.payableBalance) > 0 ? 'earnings-kpi-card--success' : ''}`}>
-          <span className="earnings-kpi-card__label">Còn được nhận</span>
+          <span className="earnings-kpi-card__label">Lương chưa thanh toán</span>
           <span className="earnings-kpi-card__value">
             <span ref={(el) => { kpiRefs.current.payableBalance = el; }}>{formatNumber(earnings.payableBalance)}</span>
             <span className="earnings-kpi-card__unit">đ</span>
           </span>
         </div>
       </div>
+      <p className="earnings-payable-note">
+        Số tiền trên là <strong>lương chưa thanh toán</strong> — khoản công ty còn đang nợ bạn.
+        Chi tiết đã thanh toán và tạm ứng sẽ được theo dõi ở bản cập nhật sau.
+      </p>
 
       {/* ═══ Zone 2 — KPI Grid ═══ */}
       <div className="earnings-kpi-grid fade-up-2">

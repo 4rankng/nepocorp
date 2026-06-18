@@ -405,3 +405,16 @@
   .driver-earnings-page .vehicle-alerts-strip__date { grid-area: date; }
   .driver-earnings-page .vehicle-alerts-strip__days { grid-area: days; align-self: center; }
 }
+
+/* A9 / B2 — honest unpaid-salary disclosure under the payable card.
+   No fabricated paid figure; Phase A surfaces unpaid only. */
+.driver-earnings-page .earnings-payable-note {
+  margin: 8px 4px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.driver-earnings-page .earnings-payable-note strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
