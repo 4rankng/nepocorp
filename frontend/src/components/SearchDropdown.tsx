@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { SearchItem, SearchItemType } from '../data/searchRegistry';
+import { EmptyIllustration } from './shared';
 
 interface Props {
   items: SearchItem[];
@@ -42,13 +43,7 @@ export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }:
     return (
       <div style={dropdownStyle}>
         <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
-          <img
-            src="/assets/illustrations/empty-search.svg"
-            alt=""
-            aria-hidden="true"
-            style={{ width: 118, height: 96, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-          />
+          <EmptyIllustration name="empty-search" width={118} height={96} style={{ margin: '0 auto 8px', display: 'block' }} />
           <div>Không có kết quả</div>
         </div>
       </div>

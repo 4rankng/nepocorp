@@ -14,6 +14,7 @@ import {
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
+import { EmptyIllustration } from '../components/shared';
 import './SalaryAttendancePage.css';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 
@@ -438,7 +439,7 @@ export default function SalaryAttendancePage() {
             })}
             {filteredDrivers.length === 0 && (
               <div className="salary-empty-inline">
-                <img src="/assets/illustrations/empty-salary.svg" alt="" aria-hidden="true" />
+                <EmptyIllustration name="empty-salary" />
                 <span>Không tìm thấy lái xe</span>
               </div>
             )}
@@ -454,7 +455,7 @@ export default function SalaryAttendancePage() {
           {!selectedDriverId ? (
             <Panel>
               <div className="salary-empty-panel">
-                <img src="/assets/illustrations/empty-salary.svg" alt="" aria-hidden="true" />
+                <EmptyIllustration name="empty-salary" />
                 <p style={{ margin: 0, fontSize: 14 }}>Chọn lái xe ở trên để xem lịch chấm công</p>
               </div>
             </Panel>

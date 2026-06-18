@@ -13,6 +13,7 @@
 }
 
 .expense-kpi-card {
+  --stat-rail: var(--accent);
   position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -23,6 +24,18 @@
               box-shadow 0.25s ease,
               border-color 0.25s ease;
 }
+.expense-kpi-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
 .expense-kpi-card:hover {
   transform: translateY(-3px);
@@ -32,17 +45,20 @@
 
 /* Variant: total (default) */
 .expense-kpi-card--total {
+  --stat-rail: var(--ink-3);
   background: var(--surface);
 }
 
 /* Variant: unpaid */
 .expense-kpi-card--unpaid {
+  --stat-rail: var(--warning);
   background: var(--surface);
   border-color: rgba(245, 166, 35, 0.25);
 }
 
 /* Variant: paid */
 .expense-kpi-card--paid {
+  --stat-rail: var(--accent);
   background: var(--surface);
   border-color: rgba(0, 177, 79, 0.25);
 }
@@ -454,7 +470,6 @@
 
 @media (max-width: 1023px) {
   .expense-kpi-grid {
-    grid-template-columns: 1fr;
     gap: 12px;
   }
 
@@ -491,26 +506,222 @@
    controls and padding. Page-scoped so it doesn't affect any other page
    that reuses .expense-filter-bar styles. */
 @media (max-width: 640px) {
+  .expense-list-page .page-header {
+    margin-bottom: 12px;
+  }
+
+  .expense-list-page .page-title {
+    font-size: 27px;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+
+  .expense-list-page .page-subtitle {
+    font-size: 14px;
+  }
+
+  .expense-list-page .page-actions,
+  .expense-list-page .page-actions .btn {
+    width: auto;
+  }
+
+  .expense-list-page .page-actions {
+    align-self: stretch;
+  }
+
+  .expense-list-page .page-actions .btn {
+    min-height: 40px;
+    border-radius: 13px;
+    padding-inline: 18px;
+    flex: 0 0 auto;
+    justify-content: center;
+  }
+
+  .expense-list-page .expense-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .expense-list-page .expense-kpi-card {
+    min-height: 0;
+    padding: 12px 14px;
+    border-radius: 13px;
+  }
+
+  .expense-list-page .expense-kpi-card--total {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+
+  .expense-list-page .expense-kpi-label {
+    gap: 7px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-2);
+  }
+
+  .expense-list-page .expense-kpi-label__icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .expense-list-page .expense-kpi-value {
+    font-size: 30px;
+    line-height: 1.05;
+    margin-bottom: 0;
+  }
+
+  .expense-list-page .expense-kpi-card:not(.expense-kpi-card--total) .expense-kpi-value {
+    font-size: 25px;
+  }
+
+  .expense-list-page .expense-kpi-value-unit {
+    font-size: 13px;
+  }
+
+  .expense-list-page .expense-kpi-meta {
+    font-size: 11px;
+    margin-top: 1px;
+  }
+
   .expense-list-page .expense-filter-bar {
-    padding: 10px;
+    padding: 8px;
     gap: 6px;
     border-radius: 12px;
     margin-bottom: 12px;
   }
   .expense-list-page .expense-filter-bar__select,
   .expense-list-page .expense-filter-bar__date {
-    height: 32px;
-    font-size: var(--fs-xs);
-    padding: 0 28px 0 10px;
+    height: 34px;
+    font-size: 12px;
+    padding: 0 26px 0 10px;
     background-size: 14px 14px;
     background-position: right 8px center;
+    flex: 1 1 calc(50% - 6px);
+    border-radius: 9px;
   }
   .expense-list-page .expense-filter-bar__date {
     padding-right: 10px;
   }
   .expense-list-page .expense-filter-bar__reset {
-    height: 32px;
+    height: 34px;
     padding: 0 11px;
     font-size: var(--fs-xs);
+  }
+
+  .expense-list-page .mobile-table-wrap {
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--sh-sm);
+  }
+
+  .expense-list-page .m-card-list {
+    gap: 0;
+  }
+
+  .expense-list-page .m-card {
+    padding: 13px 14px 12px;
+    border-bottom-color: var(--line);
+  }
+
+  .expense-list-page .m-card__top {
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .expense-list-page .m-card__title {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .expense-list-page .m-card__meta {
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .expense-list-page .expense-mobile-card__summary {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .expense-list-page .expense-mobile-card__vehicle {
+    display: inline-flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    color: var(--ink-2);
+    font-size: 12px;
+    font-weight: 650;
+    text-align: right;
+  }
+
+  .expense-list-page .expense-mobile-card__component {
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .expense-list-page .expense-mobile-card__muted {
+    color: var(--ink-3);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .expense-list-page .m-card__row {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    margin-top: 4px;
+    gap: 8px;
+  }
+
+  .expense-list-page .m-card__row-label {
+    font-size: 12px;
+  }
+
+  .expense-list-page .m-card__row-value {
+    justify-self: end;
+    text-align: right;
+    font-size: 13px;
+  }
+
+  .expense-list-page .m-card__row-value.expense-amount {
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .expense-list-page .expense-mobile-card__summary .expense-amount {
+    font-size: 18px;
+    line-height: 1.05;
+  }
+
+  .expense-list-page .expense-status {
+    padding: 5px 9px;
+    font-size: 10px;
+    letter-spacing: 0.035em;
+  }
+
+  .expense-list-page .expense-plate {
+    font-size: 12px;
+    padding: 3px 8px;
   }
 }

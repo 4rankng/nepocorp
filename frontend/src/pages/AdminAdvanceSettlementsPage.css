@@ -24,6 +24,9 @@
 
 /* ── AsKPI component — same sizing as AdminAdvancesPage .adv-kpi ───────── */
 .as-page .as-kpi {
+  --stat-rail: var(--accent);
+  --stat-tint: var(--accent-soft);
+  --stat-ink: var(--accent);
   background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -34,6 +37,40 @@
   cursor: pointer;
   transition: background var(--t-fast), box-shadow var(--t-fast);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+.as-page .as-kpi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.as-page .as-kpi--warn {
+  --stat-rail: var(--warning);
+  --stat-tint: var(--warning-soft);
+  --stat-ink: var(--warning-text);
+}
+.as-page .as-kpi--info {
+  --stat-rail: var(--info);
+  --stat-tint: rgba(37, 99, 235, 0.1);
+  --stat-ink: #1d4ed8;
+}
+.as-page .as-kpi--success {
+  --stat-rail: var(--success);
+  --stat-tint: var(--success-soft);
+  --stat-ink: var(--success);
+}
+.as-page .as-kpi--danger {
+  --stat-rail: var(--danger);
+  --stat-tint: var(--danger-soft);
+  --stat-ink: var(--danger);
 }
 .as-page .as-kpi:hover {
   background: var(--surface-2);
@@ -62,32 +99,20 @@
 }
 
 /* Active selection ring per variant */
-.as-page .as-kpi--warn.is-active {
-  box-shadow: 0 0 0 2px var(--warning), 0 0 0 5px var(--warning-soft);
-}
-.as-page .as-kpi--info.is-active {
-  box-shadow: 0 0 0 2px #2563EB, 0 0 0 5px rgba(37, 99, 235, 0.12);
-}
-.as-page .as-kpi--success.is-active {
-  box-shadow: 0 0 0 2px var(--success), 0 0 0 5px var(--success-soft);
-}
-.as-page .as-kpi--danger.is-active {
-  box-shadow: 0 0 0 2px var(--danger), 0 0 0 5px var(--danger-soft);
+.as-page .as-kpi.is-active {
+  border-color: color-mix(in srgb, var(--stat-rail) 42%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--stat-rail) 84%, transparent),
+              0 0 0 5px var(--stat-tint),
+              var(--sh-sm);
 }
 
-/* Amber tint when there are pending items requiring action */
-.as-page .as-kpi--warn.has-items {
-  background: var(--warning-soft);
+/* Keep attention states refined: rail + ink, no half-filled yellow cards. */
+.as-page .as-kpi.has-items {
+  border-color: color-mix(in srgb, var(--stat-rail) 26%, var(--line));
 }
-.as-page .as-kpi--warn.has-items .as-kpi__value {
-  color: var(--warning-text);
-}
-.as-page .as-kpi--warn.has-items .as-kpi__meta {
-  color: var(--warning-text);
-  opacity: 0.8;
-}
-.as-page .as-kpi--warn.has-items:hover {
-  background: #fef3c7;
+.as-page .as-kpi.has-items .as-kpi__value,
+.as-page .as-kpi.has-items .as-kpi__meta {
+  color: var(--stat-ink);
 }
 
 /* ── Desktop grid header ──────────────────────────────────────────────── */

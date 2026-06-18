@@ -29,10 +29,10 @@
   z-index: 1;
 }
 .sidebar-brand {
-  padding: 18px 20px 17px;
+  padding: 16px 18px 15px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   border-bottom: 1px solid var(--sb-line);
   flex-shrink: 0;
   position: relative;
@@ -65,8 +65,8 @@
   transform: translateX(-50%) scale(0.95);
 }
 .sidebar-brand-logo {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.14);
   display: flex;
@@ -88,17 +88,17 @@
   display: block;
   color: var(--fg-on-brand);
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.015em;
 }
 .sidebar-brand-meta span {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  color: rgba(255, 255, 255, 0.5);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: -0.01em;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* nav container */

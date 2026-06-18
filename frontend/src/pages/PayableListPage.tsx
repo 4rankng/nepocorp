@@ -116,7 +116,7 @@ function CommissionModal({
           <label htmlFor="commission-supplier">Nhà cung cấp <span className="req" aria-hidden="true">*</span></label>
           <select
             id="commission-supplier"
-            className="form-select"
+            className="input"
             value={form.supplierId}
             onChange={e => setForm(f => ({ ...f, supplierId: e.target.value === '' ? '' : Number(e.target.value) }))}
           >
@@ -130,6 +130,7 @@ function CommissionModal({
           <label htmlFor="commission-amount">Số tiền hoa hồng <span className="req" aria-hidden="true">*</span></label>
           <input
             id="commission-amount"
+            className="input"
             type="number"
             min="0"
             max="1000000000"
@@ -146,6 +147,7 @@ function CommissionModal({
           <label htmlFor="commission-trip">Mã chuyến (tuỳ chọn)</label>
           <input
             id="commission-trip"
+            className="input"
             type="number"
             min="1"
             placeholder="VD: 1234"
@@ -157,6 +159,7 @@ function CommissionModal({
           <label htmlFor="commission-note">Ghi chú (tuỳ chọn)</label>
           <input
             id="commission-note"
+            className="input"
             type="text"
             maxLength={500}
             placeholder="VD: Hoa hồng giới thiệu khách"

@@ -42,6 +42,8 @@
 }
 
 /* Debt page: watermark tints for danger/warning mini KPIs */
+.hero-kpi-mini.debt-kpi-mini--danger { --stat-rail: var(--danger); }
+.hero-kpi-mini.debt-kpi-mini--warning { --stat-rail: var(--warning); }
 .debt-kpi-mini--danger .hero-kpi-mini__watermark { color: rgba(227, 36, 52, 0.14); }
 .debt-kpi-mini--warning .hero-kpi-mini__watermark { color: rgba(217, 119, 6, 0.14); }
 

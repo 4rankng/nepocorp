@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Drawer } from './UI';
+import { EmptyIllustration } from './shared';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../hooks/useNotificationQueries';
 import { useAuth } from '../hooks/useAuth';
 import { formatRelativeTime } from '../lib/date';
@@ -65,13 +66,7 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--ink-3)' }}>Đang tải…</div>
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--ink-3)' }}>
-          <img
-            src="/assets/illustrations/empty-notifications.svg"
-            alt=""
-            aria-hidden="true"
-            style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-          />
+          <EmptyIllustration name="empty-notifications" width={150} height={124} style={{ margin: '0 auto 8px', display: 'block' }} />
           <div>Không có thông báo</div>
         </div>
       ) : (

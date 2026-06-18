@@ -15,7 +15,7 @@ export function TripSummaryCard() {
 
   return (
     <div className="tc-summary-card">
-      <h3 className="tc-summary-card__label">Ước tính lệnh</h3>
+      <h3 className="tc-summary-card__label">Ước tính</h3>
       <div className="tc-summary-card__big mono">
         <Money value={revenue} />
       </div>

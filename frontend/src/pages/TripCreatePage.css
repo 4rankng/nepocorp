@@ -216,13 +216,13 @@
   box-shadow: 0 0 0 3px rgba(94, 233, 155, 0.18);
 }
 .tc-hero-widgets .tc-check-item__name {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ink-2);
 }
 .tc-hero-widgets .tc-check-item__badge--done {
   color: #5EE99B;
 }
 .tc-hero-widgets .tc-check-item__badge--pending {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ink-3);
 }
 
 /* ── Unified panel ── 12-col; all card sections span 12 for full row width */

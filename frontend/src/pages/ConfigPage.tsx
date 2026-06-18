@@ -190,8 +190,8 @@ export default function ConfigPage() {
         </div>
       ) : (
         <div className="settings-grid asset-route-grid">
-          {filteredCards.map((card, idx) => (
-            <button key={idx} className="setting-card" onClick={() => navigate(card.path)}>
+          {filteredCards.map(card => (
+            <button key={card.path} className="setting-card" onClick={() => navigate(card.path)}>
               <div className="setting-card__icon">{card.icon}</div>
               <h3 className="setting-card__title">{card.title}</h3>
               <p className="setting-card__desc">{card.desc}</p>

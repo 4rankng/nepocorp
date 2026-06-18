@@ -3,18 +3,64 @@
 .fleet-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .fleet-page .kpi {
+  min-height: 112px;
+  padding: 16px 18px;
   background:
-    radial-gradient(120px 80px at 92% 50%, rgba(0, 177, 79, 0.08), transparent 72%),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 249, 0.94));
+    radial-gradient(96px 64px at 96% 42%, color-mix(in srgb, var(--stat-rail) 8%, transparent), transparent 76%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 252, 251, 0.94));
+  border-color: rgba(203, 211, 206, 0.82);
+}
+
+.fleet-page .kpi-grid {
+  gap: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.fleet-page .kpi__top {
+  margin-bottom: 8px;
+}
+
+.fleet-page .kpi__label {
+  color: var(--ink-2);
+  letter-spacing: 0.05em;
+}
+
+.fleet-page .kpi__value {
+  font-size: clamp(22px, 2vw + 12px, 28px);
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .fleet-page .kpi__watermark {
-  right: 14px;
-  bottom: 10px;
+  right: 18px;
+  bottom: 14px;
+  width: 64px;
+  height: 64px;
+  opacity: 0.055;
+  color: var(--stat-rail);
+}
+
+.fleet-page .kpi__watermark svg {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1.7;
+}
+
+.fleet-page .kpi--warn .kpi__watermark,
+.fleet-page .kpi--success .kpi__watermark,
+.fleet-page .kpi--accent .kpi__watermark,
+.fleet-page .kpi--info .kpi__watermark,
+.fleet-page .kpi--danger .kpi__watermark {
+  opacity: 0.06;
+  color: var(--stat-rail);
+}
+
+.fleet-page .fleet-kpi-meta {
+  min-width: 0;
 }
 
 /* Two-column layout for trucks + trailers */
@@ -349,6 +395,92 @@
 }
 
 @media (max-width: 640px) {
+  .fleet-page {
+    gap: 14px;
+  }
+
+  .fleet-page .kpi-grid {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .fleet-page .kpi {
+    min-height: 76px;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .fleet-page .kpi__top {
+    margin-bottom: 6px;
+  }
+
+  .fleet-page .kpi__label {
+    font-size: 11px;
+    letter-spacing: 0.045em;
+  }
+
+  .fleet-page .kpi__value {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .fleet-page .kpi__value-unit {
+    font-size: 13px;
+  }
+
+  .fleet-page .kpi__meta {
+    font-size: 9.8px;
+    gap: 3px 4px !important;
+    line-height: 1.18;
+    align-items: center;
+  }
+
+  .fleet-page .fleet-kpi-meta {
+    display: flex !important;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .fleet-page .fleet-kpi-meta > span {
+    min-width: 0;
+  }
+
+  .fleet-page .fleet-kpi-meta__good,
+  .fleet-page .fleet-kpi-meta__warn,
+  .fleet-page .fleet-kpi-meta__mono {
+    white-space: nowrap;
+    font-weight: 650 !important;
+  }
+
+  .fleet-page .fleet-kpi-dot {
+    width: 5px !important;
+    height: 5px !important;
+    align-self: center;
+  }
+
+  .fleet-page .fleet-kpi-meta__sep {
+    flex: 0 0 auto;
+  }
+
+  .fleet-page .page-actions .btn {
+    min-height: 38px;
+    padding-inline: 14px;
+    border-radius: 12px;
+  }
+
+  .fleet-page .kpi__watermark {
+    right: 12px;
+    bottom: 10px;
+    width: 42px;
+    height: 42px;
+    opacity: 0.045;
+  }
+
+  .fleet-page .kpi__watermark svg {
+    width: 42px;
+    height: 42px;
+  }
+
   .fleet-page .fleet-mini-search {
     width: 140px;
   }

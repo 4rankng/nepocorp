@@ -14,6 +14,7 @@ import type { Request, Response } from 'express';
 import { cacheInvalidate } from '../../lib/redis';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { parsePagination } from './pagination';
+import { ApiError } from '../../errors';
 
 /**
  * Helper: narrow a Drizzle table's property to a column reference.
@@ -100,7 +101,21 @@ export function createCrudRouter<
     if (beforeCreate) {
       data = (await beforeCreate(data, req)) as typeof data;
     }
-    const [item] = await db.insert(tbl).values(data as Record<string, unknown>).returning();
+    let item;
+    try {
+      [item] = await db.insert(tbl).values(data as Record<string, unknown>).returning();
+    } catch (err: unknown) {
+      // Drizzle wraps postgres errors; the underlying code is on err.cause.code
+      const e = err as { code?: string; cause?: { code?: string; detail?: string }; detail?: string };
+      const pgCode = e.code || e.cause?.code;
+      if (pgCode === '23505') {
+        const detail = e.cause?.detail || e.detail || '';
+        const fieldMatch = detail.match(/Key \(([^)]+)\)/);
+        const field = fieldMatch ? fieldMatch[1] : 'trường';
+        throw new ApiError(409, `${field} đã tồn tại`);
+      }
+      throw err;
+    }
     if (afterCreate) {
       await afterCreate(item, data, req);
     }

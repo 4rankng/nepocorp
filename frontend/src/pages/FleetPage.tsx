@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { EmptyIllustration } from '../components/shared';
 import {
-  Truck, UserCheck, Plus, Search,
+  Truck, Container, UserCheck, Plus, Search,
   Download, Filter, CheckCircle,
   Pencil, Trash2, X, Loader2,
 } from 'lucide-react';
@@ -166,7 +167,7 @@ function TrailerCard({ trailers, trucks, crud }: {
             <tbody>
               {trailers.length === 0 && (
                 <tr><td colSpan={5} style={styles.emptyRow}>
-                  <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <EmptyIllustration name="empty-trucks" width={140} height={116} style={{ margin: '0 auto 8px', display: 'block' }} />
                   <div>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</div>
                 </td></tr>
               )}
@@ -212,7 +213,7 @@ function TrailerCard({ trailers, trucks, crud }: {
         <div className="m-card-list">
           {trailers.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-              <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <EmptyIllustration name="empty-trucks" width={150} height={124} style={{ margin: '0 auto 8px', display: 'block' }} />
               <div>Chưa có rơ-moóc nào</div>
             </div>
           )}
@@ -337,7 +338,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             <tbody>
               {trucks.length === 0 && (
                 <tr><td colSpan={5} style={styles.emptyRow}>
-                  <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <EmptyIllustration name="empty-trucks" width={140} height={116} style={{ margin: '0 auto 8px', display: 'block' }} />
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
               )}
@@ -388,7 +389,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
         <div className="m-card-list">
           {trucks.length === 0 && (
             <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-              <img src="/assets/illustrations/empty-trucks.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <EmptyIllustration name="empty-trucks" width={150} height={124} style={{ margin: '0 auto 8px', display: 'block' }} />
               <div>Chưa có dữ liệu</div>
             </div>
           )}
@@ -733,12 +734,12 @@ export default function FleetPage() {
           icon={Truck}
           variant="success"
           meta={
-            <span style={styles.metaRow}>
-              <span style={styles.dotSuccess} />
-              <span style={styles.textSuccess}>{activeTrucks} hoạt động</span>
-              <span style={styles.textMuted}>·</span>
-              <span style={styles.dotWarning} />
-              <span style={styles.textWarning}>{maintTrucks} bảo trì</span>
+            <span className="fleet-kpi-meta" style={styles.metaRow}>
+              <span className="fleet-kpi-dot fleet-kpi-dot--success" style={styles.dotSuccess} />
+              <span className="fleet-kpi-meta__good" style={styles.textSuccess}>{activeTrucks} hoạt động</span>
+              <span className="fleet-kpi-meta__sep" style={styles.textMuted}>·</span>
+              <span className="fleet-kpi-dot fleet-kpi-dot--warn" style={styles.dotWarning} />
+              <span className="fleet-kpi-meta__warn" style={styles.textWarning}>{maintTrucks} bảo trì</span>
             </span>
           }
         />
@@ -746,13 +747,13 @@ export default function FleetPage() {
           label="Rơ-moóc"
           value={ft40 + ft20}
           unit="moóc"
-          icon={Truck}
+          icon={Container}
           variant="info"
           meta={
-            <span style={styles.metaRow}>
-              <span style={styles.fontMono}>{ft40}×40FT</span>
-              <span style={styles.textMuted}>·</span>
-              <span style={styles.fontMono}>{ft20}×20FT</span>
+            <span className="fleet-kpi-meta" style={styles.metaRow}>
+              <span className="fleet-kpi-meta__mono" style={styles.fontMono}>{ft40}×40FT</span>
+              <span className="fleet-kpi-meta__sep" style={styles.textMuted}>·</span>
+              <span className="fleet-kpi-meta__mono" style={styles.fontMono}>{ft20}×20FT</span>
             </span>
           }
         />
@@ -763,11 +764,11 @@ export default function FleetPage() {
           icon={UserCheck}
           variant="warn"
           meta={
-            <span style={styles.metaRow}>
-              <span style={styles.dotSuccess} />
-              <span style={styles.textSuccess}>{activeDrivers} đang làm</span>
-              <span style={styles.textMuted}>·</span>
-              <span>{assignedDrivers}/{activeDrivers} đã phân xe</span>
+            <span className="fleet-kpi-meta" style={styles.metaRow}>
+              <span className="fleet-kpi-dot fleet-kpi-dot--success" style={styles.dotSuccess} />
+              <span className="fleet-kpi-meta__good" style={styles.textSuccess}>{activeDrivers} đang làm</span>
+              <span className="fleet-kpi-meta__sep" style={styles.textMuted}>·</span>
+              <span>{assignedDrivers}/{activeDrivers} phân xe</span>
             </span>
           }
         />
@@ -778,14 +779,14 @@ export default function FleetPage() {
           icon={CheckCircle}
           variant="default"
           meta={
-            <span style={styles.metaRow}>
+            <span className="fleet-kpi-meta" style={styles.metaRow}>
               {readyToRun >= activeTrucks ? (
-                <span style={styles.textSuccess}>Đủ xe + lái xe</span>
+                <span className="fleet-kpi-meta__good" style={styles.textSuccess}>Đủ xe + lái xe</span>
               ) : (
                 <>
-                  <span>{readyToRun} xe sẵn sàng</span>
-                  <span style={styles.textMuted}>·</span>
-                  <span style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xe</span>
+                  <span>{readyToRun} sẵn sàng</span>
+                  <span className="fleet-kpi-meta__sep" style={styles.textMuted}>·</span>
+                  <span className="fleet-kpi-meta__warn" style={styles.textWarning}>{activeTrucks - readyToRun} cần phân xe</span>
                 </>
               )}
             </span>

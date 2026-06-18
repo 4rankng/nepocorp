@@ -286,10 +286,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!sidebarOpen || navClientHeight === 0) {
-      setCollapsed(prev => (prev.size === 0 ? prev : new Set<string>()));
-      return;
-    }
+    // When the sidebar is collapsed, the dedicated effect below force-expands
+    // every section; bail out here so this layout calc only runs when expanded
+    // (and only once the nav has been measured).
+    if (!sidebarOpen || navClientHeight === 0) return;
     const nav = navRef.current;
     if (!nav) return;
     const item = nav.querySelector('.sidebar-item') as HTMLElement | null;

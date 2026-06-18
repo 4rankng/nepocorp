@@ -4,6 +4,7 @@ import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
+import { EmptyIllustration } from '../components/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
@@ -333,7 +334,7 @@ export default function FinancePage() {
                 </div>
               ) : !hasChartData ? (
                 <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, gap: 8, flex: 1 }}>
-                  <img src="/assets/illustrations/empty-pricing.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <EmptyIllustration name="empty-pricing" width={150} height={124} />
                   <div>
                     {chartView === 'day'
                       ? `Chưa có chuyến nào được khóa trong tháng ${month}/${year}`
@@ -405,7 +406,7 @@ export default function FinancePage() {
               </div>
             ) : (
               <div style={{ height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
-                <img src="/assets/illustrations/empty-pie.svg" alt="" aria-hidden="true" style={{ width: 126, height: 104, objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                <EmptyIllustration name="empty-pie" width={126} height={104} />
                 <div>Chưa có dữ liệu chi phí</div>
                 <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
               </div>

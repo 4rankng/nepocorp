@@ -33,7 +33,9 @@ router.get('/ledger/balances', asyncHandler(async (req: Request, res: Response) 
 
 router.get('/ledger/customers/:id/statement', asyncHandler(async (req: Request, res: Response) => {
   const customerId = parseInt(req.params.id as string, 10);
-  const data = await getStatementData(customerId);
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const data = await getStatementData(customerId, dateFrom, dateTo);
   if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
   res.json(data);
 }));

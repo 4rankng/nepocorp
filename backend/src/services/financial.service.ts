@@ -32,8 +32,35 @@ export async function recordPayment(input: PaymentInput) {
       : [];
     const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
 
+    // Advisory lock — serialize concurrent payments for the same customer
+    await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
+
+    // Per-trip overpayment guard (Flow 04 §5.3 TC-CN-024)
     for (const payment of input.payments) {
       const tripLabel = codeById.get(payment.tripId) || '';
+      // Sum existing TRIP_REVENUE debits − PAYMENT_RECEIVED credits for this trip
+      const [{ revenue } = { revenue: '0' }] = await tx.select({
+        revenue: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then ${s.ledger.debit} else 0 end), 0)`,
+      }).from(s.ledger)
+        .where(and(
+          eq(s.ledger.entityType, 'CUSTOMER'),
+          eq(s.ledger.entityId, input.customerId),
+          eq(s.ledger.txnId, payment.tripId),
+        ));
+      const [{ paid } = { paid: '0' }] = await tx.select({
+        paid: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'PAYMENT_RECEIVED' then ${s.ledger.credit} else 0 end), 0)`,
+      }).from(s.ledger)
+        .where(and(
+          eq(s.ledger.entityType, 'CUSTOMER'),
+          eq(s.ledger.entityId, input.customerId),
+          eq(s.ledger.txnId, payment.tripId),
+        ));
+      const remaining = Number(revenue) - Number(paid);
+      if (payment.amount > remaining + 1) {  // +1 to absorb rounding
+        throw new ApiError(422,
+          `Thanh toán vượt quá số còn lại của chuyến ${tripLabel || payment.tripId} (còn ${remaining.toLocaleString('vi-VN')} ₫, nhập ${payment.amount.toLocaleString('vi-VN')} ₫)`);
+      }
+
       await LedgerService.postEntry(tx, {
         txnType: TxnType.PAYMENT_RECEIVED,
         txnId: payment.tripId,

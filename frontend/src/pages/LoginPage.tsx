@@ -168,12 +168,6 @@ export default function LoginPage() {
             </div>
             <h1>TingTing</h1>
             <p>Hệ thống Quản lý Vận tải</p>
-            <img
-              src="/assets/illustrations/empty-welcome.svg"
-              alt=""
-              aria-hidden="true"
-              className="login-welcome-illustration"
-            />
           </div>
 
           <div className="login-divider" />
@@ -190,7 +184,7 @@ export default function LoginPage() {
                 className="input"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="Nhập tên đăng nhập hoặc số điện thoại…"
+                placeholder="Tên đăng nhập hoặc SĐT"
                 autoCapitalize="none"
               />
             </div>
@@ -206,13 +200,14 @@ export default function LoginPage() {
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu…"
+                placeholder="Mật khẩu"
                 style={{ paddingRight: 40 }}
               />
               <button
                 type="button"
+                className="password-toggle"
                 onClick={() => setShowPw(!showPw)}
-                style={{ position: 'absolute', right: 12, top: 9, background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer' }}
+                aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

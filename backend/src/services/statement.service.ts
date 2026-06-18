@@ -69,11 +69,24 @@ const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Sego
   .aging td { padding: 4px 12px 4px 0; }
   @media print { body { margin: 0; } }`;
 
-export async function getStatementData(customerId: number): Promise<CustomerStatementData | null> {
+export async function getStatementData(customerId: number, dateFrom?: string, dateTo?: string): Promise<CustomerStatementData | null> {
   const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
   if (!customer) return null;
 
-  const ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
+  let ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
+
+  // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
+  // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
+  if (dateFrom || dateTo) {
+    const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
+    ledgerRows = ledgerRows.filter((r) => {
+      const t = new Date(r.timestamp).getTime();
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t > toTs) return false;
+      return true;
+    });
+  }
 
   const now = new Date();
   const { aging, openInvoices } = computeFifoAging(
@@ -167,7 +180,7 @@ export function exportStatementHtml(data: CustomerStatementData, dateStr: string
   }, dateStr);
 }
 
-export async function getSupplierStatement(supplierId: number): Promise<SupplierStatementData> {
+export async function getSupplierStatement(supplierId: number, dateFrom?: string, dateTo?: string): Promise<SupplierStatementData> {
   const [supplier] = await db.select({
     id: s.suppliers.id,
     name: s.suppliers.name,
@@ -177,7 +190,17 @@ export async function getSupplierStatement(supplierId: number): Promise<Supplier
 
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
-  const ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  let ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  if (dateFrom || dateTo) {
+    const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
+    ledgerRows = ledgerRows.filter((r) => {
+      const t = new Date(r.timestamp).getTime();
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t > toTs) return false;
+      return true;
+    });
+  }
 
   const now = new Date();
   const { aging } = computeFifoAging(

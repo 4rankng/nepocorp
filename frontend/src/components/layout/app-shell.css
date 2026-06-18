@@ -165,3 +165,10 @@
   padding: 30px 34px 40px;
   scrollbar-gutter: stable;
 }
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .app-body,
+  .content {
+    padding: 26px 24px 38px;
+  }
+}

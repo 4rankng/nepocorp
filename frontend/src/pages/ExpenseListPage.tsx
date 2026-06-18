@@ -307,31 +307,28 @@ export default function ExpenseListPage() {
                   {formatDate(e.expenseDate)}
                   {e.category && <><span className="m-card__meta-sep">·</span>{e.category.name}</>}
                 </div>
-                <div className="m-card__row">
-                  <span className="m-card__row-label">Số tiền</span>
-                  <span className={`m-card__row-value expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
+                <div className="expense-mobile-card__summary">
+                  <span className={`expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
                     {formatCurrency(e.amount)}
                   </span>
-                </div>
-                {(e.truck || e.trailer) && (
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">Xe</span>
-                    <span className="m-card__row-value">
+                  <span className="expense-mobile-card__vehicle">
+                    {(e.truck || e.trailer) ? (
                       <span className="expense-plate">
                         {e.vehicleComponent === 'TRAILER'
                           ? (e.trailer?.licensePlate || '—')
                           : (e.truck?.licensePlate || '—')
                         }
                       </span>
-                    </span>
-                  </div>
-                )}
-                {e.vehicleComponent && (
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">Thành phần</span>
-                    <span className="m-card__row-value">{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : 'Đầu kéo'}</span>
-                  </div>
-                )}
+                    ) : (
+                      <span className="expense-mobile-card__muted">Không gắn xe</span>
+                    )}
+                    {e.vehicleComponent && (
+                      <span className="expense-mobile-card__component">
+                        {e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : 'Đầu kéo'}
+                      </span>
+                    )}
+                  </span>
+                </div>
               </ClickableCard>
             ))
           )}

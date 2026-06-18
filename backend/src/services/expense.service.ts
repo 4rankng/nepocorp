@@ -58,6 +58,19 @@ export async function createExpense(tx: Tx, data: ExpenseCreateInput, userId?: n
     throw new ApiError(400, 'Chi phí có thời hạn cần ngày hết hạn (validTo)');
   }
 
+  // Per PRODUCT-SPECS §4.15 + feedback202606 A10.2: expense_date <= today().
+  // Back-dating in the past is allowed (NCC reports late); future is rejected.
+  if (data.expenseDate) {
+    const inputDate = new Date(data.expenseDate);
+    if (!isNaN(inputDate.getTime())) {
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);  // allow entire today
+      if (inputDate.getTime() > today.getTime()) {
+        throw new ApiError(400, 'Ngày phát sinh chi phí không được trong tương lai');
+      }
+    }
+  }
+
   // The expenses table only has truck_id (no trailer_id column yet) —
   // we discriminate truck vs rơ-moóc via the vehicleComponent enum. The
   // ID column holds either trucks.id or trailers.id depending on

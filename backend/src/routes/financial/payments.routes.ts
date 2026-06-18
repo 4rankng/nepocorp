@@ -57,13 +57,17 @@ router.post('/payments/vendor', asyncHandler(async (req: Request, res: Response)
 
 router.get('/ledger/suppliers/:id/statement', asyncHandler(async (req: Request, res: Response) => {
   const supplierId = Number(req.params.id);
-  res.json(await getSupplierStatement(supplierId));
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  res.json(await getSupplierStatement(supplierId, dateFrom, dateTo));
 }));
 
 router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const supplierId = parseInt(req.params.id as string, 10);
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
   const format = (req.query.format as string) || 'xlsx';
-  const data = await getSupplierStatement(supplierId);
+  const data = await getSupplierStatement(supplierId, dateFrom, dateTo);
 
   const dateStr = formatLocalDate();
   const safeName = safeFilename(data.supplier.name);

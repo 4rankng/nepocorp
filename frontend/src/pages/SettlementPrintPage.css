@@ -186,13 +186,29 @@
 }
 
 .settlement-detail__summary-card {
+  --stat-rail: var(--accent);
+  position: relative;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 16px 20px;
 }
+.settlement-detail__summary-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
 .settlement-detail__summary-card--balance {
+  --stat-rail: var(--info);
   grid-column: 1 / -1;
 }
 

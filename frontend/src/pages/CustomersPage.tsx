@@ -16,6 +16,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
+import { EmptyIllustration } from '../components/shared';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -390,7 +391,7 @@ export default function CustomersPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>Đang tải…</div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
-              <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 150, height: 124, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              <EmptyIllustration name="empty-clients" width={150} height={124} style={{ margin: '0 auto 8px', display: 'block' }} />
               <div>Chưa có dữ liệu</div>
             </div>
           ) : (
@@ -483,7 +484,7 @@ export default function CustomersPage() {
               )}
               {!loading && filtered.length === 0 && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
-                  <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <EmptyIllustration name="empty-clients" width={140} height={116} style={{ margin: '0 auto 8px', display: 'block' }} />
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
               )}

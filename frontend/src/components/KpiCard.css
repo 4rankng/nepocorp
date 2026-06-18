@@ -12,6 +12,7 @@
 .kpi-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
 .kpi {
+  --stat-rail: var(--accent);
   background:
     linear-gradient(135deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 42%),
     linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 249, 0.92));
@@ -27,6 +28,24 @@
   position: relative;
   overflow: hidden;
 }
+.kpi::before,
+.stat-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail, var(--accent));
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.kpi--warn { --stat-rail: var(--warning); }
+.kpi--danger { --stat-rail: var(--danger); }
+.kpi--success,
+.kpi--accent { --stat-rail: var(--accent); }
+.kpi--info { --stat-rail: var(--info); }
 .kpi[role="button"], .kpi.kpi--clickable { cursor: pointer; }
 .kpi[role="button"]:hover,
 .kpi.kpi--clickable:hover {
@@ -154,6 +173,7 @@
 
 /* legacy stat-card for backward compat */
 .stat-card {
+  --stat-rail: var(--accent);
   position: relative;
   background: var(--surface);
   border: 1px solid var(--line);

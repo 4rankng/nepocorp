@@ -663,3 +663,23 @@ export async function reassignTrip(tripId: number, data: { truckId: number; driv
     return updated;
   });
 }
+
+
+/**
+ * Soft-delete a trip. Only trips in CREATED status can be deleted; any other
+ * status (IN_TRANSIT, COMPLETED, LOCKED, CANCELED) returns 409. Per flow 01 §2.6.
+ */
+export async function deleteTrip(tripId: number): Promise<void> {
+  return await db.transaction(async (tx) => {
+    const [trip] = await tx.select({ id: s.trips.id, status: s.trips.status, deletedAt: s.trips.deletedAt })
+      .from(s.trips)
+      .where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) throw new ApiError(404, "Không tìm thấy chuyến đi");
+    if (trip.deletedAt) throw new ApiError(404, "Không tìm thấy chuyến đi");
+    if (trip.status !== TripStatus.CREATED) {
+      throw new ApiError(409, `Chỉ xóa được chuyến ở trạng thái CREATED (hiện tại: ${trip.status})`);
+    }
+    await tx.update(s.trips).set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(s.trips.id, tripId));
+  });
+}

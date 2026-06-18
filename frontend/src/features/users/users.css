@@ -244,7 +244,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -253,7 +253,7 @@
 .users-form-divider {
   height: 1px;
   background: var(--line-2);
-  margin: 24px 0;
+  margin: 16px 0;
 }
 
 /* ── KPI value emphasis ───────────────────────────────────────────────────── */
@@ -269,8 +269,8 @@
   display: flex;
   align-items: center;
   border: 1.5px solid var(--line-2);
-  border-radius: 10px;
-  height: 40px;
+  border-radius: 9px;
+  height: 36px;
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -296,7 +296,7 @@
   background: transparent;
   padding: 0 12px;
   height: 100%;
-  font-size: var(--fs-sm);
+  font-size: 13px;
   color: var(--ink);
   outline: none;
   font-family: inherit;
@@ -342,26 +342,46 @@
   max-width: 700px;
 }
 
+.drawer:has(.users-form-cards) .drawer__head {
+  padding: 18px 24px 14px;
+}
+
+.drawer:has(.users-form-cards) .drawer__body {
+  padding: 16px 24px 84px;
+}
+
+.drawer:has(.users-form-cards) .drawer__foot {
+  padding: 12px 24px;
+}
+
+.drawer:has(.users-form-cards) .drawer__title {
+  font-size: 20px;
+}
+
 /* Desktop: cards side by side */
 .users-form-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .users-form-card {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px;
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 /* Reset form-group spacing inside cards (card gap handles it) */
 .users-form-card .form-group {
   margin-bottom: 0;
+}
+
+.users-form-cards--driver {
+  grid-template-columns: 2fr 1fr;
 }
 
 /* ── Password Toggle ──────────────────────────────────────────────────────── */
@@ -397,9 +417,75 @@
 /* ── Mobile card enhancements ───────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  .drawer:has(.users-form-cards) .drawer__head {
+    padding: 16px 18px 12px;
+  }
+
+  .drawer:has(.users-form-cards) .drawer__body {
+    padding: 14px 18px 76px;
+  }
+
+  .drawer:has(.users-form-cards) .drawer__foot {
+    padding: 10px 18px;
+  }
+
+  .drawer:has(.users-form-cards) .drawer__title {
+    font-size: 18px;
+  }
+
+  .drawer:has(.users-form-cards) .drawer__subtitle {
+    font-size: 12px;
+  }
+
+  .users-form-section__title {
+    margin-bottom: 7px;
+  }
+
+  .users-form-divider {
+    margin: 14px 0;
+  }
+
   /* Stack form cards vertically on mobile */
   .users-form-cards {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .users-form-card {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .users-form-card .form-group > label,
+  .drawer:has(.users-form-cards) .form-group > label {
+    margin-bottom: 5px;
+    font-size: 12px;
+  }
+
+  .drawer:has(.users-form-cards) .row-2 {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .drawer:has(.users-form-cards) .input,
+  .drawer:has(.users-form-cards) select.input {
+    min-height: 36px;
+    height: 36px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 13px;
+  }
+
+  .icon-input {
+    height: 34px;
+  }
+
+  .icon-input__icon {
+    padding-left: 10px;
+  }
+
+  .icon-input__field {
+    padding-inline: 10px;
   }
 
   .user-avatar {

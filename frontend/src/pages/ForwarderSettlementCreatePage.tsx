@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { Money } from '../components/shared/Money';
+import { EmptyIllustration } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader } from '../components/UI';
@@ -200,7 +201,7 @@ export default function ForwarderSettlementCreatePage() {
           <div className="fset-step-body">
             {approvedRequests.length === 0 ? (
               <div className="fset-empty-inline">
-                <img className="fset-empty-inline__asset" src="/assets/illustrations/empty-matching.svg" alt="" aria-hidden="true" />
+                <EmptyIllustration name="empty-matching" className="fset-empty-inline__asset" />
                 <span>Không có tạm ứng nào đã duyệt</span>
               </div>
             ) : (
@@ -243,7 +244,7 @@ export default function ForwarderSettlementCreatePage() {
           <div className="fset-step-body">
             {unlinkedExpenses.length === 0 ? (
               <div className="fset-empty-inline">
-                <img className="fset-empty-inline__asset" src="/assets/illustrations/empty-matching.svg" alt="" aria-hidden="true" />
+                <EmptyIllustration name="empty-matching" className="fset-empty-inline__asset" />
                 <span>Không có chi phí nào chưa thanh toán. Các chi phí đã nằm trong phiếu khác sẽ không hiện ở đây.</span>
               </div>
             ) : (

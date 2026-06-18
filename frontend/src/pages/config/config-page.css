@@ -320,9 +320,25 @@
     line-height: 1.4;
   }
 
-  /* Hide KPI watermark icons on narrow viewports — they crowd the value */
-  .routes-config-page .kpi__watermark { display: none; }
-  .routes-config-page .kpi { overflow: hidden; }
+  /* Keep KPI watermark icons visible on mobile, but quiet enough not to crowd values. */
+  .routes-config-page .kpi {
+    overflow: hidden;
+    padding-right: 54px;
+  }
+  .routes-config-page .kpi__watermark {
+    display: flex;
+    right: 10px;
+    bottom: 9px;
+    width: 38px;
+    height: 38px;
+    opacity: 0.055;
+    color: var(--stat-rail, var(--accent));
+  }
+  .routes-config-page .kpi__watermark svg {
+    width: 38px;
+    height: 38px;
+    stroke-width: 1.65;
+  }
 
   /* "Popular route" KPI value can be a long Vietnamese city name */
   .routes-config-page .kpi__value { word-break: keep-all; overflow-wrap: anywhere; }

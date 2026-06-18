@@ -16,16 +16,19 @@
 
 /* page-header / page-title / page-subtitle sizes come from global UI.css */
 
-/* ── KPI row grid — 3 equal columns, matches dashboard proportions ─────── */
+/* ── KPI row grid ──────────────────────────────────────────────────────── */
 .adv-page .adv-kpi-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 16px;
 }
 
 /* ── AdvKPI component — exact same sizing as .dash-wf .wf-kpi ─────────── */
 .adv-page .adv-kpi {
+  --stat-rail: var(--accent);
+  --stat-tint: var(--accent-soft);
+  --stat-ink: var(--accent);
   background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -36,6 +39,35 @@
   cursor: pointer;
   transition: background var(--t-fast), box-shadow var(--t-fast);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+.adv-page .adv-kpi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.adv-page .adv-kpi--warn {
+  --stat-rail: var(--warning);
+  --stat-tint: var(--warning-soft);
+  --stat-ink: var(--warning-text);
+}
+.adv-page .adv-kpi--success {
+  --stat-rail: var(--success);
+  --stat-tint: var(--success-soft);
+  --stat-ink: var(--success);
+}
+.adv-page .adv-kpi--danger {
+  --stat-rail: var(--danger);
+  --stat-tint: var(--danger-soft);
+  --stat-ink: var(--danger);
 }
 .adv-page .adv-kpi:hover {
   background: var(--surface-2);
@@ -64,29 +96,20 @@
 }
 
 /* Active selection ring per variant */
-.adv-page .adv-kpi--warn.is-active {
-  box-shadow: 0 0 0 2px var(--warning), 0 0 0 5px var(--warning-soft);
-}
-.adv-page .adv-kpi--success.is-active {
-  box-shadow: 0 0 0 2px var(--success), 0 0 0 5px var(--success-soft);
-}
-.adv-page .adv-kpi--danger.is-active {
-  box-shadow: 0 0 0 2px var(--danger), 0 0 0 5px var(--danger-soft);
+.adv-page .adv-kpi.is-active {
+  border-color: color-mix(in srgb, var(--stat-rail) 42%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--stat-rail) 84%, transparent),
+              0 0 0 5px var(--stat-tint),
+              var(--sh-sm);
 }
 
-/* Amber tint when there are pending items requiring action */
-.adv-page .adv-kpi--warn.has-items {
-  background: var(--warning-soft);
+/* Keep attention states refined: rail + ink, no half-filled yellow cards. */
+.adv-page .adv-kpi.has-items {
+  border-color: color-mix(in srgb, var(--stat-rail) 26%, var(--line));
 }
-.adv-page .adv-kpi--warn.has-items .adv-kpi__value {
-  color: var(--warning-text);
-}
-.adv-page .adv-kpi--warn.has-items .adv-kpi__meta {
-  color: var(--warning-text);
-  opacity: 0.8;
-}
-.adv-page .adv-kpi--warn.has-items:hover {
-  background: #fef3c7; /* slightly darker than warning-soft on hover */
+.adv-page .adv-kpi.has-items .adv-kpi__value,
+.adv-page .adv-kpi.has-items .adv-kpi__meta {
+  color: var(--stat-ink);
 }
 
 /* ── Desktop grid header ──────────────────────────────────────────────── */
@@ -329,14 +352,11 @@
 
 /* ── Responsive: ≤760px ───────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* KPI row collapses to 2 cols; 3rd card spans full width */
+  /* KPI row collapses to a balanced 2 × 2 grid. */
   .adv-page .adv-kpi-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 12px;
-  }
-  .adv-page .adv-kpi-row .adv-kpi:nth-child(3) {
-    grid-column: 1 / -1;
   }
   .adv-page .adv-kpi {
     padding: 10px 12px;

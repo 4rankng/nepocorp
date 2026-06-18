@@ -490,8 +490,8 @@ export const portSchema = z.object({
 export const tripContainerSchema = z.object({
   tripId: z.coerce.number().int().positive(),
   containerTypeId: z.coerce.number().int().positive().optional().nullable(),
-  containerNumber: z.string().min(1, 'Số container không được để trống'),
-  sealNumber: z.string().optional().nullable(),
+  containerNumber: z.string().min(1, 'Số container không được để trống').max(20, 'Số container không được quá 20 ký tự'),
+  sealNumber: z.string().max(20, 'Số seal không được quá 20 ký tự').optional().nullable(),
   cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable(),
   // Phase 2: optional initial seals list (customs seal, carrier seal, …).

@@ -64,8 +64,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   }));
 }));
 
-// Create trip
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+// Create trip — only ADMIN/MANAGER can create (accountant still has trips:write for figure updates)
+router.post('/', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const data = createTripSchema.parse(req.body);
   const trip = await tripService.createTrip({
     ...data,
@@ -91,10 +91,39 @@ router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Get trip detail with legs
+// Trip KPI/stats summary — must be declared BEFORE /:id so 'stats' is not parsed as id
+router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const summary = await tripService.getTripsSummary(dateFrom, dateTo);
+  res.json({
+    totalTrips: summary.statusCounts.all,
+    created: summary.statusCounts[TripStatus.CREATED],
+    inTransit: summary.statusCounts[TripStatus.IN_TRANSIT],
+    completed: summary.statusCounts[TripStatus.COMPLETED],
+    locked: summary.statusCounts[TripStatus.LOCKED],
+    canceled: summary.statusCounts[TripStatus.CANCELED],
+    totalRevenue: summary.totalRevenue,
+    totalKm: summary.totalKm,
+    totalFuel: summary.totalFuel,
+    avgPer100: summary.avgPer100,
+    missingFuel: summary.missingFuel,
+  });
+}));
+
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
   res.json(await tripService.getTripById(id));
+}));
+
+// Soft-delete trip — only ADMIN/MANAGER, only CREATED status (flow 01 §2.6)
+router.delete('/:id', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  await tripService.deleteTrip(id);
+  await invalidateReportCaches();
+  res.json({ ok: true });
 }));
 
 // Update pre-departure figures
