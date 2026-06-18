@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" fill="none" role="img" aria-label="Forwarder expenses">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="8" x2="76" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F8F4"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="88" height="88" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#005A2D" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="68" height="68" rx="20" fill="url(#bg)" stroke="#D7DEDB" filter="url(#shadow)"/>
+  <rect x="16" y="16" width="56" height="56" rx="16" fill="#00B14F" fill-opacity=".055"/>
+  <g transform="translate(0 0)" color="#101513">
+    <path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M19 50h13l7 8h11c4 0 7 3 7 7H35l-8-7H19z"/><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M57 65h8c5 0 8-3 10-7M55 24h-27v26"/><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M36 24h27v28H36zM44 35h12M44 43h8"/><circle fill="#00B14F" cx="62" cy="58" r="3"/>
+  </g>
+</svg>
