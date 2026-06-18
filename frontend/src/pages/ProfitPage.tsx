@@ -398,24 +398,22 @@ export default function ProfitPage() {
                   )}
 
                   {preview.perTruck && preview.perTruck.filter(t => t.partners.length > 0).length > 0 && (
-                    <details style={{ marginTop: 10 }}>
-                      <summary style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg-3)', cursor: 'pointer', letterSpacing: '0.04em' }}>CHI TIẾT THEO XE</summary>
-                      <div style={{ marginTop: 8 }}>
-                        {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
-                          <div key={t.truckId} style={{ marginBottom: 8, padding: '6px 8px', background: 'var(--bg-1)', borderRadius: 6 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
-                              Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
-                            </div>
-                            {t.partners.map((p, i) => (
-                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-3)', padding: '2px 0' }}>
-                                <span>{p.partnerName} ({p.percentage}%)</span>
-                                <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{formatVND(p.amount)}</span>
-                              </div>
-                            ))}
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
+                      {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
+                        <div key={t.truckId} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--bg-1)', borderRadius: 6 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+                            Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
                           </div>
-                        ))}
-                      </div>
-                    </details>
+                          {t.partners.map((p, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--fg-3)', padding: '3px 0' }}>
+                              <span>{p.partnerName} ({p.percentage}%)</span>
+                              <span style={{ fontWeight: 600, color: 'var(--fg-1)', whiteSpace: 'nowrap' }}>{formatVND(p.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
