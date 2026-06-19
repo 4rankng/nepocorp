@@ -64,6 +64,7 @@ export const CONFIG_ITEMS: SearchItem[] = [
   { id: 'customers', type: 'config', label: 'Khách hàng & Đối tác', description: 'Danh mục đối tác vận chuyển hàng hóa, thông tin liên hệ và mã số thuế phục vụ công nợ.', path: '/config/customers', icon: Users, action: 'Sửa' },
   { id: 'routes', type: 'config', label: 'Tuyến đường & Cự ly', description: 'Danh sách các tuyến chặng, số trạm thu phí BOT, quãng đường di chuyển chuẩn.', path: '/config/routes', icon: MapPin, action: 'Sửa' },
   { id: 'trucks', type: 'config', label: 'Xe đầu kéo', description: 'Biển số các đầu kéo kéo container đang vận hành, định mức mặc định và lịch bảo dưỡng đầu xe.', path: '/config/trucks', icon: Truck, action: 'Sửa' },
+  { id: 'tire-positions', type: 'config', label: 'Vị trí lốp', description: 'Danh mục vị trí lốp dùng khi thêm hoặc cập nhật lốp trên xe.', path: '/config/tire-positions', icon: Tags, action: 'Sửa' },
   { id: 'trailers', type: 'config', label: 'Rơ-moóc', description: 'Danh sách rơ-moóc, loại rơ-moóc và thông tin đăng kiểm.', path: '/config/trailers', icon: Truck, action: 'Sửa' },
   { id: 'cargo-types', type: 'config', label: 'Loại hàng hóa', description: 'Bảng quy chuẩn loại hàng hóa vận chuyển ảnh hưởng đến việc phân xe chặng.', path: '/config/cargo-types', icon: Package, action: 'Sửa' },
   { id: 'pricing-tables', type: 'config', label: 'Bảng giá cước', description: 'Bảng giá cước chi tiết thỏa thuận với từng đối tác khách hàng trên mỗi tuyến.', path: '/config/pricing-tables', icon: DollarSign, action: 'Sửa' },

@@ -2,7 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
-  TIRE_STATUSES, TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
+  TIRE_STATUSES, TIRE_STATUS_LABELS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
@@ -35,7 +35,7 @@ export type {
   DebtOffset,
   ApprovalItemType,
   VehicleAlertField, VehicleAlertStatus, VehicleAlert,
-  Tire, VehicleTireAlert,
+  Tire, TirePosition, VehicleTireAlert,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -57,7 +57,7 @@ export {
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
   driverPayoutSchema,
-  tireSchema, installTireSchema,
+  tireSchema, installTireSchema, tirePositionSchema,
 } from './schemas';
 
 export {
@@ -70,7 +70,7 @@ export {
 export type {
   CreateTripInput, UpdateTripFiguresInput, CreatePaymentInput,
   CreatePenaltyInput, CreateAdjustmentInput, LoginInput,
-  CustomerInput, TruckInput, TrailerInput, RouteInput,
+  CustomerInput, TruckInput, TrailerInput, TirePositionInput, RouteInput,
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,
   FuelConfigInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput, TruckCapInput,

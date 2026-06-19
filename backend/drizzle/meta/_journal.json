@@ -407,6 +407,13 @@
       "when": 1781860000000,
       "tag": "0057_tire_status_string",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1781863600000,
+      "tag": "0058_tire_positions_catalog",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,7 @@ import type {
   ExpenseCategory,
   PaginatedResponse,
   Port,
+  TirePosition,
   ContainerType,
   SealType,
   Route,
@@ -61,6 +62,13 @@ export const configClient = {
   }) => api.put<RoadConfig>(CONFIG.ROAD_CONFIG, data),
 
   getPorts: () => fetchAllPaginated<Port>(CONFIG.PORTS),
+
+  getTirePositions: () => fetchAllPaginated<TirePosition>(CONFIG.TIRE_POSITIONS),
+  createTirePosition: (data: { name: string; sortOrder?: number; status?: 'ACTIVE' | 'INACTIVE' }) =>
+    api.post<TirePosition>(CONFIG.TIRE_POSITIONS, data),
+  updateTirePosition: (id: number, data: Partial<{ name: string; sortOrder: number; status: 'ACTIVE' | 'INACTIVE' }>) =>
+    api.put<TirePosition>(CONFIG.TIRE_POSITION(id), data),
+  deleteTirePosition: (id: number) => api.delete<{ ok: true }>(CONFIG.TIRE_POSITION(id)),
 
   getContainerTypes: () => fetchAllPaginated<ContainerType>(CONFIG.CONTAINER_TYPES),
 

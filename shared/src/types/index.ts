@@ -138,6 +138,16 @@ export interface Tire {
   deletedAt: string | null;
 }
 
+export interface TirePosition {
+  id: number;
+  name: string;
+  sortOrder: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
 /** Warranty-expiry alert for a tire (mirrors VehicleAlert shape). */
 export interface VehicleTireAlert {
   tireId: number;

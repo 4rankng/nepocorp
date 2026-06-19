@@ -39,6 +39,14 @@ export function useUpdateTire() {
   });
 }
 
+export function useDeleteTire() {
+  const invalidate = useInvalidateTires();
+  return useMutation({
+    mutationFn: (id: number) => tireClient.delete(id),
+    onSuccess: invalidate,
+  });
+}
+
 export function useInstallTire() {
   const invalidate = useInvalidateTires();
   return useMutation({

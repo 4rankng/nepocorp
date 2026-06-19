@@ -307,6 +307,8 @@ export const tireSchema = z.object({
   truckId: z.coerce.number().int().positive().optional().nullable(),
   position: z.string().trim().min(1).max(64).optional().nullable(),
   size: z.string().max(32).optional().nullable(),
+  installedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  removedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   supplierId: z.coerce.number().int().positive().optional().nullable(),
   cost: numericMoney.optional().default(0),
   warrantyUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -316,6 +318,12 @@ export const tireSchema = z.object({
 export const installTireSchema = z.object({
   truckId: z.coerce.number().int().positive(),
   position: z.string().trim().min(1).max(64).optional().nullable(),
+});
+
+export const tirePositionSchema = z.object({
+  name: z.string().trim().min(1, 'Tên vị trí lốp không được để trống').max(64),
+  sortOrder: z.coerce.number().int().min(0).optional().default(0),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
 });
 
 export const routeSchema = z.object({
@@ -669,6 +677,7 @@ export type TruckInput = z.infer<typeof truckSchema>;
 export type TrailerInput = z.infer<typeof trailerSchema>;
 export type TireInput = z.infer<typeof tireSchema>;
 export type InstallTireInput = z.infer<typeof installTireSchema>;
+export type TirePositionInput = z.infer<typeof tirePositionSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;
 export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;
 export type PricingTableInput = z.infer<typeof pricingTableSchema>;

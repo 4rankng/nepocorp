@@ -1,18 +1,27 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Check, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
-  TIRE_POSITION_SUGGESTIONS,
   computeTireAlerts,
 } from '@tingting/shared';
-import type { Tire } from '@tingting/shared';
+import type { Tire, TirePosition } from '@tingting/shared';
 import type { Supplier } from '@tingting/shared';
-import { StatusPill } from '../components/UI';
+import { ConfirmDialog, StatusPill } from '../components/UI';
 import { StatusStrip, StatusSwatch } from '../components/shared/StatusStrip';
+import { useToast } from '../components/shared/Toast';
+import { formatErrorMessage } from '../lib/api';
 import { routes } from '../lib/routes';
 import {
-  useTires, useCreateTire, useUpdateTire,
+  useTires, useCreateTire, useUpdateTire, useDeleteTire,
 } from '../hooks/useTireQueries';
-import { useAllSuppliers, useTrucksAndDrivers } from '../hooks/useCatalogQueries';
+import {
+  useAllSuppliers,
+  useCreateTirePosition,
+  useDeleteTirePosition,
+  useTirePositions,
+  useTrucksAndDrivers,
+  useUpdateTirePosition,
+} from '../hooks/useCatalogQueries';
 import './TruckTiresPage.css';
 
 /** Editable tire fields. `cost` is a number on the wire (numeric(15,0)). */
@@ -21,11 +30,22 @@ type TirePatch = Partial<{
   truckId: number | null;
   position: string | null;
   size: string | null;
+  installedAt: string | null;
+  removedAt: string | null;
   supplierId: number | null;
   cost: number;
   warrantyUntil: string | null;
   status: Tire['status'];
 }>;
+
+type TireEditDraft = {
+  serial: string;
+  position: string;
+  size: string;
+  installedAt: string;
+  supplierText: string;
+  warrantyUntil: string;
+};
 
 const TIRE_STATUS_COLORS: Record<Tire['status'], string> = {
   IN_USE: '#16A34A',
@@ -37,18 +57,21 @@ const TIRE_STATUS_LEGEND: { status: Tire['status']; label: string }[] = [
   { status: 'IN_STOCK', label: 'Lốp dự phòng' },
 ];
 
-function normalizePositionText(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
+function cleanText(label: string): string {
+  return label.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeSearchText(value: string): string {
+  return cleanText(value)
+    .toLocaleLowerCase('vi')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
-    .replace(/\s+/g, ' ');
+    .replace(/Đ/g, 'd');
 }
 
-function cleanPositionLabel(label: string): string {
-  return label.trim().replace(/\s+/g, ' ');
+function textMatches(haystack: string, query: string): boolean {
+  return normalizeSearchText(haystack).includes(normalizeSearchText(query));
 }
 
 function displayTirePosition(tire: Tire): string {
@@ -56,23 +79,67 @@ function displayTirePosition(tire: Tire): string {
 }
 
 function positionPayloadFromLabel(label: string): { position: string | null } {
-  const cleaned = cleanPositionLabel(label);
+  const cleaned = cleanText(label);
   return {
     position: cleaned || null,
   };
 }
 
-function buildPositionLabels(tires: Tire[]): string[] {
+function buildPositionLabels(tires: Tire[], tirePositions: TirePosition[]): string[] {
   const labels = [
-    ...TIRE_POSITION_SUGGESTIONS,
+    ...tirePositions
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'vi'))
+      .map((position) => position.name),
     ...tires.map((tire) => tire.position || '').filter(Boolean),
   ];
-  return Array.from(new Set(labels.map(cleanPositionLabel).filter(Boolean)));
+  return Array.from(new Set(labels.map(cleanText).filter(Boolean)));
+}
+
+function buildUsedPositionLabels(tires: Tire[]): string[] {
+  return Array.from(new Set(tires.map((tire) => cleanText(tire.position || '')).filter(Boolean)));
+}
+
+function normalizedCatalogLabel(label: string): string {
+  return normalizeSearchText(label);
 }
 
 function supplierName(suppliers: Supplier[], supplierId: number | null): string {
   if (!supplierId) return '—';
   return suppliers.find((supplier) => supplier.id === supplierId)?.name ?? '—';
+}
+
+function supplierTextFromId(suppliers: Supplier[], supplierId: number | null): string {
+  if (!supplierId) return '';
+  return suppliers.find((supplier) => supplier.id === supplierId)?.name ?? '';
+}
+
+function supplierIdFromText(suppliers: Supplier[], label: string): number | null {
+  const cleaned = cleanText(label);
+  if (!cleaned) return null;
+  const match = suppliers.find((supplier) => cleanText(supplier.name).toLocaleLowerCase('vi') === cleaned.toLocaleLowerCase('vi'));
+  return match?.id ?? null;
+}
+
+function draftFromTire(tire: Tire, suppliers: Supplier[]): TireEditDraft {
+  return {
+    serial: tire.serial,
+    position: tire.position ?? '',
+    size: tire.size ?? '',
+    installedAt: tire.installedAt ?? '',
+    supplierText: supplierTextFromId(suppliers, tire.supplierId),
+    warrantyUntil: tire.warrantyUntil ?? '',
+  };
+}
+
+function patchFromDraft(draft: TireEditDraft, suppliers: Supplier[]): TirePatch {
+  return {
+    serial: draft.serial.trim(),
+    ...positionPayloadFromLabel(draft.position),
+    size: draft.size.trim() || null,
+    installedAt: draft.installedAt || null,
+    supplierId: supplierIdFromText(suppliers, draft.supplierText),
+    warrantyUntil: draft.warrantyUntil || null,
+  };
 }
 
 function TireLegend() {
@@ -115,12 +182,62 @@ export default function TruckTiresPage() {
   // Fetch all tires; filter to this truck + stock spares for read-only tracking.
   const { data: allTires, isLoading } = useTires();
   const { data: suppliers = [] } = useAllSuppliers();
-  const tiresOnTruck = (allTires ?? []).filter((t) => t.truckId === truckId);
-  const spares = (allTires ?? []).filter((t) => t.status === 'IN_STOCK');
-  const positionLabels = buildPositionLabels(allTires ?? []);
+  const { data: tirePositions = [] } = useTirePositions();
+  // Derived tire lists + position suggestions. Memoized so opening a dialog or
+  // typing in an input doesn't re-scan the whole tire array on every render.
+  const { tiresOnTruck, spares, positionLabels, usedPositionLabels } = useMemo(() => {
+    const all = allTires ?? [];
+    return {
+      tiresOnTruck: all.filter((t) => t.truckId === truckId),
+      spares: all.filter((t) => t.status === 'IN_STOCK'),
+      positionLabels: buildPositionLabels(all, tirePositions),
+      usedPositionLabels: buildUsedPositionLabels(all),
+    };
+  }, [allTires, tirePositions, truckId]);
 
   const createMut = useCreateTire();
   const updateMut = useUpdateTire();
+  const deleteMut = useDeleteTire();
+  const createPositionMut = useCreateTirePosition();
+  const updatePositionMut = useUpdateTirePosition();
+  const deletePositionMut = useDeleteTirePosition();
+  const [editingTire, setEditingTire] = useState<Tire | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Tire | null>(null);
+  const [positionManagerOpen, setPositionManagerOpen] = useState(false);
+
+  const busy = updateMut.isPending || deleteMut.isPending;
+  const positionBusy = createPositionMut.isPending || updatePositionMut.isPending || deletePositionMut.isPending;
+
+  const syncUsedPositionsToCatalog = async () => {
+    const catalogNames = new Set(tirePositions.map((position) => normalizedCatalogLabel(position.name)));
+    const missingLabels = usedPositionLabels.filter((label) => !catalogNames.has(normalizedCatalogLabel(label)));
+    let nextSortOrder = computeNextSortOrder(tirePositions);
+
+    for (const label of missingLabels) {
+      try {
+        await createPositionMut.mutateAsync({
+          name: label,
+          sortOrder: nextSortOrder,
+          status: 'ACTIVE',
+        });
+      } catch (error) {
+        console.error('Không thể đồng bộ vị trí lốp đã dùng vào danh mục', error);
+      }
+      nextSortOrder += 10;
+    }
+  };
+
+  const openPositionManager = () => {
+    setPositionManagerOpen(true);
+    void syncUsedPositionsToCatalog();
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    await deleteMut.mutateAsync(target.id);
+  };
 
   return (
     <div className="ttp">
@@ -141,11 +258,20 @@ export default function TruckTiresPage() {
               <h2 id="ttp-add-title">Thêm lốp</h2>
               <p>Nhập serial và thông tin chính cho xe này.</p>
             </div>
+            <button
+              type="button"
+              className="ttp-tool-btn"
+              onClick={openPositionManager}
+            >
+              <Settings2 size={15} />
+              Vị trí lốp
+            </button>
           </div>
           <AddTireForm
             positionLabels={positionLabels}
             suppliers={suppliers}
             saving={createMut.isPending}
+            onManagePositions={openPositionManager}
             onsave={async (d) => { await createMut.mutateAsync({ ...d, truckId }); }}
           />
         </section>
@@ -161,11 +287,11 @@ export default function TruckTiresPage() {
           <TireTable
             tires={tiresOnTruck}
             suppliers={suppliers}
-            positionLabels={positionLabels}
-            positionListId="ttp-position-options-mounted"
             loading={isLoading}
             emptyHint="Chưa có lốp nào được lắp trên xe này."
-            onedit={(id, patch) => updateMut.mutate({ id, data: patch })}
+            busy={busy}
+            onedit={setEditingTire}
+            ondelete={setDeleteTarget}
           />
         </section>
       </div>
@@ -182,24 +308,62 @@ export default function TruckTiresPage() {
           <TireTable
             tires={spares}
             suppliers={suppliers}
-            positionLabels={positionLabels}
-            positionListId="ttp-position-options-spares"
             loading={isLoading}
             emptyHint="Không có lốp kho."
-            onedit={(id, patch) => updateMut.mutate({ id, data: patch })}
+            busy={busy}
+            onedit={setEditingTire}
+            ondelete={setDeleteTarget}
           />
         </section>
       )}
+
+      {editingTire && (
+        <TireEditDialog
+          key={editingTire.id}
+          tire={editingTire}
+          suppliers={suppliers}
+          positionLabels={positionLabels}
+          saving={updateMut.isPending}
+          onManagePositions={openPositionManager}
+          oncancel={() => setEditingTire(null)}
+          onsave={async (patch) => {
+            await updateMut.mutateAsync({ id: editingTire.id, data: patch });
+            setEditingTire(null);
+          }}
+        />
+      )}
+
+      {positionManagerOpen && (
+        <TirePositionsManagerDialog
+          positions={tirePositions}
+          saving={positionBusy}
+          oncancel={() => setPositionManagerOpen(false)}
+          oncreate={(data) => createPositionMut.mutateAsync(data)}
+          onupdate={(id, data) => updatePositionMut.mutateAsync({ id, data })}
+          ondelete={(id) => deletePositionMut.mutateAsync(id)}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        variant="danger"
+        message={deleteTarget ? `Xóa lốp ${deleteTarget.serial}? Hành động này sẽ ẩn lốp khỏi danh sách theo dõi.` : ''}
+        confirmLabel={deleteMut.isPending ? 'Đang xóa…' : 'Xóa lốp'}
+        cancelLabel="Hủy"
+        onConfirm={() => { void handleDeleteConfirm(); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
 
 // ─── Add-tire inline form ───────────────────────────────────────────────────
 
-function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
+function AddTireForm({ positionLabels, suppliers, saving, onManagePositions, onsave }: {
   positionLabels: string[];
   suppliers: Supplier[];
   saving: boolean;
+  onManagePositions: () => void;
   onsave: (d: {
     serial: string;
     position: string | null;
@@ -212,7 +376,7 @@ function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
   const [serial, setSerial] = useState('');
   const [positionText, setPositionText] = useState('');
   const [size, setSize] = useState('');
-  const [supplierId, setSupplierId] = useState('');
+  const [supplierText, setSupplierText] = useState('');
   const [cost, setCost] = useState('');
   const [warranty, setWarranty] = useState('');
 
@@ -223,14 +387,14 @@ function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
       serial: serial.trim(),
       ...positionPayload,
       size: size.trim() || null,
-      supplierId: supplierId ? Number(supplierId) : null,
+      supplierId: supplierIdFromText(suppliers, supplierText),
       cost: cost ? Number(cost) : 0,
       warrantyUntil: warranty || null,
     });
     setSerial('');
     setPositionText('');
     setSize('');
-    setSupplierId('');
+    setSupplierText('');
     setCost('');
     setWarranty('');
   };
@@ -243,18 +407,12 @@ function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
       </div>
       <div className="ttp-field">
         <label>Vị trí</label>
-        <input
-          className="input"
-          list="ttp-position-options-add"
+        <PositionPicker
           value={positionText}
-          onChange={(e) => setPositionText(e.target.value)}
-          onBlur={() => {
-            const cleaned = cleanPositionLabel(positionText);
-            setPositionText(cleaned);
-          }}
-          placeholder="VD: Trước trái hoặc Trục nâng trái"
+          labels={positionLabels}
+          onChange={setPositionText}
+          onManage={onManagePositions}
         />
-        <PositionOptions id="ttp-position-options-add" labels={positionLabels} />
       </div>
       <div className="ttp-field">
         <label>Kích cỡ</label>
@@ -262,12 +420,11 @@ function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
       </div>
       <div className="ttp-field">
         <label>Nhà cung cấp</label>
-        <select className="input" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-          <option value="">Chưa chọn</option>
-          {suppliers.map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-          ))}
-        </select>
+        <SupplierPicker
+          value={supplierText}
+          suppliers={suppliers}
+          onChange={setSupplierText}
+        />
       </div>
       <div className="ttp-field">
         <label>Giá (VND)</label>
@@ -286,71 +443,501 @@ function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
 
 // ─── Tire table ─────────────────────────────────────────────────────────────
 
-function PositionOptions({ id, labels }: { id: string; labels: string[] }) {
+function PositionPicker({ value, labels, onChange, onManage }: {
+  value: string;
+  labels: string[];
+  onChange: (value: string) => void;
+  onManage: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const filteredLabels = labels
+    .filter((label) => !value.trim() || textMatches(label, value))
+    .slice(0, 8);
+
   return (
-    <datalist id={id}>
-      {labels.map((label) => (
-        <option key={label} value={label} />
-      ))}
-    </datalist>
+    <div className="ttp-position-picker">
+      <input
+        className="input"
+        value={value}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          onChange(cleanText(value));
+          window.setTimeout(() => setOpen(false), 120);
+        }}
+        placeholder="VD: Trước trái hoặc Trục nâng trái"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      />
+      {open && (
+        <div className="ttp-position-picker-menu" role="listbox">
+          {filteredLabels.length > 0 ? filteredLabels.map((label) => (
+            <button
+              key={label}
+              type="button"
+              className="ttp-position-picker-option"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(label);
+                setOpen(false);
+              }}
+              role="option"
+              aria-selected={cleanText(value) === label}
+            >
+              {label}
+            </button>
+          )) : (
+            <div className="ttp-position-picker-empty">Không có vị trí phù hợp</div>
+          )}
+          <button
+            type="button"
+            className="ttp-position-picker-manage"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              setOpen(false);
+              onManage();
+            }}
+          >
+            <Settings2 size={15} />
+            Sửa / xóa vị trí
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
-function PositionCell({ tire, optionsId, onedit }: {
-  tire: Tire;
-  optionsId: string;
-  onedit: (id: number, patch: TirePatch) => void;
+function SupplierPicker({ value, suppliers, onChange }: {
+  value: string;
+  suppliers: Supplier[];
+  onChange: (value: string) => void;
 }) {
-  const currentLabel = tire.position ?? '';
+  const [open, setOpen] = useState(false);
+  const filteredSuppliers = suppliers
+    .filter((supplier) => !value.trim() || textMatches(supplier.name, value))
+    .slice(0, 8);
 
-  const commit = (node: HTMLInputElement) => {
-    const nextLabel = cleanPositionLabel(node.value);
-    if (!nextLabel) {
-      node.value = currentLabel;
+  return (
+    <div className="ttp-position-picker ttp-supplier-picker">
+      <input
+        className="input"
+        value={value}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onBlur={() => {
+          onChange(cleanText(value));
+          window.setTimeout(() => setOpen(false), 120);
+        }}
+        placeholder="Tìm nhà cung cấp"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      />
+      {open && (
+        <div className="ttp-position-picker-menu ttp-supplier-picker-menu" role="listbox">
+          {filteredSuppliers.length > 0 ? filteredSuppliers.map((supplier) => (
+            <button
+              key={supplier.id}
+              type="button"
+              className="ttp-position-picker-option"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(supplier.name);
+                setOpen(false);
+              }}
+              role="option"
+              aria-selected={cleanText(value) === cleanText(supplier.name)}
+            >
+              {supplier.name}
+            </button>
+          )) : (
+            <div className="ttp-position-picker-empty">Không có nhà cung cấp phù hợp</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type TirePositionDraft = {
+  name: string;
+};
+
+function tirePositionDraft(position?: TirePosition): TirePositionDraft {
+  return {
+    name: position?.name ?? '',
+  };
+}
+
+function tirePositionPayload(draft: TirePositionDraft, sortOrder?: number) {
+  return {
+    name: cleanText(draft.name),
+    ...(sortOrder == null ? {} : { sortOrder }),
+    status: 'ACTIVE' as TirePosition['status'],
+  };
+}
+
+function sortTirePositions(positions: TirePosition[]) {
+  return [...positions].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'vi'));
+}
+
+/** Next sort_order value: 10 past the current max (or 10 for the first row). */
+function computeNextSortOrder(positions: TirePosition[]): number {
+  return positions.length ? Math.max(...positions.map((p) => p.sortOrder)) + 10 : 10;
+}
+
+function TirePositionsManagerDialog({ positions, saving, oncreate, onupdate, ondelete, oncancel }: {
+  positions: TirePosition[];
+  saving: boolean;
+  oncreate: (data: { name: string; sortOrder?: number; status: TirePosition['status'] }) => Promise<unknown>;
+  onupdate: (id: number, data: Partial<ReturnType<typeof tirePositionPayload>>) => Promise<unknown>;
+  ondelete: (id: number) => Promise<unknown>;
+  oncancel: () => void;
+}) {
+  const { toast } = useToast();
+  const sortedPositions = sortTirePositions(positions);
+  const nextSortOrder = computeNextSortOrder(sortedPositions);
+  const [newDraft, setNewDraft] = useState<TirePositionDraft>(() => tirePositionDraft());
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<TirePositionDraft>(() => tirePositionDraft());
+  const [deleteTarget, setDeleteTarget] = useState<TirePosition | null>(null);
+  const [error, setError] = useState('');
+
+  const updateNewDraft = (key: keyof TirePositionDraft, value: string) => {
+    setNewDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateEditDraft = (key: keyof TirePositionDraft, value: string) => {
+    setEditDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const startEdit = (position: TirePosition) => {
+    setEditingId(position.id);
+    setEditDraft(tirePositionDraft(position));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft(tirePositionDraft());
+  };
+
+  const createPosition = async () => {
+    const payload = tirePositionPayload(newDraft, nextSortOrder);
+    if (!payload.name) return;
+    const exists = sortedPositions.some((position) => normalizedCatalogLabel(position.name) === normalizedCatalogLabel(payload.name));
+    if (exists) {
+      setError(`Vị trí "${payload.name}" đã có trong danh sách.`);
       return;
     }
-    if (normalizePositionText(nextLabel) === normalizePositionText(currentLabel)) {
-      node.value = nextLabel;
+    setError('');
+    try {
+      await oncreate(payload);
+      setNewDraft(tirePositionDraft());
+      toast({ kind: 'success', message: `Đã thêm vị trí "${payload.name}".` });
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      setError(message);
+      toast({ kind: 'error', message });
+    }
+  };
+
+  const updatePosition = async (id: number) => {
+    const payload = tirePositionPayload(editDraft);
+    if (!payload.name) return;
+    const exists = sortedPositions.some((position) =>
+      position.id !== id && normalizedCatalogLabel(position.name) === normalizedCatalogLabel(payload.name),
+    );
+    if (exists) {
+      setError(`Vị trí "${payload.name}" đã có trong danh sách.`);
       return;
     }
-    node.value = nextLabel;
-    onedit(tire.id, positionPayloadFromLabel(nextLabel));
+    setError('');
+    try {
+      await onupdate(id, payload);
+      cancelEdit();
+      toast({ kind: 'success', message: `Đã cập nhật vị trí "${payload.name}".` });
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      setError(message);
+      toast({ kind: 'error', message });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    setError('');
+    try {
+      await ondelete(target.id);
+      toast({ kind: 'success', message: `Đã xóa vị trí "${target.name}".` });
+    } catch (err) {
+      const message = formatErrorMessage(err);
+      setError(message);
+      toast({ kind: 'error', message });
+    }
   };
 
   return (
-    <input
-      className="input ttp-position-input"
-      list={optionsId}
-      defaultValue={currentLabel}
-      placeholder="Gõ vị trí"
-      onBlur={(e) => commit(e.currentTarget)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        if (e.key === 'Escape') {
-          e.currentTarget.value = currentLabel;
-          e.currentTarget.blur();
-        }
-      }}
-      aria-label={`Vị trí lốp ${tire.serial}`}
-    />
+    <div className="ttp-dialog-overlay" role="presentation" onClick={oncancel}>
+      <div
+        className="ttp-dialog ttp-dialog--positions"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ttp-position-manager-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ttp-dialog-head ttp-position-head">
+          <div className="ttp-position-title-block">
+            <span className="ttp-position-kicker">Danh mục lốp</span>
+            <h2 id="ttp-position-manager-title">Vị trí lắp</h2>
+            <p>Quản lý các lựa chọn xuất hiện trong ô vị trí trên trang lốp xe.</p>
+          </div>
+          <button type="button" className="ttp-dialog-close" onClick={oncancel} aria-label="Đóng">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="ttp-position-manager">
+          <div className="ttp-position-create" aria-label="Thêm vị trí lốp">
+            <div className="ttp-position-create-copy">
+              <strong>Thêm vị trí mới</strong>
+              <span>Dùng tên ngắn, dễ nhìn trên bảng lốp.</span>
+            </div>
+            <label className="ttp-position-control ttp-position-control--name">
+              <span>Tên vị trí</span>
+              <input
+                className="input"
+                value={newDraft.name}
+                onChange={(e) => updateNewDraft('name', e.target.value)}
+                onBlur={(e) => updateNewDraft('name', cleanText(e.target.value))}
+                placeholder="VD: Trục nâng trái"
+              />
+            </label>
+            <button
+              type="button"
+              className="btn btn--primary ttp-position-add-btn"
+              onClick={() => { void createPosition(); }}
+              disabled={saving || !newDraft.name.trim()}
+            >
+              <Plus size={16} />
+              Thêm
+            </button>
+            {error && <div className="ttp-position-error">{error}</div>}
+          </div>
+
+          <div className="ttp-position-list">
+            {sortedPositions.length === 0 ? (
+              <div className="ttp-position-empty">
+                <div className="ttp-position-empty-icon">
+                  <Settings2 size={20} />
+                </div>
+                <strong>Chưa có vị trí lốp</strong>
+                <span>Thêm vị trí đầu tiên để dropdown bắt đầu có lựa chọn.</span>
+              </div>
+            ) : sortedPositions.map((position) => {
+              const isEditing = editingId === position.id;
+              return (
+                <div
+                  key={position.id}
+                  className={`ttp-position-row ${isEditing ? 'ttp-position-row--editing' : 'ttp-position-row--read'}`}
+                >
+                  {isEditing ? (
+                    <>
+                      <label className="ttp-position-control ttp-position-control--name">
+                        <span>Tên vị trí</span>
+                        <input
+                          className="input"
+                          value={editDraft.name}
+                          onChange={(e) => updateEditDraft('name', e.target.value)}
+                          onBlur={(e) => updateEditDraft('name', cleanText(e.target.value))}
+                        />
+                      </label>
+                      <div className="ttp-icon-actions">
+                        <button
+                          type="button"
+                          className="ttp-icon-btn ttp-icon-btn--save"
+                          onClick={() => { void updatePosition(position.id); }}
+                          disabled={saving || !editDraft.name.trim()}
+                          title="Lưu vị trí"
+                          aria-label={`Lưu vị trí ${position.name}`}
+                        >
+                          <Check size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="ttp-icon-btn"
+                          onClick={cancelEdit}
+                          disabled={saving}
+                          title="Hủy"
+                          aria-label="Hủy sửa vị trí"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="ttp-position-name">
+                        <span>{position.name}</span>
+                        <small>Hiển thị trong dropdown</small>
+                      </div>
+                      <div className="ttp-icon-actions">
+                        <button
+                          type="button"
+                          className="ttp-icon-btn"
+                          onClick={() => startEdit(position)}
+                          disabled={saving}
+                          title="Sửa vị trí"
+                          aria-label={`Sửa vị trí ${position.name}`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="ttp-icon-btn ttp-icon-btn--danger"
+                          onClick={() => setDeleteTarget(position)}
+                          disabled={saving}
+                          title="Xóa vị trí"
+                          aria-label={`Xóa vị trí ${position.name}`}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        variant="danger"
+        message={deleteTarget ? `Xóa vị trí "${deleteTarget.name}" khỏi danh sách chọn mới?` : ''}
+        confirmLabel={saving ? 'Đang xóa…' : 'Xóa vị trí'}
+        cancelLabel="Hủy"
+        onConfirm={() => { void confirmDelete(); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </div>
   );
 }
 
-function TireTable({ tires, suppliers, positionLabels, positionListId, loading, emptyHint, onedit }: {
-  tires: Tire[];
+function TireEditDialog({ tire, suppliers, positionLabels, saving, onManagePositions, onsave, oncancel }: {
+  tire: Tire;
   suppliers: Supplier[];
   positionLabels: string[];
-  positionListId: string;
+  saving: boolean;
+  onManagePositions: () => void;
+  onsave: (patch: TirePatch) => Promise<unknown> | void;
+  oncancel: () => void;
+}) {
+  const [draft, setDraft] = useState<TireEditDraft>(() => draftFromTire(tire, suppliers));
+
+  const updateDraft = (key: keyof TireEditDraft, value: string) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const save = async () => {
+    if (!draft.serial.trim()) return;
+    await onsave(patchFromDraft(draft, suppliers));
+  };
+
+  return (
+    <div className="ttp-dialog-overlay" role="presentation" onClick={oncancel}>
+      <div
+        className="ttp-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ttp-edit-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ttp-dialog-head">
+          <div>
+            <h2 id="ttp-edit-title">Sửa thông tin lốp</h2>
+            <p>{tire.serial}</p>
+          </div>
+          <button type="button" className="ttp-dialog-close" onClick={oncancel} aria-label="Đóng">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="ttp-edit-form">
+          <div className="ttp-field ttp-field--serial">
+            <label>Serial lốp *</label>
+            <input
+              className="input"
+              value={draft.serial}
+              onChange={(e) => updateDraft('serial', e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="ttp-field">
+            <label>Vị trí</label>
+            <PositionPicker
+              value={draft.position}
+              labels={positionLabels}
+              onChange={(value) => updateDraft('position', value)}
+              onManage={onManagePositions}
+            />
+          </div>
+          <div className="ttp-field">
+            <label>Kích cỡ</label>
+            <input className="input" value={draft.size} onChange={(e) => updateDraft('size', e.target.value)} />
+          </div>
+          <div className="ttp-field">
+            <label>Ngày lắp</label>
+            <input className="input" type="date" value={draft.installedAt} onChange={(e) => updateDraft('installedAt', e.target.value)} />
+          </div>
+          <div className="ttp-field">
+            <label>Nhà cung cấp</label>
+            <SupplierPicker
+              value={draft.supplierText}
+              suppliers={suppliers}
+              onChange={(value) => updateDraft('supplierText', value)}
+            />
+          </div>
+          <div className="ttp-field">
+            <label>Hạn bảo hành</label>
+            <input className="input" type="date" value={draft.warrantyUntil} onChange={(e) => updateDraft('warrantyUntil', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="ttp-dialog-actions">
+          <button type="button" className="btn btn--secondary" onClick={oncancel} disabled={saving}>
+            Hủy
+          </button>
+          <button type="button" className="btn btn--primary" onClick={save} disabled={saving || !draft.serial.trim()}>
+            {saving ? 'Đang lưu…' : 'Lưu cập nhật'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelete }: {
+  tires: Tire[];
+  suppliers: Supplier[];
   loading: boolean;
   emptyHint: string;
-  onedit: (id: number, patch: TirePatch) => void;
+  busy: boolean;
+  onedit: (tire: Tire) => void;
+  ondelete: (tire: Tire) => void;
 }) {
   if (loading) return <div className="ttp-empty">Đang tải…</div>;
   if (tires.length === 0) return <div className="ttp-empty">{emptyHint}</div>;
 
   return (
     <div className="ttp-table-wrap">
-      <PositionOptions id={positionListId} labels={positionLabels} />
       <table className="ttp-table">
         <colgroup>
           <col className="ttp-col-serial" />
@@ -360,6 +947,7 @@ function TireTable({ tires, suppliers, positionLabels, positionListId, loading, 
           <col className="ttp-col-days" />
           <col className="ttp-col-supplier" />
           <col className="ttp-col-warranty" />
+          <col className="ttp-col-actions" />
         </colgroup>
         <thead>
           <tr>
@@ -370,6 +958,7 @@ function TireTable({ tires, suppliers, positionLabels, positionListId, loading, 
             <th>Số ngày chạy</th>
             <th>Nhà cung cấp</th>
             <th>Hạn bảo hành</th>
+            <th className="ttp-actions-heading">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -383,12 +972,18 @@ function TireTable({ tires, suppliers, positionLabels, positionListId, loading, 
                   {t.serial}
                 </td>
                 <td data-label="Vị trí">
-                  <PositionCell tire={t} optionsId={positionListId} onedit={onedit} />
+                  {displayTirePosition(t)}
                 </td>
-                <td data-label="Kích cỡ">{t.size || '—'}</td>
-                <td data-label="Ngày lắp">{t.installedAt || '—'}</td>
+                <td data-label="Kích cỡ">
+                  {t.size || '—'}
+                </td>
+                <td data-label="Ngày lắp">
+                  {t.installedAt || '—'}
+                </td>
                 <td data-label="Số ngày chạy">{days == null ? '—' : `${days} ngày`}</td>
-                <td className="ttp-supplier" data-label="Nhà cung cấp">{supplierName(suppliers, t.supplierId)}</td>
+                <td className="ttp-supplier" data-label="Nhà cung cấp">
+                  {supplierName(suppliers, t.supplierId)}
+                </td>
                 <td data-label="Hạn bảo hành">
                   {t.warrantyUntil ? (
                     <span className="ttp-warranty">
@@ -400,6 +995,30 @@ function TireTable({ tires, suppliers, positionLabels, positionListId, loading, 
                       )}
                     </span>
                   ) : '—'}
+                </td>
+                <td className="ttp-row-actions" data-label="Thao tác">
+                  <div className="ttp-icon-actions">
+                    <button
+                      type="button"
+                      className="ttp-icon-btn"
+                      onClick={() => onedit(t)}
+                      disabled={busy}
+                      title="Sửa lốp"
+                      aria-label={`Sửa lốp ${t.serial}`}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className="ttp-icon-btn ttp-icon-btn--danger"
+                      onClick={() => ondelete(t)}
+                      disabled={busy}
+                      title="Xóa lốp"
+                      aria-label={`Xóa lốp ${t.serial}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

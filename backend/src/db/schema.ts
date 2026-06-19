@@ -134,6 +134,16 @@ export const tires = pgTable('tires', {
   truckIdx: index('tires_truck_id_idx').on(t.truckId),
 }));
 
+export const tirePositions = pgTable('tire_positions', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 64 }).notNull().unique(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),

@@ -29,6 +29,8 @@ export const tireClient = {
     truckId?: number | null;
     position?: string | null;
     size?: string | null;
+    installedAt?: string | null;
+    removedAt?: string | null;
     supplierId?: number | null;
     cost?: number;
     warrantyUntil?: string | null;
@@ -40,11 +42,15 @@ export const tireClient = {
     truckId: number | null;
     position: string | null;
     size: string | null;
+    installedAt: string | null;
+    removedAt: string | null;
     supplierId: number | null;
     cost: number;
     warrantyUntil: string | null;
     status: Tire['status'];
   }>) => api.put<Tire>(TIRES.DETAIL(id), data),
+
+  delete: (id: number) => api.delete<{ ok: boolean }>(TIRES.DETAIL(id)),
 
   install: (id: number, truckId: number, position?: string | null) =>
     api.post<Tire>(TIRES.INSTALL(id), {

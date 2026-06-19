@@ -12,7 +12,7 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
-  tireSchema, installTireSchema,
+  tireSchema, installTireSchema, tirePositionSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
@@ -131,6 +131,7 @@ router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, {
   afterUpdate: mirrorSupplierLink,
 }));
 router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseCategorySchema, { searchableField: 'name' }));
+router.use('/tire-positions', createCrudRouter(s.tirePositions, tirePositionSchema, { searchableField: 'name' }));
 
 // Drivers — special handling (includes user_id, no delete per spec §4.2)
 router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {

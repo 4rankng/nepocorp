@@ -181,6 +181,52 @@ export function useAllSuppliers() {
   });
 }
 
+export function useTirePositions() {
+  return useQuery({
+    queryKey: qk.catalogs.tirePositions,
+    queryFn: () => configClient.getTirePositions(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateTirePosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof configClient.createTirePosition>[0]) =>
+      configClient.createTirePosition(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.tirePositions });
+      queryClient.invalidateQueries({ queryKey: qk.configCounts.tirePositions });
+    },
+  });
+}
+
+export function useUpdateTirePosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof configClient.updateTirePosition>[1] }) =>
+      configClient.updateTirePosition(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.tirePositions });
+      queryClient.invalidateQueries({ queryKey: qk.configCounts.tirePositions });
+    },
+  });
+}
+
+export function useDeleteTirePosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await configClient.deleteTirePosition(id);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.tirePositions });
+      queryClient.invalidateQueries({ queryKey: qk.configCounts.tirePositions });
+    },
+  });
+}
+
 export function useAllExpenseCategories() {
   return useQuery({
     queryKey: qk.catalogs.allExpenseCategories,

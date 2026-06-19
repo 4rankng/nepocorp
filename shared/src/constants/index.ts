@@ -235,17 +235,6 @@ export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
   [TrailerType.FT40]: '40FT',
 };
 
-// ─── N1 — Tires ───────────────────────────────────────────────────────────
-export const TIRE_POSITION_SUGGESTIONS = [
-  'Trước trái',
-  'Trước phải',
-  'Sau ngoài trái',
-  'Sau ngoài phải',
-  'Sau trong trái',
-  'Sau trong phải',
-  'Lốp dự phòng',
-] as const;
-
 export const TIRE_STATUSES = ['IN_STOCK', 'IN_USE'] as const;
 export type TireStatus = typeof TIRE_STATUSES[number];
 
