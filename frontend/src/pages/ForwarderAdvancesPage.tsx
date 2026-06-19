@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock } from 'lucide-react';
+import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCircle2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
-import { ADVANCE_REQUEST_STATUS_LABELS, type AdvanceRequestStatus } from '@tingting/shared';
-import type { AdvanceRequestWithRefs } from '@tingting/shared';
+import { ADVANCE_REQUEST_STATUS_LABELS, AdvanceSettlementStatus, type AdvanceRequestStatus } from '@tingting/shared';
+import type { AdvanceRequestWithRefs, AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
-import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance } from '../hooks/useQueries';
+import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance, useForwarderSettlements } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './ForwarderAdvancesPage.css';
@@ -24,6 +24,17 @@ export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
   const { data: balanceData } = useForwarderAdvanceBalance();
+  // C2b/C2c — settlement (hoàn ứng) figures shown alongside advances. Buckets
+  // are disjoint: "Chờ duyệt hoàn ứng" = requested but not yet approved/rejected;
+  // "Đã thanh toán" = approved. Rejected settlements count in neither.
+  const { data: settlementsData } = useForwarderSettlements();
+  const settlements = (settlementsData?.items ?? []) as AdvanceSettlementWithRefs[];
+  const pendingSettlements = settlements.filter(
+    s => s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT,
+  );
+  const approvedSettlements = settlements.filter(s => s.status === AdvanceSettlementStatus.APPROVED);
+  const requestedReimbursement = pendingSettlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
+  const settledPaid = approvedSettlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
   const { rootRef } = usePageAnimations({
     ready: !loading,
     selectors: ['.page-header', '.hero-kpi-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
@@ -136,6 +147,24 @@ export default function ForwarderAdvancesPage() {
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* C2b/C2c — settlement (hoàn ứng) summary: requested vs paid */}
+      {settlements.length > 0 && (
+        <div className="fadv-settlement-summary fade-up">
+          <div className="fadv-settlement-summary__card fadv-settlement-summary__card--info">
+            <span className="fadv-settlement-summary__label">Chờ duyệt hoàn ứng</span>
+            <span className="fadv-settlement-summary__value">{formatCurrency(requestedReimbursement)}</span>
+            <span className="fadv-settlement-summary__meta">{pendingSettlements.length} phiếu chờ duyệt</span>
+            <FileText size={40} className="fadv-settlement-summary__watermark" aria-hidden="true" />
+          </div>
+          <div className="fadv-settlement-summary__card fadv-settlement-summary__card--success">
+            <span className="fadv-settlement-summary__label">Đã thanh toán</span>
+            <span className="fadv-settlement-summary__value">{formatCurrency(settledPaid)}</span>
+            <span className="fadv-settlement-summary__meta">{approvedSettlements.length} phiếu đã duyệt</span>
+            <CheckCircle2 size={40} className="fadv-settlement-summary__watermark" aria-hidden="true" />
           </div>
         </div>
       )}

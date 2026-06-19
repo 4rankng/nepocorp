@@ -33,7 +33,10 @@ const router = Router();
 // wraps sharp in try/catch so a missing input codec (e.g. HEIC on a slim
 // deploy) returns a clean 400 instead of a 500.
 const MAX_IMAGE_DIMENSION = 2048;
-const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+// D1b: raised from 5 MB to 15 MB to match the trip-photo pipeline — the old
+// 5 MB ceiling rejected many phone receipt photos even after resizing.
+const EXPENSE_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
+const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: EXPENSE_PHOTO_MAX_BYTES } });
 
 router.get('/reports/renewals', asyncHandler(async (_req: Request, res: Response) => {
   const reminders = await getRenewalReminders(db);
@@ -153,7 +156,7 @@ router.post('/:id/photos', expensePhotoUpload.single('file'), asyncHandler(async
     // sharp throws when libvips lacks the input codec (notably HEIC on a slim
     // deploy). Log so ops can detect a codec regression; return a clean 400.
     console.warn('[expenses/:id/photos] sharp failed to process image:', err instanceof Error ? err.message : err);
-    return res.status(400).json({ error: 'Không xử lý được ảnh (file hỏng hoặc định dạng không được hỗ trợ)' });
+    return res.status(400).json({ error: 'Không xử lý được ảnh. Nếu là ảnh HEIC (iPhone), vui lòng đổi sang JPG/PNG rồi tải lại.' });
   }
 
   const storageKey = `expense-photos/${id}/${Date.now()}${ext}`;

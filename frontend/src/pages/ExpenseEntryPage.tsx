@@ -43,6 +43,41 @@ const initialForm: FormState = {
   note: '',
 };
 
+// D1b: matches the backend multer limit (raised from 5 MB → 15 MB).
+const EXPENSE_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
+
+// D1b: iOS Safari saves photos as HEIC, which the server's libvips cannot
+// decode. Safari decodes HEIC natively, so convert to JPEG on the client via
+// <img>→canvas before upload. Browsers that can't decode HEIC (e.g. Chrome on
+// desktop) reject in the catch below with a clear message instead of a 500.
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('read'));
+    reader.readAsDataURL(file);
+  });
+  const img: HTMLImageElement = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error('decode'));
+    i.src = dataUrl;
+  });
+  const canvas = document.createElement('canvas');
+  // Cap dimensions so a large iPhone HEIC doesn't blow up canvas memory (a
+  // 12MP photo is ~49MB of RGBA); 2560px matches the server's MAX_IMAGE_DIMENSION.
+  const MAX_DIM = 2560;
+  const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const blob: Blob | null = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+  if (!blob) throw new Error('encode');
+  return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+}
+
 export default function ExpenseEntryPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -154,7 +189,27 @@ export default function ExpenseEntryPage() {
   const handlePhotoUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
     if (!id) return; // edit-mode only — photos attach to a saved expense (B1)
-    const file = files[0];
+    let file = files[0];
+
+    // D1b: client-side size guard — matches the raised 15 MB backend limit so
+    // the user gets a clear message instead of a opaque multer failure.
+    if (file.size > EXPENSE_PHOTO_MAX_BYTES) {
+      toast({ kind: 'error', message: 'Ảnh quá lớn (>15 MB). Vui lòng giảm dung lượng rồi tải lại.' });
+      return;
+    }
+
+    // D1b: convert HEIC (iPhone) → JPEG on the client; the server has no HEIC codec.
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name);
+    if (isHeic) {
+      try {
+        file = await convertHeicToJpeg(file);
+      } catch (err) {
+        console.warn('HEIC→JPEG conversion failed:', err instanceof Error ? err.message : err);
+        toast({ kind: 'error', message: 'Không hỗ trợ ảnh HEIC trên trình duyệt này. Vui lòng đổi sang JPG/PNG.' });
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 

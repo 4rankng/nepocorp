@@ -307,6 +307,9 @@ export default function ExpenseListPage() {
                 </div>
                 <div className="m-card__meta">
                   {formatDate(e.expenseDate)}
+                  {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
+                    <><span className="m-card__meta-sep">·</span><span style={{ color: 'var(--ink-4)' }}>nhập {formatDate(e.createdAt)}</span></>
+                  )}
                   {e.category && <><span className="m-card__meta-sep">·</span>{e.category.name}</>}
                 </div>
                 <div className="expense-mobile-card__summary">
@@ -343,7 +346,7 @@ export default function ExpenseListPage() {
           <table className="expense-table">
             <thead>
               <tr>
-                <th>Ngày</th>
+                <th>Ngày phát sinh</th>
                 <th>Nhà cung cấp</th>
                 <th>Hạng mục</th>
                 <th>Xe</th>
@@ -375,6 +378,11 @@ export default function ExpenseListPage() {
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)', position: 'relative' }}>
                       <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
                       {formatDate(e.expenseDate)}
+                      {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
+                        <div style={{ fontSize: 11, color: 'var(--ink-4)' }} title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)">
+                          nhập {formatDate(e.createdAt)}
+                        </div>
+                      )}
                     </td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
                     <td style={{ color: 'var(--ink-2)' }}>{e.category?.name || '—'}</td>

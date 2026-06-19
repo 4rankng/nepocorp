@@ -308,3 +308,82 @@
   .fadv-form-panel { animation: none; }
   .fadv-empty__icon { animation: none; }
 }
+
+/* ── C2b/C2c — Settlement (hoàn ứng) summary strip ────────────────────────
+ * Two compact cards under the advances hero: amount requested for
+ * reimbursement (non-rejected settlements) and amount already paid (approved).
+ * Mirrors the hero-kpi-mini stat-rail aesthetic, scoped to this page. */
+.fadv-settlement-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fadv-settlement-summary__card {
+  --stat-rail: var(--accent);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-radius: var(--r-lg, 14px);
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.fadv-settlement-summary__card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
+  background: var(--stat-rail);
+  transform: translateY(-50%);
+}
+
+.fadv-settlement-summary__card--info { --stat-rail: #2563EB; }
+.fadv-settlement-summary__card--success { --stat-rail: var(--accent); }
+
+.fadv-settlement-summary__label {
+  font-size: var(--fs-xs, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3, #8B919B);
+}
+
+.fadv-settlement-summary__value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--ink, #0A0A0A);
+}
+
+.fadv-settlement-summary__meta {
+  font-size: var(--fs-xs, 12px);
+  color: var(--ink-3, #8B919B);
+}
+
+.fadv-settlement-summary__watermark {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  pointer-events: none;
+  color: rgba(9, 9, 11, 0.06);
+}
+
+.fadv-settlement-summary__card--info .fadv-settlement-summary__watermark { color: rgba(37, 99, 235, 0.14); }
+.fadv-settlement-summary__card--success .fadv-settlement-summary__watermark { color: rgba(0, 177, 79, 0.14); }
+
+@media (max-width: 480px) {
+  .fadv-settlement-summary {
+    grid-template-columns: 1fr;
+  }
+}

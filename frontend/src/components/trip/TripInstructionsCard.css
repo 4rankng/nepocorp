@@ -42,3 +42,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* B1c — one-tap reminder chips that append a bullet line to the notes. */
+.ti-reminders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ti-reminders__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-3, #888);
+  margin-right: 2px;
+}
+
+.ti-chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-ink, #065f46);
+  background: var(--accent-soft, rgba(0, 177, 79, 0.08));
+  border: 1px solid var(--accent, rgba(0, 177, 79, 0.25));
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ti-chip:hover {
+  background: var(--accent, rgba(0, 177, 79, 0.16));
+}
+
+.ti-chip:active {
+  transform: translateY(1px);
+}

@@ -29,6 +29,15 @@ import './TruckTiresPage.css';
 
 const POSITION_OPTIONS = Object.values(TirePosition);
 
+/** Days a tire has been in service: installedAt → removedAt, or → today if still in use. (A10c) */
+function daysInService(installedAt: string | null, removedAt: string | null): number | null {
+  if (!installedAt) return null;
+  const start = new Date(`${installedAt}T00:00:00`).getTime();
+  const end = removedAt ? new Date(`${removedAt}T00:00:00`).getTime() : Date.now();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  return Math.max(0, Math.floor((end - start) / 86_400_000));
+}
+
 /**
  * N1 — per-truck tire management page at /fleet/:id/tires.
  *
@@ -214,6 +223,7 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
           <th>Vị trí</th>
           <th>Kích cỡ</th>
           <th>Ngày lắp</th>
+          <th>Số ngày chạy</th>
           <th>Hạn bảo hành</th>
           <th>Trạng thái</th>
           <th></th>
@@ -222,12 +232,14 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
       <tbody>
         {tires.map((t) => {
           const alert = computeTireAlerts(t)[0];
+          const days = daysInService(t.installedAt, t.removedAt);
           return (
             <tr key={t.id}>
               <td className="ttp-serial">{t.serial}</td>
               <td>{t.position ? TIRE_POSITION_LABELS[t.position] : '—'}</td>
               <td>{t.size || '—'}</td>
               <td>{t.installedAt || '—'}</td>
+              <td>{days == null ? '—' : `${days} ngày`}</td>
               <td>
                 {t.warrantyUntil ? (
                   <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
