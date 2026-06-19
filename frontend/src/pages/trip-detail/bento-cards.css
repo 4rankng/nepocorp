@@ -155,7 +155,7 @@
   font-family: var(--font-mono);
   font-size: var(--fs-2xl);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   margin-top: 13px;
   color: var(--ink);
   font-feature-settings: "tnum" 1;
@@ -240,7 +240,7 @@
 .card-head h2 {
   font-size: var(--fs-md);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   display: flex;
   align-items: center;
   gap: 9px;

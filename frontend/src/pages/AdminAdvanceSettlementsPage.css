@@ -87,7 +87,7 @@
   font-family: var(--font-mono);
   font-size: var(--fs-2xl);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
   margin-top: 8px;
   color: var(--ink);
@@ -206,7 +206,7 @@
   color: var(--ink);
   text-align: right;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .as-page .as-refund {
   color: var(--ink-2);

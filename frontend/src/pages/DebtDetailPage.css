@@ -139,7 +139,7 @@
 .dd-sum-total {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 30px;
+  font-size: var(--fs-2xl);
   line-height: 1.05;
   color: var(--danger);
   letter-spacing: 0;

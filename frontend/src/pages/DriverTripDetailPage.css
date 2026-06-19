@@ -57,7 +57,7 @@
   font-weight: 800;
   color: var(--ink);
   margin: 0 0 9px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.18;
   word-break: break-word;
 }
@@ -765,4 +765,87 @@
   color: var(--fg-1, #222);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .dt-header {
+    gap: 10px;
+    padding: 10px 14px 6px;
+  }
+
+  .dt-back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .dt-title {
+    font-size: 20px;
+    line-height: 1.2;
+    margin-bottom: 7px;
+  }
+
+  .dt-subtitle {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .dt-section {
+    margin: 8px 14px 0;
+    border-radius: 14px;
+  }
+
+  .dt-section__head {
+    padding: 10px 14px 4px;
+  }
+
+  .dt-section__body {
+    padding: 7px 14px 12px;
+  }
+
+  .dt-section .info-row__label,
+  .driver-trip-detail-page .info-row__label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  .dt-section .info-row__value,
+  .driver-trip-detail-page .info-row__value {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .dcc-section,
+  .driver-trip-detail-page .fuel-alloc-card,
+  .driver-trip-detail-page .trip-legs.panel {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+
+  .dcc-bento__hero {
+    padding: 12px 12px 12px 16px;
+  }
+
+  .dcc-bento__plate {
+    font-size: 16px;
+    line-height: 1.35;
+    padding: 5px 9px;
+  }
+
+  .dcc-bento__seal,
+  .dcc-bento__photos {
+    padding: 11px 12px;
+  }
+
+  .dcc-bento__seal-value {
+    font-size: 15px;
+  }
+
+  .fuel-alloc-card__header {
+    padding: 12px 14px;
+  }
+
+  .fuel-alloc-card__value {
+    font-size: 22px;
+  }
 }

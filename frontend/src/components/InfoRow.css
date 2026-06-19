@@ -83,7 +83,7 @@
   font-feature-settings: "tnum";
   font-size: var(--fs-display);
   font-weight: var(--fw-semibold);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.1;
   color: var(--ink);
 }

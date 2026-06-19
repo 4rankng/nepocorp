@@ -51,7 +51,7 @@
 .earnings-hero__value {
   font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;

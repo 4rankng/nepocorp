@@ -64,7 +64,7 @@ const pageStyles = `
     font-family: var(--font-display);
     font-size: 13.5px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     white-space: normal;
   overflow: visible;
   overflow-wrap: anywhere;
@@ -106,7 +106,7 @@ const pageStyles = `
   .pr-fine .v {
     font-family: var(--font-mono);
     font-size: 16px; font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: var(--ink);
   }
   .pr-fine .v .cur { font-size: 12px; color: var(--ink-3); margin-left: 2px; }

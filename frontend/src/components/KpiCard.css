@@ -224,7 +224,7 @@
   font-feature-settings: "tnum";
   font-size: var(--fs-2xl);
   font-weight: var(--fw-semibold);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.15;
   color: var(--ink);
 }

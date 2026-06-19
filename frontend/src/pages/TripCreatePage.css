@@ -98,7 +98,7 @@
   font-family: var(--font-display);
   font-size: var(--fs-2xl);
   font-weight: 800;
-  letter-spacing: -0.6px;
+  letter-spacing: 0;
   line-height: 1.15;
   margin: 0 0 6px;
   color: var(--ink);

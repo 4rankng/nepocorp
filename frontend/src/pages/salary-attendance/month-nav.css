@@ -48,7 +48,7 @@
   font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .month-strip__year {

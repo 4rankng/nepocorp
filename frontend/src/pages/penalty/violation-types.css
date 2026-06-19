@@ -44,7 +44,7 @@
   font-size: var(--fs-lg);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .penalty-empty-desc {
@@ -136,7 +136,7 @@
   font-size: var(--fs-md);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .penalty-empty-reasons__desc {

@@ -63,7 +63,7 @@
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
   color: var(--fg-1, #0A0A0A);
   display: flex;
   align-items: center;
@@ -168,7 +168,7 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--fg-1, #0A0A0A);
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 
 .tc-card-sub {

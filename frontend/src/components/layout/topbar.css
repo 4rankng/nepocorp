@@ -169,7 +169,7 @@
   color: var(--ink);
   font-size: 13px;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .month-picker__title small {
   color: var(--ink-3);
@@ -191,7 +191,7 @@
   font-weight: 800;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 .month-picker__year-nav {
   display: inline-flex;

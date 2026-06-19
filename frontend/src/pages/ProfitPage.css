@@ -150,7 +150,7 @@
 .calc-row__label { font-size: var(--fs-sm); color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .calc-row__label--bold { color: var(--ink); font-weight: 600; }
 .calc-row__op { font-family: var(--font-mono); font-weight: 700; color: var(--ink-3); width: 16px; display: inline-block; text-align: center; flex-shrink: 0; }
-.calc-row__value { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
+.calc-row__value { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
 .calc-row__value--neg { color: var(--danger); }
 .calc-row__value--positive { color: var(--sb-bg); }
 .calc-row--final .calc-row__value { font-size: var(--fs-lg); color: var(--sb-bg); }

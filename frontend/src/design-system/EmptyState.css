@@ -7,6 +7,9 @@
   text-align: center;
   color: var(--fg-3, var(--ink-3));
   gap: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .ds-empty-state__illustration {
@@ -27,7 +30,13 @@
   margin: 0;
   font-size: 13px;
   color: var(--fg-3, var(--ink-3));
-  max-width: 420px;
+  width: 100%;
+  min-width: 0;
+  max-width: min(100%, 420px);
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
 }
 
 .ds-empty-state__action {

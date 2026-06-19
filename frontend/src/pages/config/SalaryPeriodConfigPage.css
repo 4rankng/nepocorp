@@ -103,7 +103,7 @@
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 1px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .sp-default-card__subtitle {

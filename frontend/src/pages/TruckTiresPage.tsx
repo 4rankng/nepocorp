@@ -28,6 +28,12 @@ import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
 import './TruckTiresPage.css';
 
 const POSITION_OPTIONS = Object.values(TirePosition);
+const TIRE_POSITION_MAP_LABELS: Partial<Record<TirePosition, string>> = {
+  [TirePosition.REAR_OUTER_LEFT]: 'Ngoài trái',
+  [TirePosition.REAR_OUTER_RIGHT]: 'Ngoài phải',
+  [TirePosition.REAR_INNER_LEFT]: 'Trong trái',
+  [TirePosition.REAR_INNER_RIGHT]: 'Trong phải',
+};
 
 /** Days a tire has been in service: installedAt → removedAt, or → today if still in use. (A10c) */
 function daysInService(installedAt: string | null, removedAt: string | null): number | null {
@@ -169,11 +175,9 @@ function AddTireForm({ saving, onsave }: {
         <label>Serial lốp *</label>
         <input className="input" value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="VD: 12345678" />
       </div>
-      <div className="ttp-field">
+      <div className="ttp-field ttp-field--position">
         <label>Vị trí</label>
-        <select className="input" value={position} onChange={(e) => setPosition(e.target.value as TirePosition)}>
-          {POSITION_OPTIONS.map((p) => <option key={p} value={p}>{TIRE_POSITION_LABELS[p]}</option>)}
-        </select>
+        <TirePositionPicker value={position} onChange={setPosition} />
       </div>
       <div className="ttp-field">
         <label>Kích cỡ</label>
@@ -190,6 +194,53 @@ function AddTireForm({ saving, onsave }: {
       <button className="btn btn--primary ttp-add-submit" disabled={saving || !serial.trim()} onClick={submit}>
         {saving ? 'Đang lưu…' : 'Thêm lốp'}
       </button>
+    </div>
+  );
+}
+
+function TirePositionPicker({ value, onChange }: {
+  value: TirePosition;
+  onChange: (next: TirePosition) => void;
+}) {
+  const tireButton = (position: TirePosition, className: string) => (
+    <button
+      key={position}
+      type="button"
+      className={`ttp-tire-pick ${className}${value === position ? ' is-selected' : ''}`}
+      aria-pressed={value === position}
+      aria-label={TIRE_POSITION_LABELS[position]}
+      onClick={() => onChange(position)}
+    >
+      <span>{TIRE_POSITION_MAP_LABELS[position] ?? TIRE_POSITION_LABELS[position]}</span>
+    </button>
+  );
+
+  return (
+    <div className="ttp-position-picker">
+      <div className="ttp-truck-map" role="group" aria-label="Chọn vị trí lốp trên xe">
+        <div className="ttp-truck-nose">Đầu xe</div>
+        <div className="ttp-truck-rail" aria-hidden="true" />
+        {tireButton(TirePosition.FRONT_LEFT, 'ttp-tire-pick--front-left')}
+        {tireButton(TirePosition.FRONT_RIGHT, 'ttp-tire-pick--front-right')}
+        {tireButton(TirePosition.REAR_OUTER_LEFT, 'ttp-tire-pick--rear-outer-left')}
+        {tireButton(TirePosition.REAR_INNER_LEFT, 'ttp-tire-pick--rear-inner-left')}
+        {tireButton(TirePosition.REAR_INNER_RIGHT, 'ttp-tire-pick--rear-inner-right')}
+        {tireButton(TirePosition.REAR_OUTER_RIGHT, 'ttp-tire-pick--rear-outer-right')}
+      </div>
+
+      <div className="ttp-position-extra" role="group" aria-label="Vị trí khác">
+        {[TirePosition.SPARE, TirePosition.OTHER].map((position) => (
+          <button
+            key={position}
+            type="button"
+            className={`ttp-position-chip${value === position ? ' is-selected' : ''}`}
+            aria-pressed={value === position}
+            onClick={() => onChange(position)}
+          >
+            {TIRE_POSITION_LABELS[position]}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

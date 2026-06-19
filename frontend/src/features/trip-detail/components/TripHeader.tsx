@@ -3,7 +3,7 @@ import {
   ArrowLeft, Play, Pencil, Check, Lock, LockOpen, XCircle, Shuffle, FilePen,
   Building2, Loader2,
 } from 'lucide-react';
-import type { TripDetail } from '@tingting/shared';
+import { TRIP_STATUS_LABELS, TripStatus, type TripDetail } from '@tingting/shared';
 import type { TripPermissions } from '../types';
 
 interface TripHeaderProps {
@@ -26,6 +26,16 @@ export function TripHeader({
   onBack, onEdit, onDispatch, onComplete, onLock, onCancel, onReassign, onAdjust, onUnlock,
 }: TripHeaderProps) {
   const { canEdit, canEditActuals, canCancel, canDispatch, canComplete, canLock, canReassign, canAdjust, canUnlock, needsPhotos } = permissions;
+  const statusClass = trip.status === TripStatus.IN_TRANSIT
+    ? 'in-transit'
+    : trip.status === TripStatus.COMPLETED
+      ? 'completed'
+      : trip.status === TripStatus.LOCKED
+        ? 'locked'
+        : trip.status === TripStatus.CANCELED
+          ? 'canceled'
+          : 'draft';
+  const statusLabel = TRIP_STATUS_LABELS[trip.status] ?? trip.status;
 
   return (
     <header className="tc-page-head td-page-head anim d1">
@@ -36,6 +46,12 @@ export function TripHeader({
         <div className="tc-title-wrap">
           <h1 className="tc-page-title">
             {trip.tripCode || 'Lệnh vận chuyển'}
+            <span
+              className={`tc-status-pill tc-status-pill--${statusClass}`}
+              aria-label={`Trạng thái: ${statusLabel}`}
+            >
+              {statusLabel}
+            </span>
           </h1>
           <p className="tc-page-sub company">
             <Building2 size={15} />

@@ -74,7 +74,7 @@
   font-family: var(--font-display);
   font-size: var(--fs-md);
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
   color: var(--ink);
   line-height: 1.2;
 }
@@ -140,7 +140,7 @@
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
   color: var(--ink);
 }
 
@@ -361,7 +361,7 @@
   font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.15;
   color: var(--ink, #0A0A0A);
 }

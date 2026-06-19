@@ -16,14 +16,14 @@ const SelectTrigger = React.forwardRef<
     className={cn(
       // h-9 = 36px — matches Input and Button default heights for inline form rows
       "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3",
-      "text-[13.5px] tracking-[-0.008em] leading-none",
+      "text-[13.5px] tracking-normal leading-none",
       "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]",
       "ring-offset-[var(--bg)]",
       "hover:border-[var(--line-2)]",
       "focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:border-[var(--accent)]",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "transition-[border-color,box-shadow] duration-150",
-      "[&>span]:line-clamp-1",
+      "[&>span]:whitespace-normal [&>span]:break-words",
       className
     )}
     {...props}

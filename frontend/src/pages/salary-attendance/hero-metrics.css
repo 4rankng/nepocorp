@@ -63,7 +63,7 @@
 .salary-page .hero-h1 {
   font-family: var(--font-display);
   font-size: var(--fs-2xl); font-weight: 800;
-  letter-spacing: -0.6px;
+  letter-spacing: 0;
   line-height: 1.15;
   margin: 0 0 6px;
 }
@@ -122,7 +122,7 @@
 }
 .salary-page .metric-value {
   font-size: var(--fs-2xl); font-weight: 700;
-  line-height: 1; letter-spacing: -0.5px;
+  line-height: 1; letter-spacing: 0;
   color: var(--ink);
 }
 .salary-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
@@ -195,21 +195,32 @@
     border-radius: 14px;
     margin-bottom: 12px;
   }
-  .salary-page .hero-top { flex-direction: row; gap: 10px; align-items: flex-start; }
+  .salary-page .hero-top { flex-direction: column; gap: 10px; align-items: stretch; }
   .salary-page .hero-h1 { font-size: var(--fs-lg); line-height: 1.15; margin-bottom: 3px; }
   .salary-page .hero-eyebrow { font-size: 9px; margin-bottom: 6px; letter-spacing: 1.4px; }
   .salary-page .hero-sub { font-size: var(--fs-xs); }
   .salary-page .hero-actions {
-    width: auto;
-    margin-left: auto;
-    justify-content: flex-end;
-    gap: 4px;
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   .salary-page .hero-actions .btn {
-    width: 34px;
     height: 34px;
-    padding: 0;
     border-radius: 9px;
+  }
+  .salary-page .hero-actions .btn--primary {
+    width: auto;
+    max-width: 100%;
+    padding: 0 10px;
+    flex: 0 1 auto;
+  }
+  .salary-page .hero-actions .btn--icon {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+    flex: 0 0 34px;
   }
   .salary-page .hero-month-label {
     min-width: 54px;
