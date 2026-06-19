@@ -6,7 +6,7 @@
  * derived sum across trucks. This page is scoped to one truck via the
  * `/config/trucks/:truckId/owners` route.
  *
- * The backend `/config/truck-cap` CRUD is a flat list (the factory doesn't
+ * The backend `/truck-cap` CRUD is a flat list (the factory doesn't
  * filter by truckId), so we fetch all rows and filter client-side. Per-truck
  * cap tables are small, so this is fine; if a truck's owner history grows
  * large, add server-side truckId filtering to the CRUD factory.
@@ -27,7 +27,7 @@ import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import { qk } from '../../api/keys';
 import './config-page.css';
 
-const ENDPOINT = '/config/truck-cap';
+const ENDPOINT = '/truck-cap';
 
 function TruckOwnerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: TruckCapEntry; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
@@ -101,7 +101,7 @@ export default function TruckOwnersConfigPage() {
   const { data: truck } = useQuery<Truck | undefined>({
     queryKey: ['truck', id],
     queryFn: async () => {
-      const r = await api.get<Truck | { items: Truck[] }>(`/config/trucks/${id}`);
+      const r = await api.get<Truck | { items: Truck[] }>(`/trucks/${id}`);
       // The factory's GET /:id returns the row directly.
       return r as Truck;
     },

@@ -41,7 +41,6 @@ p, ACCOUNTANT, notifications, read
 p, ACCOUNTANT, notifications, write
 p, DRIVER, notifications, read
 p, DRIVER, notifications, write
-p, FORWARDER, config, read
 p, FORWARDER, notifications, read
 p, FORWARDER, notifications, write
 p, ADMIN, salary, read
@@ -56,4 +55,3 @@ p, ACCOUNTANT, ocr, write
 p, DRIVER, ocr, write
 p, DRIVER, driver_portal, write
 p, DRIVER, driver_portal, delete
-p, DRIVER, config, read

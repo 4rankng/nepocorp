@@ -108,6 +108,33 @@ export default function ProfitPage() {
     }
   };
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadQuarterPreview() {
+      setPreviewing(true);
+      setPreview(null);
+      try {
+        const res = await api.post<DistributionResult>('/reports/distribute-profit/preview', {
+          quarter: selectedQuarter,
+          year: distQuarterYear,
+        });
+        if (active) setPreview(res);
+      } catch (err) {
+        if (active) {
+          showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xem trước phân phối.' });
+        }
+      } finally {
+        if (active) setPreviewing(false);
+      }
+    }
+
+    loadQuarterPreview();
+    return () => {
+      active = false;
+    };
+  }, [selectedQuarter, distQuarterYear, showToast]);
+
   const handleDistributeProfit = async () => {
     if (!await confirm(`Xác nhận phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
       return;

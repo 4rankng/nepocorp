@@ -70,7 +70,7 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
           >
             <StatusStrip color={status.color} />
             {/* Biển số */}
-            <div className="fleet-cell">
+            <div className="fleet-cell fleet-col-plate">
               <span className={`plate${isMaint ? ' maint' : ''}`}>{truck.licensePlate}</span>
             </div>
 

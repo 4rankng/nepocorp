@@ -40,8 +40,29 @@ const router = Router();
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
-router.get('/catalogs/bootstrap', asyncHandler(async (_req: Request, res: Response) => {
-  res.json(await getBootstrapData());
+function portalBootstrap(data: Awaited<ReturnType<typeof getBootstrapData>>) {
+  return {
+    ...data,
+    customers: [],
+    trucks: [],
+    drivers: [],
+    routes: [],
+    cargoTypes: [],
+    expenseCategories: [],
+    suppliers: [],
+    trailers: [],
+  };
+}
+
+export const catalogBootstrapRouter = Router();
+
+catalogBootstrapRouter.get('/catalogs/bootstrap', asyncHandler(async (req: Request, res: Response) => {
+  const data = await getBootstrapData();
+  const role = getUser(req).role;
+  if (role === Role.DRIVER || role === Role.FORWARDER) {
+    return res.json(portalBootstrap(data));
+  }
+  res.json(data);
 }));
 
 // ─── Pricing lookup ──────────────────────────────────────────────────────────

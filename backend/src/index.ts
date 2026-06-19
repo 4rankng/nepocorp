@@ -12,7 +12,7 @@ import { initAuditService } from './services/audit.service';
 import { initNotificationService } from './services/notification.service';
 import { initPushService } from './services/push.service';
 import authRoutes from './routes/auth';
-import configRoutes, { auditLogRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
+import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import financialRoutes from './routes/financial';
 import expenseRoutes from './routes/expense';
@@ -87,6 +87,9 @@ app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/ocr', authMiddleware, casbinAuthz('ocr'), ocrRoutes);
 app.use('/api/notifications', authMiddleware, casbinAuthz('notifications'), notificationRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+// Catalog bootstrap is used by both office pages and portal forms. The router
+// trims sensitive catalogs for DRIVER/FORWARDER before responding.
+app.use('/api', authMiddleware, catalogBootstrapRouter);
 // Config must mount before the generic /api financial catch-all,
 // otherwise financial Casbin gate blocks FORWARDER from /catalogs/bootstrap etc.
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);

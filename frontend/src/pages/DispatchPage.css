@@ -636,11 +636,11 @@
   }
   .dispatch-page .fleet-row {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: 
-      "plate driver"
-      "route route"
-      "cust cust";
+      "cust plate"
+      "driver driver"
+      "route route";
     gap: 8px 16px;
     padding: 16px;
     background: var(--surface);
@@ -648,10 +648,25 @@
     border-radius: 12px;
     align-items: center;
   }
-  .dispatch-page .fleet-cell:nth-child(1) { grid-area: plate; }
-  .dispatch-page .fleet-cell:nth-child(2) { grid-area: driver; justify-self: end; }
-  .dispatch-page .fleet-cell:nth-child(3) { grid-area: route; }
-  .dispatch-page .fleet-cell:nth-child(4) { grid-area: cust; }
+  .dispatch-page .fleet-col-plate {
+    grid-area: plate;
+    justify-self: end;
+  }
+  .dispatch-page .fleet-driver {
+    grid-area: driver;
+  }
+  .dispatch-page .fleet-col-route {
+    grid-area: route;
+  }
+  .dispatch-page .fleet-col-cust {
+    grid-area: cust;
+  }
+  .dispatch-page .fleet-route,
+  .dispatch-page .fleet-cust,
+  .dispatch-page .driver-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 
   .dispatch-page .fleet-col-route::before {
     content: 'Tuyến: ';
