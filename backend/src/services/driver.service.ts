@@ -11,6 +11,23 @@ import { getTripInstructions } from './trip-instructions.service';
 import { storageService } from './storage.service';
 
 /**
+ * Ledger txn types that count as cash the company has actually paid out / advanced
+ * to a driver in a period ("Đã thanh toán / đã tạm ứng").
+ *
+ * Allow-list, not a blacklist: only DRIVER_PAYOUT represents cash leaving the
+ * company on the DRIVER ledger. PENALTY is a non-cash deduction (shown separately
+ * as "Khấu trừ kỷ luật") — including it here double-counted and overstated cash
+ * paid. ADJUSTMENT on the DRIVER ledger is a reconciliation credit, never a cash
+ * debit. UNLOCK_REVERSAL reverses a DRIVER_SALARY credit and is excluded.
+ *
+ * Exported so the SQL filter and the regression test reference one source of
+ * truth (driver-earnings-paid-or-advanced.test.ts).
+ */
+export const PAID_OR_ADVANCED_TXN_TYPES: readonly TxnType[] = [
+  TxnType.DRIVER_PAYOUT,
+] as const;
+
+/**
  * Resolve an auth-user ID to the corresponding driver record.
  * Extends `ApiError` so the global error handler honours the 404 instead
  * of falling through to the generic 500 branch (which previously leaked
@@ -182,10 +199,25 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
   // read from the DRIVER ledger (Σ DRIVER_SALARY credits − reversals − payouts).
   // Customer chose "show payable balance" over a new advance-tracking model.
   const payableBalance = round2dp(await LedgerService.getBalance('DRIVER', driverId));
+
+  // "Đã thanh toán / đã tạm ứng" = actual cash the company has paid out to the
+  // driver in the period. Only true cash-out ledger debits count.
+  //
+  // Allow-list (see PAID_OR_ADVANCED_TXN_TYPES): DRIVER_PAYOUT is the only
+  // DRIVER-ledger debit that represents cash leaving the company. PENALTY is
+  // explicitly EXCLUDED — it posts a debit too, but it is a non-cash deduction
+  // already shown separately as "Khấu trừ kỷ luật"; counting it here would
+  // double-count and overstate cash paid. ADJUSTMENT on the DRIVER ledger is a
+  // reconciliation credit (penalty cancellation), never a cash debit.
+  // UNLOCK_REVERSAL reverses a DRIVER_SALARY credit and is also excluded.
+  //
+  // No separate driver-advance txn type exists (advances are recorded as
+  // DRIVER_PAYOUT with method=CASH; forwarder advances are FORWARDER_ADVANCE on
+  // the FORWARDER ledger, not this one).
   const [driverLedgerAgg] = await db.select({
     paidOrAdvanced: sql<string>`coalesce(sum(
       case
-        when ${s.ledger.txnType} != ${TxnType.UNLOCK_REVERSAL}
+        when ${inArray(s.ledger.txnType, [...PAID_OR_ADVANCED_TXN_TYPES])}
         then ${s.ledger.debit}::numeric
         else 0
       end
