@@ -138,6 +138,8 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
     // Per-truck profit must be recomputed from current revenue/cost/service
     // fee inputs, not the denormalized trips.grossProfit column. This catches
     // revenue edits that would otherwise leave the truck breakdown stale.
+    // Remediation path: backend/scripts/recost-gross-profit.ts (dry-run recost
+    // analyzer; sign-off-gated --apply).
     const ownTrucks = report.trucks.filter(t => t.id !== 0);
     const sumOwnProfit = ownTrucks.reduce((a, t) => a + t.profit, 0);
     const diff = Math.abs(report.grossProfit - sumOwnProfit);
