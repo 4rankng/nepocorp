@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, ne, and, isNull, desc, gte, lte, sql, inArray } from 'drizzle-orm';
 import { ApiError } from '../errors';
-import { computeVehicleAlerts, type VehicleAlert, round2dp } from '@tingting/shared';
+import { computeVehicleAlerts, type VehicleAlert, round2dp, TxnType } from '@tingting/shared';
 
 import { computeSalary } from './attendance.service';
 import { LedgerService } from './ledger.service';
@@ -182,6 +182,22 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
   // read from the DRIVER ledger (Σ DRIVER_SALARY credits − reversals − payouts).
   // Customer chose "show payable balance" over a new advance-tracking model.
   const payableBalance = round2dp(await LedgerService.getBalance('DRIVER', driverId));
+  const [driverLedgerAgg] = await db.select({
+    paidOrAdvanced: sql<string>`coalesce(sum(
+      case
+        when ${s.ledger.txnType} != ${TxnType.UNLOCK_REVERSAL}
+        then ${s.ledger.debit}::numeric
+        else 0
+      end
+    ), 0)`,
+  }).from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'DRIVER'),
+      eq(s.ledger.entityId, driverId),
+      gte(sql`(${s.ledger.createdAt})::date`, salaryData.periodStart),
+      lte(sql`(${s.ledger.createdAt})::date`, salaryData.periodEnd),
+    ));
+  const paidOrAdvanced = round2dp(parseFloat(driverLedgerAgg?.paidOrAdvanced ?? '0'));
 
   return {
     baseSalary: String(salaryData.baseSalary),
@@ -190,6 +206,7 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
     supplementPay: String(salaryData.supplementPay),
     leaveDeduction: String(salaryData.leaveDeduction),
     netIncome: String(salaryData.netSalary),
+    netSalary: String(salaryData.netSalary),
     adjustment: salaryData.adjustment,
     standardWorkDays: salaryData.standardWorkDays,
     paidDays: salaryData.paidDays,
@@ -198,6 +215,7 @@ export async function getDriverEarnings(driverId: number, month: number, year: n
     periodEnd: salaryData.periodEnd,
     productionSalary: String(productionSalary),
     roadAllowance: String(roadAllowance),
+    paidOrAdvanced: String(paidOrAdvanced),
     payableBalance: String(payableBalance),
   };
 }

@@ -53,9 +53,9 @@
 
 .dt-card {
   display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  gap: 2px 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  gap: 6px 16px;
   padding: 16px 20px;
 }
 
@@ -63,11 +63,13 @@
 .dt-card__route {
   grid-column: 1;
   grid-row: 1;
+  min-width: 0;
   font-weight: 600;
   font-size: var(--fs-sm);
   color: var(--fg-1);
   line-height: 1.35;
   align-self: center;
+  overflow-wrap: anywhere;
 }
 
 /* Top-right: salary */
@@ -89,22 +91,43 @@
   grid-column: 1;
   grid-row: 2;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   font-size: var(--fs-xs);
   color: var(--fg-3);
+  line-height: 1.2;
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.dt-card__meta--secondary {
+  grid-column: 1 / -1;
+  grid-row: 3;
 }
 
 .dt-card__meta-item {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dt-card__meta-item svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.dt-card__meta-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Bottom-right: arrow */
 .dt-card__arrow {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 2 / 4;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -120,12 +143,22 @@
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  .driver-trips-filter-bar {
+    padding-top: 6px;
+    margin-bottom: 8px;
+  }
   .driver-trips-page .driver-trip-card:hover {
     transform: none;
   }
   .dt-card {
     padding: 14px 16px;
-    gap: 2px 12px;
+    gap: 6px 12px;
+  }
+  .dt-card__salary {
+    font-size: var(--fs-sm);
+  }
+  .dt-card__meta {
+    gap: 8px 12px;
   }
   .dt-card__arrow {
     display: none;

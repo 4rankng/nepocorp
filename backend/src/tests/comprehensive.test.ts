@@ -382,7 +382,15 @@ test('E2E — Financial operations (P&L, profit sharing, ledger, statements, rec
     body: JSON.stringify({ quarter: 2, year: 2026 })
   });
   assert.strictEqual(distributeRes.status, 201);
-  assert.ok(distributeRes.data.distributions.length > 0);
+  assert.ok(Array.isArray(distributeRes.data.distributions));
+  assert.ok(Array.isArray(distributeRes.data.perTruck));
+  assert.ok(distributeRes.data.undistributedProfit !== undefined);
+  const distributed = distributeRes.data.distributions
+    .reduce((sum: number, row: { amount: string | number }) => sum + Number(row.amount), 0);
+  assert.strictEqual(
+    distributed + Number(distributeRes.data.undistributedProfit),
+    Number(distributeRes.data.netProfit),
+  );
 
   // 4. Ledger adjustments endpoint
   const adjustRes = await testFetch('/api/adjustments', {

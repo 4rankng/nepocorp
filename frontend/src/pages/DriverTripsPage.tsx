@@ -126,21 +126,21 @@ export default function DriverTripsPage() {
               <div className="dt-card__meta">
                 <span className="dt-card__meta-item">
                   <Truck size={12} />
-                  {trip.truckPlate || '—'}
+                  <span className="dt-card__meta-text">{trip.truckPlate || '—'}</span>
                 </span>
                 <span className="dt-card__meta-item">
                   <Calendar size={12} />
-                  {formatDate(trip.departureDate)}
+                  <span className="dt-card__meta-text">{formatDate(trip.departureDate)}</span>
                 </span>
               </div>
-              <div className="dt-card__meta">
+              <div className="dt-card__meta dt-card__meta--secondary">
                 <span className="dt-card__meta-item">
                   <Building2 size={12} />
-                  {trip.customerName || '—'}
+                  <span className="dt-card__meta-text">{trip.customerName || '—'}</span>
                 </span>
                 <span className="dt-card__meta-item">
                   <Package size={12} />
-                  {formatContainerList(trip.containerNumbers) || '—'}
+                  <span className="dt-card__meta-text">{formatContainerList(trip.containerNumbers) || '—'}</span>
                 </span>
               </div>
               <div className="dt-card__arrow">

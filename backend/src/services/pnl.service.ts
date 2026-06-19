@@ -57,6 +57,15 @@ export async function getPnlReport(month: number, year: number) {
       if (!tripFeeMap.has(fee.tripId)) tripFeeMap.set(fee.tripId, []);
       tripFeeMap.get(fee.tripId)!.push(fee);
     }
+    const serviceMarginForTrip = (tripId: number) => {
+      const tripFees = tripFeeMap.get(tripId) ?? [];
+      return tripFees.reduce((sum, f) => {
+        const feeVat = Number(f.vatRate || 0.080);
+        const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
+        const buyIncl = Number(f.buyAmount); // incl-VAT per spec §4.6.1
+        return sum + (sellEx - buyIncl);
+      }, 0);
+    };
 
     const totalRevenue = trips.reduce((sum, t) => {
       const rev = parseFloat(t.revenue || '0');
@@ -64,7 +73,8 @@ export async function getPnlReport(month: number, year: number) {
       return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
     }, 0);
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
-    const grossProfit = totalRevenue - totalCosts;
+    const ownServiceMarginTotal = trips.reduce((sum, t) => sum + serviceMarginForTrip(t.id), 0);
+    const grossProfit = totalRevenue - totalCosts + ownServiceMarginTotal;
 
     const fees = await db.select().from(s.managementFees);
     const m = month || new Date().getMonth() + 1;
@@ -148,19 +158,16 @@ export async function getPnlReport(month: number, year: number) {
       // Revenue ex-VAT for consistent P&L reporting
       const tripRev = parseFloat(trip.revenue || '0');
       const tripVat = Number(trip.vatRate || 0);
-      existing.revenue += tripVat > 0 ? Math.round(tripRev / (1 + tripVat)) : tripRev;
-      existing.costs += parseFloat(trip.totalCost || '0');
-      existing.profit += parseFloat(trip.grossProfit || '0');
+      const tripRevenueExVat = tripVat > 0 ? Math.round(tripRev / (1 + tripVat)) : tripRev;
+      const tripCosts = parseFloat(trip.totalCost || '0');
+      const tripServiceMargin = serviceMarginForTrip(trip.id);
+      existing.revenue += tripRevenueExVat;
+      existing.costs += tripCosts;
+      existing.profit += tripRevenueExVat - tripCosts + tripServiceMargin;
       existing.trips++;
       // Accumulate service margin from approved ancillary fees
       // Per spec §4.6.1 & §4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
-      const tripFees = tripFeeMap.get(trip.id) ?? [];
-      existing.serviceMargin += tripFees.reduce((sum, f) => {
-        const feeVat = Number(f.vatRate || 0.080);
-        const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
-        const buyIncl = Number(f.buyAmount);  // incl-VAT, no stripping
-        return sum + (sellEx - buyIncl);
-      }, 0);
+      existing.serviceMargin += tripServiceMargin;
       byTruck.set(trip.truckId, existing);
     }
     for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {

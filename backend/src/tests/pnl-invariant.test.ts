@@ -21,14 +21,9 @@
  *       truck-profit side excludes them; the algebraic netProfit check below
  *       guarantees the single-entry side.
  *
- *   (c) Own-truck `serviceMargin` is reported in its own field but is NOT folded
- *       into `netProfit` (the netProfit formula at :178 has no serviceMargin
- *       term). This is a KNOWN SPEC-DEVIATION carried from
- *       `spec-compliance-audit-2026-06-18` — own-truck service margin is
- *       effectively stranded (reported, not aggregated into profit). This test
- *       PINS that current behavior so a future change that folds it in is a
- *       deliberate, reviewed decision rather than silent drift. It is NOT
- *       auto-fixed in Phase A (money-calc change needs sign-off).
+ *   (c) Own-truck `serviceMargin` is folded into both truck profit and
+ *       netProfit through adjustedGrossProfit. This prevents the stale
+ *       denormalized `trips.grossProfit` divergence found in feedback202606.
  *
  * Tolerance: VND is integer (numeric scale 0). Revenue is rounded per-trip for
  * VAT stripping (pnl.service.ts:64), so Σ per-trip-rounded grossProfit can drift
@@ -72,7 +67,6 @@ interface PnlReport {
 let period: { month: number; year: number } | null = null;
 let report: PnlReport | null = null;
 let ownTripCount = 0;
-let sumCommissionOwn = 0;
 
 before(async () => {
   // Discover the most recent month that has revenue-bearing OWN trips, so the
@@ -101,18 +95,6 @@ before(async () => {
   report = r;
   ownTripCount = r.trucks.filter(t => t.id !== 0).reduce((a, t) => a + t.trips, 0);
 
-  // Σ customer commission over the report's own-trip set — used to explain the
-  // (a) divergence (commission is subtracted in computeTripTotals, not in P&L).
-  const [commRow] = await db.select({ sum: sql<string>`coalesce(sum(${s.trips.customerCommission}::numeric),0)` })
-    .from(s.trips).where(and(
-      isNull(s.trips.deletedAt), ne(s.trips.status, TripStatus.CANCELED),
-      sql`coalesce(${s.trips.carrierType}, 'OWN') = 'OWN'`,
-      sql`${s.trips.truckId} IS NOT NULL`,
-      sql`coalesce(${s.trips.revenue}, '0')::numeric > 0`,
-      sql`extract(year from ${s.trips.departureDate}) = ${period.year}`,
-      sql`extract(month from ${s.trips.departureDate}) = ${period.month}`,
-    ));
-  sumCommissionOwn = Number(commRow?.sum ?? 0);
 });
 
 after(async () => {
@@ -151,31 +133,18 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
     );
   });
 
-  test('(a.div) profit divergence is a DOCUMENTED known issue (stale denormalized grossProfit)', () => {
+  test('(a.div) Σ OWN-truck profit == adjustedGrossProfit (fresh recompute, no stale grossProfit)', () => {
     if (!report || ownTripCount === 0) { assert.ok(true, 'no own trucks'); return; }
-    // FINDING (surfaced by A8, NOT auto-fixed): Σ own-truck profit does NOT
-    // reconcile to adjustedGrossProfit. Per-truck `profit` accumulates the
-    // STORED `trips.grossProfit` (pnl.service.ts:153), a denormalized column
-    // computed by `computeTripTotals` at last save. adjustedGrossProfit instead
-    // recomputes fresh from current `trips.revenue`/`totalCost`. When revenue is
-    // edited without recomputing grossProfit (incl. the A1 revenue-zeroing bug),
-    // the stored column goes stale and the two diverge. A smaller secondary
-    // asymmetry (commission subtracted in computeTripTotals only; serviceMargin
-    // added there but stranded here) also contributes. Fix = recost script +
-    // patch recompute-on-edit paths → money-calc change, needs Pete/audit
-    // sign-off, deferred past Phase A. This test PASSES while recording the
-    // magnitude so the issue stays visible; a future recost should shrink it.
+    // Per-truck profit must be recomputed from current revenue/cost/service
+    // fee inputs, not the denormalized trips.grossProfit column. This catches
+    // revenue edits that would otherwise leave the truck breakdown stale.
     const ownTrucks = report.trucks.filter(t => t.id !== 0);
     const sumOwnProfit = ownTrucks.reduce((a, t) => a + t.profit, 0);
-    const divergence = report.grossProfit - sumOwnProfit;
-    assert.ok(Number.isFinite(divergence), 'divergence must be finite');
-    if (Math.abs(divergence) > tolerance()) {
-      console.log(
-        `   ⚠️  KNOWN P&L divergence: adjustedGrossProfit (${report.grossProfit}) − ΣownTruckProfit (${sumOwnProfit}) = ${divergence} ` +
-        `(commission Σ${sumCommissionOwn} contributes; residual = stale trips.grossProfit). Flagged for sign-off.`,
-      );
-    }
-    assert.ok(true, 'divergence documented');
+    const diff = Math.abs(report.grossProfit - sumOwnProfit);
+    assert.ok(
+      diff <= tolerance(),
+      `adjustedGrossProfit (${report.grossProfit}) must equal Σ own-truck profit (${sumOwnProfit}); diff=${diff}`,
+    );
   });
 
   test('(b) penalty/otherIncome enters netProfit exactly once (no truck double-count)', () => {
@@ -191,18 +160,16 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
     );
   });
 
-  test('(c) own-truck serviceMargin is NOT folded into netProfit (documented spec-deviation)', () => {
+  test('(c) own-truck serviceMargin is folded into netProfit through adjustedGrossProfit', () => {
     if (!report) { assert.ok(true, 'no report'); return; }
-    // The netProfit formula (pnl.service.ts:178) has NO serviceMargin term.
-    // Pin that netProfit matches the formula — i.e. own serviceMargin is
-    // reported separately (truckBreakdown.serviceMargin, :158) but stranded.
+    // Service margin is part of report.grossProfit, so the netProfit formula
+    // remains simple while still including approved service fee margin.
     const netProfitFormula =
       report.grossProfit - report.managementFee - report.companyExpenses + report.otherIncome;
     const diff = Math.abs(report.netProfit - netProfitFormula);
     assert.ok(
       diff <= tolerance(),
-      `netProfit (${report.netProfit}) must equal the formula EXCLUDING serviceMargin (${netProfitFormula}); diff=${diff}. ` +
-      `If this fails because serviceMargin was folded in, that is a deliberate change — update this test and the spec-audit note.`,
+      `netProfit (${report.netProfit}) must equal adjustedGrossProfit-inclusive formula (${netProfitFormula}); diff=${diff}.`,
     );
   });
 

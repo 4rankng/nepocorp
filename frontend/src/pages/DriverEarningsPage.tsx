@@ -47,8 +47,9 @@ export default function DriverEarningsPage() {
     penalties: HTMLSpanElement | null;
     productionSalary: HTMLSpanElement | null;
     roadAllowance: HTMLSpanElement | null;
+    paidOrAdvanced: HTMLSpanElement | null;
     payableBalance: HTMLSpanElement | null;
-  }>({ baseSalary: null, adjustment: null, penalties: null, productionSalary: null, roadAllowance: null, payableBalance: null });
+  }>({ baseSalary: null, adjustment: null, penalties: null, productionSalary: null, roadAllowance: null, paidOrAdvanced: null, payableBalance: null });
   const { animateCounters } = useCounterAnimation({ delay: 100 });
 
   useEffect(() => {
@@ -58,16 +59,18 @@ export default function DriverEarningsPage() {
     const penaltyNum = parseFloat(earnings.penalties);
 
     if (heroValueRef.current) {
-      const net = parseFloat(earnings.netIncome);
-      targets.push({ el: heroValueRef.current, value: Math.abs(net), prefix: net < 0 ? '-' : '' });
+      const payable = parseFloat(earnings.payableBalance);
+      targets.push({ el: heroValueRef.current, value: Math.abs(payable), prefix: payable < 0 ? '-' : '' });
     }
     if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum });
     // F2 / B2 — trip-income cards always animate (headline breakdown).
     const productionNum = parseFloat(earnings.productionSalary);
     const roadNum = parseFloat(earnings.roadAllowance);
+    const paidOrAdvancedNum = parseFloat(earnings.paidOrAdvanced ?? '0');
     const payableNum = parseFloat(earnings.payableBalance);
     if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum });
     if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum });
+    if (kpiRefs.current.paidOrAdvanced) targets.push({ el: kpiRefs.current.paidOrAdvanced, value: paidOrAdvancedNum });
     if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '' });
     if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum });
     if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
@@ -102,8 +105,14 @@ export default function DriverEarningsPage() {
   if (!earnings) return null;
 
   const netNum = parseFloat(earnings.netIncome);
-  const isPositive = netNum >= 0;
+  const payableNum = parseFloat(earnings.payableBalance);
+  const adjustmentNum = earnings.adjustment ?? 0;
+  const isPositive = payableNum >= 0;
   const penaltyNum = parseFloat(earnings.penalties);
+  const tripIncomeNum = parseFloat(earnings.productionSalary) + parseFloat(earnings.roadAllowance);
+  const adjustmentLabel = adjustmentNum >= 0 ? 'Thưởng công' : 'Trừ công';
+  const adjustmentValue = `${adjustmentNum >= 0 ? '+' : '-'}${formatNumber(Math.abs(adjustmentNum))}`;
+  const payableLabel = payableNum >= 0 ? 'Lương chưa thanh toán' : 'Đã tạm ứng vượt';
 
   return (
     <div ref={rootRef} className="driver-earnings-page">
@@ -138,14 +147,17 @@ export default function DriverEarningsPage() {
         </div>
       )}
 
-      {/* ═══ Zone 1 — Gradient Hero Card ═══ */}
+      {/* ═══ Zone 1 — Salary answer card ═══ */}
       <div className={`earnings-hero-bento fade-up ${isPositive ? 'earnings-hero-bento--positive' : 'earnings-hero-bento--negative'}`}>
         <div className="earnings-hero-bento__content">
-          <p className="earnings-hero-bento__eyebrow">Thu nhập thực tế</p>
+          <p className="earnings-hero-bento__eyebrow">{payableLabel}</p>
           <div className="earnings-hero-bento__amount">
-            <span ref={heroValueRef}>{formatNumber(earnings.netIncome)}</span>
+            <span ref={heroValueRef}>{formatNumber(earnings.payableBalance)}</span>
             <span className="earnings-hero-bento__currency">đ</span>
           </div>
+          <p className="earnings-hero-bento__note">
+            Số dư sổ lương hiện tại. Các khoản đã tạm ứng/đã thanh toán nằm trong phần tóm tắt bên dưới.
+          </p>
         </div>
         <div className="earnings-hero-bento__icon">
           {isPositive
@@ -158,66 +170,84 @@ export default function DriverEarningsPage() {
         </div>
       </div>
 
-      {/* ═══ F2 / B2 — Trip income: production pay · road allowance · payable ═══ */}
-      <div className="earnings-kpi-grid fade-up-2">
-        <div className="earnings-kpi-card">
-          <span className="earnings-kpi-card__label">Lương sản xuất</span>
-          <span className="earnings-kpi-card__value">
-            <span ref={(el) => { kpiRefs.current.productionSalary = el; }}>{formatNumber(earnings.productionSalary)}</span>
-            <span className="earnings-kpi-card__unit">đ</span>
-          </span>
+      {/* ═══ Zone 2 — Payslip summary ═══ */}
+      <div className="earnings-equation-card fade-up-2" aria-label="Tóm tắt thu nhập">
+        <div className="earnings-equation-card__head">
+          <span>Tóm tắt kỳ này</span>
+          <strong>{month.toString().padStart(2, '0')}/{year}</strong>
         </div>
-        <div className="earnings-kpi-card">
-          <span className="earnings-kpi-card__label">Tiền đi đường</span>
-          <span className="earnings-kpi-card__value">
-            <span ref={(el) => { kpiRefs.current.roadAllowance = el; }}>{formatNumber(earnings.roadAllowance)}</span>
-            <span className="earnings-kpi-card__unit">đ</span>
-          </span>
-        </div>
-        <div className={`earnings-kpi-card ${parseFloat(earnings.payableBalance) > 0 ? 'earnings-kpi-card--success' : ''}`}>
-          <span className="earnings-kpi-card__label">Lương chưa thanh toán</span>
-          <span className="earnings-kpi-card__value">
-            <span ref={(el) => { kpiRefs.current.payableBalance = el; }}>{formatNumber(earnings.payableBalance)}</span>
-            <span className="earnings-kpi-card__unit">đ</span>
-          </span>
+        <div className="earnings-equation">
+          <div className="earnings-equation__item">
+            <span>Lương ngày công</span>
+            <strong>{formatNumber(earnings.netIncome)} đ</strong>
+          </div>
+          <div className="earnings-equation__item">
+            <span>Lương chuyến + đi đường</span>
+            <strong>{formatNumber(tripIncomeNum)} đ</strong>
+          </div>
+          <div className="earnings-equation__item">
+            <span>Đã tạm ứng/đã thanh toán</span>
+            <strong ref={(el) => { kpiRefs.current.paidOrAdvanced = el; }}>{formatNumber(earnings.paidOrAdvanced ?? '0')} đ</strong>
+          </div>
+          <div className={`earnings-equation__item earnings-equation__item--total ${payableNum < 0 ? 'earnings-equation__item--danger' : 'earnings-equation__item--success'}`}>
+            <span>Còn chưa thanh toán</span>
+            <strong ref={(el) => { kpiRefs.current.payableBalance = el; }}>{formatNumber(earnings.payableBalance)} đ</strong>
+          </div>
         </div>
       </div>
-      <p className="earnings-payable-note">
-        Số tiền trên là <strong>lương chưa thanh toán</strong> — khoản công ty còn đang nợ bạn.
-        Chi tiết đã thanh toán và tạm ứng sẽ được theo dõi ở bản cập nhật sau.
-      </p>
 
-      {/* ═══ Zone 2 — KPI Grid ═══ */}
-      <div className="earnings-kpi-grid fade-up-2">
-        <div className="earnings-kpi-card">
-          <span className="earnings-kpi-card__label">Lương cơ bản</span>
-          <span className="earnings-kpi-card__value">
-            <span ref={(el) => { kpiRefs.current.baseSalary = el; }}>{formatNumber(earnings.baseSalary)}</span>
-            <span className="earnings-kpi-card__unit">đ</span>
-          </span>
-        </div>
-        {earnings.adjustment !== undefined && earnings.adjustment !== 0 && (
-          <div className={`earnings-kpi-card ${earnings.adjustment > 0 ? 'earnings-kpi-card--success' : 'earnings-kpi-card--danger'}`}>
-            <span className="earnings-kpi-card__label">
-              {earnings.adjustment > 0 ? 'Thưởng công thêm' : 'Trừ công thiếu'}
-            </span>
-            <span className="earnings-kpi-card__value">
-              <span ref={(el) => { kpiRefs.current.adjustment = el; }}>
-                {earnings.adjustment > 0 ? '+' : '-'}{formatNumber(Math.abs(earnings.adjustment))}
-              </span>
-              <span className="earnings-kpi-card__unit">đ</span>
-            </span>
+      <div className="earnings-ledger-grid fade-up-2">
+        <section className="earnings-ledger-card">
+          <div className="earnings-ledger-card__header">
+            <span>Lương ngày công</span>
+            <strong>{formatNumber(netNum)} đ</strong>
           </div>
-        )}
-        <div className={`earnings-kpi-card ${penaltyNum > 0 ? 'earnings-kpi-card--danger' : ''}`}>
-          <span className="earnings-kpi-card__label">Khấu trừ kỷ luật</span>
-          <span className="earnings-kpi-card__value">
-            <span ref={(el) => { kpiRefs.current.penalties = el; }}>
-              {penaltyNum > 0 ? `-${formatNumber(earnings.penalties)}` : '0'}
-            </span>
-            <span className="earnings-kpi-card__unit">đ</span>
-          </span>
-        </div>
+          <dl className="earnings-ledger-list">
+            <div>
+              <dt>Lương cơ bản</dt>
+              <dd ref={(el) => { kpiRefs.current.baseSalary = el; }}>{formatNumber(earnings.baseSalary)} đ</dd>
+            </div>
+            {adjustmentNum !== 0 && (
+              <div>
+                <dt>{adjustmentLabel}</dt>
+                <dd className={adjustmentNum >= 0 ? 'is-success' : 'is-danger'}>{adjustmentValue} đ</dd>
+              </div>
+            )}
+            <div>
+              <dt>Khấu trừ kỷ luật</dt>
+              <dd ref={(el) => { kpiRefs.current.penalties = el; }} className={penaltyNum > 0 ? 'is-danger' : ''}>{penaltyNum > 0 ? '-' : ''}{formatNumber(earnings.penalties)} đ</dd>
+            </div>
+            <div>
+              <dt>Lương thực tế</dt>
+              <dd>{formatNumber(earnings.netIncome)} đ</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="earnings-ledger-card">
+          <div className="earnings-ledger-card__header">
+            <span>Lương chuyến & thanh toán</span>
+            <strong>{formatNumber(tripIncomeNum)} đ</strong>
+          </div>
+          <dl className="earnings-ledger-list">
+            <div>
+              <dt>Lương sản xuất</dt>
+              <dd ref={(el) => { kpiRefs.current.productionSalary = el; }}>{formatNumber(earnings.productionSalary)} đ</dd>
+            </div>
+            <div>
+              <dt>Tiền đi đường</dt>
+              <dd ref={(el) => { kpiRefs.current.roadAllowance = el; }}>{formatNumber(earnings.roadAllowance)} đ</dd>
+            </div>
+            <div>
+              <dt>Đã tạm ứng/đã thanh toán</dt>
+              <dd>{formatNumber(earnings.paidOrAdvanced ?? '0')} đ</dd>
+            </div>
+            <div className="earnings-ledger-list__note">
+              <dt>Ghi chú</dt>
+              <dd>Số chưa thanh toán là số dư sổ lương hiện tại, không phải phép cộng trực tiếp của các dòng phía trên.</dd>
+            </div>
+          </dl>
+        </section>
       </div>
 
       {/* ═══ Zone 3 — Work-day Strip ═══ */}

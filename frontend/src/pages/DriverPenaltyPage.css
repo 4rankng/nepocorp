@@ -1,13 +1,35 @@
 .driver-penalty-page {
+  --driver-penalty-title: var(--fs-xl);
+  --driver-penalty-subtitle: var(--fs-xs);
+  --driver-penalty-section: var(--fs-xs);
+  --driver-penalty-body: var(--fs-sm);
+  --driver-penalty-muted: var(--fs-xs);
+  --driver-penalty-kpi: 22px;
   padding-bottom: 40px;
+}
+
+.driver-penalty-page .page-header {
+  margin-bottom: 16px;
+}
+
+.driver-penalty-page .page-title {
+  font-size: var(--driver-penalty-title);
+  line-height: var(--lh-tight);
+  letter-spacing: 0;
+}
+
+.driver-penalty-page .page-subtitle {
+  font-size: var(--driver-penalty-subtitle);
+  line-height: var(--lh-normal);
+  color: var(--ink-2);
 }
 
 /* ═══ ZONE 1 — Status Banner ═══ */
 .penalty-status-banner {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 14px;
+  padding: 16px;
   border-radius: 16px;
   margin-bottom: 20px;
 }
@@ -20,8 +42,8 @@
   border: 1px solid var(--danger);
 }
 .penalty-status-banner__icon {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -36,13 +58,16 @@
   background: var(--danger);
 }
 .penalty-status-banner__title {
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
+  line-height: var(--lh-snug);
+  letter-spacing: 0;
 }
 .penalty-status-banner__subtitle {
-  font-size: 13px;
+  font-size: var(--driver-penalty-body);
   color: var(--ink-2);
   margin-top: 2px;
+  line-height: var(--lh-normal);
 }
 .penalty-status-banner--safe .penalty-status-banner__title {
   color: var(--success-text);
@@ -63,12 +88,70 @@
   background: var(--surface-2);
   border: 1px solid var(--line-2);
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: var(--driver-penalty-muted);
 }
 
 /* ═══ ZONE 2 — KPI Grid (reuse shared .kpi-grid and .kpi classes) ═══ */
 .penalty-kpi-grid {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
+}
+
+.penalty-kpi-grid .kpi {
+  min-height: 108px;
+  padding: 16px 88px 16px 20px;
+}
+
+.penalty-kpi-grid .kpi__top {
+  margin-bottom: 10px;
+}
+
+.penalty-kpi-grid .kpi__label {
+  font-size: var(--driver-penalty-section);
+  letter-spacing: var(--tracking-wide);
+}
+
+.penalty-kpi-grid .kpi__value {
+  font-size: var(--driver-penalty-kpi) !important;
+  line-height: var(--lh-tight);
+  margin-bottom: 6px;
+  letter-spacing: 0;
+  word-break: normal;
+  white-space: nowrap;
+}
+
+.penalty-kpi-grid .kpi__value-unit {
+  font-size: var(--driver-penalty-muted);
+  letter-spacing: 0;
+}
+
+.penalty-kpi-grid .kpi__meta {
+  font-size: var(--driver-penalty-muted);
+  line-height: var(--lh-snug);
+}
+
+.penalty-kpi-grid .kpi__watermark {
+  top: 50%;
+  right: 24px;
+  bottom: auto;
+  width: 58px;
+  height: 58px;
+  color: var(--stat-rail);
+  opacity: 0.08;
+  transform: translateY(-50%);
+}
+
+.penalty-kpi-grid .kpi__watermark svg {
+  width: 58px;
+  height: 58px;
+  stroke-width: 1.7;
+}
+
+.penalty-kpi-grid .kpi--warn .kpi__watermark,
+.penalty-kpi-grid .kpi--success .kpi__watermark,
+.penalty-kpi-grid .kpi--danger .kpi__watermark,
+.penalty-kpi-grid .kpi--neutral .kpi__watermark {
+  color: var(--stat-rail);
+  opacity: 0.08;
 }
 
 /* ═══ ZONE 3 — Violations Data Card ═══ */
@@ -80,22 +163,25 @@
   overflow: hidden;
 }
 .penalty-data-card__header {
-  padding: 16px 20px 12px;
+  padding: 16px 20px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 14px;
 }
 .penalty-data-card__title {
-  font-size: 13px;
+  font-size: var(--driver-penalty-section);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--tracking-wide);
   color: var(--ink-3);
+  line-height: var(--lh-snug);
 }
 .penalty-month-select {
-  width: 150px;
-  height: 28px;
-  font-size: 12px;
+  width: 148px;
+  height: 36px;
+  font-size: var(--driver-penalty-muted);
+  font-weight: 600;
 }
 
 /* Violation rows */
@@ -139,12 +225,13 @@
   flex-wrap: wrap;
 }
 .penalty-violation-row__reason {
-  font-size: 14px;
+  font-size: var(--driver-penalty-body);
   font-weight: 600;
   color: var(--ink);
+  line-height: var(--lh-snug);
 }
 .penalty-violation-row__amount {
-  font-size: 15px;
+  font-size: var(--driver-penalty-body);
   font-weight: 700;
   color: var(--danger);
   white-space: nowrap;
@@ -154,7 +241,7 @@
   gap: 12px;
   margin-top: 6px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: var(--driver-penalty-muted);
   color: var(--ink-3);
 }
 .penalty-violation-row__meta span {
@@ -164,7 +251,7 @@
 }
 .penalty-violation-row__note {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: var(--driver-penalty-muted);
   color: var(--ink-3);
   font-style: italic;
 }
@@ -172,7 +259,7 @@
 /* Empty state */
 .penalty-empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 42px 20px;
   color: var(--ink-3);
   border-top: 1px solid var(--line);
 }
@@ -184,13 +271,16 @@
   margin-top: 12px;
 }
 .penalty-empty-state__title {
+  font-size: var(--fs-md);
   font-weight: 600;
   color: var(--ink);
   margin: 0;
+  line-height: var(--lh-snug);
 }
 .penalty-empty-state__desc {
-  margin: 4px 0 0;
-  font-size: 12px;
+  margin: 6px 0 0;
+  font-size: var(--driver-penalty-muted);
+  line-height: var(--lh-normal);
 }
 
 /* ═══ ZONE 4 — Footer Note ═══ */
@@ -199,13 +289,27 @@
   padding: 12px 16px;
   background: var(--surface-2);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: var(--driver-penalty-muted);
   color: var(--ink-3);
   text-align: center;
 }
 
 /* ═══ Responsive ═══ */
 @media (max-width: 640px) {
+  .driver-penalty-page {
+    --driver-penalty-title: var(--fs-xl);
+    --driver-penalty-subtitle: 13px;
+    --driver-penalty-section: 11px;
+    --driver-penalty-body: 13px;
+    --driver-penalty-muted: 11.5px;
+    --driver-penalty-kpi: 22px;
+  }
+  .driver-penalty-page .page-header {
+    margin-bottom: 14px;
+  }
+  .driver-penalty-page .page-title {
+    font-weight: 800;
+  }
   .penalty-violation-row {
     padding: 12px 16px;
   }
@@ -215,5 +319,51 @@
   .penalty-status-banner {
     padding: 14px 16px;
     border-radius: 14px;
+    gap: 12px;
+  }
+  .penalty-status-banner__icon {
+    width: 38px;
+    height: 38px;
+  }
+  .penalty-status-banner__title {
+    font-size: var(--fs-sm);
+  }
+  .penalty-status-banner__subtitle {
+    font-size: var(--driver-penalty-body);
+  }
+  .penalty-kpi-grid .kpi {
+    min-height: 96px;
+    padding: 14px 58px 14px 16px;
+  }
+  .penalty-kpi-grid .kpi__top {
+    margin-bottom: 8px;
+  }
+  .penalty-kpi-grid .kpi__watermark {
+    right: 14px;
+    width: 40px;
+    height: 40px;
+    opacity: 0.065;
+  }
+  .penalty-kpi-grid .kpi__watermark svg {
+    width: 40px;
+    height: 40px;
+  }
+  .penalty-data-card__header {
+    padding: 14px 16px 12px;
+  }
+  .penalty-month-select {
+    width: 136px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 420px) {
+  .penalty-data-card__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .penalty-month-select {
+    width: 100%;
   }
 }

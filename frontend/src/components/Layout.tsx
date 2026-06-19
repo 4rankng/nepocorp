@@ -170,6 +170,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const displayedUnreadCount = user?.role === 'DRIVER' ? 0 : unreadCount;
 
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
@@ -374,7 +375,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     user,
     isDriver,
     sidebarOpen,
-    unreadCount,
+    unreadCount: displayedUnreadCount,
     onToggleSidebar: () => setSidebarOpen(v => !v),
     onOpenNotifications: () => setNotifOpen(true),
   };
