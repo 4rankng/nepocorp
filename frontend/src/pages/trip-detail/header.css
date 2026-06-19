@@ -207,6 +207,25 @@
   align-items: center;
 }
 
+.tdp-edit-btn {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-2);
+  box-shadow: var(--sh-sm);
+  font-weight: 700;
+}
+
+.tdp-edit-btn:hover {
+  background: color-mix(in srgb, var(--surface) 88%, var(--accent-soft));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line-2));
+  color: var(--accent-ink, var(--accent));
+  transform: translateY(-1px);
+}
+
+.tdp-edit-btn svg {
+  color: var(--accent);
+}
+
 /* ── Buttons ──
  *   Global .btn / .btn--primary / .btn--ghost / .btn--danger
  *   (components/Button.css) govern the header action cluster. The local

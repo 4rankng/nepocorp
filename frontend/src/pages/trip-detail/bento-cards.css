@@ -364,19 +364,23 @@
 
 /* ── Containers & Seal card ─────────────────────────────────────────────── */
 .cs-galleries {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 12px 0 4px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(120px, 0.8fr);
+  gap: 10px;
+  padding: 8px 0 12px;
   border-bottom: 1px solid var(--line-2, #EFF2F0);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .cs-gallery {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-2, #EFF2F0);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 74%, var(--surface-2));
 }
 
 .cs-gallery__label {
@@ -388,8 +392,8 @@
 }
 
 .cs-thumbs {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -399,7 +403,8 @@
   justify-content: center;
   flex-direction: column;
   gap: 3px;
-  aspect-ratio: 4 / 3;
+  width: 82px;
+  height: 58px;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--r-md, 14px);
@@ -442,16 +447,16 @@
 .containers-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 0 4px;
+  gap: 8px;
+  padding: 10px 0 4px;
 }
 
 .container-row {
   display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 12px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
   align-items: start;
-  padding: 12px;
+  padding: 11px 12px;
   border: 1px solid var(--line-2, #EFF2F0);
   border-radius: var(--r-md, 14px);
   background: linear-gradient(180deg, var(--bg-2, #FAFBFC), var(--surface-2));
@@ -472,9 +477,9 @@
 
 .container-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 16px;
-  row-gap: 10px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  column-gap: 14px;
+  row-gap: 8px;
   min-width: 0;
 }
 
@@ -498,7 +503,8 @@
 }
 
 .cf-value {
-  font-size: var(--fs-sm);
+  font-size: 13px;
+  line-height: 1.22;
   font-weight: 600;
   color: var(--ink);
   word-break: break-word;

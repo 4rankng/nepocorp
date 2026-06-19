@@ -93,12 +93,7 @@ export default function TripDetailPage() {
           </div>
 
           <div className="anim d3 tdp-card tdp-m3">
-            <BasicInfoCard
-              trip={trip}
-              canChangeDate={permissions.canChangeDate}
-              onChangeDepartureDate={page.handleChangeDepartureDate}
-              actionLoading={ui.actionLoading}
-            />
+            <BasicInfoCard trip={trip} />
           </div>
 
           <div className="anim d4 tdp-card tdp-m4">

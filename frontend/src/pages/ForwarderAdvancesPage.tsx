@@ -128,21 +128,21 @@ export default function ForwarderAdvancesPage() {
         <div className="hero-kpi-row">
           <div className="hero-kpi-card">
             <span className="hero-kpi-card__eyebrow">Tổng tạm ứng</span>
-            <span className="hero-kpi-card__amount"><span ref={heroAmountRef}>0</span><span className="hero-kpi-card__currency">₫</span></span>
+            <span className="hero-kpi-card__amount"><span ref={heroAmountRef}>{Math.round(totalAmount).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
             <span className="hero-kpi-card__subtitle">{totalRequests} yêu cầu tạm ứng</span>
             <Wallet size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
-                <span className="hero-kpi-mini__value" ref={heroOutstandingRef}>0</span>
+                <span className="hero-kpi-mini__value" ref={heroOutstandingRef}>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
                 <span className="hero-kpi-mini__label">tồn tạm ứng (₫)</span>
               </div>
               <Wallet size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
-                <span className="hero-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pendingCount}</span>
                 <span className="hero-kpi-mini__label">chờ duyệt</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />

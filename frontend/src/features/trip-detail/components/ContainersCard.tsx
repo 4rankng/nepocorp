@@ -99,6 +99,7 @@ export function ContainersCard({ tripId }: Props) {
               <div className="cs-galleries">
                 <PhotoGallery
                   label={`Ảnh số cont${contUrls.length > 1 ? ` (${contUrls.length})` : ''}`}
+                  kind="cont"
                   urls={contUrls}
                   broken={broken}
                   onOpen={i => openGallery('cont', i)}
@@ -106,6 +107,7 @@ export function ContainersCard({ tripId }: Props) {
                 />
                 <PhotoGallery
                   label={`Ảnh số seal${sealUrls.length > 1 ? ` (${sealUrls.length})` : ''}`}
+                  kind="seal"
                   urls={sealUrls}
                   broken={broken}
                   onOpen={i => openGallery('seal', i)}
@@ -172,16 +174,17 @@ export function ContainersCard({ tripId }: Props) {
 
 interface PhotoGalleryProps {
   label: string;
+  kind: 'cont' | 'seal';
   urls: string[];
   broken: Set<string>;
   onOpen: (idx: number) => void;
   onBroken: (url: string) => void;
 }
 
-function PhotoGallery({ label, urls, broken, onOpen, onBroken }: PhotoGalleryProps) {
+function PhotoGallery({ label, kind, urls, broken, onOpen, onBroken }: PhotoGalleryProps) {
   if (urls.length === 0) {
     return (
-      <div className="cs-gallery">
+      <div className={`cs-gallery cs-gallery--${kind}`}>
         <div className="cs-gallery__label">{label}</div>
         <div className="cs-thumbs">
           <div className="cs-thumb cs-thumb--empty">
@@ -194,7 +197,7 @@ function PhotoGallery({ label, urls, broken, onOpen, onBroken }: PhotoGalleryPro
   }
 
   return (
-    <div className="cs-gallery">
+    <div className={`cs-gallery cs-gallery--${kind}`}>
       <div className="cs-gallery__label">{label}</div>
       <div className="cs-thumbs">
         {urls.map((url, i) => {

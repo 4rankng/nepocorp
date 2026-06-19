@@ -11,6 +11,7 @@ import { useToast } from '../components/shared/Toast';
 import { useConfirm, Modal } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import './DebtDetailPage.css';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -158,7 +159,7 @@ export default function PayableDetailPage() {
 
   if (error || !typedStatement) {
     return (
-      <div>
+      <div className="debt-detail-page">
         <div className="dd-header">
           <button className="dd-back" onClick={() => navigate(backPath)}>
             <ArrowLeft size={20} />
@@ -184,7 +185,7 @@ export default function PayableDetailPage() {
   const agingTotal = totalOutstanding || 1;
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="debt-detail-page">
       {/* Supplier Header */}
       <div className="dd-header">
         <button className="dd-back" onClick={() => navigate(backPath)}>

@@ -6,7 +6,7 @@ import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { emitNotification } from '../../services/notification.service';
 import * as financialService from '../../services/financial.service';
-import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, safeFilename } from '../../services/statement.service';
+import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, attachmentDisposition } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
 import { cacheInvalidate } from '../../lib/redis';
 import { getPayablesSummary } from '../../services/payables.service';
@@ -70,7 +70,6 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
   const data = await getSupplierStatement(supplierId, dateFrom, dateTo);
 
   const dateStr = formatLocalDate();
-  const safeName = safeFilename(data.supplier.name);
 
   if (format === 'pdf') {
     const html = exportSupplierStatementHtml(data, dateStr);
@@ -80,7 +79,7 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
   }
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename=sao-ke-ncc-${safeName}-${dateStr}.xlsx`);
+  res.setHeader('Content-Disposition', attachmentDisposition(`sao-ke-ncc-${data.supplier.name}-${dateStr}.xlsx`));
   await exportSupplierStatementXlsx(data, dateStr, res);
 }));
 

@@ -36,7 +36,21 @@ interface StatementExportConfig {
 }
 
 export function safeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9À-ỹ ]/g, '').replace(/\s+/g, '-');
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, (c) => c === 'đ' ? 'd' : 'D')
+    .replace(/[^a-zA-Z0-9 ._-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-') || 'statement';
+}
+
+export function attachmentDisposition(filename: string): string {
+  const fallback = safeFilename(filename);
+  const encoded = encodeURIComponent(filename)
+    .replace(/['()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/\*/g, '%2A');
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }
 
 const TXN_LABELS: Record<string, string> = {

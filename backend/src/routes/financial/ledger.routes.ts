@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { LedgerService } from '../../services/ledger.service';
 import * as financialService from '../../services/financial.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml, safeFilename } from '../../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, attachmentDisposition } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
 
 const router = Router();
@@ -49,7 +49,6 @@ router.get('/ledger/customers/:id/statement/export', asyncHandler(async (req: Re
   if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
 
   const dateStr = formatLocalDate();
-  const safeName = safeFilename(data.customer.name);
 
   if (format === 'pdf') {
     const html = exportStatementHtml(data, dateStr);
@@ -59,7 +58,7 @@ router.get('/ledger/customers/:id/statement/export', asyncHandler(async (req: Re
   }
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename=sao-ke-${safeName}-${dateStr}.xlsx`);
+  res.setHeader('Content-Disposition', attachmentDisposition(`sao-ke-${data.customer.name}-${dateStr}.xlsx`));
   await exportStatementXlsx(data, dateStr, res);
 }));
 

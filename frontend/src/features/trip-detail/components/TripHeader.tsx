@@ -4,7 +4,6 @@ import {
   Building2, Loader2,
 } from 'lucide-react';
 import type { TripDetail } from '@tingting/shared';
-import { TripStatus } from '@tingting/shared';
 import type { TripPermissions } from '../types';
 
 interface TripHeaderProps {
@@ -22,22 +21,6 @@ interface TripHeaderProps {
   onUnlock: () => void;
 }
 
-function StatusBadge({ status }: { status: TripStatus }) {
-  const labels: Record<TripStatus, { text: string; className: string }> = {
-    [TripStatus.CREATED]: { text: 'Mới tạo', className: 'tc-status-pill--draft' },
-    [TripStatus.IN_TRANSIT]: { text: 'Đang chạy', className: 'tc-status-pill--in-transit' },
-    [TripStatus.COMPLETED]: { text: 'Hoàn thành', className: 'tc-status-pill--completed' },
-    [TripStatus.LOCKED]: { text: 'Đã khóa', className: 'tc-status-pill--locked' },
-    [TripStatus.CANCELED]: { text: 'Đã hủy', className: 'tc-status-pill--canceled' },
-  };
-  const { text, className } = labels[status] ?? { text: status, className: '' };
-  return (
-    <span className={`tc-status-pill ${className}`}>
-      {text}
-    </span>
-  );
-}
-
 export function TripHeader({
   trip, permissions, actionLoading,
   onBack, onEdit, onDispatch, onComplete, onLock, onCancel, onReassign, onAdjust, onUnlock,
@@ -53,7 +36,6 @@ export function TripHeader({
         <div className="tc-title-wrap">
           <h1 className="tc-page-title">
             {trip.tripCode || 'Lệnh vận chuyển'}
-            <StatusBadge status={trip.status} />
           </h1>
           <p className="tc-page-sub company">
             <Building2 size={15} />
@@ -64,7 +46,7 @@ export function TripHeader({
 
       <div className="header-actions">
         {canEdit && (
-          <button className="btn btn--ghost" onClick={onEdit}>
+          <button className="btn tdp-edit-btn" onClick={onEdit}>
             <Pencil size={15} />Chỉnh sửa
           </button>
         )}

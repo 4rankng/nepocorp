@@ -45,7 +45,6 @@ export interface TopbarProps {
   };
   isDriver: boolean;
   sidebarOpen: boolean;
-  unreadCount: number;
   onToggleSidebar: () => void;
   onOpenNotifications: () => void;
 }

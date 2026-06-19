@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
 import { formatCurrency as formatVND } from '../lib/format';
+import { getProfitPreviewEmptyMessage } from '../lib/profit-preview';
 import { Money } from '../components/shared/Money';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
@@ -167,6 +168,7 @@ export default function ProfitPage() {
   };
 
   const activeCapTable = getDisplayCapTable();
+  const previewEmptyMessage = preview ? getProfitPreviewEmptyMessage(preview) : null;
 
   return (
     <div ref={rootRef} style={{ paddingBottom: 40 }}>
@@ -402,7 +404,11 @@ export default function ProfitPage() {
                     </div>
                   )}
 
-                  {preview.entity && preview.entity.length > 0 ? (
+                  {previewEmptyMessage ? (
+                    <div style={{ padding: 12, background: 'var(--bg-1)', borderRadius: 6, color: 'var(--fg-3)', fontSize: 12.5, fontWeight: 600 }}>
+                      {previewEmptyMessage}
+                    </div>
+                  ) : preview.entity && preview.entity.length > 0 ? (
                     <>
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
                       <table style={{ width: '100%', fontSize: 12.5 }}>

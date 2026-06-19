@@ -235,6 +235,8 @@ export const qk = {
     unreadCount: ['notifications', 'unread-count'],
     list: (page = 1, limit = 20) =>
       ['notifications', 'list', page, limit] as const,
+    infiniteList: (limit = 20) =>
+      ['notifications', 'infinite-list', limit] as const,
     all: ['notifications'],
   },
 

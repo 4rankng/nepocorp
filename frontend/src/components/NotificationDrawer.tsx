@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Drawer } from './UI';
 import { EmptyIllustration } from './shared';
-import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '../hooks/useNotificationQueries';
+import { useInfiniteNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead } from '../hooks/useNotificationQueries';
 import { useAuth } from '../hooks/useAuth';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { formatRelativeTime } from '../lib/date';
@@ -33,20 +33,29 @@ interface Props {
   onClose: () => void;
 }
 
+const NOTIFICATION_PAGE_SIZE = 20;
+
 export function NotificationDrawer({ isOpen, onClose }: Props) {
-  const { data, isLoading, isFetching, refetch } = useNotifications(1, 100);
-  const { data: unreadData } = useUnreadCount();
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteNotifications(NOTIFICATION_PAGE_SIZE, { enabled: isOpen });
+  const { data: unreadData } = useUnreadCount({ enabled: isOpen });
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [filter, setFilter] = useState<NotificationFilter>('all');
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const items = useMemo(() => data?.items ?? [], [data]);
-  const totalNotifications = data?.total ?? items.length;
+  const items = useMemo(() => data?.pages.flatMap(page => page.items) ?? [], [data]);
   const unread = items.filter(n => !n.isRead);
   const unreadTotal = unreadData?.count ?? unread.length;
-  const counts = useMemo(() => buildCounts(items, unreadTotal), [items, unreadTotal]);
   const filtered = useMemo(() => {
     if (filter === 'unread') return items.filter(n => !n.isRead);
     if (filter === 'operations' || filter === 'finance' || filter === 'alerts')
@@ -54,6 +63,18 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
     return items;
   }, [filter, items]);
   const groups = useMemo(() => groupNotifications(filtered), [filtered]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!isOpen || !node || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) fetchNextPage();
+    }, { rootMargin: '160px 0px' });
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isOpen, filtered.length]);
 
   function handleOpen(n: Notification) {
     if (!n.isRead) markAsRead.mutate(n.id);
@@ -71,7 +92,7 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
       isOpen={isOpen}
       onClose={onClose}
       title="Thông báo"
-      subtitle={totalNotifications > 0 ? `${unreadTotal} chưa đọc trên ${totalNotifications} thông báo` : 'Trung tâm nhắc việc'}
+      subtitle="Trung tâm nhắc việc"
       footer={
         unreadTotal > 0 ? (
           <button className="notification-mark-all" onClick={() => markAllAsRead.mutate()} disabled={markAllAsRead.isPending}>
@@ -104,7 +125,6 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
 
         <NotificationFilters
           active={filter}
-          counts={counts}
           onChange={setFilter}
         />
 
@@ -138,6 +158,17 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
             ))}
           </div>
       )}
+        {!isLoading && items.length > 0 && (
+          <div ref={loadMoreRef} className="notification-load-more" aria-live="polite">
+            {isFetchingNextPage
+              ? 'Đang tải thêm...'
+              : hasNextPage
+                ? ' '
+                : items.length > NOTIFICATION_PAGE_SIZE
+                  ? 'Đã tải hết thông báo'
+                  : null}
+          </div>
+        )}
       </div>
     </Drawer>
   );
@@ -198,16 +229,6 @@ function urlForNotification(n: Notification, role: string | undefined): string |
   }
 }
 
-function buildCounts(items: Notification[], unreadTotal: number) {
-  return {
-    all: items.length,
-    unread: unreadTotal,
-    operations: items.filter(n => categoryFor(n) === 'operations').length,
-    finance: items.filter(n => categoryFor(n) === 'finance').length,
-    alerts: items.filter(n => categoryFor(n) === 'alerts').length,
-  } satisfies Record<NotificationFilter, number>;
-}
-
 function groupNotifications(items: Notification[]) {
   const unread = items.filter(n => !n.isRead);
   const read = items.filter(n => n.isRead);
@@ -219,11 +240,9 @@ function groupNotifications(items: Notification[]) {
 
 function NotificationFilters({
   active,
-  counts,
   onChange,
 }: {
   active: NotificationFilter;
-  counts: Record<NotificationFilter, number>;
   onChange: (value: NotificationFilter) => void;
 }) {
   const filters: { key: NotificationFilter; label: string }[] = [
@@ -245,7 +264,6 @@ function NotificationFilters({
           onClick={() => onChange(filter.key)}
         >
           <span>{filter.label}</span>
-          <span className="notification-filter__count">{counts[filter.key]}</span>
         </button>
       ))}
     </div>

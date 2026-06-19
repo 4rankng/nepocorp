@@ -159,12 +159,47 @@
     grid-template-columns: 1fr;
   }
 
-  /* Container fields stack to a single column on phones */
-  .container-fields {
-    grid-template-columns: 1fr;
+  .cs-galleries {
+    grid-template-columns: 1fr 92px;
+    gap: 8px;
   }
 
-  /* Container/seal photo thumbs stay 2-up on phones — they're small enough */
+  .cs-gallery {
+    padding: 8px;
+  }
+
+  .cs-thumb {
+    width: 72px;
+    height: 52px;
+  }
+
+  .cs-gallery--seal .cs-thumb {
+    width: 76px;
+  }
+
+  .container-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .container-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+
+  .container-fields .cf:nth-child(3),
+  .container-fields .cf--full {
+    grid-column: 1 / -1;
+  }
+
+  .cf-label {
+    font-size: 10px;
+  }
+
+  .cf-value {
+    font-size: 12.5px;
+  }
 
   /* KPI rail micro-grid stays 2x2 on mobile, but tighter */
   .kpi-rail {

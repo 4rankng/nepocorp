@@ -31,7 +31,6 @@ import { api } from '../lib/api';
 import { useBadgeCounts } from '../hooks/useQueries';
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
-import { useUnreadCount } from '../hooks/useNotificationQueries';
 import { NotificationDrawer } from './NotificationDrawer';
 import { Sidebar } from './layout/Sidebar';
 import { Topbar } from './layout/Topbar';
@@ -156,8 +155,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { data: unreadData } = useUnreadCount({ enabled: user?.role !== 'DRIVER' });
-  const unreadCount = unreadData?.count ?? 0;
 
   // Profile modal state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -170,8 +167,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const displayedUnreadCount = user?.role === 'DRIVER' ? 0 : unreadCount;
-
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
 
@@ -375,7 +370,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     user,
     isDriver,
     sidebarOpen,
-    unreadCount: displayedUnreadCount,
     onToggleSidebar: () => setSidebarOpen(v => !v),
     onOpenNotifications: () => setNotifOpen(true),
   };
