@@ -138,9 +138,9 @@
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 .penalty-m-card__id {

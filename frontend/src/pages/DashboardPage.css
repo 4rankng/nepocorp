@@ -285,7 +285,7 @@
   max-width: none !important;
   max-height: none !important;
 }
-.dash-wf .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dash-wf .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .dash-wf .lbl {
   font-family: var(--font-mono); text-transform: uppercase;
   letter-spacing: 0.08em; font-size: var(--fs-2xs); font-weight: 600;
@@ -293,7 +293,7 @@
 }
 
 .dash-wf .wf-head { display: flex; flex-direction: column; gap: 12px; }
-.dash-wf .wf-head h1 { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
+.dash-wf .wf-head h1 { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: 0; line-height: 1.22; margin: 0; overflow-wrap: anywhere; }
 .dash-wf .wf-head .wf-sum { margin-top: 6px; color: var(--wf-ink-2); font-size: var(--fs-sm); max-width: 640px; }
 .dash-wf .wf-head .wf-sum b { color: var(--wf-ink); font-weight: 700; }
 .dash-wf .wf-head .wf-sum .pos { color: var(--wf-green-500); font-weight: 700; }
@@ -396,7 +396,7 @@
 .dash-wf .wf-kpi .delta.down { color: var(--wf-red); background: #FBE5E3; }
 .dash-wf .wf-kpi .delta.flat { color: var(--wf-ink-2); background: var(--wf-bg); }
 .dash-wf .wf-kpi .delta.warn { color: var(--wf-amber); background: var(--wf-amber-soft); }
-.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: 25px; font-weight: 700; letter-spacing: -0.03em; margin-top: 9px; line-height: 1; }
+.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; margin-top: 9px; line-height: 1.12; }
 .dash-wf .wf-kpi .val i { font-style: normal; font-size: 15px; color: var(--wf-ink-3); font-weight: 500; margin-left: 1px; }
 .dash-wf .wf-kpi .foot { font-size: var(--fs-2xs); color: var(--wf-ink-2); margin-top: 7px; }
 
@@ -461,9 +461,9 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .dash-wf .wf-vrow .bar { height: 7px; border-radius: 5px; background: var(--wf-bg); overflow: hidden; }
 .dash-wf .wf-vrow .bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--wf-green), var(--wf-green-500)); }
@@ -473,7 +473,7 @@
 .dash-wf .wf-rrow { display: flex; align-items: center; gap: 11px; padding: 8px; border-radius: 9px; }
 .dash-wf .wf-rrow:hover { background: var(--wf-bg); }
 .dash-wf .wf-rrow .rk { width: 20px; height: 20px; border-radius: 6px; background: var(--wf-green-soft); color: var(--wf-green-700); font-family: var(--font-mono); font-size: var(--fs-2xs); font-weight: 700; display: grid; place-items: center; flex: 0 0 auto; }
-.dash-wf .wf-rrow .rt { font-size: var(--fs-xs); font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-rrow .rt { font-size: var(--fs-xs); font-weight: 600; flex: 1; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 .dash-wf .wf-rrow .rv { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--wf-green-700); }
 
 .dash-wf .wf-fleet .body { padding: 12px 16px 15px; }
@@ -498,7 +498,7 @@
 .dash-wf .wf-clegend { flex: 1; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
 .dash-wf .wf-crow { display: flex; align-items: center; gap: 9px; font-size: var(--fs-xs); }
 .dash-wf .wf-crow .sw { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
-.dash-wf .wf-crow .nm { flex: 1; color: var(--wf-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-crow .nm { flex: 1; color: var(--wf-ink-2); white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 .dash-wf .wf-crow .pc { font-family: var(--font-mono); font-weight: 600; color: var(--wf-ink); }
 
 .dash-wf .wf-att .body { padding: 6px 8px 8px; }
@@ -562,11 +562,9 @@
   font-size: var(--fs-xs);
   line-height: 1.4;
   color: var(--wf-ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: block;
+  overflow: visible;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
@@ -586,7 +584,7 @@
 
 @container (max-width: 1180px) {
   .dash-wf .wf-head h1 {
-    font-size: 31px;
+    font-size: var(--fs-2xl);
   }
 
   .dash-wf .wf-head .wf-sum {
@@ -609,7 +607,7 @@
   }
 
   .dash-wf .wf-kpi .val {
-    font-size: 25px;
+    font-size: var(--fs-xl);
   }
 }
 
@@ -635,7 +633,7 @@
 
 @container (max-width: 820px) {
   .dash-wf .wf-head h1 {
-    font-size: 28px;
+    font-size: var(--fs-xl);
   }
 
   .dash-wf .wf-head .wf-acts {
@@ -674,9 +672,9 @@
      already visible in the topbar date range, so hide the badge on phones. */
   .dash-wf .wf-kpi .row1 .delta.flat { display: none; }
   .dash-wf .wf-kpi .lbl {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   }
   .dash-wf .wf-kpi .foot { font-size: var(--fs-2xs); margin-top: 5px; }
   .dash-wf .wf-fstats { grid-template-columns: 1fr 1fr; }
@@ -796,9 +794,9 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--wf-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .dash-wf .approval-queue__s {
   font-size: var(--fs-2xs);
@@ -806,9 +804,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .dash-wf .approval-queue__tag {
   font-family: var(--font-mono);
@@ -926,16 +924,16 @@
 
 /* ── 1D. Typography hierarchy polish ── */
 .dash-wf .wf-kpi .val {
-  font-size: var(--fs-2xl);
-  letter-spacing: -0.04em;
+  font-size: var(--fs-xl);
+  letter-spacing: 0;
 }
 .dash-wf .wf-kpi .lbl {
   letter-spacing: 0.1em;
   font-size: var(--fs-2xs);
 }
 .dash-wf .wf-head h1 {
-  font-size: var(--fs-3xl);
-  letter-spacing: -0.03em;
+  font-size: var(--fs-2xl);
+  letter-spacing: 0;
 }
 
 /* ── 1E. Bar gradient enhancement (three-stop gradient) ── */
@@ -1038,7 +1036,7 @@
 
   .dash-wf .wf-kpi .val {
     font-size: 15px;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
   .dash-wf .wf-head h1 {
     font-size: var(--fs-xl);

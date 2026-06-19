@@ -195,7 +195,7 @@ export default function PayableDetailPage() {
           {supplier.name.charAt(0)}
         </div>
         <div className="dd-meta">
-          <h1>Công nợ phải trả — {supplier.name}</h1>
+          <h1>{supplier.name}</h1>
           <div className="dd-sub">
             {supplier.phone && (
               <span>

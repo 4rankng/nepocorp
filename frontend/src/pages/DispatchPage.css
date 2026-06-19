@@ -127,9 +127,9 @@
   font-weight: 600;
   text-transform: uppercase;
   margin-bottom: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .dispatch-page .metric-value {
   font-size: clamp(24px, 1.9vw, var(--fs-2xl)); font-weight: 700;
@@ -713,9 +713,9 @@
   .dispatch-page .metric { padding: 9px 10px; min-width: 0; }
   .dispatch-page .metric-label {
     font-size: var(--fs-2xs);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   }
   .dispatch-page .metric-value { font-size: var(--fs-md); }
   .dispatch-page .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }

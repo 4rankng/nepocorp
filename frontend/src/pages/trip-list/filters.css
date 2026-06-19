@@ -198,9 +198,10 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+  text-overflow: clip;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1180px) {

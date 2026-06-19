@@ -1,12 +1,16 @@
 /* TruckTiresPage — N1 tire management. Page-scoped; no !important. */
 
+.ttp {
+  max-width: 1280px;
+}
+
 .ttp-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .ttp-header h1 {
@@ -44,15 +48,64 @@
   align-items: center;
 }
 
+.ttp-workbench {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(520px, 1.18fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ttp-panel {
+  min-width: 0;
+  background: var(--bg-1, #fff);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px -30px rgba(20, 34, 29, 0.38);
+}
+
+.ttp-panel--form {
+  max-width: 520px;
+}
+
+.ttp-spares {
+  margin-top: 14px;
+}
+
+.ttp-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.ttp-section-head h2 {
+  margin: 0;
+  color: var(--fg-1);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ttp-section-head p {
+  margin: 3px 0 0;
+  color: var(--fg-3);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ttp-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .ttp-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
-  background: var(--bg-1, #fff);
-  border: 1px solid var(--border-2);
-  border-radius: 12px;
-  overflow: hidden;
+  min-width: 780px;
 }
 
 .ttp-table thead th {
@@ -60,16 +113,17 @@
   font-weight: 600;
   color: var(--fg-2);
   background: var(--bg-2, #f8f9fa);
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-bottom: 1px solid var(--border-2);
   white-space: nowrap;
 }
 
 .ttp-table tbody td {
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-bottom: 1px solid var(--border-1);
   color: var(--fg-1);
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .ttp-table tbody tr:last-child td {
@@ -85,10 +139,15 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .ttp-empty {
-  padding: 40px 16px;
+  min-height: 188px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
   text-align: center;
   color: var(--fg-3);
   font-size: 14px;
@@ -97,14 +156,10 @@
 /* Inline add form (mirrors config InlineForm layout). */
 .ttp-add {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(116px, 0.85fr);
+  gap: 10px 12px;
   align-items: end;
-  background: var(--bg-2, #f8f9fa);
-  border: 1px solid var(--border-2);
-  border-radius: 12px;
   padding: 14px;
-  margin-bottom: 16px;
 }
 
 .ttp-add .ttp-field {
@@ -121,12 +176,88 @@
 
 .ttp-add .input,
 .ttp-add select.input {
+  width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--border-2);
   border-radius: 8px;
   font-size: 13px;
   background: var(--bg-1, #fff);
   color: var(--fg-1);
+}
+
+.ttp-field--serial,
+.ttp-add-submit {
+  grid-column: 1 / -1;
+}
+
+.ttp-add-submit {
+  justify-content: center;
+  min-height: 38px;
+}
+
+.ttp-pos-select {
+  width: 128px;
+  min-width: 128px;
+}
+
+.ttp-warranty {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+@media (max-width: 1180px) {
+  .ttp-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .ttp-panel--form {
+    max-width: none;
+  }
+
+  .ttp-add {
+    grid-template-columns: minmax(190px, 1.2fr) repeat(2, minmax(140px, 0.9fr));
+  }
+
+  .ttp-field--serial {
+    grid-column: auto;
+  }
+
+  .ttp-add-submit {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .ttp {
+    max-width: none;
+  }
+
+  .ttp-header {
+    margin-bottom: 12px;
+  }
+
+  .ttp-header h1 {
+    font-size: 20px;
+  }
+
+  .ttp-workbench,
+  .ttp-spares {
+    gap: 12px;
+  }
+
+  .ttp-add {
+    grid-template-columns: 1fr;
+  }
+
+  .ttp-field--serial,
+  .ttp-add-submit {
+    grid-column: auto;
+  }
+
+  .ttp-empty {
+    min-height: 144px;
+  }
 }
 
 /* Tire action buttons use the Global .btn / .btn--primary / .btn--danger /

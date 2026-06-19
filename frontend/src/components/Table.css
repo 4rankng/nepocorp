@@ -62,13 +62,13 @@
 /* Clip long text in body cells so numbers/labels never bleed into the
    next column. Col 1 keeps the natural wrap (it stacks name + container). */
 .ancillary-fees__table tbody td {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .ancillary-fees__table tbody td.num {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 .ancillary-fees__table tfoot td:nth-child(7) {
@@ -146,9 +146,9 @@
   font-size: var(--fs-xs);
   /* Match body .num cells: clip long totals so they
      never bleed into the next column on narrow viewports. */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 /* Dashed "Thêm phí" row */

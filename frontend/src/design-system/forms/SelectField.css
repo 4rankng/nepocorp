@@ -33,9 +33,9 @@
 }
 
 .ds-select-trigger__value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ds-select-trigger__icon {
@@ -117,9 +117,9 @@
 }
 
 .ds-select-item__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 @keyframes dsSelectSlideIn {

@@ -338,9 +338,9 @@
   font-weight: 600;
   color: var(--ink);
   margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 .info-meta .val.mono {

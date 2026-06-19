@@ -137,8 +137,8 @@ a.tdp-instructions-value:hover {
 .tdp-adjustment-note {
   color: var(--fg-2);
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .tdp-adjustment-amount {
   font-weight: 600;

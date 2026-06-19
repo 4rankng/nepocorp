@@ -65,9 +65,9 @@ const pageStyles = `
     font-size: 13.5px;
     font-weight: 700;
     letter-spacing: -0.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
     line-height: 1.3;
     color: var(--ink);
   }

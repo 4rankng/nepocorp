@@ -39,7 +39,7 @@
    * Constrain the brand-meta so it can shrink, and keep the subtitle on one line. */
   .sidebar-brand-meta { min-width: 0; flex: 1 1 auto; }
   .sidebar-brand-meta strong,
-  .sidebar-brand-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-brand-meta span { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
 }
 
 /* ─── Notification drawer items ─────────────────────────────────────────── */

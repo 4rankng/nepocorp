@@ -629,7 +629,7 @@
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 10px 12px; }
   .kpi__label { font-size: var(--fs-2xs); letter-spacing: 0.02em; }
-  .kpi__value { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi__value { font-size: 17px; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
   .kpi__value-unit { font-size: var(--fs-xs); }
   .kpi__meta { font-size: var(--fs-2xs); }
   .page-title { font-size: var(--fs-xl); }

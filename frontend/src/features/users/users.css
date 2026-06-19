@@ -7,10 +7,10 @@
 }
 
 .users-admin-page .page-title {
-  font-size: clamp(28px, 3vw, 40px);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-  font-weight: 800;
+  font-size: var(--fs-2xl);
+  line-height: 1.22;
+  letter-spacing: 0;
+  font-weight: 700;
 }
 
 .users-admin-page .page-title em {
@@ -21,7 +21,7 @@
 .users-admin-page .page-subtitle {
   margin-top: 6px;
   color: var(--ink-2);
-  font-size: 15px;
+  font-size: var(--fs-sm);
   line-height: 1.45;
 }
 
@@ -289,7 +289,7 @@
 /* ── KPI value emphasis ───────────────────────────────────────────────────── */
 
 .users-admin-page .kpi-grid .kpi__value {
-  font-size: clamp(30px, 3.2vw, 42px);
+  font-size: var(--fs-xl);
 }
 
 /* ── Icon Input ─────────────────────────────────────────────────────────────── */
@@ -579,9 +579,9 @@
     font-weight: 700;
     font-size: 15px;
     color: var(--ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
   }
 
   .users-mobile-card__handle {
@@ -770,10 +770,10 @@
 }
 
 .users-admin-page .kpi-grid .kpi .kpi__value {
-  font-size: clamp(30px, 3.2vw, 42px);
+  font-size: var(--fs-xl);
   font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   margin: 4px 0 6px 0;
   line-height: 1;
 }

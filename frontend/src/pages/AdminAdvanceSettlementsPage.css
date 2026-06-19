@@ -135,9 +135,9 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-family: var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .as-page .as-grid-head .col-right { text-align: right; }
 .as-page .as-grid-head .col-center { text-align: center; }
@@ -166,9 +166,9 @@
   font-size: var(--fs-sm);
   color: var(--brand, var(--ink));
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
   display: block;
 }
 .as-page .as-code-link:hover { text-decoration: underline; }
@@ -194,9 +194,9 @@
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .as-page .as-amount,
 .as-page .as-refund {
@@ -314,17 +314,17 @@
   font-size: var(--fs-sm);
   color: var(--brand, var(--ink));
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .as-page .as-mcard__name {
   font-weight: var(--fw-semibold);
   font-size: var(--fs-xs);
   color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .as-page .as-mcard__amounts {
   margin-bottom: 10px;

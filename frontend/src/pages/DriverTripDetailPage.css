@@ -595,8 +595,9 @@
   border-radius: 8px;
   white-space: nowrap;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .dcc-bento__hero-meta {

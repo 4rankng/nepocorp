@@ -89,9 +89,9 @@
   margin: 0;
   font-size: 13px;
   color: var(--fg-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 .tc-status-pill {
@@ -144,9 +144,9 @@
   color: var(--ink-2);
   font-size: var(--fs-sm);
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   max-width: 560px;
 }
 

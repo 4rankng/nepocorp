@@ -393,9 +393,9 @@
   font-size: 14px;
   font-weight: 850;
   line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .notif-item--read .notif-title {

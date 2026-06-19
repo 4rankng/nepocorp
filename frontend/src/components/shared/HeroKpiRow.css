@@ -62,10 +62,10 @@
 
 .hero-kpi-card__amount {
   font-family: var(--font-display);
-  font-size: clamp(22px, 2.6vw, 28px);
+  font-size: var(--fs-2xl);
   font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  letter-spacing: 0;
+  line-height: 1.15;
   color: var(--ink);
   margin-bottom: 4px;
 }
@@ -78,7 +78,7 @@
 
 /* Currency unit rendered at subtitle size next to the hero amount digits */
 .hero-kpi-card__currency {
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   margin-left: 6px;
@@ -155,9 +155,9 @@
 
 .hero-kpi-mini__value {
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: var(--fs-lg);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.1;
   color: var(--ink, #0A0A0A);
 }

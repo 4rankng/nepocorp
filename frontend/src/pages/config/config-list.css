@@ -42,9 +42,9 @@
   font-weight: 600;
   font-size: var(--fs-sm);
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .cfg-row__name--wide { width: 220px; }
 
@@ -53,9 +53,9 @@
   flex-shrink: 0;
   font-size: var(--fs-sm);
   color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .cfg-row__notes {
@@ -63,9 +63,9 @@
   min-width: 0;
   font-size: var(--fs-sm);
   color: var(--ink-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .cfg-row__actions {

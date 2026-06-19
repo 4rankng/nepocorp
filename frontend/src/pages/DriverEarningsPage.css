@@ -9,8 +9,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 148px;
-  padding: 24px;
+  min-height: 124px;
+  padding: 20px 22px;
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -46,7 +46,7 @@
 }
 
 .earnings-hero-bento__amount {
-  font-size: clamp(28px, 6vw, 44px);
+  font-size: var(--fs-2xl);
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.1;

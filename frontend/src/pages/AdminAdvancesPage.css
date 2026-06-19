@@ -129,9 +129,9 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;      /* dashboard .lbl letter-spacing */
   font-family: var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .adv-page .adv-grid-head .col-right { text-align: right; }
 .adv-page .adv-grid-head .col-center { text-align: center; }
@@ -175,9 +175,9 @@
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);             /* dashboard row titles: 12.5–13px */
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .adv-page .adv-amount {
   font-family: var(--font-mono);
@@ -196,9 +196,9 @@
 .adv-page .adv-reason {
   font-size: var(--fs-sm);
   color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .adv-page .adv-actions {
   display: flex;
@@ -294,9 +294,9 @@
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .adv-page .adv-mcard__amount {

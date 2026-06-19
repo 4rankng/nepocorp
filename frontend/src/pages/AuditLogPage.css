@@ -138,9 +138,9 @@
   font-size: var(--fs-xs);
   color: var(--ink-2);
   line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
   max-width: 100%;
 }
 
@@ -190,8 +190,8 @@
   .audit-log-page table.table-hover td:nth-child(2) { grid-area: time; white-space: nowrap; }
   .audit-log-page table.table-hover td:nth-child(3) {
     grid-area: user;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    overflow-wrap: anywhere;
     min-width: 0;
   }
   .audit-log-page table.table-hover td:nth-child(4) {

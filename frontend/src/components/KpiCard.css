@@ -85,22 +85,22 @@
 
 .kpi__value {
   font-family: var(--font-display);
-  font-size: clamp(20px, 3.5vw + 4px, 24px);
+  font-size: var(--fs-xl);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: 1.12;
   margin-bottom: 6px;
   color: var(--ink);
 }
 .kpi__value-unit {
-  font-size: var(--fs-md);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 2px;
 }
 .kpi--compact .kpi__value {
-  font-size: clamp(14px, 2vw + 6px, 16px);
-  letter-spacing: -0.01em;
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
   line-height: 1.2;
   word-break: break-word;
 }

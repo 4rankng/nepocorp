@@ -64,9 +64,9 @@
   margin-top: 2px;
 }
 .trip-list-page .container-numbers-list span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .container-numbers-more {
   color: var(--ink-3);

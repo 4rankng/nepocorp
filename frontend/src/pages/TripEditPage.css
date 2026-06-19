@@ -75,9 +75,9 @@
   margin: 0;
   font-size: 13px;
   color: var(--fg-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   letter-spacing: 0.005em;
 }
 

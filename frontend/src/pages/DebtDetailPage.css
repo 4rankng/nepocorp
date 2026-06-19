@@ -7,9 +7,9 @@
 
 .dd-header {
   display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  margin-bottom: 22px;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
   animation: fade-up .35s var(--ease) both;
 }
 
@@ -29,16 +29,16 @@
 .dd-back:hover { border-color: var(--ink-2); color: var(--ink); }
 
 .dd-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--r-lg);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   flex-shrink: 0;
   background: linear-gradient(150deg, #00702F, var(--sidebar));
   color: var(--fg-on-brand);
   display: grid;
   place-items: center;
   font-weight: 800;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-md);
   letter-spacing: .02em;
   box-shadow: 0 10px 22px -12px rgba(0, 90, 45, .7);
 }
@@ -46,20 +46,21 @@
 .dd-meta { flex: 1; min-width: 0; }
 
 .dd-meta h1 {
-  font-size: var(--fs-3xl);
-  font-weight: 800;
-  letter-spacing: -.01em;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
 }
 
 .dd-sub {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-top: 8px;
+  margin-top: 6px;
   flex-wrap: wrap;
 }
 .dd-sub span {
@@ -115,8 +116,8 @@
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   box-shadow: var(--sh);
-  padding: 26px 28px;
-  margin-bottom: 22px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
   animation: fade-up .4s var(--ease) both;
   animation-delay: .06s;
 }
@@ -138,14 +139,14 @@
 .dd-sum-total {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 46px; /* hero total — intentionally above token scale for visual weight */
-  line-height: 1;
+  font-size: 30px;
+  line-height: 1.05;
   color: var(--danger);
-  letter-spacing: -.02em;
+  letter-spacing: 0;
   margin-top: 12px;
 }
 .dd-sum-total .dd-cur {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-sm);
   font-weight: 600;
   margin-left: 6px;
   color: var(--danger);
@@ -258,7 +259,7 @@
 .dd-ac-val {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-lg);
   margin-top: 12px;
   color: var(--ink);
 }
@@ -289,12 +290,13 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--line);
 }
 .dd-ledger-head h2 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
+  flex-shrink: 0;
 }
 .dd-ledger-head .dd-cnt {
   font-size: var(--fs-xs);
@@ -320,6 +322,7 @@
   color: var(--ink-2);
   cursor: pointer;
   transition: var(--t-fast);
+  white-space: nowrap;
 }
 .dd-filter-chip:hover { border-color: var(--ink-2); }
 .dd-filter-chip--on {
@@ -347,7 +350,7 @@
 .dd-table thead th.dd-r { text-align: right; }
 
 .dd-table tbody td {
-  padding: 15px 24px;
+  padding: 13px 24px;
   border-bottom: 1px solid var(--bg-3);
   font-size: var(--fs-sm);
   vertical-align: middle;
@@ -440,6 +443,34 @@
   font-weight: 500;
 }
 
+@media (max-width: 1200px) {
+  .debt-detail-page .dd-header {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .debt-detail-page .dd-meta {
+    flex: 1 1 360px;
+  }
+  .debt-detail-page .dd-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .debt-detail-page .dd-ledger-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .debt-detail-page .dd-filters {
+    flex-basis: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .debt-detail-page .dd-filters::-webkit-scrollbar { display: none; }
+  .debt-detail-page .dd-filters > * {
+    flex-shrink: 0;
+  }
+}
+
 /* ─── Animation ─────────────────────────────────────────────────────────────── */
 
 @keyframes fade-up {
@@ -469,8 +500,9 @@
     font-size: var(--fs-sm);
   }
   .debt-detail-page .dd-meta h1 {
-    font-size: var(--fs-lg);
+    font-size: 17px;
     line-height: 1.25;
+    overflow-wrap: anywhere;
   }
   .debt-detail-page .dd-sub {
     gap: 8px;
@@ -510,7 +542,7 @@
     letter-spacing: 0.12em;
   }
   .debt-detail-page .dd-sum-total {
-    font-size: var(--fs-3xl);
+    font-size: 26px;
     margin-top: 6px;
   }
   .debt-detail-page .dd-sum-total .dd-cur {
@@ -587,7 +619,7 @@
   .dd-header { flex-wrap: wrap; align-items: center; gap: 12px; }
   .dd-avatar { display: none; }
   .dd-meta { flex: 1 1 100%; min-width: 0; }
-  .dd-meta h1 { font-size: var(--fs-lg); line-height: 1.25; word-break: keep-all; }
+  .dd-meta h1 { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
   .dd-actions { flex: 1 1 100%; }
   .dd-actions .btn { width: 100%; justify-content: center; }
   .dd-ledger-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }

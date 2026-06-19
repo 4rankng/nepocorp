@@ -205,9 +205,9 @@
     font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--ink-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   }
 
   /* --- Right column --- */

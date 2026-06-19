@@ -84,9 +84,9 @@
     font-size: var(--fs-2xs);
     /* Force single-line so cards align on the 2-col grid. Long labels like
        "Tổng KM tháng này" used to wrap to 2 lines, throwing off the rhythm. */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
   }
   /* "Tổng giá trị lệnh (tất cả trạng thái)" — drop the parenthetical on phones,
      it doesn't fit and the metric-delta line below repeats the same info. */

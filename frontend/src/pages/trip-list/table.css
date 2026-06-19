@@ -94,9 +94,9 @@
   font-size: var(--fs-2xs); letter-spacing: 0.08em;
   color: var(--ink-2); font-weight: 700;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .right { text-align: right; justify-self: end; }
 .trip-list-page .center { text-align: center; justify-self: center; }
@@ -294,9 +294,9 @@
   font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .route-origin-row { min-width: 0; }
 .trip-list-page .route-arrow-right {
@@ -310,9 +310,9 @@
   font-weight: 600;
   color: var(--ink);
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .route-tags-row {
   display: flex;
