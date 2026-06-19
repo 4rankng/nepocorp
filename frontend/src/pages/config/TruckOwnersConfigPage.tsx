@@ -23,6 +23,7 @@ import { Field } from '../../components/config/Field';
 import { useToast } from '../../components/shared/Toast';
 import { usePageAnimations } from '../../hooks/animations';
 import type { TruckCapEntry, PaginatedResponse, Truck } from '@tingting/shared';
+import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import { qk } from '../../api/keys';
 import './config-page.css';
 
@@ -33,9 +34,10 @@ function TruckOwnerForm({ saving, item, onsave, oncancel }: {
 }) {
   const [partnerName, setPartnerName] = useState(item?.partnerName || '');
   const [percentage, setPercentage] = useState(item ? String(item.percentage) : '');
+  const [role, setRole] = useState<TruckCapRole>(item?.role ?? TruckCapRole.INVESTOR);
   const [effectiveDate, setEffectiveDate] = useState(item ? item.effectiveDate.split('T')[0] : '');
   return (
-    <InlineForm colSpan={4}>
+    <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 180 }}>
         <Field label="Tên đối tác sở hữu">
           <input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên đối tác…" />
@@ -46,6 +48,14 @@ function TruckOwnerForm({ saving, item, onsave, oncancel }: {
           <input className="input" type="number" step="0.01" min="0" max="100" value={percentage} onChange={e => setPercentage(e.target.value)} placeholder="0" />
         </Field>
       </div>
+      <div style={{ flex: 1.2, minWidth: 140 }}>
+        <Field label="Vai trò">
+          <select className="input" value={role} onChange={e => setRole(e.target.value as TruckCapRole)}>
+            <option value={TruckCapRole.INVESTOR}>{TRUCK_CAP_ROLE_LABELS[TruckCapRole.INVESTOR]} (góp vốn)</option>
+            <option value={TruckCapRole.DRIVER}>{TRUCK_CAP_ROLE_LABELS[TruckCapRole.DRIVER]}</option>
+          </select>
+        </Field>
+      </div>
       <div style={{ flex: 1.4, minWidth: 150 }}>
         <Field label="Ngày hiệu lực">
           <input className="input" type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
@@ -53,7 +63,7 @@ function TruckOwnerForm({ saving, item, onsave, oncancel }: {
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
         if (!partnerName.trim() || percentage === '' || !effectiveDate) return;
-        onsave({ partnerName: partnerName.trim(), percentage: Number(percentage), effectiveDate });
+        onsave({ partnerName: partnerName.trim(), percentage: Number(percentage), role, effectiveDate });
       }} />
     </InlineForm>
   );
@@ -195,13 +205,14 @@ export default function TruckOwnersConfigPage() {
             <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
               <th style={{ textAlign: 'left', padding: '8px 16px' }}>Đối tác</th>
               <th style={{ textAlign: 'right', padding: '8px 16px' }}>Tỷ lệ (%)</th>
+              <th style={{ textAlign: 'left', padding: '8px 16px' }}>Vai trò</th>
               <th style={{ textAlign: 'left', padding: '8px 16px' }}>Ngày hiệu lực</th>
               <th style={{ textAlign: 'right', padding: '8px 16px' }}></th>
             </tr>
           </thead>
           <tbody>
             {showAddForm && (
-              <tr><td colSpan={4} style={{ padding: 0 }}>
+              <tr><td colSpan={5} style={{ padding: 0 }}>
                 <TruckOwnerForm saving={saving} onsave={doCreate} oncancel={() => setShowAddForm(false)} />
               </td></tr>
             )}
@@ -209,11 +220,12 @@ export default function TruckOwnersConfigPage() {
               const isActive = activeIds.has(r.id);
               if (editingId === r.id) {
                 return (
-                  <tr key={r.id} className="cfg-row"><td colSpan={4} style={{ padding: 0 }}>
+                  <tr key={r.id} className="cfg-row"><td colSpan={5} style={{ padding: 0 }}>
                     <TruckOwnerForm saving={saving} item={r} onsave={(d) => doUpdate(r.id, d)} oncancel={() => setEditingId(null)} />
                   </td></tr>
                 );
               }
+              const isDriver = (r.role ?? TruckCapRole.INVESTOR) === TruckCapRole.DRIVER;
               return (
                 <tr key={r.id} className="cfg-row" style={{ borderBottom: '1px solid var(--border-3)', opacity: isActive ? 1 : 0.55 }}>
                   <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--fg-1)' }}>
@@ -222,6 +234,11 @@ export default function TruckOwnersConfigPage() {
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: isActive ? 'var(--brand)' : 'var(--fg-2)' }}>
                     {parseFloat(r.percentage).toFixed(2)}%
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <StatusPill variant={isDriver ? 'warn' : 'neutral'}>
+                      {TRUCK_CAP_ROLE_LABELS[r.role ?? TruckCapRole.INVESTOR]}
+                    </StatusPill>
                   </td>
                   <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN')}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
@@ -232,7 +249,7 @@ export default function TruckOwnersConfigPage() {
               );
             })}
             {sorted.length === 0 && !showAddForm && (
-              <tr><td colSpan={4} style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
+              <tr><td colSpan={5} style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
                 Chưa có đối tác sở hữu cho xe này. Thêm đối tác để bắt đầu phân chia lợi nhuận theo xe.
               </td></tr>
             )}

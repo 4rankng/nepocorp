@@ -14,7 +14,24 @@ import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQ
 import { useToast } from '../components/shared/Toast';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
+import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import './ProfitPage.css';
+
+/** B2 — render a partner-role tag. Driver-contributors get a distinct "Lái xe"
+ * label so investors and drivers are visually distinguishable in the per-truck
+ * breakdown and distribution tables. Returns null for the default investor
+ * role so legacy investor-only views stay uncluttered. */
+function RoleTag({ role }: { role?: TruckCapRole | string | null }) {
+  if (!role || role === TruckCapRole.INVESTOR) return null;
+  const label = TRUCK_CAP_ROLE_LABELS[TruckCapRole.DRIVER];
+  return (
+    <span style={{
+      marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: 'var(--warn)',
+      background: 'var(--warn-soft)', padding: '1px 6px', borderRadius: 999,
+      letterSpacing: '0.02em', verticalAlign: 'middle',
+    }}>{label}</span>
+  );
+}
 
 interface DistributionResult {
   quarter: number;
@@ -26,6 +43,8 @@ interface DistributionResult {
     percentage?: string;
     amount: string;
     truckId?: number | null;
+    /** B2 — partner role label (INVESTOR | DRIVER). */
+    role?: TruckCapRole | string | null;
   }>;
   /** F3 — entity-grouped view (partner → Σ across trucks). */
   entity?: Array<{ partnerName: string; amount: number }>;
@@ -35,7 +54,7 @@ interface DistributionResult {
     /** Business label — backend joins trucks.license_plate so we never show #id. */
     licensePlate?: string;
     profit: number;
-    partners: Array<{ partnerName: string; percentage: number; amount: number }>;
+    partners: Array<{ partnerName: string; percentage: number; amount: number; role?: TruckCapRole | string | null }>;
   }>;
   /** F3 — Σ profit of ownerless trucks (held aside, not distributed). */
   undistributedProfit?: number;
@@ -388,7 +407,7 @@ export default function ProfitPage() {
                       <tbody>
                         {preview.distributions.map((d, idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                            <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                            <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}<RoleTag role={d.role} /></td>
                             <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
                             <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                           </tr>
@@ -407,7 +426,7 @@ export default function ProfitPage() {
                           </div>
                           {t.partners.map((p, i) => (
                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--fg-3)', padding: '3px 0' }}>
-                              <span>{p.partnerName} ({p.percentage}%)</span>
+                              <span>{p.partnerName} ({p.percentage}%)<RoleTag role={p.role} /></span>
                               <span style={{ fontWeight: 600, color: 'var(--fg-1)', whiteSpace: 'nowrap' }}>{formatVND(p.amount)}</span>
                             </div>
                           ))}
@@ -432,7 +451,7 @@ export default function ProfitPage() {
                     <tbody>
                       {distResult.distributions.map((d, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
-                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
+                          <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}<RoleTag role={d.role} /></td>
                           <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                         </tr>
                       ))}

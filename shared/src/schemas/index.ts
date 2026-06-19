@@ -407,12 +407,16 @@ export const capTableSchema = z.object({
 
 // F3 — per-vehicle cap-table write. `truckId` scopes the entry to a truck;
 // `percentage` is the explicit owner share (0–100) of that truck's profit.
+// B2 — `role` labels the partner (INVESTOR capital partner [default] or
+// DRIVER driver-contributor). The split math is owner-agnostic; role only
+// labels the row for UI display.
 export const truckCapSchema = z.object({
   truckId: z.union([z.number(), z.string()]).transform(v => Number(v))
     .refine(v => Number.isInteger(v) && v > 0, { message: 'truckId không hợp lệ' }),
   partnerName: z.string().min(1),
   percentage: z.union([z.number(), z.string()]).transform(v => Number(v))
     .refine(v => v >= 0 && v <= 100, { message: 'Tỷ lệ phải trong khoảng 0–100' }),
+  role: z.enum(['INVESTOR', 'DRIVER']).default('INVESTOR'),
   effectiveDate: z.string().min(1),
 });
 

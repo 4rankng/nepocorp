@@ -71,6 +71,19 @@ export enum DebitNoteMode {
   PER_BATCH = 'PER_BATCH',
 }
 
+/**
+ * B2 (feedback202606 GAP 7) — Role of a `truck_cap_table` partner.
+ * INVESTOR (default): a capital partner sharing the truck's profit by %.
+ * DRIVER: a driver-contributor modeled as a per-truck profit participant by %.
+ * A row with role=DRIVER means that named partner is entitled to that % of
+ * the truck's profit (manual fraction per row — no contract table). The
+ * distribution math is owner-agnostic; `role` only labels the partner for UI.
+ */
+export enum TruckCapRole {
+  INVESTOR = 'INVESTOR',
+  DRIVER = 'DRIVER',
+}
+
 export enum TrailerType {
   FT20 = '20FT',
   FT40 = '40FT',
@@ -190,6 +203,12 @@ export const APPROVAL_STATUS_LABELS: Record<ApprovalStatus, string> = {
   [ApprovalStatus.PENDING]: 'Chờ duyệt',
   [ApprovalStatus.APPROVED]: 'Đã duyệt',
   [ApprovalStatus.REJECTED]: 'Từ chối',
+};
+
+/** B2 — Vietnamese labels for `truck_cap_table.role`. */
+export const TRUCK_CAP_ROLE_LABELS: Record<TruckCapRole, string> = {
+  [TruckCapRole.INVESTOR]: 'Đối tác',
+  [TruckCapRole.DRIVER]: 'Lái xe',
 };
 
 export const ADVANCE_REQUEST_STATUS_LABELS: Record<AdvanceRequestStatus, string> = {

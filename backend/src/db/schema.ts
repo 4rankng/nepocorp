@@ -1,7 +1,8 @@
 import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
-  jsonb, numeric, date, pgEnum, uniqueIndex, index,
+  jsonb, numeric, date, pgEnum, uniqueIndex, index, check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // Enums
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
@@ -393,11 +394,17 @@ export const truckCapTable = pgTable('truck_cap_table', {
   truckId: integer('truck_id').references(() => trucks.id).notNull(),
   partnerName: varchar('partner_name', { length: 255 }).notNull(),
   percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull().default('0'),
+  // B2 (feedback202606 GAP 7) — role of the partner: INVESTOR (capital partner,
+  // default) or DRIVER (driver-contributor modeled as a per-truck profit
+  // participant by %). TEXT + CHECK (not a pgEnum) to avoid enum-migration
+  // hassle and the name collision with the user-role pgEnum.
+  role: text('role').notNull().default('INVESTOR'),
   effectiveDate: date('effective_date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('truck_cap_table_truck_effective_idx').on(table.truckId, table.effectiveDate),
+  check('truck_cap_role_check', sql`${table.role} IN ('INVESTOR', 'DRIVER')`),
 ]);
 
 export const distributions = pgTable('distributions', {

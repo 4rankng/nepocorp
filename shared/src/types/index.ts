@@ -2,7 +2,7 @@ import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus,
-  TirePosition, TireStatus,
+  TirePosition, TireStatus, TruckCapRole,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -362,11 +362,14 @@ export interface CapTableHistory {
 
 // F3 — per-vehicle ownership snapshot. Mirrors CapTableHistory but scoped to a
 // truck; `percentage` is an explicit owner share (0–100) of that truck's profit.
+// B2 — `role` labels the partner: INVESTOR (capital partner) or DRIVER
+// (driver-contributor modeled as a per-truck profit participant by %).
 export interface TruckCapEntry {
   id: number;
   truckId: number;
   partnerName: string;
   percentage: string;
+  role: TruckCapRole;
   effectiveDate: string;
   createdAt: string;
   updatedAt: string;

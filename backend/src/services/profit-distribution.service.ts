@@ -29,6 +29,9 @@ export interface DistributionRow {
   partnerName: string;
   percentage: string;
   amount: string;
+  /** B2 — partner role label for UI (INVESTOR | DRIVER). Not persisted to the
+   * `distributions` table; carried on the per-truck breakdown + DTO only. */
+  role: 'INVESTOR' | 'DRIVER';
 }
 
 /** Per-truck profit + its computed partner distributions. */
@@ -37,7 +40,7 @@ export interface PerTruckDistribution {
   /** Business label for UI display — never expose the raw truckId. */
   licensePlate: string;
   profit: number;
-  partners: Array<{ partnerName: string; percentage: number; amount: number }>;
+  partners: Array<{ partnerName: string; percentage: number; amount: number; role: 'INVESTOR' | 'DRIVER' }>;
 }
 
 /** Result of computeDistribution — the full per-vehicle plan. */
@@ -150,8 +153,8 @@ export async function getDistributionHistory() {
 export function distributeTruckProfit(
   truckId: number,
   profit: number,
-  owners: Array<{ partnerName: string; percentage: number }>,
-): { partners: Array<{ partnerName: string; percentage: number; amount: number }> } {
+  owners: Array<{ partnerName: string; percentage: number; role?: 'INVESTOR' | 'DRIVER' }>,
+): { partners: Array<{ partnerName: string; percentage: number; amount: number; role: 'INVESTOR' | 'DRIVER' }> } {
   void truckId; // accepted for API symmetry; caller re-attaches truckId to rows
   if (owners.length === 0) return { partners: [] };
   let allocated = 0;
@@ -160,7 +163,11 @@ export function distributeTruckProfit(
     const raw = profit * owner.percentage / 100;
     const amount = isLast ? Math.round(profit - allocated) : Math.round(raw);
     allocated += amount;
-    return { partnerName: owner.partnerName, percentage: owner.percentage, amount };
+    // B2 — role is owner-agnostic to the math; carry it onto the result row so
+    // the UI can label investor vs driver-contributor shares. Default INVESTOR
+    // for callers that don't supply a role.
+    const role: 'INVESTOR' | 'DRIVER' = owner.role === 'DRIVER' ? 'DRIVER' : 'INVESTOR';
+    return { partnerName: owner.partnerName, percentage: owner.percentage, amount, role };
   });
   return { partners };
 }
@@ -258,6 +265,7 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
         partnerName: p.partnerName,
         percentage: String(p.percentage),
         amount: String(p.amount),
+        role: p.role,
       });
     }
     perTruck.push({ truckId, licensePlate: plate, profit, partners });

@@ -15,6 +15,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { distributeTruckProfit } from '../services/profit-distribution.service';
+import { resolveTruckCapSnapshot } from '../services/reporting-shared';
 
 describe('F3 distributeTruckProfit — exactness', () => {
   test('single truck, two 50% owners, odd profit → rows sum exactly to profit', () => {
@@ -88,5 +89,73 @@ describe('F3 distributeTruckProfit — exactness', () => {
     ]);
     const sum = partners.reduce((s, p) => s + p.amount, 0);
     assert.strictEqual(sum, 10);
+  });
+});
+
+// ─── B2 (feedback202606 GAP 7) — driver profit contributors ──────────────────
+// A driver is modeled as a per-truck profit contributor via `truck_cap_table`
+// with role=DRIVER. The split math is owner-agnostic (a driver-contributor is
+// just an owner with a % share); `role` only labels the row for UI. These
+// tests confirm (1) a mixed investor+driver owner set splits correctly and the
+// result rows carry their role, and (2) `resolveTruckCapSnapshot` passes the
+// row's role through to the active snapshot.
+describe('B2 truck_cap role — driver profit contributors', () => {
+  test('mixed owner set (1 investor 80% + 1 driver 20%) splits correctly and rows carry role', () => {
+    // Truck profit 1000₫. Investor A 80% → 800₫. Driver B 20% → 200₫. Sum exact.
+    const profit = 1000;
+    const owners = [
+      { partnerName: 'A (đối tác)', percentage: 80, role: 'INVESTOR' as const },
+      { partnerName: 'B (lái xe)', percentage: 20, role: 'DRIVER' as const },
+    ];
+    const { partners } = distributeTruckProfit(1, profit, owners);
+
+    // Exactness still holds — driver rows count toward the total.
+    const sum = partners.reduce((s, p) => s + p.amount, 0);
+    assert.strictEqual(sum, profit, `rows must sum exactly to ${profit}, got ${sum}`);
+
+    // Each partner's role is carried through unchanged.
+    const byName = new Map(partners.map(p => [p.partnerName, p]));
+    assert.strictEqual(byName.get('A (đối tác)')?.role, 'INVESTOR');
+    assert.strictEqual(byName.get('B (lái xe)')?.role, 'DRIVER');
+
+    // The driver-contributor gets exactly their % share (no rounding bias here).
+    assert.strictEqual(byName.get('A (đối tác)')?.amount, 800);
+    assert.strictEqual(byName.get('B (lái xe)')?.amount, 200);
+  });
+
+  test('owners without an explicit role default to INVESTOR on the result row', () => {
+    // Legacy callers (pre-B2) don't supply `role`; they must still work and
+    // label as INVESTOR so the UI never shows an unlabeled partner.
+    const { partners } = distributeTruckProfit(2, 100, [
+      { partnerName: 'Legacy', percentage: 100 },
+    ]);
+    assert.strictEqual(partners.length, 1);
+    assert.strictEqual(partners[0].role, 'INVESTOR');
+  });
+
+  test('resolveTruckCapSnapshot passes role through and filters percentage > 0', () => {
+    // Two rows on the same effectiveDate: an investor and a driver-contributor.
+    // The snapshot must keep both, carry each role, and drop zero-percentage rows.
+    const cutoff = '2026-01-15';
+    const rows = [
+      { partnerName: 'A', effectiveDate: '2026-01-01', createdAt: '2026-01-01T00:00:00Z', percentage: '80', role: 'INVESTOR' },
+      { partnerName: 'B', effectiveDate: '2026-01-01', createdAt: '2026-01-01T00:00:00Z', percentage: '20', role: 'DRIVER' },
+      { partnerName: 'C', effectiveDate: '2026-01-01', createdAt: '2026-01-01T00:00:00Z', percentage: '0', role: 'INVESTOR' },
+    ];
+    const snap = resolveTruckCapSnapshot(rows, cutoff);
+    const byName = new Map(snap.map(p => [p.partnerName, p]));
+    assert.strictEqual(snap.length, 2, 'zero-percentage row must be filtered out');
+    assert.strictEqual(byName.get('A')?.role, 'INVESTOR');
+    assert.strictEqual(byName.get('B')?.role, 'DRIVER');
+  });
+
+  test('resolveTruckCapSnapshot defaults a null/missing role to INVESTOR (legacy rows)', () => {
+    const cutoff = '2026-01-15';
+    const rows = [
+      { partnerName: 'A', effectiveDate: '2026-01-01', createdAt: '2026-01-01T00:00:00Z', percentage: '100', role: null },
+      { partnerName: 'B', effectiveDate: '2026-01-01', createdAt: '2026-01-01T00:00:00Z', percentage: '50' },
+    ];
+    const snap = resolveTruckCapSnapshot(rows, cutoff);
+    assert.ok(snap.every(p => p.role === 'INVESTOR'), 'null/missing role must default to INVESTOR');
   });
 });

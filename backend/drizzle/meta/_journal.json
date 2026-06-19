@@ -386,6 +386,13 @@
       "when": 1781833345968,
       "tag": "0054_abnormal_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1781838975911,
+      "tag": "0055_nosy_star_brand",
+      "breakpoints": true
     }
   ]
 }

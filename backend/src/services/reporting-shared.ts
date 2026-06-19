@@ -140,14 +140,18 @@ export function resolveCapTableSnapshot(
  * `capRows` must already be scoped to one truck (caller filters by truckId).
  */
 export function resolveTruckCapSnapshot(
-  capRows: Array<{ partnerName: string; effectiveDate: string; createdAt: Date | string; percentage: string | null }>,
+  capRows: Array<{ partnerName: string; effectiveDate: string; createdAt: Date | string; percentage: string | null; role?: string | null }>,
   cutoffDate: string,
-): Array<{ partnerName: string; percentage: number }> {
+): Array<{ partnerName: string; percentage: number; role: 'INVESTOR' | 'DRIVER' }> {
   const rows = resolveSnapshotRows(capRows, cutoffDate);
   return rows
     .map(r => ({
       partnerName: r.partnerName,
       percentage: parseFloat(r.percentage ?? '0') || 0,
+      // B2 — pass through the partner role, defaulting to INVESTOR for legacy/
+      // null rows. normalize guards against an unexpected value landing as
+      // INVESTOR rather than an `any`.
+      role: (r.role === 'DRIVER' ? 'DRIVER' : 'INVESTOR') as 'INVESTOR' | 'DRIVER',
     }))
     .filter(p => p.percentage > 0);
 }
