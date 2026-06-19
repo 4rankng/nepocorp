@@ -381,7 +381,7 @@
     linear-gradient(90deg, rgba(230, 247, 238, 0.78), rgba(255, 255, 255, 0.92) 38%);
 }
 
-.notif-item--green { --notif-color: #10B981; --notif-soft: #ECFDF5; --notif-ink: #047857; }
+.notif-item--green { --notif-color: var(--accent); --notif-soft: var(--success-soft); --notif-ink: var(--success-text); }
 .notif-item--blue { --notif-color: #3B82F6; --notif-soft: #EFF6FF; --notif-ink: #1D4ED8; }
 .notif-item--amber { --notif-color: #F59E0B; --notif-soft: #FFFBEB; --notif-ink: #B45309; }
 .notif-item--red { --notif-color: var(--danger); --notif-soft: #FEF2F2; --notif-ink: #DC2626; }

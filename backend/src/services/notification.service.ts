@@ -140,7 +140,9 @@ async function resolveTargets(payload: NotificationPayload): Promise<{ userId: n
 }
 
 /** Best-effort deep link for push clicks. Role-specific portals keep users in
- *  their own app surface instead of landing them on a forbidden desktop route. */
+ *  their own app surface instead of landing them on a forbidden desktop route.
+ *  Mirrors frontend urlForNotification() in NotificationDrawer.tsx — the two
+ *  must agree so a push and a drawer tap open the same screen. */
 function urlFor(payload: NotificationPayload, role: Role): string | undefined {
   const id = payload.relatedEntityId;
   switch (payload.relatedEntityType) {
