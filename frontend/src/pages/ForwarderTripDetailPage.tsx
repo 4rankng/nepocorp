@@ -211,6 +211,16 @@ export default function ForwarderTripDetailPage() {
   const containers = (trip.containers || []) as ForwarderContainer[];
   const expenses = trip.expenses || [];
   const legs = (trip.legs || []) as Array<{ id: number; sequence: number; origin: string; destination: string; km: number; loadingType: string; polylinePath?: string | null }>;
+  const selectedExpenseContainer = containers.find(c => String(c.id) === expenseForm.tripContainerId);
+  const openExpenseForm = () => {
+    setShowExpenseForm(prev => {
+      const willOpen = !prev;
+      if (willOpen && !expenseForm.tripContainerId && containers.length === 1) {
+        setExpenseForm(f => ({ ...f, tripContainerId: String(containers[0].id) }));
+      }
+      return willOpen;
+    });
+  };
 
   return (
     <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
@@ -411,7 +421,7 @@ export default function ForwarderTripDetailPage() {
           </span>
           <button
             className="btn btn--secondary btn--sm"
-            onClick={() => setShowExpenseForm(!showExpenseForm)}
+            onClick={openExpenseForm}
             style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <Plus size={12} /> Thêm
@@ -514,18 +524,52 @@ export default function ForwarderTripDetailPage() {
                 </FormGroup>
               )}
 
-              <FormGroup label="Số container" style={{ flex: '1 1 160px', minWidth: 140 }}>
-                <select
-                  className="input"
-                  value={expenseForm.tripContainerId}
-                  onChange={e => setExpenseForm(f => ({ ...f, tripContainerId: e.target.value }))}
-                >
-                  <option value="">{containers.length === 0 ? '-- Chưa có cont --' : '-- Chọn cont --'}</option>
-                  {containers.map(c => (
-                    <option key={c.id} value={String(c.id)}>{c.containerNumber}</option>
-                  ))}
-                </select>
-              </FormGroup>
+              {containers.length === 0 && (
+                <div style={{ flex: '1 1 240px', minWidth: 220, color: 'var(--fg-3)', fontSize: 13, paddingTop: 28 }}>
+                  Chưa có container; chi phí này sẽ lưu như chi phí chung của chuyến.
+                </div>
+              )}
+
+              {containers.length === 1 && selectedExpenseContainer && (
+                <FormGroup label="Container áp dụng" style={{ flex: '1 1 220px', minWidth: 200 }}>
+                  <div
+                    className="input"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      background: 'var(--brand-subtle, rgba(0,177,79,0.08))',
+                      borderColor: 'rgba(0, 107, 63, 0.22)',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{selectedExpenseContainer.containerNumber}</span>
+                    {selectedExpenseContainer.sealNumber && (
+                      <span style={{ color: 'var(--fg-3)', fontSize: 12 }}>Seal {selectedExpenseContainer.sealNumber}</span>
+                    )}
+                  </div>
+                </FormGroup>
+              )}
+
+              {containers.length > 1 && (
+                <FormGroup label="Container áp dụng" style={{ flex: '1 1 220px', minWidth: 200 }}>
+                  <select
+                    className="input"
+                    value={expenseForm.tripContainerId}
+                    onChange={e => setExpenseForm(f => ({ ...f, tripContainerId: e.target.value }))}
+                  >
+                    <option value="">Chi phí chung của chuyến</option>
+                    {containers.map(c => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.containerNumber}{c.sealNumber ? ` · Seal ${c.sealNumber}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
+                    Chọn container từ danh sách đã nhập, không cần gõ lại số container.
+                  </span>
+                </FormGroup>
+              )}
             </div>
 
             {/* Row 3: invoice + declaration + note */}

@@ -37,8 +37,9 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
       title={item ? `Sửa lái xe ${item.name}` : 'Thêm lái xe'}
       onClose={oncancel}
       onConfirm={handleSave}
+      maxWidth={620}
       footer={
-        <>
+        <div className="fleet-form-actions">
           <button className="btn btn--ghost btn--sm" onClick={oncancel}>
             <X size={14} /> Hủy
           </button>
@@ -46,69 +47,78 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             {item ? 'Cập nhật' : 'Thêm lái xe'}
           </button>
-        </>
+        </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="driver-name" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Họ và tên <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="driver-name"
-            className="input"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="VD: Nguyễn Văn A"
-            autoFocus
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="driver-phone" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Số điện thoại
-            </label>
-            <input
-              id="driver-phone"
-              className="input"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="0912…"
-            />
+      <div className="fleet-form">
+        <section className="fleet-form__section fleet-form__section--identity">
+          <div className="fleet-form__section-head">
+            <div>
+              <h4>Hồ sơ lái xe</h4>
+              <p>Thông tin liên hệ, lương cơ bản và trạng thái làm việc.</p>
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="driver-salary" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Lương cơ bản (đ)
-            </label>
-            <input
-              id="driver-salary"
-              className="input"
-              type="number"
-              value={baseSalary}
-              onChange={e => setBaseSalary(e.target.value)}
-              placeholder="0"
-            />
+          <div className="fleet-form__grid">
+            <div className="field fleet-form__field fleet-form__field--wide">
+              <label htmlFor="driver-name">
+                Họ và tên <span>*</span>
+              </label>
+              <input
+                id="driver-name"
+                className="input"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="VD: Nguyễn Văn A"
+                autoFocus
+              />
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="driver-phone">Số điện thoại</label>
+              <input
+                id="driver-phone"
+                className="input"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="0912..."
+              />
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="driver-salary">Lương cơ bản (đ)</label>
+              <input
+                id="driver-salary"
+                className="input"
+                type="number"
+                value={baseSalary}
+                onChange={e => setBaseSalary(e.target.value)}
+                placeholder="0"
+              />
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="driver-truck" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Xe phân công
-            </label>
-            <select id="driver-truck" className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
-              <option value={0}>— Chưa phân —</option>
-              {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-            </select>
+        </section>
+
+        <section className="fleet-form__section">
+          <div className="fleet-form__section-head">
+            <div>
+              <h4>Phân công</h4>
+              <p>Gán lái xe vào một đầu kéo đang hoạt động.</p>
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="driver-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Trạng thái
-            </label>
-            <select id="driver-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
+          <div className="fleet-form__grid">
+            <div className="field fleet-form__field">
+              <label htmlFor="driver-truck">Xe phân công</label>
+              <select id="driver-truck" className="input" value={truckId} onChange={e => setTruckId(Number(e.target.value))}>
+                <option value={0}>— Chưa phân —</option>
+                {trucks.filter(t => t.status === 'ACTIVE').map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+              </select>
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="driver-status">Trạng thái</label>
+              <select id="driver-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+                {Object.entries(DRIVER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
     </Modal>
   );

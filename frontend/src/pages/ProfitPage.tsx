@@ -212,7 +212,7 @@ export default function ProfitPage() {
                 <div className="calc-row">
                   <div className="calc-row__label">
                     <span className="calc-row__op">+</span>
-                    Thu nhập phạt vi phạm (Deduction)
+                    Thu nhập phạt vi phạm
                   </div>
                   <div className="calc-row__value calc-row__value--positive"><Money value={report?.otherIncome || 0} sign="+" /></div>
                 </div>

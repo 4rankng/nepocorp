@@ -46,13 +46,23 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'TingTing';
   const url = data.url || '/';
   const body = stripHtml(data.body);
+  const type = data.type || 'SYSTEM_ANNOUNCEMENT';
+  const actionTitle = /PENALTY/.test(type)
+    ? 'Xem phạt'
+    : /PAYMENT/.test(type)
+      ? 'Đối chiếu'
+      : /TRIP/.test(type)
+        ? 'Mở chuyến'
+        : 'Mở';
   const options = {
     body,
     icon: data.icon || '/assets/logo-192.png',
     badge: '/assets/logo-192.png',
     tag: data.tag || 'tingting-notification',
+    timestamp: Date.now(),
     data: { url },
-    vibrate: [100, 50, 100],
+    actions: [{ action: 'open', title: actionTitle }],
+    vibrate: /CANCELED|PENALTY|OVERDUE/.test(type) ? [120, 60, 120] : [80],
     requireInteraction: false,
     renotify: true,
   };

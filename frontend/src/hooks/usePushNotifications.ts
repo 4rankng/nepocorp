@@ -30,14 +30,40 @@ interface UsePushNotificationsReturn {
   isSubscribed: boolean;
   isSupported: boolean;
   isLoading: boolean;
+  errorMessage: string | null;
   subscribe: () => Promise<boolean>;
   unsubscribe: () => Promise<void>;
+}
+
+async function getPushRegistration(): Promise<ServiceWorkerRegistration> {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service workers are not available in this browser');
+  }
+
+  const existing = await navigator.serviceWorker.getRegistration('/');
+  if (existing?.active) return existing;
+
+  if (existing) {
+    // installing/waiting → a legitimate activation is in progress; wait for it.
+    if (existing.installing || existing.waiting) return navigator.serviceWorker.ready;
+    // No installing/waiting/active worker means the registration is 'redundant'
+    // (a failed install). navigator.serviceWorker.ready never resolves in that
+    // case and would hang subscribe() forever, so purge it before re-registering.
+    await existing.unregister().catch(() => { /* best-effort */ });
+  }
+
+  // Vite dev does not register the app shell service worker globally because a
+  // cache-first SW can interfere with HMR. For push opt-in we still need an SW,
+  // so register it lazily only after the user interacts with the toggle.
+  await navigator.serviceWorker.register('/sw.js');
+  return navigator.serviceWorker.ready;
 }
 
 export function usePushNotifications(): UsePushNotificationsReturn {
   const [permissionStatus, setPermissionStatus] = useState<PushPermissionStatus>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Static feature-detection — never changes after first render, so a plain
   // const (not state) suffices and avoids a needless state slot.
   const isSupported =
@@ -54,25 +80,35 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
     const perm = Notification.permission as PushPermissionStatus;
     setPermissionStatus(perm);
+    let alive = true;
     (async () => {
       try {
-        const reg = await navigator.serviceWorker.ready;
+        const reg = await navigator.serviceWorker.getRegistration('/');
+        if (!reg) {
+          if (alive) setIsSubscribed(false);
+          return;
+        }
         const sub = await reg.pushManager.getSubscription();
-        setIsSubscribed(!!sub);
+        if (alive) setIsSubscribed(!!sub);
       } catch {
         /* SW not ready yet — ignore */
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, [isSupported]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!isSupported || _busy) return false;
     _busy = true;
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setPermissionStatus(permission === 'denied' ? 'denied' : 'default');
+        setErrorMessage(permission === 'denied' ? 'Quyền thông báo đang bị chặn trong trình duyệt.' : null);
         return false;
       }
       setPermissionStatus('granted');
@@ -80,10 +116,11 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const { publicKey } = await notificationClient.getVapidKey();
       if (!publicKey) {
         console.error('Push not configured on server (empty VAPID public key)');
+        setErrorMessage('Máy chủ chưa cấu hình khóa thông báo đẩy.');
         return false;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getPushRegistration();
       const applicationServerKey = urlBase64ToUint8Array(publicKey) as BufferSource;
 
       // Subscribe, clearing any stale subscription bound to a different
@@ -113,10 +150,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
       await notificationClient.subscribePush({ endpoint: json.endpoint, keys: json.keys, deviceType: sniffDeviceType() });
 
+      setPermissionStatus(Notification.permission as PushPermissionStatus);
       setIsSubscribed(true);
+      setErrorMessage(null);
       return true;
     } catch (err) {
       console.error('Failed to subscribe to push:', err);
+      setErrorMessage('Chưa bật được trên thiết bị này. Hãy thử lại hoặc kiểm tra cài đặt trình duyệt.');
       return false;
     } finally {
       _busy = false;
@@ -128,8 +168,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     if (_busy) return;
     _busy = true;
     setIsLoading(true);
+    setErrorMessage(null);
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration) {
+        setIsSubscribed(false);
+        return;
+      }
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         const endpoint = subscription.endpoint;
@@ -137,6 +182,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         await notificationClient.unsubscribePush(endpoint);
       }
       setIsSubscribed(false);
+      setErrorMessage(null);
     } catch (err) {
       console.error('Failed to unsubscribe from push:', err);
     } finally {
@@ -145,5 +191,5 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
   }, []);
 
-  return { permissionStatus, isSubscribed, isSupported, isLoading, subscribe, unsubscribe };
+  return { permissionStatus, isSubscribed, isSupported, isLoading, errorMessage, subscribe, unsubscribe };
 }

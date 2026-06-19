@@ -92,7 +92,7 @@ export function initNotificationService() {
           (audience === 'financial' && isFinancialRole(t.role)),
         );
         await Promise.allSettled(pushable.map(t =>
-          pushService.sendToUser(t.userId, payload.title, payload.message, urlFor(payload, t.role)),
+          pushService.sendToUser(t.userId, payload.title, payload.message, urlFor(payload, t.role), payload.type),
         ));
       }
     } catch (err) {
@@ -139,14 +139,20 @@ async function resolveTargets(payload: NotificationPayload): Promise<{ userId: n
     .map(([userId, role]) => ({ userId, role: role as Role }));
 }
 
-/** Best-effort deep link for a DRIVER push; office pushes open at home ('/'). */
+/** Best-effort deep link for push clicks. Role-specific portals keep users in
+ *  their own app surface instead of landing them on a forbidden desktop route. */
 function urlFor(payload: NotificationPayload, role: Role): string | undefined {
-  if (role !== Role.DRIVER) return undefined;
   const id = payload.relatedEntityId;
   switch (payload.relatedEntityType) {
-    case 'trips':     return id ? `/my-trips/${id}` : '/my-trips';
-    case 'penalties': return '/my-penalties';
-    case 'payments':  return '/my-earnings';
-    default:          return undefined;
+    case 'trips':
+      if (role === Role.DRIVER) return id ? `/my-trips/${id}` : '/my-trips';
+      if (role === Role.FORWARDER) return id ? `/my-forwarder-trips/${id}` : '/my-forwarder-trips';
+      return id ? `/trips/${id}` : '/trips';
+    case 'penalties':
+      return role === Role.DRIVER ? '/my-penalties' : '/penalties';
+    case 'payments':
+      return role === Role.DRIVER ? '/my-earnings' : '/finance';
+    default:
+      return undefined;
   }
 }

@@ -5,18 +5,20 @@ import { EmptyIllustration } from '../components/shared';
 import {
   Truck, Container, UserCheck, Plus, Search,
   Download, Filter, CheckCircle,
-  Pencil, Trash2, X, Loader2,
+  Pencil, Trash2, X, Loader2, ArrowRight,
 } from 'lucide-react';
 import { getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCRUD } from '../hooks/useCRUD';
 import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
+import { useTires } from '../hooks/useTireQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
-import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
-import type { Truck as TruckType, Driver } from '@tingting/shared';
+import { TireStatus, TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
+import type { Tire, Truck as TruckType, Driver } from '@tingting/shared';
 import { routes } from '../lib/routes';
 
 // Extracted form modals + shared fleet constants
@@ -62,6 +64,45 @@ const StatusDot = memo(function StatusDot({ status }: { status: string }) {
   return <StatusPill variant={variant} dot>{label}</StatusPill>;
 });
 
+function fleetStatusColor(status: string): string {
+  if (status === 'ACTIVE') return '#059669';
+  if (status === 'MAINTENANCE') return '#D97706';
+  return '#6B7280';
+}
+
+const TireQuickLink = memo(function TireQuickLink({ truckId, count }: { truckId: number; count: number }) {
+  return (
+    <Link
+      to={routes.fleetTires(truckId)}
+      className={`fleet-tire-link${count === 0 ? ' fleet-tire-link--empty' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={`Quản lý lốp xe, hiện có ${count} lốp`}
+    >
+      <span className="fleet-tire-link__count">{count}</span>
+      <span>Lốp</span>
+      <ArrowRight size={13} />
+    </Link>
+  );
+});
+
+function FleetStatusLegend({ maintenance = true }: { maintenance?: boolean }) {
+  return (
+    <span className="fleet-status-legend" aria-label="Chú giải trạng thái">
+      <span className="fleet-legend-item">
+        <span className="fleet-legend-swatch" style={{ background: fleetStatusColor('ACTIVE') }} /> Hoạt động
+      </span>
+      {maintenance && (
+        <span className="fleet-legend-item">
+          <span className="fleet-legend-swatch" style={{ background: fleetStatusColor('MAINTENANCE') }} /> Bảo trì
+        </span>
+      )}
+      <span className="fleet-legend-item">
+        <span className="fleet-legend-swatch" style={{ background: fleetStatusColor('INACTIVE') }} /> Ngưng
+      </span>
+    </span>
+  );
+}
+
 // ─── DetailModal — shared view dialog with edit/delete actions ────────────────
 
 function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleting, itemId }: {
@@ -74,13 +115,18 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
   deleting: number | null;
   itemId: number;
 }) {
+  const primary = details[0];
+  const status = details.find((d) => d.label === 'Trạng thái');
+  const secondary = details.filter((d, i) => i !== 0 && d.label !== 'Trạng thái');
+
   return (
     <Modal
       isOpen={isOpen}
       title={title}
       onClose={onClose}
+      maxWidth={620}
       footer={
-        <>
+        <div className="fleet-detail-actions">
           <button className="btn btn--ghost btn--sm" onClick={onClose}>
             <X size={14} /> Đóng
           </button>
@@ -98,16 +144,33 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
               Xóa
             </button>
           )}
-        </>
+        </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {details.map((d, i) => (
-          <div key={i}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>{d.label}</div>
-            <div style={{ fontSize: 14, color: 'var(--ink)' }}>{d.value}</div>
+      <div className="fleet-detail">
+        {primary && (
+          <div className="fleet-detail__hero">
+            <div className="fleet-detail__identity">
+              <div className="fleet-detail__label">{primary.label}</div>
+              <div className="fleet-detail__primary">{primary.value}</div>
+            </div>
+            {status && (
+              <div className="fleet-detail__status">
+                <div className="fleet-detail__label">Trạng thái</div>
+                <div>{status.value}</div>
+              </div>
+            )}
           </div>
-        ))}
+        )}
+
+        <div className="fleet-detail__grid">
+          {secondary.map((d, i) => (
+            <div className={`fleet-detail__item${d.label === 'Lốp' ? ' fleet-detail__item--action' : ''}`} key={`${d.label}-${i}`}>
+              <div className="fleet-detail__label">{d.label}</div>
+              <div className="fleet-detail__value">{d.value}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </Modal>
   );
@@ -161,7 +224,6 @@ function TrailerCard({ trailers, trucks, crud }: {
                 <th>Biển số rơ-moóc</th>
                 <th>Loại</th>
                 <th>Đầu kéo đang ghép</th>
-                <th className="center">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
@@ -182,7 +244,10 @@ function TrailerCard({ trailers, trucks, crud }: {
                     tabIndex={0}
                     onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(t.id); } }}
                   >
-                    <td className="num">{i + 1}</td>
+                    <td className="num fleet-status-cell">
+                      <StatusStrip color={fleetStatusColor(t.status)} />
+                      {i + 1}
+                    </td>
                     <td><Plate plate={t.licensePlate} tag="RM" /></td>
                     <td><TypeChip type={t.type} /></td>
                     <td>
@@ -191,7 +256,6 @@ function TrailerCard({ trailers, trucks, crud }: {
                         : <span className="fleet-unassigned">— Chưa ghép —</span>
                       }
                     </td>
-                    <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
                   </tr>
                 );
               })}
@@ -205,6 +269,8 @@ function TrailerCard({ trailers, trucks, crud }: {
             <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
             <span style={styles.dotSep}>·</span>
             <span>{active} đang hoạt động</span>
+            <span style={styles.dotSep}>·</span>
+            <FleetStatusLegend />
           </div>
           <span>Hiển thị {trailers.length}</span>
         </div>
@@ -221,12 +287,12 @@ function TrailerCard({ trailers, trucks, crud }: {
             const coupledTruck = truckByTrailer.get(t.id);
             return (
               <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
+                <StatusStrip color={fleetStatusColor(t.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>RM</span>
                     {t.licensePlate}
                   </span>
-                  <StatusDot status={t.status} />
                 </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Loại</span>
@@ -251,6 +317,8 @@ function TrailerCard({ trailers, trucks, crud }: {
             <span><strong style={styles.fontMono}>{ft20}</strong> × 20FT</span>
             <span style={styles.dotSep}>·</span>
             <span>{active} đang hoạt động</span>
+            <span style={styles.dotSep}>·</span>
+            <FleetStatusLegend />
           </div>
           <span>Hiển thị {trailers.length}</span>
         </div>
@@ -258,7 +326,7 @@ function TrailerCard({ trailers, trucks, crud }: {
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <DetailModal
         isOpen={viewingId != null}
-        title={viewingId != null ? `Rơ-moóc ${trailers.find(t => t.id === viewingId)?.licensePlate ?? ''}` : ''}
+        title="Rơ-moóc"
         onClose={() => setViewingId(null)}
         itemId={viewingId ?? 0}
         deleting={crud.deleting}
@@ -300,8 +368,18 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
   crud: ReturnType<typeof useCRUD>;
 }) {
   const [viewingId, setViewingId] = useState<number | null>(null);
+  const { data: tires = [] } = useTires();
   const active = trucks.filter(t => t.status === 'ACTIVE').length;
   const maint = trucks.filter(t => t.status === 'MAINTENANCE').length;
+  const tireCountByTruck = useMemo(() => {
+    const counts = new Map<number, number>();
+    (tires as Tire[]).forEach((tire) => {
+      if (tire.truckId && tire.status === TireStatus.IN_USE) {
+        counts.set(tire.truckId, (counts.get(tire.truckId) ?? 0) + 1);
+      }
+    });
+    return counts;
+  }, [tires]);
 
   return (
     <Panel flush>
@@ -332,7 +410,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <th>Biển số xe đầu</th>
                 <th>Rơ-moóc</th>
                 <th>Lái xe gán</th>
-                <th className="center">Trạng thái</th>
+                <th>Lốp</th>
               </tr>
             </thead>
             <tbody>
@@ -344,7 +422,10 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
               )}
               {trucks.map((t, i) => (
                 <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => setViewingId(t.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(t.id); } }}>
-                  <td className="num">{i + 1}</td>
+                  <td className="num fleet-status-cell">
+                    <StatusStrip color={fleetStatusColor(t.status)} />
+                    {i + 1}
+                  </td>
                   <td><Plate plate={t.licensePlate} tag="VN" /></td>
                   <td>
                     {(() => {
@@ -367,7 +448,9 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                       : <span className="fleet-unassigned">— Chưa phân —</span>
                     }
                   </td>
-                  <td style={styles.centerAlign}><StatusDot status={t.status} /></td>
+                  <td>
+                    <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -375,12 +458,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
         </div>
         <div className="table-foot">
           <div className="fleet-legend">
-            <span className="fleet-legend-item">
-              <span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động
-            </span>
-            <span className="fleet-legend-item">
-              <span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì
-            </span>
+            <FleetStatusLegend />
           </div>
           <span>Hoạt động {active} · Bảo trì {maint}</span>
         </div>
@@ -398,12 +476,12 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             const driver = driverByTruck.get(t.id);
             return (
               <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
+                <StatusStrip color={fleetStatusColor(t.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>VN</span>
                     {t.licensePlate}
                   </span>
-                  <StatusDot status={t.status} />
                 </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Rơ-moóc</span>
@@ -412,6 +490,10 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <div className="m-card__row">
                   <span className="m-card__row-label">Lái xe</span>
                   <span className="m-card__row-value">{driver ? driver.name : '— Chưa phân —'}</span>
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Lốp</span>
+                  <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} />
                 </div>
                 <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(t.id); }}>Xem</button>
@@ -423,8 +505,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
         </div>
         <div className="table-foot">
           <div className="fleet-legend">
-            <span className="fleet-legend-item"><span className="fleet-legend-swatch" style={styles.swatchSuccess} /> Hoạt động</span>
-            <span className="fleet-legend-item"><span className="fleet-legend-swatch" style={styles.swatchWarning} /> Bảo trì</span>
+            <FleetStatusLegend />
           </div>
           <span>Hoạt động {active} · Bảo trì {maint}</span>
         </div>
@@ -432,7 +513,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <DetailModal
         isOpen={viewingId != null}
-        title={viewingId != null ? `Xe đầu kéo ${trucks.find(t => t.id === viewingId)?.licensePlate ?? ''}` : ''}
+        title="Xe đầu kéo"
         onClose={() => setViewingId(null)}
         itemId={viewingId ?? 0}
         deleting={crud.deleting}
@@ -448,7 +529,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
             { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
-            { label: 'Lốp', value: <Link to={routes.fleetTires(t.id)} className="btn btn--ghost btn--sm">Quản lý lốp →</Link> },
+            { label: 'Lốp', value: <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} /> },
           ];
         })()}
       />
@@ -517,16 +598,18 @@ function DriverCard({ drivers, truckMap, crud }: {
                 <th>SĐT</th>
                 <th>Xe phân công</th>
                 <th>Lương CB</th>
-                <th className="center">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
               {drivers.length === 0 && (
-                <tr><td colSpan={6} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
+                <tr><td colSpan={5} style={styles.emptyRow}>Chưa có dữ liệu</td></tr>
               )}
               {filteredDrivers.map((d, i) => (
                 <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => setViewingId(d.id)} role="button" tabIndex={0} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setViewingId(d.id); } }}>
-                  <td className="num">{i + 1}</td>
+                  <td className="num fleet-status-cell">
+                    <StatusStrip color={fleetStatusColor(d.status)} />
+                    {i + 1}
+                  </td>
                   <td>
                     <span className="fleet-assigned">
                       <AvatarInitials name={d.name} />
@@ -550,7 +633,6 @@ function DriverCard({ drivers, truckMap, crud }: {
                       : <span className="fleet-salary empty">—</span>
                     }
                   </td>
-                  <td style={styles.centerAlign}><StatusDot status={d.status} /></td>
                 </tr>
               ))}
             </tbody>
@@ -558,6 +640,8 @@ function DriverCard({ drivers, truckMap, crud }: {
         </div>
         <div className="table-foot">
           <div className="fleet-legend">
+            <FleetStatusLegend maintenance={false} />
+            <span style={styles.dotSep}>·</span>
             <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
             {unassigned > 0 && (
               <>
@@ -578,12 +662,12 @@ function DriverCard({ drivers, truckMap, crud }: {
             const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
             return (
               <div key={d.id} className="m-card" onClick={() => setViewingId(d.id)}>
+                <StatusStrip color={fleetStatusColor(d.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
                     <AvatarInitials name={d.name} />
                     <span style={{ marginLeft: 6 }}>{d.name}</span>
                   </span>
-                  <StatusDot status={d.status} />
                 </div>
                 {d.phone && (
                   <div className="m-card__meta">
@@ -609,6 +693,8 @@ function DriverCard({ drivers, truckMap, crud }: {
         </div>
         <div className="table-foot">
           <div className="fleet-legend">
+            <FleetStatusLegend maintenance={false} />
+            <span style={styles.dotSep}>·</span>
             <span>Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString('vi-VN')} đ</strong></span>
             {unassigned > 0 && (
               <>
@@ -623,7 +709,7 @@ function DriverCard({ drivers, truckMap, crud }: {
       {crud.error && <div style={styles.errorBanner}>{crud.error}</div>}
       <DetailModal
         isOpen={viewingId != null}
-        title={viewingId != null ? `Lái xe ${drivers.find(d => d.id === viewingId)?.name ?? ''}` : ''}
+        title="Lái xe"
         onClose={() => setViewingId(null)}
         itemId={viewingId ?? 0}
         deleting={crud.deleting}

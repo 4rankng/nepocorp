@@ -70,7 +70,7 @@ function statusCodeOf(err: unknown): number | undefined {
  * Deliver a push to every subscription owned by `userId`. Never throws.
  * Endpoints that return 410 (Gone) or 404 (Not Found) are auto-deleted.
  */
-export async function sendToUser(userId: number, title: string, body: string, url?: string) {
+export async function sendToUser(userId: number, title: string, body: string, url?: string, type?: string) {
   if (!enabled) return;
 
   // Honor the "never throws" contract on the DB read too — a transient Postgres
@@ -97,7 +97,8 @@ export async function sendToUser(userId: number, title: string, body: string, ur
     url: url ?? '/',
     icon: '/assets/logo-192.png',
     badge: '/assets/logo-192.png',
-    tag: 'tingting-notification',
+    tag: `tingting-${type ?? 'notification'}-${url ?? 'home'}`,
+    type,
   });
 
   await Promise.all(subs.map(async (s) => {

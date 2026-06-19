@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Save, X, Loader2 } from 'lucide-react';
 import { Modal } from '../../components/UI';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
-import { labelStyle } from '../../utils/formStyles';
 
 /**
  * Modal for creating/editing a trailer (rơ-moóc).
@@ -43,8 +42,9 @@ export function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
       title={item ? `Sửa rơ-moóc ${item.licensePlate}` : 'Thêm rơ-moóc'}
       onClose={oncancel}
       onConfirm={handleSave}
+      maxWidth={600}
       footer={
-        <>
+        <div className="fleet-form-actions">
           <button className="btn btn--ghost btn--sm" onClick={oncancel}>
             <X size={14} /> Hủy
           </button>
@@ -52,43 +52,50 @@ export function TrailerFormModal({ saving, item, onsave, oncancel, isOpen }: {
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             {item ? 'Cập nhật' : 'Thêm rơ-moóc'}
           </button>
-        </>
+        </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="trailer-plate-input" style={labelStyle}>
-            Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="trailer-plate-input"
-            className="input"
-            value={plate}
-            onChange={e => setPlate(e.target.value)}
-            placeholder="VD: 70C-12345"
-            autoFocus
-          />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="trailer-type-input" style={labelStyle}>Loại rơ-moóc</label>
-            <select id="trailer-type-input" className="input" value={type} onChange={e => setType(e.target.value)}>
-              {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
+      <div className="fleet-form">
+        <section className="fleet-form__section fleet-form__section--identity">
+          <div className="fleet-form__section-head">
+            <div>
+              <h4>Thông tin rơ-moóc</h4>
+              <p>Dùng để ghép với đầu kéo và tách chi phí bảo dưỡng.</p>
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="trailer-status-input" style={labelStyle}>Trạng thái</label>
-            <select id="trailer-status-input" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="MAINTENANCE">Bảo trì</option>
-              <option value="INACTIVE">Ngưng</option>
-            </select>
+          <div className="fleet-form__grid">
+            <div className="field fleet-form__field fleet-form__field--wide">
+              <label htmlFor="trailer-plate-input">
+                Biển số rơ-moóc <span>*</span>
+              </label>
+              <input
+                id="trailer-plate-input"
+                className="input"
+                value={plate}
+                onChange={e => setPlate(e.target.value)}
+                placeholder="VD: 70C-12345"
+                autoFocus
+              />
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="trailer-type-input">Loại rơ-moóc</label>
+              <select id="trailer-type-input" className="input" value={type} onChange={e => setType(e.target.value)}>
+                {Object.entries(TRAILER_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="trailer-status-input">Trạng thái</label>
+              <select id="trailer-status-input" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+                <option value="ACTIVE">Hoạt động</option>
+                <option value="MAINTENANCE">Bảo trì</option>
+                <option value="INACTIVE">Ngưng</option>
+              </select>
+            </div>
           </div>
+        </section>
+        <div className="fleet-form__note">
+          Sau khi thêm, gán rơ-moóc cho đầu kéo bằng cách sửa xe đầu kéo và chọn rơ-moóc trong danh sách.
         </div>
-        <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 6 }}>
-          💡 Sau khi thêm, bạn có thể gán rơ-moóc cho đầu kéo bằng cách sửa xe
-          đầu kéo và chọn rơ-moóc trong danh sách.
-        </p>
       </div>
     </Modal>
   );

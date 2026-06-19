@@ -81,8 +81,9 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
       title={item ? `Sửa xe ${item.licensePlate}` : 'Thêm xe đầu kéo'}
       onClose={oncancel}
       onConfirm={handleSave}
+      maxWidth={680}
       footer={
-        <>
+        <div className="fleet-form-actions">
           <button className="btn btn--ghost btn--sm" onClick={oncancel}>
             <X size={14} /> Hủy
           </button>
@@ -90,119 +91,132 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             {item ? 'Cập nhật' : 'Thêm xe'}
           </button>
-        </>
+        </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="field">
-          <label htmlFor="truck-plate" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Biển số xe đầu kéo <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input
-            id="truck-plate"
-            className="input"
-            value={plate}
-            onChange={e => setPlate(e.target.value)}
-            placeholder="VD: 60C-12345"
-            autoFocus
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="trailer-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Rơ-moóc hiện tại
-          </label>
-          <select
-            id="trailer-select"
-            className="input"
-            value={currentTrailerId ?? ''}
-            onChange={e => setCurrentTrailerId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">— Không có —</option>
-            {trailers.map(t => (
-              <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})</option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="truck-status" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Trạng thái
-          </label>
-          <select id="truck-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
-
-        {/* N5 / A12: compliance & service date reminders. type=date gives a native
-            picker; the badge surfaces overdue/due state next to each field. */}
-        <div className="truck-alert-fields">
-          <TruckDateField
-            id="truck-inspection"
-            label="Hạn đăng kiểm"
-            value={nextInspectionDate}
-            onChange={setNextInspectionDate}
-            alert={alertFor('nextInspectionDate')}
-          />
-          <TruckDateField
-            id="truck-insurance"
-            label="Hạn bảo hiểm"
-            value={insuranceExpiryDate}
-            onChange={setInsuranceExpiryDate}
-            alert={alertFor('insuranceExpiryDate')}
-          />
-          <TruckDateField
-            id="truck-oil"
-            label="Thay dầu kế tiếp"
-            value={lastOilServiceDate}
-            onChange={setLastOilServiceDate}
-            alert={alertFor('lastOilServiceDate')}
-          />
-          {/* Oil next-due can also be DERIVED from a last-change date + an
-              interval (months). Selecting both writes the computed next-due
-              into the field above; nothing extra is persisted. */}
-          <div className="field" style={{ marginTop: -4 }}>
-            <label htmlFor="truck-oil-last" className="truck-alert-field__label">
-              Hoặc tính từ lần thay gần nhất
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
+      <div className="fleet-form">
+        <section className="fleet-form__section fleet-form__section--identity">
+          <div className="fleet-form__section-head">
+            <div>
+              <h4>Thông tin xe</h4>
+              <p>Biển số, rơ-moóc đang ghép và trạng thái vận hành.</p>
+            </div>
+          </div>
+          <div className="fleet-form__grid fleet-form__grid--truck">
+            <div className="field fleet-form__field fleet-form__field--wide">
+              <label htmlFor="truck-plate">
+                Biển số xe đầu kéo <span>*</span>
+              </label>
               <input
-                id="truck-oil-last"
-                type="date"
+                id="truck-plate"
                 className="input"
-                aria-label="Lần thay dầu gần nhất"
-                value={lastOilChangeDate}
-                onChange={e => {
-                  const v = e.target.value;
-                  setLastOilChangeDate(v);
-                  if (v && oilIntervalMonths) {
-                    const next = addMonthsIso(v, oilIntervalMonths);
-                    if (next) setLastOilServiceDate(next);
-                  }
-                }}
+                value={plate}
+                onChange={e => setPlate(e.target.value)}
+                placeholder="VD: 60C-12345"
+                autoFocus
               />
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="trailer-select">Rơ-moóc hiện tại</label>
               <select
-                id="truck-oil-interval"
+                id="trailer-select"
                 className="input"
-                style={{ flex: '0 0 130px' }}
-                aria-label="Chu kỳ thay dầu (tháng)"
-                value={oilIntervalMonths ? String(oilIntervalMonths) : ''}
-                onChange={e => {
-                  const n = e.target.value ? Number(e.target.value) : 0;
-                  setOilIntervalMonths(n);
-                  if (lastOilChangeDate && n) {
-                    const next = addMonthsIso(lastOilChangeDate, n);
-                    if (next) setLastOilServiceDate(next);
-                  }
-                }}
+                value={currentTrailerId ?? ''}
+                onChange={e => setCurrentTrailerId(e.target.value ? Number(e.target.value) : null)}
               >
-                <option value="">Chu kỳ…</option>
-                <option value="3">3 tháng</option>
-                <option value="6">6 tháng</option>
-                <option value="9">9 tháng</option>
-                <option value="12">12 tháng</option>
+                <option value="">— Không có —</option>
+                {trailers.map(t => (
+                  <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})</option>
+                ))}
+              </select>
+            </div>
+            <div className="field fleet-form__field">
+              <label htmlFor="truck-status">Trạng thái</label>
+              <select id="truck-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
+                {Object.entries(TRUCK_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* N5 / A12: compliance & service date reminders. type=date gives a native
+            picker; the badge surfaces overdue/due state next to each field. */}
+        <section className="fleet-form__section">
+          <div className="fleet-form__section-head">
+            <div>
+              <h4>Mốc nhắc việc</h4>
+              <p>Theo dõi đăng kiểm, bảo hiểm và lịch thay dầu.</p>
+            </div>
+          </div>
+          <div className="truck-alert-fields">
+            <TruckDateField
+              id="truck-inspection"
+              label="Hạn đăng kiểm"
+              value={nextInspectionDate}
+              onChange={setNextInspectionDate}
+              alert={alertFor('nextInspectionDate')}
+            />
+            <TruckDateField
+              id="truck-insurance"
+              label="Hạn bảo hiểm"
+              value={insuranceExpiryDate}
+              onChange={setInsuranceExpiryDate}
+              alert={alertFor('insuranceExpiryDate')}
+            />
+            <TruckDateField
+              id="truck-oil"
+              label="Thay dầu kế tiếp"
+              value={lastOilServiceDate}
+              onChange={setLastOilServiceDate}
+              alert={alertFor('lastOilServiceDate')}
+            />
+            {/* Oil next-due can also be DERIVED from a last-change date + an
+                interval (months). Selecting both writes the computed next-due
+                into the field above; nothing extra is persisted. */}
+            <div className="field truck-alert-field truck-alert-field--wide">
+              <label htmlFor="truck-oil-last" className="truck-alert-field__label">
+                Tính từ lần thay dầu gần nhất
+              </label>
+              <div className="fleet-form__inline">
+                <input
+                  id="truck-oil-last"
+                  type="date"
+                  className="input"
+                  aria-label="Lần thay dầu gần nhất"
+                  value={lastOilChangeDate}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setLastOilChangeDate(v);
+                    if (v && oilIntervalMonths) {
+                      const next = addMonthsIso(v, oilIntervalMonths);
+                      if (next) setLastOilServiceDate(next);
+                    }
+                  }}
+                />
+                <select
+                  id="truck-oil-interval"
+                  className="input fleet-form__interval"
+                  aria-label="Chu kỳ thay dầu (tháng)"
+                  value={oilIntervalMonths ? String(oilIntervalMonths) : ''}
+                  onChange={e => {
+                    const n = e.target.value ? Number(e.target.value) : 0;
+                    setOilIntervalMonths(n);
+                    if (lastOilChangeDate && n) {
+                      const next = addMonthsIso(lastOilChangeDate, n);
+                      if (next) setLastOilServiceDate(next);
+                    }
+                  }}
+                >
+                  <option value="">Chu kỳ…</option>
+                  <option value="3">3 tháng</option>
+                  <option value="6">6 tháng</option>
+                  <option value="9">9 tháng</option>
+                  <option value="12">12 tháng</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </Modal>
   );

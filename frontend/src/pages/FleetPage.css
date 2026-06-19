@@ -232,6 +232,56 @@
   color: var(--ink-3);
 }
 
+/* Direct tire-management affordance in the truck list. This keeps lốp visible
+   without making it compete with primary create/edit actions. */
+.fleet-page .fleet-tire-link,
+.fleet-detail .fleet-tire-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 30px;
+  padding: 4px 9px 4px 5px;
+  border: 1px solid rgba(0, 177, 79, 0.18);
+  border-radius: 8px;
+  background: rgba(230, 247, 237, 0.65);
+  color: var(--accent-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease), color 140ms var(--ease), transform 140ms var(--ease);
+}
+
+.fleet-page .fleet-tire-link:hover,
+.fleet-detail .fleet-tire-link:hover {
+  border-color: rgba(0, 177, 79, 0.34);
+  background: rgba(221, 247, 232, 0.95);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.fleet-page .fleet-tire-link__count,
+.fleet-detail .fleet-tire-link__count {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(203, 211, 206, 0.8);
+}
+
+.fleet-page .fleet-tire-link--empty,
+.fleet-detail .fleet-tire-link--empty {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
 /* Phone display */
 .fleet-page .fleet-phone {
   font-family: var(--font-mono);
@@ -295,7 +345,15 @@
 .fleet-page .fleet-legend {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
+}
+
+.fleet-page .fleet-status-legend {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .fleet-page .fleet-legend-item {
@@ -321,6 +379,19 @@
 .fleet-page .tt-table td.num:first-child {
   width: 56px;
   text-align: center;
+}
+
+.fleet-page .tt-table td.fleet-status-cell {
+  position: relative;
+}
+
+.fleet-page .tt-table td.fleet-status-cell > span:first-child {
+  left: 0;
+}
+
+.fleet-page .m-card {
+  position: relative;
+  overflow: hidden;
 }
 
 .fleet-page .fleet-edit-row td {
@@ -392,6 +463,290 @@
   justify-content: flex-end;
   gap: 6px;
   margin-top: 8px;
+}
+
+/* ─── Fleet detail modal ────────────────────────────────────────────────────
+   The shared Modal is portaled outside .fleet-page, so modal-specific fleet
+   styles must be scoped by .fleet-detail instead of nesting under .fleet-page. */
+.fleet-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fleet-detail__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(203, 211, 206, 0.86);
+  border-radius: 12px;
+  background:
+    radial-gradient(140px 80px at 100% 0%, rgba(0, 177, 79, 0.09), transparent 72%),
+    linear-gradient(180deg, rgba(250, 252, 251, 0.98), rgba(246, 249, 247, 0.9));
+}
+
+.fleet-detail__identity,
+.fleet-detail__status,
+.fleet-detail__item {
+  min-width: 0;
+}
+
+.fleet-detail__label {
+  margin-bottom: 7px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.fleet-detail__primary {
+  color: var(--ink);
+  font-size: var(--fs-lg);
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.fleet-detail__status {
+  justify-self: end;
+  text-align: right;
+}
+
+.fleet-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fleet-detail__item {
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.fleet-detail__item--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+.fleet-detail__item--action .fleet-detail__label {
+  margin-bottom: 0;
+}
+
+.fleet-detail__value {
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.fleet-detail .fleet-plate {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: inherit;
+  font-weight: 750;
+}
+
+.fleet-detail .fleet-plate-tag {
+  margin-right: 7px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--fg-on-brand);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+}
+
+.fleet-detail .fleet-pair,
+.fleet-detail .fleet-assigned {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.fleet-detail .fleet-pair {
+  flex-wrap: wrap;
+}
+
+.fleet-detail .fleet-assigned .name {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.fleet-detail .fleet-unassigned {
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}
+
+.fleet-detail .fleet-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+}
+
+.fleet-detail .fleet-type-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.fleet-detail .fleet-type-chip.ft40 {
+  background: linear-gradient(180deg, #EFF6FF, #E6F0FF);
+  border-color: #DBEAFE;
+  color: var(--info);
+}
+
+.fleet-detail .fleet-type-chip.ft20 {
+  background: linear-gradient(180deg, var(--accent-soft), #DDF7E8);
+  border-color: rgba(0, 177, 79, 0.15);
+  color: var(--accent-2);
+}
+
+.fleet-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ─── Fleet form modals ─────────────────────────────────────────────────────
+   The form modals are also portaled, so these classes intentionally are not
+   nested under .fleet-page. */
+.fleet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fleet-form__section {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.fleet-form__section--identity {
+  border-color: rgba(203, 211, 206, 0.9);
+  background:
+    radial-gradient(160px 96px at 100% 0%, rgba(0, 177, 79, 0.08), transparent 72%),
+    linear-gradient(180deg, rgba(250, 252, 251, 0.98), rgba(247, 250, 248, 0.92));
+}
+
+.fleet-form__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fleet-form__section-head h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.fleet-form__section-head p {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.fleet-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fleet-form__grid--truck {
+  grid-template-columns: minmax(220px, 1.35fr) minmax(180px, 1fr) minmax(140px, 0.8fr);
+}
+
+.fleet-form__field {
+  margin: 0;
+  min-width: 0;
+}
+
+.fleet-form__field--wide {
+  grid-column: span 2;
+}
+
+.fleet-form__grid--truck .fleet-form__field--wide {
+  grid-column: auto;
+}
+
+.fleet-form__field label,
+.truck-alert-field__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.fleet-form__field label span {
+  color: var(--danger);
+}
+
+.fleet-form__inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fleet-form__interval {
+  flex: 0 0 130px;
+}
+
+.fleet-form__note {
+  padding: 11px 13px;
+  border: 1px solid rgba(203, 211, 206, 0.82);
+  border-radius: 10px;
+  background: rgba(247, 250, 248, 0.88);
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.fleet-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
 }
 
 @media (max-width: 640px) {
@@ -506,6 +861,10 @@
   .fleet-page .fleet-card-actions {
     display: none;
   }
+
+  .fleet-page .m-card__row .fleet-tire-link {
+    margin-left: auto;
+  }
   /* Shrink the panel-head icon for the 3 fleet panels (trucks / trailers /
      drivers) — matches the penalty-page mobile sizing. */
   .fleet-page .fleet-card-icon {
@@ -515,6 +874,31 @@
   }
   .fleet-page .fleet-card-lead {
     gap: 10px;
+  }
+
+  .fleet-detail__hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 14px;
+  }
+
+  .fleet-detail__status {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .fleet-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fleet-detail__item--action {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fleet-detail-actions .btn {
+    flex: 1 1 0;
+    justify-content: center;
   }
 }
 
@@ -540,14 +924,7 @@
   }
 }
 .truck-alert-field__label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--fg-2);
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 .truck-alert-badge {
   font-size: 11px;
@@ -564,4 +941,47 @@
 .truck-alert-badge--due {
   background: var(--warning-soft);
   color: var(--warning);
+}
+
+.truck-alert-field {
+  margin: 0;
+  min-width: 0;
+}
+
+.truck-alert-field--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+  .fleet-form__grid,
+  .fleet-form__grid--truck,
+  .truck-alert-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .fleet-form__field--wide,
+  .fleet-form__grid--truck .fleet-form__field--wide,
+  .truck-alert-field--wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .fleet-form__section {
+    padding: 12px;
+  }
+
+  .fleet-form__inline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fleet-form__interval {
+    flex-basis: auto;
+  }
+
+  .fleet-form-actions .btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
 }
