@@ -200,7 +200,7 @@ export default function ProfitPage() {
                 <span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">
-                Sau khi trừ phí quản lý {formatVND(report?.managementFee || 0)} · Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa
+                Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa trong kỳ
               </div>
             </div>
           </div>
@@ -243,13 +243,6 @@ export default function ProfitPage() {
                     <div className="calc-row__value calc-row__value--neg"><Money value={report?.maintenanceExpensesTotal || 0} sign="-" /></div>
                   </div>
                 )}
-                <div className="calc-row">
-                  <div className="calc-row__label">
-                    <span className="calc-row__op">-</span>
-                    Phí quản lý văn phòng định mức
-                  </div>
-                  <div className="calc-row__value calc-row__value--neg"><Money value={report?.managementFee || 0} sign="-" /></div>
-                </div>
                 <div className="calc-row">
                   <div className="calc-row__label">
                     <span className="calc-row__op">-</span>

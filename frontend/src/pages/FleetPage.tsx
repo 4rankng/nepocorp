@@ -17,7 +17,8 @@ import { useTires } from '../hooks/useTireQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
-import { TireStatus, TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from '@tingting/shared';
+import type { TireStatus } from '@tingting/shared';
+import { TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from '@tingting/shared';
 import type { Tire, Truck as TruckType, Driver } from '@tingting/shared';
 import { routes } from '../lib/routes';
 import { formatDate } from '../lib/format';
@@ -87,13 +88,12 @@ const TireQuickLink = memo(function TireQuickLink({ truckId, count }: { truckId:
 });
 
 function tireStatusVariant(status: TireStatus): 'neutral' | 'success' | 'warn' {
-  if (status === TireStatus.IN_USE) return 'success';
-  if (status === TireStatus.RETIRED) return 'warn';
+  if (status === 'IN_USE') return 'success';
   return 'neutral';
 }
 
 const TireDetailList = memo(function TireDetailList({ truckId, tires }: { truckId: number; tires: Tire[] }) {
-  const mountedTires = tires.filter((tire) => tire.truckId === truckId && tire.status === TireStatus.IN_USE);
+  const mountedTires = tires.filter((tire) => tire.truckId === truckId && tire.status === 'IN_USE');
 
   if (mountedTires.length === 0) {
     return <TireQuickLink truckId={truckId} count={0} />;
@@ -415,7 +415,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
   const tireCountByTruck = useMemo(() => {
     const counts = new Map<number, number>();
     (tires as Tire[]).forEach((tire) => {
-      if (tire.truckId && tire.status === TireStatus.IN_USE) {
+      if (tire.truckId && tire.status === 'IN_USE') {
         counts.set(tire.truckId, (counts.get(tire.truckId) ?? 0) + 1);
       }
     });

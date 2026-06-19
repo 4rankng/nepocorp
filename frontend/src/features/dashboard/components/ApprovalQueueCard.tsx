@@ -1,32 +1,29 @@
 import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NavigateFunction } from 'react-router-dom';
-import { Receipt, ArrowLeftRight, Wallet, CheckCircle2, FileCheck2, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Receipt, Wallet, CheckCircle2, FileCheck2, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
 import { qk } from '../../../api/keys';
 
-const TYPE_LABEL: Record<ApprovalItemType, string> = {
+const TYPE_LABEL: Partial<Record<ApprovalItemType, string>> = {
   ancillaryFees: 'Phí phụ trợ',
-  debtOffsets: 'Bù trừ công nợ',
   advances: 'Tạm ứng',
   advanceSettlementsCheck: 'Phiếu thanh toán — kiểm tra',
   advanceSettlementsApprove: 'Phiếu thanh toán — duyệt',
 };
 
-const TYPE_ICON: Record<ApprovalItemType, React.ReactNode> = {
+const TYPE_ICON: Partial<Record<ApprovalItemType, React.ReactNode>> = {
   ancillaryFees: <Receipt size={14} strokeWidth={2.2} />,
-  debtOffsets: <ArrowLeftRight size={14} strokeWidth={2.2} />,
   advances: <Wallet size={14} strokeWidth={2.2} />,
   advanceSettlementsCheck: <FileCheck2 size={14} strokeWidth={2.2} />,
   advanceSettlementsApprove: <CheckCircle2 size={14} strokeWidth={2.2} />,
 };
 
-const TYPE_ICON_CLASS: Record<ApprovalItemType, string> = {
+const TYPE_ICON_CLASS: Partial<Record<ApprovalItemType, string>> = {
   ancillaryFees: 'approval-queue__ic--amber',
-  debtOffsets: 'approval-queue__ic--blue',
   advances: 'approval-queue__ic--green',
   advanceSettlementsCheck: 'approval-queue__ic--blue',
   advanceSettlementsApprove: 'approval-queue__ic--green',
@@ -36,16 +33,14 @@ const fmtVN = (n: number) => Math.round(n).toLocaleString('vi-VN');
 
 const GROUP_ORDER: ApprovalItemType[] = [
   'ancillaryFees',
-  'debtOffsets',
   'advances',
   'advanceSettlementsCheck',
   'advanceSettlementsApprove',
 ];
 
 // Tooltip text per type — explains what the tick button does.
-const QUICK_ACTION_LABEL: Record<ApprovalItemType, string> = {
+const QUICK_ACTION_LABEL: Partial<Record<ApprovalItemType, string>> = {
   ancillaryFees: 'Duyệt phụ phí',
-  debtOffsets: 'Duyệt bù trừ',
   advances: 'Duyệt tạm ứng',
   advanceSettlementsCheck: 'Kiểm tra phiếu',
   advanceSettlementsApprove: 'Duyệt phiếu thanh toán',
@@ -58,8 +53,11 @@ interface Props {
 }
 
 export function ApprovalQueueCard({ data, loading, navigate }: Props) {
-  const total = data?.total ?? 0;
-  const items = useMemo(() => data?.items ?? [], [data?.items]);
+  const items = useMemo(
+    () => (data?.items ?? []).filter(item => item.type !== 'debtOffsets'),
+    [data?.items],
+  );
+  const total = items.length;
   const groupedView = items.length > 5;
 
   // Single-pass groupBy instead of O(n*k) filter per type
@@ -174,10 +172,6 @@ function Row({
           await tripClient.approveTripExpense(tripId, numericId);
           break;
         }
-        case 'debtOffsets': {
-          await api.post(`/finance/debt-offsets/${numericId}/approve`, {});
-          break;
-        }
         case 'advances': {
           await forwarderClient.approveAdvanceRequest(numericId);
           break;
@@ -199,7 +193,6 @@ function Row({
       queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpensesAll });
       queryClient.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
       queryClient.invalidateQueries({ queryKey: qk.forwarder.settlements });
-      queryClient.invalidateQueries({ queryKey: qk.financial.debtOffsetsAll });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Lỗi khi duyệt');
     } finally {

@@ -155,7 +155,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }
           </div>
         </div>
         <div className="field">
-          <label htmlFor="cust-linked-supplier" style={labelStyle}>Liên kết nhà cung cấp (bù trừ nợ)</label>
+          <label htmlFor="cust-linked-supplier" style={labelStyle}>Nhà cung cấp liên quan</label>
           <select
             id="cust-linked-supplier"
             className="input"

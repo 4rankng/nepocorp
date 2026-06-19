@@ -1,6 +1,5 @@
-import React, { lazy, Suspense, useEffect, type ReactElement } from 'react';
+import React, { lazy, Suspense, type ReactElement } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';
@@ -9,33 +8,6 @@ import { Role } from '@tingting/shared';
 import Layout from './components/Layout';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { ToastProvider } from './components/shared/Toast';
-
-/**
- * Bridges service-worker push messages to the app: a notification CLICK
- * (message type NOTIFICATION_CLICK from sw.js) navigates to the deep link so
- * the focused tab actually opens the relevant screen; an incoming PUSH while
- * the app is open (PUSH_NOTIFICATION) refreshes the notification badge/list.
- */
-function PushMessageHandler() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-    const onMessage = (event: MessageEvent) => {
-      const msg = event.data;
-      if (!msg || typeof msg !== 'object') return;
-      if (msg.type === 'NOTIFICATION_CLICK' && typeof msg.payload?.url === 'string') {
-        navigate(msg.payload.url);
-      } else if (msg.type === 'PUSH_NOTIFICATION') {
-        queryClient.invalidateQueries();
-      }
-    };
-    navigator.serviceWorker.addEventListener('message', onMessage);
-    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
-  }, [navigate, queryClient]);
-  return null;
-}
-
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -79,7 +51,6 @@ const FuelConfigPage = lazy(() => import('./pages/config/FuelConfigPage'));
 const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'));
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
 const TrailersConfigPage = lazy(() => import('./pages/config/TrailersConfigPage'));
-const ManagementFeesConfigPage = lazy(() => import('./pages/config/ManagementFeesConfigPage'));
 const SalaryPeriodConfigPage = lazy(() => import('./pages/config/SalaryPeriodConfigPage'));
 const TripExpenseConfigPage = lazy(() => import('./pages/config/TripExpenseConfigPage'));
 const SupplierListPage = lazy(() => import('./pages/SupplierListPage'));
@@ -90,9 +61,6 @@ const PayableDetailPage = lazy(() => import('./pages/PayableDetailPage'));
 const SalaryAttendancePage = lazy(() => import('./pages/SalaryAttendancePage'));
 
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
-const ContainerTypesConfigPage = lazy(() => import('./pages/config/ContainerTypesConfigPage'));
-const PortsConfigPage = lazy(() => import('./pages/config/PortsConfigPage'));
-const SealTypesConfigPage = lazy(() => import('./pages/config/SealTypesConfigPage'));
 const ForwarderExpenseTypesConfigPage = lazy(() => import('./pages/config/ForwarderExpenseTypesConfigPage'));
 
 function PageLoader() {
@@ -142,7 +110,6 @@ function AppRoutes() {
 
   return (
     <ToastProvider>
-      <PushMessageHandler />
       <Layout>
         <Routes>
           <Route path="/" element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />} />
@@ -185,12 +152,12 @@ function AppRoutes() {
           <Route path="/config/trip-expense" element={adminOnly(page(<TripExpenseConfigPage />))} />
           <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />
           <Route path="/config/customers" element={adminOnly(page(<CustomersConfigPage />))} />
-          <Route path="/config/management-fees" element={adminOnly(page(<ManagementFeesConfigPage />))} />
+          <Route path="/config/management-fees" element={<Navigate to="/config" replace />} />
           <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
           <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
-          <Route path="/config/container-types" element={adminOnly(page(<ContainerTypesConfigPage />))} />
-          <Route path="/config/seal-types" element={adminOnly(page(<SealTypesConfigPage />))} />
-          <Route path="/config/ports" element={adminOnly(page(<PortsConfigPage />))} />
+          <Route path="/config/container-types" element={<Navigate to="/config" replace />} />
+          <Route path="/config/seal-types" element={<Navigate to="/config" replace />} />
+          <Route path="/config/ports" element={<Navigate to="/config" replace />} />
           <Route path="/config/forwarder-expense-types" element={adminOnly(page(<ForwarderExpenseTypesConfigPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
           <Route path="/suppliers/:id" element={adminOnly(page(<PayableDetailPage />))} />

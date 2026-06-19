@@ -1,7 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
-import type { TireStatus } from '@tingting/shared';
 
 /**
  * N1 — Tire lifecycle service.
@@ -11,17 +10,11 @@ import type { TireStatus } from '@tingting/shared';
  * stay consistent.
  *
  *  - install: truck_id + position + installed_at(now) + status=IN_USE, clear removed_at
- *  - remove:  removed_at(now) + status (RETIRED flag OR back to IN_STOCK), null truck_id
  */
 
 export interface InstallTireInput {
   truckId: number;
   position?: string | null;
-}
-
-export interface RemoveTireInput {
-  /** If true the tire leaves the fleet for good (status=RETIRED); else back to IN_STOCK. */
-  retire?: boolean;
 }
 
 class HttpError extends Error {
@@ -74,36 +67,7 @@ export async function installTire(tireId: number, input: InstallTireInput) {
       position: input.position ?? existing.position ?? null,
       installedAt: todayISO(),
       removedAt: null,
-      status: 'IN_USE' as TireStatus,
-      updatedAt: new Date(),
-    };
-
-    const [updated] = await tx.update(s.tires).set(patch)
-      .where(eq(s.tires.id, tireId)).returning();
-    return updated;
-  });
-}
-
-/** Remove a tire from its truck (RETIRED or back to IN_STOCK). */
-export async function removeTire(tireId: number, input: RemoveTireInput) {
-  return db.transaction(async (tx) => {
-    const [existing] = await tx.select().from(s.tires)
-      .where(and(eq(s.tires.id, tireId), isNull(s.tires.deletedAt)))
-      .limit(1);
-    if (!existing) {
-      throw new HttpError(404, 'Không tìm thấy lốp');
-    }
-    // Guard the lifecycle: only an IN_USE tire can be removed. Removing an
-    // IN_STOCK/RETIRED tire would fabricate a removed_at with no install, or
-    // resurrect a RETIRED tire — corrupting lifecycle history. (code-review CRITICAL)
-    if (existing.status !== 'IN_USE') {
-      throw new HttpError(409, 'Lốp không đang lắp trên xe — không thể tháo');
-    }
-
-    const patch: Partial<typeof s.tires.$inferSelect> = {
-      removedAt: todayISO(),
-      truckId: null,
-      status: (input.retire ? 'RETIRED' : 'IN_STOCK') as TireStatus,
+      status: 'IN_USE',
       updatedAt: new Date(),
     };
 

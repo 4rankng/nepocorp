@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, Plus, Trash2, Camera, ImageOff, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
-import { configClient } from '../../api/configClient';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
@@ -16,7 +15,6 @@ import {
   validateContainerFormat,
   validateCheckDigit,
   suggestCorrections,
-  SealType,
 } from '@tingting/shared';
 
 /**
@@ -44,12 +42,6 @@ import {
  * card) still fills the first empty containerNumber / appends a seal — kept
  * for parity with the driver flow.
  */
-
-interface ContainerType {
-  id: number;
-  code: string;
-  name: string;
-}
 
 /** Edited container row. Aliased from the form-state type so this card and the
  *  unified "Lưu cập nhật" submit share one shape. */
@@ -140,7 +132,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
   const { ocrResult, containerRows: rows, setContainerRows: setRows,
     uploadContainerPhoto, revokeRowPhotos } = useTripFormContext();
-  const queryClient = useQueryClient();
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
   // Create-page (/trips/new) guard: seed initial empty rows exactly once,
@@ -200,28 +191,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     });
     toast({ kind: 'info', message: 'Đã nhận diện số cont/seal — xem lại trước khi lưu.' });
   }, [ocrResult, setRows, toast]);
-
-  // Container types from the global config catalog
-  const { data: containerTypes = [] } = useQuery<ContainerType[]>({
-    queryKey: qk.catalogs.containerTypes,
-    queryFn: () => configClient.getContainerTypes(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: sealTypes = [] } = useQuery<SealType[]>({
-    queryKey: qk.catalogs.sealTypes,
-    queryFn: () => configClient.getSealTypes(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { mutate: addSealType, isPending: addingSealType } = useMutation({
-    mutationFn: (name: string) => configClient.createSealType({ name }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.catalogs.sealTypes });
-      toast({ kind: 'success', message: 'Đã thêm loại seal mới vào Cấu hình' });
-    },
-    onError: () => toast({ kind: 'error', message: 'Không thể thêm loại seal' }),
-  });
 
   // Existing container instances for this trip. Phase 2 also returns per-type
   // photo keys but we ignore the trip-level keys — photos now live in
@@ -511,22 +480,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </div>
                 <div>
                   <label className="ci-label">
-                    Loại cont
-                  </label>
-                  <select
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    value={row.containerTypeId}
-                    onChange={e => updateRow(row._key, 'containerTypeId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">— Chọn loại —</option>
-                    {containerTypes.map(ct => (
-                      <option key={ct.id} value={ct.id}>{ct.name} ({ct.code})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="ci-label">
                     Trọng lượng (kg)
                   </label>
                   <input
@@ -647,28 +600,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                         <span style={{ fontSize: 13, color: 'var(--fg-3)', minWidth: 28, fontWeight: 600 }}>
                           #{sIdx + 1}
                         </span>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <input
-                            className="input ci-input-sm"
-                            style={{ width: 140, paddingRight: sl.sealType && !sealTypes.some(st => st.name.toLowerCase() === sl.sealType.toLowerCase()) ? 28 : undefined }}
-                            list="seal-types"
-                            placeholder="Loại seal"
-                            value={sl.sealType}
-                            onChange={e => updateSeal(row._key, sl._key, 'sealType', e.target.value)}
-                          />
-                          {sl.sealType && !sealTypes.some(st => st.name.toLowerCase() === sl.sealType.toLowerCase()) && (
-                            <button
-                              type="button"
-                              className="btn btn--ghost btn--sm"
-                              style={{ position: 'absolute', right: 2, top: '50%', transform: 'translateY(-50%)', padding: '0 4px', minHeight: 24, minWidth: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                              onClick={() => addSealType(sl.sealType)}
-                              disabled={addingSealType}
-                              title="Thêm loại seal này vào Cấu hình chung"
-                            >
-                              {addingSealType ? <Loader2 size={13} className="spin" /> : <Plus size={13} style={{ color: 'var(--primary)' }} />}
-                            </button>
-                          )}
-                        </div>
                         <input
                           className="input ci-input-sm"
                           style={{ width: 140 }}
@@ -727,14 +658,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         />
       )}
 
-      {/* Shared datalist for sealType — defined once at the bottom of the
-          component tree so the per-row <input list="seal-types"> references
-          resolve. Free-form; values are suggestions, not an enum. */}
-      <datalist id="seal-types">
-        {sealTypes.map(st => (
-          <option key={st.id} value={st.name} />
-        ))}
-      </datalist>
     </div>
   );
 }

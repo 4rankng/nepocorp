@@ -28,10 +28,6 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
-// N1 — tire management: position is free text because fleets use different axle layouts.
-export const tireStatusEnum = pgEnum('tire_status', ['IN_STOCK', 'IN_USE', 'RETIRED']);
-
-
 // ─── Config tables ───────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
@@ -115,10 +111,10 @@ export const suppliers = pgTable('suppliers', {
 });
 
 // ─── N1 — Tires ──────────────────────────────────────────────────────────────
-// Tracks individual tires by serial across their lifecycle (stock → in-use on
-// a truck → retired). `serial` is the immutable identity; install/remove just
-// flip truck_id + status + installed_at/removed_at. Soft-deleted via deletedAt
-// (the CRUD factory relies on it).
+// Tracks individual tires by serial, truck assignment, install/remove dates,
+// supplier, and warranty metadata. Status is a plain string so the app can stay
+// aligned with the requirement wording instead of baking extra lifecycle states
+// into a database enum.
 export const tires = pgTable('tires', {
   id: serial('id').primaryKey(),
   serial: varchar('serial', { length: 64 }).notNull().unique(),
@@ -130,7 +126,7 @@ export const tires = pgTable('tires', {
   supplierId: integer('supplier_id').references(() => suppliers.id),
   cost: numeric('cost', { precision: 15, scale: 0 }).default('0'),
   warrantyUntil: date('warranty_until'),
-  status: tireStatusEnum('status').default('IN_STOCK'),
+  status: varchar('status', { length: 20 }).default('IN_STOCK'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

@@ -67,8 +67,8 @@ export default function FinancePage() {
 
   const {
     fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
-    totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
-    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
+    totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
+    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
     activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
   } = useMemo(() => {
     const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
@@ -89,17 +89,15 @@ export default function FinancePage() {
     const transRevenue = Math.max(0, totalRevenue - otherRevenue);
     // totalCosts is already defined above
     const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
-    const mgmtFee = report?.managementFee ?? 0;
-    const netProfit = report?.netProfit ?? (grossProfit - mgmtFee + otherRevenue);
+    const netProfit = report?.netProfit ?? (grossProfit - companyExpenses + otherRevenue);
 
     const totalRevenueLY = prevReport?.totalRevenue ?? 0;
     const otherRevenueLY = prevReport?.otherIncome ?? 0;
     const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
     const totalCostsLY = prevReport?.totalCosts ?? 0;
     const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
-    const mgmtFeeLY = prevReport?.managementFee ?? 0;
     const companyExpensesLY = prevReport?.companyExpenses ?? 0;
-    const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - mgmtFeeLY + otherRevenueLY);
+    const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - companyExpensesLY + otherRevenueLY);
 
     const activeCapTable = getActiveCapTable(capTableRaw)
       .map(c => ({ name: c.partnerName, pct: c.percentage }));
@@ -115,7 +113,6 @@ export default function FinancePage() {
       { name: 'Tiền đi đường', value: roadCost, fill: '#D97706' },
       { name: 'Lương lái xe', value: driverCost, fill: '#2563EB' },
       { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#DC2626' },
-      { name: 'Phí quản lý', value: mgmtFee, fill: '#EA580C' },
     ].filter(d => d.value > 0.5);
 
     const categoryBreakdown: Array<{ categoryName: string; total: number }> =
@@ -156,8 +153,8 @@ export default function FinancePage() {
 
     return {
       fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
-      totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, mgmtFee, netProfit,
-      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, mgmtFeeLY, companyExpensesLY, netProfitLY,
+      totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
+      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
       activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
     };
   }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
@@ -252,7 +249,6 @@ export default function FinancePage() {
                 ['Lương lái xe', driverCost, ''],
                 ['Tổng chi phí vận hành', totalCosts, totalCostsLY],
                 ['Lợi nhuận gộp', grossProfit, grossProfitLY],
-                ['Phí quản lý', mgmtFee, mgmtFeeLY],
                 ['Lợi nhuận ròng', netProfit, netProfitLY],
               ];
               downloadCSV(`bao-cao-lai-lo-${String(month).padStart(2, '0')}-${String(year).slice(-2)}.csv`, headers, rows);
@@ -596,22 +592,6 @@ export default function FinancePage() {
               <div className={`pnl-row__pct ${prevReport ? yoyClass(grossProfit, grossProfitLY) : ''}`}>{prevReport ? yoyPct(grossProfit, grossProfitLY) : '—'}</div>
             </div>
 
-            {/* OPERATING COSTS */}
-            <div className="pnl-row pnl-row--section">
-              <div>Chi phí hoạt động</div>
-              <div></div><div></div><div></div>
-            </div>
-
-            <div className="pnl-row">
-              <div className="pnl-row__label">
-                Phí quản lý
-                <div className="pnl-row__label-sub">Cố định điều hành nội bộ</div>
-              </div>
-              <div className="pnl-row__amount">{formatNumber(mgmtFee)}</div>
-              <div className="pnl-row__yoy">{prevReport ? formatNumber(mgmtFeeLY) : '—'}</div>
-              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee, mgmtFeeLY) : ''}`}>{prevReport ? yoyPct(mgmtFee, mgmtFeeLY) : '—'}</div>
-            </div>
-
             {companyExpenses > 0 && (
             <div className="pnl-row">
               <div className="pnl-row__label">
@@ -624,12 +604,14 @@ export default function FinancePage() {
             </div>
             )}
 
-            <div className="pnl-row pnl-row--subtotal">
-              <div className="pnl-row__label">Tổng chi phí hoạt động</div>
-              <div className="pnl-row__amount">{formatNumber(mgmtFee + companyExpenses)}</div>
-              <div className="pnl-row__yoy">{prevReport ? formatNumber(mgmtFeeLY + companyExpensesLY) : '—'}</div>
-              <div className={`pnl-row__pct ${prevReport ? yoyClass(mgmtFee + companyExpenses, mgmtFeeLY + companyExpensesLY) : ''}`}>{prevReport ? yoyPct(mgmtFee + companyExpenses, mgmtFeeLY + companyExpensesLY) : '—'}</div>
-            </div>
+            {companyExpenses > 0 && (
+              <div className="pnl-row pnl-row--subtotal">
+                <div className="pnl-row__label">Tổng chi phí hoạt động</div>
+                <div className="pnl-row__amount">{formatNumber(companyExpenses)}</div>
+                <div className="pnl-row__yoy">{prevReport ? formatNumber(companyExpensesLY) : '—'}</div>
+                <div className={`pnl-row__pct ${prevReport ? yoyClass(companyExpenses, companyExpensesLY) : ''}`}>{prevReport ? yoyPct(companyExpenses, companyExpensesLY) : '—'}</div>
+              </div>
+            )}
 
             {/* FINAL NET PROFIT */}
             <div className="pnl-row pnl-row--final">

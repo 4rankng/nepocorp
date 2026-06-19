@@ -41,7 +41,6 @@ export interface DerivedData {
   fuelCost: number;
   roadCost: number;
   driverCost: number;
-  mgmtCost: number;
   slicesWithPct: Array<{ label: string; value: number; color: string; pct: number }>;
   conicGradient: string;
   totalPie: number;
@@ -150,14 +149,13 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
 
     // Use P&L report as single source of truth for all 4 KPIs when available,
     // so net profit is always consistent with revenue/costs/gross.
-    // Falls back to dashboard stats (which lack otherIncome/managementFee).
+    // Falls back to dashboard stats (which lack otherIncome/companyExpenses).
     const revenue = pnlReport?.totalRevenue ?? stats.revenue ?? 0;
     const costs = pnlReport?.totalCosts ?? stats.costs ?? 0;
     const grossProfit = pnlReport?.grossProfit ?? stats.grossProfit ?? 0;
-    const managementFee = pnlReport?.managementFee ?? 0;
     const otherIncome = pnlReport?.otherIncome ?? 0;
     const companyExpenses = pnlReport?.companyExpenses ?? 0;
-    const netProfit = pnlReport?.netProfit ?? (grossProfit - managementFee - companyExpenses + otherIncome);
+    const netProfit = pnlReport?.netProfit ?? (grossProfit - companyExpenses + otherIncome);
 
     const sortedTrucks = pnlReport?.trucks
       ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)
@@ -203,7 +201,6 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const realFuelCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalFuelCost || '0'), 0);
     const realRoadCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
     const realDriverCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.driverSalary || '0'), 0);
-    const mgmtCost = pnlReport?.managementFee ?? 0;
     const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
     const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
     const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
@@ -215,7 +212,6 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
       { label: 'Nhiên liệu', value: fuelCost, color: 'var(--brand)' },
       { label: 'Lương lái xe', value: driverCost, color: 'var(--info)' },
       { label: 'Tiền đi đường', value: roadCost, color: 'var(--warning)' },
-      { label: 'Phí quản lý', value: mgmtCost, color: '#E07D2E' },
     ];
 
     const categoryBreakdown = pnlReport?.categoryBreakdown ?? [];
@@ -236,7 +232,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     return {
       revenue, costs, grossProfit, netProfit,
       displayTrucks, maxTruckProfit, displayRoutes,
-      fuelCost, roadCost, driverCost, mgmtCost,
+      fuelCost, roadCost, driverCost,
       slicesWithPct, conicGradient, totalPie,
       prevRevenue, prevCosts, prevGross,
     };

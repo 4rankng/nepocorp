@@ -246,16 +246,12 @@ export const TIRE_POSITION_SUGGESTIONS = [
   'Lốp dự phòng',
 ] as const;
 
-export enum TireStatus {
-  IN_STOCK = 'IN_STOCK',
-  IN_USE = 'IN_USE',
-  RETIRED = 'RETIRED',
-}
+export const TIRE_STATUSES = ['IN_STOCK', 'IN_USE'] as const;
+export type TireStatus = typeof TIRE_STATUSES[number];
 
 export const TIRE_STATUS_LABELS: Record<TireStatus, string> = {
-  [TireStatus.IN_STOCK]: 'Trong kho',
-  [TireStatus.IN_USE]: 'Đang dùng',
-  [TireStatus.RETIRED]: 'Đã thanh lý',
+  IN_STOCK: 'Dự phòng',
+  IN_USE: 'Đang dùng',
 };
 
 // ─── Notification ───────────────────────────────────────────────────────────

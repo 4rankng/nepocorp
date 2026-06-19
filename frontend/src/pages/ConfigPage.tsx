@@ -25,12 +25,8 @@ const CONFIG_ICON_MAP: Record<string, string> = {
   trailers: 'config-trailers',
   'cargo-types': 'config-cargo-types',
   'pricing-tables': 'config-pricing-tables',
-  'management-fees': 'config-management-fees',
   'salary-periods': 'config-salary-periods',
   'expense-categories': 'config-expense-categories',
-  'container-types': 'config-container-types',
-  'seal-types': 'config-seal-types',
-  ports: 'config-ports',
   'forwarder-expense-types': 'config-forwarder-expense-types',
 };
 
@@ -65,13 +61,9 @@ export default function ConfigPage() {
     trailers,
     cargoTypes,
     pricingTables,
-    managementFees,
     salaryDefault,
     expenseCategories,
     fuelConfig,
-    containerTypes,
-    sealTypes,
-    ports,
     forwarderExpenseTypes,
   ] = useQueries({
     queries: [
@@ -85,13 +77,9 @@ export default function ConfigPage() {
       { queryKey: qk.configCounts.trailers,              queryFn: () => api.get<ListResponse>('/trailers?limit=1'),            staleTime: 60_000 },
       { queryKey: qk.configCounts.cargoTypes,            queryFn: () => api.get<ListResponse>('/cargo-types?limit=1'),        staleTime: 60_000 },
       { queryKey: qk.configCounts.pricingTables,         queryFn: () => api.get<ListResponse>('/pricing-tables?limit=1'),     staleTime: 60_000 },
-      { queryKey: qk.configCounts.managementFees,        queryFn: () => api.get<ListResponse>('/management-fees?limit=1'),    staleTime: 60_000 },
       { queryKey: qk.configCounts.salaryDefault,         queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
       { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
-      { queryKey: qk.configCounts.containerTypes,        queryFn: () => api.get<ListResponse>('/container-types?limit=1'),   staleTime: 60_000 },
-      { queryKey: qk.configCounts.sealTypes,             queryFn: () => api.get<ListResponse>('/seal-types?limit=1'),        staleTime: 60_000 },
-      { queryKey: qk.configCounts.ports,                 queryFn: () => api.get<ListResponse>('/ports?limit=1'),              staleTime: 60_000 },
       { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
     ],
   });
@@ -128,12 +116,8 @@ export default function ConfigPage() {
     'trailers':                 { status: countLabel(trailers.data?.total, 'rơ-moóc') },
     'cargo-types':              { status: countLabel(cargoTypes.data?.total, 'loại hàng') },
     'pricing-tables':           { status: countLabel(pricingTables.data?.total, 'đơn giá') },
-    'management-fees':          { status: countLabel(managementFees.data?.total, 'khoản phí') },
     'salary-periods':           { status: salaryStatus() },
     'expense-categories':       { status: countLabel(expenseCategories.data?.total, 'hạng mục') },
-    'container-types':          { status: countLabel(containerTypes.data?.total, 'loại') },
-    'seal-types':               { status: countLabel(sealTypes.data?.total, 'loại') },
-    'ports':                    { status: countLabel(ports.data?.total, 'cảng/bãi') },
     'forwarder-expense-types':  { status: countLabel(forwarderExpenseTypes.data?.total, 'loại') },
   };
 

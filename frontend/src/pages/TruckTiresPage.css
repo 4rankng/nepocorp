@@ -50,7 +50,7 @@
 
 .ttp-workbench {
   display: grid;
-  grid-template-columns: minmax(360px, 520px) minmax(620px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: start;
 }
@@ -64,7 +64,7 @@
 }
 
 .ttp-panel--form {
-  max-width: 520px;
+  max-width: none;
 }
 
 .ttp-spares {
@@ -78,6 +78,25 @@
   gap: 12px;
   padding: 12px 14px 10px;
   border-bottom: 1px solid var(--border-1);
+}
+
+.ttp-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.ttp-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-3);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .ttp-section-head h2 {
@@ -98,14 +117,30 @@
 .ttp-table-wrap {
   width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .ttp-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
-  min-width: 780px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.ttp-col-serial { width: 14%; }
+.ttp-col-position { width: 16%; }
+.ttp-col-size { width: 9%; }
+.ttp-col-installed { width: 11%; }
+.ttp-col-days { width: 11%; }
+.ttp-col-supplier { width: 18%; }
+.ttp-col-warranty { width: 14%; }
+.ttp-col-actions { width: 7%; }
+
+.ttp-supplier {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ttp-table thead th {
@@ -113,17 +148,18 @@
   font-weight: 600;
   color: var(--fg-2);
   background: var(--bg-2, #f8f9fa);
-  padding: 9px 11px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border-2);
   white-space: nowrap;
 }
 
 .ttp-table tbody td {
-  padding: 9px 11px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border-1);
   color: var(--fg-1);
   vertical-align: middle;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ttp-table tbody tr:last-child td {
@@ -131,15 +167,66 @@
 }
 
 .ttp-serial {
+  position: relative;
+  padding-left: 18px !important;
   font-family: var(--font-mono, monospace);
   font-weight: 600;
 }
 
-.ttp-row-actions {
+.ttp-action-menu {
+  position: relative;
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.ttp-action-trigger {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-2);
+  border-radius: 9px;
+  background: var(--bg-1, #fff);
+  color: var(--fg-2);
+  cursor: pointer;
+  box-shadow: 0 4px 12px -10px rgba(20, 34, 29, 0.45);
+}
+
+.ttp-action-trigger:hover,
+.ttp-action-trigger[aria-expanded='true'] {
+  color: var(--fg-1);
+  border-color: var(--border-3, var(--border-2));
+  background: var(--bg-2, #f8f9fa);
+}
+
+.ttp-action-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 168px;
+  padding: 5px;
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  background: var(--bg-1, #fff);
+  box-shadow: 0 16px 40px -22px rgba(20, 34, 29, 0.55), 0 8px 18px -14px rgba(20, 34, 29, 0.35);
+}
+
+.ttp-action-install {
+  display: grid;
+  gap: 6px;
+  padding: 5px;
+}
+
+.ttp-action-install .ttp-pos-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.ttp-action-install .btn {
+  min-height: 32px;
+  padding-inline: 10px;
 }
 
 .ttp-empty {
@@ -156,7 +243,7 @@
 /* Inline add form (mirrors config InlineForm layout). */
 .ttp-add {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(116px, 0.85fr);
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 10px 12px;
   align-items: end;
   padding: 14px;
@@ -185,7 +272,6 @@
   color: var(--fg-1);
 }
 
-.ttp-field--serial,
 .ttp-add-submit {
   grid-column: 1 / -1;
 }
@@ -201,8 +287,8 @@
 }
 
 .ttp-position-input {
-  width: 160px;
-  min-width: 160px;
+  width: 100%;
+  min-width: 0;
   padding: 6px 8px;
   border: 1px solid var(--border-2);
   border-radius: 7px;
@@ -218,24 +304,12 @@
 }
 
 @media (max-width: 1180px) {
-  .ttp-workbench {
-    grid-template-columns: 1fr;
-  }
-
-  .ttp-panel--form {
-    max-width: none;
-  }
-
   .ttp-add {
     grid-template-columns: minmax(190px, 1.2fr) repeat(2, minmax(140px, 0.9fr));
   }
 
-  .ttp-field--serial {
-    grid-column: auto;
-  }
-
   .ttp-add-submit {
-    grid-column: auto;
+    grid-column: 1 / -1;
   }
 }
 
@@ -250,6 +324,15 @@
 
   .ttp-header h1 {
     font-size: 20px;
+  }
+
+  .ttp-section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ttp-legend {
+    justify-content: flex-start;
   }
 
   .ttp-workbench,
@@ -269,8 +352,56 @@
   .ttp-empty {
     min-height: 144px;
   }
-}
 
-/* Tire action buttons use the Global .btn / .btn--primary / .btn--danger /
-   .btn--secondary system (components/Button.css). The page-scoped .ttp-btn*
-   recipes were retired during CTA unification. */
+  .ttp-table-wrap {
+    overflow-x: visible;
+  }
+
+  .ttp-table,
+  .ttp-table thead,
+  .ttp-table tbody,
+  .ttp-table tr,
+  .ttp-table th,
+  .ttp-table td {
+    display: block;
+  }
+
+  .ttp-table colgroup,
+  .ttp-table thead {
+    display: none;
+  }
+
+  .ttp-table tbody tr {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-1);
+  }
+
+  .ttp-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .ttp-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(92px, 36%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: none;
+  }
+
+  .ttp-table tbody td::before {
+    content: attr(data-label);
+    color: var(--fg-3);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .ttp-action-menu {
+    justify-content: flex-start;
+  }
+
+  .ttp-action-popover {
+    right: auto;
+    left: 0;
+  }
+}

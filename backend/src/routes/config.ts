@@ -12,7 +12,7 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
-  tireSchema, installTireSchema, removeTireSchema,
+  tireSchema, installTireSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
@@ -20,7 +20,7 @@ import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelP
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
-import { installTire, removeTire, isHttpError } from '../services/tire.service';
+import { installTire, isHttpError } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -163,20 +163,6 @@ tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER),
     throw e;
   }
 }));
-tireLifecycleRouter.post('/:id/remove', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id as string, 10);
-  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
-  const data = removeTireSchema.parse(req.body);
-  try {
-    const tire = await removeTire(id, { retire: data.retire });
-    await cacheInvalidatePattern('catalogs:*');
-    res.json(tire);
-  } catch (e) {
-    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
-    throw e;
-  }
-}));
-
 // Road config — singleton GET/PUT
 router.get('/road-config', asyncHandler(async (_req: Request, res: Response) => {
   const [row] = await db.select().from(s.roadConfig).limit(1);

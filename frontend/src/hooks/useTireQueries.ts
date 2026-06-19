@@ -39,28 +39,11 @@ export function useUpdateTire() {
   });
 }
 
-export function useDeleteTire() {
-  const invalidate = useInvalidateTires();
-  return useMutation({
-    mutationFn: (id: number) => tireClient.remove(id),
-    onSuccess: invalidate,
-  });
-}
-
 export function useInstallTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
     mutationFn: ({ id, truckId, position }: { id: number; truckId: number; position?: string | null }) =>
       tireClient.install(id, truckId, position ?? null),
-    onSuccess: invalidate,
-  });
-}
-
-export function useRemoveTire() {
-  const invalidate = useInvalidateTires();
-  return useMutation({
-    mutationFn: ({ id, retire }: { id: number; retire?: boolean }) =>
-      tireClient.removeFromTruck(id, retire),
     onSuccess: invalidate,
   });
 }

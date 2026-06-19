@@ -400,6 +400,13 @@
       "when": 1781852886223,
       "tag": "0056_jittery_pride",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1781860000000,
+      "tag": "0057_tire_status_string",
+      "breakpoints": true
     }
   ]
 }

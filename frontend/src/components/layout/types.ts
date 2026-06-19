@@ -46,7 +46,6 @@ export interface TopbarProps {
   isDriver: boolean;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onOpenNotifications: () => void;
 }
 
 export interface ProfileModalProps {

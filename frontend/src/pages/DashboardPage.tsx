@@ -219,13 +219,12 @@ export default function DashboardPage() {
   // "Chi phí khác 100%" gray donut.
   const costSlices = useMemo<DonutSlice[]>(() => {
     if (!d) return [];
-    const realTotal = (d.fuelCost || 0) + (d.driverCost || 0) + (d.roadCost || 0) + (d.mgmtCost || 0);
+    const realTotal = (d.fuelCost || 0) + (d.driverCost || 0) + (d.roadCost || 0);
     if (realTotal <= 0) return [];
     const slices: DonutSlice[] = [
       { name: 'Nhiên liệu', pct: Math.round(((d.fuelCost || 0) / realTotal) * 100), color: '#005A2D' },
       { name: 'Lương lái xe', pct: Math.round(((d.driverCost || 0) / realTotal) * 100), color: '#16A34A' },
       { name: 'Phí cầu đường', pct: Math.round(((d.roadCost || 0) / realTotal) * 100), color: '#2563EB' },
-      { name: 'Phí quản lý', pct: Math.round(((d.mgmtCost || 0) / realTotal) * 100), color: '#C2780B' },
     ].filter(s => s.pct > 0);
     return slices;
   }, [d]);

@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  TireStatus,
-  TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
+  TIRE_POSITION_SUGGESTIONS,
   computeTireAlerts,
 } from '@tingting/shared';
 import type { Tire } from '@tingting/shared';
+import type { Supplier } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
+import { StatusStrip, StatusSwatch } from '../components/shared/StatusStrip';
 import { routes } from '../lib/routes';
 import {
-  useTires, useCreateTire, useUpdateTire, useDeleteTire,
-  useInstallTire, useRemoveTire,
+  useTires, useCreateTire, useUpdateTire,
 } from '../hooks/useTireQueries';
-import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
+import { useAllSuppliers, useTrucksAndDrivers } from '../hooks/useCatalogQueries';
 import './TruckTiresPage.css';
 
 /** Editable tire fields. `cost` is a number on the wire (numeric(15,0)). */
@@ -26,6 +26,16 @@ type TirePatch = Partial<{
   warrantyUntil: string | null;
   status: Tire['status'];
 }>;
+
+const TIRE_STATUS_COLORS: Record<Tire['status'], string> = {
+  IN_USE: '#16A34A',
+  IN_STOCK: '#2563EB',
+};
+
+const TIRE_STATUS_LEGEND: { status: Tire['status']; label: string }[] = [
+  { status: 'IN_USE', label: 'Đang lắp trên xe' },
+  { status: 'IN_STOCK', label: 'Lốp dự phòng' },
+];
 
 function normalizePositionText(value: string): string {
   return value
@@ -60,6 +70,24 @@ function buildPositionLabels(tires: Tire[]): string[] {
   return Array.from(new Set(labels.map(cleanPositionLabel).filter(Boolean)));
 }
 
+function supplierName(suppliers: Supplier[], supplierId: number | null): string {
+  if (!supplierId) return '—';
+  return suppliers.find((supplier) => supplier.id === supplierId)?.name ?? '—';
+}
+
+function TireLegend() {
+  return (
+    <div className="ttp-legend" aria-label="Chú giải trạng thái lốp">
+      {TIRE_STATUS_LEGEND.map((item) => (
+        <span key={item.status} className="ttp-legend-item">
+          <StatusSwatch color={TIRE_STATUS_COLORS[item.status]} />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Days a tire has been in service: installedAt → removedAt, or → today if still in use. (A10c) */
 function daysInService(installedAt: string | null, removedAt: string | null): number | null {
   if (!installedAt) return null;
@@ -73,12 +101,9 @@ function daysInService(installedAt: string | null, removedAt: string | null): nu
  * N1 — per-truck tire management page at /fleet/:id/tires.
  *
  * Lists the truck's tires (serial, position, size, installed, warranty, status)
- * with an inline add form + install/remove actions. Warranty-expiry badge uses
+ * with an inline add form. Warranty-expiry badge uses
  * computeTireAlerts (≤30d = warn, overdue = danger), mirroring the N5 truck
  * alert styling via StatusPill.
- *
- * Tires with status IN_STOCK (truckId null) are also shown so a manager can
- * install a spare onto this truck from the same view.
  */
 export default function TruckTiresPage() {
   const params = useParams<{ id: string }>();
@@ -87,17 +112,15 @@ export default function TruckTiresPage() {
   const { data: trucksDrivers } = useTrucksAndDrivers({ enabled: Number.isFinite(truckId) });
   const truck = trucksDrivers?.trucks.find((t) => t.id === truckId);
 
-  // Fetch all tires; filter to this truck + spares available for install.
+  // Fetch all tires; filter to this truck + stock spares for read-only tracking.
   const { data: allTires, isLoading } = useTires();
+  const { data: suppliers = [] } = useAllSuppliers();
   const tiresOnTruck = (allTires ?? []).filter((t) => t.truckId === truckId);
-  const spares = (allTires ?? []).filter((t) => t.status === TireStatus.IN_STOCK);
+  const spares = (allTires ?? []).filter((t) => t.status === 'IN_STOCK');
   const positionLabels = buildPositionLabels(allTires ?? []);
 
   const createMut = useCreateTire();
   const updateMut = useUpdateTire();
-  const deleteMut = useDeleteTire();
-  const installMut = useInstallTire();
-  const removeMut = useRemoveTire();
 
   return (
     <div className="ttp">
@@ -106,7 +129,7 @@ export default function TruckTiresPage() {
           <Link to={routes.fleet} className="ttp-back">← Quay lại đội xe</Link>
           <h1>{truck?.licensePlate ?? 'Lốp xe'}</h1>
           <div className="ttp-sub">
-            Theo dõi serial lốp, vị trí lắp, hạn bảo hành và vòng đời (kho → đang dùng → thanh lý).
+            Theo dõi serial lốp, vị trí lắp, ngày thay, nhà cung cấp và hạn bảo hành.
           </div>
         </div>
       </div>
@@ -121,6 +144,7 @@ export default function TruckTiresPage() {
           </div>
           <AddTireForm
             positionLabels={positionLabels}
+            suppliers={suppliers}
             saving={createMut.isPending}
             onsave={async (d) => { await createMut.mutateAsync({ ...d, truckId }); }}
           />
@@ -132,16 +156,16 @@ export default function TruckTiresPage() {
               <h2 id="ttp-mounted-title">Lốp đang lắp trên xe</h2>
               <p>{tiresOnTruck.length} lốp đang theo dõi</p>
             </div>
+            <TireLegend />
           </div>
           <TireTable
             tires={tiresOnTruck}
+            suppliers={suppliers}
             positionLabels={positionLabels}
             positionListId="ttp-position-options-mounted"
             loading={isLoading}
             emptyHint="Chưa có lốp nào được lắp trên xe này."
-            onremove={(id, retire) => removeMut.mutate({ id, retire })}
             onedit={(id, patch) => updateMut.mutate({ id, data: patch })}
-            ondelete={(id) => deleteMut.mutate(id)}
           />
         </section>
       </div>
@@ -153,16 +177,16 @@ export default function TruckTiresPage() {
               <h2 id="ttp-spares-title">Lốp dự phòng trong kho</h2>
               <p>{spares.length} lốp có thể lắp lên xe này</p>
             </div>
+            <TireLegend />
           </div>
           <TireTable
             tires={spares}
+            suppliers={suppliers}
             positionLabels={positionLabels}
             positionListId="ttp-position-options-spares"
             loading={isLoading}
             emptyHint="Không có lốp kho."
-            oninstall={(id, position) => installMut.mutate({ id, truckId, position })}
             onedit={(id, patch) => updateMut.mutate({ id, data: patch })}
-            ondelete={(id) => deleteMut.mutate(id)}
           />
         </section>
       )}
@@ -172,13 +196,15 @@ export default function TruckTiresPage() {
 
 // ─── Add-tire inline form ───────────────────────────────────────────────────
 
-function AddTireForm({ positionLabels, saving, onsave }: {
+function AddTireForm({ positionLabels, suppliers, saving, onsave }: {
   positionLabels: string[];
+  suppliers: Supplier[];
   saving: boolean;
   onsave: (d: {
     serial: string;
     position: string | null;
     size: string | null;
+    supplierId: number | null;
     cost: number;
     warrantyUntil: string | null;
   }) => void;
@@ -186,6 +212,7 @@ function AddTireForm({ positionLabels, saving, onsave }: {
   const [serial, setSerial] = useState('');
   const [positionText, setPositionText] = useState('');
   const [size, setSize] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [cost, setCost] = useState('');
   const [warranty, setWarranty] = useState('');
 
@@ -196,12 +223,14 @@ function AddTireForm({ positionLabels, saving, onsave }: {
       serial: serial.trim(),
       ...positionPayload,
       size: size.trim() || null,
+      supplierId: supplierId ? Number(supplierId) : null,
       cost: cost ? Number(cost) : 0,
       warrantyUntil: warranty || null,
     });
     setSerial('');
     setPositionText('');
     setSize('');
+    setSupplierId('');
     setCost('');
     setWarranty('');
   };
@@ -230,6 +259,15 @@ function AddTireForm({ positionLabels, saving, onsave }: {
       <div className="ttp-field">
         <label>Kích cỡ</label>
         <input className="input" value={size} onChange={(e) => setSize(e.target.value)} placeholder="VD: 11R22.5" />
+      </div>
+      <div className="ttp-field">
+        <label>Nhà cung cấp</label>
+        <select className="input" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+          <option value="">Chưa chọn</option>
+          {suppliers.map((supplier) => (
+            <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+          ))}
+        </select>
       </div>
       <div className="ttp-field">
         <label>Giá (VND)</label>
@@ -298,48 +336,14 @@ function PositionCell({ tire, optionsId, onedit }: {
   );
 }
 
-/** Inline position picker + install button for a spare. A spare's stored
- *  position is just its last slot — let the manager choose where it mounts
- *  NOW (was previously always reusing the stale/OTHER slot). (code-review MEDIUM) */
-function InstallControl({ tire, optionsId, oninstall }: {
-  tire: Tire;
-  optionsId: string;
-  oninstall: (id: number, position: string | null) => void;
-}) {
-  const [positionText, setPositionText] = useState(tire.position ?? '');
-  return (
-    <>
-      <input
-        className="input ttp-pos-select"
-        list={optionsId}
-        value={positionText}
-        onChange={(e) => setPositionText(e.target.value)}
-        onBlur={() => {
-          const cleaned = cleanPositionLabel(positionText);
-          setPositionText(cleaned);
-        }}
-        aria-label="Vị trí lắp lốp"
-      />
-      <button className="btn btn--primary" onClick={() => {
-        const payload = positionPayloadFromLabel(positionText);
-        oninstall(tire.id, payload.position ?? null);
-      }}>
-        Lắp lên xe
-      </button>
-    </>
-  );
-}
-
-function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, oninstall, onremove, onedit, ondelete }: {
+function TireTable({ tires, suppliers, positionLabels, positionListId, loading, emptyHint, onedit }: {
   tires: Tire[];
+  suppliers: Supplier[];
   positionLabels: string[];
   positionListId: string;
   loading: boolean;
   emptyHint: string;
-  oninstall?: (id: number, position: string | null) => void;
-  onremove?: (id: number, retire: boolean) => void;
   onedit: (id: number, patch: TirePatch) => void;
-  ondelete: (id: number) => void;
 }) {
   if (loading) return <div className="ttp-empty">Đang tải…</div>;
   if (tires.length === 0) return <div className="ttp-empty">{emptyHint}</div>;
@@ -348,6 +352,15 @@ function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, 
     <div className="ttp-table-wrap">
       <PositionOptions id={positionListId} labels={positionLabels} />
       <table className="ttp-table">
+        <colgroup>
+          <col className="ttp-col-serial" />
+          <col className="ttp-col-position" />
+          <col className="ttp-col-size" />
+          <col className="ttp-col-installed" />
+          <col className="ttp-col-days" />
+          <col className="ttp-col-supplier" />
+          <col className="ttp-col-warranty" />
+        </colgroup>
         <thead>
           <tr>
             <th>Serial</th>
@@ -355,9 +368,8 @@ function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, 
             <th>Kích cỡ</th>
             <th>Ngày lắp</th>
             <th>Số ngày chạy</th>
+            <th>Nhà cung cấp</th>
             <th>Hạn bảo hành</th>
-            <th>Trạng thái</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -366,14 +378,18 @@ function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, 
             const days = daysInService(t.installedAt, t.removedAt);
             return (
               <tr key={t.id}>
-                <td className="ttp-serial">{t.serial}</td>
-                <td>
+                <td className="ttp-serial" data-label="Serial">
+                  <StatusStrip color={TIRE_STATUS_COLORS[t.status]} />
+                  {t.serial}
+                </td>
+                <td data-label="Vị trí">
                   <PositionCell tire={t} optionsId={positionListId} onedit={onedit} />
                 </td>
-                <td>{t.size || '—'}</td>
-                <td>{t.installedAt || '—'}</td>
-                <td>{days == null ? '—' : `${days} ngày`}</td>
-                <td>
+                <td data-label="Kích cỡ">{t.size || '—'}</td>
+                <td data-label="Ngày lắp">{t.installedAt || '—'}</td>
+                <td data-label="Số ngày chạy">{days == null ? '—' : `${days} ngày`}</td>
+                <td className="ttp-supplier" data-label="Nhà cung cấp">{supplierName(suppliers, t.supplierId)}</td>
+                <td data-label="Hạn bảo hành">
                   {t.warrantyUntil ? (
                     <span className="ttp-warranty">
                       {t.warrantyUntil}
@@ -384,29 +400,6 @@ function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, 
                       )}
                     </span>
                   ) : '—'}
-                </td>
-                <td>
-                  <StatusPill variant={t.status === TireStatus.IN_USE ? 'success' : t.status === TireStatus.IN_STOCK ? 'neutral' : 'warn'}>
-                    {TIRE_STATUS_LABELS[t.status]}
-                  </StatusPill>
-                </td>
-                <td>
-                  <div className="ttp-row-actions">
-                    {oninstall && <InstallControl tire={t} optionsId={positionListId} oninstall={oninstall} />}
-                    {onremove && (
-                      <>
-                        <button className="btn btn--secondary" onClick={() => onremove(t.id, false)}>Tháo (về kho)</button>
-                        <button className="btn btn--danger" onClick={() => onremove(t.id, true)}>Thanh lý</button>
-                      </>
-                    )}
-                    <button className="btn btn--secondary" onClick={() => {
-                      const sz = prompt('Kích cỡ mới', t.size ?? '');
-                      if (sz !== null) onedit(t.id, { size: sz });
-                    }}>Sửa</button>
-                    <button className="btn btn--danger" onClick={() => {
-                      if (confirm(`Xóa lốp "${t.serial}"?`)) ondelete(t.id);
-                    }}>Xóa</button>
-                  </div>
                 </td>
               </tr>
             );

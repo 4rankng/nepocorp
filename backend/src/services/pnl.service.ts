@@ -76,10 +76,7 @@ export async function getPnlReport(month: number, year: number) {
     const ownServiceMarginTotal = trips.reduce((sum, t) => sum + serviceMarginForTrip(t.id), 0);
     const grossProfit = totalRevenue - totalCosts + ownServiceMarginTotal;
 
-    const fees = await db.select().from(s.managementFees);
-    const m = month || new Date().getMonth() + 1;
-    const [fee] = fees.filter(f => f.month === m && f.year === year);
-    const managementFee = fee ? parseFloat(fee.amount) : 0;
+    const managementFee = 0;
 
     const penaltyDateFilter = month
       ? and(gte(s.penalties.date, tripStart), sql`${s.penalties.date} < ${tripEnd}`)
@@ -182,7 +179,7 @@ export async function getPnlReport(month: number, year: number) {
 
     const adjustedGrossProfit = grossProfit - totalMaintenanceExpenses;
     const adjustedTotalCosts = totalCosts + totalMaintenanceExpenses;
-    const netProfit = adjustedGrossProfit - managementFee - companyExpenses + otherIncome;
+    const netProfit = adjustedGrossProfit - companyExpenses + otherIncome;
 
     const maintenanceExpensesByTruckResult: Record<number, string> = {};
     for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {

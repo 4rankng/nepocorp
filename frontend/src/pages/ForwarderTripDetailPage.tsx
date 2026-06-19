@@ -19,7 +19,6 @@ interface ForwarderContainer {
   id: number;
   containerNumber?: string;
   sealNumber?: string | null;
-  containerTypeName?: string | null;
   notes?: string | null;
 }
 
@@ -46,7 +45,6 @@ export default function ForwarderTripDetailPage() {
   const deleteExpenseMut = useDeleteForwarderExpense();
 
   const { data: catalogs } = useCatalogs();
-  const containerTypeOptions = catalogs?.containerTypes ?? [];
   const forwarderExpenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
 
   const { data: suppliersResp } = useQuery({
@@ -57,7 +55,7 @@ export default function ForwarderTripDetailPage() {
   const supplierOptions = suppliersResp?.items ?? [];
 
   const [showContainerForm, setShowContainerForm] = useState(false);
-  const [containerForm, setContainerForm] = useState({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' });
+  const [containerForm, setContainerForm] = useState({ containerNumber: '', sealNumber: '', notes: '' });
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
@@ -123,13 +121,12 @@ export default function ForwarderTripDetailPage() {
       {
         tripId,
         data: {
-          containerTypeId: containerForm.containerTypeId ? Number(containerForm.containerTypeId) : undefined,
           containerNumber: containerForm.containerNumber,
           sealNumber: containerForm.sealNumber || undefined,
           notes: containerForm.notes || undefined,
         },
       },
-      { onSuccess: () => { setContainerForm({ containerTypeId: '', containerNumber: '', sealNumber: '', notes: '' }); setShowContainerForm(false); } },
+      { onSuccess: () => { setContainerForm({ containerNumber: '', sealNumber: '', notes: '' }); setShowContainerForm(false); } },
     );
   };
 
@@ -313,18 +310,6 @@ export default function ForwarderTripDetailPage() {
         {showContainerForm && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-1)', background: 'var(--bg-2)' }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <FormGroup label="Loại container" style={{ flex: '0 0 150px' }}>
-                <select
-                  className="input"
-                  value={containerForm.containerTypeId}
-                  onChange={e => setContainerForm(f => ({ ...f, containerTypeId: e.target.value }))}
-                >
-                  <option value="">-- Chọn loại --</option>
-                  {containerTypeOptions.map(ct => (
-                    <option key={ct.id} value={String(ct.id)}>{ct.name}</option>
-                  ))}
-                </select>
-              </FormGroup>
               <FormGroup label="Số container *" style={{ flex: 1, minWidth: 140 }}>
                 <input
                   className="input"
@@ -386,16 +371,6 @@ export default function ForwarderTripDetailPage() {
               >
                 <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
-                  {c.containerTypeName && (
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, color: 'var(--brand)',
-                      background: 'var(--brand-subtle, rgba(0,177,79,0.1))',
-                      borderRadius: 4, padding: '1px 6px', marginRight: 8,
-                      fontFamily: 'var(--font-mono)',
-                    }}>
-                      {c.containerTypeName}
-                    </span>
-                  )}
                   <span style={{ fontWeight: 600, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{c.containerNumber}</span>
                   {c.sealNumber && (
                     <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 12 }}>

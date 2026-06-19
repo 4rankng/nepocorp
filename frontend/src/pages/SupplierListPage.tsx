@@ -120,7 +120,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
           <input id="supp-note" className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú thêm…" />
         </div>
         <div className="field">
-          <label htmlFor="supp-linked-customer" style={labelStyle}>Liên kết khách hàng (bù trừ nợ)</label>
+          <label htmlFor="supp-linked-customer" style={labelStyle}>Khách hàng liên quan</label>
           <select
             id="supp-linked-customer"
             className="input"

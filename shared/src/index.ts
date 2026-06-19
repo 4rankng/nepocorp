@@ -2,7 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
-  TireStatus, TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
+  TIRE_STATUSES, TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
@@ -17,7 +17,7 @@ export {
   TIRES,
 } from './constants';
 
-export type { PushAudience } from './constants';
+export type { PushAudience, TireStatus } from './constants';
 
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
@@ -57,7 +57,7 @@ export {
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
   driverPayoutSchema,
-  tireSchema, installTireSchema, removeTireSchema,
+  tireSchema, installTireSchema,
 } from './schemas';
 
 export {
@@ -83,7 +83,7 @@ export type {
   AncillaryExpenseType,
   UpdateProfileInput,
   CommissionInput,
-  TireInput, InstallTireInput, RemoveTireInput,
+  TireInput, InstallTireInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

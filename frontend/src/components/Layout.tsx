@@ -31,7 +31,6 @@ import { api } from '../lib/api';
 import { useBadgeCounts } from '../hooks/useQueries';
 import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
-import { NotificationDrawer } from './NotificationDrawer';
 import { Sidebar } from './layout/Sidebar';
 import { Topbar } from './layout/Topbar';
 import { ProfileModal } from './layout/ProfileModal';
@@ -154,7 +153,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const bottomNavRef = useBottomNavAnimations({ ready: !!user && user.role === 'DRIVER' });
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
 
   // Profile modal state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -371,7 +369,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     isDriver,
     sidebarOpen,
     onToggleSidebar: () => setSidebarOpen(v => !v),
-    onOpenNotifications: () => setNotifOpen(true),
   };
 
   return (
@@ -524,8 +521,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-
-      <NotificationDrawer isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
   );
 }

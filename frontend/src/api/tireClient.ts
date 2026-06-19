@@ -46,14 +46,9 @@ export const tireClient = {
     status: Tire['status'];
   }>) => api.put<Tire>(TIRES.DETAIL(id), data),
 
-  remove: (id: number) => api.delete<{ ok: true }>(TIRES.DETAIL(id)),
-
   install: (id: number, truckId: number, position?: string | null) =>
     api.post<Tire>(TIRES.INSTALL(id), {
       truckId,
       position: position ?? null,
     }),
-
-  removeFromTruck: (id: number, retire = false) =>
-    api.post<Tire>(TIRES.REMOVE(id), { retire }),
 };

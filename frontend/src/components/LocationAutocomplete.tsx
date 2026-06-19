@@ -46,8 +46,7 @@ export function LocationAutocomplete({
 
   useClickOutside(wrapperRef, closeDropdown, { escapeKey: true });
 
-  // Ports catalog (Cảng / Bãi Hải Phòng — Pete's config catalog)
-  // Cached for 5 min; fires once per session for all autocomplete inputs.
+  // Cached location suggestions; fires once per session for all autocomplete inputs.
   const { data: ports = [] } = useQuery<Port[]>({
     queryKey: qk.catalogs.portsCatalog,
     queryFn: () => configClient.getPorts(),

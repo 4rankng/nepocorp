@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard, Compass, Layers, Truck, AlertTriangle, Wallet, DollarSign,
   Receipt, FileText, Store, Route, Settings, Users, ScrollText, Package,
-  Fuel, MapPin, UserCheck, Building, Tags, Container, Anchor, Calendar,
+  Fuel, MapPin, UserCheck, Building, Tags, Calendar,
 } from 'lucide-react';
 
 export type SearchItemType = 'page' | 'config' | 'action';
@@ -67,12 +67,8 @@ export const CONFIG_ITEMS: SearchItem[] = [
   { id: 'trailers', type: 'config', label: 'Rơ-moóc', description: 'Danh sách rơ-moóc, loại rơ-moóc và thông tin đăng kiểm.', path: '/config/trailers', icon: Truck, action: 'Sửa' },
   { id: 'cargo-types', type: 'config', label: 'Loại hàng hóa', description: 'Bảng quy chuẩn loại hàng hóa vận chuyển ảnh hưởng đến việc phân xe chặng.', path: '/config/cargo-types', icon: Package, action: 'Sửa' },
   { id: 'pricing-tables', type: 'config', label: 'Bảng giá cước', description: 'Bảng giá cước chi tiết thỏa thuận với từng đối tác khách hàng trên mỗi tuyến.', path: '/config/pricing-tables', icon: DollarSign, action: 'Sửa' },
-  { id: 'management-fees', type: 'config', label: 'Phí quản lý', description: 'Cấu hình phí quản lý vận hành theo tháng/năm dùng cho báo cáo lãi lỗ.', path: '/config/management-fees', icon: Building, action: 'Sửa' },
   { id: 'salary-periods', type: 'config', label: 'Kỳ lương', description: 'Cấu hình kỳ lương hàng tháng. Mặc định: ngày 26 tháng trước đến ngày 25 tháng này.', path: '/config/salary-periods', icon: Calendar, action: 'Sửa' },
   { id: 'expense-categories', type: 'config', label: 'Hạng mục chi phí', description: 'Phân loại chi phí vận hành. Bật định kỳ để theo dõi ngày gia hạn bảo hiểm, đăng kiểm, bảo dưỡng.', path: '/config/expense-categories', icon: Tags, action: 'Sửa' },
-  { id: 'container-types', type: 'config', label: 'Loại container', description: "Danh mục các loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC…) dùng khi ghi nhận số container / seal.", path: '/config/container-types', icon: Container, action: 'Sửa' },
-  { id: 'seal-types', type: 'config', label: 'Loại seal', description: 'Danh mục các loại seal (Customs, Carrier, Bản in…) dùng khi ghi nhận danh sách seal của container.', path: '/config/seal-types', icon: Container, action: 'Sửa' },
-  { id: 'ports', type: 'config', label: 'Cảng / Bãi Hải Phòng', description: 'Danh mục các cảng và bãi container tại khu vực Hải Phòng, dùng làm điểm đi / điểm đến trong chuyến hàng.', path: '/config/ports', icon: Anchor, action: 'Sửa' },
   { id: 'forwarder-expense-types', type: 'config', label: 'Loại chi phí giao nhận', description: 'Danh mục các khoản chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe, kiểm tra…).', path: '/config/forwarder-expense-types', icon: Tags, action: 'Sửa' },
 ];
 
