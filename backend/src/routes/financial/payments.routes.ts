@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role, NotificationType, createPaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema } from '@tingting/shared';
+import { Role, NotificationType, createPaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema, driverPayoutSchema } from '@tingting/shared';
 import type { PayablesCategory } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
@@ -101,6 +101,29 @@ router.post('/commissions', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTA
   const result = await recordCommission(data);
   await cacheInvalidate('reports:dashboard');
   res.status(201).json(result);
+}));
+
+// ─── Driver payout (B1 — feedback202606 GAP 4) ──────────────────────────────
+// Records a driver salary/cash payout. Posts a DRIVER_PAYOUT debit on the
+// DRIVER ledger. MANAGER/ACCOUNTANT only — drivers may not record their own
+// payouts (DRIVER/FORWARDER denied by requireRoles).
+
+router.post('/drivers/:driverId/payouts', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(req.params.driverId as string, 10);
+  if (!Number.isFinite(driverId) || driverId <= 0) {
+    return res.status(400).json({ error: 'driverId không hợp lệ' });
+  }
+  const data = driverPayoutSchema.parse(req.body);
+  const entry = await financialService.recordDriverPayout({
+    driverId,
+    amount: data.amount,
+    method: data.method,
+    payoutDate: data.payoutDate,
+    note: data.note,
+    receiptId: data.receiptId,
+  });
+  await cacheInvalidate('reports:dashboard');
+  res.status(201).json(entry);
 }));
 
 export default router;

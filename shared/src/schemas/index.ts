@@ -198,6 +198,21 @@ export const commissionSchema = z.object({
 
 export type CommissionInput = z.infer<typeof commissionSchema>;
 
+// ─── Driver payout (B1 — feedback202606 GAP 4) ───────────────────────────────
+// Records a salary/cash payout to a driver. Posts a DRIVER_PAYOUT debit on the
+// DRIVER ledger, reducing the company's payable balance for that driver.
+
+export const driverPayoutSchema = z.object({
+  amount: z.union([z.number(), z.string()]).transform(Number)
+    .refine((v) => Number.isFinite(v) && v > 0 && v <= 1_000_000_000, { message: 'Số tiền thanh toán không hợp lệ (phải > 0 và ≤ 1 tỷ VND)' }),
+  method: z.enum(['CASH', 'BANK']),
+  payoutDate: z.string().min(1, 'Ngày thanh toán là bắt buộc'),
+  note: z.string().trim().max(500).optional(),
+  receiptId: z.string().trim().max(100).optional(),
+});
+
+export type DriverPayoutInput = z.infer<typeof driverPayoutSchema>;
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const loginSchema = z.object({

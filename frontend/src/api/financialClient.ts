@@ -91,4 +91,12 @@ export const financialClient = {
       totalOutstanding: string;
       items: Array<{ forwarderId: number; name: string | null; outstanding: string }>;
     }>(FINANCIAL.ADVANCE_BALANCES),
+
+  postDriverPayout: (driverId: number, data: {
+    amount: number;
+    method: 'CASH' | 'BANK';
+    payoutDate: string;
+    note?: string;
+    receiptId?: string;
+  }) => api.post<{ id: number }>(FINANCIAL.DRIVER_PAYOUT(driverId), data),
 };

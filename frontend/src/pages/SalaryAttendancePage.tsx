@@ -2,15 +2,17 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Loader2,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock,
+  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock, Wallet,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { Money } from '../components/shared/Money';
-import { Panel } from '../components/UI';
+import { Panel, Modal } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import {
   useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary,
 } from '../hooks/useSalaryQueries';
+import { usePostDriverPayout } from '../hooks/useFinancialQueries';
+import { useAuth } from '../hooks/useAuth';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
@@ -222,6 +224,182 @@ function MobileDayList({ dates, workDayMap, isUpdating: _isUpdating, isConfirmed
   );
 }
 
+// ── Driver payout modal (B1 — feedback202606 GAP 4) ──────────────────────────
+// MANAGER/ACCOUNTANT records a salary/cash payout to a driver. Posts a
+// DRIVER_PAYOUT debit on the DRIVER ledger, reducing the company's payable
+// balance for that driver. Drivers may not record their own payouts.
+
+interface DriverPayoutForm {
+  driverId: number | '';
+  amount: string;
+  method: 'CASH' | 'BANK';
+  payoutDate: string;
+  note: string;
+}
+
+function DriverPayoutModal({
+  isOpen,
+  onClose,
+  initialDriverId,
+  drivers,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  initialDriverId: number | null;
+  drivers: Array<{ id: number; name: string }>;
+}) {
+  const payout = usePostDriverPayout();
+  const { toast } = useToast();
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState<DriverPayoutForm>({
+    driverId: '', amount: '', method: 'CASH', payoutDate: today, note: '',
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      setForm({
+        driverId: initialDriverId ?? '',
+        amount: '',
+        method: 'CASH',
+        payoutDate: today,
+        note: '',
+      });
+    }
+  }, [isOpen, initialDriverId, today]);
+
+  const sortedDrivers = useMemo(
+    () => drivers.slice().sort((a, b) => a.name.localeCompare(b.name, 'vi')),
+    [drivers],
+  );
+
+  const amountNum = Number(form.amount);
+  const overLimit = Number.isFinite(amountNum) && amountNum > 1_000_000_000;
+  const canSubmit =
+    !payout.isPending &&
+    form.driverId !== '' &&
+    form.amount.trim() !== '' &&
+    Number.isFinite(amountNum) &&
+    amountNum > 0 &&
+    !overLimit &&
+    form.payoutDate.trim() !== '';
+
+  const handleSubmit = () => {
+    if (!canSubmit || form.driverId === '') return;
+    payout.mutate(
+      {
+        driverId: Number(form.driverId),
+        amount: amountNum,
+        method: form.method,
+        payoutDate: form.payoutDate,
+        note: form.note.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast({ kind: 'success', message: 'Đã ghi thanh toán lương cho lái xe.' });
+          onClose();
+        },
+        onError: (err) => {
+          const msg = (err as Error)?.message ?? 'Không thể ghi thanh toán.';
+          toast({ kind: 'error', message: msg });
+        },
+      },
+    );
+  };
+
+  const error = payout.error ? (payout.error as Error).message : null;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      title="Ghi thanh toán lương"
+      onClose={onClose}
+      onConfirm={handleSubmit}
+      maxWidth={480}
+      footer={
+        <>
+          <button className="btn btn--secondary btn--sm" onClick={onClose} disabled={payout.isPending}>
+            Hủy bỏ
+          </button>
+          <button className="btn btn--primary btn--sm" onClick={handleSubmit} disabled={!canSubmit}>
+            {payout.isPending ? 'Đang ghi...' : 'Ghi nhận'}
+          </button>
+        </>
+      }
+    >
+      <div className="commission-form">
+        {error && (
+          <div className="commission-form__error" role="alert">{error}</div>
+        )}
+        <div className="field">
+          <label htmlFor="payout-driver">Lái xe <span className="req" aria-hidden="true">*</span></label>
+          <select
+            id="payout-driver"
+            className="input"
+            value={form.driverId}
+            onChange={e => setForm(f => ({ ...f, driverId: e.target.value === '' ? '' : Number(e.target.value) }))}
+          >
+            <option value="">— Chọn lái xe —</option>
+            {sortedDrivers.map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="payout-amount">Số tiền <span className="req" aria-hidden="true">*</span></label>
+          <input
+            id="payout-amount"
+            className="input"
+            type="number"
+            min="0"
+            max="1000000000"
+            step="1000"
+            placeholder="VD: 5000000"
+            value={form.amount}
+            onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+          />
+          {overLimit && (
+            <div className="commission-form__error" role="note">Số tiền vượt quá giới hạn tối đa 1 tỷ VND.</div>
+          )}
+        </div>
+        <div className="field">
+          <label htmlFor="payout-method">Phương thức <span className="req" aria-hidden="true">*</span></label>
+          <select
+            id="payout-method"
+            className="input"
+            value={form.method}
+            onChange={e => setForm(f => ({ ...f, method: e.target.value as 'CASH' | 'BANK' }))}
+          >
+            <option value="CASH">Tiền mặt</option>
+            <option value="BANK">Chuyển khoản</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="payout-date">Ngày thanh toán <span className="req" aria-hidden="true">*</span></label>
+          <input
+            id="payout-date"
+            className="input"
+            type="date"
+            value={form.payoutDate}
+            onChange={e => setForm(f => ({ ...f, payoutDate: e.target.value }))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="payout-note">Ghi chú (tuỳ chọn)</label>
+          <input
+            id="payout-note"
+            className="input"
+            type="text"
+            maxLength={500}
+            placeholder="VD: Tạm ứng tháng lương"
+            value={form.note}
+            onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SalaryAttendancePage() {
   const { month, year, goPrev, goNext } = useMonth();
@@ -235,6 +413,12 @@ export default function SalaryAttendancePage() {
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
   const confirmMutation = useConfirmSalary(selectedDriverId ?? 0, year, month);
   const { toast } = useToast();
+
+  /* ── Driver payout modal (B1) — MANAGER/ACCOUNTANT only ── */
+  const { user } = useAuth();
+  const canPostPayout =
+    user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'ACCOUNTANT';
+  const [payoutOpen, setPayoutOpen] = useState(false);
 
   const isConfirmed = salary?.confirmationStatus === 'CONFIRMED';
 
@@ -364,6 +548,15 @@ export default function SalaryAttendancePage() {
             <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} lái xe</div>
           </div>
           <div className="hero-actions">
+            {canPostPayout && (
+              <button
+                className="btn btn--primary btn--sm"
+                onClick={() => setPayoutOpen(true)}
+              >
+                <Wallet size={14} style={{ marginRight: 6 }} />
+                Ghi thanh toán
+              </button>
+            )}
             <button className="btn btn--secondary btn--icon" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
             <span className="hero-month-label">Tháng {month}</span>
             <button className="btn btn--secondary btn--icon" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
@@ -643,6 +836,14 @@ export default function SalaryAttendancePage() {
           </aside>
         )}
       </div>
+      {canPostPayout && (
+        <DriverPayoutModal
+          isOpen={payoutOpen}
+          onClose={() => setPayoutOpen(false)}
+          initialDriverId={selectedDriverId}
+          drivers={drivers.map(d => ({ id: d.id, name: d.name }))}
+        />
+      )}
     </div>
   );
 }

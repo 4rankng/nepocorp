@@ -54,6 +54,7 @@ export {
   containerTypeSchema, portSchema, sealTypeSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
+  driverPayoutSchema,
   tireSchema, installTireSchema, removeTireSchema,
 } from './schemas';
 

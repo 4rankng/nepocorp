@@ -75,6 +75,60 @@ export async function recordPayment(input: PaymentInput) {
   });
 }
 
+// ─── Driver payout (B1 — feedback202606 GAP 4) ───────────────────────────────
+
+export interface DriverPayoutInput {
+  driverId: number;
+  amount: number;          // VND, integer-scale
+  method: 'CASH' | 'BANK';
+  payoutDate: string;      // ISO date (YYYY-MM-DD)
+  note?: string;
+  receiptId?: string;
+}
+
+/**
+ * Record a driver salary/cash payout. Posts ONE DRIVER_PAYOUT debit on the
+ * DRIVER ledger, reducing the company's payable balance for that driver.
+ *
+ * Mirrors recordPayment: advisory-lock the entity, guard against overpay
+ * (debit may not exceed the current payable balance + 1 for rounding), then
+ * post a single append-only ledger entry.
+ */
+export async function recordDriverPayout(input: DriverPayoutInput) {
+  return db.transaction(async (tx) => {
+    // Resolve driver name for a human-readable overpay error message
+    // (no raw IDs in UI text — per project convention).
+    const [driver] = await tx.select({ name: s.drivers.name })
+      .from(s.drivers)
+      .where(eq(s.drivers.id, input.driverId))
+      .limit(1);
+    const driverLabel = driver?.name ?? `ID ${input.driverId}`;
+
+    // Advisory lock — serialize concurrent payouts for the same driver
+    await LedgerService.lockEntity(tx, 'DRIVER', input.driverId);
+
+    // DRIVER ledger balance = payable (what the company still owes the driver).
+    const balance = await LedgerService.getBalanceTx(tx, 'DRIVER', input.driverId);
+    if (input.amount > balance + 1) {  // +1 to absorb rounding
+      throw new ApiError(422,
+        `Số thanh toán vượt quá số công nợ còn lại của lái xe ${driverLabel} (còn ${balance.toLocaleString('vi-VN')} ₫, nhập ${input.amount.toLocaleString('vi-VN')} ₫)`);
+    }
+
+    const methodLabel = input.method === 'BANK' ? 'chuyển khoản' : 'tiền mặt';
+    const note = `Thanh toán lương (${methodLabel}) — ${input.payoutDate}${input.note ? ' — ' + input.note : ''}`;
+
+    return LedgerService.postEntry(tx, {
+      txnType: TxnType.DRIVER_PAYOUT,
+      entityType: 'DRIVER',
+      entityId: input.driverId,
+      debit: input.amount,
+      credit: 0,
+      receiptId: input.receiptId,
+      note,
+    });
+  });
+}
+
 // ─── Adjustments ────────────────────────────────────────────────────────────────
 
 export interface AdjustmentInput {

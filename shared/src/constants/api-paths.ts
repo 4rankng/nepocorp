@@ -116,6 +116,7 @@ export const FINANCIAL = {
   DASHBOARD_APPROVAL_QUEUE: '/dashboard/approval-queue',
   LEDGER_BALANCES: '/ledger/balances',
   COMMISSIONS: '/commissions',
+  DRIVER_PAYOUT: (driverId: number) => `/drivers/${driverId}/payouts`,
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

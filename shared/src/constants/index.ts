@@ -47,6 +47,7 @@ export enum TxnType {
   FUEL_EXPENSE = 'FUEL_EXPENSE',
   UNLOCK_REVERSAL = 'UNLOCK_REVERSAL',
   COMMISSION = 'COMMISSION',
+  DRIVER_PAYOUT = 'DRIVER_PAYOUT',
 }
 
 export enum CarrierType {

@@ -54,6 +54,36 @@ export function usePostCommission() {
   });
 }
 
+/**
+ * Records a driver salary/cash payout (B1 — feedback202606 GAP 4). Posts a
+ * DRIVER_PAYOUT debit on the DRIVER ledger, reducing the company's payable
+ * balance for that driver. Invalidates salary-list + driver-salary queries so
+ * the "Đã thanh toán" / payable figures refresh.
+ */
+export function usePostDriverPayout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      driverId: number;
+      amount: number;
+      method: 'CASH' | 'BANK';
+      payoutDate: string;
+      note?: string;
+      receiptId?: string;
+    }) => financialClient.postDriverPayout(data.driverId, {
+      amount: data.amount,
+      method: data.method,
+      payoutDate: data.payoutDate,
+      note: data.note,
+      receiptId: data.receiptId,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.salary.listAll });
+      qc.invalidateQueries({ queryKey: qk.salary.driverSalaryAll });
+    },
+  });
+}
+
 export function useSupplierStatement(supplierId: number | undefined) {
   return useQuery<SupplierStatement>({
     queryKey: qk.financial.supplierStatement(supplierId),
