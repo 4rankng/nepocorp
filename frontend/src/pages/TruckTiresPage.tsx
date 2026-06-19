@@ -1,24 +1,12 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  TirePosition, TireStatus,
-  TIRE_POSITION_LABELS, TIRE_STATUS_LABELS,
+  TireStatus,
+  TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
   computeTireAlerts,
 } from '@tingting/shared';
 import type { Tire } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
-
-/** Editable tire fields. `cost` is a number on the wire (numeric(15,0)). */
-type TirePatch = Partial<{
-  serial: string;
-  truckId: number | null;
-  position: TirePosition | null;
-  size: string | null;
-  supplierId: number | null;
-  cost: number;
-  warrantyUntil: string | null;
-  status: Tire['status'];
-}>;
 import { routes } from '../lib/routes';
 import {
   useTires, useCreateTire, useUpdateTire, useDeleteTire,
@@ -27,13 +15,50 @@ import {
 import { useTrucksAndDrivers } from '../hooks/useCatalogQueries';
 import './TruckTiresPage.css';
 
-const POSITION_OPTIONS = Object.values(TirePosition);
-const TIRE_POSITION_MAP_LABELS: Partial<Record<TirePosition, string>> = {
-  [TirePosition.REAR_OUTER_LEFT]: 'Ngoài trái',
-  [TirePosition.REAR_OUTER_RIGHT]: 'Ngoài phải',
-  [TirePosition.REAR_INNER_LEFT]: 'Trong trái',
-  [TirePosition.REAR_INNER_RIGHT]: 'Trong phải',
-};
+/** Editable tire fields. `cost` is a number on the wire (numeric(15,0)). */
+type TirePatch = Partial<{
+  serial: string;
+  truckId: number | null;
+  position: string | null;
+  size: string | null;
+  supplierId: number | null;
+  cost: number;
+  warrantyUntil: string | null;
+  status: Tire['status'];
+}>;
+
+function normalizePositionText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/\s+/g, ' ');
+}
+
+function cleanPositionLabel(label: string): string {
+  return label.trim().replace(/\s+/g, ' ');
+}
+
+function displayTirePosition(tire: Tire): string {
+  return tire.position || '—';
+}
+
+function positionPayloadFromLabel(label: string): { position: string | null } {
+  const cleaned = cleanPositionLabel(label);
+  return {
+    position: cleaned || null,
+  };
+}
+
+function buildPositionLabels(tires: Tire[]): string[] {
+  const labels = [
+    ...TIRE_POSITION_SUGGESTIONS,
+    ...tires.map((tire) => tire.position || '').filter(Boolean),
+  ];
+  return Array.from(new Set(labels.map(cleanPositionLabel).filter(Boolean)));
+}
 
 /** Days a tire has been in service: installedAt → removedAt, or → today if still in use. (A10c) */
 function daysInService(installedAt: string | null, removedAt: string | null): number | null {
@@ -66,6 +91,7 @@ export default function TruckTiresPage() {
   const { data: allTires, isLoading } = useTires();
   const tiresOnTruck = (allTires ?? []).filter((t) => t.truckId === truckId);
   const spares = (allTires ?? []).filter((t) => t.status === TireStatus.IN_STOCK);
+  const positionLabels = buildPositionLabels(allTires ?? []);
 
   const createMut = useCreateTire();
   const updateMut = useUpdateTire();
@@ -78,7 +104,7 @@ export default function TruckTiresPage() {
       <div className="ttp-header">
         <div>
           <Link to={routes.fleet} className="ttp-back">← Quay lại đội xe</Link>
-          <h1>Lốp xe{truck ? ` — ${truck.licensePlate}` : ''}</h1>
+          <h1>{truck?.licensePlate ?? 'Lốp xe'}</h1>
           <div className="ttp-sub">
             Theo dõi serial lốp, vị trí lắp, hạn bảo hành và vòng đời (kho → đang dùng → thanh lý).
           </div>
@@ -94,6 +120,7 @@ export default function TruckTiresPage() {
             </div>
           </div>
           <AddTireForm
+            positionLabels={positionLabels}
             saving={createMut.isPending}
             onsave={async (d) => { await createMut.mutateAsync({ ...d, truckId }); }}
           />
@@ -108,6 +135,8 @@ export default function TruckTiresPage() {
           </div>
           <TireTable
             tires={tiresOnTruck}
+            positionLabels={positionLabels}
+            positionListId="ttp-position-options-mounted"
             loading={isLoading}
             emptyHint="Chưa có lốp nào được lắp trên xe này."
             onremove={(id, retire) => removeMut.mutate({ id, retire })}
@@ -127,6 +156,8 @@ export default function TruckTiresPage() {
           </div>
           <TireTable
             tires={spares}
+            positionLabels={positionLabels}
+            positionListId="ttp-position-options-spares"
             loading={isLoading}
             emptyHint="Không có lốp kho."
             oninstall={(id, position) => installMut.mutate({ id, truckId, position })}
@@ -141,32 +172,38 @@ export default function TruckTiresPage() {
 
 // ─── Add-tire inline form ───────────────────────────────────────────────────
 
-function AddTireForm({ saving, onsave }: {
+function AddTireForm({ positionLabels, saving, onsave }: {
+  positionLabels: string[];
   saving: boolean;
   onsave: (d: {
     serial: string;
-    position: TirePosition | null;
+    position: string | null;
     size: string | null;
     cost: number;
     warrantyUntil: string | null;
   }) => void;
 }) {
   const [serial, setSerial] = useState('');
-  const [position, setPosition] = useState<TirePosition>(TirePosition.OTHER);
+  const [positionText, setPositionText] = useState('');
   const [size, setSize] = useState('');
   const [cost, setCost] = useState('');
   const [warranty, setWarranty] = useState('');
 
   const submit = () => {
     if (!serial.trim()) return;
+    const positionPayload = positionPayloadFromLabel(positionText);
     onsave({
       serial: serial.trim(),
-      position,
+      ...positionPayload,
       size: size.trim() || null,
       cost: cost ? Number(cost) : 0,
       warrantyUntil: warranty || null,
     });
-    setSerial(''); setSize(''); setCost(''); setWarranty('');
+    setSerial('');
+    setPositionText('');
+    setSize('');
+    setCost('');
+    setWarranty('');
   };
 
   return (
@@ -175,9 +212,20 @@ function AddTireForm({ saving, onsave }: {
         <label>Serial lốp *</label>
         <input className="input" value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="VD: 12345678" />
       </div>
-      <div className="ttp-field ttp-field--position">
+      <div className="ttp-field">
         <label>Vị trí</label>
-        <TirePositionPicker value={position} onChange={setPosition} />
+        <input
+          className="input"
+          list="ttp-position-options-add"
+          value={positionText}
+          onChange={(e) => setPositionText(e.target.value)}
+          onBlur={() => {
+            const cleaned = cleanPositionLabel(positionText);
+            setPositionText(cleaned);
+          }}
+          placeholder="VD: Trước trái hoặc Trục nâng trái"
+        />
+        <PositionOptions id="ttp-position-options-add" labels={positionLabels} />
       </div>
       <div className="ttp-field">
         <label>Kích cỡ</label>
@@ -198,85 +246,97 @@ function AddTireForm({ saving, onsave }: {
   );
 }
 
-function TirePositionPicker({ value, onChange }: {
-  value: TirePosition;
-  onChange: (next: TirePosition) => void;
-}) {
-  const tireButton = (position: TirePosition, className: string) => (
-    <button
-      key={position}
-      type="button"
-      className={`ttp-tire-pick ${className}${value === position ? ' is-selected' : ''}`}
-      aria-pressed={value === position}
-      aria-label={TIRE_POSITION_LABELS[position]}
-      onClick={() => onChange(position)}
-    >
-      <span>{TIRE_POSITION_MAP_LABELS[position] ?? TIRE_POSITION_LABELS[position]}</span>
-    </button>
-  );
+// ─── Tire table ─────────────────────────────────────────────────────────────
 
+function PositionOptions({ id, labels }: { id: string; labels: string[] }) {
   return (
-    <div className="ttp-position-picker">
-      <div className="ttp-truck-map" role="group" aria-label="Chọn vị trí lốp trên xe">
-        <div className="ttp-truck-nose">Đầu xe</div>
-        <div className="ttp-truck-rail" aria-hidden="true" />
-        {tireButton(TirePosition.FRONT_LEFT, 'ttp-tire-pick--front-left')}
-        {tireButton(TirePosition.FRONT_RIGHT, 'ttp-tire-pick--front-right')}
-        {tireButton(TirePosition.REAR_OUTER_LEFT, 'ttp-tire-pick--rear-outer-left')}
-        {tireButton(TirePosition.REAR_INNER_LEFT, 'ttp-tire-pick--rear-inner-left')}
-        {tireButton(TirePosition.REAR_INNER_RIGHT, 'ttp-tire-pick--rear-inner-right')}
-        {tireButton(TirePosition.REAR_OUTER_RIGHT, 'ttp-tire-pick--rear-outer-right')}
-      </div>
-
-      <div className="ttp-position-extra" role="group" aria-label="Vị trí khác">
-        {[TirePosition.SPARE, TirePosition.OTHER].map((position) => (
-          <button
-            key={position}
-            type="button"
-            className={`ttp-position-chip${value === position ? ' is-selected' : ''}`}
-            aria-pressed={value === position}
-            onClick={() => onChange(position)}
-          >
-            {TIRE_POSITION_LABELS[position]}
-          </button>
-        ))}
-      </div>
-    </div>
+    <datalist id={id}>
+      {labels.map((label) => (
+        <option key={label} value={label} />
+      ))}
+    </datalist>
   );
 }
 
-// ─── Tire table ─────────────────────────────────────────────────────────────
+function PositionCell({ tire, optionsId, onedit }: {
+  tire: Tire;
+  optionsId: string;
+  onedit: (id: number, patch: TirePatch) => void;
+}) {
+  const currentLabel = tire.position ?? '';
+
+  const commit = (node: HTMLInputElement) => {
+    const nextLabel = cleanPositionLabel(node.value);
+    if (!nextLabel) {
+      node.value = currentLabel;
+      return;
+    }
+    if (normalizePositionText(nextLabel) === normalizePositionText(currentLabel)) {
+      node.value = nextLabel;
+      return;
+    }
+    node.value = nextLabel;
+    onedit(tire.id, positionPayloadFromLabel(nextLabel));
+  };
+
+  return (
+    <input
+      className="input ttp-position-input"
+      list={optionsId}
+      defaultValue={currentLabel}
+      placeholder="Gõ vị trí"
+      onBlur={(e) => commit(e.currentTarget)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+        if (e.key === 'Escape') {
+          e.currentTarget.value = currentLabel;
+          e.currentTarget.blur();
+        }
+      }}
+      aria-label={`Vị trí lốp ${tire.serial}`}
+    />
+  );
+}
 
 /** Inline position picker + install button for a spare. A spare's stored
  *  position is just its last slot — let the manager choose where it mounts
  *  NOW (was previously always reusing the stale/OTHER slot). (code-review MEDIUM) */
-function InstallControl({ tire, oninstall }: {
+function InstallControl({ tire, optionsId, oninstall }: {
   tire: Tire;
-  oninstall: (id: number, position: TirePosition | null) => void;
+  optionsId: string;
+  oninstall: (id: number, position: string | null) => void;
 }) {
-  const [pos, setPos] = useState<TirePosition>(tire.position ?? TirePosition.OTHER);
+  const [positionText, setPositionText] = useState(tire.position ?? '');
   return (
     <>
-      <select
+      <input
         className="input ttp-pos-select"
-        value={pos}
-        onChange={(e) => setPos(e.target.value as TirePosition)}
+        list={optionsId}
+        value={positionText}
+        onChange={(e) => setPositionText(e.target.value)}
+        onBlur={() => {
+          const cleaned = cleanPositionLabel(positionText);
+          setPositionText(cleaned);
+        }}
         aria-label="Vị trí lắp lốp"
-      >
-        {POSITION_OPTIONS.map((p) => <option key={p} value={p}>{TIRE_POSITION_LABELS[p]}</option>)}
-      </select>
-      <button className="btn btn--primary" onClick={() => oninstall(tire.id, pos)}>
+      />
+      <button className="btn btn--primary" onClick={() => {
+        const payload = positionPayloadFromLabel(positionText);
+        oninstall(tire.id, payload.position ?? null);
+      }}>
         Lắp lên xe
       </button>
     </>
   );
 }
 
-function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ondelete }: {
+function TireTable({ tires, positionLabels, positionListId, loading, emptyHint, oninstall, onremove, onedit, ondelete }: {
   tires: Tire[];
+  positionLabels: string[];
+  positionListId: string;
   loading: boolean;
   emptyHint: string;
-  oninstall?: (id: number, position: TirePosition | null) => void;
+  oninstall?: (id: number, position: string | null) => void;
   onremove?: (id: number, retire: boolean) => void;
   onedit: (id: number, patch: TirePatch) => void;
   ondelete: (id: number) => void;
@@ -286,6 +346,7 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
 
   return (
     <div className="ttp-table-wrap">
+      <PositionOptions id={positionListId} labels={positionLabels} />
       <table className="ttp-table">
         <thead>
           <tr>
@@ -306,7 +367,9 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
             return (
               <tr key={t.id}>
                 <td className="ttp-serial">{t.serial}</td>
-                <td>{t.position ? TIRE_POSITION_LABELS[t.position] : '—'}</td>
+                <td>
+                  <PositionCell tire={t} optionsId={positionListId} onedit={onedit} />
+                </td>
                 <td>{t.size || '—'}</td>
                 <td>{t.installedAt || '—'}</td>
                 <td>{days == null ? '—' : `${days} ngày`}</td>
@@ -329,7 +392,7 @@ function TireTable({ tires, loading, emptyHint, oninstall, onremove, onedit, ond
                 </td>
                 <td>
                   <div className="ttp-row-actions">
-                    {oninstall && <InstallControl tire={t} oninstall={oninstall} />}
+                    {oninstall && <InstallControl tire={t} optionsId={positionListId} oninstall={oninstall} />}
                     {onremove && (
                       <>
                         <button className="btn btn--secondary" onClick={() => onremove(t.id, false)}>Tháo (về kho)</button>

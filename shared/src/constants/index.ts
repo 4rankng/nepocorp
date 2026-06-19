@@ -236,33 +236,21 @@ export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
 };
 
 // ─── N1 — Tires ───────────────────────────────────────────────────────────
-export enum TirePosition {
-  FRONT_LEFT = 'FRONT_LEFT',
-  FRONT_RIGHT = 'FRONT_RIGHT',
-  REAR_OUTER_LEFT = 'REAR_OUTER_LEFT',
-  REAR_OUTER_RIGHT = 'REAR_OUTER_RIGHT',
-  REAR_INNER_LEFT = 'REAR_INNER_LEFT',
-  REAR_INNER_RIGHT = 'REAR_INNER_RIGHT',
-  SPARE = 'SPARE',
-  OTHER = 'OTHER',
-}
+export const TIRE_POSITION_SUGGESTIONS = [
+  'Trước trái',
+  'Trước phải',
+  'Sau ngoài trái',
+  'Sau ngoài phải',
+  'Sau trong trái',
+  'Sau trong phải',
+  'Lốp dự phòng',
+] as const;
 
 export enum TireStatus {
   IN_STOCK = 'IN_STOCK',
   IN_USE = 'IN_USE',
   RETIRED = 'RETIRED',
 }
-
-export const TIRE_POSITION_LABELS: Record<TirePosition, string> = {
-  [TirePosition.FRONT_LEFT]: 'Trước trái',
-  [TirePosition.FRONT_RIGHT]: 'Trước phải',
-  [TirePosition.REAR_OUTER_LEFT]: 'Sau ngoài trái',
-  [TirePosition.REAR_OUTER_RIGHT]: 'Sau ngoài phải',
-  [TirePosition.REAR_INNER_LEFT]: 'Sau trong trái',
-  [TirePosition.REAR_INNER_RIGHT]: 'Sau trong phải',
-  [TirePosition.SPARE]: 'Lốp dự phòng',
-  [TirePosition.OTHER]: 'Khác',
-};
 
 export const TIRE_STATUS_LABELS: Record<TireStatus, string> = {
   [TireStatus.IN_STOCK]: 'Trong kho',

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tireClient } from '../api/tireClient';
 import { qk } from '../api/keys';
-import type { Tire, TirePosition } from '@tingting/shared';
+import type { Tire } from '@tingting/shared';
 
 export function useTires(truckId?: number) {
   return useQuery<Tire[]>({
@@ -50,7 +50,7 @@ export function useDeleteTire() {
 export function useInstallTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
-    mutationFn: ({ id, truckId, position }: { id: number; truckId: number; position?: TirePosition | null }) =>
+    mutationFn: ({ id, truckId, position }: { id: number; truckId: number; position?: string | null }) =>
       tireClient.install(id, truckId, position ?? null),
     onSuccess: invalidate,
   });

@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import { TIRES } from '@tingting/shared';
-import type { Tire, PaginatedResponse, TirePosition } from '@tingting/shared';
+import type { Tire, PaginatedResponse } from '@tingting/shared';
 
 /**
  * N1 — Tire API client. CRUD hits the generic `/fleet/tires` router; install
@@ -27,7 +27,7 @@ export const tireClient = {
   create: (data: {
     serial: string;
     truckId?: number | null;
-    position?: TirePosition | null;
+    position?: string | null;
     size?: string | null;
     supplierId?: number | null;
     cost?: number;
@@ -38,7 +38,7 @@ export const tireClient = {
   update: (id: number, data: Partial<{
     serial: string;
     truckId: number | null;
-    position: TirePosition | null;
+    position: string | null;
     size: string | null;
     supplierId: number | null;
     cost: number;
@@ -48,8 +48,11 @@ export const tireClient = {
 
   remove: (id: number) => api.delete<{ ok: true }>(TIRES.DETAIL(id)),
 
-  install: (id: number, truckId: number, position?: TirePosition | null) =>
-    api.post<Tire>(TIRES.INSTALL(id), { truckId, position: position ?? null }),
+  install: (id: number, truckId: number, position?: string | null) =>
+    api.post<Tire>(TIRES.INSTALL(id), {
+      truckId,
+      position: position ?? null,
+    }),
 
   removeFromTruck: (id: number, retire = false) =>
     api.post<Tire>(TIRES.REMOVE(id), { retire }),

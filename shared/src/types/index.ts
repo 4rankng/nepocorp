@@ -2,7 +2,7 @@ import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus,
-  TirePosition, TireStatus, TruckCapRole,
+  TireStatus, TruckCapRole,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ export interface Tire {
   id: number;
   serial: string;
   truckId: number | null;
-  position: TirePosition | null;
+  position: string | null;
   size: string | null;
   installedAt: string | null;
   removedAt: string | null;

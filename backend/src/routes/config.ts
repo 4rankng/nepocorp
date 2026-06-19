@@ -152,7 +152,10 @@ tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER),
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
   const data = installTireSchema.parse(req.body);
   try {
-    const tire = await installTire(id, { truckId: data.truckId, position: data.position ?? null });
+    const tire = await installTire(id, {
+      truckId: data.truckId,
+      position: data.position ?? null,
+    });
     await cacheInvalidatePattern('catalogs:*');
     res.json(tire);
   } catch (e) {

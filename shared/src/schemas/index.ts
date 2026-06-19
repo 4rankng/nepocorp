@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   FuelMode, LoadingType, Role,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
-  TirePosition, TireStatus,
+  TireStatus,
 } from '../constants';
 
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
@@ -305,7 +305,7 @@ export const trailerSchema = z.object({
 export const tireSchema = z.object({
   serial: z.string().min(1, 'Số serial lốp không được để trống').max(64),
   truckId: z.coerce.number().int().positive().optional().nullable(),
-  position: z.nativeEnum(TirePosition).optional().nullable(),
+  position: z.string().trim().min(1).max(64).optional().nullable(),
   size: z.string().max(32).optional().nullable(),
   supplierId: z.coerce.number().int().positive().optional().nullable(),
   cost: numericMoney.optional().default(0),
@@ -315,7 +315,7 @@ export const tireSchema = z.object({
 
 export const installTireSchema = z.object({
   truckId: z.coerce.number().int().positive(),
-  position: z.nativeEnum(TirePosition).optional().nullable(),
+  position: z.string().trim().min(1).max(64).optional().nullable(),
 });
 
 export const removeTireSchema = z.object({
@@ -702,4 +702,3 @@ export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlemen
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;
 export type SealTypeInput = z.infer<typeof sealTypeSchema>;
 export type PortInput = z.infer<typeof portSchema>;
-

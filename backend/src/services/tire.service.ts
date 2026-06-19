@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
-import type { TirePosition, TireStatus } from '@tingting/shared';
+import type { TireStatus } from '@tingting/shared';
 
 /**
  * N1 — Tire lifecycle service.
@@ -16,7 +16,7 @@ import type { TirePosition, TireStatus } from '@tingting/shared';
 
 export interface InstallTireInput {
   truckId: number;
-  position?: TirePosition | null;
+  position?: string | null;
 }
 
 export interface RemoveTireInput {

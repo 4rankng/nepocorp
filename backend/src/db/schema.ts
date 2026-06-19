@@ -28,13 +28,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
-// N1 — tire management: axle/wheel slot + lifecycle status.
-export const tirePositionEnum = pgEnum('tire_position', [
-  'FRONT_LEFT', 'FRONT_RIGHT',
-  'REAR_OUTER_LEFT', 'REAR_OUTER_RIGHT',
-  'REAR_INNER_LEFT', 'REAR_INNER_RIGHT',
-  'SPARE', 'OTHER',
-]);
+// N1 — tire management: position is free text because fleets use different axle layouts.
 export const tireStatusEnum = pgEnum('tire_status', ['IN_STOCK', 'IN_USE', 'RETIRED']);
 
 
@@ -129,7 +123,7 @@ export const tires = pgTable('tires', {
   id: serial('id').primaryKey(),
   serial: varchar('serial', { length: 64 }).notNull().unique(),
   truckId: integer('truck_id').references(() => trucks.id),
-  position: tirePositionEnum('position'),
+  position: varchar('position', { length: 64 }),
   size: varchar('size', { length: 32 }),
   installedAt: date('installed_at'),
   removedAt: date('removed_at'),
@@ -840,5 +834,3 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   uniqueIndex('push_sub_user_endpoint_idx').on(table.userId, table.endpoint),
   index('push_sub_user_idx').on(table.userId),
 ]);
-
-

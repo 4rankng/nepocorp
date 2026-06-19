@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Camera, Loader2, Save, Package, AlertCircle, Pencil, X, Check, ImageOff } from 'lucide-react';
 import { api, getAuthenticatedPhotoUrl } from '../../lib/api';
-import { configClient } from '../../api/configClient';
-import { qk } from '../../api/keys';
 import { useToast } from '../shared/Toast';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import {
@@ -13,13 +10,6 @@ import {
   suggestCorrections,
 } from '@tingting/shared';
 import { TextField } from '../../design-system';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/Select';
 
 /**
  * Container & seal section for the driver trip-detail page.
@@ -49,12 +39,6 @@ interface ExistingContainer {
   containerTypeName: string | null;
   containerTypeCode: string | null;
   cargoWeightKg: string | null;
-}
-
-interface ContainerType {
-  id: number;
-  code: string;
-  name: string;
 }
 
 interface OcrResponse {
@@ -153,12 +137,6 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
   const [scannerType, setScannerType] = useState<'CONTAINER' | 'SEAL' | null>(null);
   const [editing, setEditing] = useState(false);
   const [removingPhoto, setRemovingPhoto] = useState<'CONTAINER' | 'SEAL' | null>(null);
-
-  const { data: containerTypes = [] } = useQuery<ContainerType[]>({
-    queryKey: qk.catalogs.containerTypes,
-    queryFn: () => configClient.getContainerTypes(),
-    staleTime: 5 * 60 * 1000,
-  });
 
   const hasSaved = containers.length > 0;
   const showForm = !hasSaved || editing;
@@ -465,26 +443,6 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
                 value={draft.sealNumber}
                 onChange={e => setDraft(prev => ({ ...prev, sealNumber: e.target.value.toUpperCase() }))}
               />
-
-              <div className="ds-field">
-                <label className="ds-field__label">Loại cont</label>
-                <Select
-                  value={draft.containerTypeId ? String(draft.containerTypeId) : "none"}
-                  onValueChange={val => setDraft(prev => ({ ...prev, containerTypeId: val === "none" ? "" : val }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="— Chọn loại —" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Chọn loại —</SelectItem>
-                    {containerTypes.map(ct => (
-                      <SelectItem key={ct.id} value={String(ct.id)}>
-                        {ct.name} ({ct.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="dcc-actions">

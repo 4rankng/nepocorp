@@ -393,6 +393,13 @@
       "when": 1781838975911,
       "tag": "0055_nosy_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781852886223,
+      "tag": "0056_jittery_pride",
+      "breakpoints": true
     }
   ]
 }

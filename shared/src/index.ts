@@ -2,7 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
-  TirePosition, TireStatus, TIRE_POSITION_LABELS, TIRE_STATUS_LABELS,
+  TireStatus, TIRE_POSITION_SUGGESTIONS, TIRE_STATUS_LABELS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
@@ -101,4 +101,3 @@ export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
 export { computeVehicleAlerts, VEHICLE_ALERT_LABELS, computeTireAlerts } from './calculations/vehicleAlerts';
 export type { VehicleAlertInput } from './calculations/vehicleAlerts';
-

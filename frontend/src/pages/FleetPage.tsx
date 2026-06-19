@@ -17,9 +17,10 @@ import { useTires } from '../hooks/useTireQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
-import { TireStatus, TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
+import { TireStatus, TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from '@tingting/shared';
 import type { Tire, Truck as TruckType, Driver } from '@tingting/shared';
 import { routes } from '../lib/routes';
+import { formatDate } from '../lib/format';
 
 // Extracted form modals + shared fleet constants
 import {
@@ -82,6 +83,46 @@ const TireQuickLink = memo(function TireQuickLink({ truckId, count }: { truckId:
       <span>Lốp</span>
       <ArrowRight size={13} />
     </Link>
+  );
+});
+
+function tireStatusVariant(status: TireStatus): 'neutral' | 'success' | 'warn' {
+  if (status === TireStatus.IN_USE) return 'success';
+  if (status === TireStatus.RETIRED) return 'warn';
+  return 'neutral';
+}
+
+const TireDetailList = memo(function TireDetailList({ truckId, tires }: { truckId: number; tires: Tire[] }) {
+  const mountedTires = tires.filter((tire) => tire.truckId === truckId && tire.status === TireStatus.IN_USE);
+
+  if (mountedTires.length === 0) {
+    return <TireQuickLink truckId={truckId} count={0} />;
+  }
+
+  return (
+    <div className="fleet-tire-detail">
+      <div className="fleet-tire-detail__head">
+        <span><strong>{mountedTires.length}</strong> lốp đang lắp</span>
+        <TireQuickLink truckId={truckId} count={mountedTires.length} />
+      </div>
+      <div className="fleet-tire-detail__list">
+        {mountedTires.map((tire) => (
+          <div className="fleet-tire-detail__row" key={tire.id}>
+            <div className="fleet-tire-detail__main">
+              <span className="fleet-tire-detail__serial">{tire.serial}</span>
+              <span className="fleet-tire-detail__position">{tire.position || 'Chưa nhập vị trí'}</span>
+            </div>
+            <div className="fleet-tire-detail__meta">
+              <span>{tire.size || '—'}</span>
+              {tire.warrantyUntil && <span>BH {formatDate(tire.warrantyUntil)}</span>}
+              <StatusPill variant={tireStatusVariant(tire.status)}>
+                {TIRE_STATUS_LABELS[tire.status]}
+              </StatusPill>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 });
 
@@ -165,7 +206,7 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
 
         <div className="fleet-detail__grid">
           {secondary.map((d, i) => (
-            <div className={`fleet-detail__item${d.label === 'Lốp' ? ' fleet-detail__item--action' : ''}`} key={`${d.label}-${i}`}>
+            <div className={`fleet-detail__item${d.label === 'Lốp' ? ' fleet-detail__item--wide' : ''}`} key={`${d.label}-${i}`}>
               <div className="fleet-detail__label">{d.label}</div>
               <div className="fleet-detail__value">{d.value}</div>
             </div>
@@ -529,7 +570,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
             { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
             { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
-            { label: 'Lốp', value: <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} /> },
+            { label: 'Lốp', value: <TireDetailList truckId={t.id} tires={tires as Tire[]} /> },
           ];
         })()}
       />

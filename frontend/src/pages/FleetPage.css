@@ -528,16 +528,8 @@
   background: var(--surface-2);
 }
 
-.fleet-detail__item--action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.fleet-detail__item--wide {
   grid-column: 1 / -1;
-}
-
-.fleet-detail__item--action .fleet-detail__label {
-  margin-bottom: 0;
 }
 
 .fleet-detail__value {
@@ -625,6 +617,78 @@
   background: linear-gradient(180deg, var(--accent-soft), #DDF7E8);
   border-color: rgba(0, 177, 79, 0.15);
   color: var(--accent-2);
+}
+
+.fleet-tire-detail {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+}
+
+.fleet-tire-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+}
+
+.fleet-tire-detail__head strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.fleet-tire-detail__list {
+  display: grid;
+  gap: 7px;
+}
+
+.fleet-tire-detail__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(203, 211, 206, 0.72);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.fleet-tire-detail__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fleet-tire-detail__serial {
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-tire-detail__position {
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-tire-detail__meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  white-space: nowrap;
 }
 
 .fleet-detail-actions {
@@ -891,9 +955,13 @@
     grid-template-columns: 1fr;
   }
 
-  .fleet-detail__item--action {
+  .fleet-tire-detail__head,
+  .fleet-tire-detail__row,
+  .fleet-tire-detail__meta {
     align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    justify-content: flex-start;
+    white-space: normal;
   }
 
   .fleet-detail-actions .btn {
