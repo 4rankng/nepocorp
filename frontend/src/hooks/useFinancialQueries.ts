@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { financialClient, type CustomerAging } from '../api/financialClient';
+import { financialClient, type CustomerAging, type CustomerAgingResponse } from '../api/financialClient';
 import { qk } from '../api/keys';
 import type { LedgerEntry, CustomerStatement, PayablesCategory, SupplierStatement } from '@tingting/shared';
 
 export type { CustomerAging };
 
 export function useCustomerAging(search?: string) {
-  return useQuery<{ customers: CustomerAging[] }>({
+  return useQuery<CustomerAgingResponse>({
     queryKey: qk.financial.customerAging(search),
-    queryFn: () => financialClient.getCustomerAging(search),
+    queryFn: () => financialClient.getCustomerAging({ search }),
     staleTime: 2 * 60 * 1000,
   });
 }

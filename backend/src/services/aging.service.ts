@@ -19,6 +19,8 @@ interface FetchOptions {
   asOfDate?: string;
   /** Restrict to a single entity — avoids fetching all entities when only one is needed */
   entityId?: number;
+  /** Restrict to a known set of entities — useful after catalog/search prefiltering */
+  entityIds?: number[];
   /** Restrict to a subset of transaction types (e.g. fuel-only payables). */
   txnTypes?: TxnType[];
 }
@@ -31,14 +33,42 @@ interface EntityAgingResult {
   maxOverdueDays: number;
 }
 
+interface AgingPageOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface CustomerAgingListItem {
+  customerId: number;
+  customerName: string;
+  contactInfo: string | null;
+  linkedSupplierId: number | null;
+  linkedSupplierApBalance: number;
+  netBalance: number;
+  totalOutstanding: number;
+  aging: { current: number; d30: number; d60: number; over90: number };
+  maxOverdueDays: number;
+}
+
+export interface CustomerAgingListResult {
+  customers: CustomerAgingListItem[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 // ─── Core computation ────────────────────────────────────────────────────────
 
 async function fetchLedgerGrouped(
   config: AgingConfig,
   opts: FetchOptions = {},
 ): Promise<Map<number, LedgerEntry[]>> {
+  if (opts.entityIds && opts.entityIds.length === 0) return new Map();
+
   const conditions = [eq(s.ledger.entityType, config.entityType)];
   if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
+  if (opts.entityIds && opts.entityIds.length > 0) conditions.push(inArray(s.ledger.entityId, opts.entityIds));
   if (opts.asOfDate) conditions.push(sql`${s.ledger.timestamp} <= ${opts.asOfDate}::timestamptz`);
   if (opts.txnTypes && opts.txnTypes.length > 0) {
     conditions.push(inArray(s.ledger.txnType, opts.txnTypes));
@@ -97,6 +127,53 @@ function computeEntityResults(
   }
 
   return results;
+}
+
+export function paginateAgingRows<T>(
+  rows: T[],
+  opts: AgingPageOptions = {},
+): { rows: T[]; page: number; limit: number; total: number; totalPages: number } {
+  const page = Math.max(1, Math.floor(opts.page || 1));
+  const limit = Math.min(500, Math.max(1, Math.floor(opts.limit || 500)));
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  return {
+    rows: rows.slice(start, start + limit),
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number>> {
+  const escaped = search.replace(/[%_]/g, '\\$&');
+  const pattern = `%${escaped}%`;
+  const ids = new Set<number>();
+
+  // Name + contact match — case-insensitive
+  const byName = await db.select({ id: s.customers.id }).from(s.customers)
+    .where(sql`lower(${s.customers.name}) like lower(${pattern}) OR lower(coalesce(${s.customers.contactInfo}, '')) like lower(${pattern})`);
+  byName.forEach(r => ids.add(r.id));
+
+  // Container match via trip_containers
+  const byContainer = await db
+    .select({ customerId: s.trips.customerId })
+    .from(s.tripContainers)
+    .innerJoin(s.trips, eq(s.tripContainers.tripId, s.trips.id))
+    .where(like(s.tripContainers.containerNumber, pattern));
+  byContainer.forEach(r => ids.add(r.customerId));
+
+  // Container match via trip_expenses.container_number
+  const byFeeContainer = await db
+    .select({ customerId: s.trips.customerId })
+    .from(s.tripExpenses)
+    .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+    .where(like(s.tripExpenses.containerNumber, pattern));
+  byFeeContainer.forEach(r => ids.add(r.customerId));
+
+  return ids;
 }
 
 // ─── Accounts Receivable (Customer aging) ────────────────────────────────────
@@ -186,43 +263,18 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
   return topOverdue;
 }
 
-export async function getCustomerAgingList(opts: { search?: string; asOfDate?: string } = {}) {
-  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false }, opts);
-  let results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
-
+export async function getCustomerAgingList(opts: { search?: string; asOfDate?: string; page?: number; limit?: number } = {}): Promise<CustomerAgingListResult> {
   // Container-number / name search: if provided, narrow customer IDs to those
   // whose customer name OR linked trips' containers (trip_containers or
   // trip_expenses.container_number) match the query. Matches the test guide's
   // expectation that "/debt" supports lookup by container.
-  if (opts.search && opts.search.trim()) {
-    const q = opts.search.trim();
-    const escaped = q.replace(/[%_]/g, '\\$&');
-    const pattern = `%${escaped}%`;
-    const ids = new Set<number>();
-
-    // Name + contact match — case-insensitive
-    const byName = await db.select({ id: s.customers.id }).from(s.customers)
-      .where(sql`lower(${s.customers.name}) like lower(${pattern}) OR lower(coalesce(${s.customers.contactInfo}, '')) like lower(${pattern})`);
-    byName.forEach(r => ids.add(r.id));
-
-    // Container match via trip_containers
-    const byContainer = await db
-      .select({ customerId: s.trips.customerId })
-      .from(s.tripContainers)
-      .innerJoin(s.trips, eq(s.tripContainers.tripId, s.trips.id))
-      .where(like(s.tripContainers.containerNumber, pattern));
-    byContainer.forEach(r => ids.add(r.customerId));
-
-    // Container match via trip_expenses.container_number
-    const byFeeContainer = await db
-      .select({ customerId: s.trips.customerId })
-      .from(s.tripExpenses)
-      .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
-      .where(like(s.tripExpenses.containerNumber, pattern));
-    byFeeContainer.forEach(r => ids.add(r.customerId));
-
-    results = results.filter(r => ids.has(r.entityId));
-  }
+  const trimmedSearch = opts.search?.trim();
+  const searchedCustomerIds = trimmedSearch ? await findCustomerIdsForAgingSearch(trimmedSearch) : undefined;
+  const grouped = await fetchLedgerGrouped(
+    { entityType: 'CUSTOMER', invertSigns: false },
+    { asOfDate: opts.asOfDate, entityIds: searchedCustomerIds ? [...searchedCustomerIds] : undefined },
+  );
+  const results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
 
   const customerIds = results.map(r => r.entityId);
   const customers = customerIds.length > 0
@@ -239,16 +291,17 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
   const linkedSupplierIds = [...new Set(customers.map(c => c.linkedSupplierId).filter((v): v is number => v != null))];
   const apByVendor = new Map<number, number>();
   if (linkedSupplierIds.length > 0) {
-    const apGrouped = await fetchLedgerGrouped({ entityType: 'VENDOR', invertSigns: true }, opts);
+    const apGrouped = await fetchLedgerGrouped(
+      { entityType: 'VENDOR', invertSigns: true },
+      { asOfDate: opts.asOfDate, entityIds: linkedSupplierIds },
+    );
     const apResults = computeEntityResults(apGrouped, { entityType: 'VENDOR', invertSigns: true });
     for (const r of apResults) {
-      if (linkedSupplierIds.includes(r.entityId)) {
-        apByVendor.set(r.entityId, r.totalOutstanding);
-      }
+      apByVendor.set(r.entityId, r.totalOutstanding);
     }
   }
 
-  const mapped = results.map(r => {
+  const mapped: CustomerAgingListItem[] = results.map(r => {
     const linkedSupplierId = linkedSupplierMap.get(r.entityId) ?? null;
     const linkedSupplierApBalance = linkedSupplierId != null ? (apByVendor.get(linkedSupplierId) ?? 0) : 0;
     return {
@@ -265,7 +318,14 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
   });
 
   mapped.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
-  return { customers: mapped };
+  const page = paginateAgingRows(mapped, opts);
+  return {
+    customers: page.rows,
+    page: page.page,
+    limit: page.limit,
+    total: page.total,
+    totalPages: page.totalPages,
+  };
 }
 
 // ─── Accounts Payable (Vendor aging) ─────────────────────────────────────────

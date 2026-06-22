@@ -66,6 +66,7 @@ export default function DebtListPage() {
   const [search, setSearch] = useState('');
   const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
   const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
+  const totalCustomers = data?.total ?? rawCustomers.length;
   const error = queryError ? (queryError as Error).message : null;
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk' | 'current'>(
     searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
@@ -102,19 +103,13 @@ export default function DebtListPage() {
   /* ── Data processing (preserved exactly) ── */
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
     return rawCustomers.map(c => {
-      // API returns these alongside the typed CustomerAging fields but they
-      // aren't declared on the interface yet; cast to a typed extension.
-      const ext = c as CustomerAging & {
-        linkedSupplierApBalance?: number;
-        netBalance?: number;
-      };
       return {
       customerId: c.customerId,
       customerName: c.customerName,
       contactInfo: c.contactInfo,
       linkedSupplierId: c.linkedSupplierId ?? null,
-      linkedSupplierApBalance: ext.linkedSupplierApBalance ?? 0,
-      netBalance: ext.netBalance ?? c.totalOutstanding,
+      linkedSupplierApBalance: c.linkedSupplierApBalance,
+      netBalance: c.netBalance,
       totalOutstanding: c.totalOutstanding,
       aging: c.aging,
       maxOverdueDays: c.maxOverdueDays,
@@ -195,7 +190,7 @@ export default function DebtListPage() {
     <div ref={rootRef} className="debt-list-page">
       <PageHeader
         title="Công nợ phải thu"
-        description={`${rawCustomers.length} khách hàng · cập nhật vừa xong`}
+        description={`${totalCustomers} khách hàng · cập nhật vừa xong`}
         action={
           <div className="page-actions">
             <button className="btn btn--secondary btn--sm" onClick={() => {
@@ -233,7 +228,7 @@ export default function DebtListPage() {
               <span className="debt-hero__currency">{heroMoney.unit}</span>
             </div>
             <span className="hero-kpi-card__subtitle">
-              {rawCustomers.length} khách hàng · cập nhật vừa xong
+              {totalCustomers} khách hàng · cập nhật vừa xong
             </span>
           </div>
           <div className="hero-kpi-card__watermark" aria-hidden="true">

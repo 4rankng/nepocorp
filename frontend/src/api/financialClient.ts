@@ -19,9 +19,19 @@ export interface CustomerAging {
   customerName: string;
   contactInfo: string | null;
   linkedSupplierId: number | null;
+  linkedSupplierApBalance: number;
+  netBalance: number;
   totalOutstanding: number;
   aging: { current: number; d30: number; d60: number; over90: number };
   maxOverdueDays: number;
+}
+
+export interface CustomerAgingResponse {
+  customers: CustomerAging[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export const financialClient = {
@@ -71,12 +81,10 @@ export const financialClient = {
   postCommission: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) =>
     api.post<{ ok: true }>(FINANCIAL.COMMISSIONS, data),
 
-  getCustomerAging: (search?: string) => {
-    const trimmed = search?.trim();
-    return api.get<{ customers: CustomerAging[] }>(
-      trimmed
-        ? `${REPORTS.RECEIVABLES_AGING}${toQuery({ search: trimmed })}`
-        : REPORTS.RECEIVABLES_AGING,
+  getCustomerAging: (params?: { search?: string; page?: number; limit?: number }) => {
+    const search = params?.search?.trim() || undefined;
+    return api.get<CustomerAgingResponse>(
+      `${REPORTS.RECEIVABLES_AGING}${toQuery({ search, page: params?.page, limit: params?.limit })}`,
     );
   },
 
