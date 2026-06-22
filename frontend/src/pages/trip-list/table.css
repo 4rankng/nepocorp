@@ -12,8 +12,8 @@
   font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--ink-3);
-  background: transparent;
-  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(203, 211, 206, 0.72);
   border-radius: 999px;
   max-width: 100%;
   letter-spacing: 0;
@@ -52,7 +52,7 @@
 }
 .trip-list-page .table-card {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(203, 211, 206, 0.9);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
@@ -69,6 +69,7 @@
   overflow-y: visible;
   scrollbar-width: thin;
   scrollbar-color: var(--line-3) transparent;
+  overscroll-behavior-x: contain;
 }
 .trip-list-page .table-scroll-body::-webkit-scrollbar { width: 0; height: 6px; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
@@ -81,7 +82,9 @@
   grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
   padding: 14px 16px;
   gap: 12px;
-  background: var(--surface-2);
+  background:
+    linear-gradient(90deg, rgba(0, 90, 45, 0.05), rgba(255, 255, 255, 0) 44%),
+    var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   width: 100%;
   align-items: center;
@@ -108,7 +111,7 @@
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  transition: all 150ms ease;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   cursor: pointer;
   width: 100%;
   min-height: 60px;
@@ -127,7 +130,11 @@
   background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .table-row:hover {
-  background: var(--tbl-green-050);
+  background:
+    linear-gradient(90deg, rgba(0, 90, 45, 0.05), rgba(255, 255, 255, 0) 52%),
+    var(--tbl-green-050);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 22px -22px rgba(0, 90, 45, 0.55);
+  transform: translateY(-1px);
 }
 /* Hover chevron — sits inside the sticky status cell so it stays visible
    regardless of horizontal scroll. Hidden at rest; fades in + slides on
@@ -148,7 +155,8 @@
 /* Keyboard focus ring */
 .trip-list-page .table-row:focus-visible {
   outline: none;
-  box-shadow: inset 4px 0 0 var(--tbl-green-600), 0 0 0 2px var(--tbl-green-100);
+  background: var(--tbl-green-050);
+  box-shadow: inset 4px 0 0 var(--tbl-green-600), 0 0 0 2px var(--tbl-green-100), 0 10px 22px -22px rgba(0, 90, 45, 0.55);
 }
 .trip-list-page .table-row:last-of-type { border-bottom: none; }
 .trip-list-page .table-row > div {

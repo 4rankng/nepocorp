@@ -10,6 +10,21 @@
   max-width: 960px;
 }
 
+.sp-page-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.sp-page-header p {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
 /* ── Mode Selector Cards ── */
 .sp-mode-selector {
   display: grid;
@@ -301,6 +316,9 @@
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
+  .sp-wrap { gap: 16px; }
+  .sp-page-header h1 { font-size: 24px; }
+  .sp-page-header p { font-size: var(--fs-xs); }
   .sp-default-card__header { flex-wrap: wrap; }
   .sp-badge { margin-left: 0; }
   .sp-default-card__fields { flex-direction: column; align-items: stretch; }

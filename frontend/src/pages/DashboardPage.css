@@ -247,7 +247,7 @@
   transform: translateY(-1px);
 }
 
-/* @media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
   .dash-wf .wf-head,
   .dash-wf .wf-kpi,
   .dash-wf .wf-bento > *,
@@ -256,7 +256,13 @@
     opacity: 1 !important;
     transform: none !important;
   }
-} */
+  .dash-wf .wf-kpi,
+  .dash-wf .wf-card,
+  .dash-wf .wf-btn,
+  .dash-wf .wf-minibtn {
+    transition: none !important;
+  }
+}
 /* Safety net: any SVG inside the dashboard that's missing width/height attrs
    defaults to the browser's intrinsic SVG size (300×150 or full container),
    which leaks a giant icon onto the chart card. Force a small default for
@@ -336,6 +342,10 @@
   overflow: hidden;
   min-width: 0;
   position: relative;
+}
+.dash-wf .wf-card:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--wf-border));
+  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.08), var(--wf-shadow);
 }
 .dash-wf .wf-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; }
 .dash-wf .wf-card-h .ttl { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0; }

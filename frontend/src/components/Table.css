@@ -17,6 +17,7 @@
   overflow-y: hidden;
   scrollbar-color: rgba(0, 90, 45, 0.25) transparent;
   scrollbar-width: thin;
+  overscroll-behavior-x: contain;
 }
 .table-scroll::-webkit-scrollbar { height: 8px; }
 .table-scroll::-webkit-scrollbar-thumb {

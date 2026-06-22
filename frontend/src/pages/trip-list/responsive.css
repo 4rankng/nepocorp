@@ -139,11 +139,23 @@
 @media (max-width: 640px) {
   /* ── TripListPage: larger filter pill tap targets, breakdown bar fix ── */
   .trip-list-page .filter-pill {
-    height: 40px;
-    padding: 0 10px;
+    height: auto;
+    min-height: 54px;
+    padding: 8px 12px;
     font-size: var(--fs-xs);
+    align-items: center;
   }
-  .trip-list-page .filter-pill .filter-lbl-wrap { line-height: 1.2; }
+  .trip-list-page .filter-pill .filter-lbl-wrap {
+    gap: 3px;
+    line-height: 1.2;
+  }
+  .trip-list-page .filter-pill .filter-lbl-cap {
+    line-height: 1.1;
+  }
+  .trip-list-page .filter-pill select {
+    min-height: 24px;
+    line-height: 1.25;
+  }
   .trip-list-page .breakdown-bar {
     height: 6px;
     border-radius: 99px;

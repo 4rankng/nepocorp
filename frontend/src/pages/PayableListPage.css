@@ -294,6 +294,11 @@
   .payables-page .payables-category-chips {
     gap: 8px;
     margin-bottom: 12px;
+    scrollbar-width: none;
+  }
+
+  .payables-page .payables-category-chips::-webkit-scrollbar {
+    display: none;
   }
 
   .payables-page .payables-category-chip {
@@ -431,6 +436,9 @@
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 4px;
+    padding-right: 26px;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
   }
 
   .payables-page .payables-category-chips::-webkit-scrollbar {

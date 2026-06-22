@@ -65,6 +65,13 @@ export default function SalaryPeriodConfigPage() {
 
   return (
     <div ref={pageRef} className="sp-wrap" style={{ maxWidth: 840 }}>
+      <header className="sp-page-header">
+        <div>
+          <h1>Kỳ lương</h1>
+          <p>Thiết lập quy tắc mặc định cho chu kỳ chấm công và tính lương.</p>
+        </div>
+      </header>
+
       {/* ── Global Default Rule ── */}
       <div className="sp-default-card">
         <div className="sp-default-card__header">

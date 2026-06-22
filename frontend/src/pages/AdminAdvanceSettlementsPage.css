@@ -410,7 +410,7 @@
   .as-page .as-grid-row { display: none; }
   .as-page .as-cards {
     display: block;
-    padding: 10px;
+    padding: 10px 0;
   }
 
   /* Panel becomes transparent wrapper for cards */

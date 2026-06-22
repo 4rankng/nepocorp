@@ -42,7 +42,8 @@
 /* ── Hero (same pattern as dispatch) ──────────────────────────────────── */
 .trip-list-page .hero {
   background:
-    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(135deg, rgba(0, 90, 45, 0.07), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(90deg, rgba(0, 90, 45, 0.045) 1px, transparent 1px),
     var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
@@ -57,18 +58,21 @@
 .trip-list-page .hero.hero--route-network {
   background-image:
     linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(90deg, rgba(0, 90, 45, 0.045) 1px, transparent 1px),
     url("/assets/illustrations/hero-route-network.svg");
   background-color: var(--surface);
   background-repeat: no-repeat;
-  background-position: left top, right 24px bottom 10px;
-  background-size: auto, min(260px, 24vw) auto;
+  background-position: left top, left top, right 24px bottom 10px;
+  background-size: auto, 32px 32px, min(260px, 24vw) auto;
 }
 .trip-list-page .hero::before {
   content: '';
   position: absolute;
-  right: -110px; top: -120px;
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.10), transparent 68%);
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(340px, 34%);
+  background: linear-gradient(90deg, transparent, rgba(0, 90, 45, 0.035));
   pointer-events: none;
 }
 .trip-list-page .hero::after {
@@ -106,6 +110,9 @@
 }
 .trip-list-page .hero-sub { font-size: var(--fs-sm); color: var(--ink-2); }
 .trip-list-page .hero-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.trip-list-page .hero-actions .btn {
+  min-width: 132px;
+}
 
 /* Hero action buttons use the Global .btn / .btn--primary / .btn--secondary
    system (components/Button.css). The page-scoped .btn-d* recipes were
@@ -131,6 +138,12 @@
   border-radius: 12px;
   padding: 14px 16px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+  transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease), transform 160ms var(--ease);
+}
+.trip-list-page .metric:hover {
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line-2));
+  box-shadow: 0 12px 26px -24px rgba(0, 90, 45, 0.55), 0 1px 2px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
 }
 .trip-list-page .metric.featured {
   grid-row: auto;

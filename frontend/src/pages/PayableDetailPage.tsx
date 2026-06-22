@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -11,6 +11,7 @@ import { useToast } from '../components/shared/Toast';
 import { useConfirm, Modal } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import { useClickOutside } from '../hooks/useClickOutside';
 import './DebtDetailPage.css';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
@@ -63,6 +64,8 @@ export default function PayableDetailPage() {
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(exportMenuRef, () => setShowExportMenu(false), { escapeKey: true, enabled: showExportMenu });
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [paymentReceiptId, setPaymentReceiptId] = useState('');
