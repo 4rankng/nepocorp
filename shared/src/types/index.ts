@@ -344,6 +344,8 @@ export interface LedgerEntry {
   balance: string;
   note: string | null;
   createdAt: string;
+  routeName?: string | null;
+  containerNumbers?: string[];
 }
 
 export interface Penalty {
@@ -922,6 +924,63 @@ export interface DebtOffset {
   approvedBy: number | null;
   approvedAt: string | null;
   createdAt: string;
+}
+
+// ─── Billing Documents (debit notes + payment statements) ─────────────────────
+// Saved SNAPSHOT documents composed by kế toán / quản lý.
+// Saving never mutates the append-only ledger — these are presentation artifacts.
+// entityType CUSTOMER = AR customer (debit note) OR AP external carrier (payment
+// statement, since carriers live in the customers catalog per decision D-E/F);
+// entityType VENDOR = AP supplier (fuel / ancillary).
+
+export type BillingDocumentType = 'DEBIT_NOTE' | 'PAYMENT_STATEMENT';
+export type BillingDocumentEntityType = 'CUSTOMER' | 'VENDOR';
+export type BillingLineSourceType = 'TRIP' | 'EXPENSE' | 'ADHOC';
+export type BillingLineType = 'FREIGHT' | 'SERVICE_FEE' | 'ADHOC';
+
+export interface BillingDocumentLine {
+  id?: number;
+  documentId?: number;
+  sourceType: BillingLineSourceType;
+  sourceId: number | null;        // tripId | tripExpenseId | null (ADHOC)
+  lineType: BillingLineType;
+  description: string;
+  routeName?: string | null;
+  containerNumbers?: string[] | null;
+  baseAmount: number;             // generated amount (incl-VAT, VND)
+  amountOverride?: number | null; // edited amount; effective = override ?? baseAmount
+  excluded?: boolean;             // hidden from this document
+  sortOrder: number;
+}
+
+export interface BillingDocument {
+  id: number;
+  type: BillingDocumentType;
+  entityType: BillingDocumentEntityType;
+  entityId: number;
+  entityName?: string;
+  rangeFrom: string;              // ISO date (trip departure-date basis)
+  rangeTo: string;
+  note: string | null;
+  totalInclVat: number;           // sum of non-excluded effective line amounts
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  lines: BillingDocumentLine[];
+}
+
+/** Lines returned by the generate/preview step, before save. */
+export interface BillingDraftLine extends Omit<BillingDocumentLine, 'id' | 'documentId'> {}
+
+export interface BillingDocumentDraft {
+  type: BillingDocumentType;
+  entityType: BillingDocumentEntityType;
+  entityId: number;
+  entityName: string;
+  rangeFrom: string;
+  rangeTo: string;
+  lines: BillingDraftLine[];
+  totalInclVat: number;
 }
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

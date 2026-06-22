@@ -12,6 +12,12 @@ import type {
   PaginatedResponse,
   Penalty,
   AdvanceSettlementWithRefs,
+  BillingDocument,
+  BillingDocumentDraft,
+  BillingDocumentEntityType,
+  BillingDocumentType,
+  SaveBillingDocumentInput,
+  GenerateBillingDocumentInput,
 } from '@tingting/shared';
 
 export interface CustomerAging {
@@ -107,4 +113,29 @@ export const financialClient = {
     note?: string;
     receiptId?: string;
   }) => api.post<{ id: number }>(FINANCIAL.DRIVER_PAYOUT(driverId), data),
+
+  // ─── Billing documents (debit notes + payment statements) ───────────────────
+  generateBillingDraft: (data: GenerateBillingDocumentInput) =>
+    api.post<BillingDocumentDraft>(FINANCIAL.BILLING_DOCUMENT_GENERATE, data),
+
+  saveBillingDocument: (data: SaveBillingDocumentInput) =>
+    api.post<BillingDocument>(FINANCIAL.BILLING_DOCUMENTS, data),
+
+  updateBillingDocument: (id: number, data: SaveBillingDocumentInput) =>
+    api.put<BillingDocument>(FINANCIAL.BILLING_DOCUMENT(id), data),
+
+  listBillingDocuments: (entityType: BillingDocumentEntityType, entityId: number) =>
+    api.get<BillingDocument[]>(
+      `${FINANCIAL.BILLING_DOCUMENTS}${toQuery({ entityType, entityId })}`,
+    ),
+
+  getBillingDocument: (id: number) =>
+    api.get<BillingDocument>(FINANCIAL.BILLING_DOCUMENT(id)),
+
+  deleteBillingDocument: (id: number) =>
+    api.delete<{ ok: true }>(FINANCIAL.BILLING_DOCUMENT(id)),
+
+  /** Direct URL for authenticated blob download (used with fetch + auth header). */
+  getBillingDocumentExportUrl: (id: number) =>
+    `/api${FINANCIAL.BILLING_DOCUMENT_EXPORT(id)}`,
 };

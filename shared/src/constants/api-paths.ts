@@ -118,6 +118,10 @@ export const FINANCIAL = {
   LEDGER_BALANCES: '/ledger/balances',
   COMMISSIONS: '/commissions',
   DRIVER_PAYOUT: (driverId: number) => `/drivers/${driverId}/payouts`,
+  BILLING_DOCUMENTS: '/finance/billing-documents',
+  BILLING_DOCUMENT_GENERATE: '/finance/billing-documents/generate',
+  BILLING_DOCUMENT: (id: number) => `/finance/billing-documents/${id}`,
+  BILLING_DOCUMENT_EXPORT: (id: number) => `/finance/billing-documents/${id}/export`,
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

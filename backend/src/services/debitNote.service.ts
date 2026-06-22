@@ -76,14 +76,38 @@ export async function getDebitNoteData(
     .where(and(...tripConditions))
     .orderBy(s.trips.departureDate);
 
+  // Bulk query container numbers for all selected trips
+  const tripIds = trips.map(t => t.id);
+  const containerRows = tripIds.length > 0
+    ? await db.select({
+        tripId: s.tripContainers.tripId,
+        containerNumber: s.tripContainers.containerNumber,
+      }).from(s.tripContainers)
+        .where(inArray(s.tripContainers.tripId, tripIds))
+    : [];
+
+  const containersByTripId = new Map<number, string[]>();
+  for (const c of containerRows) {
+    if (!containersByTripId.has(c.tripId)) {
+      containersByTripId.set(c.tripId, []);
+    }
+    containersByTripId.get(c.tripId)!.push(c.containerNumber);
+  }
+
   const lines: DebitNoteLine[] = [];
 
   for (const trip of trips) {
+    const containerNumbers = containersByTripId.get(trip.id) ?? [];
+    let freightDesc = `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}`;
+    if (containerNumbers.length > 0) {
+      freightDesc += ` (Cont: ${containerNumbers.join(', ')})`;
+    }
+
     // Freight line
     lines.push({
       tripCode: trip.tripCode ?? '',
       departureDate: trip.departureDate,
-      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}`,
+      description: freightDesc,
       quantity: 1,
       sellAmountInclVat: Number(trip.revenue ?? 0),
       lineType: 'FREIGHT',

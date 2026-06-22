@@ -9,6 +9,7 @@ import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
 import { useConfirm, Modal } from '../components/UI';
+import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -222,7 +223,7 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
-          <div style={{ position: 'relative' }}>
+          <div ref={exportMenuRef} style={{ position: 'relative' }}>
             <button
               className="btn btn--secondary"
               onClick={() => setShowExportMenu(v => !v)}
@@ -257,6 +258,17 @@ export default function PayableDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Payment-statement builder (AP snapshot documents) */}
+      {id && (
+        <BillingDocumentsPanel
+          type="PAYMENT_STATEMENT"
+          entityType="VENDOR"
+          entityId={Number(id)}
+          entityName={typedStatement?.supplier.name ?? ''}
+          buttonLabel="Tạo bảng kê thanh toán"
+        />
+      )}
 
       {/* Summary Card */}
       <section className="dd-summary">

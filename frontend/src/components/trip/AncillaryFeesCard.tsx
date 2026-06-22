@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Check, X, Edit2 } from 'lucide-react';
+import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
@@ -10,7 +10,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
-import { StatusPill, useConfirm } from '../UI';
+import { StatusPill, useConfirm, Modal } from '../UI';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import { qk } from '../../api/keys';
 
 function AncillaryEmptyState() {
@@ -93,10 +94,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
-  // Per-row in-flight flag — disables the buttons while a request is pending
-  // so a double click can't fire approve + reject on the same row.
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [activeActionId, setActiveActionId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(actionMenuRef, () => setActiveActionId(null), { escapeKey: true, enabled: activeActionId !== null });
 
   const { data, isLoading } = useQuery({
     queryKey: qk.tripForm.tripExpenses(tripId),
@@ -338,37 +340,63 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                 <span title="Chờ duyệt"><StatusPill variant="neutral">Chờ</StatusPill></span>
                               )}
                               {canDecide && !readOnly && (
-                                <div className="fee-decision-cell__actions">
+                                <div
+                                  className="fee-action-container"
+                                  ref={activeActionId === fee.id ? actionMenuRef : null}
+                                  style={{ marginLeft: 6 }}
+                                >
                                   <button
                                     type="button"
-                                    className="fee-decision-cell__btn fee-decision-cell__btn--approve"
-                                    onClick={() => confirmAndRun(fee, 'approve')}
+                                    className={`fee-action-trigger ${activeActionId === fee.id ? 'is-active' : ''}`}
+                                    onClick={() => setActiveActionId(activeActionId === fee.id ? null : fee.id)}
+                                    title="Thao tác"
+                                    aria-label={activeActionId === fee.id ? 'Đóng menu thao tác' : 'Thao tác'}
+                                    aria-haspopup="menu"
+                                    aria-expanded={activeActionId === fee.id}
                                     disabled={isBusy}
-                                    title="Duyệt khoản phí này"
-                                    aria-label="Duyệt"
                                   >
-                                    {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} strokeWidth={2.6} />}
+                                    <MoreVertical size={14} />
                                   </button>
-                                  <button
-                                    type="button"
-                                    className="fee-decision-cell__btn fee-decision-cell__btn--edit"
-                                    onClick={() => handleEdit(fee)}
-                                    disabled={isBusy}
-                                    title="Sửa khoản phí này"
-                                    aria-label="Sửa"
-                                  >
-                                    <Edit2 size={13} strokeWidth={2} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="fee-decision-cell__btn fee-decision-cell__btn--reject"
-                                    onClick={() => confirmAndRun(fee, 'reject')}
-                                    disabled={isBusy}
-                                    title="Từ chối khoản phí này"
-                                    aria-label="Từ chối"
-                                  >
-                                    {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} strokeWidth={2.6} />}
-                                  </button>
+                                  {activeActionId === fee.id && (
+                                    <div className="fee-action-dropdown" role="menu">
+                                      <button
+                                        type="button"
+                                        className="fee-action-dropdown__item"
+                                        role="menuitem"
+                                        onClick={() => {
+                                          setActiveActionId(null);
+                                          confirmAndRun(fee, 'approve');
+                                        }}
+                                      >
+                                        <Check size={13} strokeWidth={2.6} style={{ color: 'var(--accent)' }} />
+                                        Duyệt
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="fee-action-dropdown__item"
+                                        role="menuitem"
+                                        onClick={() => {
+                                          setActiveActionId(null);
+                                          handleEdit(fee);
+                                        }}
+                                      >
+                                        <Edit2 size={13} style={{ color: 'var(--ink-2)' }} />
+                                        Sửa
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="fee-action-dropdown__item"
+                                        role="menuitem"
+                                        onClick={() => {
+                                          setActiveActionId(null);
+                                          confirmAndRun(fee, 'reject');
+                                        }}
+                                      >
+                                        <X size={13} strokeWidth={2.6} style={{ color: 'var(--danger)' }} />
+                                        Từ chối
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -519,7 +547,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   </div>
                 </div>
 
-                {!readOnly && !hideAddButton && !showForm && (
+                {!readOnly && !hideAddButton && (
                   <button
                     type="button"
                     className="ancillary-fees__mobile-add"
@@ -534,196 +562,190 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
             <AncillaryEmptyState />
           )}
 
-          {!readOnly && showForm && (
-            <div
-              style={{
-                padding: 14,
-                border: '1px solid var(--border-1)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-3)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
+          {!readOnly && (
+            <Modal
+              isOpen={showForm}
+              title={editingId ? 'Sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ'}
+              onClose={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
+              onConfirm={handleAdd}
+              footer={
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', width: '100%' }}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    disabled={submitting}
+                    onClick={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--sm"
+                    disabled={submitting}
+                    onClick={handleAdd}
+                  >
+                    {submitting ? <Loader2 size={13} className="spin" /> : <Plus size={13} />}
+                    Lưu phí
+                  </button>
+                </div>
+              }
             >
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 2 }}>
-                {editingId ? 'Sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ'}
-              </div>
-
-              {formError && (
-                <div style={{ padding: '6px 10px', background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 12 }}>
-                  {formError}
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Loại phí *</label>
-                  <select
-                    className="input"
-                    value={form.expenseType}
-                    onChange={(e) => handleExpenseTypeChange(e.target.value)}
-                  >
-                    {(catalogData?.forwarderExpenseTypes && catalogData.forwarderExpenseTypes.length > 0
-                      ? catalogData.forwarderExpenseTypes
-                      : ANCILLARY_EXPENSE_TYPES.map(t => ({ code: t, name: feeTypeLabel(t) }))
-                    ).map(t => (
-                      <option key={t.code} value={t.code}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Hình thức thanh toán</label>
-                  <select
-                    className="input"
-                    value={form.settlementMethod}
-                    onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE', supplierId: '' }))}
-                  >
-                    <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
-                    <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
-                  </select>
-                </div>
-
-                {form.settlementMethod === 'COMPANY_DIRECT' && (
-                  <div className="field" style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: 12 }}>Nhà cung cấp *</label>
-                    <select
-                      className="input"
-                      value={form.supplierId}
-                      onChange={(e) => setForm(f => ({ ...f, supplierId: e.target.value }))}
-                    >
-                      <option value="">-- Chọn nhà cung cấp --</option>
-                      {catalogData?.suppliers?.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {formError && (
+                  <div style={{ padding: '6px 10px', background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 12 }}>
+                    {formError}
                   </div>
                 )}
 
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Mua vào *</label>
-                  <InputWithPrefix
-                    value={form.buyAmount}
-                    onChange={handleBuyAmountChange}
-                    placeholder="0"
-                    prefix="đ"
-                    mono
-                    type="money"
-                  />
-                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Loại phí *</label>
+                    <select
+                      className="input"
+                      value={form.expenseType}
+                      onChange={(e) => handleExpenseTypeChange(e.target.value)}
+                    >
+                      {(catalogData?.forwarderExpenseTypes && catalogData.forwarderExpenseTypes.length > 0
+                        ? catalogData.forwarderExpenseTypes
+                        : ANCILLARY_EXPENSE_TYPES.map(t => ({ code: t, name: feeTypeLabel(t) }))
+                      ).map(t => (
+                        <option key={t.code} value={t.code}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>
-                    Bán ra {hasMarkup ? '' : '(= mua vào)'}
-                  </label>
-                  {hasMarkup ? (
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Hình thức thanh toán</label>
+                    <select
+                      className="input"
+                      value={form.settlementMethod}
+                      onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE', supplierId: '' }))}
+                    >
+                      <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
+                      <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
+                    </select>
+                  </div>
+
+                  {form.settlementMethod === 'COMPANY_DIRECT' && (
+                    <div className="field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: 12 }}>Nhà cung cấp *</label>
+                      <select
+                        className="input"
+                        value={form.supplierId}
+                        onChange={(e) => setForm(f => ({ ...f, supplierId: e.target.value }))}
+                      >
+                        <option value="">-- Chọn nhà cung cấp --</option>
+                        {catalogData?.suppliers?.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Mua vào *</label>
                     <InputWithPrefix
-                      value={form.sellAmount}
-                      onChange={(val) => setForm(f => ({ ...f, sellAmount: val }))}
+                      value={form.buyAmount}
+                      onChange={handleBuyAmountChange}
                       placeholder="0"
                       prefix="đ"
                       mono
                       type="money"
                     />
-                  ) : (
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        className="input mono"
-                        type="text"
-                        value={form.buyAmount ? Number(form.buyAmount).toLocaleString('vi-VN') : '0'}
-                        readOnly
-                        disabled
-                        style={{ background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed', paddingRight: 32 }}
-                      />
-                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--fg-3)' }}>đ</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: liveMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                    Lãi DV gợi ý: <span className="mono">{formatCurrency(liveMargin)}</span>
                   </div>
-                </div>
 
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Số hóa đơn</label>
-                  <input
-                    className="input mono"
-                    type="text"
-                    placeholder="VD: HD-001"
-                    value={form.invoiceNumber}
-                    onChange={(e) => setForm(f => ({ ...f, invoiceNumber: e.target.value }))}
-                  />
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Ngày hóa đơn</label>
-                  <input
-                    className="input mono"
-                    type="date"
-                    value={form.invoiceDate}
-                    onChange={(e) => setForm(f => ({ ...f, invoiceDate: e.target.value }))}
-                  />
-                </div>
-
-                <div className="field">
-                  <label style={{ fontSize: 12 }}>Số công-te-nơ</label>
-                  <input
-                    className="input mono"
-                    type="text"
-                    placeholder="VD: HDMU1234567"
-                    value={form.containerNumber}
-                    onChange={(e) => setForm(f => ({ ...f, containerNumber: e.target.value.toUpperCase() }))}
-                  />
-                </div>
-
-                {form.expenseType === 'CUSTOMS' && (
                   <div className="field">
-                    <label style={{ fontSize: 12 }}>Số tờ khai hải quan *</label>
+                    <label style={{ fontSize: 12 }}>
+                      Bán ra {hasMarkup ? '' : '(= mua vào)'}
+                    </label>
+                    {hasMarkup ? (
+                      <InputWithPrefix
+                        value={form.sellAmount}
+                        onChange={(val) => setForm(f => ({ ...f, sellAmount: val }))}
+                        placeholder="0"
+                        prefix="đ"
+                        mono
+                        type="money"
+                      />
+                    ) : (
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          className="input mono"
+                          type="text"
+                          value={form.buyAmount ? Number(form.buyAmount).toLocaleString('vi-VN') : '0'}
+                          readOnly
+                          disabled
+                          style={{ background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed', paddingRight: 32 }}
+                        />
+                        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--fg-3)' }}>đ</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: liveMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                      Lãi: <span className="mono">{formatCurrency(liveMargin)}</span>
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Số hóa đơn</label>
                     <input
                       className="input mono"
                       type="text"
-                      placeholder="VD: TK-2024-001"
-                      value={form.declarationNumber}
-                      onChange={(e) => setForm(f => ({ ...f, declarationNumber: e.target.value }))}
+                      placeholder="VD: HD-001"
+                      value={form.invoiceNumber}
+                      onChange={(e) => setForm(f => ({ ...f, invoiceNumber: e.target.value }))}
                     />
                   </div>
-                )}
 
-                <div className="field" style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: 12 }}>Ghi chú</label>
-                  <input
-                    className="input"
-                    type="text"
-                    placeholder="Ghi chú thêm…"
-                    value={form.note}
-                    onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
-                  />
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Ngày hóa đơn</label>
+                    <input
+                      className="input mono"
+                      type="date"
+                      value={form.invoiceDate}
+                      onChange={(e) => setForm(f => ({ ...f, invoiceDate: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label style={{ fontSize: 12 }}>Số công-te-nơ</label>
+                    <input
+                      className="input mono"
+                      type="text"
+                      placeholder="VD: HDMU1234567"
+                      value={form.containerNumber}
+                      onChange={(e) => setForm(f => ({ ...f, containerNumber: e.target.value.toUpperCase() }))}
+                    />
+                  </div>
+
+                  {form.expenseType === 'CUSTOMS' && (
+                    <div className="field">
+                      <label style={{ fontSize: 12 }}>Số tờ khai hải quan *</label>
+                      <input
+                        className="input mono"
+                        type="text"
+                        placeholder="VD: TK-2024-001"
+                        value={form.declarationNumber}
+                        onChange={(e) => setForm(f => ({ ...f, declarationNumber: e.target.value }))}
+                      />
+                    </div>
+                  )}
+
+                  <div className="field" style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 12 }}>Ghi chú</label>
+                    <input
+                      className="input"
+                      type="text"
+                      placeholder="Ghi chú thêm…"
+                      value={form.note}
+                      onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <button
-                  type="button"
-                  className="btn btn--primary btn--sm"
-                  disabled={submitting}
-                  onClick={handleAdd}
-                >
-                  {submitting ? <Loader2 size={13} className="spin" /> : <Plus size={13} />}
-                  Lưu phí
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--sm"
-                  disabled={submitting}
-                  onClick={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
+            </Modal>
           )}
         </>
       )}

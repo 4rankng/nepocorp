@@ -1,18 +1,18 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
-import { AlertTriangle, Download, FileSpreadsheet, FileText, Receipt, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save } from 'lucide-react';
+import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
+import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
-import { useClickOutside } from '../hooks/useClickOutside';
 import './DebtDetailPage.css';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
@@ -72,9 +72,6 @@ export default function DebtDetailPage() {
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-  useClickOutside(exportMenuRef, () => setShowExportMenu(false), { escapeKey: true, enabled: showExportMenu });
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -88,7 +85,6 @@ export default function DebtDetailPage() {
   const { toast: showToast } = useToast();
 
   const downloadExport = async (format: string) => {
-    setShowExportMenu(false);
     try {
       const blob = await api.getBlob(`/ledger/customers/${id}/statement/export?format=${format}`);
       const url = URL.createObjectURL(blob);
@@ -106,28 +102,9 @@ export default function DebtDetailPage() {
     }
   };
 
-  const downloadDebitNote = async () => {
-    setShowExportMenu(false);
-    try {
-      if (!statement) return;
-      const mode = statement.customer.debitNoteMode === 'PER_BATCH' ? 'PER_BATCH' : 'MONTHLY';
-      const now = new Date();
-      const params = new URLSearchParams({
-        mode,
-        month: String(now.getMonth() + 1),
-        year: String(now.getFullYear()),
-      });
-      const blob = await api.getBlob(`/finance/debit-note/${id}/export?${params}`);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `giay-bao-no-${statement.customer.name}-${now.toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất giấy báo nợ' });
-    }
-  };
+  // Debit-note export now lives in <BillingDocumentsPanel> below (saved-snapshot
+  // Giấy báo nợ). The old stateless /finance/debit-note/export button was removed
+  // when the export menu here was collapsed to a single statement-xlsx button.
 
   // ── Linked supplier data (dual-entity customers) ─────────────────────────
   // The customer statement doesn't expose linkedSupplierId directly, so we
@@ -303,52 +280,26 @@ export default function DebtDetailPage() {
               Ghi nhận thanh toán
             </button>
           )}
-          {/* Export dropdown */}
-          <div ref={exportMenuRef} style={{ position: 'relative' }}>
-            <button
-              className="btn btn--secondary"
-              onClick={() => setShowExportMenu(v => !v)}
-            >
-              <Download size={14} />
-              Xuất sao kê
-            </button>
-            {showExportMenu && (
-              <div style={{
-                position: 'absolute', right: 0, top: '100%', marginTop: 4,
-                background: 'var(--surface)', border: '1px solid var(--line)',
-                borderRadius: 8, boxShadow: 'var(--sh-lg)',
-                zIndex: 50, minWidth: 180, overflow: 'hidden',
-              }}>
-                <button
-                  className="dd-export-btn"
-                  onClick={() => downloadExport('xlsx')}
-                >
-                  <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
-                  Excel (.xlsx)
-                </button>
-                <button
-                  className="dd-export-btn"
-                  onClick={() => downloadExport('pdf')}
-                >
-                  <FileText size={14} style={{ color: '#dc2626' }} />
-                  PDF (In)
-                </button>
-                <div style={{ borderTop: '1px solid var(--line)', margin: '4px 0' }} />
-                <button
-                  className="dd-export-btn"
-                  onClick={downloadDebitNote}
-                >
-                  <Receipt size={14} style={{ color: '#7c3aed' }} />
-                  Giấy báo nợ (.xlsx)
-                  <span style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 'auto' }}>
-                    {customer.debitNoteMode === 'PER_BATCH' ? 'Theo lô' : 'Theo tháng'}
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            className="btn btn--secondary"
+            onClick={() => downloadExport('xlsx')}
+          >
+            <Download size={14} />
+            Xuất sao kê
+          </button>
         </div>
       </div>
+
+      {/* ── Debit-note builder (AR snapshot documents) ───────────────────── */}
+      {id && (
+        <BillingDocumentsPanel
+          type="DEBIT_NOTE"
+          entityType="CUSTOMER"
+          entityId={Number(id)}
+          entityName={statement?.customer.name ?? ''}
+          buttonLabel="Tạo giấy báo nợ"
+        />
+      )}
 
       {/* ── Summary Card ────────────────────────────────────────────────── */}
       <section className="dd-summary">
@@ -455,6 +406,8 @@ export default function DebtDetailPage() {
             <thead>
               <tr>
                 <th>NGÀY</th>
+                <th>TUYẾN</th>
+                <th>SỐ CONTAINER</th>
                 <th>LOẠI GIAO DỊCH</th>
                 <th className="dd-r">NỢ</th>
                 <th className="dd-r">CÓ</th>
@@ -468,7 +421,7 @@ export default function DebtDetailPage() {
               ))}
               {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                     Không có giao dịch
                   </td>
                 </tr>
@@ -563,6 +516,12 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
   return (
     <tr>
       <td className="dd-td-date">{formatDate(row.timestamp)}</td>
+      <td>{row.routeName || '—'}</td>
+      <td>
+        {row.containerNumbers && row.containerNumbers.length > 0
+          ? row.containerNumbers.join(', ')
+          : '—'}
+      </td>
       <td><span className={meta.pill}>{meta.label}</span></td>
       <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
         {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}

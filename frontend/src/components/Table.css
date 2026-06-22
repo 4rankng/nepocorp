@@ -83,57 +83,87 @@
   gap: 2px;
   white-space: nowrap;
 }
-.fee-decision-cell__actions {
+.fee-action-container {
+  position: relative;
   display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  opacity: 0;
-  transform: translateX(-2px);
-  transition: opacity 140ms ease, transform 140ms ease;
 }
-/* Reveal on row hover — keyboard focus also reveals for accessibility. */
-.ancillary-fees__table tbody tr:hover .fee-decision-cell__actions,
-.ancillary-fees__table tbody tr:focus-within .fee-decision-cell__actions,
-.ancillary-fees__table tbody tr:focus .fee-decision-cell__actions {
-  opacity: 1;
-  transform: translateX(0);
-}
-/* Icon-only action buttons */
-.fee-decision-cell__btn {
+
+.fee-action-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 1.5px solid transparent;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
   cursor: pointer;
   padding: 0;
-  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  opacity: 0;
 }
-.fee-decision-cell__btn:active:not(:disabled) { transform: scale(0.88); }
-.fee-decision-cell__btn:disabled { opacity: 0.5; cursor: not-allowed; }
-/* Approve: solid green — the primary action */
-.fee-decision-cell__btn--approve {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent-2);
+
+/* Reveal on row hover — keyboard focus also reveals for accessibility. */
+.ancillary-fees__table tbody tr:hover .fee-action-trigger,
+.ancillary-fees__table tbody tr:focus-within .fee-action-trigger,
+.fee-action-container .fee-action-trigger:focus,
+.fee-action-container:focus-within .fee-action-trigger {
+  opacity: 1;
 }
-.fee-decision-cell__btn--approve:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent-2);
-  color: var(--fg-on-brand);
+
+.fee-action-trigger.is-active {
+  opacity: 1;
+  background: var(--bg-3);
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
-/* Reject: ghost — invisible until hovered, then red */
-.fee-decision-cell__btn--reject {
+
+.fee-action-trigger:hover:not(:disabled) {
+  background: var(--bg-2);
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.fee-action-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--sh-lg);
+  z-index: 60;
+  min-width: 120px;
+  overflow: hidden;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fee-action-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
   background: transparent;
-  border-color: transparent;
-  color: var(--ink-3);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--fg-1);
+  text-align: left;
+  transition: background 120ms;
 }
-.fee-decision-cell__btn--reject:hover:not(:disabled) {
-  background: var(--danger-soft);
-  border-color: var(--danger);
-  color: var(--danger);
+
+.fee-action-dropdown__item:hover:not(:disabled) {
+  background: var(--bg-2);
+}
+
+.fee-action-dropdown__item svg {
+  flex-shrink: 0;
 }
 
 /* Total row */

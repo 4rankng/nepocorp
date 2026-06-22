@@ -1,16 +1,19 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { TxnType, computeFifoAging } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
+// Ledger rows enriched with the related trip's route/container for display.
+// Customer statements populate these; supplier statements leave them undefined.
+type EnrichedLedgerRow = LedgerRow & { routeName?: string | null; containerNumbers?: string[] };
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null };
-  ledgerRows: LedgerRow[];
+  ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
   agingBuckets: Array<{ range: string; amount: number }>;
@@ -30,7 +33,7 @@ interface StatementExportConfig {
   entityName: string;
   contactLines: string[];
   txnLabels: Record<string, string>;
-  ledgerRows: LedgerRow[];
+  ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
 }
@@ -102,9 +105,56 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     });
   }
 
+  // Fetch routes and container numbers for related trips
+  const tripIds = Array.from(new Set(
+    ledgerRows
+      .filter((r) => r.txnId && (r.txnType === TxnType.TRIP_REVENUE || r.txnType === TxnType.UNLOCK_REVERSAL || r.txnType === TxnType.PAYMENT_RECEIVED))
+      .map((r) => r.txnId as number)
+  ));
+
+  const tripDetailsMap = new Map<number, { routeName: string | null; containerNumbers: string[] }>();
+  if (tripIds.length > 0) {
+    const tripRows = await db.select({
+      tripId: s.trips.id,
+      routeName: s.routes.name,
+    }).from(s.trips)
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .where(inArray(s.trips.id, tripIds));
+
+    const containerRows = await db.select({
+      tripId: s.tripContainers.tripId,
+      containerNumber: s.tripContainers.containerNumber,
+    }).from(s.tripContainers)
+      .where(inArray(s.tripContainers.tripId, tripIds));
+
+    const containersByTrip = new Map<number, string[]>();
+    for (const c of containerRows) {
+      if (!containersByTrip.has(c.tripId)) {
+        containersByTrip.set(c.tripId, []);
+      }
+      containersByTrip.get(c.tripId)!.push(c.containerNumber);
+    }
+
+    for (const t of tripRows) {
+      tripDetailsMap.set(t.tripId, {
+        routeName: t.routeName,
+        containerNumbers: containersByTrip.get(t.tripId) ?? [],
+      });
+    }
+  }
+
+  const enrichedLedgerRows = ledgerRows.map((r) => {
+    const details = r.txnId ? tripDetailsMap.get(r.txnId) : undefined;
+    return {
+      ...r,
+      routeName: details?.routeName ?? null,
+      containerNumbers: details?.containerNumbers ?? [],
+    };
+  });
+
   const now = new Date();
   const { aging, openInvoices } = computeFifoAging(
-    ledgerRows.map((r) => ({
+    enrichedLedgerRows.map((r) => ({
       timestamp: r.timestamp.toISOString(),
       debit: r.debit ?? '0',
       credit: r.credit ?? '0',
@@ -114,7 +164,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
   const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
-  const revenueEntries = ledgerRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
+  const revenueEntries = enrichedLedgerRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
   const tripNotes = new Map<number, string>();
   for (const entry of revenueEntries) {
     if (entry.txnId && !tripNotes.has(entry.txnId)) {
@@ -155,7 +205,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
   return {
     customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY' },
-    ledgerRows,
+    ledgerRows: enrichedLedgerRows,
     totalOutstanding,
     unpaidTrips,
     agingBuckets: [
@@ -289,59 +339,223 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
 
-  const numContacts = config.contactLines.length;
+  // Enable grid lines
+  sheet.views = [{ showGridLines: true }];
 
-  sheet.mergeCells('A1:F1');
-  const titleCell = sheet.getCell('A1');
-  titleCell.value = `NEPO Logistics — ${config.heading}: ${config.entityName}`;
-  titleCell.font = { size: 14, bold: true };
+  // Border style
+  const borderStyle = {
+    top: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } }
+  };
 
-  config.contactLines.forEach((line, i) => {
-    sheet.getCell(`A${2 + i}`).value = line;
+  // Header/Title Row (Row 2)
+  sheet.mergeCells('A2:H2');
+  const titleCell = sheet.getCell('A2');
+  titleCell.value = config.heading.toUpperCase();
+  titleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.getRow(2).height = 36;
+
+  // Partner Info (Row 4)
+  sheet.getCell('A4').value = `${config.entityLabel}:`;
+  sheet.getCell('A4').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF374151' } };
+  sheet.getCell('B4').value = config.entityName;
+  sheet.getCell('B4').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF111827' } };
+  sheet.mergeCells('B4:H4');
+  sheet.getRow(4).height = 20;
+
+  // Contact Info (Row 5+)
+  let currentOffset = 5;
+  config.contactLines.forEach((line) => {
+    sheet.getCell(`A${currentOffset}`).value = line;
+    sheet.getCell(`A${currentOffset}`).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+    sheet.mergeCells(`A${currentOffset}:H${currentOffset}`);
+    sheet.getRow(currentOffset).height = 18;
+    currentOffset++;
   });
 
-  const dateRow = 2 + numContacts;
-  const totalRow = dateRow + 1;
-  const agingLabelRow = totalRow + 2;
-  const agingStartRow = agingLabelRow + 1;
-  const headerRow = agingStartRow + 5;
+  // Export date
+  sheet.getCell(`A${currentOffset}`).value = `Ngày xuất: ${dateStr}`;
+  sheet.getCell(`A${currentOffset}`).font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF6B7280' } };
+  sheet.mergeCells(`A${currentOffset}:H${currentOffset}`);
+  sheet.getRow(currentOffset).height = 18;
+  currentOffset++;
 
-  sheet.getCell(`A${dateRow}`).value = `Ngày xuất: ${dateStr}`;
-  sheet.getCell(`A${totalRow}`).value = `Tổng nợ: ${config.totalOutstanding.toLocaleString('vi-VN')} ₫`;
+  // Total Outstanding Row
+  const outstandingRow = currentOffset;
+  sheet.getCell(`A${outstandingRow}`).value = 'TỔNG CỘNG NỢ HIỆN TẠI:';
+  sheet.getCell(`A${outstandingRow}`).font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFDC2626' } };
+  sheet.mergeCells(`A${outstandingRow}:D${outstandingRow}`);
 
-  sheet.getCell(`A${agingLabelRow}`).value = 'Thống kê aging:';
+  sheet.getCell(`E${outstandingRow}`).value = config.totalOutstanding;
+  sheet.getCell(`E${outstandingRow}`).font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFDC2626' } };
+  sheet.getCell(`E${outstandingRow}`).numFmt = '#,##0" đ"';
+  sheet.mergeCells(`E${outstandingRow}:H${outstandingRow}`);
+  sheet.getRow(outstandingRow).height = 22;
+  currentOffset++;
+
+  // Space
+  currentOffset++;
+
+  // Aging header row
+  const agingHeaderRow = currentOffset;
+  sheet.mergeCells(`A${agingHeaderRow}:H${agingHeaderRow}`);
+  const agingHeaderCell = sheet.getCell(`A${agingHeaderRow}`);
+  agingHeaderCell.value = 'PHÂN TÍCH TUỔI NỢ';
+  agingHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF00702F' } };
+  agingHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } };
+  agingHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  sheet.getRow(agingHeaderRow).height = 24;
+  currentOffset++;
+
+  // Aging columns: horizontal grid
+  const agingLabelRow = currentOffset;
+  const agingValueRow = agingLabelRow + 1;
+
   config.agingBuckets.forEach((b, i) => {
-    sheet.getCell(agingStartRow + i, 1).value = b.range;
-    sheet.getCell(agingStartRow + i, 2).value = b.amount;
-    sheet.getCell(agingStartRow + i, 2).numFmt = '#,##0';
+    const colIdx = i + 1; // A, B, C, D
+    const labelCell = sheet.getCell(agingLabelRow, colIdx);
+    labelCell.value = b.range;
+    labelCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    labelCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    labelCell.border = borderStyle;
+
+    const valCell = sheet.getCell(agingValueRow, colIdx);
+    valCell.value = b.amount;
+    valCell.font = { name: 'Segoe UI', size: 10, color: b.amount > 0 ? { argb: 'FFDC2626' } : { argb: 'FF9CA3AF' } };
+    valCell.numFmt = '#,##0';
+    valCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    valCell.border = borderStyle;
   });
 
-  sheet.getRow(headerRow).values = ['Ngày', 'Loại GD', 'Nợ', 'Có', 'Số dư', 'Ghi chú'];
-  sheet.getRow(headerRow).font = { bold: true };
-  sheet.getRow(headerRow).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+  // Aging Total Column (Columns 5 to 8 merged)
+  const totalLabelCell = sheet.getCell(agingLabelRow, 5);
+  totalLabelCell.value = 'Tổng cộng';
+  totalLabelCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+  totalLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
+  totalLabelCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.mergeCells(agingLabelRow, 5, agingLabelRow, 8);
+  for (let c = 5; c <= 8; c++) {
+    sheet.getCell(agingLabelRow, c).border = borderStyle;
+  }
 
+  const totalValueCell = sheet.getCell(agingValueRow, 5);
+  totalValueCell.value = config.totalOutstanding;
+  totalValueCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF00702F' } };
+  totalValueCell.numFmt = '#,##0';
+  totalValueCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.mergeCells(agingValueRow, 5, agingValueRow, 8);
+  for (let c = 5; c <= 8; c++) {
+    sheet.getCell(agingValueRow, c).border = borderStyle;
+  }
+
+  sheet.getRow(agingLabelRow).height = 20;
+  sheet.getRow(agingValueRow).height = 20;
+  currentOffset += 2;
+
+  // Space
+  currentOffset++;
+
+  // Transaction Detail Header (Row 13+)
+  const transHeaderRow = currentOffset;
+  sheet.mergeCells(`A${transHeaderRow}:H${transHeaderRow}`);
+  const transHeaderCell = sheet.getCell(`A${transHeaderRow}`);
+  transHeaderCell.value = 'CHI TIẾT CÁC GIAO DỊCH';
+  transHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+  transHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
+  transHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  sheet.getRow(transHeaderRow).height = 24;
+  currentOffset++;
+
+  // Table header row
+  const tableHeaderRow = currentOffset;
+  const headers = ['Ngày', 'Tuyến đường', 'Số Container', 'Loại giao dịch', 'Nợ (VND)', 'Có (VND)', 'Số dư (VND)', 'Ghi chú'];
+  headers.forEach((h, i) => {
+    const cell = sheet.getCell(tableHeaderRow, i + 1);
+    cell.value = h;
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    cell.alignment = {
+      vertical: 'middle',
+      horizontal: i === 0 ? 'center' : (i >= 4 && i <= 6 ? 'right' : 'left'),
+    };
+    cell.border = borderStyle;
+  });
+  sheet.getRow(tableHeaderRow).height = 22;
+  currentOffset++;
+
+  // Populate data rows
   config.ledgerRows.forEach((row, i: number) => {
-    const r = headerRow + 1 + i;
+    const r = tableHeaderRow + 1 + i;
     const debit = parseFloat(row.debit || '0');
     const credit = parseFloat(row.credit || '0');
     const balance = parseFloat(row.balance || '0');
-    sheet.getCell(r, 1).value = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
-    sheet.getCell(r, 2).value = config.txnLabels[row.txnType] || row.txnType;
-    sheet.getCell(r, 3).value = debit || '';
-    if (debit) sheet.getCell(r, 3).numFmt = '#,##0';
-    sheet.getCell(r, 4).value = credit || '';
-    if (credit) sheet.getCell(r, 4).numFmt = '#,##0';
-    sheet.getCell(r, 5).value = balance;
-    sheet.getCell(r, 5).numFmt = '#,##0';
-    sheet.getCell(r, 6).value = row.note || '';
+
+    const dateCell = sheet.getCell(r, 1);
+    dateCell.value = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
+    dateCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    const routeCell = sheet.getCell(r, 2);
+    routeCell.value = row.routeName || '—';
+    routeCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+    const contCell = sheet.getCell(r, 3);
+    contCell.value = row.containerNumbers && row.containerNumbers.length > 0
+      ? row.containerNumbers.join(', ')
+      : '—';
+    contCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+    const typeCell = sheet.getCell(r, 4);
+    typeCell.value = config.txnLabels[row.txnType] || row.txnType;
+    typeCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+    const debitCell = sheet.getCell(r, 5);
+    debitCell.value = debit || '';
+    debitCell.numFmt = '#,##0';
+    debitCell.alignment = { vertical: 'middle', horizontal: 'right' };
+
+    const creditCell = sheet.getCell(r, 6);
+    creditCell.value = credit || '';
+    creditCell.numFmt = '#,##0';
+    creditCell.alignment = { vertical: 'middle', horizontal: 'right' };
+
+    const balCell = sheet.getCell(r, 7);
+    balCell.value = balance;
+    balCell.numFmt = '#,##0';
+    balCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    balCell.font = { name: 'Segoe UI', size: 10, bold: true, color: balance > 0 ? { argb: 'FFDC2626' } : { argb: 'FF10B981' } };
+
+    const noteCell = sheet.getCell(r, 8);
+    noteCell.value = row.note || '';
+    noteCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+    // Zebra striping and standard styling
+    const zebraColor = i % 2 === 0 ? 'FFFFFFFF' : 'FFF9FBF9';
+    for (let c = 1; c <= 8; c++) {
+      const cell = sheet.getCell(r, c);
+      if (c !== 7) {
+        cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF1F2937' } };
+      }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraColor } };
+      cell.border = borderStyle;
+    }
+
+    sheet.getRow(r).height = 20;
   });
 
-  sheet.getColumn(1).width = 12;
-  sheet.getColumn(2).width = 22;
-  sheet.getColumn(3).width = 16;
-  sheet.getColumn(4).width = 16;
-  sheet.getColumn(5).width = 18;
-  sheet.getColumn(6).width = 32;
+  // Set column widths
+  sheet.getColumn(1).width = 12; // Ngày
+  sheet.getColumn(2).width = 25; // Tuyến đường
+  sheet.getColumn(3).width = 22; // Số Container
+  sheet.getColumn(4).width = 22; // Loại giao dịch
+  sheet.getColumn(5).width = 16; // Nợ
+  sheet.getColumn(6).width = 16; // Có
+  sheet.getColumn(7).width = 18; // Số dư
+  sheet.getColumn(8).width = 35; // Ghi chú
 
   await workbook.xlsx.write(writable);
 }
@@ -352,8 +566,14 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
     const credit = parseFloat(row.credit || '0');
     const balance = parseFloat(row.balance || '0');
     const date = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
+    const routeName = row.routeName || '—';
+    const containerNumbers = row.containerNumbers && row.containerNumbers.length > 0
+      ? row.containerNumbers.join(', ')
+      : '—';
     return `<tr>
       <td>${date}</td>
+      <td>${escapeHtml(routeName)}</td>
+      <td>${escapeHtml(containerNumbers)}</td>
       <td>${config.txnLabels[row.txnType] || row.txnType}</td>
       <td class="num">${debit ? debit.toLocaleString('vi-VN') : ''}</td>
       <td class="num">${credit ? credit.toLocaleString('vi-VN') : ''}</td>
@@ -385,7 +605,7 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
 <div class="total">Tổng nợ: ${config.totalOutstanding.toLocaleString('vi-VN')} ₫</div>
 <table class="aging">${agingRows}</table>
 <table>
-  <thead><tr><th>Ngày</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
+  <thead><tr><th>Ngày</th><th>Tuyến</th><th>Số Cont</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 </body></html>`;

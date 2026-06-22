@@ -180,6 +180,43 @@ export const createAdjustmentSchema = z.object({
   signedAgreementRef: z.string().min(1),
 });
 
+// ─── Billing Documents (debit notes + payment statements) ────────────────────
+// Saved SNAPSHOT documents — saving never mutates the ledger.
+// Generate returns a preview draft; Save persists the (possibly edited) draft.
+
+export const billingDocumentLineSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  sourceType: z.enum(['TRIP', 'EXPENSE', 'ADHOC']),
+  sourceId: z.coerce.number().int().positive().nullable(),
+  lineType: z.enum(['FREIGHT', 'SERVICE_FEE', 'ADHOC']),
+  description: z.string().min(1),
+  routeName: z.string().nullable().optional(),
+  containerNumbers: z.array(z.string()).nullable().optional(),
+  baseAmount: nonNegNumeric,
+  amountOverride: nonNegNumeric.nullable().optional(),
+  excluded: z.boolean().optional(),
+  sortOrder: z.coerce.number().int(),
+});
+
+export const generateBillingDocumentSchema = z.object({
+  type: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']),
+  entityType: z.enum(['CUSTOMER', 'VENDOR']),
+  entityId: z.coerce.number().int().positive(),
+  rangeFrom: z.string().min(1),
+  rangeTo: z.string().min(1),
+});
+
+export const saveBillingDocumentSchema = z.object({
+  type: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']),
+  entityType: z.enum(['CUSTOMER', 'VENDOR']),
+  entityId: z.coerce.number().int().positive(),
+  entityName: z.string().optional(),
+  rangeFrom: z.string().min(1),
+  rangeTo: z.string().min(1),
+  note: z.string().nullable().optional(),
+  lines: z.array(billingDocumentLineSchema).min(1),
+});
+
 // ─── Commission (manual posting) ────────────────────────────────────────────
 // Records a commission payable owed to a supplier (VENDOR ledger, COMMISSION
 // txnType). Not trip-scoped — `tripId` is optional context only.
@@ -706,3 +743,6 @@ export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlemen
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;
 export type SealTypeInput = z.infer<typeof sealTypeSchema>;
 export type PortInput = z.infer<typeof portSchema>;
+export type GenerateBillingDocumentInput = z.infer<typeof generateBillingDocumentSchema>;
+export type SaveBillingDocumentInput = z.infer<typeof saveBillingDocumentSchema>;
+export type BillingDocumentLineInput = z.infer<typeof billingDocumentLineSchema>;

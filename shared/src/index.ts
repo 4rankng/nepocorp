@@ -36,6 +36,8 @@ export type {
   ApprovalItemType,
   VehicleAlertField, VehicleAlertStatus, VehicleAlert,
   Tire, TirePosition, VehicleTireAlert,
+  BillingDocument, BillingDocumentLine, BillingDocumentType, BillingDocumentEntityType,
+  BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -58,6 +60,7 @@ export {
   commissionSchema,
   driverPayoutSchema,
   tireSchema, installTireSchema, tirePositionSchema,
+  generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
 } from './schemas';
 
 export {
@@ -84,6 +87,7 @@ export type {
   UpdateProfileInput,
   CommissionInput,
   TireInput, InstallTireInput,
+  GenerateBillingDocumentInput, SaveBillingDocumentInput, BillingDocumentLineInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

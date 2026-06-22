@@ -355,6 +355,49 @@ export const ledger = pgTable('ledger', {
   index('ledger_entity_txn_timestamp_idx').on(table.entityType, table.txnType, table.timestamp),
 ]);
 
+// ─── Billing Documents (debit notes + payment statements) ─────────────────────
+// Saved SNAPSHOT documents composed by kế toán / quản lý. Editing/saving these
+// NEVER mutates the append-only ledger — they are presentation artifacts that
+// re-present already-posted receivable/payable figures with per-line edits
+// (amount override, ad-hoc lines, exclusions) for printing/sending.
+// entityType CUSTOMER = AR debit-note customer OR AP external carrier (carriers
+// live in customers per decision D-E/F); entityType VENDOR = AP supplier.
+
+export const billingDocuments = pgTable('billing_documents', {
+  id: serial('id').primaryKey(),
+  type: varchar('type', { length: 20 }).notNull(),               // DEBIT_NOTE | PAYMENT_STATEMENT
+  entityType: varchar('entity_type', { length: 20 }).notNull(),  // CUSTOMER | VENDOR
+  entityId: integer('entity_id').notNull(),
+  entityName: varchar('entity_name', { length: 255 }),
+  rangeFrom: date('range_from').notNull(),
+  rangeTo: date('range_to').notNull(),
+  note: text('note'),
+  totalInclVat: numeric('total_incl_vat', { precision: 15, scale: 0 }).notNull().default('0'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => [
+  index('billing_documents_entity_idx').on(table.entityType, table.entityId),
+]);
+
+export const billingDocumentLines = pgTable('billing_document_lines', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').references(() => billingDocuments.id).notNull(),
+  sourceType: varchar('source_type', { length: 20 }).notNull(),  // TRIP | EXPENSE | ADHOC
+  sourceId: integer('source_id'),                                // tripId | tripExpenseId | null(ADHOC)
+  lineType: varchar('line_type', { length: 20 }).notNull(),      // FREIGHT | SERVICE_FEE | ADHOC
+  description: text('description').notNull(),
+  routeName: varchar('route_name', { length: 255 }),
+  containerNumbers: text('container_numbers'),                   // comma-joined (no PG arrays in this schema)
+  baseAmount: numeric('base_amount', { precision: 15, scale: 0 }).notNull().default('0'),
+  amountOverride: numeric('amount_override', { precision: 15, scale: 0 }),
+  excluded: boolean('excluded').default(false).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+}, (table) => [
+  index('billing_document_lines_doc_idx').on(table.documentId),
+]);
+
 export const penalties = pgTable('penalties', {
   id: serial('id').primaryKey(),
   driverId: integer('driver_id').references(() => drivers.id).notNull(),
