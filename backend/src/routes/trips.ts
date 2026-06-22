@@ -18,6 +18,7 @@ import { parsePagination } from './utils/pagination';
 import { throwValidation } from '../lib/validation';
 import { emitNotification } from '../services/notification.service';
 import { getFuelVoucherHtml, getFuelVoucherXlsx } from '../services/fuel-voucher.service';
+import { createTripCommand, dispatchTripCommand } from '../services/trip-command.service';
 
 // Audit event registrations — declared once at module load, matched by middleware
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
@@ -67,19 +68,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 // Create trip — only ADMIN/MANAGER can create (accountant still has trips:write for figure updates)
 router.post('/', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const data = createTripSchema.parse(req.body);
-  const trip = await tripService.createTrip({
-    ...data,
-    createdBy: getUser(req).userId,
-  });
-  await invalidateReportCaches();
-  emitNotification({
-    type: NotificationType.TRIP_CREATED,
-    title: 'Chuyến mới được tạo',
-    message: `Chuyến ${trip.tripCode} đã được tạo`,
-    relatedEntityType: 'trips',
-    relatedEntityId: trip.id,
-    targetDriverId: trip.driverId ?? undefined,
-  });
+  const trip = await createTripCommand(data, getUser(req));
   res.status(201).json(trip);
 }));
 
@@ -154,26 +143,7 @@ router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
 
 // Dispatch trip
 router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) => {
-  const trip = await tripService.transitionTripStatus(
-    parseInt(req.params.id as string),
-    TripStatus.IN_TRANSIT,
-    getUser(req).userId,
-    getUser(req).role,
-  );
-  await invalidateReportCaches();
-  // Sync attendance: mark departure date as TRIP_DAY
-  await tripService.syncAttendanceAfterStatusChange(
-    trip.id, TripStatus.IN_TRANSIT, trip.driverId ?? null,
-    trip.departureDate ?? null, null, getUser(req).userId,
-  );
-  emitNotification({
-    type: NotificationType.TRIP_DISPATCHED,
-    title: 'Chuyến được điều phối',
-    message: `Chuyến ${trip.tripCode} đã được điều phối`,
-    relatedEntityType: 'trips',
-    relatedEntityId: trip.id,
-    targetDriverId: trip.driverId ?? undefined,
-  });
+  const trip = await dispatchTripCommand(parseInt(req.params.id as string), getUser(req));
   res.json(trip);
 }));
 
@@ -266,7 +236,7 @@ router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) =
   res.json(trip);
 }));
 
-// Unlock trip (LOCKED → COMPLETED, reverses ledger entries)
+// Unlock trip (LOCKED → COMPLETED, reopens editing; ledger stays posted)
 router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const trip = await tripService.transitionTripStatus(

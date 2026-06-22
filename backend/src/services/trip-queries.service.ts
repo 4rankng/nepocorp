@@ -6,7 +6,6 @@ import * as s from '../db/schema';
 import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'drizzle-orm';
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
-import { config } from '../config';
 import { getTripInstructions } from './trip-instructions.service';
 
 // ─── Query helpers ─────────────────────────────────────────────────────────
@@ -395,46 +394,6 @@ export async function getTripById(id: number) {
     const cached = cacheMap.get(key);
     return { ...leg, polylinePath: cached?.polylinePath ?? null };
   });
-
-  // Fallback: fetch missing polylines from Google Maps Directions API
-  const missingPolylines = legsWithPaths.filter(l => !l.polylinePath);
-  if (missingPolylines.length > 0 && config.googleMapsApiKey) {
-    for (const leg of missingPolylines) {
-      try {
-        const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
-        url.searchParams.set('origin', leg.origin);
-        url.searchParams.set('destination', leg.destination);
-        url.searchParams.set('key', config.googleMapsApiKey);
-        url.searchParams.set('mode', 'driving');
-
-        const response = await fetch(url.toString());
-        const data = await response.json() as {
-          status: string;
-          routes?: Array<{ overview_polyline?: { points: string } }>;
-        };
-        if (data.status === 'OK' && data.routes?.[0]?.overview_polyline?.points) {
-          const polyline = data.routes[0].overview_polyline.points;
-          const cleanedO = leg.origin.trim().toLowerCase();
-          const cleanedD = leg.destination.trim().toLowerCase();
-
-          // Upsert into cache so next load is instant
-          await db.insert(s.routeDistanceCache).values({
-            originCleaned: cleanedO,
-            destinationCleaned: cleanedD,
-            distanceKm: String(leg.km),
-            polylinePath: polyline,
-          }).onConflictDoUpdate({
-            target: [s.routeDistanceCache.originCleaned, s.routeDistanceCache.destinationCleaned],
-            set: { polylinePath: polyline },
-          });
-
-          leg.polylinePath = polyline;
-        }
-      } catch {
-        // Non-critical — map just won't show for this leg
-      }
-    }
-  }
 
   const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
   return { ...shapeTripRelations(trip, { legs: legsWithPaths, photoUrls }), instructions };
