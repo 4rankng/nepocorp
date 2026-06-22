@@ -11,6 +11,7 @@ import { TripStatus } from '@tingting/shared';
 import { getTopOverdueCustomer } from './aging.service';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange, localDateStr, resolveCapTableSnapshot } from './reporting-shared';
+import { getPnlReport } from './pnl.service';
 
 export async function getDashboardStats() {
   return cacheGet('reports:dashboard', 30, async () => {
@@ -26,13 +27,9 @@ export async function getDashboardStats() {
       capRows,
       [inTransitResult],
       topOverdueCustomer,
+      pnlReport,
     ] = await Promise.all([
       db.select({
-        // Include all non-canceled trips — show data as soon as trips have values.
-        revenue: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then case when ${s.trips.vatRate}::numeric > 0 then round(${s.trips.revenue}::numeric / (1 + ${s.trips.vatRate}::numeric)) else ${s.trips.revenue}::numeric end else 0 end), 0)`,
-        costs: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.totalCost}::numeric else 0 end), 0)`,
-        // Use stored grossProfit (includes service margin + handles OWN/EXTERNAL correctly)
-        grossProfitSum: sql<string>`coalesce(sum(case when ${s.trips.status} != 'CANCELED' then ${s.trips.grossProfit}::numeric else 0 end), 0)`,
         tripCount: sql<number>`count(*) filter (where ${s.trips.status} != 'CANCELED')`,
         completedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')`,
         lockedTrips: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')`,
@@ -55,13 +52,14 @@ export async function getDashboardStats() {
         eq(s.trips.status, TripStatus.IN_TRANSIT),
       )),
       getTopOverdueCustomer(),
+      getPnlReport(month, year),
     ]);
 
     const topShareholder = resolveTopShareholder(capRows);
 
-    const revenue = parseFloat(stats?.revenue || '0');
-    const costs = parseFloat(stats?.costs || '0');
-    const grossProfit = parseFloat(stats?.grossProfitSum || '0');
+    const revenue = Number(pnlReport.totalRevenue || 0);
+    const costs = Number(pnlReport.totalCosts || 0);
+    const grossProfit = Number(pnlReport.grossProfit || 0);
 
     return {
       revenue,

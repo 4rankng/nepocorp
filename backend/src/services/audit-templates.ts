@@ -122,10 +122,10 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.TRIP_DISPATCHED]: (c) => `${subj(c)} đã cho xe xuất phát cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.TRIP_UPDATED_PRE_DEPARTURE]: (c) => `${subj(c)} đã cập nhật các thông tin trước xuất phát cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.TRIP_UPDATED_ACTUALS]: (c) => `${subj(c)} đã cập nhật các số liệu thực tế sau chuyến đi cho lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
-  [AuditEvent.TRIP_COMPLETED]: (c) => `${subj(c)} đã xác nhận hoàn thành lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
-  [AuditEvent.TRIP_LOCKED]: (c) => `${subj(c)} đã chốt khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (mọi số liệu đã được cố định và ghi nhận sổ cái)`,
+  [AuditEvent.TRIP_COMPLETED]: (c) => `${subj(c)} đã xác nhận hoàn thành lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (công nợ đã được ghi nhận vào sổ cái)`,
+  [AuditEvent.TRIP_LOCKED]: (c) => `${subj(c)} đã chốt khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (mọi số liệu đã được cố định, không cho sửa)`,
   [AuditEvent.TRIP_CANCELED]: (c) => `${subj(c)} đã hủy bỏ lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
-  [AuditEvent.TRIP_UNLOCKED]: (c) => `${subj(c)} đã mở khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (các bút toán đã được hoàn tác)`,
+  [AuditEvent.TRIP_UNLOCKED]: (c) => `${subj(c)} đã mở khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (cho phép chỉnh sửa lại số liệu)`,
   [AuditEvent.TRIP_DEPARTURE_DATE_CHANGED]: (c) => `${subj(c)} đã thay đổi ngày khởi hành của lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
 
   [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} đã ghi nhận thanh toán${c.entityKey ? ` ${c.entityKey}` : ''}`,

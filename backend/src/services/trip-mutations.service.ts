@@ -10,6 +10,7 @@ import { computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/share
 import { ApiError } from '../errors';
 import { resolveTrailer } from './trip-shared';
 import { computeStandardWorkDays } from './attendance.service';
+import { LedgerService } from './ledger.service';
 
 // ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
 
@@ -512,6 +513,9 @@ export async function updateTripFigures(
           ne(s.tripExpenses.approvalStatus, 'REJECTED'),
         )
       );
+    const ledgerFees = tripStatus === TripStatus.COMPLETED
+      ? await tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, tripId))
+      : [];
 
     const totalsInput = {
       legs: normalizedLegs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
@@ -622,6 +626,48 @@ export async function updateTripFigures(
 
     if (!updated) {
       throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
+    }
+
+    if (tripStatus === TripStatus.COMPLETED) {
+      const mappedLedgerFees = ledgerFees.map(fee => ({
+        id: fee.id,
+        buyAmount: fee.buyAmount,
+        sellAmount: fee.sellAmount,
+        settlementMethod: fee.settlementMethod,
+        supplierId: fee.supplierId ?? null,
+        forwarderId: fee.forwarderId ?? null,
+        approvalStatus: fee.approvalStatus,
+      }));
+
+      await LedgerService.postTripUnlock(tx, {
+        id: trip.id,
+        tripCode: trip.tripCode,
+        customerId: trip.customerId,
+        driverId: trip.driverId ?? null,
+        revenue: trip.revenue,
+        driverSalary: trip.driverSalary,
+        carrierType: trip.carrierType ?? 'OWN',
+        externalCarrierId: trip.externalCarrierId ?? null,
+        externalFreightCost: trip.externalFreightCost ?? null,
+        fuelSupplierId: trip.fuelSupplierId ?? null,
+        totalFuelCost: trip.totalFuelCost,
+        ancillaryFees: mappedLedgerFees,
+      });
+
+      await LedgerService.postTripLock(tx, {
+        id: updated.id,
+        tripCode: updated.tripCode,
+        customerId: updated.customerId,
+        driverId: updated.driverId ?? null,
+        revenue: updated.revenue,
+        driverSalary: updated.driverSalary,
+        carrierType: updated.carrierType ?? 'OWN',
+        externalCarrierId: updated.externalCarrierId ?? null,
+        externalFreightCost: updated.externalFreightCost ?? null,
+        fuelSupplierId: updated.fuelSupplierId ?? null,
+        totalFuelCost: updated.totalFuelCost,
+        ancillaryFees: mappedLedgerFees,
+      });
     }
 
     // 7. Persist physical leg segments

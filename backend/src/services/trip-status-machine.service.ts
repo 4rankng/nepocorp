@@ -69,8 +69,8 @@ export async function transitionTripStatus(
         );
       }
     } else if (targetStatus === TripStatus.COMPLETED && currentStatus === TripStatus.LOCKED) {
-      // UNLOCK: LOCKED → COMPLETED — reverse ledger entries so the trip can be
-      // edited, then re-locked with updated figures.
+      // UNLOCK: LOCKED → COMPLETED — reopen the trip for editing. Ledger rows
+      // are posted at completion time, so unlocking must not reverse them.
       if (userRole !== Role.ADMIN && userRole !== Role.MANAGER) {
         throw new ApiError(403, 'Chỉ Quản lý hoặc Quản trị viên mới có quyền mở khóa chuyến đi');
       }
@@ -85,34 +85,6 @@ export async function transitionTripStatus(
       if (!unlockedTrip) {
         throw new ApiError(409, 'Chuyến đi không thể mở khóa hoặc đã bị thay đổi. Vui lòng tải lại.');
       }
-
-      // Load ancillary fees for ledger reversal
-      const ancillaryFees = await tx.select().from(s.tripExpenses)
-        .where(eq(s.tripExpenses.tripId, trip.id));
-
-      // Post reversal ledger entries (swap debit↔credit via UNLOCK_REVERSAL)
-      await LedgerService.postTripUnlock(tx, {
-        id: unlockedTrip.id,
-        tripCode: unlockedTrip.tripCode,
-        customerId: unlockedTrip.customerId,
-        driverId: unlockedTrip.driverId ?? null,
-        revenue: unlockedTrip.revenue,
-        driverSalary: unlockedTrip.driverSalary,
-        carrierType: unlockedTrip.carrierType ?? 'OWN',
-        externalCarrierId: unlockedTrip.externalCarrierId ?? null,
-        externalFreightCost: unlockedTrip.externalFreightCost ?? null,
-        fuelSupplierId: unlockedTrip.fuelSupplierId ?? null,
-        totalFuelCost: unlockedTrip.totalFuelCost,
-        ancillaryFees: ancillaryFees.map(fee => ({
-          id: fee.id,
-          buyAmount: fee.buyAmount,
-          sellAmount: fee.sellAmount,
-          settlementMethod: fee.settlementMethod,
-          supplierId: fee.supplierId ?? null,
-          forwarderId: fee.forwarderId ?? null,
-          approvalStatus: fee.approvalStatus,
-        })),
-      });
 
       return unlockedTrip;
     } else if (targetStatus === TripStatus.COMPLETED) {
@@ -156,35 +128,6 @@ export async function transitionTripStatus(
         throw new ApiError(409, 'Chuyến đi không thể chốt hoặc đã bị thay đổi. Vui lòng tải lại.');
       }
 
-      // Load ancillary fees for ledger posting
-      const ancillaryFees = await tx.select().from(s.tripExpenses)
-        .where(eq(s.tripExpenses.tripId, trip.id));
-
-      // Post transaction financial ledger entries via service seam
-      await LedgerService.postTripLock(tx, {
-        id: lockedTrip.id,
-        tripCode: lockedTrip.tripCode,
-        customerId: lockedTrip.customerId,
-        driverId: lockedTrip.driverId ?? null,
-        revenue: lockedTrip.revenue,
-        driverSalary: lockedTrip.driverSalary,
-        carrierType: lockedTrip.carrierType ?? 'OWN',
-        externalCarrierId: lockedTrip.externalCarrierId ?? null,
-        externalFreightCost: lockedTrip.externalFreightCost ?? null,
-        fuelSupplierId: lockedTrip.fuelSupplierId ?? null,
-        totalFuelCost: lockedTrip.totalFuelCost,
-        ancillaryFees: ancillaryFees.map(fee => ({
-          id: fee.id,
-          buyAmount: fee.buyAmount,
-          sellAmount: fee.sellAmount,
-          settlementMethod: fee.settlementMethod,
-          supplierId: fee.supplierId ?? null,
-          forwarderId: fee.forwarderId ?? null,
-          approvalStatus: fee.approvalStatus,
-        })),
-      });
-
-
       // Audit row is written by the auditLogMiddleware for the POST /lock
       // endpoint as "Quản lý <actor> khóa chuyến <tripCode>". We intentionally
       // skip a service-level write here to avoid a duplicate row, and to keep
@@ -203,6 +146,10 @@ export async function transitionTripStatus(
         throw new ApiError(409, 'Không thể hủy chuyến đi đã chốt');
       }
 
+      const ancillaryFees = currentStatus === TripStatus.COMPLETED
+        ? await tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, trip.id))
+        : [];
+
       // Canceled: zero all financials
       const [updated] = await tx.update(s.trips).set({
         status: TripStatus.CANCELED,
@@ -215,6 +162,31 @@ export async function transitionTripStatus(
         driverSalary: '0',
         updatedAt: new Date(),
       }).where(eq(s.trips.id, tripId)).returning();
+
+      if (currentStatus === TripStatus.COMPLETED) {
+        await LedgerService.postTripUnlock(tx, {
+          id: trip.id,
+          tripCode: trip.tripCode,
+          customerId: trip.customerId,
+          driverId: trip.driverId ?? null,
+          revenue: trip.revenue,
+          driverSalary: trip.driverSalary,
+          carrierType: trip.carrierType ?? 'OWN',
+          externalCarrierId: trip.externalCarrierId ?? null,
+          externalFreightCost: trip.externalFreightCost ?? null,
+          fuelSupplierId: trip.fuelSupplierId ?? null,
+          totalFuelCost: trip.totalFuelCost,
+          ancillaryFees: ancillaryFees.map(fee => ({
+            id: fee.id,
+            buyAmount: fee.buyAmount,
+            sellAmount: fee.sellAmount,
+            settlementMethod: fee.settlementMethod,
+            supplierId: fee.supplierId ?? null,
+            forwarderId: fee.forwarderId ?? null,
+            approvalStatus: fee.approvalStatus,
+          })),
+        });
+      }
 
       // Cancel audit row is written by the middleware for POST /cancel
       // ("Quản lý <actor> hủy chuyến <tripCode>") — skip duplicate write.
@@ -229,6 +201,34 @@ export async function transitionTripStatus(
 
     if (!updated) {
       throw new ApiError(409, 'Trạng thái chuyến đi đã bị thay đổi bởi người khác. Vui lòng tải lại.');
+    }
+
+    if (targetStatus === TripStatus.COMPLETED && currentStatus === TripStatus.IN_TRANSIT) {
+      const ancillaryFees = await tx.select().from(s.tripExpenses)
+        .where(eq(s.tripExpenses.tripId, trip.id));
+
+      await LedgerService.postTripLock(tx, {
+        id: updated.id,
+        tripCode: updated.tripCode,
+        customerId: updated.customerId,
+        driverId: updated.driverId ?? null,
+        revenue: updated.revenue,
+        driverSalary: updated.driverSalary,
+        carrierType: updated.carrierType ?? 'OWN',
+        externalCarrierId: updated.externalCarrierId ?? null,
+        externalFreightCost: updated.externalFreightCost ?? null,
+        fuelSupplierId: updated.fuelSupplierId ?? null,
+        totalFuelCost: updated.totalFuelCost,
+        ancillaryFees: ancillaryFees.map(fee => ({
+          id: fee.id,
+          buyAmount: fee.buyAmount,
+          sellAmount: fee.sellAmount,
+          settlementMethod: fee.settlementMethod,
+          supplierId: fee.supplierId ?? null,
+          forwarderId: fee.forwarderId ?? null,
+          approvalStatus: fee.approvalStatus,
+        })),
+      });
     }
 
     // Other transitions (e.g. IN_TRANSIT → COMPLETED triggered from /actuals)
