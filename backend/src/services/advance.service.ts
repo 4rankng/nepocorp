@@ -6,11 +6,12 @@ import { LedgerService } from './ledger.service';
 import { AdvanceError, validateSettlementInputs } from './settlement-validation';
 import type { Tx } from './trip-shared';
 
-async function generateSettlementCode(tx: Tx): Promise<string> {
-  const now = new Date();
+export async function generateSettlementCode(tx: Tx, now: Date = new Date()): Promise<string> {
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const prefix = `PT-${yy}${mm}`;
+
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(6001, hashtext(${prefix}))`);
 
   const [row] = await tx.select({ maxCode: sql<string | null>`max(${s.advanceSettlements.code})` })
     .from(s.advanceSettlements)
