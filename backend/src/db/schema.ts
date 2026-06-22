@@ -351,6 +351,8 @@ export const ledger = pgTable('ledger', {
 }, (table) => [
   // Hottest query path: every getBalance/postEntry does WHERE entity_type = ? AND entity_id = ? ORDER BY id DESC LIMIT 1
   index('ledger_entity_entity_idx').on(table.entityType, table.entityId),
+  index('ledger_entity_entity_id_idx').on(table.entityType, table.entityId, table.id),
+  index('ledger_entity_txn_timestamp_idx').on(table.entityType, table.txnType, table.timestamp),
 ]);
 
 export const penalties = pgTable('penalties', {
@@ -515,7 +517,12 @@ export const expenses = pgTable('expenses', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  index('expenses_date_idx').on(table.expenseDate),
+  index('expenses_supplier_idx').on(table.supplierId),
+  index('expenses_category_idx').on(table.categoryId),
+  index('expenses_vehicle_idx').on(table.truckId, table.vehicleComponent),
+]);
 
 export const expensePhotos = pgTable('expense_photos', {
   id: serial('id').primaryKey(),

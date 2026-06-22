@@ -414,6 +414,27 @@
       "when": 1781863600000,
       "tag": "0058_tire_positions_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1781884165879,
+      "tag": "0059_brave_landau",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1781884526511,
+      "tag": "0061_sleepy_the_call",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1781889000000,
+      "tag": "0062_backfill_completed_trip_ledger",
+      "breakpoints": true
     }
   ]
 }
