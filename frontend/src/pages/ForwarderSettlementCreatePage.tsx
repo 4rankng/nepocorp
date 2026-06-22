@@ -9,6 +9,7 @@ import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
+import type { AdvanceRequestWithRefs } from '@tingting/shared';
 import './ForwarderSettlementsPage.css';
 
 /** Vietnamese fallback labels for expense type codes */
@@ -27,15 +28,6 @@ const EXPENSE_TYPE_VI: Record<string, string> = {
 
 function expenseLabel(code: string, options: Array<{ code: string; name: string }>): string {
   return options.find(t => t.code === code)?.name || EXPENSE_TYPE_VI[code] || code;
-}
-
-interface AdvanceRequest {
-  id: number;
-  requesterId: number;
-  amount: string;
-  reason: string;
-  status: string;
-  createdAt: string;
 }
 
 interface CreatedSettlement {
@@ -75,7 +67,7 @@ export default function ForwarderSettlementCreatePage() {
   const { data: catalogs } = useCatalogs();
   const createSettlement = useCreateAdvanceSettlement();
 
-  const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequest[]);
+  const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequestWithRefs[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = useMemo(() => (unlinkedData?.items ?? []) as Array<{
     id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null; containerNumbers: string | null;

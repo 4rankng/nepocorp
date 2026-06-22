@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -9,8 +9,10 @@ import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries'
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
+import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import { useClickOutside } from '../hooks/useClickOutside';
 import './DebtDetailPage.css';
 
 // ── Txn type label + pill variant ──────────────────────────────────────────
@@ -71,6 +73,8 @@ export default function DebtDetailPage() {
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(exportMenuRef, () => setShowExportMenu(false), { escapeKey: true, enabled: showExportMenu });
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -81,6 +85,49 @@ export default function DebtDetailPage() {
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
+  const { toast: showToast } = useToast();
+
+  const downloadExport = async (format: string) => {
+    setShowExportMenu(false);
+    try {
+      const blob = await api.getBlob(`/ledger/customers/${id}/statement/export?format=${format}`);
+      const url = URL.createObjectURL(blob);
+      if (format === 'pdf') {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sao-ke-${statement?.customer.name}-${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
+    }
+  };
+
+  const downloadDebitNote = async () => {
+    setShowExportMenu(false);
+    try {
+      if (!statement) return;
+      const mode = statement.customer.debitNoteMode === 'PER_BATCH' ? 'PER_BATCH' : 'MONTHLY';
+      const now = new Date();
+      const params = new URLSearchParams({
+        mode,
+        month: String(now.getMonth() + 1),
+        year: String(now.getFullYear()),
+      });
+      const blob = await api.getBlob(`/finance/debit-note/${id}/export?${params}`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `giay-bao-no-${statement.customer.name}-${now.toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất giấy báo nợ' });
+    }
+  };
 
   // ── Linked supplier data (dual-entity customers) ─────────────────────────
   // The customer statement doesn't expose linkedSupplierId directly, so we
@@ -257,7 +304,7 @@ export default function DebtDetailPage() {
             </button>
           )}
           {/* Export dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div ref={exportMenuRef} style={{ position: 'relative' }}>
             <button
               className="btn btn--secondary"
               onClick={() => setShowExportMenu(v => !v)}
@@ -273,39 +320,23 @@ export default function DebtDetailPage() {
                 zIndex: 50, minWidth: 180, overflow: 'hidden',
               }}>
                 <button
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
-                  onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=xlsx`, '_blank'); }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  className="dd-export-btn"
+                  onClick={() => downloadExport('xlsx')}
                 >
                   <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
                   Excel (.xlsx)
                 </button>
                 <button
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
-                  onClick={() => { setShowExportMenu(false); window.open(`/api/ledger/customers/${id}/statement/export?format=pdf`, '_blank'); }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  className="dd-export-btn"
+                  onClick={() => downloadExport('pdf')}
                 >
                   <FileText size={14} style={{ color: '#dc2626' }} />
                   PDF (In)
                 </button>
                 <div style={{ borderTop: '1px solid var(--line)', margin: '4px 0' }} />
                 <button
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)' }}
-                  onClick={() => {
-                    setShowExportMenu(false);
-                    const mode = customer.debitNoteMode === 'PER_BATCH' ? 'PER_BATCH' : 'MONTHLY';
-                    const now = new Date();
-                    const params = new URLSearchParams({
-                      mode,
-                      month: String(now.getMonth() + 1),
-                      year: String(now.getFullYear()),
-                    });
-                    window.open(`/api/finance/debit-note/${id}/export?${params}`, '_blank');
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  className="dd-export-btn"
+                  onClick={downloadDebitNote}
                 >
                   <Receipt size={14} style={{ color: '#7c3aed' }} />
                   Giấy báo nợ (.xlsx)
