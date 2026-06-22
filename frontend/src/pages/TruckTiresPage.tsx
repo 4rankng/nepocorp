@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
 import {
   computeTireAlerts,
 } from '@tingting/shared';
@@ -11,6 +11,21 @@ import { StatusStrip, StatusSwatch } from '../components/shared/StatusStrip';
 import { useToast } from '../components/shared/Toast';
 import { formatErrorMessage } from '../lib/api';
 import { routes } from '../lib/routes';
+import {
+  buildPositionLabels,
+  buildUsedPositionLabels,
+  cleanText,
+  displayTirePosition,
+  draftFromTire,
+  normalizedCatalogLabel,
+  patchFromDraft,
+  positionPayloadFromLabel,
+  supplierIdFromText,
+  supplierName,
+  textMatches,
+  type TireEditDraft,
+  type TirePatch,
+} from '../features/tires/tireUtils';
 import {
   useTires, useCreateTire, useUpdateTire, useDeleteTire,
 } from '../hooks/useTireQueries';
@@ -24,29 +39,6 @@ import {
 } from '../hooks/useCatalogQueries';
 import './TruckTiresPage.css';
 
-/** Editable tire fields. `cost` is a number on the wire (numeric(15,0)). */
-type TirePatch = Partial<{
-  serial: string;
-  truckId: number | null;
-  position: string | null;
-  size: string | null;
-  installedAt: string | null;
-  removedAt: string | null;
-  supplierId: number | null;
-  cost: number;
-  warrantyUntil: string | null;
-  status: Tire['status'];
-}>;
-
-type TireEditDraft = {
-  serial: string;
-  position: string;
-  size: string;
-  installedAt: string;
-  supplierText: string;
-  warrantyUntil: string;
-};
-
 const TIRE_STATUS_COLORS: Record<Tire['status'], string> = {
   IN_USE: '#16A34A',
   IN_STOCK: '#2563EB',
@@ -56,91 +48,6 @@ const TIRE_STATUS_LEGEND: { status: Tire['status']; label: string }[] = [
   { status: 'IN_USE', label: 'Đang lắp trên xe' },
   { status: 'IN_STOCK', label: 'Lốp dự phòng' },
 ];
-
-function cleanText(label: string): string {
-  return label.trim().replace(/\s+/g, ' ');
-}
-
-function normalizeSearchText(value: string): string {
-  return cleanText(value)
-    .toLocaleLowerCase('vi')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd');
-}
-
-function textMatches(haystack: string, query: string): boolean {
-  return normalizeSearchText(haystack).includes(normalizeSearchText(query));
-}
-
-function displayTirePosition(tire: Tire): string {
-  return tire.position || '—';
-}
-
-function positionPayloadFromLabel(label: string): { position: string | null } {
-  const cleaned = cleanText(label);
-  return {
-    position: cleaned || null,
-  };
-}
-
-function buildPositionLabels(tires: Tire[], tirePositions: TirePosition[]): string[] {
-  const labels = [
-    ...tirePositions
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'vi'))
-      .map((position) => position.name),
-    ...tires.map((tire) => tire.position || '').filter(Boolean),
-  ];
-  return Array.from(new Set(labels.map(cleanText).filter(Boolean)));
-}
-
-function buildUsedPositionLabels(tires: Tire[]): string[] {
-  return Array.from(new Set(tires.map((tire) => cleanText(tire.position || '')).filter(Boolean)));
-}
-
-function normalizedCatalogLabel(label: string): string {
-  return normalizeSearchText(label);
-}
-
-function supplierName(suppliers: Supplier[], supplierId: number | null): string {
-  if (!supplierId) return '—';
-  return suppliers.find((supplier) => supplier.id === supplierId)?.name ?? '—';
-}
-
-function supplierTextFromId(suppliers: Supplier[], supplierId: number | null): string {
-  if (!supplierId) return '';
-  return suppliers.find((supplier) => supplier.id === supplierId)?.name ?? '';
-}
-
-function supplierIdFromText(suppliers: Supplier[], label: string): number | null {
-  const cleaned = cleanText(label);
-  if (!cleaned) return null;
-  const match = suppliers.find((supplier) => cleanText(supplier.name).toLocaleLowerCase('vi') === cleaned.toLocaleLowerCase('vi'));
-  return match?.id ?? null;
-}
-
-function draftFromTire(tire: Tire, suppliers: Supplier[]): TireEditDraft {
-  return {
-    serial: tire.serial,
-    position: tire.position ?? '',
-    size: tire.size ?? '',
-    installedAt: tire.installedAt ?? '',
-    supplierText: supplierTextFromId(suppliers, tire.supplierId),
-    warrantyUntil: tire.warrantyUntil ?? '',
-  };
-}
-
-function patchFromDraft(draft: TireEditDraft, suppliers: Supplier[]): TirePatch {
-  return {
-    serial: draft.serial.trim(),
-    ...positionPayloadFromLabel(draft.position),
-    size: draft.size.trim() || null,
-    installedAt: draft.installedAt || null,
-    supplierId: supplierIdFromText(suppliers, draft.supplierText),
-    warrantyUntil: draft.warrantyUntil || null,
-  };
-}
 
 function TireLegend() {
   return (
@@ -243,11 +150,20 @@ export default function TruckTiresPage() {
     <div className="ttp">
       <div className="ttp-header">
         <div>
-          <Link to={routes.fleet} className="ttp-back">← Quay lại đội xe</Link>
+          <Link to={routes.fleet} className="ttp-back">
+            <ArrowLeft size={14} />
+            Quay lại đội xe
+          </Link>
           <h1>{truck?.licensePlate ?? 'Lốp xe'}</h1>
           <div className="ttp-sub">
             Theo dõi serial lốp, vị trí lắp, ngày thay, nhà cung cấp và hạn bảo hành.
           </div>
+        </div>
+        <div className="ttp-actions">
+          <a className="ttp-primary-action" href="#ttp-add-title">
+            <Plus size={15} />
+            Thêm lốp
+          </a>
         </div>
       </div>
 
