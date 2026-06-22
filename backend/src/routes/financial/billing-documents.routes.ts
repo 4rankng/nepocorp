@@ -26,14 +26,16 @@ router.post('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(a
   res.status(201).json(doc);
 }));
 
-// GET /api/finance/billing-documents?entityType&entityId — list saved documents
+// GET /api/finance/billing-documents?entityType&entityId&type — list saved documents
 router.get('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   const entityType = String(req.query.entityType ?? '');
   const entityId = Number(req.query.entityId);
   if ((entityType !== 'CUSTOMER' && entityType !== 'VENDOR') || !Number.isFinite(entityId) || entityId <= 0) {
     return res.status(400).json({ error: 'Thiếu hoặc sai entityType / entityId' });
   }
-  res.json(await billingService.listDocuments(entityType, entityId));
+  const rawType = req.query.type;
+  const type = rawType === 'DEBIT_NOTE' || rawType === 'PAYMENT_STATEMENT' ? rawType : undefined;
+  res.json(await billingService.listDocuments(entityType, entityId, type));
 }));
 
 // GET /api/finance/billing-documents/:id — one document with lines

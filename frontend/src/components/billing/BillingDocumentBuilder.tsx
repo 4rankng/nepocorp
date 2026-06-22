@@ -121,8 +121,12 @@ export default function BillingDocumentBuilder({
           excluded: l.excluded ?? false, sortOrder: i,
         })),
       };
-      const saved = isEdit && savedId
-        ? await financialClient.updateBillingDocument(savedId, payload)
+      // Edit mode always updates the ORIGINAL document — re-filtering ("Lọc
+      // dòng") must not turn the next save into a duplicate POST. New mode
+      // creates on first save, then updates via savedId.
+      const updateId = isEdit ? (initialDoc?.id ?? null) : savedId;
+      const saved = updateId
+        ? await financialClient.updateBillingDocument(updateId, payload)
         : await financialClient.saveBillingDocument(payload);
       setSavedId(saved.id);
       showToast({ kind: 'success', message: 'Đã lưu tài liệu.' });
@@ -246,7 +250,7 @@ export default function BillingDocumentBuilder({
                         className="input mono"
                         style={{ ...inputBase, textAlign: 'right', width: 120 }}
                         value={amt}
-                        onChange={(e) => updateLine(i, { amountOverride: Number(e.target.value) })}
+                        onChange={(e) => updateLine(i, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
                       />
                     </td>
                     <td style={{ ...cellStyle, textAlign: 'center' }}>

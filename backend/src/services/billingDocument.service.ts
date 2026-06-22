@@ -230,20 +230,22 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
 
 export async function updateDocument(id: number, input: SaveBillingDocumentInput): Promise<BillingDocument> {
   const total = docTotal(input.lines as BillingDocumentLine[]);
-  await db.update(s.billingDocuments).set({
-    entityName: input.entityName ?? null, rangeFrom: input.rangeFrom, rangeTo: input.rangeTo,
-    note: input.note ?? null, totalInclVat: String(total), updatedAt: new Date(),
-  }).where(eq(s.billingDocuments.id, id));
-
-  // Always-editable: replace lines on edit.
-  await db.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, id));
-  await persistLines(id, input.lines);
+  // Always-editable: replace lines on edit — delete + re-insert inside one
+  // transaction so a mid-way failure cannot wipe the document's lines.
+  await db.transaction(async (tx) => {
+    await tx.update(s.billingDocuments).set({
+      entityName: input.entityName ?? null, rangeFrom: input.rangeFrom, rangeTo: input.rangeTo,
+      note: input.note ?? null, totalInclVat: String(total), updatedAt: new Date(),
+    }).where(eq(s.billingDocuments.id, id));
+    await tx.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, id));
+    await persistLines(tx, id, input.lines);
+  });
   return getDocument(id);
 }
 
-async function persistLines(documentId: number, lines: BillingDocumentLine[]): Promise<void> {
+async function persistLines(tx: Tx, documentId: number, lines: BillingDocumentLine[]): Promise<void> {
   if (lines.length === 0) return;
-  await db.insert(s.billingDocumentLines).values(
+  await tx.insert(s.billingDocumentLines).values(
     lines.map((l) => ({
       documentId,
       sourceType: l.sourceType, sourceId: l.sourceId ?? null, lineType: l.lineType,
@@ -256,13 +258,18 @@ async function persistLines(documentId: number, lines: BillingDocumentLine[]): P
   );
 }
 
-export async function listDocuments(entityType: BillingDocumentEntityType, entityId: number): Promise<BillingDocument[]> {
+export async function listDocuments(entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType): Promise<BillingDocument[]> {
+  // Filter by `type` when provided so a customer who is also an external
+  // carrier doesn't see their payment-statements mixed into the debit-note
+  // list (both share entityType=CUSTOMER).
+  const conds: SQL<unknown>[] = [
+    eq(s.billingDocuments.entityType, entityType),
+    eq(s.billingDocuments.entityId, entityId),
+    isNull(s.billingDocuments.deletedAt),
+  ];
+  if (type) conds.push(eq(s.billingDocuments.type, type));
   const docs = await db.select().from(s.billingDocuments)
-    .where(and(
-      eq(s.billingDocuments.entityType, entityType),
-      eq(s.billingDocuments.entityId, entityId),
-      isNull(s.billingDocuments.deletedAt),
-    ))
+    .where(and(...conds))
     .orderBy(desc(s.billingDocuments.createdAt));
   return Promise.all(docs.map((d) => hydrateDocument(d)));
 }

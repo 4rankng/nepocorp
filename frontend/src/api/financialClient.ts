@@ -124,9 +124,9 @@ export const financialClient = {
   updateBillingDocument: (id: number, data: SaveBillingDocumentInput) =>
     api.put<BillingDocument>(FINANCIAL.BILLING_DOCUMENT(id), data),
 
-  listBillingDocuments: (entityType: BillingDocumentEntityType, entityId: number) =>
+  listBillingDocuments: (entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType) =>
     api.get<BillingDocument[]>(
-      `${FINANCIAL.BILLING_DOCUMENTS}${toQuery({ entityType, entityId })}`,
+      `${FINANCIAL.BILLING_DOCUMENTS}${toQuery({ entityType, entityId, type })}`,
     ),
 
   getBillingDocument: (id: number) =>

@@ -28,7 +28,7 @@ export default function BillingDocumentsPanel({ type, entityType, entityId, enti
   const queryKey = ['billing-docs', type, entityType, entityId];
   const { data: docs = [] } = useQuery<BillingDocument[]>({
     queryKey,
-    queryFn: () => financialClient.listBillingDocuments(entityType, entityId),
+    queryFn: () => financialClient.listBillingDocuments(entityType, entityId, type),
     enabled: !!entityId,
   });
 
