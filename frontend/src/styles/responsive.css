@@ -82,6 +82,13 @@
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
   }
+
+  .topbar__context-kicker {
+    color: rgba(255, 255, 255, 0.62);
+  }
+  .topbar__context strong {
+    color: #ffffff;
+  }
   
   /* Month Navigator in green header */
   .topbar-date__trigger {
@@ -186,6 +193,7 @@
   }
   .topbar-search,
   .topbar__search,
+  .topbar__context,
   .topbar__breadcrumb { display: none; }
   .topbar .icon-btn { display: none; }
   /* Bump hamburger to a 44px touch target (was 40px) */

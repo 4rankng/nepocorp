@@ -45,6 +45,7 @@ export interface TopbarProps {
   };
   isDriver: boolean;
   sidebarOpen: boolean;
+  pageTitle: string;
   onToggleSidebar: () => void;
 }
 

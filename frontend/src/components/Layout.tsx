@@ -37,6 +37,7 @@ import { ProfileModal } from './layout/ProfileModal';
 import { PasswordModal } from './layout/PasswordModal';
 import type { NavItem } from './layout/types';
 import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
+import { routes, titleForPath } from '../lib/routes';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -47,47 +48,47 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
     case 'ACCOUNTANT':
     case 'ADMIN':
       return [
-        { key: 'dashboard', label: 'Tổng quan', path: '/dashboard', icon: LayoutDashboard },
+        { key: 'dashboard', label: 'Tổng quan', path: routes.dashboard, icon: LayoutDashboard },
 
-        { key: 'dispatch', label: 'Phân xe', path: '/dispatch', icon: Compass, section: 'operations', count: dispatchCount },
-        { key: 'trips', label: 'Sổ chuyến đi', path: '/trips', icon: Truck, section: 'operations' },
+        { key: 'dispatch', label: 'Phân xe', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
+        { key: 'trips', label: 'Sổ chuyến đi', path: routes.trips, icon: Truck, section: 'operations' },
 
-        { key: 'salary', label: 'Lương & Chấm công', path: '/salary', icon: CalendarDays, section: 'hr' },
-        { key: 'penalties', label: 'Kỷ luật', path: '/penalties', icon: AlertTriangle, section: 'hr', count: penaltiesCount },
+        { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
+        { key: 'penalties', label: 'Kỷ luật', path: routes.penalties, icon: AlertTriangle, section: 'hr', count: penaltiesCount },
 
-        { key: 'finance', label: 'Báo cáo lãi lỗ', path: '/finance', icon: Wallet, section: 'financials' },
-        { key: 'profit', label: 'Phân chia lợi nhuận', path: '/profit', icon: DollarSign, section: 'financials' },
-        { key: 'debt', label: 'Công nợ phải thu', path: '/debt', icon: Receipt, section: 'financials' },
-        { key: 'payables', label: 'Công nợ phải trả', path: '/payables', icon: Receipt, section: 'financials' },
-        { key: 'expenses', label: 'Chi phí phát sinh', path: '/expenses', icon: FileText, section: 'financials' },
-        { key: 'advances', label: 'Tạm ứng', path: '/advances', icon: Wallet, section: 'financials' },
-        { key: 'advance-settlements', label: 'Duyệt hoàn ứng', path: '/admin/advance-settlements', icon: ClipboardCheck, section: 'financials' },
+        { key: 'finance', label: 'Báo cáo lãi lỗ', path: routes.finance, icon: Wallet, section: 'financials' },
+        { key: 'profit', label: 'Phân chia lợi nhuận', path: routes.profit, icon: DollarSign, section: 'financials' },
+        { key: 'debt', label: 'Công nợ phải thu', path: routes.debt, icon: Receipt, section: 'financials' },
+        { key: 'payables', label: 'Công nợ phải trả', path: routes.payables, icon: Receipt, section: 'financials' },
+        { key: 'expenses', label: 'Chi phí phát sinh', path: routes.expenses, icon: FileText, section: 'financials' },
+        { key: 'advances', label: 'Tạm ứng', path: routes.advances, icon: Wallet, section: 'financials' },
+        { key: 'advance-settlements', label: 'Duyệt hoàn ứng', path: routes.adminAdvanceSettlements, icon: ClipboardCheck, section: 'financials' },
 
 
-        { key: 'fleet', label: 'Đội xe', path: '/fleet', icon: Layers, section: 'master-data' },
-        { key: 'customers', label: 'Khách hàng', path: '/customers', icon: Users, section: 'master-data' },
-        { key: 'suppliers', label: 'Nhà cung cấp', path: '/suppliers', icon: Store, section: 'master-data' },
-        { key: 'routes', label: 'Tuyến đường', path: '/config/routes', icon: Route, section: 'master-data' },
+        { key: 'fleet', label: 'Đội xe', path: routes.fleet, icon: Layers, section: 'master-data' },
+        { key: 'customers', label: 'Khách hàng', path: routes.customers, icon: Users, section: 'master-data' },
+        { key: 'suppliers', label: 'Nhà cung cấp', path: routes.suppliers, icon: Store, section: 'master-data' },
+        { key: 'routes', label: 'Tuyến đường', path: routes.configRoutes, icon: Route, section: 'master-data' },
 
         ...(role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT' ? [
-          { key: 'users', label: 'Người dùng', path: '/users', icon: Users, section: 'system' as const },
+          { key: 'users', label: 'Người dùng', path: routes.users, icon: Users, section: 'system' as const },
         ] : []),
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
-          { key: 'audit-logs', label: 'Nhật ký người dùng', path: '/audit-logs', icon: ScrollText, section: 'system' as const },
+          { key: 'audit-logs', label: 'Nhật ký người dùng', path: routes.auditLogs, icon: ScrollText, section: 'system' as const },
         ] : []),
-        { key: 'config', label: 'Cấu hình', path: '/config', icon: Settings, section: 'system' },
+        { key: 'config', label: 'Cấu hình', path: routes.config, icon: Settings, section: 'system' },
       ];
     case 'DRIVER':
       return [
-        { key: 'my-trips', label: 'Hành trình', path: '/my-trips', icon: Route, section: 'operations' },
-        { key: 'my-earnings', label: 'Thu nhập', path: '/my-earnings', icon: DollarSign, section: 'operations' },
-        { key: 'my-penalties', label: 'Kỷ luật', path: '/my-penalties', icon: AlertTriangle, section: 'operations' },
+        { key: 'my-trips', label: 'Hành trình', path: routes.myTrips, icon: Route, section: 'operations' },
+        { key: 'my-earnings', label: 'Thu nhập', path: routes.myEarnings, icon: DollarSign, section: 'operations' },
+        { key: 'my-penalties', label: 'Kỷ luật', path: routes.myPenalties, icon: AlertTriangle, section: 'operations' },
       ];
     case 'FORWARDER':
       return [
-        { key: 'my-forwarder-trips', label: 'Chuyến đi', path: '/my-forwarder-trips', icon: Package, section: 'operations' },
-        { key: 'my-advances', label: 'Tạm ứng', path: '/my-advances', icon: Wallet, section: 'operations' },
-        { key: 'my-settlements', label: 'Phiếu thanh toán', path: '/my-settlements', icon: FileText, section: 'operations' },
+        { key: 'my-forwarder-trips', label: 'Chuyến đi', path: routes.myForwarderTrips, icon: Package, section: 'operations' },
+        { key: 'my-advances', label: 'Tạm ứng', path: routes.myAdvances, icon: Wallet, section: 'operations' },
+        { key: 'my-settlements', label: 'Phiếu thanh toán', path: routes.mySettlements, icon: FileText, section: 'operations' },
       ];
     default:
       return [];
@@ -99,41 +100,7 @@ function getRoleLabel(role: Role): string {
 }
 
 function getPageTitle(pathname: string): string {
-  if (pathname === '/dashboard') return 'Tổng quan';
-  if (pathname.startsWith('/dispatch')) return 'Điều vận & Phân xe';
-  if (pathname.startsWith('/fleet')) return 'Đội xe';
-  const tripMatch = pathname.match(/^\/trips\/(\d+)(?:\/edit)?$/);
-  if (tripMatch) {
-    const isEdit = pathname.endsWith('/edit');
-    return isEdit ? 'Sửa lệnh vận chuyển' : 'Chi tiết lệnh vận chuyển';
-  }
-  if (pathname === '/trips/new') return 'Tạo lệnh vận chuyển';
-  if (pathname.startsWith('/trips')) return 'Lệnh vận chuyển';
-  if (pathname === '/finance') return 'Báo cáo lãi lỗ';
-  if (pathname.startsWith('/profit')) return 'Phân chia lợi nhuận';
-  if (pathname.startsWith('/debt')) return 'Công nợ phải thu';
-  if (pathname.startsWith('/payables')) return 'Công nợ phải trả';
-  if (pathname.startsWith('/expenses/new')) return 'Ghi nhận chi phí';
-  if (pathname.match(/^\/expenses\/\d+\/edit$/)) return 'Sửa chi phí';
-  if (pathname.startsWith('/expenses')) return 'Chi phí phát sinh';
-  if (pathname.startsWith('/suppliers')) return 'Nhà cung cấp';
-  if (pathname === '/penalties' || pathname === '/my-penalties') return 'Kỷ luật';
-  if (pathname.startsWith('/customers')) return 'Khách hàng';
-  if (pathname.startsWith('/config/routes') || pathname.startsWith('/routes')) return 'Tuyến đường';
-  if (pathname === '/config') return 'Cấu hình hệ thống';
-  if (pathname.startsWith('/config')) return 'Cấu hình';
-  if (pathname === '/users') return 'Người dùng';
-  if (pathname === '/audit-logs') return 'Nhật ký người dùng';
-  if (pathname.startsWith('/my-trips')) return 'Hành trình';
-  if (pathname.startsWith('/my-earnings')) return 'Thu nhập';
-  if (pathname.startsWith('/my-forwarder-trips')) return 'Chuyến đi';
-  if (pathname.startsWith('/my-advances')) return 'Tạm ứng';
-  if (pathname.match(/^\/my-settlements\/\d+$/)) return 'Chi tiết phiếu thanh toán';
-  if (pathname.startsWith('/my-settlements')) return 'Phiếu thanh toán';
-  if (pathname.startsWith('/advances')) return 'Quản lý tạm ứng';
-  if (pathname.startsWith('/admin/advance-settlements')) return 'Duyệt hoàn ứng';
-  if (pathname.startsWith('/salary')) return 'Lương & Chấm công';
-  return 'NEPO';
+  return titleForPath(pathname);
 }
 
 const getInitials = (name?: string | null) => {
@@ -368,6 +335,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     user,
     isDriver,
     sidebarOpen,
+    pageTitle,
     onToggleSidebar: () => setSidebarOpen(v => !v),
   };
 

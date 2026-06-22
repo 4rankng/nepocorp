@@ -39,6 +39,7 @@ export const routes = {
   debtDetail: (id: number | string) => `/debt/${id}`,
   penalties: '/penalties',
   advances: '/advances',
+  adminAdvanceSettlements: '/admin/advance-settlements',
   salary: '/salary',
   users: '/users',
   auditLogs: '/audit-logs',
@@ -107,4 +108,48 @@ export function homeForRole(role: 'DRIVER' | 'FORWARDER' | string): string {
   if (role === 'DRIVER') return routes.myTrips;
   if (role === 'FORWARDER') return routes.myForwarderTrips;
   return routes.dashboard;
+}
+
+type TitleRule = {
+  test: (pathname: string) => boolean;
+  title: string | ((pathname: string) => string);
+};
+
+const titleRules: TitleRule[] = [
+  { test: p => p === routes.dashboard, title: 'Tổng quan' },
+  { test: p => p.startsWith(routes.dispatch), title: 'Điều vận & Phân xe' },
+  { test: p => p.startsWith(routes.fleet), title: 'Đội xe' },
+  { test: p => /^\/trips\/(\d+)(?:\/edit)?$/.test(p), title: p => p.endsWith('/edit') ? 'Sửa lệnh vận chuyển' : 'Chi tiết lệnh vận chuyển' },
+  { test: p => p === routes.tripNew, title: 'Tạo lệnh vận chuyển' },
+  { test: p => p.startsWith(routes.trips), title: 'Lệnh vận chuyển' },
+  { test: p => p === routes.finance, title: 'Báo cáo lãi lỗ' },
+  { test: p => p.startsWith(routes.profit), title: 'Phân chia lợi nhuận' },
+  { test: p => p.startsWith(routes.debt), title: 'Công nợ phải thu' },
+  { test: p => p.startsWith(routes.payables), title: 'Công nợ phải trả' },
+  { test: p => p.startsWith(routes.expenseNew), title: 'Ghi nhận chi phí' },
+  { test: p => /^\/expenses\/\d+\/edit$/.test(p), title: 'Sửa chi phí' },
+  { test: p => p.startsWith(routes.expenses), title: 'Chi phí phát sinh' },
+  { test: p => p.startsWith(routes.suppliers), title: 'Nhà cung cấp' },
+  { test: p => p === routes.penalties || p === routes.myPenalties, title: 'Kỷ luật' },
+  { test: p => p.startsWith(routes.customers), title: 'Khách hàng' },
+  { test: p => p.startsWith(routes.configRoutes) || p.startsWith(routes.legacy.routes), title: 'Tuyến đường' },
+  { test: p => p === routes.config, title: 'Cấu hình hệ thống' },
+  { test: p => p.startsWith(routes.config), title: 'Cấu hình' },
+  { test: p => p === routes.users, title: 'Người dùng' },
+  { test: p => p === routes.auditLogs, title: 'Nhật ký người dùng' },
+  { test: p => p.startsWith(routes.myTrips), title: 'Hành trình' },
+  { test: p => p.startsWith(routes.myEarnings), title: 'Thu nhập' },
+  { test: p => p.startsWith(routes.myForwarderTrips), title: 'Chuyến đi' },
+  { test: p => p.startsWith(routes.myAdvances), title: 'Tạm ứng' },
+  { test: p => /^\/my-settlements\/\d+$/.test(p), title: 'Chi tiết phiếu thanh toán' },
+  { test: p => p.startsWith(routes.mySettlements), title: 'Phiếu thanh toán' },
+  { test: p => p.startsWith(routes.advances), title: 'Quản lý tạm ứng' },
+  { test: p => p.startsWith(routes.adminAdvanceSettlements), title: 'Duyệt hoàn ứng' },
+  { test: p => p.startsWith(routes.salary), title: 'Lương & Chấm công' },
+];
+
+export function titleForPath(pathname: string): string {
+  const match = titleRules.find(rule => rule.test(pathname));
+  if (!match) return 'NEPO';
+  return typeof match.title === 'function' ? match.title(pathname) : match.title;
 }

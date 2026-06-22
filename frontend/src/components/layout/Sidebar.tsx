@@ -57,6 +57,7 @@ function Sidebar({
           onClick={() => onNavigate(item.path)}
           title={item.label}
           aria-label={item.label}
+          aria-current={isActive ? 'page' : undefined}
         >
           <NavIcon item={item} />
           <span className="sidebar-item-label">{item.label}</span>
@@ -106,6 +107,7 @@ function Sidebar({
               onClick={() => onNavigate(item.path)}
               title={item.label}
               aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
             >
               <NavIcon item={item} />
               <span className="sidebar-item-label">{item.label}</span>
