@@ -102,6 +102,9 @@ export const tripClient = {
   createTripExpense: (tripId: number, data: object) =>
     api.post<TripExpense>(TRIPS.EXPENSES(tripId), data),
 
+  updateTripExpense: (tripId: number, eid: number, data: object) =>
+    api.put<TripExpense>(TRIPS.EXPENSE(tripId, eid), data),
+
   deleteTripExpense: (tripId: number, eid: number) =>
     api.delete<{ ok: boolean }>(TRIPS.EXPENSE(tripId, eid)),
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Check, X } from 'lucide-react';
+import { Loader2, Plus, Check, X, Edit2 } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
@@ -96,6 +96,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   // Per-row in-flight flag — disables the buttons while a request is pending
   // so a double click can't fire approve + reject on the same row.
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: qk.tripForm.tripExpenses(tripId),
@@ -144,6 +145,24 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
     });
   };
 
+  const handleEdit = (fee: TripExpense) => {
+    setForm({
+      expenseType: fee.expenseType as AncillaryExpenseType,
+      buyAmount: fee.buyAmount ? String(fee.buyAmount) : '',
+      sellAmount: fee.sellAmount ? String(fee.sellAmount) : '',
+      settlementMethod: fee.settlementMethod as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
+      supplierId: fee.supplierId ? String(fee.supplierId) : '',
+      containerNumber: fee.containerNumber || '',
+      invoiceNumber: fee.invoiceNumber || '',
+      invoiceDate: fee.invoiceDate || '',
+      declarationNumber: fee.declarationNumber || '',
+      note: fee.note || '',
+    });
+    setEditingId(fee.id);
+    setFormError('');
+    setShowForm(true);
+  };
+
   const handleAdd = async () => {
     setFormError('');
     if (!form.buyAmount || Number(form.buyAmount) <= 0) {
@@ -160,7 +179,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
     }
     setSubmitting(true);
     try {
-      await tripClient.createTripExpense(tripId, {
+      const payload = {
         expenseType: form.expenseType,
         buyAmount: Number(form.buyAmount),
         sellAmount: form.sellAmount ? Number(form.sellAmount) : 0,
@@ -171,12 +190,20 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
         invoiceDate: form.invoiceDate || undefined,
         declarationNumber: form.declarationNumber.trim() || undefined,
         note: form.note.trim() || undefined,
-      });
+      };
+
+      if (editingId) {
+        await tripClient.updateTripExpense(tripId, editingId, payload);
+      } else {
+        await tripClient.createTripExpense(tripId, payload);
+      }
+      
       await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpenses(tripId) });
       setForm(EMPTY_FORM);
+      setEditingId(null);
       setShowForm(false);
     } catch (e: unknown) {
-      setFormError((e as Error).message || 'Lỗi khi thêm phí.');
+      setFormError((e as Error).message || 'Lỗi khi lưu phí.');
     } finally {
       setSubmitting(false);
     }
@@ -324,6 +351,16 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                   </button>
                                   <button
                                     type="button"
+                                    className="fee-decision-cell__btn fee-decision-cell__btn--edit"
+                                    onClick={() => handleEdit(fee)}
+                                    disabled={isBusy}
+                                    title="Sửa khoản phí này"
+                                    aria-label="Sửa"
+                                  >
+                                    <Edit2 size={13} strokeWidth={2} />
+                                  </button>
+                                  <button
+                                    type="button"
                                     className="fee-decision-cell__btn fee-decision-cell__btn--reject"
                                     onClick={() => confirmAndRun(fee, 'reject')}
                                     disabled={isBusy}
@@ -342,7 +379,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     {!readOnly && !hideAddButton && !showForm && (
                       <tr
                         className="ancillary-fees__add-row"
-                        onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+                        onClick={() => { setForm(EMPTY_FORM); setFormError(''); setEditingId(null); setShowForm(true); }}
                       >
                         <td colSpan={7}>
                           <Plus size={13} /> Thêm phí
@@ -438,6 +475,15 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                             </button>
                             <button
                               type="button"
+                              className="btn btn--sm btn--ghost ancillary-fee-card__btn"
+                              onClick={() => handleEdit(fee)}
+                              disabled={isBusy}
+                            >
+                              <Edit2 size={13} />
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
                               className="btn btn--sm btn--ghost ancillary-fee-card__btn ancillary-fee-card__btn--reject"
                               onClick={() => confirmAndRun(fee, 'reject')}
                               disabled={isBusy}
@@ -477,7 +523,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   <button
                     type="button"
                     className="ancillary-fees__mobile-add"
-                    onClick={() => { setForm(EMPTY_FORM); setFormError(''); setShowForm(true); }}
+                    onClick={() => { setForm(EMPTY_FORM); setFormError(''); setEditingId(null); setShowForm(true); }}
                   >
                     <Plus size={14} /> Thêm phí
                   </button>
@@ -501,7 +547,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-1)', marginBottom: 2 }}>
-                Thêm chi phí dịch vụ
+                {editingId ? 'Sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ'}
               </div>
 
               {formError && (
@@ -672,7 +718,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   type="button"
                   className="btn btn--ghost btn--sm"
                   disabled={submitting}
-                  onClick={() => { setShowForm(false); setFormError(''); }}
+                  onClick={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
                 >
                   Hủy
                 </button>

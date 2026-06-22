@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
+import { useCatalogs } from '../../hooks/useCatalogs';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
@@ -128,6 +129,8 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
 
 export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
   const { toast } = useToast();
+  const { data: catalogs } = useCatalogs();
+  const containerTypes = catalogs?.containerTypes ?? [];
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
   const { ocrResult, containerRows: rows, setContainerRows: setRows,
@@ -477,6 +480,24 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                       </div>
                     );
                   })()}
+                </div>
+                <div>
+                  <label className="ci-label">
+                    Loại container
+                  </label>
+                  <select
+                    className="input ci-input-sm"
+                    style={{ width: '100%' }}
+                    value={row.containerTypeId}
+                    onChange={e => updateRow(row._key, 'containerTypeId', e.target.value === '' ? '' : Number(e.target.value))}
+                  >
+                    <option value="">Chọn loại</option>
+                    {containerTypes.map(type => (
+                      <option key={type.id} value={type.id}>
+                        {type.name || type.code}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="ci-label">

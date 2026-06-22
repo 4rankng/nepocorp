@@ -25,14 +25,11 @@ import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
 import type { ContainerFormRow, SealFormRow } from './useTripFormState';
+import { createFallbackLegsFromRouteName, resolveContainerCount } from './tripFormDispatchUtils';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
 const LOADED_RATE = FUEL_LOADED_NORM_FALLBACK;
 const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
-
-function resolveContainerCount(raw: string): number {
-  return Math.min(10, Math.max(1, Number(raw) || 1));
-}
 
 /** Shape returned by PUT /api/trips/:id/containers — same as Phase 2
  *  `TripContainer` with the new `seals[]` and `photos[]` sub-collections. */
@@ -208,27 +205,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         loadingType: leg.loadingType as LoadingType,
       })));
     } else {
-      const parts = (existingTrip.route?.name || '').split(/\s*[-→]\s*/).filter(Boolean);
-      const originGuess = parts[0]?.trim() || '';
-      const destGuess = parts.length > 1 ? parts[parts.length - 1].trim() : '';
-      setLegs([
-        {
-          id: Math.random().toString(),
-          sequence: 1,
-          origin: originGuess,
-          destination: destGuess,
-          km: '',
-          loadingType: LoadingType.HANG,
-        },
-        {
-          id: Math.random().toString(),
-          sequence: 2,
-          origin: destGuess,
-          destination: originGuess,
-          km: '',
-          loadingType: LoadingType.VO,
-        },
-      ]);
+      setLegs(createFallbackLegsFromRouteName(existingTrip.route?.name));
     }
 
     lastPopulatedTripId.current = existingTrip.id;
