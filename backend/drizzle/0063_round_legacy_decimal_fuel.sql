@@ -14,12 +14,26 @@ WHERE fuel_supplement_liters IS NOT NULL
 
 --> statement-breakpoint
 
--- Round fuel_liters, recalculate total_fuel_cost, total_cost, and gross_profit in trips
+-- Round fuel_liters, recalculate total_fuel_cost, total_cost, and gross_profit in trips.
+-- Unit price resolution (in priority order):
+--   1. fuel_actual_unit_price (when non-zero)
+--   2. fuel_price_applied     (when non-zero)
+--   3. effective fuel price for the trip's departure day (from fuel_price_history)
+--   4. derived from existing cost / liters (last resort)
+-- NULLIF(...,0) is essential: legacy trips have fuel_price_applied = 0, and a plain
+-- COALESCE would treat 0 as a real price and zero out the fuel cost.
 WITH rounded_trips AS (
   SELECT
     id,
     ROUND(fuel_liters) AS rounded_liters,
-    ROUND(COALESCE(fuel_actual_unit_price, fuel_price_applied, ROUND(total_fuel_cost / NULLIF(fuel_liters, 0)))) AS unit_price,
+    ROUND(COALESCE(
+      NULLIF(fuel_actual_unit_price, 0),
+      NULLIF(fuel_price_applied, 0),
+      (SELECT unit_price FROM fuel_price_history
+         WHERE effective_date <= (departure_date::timestamp + interval '23 hours 59 minutes')
+         ORDER BY effective_date DESC LIMIT 1),
+      total_fuel_cost / NULLIF(fuel_liters, 0)
+    )) AS unit_price,
     total_fuel_cost AS orig_fuel_cost,
     total_cost AS orig_total_cost,
     gross_profit AS orig_gross_profit
@@ -42,7 +56,6 @@ SET
   fuel_liters = c.rounded_liters,
   total_fuel_cost = c.new_fuel_cost,
   total_cost = c.orig_total_cost + c.cost_delta,
-  gross_profit = c.orig_gross_profit - c.cost_delta,
-  fuel_supplement_norm_applied = CASE WHEN t.id IN (2, 3) THEN 3.00 ELSE t.fuel_supplement_norm_applied END
+  gross_profit = c.orig_gross_profit - c.cost_delta
 FROM calcs c
 WHERE t.id = c.id;
