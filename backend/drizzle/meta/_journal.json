@@ -442,6 +442,13 @@
       "when": 1782142703689,
       "tag": "0062_billing_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1782242703689,
+      "tag": "0063_round_legacy_decimal_fuel",
+      "breakpoints": true
     }
   ]
 }

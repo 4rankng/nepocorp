@@ -148,7 +148,7 @@ router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, { searchableFie
 // Lifecycle endpoints — MANAGER/ADMIN only (writes). The mount-level config
 // Casbin gate already restricts broadly; requireRoles tightens write actions.
 export const tireLifecycleRouter = Router();
-tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
   const data = installTireSchema.parse(req.body);

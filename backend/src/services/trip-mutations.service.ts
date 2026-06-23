@@ -66,12 +66,14 @@ export function applyCommittedLegacyFuelFreeze(
     return { ...computed };
   }
 
-  const delta = trip.storedFuelCost - computed.totalFuelCost;
+  const storedLiters = Math.round(trip.storedFuelLiters);
+  const storedCost = Math.round(trip.storedFuelCost);
+  const delta = storedCost - computed.totalFuelCost;
   return {
-    totalFuelCost: trip.storedFuelCost,
+    totalFuelCost: storedCost,
     totalCost: computed.totalCost + delta,
     grossProfit: computed.grossProfit - delta,
-    totalFuelLiters: trip.storedFuelLiters,
+    totalFuelLiters: storedLiters,
   };
 }
 

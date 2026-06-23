@@ -9,6 +9,8 @@ import { getFuelVarianceReport } from '../../services/pnl.service';
 import { getCustomerAgingList } from '../../services/receivables.service';
 import { getApprovalQueue } from '../../services/approval-queue.service';
 import { parsePagination } from '../utils/pagination';
+import { exportReceivablesAgingXlsx, attachmentDisposition } from '../../services/statement.service';
+import { formatLocalDate } from '../../lib/format';
 
 const router = Router();
 
@@ -46,6 +48,16 @@ router.get('/reports/receivables-aging', requireRoles(Role.ADMIN, Role.MANAGER, 
   const asOfDate = typeof req.query.asOfDate === 'string' ? req.query.asOfDate : undefined;
   const { page, limit } = parsePagination(req, { limit: 500, maxLimit: 500 });
   res.json(await getCustomerAgingList({ search, asOfDate, page, limit }));
+}));
+
+router.get('/reports/receivables-aging/export', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  const asOfDate = typeof req.query.asOfDate === 'string' ? req.query.asOfDate : undefined;
+  const data = await getCustomerAgingList({ search, asOfDate, page: 1, limit: 10000 });
+  const dateStr = formatLocalDate();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', attachmentDisposition(`cong-no-phai-thu-${dateStr}.xlsx`));
+  await exportReceivablesAgingXlsx(data.customers, dateStr, res);
 }));
 
 // ─── Fuel variance report ────────────────────────────────────────────────────

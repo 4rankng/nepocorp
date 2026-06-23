@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
-import { downloadCSV } from '../lib/csv';
+import { api } from '../lib/api';
+import { useToast } from '../components/shared/Toast';
 import { Search, ChevronRight, Wallet, AlertTriangle, AlertCircle, Users, Clock } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
@@ -65,6 +66,27 @@ export default function DebtListPage() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
+  const { toast: showToast } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const q = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+      const blob = await api.getBlob(`/reports/receivables-aging/export${q}`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cong-no-phai-thu-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất báo cáo' });
+    } finally {
+      setExporting(false);
+    }
+  };
   const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
   const totalCustomers = data?.total ?? rawCustomers.length;
   const error = queryError ? (queryError as Error).message : null;
@@ -193,21 +215,17 @@ export default function DebtListPage() {
         description={`${totalCustomers} khách hàng · cập nhật vừa xong`}
         action={
           <div className="page-actions">
-            <button className="btn btn--secondary btn--sm" onClick={() => {
-              const headers = ['Khách hàng', 'Tổng nợ', 'Trong hạn', '31-60 ngày', '61-90 ngày', 'Trên 90 ngày', 'Rủi ro'];
-              const rows = filteredDebts.map(d => [
-                d.customerName,
-                d.totalOutstanding,
-                d.aging.current,
-                d.aging.d30,
-                d.aging.d60,
-                d.aging.over90,
-                d.riskClass,
-              ]);
-              downloadCSV(`cong-no-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
-            }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Xuất báo cáo
+            <button 
+              className="btn btn--secondary btn--sm" 
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? 'Đang xuất...' : (
+                <>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Xuất báo cáo
+                </>
+              )}
             </button>
           </div>
         }

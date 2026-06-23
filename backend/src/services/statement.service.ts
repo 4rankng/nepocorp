@@ -5,6 +5,7 @@ import { TxnType, computeFifoAging } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
+import { CustomerAgingListItem } from './aging.service';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
 // Ledger rows enriched with the related trip's route/container for display.
@@ -609,6 +610,188 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
   <tbody>${rows}</tbody>
 </table>
 </body></html>`;
+}
+
+// escapeHtml imported from lib/format
+
+export async function exportReceivablesAgingXlsx(data: CustomerAgingListItem[], dateStr: string, writable: import('stream').Writable): Promise<void> {
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Công nợ phải thu');
+
+  // Enable grid lines
+  sheet.views = [{ showGridLines: true }];
+
+  // Border style
+  const borderStyle = {
+    top: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } }
+  };
+
+  // Header/Title Row (Row 2)
+  sheet.mergeCells('A2:H2');
+  const titleCell = sheet.getCell('A2');
+  titleCell.value = 'BÁO CÁO CÔNG NỢ PHẢI THU';
+  titleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.getRow(2).height = 36;
+
+  // Export date (Row 4)
+  sheet.getCell('A4').value = `Ngày xuất: ${dateStr}`;
+  sheet.getCell('A4').font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF6B7280' } };
+  sheet.mergeCells('A4:H4');
+  sheet.getRow(4).height = 20;
+
+  let currentOffset = 6;
+
+  // Table header row
+  const tableHeaderRow = currentOffset;
+  const headers = ['Khách hàng', 'Tổng nợ (VND)', 'Trong hạn (VND)', '31-60 ngày (VND)', '61-90 ngày (VND)', 'Trên 90 ngày (VND)', 'Phải trả l.kết (VND)', 'Nợ ròng (VND)'];
+  headers.forEach((h, i) => {
+    const cell = sheet.getCell(tableHeaderRow, i + 1);
+    cell.value = h;
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    cell.alignment = {
+      vertical: 'middle',
+      horizontal: i === 0 ? 'left' : 'right',
+    };
+    cell.border = borderStyle;
+  });
+  sheet.getRow(tableHeaderRow).height = 24;
+  currentOffset++;
+
+  let sumTotal = 0;
+  let sumCurrent = 0;
+  let sumD30 = 0;
+  let sumD60 = 0;
+  let sumOver90 = 0;
+  let sumApBalance = 0;
+  let sumNetBalance = 0;
+
+  // Populate data rows
+  data.forEach((row, i: number) => {
+    const r = tableHeaderRow + 1 + i;
+    
+    const customerNameCell = sheet.getCell(r, 1);
+    customerNameCell.value = row.customerName;
+    customerNameCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF111827' } };
+    customerNameCell.alignment = { vertical: 'middle', horizontal: 'left' };
+    customerNameCell.border = borderStyle;
+
+    const totalCell = sheet.getCell(r, 2);
+    totalCell.value = row.totalOutstanding || 0;
+    totalCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF111827' } };
+    totalCell.numFmt = '#,##0';
+    totalCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    totalCell.border = borderStyle;
+
+    const currentCell = sheet.getCell(r, 3);
+    currentCell.value = row.aging.current || 0;
+    currentCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+    currentCell.numFmt = '#,##0';
+    currentCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    currentCell.border = borderStyle;
+
+    const d30Cell = sheet.getCell(r, 4);
+    d30Cell.value = row.aging.d30 || 0;
+    d30Cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+    d30Cell.numFmt = '#,##0';
+    d30Cell.alignment = { vertical: 'middle', horizontal: 'right' };
+    d30Cell.border = borderStyle;
+
+    const d60Cell = sheet.getCell(r, 5);
+    d60Cell.value = row.aging.d60 || 0;
+    d60Cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+    d60Cell.numFmt = '#,##0';
+    d60Cell.alignment = { vertical: 'middle', horizontal: 'right' };
+    d60Cell.border = borderStyle;
+
+    const over90Cell = sheet.getCell(r, 6);
+    over90Cell.value = row.aging.over90 || 0;
+    over90Cell.font = { name: 'Segoe UI', size: 10, color: row.aging.over90 > 0 ? { argb: 'FFDC2626' } : { argb: 'FF4B5563' } };
+    over90Cell.numFmt = '#,##0';
+    over90Cell.alignment = { vertical: 'middle', horizontal: 'right' };
+    over90Cell.border = borderStyle;
+
+    const apBalanceCell = sheet.getCell(r, 7);
+    apBalanceCell.value = row.linkedSupplierApBalance || 0;
+    apBalanceCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+    apBalanceCell.numFmt = '#,##0';
+    apBalanceCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    apBalanceCell.border = borderStyle;
+
+    const netBalanceCell = sheet.getCell(r, 8);
+    netBalanceCell.value = row.netBalance || 0;
+    netBalanceCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF00702F' } };
+    netBalanceCell.numFmt = '#,##0';
+    netBalanceCell.alignment = { vertical: 'middle', horizontal: 'right' };
+    netBalanceCell.border = borderStyle;
+
+    sheet.getRow(r).height = 20;
+
+    sumTotal += row.totalOutstanding || 0;
+    sumCurrent += row.aging.current || 0;
+    sumD30 += row.aging.d30 || 0;
+    sumD60 += row.aging.d60 || 0;
+    sumOver90 += row.aging.over90 || 0;
+    sumApBalance += row.linkedSupplierApBalance || 0;
+    sumNetBalance += row.netBalance || 0;
+
+    currentOffset++;
+  });
+
+  // Total row
+  const totalRowIdx = currentOffset + 1;
+  const labelCell = sheet.getCell(totalRowIdx, 1);
+  labelCell.value = 'TỔNG CỘNG';
+  labelCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF111827' } };
+  labelCell.alignment = { vertical: 'middle', horizontal: 'left' };
+  labelCell.border = borderStyle;
+
+  const totalCols = [
+    { col: 2, val: sumTotal },
+    { col: 3, val: sumCurrent },
+    { col: 4, val: sumD30 },
+    { col: 5, val: sumD60 },
+    { col: 6, val: sumOver90, isRed: true },
+    { col: 7, val: sumApBalance },
+    { col: 8, val: sumNetBalance, isBold: true }
+  ];
+
+  totalCols.forEach(tc => {
+    const cell = sheet.getCell(totalRowIdx, tc.col);
+    cell.value = tc.val;
+    cell.font = {
+      name: 'Segoe UI',
+      size: 10,
+      bold: true,
+      color: tc.isRed ? { argb: 'FFDC2626' } : { argb: 'FF111827' }
+    };
+    cell.numFmt = '#,##0';
+    cell.alignment = { vertical: 'middle', horizontal: 'right' };
+    cell.border = borderStyle;
+  });
+
+  sheet.getRow(totalRowIdx).height = 22;
+
+  // Set widths
+  sheet.columns.forEach((col, i) => {
+    let maxLen = headers[i] ? headers[i].length : 0;
+    sheet.getColumn(i + 1).eachCell({ includeEmpty: true }, (cell) => {
+      const len = String(cell.value || '').length;
+      if (len > maxLen) maxLen = len;
+    });
+    col.width = Math.max(maxLen + 4, 12);
+  });
+
+  await workbook.xlsx.write(writable);
 }
 
 // escapeHtml imported from lib/format
