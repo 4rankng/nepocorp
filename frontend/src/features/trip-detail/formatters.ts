@@ -42,7 +42,7 @@ export function fmtPercent(n: number | null | undefined): string {
 /** Format an ISO date string to Vietnamese locale, e.g. "02/06/2026". */
 export function fmtDate(d: string | null | undefined): string {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('vi-VN');
+  return new Date(d).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
 /** Calculate fuel consumption rate (liters per 100km). */

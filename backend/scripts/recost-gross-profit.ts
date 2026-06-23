@@ -50,6 +50,7 @@
  *   npx tsx scripts/recost-gross-profit.ts --apply --i-have-signoff # WRITE (requires sign-off)
  *   npx tsx scripts/recost-gross-profit.ts --sample 50             # show up to 50 stale rows
  *   npx tsx scripts/recost-gross-profit.ts --period 5 2026         # restrict to a month
+ *   npx tsx scripts/recost-gross-profit.ts --trips 12,15,22        # restrict to specific trips
  *
  * Exit code: 0 if no STALE rows (all within 1 VND tolerance); 1 if any STALE
  * rows exist — so this can gate CI/deploys once the recost is approved and run.
@@ -89,6 +90,30 @@ const PERIOD = (() => {
   return null;
 })();
 
+// Optional --trips <csv> restriction — scope the scan to specific trip IDs
+// (e.g. only the trips whose km was just backfilled). Keeps the sign-off delta
+// clean: unrelated drift in other trips is NOT swept into a financial write.
+const TRIPS_FLAG_IDX = process.argv.indexOf('--trips');
+const TRIP_IDS = (() => {
+  if (TRIPS_FLAG_IDX !== -1 && process.argv[TRIPS_FLAG_IDX + 1]) {
+    return process.argv[TRIPS_FLAG_IDX + 1]
+      .split(',')
+      .map((x) => Number(x.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .map((n) => Math.floor(n));
+  }
+  return null;
+})();
+// `--trips ""` / `--trips abc` parses to [] — refuse to fall through to a full-table
+// scan (in WRITE_MODE that would rewrite every drifted financial row). Abort instead.
+if (TRIPS_FLAG_IDX !== -1 && (TRIP_IDS === null || TRIP_IDS.length === 0)) {
+  console.error(
+    `--trips "${process.argv[TRIPS_FLAG_IDX + 1] ?? ''}" yielded no valid trip IDs; aborting ` +
+      `(pass a non-empty CSV of positive IDs, or omit --trips to scan all).`,
+  );
+  process.exit(2);
+}
+
 const WRITE_MODE = APPLY && HAVE_SIGNOFF;
 const TOLERANCE = 1; // VND is integer (numeric scale 0); 1 VND absorbs per-trip VAT rounding.
 
@@ -103,6 +128,7 @@ Options:
   --i-have-signoff         Assert out-of-band Pete/audit sign-off exists (enables writes with --apply)
   --sample N               Show up to N stale rows in the report (default 20)
   --period MONTH YEAR      Restrict scan to one month (e.g. --period 5 2026)
+  --trips 1,2,3            Restrict scan to specific trip IDs (csv) — clean scoped sign-off
   --help, -h               Show this help
 
 Exit code: 0 if no STALE rows; 1 if any STALE rows exist.
@@ -199,6 +225,7 @@ async function main() {
   console.log('🔍 grossProfit Recost Analyzer (A8 a.div)');
   console.log(`   Mode: ${WRITE_MODE ? 'APPLY (write — sign-off asserted)' : 'dry-run (read-only)'}`);
   console.log(`   Period: ${PERIOD ? `${PERIOD.month}/${PERIOD.year}` : 'all history'}`);
+  console.log(`   Scope:  ${TRIP_IDS ? `${TRIP_IDS.length} trip(s) [${TRIP_IDS.slice(0, 12).join(',')}${TRIP_IDS.length > 12 ? ',…' : ''}]` : 'all matched'}`);
   console.log(`   Time: ${new Date().toISOString()}\n`);
 
   // Load non-canceled, non-deleted trips. CANCELED trips are excluded from P&L
@@ -216,6 +243,9 @@ async function main() {
       sql`extract(month from ${s.trips.departureDate})::int = ${PERIOD.month}`,
       sql`extract(year from ${s.trips.departureDate})::int = ${PERIOD.year}`,
     );
+  }
+  if (TRIP_IDS && TRIP_IDS.length > 0) {
+    tripWhereParts.push(inArray(s.trips.id, TRIP_IDS));
   }
   const tripRows = await db.select().from(s.trips).where(and(...tripWhereParts));
 

@@ -1111,8 +1111,9 @@ export interface LiveFleetVehicle {
   gpsDriverName: string | null;
   lastSeenAt: string;       // ISO timestamp of the device report
   stale: boolean;           // report older than the staleness threshold
-  // Active trip context (joined server-side)
-  tripId: number;
+  // Active/recent trip context (joined server-side). Null when the truck has no
+  // recent trip (fleet-overview mode shows such trucks at their last-known spot).
+  tripId: number | null;
   tripCode: string | null;
   driverName: string | null;
   customerName: string | null;

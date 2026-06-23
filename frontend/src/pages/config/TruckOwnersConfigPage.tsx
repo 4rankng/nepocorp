@@ -240,7 +240,7 @@ export default function TruckOwnersConfigPage() {
                       {TRUCK_CAP_ROLE_LABELS[r.role ?? TruckCapRole.INVESTOR]}
                     </StatusPill>
                   </td>
-                  <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN')}</td>
+                  <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                     <button className="btn btn--secondary" style={{ height: 28, padding: '0 10px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
                     <button className="btn btn--danger" style={{ height: 28, padding: '0 10px' }} onClick={() => doDelete(r.id)}>Xóa</button>

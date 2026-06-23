@@ -7,7 +7,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import {
   encodePolyline, decodePolyline, reverseEncodedPolyline, resolveRoute,
-  sliceLegByPlaces, dedupPoints, type LngLat, type RouteEntry,
+  sliceLegByPlaces, dedupPoints, tripWindowBoundsMs, filterToWindow, type LngLat, type RouteEntry,
 } from '../services/gps/route-capture';
 
 describe('route-capture: polyline codec', () => {
@@ -84,5 +84,62 @@ describe('route-capture: dedupPoints', () => {
   test('keeps everything when points are well separated', () => {
     const pts: LngLat[] = [[20.869, 106.715], [20.95, 106.6], [21.0, 106.3]];
     assert.equal(dedupPoints(pts, 15).length, 3);
+  });
+});
+
+describe('route-capture: trip-scoped window (tripWindowBoundsMs + filterToWindow)', () => {
+  test('lower bound = departure-day UTC+7 midnight minus 1h; upper = completedAt instant', () => {
+    // Trip departed 2026-06-18 (VN). VN midnight = 2026-06-17T17:00:00Z; minus 1h.
+    const { lowerMs, upperMs } = tripWindowBoundsMs('2026-06-18', '2026-06-19', new Date('2026-06-19T03:46:37Z'));
+    assert.equal(lowerMs, Date.parse('2026-06-17T16:00:00Z'));
+    assert.equal(upperMs, Date.parse('2026-06-19T03:46:37Z'));
+  });
+
+  test('null completedAt → upper bound = compDay VN end-of-day', () => {
+    const { upperMs } = tripWindowBoundsMs('2026-06-18', '2026-06-19', null);
+    assert.equal(upperMs, Date.parse('2026-06-19T23:59:59+07:00'));
+  });
+
+  test('filterToWindow drops outside-window points, keeps inside + null-time', () => {
+    const pts = [
+      { time: '2026-06-17T05:00:00Z' }, // before window (other trip) → drop
+      { time: '2026-06-17T16:30:00Z' }, // >= lower bound (16:00Z) → keep
+      { time: null },                    // null time → keep
+      { time: '2026-06-18T20:00:00Z' }, // inside → keep
+      { time: '2026-06-19T10:00:00Z' }, // after completion (03:46Z) → drop
+    ];
+    const lower = Date.parse('2026-06-17T16:00:00Z');
+    const upper = Date.parse('2026-06-19T03:46:37Z');
+    const out = filterToWindow(pts, p => (p.time ? Date.parse(p.time) : null), lower, upper);
+    assert.equal(out.length, 3);
+    assert.equal(out[0].time, '2026-06-17T16:30:00Z');
+    assert.equal(out[1].time, null);
+    assert.equal(out[2].time, '2026-06-18T20:00:00Z');
+  });
+
+  test('filterToWindow keeps everything when bounds are degenerate (upper <= lower)', () => {
+    const pts = [{ time: '2000-01-01T00:00:00Z' }, { time: '2099-01-01T00:00:00Z' }];
+    const out = filterToWindow(pts, p => (p.time ? Date.parse(p.time) : null), 100, 50);
+    assert.equal(out.length, 2);
+  });
+
+  test('end-to-end: a multi-day truck trail narrows to the trip window', () => {
+    // Trip 56 shape: dep 2026-06-18 (VN), completed 2026-06-19 03:46Z. The truck
+    // also drove on 06-16/06-17 (other trips). lower bound = 2026-06-17T16:00:00Z
+    // (departure-day VN-midnight minus 1h); upper = completion instant.
+    const { lowerMs, upperMs } = tripWindowBoundsMs('2026-06-18', '2026-06-19', new Date('2026-06-19T03:46:37Z'));
+    assert.equal(lowerMs, Date.parse('2026-06-17T16:00:00Z'));
+    const trail = [
+      '2026-06-16T18:00:00Z', // other trip → drop
+      '2026-06-17T06:00:00Z', // other trip → drop
+      '2026-06-18T01:00:00Z', // = 06-18 08:00 VN, trip start → keep
+      '2026-06-18T20:00:00Z', // trip → keep
+      '2026-06-19T02:00:00Z', // near completion → keep
+      '2026-06-19T10:00:00Z', // after completion → drop
+    ].map(time => ({ time }));
+    const out = filterToWindow(trail, p => Date.parse(p.time!), lowerMs, upperMs);
+    assert.equal(out.length, 3);
+    assert.equal(out[0].time, '2026-06-18T01:00:00Z');
+    assert.equal(out[2].time, '2026-06-19T02:00:00Z');
   });
 });

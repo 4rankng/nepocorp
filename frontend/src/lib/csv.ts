@@ -117,7 +117,7 @@ export async function downloadCSV(
 
   const colCount = headers.length;
   const today = new Date();
-  const dateStr = today.toLocaleDateString('vi-VN');
+  const dateStr = today.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const title = options.title ?? 'BÁO CÁO';
   const subtitle = options.subtitle;
 

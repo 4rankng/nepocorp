@@ -33,7 +33,7 @@ function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | '
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  return d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit' });
 }
 
 interface LinkedExpense {
@@ -234,7 +234,7 @@ export default function SettlementPrintPage() {
             </div>
             <div className="settlement-detail__info-item">
               <span className="settlement-detail__info-label">Ngày lập</span>
-              <span className="settlement-detail__info-value">{new Date(s.createdAt).toLocaleDateString('vi-VN')}</span>
+              <span className="settlement-detail__info-value">{new Date(s.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
             </div>
             <div className="settlement-detail__info-item">
               <span className="settlement-detail__info-label">Nhân viên</span>
@@ -252,7 +252,7 @@ export default function SettlementPrintPage() {
                 <div key={r.id} className="settlement-detail__advance-row">
                   <span className="settlement-detail__advance-amount">{formatCurrency(Number(r.amount))}</span>
                   <span className="settlement-detail__advance-reason">{r.reason}</span>
-                  <span className="settlement-detail__advance-date">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                  <span className="settlement-detail__advance-date">{new Date(r.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
                 </div>
               ))}
               <div className="settlement-detail__advance-total">

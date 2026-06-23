@@ -110,7 +110,7 @@ export default function CapTableConfigPage() {
         },
         {
           header: 'Ngày hiệu lực',
-          render: (ct) => ct.effectiveDate ? new Date(ct.effectiveDate).toLocaleDateString('vi-VN') : '—',
+          render: (ct) => ct.effectiveDate ? new Date(ct.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—',
         },
       ]}
       renderForm={(p) => <CapTableForm saving={p.saving} item={p.item} onsave={p.onSave} oncancel={p.onCancel} />}

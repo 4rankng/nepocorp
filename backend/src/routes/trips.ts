@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as gpsService from '../services/gps.service';
-import { captureTripGpsTrack } from '../services/gps/capture.service';
+import { captureTripGpsTrack, deriveRoutesForStoredTrip } from '../services/gps/capture.service';
 import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo, latestTripPhotoKey, listTripPhotoKeys } from '../services/forwarder.service';
 import { processExpenseApproval } from '../services/approval.service';
@@ -183,12 +183,14 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
     relatedEntityId: trip.id,
     targetDriverId: trip.driverId ?? undefined,
   });
-  // Capture real GPS routes for this trip's legs (fire-and-forget, ≤8s). GPS may
-  // still be ingesting at completion, so failures are logged — never fatal.
-  void Promise.race([
-    captureTripGpsTrack(trip.id),
-    new Promise<void>((resolve) => setTimeout(resolve, 8000)),
-  ]).catch((err) => console.warn('[gps] capture hook error', { tripId: trip.id, err }));
+  // Capture real GPS routes for this trip's legs (fire-and-forget). Phase 1
+  // persists the trip-scoped trail (fast, no geocoding); Phase 2 derives the
+  // per-leg routes untimed off the real persist promise (Nominatim ~1 req/s).
+  // Both run after the response — never block completion. GPS may still be
+  // ingesting at completion, so failures are logged — never fatal.
+  void captureTripGpsTrack(trip.id)
+    .then((r) => (r.status === 'ok' ? deriveRoutesForStoredTrip(trip.id) : null))
+    .catch((err) => console.warn('[gps] capture/derive hook error', { tripId: trip.id, err }));
   res.json(trip);
 }));
 

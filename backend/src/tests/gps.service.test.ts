@@ -101,10 +101,14 @@ describe('deriveStatus', () => {
 });
 
 describe('parseAspDate', () => {
-  test('parses /Date(epoch)/ → Date', () => {
+  test('parses /Date(epoch)/ treating the epoch as Vietnam wall-clock (UTC+7) → true UTC', () => {
+    // Bách Khoa's portal emits the device's Vietnam wall-clock baked into the
+    // epoch as if it were UTC, so subtract 7h to recover the true instant —
+    // mirroring parseBachKhoaDate. Rendered back in Asia/Ho_Chi_Minh that yields
+    // the same wall-clock the device panel shows (no future-dated "Cập nhật").
     const d = parseAspDate('/Date(1782217250000)/');
     assert.ok(d);
-    assert.equal(d!.getTime(), 1782217250000);
+    assert.equal(d!.getTime(), 1782217250000 - 7 * 60 * 60 * 1000);
   });
 
   test('null / malformed → null', () => {

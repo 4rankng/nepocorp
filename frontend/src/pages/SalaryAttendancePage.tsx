@@ -778,7 +778,7 @@ export default function SalaryAttendancePage() {
                             <span>Đã xác nhận</span>
                             {salary.confirmedAt && (
                               <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
-                                {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
+                                {new Date(salary.confirmedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
                               </span>
                             )}
                           </div>

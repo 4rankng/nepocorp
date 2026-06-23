@@ -56,5 +56,5 @@ export function formatTimeShort(iso: string): string {
   if (diffMin < 60) return `${diffMin} phút trước`;
   const diffH = Math.floor(diffMin / 60);
   if (diffH < 24) return `${diffH} giờ trước`;
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }

@@ -133,7 +133,7 @@ export default function FuelConfigPage() {
               <tbody>
                 {history.map((row) => (
                   <tr key={row.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(row.effectiveDate).toLocaleDateString('vi-VN')}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(row.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                     <td className="num" style={{ fontWeight: 600 }}>{Number(row.unitPrice).toLocaleString('vi-VN')}</td>
                     <td style={{ color: 'var(--ink-3)' }}>—</td>
                     <td style={{ color: 'var(--ink-3)', fontSize: 12 }}>{row.note || '—'}</td>

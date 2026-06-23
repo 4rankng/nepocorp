@@ -108,6 +108,47 @@ export function dedupPoints(pts: LngLat[], radiusM = 15): LngLat[] {
   return out;
 }
 
+// ─── Trip-scoped trail window ────────────────────────────────────────────────
+// The Bách Khoa portal reports in UTC+7 (parsePortalDateTime shifts to UTC), so
+// a VN calendar date maps to midnight UTC+7. capture.service narrows the truck's
+// day-paginated trail to the trip's own [departure-1h, completion] window before
+// persisting — otherwise a ~600 km round trip stores the truck's full multi-day
+// movement (other trips included) and the per-leg slicer matches 0/2.
+
+/** Vietnam timezone offset used by the Bách Khoa portal. */
+export const VN_OFFSET = '+07:00';
+
+/**
+ * Trip-scoped trail window, in epoch ms. Lower bound = departure-day VN-midnight
+ * minus 1h (absorbs clock skew at the day boundary without re-ingesting the prior
+ * day's other-trip driving). Upper bound = completion instant, or the end of the
+ * completion VN-day when completedAt is null.
+ */
+export function tripWindowBoundsMs(
+  dep: string,           // 'YYYY-MM-DD' (VN calendar day the trip departed)
+  compDay: string,       // 'YYYY-MM-DD' (completion day; == dep when no completedAt)
+  completedAt: Date | null,
+): { lowerMs: number; upperMs: number } {
+  const lowerMs = Date.parse(`${dep}T00:00:00${VN_OFFSET}`) - 3_600_000;
+  const upperMs = completedAt
+    ? new Date(completedAt).getTime()
+    : Date.parse(`${compDay}T23:59:59${VN_OFFSET}`);
+  return { lowerMs, upperMs };
+}
+
+/** Keep only entries whose timestamp falls in [lowerMs, upperMs]. Entries with no
+ *  timestamp are kept (rare; can't be bounded). Degenerate bounds (upper ≤ lower)
+ *  keep everything — safer than dropping the whole set. Pure + exported so it is
+ *  unit-testable without the portal/DB. */
+export function filterToWindow<T>(items: T[], timeMs: (t: T) => number | null, lowerMs: number, upperMs: number): T[] {
+  if (!(upperMs > lowerMs)) return items;
+  return items.filter((t) => {
+    const ms = timeMs(t);
+    if (ms == null) return true;
+    return ms >= lowerMs && ms <= upperMs;
+  });
+}
+
 /**
  * Slice a leg's actual driven portion by matching the truck's FIRST pass to the
  * ORIGIN and DESTINATION coordinates (ground-truth geocoded), scanning FORWARD

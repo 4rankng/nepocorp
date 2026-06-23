@@ -1,11 +1,13 @@
 /**
  * Maps service — route/distance lookup (from our GPS-captured route_polylines)
- * + Google Places autocomplete. Extracted from routes/maps.ts.
- * Google Directions was retired — routes now come from real Bách Khoa GPS tracks.
+ * + place autocomplete via Map4D (the provider the Bách Khoa portal embeds).
+ * Extracted from routes/maps.ts. Google Directions was retired — routes now
+ * come from real Bách Khoa GPS tracks; place search + geocoding come from
+ * Map4D (was OpenStreetMap/Nominatim).
  */
 import { resolveRoute, decodePolyline } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
-import { searchPlaces, geocodePlace } from './osm';
+import { searchPlaces, geocodePlace } from './map4d';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -29,9 +31,9 @@ export interface DistanceResponse {
 }
 
 // (Google Maps fully removed — route + distance come from Bách Khoa GPS tracks,
-//  and place autocomplete + geocoding come from OpenStreetMap / Nominatim.)
+//  and place autocomplete + geocoding come from Map4D / Bách Khoa.)
 
-// ── Places Autocomplete (OpenStreetMap / Nominatim) ────────────────────────
+// ── Places Autocomplete (Map4D / Bách Khoa) ────────────────────────────────
 
 export async function getPlaceAutocomplete(query: string, _sessionToken?: string): Promise<PlaceSuggestion[]> {
   return searchPlaces(query, 8);

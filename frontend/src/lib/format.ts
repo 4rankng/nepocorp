@@ -53,7 +53,24 @@ export function moneyParts(amount: number, compact: boolean): MoneyParts {
 
 export function formatDate(d: string | null): string {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('vi-VN');
+  return new Date(d).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+/**
+ * Format a timestamp as Vietnam wall-clock (Asia/Ho_Chi_Minh) on ANY host.
+ * The locale argument alone ('vi-VN') only shapes numbers/dates — it does NOT
+ * set the timezone, so toLocaleString would otherwise render in the runtime's
+ * local zone (e.g. a GMT+8 machine shows device time +8h). GPS "last seen" and
+ * other device timestamps must always read as Vietnam time, so set timeZone
+ * explicitly here. Accepts ISO string | epoch | Date | null/empty.
+ */
+export function formatDateTimeVN(
+  value: string | number | Date | null | undefined,
+): string {
+  if (value == null || value === '') return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false });
 }
 
 export function removeDiacritics(str: string): string {

@@ -15,7 +15,7 @@ function timeAgo(iso: string): string {
   if (h < 24) return `${h} giờ trước`;
   const days = Math.floor(h / 24);
   if (days < 30) return `${days} ngày trước`;
-  return d.toLocaleDateString('vi-VN');
+  return d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
 /**

@@ -503,7 +503,7 @@ export default function ProfitPage() {
                         </div>
                         <div className="profit-history-item__bottom">
                           <span className="profit-history-item__amount"><Money value={Number(d.amount)} /></span>
-                          <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN')}</span>
+                          <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
                         </div>
                       </div>
                     ))}

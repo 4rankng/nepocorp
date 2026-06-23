@@ -48,6 +48,12 @@ const configSchema = z.object({
   //  - 'api'    : documented /BachKhoaAPI/GetInfoCar only (needs vendor API-gateway access)
   //  - 'portal' : web-portal /Home/get_AllTIBase only (session-cookie login)
   bachKhoaProvider: z.enum(['auto', 'api', 'portal']).default('auto'),
+  // Map4D place search (api.map4d.vn) — the map/search provider the Bách Khoa
+  // portal embeds. Replaces OpenStreetMap/Nominatim for place autocomplete +
+  // geocoding. The key alone authenticates (passed as ?key=, no portal login).
+  // Search + geocoding degrade to empty when the key is unset.
+  map4dApiKey: z.string().default(''),
+  map4dApiUrl: z.string().url().default('https://api.map4d.vn'),
   corsOrigin: z.string().default(''),
   trustProxy: trustProxySchema.default(isProd ? 1 : false),
   // Web Push (VAPID). Optional — push silently no-ops when these are empty.
@@ -71,6 +77,8 @@ const raw = {
   bachKhoaPassword: process.env.BACH_KHOA_PASSWORD,
   bachKhoaTimeoutMs: process.env.BACH_KHOA_TIMEOUT_MS,
   bachKhoaProvider: process.env.BACH_KHOA_PROVIDER,
+  map4dApiKey: process.env.MAP4D_API_KEY,
+  map4dApiUrl: process.env.MAP4D_API_URL,
   corsOrigin: process.env.CORS_ORIGIN,
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
@@ -95,6 +103,8 @@ const withDefaults = {
   bachKhoaPassword: raw.bachKhoaPassword || '',
   bachKhoaTimeoutMs: raw.bachKhoaTimeoutMs || 8000,
   bachKhoaProvider: raw.bachKhoaProvider || 'auto',
+  map4dApiKey: raw.map4dApiKey || '',
+  map4dApiUrl: raw.map4dApiUrl || 'https://api.map4d.vn',
   corsOrigin: raw.corsOrigin || '',
   trustProxy: raw.trustProxy,
   vapidPublicKey: raw.vapidPublicKey || '',
@@ -132,6 +142,8 @@ export const config = result.success ? result.data : configSchema.parse({
   bachKhoaPassword: '',
   bachKhoaTimeoutMs: 8000,
   bachKhoaProvider: 'auto',
+  map4dApiKey: '',
+  map4dApiUrl: 'https://api.map4d.vn',
   corsOrigin: '',
   trustProxy: false,
   vapidPublicKey: '',

@@ -1,4 +1,4 @@
-import { eq, and, isNull, inArray, or, sql } from 'drizzle-orm';
+import { eq, ne, and, isNull, inArray, or, sql } from 'drizzle-orm';
 import { config } from '../config';
 import { db } from '../db';
 import * as schema from '../db/schema';
@@ -8,7 +8,7 @@ import type { LiveFleetLeg, LiveFleetResponse, LiveFleetVehicle } from '@tingtin
 import { getGpsProvider } from './gps/providers';
 import type { NormalizedGpsVehicle } from './gps/providers/types';
 import { normalizePlate, isStale, deriveStatus, reviveDate } from './gps/parse';
-import { resolveRoute } from './gps/route-capture';
+import { resolveRoute, decodePolyline } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
 
 // Re-export the pure helpers (consumed by unit tests and the providers).
@@ -201,7 +201,129 @@ async function persistLastPositions(rows: PositionRow[]): Promise<void> {
         lastSeenAt: sql`excluded.last_seen_at`,
         updatedAt: new Date(),
       },
+      // Fresher-wins: never let a stale fix overwrite a newer persisted position.
+      // Guards the overview path — the provider may re-emit an old breadcrumb for a
+      // parked truck — and is a no-op for the active-trip path, whose live fixes are
+      // always current.
+      where: sql`excluded.last_seen_at IS NOT NULL AND (vehicle_last_positions.last_seen_at IS NULL OR excluded.last_seen_at >= vehicle_last_positions.last_seen_at)`,
     });
+}
+
+// ─── Fleet overview (all trucks, not just active trips) ──────────────────────
+
+interface TripContext {
+  tripId: number;
+  tripCode: string | null;
+  driverName: string | null;
+  customerName: string | null;
+  routeName: string | null;
+}
+
+/** All non-deleted trucks — the fleet shown on the dispatch map. */
+async function loadAllTrucks(): Promise<Array<{ id: number; licensePlate: string }>> {
+  return db
+    .select({ id: schema.trucks.id, licensePlate: schema.trucks.licensePlate })
+    .from(schema.trucks)
+    .where(isNull(schema.trucks.deletedAt));
+}
+
+/** Most-recent trip per truck (context for the marker popup). Latest = highest trip id. */
+async function loadRecentTripsByTruck(truckIds: number[]): Promise<Map<number, TripContext>> {
+  const map = new Map<number, TripContext>();
+  if (truckIds.length === 0) return map;
+  const rows = await db
+    .select({
+      truckId: schema.trips.truckId,
+      tripId: schema.trips.id,
+      tripCode: schema.trips.tripCode,
+      driverName: schema.drivers.name,
+      customerName: schema.customers.name,
+      routeName: schema.routes.name,
+    })
+    .from(schema.trips)
+    .leftJoin(schema.drivers, eq(schema.trips.driverId, schema.drivers.id))
+    .leftJoin(schema.customers, eq(schema.trips.customerId, schema.customers.id))
+    .leftJoin(schema.routes, eq(schema.trips.routeId, schema.routes.id))
+    // Exclude CANCELED: a canceled trip's higher serial id would otherwise displace
+    // the truck's real last trip as the "recent trip" popup context. CREATED trips
+    // are kept (they are valid upcoming assignments).
+    .where(and(
+      inArray(schema.trips.truckId, truckIds),
+      isNull(schema.trips.deletedAt),
+      ne(schema.trips.status, TripStatus.CANCELED),
+    ));
+  for (const r of rows) {
+    if (r.truckId == null) continue;
+    const cur = map.get(r.truckId);
+    if (!cur || r.tripId > cur.tripId) {
+      map.set(r.truckId, {
+        tripId: r.tripId,
+        tripCode: r.tripCode,
+        driverName: r.driverName,
+        customerName: r.customerName,
+        routeName: r.routeName,
+      });
+    }
+  }
+  return map;
+}
+
+/**
+ * Last-known location per truck: the persisted live fix when present, otherwise
+ * the endpoint of the most-recent captured GPS trail (decoded). Returns only
+ * trucks with a resolvable location — powers the fleet-overview fallback so the
+ * dispatch map stays populated even when no trip is in-transit.
+ */
+async function loadLastKnownAll(truckIds: number[]): Promise<Map<number, LastKnownPosition>> {
+  const map = new Map<number, LastKnownPosition>();
+  if (truckIds.length === 0) return map;
+
+  const persisted = await loadLastKnownPositions(truckIds);
+  for (const [id, pos] of persisted) {
+    if (pos.lat != null && pos.lng != null) map.set(id, pos);
+  }
+
+  const missing = truckIds.filter((id) => !map.has(id));
+  if (missing.length === 0) return map;
+
+  const trails = await db
+    .select({
+      truckId: schema.tripGpsTracks.truckId,
+      encodedPolyline: schema.tripGpsTracks.encodedPolyline,
+      endedAt: schema.tripGpsTracks.endedAt,
+      capturedAt: schema.tripGpsTracks.capturedAt,
+    })
+    .from(schema.tripGpsTracks)
+    .where(inArray(schema.tripGpsTracks.truckId, missing));
+  // Pick the latest trail per truck by captured_at (NOT NULL), NOT ended_at — ended_at
+  // is nullable, so a newer partial/failed capture (ended_at NULL) would otherwise lose
+  // to an older timestamped trail and place the marker at a stale position.
+  const latest = new Map<number, { poly: string; ts: number; endedAt: Date | null }>();
+  for (const t of trails) {
+    if (t.truckId == null) continue;
+    const ts = t.capturedAt.getTime();
+    const cur = latest.get(t.truckId);
+    if (!cur || ts > cur.ts) latest.set(t.truckId, { poly: t.encodedPolyline, ts, endedAt: t.endedAt });
+  }
+  for (const [truckId, { poly, endedAt }] of latest) {
+    const pts = decodePolyline(poly);
+    if (pts.length === 0) continue;
+    const last = pts[pts.length - 1];
+    map.set(truckId, {
+      truckId,
+      deviceId: null,
+      lat: last[0],
+      lng: last[1],
+      speed: 0,
+      angle: 0,
+      address: null,
+      ignitionOn: false,
+      fuel: null,
+      gpsDriverName: null,
+      lastSeenAt: endedAt,
+    });
+  }
+  return map;
 }
 
 /**
@@ -316,10 +438,12 @@ export function composeFleet(args: {
 }
 
 /**
- * Build the live-fleet payload: cached GPS positions joined to each truck's
- * single active IN_TRANSIT trip, falling back to each truck's last-known
- * position (shown offline) when the Bách Khoa provider is down or omits a truck.
- * Always returns a well-formed response — never throws.
+ * Build the live-fleet payload — a dispatch overview of EVERY truck, not just
+ * those on an active trip. For trucks on an active IN_TRANSIT trip, live provider
+ * fixes are joined in (last-known shown offline when the provider is down/omits
+ * them). Trucks not on an active trip are still shown at their last-known location
+ * (persisted live fix, else the endpoint of the most-recent captured GPS trail),
+ * so the map is never blank. Always returns a well-formed response — never throws.
  */
 export async function getLiveFleet(): Promise<LiveFleetResponse> {
   const fetchedAt = new Date().toISOString();
@@ -359,7 +483,7 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
   // Planned route legs for every active trip (used by both live and fallback).
   const legsByTrip = await fetchLegsWithRoutes(activeTrips.map((t) => t.tripId));
 
-  const { vehicles, stale, error, persist } = composeFleet({
+  let { vehicles, stale, error, persist } = composeFleet({
     activeTrips,
     providerVehicles,
     providerError,
@@ -367,6 +491,92 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
     legsByTrip,
     now,
   });
+
+  // Fleet overview: also surface trucks NOT on an active trip, at their last-known
+  // location — a live provider fix if one exists for the plate, else the persisted
+  // or trail-derived last-known. Keeps the dispatch map populated even when no trip
+  // is in-transit (the active-trip-only compose above would otherwise be empty).
+  const coveredTruckIds = new Set(vehicles.map((v) => v.truckId));
+  const allTrucks = await loadAllTrucks();
+  const overviewIds = allTrucks.filter((t) => !coveredTruckIds.has(t.id)).map((t) => t.id);
+  if (overviewIds.length > 0) {
+    const [lastKnownAll, recentTrips] = await Promise.all([
+      loadLastKnownAll(overviewIds),
+      loadRecentTripsByTruck(overviewIds),
+    ]);
+    const fixByPlate = new Map<string, NormalizedGpsVehicle>();
+    if (providerVehicles) for (const g of providerVehicles) fixByPlate.set(normalizePlate(g.numberPlate), g);
+    for (const truck of allTrucks) {
+      if (coveredTruckIds.has(truck.id)) continue;
+      const ctx = recentTrips.get(truck.id) ?? null;
+      const fix = fixByPlate.get(normalizePlate(truck.licensePlate));
+      if (fix) {
+        const fixStale = isStale(fix.lastSeenAt, now);
+        const v: LiveFleetVehicle = {
+          truckId: truck.id,
+          licensePlate: truck.licensePlate,
+          deviceId: fix.deviceId,
+          lat: fix.lat,
+          lng: fix.lng,
+          speed: fix.speed,
+          angle: fix.angle,
+          address: fix.address,
+          status: deriveStatus(fixStale, fix.lostSignal, fix.speed),
+          ignitionOn: fix.ignitionOn,
+          fuel: fix.fuel,
+          gpsDriverName: fix.driverName,
+          lastSeenAt: fix.lastSeenAt ? fix.lastSeenAt.toISOString() : '',
+          stale: fixStale,
+          tripId: ctx?.tripId ?? null,
+          tripCode: ctx?.tripCode ?? null,
+          driverName: ctx?.driverName ?? null,
+          customerName: ctx?.customerName ?? null,
+          routeName: ctx?.routeName ?? null,
+          legs: [],
+          details: fix.details ?? null,
+        };
+        vehicles.push(v);
+        persist.push(toPositionRow(v));
+      } else {
+        const pos = lastKnownAll.get(truck.id);
+        if (!pos || pos.lat == null || pos.lng == null) continue;
+        vehicles.push({
+          truckId: truck.id,
+          licensePlate: truck.licensePlate,
+          deviceId: pos.deviceId,
+          lat: pos.lat,
+          lng: pos.lng,
+          speed: pos.speed ?? 0,
+          angle: pos.angle ?? 0,
+          address: pos.address,
+          status: 'offline',
+          ignitionOn: pos.ignitionOn,
+          fuel: pos.fuel,
+          gpsDriverName: pos.gpsDriverName,
+          lastSeenAt: pos.lastSeenAt ? pos.lastSeenAt.toISOString() : '',
+          stale: true,
+          tripId: ctx?.tripId ?? null,
+          tripCode: ctx?.tripCode ?? null,
+          driverName: ctx?.driverName ?? null,
+          customerName: ctx?.customerName ?? null,
+          routeName: ctx?.routeName ?? null,
+          legs: [],
+          details: null,
+        });
+      }
+    }
+  }
+
+  // Recompute aggregate flags now that overview vehicles may have been added.
+  // A populated map suppresses the error banner — EXCEPT when an active trip is
+  // still missing from the map (provider down + no last-known for it): parked-truck
+  // pins must not hide that a driving truck is unreported.
+  const shownTruckIds = new Set(vehicles.map((v) => v.truckId));
+  const activeTripUncovered = activeTrips.some((t) => !shownTruckIds.has(t.truckId));
+  if (vehicles.length > 0) {
+    stale = vehicles.every((v) => v.stale);
+    if (!activeTripUncovered) error = undefined;
+  }
 
   // Persist fresh live fixes so the next provider outage can fall back to them.
   // Non-fatal: a DB hiccup must never break the live response.

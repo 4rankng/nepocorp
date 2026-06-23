@@ -93,7 +93,7 @@ export default function DebtDetailPage() {
       } else {
         const a = document.createElement('a');
         a.href = url;
-        a.download = `sao-ke-${statement?.customer.name}-${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
+        a.download = `sao-ke-${statement?.customer.name}-${new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }).replace(/\//g, '-')}.xlsx`;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -324,7 +324,7 @@ export default function DebtDetailPage() {
           </div>
           <div className="dd-sum-update">
             Cập nhật lần cuối
-            <b>{new Date().toLocaleDateString('vi-VN')}</b>
+            <b>{new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</b>
             {ledgerRows.length} giao dịch trong kỳ
           </div>
         </div>

@@ -2,25 +2,23 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import type { LiveFleetVehicle } from '@tingting/shared';
 import { LIVE_STATUS_COLOR, LIVE_STATUS_LABEL, liveMarkerIcon, escapeHtml } from '../../../lib/liveFleet';
+import { formatDateTimeVN } from '../../../lib/format';
+import './LiveFleetMap.css';
 
 /**
- * Live fleet map (Dispatch page). For each truck on an active trip:
- *  - live marker (colored by status)
- *  - destination marker
- * Polled every ~25s; redraws each refresh, refits bounds only when the truck
- * set changes. Marker styling lives in lib/liveFleet.ts; leg detection in
- * lib/liveRoute.ts. leaflet.css is imported globally in main.tsx.
+ * Live fleet map (Dispatch page). One dot per truck — a live fix when available
+ * (colored by status), otherwise the truck's last-known location (shown offline).
+ * Each dot carries a permanent biển-số label and a click-popup with full detail.
+ * Polled every ~25s; redraws each refresh, refits bounds only when the truck set
+ * changes. Marker styling lives in lib/liveFleet.ts; leaflet.css is imported
+ * globally in main.tsx, and the .fleet-plate-label style is imported locally at
+ * the top of this module (Leaflet renders tooltips outside this subtree, but a
+ * plain Vite CSS import still applies the class selector globally).
  */
 
 interface LiveFleetMapProps {
   vehicles: LiveFleetVehicle[];
   height?: string;
-}
-
-function formatLastSeen(iso: string): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN', { hour12: false });
 }
 
 function popupHtml(v: LiveFleetVehicle): string {
@@ -40,7 +38,7 @@ function popupHtml(v: LiveFleetVehicle): string {
     <div>Tốc độ: <span style="${mono}">${Math.round(v.speed)} km/h</span> · ${v.ignitionOn ? 'động cơ bật' : 'động cơ tắt'}</div>
     ${v.driverName ? `<div>Lái xe: ${e(v.driverName)}</div>` : ''}
     ${v.address ? `<div style="color:#6B7280;">${e(v.address)}</div>` : ''}
-    <div style="color:#9CA3AF; font-size:11px; margin-top:4px;">Cập nhật: ${formatLastSeen(v.lastSeenAt)}</div>
+    <div style="color:#9CA3AF; font-size:11px; margin-top:4px;">Cập nhật: ${formatDateTimeVN(v.lastSeenAt)}</div>
   </div>`;
 }
 
@@ -77,13 +75,24 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
     const truckMarkers: L.Marker[] = [];
 
     for (const v of vehicles) {
-      if (v.stale) continue;
+      const marker = L.marker([v.lat, v.lng], { icon: liveMarkerIcon(v.status, v.angle), zIndexOffset: 1000 })
+        .addTo(layerGroup)
+        // Permanent biển-số label so dispatch can tell trucks apart at a glance.
+        .bindTooltip(v.licensePlate, {
+          permanent: true,
+          direction: 'right',
+          className: 'fleet-plate-label',
+          offset: [10, 0],
+          interactive: true,
+        })
+        .bindPopup(popupHtml(v));
 
-      truckMarkers.push(
-        L.marker([v.lat, v.lng], { icon: liveMarkerIcon(v.status, v.angle), zIndexOffset: 1000 })
-          .addTo(layerGroup)
-          .bindPopup(popupHtml(v)),
-      );
+      const tooltip = marker.getTooltip();
+      if (tooltip) {
+        tooltip.on('click', () => marker.openPopup());
+      }
+
+      truckMarkers.push(marker);
     }
 
     const setKey = vehicles.map((v) => v.truckId).sort((a, b) => a - b).join(',');

@@ -1,6 +1,7 @@
 import { Camera, Gauge, Fuel, Wrench, Clock, User, MapPin, Signal, RefreshCw } from 'lucide-react';
 import type { LiveFleetVehicle, LiveFleetDetails } from '@tingting/shared';
 import { LIVE_STATUS_COLOR, LIVE_STATUS_LABEL } from '../../../lib/liveFleet';
+import { formatDateTimeVN } from '../../../lib/format';
 
 /**
  * Live GPS telemetry for a trip's assigned truck — everything Bách Khoa exposes
@@ -52,11 +53,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
   const d: LiveFleetDetails | null | undefined = vehicle.details;
   const color = LIVE_STATUS_COLOR[vehicle.status];
-  const updatedDate = vehicle.lastSeenAt ? new Date(vehicle.lastSeenAt) : null;
-  const updated =
-    updatedDate && !isNaN(updatedDate.getTime())
-      ? updatedDate.toLocaleString('vi-VN', { hour12: false })
-      : '—';
+  const updated = formatDateTimeVN(vehicle.lastSeenAt);
 
   return (
     <section className="card" style={{ padding: 16 }}>

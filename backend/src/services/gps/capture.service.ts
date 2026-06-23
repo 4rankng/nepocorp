@@ -1,20 +1,39 @@
 /**
- * Route capture — on trip completion, derive real per-(origin,destination)
- * routes from the truck's Bách Khoa GPS trail and upsert into route_polylines.
+ * Route capture — on trip completion, persist the truck's real Bách Khoa GPS
+ * trail for the trip and derive real per-(origin,destination) routes from it.
  *
- * Slicing matches each leg to the truck's REAL stop coordinates (Bách Khoa
- * DetailStop report), so endpoints are driven ground-truth and can't be
- * direction-confused. Same pipeline the backfill uses
- * (getJourneyRange → sliceLegByPlaces → dedup → encode).
+ * TWO PHASES (split so the slow OSM-geocoding derivation never blocks trail
+ * persistence, and never gets abandoned by the completion hook's budget):
+ *   Phase 1  captureTripGpsTrack()        — fetch + TRIP-SCOPE the trail,
+ *                                            persist trip_gps_tracks (polyline
+ *                                            + significant stops). No geocoding.
+ *   Phase 2  deriveRoutesForStoredTrip()   — slice the STORED trail per leg,
+ *                                            upsert route_polylines, backfill
+ *                                            trip_legs.km for legs still at 0.
+ *                                            Slow (Nominatim, ~1 req/s).
  *
- * Never throws — called fire-and-forget from POST /:id/complete.
+ * The completion hook (routes/trips.ts) runs Phase 1, then fires Phase 2
+ * fire-and-forget off the real persist promise. backfill/rederive scripts await
+ * both. deriveRoutesForTrip is shared Phase-2 logic (also used by rederive).
+ *
+ * Trail scoping (PR1): the captured trail used to be the truck's whole
+ * [dep-1day, compDay] movement — other trips' driving included — so a ~600 km
+ * round trip could store a 1500+ km trail and the per-leg slicer matched 0/2.
+ * The trail is now narrowed to the trip's actual [departure-1h, completion]
+ * window before persistence (tripWindowBoundsMs + filterToWindow).
+ *
+ * Slicing (current impl) matches each leg to OSM-geocoded origin/destination
+ * via a forward scan (round-trip safe). km is backfilled ONLY for legs missing
+ * it (km=0) — never overwriting a hand-entered or previously-derived value.
+ *
+ * Never throws — called fire-and-forget.
  */
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import * as schema from '../../db/schema';
 import { resolveCarId, getJourneyRange, getStopDetail } from './reports';
-import { cleanPlaceName, sliceLegByPlaces, dedupPoints, encodePolyline, trailDistanceKm, haversineKm, type LngLat } from './route-capture';
-import { geocodePlace } from '../osm';
+import { cleanPlaceName, sliceLegByPlaces, dedupPoints, encodePolyline, decodePolyline, trailDistanceKm, haversineKm, tripWindowBoundsMs, filterToWindow, type LngLat } from './route-capture';
+import { geocodePlace } from '../map4d';
 
 const MATCH_TOL_KM = 5;
 const DETOUR_MAX = 2.2;
@@ -38,11 +57,9 @@ export interface GpsStopRecord {
 
 /**
  * The truck's ordered significant stops (Bách Khoa DetailStop report, ≥3min
- * each) — real GPS waypoints along the trip. By position stop[i] ≈ leg[i].origin
- * and stop[i+1] ≈ leg[i].destination, so sliceLegByPlaces cuts each leg at REAL
- * driven coordinates (works for short/obscure places a geocoder would miss).
- * Also persisted to trip_gps_tracks.stops so the map can render numbered
- * markers at every real stop 1..N. Returns [] on any provider error.
+ * each) — real GPS waypoints along the trip. Persisted to trip_gps_tracks.stops
+ * so the map can render numbered markers at real stop coordinates (1..N).
+ * Returns [] on any provider error. Callers trip-scope the result by startTime.
  */
 async function fetchSignificantStops(
   carId: number,
@@ -62,11 +79,11 @@ async function fetchSignificantStops(
 
 /**
  * Slice a trail into per-leg routes and upsert them into route_polylines. Each
- * leg's origin/destination is resolved to real coordinates via OSM (Nominatim,
- * Vietnam-scoped, cached), then matched to the trail's first forward pass within
- * MATCH_TOL_KM. Also backfills each matched leg's driven `km` (fixes legs saved
- * with km=0). Shared by capture (fresh trail) and the re-derive script (stored
- * trail) so the matching logic lives in one place.
+ * leg's origin/destination is resolved to coordinates via Map4D (the provider
+ * the Bách Khoa portal embeds; Vietnam-scoped, Redis-cached ~3 months), then
+ * matched to the trail's first forward pass within MATCH_TOL_KM. Also backfills
+ * each matched leg's driven `km` (fixes legs saved with km=0). Shared Phase-2
+ * logic for the completion hook and rederive script.
  */
 export async function deriveRoutesForTrip(
   tripId: number,
@@ -119,10 +136,11 @@ export interface CaptureResult {
 }
 
 /**
- * Derive + persist the real GPS trail/routes for one trip. Never throws — the
- * completion hook calls it fire-and-forget; backfill aggregates the returned
- * status. status: 'ok' (≥1 route derived), 'partial' (trail stored, no leg
- * matched), 'empty' (no trail/legs), 'failed' (error).
+ * Phase 1 — fetch + trip-scope the truck's real GPS trail and persist it
+ * (polyline + significant stops). Fast: no per-leg geocoding. Returns as soon
+ * as the trail is stored so the completion hook can fire Phase 2 untimed.
+ * status: 'ok' (trail stored), 'empty' (no trail/legs/canceled), 'failed'.
+ * legsDerived is always 0 here — derivation is Phase 2.
  */
 export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult> {
   const fail = (errorKind: string, legsTotal = 0): CaptureResult => ({ tripId, status: 'failed', pointCount: 0, legsDerived: 0, legsTotal, errorKind });
@@ -147,15 +165,20 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
 
     const dep = isoDay(trip.departureDate);
     const compDay = trip.completedAt ? isoDay(trip.completedAt) : dep;
-    const journey = await getJourneyRange(carId, addDay(dep, -1), compDay);
+    // Fetch the truck's movement across the surrounding days, then narrow to the
+    // trip's own window — drops the prior day's other-trip driving + anything
+    // after completion (the cause of 1500+ km trails for ~600 km trips).
+    const journeyAll = await getJourneyRange(carId, addDay(dep, -1), compDay);
+    const { lowerMs, upperMs } = tripWindowBoundsMs(dep, compDay, trip.completedAt);
+    const journey = filterToWindow(
+      journeyAll,
+      p => (p.time ? Date.parse(p.time) : null),
+      lowerMs, upperMs,
+    );
     const pts: LngLat[] = [];
     for (const p of journey) if (p.lat != null && p.lng != null) pts.push([p.lat, p.lng]);
     if (pts.length < 2) return { tripId, status: 'empty', pointCount: pts.length, legsDerived: 0, legsTotal: legs.length, errorKind: 'no_points' };
 
-    // Store the FULL lossless trail (GPS-route-DB decision #2: "store all") — the
-    // raw ground truth, before per-leg slicing. Upsert on trip_id (idempotent;
-    // recapture overwrites). Kept so routes can be re-derived without re-hitting
-    // the provider (e.g. a future consensus-path derivation).
     const fullPoly = encodePolyline(pts);
     const fullKm = Math.round(trailDistanceKm(pts) * 100) / 100;
     const firstPt = journey[0];
@@ -163,14 +186,18 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
     const startedAt = firstPt?.time ? new Date(firstPt.time) : null;
     const endedAt = lastPt?.time ? new Date(lastPt.time) : null;
 
-    // Real GPS waypoints from the truck's actual stops (Bách Khoa), persisted
-    // as the trip's waypoint data (the map draws numbered markers from the
-    // per-leg routes below, not from these stops).
-    const sigStops = await fetchSignificantStops(carId, addDay(dep, -1), compDay);
-    const { legsDerived } = await deriveRoutesForTrip(tripId, trip.routeId, pts, legs);
+    // Significant stops are fetched over the wider day window (the report is
+    // day-scoped) but narrowed to the trip window so map markers belong to this
+    // trip, not the truck's other trips that day.
+    const sigStopsAll = await fetchSignificantStops(carId, addDay(dep, -1), compDay);
+    const sigStops = filterToWindow(
+      sigStopsAll,
+      s => (s.startTime ? Date.parse(s.startTime) : null),
+      lowerMs, upperMs,
+    );
 
-    // Persist the trip's full trail + per-leg derivation outcome. status: 'ok' =
-    // at least one route derived; 'partial' = trail stored but no leg matched.
+    // Persist trail + stops. status/segmentMatched are finalised by Phase 2
+    // (deriveRoutesForStoredTrip); until then 'ok' = trail stored.
     await db.insert(schema.tripGpsTracks).values({
       tripId,
       routeId: trip.routeId,
@@ -183,8 +210,8 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
       stops: sigStops.length ? sigStops : null,
       startedAt,
       endedAt,
-      status: legsDerived > 0 ? 'ok' : 'partial',
-      segmentMatched: legs.length > 0 && legsDerived === legs.length,
+      status: 'ok',
+      segmentMatched: false,
     }).onConflictDoUpdate({
       target: schema.tripGpsTracks.tripId,
       set: {
@@ -195,18 +222,47 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
         encodedPolyline: fullPoly,
         pointCount: pts.length,
         distanceKm: fullKm.toFixed(2),
+        stops: sigStops.length ? sigStops : null,
         startedAt,
         endedAt,
-        status: legsDerived > 0 ? 'ok' : 'partial',
-        segmentMatched: legs.length > 0 && legsDerived === legs.length,
+        status: 'ok',
+        segmentMatched: false,
         capturedAt: new Date(),
       },
     });
-    console.log('[gps] captured routes for trip', tripId, `(trail ${pts.length} pts, ${legsDerived}/${legs.length} legs)`);
-    return { tripId, status: legsDerived > 0 ? 'ok' : 'partial', pointCount: pts.length, legsDerived, legsTotal: legs.length };
+    console.log('[gps] trail stored for trip', tripId, `(${pts.length} pts, ${fullKm} km) — derivation queued`);
+    return { tripId, status: 'ok', pointCount: pts.length, legsDerived: 0, legsTotal: legs.length };
   } catch (e: unknown) {
     const msg = (e as Error)?.message ?? String(e);
     console.warn('[gps] captureTripGpsTrack failed', { tripId, err: msg });
     return fail(msg.slice(0, 30) || 'unknown');
   }
+}
+
+/**
+ * Phase 2 — derive per-leg routes from the STORED trail (no portal re-hit):
+ * slice each leg, upsert route_polylines, backfill trip_legs.km for legs still
+ * at 0, and finalise the track's status/segmentMatched. Slow (OSM geocoding per
+ * leg). Called untimed by the completion hook and directly by the rederive +
+ * backfill scripts.
+ */
+export async function deriveRoutesForStoredTrip(tripId: number): Promise<{ legsDerived: number; legsTotal: number }> {
+  const [track] = await db.select({
+    poly: schema.tripGpsTracks.encodedPolyline, routeId: schema.tripGpsTracks.routeId,
+  }).from(schema.tripGpsTracks).where(eq(schema.tripGpsTracks.tripId, tripId)).limit(1);
+  const legs = await db.select({
+    id: schema.tripLegs.id, origin: schema.tripLegs.origin, destination: schema.tripLegs.destination, km: schema.tripLegs.km,
+  }).from(schema.tripLegs).where(eq(schema.tripLegs.tripId, tripId)).orderBy(schema.tripLegs.sequence);
+  if (!track || legs.length === 0) return { legsDerived: 0, legsTotal: legs.length };
+  const pts = decodePolyline(track.poly);
+  if (pts.length < 2) return { legsDerived: 0, legsTotal: legs.length };
+  const { legsDerived, legsTotal } = await deriveRoutesForTrip(tripId, track.routeId ?? null, pts, legs);
+  // Reflect the derivation outcome on the track row: 'ok' (≥1 leg matched) or
+  // 'partial' (trail stored but no leg matched).
+  await db.update(schema.tripGpsTracks).set({
+    status: legsDerived > 0 ? 'ok' : 'partial',
+    segmentMatched: legsTotal > 0 && legsDerived === legsTotal,
+  }).where(eq(schema.tripGpsTracks.tripId, tripId));
+  console.log('[gps] derived routes for trip', tripId, `(${legsDerived}/${legsTotal} legs)`);
+  return { legsDerived, legsTotal };
 }

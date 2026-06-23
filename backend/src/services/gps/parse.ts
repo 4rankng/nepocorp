@@ -26,14 +26,18 @@ export function parseBachKhoaDate(raw: string | null | undefined): Date | null {
 }
 
 /**
- * Parse an ASP.NET JSON date "/Date(1782217250000)/" (epoch ms) → Date.
- * The portal endpoint returns RealDate in this format.
+ * Parse an ASP.NET JSON date "/Date(1782217250000)/" (epoch ms) → Date. The
+ * portal endpoint returns RealDate in this format. Bách Khoa's server emits the
+ * epoch with the device's Vietnam wall-clock (UTC+7) baked in as if it were UTC,
+ * so subtract 7h to recover the true UTC instant — matching parseBachKhoaDate.
+ * This also keeps the staleness check (vs real `new Date()`) honest: without the
+ * shift, freshly-reported vehicles appear 7h in the future and never go stale.
  */
 export function parseAspDate(raw: string | null | undefined): Date | null {
   if (!raw) return null;
   const m = raw.match(/\/Date\((-?\d+)\)\//);
   if (!m) return null;
-  const d = new Date(Number(m[1]));
+  const d = new Date(Number(m[1]) - 7 * 60 * 60 * 1000);
   return isNaN(d.getTime()) ? null : d;
 }
 
