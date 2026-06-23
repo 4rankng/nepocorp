@@ -29,7 +29,7 @@ function addDay(day: string, delta: number): string {
 export async function captureTripGpsTrack(tripId: number): Promise<void> {
   try {
     const [trip] = await db.select({
-      routeId: schema.trips.routeId, status: schema.trips.status,
+      routeId: schema.trips.routeId, status: schema.trips.status, truckId: schema.trips.truckId,
       departureDate: schema.trips.departureDate, completedAt: schema.trips.completedAt,
       plate: schema.trucks.licensePlate,
     }).from(schema.trips)
@@ -52,7 +52,19 @@ export async function captureTripGpsTrack(tripId: number): Promise<void> {
     for (const p of journey) if (p.lat != null && p.lng != null) pts.push([p.lat, p.lng]);
     if (pts.length < 2) return;
 
+    // Store the FULL lossless trail (GPS-route-DB decision #2: "store all") — the
+    // raw ground truth, before per-leg slicing. Upsert on trip_id (idempotent;
+    // recapture overwrites). Kept so routes can be re-derived without re-hitting
+    // the provider (e.g. a future consensus-path derivation).
+    const fullPoly = encodePolyline(pts);
+    const fullKm = Math.round(trailDistanceKm(pts) * 100) / 100;
+    const firstPt = journey[0];
+    const lastPt = journey[journey.length - 1];
+    const startedAt = firstPt?.time ? new Date(firstPt.time) : null;
+    const endedAt = lastPt?.time ? new Date(lastPt.time) : null;
+
     let fromIdx = 0;
+    let legsDerived = 0;
     for (const leg of legs) {
       const o = cleanPlaceName(leg.origin), d = cleanPlaceName(leg.destination);
       if (!o || !d) continue;
@@ -72,8 +84,42 @@ export async function captureTripGpsTrack(tripId: number): Promise<void> {
         target: [schema.routePolylines.originCleaned, schema.routePolylines.destinationCleaned],
         set: { encodedPolyline: poly, pointCount: dp.length, distanceKm: candKm.toFixed(2), sourceTripId: tripId, routeId: trip.routeId, derivedAt: new Date() },
       });
+      legsDerived++;
     }
-    console.log('[gps] captured routes for trip', tripId);
+
+    // Persist the trip's full trail + per-leg derivation outcome. status: 'ok' =
+    // at least one route derived; 'partial' = trail stored but no leg matched.
+    await db.insert(schema.tripGpsTracks).values({
+      tripId,
+      routeId: trip.routeId,
+      truckId: trip.truckId,
+      carId,
+      licensePlate: trip.plate,
+      encodedPolyline: fullPoly,
+      pointCount: pts.length,
+      distanceKm: fullKm.toFixed(2),
+      startedAt,
+      endedAt,
+      status: legsDerived > 0 ? 'ok' : 'partial',
+      segmentMatched: legs.length > 0 && legsDerived === legs.length,
+    }).onConflictDoUpdate({
+      target: schema.tripGpsTracks.tripId,
+      set: {
+        routeId: trip.routeId,
+        truckId: trip.truckId,
+        carId,
+        licensePlate: trip.plate,
+        encodedPolyline: fullPoly,
+        pointCount: pts.length,
+        distanceKm: fullKm.toFixed(2),
+        startedAt,
+        endedAt,
+        status: legsDerived > 0 ? 'ok' : 'partial',
+        segmentMatched: legs.length > 0 && legsDerived === legs.length,
+        capturedAt: new Date(),
+      },
+    });
+    console.log('[gps] captured routes for trip', tripId, `(trail ${pts.length} pts, ${legsDerived}/${legs.length} legs)`);
   } catch (e: unknown) {
     console.warn('[gps] captureTripGpsTrack failed', { tripId, err: (e as Error)?.message ?? e });
   }

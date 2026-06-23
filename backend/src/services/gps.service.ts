@@ -95,7 +95,19 @@ export interface LastKnownPosition {
 }
 
 /** A live fix to upsert into vehicle_last_positions. */
-type PositionRow = ReturnType<typeof toPositionRow>;
+interface PositionRow {
+  truckId: number;
+  deviceId: string | null;
+  lat: number;
+  lng: number;
+  speed: number;
+  angle: number;
+  address: string | null;
+  ignitionOn: boolean;
+  fuel: number | null;
+  gpsDriverName: string | null;
+  lastSeenAt: Date | null;
+}
 
 /** Compose-fleet result. `persist` holds the fresh live fixes to upsert. */
 interface ComposeResult {
@@ -268,8 +280,8 @@ export function composeFleet(args: {
       deviceId: pos.deviceId,
       lat: pos.lat,
       lng: pos.lng,
-      speed: pos.speed,
-      angle: pos.angle,
+      speed: pos.speed ?? 0,
+      angle: pos.angle ?? 0,
       address: pos.address,
       status: 'offline',
       ignitionOn: pos.ignitionOn,

@@ -37,7 +37,7 @@ router.get('/autocomplete', asyncHandler(async (req: Request, res: Response) => 
   }
 }));
 
-// ── Google Directions with Local Cache ─────────────────────────────────────
+// ── Route + Distance (real GPS-captured polylines) ─────────────────────────
 
 router.get('/distance', asyncHandler(async (req: Request, res: Response) => {
   const origin = (req.query.origin as string || '').trim();

@@ -842,26 +842,13 @@ export const tripPhotos = pgTable('trip_photos', {
   index('trip_photos_trip_container_id_idx').on(table.tripContainerId),
 ]);
 
-export const routeDistanceCache = pgTable('route_distance_cache', {
-  id: serial('id').primaryKey(),
-  originCleaned: varchar('origin_cleaned', { length: 255 }).notNull(),
-  destinationCleaned: varchar('destination_cleaned', { length: 255 }).notNull(),
-  distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull(),
-  durationSeconds: integer('duration_seconds'),
-  polylinePath: text('polyline_path'),
-  allRoutesJson: text('all_routes_json'),
-  routeSummary: varchar('route_summary', { length: 100 }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => [
-  uniqueIndex('route_distance_cache_uniq_idx').on(table.originCleaned, table.destinationCleaned),
-]);
-
 /**
  * Real driven routes between two locations, captured from Bách Khoa GPS tracks.
  * Keyed by cleaned (origin, destination) — the SAME key the trip-queries + gps
  * joins build from trip_legs (`.trim().toLowerCase()`). Populated by the
- * route-capture backfill + runtime completion hook. Replaces Google Directions
- * (`route_distance_cache.polyline_path`) for trip/dispatch map display.
+ * route-capture backfill + runtime completion hook. The SOLE source of route
+ * polylines + distances for trip/dispatch map display — Google Directions was
+ * removed entirely, so every shown route is one the vehicle actually drove.
  */
 export const routePolylines = pgTable('route_polylines', {
   id: serial('id').primaryKey(),
@@ -876,6 +863,37 @@ export const routePolylines = pgTable('route_polylines', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('route_polylines_uniq_idx').on(table.originCleaned, table.destinationCleaned),
+]);
+
+/**
+ * The full, lossless GPS breadcrumb trail a truck actually drove for one trip —
+ * the raw ground truth captured from Bách Khoa (getJourney), before per-leg
+ * slicing/derivation. Kept per the GPS-route-DB plan (user decision #2: "store
+ * all") so routes can be re-derived later (e.g. consensus path) without re-hitting
+ * the provider. 1:1 per trip (unique trip_id). `encoded_polyline` is the complete
+ * trail; `status` is app-controlled ('ok' | 'partial' | 'empty' | 'failed').
+ * `segment_matched` records whether per-leg derivation succeeded for every leg.
+ */
+export const tripGpsTracks = pgTable('trip_gps_tracks', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id, { onDelete: 'cascade' }).notNull(),
+  routeId: integer('route_id').references(() => routes.id),
+  truckId: integer('truck_id').references(() => trucks.id),
+  carId: integer('car_id'),
+  licensePlate: varchar('license_plate', { length: 20 }),
+  encodedPolyline: text('encoded_polyline').notNull(),
+  pointCount: integer('point_count').notNull().default(0),
+  distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull().default('0.00'),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  status: varchar('status', { length: 16 }).notNull().default('ok'),
+  segmentMatched: boolean('segment_matched').notNull().default(false),
+  capturedAt: timestamp('captured_at', { withTimezone: true }).defaultNow().notNull(),
+  errorKind: varchar('error_kind', { length: 32 }),
+}, (table) => [
+  uniqueIndex('trip_gps_tracks_trip_uniq_idx').on(table.tripId),
+  index('trip_gps_tracks_route_idx').on(table.routeId),
+  index('trip_gps_tracks_truck_ended_idx').on(table.truckId, table.endedAt),
 ]);
 
 /**
