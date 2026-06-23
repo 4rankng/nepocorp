@@ -156,7 +156,7 @@ function AppRoutes() {
           <Route path="/config/management-fees" element={<Navigate to="/config" replace />} />
           <Route path="/config/salary-periods" element={adminOnly(page(<SalaryPeriodConfigPage />))} />
           <Route path="/config/expense-categories" element={adminOnly(page(<ExpenseCategoriesConfigPage />))} />
-          <Route path="/config/tire-positions" element={adminOnly(page(<TirePositionsConfigPage />))} />
+          <Route path="/config/tire-positions" element={officeStaffOnly(page(<TirePositionsConfigPage />))} />
           <Route path="/config/container-types" element={<Navigate to="/config" replace />} />
           <Route path="/config/seal-types" element={<Navigate to="/config" replace />} />
           <Route path="/config/ports" element={<Navigate to="/config" replace />} />
