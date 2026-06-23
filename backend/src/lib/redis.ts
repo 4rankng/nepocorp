@@ -27,7 +27,11 @@ export async function disconnectRedis(): Promise<void> {
   }
 }
 
-export async function cacheGet<T>(key: string, ttl: number, fetchFn: () => Promise<T>): Promise<T> {
+export async function cacheGet<T>(
+  key: string,
+  ttl: number | ((result: T) => number),
+  fetchFn: () => Promise<T>
+): Promise<T> {
   const client = getRedis();
   try {
     const cached = await client.get(key);
@@ -43,7 +47,8 @@ export async function cacheGet<T>(key: string, ttl: number, fetchFn: () => Promi
 
   const fetchPromise = fetchFn().then(async (result) => {
     try {
-      await client.set(key, JSON.stringify(result), 'EX', ttl);
+      const resolvedTtl = typeof ttl === 'function' ? ttl(result) : ttl;
+      await client.set(key, JSON.stringify(result), 'EX', resolvedTtl);
     } catch {
       // Redis write failure — non-critical, serve from DB
     }

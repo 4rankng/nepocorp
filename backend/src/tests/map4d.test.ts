@@ -7,7 +7,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { mapToSuggestions, geocodeFromLookup, type Map4dPlace } from '../services/map4d';
+import { mapToSuggestions, geocodeFromLookup, googleResultToPlace, type Map4dPlace } from '../services/map4d';
 
 const row = (over: Partial<Map4dPlace>): Map4dPlace => ({
   id: 'x',
@@ -57,6 +57,34 @@ describe('map4d: mapToSuggestions', () => {
 
   test('empty input → empty output', () => {
     assert.deepEqual(mapToSuggestions([], 8), []);
+  });
+});
+
+describe('map4d: googleResultToPlace (Google fallback normalization)', () => {
+  test('maps formatted_address + geometry.location into the Map4dPlace shape', () => {
+    const p = googleResultToPlace({
+      place_id: 'ChIJ123',
+      formatted_address: 'Vụ Yên, Yên Bái, Vietnam',
+      geometry: { location: { lat: 21.5, lng: 104.6 } },
+    });
+    assert.deepEqual(p, {
+      id: 'g:ChIJ123',
+      name: 'Vụ Yên, Yên Bái, Vietnam',
+      address: 'Vụ Yên, Yên Bái, Vietnam',
+      location: { lat: 21.5, lng: 104.6 },
+    });
+  });
+
+  test('normalized Google rows pass straight through mapToSuggestions', () => {
+    const p = googleResultToPlace({
+      place_id: 'X',
+      formatted_address: 'Hà Nội, Vietnam',
+      geometry: { location: { lat: 21.0, lng: 105.8 } },
+    });
+    const out = mapToSuggestions([p], 8);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].placeId, 'g:X');
+    assert.equal(out[0].description, 'Hà Nội, Vietnam');
   });
 });
 

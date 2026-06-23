@@ -8,6 +8,8 @@
 import { resolveRoute, decodePolyline } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
 import { searchPlaces, geocodePlace } from './map4d';
+// TEMPORARY: expose the location-search diagnostic for the autocomplete ?debug=1 probe.
+export { debugResolve } from './map4d';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -73,8 +75,9 @@ export interface LegCoord {
  * (e.g. trip 76 legs 2-3). Free data first, geocode last:
  *   1. Legs WITH a route_polyline: decode it (already oriented origin→destination
  *      by resolveRoute) → origin = first point, destination = last point.
- *   2. Remaining unique place-names: geocode via Nominatim (osm.geocodePlace —
- *      cached + ≥1.1s-throttled, so policy-safe even for several novel places).
+ *   2. Remaining unique place-names: geocode via Map4D (map4d.geocodePlace —
+ *      cached ~3 months in Redis, with a Google Maps fallback), so even several
+ *      novel places resolve without hammering any one provider.
  * Returns one {originCoord, destinationCoord} per input leg; null when a place
  * genuinely can't be resolved (the frontend then just omits that marker).
  */
