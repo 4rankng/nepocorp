@@ -57,11 +57,14 @@ export function LeafletMap({
 
     const boundsLayers: L.Layer[] = [];
 
-    const drawRoute = (polyline: string, color: string, startPopup: string, endPopup: string) => {
+    const drawRoute = (
+      polyline: string, color: string, startPopup: string, endPopup: string,
+      opts: { startNumber?: number; withEnd?: boolean } = {},
+    ) => {
       const coordinates = decodePolyline(polyline);
       if (coordinates.length === 0) return null;
 
-      // Draw Polyline
+      // Draw Polyline (real GPS trace from route_polylines — never Google routing)
       const routePolyline = L.polyline(coordinates, {
         color,
         weight: 4,
@@ -70,41 +73,53 @@ export function LeafletMap({
       }).addTo(layerGroup);
       boundsLayers.push(routePolyline);
 
-      // Start Marker
-      const startIcon = L.divIcon({
-        className: 'custom-map-marker',
-        html: `<div style="
-          width: 12px;
-          height: 12px;
-          background: #10B981;
-          border: 2px solid #FFFFFF;
-          border-radius: 50%;
-          box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-        "></div>`,
-        iconSize: [12, 12],
-        iconAnchor: [6, 6],
-      });
-      L.marker(coordinates[0], { icon: startIcon })
+      // Start marker: a small numbered circle in leg mode (1..N at each leg's
+      // origin), otherwise the green dot for the single-polyline path.
+      const startIcon = opts.startNumber != null
+        ? L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:1;">${opts.startNumber}</div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+          })
+        : L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div style="
+              width: 12px;
+              height: 12px;
+              background: #10B981;
+              border: 2px solid #FFFFFF;
+              border-radius: 50%;
+              box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            "></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+          });
+      L.marker(coordinates[0], { icon: startIcon, zIndexOffset: opts.startNumber != null ? 600 : 0 })
         .addTo(layerGroup)
         .bindPopup(startPopup);
 
-      // End Marker
-      const endIcon = L.divIcon({
-        className: 'custom-map-marker',
-        html: `<div style="
-          width: 12px;
-          height: 12px;
-          background: #EF4444;
-          border: 2px solid #FFFFFF;
-          border-radius: 50%;
-          box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-        "></div>`,
-        iconSize: [12, 12],
-        iconAnchor: [6, 6],
-      });
-      L.marker(coordinates[coordinates.length - 1], { icon: endIcon })
-        .addTo(layerGroup)
-        .bindPopup(endPopup);
+      // End marker: only in single-polyline mode. In leg mode the numbered
+      // origins of consecutive legs already mark each stop; the final
+      // destination is just the polyline endpoint — no extra pin needed.
+      if (opts.withEnd !== false) {
+        const endIcon = L.divIcon({
+          className: 'custom-map-marker',
+          html: `<div style="
+            width: 12px;
+            height: 12px;
+            background: #EF4444;
+            border: 2px solid #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+          "></div>`,
+          iconSize: [12, 12],
+          iconAnchor: [6, 6],
+        });
+        L.marker(coordinates[coordinates.length - 1], { icon: endIcon })
+          .addTo(layerGroup)
+          .bindPopup(endPopup);
+      }
 
       return routePolyline;
     };
@@ -120,6 +135,7 @@ export function LeafletMap({
             color,
             `<strong>Chặng ${index + 1} xuất phát:</strong> ${leg.origin}`,
             `<strong>Chặng ${index + 1} đích đến:</strong> ${leg.destination}`,
+            { startNumber: index + 1, withEnd: false },
           );
         }
       });

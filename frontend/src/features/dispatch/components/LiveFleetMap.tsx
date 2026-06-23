@@ -47,19 +47,6 @@ function popupHtml(v: LiveFleetVehicle): string {
   </div>`;
 }
 
-function destinationIcon(loadingType: LoadingType): L.DivIcon {
-  const color = loadingType === LoadingType.HANG ? '#00B14F' : '#6B7280';
-  return L.divIcon({
-    className: 'custom-map-marker',
-    html: `<div style="font-size:22px; line-height:1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));">
-        <span style="color:${color};">📍</span>
-      </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 22],
-    popupAnchor: [0, -20],
-  });
-}
-
 export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -91,7 +78,6 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
     if (vehicles.length === 0) return;
 
     const truckMarkers: L.Marker[] = [];
-    const destMarkers: L.Marker[] = [];
 
     for (const v of vehicles) {
       // Remaining route to destination (current leg detected via heading).
@@ -115,17 +101,6 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
               lineJoin: 'round',
             }).addTo(layerGroup);
           }
-          if (route.destinationPoint) {
-            destMarkers.push(
-              L.marker(route.destinationPoint, { icon: destinationIcon(route.loadingType), zIndexOffset: 500 })
-                .addTo(layerGroup)
-                .bindPopup(
-                  `<strong>${escapeHtml(route.destinationName)}</strong><br/>` +
-                  `${route.loadingType === LoadingType.HANG ? 'Chuyến đi (có hàng)' : 'Chuyến về (chạy vỏ)'}<br/>` +
-                  `Còn <span style="font-family:'JetBrains Mono',monospace;">${route.distanceKm.toFixed(1)}</span> km`,
-                ),
-            );
-          }
         }
       }
 
@@ -139,7 +114,7 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
     const setKey = vehicles.map((v) => v.truckId).sort((a, b) => a - b).join(',');
     if (setKey !== markerSetKeyRef.current) {
       markerSetKeyRef.current = setKey;
-      const all = [...truckMarkers, ...destMarkers];
+      const all = truckMarkers;
       if (all.length > 0) {
         map.fitBounds(L.featureGroup(all).getBounds(), { padding: [50, 50], maxZoom: 13 });
       }
