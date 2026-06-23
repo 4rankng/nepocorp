@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import { toQuery } from '../lib/http/query';
-import { TRIPS, CATALOGS } from '@tingting/shared';
+import { TRIPS, CATALOGS, TRACKING } from '@tingting/shared';
 import type {
   Trip,
   TripDetail,
@@ -9,6 +9,7 @@ import type {
   CreateTripRequest,
   UpdateTripFiguresRequest,
   PaginatedResponse,
+  LiveFleetResponse,
 } from '@tingting/shared';
 
 type ListTripsParams = {
@@ -25,6 +26,9 @@ type ListTripsParams = {
 export const tripClient = {
   listTrips: (params?: ListTripsParams) =>
     api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${toQuery(params)}`),
+
+  /** Live fleet — current GPS positions of trucks on active IN_TRANSIT trips. */
+  getLiveFleet: () => api.get<LiveFleetResponse>(TRACKING.LIVE_FLEET),
 
   /** Fetch all pages of trips for a given filter set. */
   fetchAllTrips: async (

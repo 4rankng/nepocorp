@@ -1,10 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Shuffle, FilePen, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { useLiveFleet } from '../hooks/useTripQueries';
+import { LiveTrackingCard } from '../features/trip-detail/components/LiveTrackingCard';
 import { Modal, Drawer } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
+import { TripStatus } from '@tingting/shared';
 
 // Feature: logic (.ts) + UI (.tsx)
 import { useTripDetailPage } from '../features/trip-detail';
@@ -21,6 +24,9 @@ export default function TripDetailPage() {
   const navigate = useNavigate();
   const page = useTripDetailPage(id);
   const { rootRef } = usePageAnimations({ ready: !page.loading });
+  // Only poll live GPS when this trip is actually in transit — a completed /
+  // cancelled trip never has a live vehicle, so avoid polling the cache forever.
+  const { data: liveFleet } = useLiveFleet({ enabled: page.trip?.status === TripStatus.IN_TRANSIT });
 
   /* ── Loading / Error / Empty guards ────────────────────────────────── */
   if (page.loading) {
@@ -48,6 +54,7 @@ export default function TripDetailPage() {
   if (!page.trip) return null;
 
   const { trip, derived, permissions, ui, fuelPriceConfig, adjustments } = page;
+  const liveVehicle = liveFleet?.vehicles.find((v) => v.tripId === trip.id) ?? null;
   const displayError = ui.actionError || page.error;
 
   /* ── Main render ───────────────────────────────────────────────────── */
@@ -84,7 +91,13 @@ export default function TripDetailPage() {
         <div className="trip-col trip-col--main">
           {trip.legs && trip.legs.length > 0 && (
             <div className="anim d3 tdp-card tdp-m1">
-              <JourneyCard trip={trip} derived={derived} />
+              <JourneyCard trip={trip} derived={derived} liveVehicle={liveVehicle} />
+            </div>
+          )}
+
+          {liveVehicle && (
+            <div className="anim d3 tdp-card">
+              <LiveTrackingCard vehicle={liveVehicle} />
             </div>
           )}
 

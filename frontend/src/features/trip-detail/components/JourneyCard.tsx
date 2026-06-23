@@ -1,16 +1,19 @@
 import React from 'react';
-import { Route, Ruler, Image as ImageIcon, Plus, ArrowRight, Fuel } from 'lucide-react';
-import type { TripDetail } from '@tingting/shared';
+import { Route, Ruler, Image as ImageIcon, Plus, ArrowRight, Fuel, Radio } from 'lucide-react';
+import type { TripDetail, LiveFleetVehicle } from '@tingting/shared';
 import { LoadingType } from '@tingting/shared';
 import { LeafletMap } from '../../../components/shared/LeafletMap';
+import { LIVE_STATUS_COLOR, LIVE_STATUS_LABEL } from '../../../lib/liveFleet';
 import type { TripDerivedData } from '../types';
 
 interface JourneyCardProps {
   trip: TripDetail;
   derived: TripDerivedData;
+  /** Live truck position to overlay on the route (present when the trip is in transit). */
+  liveVehicle?: LiveFleetVehicle | null;
 }
 
-export function JourneyCard({ trip, derived }: JourneyCardProps) {
+export function JourneyCard({ trip, derived, liveVehicle = null }: JourneyCardProps) {
   const { totalKm } = derived;
   const hasPolyline = trip.legs?.some(leg => leg.polylinePath);
   const legCount = trip.legs?.length ?? 0;
@@ -26,6 +29,18 @@ export function JourneyCard({ trip, derived }: JourneyCardProps) {
               • {legCount} chặng đường
             </span>
           </h2>
+          {liveVehicle && (
+            <span
+              title="Vị trí trực tiếp từ GPS"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 6,
+                padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600,
+                background: `${LIVE_STATUS_COLOR[liveVehicle.status]}22`, color: LIVE_STATUS_COLOR[liveVehicle.status],
+              }}
+            >
+              <Radio size={11} /> {LIVE_STATUS_LABEL[liveVehicle.status]}
+            </span>
+          )}
         </div>
         <div className="journey-pills">
           <span className="jp jp--km">
@@ -36,9 +51,19 @@ export function JourneyCard({ trip, derived }: JourneyCardProps) {
       </div>
 
       <div className="journey-body">
-        {hasPolyline && (
+        {(hasPolyline || liveVehicle) && (
           <div className="map-wrap">
-            <LeafletMap legs={trip.legs} height="100%" />
+            <LeafletMap
+              legs={trip.legs}
+              height="100%"
+              livePosition={liveVehicle ? {
+                lat: liveVehicle.lat,
+                lng: liveVehicle.lng,
+                angle: liveVehicle.angle,
+                status: liveVehicle.status,
+                speed: liveVehicle.speed,
+              } : null}
+            />
           </div>
         )}
 

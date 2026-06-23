@@ -4,7 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Download, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { EmptyState } from '../design-system';
 import { useDispatchData } from '../hooks/useQueries';
+import { useLiveFleet } from '../hooks/useTripQueries';
 import type { NormalizedTrip } from '../hooks/useTripQueries';
+import { LiveFleetMap } from '../features/dispatch/components/LiveFleetMap';
 import { useDispatchMutations, useReassignMutations } from '../features/dispatch/hooks/useDispatchMutations';
 import { DispatchTripCard } from '../features/dispatch/components/DispatchTripCard';
 import { DispatchFilters } from '../features/dispatch/components/DispatchFilters';
@@ -17,6 +19,7 @@ import './DispatchPage.css';
 export default function DispatchPage() {
   const navigate = useNavigate();
   const { data, isLoading: loading, error: queryError } = useDispatchData();
+  const { data: live } = useLiveFleet();
   const { rootRef } = usePageAnimations({ ready: !loading });
   const drivers = useMemo(() => (data?.drivers ?? []) as Driver[], [data]);
   const trucks: Truck[] = useMemo(() => (data?.trucks ?? []).map((t) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' })), [data]);
@@ -76,6 +79,27 @@ export default function DispatchPage() {
           <div className="metric"><div className="metric-label">Cần lưu ý</div><div className="metric-value d-mono">{noteCount}</div><div className="metric-delta delta-down"><TrendingDown size={10} strokeWidth={2.5} /> {fleetCounts.maint} bảo dưỡng · {fleetCounts.noassign} chờ giao</div></div>
         </div>
       </section>
+
+      <div className="section-head">
+        <div className="section-title"><h2>Vị trí thời gian thực</h2><span className="count">{live?.vehicles.length ?? 0} xe</span></div>
+        <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
+          <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 25 giây</span>
+        </div>
+      </div>
+      {live?.error ? (
+        <div style={{ padding: '14px 16px', background: 'rgba(245,166,35,0.12)', color: '#B45309', borderRadius: 10, border: '1px solid rgba(245,166,35,0.35)', fontSize: 13, marginBottom: 20 }}>
+          Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
+        </div>
+      ) : live && live.vehicles.length > 0 ? (
+        <LiveFleetMap vehicles={live.vehicles} />
+      ) : (
+        <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 13, marginBottom: 20 }}>
+          Chưa có xe nào đang chạy để theo dõi.
+        </div>
+      )}
 
       <div className="section-head">
         <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>

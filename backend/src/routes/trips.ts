@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
+import * as gpsService from '../services/gps.service';
 import * as financialService from '../services/financial.service';
 import { listTripContainers, batchUpsertTripContainers, createTripExpense, updateTripExpense, getTripExpenses, deleteTripExpenseGuarded, getTripExpenseAuditInfo, latestTripPhotoKey, listTripPhotoKeys } from '../services/forwarder.service';
 import { processExpenseApproval } from '../services/approval.service';
@@ -77,6 +78,14 @@ router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
   const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
   const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
   res.json(await tripService.getTripsSummary(dateFrom, dateTo));
+}));
+
+// Live fleet — current GPS positions of trucks on an active IN_TRANSIT trip,
+// pulled from the Bách Khoa provider via a Redis pull-through cache. Declared
+// BEFORE /:id so 'live-fleet' is not parsed as an id. Inherits the trips-read
+// Casbin policy from the /api/trips mount in index.ts.
+router.get('/live-fleet', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await gpsService.getLiveFleet());
 }));
 
 // Get trip detail with legs

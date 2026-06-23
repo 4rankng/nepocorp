@@ -34,6 +34,14 @@ export const TRIPS = {
   EXPENSE_REJECT: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/reject`,
 } as const;
 
+// ─── Tracking (live GPS vehicle positions) ────────────────────────────────────
+// Live fleet positions joined to active IN_TRANSIT trips. Mounted on the trips
+// router so it inherits trips-read RBAC; cached server-side via Redis and the
+// Bách Khoa provider credentials never reach the client.
+export const TRACKING = {
+  LIVE_FLEET: '/trips/live-fleet',
+} as const;
+
 // ─── Catalogs & Pricing ────────────────────────────────────────────────────────
 export const CATALOGS = {
   BOOTSTRAP: '/catalogs/bootstrap',

@@ -114,6 +114,12 @@ export const qk = {
     tripDetail: (id: number) => ['trip-detail', String(id)] as const,
   },
 
+  /* ── Live fleet (GPS tracking) ──────────────────────────────────────── */
+
+  liveFleet: {
+    all: ['live-fleet'],
+  },
+
   /* ── Driver portal ──────────────────────────────────────────────────── */
 
   driver: {

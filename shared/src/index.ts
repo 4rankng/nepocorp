@@ -9,6 +9,7 @@ export {
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS, PUSH_RULES,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
+  TRACKING,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   TruckCapRole,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
@@ -38,6 +39,7 @@ export type {
   Tire, TirePosition, VehicleTireAlert,
   BillingDocument, BillingDocumentLine, BillingDocumentType, BillingDocumentEntityType,
   BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
+  LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -61,6 +63,7 @@ export {
   driverPayoutSchema,
   tireSchema, installTireSchema, tirePositionSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
+  bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
 } from './schemas';
 
 export {
@@ -88,6 +91,7 @@ export type {
   CommissionInput,
   TireInput, InstallTireInput,
   GenerateBillingDocumentInput, SaveBillingDocumentInput, BillingDocumentLineInput,
+  BachKhoaVehicle,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';
