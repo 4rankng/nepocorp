@@ -856,6 +856,28 @@ export const routeDistanceCache = pgTable('route_distance_cache', {
   uniqueIndex('route_distance_cache_uniq_idx').on(table.originCleaned, table.destinationCleaned),
 ]);
 
+/**
+ * Real driven routes between two locations, captured from Bách Khoa GPS tracks.
+ * Keyed by cleaned (origin, destination) — the SAME key the trip-queries + gps
+ * joins build from trip_legs (`.trim().toLowerCase()`). Populated by the
+ * route-capture backfill + runtime completion hook. Replaces Google Directions
+ * (`route_distance_cache.polyline_path`) for trip/dispatch map display.
+ */
+export const routePolylines = pgTable('route_polylines', {
+  id: serial('id').primaryKey(),
+  originCleaned: varchar('origin_cleaned', { length: 255 }).notNull(),
+  destinationCleaned: varchar('destination_cleaned', { length: 255 }).notNull(),
+  encodedPolyline: text('encoded_polyline').notNull(),
+  pointCount: integer('point_count').notNull(),
+  distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull(),
+  sourceTripId: integer('source_trip_id').references(() => trips.id),
+  routeId: integer('route_id').references(() => routes.id),
+  derivedAt: timestamp('derived_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('route_polylines_uniq_idx').on(table.originCleaned, table.destinationCleaned),
+]);
+
 // ─── Notifications ──────────────────────────────────────────────────────────
 
 export const notifications = pgTable('notifications', {

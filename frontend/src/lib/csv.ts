@@ -1,64 +1,280 @@
 import ExcelJS from 'exceljs';
 
-export async function downloadCSV(filename: string, headers: string[], rows: (string | number)[][]) {
-  const cleanFilename = filename.endsWith('.csv') ? filename.replace(/\.csv$/, '.xlsx') : filename;
+export type ColumnType = 'text' | 'number' | 'km' | 'liters' | 'currency' | 'date' | 'decimal';
 
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Dữ liệu');
+export interface DownloadOptions {
+  /** Report title shown on the emerald title band. Defaults to filename. */
+  title?: string;
+  /** Subtitle shown under the title (e.g. "Tháng 06/2026 · Trạng thái: Hoàn thành"). */
+  subtitle?: string;
+  /** Per-column type metadata (length must match headers). */
+  columnTypes?: ColumnType[];
+  /** Force a totals row at the bottom for the given column indices. */
+  totalsColumns?: number[];
+  /** Label shown in the totals row's first cell. Defaults to "TỔNG CỘNG". */
+  totalsLabel?: string;
+  /** Hide the totals row entirely. Defaults to false. */
+  hideTotals?: boolean;
+}
 
-  const headerRow = worksheet.addRow(headers);
-  headerRow.height = 28;
-  headerRow.font = { bold: true };
+/* ─── Brand tokens (mirrors --brand in styles/tokens.css) ────────────────── */
 
-  for (const rowData of rows) {
-    const row = worksheet.addRow(rowData);
-    row.height = 22;
+const BRAND = 'FF00B14F';
+const BRAND_DARK = 'FF008B3E';
+const BRAND_SOFT = 'FFE6F7EE';
+const HEADER_FG = 'FFFFFFFF';
+const ROW_ZEBRA = 'FFF9FBF9';
+const BORDER = 'FFD1D5DB';
+const TITLE_FG = 'FF111827';
+const META_FG = 'FF6B7280';
+const TOTALS_FG = 'FFFFFFFF';
+
+const FONT_FAMILY = 'Segoe UI';
+
+const BORDER_STYLE = {
+  top: { style: 'thin' as const, color: { argb: BORDER } },
+  left: { style: 'thin' as const, color: { argb: BORDER } },
+  bottom: { style: 'thin' as const, color: { argb: BORDER } },
+  right: { style: 'thin' as const, color: { argb: BORDER } },
+};
+
+/* ─── Number format strings ──────────────────────────────────────────────── */
+
+const NF = {
+  integer: '#,##0',
+  decimal: '#,##0.00',
+  currency: '#,##0" ₫"',
+  date: 'dd/mm/yyyy',
+};
+
+/**
+ * Default column-type inference used when the caller does not provide
+ * `columnTypes`. Keeps the legacy behavior for the simple catalog exports.
+ */
+function inferColumnType(header: string, sampleValues: Array<string | number | undefined>): ColumnType {
+  const h = header.toLowerCase();
+  if (/(ngày|date|tg|time)/.test(h)) return 'date';
+  if (/(km\b)/.test(h)) return 'km';
+  if (/(lít|lit|dầu|fuel)/.test(h)) return 'liters';
+  if (/(₫|đ|vnd|giá|tiền|doanh thu|chi phí|phí|nợ|có|dư|số dư|tổng)/.test(h)) return 'currency';
+
+  // Inspect sample data — if every non-empty value parses as a number, treat as number.
+  const nonEmpty = sampleValues.filter(v => v !== '' && v != null);
+  if (nonEmpty.length === 0) return 'text';
+  const allNumeric = nonEmpty.every(v => {
+    if (typeof v === 'number') return Number.isFinite(v);
+    const s = String(v).replace(/[₫đ\s.,]/g, '');
+    return /^\d+$/.test(s) || /^\d+([.,]\d+)?$/.test(s);
+  });
+  return allNumeric ? 'number' : 'text';
+}
+
+/**
+ * Convert a raw cell value to a typed JS value (number/Date) appropriate for the
+ * column type. Returns the original value if no conversion applies.
+ */
+function coerceCellValue(value: string | number, type: ColumnType): string | number | Date {
+  if (value === '' || value == null) return value;
+
+  if (type === 'currency' || type === 'number' || type === 'km' || type === 'liters' || type === 'decimal') {
+    if (typeof value === 'number') return value;
+    const cleaned = String(value).replace(/[₫đ\s]/g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    return Number.isFinite(num) ? num : value;
   }
 
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
+  if (type === 'date') {
+    // Accept ISO-ish strings (YYYY-MM-DD or full ISO). Pass through what we can't parse.
+    const s = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return value;
+  }
 
-    row.eachCell((cell, _colNumber) => {
-      if (cell.value === null || cell.value === undefined) return;
+  return value;
+}
 
-      const rawVal = String(cell.value).trim();
-      if (!rawVal) return;
+/**
+ * Build a professional .xlsx report and trigger a browser download.
+ *
+ * - Backward compatible with the original `downloadCSV(filename, headers, rows)`
+ *   signature; the 4th `options` argument is optional.
+ * - Layout: emerald title band (3 rows), header row, data rows, optional totals row.
+ * - Header row is frozen so it stays visible while scrolling.
+ * - Per-column number formats honor explicit `columnTypes` when supplied, or
+ *   fall back to header-based inference.
+ * - Print setup is landscape with fit-to-page width so internal printouts are clean.
+ */
+export async function downloadCSV(
+  filename: string,
+  headers: string[],
+  rows: (string | number)[][],
+  options: DownloadOptions = {},
+): Promise<void> {
+  const cleanFilename = filename.endsWith('.csv') ? filename.replace(/\.csv$/, '.xlsx') : filename;
 
-      if (typeof cell.value === 'string') {
-        if (rawVal.startsWith('0') && rawVal.length > 1) return;
+  const colCount = headers.length;
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('vi-VN');
+  const title = options.title ?? 'BÁO CÁO';
+  const subtitle = options.subtitle;
 
-        const normalized = rawVal.replace(/[₫đ\s]/g, '');
+  /* ─── Resolve column types ───────────────────────────────────────────── */
+  const columnTypes: ColumnType[] =
+    options.columnTypes && options.columnTypes.length === colCount
+      ? options.columnTypes
+      : headers.map((h, i) => {
+          const sample = rows.slice(0, 20).map(r => r[i]);
+          return inferColumnType(h, sample);
+        });
 
-        if (/^\d+([.,]\d+)?$/.test(normalized)) {
-          const cleanVal = normalized.replace(',', '.');
-          const numVal = parseFloat(cleanVal);
-          if (!isNaN(numVal)) {
-            cell.value = numVal;
-            cell.numFmt = numVal % 1 !== 0 ? '#,##0.00' : '#,##0';
-          }
-        } else {
-          const cleanNumStr = rawVal.replace(/[.\s₫đ,]/g, '');
-          if (cleanNumStr && /^\d+$/.test(cleanNumStr)) {
-            const numVal = parseInt(cleanNumStr, 10);
-            cell.value = numVal;
-            cell.numFmt = '#,##0';
-          }
-        }
-      } else if (typeof cell.value === 'number') {
-        cell.numFmt = cell.value % 1 !== 0 ? '#,##0.00' : '#,##0';
-      }
+  /* ─── Workbook + sheet ──────────────────────────────────────────────── */
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'NEPO Logistics';
+  workbook.created = today;
+  const worksheet = workbook.addWorksheet('Báo cáo', {
+    views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }],
+    pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    headerFooter: {
+      oddFooter: '&L&"Segoe UI,Italic"&8NEPO Logistics · Xuất ngày ' + dateStr +
+        '&C&"Segoe UI,Italic"&8Trang &P / &N' +
+        '&R&"Segoe UI,Italic"&8Tài liệu nội bộ',
+    },
+  });
+
+  /* ─── Title band (rows 1-3) ─────────────────────────────────────────── */
+  worksheet.mergeCells(1, 1, 1, colCount);
+  const titleCell = worksheet.getCell(1, 1);
+  titleCell.value = title.toUpperCase();
+  titleCell.font = { name: FONT_FAMILY, size: 14, bold: true, color: { argb: TITLE_FG } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_SOFT } };
+  titleCell.border = { bottom: { style: 'thin', color: { argb: BRAND } } };
+  worksheet.getRow(1).height = 26;
+
+  // Subtitle row (optional)
+  worksheet.mergeCells(2, 1, 2, colCount);
+  const subtitleCell = worksheet.getCell(2, 1);
+  if (subtitle) {
+    subtitleCell.value = subtitle;
+    subtitleCell.font = { name: FONT_FAMILY, size: 10, color: { argb: META_FG }, italic: true };
+    subtitleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  }
+  worksheet.getRow(2).height = 18;
+
+  // Export date row
+  worksheet.mergeCells(3, 1, 3, colCount);
+  const dateCell = worksheet.getCell(3, 1);
+  dateCell.value = `Ngày xuất: ${dateStr}`;
+  dateCell.font = { name: FONT_FAMILY, size: 10, color: { argb: META_FG } };
+  dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  worksheet.getRow(3).height = 18;
+
+  // Spacer row 4 stays blank (used as the freeze pane boundary)
+
+  /* ─── Header row (row 5) ─────────────────────────────────────────────── */
+  const headerRowIdx = 5;
+  const headerRow = worksheet.getRow(headerRowIdx);
+  headers.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = h;
+    cell.font = { name: FONT_FAMILY, size: 10, bold: true, color: { argb: HEADER_FG } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+    cell.alignment = { vertical: 'middle', horizontal: centerAlignFor(i, columnTypes[i]), wrapText: true };
+    cell.border = BORDER_STYLE;
+  });
+  headerRow.height = 32;
+
+  /* ─── Data rows ──────────────────────────────────────────────────────── */
+  const dataStartIdx = headerRowIdx + 1;
+  rows.forEach((r, rowIdx) => {
+    const excelRow = worksheet.getRow(dataStartIdx + rowIdx);
+    excelRow.height = 22;
+    const zebra = rowIdx % 2 === 1 ? ROW_ZEBRA : 'FFFFFFFF';
+    r.forEach((raw, i) => {
+      const cell = excelRow.getCell(i + 1);
+      const type = columnTypes[i] ?? 'text';
+      const value = coerceCellValue(raw, type);
+      cell.value = value as ExcelJS.CellValue;
+      cell.font = { name: FONT_FAMILY, size: 10, color: { argb: 'FF1F2937' } };
+      cell.alignment = { vertical: 'middle', horizontal: centerAlignFor(i, type), wrapText: false };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: zebra } };
+      cell.border = BORDER_STYLE;
+      cell.numFmt = numFmtFor(type);
     });
   });
 
+  /* ─── Totals row (optional) ─────────────────────────────────────────── */
+  const totalsCols = options.totalsColumns?.filter(i => i >= 0 && i < colCount) ?? [];
+  const showTotals = !options.hideTotals && totalsCols.length > 0 && rows.length > 0;
+  if (showTotals) {
+    const totalsRowIdx = dataStartIdx + rows.length;
+    const totalsRow = worksheet.getRow(totalsRowIdx);
+    totalsRow.height = 26;
+
+    // Label cell spans the first non-totals column to the left
+    const labelCell = totalsRow.getCell(1);
+    labelCell.value = options.totalsLabel ?? 'TỔNG CỘNG';
+    labelCell.font = { name: FONT_FAMILY, size: 10, bold: true, color: { argb: TOTALS_FG } };
+    labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } };
+    labelCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    labelCell.border = BORDER_STYLE;
+
+    // Empty cells between label and the first totals column → dark fill, white border.
+    for (let c = 2; c <= colCount; c++) {
+      const cell = totalsRow.getCell(c);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } };
+      cell.border = BORDER_STYLE;
+    }
+
+    // Totals values (sum of the data column above)
+    totalsCols.forEach(colIdx => {
+      const colLetter = worksheet.getColumn(colIdx + 1).letter;
+      const type = columnTypes[colIdx];
+      const cell = totalsRow.getCell(colIdx + 1);
+      cell.value = {
+        formula: `SUM(${colLetter}${dataStartIdx}:${colLetter}${dataStartIdx + rows.length - 1})`,
+      };
+      cell.numFmt = numFmtFor(type);
+      cell.font = { name: FONT_FAMILY, size: 10, bold: true, color: { argb: TOTALS_FG } };
+      cell.alignment = { vertical: 'middle', horizontal: centerAlignFor(colIdx, type) };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } };
+      cell.border = BORDER_STYLE;
+    });
+  }
+
+  /* ─── Column widths ──────────────────────────────────────────────────── */
   worksheet.columns.forEach((col, i) => {
-    let maxLen = headers[i] ? headers[i].length : 0;
-    worksheet.getColumn(i + 1).eachCell({ includeEmpty: true }, (cell) => {
-      const len = String(cell.value || '').length;
+    let maxLen = (headers[i] ?? '').length;
+    worksheet.getColumn(i + 1).eachCell({ includeEmpty: true }, cell => {
+      const v = cell.value;
+      if (v == null) return;
+      let len = 0;
+      if (typeof v === 'number') {
+        len = String(v).length + 2;
+      } else if (v instanceof Date) {
+        len = 12;
+      } else if (typeof v === 'object') {
+        // ExcelJS formula / rich-text / hyperlink values — render as a generic width.
+        len = 14;
+      } else {
+        len = String(v).length;
+      }
       if (len > maxLen) maxLen = len;
     });
-    col.width = Math.max(maxLen + 4, 12);
+    const type = columnTypes[i];
+    const minByType: Record<ColumnType, number> = {
+      text: 14, number: 12, km: 10, liters: 12, currency: 16, date: 13, decimal: 12,
+    };
+    col.width = Math.min(Math.max(maxLen + 4, minByType[type] ?? 12), 42);
   });
 
+  /* ─── Print margins ──────────────────────────────────────────────────── */
+  worksheet.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 };
+
+  /* ─── Write + download ──────────────────────────────────────────────── */
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -69,4 +285,27 @@ export async function downloadCSV(filename: string, headers: string[], rows: (st
   a.download = cleanFilename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ─── Helpers ──────────────────────────────────────────────────────────── */
+
+function centerAlignFor(colIdx: number, type: ColumnType): 'left' | 'center' | 'right' {
+  if (type === 'currency' || type === 'number' || type === 'km' || type === 'liters' || type === 'decimal') {
+    return 'right';
+  }
+  if (type === 'date') return 'center';
+  // First column (label/index) and short text columns look better left-aligned.
+  return colIdx === 0 ? 'left' : 'left';
+}
+
+function numFmtFor(type: ColumnType): string {
+  switch (type) {
+    case 'currency': return NF.currency;
+    case 'km':       return NF.integer;
+    case 'liters':   return NF.decimal;
+    case 'decimal':  return NF.decimal;
+    case 'date':     return NF.date;
+    case 'number':   return NF.integer;
+    default:         return 'General';
+  }
 }

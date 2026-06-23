@@ -159,7 +159,7 @@ export function PenaltyTable({
           </div>
         </div>
         <div className="page-actions">
-          <Btn variant="secondary" icon={<Download size={14} />} onClick={() => {
+          <Btn variant="secondary" icon={<Download size={14} />} onClick={async () => {
             const headers = ['Lái xe', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
             const rows = filteredPenalties.map(p => [
               p.driverName || '—',
@@ -168,7 +168,13 @@ export function PenaltyTable({
               p.amount,
               p.date,
             ]);
-            downloadCSV(`ky-luat-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+            await downloadCSV(`ky-luat-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+              title: 'SỔ KỶ LUẬT LÁI XE',
+              subtitle: `${filteredPenalties.length} biên bản · khấu trừ trực tiếp vào lương lái xe`,
+              columnTypes: ['text', 'text', 'text', 'currency', 'date'],
+              totalsColumns: [3],
+              totalsLabel: 'TỔNG PHẠT',
+            });
           }}>
             Xuất báo cáo
           </Btn>

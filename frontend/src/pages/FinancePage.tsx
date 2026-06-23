@@ -237,9 +237,9 @@ export default function FinancePage() {
               <CalendarDays size={14} style={{ color: 'var(--brand)' }} />
               <span>Tháng {month} · <strong>{year}</strong></span>
             </div>
-            <button className="btn btn--primary" onClick={() => {
+            <button className="btn btn--primary" onClick={async () => {
               if (!report) return;
-              const headers = ['Khoản mục', `Tháng ${month}/${year}`, `Tháng ${month}/${year - 1}`];
+              const headers = ['Khoản mục', `Tháng ${String(month).padStart(2,'0')}/${year}`, `Tháng ${String(month).padStart(2,'0')}/${year - 1}`];
               const rows = [
                 ['Doanh thu vận tải', transRevenue, transRevenueLY],
                 ['Thu nhập khác', otherRevenue, otherRevenueLY],
@@ -251,7 +251,11 @@ export default function FinancePage() {
                 ['Lợi nhuận gộp', grossProfit, grossProfitLY],
                 ['Lợi nhuận ròng', netProfit, netProfitLY],
               ];
-              downloadCSV(`bao-cao-lai-lo-${String(month).padStart(2, '0')}-${String(year).slice(-2)}.csv`, headers, rows);
+              await downloadCSV(`bao-cao-lai-lo-${String(month).padStart(2, '0')}-${String(year).slice(-2)}.csv`, headers, rows, {
+                title: 'BÁO CÁO LÃI LỖ',
+                subtitle: `Kỳ báo cáo: Tháng ${String(month).padStart(2,'0')}/${year} · so sánh với Tháng ${String(month).padStart(2,'0')}/${year - 1}`,
+                columnTypes: ['text', 'currency', 'currency'],
+              });
             }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Xuất Excel

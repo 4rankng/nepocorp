@@ -840,12 +840,17 @@ export default function FleetPage() {
         description="Quản lý xe đầu kéo, rơ-moóc và lái xe trong một trang"
         action={
           <div style={styles.actionRow}>
-            <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => {
+            <Btn variant="secondary" size="sm" icon={<Download size={14} />} onClick={async () => {
               const headers = ['Loại', 'Biển số', 'Trạng thái', 'Lái xe gán'];
               const rows = [
                 ...trucks.map(t => ['Xe đầu kéo', t.licensePlate, TRUCK_STATUS[t.status] || t.status, driverByTruck.has(t.id) ? driverByTruck.get(t.id)!.name : '—']),
               ];
-              downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+              await downloadCSV(`doi-xe-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+                title: 'DANH SÁCH ĐỘI XE',
+                subtitle: `${trucks.length} xe đầu kéo đang quản lý`,
+                columnTypes: ['text', 'text', 'text', 'text'],
+                hideTotals: true,
+              });
             }}>Xuất Excel</Btn>
             <Btn variant="secondary" size="sm" icon={<Filter size={14} />} disabled title="Sắp ra mắt">Lọc nâng cao</Btn>
           </div>

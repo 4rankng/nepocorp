@@ -71,6 +71,9 @@ const TXN_LABELS: Record<string, string> = {
 const VENDOR_TXN_LABELS: Record<string, string> = {
   VENDOR_EXPENSE: 'Ghi nhận chi phí',
   VENDOR_PAYMENT: 'Thanh toán công nợ',
+  FUEL_EXPENSE: 'Chi phí nhiên liệu',
+  COMMISSION: 'Hoa hồng',
+  EXTERNAL_CARRIER_COST: 'Cước thuê ngoài',
   ADJUSTMENT: 'Điều chỉnh',
   UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
 };
@@ -511,7 +514,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
     contCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
     const typeCell = sheet.getCell(r, 4);
-    typeCell.value = config.txnLabels[row.txnType] || row.txnType;
+    typeCell.value = config.txnLabels[row.txnType] || 'Khác';
     typeCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
     const debitCell = sheet.getCell(r, 5);
@@ -575,7 +578,7 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
       <td>${date}</td>
       <td>${escapeHtml(routeName)}</td>
       <td>${escapeHtml(containerNumbers)}</td>
-      <td>${config.txnLabels[row.txnType] || row.txnType}</td>
+      <td>${escapeHtml(config.txnLabels[row.txnType] || 'Khác')}</td>
       <td class="num">${debit ? debit.toLocaleString('vi-VN') : ''}</td>
       <td class="num">${credit ? credit.toLocaleString('vi-VN') : ''}</td>
       <td class="num">${balance.toLocaleString('vi-VN')}</td>

@@ -1,5 +1,4 @@
 import { TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
-import { downloadCSV } from '../../lib/csv';
 import { buildTripCode, type TripListRow, getTripDistance } from './tripHelpers';
 
 export type TripExportFilters = {
@@ -20,6 +19,15 @@ const EXPORT_HEADERS = [
   'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu',
   'Tổng đi đường', 'Doanh thu', 'Trạng thái',
 ];
+
+const EXPORT_COLUMN_TYPES = [
+  'text', 'text', 'text', 'text', 'date', 'km',
+  'text', 'text', 'liters', 'text', 'currency',
+  'currency', 'currency', 'text',
+] as const;
+
+/* Column indices (0-based) that should be summed in the totals row. */
+const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12]; // KM, Dầu (L), Giá trị dầu, Tổng đi đường, Doanh thu
 
 export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   const commonParams: TripExportFilters = {
@@ -64,5 +72,24 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
     ];
   });
 
-  downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, EXPORT_HEADERS, rows);
+  const { downloadCSV: downloadCSVFn } = await import('../../lib/csv');
+  await downloadCSVFn(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, EXPORT_HEADERS, rows, {
+    title: 'SỔ CHUYẾN ĐI',
+    subtitle: subtitleParts(opts),
+    columnTypes: [...EXPORT_COLUMN_TYPES],
+    totalsColumns: EXPORT_TOTALS_COLUMNS,
+    totalsLabel: 'TỔNG CỘNG',
+  });
+}
+
+function subtitleParts(opts: TripExportOptions): string {
+  const parts: string[] = [];
+  if (opts.dateFrom && opts.dateTo) parts.push(`Từ ${opts.dateFrom} đến ${opts.dateTo}`);
+  else if (opts.dateFrom) parts.push(`Từ ${opts.dateFrom}`);
+  else if (opts.dateTo) parts.push(`Đến ${opts.dateTo}`);
+  if (opts.status) parts.push(`Trạng thái: ${opts.status}`);
+  if (opts.truckId) parts.push(`Xe: #${opts.truckId}`);
+  if (opts.customerId) parts.push(`Khách hàng: #${opts.customerId}`);
+  if (opts.search) parts.push(`Tìm kiếm: "${opts.search}"`);
+  return parts.join(' · ') || 'Tất cả chuyến trong kỳ';
 }

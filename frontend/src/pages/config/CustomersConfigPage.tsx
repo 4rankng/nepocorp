@@ -182,7 +182,7 @@ export default function CustomersConfigPage() {
           </p>
         </div>
         <div className="page-actions">
-          <button className="btn btn--secondary" onClick={() => {
+          <button className="btn btn--secondary" onClick={async () => {
             const headers = ['Khách hàng', 'MST', 'Liên hệ', 'Chuyến ' + monthLabel, 'Doanh thu ' + monthLabel, 'Hạn mức TD', 'Trạng thái'];
             const rows = filtered.map(c => {
               const stats = customerTripStats.get(c.id);
@@ -197,7 +197,13 @@ export default function CustomersConfigPage() {
                 c.status === CustomerStatus.LOCKED ? 'Tạm khoá' : 'Hoạt động',
               ];
             });
-            downloadCSV('khach-hang.csv', headers, rows);
+            await downloadCSV(`khach-hang-${monthLabel.replace(/\s/g, '-')}.xlsx`, headers, rows, {
+              title: 'DANH SÁCH KHÁCH HÀNG',
+              subtitle: `Tháng ${monthLabel} · ${filtered.length} khách hàng`,
+              columnTypes: ['text', 'text', 'text', 'number', 'currency', 'currency', 'text'],
+              totalsColumns: [3, 4],
+              totalsLabel: 'TỔNG CỘNG',
+            });
           }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Xuất Excel

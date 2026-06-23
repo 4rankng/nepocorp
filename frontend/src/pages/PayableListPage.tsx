@@ -300,7 +300,7 @@ export default function PayableListPage() {
   const over90Money = moneyParts(totals.over90, compact);
 
   /* ── CSV export ── */
-  const handleExport = () => {
+  const handleExport = async () => {
     const headers = ['Nhà cung cấp', 'Tổng nợ', '0-30 ngày', '31-60 ngày', '61-90 ngày', '>90 ngày'];
     const rows = filteredPayables.map(d => [
       d.supplier.name,
@@ -310,7 +310,14 @@ export default function PayableListPage() {
       d.aging.d60,
       d.aging.over90,
     ]);
-    downloadCSV(`cong-no-phai-tra-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    const filterLabel = category ? `Loại: ${category}` : 'Tất cả nhà cung cấp';
+    await downloadCSV(`cong-no-phai-tra-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+      title: 'SỔ CÔNG NỢ PHẢI TRẢ',
+      subtitle: filterLabel + (search.trim() ? ` · Tìm: "${search.trim()}"` : ''),
+      columnTypes: ['text', 'currency', 'currency', 'currency', 'currency', 'currency'],
+      totalsColumns: [1, 2, 3, 4, 5],
+      totalsLabel: 'TỔNG CỘNG',
+    });
   };
 
   return (

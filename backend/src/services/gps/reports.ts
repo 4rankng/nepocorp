@@ -212,6 +212,23 @@ export async function getJourney(carId: number, range: ReportRange, maxPoints = 
   return points.slice(0, maxPoints);
 }
 
+/** Full breadcrumb trail across a multi-day range (day-paginated, deduped,
+ *  time-sorted). `getJourney` is single-day; this concatenates days so long
+ *  trips aren't truncated by the per-call cap. */
+export async function getJourneyRange(carId: number, fromDay: string, toDay: string, maxPoints = 50000): Promise<JourneyPoint[]> {
+  const seen = new Set<string>();
+  const all: JourneyPoint[] = [];
+  for (let t = new Date(fromDay + 'T00:00:00Z').getTime(); t <= new Date(toDay + 'T00:00:00Z').getTime(); t += 86400000) {
+    const day = new Date(t).toISOString().slice(0, 10);
+    for (const p of await getJourney(carId, { dateFrom: day, dateTo: day }, maxPoints)) {
+      const k = `${p.time}|${p.lat}|${p.lng}`;
+      if (!seen.has(k)) { seen.add(k); all.push(p); }
+    }
+  }
+  all.sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
+  return all;
+}
+
 export interface OverSpeedEvent { time: string | null; avgSpeed: number | null; driver: string | null; license: string | null; }
 /** Overspeed events (empty array if none in range). */
 export async function getOverSpeed(carId: number, range: ReportRange): Promise<OverSpeedEvent[]> {

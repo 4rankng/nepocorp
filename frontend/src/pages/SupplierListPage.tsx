@@ -249,7 +249,7 @@ export default function SupplierListPage() {
         description={`${total} nhà cung cấp đang quản lý`}
         action={
           <>
-            <button className="btn btn--secondary" onClick={() => {
+            <button className="btn btn--secondary" onClick={async () => {
               const headers = ['Tên NCC', 'Người liên hệ', 'Điện thoại', 'MST', 'Là nhà CC nhiên liệu', 'Trạng thái'];
               const rows = filtered.map(s => [
                 s.name,
@@ -259,7 +259,12 @@ export default function SupplierListPage() {
                 s.isFuelSupplier ? 'Có' : 'Không',
                 STATUS_LABELS[s.status] || s.status,
               ]);
-              downloadCSV(`nha-cung-cap-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+              await downloadCSV(`nha-cung-cap-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+                title: 'DANH SÁCH NHÀ CUNG CẤP',
+                subtitle: `${filtered.length} nhà cung cấp đang quản lý`,
+                columnTypes: ['text', 'text', 'text', 'text', 'text', 'text'],
+                hideTotals: true,
+              });
             }}>
               <Download size={14} /> Xuất Excel
             </button>

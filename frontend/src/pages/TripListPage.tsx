@@ -210,7 +210,21 @@ export default function TripListPage() {
       ];
     });
     const { downloadCSV } = await import('../lib/csv');
-    downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    const filterParts: string[] = [];
+    if (listDateFrom && listDateTo) filterParts.push(`Từ ${listDateFrom} đến ${listDateTo}`);
+    else if (listDateFrom) filterParts.push(`Từ ${listDateFrom}`);
+    else if (listDateTo) filterParts.push(`Đến ${listDateTo}`);
+    if (statusFilter) filterParts.push(`Trạng thái: ${statusFilter}`);
+    if (truckFilter) filterParts.push(`Xe: #${truckFilter}`);
+    if (customerFilter) filterParts.push(`Khách hàng: #${customerFilter}`);
+    if (debouncedSearch) filterParts.push(`Tìm kiếm: "${debouncedSearch}"`);
+    await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+      title: 'SỔ CHUYẾN ĐI',
+      subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
+      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'text'],
+      totalsColumns: [5, 8, 10, 11, 12],
+      totalsLabel: 'TỔNG CỘNG',
+    });
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);
 
   // ── Table instance ──

@@ -312,14 +312,14 @@ fontSize: 13,
           <button
             className="btn btn--secondary"
             disabled={entries.length === 0}
-            onClick={() => {
+            onClick={async () => {
               const headers = isAdmin
                 ? ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung', 'Địa chỉ IP']
                 : ['#', 'Thời gian', 'Người dùng', 'Hành động', 'Nội dung'];
               const rows = entries.map((e, i) => {
                 const base = [
                   i + 1,
-                  formatExactTime(e.timestamp),
+                  e.timestamp,
                   e.userName,
                   ACTION_LABELS[e.action] || e.action,
                   e.message,
@@ -327,11 +327,18 @@ fontSize: 13,
                 if (isAdmin) base.push(e.ipAddress || 'Không rõ');
                 return base;
               });
-              downloadCSV(`nhat-ky-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+              await downloadCSV(`nhat-ky-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+                title: 'NHẬT KÝ NGƯỜI DÙNG',
+                subtitle: `${entries.length} sự kiện · tài liệu nội bộ`,
+                columnTypes: isAdmin
+                  ? ['number', 'date', 'text', 'text', 'text', 'text']
+                  : ['number', 'date', 'text', 'text', 'text'],
+                hideTotals: true,
+              });
             }}
           >
             <Download size={14} />
-            Xuất dữ liệu CSV
+            Xuất Excel
           </button>
         </div>
       </header>

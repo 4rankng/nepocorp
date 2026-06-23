@@ -1,12 +1,12 @@
 /**
- * Maps service — distance cache and Google Maps API integration.
- * Extracted from routes/maps.ts to separate business logic from HTTP handling.
+ * Maps service — route/distance lookup (from our GPS-captured route_polylines)
+ * + Google Places autocomplete. Extracted from routes/maps.ts.
+ * Google Directions was retired — routes now come from real Bách Khoa GPS tracks.
  */
-import { db } from '../db';
-import * as s from '../db/schema';
-import { and, eq } from 'drizzle-orm';
 import { config } from '../config';
 import { ApiError } from '../errors';
+import { resolveRoute } from './gps/route-capture';
+import { fetchRouteMap } from './gps/route-lookup';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,32 +32,9 @@ export interface DistanceResponse {
   selected: RouteSuggestion | null;
 }
 
-interface GoogleDirectionsRoute {
-  summary?: string;
-  legs?: Array<{
-    distance?: { value: number };
-    duration?: { value: number };
-  }>;
-  overview_polyline?: { points: string };
-}
-
-interface GoogleDirectionsResponse {
-  status: string;
-  routes?: GoogleDirectionsRoute[];
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function routeToSuggestion(route: GoogleDirectionsRoute): RouteSuggestion | null {
-  const leg = route.legs?.[0];
-  if (!leg || !leg.distance) return null;
-  return {
-    km: Math.round(leg.distance.value / 100) / 10,
-    durationSeconds: leg.duration?.value ?? null,
-    polylinePath: route.overview_polyline?.points ?? null,
-    summary: route.summary ?? '',
-  };
-}
+// (Google Directions integration retired — route + distance now come from
+//  route_polylines, captured from Bách Khoa GPS tracks. Google Places
+//  autocomplete below is retained.)
 
 // ── Places Autocomplete ────────────────────────────────────────────────────
 
@@ -100,91 +77,17 @@ export async function getDistance(origin: string, destination: string): Promise<
   const empty: DistanceResponse = { routes: [], selected: null };
   if (!origin || !destination) return empty;
 
-  const originCleaned = origin.trim().toLowerCase();
-  const destCleaned = destination.trim().toLowerCase();
+  // Route + distance from our GPS-captured route_polylines, bidirectionally
+  // (A→B also covers B→A reversed). Empty when neither direction is captured.
+  const byPair = await fetchRouteMap([{ origin, destination }]);
+  const route = resolveRoute(byPair, origin, destination);
+  if (!route) return empty;
 
-  // 1. Check local DB cache first
-  const [cached] = await db
-    .select()
-    .from(s.routeDistanceCache)
-    .where(
-      and(
-        eq(s.routeDistanceCache.originCleaned, originCleaned),
-        eq(s.routeDistanceCache.destinationCleaned, destCleaned)
-      )
-    )
-    .limit(1);
-
-  // Only use cache when it has the full alternatives list.
-  if (cached && cached.allRoutesJson) {
-    try {
-      const routes = JSON.parse(cached.allRoutesJson) as RouteSuggestion[];
-      if (Array.isArray(routes) && routes.length > 0) {
-        const selected: RouteSuggestion = {
-          km: Number(cached.distanceKm),
-          durationSeconds: cached.durationSeconds ?? null,
-          polylinePath: cached.polylinePath ?? null,
-          summary: cached.routeSummary ?? '',
-        };
-        return { routes, selected };
-      }
-    } catch {
-      // Corrupt JSON — fall through and refresh from Google Maps
-    }
-  }
-
-  if (!config.googleMapsApiKey) {
-    throw new ApiError(503, 'Google Maps API key not configured');
-  }
-
-  // 2. Fallback to Google Directions API — request alternatives
-  const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
-  url.searchParams.set('origin', origin);
-  url.searchParams.set('destination', destination);
-  url.searchParams.set('key', config.googleMapsApiKey);
-  url.searchParams.set('mode', 'driving');
-  url.searchParams.set('alternatives', 'true');
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    console.error(`[maps] Directions API returned ${response.status}`);
-    return empty;
-  }
-
-  const data = await response.json() as GoogleDirectionsResponse;
-
-  if (data.status !== 'OK' || !data.routes || data.routes.length === 0) {
-    console.error(`[maps] Directions status: ${data.status}`);
-    return empty;
-  }
-
-  const suggestions = data.routes
-    .map(routeToSuggestion)
-    .filter((r): r is RouteSuggestion => r !== null);
-
-  if (suggestions.length === 0) return empty;
-
-  const selected = suggestions[0];
-
-  // 3. Save into cache table
-  await db.insert(s.routeDistanceCache).values({
-    originCleaned,
-    destinationCleaned: destCleaned,
-    distanceKm: String(selected.km),
-    durationSeconds: selected.durationSeconds,
-    polylinePath: selected.polylinePath,
-    allRoutesJson: JSON.stringify(suggestions),
-    routeSummary: selected.summary || null,
-  }).onConflictDoUpdate({
-    target: [s.routeDistanceCache.originCleaned, s.routeDistanceCache.destinationCleaned],
-    set: {
-      distanceKm: String(selected.km),
-      durationSeconds: selected.durationSeconds,
-      polylinePath: selected.polylinePath,
-      allRoutesJson: JSON.stringify(suggestions),
-      routeSummary: selected.summary || null,
-    },
-  });
-
-  return { routes: suggestions, selected };
+  const suggestion: RouteSuggestion = {
+    km: route.km,
+    durationSeconds: null,
+    polylinePath: route.polyline,
+    summary: '',
+  };
+  return { routes: [suggestion], selected: suggestion };
 }

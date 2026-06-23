@@ -301,7 +301,7 @@ export default function CustomersPage() {
         description={`${total} khách hàng đang quản lý`}
         action={
           <>
-            <button className="btn btn--secondary" onClick={() => {
+            <button className="btn btn--secondary" onClick={async () => {
               const headers = ['Tên KH', 'MST', 'Người liên hệ', 'Điện thoại', 'Hạn mức TD', 'Trạng thái'];
               const rows = filtered.map(c => [
                 c.name,
@@ -311,7 +311,11 @@ export default function CustomersPage() {
                 c.creditLimit || '',
                 STATUS_LABELS[c.status] || c.status,
               ]);
-              downloadCSV(`khach-hang-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+              await downloadCSV(`khach-hang-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+                title: 'DANH SÁCH KHÁCH HÀNG',
+                subtitle: `${filtered.length} khách hàng đang quản lý`,
+                columnTypes: ['text', 'text', 'text', 'text', 'currency', 'text'],
+              });
             }}>
               <Download size={14} /> Xuất Excel
             </button>

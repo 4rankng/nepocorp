@@ -8,6 +8,8 @@ import type { LiveFleetLeg, LiveFleetResponse, LiveFleetVehicle } from '@tingtin
 import { getGpsProvider } from './gps/providers';
 import type { NormalizedGpsVehicle } from './gps/providers/types';
 import { normalizePlate, isStale, deriveStatus, reviveDate } from './gps/parse';
+import { resolveRoute } from './gps/route-capture';
+import { fetchRouteMap } from './gps/route-lookup';
 
 // Re-export the pure helpers (consumed by unit tests and the providers).
 export { normalizePlate, parseBachKhoaDate, parseAspDate, isStale, deriveStatus, reviveDate } from './gps/parse';
@@ -23,9 +25,9 @@ export { normalizePlate, parseBachKhoaDate, parseAspDate, isStale, deriveStatus,
  */
 
 /**
- * Fetch the planned legs (with cached Google polylines) for the given trips, so
- * the dispatch map can draw the remaining route to each truck's destination.
- * Mirrors the polyline attachment in trip-queries.service.ts (routeDistanceCache).
+ * Fetch the planned legs (with GPS-captured route polylines) for the given trips,
+ * so the dispatch map can draw the remaining route to each truck's destination.
+ * Mirrors the polyline attachment in trip-queries.service.ts (route_polylines).
  */
 async function fetchLegsWithRoutes(tripIds: number[]): Promise<Map<number, LiveFleetLeg[]>> {
   const byTrip = new Map<number, LiveFleetLeg[]>();
@@ -43,38 +45,18 @@ async function fetchLegsWithRoutes(tripIds: number[]): Promise<Map<number, LiveF
     .where(inArray(schema.tripLegs.tripId, tripIds))
     .orderBy(schema.tripLegs.tripId, schema.tripLegs.sequence);
 
-  const pairs = [...new Set(
-    legs.map((l) => `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`),
-  )];
-  const cacheEntries = pairs.length > 0
-    ? await db
-        .select({
-          originCleaned: schema.routeDistanceCache.originCleaned,
-          destinationCleaned: schema.routeDistanceCache.destinationCleaned,
-          polylinePath: schema.routeDistanceCache.polylinePath,
-        })
-        .from(schema.routeDistanceCache)
-        .where(or(...pairs.map((p) => {
-          const [o, d] = p.split('|');
-          return and(
-            eq(schema.routeDistanceCache.originCleaned, o),
-            eq(schema.routeDistanceCache.destinationCleaned, d),
-          );
-        })))
-    : [];
-  const polyByPair = new Map(
-    cacheEntries.map((e) => [`${e.originCleaned}|${e.destinationCleaned}`, e.polylinePath]),
-  );
+  // Routes (bidirectional: A→B also covers B→A reversed) for each leg.
+  const byPair = await fetchRouteMap(legs);
 
   for (const l of legs) {
-    const key = `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`;
+    const route = resolveRoute(byPair, l.origin, l.destination);
     const arr = byTrip.get(l.tripId) ?? [];
     arr.push({
       sequence: l.sequence,
       origin: l.origin,
       destination: l.destination,
       loadingType: l.loadingType as LiveFleetLeg['loadingType'],
-      polylinePath: polyByPair.get(key) ?? null,
+      polylinePath: route?.polyline ?? null,
     });
     byTrip.set(l.tripId, arr);
   }

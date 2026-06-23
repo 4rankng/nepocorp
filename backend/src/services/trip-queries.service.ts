@@ -7,6 +7,8 @@ import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'dri
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getTripInstructions } from './trip-instructions.service';
+import { resolveRoute } from './gps/route-capture';
+import { fetchRouteMap } from './gps/route-lookup';
 
 // ─── Query helpers ─────────────────────────────────────────────────────────
 
@@ -367,32 +369,11 @@ export async function getTripById(id: number) {
     getTripInstructions(id),
   ]);
 
-  const uniquePairs = [...new Set(legs.map(l => `${l.origin.trim().toLowerCase()}|${l.destination.trim().toLowerCase()}`))];
-  const cacheEntries = uniquePairs.length > 0
-    ? await db
-        .select({
-          originCleaned: s.routeDistanceCache.originCleaned,
-          destinationCleaned: s.routeDistanceCache.destinationCleaned,
-          polylinePath: s.routeDistanceCache.polylinePath,
-        })
-        .from(s.routeDistanceCache)
-        .where(
-          or(...uniquePairs.map(pair => {
-            const [o, d] = pair.split('|');
-            return and(
-              eq(s.routeDistanceCache.originCleaned, o),
-              eq(s.routeDistanceCache.destinationCleaned, d)
-            );
-          }))
-        )
-    : [];
-  const cacheMap = new Map<string, typeof cacheEntries[number]>(
-    cacheEntries.map(e => [`${e.originCleaned}|${e.destinationCleaned}`, e] as const)
-  );
+  // Routes (bidirectional: A→B also covers B→A reversed) for each leg.
+  const byPair = await fetchRouteMap(legs);
   const legsWithPaths = legs.map(leg => {
-    const key = `${leg.origin.trim().toLowerCase()}|${leg.destination.trim().toLowerCase()}`;
-    const cached = cacheMap.get(key);
-    return { ...leg, polylinePath: cached?.polylinePath ?? null };
+    const route = resolveRoute(byPair, leg.origin, leg.destination);
+    return { ...leg, polylinePath: route?.polyline ?? null };
   });
 
   const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
