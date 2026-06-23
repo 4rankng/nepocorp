@@ -16,6 +16,7 @@ interface JourneyCardProps {
 export function JourneyCard({ trip, derived, liveVehicle = null }: JourneyCardProps) {
   const { totalKm } = derived;
   const hasPolyline = trip.legs?.some(leg => leg.polylinePath);
+  const hasLegCoord = trip.legs?.some(leg => leg.originCoord) ?? false;
   const legCount = trip.legs?.length ?? 0;
 
   return (
@@ -51,10 +52,11 @@ export function JourneyCard({ trip, derived, liveVehicle = null }: JourneyCardPr
       </div>
 
       <div className="journey-body">
-        {(hasPolyline || liveVehicle) && (
+        {(hasPolyline || !!trip.gpsTrail || liveVehicle || hasLegCoord) && (
           <div className="map-wrap">
             <LeafletMap
               legs={trip.legs}
+              gpsTrail={trip.gpsTrail ?? null}
               height="100%"
               livePosition={liveVehicle ? {
                 lat: liveVehicle.lat,

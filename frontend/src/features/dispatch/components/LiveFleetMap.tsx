@@ -1,14 +1,11 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { LoadingType } from '@tingting/shared';
 import type { LiveFleetVehicle } from '@tingting/shared';
 import { LIVE_STATUS_COLOR, LIVE_STATUS_LABEL, liveMarkerIcon, escapeHtml } from '../../../lib/liveFleet';
-import { computeRemainingRoute } from '../../../lib/liveRoute';
 
 /**
  * Live fleet map (Dispatch page). For each truck on an active trip:
  *  - live marker (colored by status)
- *  - remaining route to its destination (detected current leg via heading → đi/về)
  *  - destination marker
  * Polled every ~25s; redraws each refresh, refits bounds only when the truck
  * set changes. Marker styling lives in lib/liveFleet.ts; leg detection in
@@ -80,29 +77,7 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
     const truckMarkers: L.Marker[] = [];
 
     for (const v of vehicles) {
-      // Remaining route to destination (current leg detected via heading).
-      if (v.legs && v.legs.length > 0) {
-        // Heading only disambiguates đi/về while the truck is actually moving —
-        // when stopped the reported angle is often 0/stale, which would bias leg
-        // selection toward a north-bound leg. Pass undefined so proximity wins.
-        const route = computeRemainingRoute(
-          v.lat,
-          v.lng,
-          v.status === 'moving' ? v.angle : undefined,
-          v.legs,
-        );
-        if (route) {
-          if (route.remainingPath.length >= 2) {
-            L.polyline(route.remainingPath, {
-              color: route.loadingType === LoadingType.HANG ? '#00B14F' : '#6B7280',
-              weight: 4,
-              opacity: 0.7,
-              dashArray: '6 8',
-              lineJoin: 'round',
-            }).addTo(layerGroup);
-          }
-        }
-      }
+      if (v.stale) continue;
 
       truckMarkers.push(
         L.marker([v.lat, v.lng], { icon: liveMarkerIcon(v.status, v.angle), zIndexOffset: 1000 })

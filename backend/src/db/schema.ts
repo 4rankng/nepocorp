@@ -884,6 +884,12 @@ export const tripGpsTracks = pgTable('trip_gps_tracks', {
   encodedPolyline: text('encoded_polyline').notNull(),
   pointCount: integer('point_count').notNull().default(0),
   distanceKm: numeric('distance_km', { precision: 10, scale: 2 }).notNull().default('0.00'),
+  /** The truck's ordered significant stops (Bách Khoa DetailStop, ≥3min) — real
+   *  GPS waypoints {lat,lng,address,startTime,durationSec}. Captured alongside
+   *  the trail so the map can place numbered markers at real stop coordinates
+   *  (every stop 1..N), independent of per-leg route derivation. Null when no
+   *  stops were resolved (e.g. older rows captured before this column existed). */
+  stops: jsonb('stops').$type<Array<{ lat: number; lng: number; address: string | null; startTime: string | null; durationSec: number | null }>>(),
   startedAt: timestamp('started_at', { withTimezone: true }),
   endedAt: timestamp('ended_at', { withTimezone: true }),
   status: varchar('status', { length: 16 }).notNull().default('ok'),

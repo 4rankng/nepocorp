@@ -9,6 +9,7 @@ import { ApiError } from '../errors';
 import { getTripInstructions } from './trip-instructions.service';
 import { resolveRoute } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
+import { resolveLegCoords } from './maps.service';
 
 // ─── Query helpers ─────────────────────────────────────────────────────────
 
@@ -355,7 +356,7 @@ export async function getTripById(id: number) {
 
   if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
 
-  const [legs, photos, instructions] = await Promise.all([
+  const [legs, photos, instructions, gpsTrackRow] = await Promise.all([
     db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
     // Only general (`OTHER`) photos belong in the trip-level `photoUrls`.
     // CONTAINER/SEAL photos are surfaced separately by the "Container & Seal"
@@ -367,6 +368,14 @@ export async function getTripById(id: number) {
     // edit form can populate the TripInstructionsCard fields from the same
     // detail payload (one row per trip; null when none exists yet).
     getTripInstructions(id),
+    // The vehicle's full real GPS trail (Bách Khoa), captured at completion —
+    // the complete driven path, drawn on the trip map as the real route.
+    db.select({
+      encodedPolyline: s.tripGpsTracks.encodedPolyline,
+      distanceKm: s.tripGpsTracks.distanceKm,
+      pointCount: s.tripGpsTracks.pointCount,
+      stops: s.tripGpsTracks.stops,
+    }).from(s.tripGpsTracks).where(eq(s.tripGpsTracks.tripId, id)).limit(1),
   ]);
 
   // Routes (bidirectional: A→B also covers B→A reversed) for each leg.
@@ -376,6 +385,20 @@ export async function getTripById(id: number) {
     return { ...leg, polylinePath: route?.polyline ?? null };
   });
 
+  // Per-leg stop coordinates so the map can number every stop (1,2,3..) even
+  // when a leg has no captured route polyline (e.g. trip 76 legs 2-3). Resolves
+  // free route-endpoint coords first, then Nominatim geocode (cached/throttled).
+  const legCoords = await resolveLegCoords(legsWithPaths);
+  const legsWithCoords = legsWithPaths.map((leg, i) => ({
+    ...leg,
+    originCoord: legCoords[i]?.originCoord ?? null,
+    destinationCoord: legCoords[i]?.destinationCoord ?? null,
+  }));
+
   const photoUrls = photos.map(p => `/api/photos/${encodeURIComponent(p.storageKey)}`);
-  return { ...shapeTripRelations(trip, { legs: legsWithPaths, photoUrls }), instructions };
+  const gpsRow = gpsTrackRow[0];
+  const gpsTrail = gpsRow
+    ? { encodedPolyline: gpsRow.encodedPolyline, distanceKm: Number(gpsRow.distanceKm), pointCount: gpsRow.pointCount, stops: gpsRow.stops ?? [] }
+    : null;
+  return { ...shapeTripRelations(trip, { legs: legsWithCoords, photoUrls }), instructions, gpsTrail };
 }

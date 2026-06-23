@@ -85,7 +85,7 @@ export default function DispatchPage() {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
-          <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 25 giây</span>
+          <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 10 giây</span>
         </div>
       </div>
       {live?.error ? (

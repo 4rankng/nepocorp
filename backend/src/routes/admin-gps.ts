@@ -33,23 +33,34 @@ router.post('/backfill', asyncHandler(async (req: Request, res: Response) => {
     tripIds?: number[];
   };
 
+  // Validate tripIds (office-only endpoint, but reject malformed input early).
+  const ids = Array.isArray(tripIds)
+    ? tripIds.filter((n): n is number => Number.isInteger(n) && n > 0).slice(0, 200)
+    : [];
+
   const conds = [inArray(schema.trips.status, ['COMPLETED', 'LOCKED'])];
-  if (tripIds && tripIds.length) {
-    conds.push(inArray(schema.trips.id, tripIds));
+  if (ids.length) {
+    conds.push(inArray(schema.trips.id, ids));
   } else if (dateFrom && dateTo) {
     // departureDate is a PgDateString (YYYY-MM-DD) — string compare is chronological for ISO dates.
     conds.push(gte(schema.trips.departureDate, dateFrom));
     conds.push(lte(schema.trips.departureDate, dateTo));
   }
 
-  const trips = await db.select({ id: schema.trips.id })
+  // Cap the sequential provider run so a huge date range can't hold a worker open
+  // for tens of minutes. Fetch one extra row to detect truncation without a second query.
+  const BACKFILL_CAP = 500;
+  const selected = await db.select({ id: schema.trips.id })
     .from(schema.trips)
     .where(and(...conds))
-    .orderBy(schema.trips.id);
+    .orderBy(schema.trips.id)
+    .limit(BACKFILL_CAP + 1);
+  const truncated = selected.length > BACKFILL_CAP;
+  const page = truncated ? selected.slice(0, BACKFILL_CAP) : selected;
 
   let ok = 0, partial = 0, failed = 0, empty = 0;
   const failures: Array<{ tripId: number; errorKind?: string }> = [];
-  for (const t of trips) {
+  for (const t of page) {
     const r: CaptureResult = await captureTripGpsTrack(t.id); // never throws
     if (r.status === 'ok') ok++;
     else if (r.status === 'partial') partial++;
@@ -58,12 +69,13 @@ router.post('/backfill', asyncHandler(async (req: Request, res: Response) => {
   }
 
   res.json({
-    total: trips.length,
+    total: page.length,
     ok,
     partial,
     empty,
     failed,
     failures,
+    truncated,
   });
 }));
 

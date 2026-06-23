@@ -64,7 +64,7 @@ async function fetchLegsWithRoutes(tripIds: number[]): Promise<Map<number, LiveF
 }
 
 const GPS_CACHE_KEY = 'gps:live';
-const GPS_CACHE_TTL_SECONDS = 25;
+const GPS_CACHE_TTL_SECONDS = 10;
 
 // ─── Last-known position persistence + offline fallback ──────────────────────
 

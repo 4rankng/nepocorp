@@ -40,6 +40,7 @@ export type {
   BillingDocument, BillingDocumentLine, BillingDocumentType, BillingDocumentEntityType,
   BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
+  GpsStop,
 } from './types';
 
 export { parseThreshold } from './types';

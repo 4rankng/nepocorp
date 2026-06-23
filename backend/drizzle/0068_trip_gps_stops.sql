@@ -1,0 +1,1 @@
+ALTER TABLE "trip_gps_tracks" ADD COLUMN "stops" jsonb;

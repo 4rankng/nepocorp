@@ -2,18 +2,19 @@
  * Route capture — on trip completion, derive real per-(origin,destination)
  * routes from the truck's Bách Khoa GPS trail and upsert into route_polylines.
  *
- * Geocode-based slicing matches each leg to its origin/destination coordinates
- * (Google ground truth), so endpoints can't be direction-confused. Same pipeline
- * the backfill uses (getJourneyRange → sliceLegByPlaces → dedup → encode).
+ * Slicing matches each leg to the truck's REAL stop coordinates (Bách Khoa
+ * DetailStop report), so endpoints are driven ground-truth and can't be
+ * direction-confused. Same pipeline the backfill uses
+ * (getJourneyRange → sliceLegByPlaces → dedup → encode).
  *
  * Never throws — called fire-and-forget from POST /:id/complete.
  */
 import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import * as schema from '../../db/schema';
-import { resolveCarId, getJourneyRange } from './reports';
-import { geocodePlace } from './place-geocode';
+import { resolveCarId, getJourneyRange, getStopDetail } from './reports';
 import { cleanPlaceName, sliceLegByPlaces, dedupPoints, encodePolyline, trailDistanceKm, haversineKm, type LngLat } from './route-capture';
+import { geocodePlace } from '../osm';
 
 const MATCH_TOL_KM = 5;
 const DETOUR_MAX = 2.2;
@@ -24,6 +25,86 @@ function isoDay(d: unknown): string {
 }
 function addDay(day: string, delta: number): string {
   return new Date(new Date(day + 'T00:00:00Z').getTime() + delta * 86400000).toISOString().slice(0, 10);
+}
+
+/** A resolved significant stop — a real GPS waypoint from Bách Khoa. */
+export interface GpsStopRecord {
+  lat: number;
+  lng: number;
+  address: string | null;
+  startTime: string | null;
+  durationSec: number | null;
+}
+
+/**
+ * The truck's ordered significant stops (Bách Khoa DetailStop report, ≥3min
+ * each) — real GPS waypoints along the trip. By position stop[i] ≈ leg[i].origin
+ * and stop[i+1] ≈ leg[i].destination, so sliceLegByPlaces cuts each leg at REAL
+ * driven coordinates (works for short/obscure places a geocoder would miss).
+ * Also persisted to trip_gps_tracks.stops so the map can render numbered
+ * markers at every real stop 1..N. Returns [] on any provider error.
+ */
+async function fetchSignificantStops(
+  carId: number,
+  dateFrom: string,
+  dateTo: string,
+): Promise<GpsStopRecord[]> {
+  try {
+    const { stops } = await getStopDetail(carId, { dateFrom, dateTo });
+    return stops
+      .filter(s => s.lat != null && s.lng != null && (s.durationSec ?? 0) >= 180)
+      .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))
+      .map(s => ({ lat: s.lat!, lng: s.lng!, address: s.address, startTime: s.startTime, durationSec: s.durationSec }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Slice a trail into per-leg routes and upsert them into route_polylines. Each
+ * leg's origin/destination is resolved to real coordinates via OSM (Nominatim,
+ * Vietnam-scoped, cached), then matched to the trail's first forward pass within
+ * MATCH_TOL_KM. Also backfills each matched leg's driven `km` (fixes legs saved
+ * with km=0). Shared by capture (fresh trail) and the re-derive script (stored
+ * trail) so the matching logic lives in one place.
+ */
+export async function deriveRoutesForTrip(
+  tripId: number,
+  routeId: number | null,
+  pts: LngLat[],
+  legs: Array<{ id: number; origin: string; destination: string; km: number | null }>,
+): Promise<{ legsDerived: number; legsTotal: number }> {
+  let fromIdx = 0;
+  let legsDerived = 0;
+  for (let i = 0; i < legs.length; i++) {
+    const leg = legs[i];
+    const o = cleanPlaceName(leg.origin), d = cleanPlaceName(leg.destination);
+    if (!o || !d) continue;
+    const [oCoord, dCoord] = await Promise.all([geocodePlace(leg.origin), geocodePlace(leg.destination)]);
+    const slice = sliceLegByPlaces(pts, fromIdx, oCoord, dCoord, MATCH_TOL_KM);
+    if (!slice) continue; // truck never passed near an endpoint → skip this leg
+    fromIdx = slice.endIdx;
+    const dp = dedupPoints(slice.points, 15);
+    if (dp.length < 2) continue;
+    const candKm = Math.round(trailDistanceKm(dp) * 100) / 100;
+    const straightKm = haversineKm(dp[0], dp[dp.length - 1]);
+    if (straightKm < 0.5 || candKm / straightKm > DETOUR_MAX) continue;
+    const poly = encodePolyline(dp);
+    await db.insert(schema.routePolylines).values({
+      originCleaned: o, destinationCleaned: d, encodedPolyline: poly, pointCount: dp.length,
+      distanceKm: candKm.toFixed(2), sourceTripId: tripId, routeId,
+    }).onConflictDoUpdate({
+      target: [schema.routePolylines.originCleaned, schema.routePolylines.destinationCleaned],
+      set: { encodedPolyline: poly, pointCount: dp.length, distanceKm: candKm.toFixed(2), sourceTripId: tripId, routeId, derivedAt: new Date() },
+    });
+    // Backfill driven distance ONLY for legs missing it (km=0/null). Never
+    // overwrite an existing km — that could shift completed-trip fuel/cost math.
+    if (!leg.km) {
+      await db.update(schema.tripLegs).set({ km: Math.round(candKm) }).where(eq(schema.tripLegs.id, leg.id));
+    }
+    legsDerived++;
+  }
+  return { legsDerived, legsTotal: legs.length };
 }
 
 export type CaptureStatus = 'ok' | 'partial' | 'empty' | 'failed';
@@ -60,7 +141,7 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
     if (!carId) { console.warn('[gps] capture: no carId for trip', tripId); return fail('no_car_id'); }
 
     const legs = await db.select({
-      origin: schema.tripLegs.origin, destination: schema.tripLegs.destination,
+      id: schema.tripLegs.id, origin: schema.tripLegs.origin, destination: schema.tripLegs.destination, km: schema.tripLegs.km,
     }).from(schema.tripLegs).where(eq(schema.tripLegs.tripId, tripId)).orderBy(schema.tripLegs.sequence);
     if (legs.length === 0) return { tripId, status: 'empty', pointCount: 0, legsDerived: 0, legsTotal: 0, errorKind: 'no_legs' };
 
@@ -82,29 +163,11 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
     const startedAt = firstPt?.time ? new Date(firstPt.time) : null;
     const endedAt = lastPt?.time ? new Date(lastPt.time) : null;
 
-    let fromIdx = 0;
-    let legsDerived = 0;
-    for (const leg of legs) {
-      const o = cleanPlaceName(leg.origin), d = cleanPlaceName(leg.destination);
-      if (!o || !d) continue;
-      const slice = sliceLegByPlaces(pts, fromIdx, await geocodePlace(leg.origin), await geocodePlace(leg.destination), MATCH_TOL_KM);
-      if (!slice) continue; // truck never passed near an endpoint → skip this leg
-      fromIdx = slice.endIdx;
-      const dp = dedupPoints(slice.points, 15);
-      if (dp.length < 2) continue;
-      const candKm = Math.round(trailDistanceKm(dp) * 100) / 100;
-      const straightKm = haversineKm(dp[0], dp[dp.length - 1]);
-      if (straightKm < 0.5 || candKm / straightKm > DETOUR_MAX) continue;
-      const poly = encodePolyline(dp);
-      await db.insert(schema.routePolylines).values({
-        originCleaned: o, destinationCleaned: d, encodedPolyline: poly, pointCount: dp.length,
-        distanceKm: candKm.toFixed(2), sourceTripId: tripId, routeId: trip.routeId,
-      }).onConflictDoUpdate({
-        target: [schema.routePolylines.originCleaned, schema.routePolylines.destinationCleaned],
-        set: { encodedPolyline: poly, pointCount: dp.length, distanceKm: candKm.toFixed(2), sourceTripId: tripId, routeId: trip.routeId, derivedAt: new Date() },
-      });
-      legsDerived++;
-    }
+    // Real GPS waypoints from the truck's actual stops (Bách Khoa), persisted
+    // as the trip's waypoint data (the map draws numbered markers from the
+    // per-leg routes below, not from these stops).
+    const sigStops = await fetchSignificantStops(carId, addDay(dep, -1), compDay);
+    const { legsDerived } = await deriveRoutesForTrip(tripId, trip.routeId, pts, legs);
 
     // Persist the trip's full trail + per-leg derivation outcome. status: 'ok' =
     // at least one route derived; 'partial' = trail stored but no leg matched.
@@ -117,6 +180,7 @@ export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult
       encodedPolyline: fullPoly,
       pointCount: pts.length,
       distanceKm: fullKm.toFixed(2),
+      stops: sigStops.length ? sigStops : null,
       startedAt,
       endedAt,
       status: legsDerived > 0 ? 'ok' : 'partial',

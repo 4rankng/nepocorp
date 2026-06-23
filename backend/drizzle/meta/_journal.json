@@ -477,6 +477,20 @@
       "when": 1782224438764,
       "tag": "0067_rich_luckman",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1782227363688,
+      "tag": "0068_trip_gps_stops",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1782315000000,
+      "tag": "0069_backfill_trip_leg_km",
+      "breakpoints": true
     }
   ]
 }

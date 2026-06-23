@@ -163,8 +163,8 @@ export function useLiveFleet(options?: { enabled?: boolean }) {
     queryKey: qk.liveFleet.all,
     queryFn: () => tripClient.getLiveFleet(),
     enabled: options?.enabled ?? true,
-    refetchInterval: 25_000,
-    staleTime: 20_000,
+    refetchInterval: 10_000,
+    staleTime: 0,
     refetchOnWindowFocus: true,
     retry: 1,
   });

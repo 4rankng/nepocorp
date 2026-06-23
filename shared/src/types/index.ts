@@ -325,6 +325,12 @@ export interface TripLeg {
   loadingType: LoadingType;
   calculatedLiters: string | null;
   polylinePath: string | null;
+  /** Geocoded/route-derived coordinate of this leg's origin stop, so the map can
+   *  place a numbered marker even when no captured route polyline exists.
+   *  Null when the place could not be resolved (route endpoint or geocode). */
+  originCoord?: { lat: number; lng: number } | null;
+  /** Coordinate of this leg's destination stop (same resolution strategy). */
+  destinationCoord?: { lat: number; lng: number } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -760,6 +766,15 @@ export interface TripInstruction {
   updatedAt: string;
 }
 
+/** A real GPS waypoint from the truck's Bách Khoa stop report — used to place
+ *  numbered map markers at actual driven stop coordinates. */
+export interface GpsStop {
+  lat: number;
+  lng: number;
+  address?: string | null;
+  startTime?: string | null;
+}
+
 export interface TripDetail extends Trip {
   legs: TripLeg[];
   driver?: Driver;
@@ -770,6 +785,11 @@ export interface TripDetail extends Trip {
   cargoType?: CargoType;
   fuelSupplier?: { id: number; name: string } | null;
   instructions?: TripInstruction | null;
+  /** The vehicle's full real GPS trail (Bách Khoa), captured at completion.
+   *  The complete driven path — drawn on the trip map as the real route.
+   *  `stops` are the truck's ordered significant stops (real GPS waypoints) so
+   *  the map can render numbered markers at every real stop 1..N. */
+  gpsTrail?: { encodedPolyline: string; distanceKm: number; pointCount: number; stops: GpsStop[] } | null;
 }
 
 export interface CreateTripRequest {

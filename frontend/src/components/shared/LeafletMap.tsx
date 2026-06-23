@@ -2,15 +2,18 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { decodePolyline } from '../../lib/maps';
 import { LIVE_STATUS_LABEL, liveMarkerIcon } from '../../lib/liveFleet';
-import type { LiveFleetStatus } from '@tingting/shared';
+import type { GpsStop, LiveFleetStatus } from '@tingting/shared';
 
 interface LeafletMapProps {
   polylinePath?: string | null;
-  legs?: Array<{ origin: string; destination: string; polylinePath?: string | null }> | null;
+  legs?: Array<{ origin: string; destination: string; polylinePath?: string | null; originCoord?: { lat: number; lng: number } | null; destinationCoord?: { lat: number; lng: number } | null }> | null;
   originName?: string;
   destinationName?: string;
   /** Live truck position to overlay on the route (trip-detail page). */
   livePosition?: { lat: number; lng: number; angle?: number; status: LiveFleetStatus; speed: number } | null;
+  /** The vehicle's full real GPS trail (Bách Khoa) — the complete driven path,
+   *  drawn as the real route with numbered markers at each real stop. */
+  gpsTrail?: { encodedPolyline: string; stops?: GpsStop[] } | null;
   height?: string | number;
   className?: string;
 }
@@ -21,6 +24,7 @@ export function LeafletMap({
   originName = 'Điểm đi',
   destinationName = 'Điểm đến',
   livePosition = null,
+  gpsTrail = null,
   height = '350px',
   className = '',
 }: LeafletMapProps) {
@@ -56,6 +60,15 @@ export function LeafletMap({
     layerGroup.clearLayers();
 
     const boundsLayers: L.Layer[] = [];
+
+    // Full real GPS trail (Bách Khoa) — the complete driven path. Drawn FIRST so
+    // the per-leg colored segments + numbered markers render on top of it.
+    if (gpsTrail?.encodedPolyline) {
+      const trailCoords = decodePolyline(gpsTrail.encodedPolyline);
+      if (trailCoords.length >= 2) {
+        boundsLayers.push(L.polyline(trailCoords, { color: '#0F172A', weight: 6, opacity: 0.5, lineJoin: 'round' }).addTo(layerGroup));
+      }
+    }
 
     const drawRoute = (
       polyline: string, color: string, startPopup: string, endPopup: string,
@@ -124,12 +137,53 @@ export function LeafletMap({
       return routePolyline;
     };
 
-    if (legs && legs.length > 0) {
-      // Alternate Colors: Green, Cyan, Blue, Purple
+    if (gpsTrail?.encodedPolyline && legs && legs.length > 0) {
+      // Trip-detail (trail mode): the full GPS trail IS the route (navy, drawn
+      // above). Place ONE numbered marker (1..N) at each leg's origin — the first
+      // point of its GPS-derived route when available, otherwise the geocoded
+      // originCoord, so EVERY leg is numbered even if its route wasn't captured.
       const colors = ['#10B981', '#06B6D4', '#3B82F6', '#8B5CF6'];
       legs.forEach((leg, index) => {
+        let coord: { lat: number; lng: number } | null = null;
         if (leg.polylinePath) {
-          const color = colors[index % colors.length];
+          const c = decodePolyline(leg.polylinePath);
+          if (c.length) coord = { lat: c[0][0], lng: c[0][1] };
+        }
+        coord = coord ?? leg.originCoord ?? null;
+        if (!coord) return;
+        const color = colors[index % colors.length];
+        const icon = L.divIcon({
+          className: 'custom-map-marker',
+          html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1;">${index + 1}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+        boundsLayers.push(
+          L.marker(coord, { icon, zIndexOffset: 600 })
+            .addTo(layerGroup)
+            .bindPopup(`<strong>Chặng ${index + 1}</strong><br/>${leg.origin} → ${leg.destination}`),
+        );
+      });
+      // Terminal stop: mark the final destination so the trip's end is visible.
+      const lastLeg = legs[legs.length - 1];
+      if (lastLeg?.destinationCoord) {
+        boundsLayers.push(
+          L.marker(lastLeg.destinationCoord, {
+            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:12px;height:12px;background:#EF4444;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(239,68,68,0.6);"></div>', iconSize: [12, 12], iconAnchor: [6, 6] }),
+          })
+            .addTo(layerGroup)
+            .bindPopup(`<strong>Đích đến:</strong> ${lastLeg.destination}`),
+        );
+      }
+    } else if (legs && legs.length > 0) {
+      // Route-config mode (no real trail): per-leg colored segments + numbered
+      // markers at each leg's polyline start. Legs without a captured route still
+      // get a numbered marker at their geocoded origin (no line — no fake route),
+      // so the stop sequence (1..N) stays complete. Alternate colors Green/Cyan/Blue/Purple.
+      const colors = ['#10B981', '#06B6D4', '#3B82F6', '#8B5CF6'];
+      legs.forEach((leg, index) => {
+        const color = colors[index % colors.length];
+        if (leg.polylinePath) {
           drawRoute(
             leg.polylinePath,
             color,
@@ -137,8 +191,31 @@ export function LeafletMap({
             `<strong>Chặng ${index + 1} đích đến:</strong> ${leg.destination}`,
             { startNumber: index + 1, withEnd: false },
           );
+        } else if (leg.originCoord) {
+          const icon = L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:1;">${index + 1}</div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+          });
+          boundsLayers.push(
+            L.marker(leg.originCoord, { icon, zIndexOffset: 600 })
+              .addTo(layerGroup)
+              .bindPopup(`<strong>Chặng ${index + 1}</strong><br/>${leg.origin} → ${leg.destination}`),
+          );
         }
       });
+      // Terminal stop marker (final destination) when resolvable.
+      const lastLeg = legs[legs.length - 1];
+      if (lastLeg?.destinationCoord) {
+        boundsLayers.push(
+          L.marker(lastLeg.destinationCoord, {
+            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:12px;height:12px;background:#EF4444;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(239,68,68,0.6);"></div>', iconSize: [12, 12], iconAnchor: [6, 6] }),
+          })
+            .addTo(layerGroup)
+            .bindPopup(`<strong>Đích đến:</strong> ${lastLeg.destination}`),
+        );
+      }
     } else if (polylinePath) {
       drawRoute(polylinePath, '#10B981', `<strong>Từ:</strong> ${originName}`, `<strong>Đến:</strong> ${destinationName}`);
     }
@@ -173,7 +250,7 @@ export function LeafletMap({
     // rebuilds it as a fresh object literal each render, which would otherwise
     // trigger clearLayers + redraw + fitBounds on every unrelated re-render.
   }, [
-    polylinePath, legs, originName, destinationName,
+    polylinePath, legs, originName, destinationName, gpsTrail?.encodedPolyline,
     livePosition?.lat, livePosition?.lng, livePosition?.angle,
     livePosition?.status, livePosition?.speed,
   ]);

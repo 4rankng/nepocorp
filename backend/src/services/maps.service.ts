@@ -3,21 +3,17 @@
  * + Google Places autocomplete. Extracted from routes/maps.ts.
  * Google Directions was retired — routes now come from real Bách Khoa GPS tracks.
  */
-import { config } from '../config';
-import { ApiError } from '../errors';
-import { resolveRoute } from './gps/route-capture';
+import { resolveRoute, decodePolyline } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
+import { searchPlaces, geocodePlace } from './osm';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface PlaceSuggestion {
   placeId: string;
   description: string;
-}
-
-interface GooglePlacePrediction {
-  place_id: string;
-  description: string;
+  lat: number;
+  lng: number;
 }
 
 export interface RouteSuggestion {
@@ -32,43 +28,13 @@ export interface DistanceResponse {
   selected: RouteSuggestion | null;
 }
 
-// (Google Directions integration retired — route + distance now come from
-//  route_polylines, captured from Bách Khoa GPS tracks. Google Places
-//  autocomplete below is retained.)
+// (Google Maps fully removed — route + distance come from Bách Khoa GPS tracks,
+//  and place autocomplete + geocoding come from OpenStreetMap / Nominatim.)
 
-// ── Places Autocomplete ────────────────────────────────────────────────────
+// ── Places Autocomplete (OpenStreetMap / Nominatim) ────────────────────────
 
-export async function getPlaceAutocomplete(query: string, sessionToken?: string): Promise<PlaceSuggestion[]> {
-  if (!config.googleMapsApiKey) {
-    throw new ApiError(503, 'Google Maps API key not configured');
-  }
-
-  const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json');
-  url.searchParams.set('input', query);
-  url.searchParams.set('key', config.googleMapsApiKey);
-  url.searchParams.set('components', 'country:vn');
-  url.searchParams.set('language', 'vi');
-
-  if (sessionToken) {
-    url.searchParams.set('sessiontoken', sessionToken);
-  }
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    console.error(`[maps] Places API returned ${response.status}`);
-    return [];
-  }
-
-  const data = await response.json() as { status: string; predictions?: GooglePlacePrediction[] };
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    console.error(`[maps] Places API status: ${data.status}`);
-    return [];
-  }
-
-  return (data.predictions || []).map(p => ({
-    placeId: p.place_id,
-    description: p.description,
-  }));
+export async function getPlaceAutocomplete(query: string, _sessionToken?: string): Promise<PlaceSuggestion[]> {
+  return searchPlaces(query, 8);
 }
 
 // ── Distance with cache ────────────────────────────────────────────────────
@@ -90,4 +56,62 @@ export async function getDistance(origin: string, destination: string): Promise<
     summary: '',
   };
   return { routes: [suggestion], selected: suggestion };
+}
+
+// ── Leg stop coordinates (for numbered map markers) ─────────────────────────
+
+export interface LegCoord {
+  originCoord: { lat: number; lng: number } | null;
+  destinationCoord: { lat: number; lng: number } | null;
+}
+
+/**
+ * Resolve origin/destination coordinates for each leg so the map can place a
+ * numbered marker at EVERY stop — even legs that have no captured route polyline
+ * (e.g. trip 76 legs 2-3). Free data first, geocode last:
+ *   1. Legs WITH a route_polyline: decode it (already oriented origin→destination
+ *      by resolveRoute) → origin = first point, destination = last point.
+ *   2. Remaining unique place-names: geocode via Nominatim (osm.geocodePlace —
+ *      cached + ≥1.1s-throttled, so policy-safe even for several novel places).
+ * Returns one {originCoord, destinationCoord} per input leg; null when a place
+ * genuinely can't be resolved (the frontend then just omits that marker).
+ */
+export async function resolveLegCoords(
+  legs: Array<{ origin: string; destination: string; polylinePath: string | null }>,
+): Promise<LegCoord[]> {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const placeCoords = new Map<string, { lat: number; lng: number }>();
+
+  // 1. Free coordinates from matched route polylines.
+  for (const leg of legs) {
+    if (!leg.polylinePath) continue;
+    const pts = decodePolyline(leg.polylinePath);
+    if (pts.length === 0) continue;
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    placeCoords.set(norm(leg.origin), { lat: first[0], lng: first[1] });
+    placeCoords.set(norm(leg.destination), { lat: last[0], lng: last[1] });
+  }
+
+  // 2. Geocode the remaining unique place-names (origins + destinations).
+  const unresolved: string[] = [];
+  const seen = new Set<string>();
+  for (const leg of legs) {
+    for (const place of [leg.origin, leg.destination]) {
+      const n = norm(place);
+      if (placeCoords.has(n) || seen.has(n)) continue;
+      seen.add(n);
+      unresolved.push(place);
+    }
+  }
+  for (const place of unresolved) {
+    const c = await geocodePlace(place); // [lat, lng] | null
+    if (c) placeCoords.set(norm(place), { lat: c[0], lng: c[1] });
+  }
+
+  // 3. Map back to per-leg coordinates.
+  return legs.map((leg) => ({
+    originCoord: placeCoords.get(norm(leg.origin)) ?? null,
+    destinationCoord: placeCoords.get(norm(leg.destination)) ?? null,
+  }));
 }
