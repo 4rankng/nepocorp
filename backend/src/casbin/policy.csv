@@ -47,6 +47,7 @@ p, ADMIN, salary, read
 p, ADMIN, salary, write
 p, MANAGER, salary, read
 p, MANAGER, salary, write
+p, MANAGER, gps-admin, write
 p, ACCOUNTANT, salary, read
 p, ACCOUNTANT, salary, write
 p, DRIVER, salary, read

@@ -26,7 +26,25 @@ function addDay(day: string, delta: number): string {
   return new Date(new Date(day + 'T00:00:00Z').getTime() + delta * 86400000).toISOString().slice(0, 10);
 }
 
-export async function captureTripGpsTrack(tripId: number): Promise<void> {
+export type CaptureStatus = 'ok' | 'partial' | 'empty' | 'failed';
+
+export interface CaptureResult {
+  tripId: number;
+  status: CaptureStatus;
+  pointCount: number;
+  legsDerived: number;
+  legsTotal: number;
+  errorKind?: string;
+}
+
+/**
+ * Derive + persist the real GPS trail/routes for one trip. Never throws — the
+ * completion hook calls it fire-and-forget; backfill aggregates the returned
+ * status. status: 'ok' (≥1 route derived), 'partial' (trail stored, no leg
+ * matched), 'empty' (no trail/legs), 'failed' (error).
+ */
+export async function captureTripGpsTrack(tripId: number): Promise<CaptureResult> {
+  const fail = (errorKind: string, legsTotal = 0): CaptureResult => ({ tripId, status: 'failed', pointCount: 0, legsDerived: 0, legsTotal, errorKind });
   try {
     const [trip] = await db.select({
       routeId: schema.trips.routeId, status: schema.trips.status, truckId: schema.trips.truckId,
@@ -35,22 +53,23 @@ export async function captureTripGpsTrack(tripId: number): Promise<void> {
     }).from(schema.trips)
       .innerJoin(schema.trucks, eq(schema.trips.truckId, schema.trucks.id))
       .where(eq(schema.trips.id, tripId)).limit(1);
-    if (!trip || trip.status === 'CANCELED') return;
+    if (!trip) return fail('not_found');
+    if (trip.status === 'CANCELED') return { tripId, status: 'empty', pointCount: 0, legsDerived: 0, legsTotal: 0, errorKind: 'canceled' };
 
     const carId = await resolveCarId(trip.plate);
-    if (!carId) { console.warn('[gps] capture: no carId for trip', tripId); return; }
+    if (!carId) { console.warn('[gps] capture: no carId for trip', tripId); return fail('no_car_id'); }
 
     const legs = await db.select({
       origin: schema.tripLegs.origin, destination: schema.tripLegs.destination,
     }).from(schema.tripLegs).where(eq(schema.tripLegs.tripId, tripId)).orderBy(schema.tripLegs.sequence);
-    if (legs.length === 0) return;
+    if (legs.length === 0) return { tripId, status: 'empty', pointCount: 0, legsDerived: 0, legsTotal: 0, errorKind: 'no_legs' };
 
     const dep = isoDay(trip.departureDate);
     const compDay = trip.completedAt ? isoDay(trip.completedAt) : dep;
     const journey = await getJourneyRange(carId, addDay(dep, -1), compDay);
     const pts: LngLat[] = [];
     for (const p of journey) if (p.lat != null && p.lng != null) pts.push([p.lat, p.lng]);
-    if (pts.length < 2) return;
+    if (pts.length < 2) return { tripId, status: 'empty', pointCount: pts.length, legsDerived: 0, legsTotal: legs.length, errorKind: 'no_points' };
 
     // Store the FULL lossless trail (GPS-route-DB decision #2: "store all") — the
     // raw ground truth, before per-leg slicing. Upsert on trip_id (idempotent;
@@ -120,7 +139,10 @@ export async function captureTripGpsTrack(tripId: number): Promise<void> {
       },
     });
     console.log('[gps] captured routes for trip', tripId, `(trail ${pts.length} pts, ${legsDerived}/${legs.length} legs)`);
+    return { tripId, status: legsDerived > 0 ? 'ok' : 'partial', pointCount: pts.length, legsDerived, legsTotal: legs.length };
   } catch (e: unknown) {
-    console.warn('[gps] captureTripGpsTrack failed', { tripId, err: (e as Error)?.message ?? e });
+    const msg = (e as Error)?.message ?? String(e);
+    console.warn('[gps] captureTripGpsTrack failed', { tripId, err: msg });
+    return fail(msg.slice(0, 30) || 'unknown');
   }
 }

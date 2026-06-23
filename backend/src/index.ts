@@ -19,6 +19,7 @@ import expenseRoutes from './routes/expense';
 import driverRoutes from './routes/driver';
 import forwarderRoutes from './routes/forwarder';
 import forwarderAdminRoutes from './routes/forwarder-admin';
+import adminGpsRoutes from './routes/admin-gps';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
@@ -80,6 +81,8 @@ app.use('/api/salary-periods', authMiddleware, casbinAuthz('config'), salaryPeri
 app.use('/api/driver/me', authMiddleware, casbinAuthz('driver_portal'), driverRoutes);
 app.use('/api/forwarder/me', authMiddleware, casbinAuthz('forwarder_portal'), forwarderRoutes);
 app.use('/api/forwarder-expenses', authMiddleware, casbinAuthz('financial'), forwarderAdminRoutes);
+// GPS route-DB admin (backfill + recapture) — MANAGER/ADMIN only (gps-admin action).
+app.use('/api/admin/gps', authMiddleware, casbinAuthz('gps-admin'), adminGpsRoutes);
 app.use('/api/maps', authMiddleware, casbinAuthz('maps'), mapsRoutes);
 app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);

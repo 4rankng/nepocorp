@@ -109,13 +109,12 @@ export function dedupPoints(pts: LngLat[], radiusM = 15): LngLat[] {
 }
 
 /**
- * Slice a leg's actual driven portion by matching the truck's nearest pass to
- * the ORIGIN and DESTINATION coordinates (ground-truth geocoded). Finds the
- * closest trail point to the origin (at/after `fromIdx`, within `tolKm`), then
- * the closest to the destination after that — the slice between them IS the A→B
- * leg, so its endpoints match the places by construction. Returns null when the
- * truck never passed within tolKm of either endpoint (segmentation can't be
- * trusted → caller falls back). `endIdx` lets the next leg continue from here.
+ * Slice a leg's actual driven portion by matching the truck's FIRST pass to the
+ * ORIGIN and DESTINATION coordinates (ground-truth geocoded), scanning FORWARD
+ * from `fromIdx`. Forward-order matching is essential for round trips: a global
+ * nearest-to-origin would match a LATER revisit (the return leg), leaving no
+ * trail after it for the destination. Returns null when the truck never passed
+ * within tolKm of either endpoint. `endIdx` lets the next leg continue from here.
  */
 export function sliceLegByPlaces(
   pts: LngLat[],
@@ -125,17 +124,17 @@ export function sliceLegByPlaces(
   tolKm = 5,
 ): { points: LngLat[]; endIdx: number } | null {
   if (!originCoord || !destCoord || pts.length < 2) return null;
-  let s = -1, sBest = Infinity;
+  // First trail point within tolKm of the origin (forward scan respects trip order).
+  let s = -1;
   for (let i = fromIdx; i < pts.length; i++) {
-    const d = haversineKm(pts[i], originCoord);
-    if (d < sBest) { sBest = d; s = i; }
+    if (haversineKm(pts[i], originCoord) <= tolKm) { s = i; break; }
   }
-  if (s < 0 || sBest > tolKm) return null;
-  let e = -1, eBest = Infinity;
+  if (s < 0) return null;
+  // First trail point within tolKm of the destination, at/after the origin pass.
+  let e = -1;
   for (let i = s; i < pts.length; i++) {
-    const d = haversineKm(pts[i], destCoord);
-    if (d < eBest) { eBest = d; e = i; }
+    if (haversineKm(pts[i], destCoord) <= tolKm) { e = i; break; }
   }
-  if (e < 0 || eBest > tolKm || e <= s) return null;
+  if (e < 0 || e <= s) return null;
   return { points: pts.slice(s, e + 1), endIdx: e };
 }
