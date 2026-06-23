@@ -245,10 +245,28 @@ export async function downloadCSV(
     });
   }
 
-  /* ─── Column widths ──────────────────────────────────────────────────── */
+  /* ─── Column widths (outlier-aware: compact, wrap the long tail) ──────── */
+  // Goal: every column is just wide enough for its longest value — UNLESS that
+  // longest value is an outlier vs the median, in which case the column is sized
+  // to the typical value and the long values wrap (and the row grows to fit).
+  const OUTLIER_MIN = 28;     // absolute floor before wrap is even considered
+  const OUTLIER_RATIO = 1.6;  // max must exceed median × this to count as an outlier
+  const WRAP_FLOOR = 14;      // a wrapping column is never narrower than this
+  const WRAP_CAP = 34;        // a wrapping column is never wider than this
+  const WRAP_PAD = 6;         // wrap width ≈ median + this (breathing room)
+  const NORMAL_PAD = 4;       // non-wrap width = maxLen + this (fits the longest value)
+  const minByType: Record<ColumnType, number> = {
+    text: 12, number: 12, km: 10, liters: 12, currency: 16, date: 13, decimal: 12,
+  };
+
+  const wrapCols = new Set<number>();
   worksheet.columns.forEach((col, i) => {
-    let maxLen = (headers[i] ?? '').length;
-    worksheet.getColumn(i + 1).eachCell({ includeEmpty: true }, cell => {
+    const headerLen = (headers[i] ?? '').length;
+    const lens: number[] = [];
+    // Measure the header + data cells only: skip the title band (rows 1-4) whose
+    // merged cells (e.g. a long subtitle) would otherwise skew the widths.
+    worksheet.getColumn(i + 1).eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+      if (rowNumber < headerRowIdx) return;
       const v = cell.value;
       if (v == null) return;
       let len = 0;
@@ -262,14 +280,58 @@ export async function downloadCSV(
       } else {
         len = String(v).length;
       }
-      if (len > maxLen) maxLen = len;
+      lens.push(len);
     });
     const type = columnTypes[i];
-    const minByType: Record<ColumnType, number> = {
-      text: 14, number: 12, km: 10, liters: 12, currency: 16, date: 13, decimal: 12,
-    };
-    col.width = Math.min(Math.max(maxLen + 4, minByType[type] ?? 12), 42);
+    const maxLen = lens.reduce((m, l) => (l > m ? l : m), headerLen);
+
+    // Only free-text columns wrap; numbers/dates are always single-line.
+    const sorted = [...lens].sort((a, b) => a - b);
+    const median = sorted.length
+      ? sorted.length <= 3
+        ? maxLen // tiny tables: keep it simple, never wrap
+        : sorted.length % 2
+          ? sorted[(sorted.length - 1) / 2]
+          : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+      : maxLen;
+    const isOutlier =
+      type === 'text' && maxLen >= OUTLIER_MIN && maxLen > median * OUTLIER_RATIO;
+
+    if (isOutlier) {
+      wrapCols.add(i);
+      col.width = Math.min(Math.max(Math.round(median) + WRAP_PAD, WRAP_FLOOR), WRAP_CAP);
+    } else {
+      col.width = Math.max(maxLen + NORMAL_PAD, minByType[type] ?? 12);
+    }
   });
+
+  /* ─── Wrap alignment + row heights (wrapped cells grow, not stretch) ──── */
+  const ROW_BASE = 22;
+  const LINE_HEIGHT = 14.5;
+  if (wrapCols.size > 0) {
+    rows.forEach((r, rowIdx) => {
+      const excelRow = worksheet.getRow(dataStartIdx + rowIdx);
+      let maxLines = 1;
+      wrapCols.forEach(colIdx => {
+        const text = r[colIdx] == null ? '' : String(r[colIdx]);
+        const colWidth = worksheet.getColumn(colIdx + 1).width ?? minByType.text;
+        const charsPerLine = Math.max(Math.floor(colWidth) - 1, 4);
+        const lines = text
+          .split('\n')
+          .reduce((sum, seg) => sum + Math.max(1, Math.ceil(seg.length / charsPerLine)), 0);
+        if (lines > maxLines) maxLines = lines;
+        // Wrapped columns read best top-aligned and left-justified.
+        excelRow.getCell(colIdx + 1).alignment = {
+          vertical: 'top',
+          horizontal: 'left',
+          wrapText: true,
+        };
+      });
+      if (maxLines > 1) {
+        excelRow.height = Math.max(ROW_BASE, maxLines * LINE_HEIGHT);
+      }
+    });
+  }
 
   /* ─── Print margins ──────────────────────────────────────────────────── */
   worksheet.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6, header: 0.3, footer: 0.3 };

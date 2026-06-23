@@ -10,6 +10,7 @@ import {
   getWorkDays,
   computeAllDriverSalaries,
   confirmSalary,
+  unconfirmSalary,
 } from '../services/attendance.service';
 import { resolveSalaryPeriodDateRange } from '../services/salary-period.service';
 import { db } from '../db';
@@ -91,6 +92,20 @@ router.post('/:driverId/:year/:month/confirm', requireRoles(Role.ADMIN, Role.ACC
   }
 
   const result = await confirmSalary(driverId, year, month, getUser(req).userId);
+  res.json(result);
+}));
+
+// POST /api/salary/:driverId/:year/:month/unconfirm — reopen confirmed salary period (CONFIRMED → DRAFT)
+router.post('/:driverId/:year/:month/unconfirm', requireRoles(Role.ADMIN, Role.ACCOUNTANT, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const driverId = parseInt(String(req.params.driverId), 10);
+  const year = parseInt(String(req.params.year), 10);
+  const month = parseInt(String(req.params.month), 10);
+
+  if (!driverId || !year || !month || month < 1 || month > 12) {
+    throw new ApiError(400, 'Tham số không hợp lệ');
+  }
+
+  const result = await unconfirmSalary(driverId, year, month);
   res.json(result);
 }));
 

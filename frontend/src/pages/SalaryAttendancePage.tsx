@@ -2,14 +2,14 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Loader2,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock, Wallet,
+  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock, Unlock, Wallet,
 } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { Money } from '../components/shared/Money';
-import { Panel, Modal } from '../components/UI';
+import { Panel, Modal, ConfirmDialog } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import {
-  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary,
+  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary,
 } from '../hooks/useSalaryQueries';
 import { usePostDriverPayout } from '../hooks/useFinancialQueries';
 import { useAuth } from '../hooks/useAuth';
@@ -412,6 +412,8 @@ export default function SalaryAttendancePage() {
   const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
   const confirmMutation = useConfirmSalary(selectedDriverId ?? 0, year, month);
+  const unconfirmMutation = useUnconfirmSalary(selectedDriverId ?? 0, year, month);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const { toast } = useToast();
 
   /* ── Driver payout modal (B1) — MANAGER/ACCOUNTANT only ── */
@@ -770,15 +772,32 @@ export default function SalaryAttendancePage() {
                     {/* Confirm button & status badge */}
                     <div style={{ marginTop: 12 }}>
                       {isConfirmed ? (
-                        <div className="salary-confirm-status">
-                          <CheckCircle2 size={16} />
-                          <span>Đã xác nhận</span>
-                          {salary.confirmedAt && (
-                            <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
-                              {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
-                            </span>
+                        <>
+                          <div className="salary-confirm-status">
+                            <CheckCircle2 size={16} />
+                            <span>Đã xác nhận</span>
+                            {salary.confirmedAt && (
+                              <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
+                                {new Date(salary.confirmedAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            )}
+                          </div>
+                          {canPostPayout && (
+                            <button
+                              className="btn btn--secondary btn--sm"
+                              style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                              disabled={unconfirmMutation.isPending}
+                              onClick={() => setUnlockOpen(true)}
+                            >
+                              {unconfirmMutation.isPending ? (
+                                <Loader2 size={14} className="spin" />
+                              ) : (
+                                <Unlock size={14} />
+                              )}
+                              Mở khóa để chỉnh sửa
+                            </button>
                           )}
-                        </div>
+                        </>
                       ) : (
                         <button
                           className="btn btn--primary btn--sm"
@@ -844,6 +863,25 @@ export default function SalaryAttendancePage() {
           drivers={drivers.map(d => ({ id: d.id, name: d.name }))}
         />
       )}
+      <ConfirmDialog
+        isOpen={unlockOpen}
+        variant="warning"
+        message="Mở khóa kỳ lương để chỉnh sửa ngày công? Sau khi chỉnh xong bạn cần xác nhận lại."
+        confirmLabel={unconfirmMutation.isPending ? 'Đang mở…' : 'Mở khóa'}
+        cancelLabel="Hủy"
+        onConfirm={() => {
+          unconfirmMutation.mutate(undefined, {
+            onSuccess: () => {
+              toast({ kind: 'success', message: 'Đã mở khóa kỳ lương. Bạn có thể chỉnh sửa ngày công.' });
+              setUnlockOpen(false);
+            },
+            onError: (err: unknown) => {
+              toast({ kind: 'error', message: (err as Error)?.message || 'Không thể mở khóa kỳ lương.' });
+            },
+          });
+        }}
+        onCancel={() => setUnlockOpen(false)}
+      />
     </div>
   );
 }

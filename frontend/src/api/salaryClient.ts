@@ -94,6 +94,12 @@ export const salaryClient = {
     api.post<{ confirmation: SalaryConfirmation; salary: AttendanceSalary }>(
       SALARY.CONFIRM(driverId, year, month), {}
     ),
+
+  // Reopen a confirmed salary period for editing (CONFIRMED → DRAFT)
+  unconfirmSalary: (driverId: number, year: number, month: number) =>
+    api.post<{ ok: true; salary: AttendanceSalary }>(
+      SALARY.UNCONFIRM(driverId, year, month), {}
+    ),
 };
 
 // ─── Salary Period Config ─────────────────────────────────────────

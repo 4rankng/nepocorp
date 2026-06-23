@@ -1,6 +1,6 @@
 import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
-  jsonb, numeric, date, pgEnum, uniqueIndex, index, check,
+  jsonb, numeric, date, pgEnum, uniqueIndex, index, check, doublePrecision,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -877,6 +877,29 @@ export const routePolylines = pgTable('route_polylines', {
 }, (table) => [
   uniqueIndex('route_polylines_uniq_idx').on(table.originCleaned, table.destinationCleaned),
 ]);
+
+/**
+ * One row per truck: the most recent GPS fix seen by getLiveFleet(). Upserted on
+ * every successful live-fleet poll so the dispatch map can fall back to the
+ * last-known position (shown offline) when the Bách Khoa provider is down or a
+ * specific truck is absent from its response — instead of the map going empty.
+ * truck_id is the PK (1:1 per truck); telemetry is double precision so values
+ * round-trip as native JS numbers (no numeric string juggling on readback).
+ */
+export const vehicleLastPositions = pgTable('vehicle_last_positions', {
+  truckId: integer('truck_id').references(() => trucks.id).primaryKey(),
+  deviceId: varchar('device_id', { length: 50 }),
+  lat: doublePrecision('lat'),
+  lng: doublePrecision('lng'),
+  speed: doublePrecision('speed'),
+  angle: doublePrecision('angle'),
+  address: text('address'),
+  ignitionOn: boolean('ignition_on').default(false).notNull(),
+  fuel: doublePrecision('fuel'),
+  gpsDriverName: varchar('gps_driver_name', { length: 255 }),
+  lastSeenAt: timestamp('last_seen_at'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 // ─── Notifications ──────────────────────────────────────────────────────────
 

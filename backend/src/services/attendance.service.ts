@@ -427,3 +427,31 @@ export async function confirmSalary(
   const salary = await computeSalary(driverId, year, month);
   return { confirmation, salary };
 }
+
+/**
+ * Reopen a confirmed salary period for editing (CONFIRMED → DRAFT).
+ * Removes the salary_confirmations row so work days become editable again.
+ * No-op if the period was never confirmed (computeSalary returns DRAFT).
+ */
+export async function unconfirmSalary(
+  driverId: number,
+  year: number,
+  month: number,
+) {
+  // Validate driver exists
+  const [driver] = await db.select({ id: s.drivers.id })
+    .from(s.drivers)
+    .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt)))
+    .limit(1);
+  if (!driver) throw new ApiError(404, 'Không tìm thấy lái xe');
+
+  await db.delete(s.salaryConfirmations)
+    .where(and(
+      eq(s.salaryConfirmations.driverId, driverId),
+      eq(s.salaryConfirmations.year, year),
+      eq(s.salaryConfirmations.month, month),
+    ));
+
+  const salary = await computeSalary(driverId, year, month);
+  return { ok: true as const, salary };
+}

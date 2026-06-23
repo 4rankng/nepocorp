@@ -7,9 +7,13 @@ import {
   isStale,
   deriveStatus,
   reviveDate,
+  composeFleet,
+  type ActiveTripRow,
+  type LastKnownPosition,
 } from '../services/gps.service';
 import { parseBachKhoaResponse } from '@tingting/shared';
 import type { BachKhoaVehicle } from '@tingting/shared';
+import type { NormalizedGpsVehicle } from '../services/gps/providers/types';
 
 const vehicle = (over: Partial<BachKhoaVehicle>): BachKhoaVehicle => ({
   Message: 'OK',
@@ -161,5 +165,146 @@ describe('parseBachKhoaResponse (shared)', () => {
     assert.deepEqual(parseBachKhoaResponse(null), []);
     assert.deepEqual(parseBachKhoaResponse(undefined), []);
     assert.deepEqual(parseBachKhoaResponse('a string'), []);
+  });
+});
+
+describe('composeFleet', () => {
+  const NOW = new Date('2026-06-23T12:00:00Z');
+
+  const trip = (over: Partial<ActiveTripRow> = {}): ActiveTripRow => ({
+    tripId: 1,
+    tripCode: 'TT-1',
+    truckId: 10,
+    licensePlate: '15C-136.31',
+    driverName: 'Nam',
+    customerName: 'ACME',
+    routeName: 'HN → HY',
+    ...over,
+  });
+
+  const gps = (over: Partial<NormalizedGpsVehicle> = {}): NormalizedGpsVehicle => ({
+    numberPlate: '15C-136.31',
+    deviceId: '602752',
+    driverName: 'Nam',
+    lat: 21.0,
+    lng: 105.8,
+    speed: 0,
+    angle: 0,
+    address: 'Hà Nội',
+    ignitionOn: true,
+    fuel: 50,
+    lastSeenAt: new Date('2026-06-23T11:59:30Z'),
+    lostSignal: false,
+    ...over,
+  });
+
+  const lastPos = (over: Partial<LastKnownPosition> = {}): LastKnownPosition => ({
+    truckId: 10,
+    deviceId: '602752',
+    lat: 21.0,
+    lng: 105.8,
+    speed: 12,
+    angle: 90,
+    address: 'Phú Thụy',
+    ignitionOn: true,
+    fuel: 48,
+    gpsDriverName: 'Nam',
+    lastSeenAt: new Date('2026-06-23T11:00:00Z'),
+    ...over,
+  });
+
+  test('live match is emitted with derived status + queued for persist', () => {
+    const res = composeFleet({
+      activeTrips: [trip()],
+      providerVehicles: [gps()],
+      lastKnown: new Map(),
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 1);
+    assert.equal(res.vehicles[0].truckId, 10);
+    assert.equal(res.vehicles[0].status, 'stopped'); // fresh fix, speed 0
+    assert.equal(res.error, undefined);
+    assert.equal(res.persist.length, 1);
+    assert.equal(res.persist[0].truckId, 10);
+    assert.equal(res.persist[0].lat, 21.0);
+  });
+
+  test('whole-provider failure falls back to last-known offline (no error)', () => {
+    const res = composeFleet({
+      activeTrips: [trip()],
+      providerVehicles: null,
+      providerError: 'GPS provider not configured',
+      lastKnown: new Map([[10, lastPos()]]),
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 1);
+    assert.equal(res.vehicles[0].status, 'offline');
+    assert.equal(res.vehicles[0].stale, true);
+    assert.equal(res.vehicles[0].address, 'Phú Thụy');
+    assert.equal(res.error, undefined); // map stays populated → no amber banner
+    assert.equal(res.persist.length, 0); // fallback never persists
+  });
+
+  test('partial provider response fills the missing truck from last-known', () => {
+    const trips = [
+      trip({ truckId: 10, licensePlate: '15C-136.31' }),
+      trip({ tripId: 2, tripCode: 'TT-2', truckId: 20, licensePlate: '15C-139.82' }),
+    ];
+    const lastKnown = new Map<number, LastKnownPosition>([[20, lastPos({ truckId: 20 })]]);
+    const res = composeFleet({
+      activeTrips: trips,
+      providerVehicles: [gps()], // only truck 10 reported live
+      lastKnown,
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 2);
+    const byTruck = new Map(res.vehicles.map((v) => [v.truckId, v]));
+    assert.equal(byTruck.get(10)!.status, 'stopped'); // live
+    assert.equal(byTruck.get(20)!.status, 'offline'); // fallback
+    assert.equal(res.persist.length, 1); // only the live fix is persisted
+    assert.equal(res.persist[0].truckId, 10);
+  });
+
+  test('provider down with no last-known for any active trip → error', () => {
+    const res = composeFleet({
+      activeTrips: [trip()],
+      providerVehicles: null,
+      providerError: 'GPS provider not configured',
+      lastKnown: new Map(), // nothing to fall back to
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 0);
+    assert.equal(res.error, 'GPS provider not configured');
+  });
+
+  test('no active trips + empty provider → no error (grey notice, not banner)', () => {
+    const res = composeFleet({
+      activeTrips: [],
+      providerVehicles: [],
+      lastKnown: new Map(),
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 0);
+    assert.equal(res.error, undefined);
+  });
+
+  test('stale live report renders offline but is still persisted', () => {
+    const staleFix = gps({ lastSeenAt: new Date('2026-06-23T11:00:00Z') }); // >10min old
+    const res = composeFleet({
+      activeTrips: [trip()],
+      providerVehicles: [staleFix],
+      lastKnown: new Map(),
+      legsByTrip: new Map(),
+      now: NOW,
+    });
+    assert.equal(res.vehicles.length, 1);
+    assert.equal(res.vehicles[0].status, 'offline'); // stale → offline
+    assert.equal(res.vehicles[0].stale, true);
+    assert.equal(res.persist.length, 1); // live fix still persisted
   });
 });

@@ -198,4 +198,5 @@ export const SALARY = {
   DRIVER_MONTH: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}`,
   WORK_DAYS: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}/workdays`,
   CONFIRM: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}/confirm`,
+  UNCONFIRM: (driverId: number, year: number, month: number) => `/salary/${driverId}/${year}/${month}/unconfirm`,
 } as const;

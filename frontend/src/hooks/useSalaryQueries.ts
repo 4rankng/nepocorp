@@ -95,3 +95,14 @@ export function useConfirmSalary(driverId: number, year: number, month: number) 
   });
 }
 
+export function useUnconfirmSalary(driverId: number, year: number, month: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => salaryClient.unconfirmSalary(driverId, year, month),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.salary.driverSalary(driverId, year, month) });
+      queryClient.invalidateQueries({ queryKey: qk.salary.list(year, month) });
+    },
+  });
+}
+
