@@ -62,7 +62,7 @@ export {
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
   driverPayoutSchema,
-  tireSchema, installTireSchema, disposeTireSchema, tirePositionSchema,
+  tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
 } from './schemas';

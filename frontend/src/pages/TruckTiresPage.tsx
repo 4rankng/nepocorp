@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowDownToLine, ArrowLeft, Check, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUpToLine, Check, MoreVertical, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
 import { TIRE_DISPOSAL_REASONS } from '@tingting/shared';
 import type { Tire, TirePosition } from '@tingting/shared';
 import type { Supplier } from '@tingting/shared';
@@ -30,7 +30,7 @@ import {
   type TirePatch,
 } from '../features/tires/tireUtils';
 import {
-  useTires, useCreateTire, useUpdateTire, useDeleteTire, useRemoveTire, useDisposeTire,
+  useTires, useCreateTire, useUpdateTire, useDeleteTire, useInstallTire, useRemoveTire, useDisposeTire, useTransferTire,
 } from '../hooks/useTireQueries';
 import {
   useAllSuppliers,
@@ -75,6 +75,19 @@ function daysInService(installedAt: string | null, removedAt: string | null): nu
   return daysBetween(installedAt, removedAt);
 }
 
+/** Positions already taken by an IN_USE tire on a given vehicle — fast feedback
+ *  in the install/transfer dialogs that mirrors the backend 409. Labels and the
+ *  stored `position` are the same cleaned string, so this compares apples-to-apples. */
+function occupiedPositionsOn(tires: Tire[], kind: VehicleKind, vehicleId: number): Set<string> {
+  const set = new Set<string>();
+  for (const t of tires) {
+    if (t.status !== 'IN_USE') continue;
+    const onThis = kind === 'truck' ? t.truckId === vehicleId : t.trailerId === vehicleId;
+    if (onThis && t.position) set.add(t.position);
+  }
+  return set;
+}
+
 /**
  * N1 — per-vehicle tire management page.
  *
@@ -93,7 +106,9 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
   const handleBack = () => navigate(routes.fleet);
   useBackShortcut(handleBack);
 
-  const { data: trucksDrivers } = useTrucksAndDrivers({ enabled: isTruck && Number.isFinite(vehicleId) });
+  // Trucks are fetched on trailer pages too so the transfer dialog can list
+  // every other vehicle as a move target (a mounted trailer tire can go to a truck).
+  const { data: trucksDrivers } = useTrucksAndDrivers({ enabled: Number.isFinite(vehicleId) });
   const { data: trailers = [] } = useTrailers();
   const truck = trucksDrivers?.trucks.find((t) => t.id === vehicleId);
   const trailer = trailers.find((t) => t.id === vehicleId);
@@ -123,20 +138,36 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
     };
   }, [allTires, tirePositions, vehicleId, isTruck]);
 
+  // Every other truck + trailer, by plate, as a transfer target (excluding the
+  // current vehicle so a tire can't be "moved" onto the vehicle it's already on).
+  const transferVehicles = useMemo(() => {
+    const truckOpts = (trucksDrivers?.trucks ?? [])
+      .filter((t) => !(isTruck && t.id === vehicleId))
+      .map((t) => ({ id: t.id, kind: 'truck' as const, label: t.licensePlate }));
+    const trailerOpts = trailers
+      .filter((t) => !(!isTruck && t.id === vehicleId))
+      .map((t) => ({ id: t.id, kind: 'trailer' as const, label: t.licensePlate }));
+    return [...truckOpts, ...trailerOpts];
+  }, [trucksDrivers, trailers, isTruck, vehicleId]);
+
   const createMut = useCreateTire();
   const updateMut = useUpdateTire();
   const deleteMut = useDeleteTire();
   const removeMut = useRemoveTire();
   const disposeMut = useDisposeTire();
+  const installMut = useInstallTire();
+  const transferMut = useTransferTire();
   const createPositionMut = useCreateTirePosition();
   const updatePositionMut = useUpdateTirePosition();
   const deletePositionMut = useDeleteTirePosition();
   const [editingTire, setEditingTire] = useState<Tire | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Tire | null>(null);
   const [unmountTarget, setUnmountTarget] = useState<Tire | null>(null);
+  const [installTarget, setInstallTarget] = useState<Tire | null>(null);
+  const [transferTarget, setTransferTarget] = useState<Tire | null>(null);
   const [positionManagerOpen, setPositionManagerOpen] = useState(false);
 
-  const busy = updateMut.isPending || deleteMut.isPending || removeMut.isPending || disposeMut.isPending;
+  const busy = updateMut.isPending || deleteMut.isPending || removeMut.isPending || disposeMut.isPending || installMut.isPending || transferMut.isPending;
   const positionBusy = createPositionMut.isPending || updatePositionMut.isPending || deletePositionMut.isPending;
 
   const syncUsedPositionsToCatalog = async () => {
@@ -244,6 +275,7 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             onedit={setEditingTire}
             ondelete={setDeleteTarget}
             onunmount={setUnmountTarget}
+            ontransfer={setTransferTarget}
           />
         </section>
       </div>
@@ -265,6 +297,7 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             busy={busy}
             onedit={setEditingTire}
             ondelete={setDeleteTarget}
+            oninstall={setInstallTarget}
           />
         </section>
       )}
@@ -305,6 +338,43 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           oncancel={() => setUnmountTarget(null)}
           onremove={async (id) => { await removeMut.mutateAsync(id); setUnmountTarget(null); }}
           ondispose={async (id, reason) => { await disposeMut.mutateAsync({ id, reason }); setUnmountTarget(null); }}
+        />
+      )}
+
+      {installTarget && (
+        <InstallTireDialog
+          key={installTarget.id}
+          tire={installTarget}
+          tires={allTires ?? []}
+          isTruck={isTruck}
+          vehicleId={vehicleId}
+          vehicleLabel={vehicleLabel}
+          positionLabels={positionLabels}
+          saving={installMut.isPending}
+          onManagePositions={openPositionManager}
+          oncancel={() => setInstallTarget(null)}
+          oninstall={async (payload) => {
+            await installMut.mutateAsync({ id: installTarget.id, ...payload });
+            setInstallTarget(null);
+          }}
+        />
+      )}
+
+      {transferTarget && (
+        <TransferTireDialog
+          key={transferTarget.id}
+          tire={transferTarget}
+          tires={allTires ?? []}
+          vehicles={transferVehicles}
+          currentVehicleLabel={vehicleLabel}
+          positionLabels={positionLabels}
+          saving={transferMut.isPending}
+          onManagePositions={openPositionManager}
+          oncancel={() => setTransferTarget(null)}
+          ontransfer={async (payload) => {
+            await transferMut.mutateAsync({ id: transferTarget.id, ...payload });
+            setTransferTarget(null);
+          }}
         />
       )}
 
@@ -1032,7 +1102,7 @@ function UnmountTireDialog({ tire, saving, oncancel, onremove, ondispose }: {
   );
 }
 
-function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelete, onunmount }: {
+function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelete, onunmount, oninstall, ontransfer }: {
   tires: Tire[];
   suppliers: Supplier[];
   loading: boolean;
@@ -1041,7 +1111,27 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
   onedit: (tire: Tire) => void;
   ondelete: (tire: Tire) => void;
   onunmount?: (tire: Tire) => void;
+  oninstall?: (tire: Tire) => void;
+  ontransfer?: (tire: Tire) => void;
 }) {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  // Only one row menu open at a time; close on outside click / Escape.
+  useEffect(() => {
+    if (openMenuId == null) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && !target.closest('.ttp-kebab-root')) setOpenMenuId(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenuId(null); };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [openMenuId]);
+
   if (loading) return <div className="ttp-empty">Đang tải…</div>;
   if (tires.length === 0) return <div className="ttp-empty">{emptyHint}</div>;
 
@@ -1073,7 +1163,7 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
           </tr>
         </thead>
         <tbody>
-          {tires.map((t) => {
+          {tires.map((t, index) => {
             const days = daysInService(t.installedAt, t.removedAt);
             const age = tireAgeDays(t.purchasedAt);
             return (
@@ -1098,46 +1188,296 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
                   {supplierName(suppliers, t.supplierId)}
                 </td>
                 <td className="ttp-row-actions" data-label="Thao tác">
-                  <div className="ttp-icon-actions">
-                    {onunmount && (
-                      <button
-                        type="button"
-                        className="ttp-icon-btn ttp-icon-btn--unmount"
-                        onClick={() => onunmount(t)}
-                        disabled={busy}
-                        title="Tháo lốp"
-                        aria-label={`Tháo lốp ${t.serial}`}
-                      >
-                        <ArrowDownToLine size={15} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="ttp-icon-btn"
-                      onClick={() => onedit(t)}
-                      disabled={busy}
-                      title="Sửa lốp"
-                      aria-label={`Sửa lốp ${t.serial}`}
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      className="ttp-icon-btn ttp-icon-btn--danger"
-                      onClick={() => ondelete(t)}
-                      disabled={busy}
-                      title="Xóa lốp"
-                      aria-label={`Xóa lốp ${t.serial}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  <TireRowActions
+                    tire={t}
+                    index={index}
+                    total={tires.length}
+                    open={openMenuId === t.id}
+                    onOpenChange={(o) => setOpenMenuId(o ? t.id : null)}
+                    busy={busy}
+                    oninstall={oninstall}
+                    ontransfer={ontransfer}
+                    onunmount={onunmount}
+                    onedit={onedit}
+                    ondelete={ondelete}
+                  />
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/**
+ * Per-row 3-dot (kebab) action menu. The trigger is icon-only (the universal
+ * "more" affordance); every item inside carries a Vietnamese label + icon so the
+ * action is unambiguous (q2). Items render only when their callback is present,
+ * so the same component serves mounted rows (transfer/unmount/edit/delete) and
+ * spare rows (install/edit/delete).
+ */
+function TireRowActions({ tire, index, total, open, onOpenChange, busy, oninstall, ontransfer, onunmount, onedit, ondelete }: {
+  tire: Tire;
+  index: number;
+  total: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  busy: boolean;
+  oninstall?: (tire: Tire) => void;
+  ontransfer?: (tire: Tire) => void;
+  onunmount?: (tire: Tire) => void;
+  onedit: (tire: Tire) => void;
+  ondelete: (tire: Tire) => void;
+}) {
+  const flipUp = total > 2 && index >= total - 2;
+  const run = (fn: (tire: Tire) => void) => {
+    onOpenChange(false);
+    fn(tire);
+  };
+
+  return (
+    <div className={`ttp-kebab-root ${open ? 'is-open' : ''}`}>
+      <button
+        type="button"
+        className={`ttp-kebab ${open ? 'is-active' : ''}`}
+        onClick={() => onOpenChange(!open)}
+        disabled={busy}
+        title="Thao tác"
+        aria-label={open ? 'Đóng menu thao tác' : `Thao tác với lốp ${tire.serial}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <MoreVertical size={15} />
+      </button>
+      {open && (
+        <div className={`ttp-kebab__menu ${flipUp ? 'ttp-kebab__menu--up' : ''}`} role="menu">
+          {oninstall && (
+            <button type="button" className="ttp-kebab__item" role="menuitem" disabled={busy} onClick={() => run(oninstall)}>
+              <ArrowUpToLine size={14} />
+              Lắp lốp lên xe
+            </button>
+          )}
+          {ontransfer && (
+            <button type="button" className="ttp-kebab__item" role="menuitem" disabled={busy} onClick={() => run(ontransfer)}>
+              <ArrowLeftRight size={14} />
+              Chuyển sang xe khác
+            </button>
+          )}
+          {onunmount && (
+            <button type="button" className="ttp-kebab__item" role="menuitem" disabled={busy} onClick={() => run(onunmount)}>
+              <ArrowDownToLine size={14} />
+              Tháo lốp
+            </button>
+          )}
+          <button type="button" className="ttp-kebab__item" role="menuitem" disabled={busy} onClick={() => run(onedit)}>
+            <Pencil size={14} />
+            Sửa
+          </button>
+          <button type="button" className="ttp-kebab__item ttp-kebab__item--danger" role="menuitem" disabled={busy} onClick={() => run(ondelete)}>
+            <Trash2 size={14} />
+            Xoá
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Mount a spare (IN_STOCK) tire onto this vehicle. Position optional but blocked
+ *  if another IN_USE tire already fills it. */
+function InstallTireDialog({ tire, tires, isTruck, vehicleId, vehicleLabel, positionLabels, saving, onManagePositions, oncancel, oninstall }: {
+  tire: Tire;
+  tires: Tire[];
+  isTruck: boolean;
+  vehicleId: number;
+  vehicleLabel: string;
+  positionLabels: string[];
+  saving: boolean;
+  onManagePositions: () => void;
+  oncancel: () => void;
+  oninstall: (payload: { truckId?: number | null; trailerId?: number | null; position?: string | null }) => Promise<unknown> | void;
+}) {
+  const [positionText, setPositionText] = useState(tire.position ?? '');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') oncancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [oncancel]);
+
+  const occupied = occupiedPositionsOn(tires, isTruck ? 'truck' : 'trailer', vehicleId);
+  const chosenRaw = positionPayloadFromLabel(positionText).position;
+  const positionTaken = !!chosenRaw && occupied.has(chosenRaw);
+
+  const confirm = async () => {
+    if (positionTaken) return;
+    setError('');
+    try {
+      await oninstall({
+        ...(isTruck ? { truckId: vehicleId } : { trailerId: vehicleId }),
+        position: chosenRaw,
+      });
+    } catch (err) {
+      setError(formatErrorMessage(err));
+    }
+  };
+
+  return (
+    <div className="ttp-dialog-overlay" role="presentation" onClick={oncancel}>
+      <div
+        className="ttp-dialog ttp-dialog--unmount"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ttp-install-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ttp-dialog-head">
+          <div>
+            <h2 id="ttp-install-title">Lắp lốp lên xe</h2>
+            <p>{tire.serial} · {vehicleLabel}</p>
+          </div>
+          <button type="button" className="ttp-dialog-close" onClick={oncancel} aria-label="Đóng">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="ttp-edit-form">
+          <div className="ttp-field ttp-field--serial">
+            <label>Vị trí lắp</label>
+            <PositionPicker
+              value={positionText}
+              labels={positionLabels}
+              onChange={setPositionText}
+              onManage={onManagePositions}
+            />
+            {positionTaken && (
+              <div className="ttp-position-error">Vị trí này trên {vehicleLabel} đã có lốp.</div>
+            )}
+            {error && <div className="ttp-position-error">{error}</div>}
+          </div>
+        </div>
+
+        <div className="ttp-dialog-actions">
+          <button type="button" className="btn btn--secondary" onClick={oncancel} disabled={saving}>
+            Hủy
+          </button>
+          <button type="button" className="btn btn--primary" onClick={() => { void confirm(); }} disabled={saving || positionTaken}>
+            {saving ? 'Đang xử lý…' : 'Lắp lốp'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Move a mounted tire to another vehicle in one step (preserves install date). */
+function TransferTireDialog({ tire, tires, vehicles, currentVehicleLabel, positionLabels, saving, onManagePositions, oncancel, ontransfer }: {
+  tire: Tire;
+  tires: Tire[];
+  vehicles: { id: number; kind: 'truck' | 'trailer'; label: string }[];
+  currentVehicleLabel: string;
+  positionLabels: string[];
+  saving: boolean;
+  onManagePositions: () => void;
+  oncancel: () => void;
+  ontransfer: (payload: { truckId?: number | null; trailerId?: number | null; position?: string | null }) => Promise<unknown> | void;
+}) {
+  const [targetKey, setTargetKey] = useState('');
+  const [positionText, setPositionText] = useState(tire.position ?? '');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') oncancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [oncancel]);
+
+  const target = vehicles.find((v) => `${v.kind}:${v.id}` === targetKey) ?? null;
+  const chosenRaw = positionPayloadFromLabel(positionText).position;
+  const positionTaken = target
+    ? !!chosenRaw && occupiedPositionsOn(tires, target.kind, target.id).has(chosenRaw)
+    : false;
+
+  const confirm = async () => {
+    if (!target || positionTaken) return;
+    setError('');
+    try {
+      await ontransfer({
+        ...(target.kind === 'truck' ? { truckId: target.id } : { trailerId: target.id }),
+        position: chosenRaw,
+      });
+    } catch (err) {
+      setError(formatErrorMessage(err));
+    }
+  };
+
+  return (
+    <div className="ttp-dialog-overlay" role="presentation" onClick={oncancel}>
+      <div
+        className="ttp-dialog ttp-dialog--unmount"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ttp-transfer-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ttp-dialog-head">
+          <div>
+            <h2 id="ttp-transfer-title">Chuyển lốp sang xe khác</h2>
+            <p>{tire.serial} · đang trên {currentVehicleLabel}</p>
+          </div>
+          <button type="button" className="ttp-dialog-close" onClick={oncancel} aria-label="Đóng">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="ttp-edit-form">
+          <div className="ttp-field">
+            <label>Phương tiện nhận lốp *</label>
+            <select className="input" value={targetKey} onChange={(e) => setTargetKey(e.target.value)}>
+              <option value="">— Chọn xe / rơ-moóc —</option>
+              <optgroup label="Xe đầu kéo">
+                {vehicles.filter((v) => v.kind === 'truck').map((v) => (
+                  <option key={`truck-${v.id}`} value={`truck:${v.id}`}>{v.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Rơ-moóc">
+                {vehicles.filter((v) => v.kind === 'trailer').map((v) => (
+                  <option key={`trailer-${v.id}`} value={`trailer:${v.id}`}>{v.label}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+          <div className="ttp-field">
+            <label>Vị trí lắp</label>
+            <PositionPicker
+              value={positionText}
+              labels={positionLabels}
+              onChange={setPositionText}
+              onManage={onManagePositions}
+            />
+          </div>
+          {(positionTaken || error) && (
+            <div className="ttp-field ttp-field--serial">
+              {positionTaken && target && (
+                <div className="ttp-position-error">Vị trí này trên {target.label} đã có lốp.</div>
+              )}
+              {error && <div className="ttp-position-error">{error}</div>}
+            </div>
+          )}
+        </div>
+
+        <div className="ttp-dialog-actions">
+          <button type="button" className="btn btn--secondary" onClick={oncancel} disabled={saving}>
+            Hủy
+          </button>
+          <button type="button" className="btn btn--primary" onClick={() => { void confirm(); }} disabled={saving || !target || positionTaken}>
+            {saving ? 'Đang xử lý…' : 'Chuyển lốp'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

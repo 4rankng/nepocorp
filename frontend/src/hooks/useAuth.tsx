@@ -79,6 +79,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // Idempotent: useAuthedQuery invokes logout() on any 401/403, so during a
+    // logout teardown several in-flight queries may race to log out again.
+    // Short-circuit once the cached user is already null to avoid redundant
+    // token clears / cache writes.
+    if (queryClient.getQueryData(qk.auth.me) === null) return;
     api.clearToken();
     queryClient.setQueryData(qk.auth.me, null);
   }, [queryClient]);

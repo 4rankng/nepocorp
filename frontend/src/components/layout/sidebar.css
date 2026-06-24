@@ -396,3 +396,29 @@
 .sidebar-user-dropdown-item--neutral:hover {
   background: rgba(0, 0, 0, 0.04);
 }
+
+/* ---- Collapsed-rail tooltip ------------------------------------------------
+ * Portal-rendered (see Sidebar.tsx) so it escapes the sidebar's overflow:hidden
+ * and the nav's overflow scroll. Shown only in icon-only (collapsed) mode, where
+ * the item labels are hidden and the native title attribute is too slow/unstyled.
+ */
+.rail-tooltip {
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: var(--z-tooltip);
+  background: var(--surface, #ffffff);
+  color: var(--ink, #1a1a2e);
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  animation: railTipIn 110ms ease-out;
+}
+@keyframes railTipIn {
+  from { opacity: 0; transform: translate(4px, -50%); }
+  to { opacity: 1; transform: translate(0, -50%); }
+}

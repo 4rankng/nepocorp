@@ -60,6 +60,20 @@ export function useInstallTire() {
   });
 }
 
+/** Move a mounted tire to another vehicle (atomic; preserves install date). */
+export function useTransferTire() {
+  const invalidate = useInvalidateTires();
+  return useMutation({
+    mutationFn: (args: { id: number; truckId?: number | null; trailerId?: number | null; position?: string | null }) =>
+      tireClient.transfer(args.id, {
+        truckId: args.truckId ?? null,
+        trailerId: args.trailerId ?? null,
+        position: args.position ?? null,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
 /** Remove a tire from its vehicle → IN_STOCK (spare). */
 export function useRemoveTire() {
   const invalidate = useInvalidateTires();

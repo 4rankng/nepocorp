@@ -366,6 +366,17 @@ export const installTireSchema = z.object({
   path: ['truckId'],
 });
 
+// Transfer a mounted tire to another vehicle (exactly one target required).
+// Mirrors installTireSchema; kept separate so messages + future divergence stay clear.
+export const transferTireSchema = z.object({
+  truckId: z.coerce.number().int().positive().optional().nullable(),
+  trailerId: z.coerce.number().int().positive().optional().nullable(),
+  position: z.string().trim().min(1).max(64).optional().nullable(),
+}).refine((d) => d.truckId || d.trailerId, {
+  message: 'Phải chọn xe đầu kéo hoặc rơ-moóc để chuyển lốp',
+  path: ['truckId'],
+});
+
 export const disposeTireSchema = z.object({
   reason: z.string().trim().min(1, 'Chọn lý do thanh lý').max(120),
 });

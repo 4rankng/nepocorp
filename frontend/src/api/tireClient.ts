@@ -45,6 +45,14 @@ export const tireClient = {
       position: target.position ?? null,
     }),
 
+  /** Move a mounted tire to another vehicle (atomic; preserves install date). */
+  transfer: (id: number, target: { truckId?: number | null; trailerId?: number | null; position?: string | null }) =>
+    api.post<Tire>(TIRES.TRANSFER(id), {
+      truckId: target.truckId ?? null,
+      trailerId: target.trailerId ?? null,
+      position: target.position ?? null,
+    }),
+
   /** Remove a tire from its vehicle back to the spare pool (IN_STOCK). */
   remove: (id: number) => api.post<Tire>(TIRES.REMOVE(id), {}),
 

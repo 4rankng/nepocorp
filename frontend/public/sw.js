@@ -8,7 +8,7 @@
 // To force every client onto a new SW after a breaking change, bump `CACHE`
 // (e.g. tingting-shell-v2); the activate step purges any older cache version.
 
-const CACHE = 'tingting-shell-v1';
+const CACHE = 'tingting-shell-v2';
 
 // Same-origin static asset extensions worth caching long-term.
 const ASSET_RE = /\.(?:js|mjs|css|woff2?|ttf|otf|png|jpe?g|gif|svg|avif|webp|ico)$/i;

@@ -12,7 +12,7 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
-  tireSchema, installTireSchema, disposeTireSchema, tirePositionSchema,
+  tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
@@ -21,7 +21,7 @@ import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelP
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
-import { installTire, removeTire, disposeTire, isHttpError } from '../services/tire.service';
+import { installTire, removeTire, disposeTire, transferTire, isHttpError } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -204,6 +204,24 @@ tireLifecycleRouter.post('/:id/dispose', requireRoles(Role.ADMIN, Role.MANAGER, 
   const data = disposeTireSchema.parse(req.body);
   try {
     const tire = await disposeTire(id, { reason: data.reason });
+    await cacheInvalidatePattern('catalogs:*');
+    res.json(tire);
+  } catch (e) {
+    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+
+tireLifecycleRouter.post('/:id/transfer', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+  const data = transferTireSchema.parse(req.body);
+  try {
+    const tire = await transferTire(id, {
+      truckId: data.truckId ?? null,
+      trailerId: data.trailerId ?? null,
+      position: data.position ?? null,
+    });
     await cacheInvalidatePattern('catalogs:*');
     res.json(tire);
   } catch (e) {

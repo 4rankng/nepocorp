@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronRight,
   ChevronDown,
@@ -43,6 +44,18 @@ function Sidebar({
 }: SidebarProps) {
   const animRef = useSidebarAnimations();
 
+  // Icon-only (collapsed) rail: show an instant styled tooltip on hover/focus.
+  // The native `title` attribute is slow (~1s) and unstyled, and the item labels
+  // are hidden when collapsed, so without this the icons are unlabeled. aria-label
+  // still carries the accessible name. Rendered into a portal so the tooltip
+  // escapes the sidebar's overflow:hidden and the nav's scroll container.
+  const [tip, setTip] = useState<{ label: string; top: number; left: number } | null>(null);
+  const showTip = (label: string, rect: DOMRect) => {
+    if (sidebarOpen) return; // only when collapsed to icons
+    setTip({ label, top: rect.top + rect.height / 2, left: rect.right + 10 });
+  };
+  const hideTip = () => setTip(null);
+
   const renderUngroupedItems = () => {
     const items = navItems.filter(i => !i.section);
     if (items.length === 0) return null;
@@ -55,9 +68,12 @@ function Sidebar({
           key={item.key}
           className={`sidebar-item ${isActive ? 'active' : ''}`}
           onClick={() => onNavigate(item.path)}
-          title={item.label}
           aria-label={item.label}
           aria-current={isActive ? 'page' : undefined}
+          onMouseEnter={(e) => showTip(item.label, e.currentTarget.getBoundingClientRect())}
+          onMouseLeave={hideTip}
+          onFocus={(e) => showTip(item.label, e.currentTarget.getBoundingClientRect())}
+          onBlur={hideTip}
         >
           <NavIcon item={item} />
           <span className="sidebar-item-label">{item.label}</span>
@@ -105,9 +121,12 @@ function Sidebar({
               key={item.key}
               className={`sidebar-item ${isActive ? 'active' : ''}`}
               onClick={() => onNavigate(item.path)}
-              title={item.label}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
+              onMouseEnter={(e) => showTip(item.label, e.currentTarget.getBoundingClientRect())}
+              onMouseLeave={hideTip}
+              onFocus={(e) => showTip(item.label, e.currentTarget.getBoundingClientRect())}
+              onBlur={hideTip}
             >
               <NavIcon item={item} />
               <span className="sidebar-item-label">{item.label}</span>
@@ -211,6 +230,13 @@ function Sidebar({
           )}
         </div>
       </aside>
+      {tip &&
+        createPortal(
+          <div className="rail-tooltip" role="tooltip" style={{ top: tip.top, left: tip.left }}>
+            {tip.label}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

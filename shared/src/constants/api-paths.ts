@@ -99,6 +99,7 @@ export const TIRES = {
   INSTALL: (id: number) => `/fleet/tires/${id}/install`,
   REMOVE: (id: number) => `/fleet/tires/${id}/remove`,
   DISPOSE: (id: number) => `/fleet/tires/${id}/dispose`,
+  TRANSFER: (id: number) => `/fleet/tires/${id}/transfer`,
 } as const;
 
 // ─── Financial ──────────────────────────────────────────────────────────────────

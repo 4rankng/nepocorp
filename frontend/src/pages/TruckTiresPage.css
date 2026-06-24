@@ -458,6 +458,98 @@
   background: rgba(217, 119, 6, 0.07);
 }
 
+/* ─── Row kebab (3-dot) action menu ──────────────────────────────────────────
+   The trigger is icon-only (universal "more" affordance); each item inside
+   carries a Vietnamese label + icon so the action is unambiguous (q2). */
+.ttp-kebab-root {
+  position: relative;
+  display: inline-flex;
+}
+
+.ttp-kebab {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--bg-1, #fff);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ttp-kebab:hover:not(:disabled),
+.ttp-kebab.is-active {
+  color: var(--fg-1);
+  border-color: var(--border-3, var(--border-2));
+  background: var(--bg-2, #f8f9fa);
+}
+
+.ttp-kebab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ttp-kebab__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 60;
+  min-width: 188px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--line, var(--border-2));
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  box-shadow: 0 18px 46px -24px rgba(9, 9, 11, 0.36), 0 0 0 1px rgba(9, 9, 11, 0.03);
+}
+
+/* Flip above for the last couple of rows so the menu never clips off-card. */
+.ttp-kebab__menu--up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.ttp-kebab__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink, var(--fg-1));
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.ttp-kebab__item:hover:not(:disabled) {
+  background: var(--bg-2, #f5f7f6);
+  color: var(--fg-1);
+}
+
+.ttp-kebab__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ttp-kebab__item--danger {
+  color: #B42318;
+}
+
+.ttp-kebab__item--danger:hover:not(:disabled) {
+  background: rgba(180, 35, 24, 0.08);
+  color: #B42318;
+}
+
 .ttp-dialog-overlay {
   position: fixed;
   inset: 0;
