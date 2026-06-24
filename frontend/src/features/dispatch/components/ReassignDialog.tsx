@@ -48,7 +48,7 @@ export function ReassignDialog({
             }
             disabled={reassignState.loading}
           >
-            <option value="">Chọn xe đầu</option>
+            <option value="">Chọn xe đầu kéo</option>
             {trucks
               .filter((t) => t.status !== 'MAINTENANCE')
               .map((t) => (

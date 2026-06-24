@@ -112,8 +112,8 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
           {form.carrierType === 'OWN' && (
             <>
-              <Field label="Xe đầu" required>
-                {sel(form.truckId, form.setTruckId, props.trucks, 'Chọn xe đầu', 'truckId')}
+              <Field label="Xe đầu kéo" required>
+                {sel(form.truckId, form.setTruckId, props.trucks, 'Chọn xe đầu kéo', 'truckId')}
               </Field>
               <Field label="Loại rơ moóc" required>
                 {selStatic(form.trailerType, form.setTrailerType, props.trailerTypes, 'Chọn loại rơ moóc', 'trailerType')}

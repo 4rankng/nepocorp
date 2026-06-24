@@ -212,14 +212,14 @@ export default function TripEditPage() {
                 {form.carrierType === 'OWN' && (
                   <div className="tc-field-row tc-field-row--3" style={{ marginTop: 14 }}>
                     <div className="tc-field">
-                      <label className="tc-field-label">Xe đầu <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                      <label className="tc-field-label">Xe đầu kéo <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
                       <select
                         id="truckId"
                         className="input"
                         value={form.truckId}
                         onChange={(e) => form.setTruckId(e.target.value)}
                       >
-                        <option value="">-- Chọn xe đầu --</option>
+                        <option value="">-- Chọn xe đầu kéo --</option>
                         {editOptions.trucks.map((t) => (
                           <option key={t.id} value={t.id}>
                             {t.label}

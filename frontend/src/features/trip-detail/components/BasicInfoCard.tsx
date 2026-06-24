@@ -9,7 +9,7 @@ interface BasicInfoCardProps {
 
 export function BasicInfoCard({ trip }: BasicInfoCardProps) {
   const rows = [
-    { icon: <Truck size={17} />, label: 'Xe đầu', value: trip.truck?.licensePlate ?? '—', mono: true },
+    { icon: <Truck size={17} />, label: 'Xe đầu kéo', value: trip.truck?.licensePlate ?? '—', mono: true },
     { icon: <User size={17} />, label: 'Lái xe', value: trip.driver?.name ?? '—' },
     {
       icon: (
