@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, UserCheck, BarChart3, Lock, Plus, Download, Search,
-  MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
+  MoreHorizontal, Pencil, Trash2, X, Save, Loader2, Truck,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
@@ -414,6 +414,12 @@ export default function CustomersPage() {
                         2 chiều
                       </span>
                     )}
+                    {/* TODO: extract a shared <Badge> component for "2 chiều" / "Xe ngoài" */}
+                    {c.isCarrier && (
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <Truck size={11} aria-hidden="true" /> Xe ngoài
+                      </span>
+                    )}
                   </span>
                   <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
                     {STATUS_LABELS[c.status] || c.status}
@@ -512,6 +518,11 @@ export default function CustomersPage() {
                         {c.linkedSupplierId && (
                           <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1 }}>
                             2 chiều
+                          </span>
+                        )}
+                        {c.isCarrier && (
+                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                            <Truck size={11} aria-hidden="true" /> Xe ngoài
                           </span>
                         )}
                       </div>

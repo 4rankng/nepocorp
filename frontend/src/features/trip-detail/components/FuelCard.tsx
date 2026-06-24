@@ -21,10 +21,17 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
 
   // Effective price applied to this trip: the per-trip pump price when one was
-  // recorded, else the config snapshot. Mirrors the voucher's effectiveFuelPrice
-  // so the detail card and the phiếu bốc dầu always agree.
+  // recorded, else the trip's frozen config snapshot (fuelPriceApplied), else
+  // the live config for legacy trips that never snapshotted. Falling back to the
+  // snapshot — not the live config — keeps this card in lock-step with the phiếu
+  // bốc dầu, whose "Giá áp dụng" reads that same snapshot. Using the live config
+  // here would make the card and voucher disagree whenever the global fuel price
+  // is changed after the trip was created.
   const actualPrice = trip.fuelActualUnitPrice != null ? Number(trip.fuelActualUnitPrice) : 0;
-  const effectiveFuelPrice = actualPrice > 0 ? actualPrice : fuelPriceConfig;
+  const snapshotPrice = trip.fuelPriceApplied != null ? Number(trip.fuelPriceApplied) : null;
+  const effectiveFuelPrice = actualPrice > 0
+    ? actualPrice
+    : (snapshotPrice != null ? snapshotPrice : fuelPriceConfig);
 
   const handlePrintVoucher = async () => {
     // Open window synchronously before await to avoid popup blocker

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
-import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save } from 'lucide-react';
+import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
@@ -251,7 +251,14 @@ export default function DebtDetailPage() {
         </button>
         <div className="dd-avatar">{initials}</div>
         <div className="dd-meta">
-          <h1>{customer.name}</h1>
+          <div className="dd-name-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h1>{customer.name}</h1>
+            {customer.isCarrier && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 6px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <Truck size={12} aria-hidden="true" /> Xe ngoài
+              </span>
+            )}
+          </div>
           <div className="dd-sub">
             {customer.contactInfo && (
               <span>

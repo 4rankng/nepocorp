@@ -925,7 +925,7 @@ export interface UnpaidTrip {
 }
 
 export interface CustomerStatement {
-  customer: Pick<Customer, 'id' | 'name' | 'contactInfo'> & { debitNoteMode?: string | null };
+  customer: Pick<Customer, 'id' | 'name' | 'contactInfo' | 'isCarrier'> & { debitNoteMode?: string | null };
   ledgerRows: LedgerEntry[];
   agingBuckets: AgingBucket[];
   totalOutstanding: number;

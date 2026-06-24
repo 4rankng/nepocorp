@@ -13,7 +13,7 @@ type LedgerRow = typeof s.ledger.$inferSelect;
 type EnrichedLedgerRow = LedgerRow & { routeName?: string | null; containerNumbers?: string[] };
 
 export interface CustomerStatementData {
-  customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null };
+  customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
@@ -208,7 +208,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return {
-    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY' },
+    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
     ledgerRows: enrichedLedgerRows,
     totalOutstanding,
     unpaidTrips,
