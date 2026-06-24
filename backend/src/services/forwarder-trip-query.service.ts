@@ -41,7 +41,7 @@ export async function getForwarderTrips(
   if (filters?.search) {
     const term = `%${filters.search.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
     conditions.push(or(
-      ilike(s.customers.name, term),
+      sql`unaccent(${s.customers.name}) ILIKE unaccent(${term})`,
       sql`EXISTS (
         SELECT 1 FROM trip_containers tc
         WHERE tc.trip_id = ${s.trips.id} AND tc.container_number ILIKE ${term}

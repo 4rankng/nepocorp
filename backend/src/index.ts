@@ -31,6 +31,14 @@ await initNotificationService();
 await initPushService();
 await initEnforcer();
 
+// Enable unaccent extension
+try {
+  await dbClient`CREATE EXTENSION IF NOT EXISTS unaccent;`;
+  console.log('PostgreSQL unaccent extension initialized successfully.');
+} catch (e) {
+  console.error('Failed to initialize unaccent extension:', e);
+}
+
 const app = express();
 
 // Honour X-Forwarded-For from the reverse proxy in front of us (nginx in

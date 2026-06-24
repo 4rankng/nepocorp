@@ -58,7 +58,7 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
       buildTripCode(t),
       t.customer?.name ?? '',
       t.route?.name ?? '',
-      t.truck?.licensePlate ?? '',
+      t.carrierType === 'EXTERNAL' ? (t.externalPlateNumber ?? 'Xe ngoài') : (t.truck?.licensePlate ?? ''),
       t.departureDate ?? '',
       getTripDistance(t) || '',
       typeCodes,

@@ -326,6 +326,15 @@ export async function updateTripFigures(
     expectedVersion?: number;
     userId?: number;
     routeId?: number;
+    carrierType?: 'OWN' | 'EXTERNAL';
+    externalCarrierId?: number | null;
+    externalFreightCost?: number | null;
+    externalPlateNumber?: string | null;
+    externalDriverName?: string | null;
+    externalDriverPhone?: string | null;
+    truckId?: number | null;
+    driverId?: number | null;
+    trailerType?: string | null;
   },
 ) {
   // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors
@@ -353,6 +362,8 @@ export async function updateTripFigures(
     let roadAllowanceBaseApplied = Number(trip.roadAllowanceBaseApplied || 0);
     let route = null;
 
+    const finalTrailerType = data.trailerType !== undefined ? data.trailerType : trip.trailerType;
+
     if (data.routeId !== undefined && data.routeId !== trip.routeId) {
       finalRouteId = data.routeId;
       const [newRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, finalRouteId)).limit(1);
@@ -361,11 +372,11 @@ export async function updateTripFigures(
         fuelFixedAllowanceApplied = Number(newRoute.fixedFuelAllowance || 0);
       }
 
-      if (trip.trailerType) {
+      if (finalTrailerType) {
         const [allowance] = await tx.select().from(s.roadAllowances).where(
           and(
             eq(s.roadAllowances.routeId, finalRouteId),
-            eq(s.roadAllowances.trailerType, trip.trailerType),
+            eq(s.roadAllowances.trailerType, finalTrailerType as '20FT' | '40FT'),
             isNull(s.roadAllowances.deletedAt)
           )
         ).limit(1);
@@ -374,6 +385,21 @@ export async function updateTripFigures(
     } else {
       const [existingRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
       route = existingRoute;
+
+      if (data.trailerType !== undefined && data.trailerType !== trip.trailerType) {
+        if (finalTrailerType) {
+          const [allowance] = await tx.select().from(s.roadAllowances).where(
+            and(
+              eq(s.roadAllowances.routeId, finalRouteId),
+              eq(s.roadAllowances.trailerType, finalTrailerType as '20FT' | '40FT'),
+              isNull(s.roadAllowances.deletedAt)
+            )
+          ).limit(1);
+          roadAllowanceBaseApplied = allowance ? Number(allowance.baseAmount) : 0;
+        } else {
+          roadAllowanceBaseApplied = 0;
+        }
+      }
     }
 
     // 3. Resolve snapshotted rates from trip row (set at creation time).
@@ -544,8 +570,8 @@ export async function updateTripFigures(
       vehicleShiftAllowance,
       roadAllowanceOverride: data.roadAllowanceOverride ?? null,
       vatRate: Number(trip.vatRate || 0),
-      carrierType: (trip.carrierType as 'OWN' | 'EXTERNAL') ?? 'OWN',
-      externalFreightCost: Number(trip.externalFreightCost || 0),
+      carrierType: (data.carrierType !== undefined ? data.carrierType : trip.carrierType) as 'OWN' | 'EXTERNAL',
+      externalFreightCost: Number(data.externalFreightCost !== undefined ? (data.externalFreightCost ?? 0) : (trip.externalFreightCost ?? 0)),
       ancillaryFees: tripFees.map(f => ({
         buyAmount: Number(f.buyAmount || 0),
         sellAmount: Number(f.sellAmount || 0),
@@ -623,6 +649,15 @@ export async function updateTripFigures(
       revenueOverriddenBy,
       revenueOverriddenAt,
       notes: data.notes ?? null,
+      carrierType: data.carrierType !== undefined ? data.carrierType : trip.carrierType,
+      externalCarrierId: data.externalCarrierId !== undefined ? data.externalCarrierId : trip.externalCarrierId,
+      externalFreightCost: data.externalFreightCost !== undefined ? (data.externalFreightCost != null ? String(data.externalFreightCost) : null) : trip.externalFreightCost,
+      externalPlateNumber: data.externalPlateNumber !== undefined ? data.externalPlateNumber : trip.externalPlateNumber,
+      externalDriverName: data.externalDriverName !== undefined ? data.externalDriverName : trip.externalDriverName,
+      externalDriverPhone: data.externalDriverPhone !== undefined ? data.externalDriverPhone : trip.externalDriverPhone,
+      truckId: data.truckId !== undefined ? data.truckId : trip.truckId,
+      driverId: data.driverId !== undefined ? data.driverId : trip.driverId,
+      trailerType: data.trailerType !== undefined ? (data.trailerType as '20FT' | '40FT' | null) : trip.trailerType,
       updatedAt: new Date(),
     }).where(and(eq(s.trips.id, tripId), eq(s.trips.version, trip.version))).returning();
 
@@ -735,32 +770,43 @@ export async function updateDepartureDate(
 
 // ─── reassignTrip ───────────────────────────────────────────────────────────
 
-export async function reassignTrip(tripId: number, data: { truckId: number; driverId: number }) {
+export async function reassignTrip(tripId: number, data: { carrierType?: 'OWN' | 'EXTERNAL'; truckId?: number | null; driverId?: number | null; externalCarrierId?: number | null; externalPlateNumber?: string | null; externalDriverName?: string | null; externalDriverPhone?: string | null; }) {
   return await db.transaction(async (tx) => {
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
     if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi lái xe/xe cho chuyến chưa xuất phát');
 
-    // Validate truck/driver exist before attempting the update — otherwise the
-    // raw postgres FK constraint error ("insert or update on table trips
-    // violates foreign key constraint trips_truck_id_trucks_id_fk") leaks into
-    // the UI as an unfriendly red banner. Catch the bad id at the API edge.
-    const [newTruck] = await tx.select({ id: s.trucks.id, trailerType: s.trucks.trailerType, currentTrailerId: s.trucks.currentTrailerId }).from(s.trucks)
-      .where(and(eq(s.trucks.id, data.truckId), isNull(s.trucks.deletedAt))).limit(1);
-    if (!newTruck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
-    const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
-      .where(and(eq(s.drivers.id, data.driverId), isNull(s.drivers.deletedAt))).limit(1);
-    if (!driver) throw new ApiError(400, 'Lái xe không tồn tại hoặc đã bị xóa');
+    const carrierType = data.carrierType || 'OWN';
+    let trailerId = trip.trailerId;
+    let trailerType = trip.trailerType;
 
-    const resolved = await resolveTrailer(tx, newTruck.currentTrailerId);
-    const trailerId = resolved.trailerId;
-    const trailerType = (resolved.trailerType || newTruck.trailerType || trip.trailerType || '40FT') as '20FT' | '40FT';
+    if (carrierType === 'OWN') {
+      const [newTruck] = await tx.select({ id: s.trucks.id, trailerType: s.trucks.trailerType, currentTrailerId: s.trucks.currentTrailerId }).from(s.trucks)
+        .where(and(eq(s.trucks.id, data.truckId!), isNull(s.trucks.deletedAt))).limit(1);
+      if (!newTruck) throw new ApiError(400, 'Xe đầu kéo không tồn tại hoặc đã bị xóa');
+      const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
+        .where(and(eq(s.drivers.id, data.driverId!), isNull(s.drivers.deletedAt))).limit(1);
+      if (!driver) throw new ApiError(400, 'Lái xe không tồn tại hoặc đã bị xóa');
+
+      const resolved = await resolveTrailer(tx, newTruck.currentTrailerId);
+      trailerId = resolved.trailerId;
+      trailerType = (resolved.trailerType || newTruck.trailerType || trip.trailerType || '40FT') as '20FT' | '40FT';
+    } else {
+      trailerId = null;
+      trailerType = null;
+    }
 
     const [updated] = await tx.update(s.trips).set({
-      truckId: data.truckId,
-      driverId: data.driverId,
+      carrierType,
+      truckId: carrierType === 'OWN' ? data.truckId! : null,
+      driverId: carrierType === 'OWN' ? data.driverId! : null,
       trailerId,
       trailerType,
+      externalCarrierId: carrierType === 'EXTERNAL' && data.externalCarrierId ? data.externalCarrierId : null,
+      externalPlateNumber: carrierType === 'EXTERNAL' && data.externalPlateNumber ? data.externalPlateNumber : null,
+      externalDriverName: carrierType === 'EXTERNAL' && data.externalDriverName ? data.externalDriverName : null,
+      externalDriverPhone: carrierType === 'EXTERNAL' && data.externalDriverPhone ? data.externalDriverPhone : null,
+      version: sql`${s.trips.version} + 1`,
       updatedAt: new Date(),
     }).where(eq(s.trips.id, tripId)).returning();
 

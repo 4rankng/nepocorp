@@ -47,8 +47,13 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   });
   const reassignTrucks = trucksDriversData?.trucks ?? [];
   const reassignDrivers = trucksDriversData?.drivers ?? [];
+  const [reassignCarrierType, setReassignCarrierType] = useState<'OWN' | 'EXTERNAL'>('OWN');
   const [reassignTruckId, setReassignTruckId] = useState('');
   const [reassignDriverId, setReassignDriverId] = useState('');
+  const [reassignExternalCarrierId, setReassignExternalCarrierId] = useState('');
+  const [reassignExternalPlateNumber, setReassignExternalPlateNumber] = useState('');
+  const [reassignExternalDriverName, setReassignExternalDriverName] = useState('');
+  const [reassignExternalDriverPhone, setReassignExternalDriverPhone] = useState('');
   const [reassignLoading, setReassignLoading] = useState(false);
   const [reassignError, setReassignError] = useState('');
 
@@ -59,12 +64,19 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const [adjustSubmitting, setAdjustSubmitting] = useState(false);
   const [adjustError, setAdjustError] = useState('');
 
+  const [cancelLoading, setCancelLoading] = useState(false);
+
   const ui: TripUIState = {
     actionLoading,
     actionError,
     showReassign,
+    reassignCarrierType,
     reassignTruckId,
     reassignDriverId,
+    reassignExternalCarrierId,
+    reassignExternalPlateNumber,
+    reassignExternalDriverName,
+    reassignExternalDriverPhone,
     reassignLoading,
     reassignError,
     showAdjust,
@@ -272,19 +284,34 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
 
   const openReassign = () => {
     setReassignError('');
+    setReassignCarrierType(trip?.carrierType || 'OWN');
     setReassignTruckId(String(trip?.truckId ?? ''));
     setReassignDriverId(String(trip?.driverId ?? ''));
+    setReassignExternalCarrierId(String(trip?.externalCarrierId ?? ''));
+    setReassignExternalPlateNumber(trip?.externalPlateNumber ?? '');
+    setReassignExternalDriverName(trip?.externalDriverName ?? '');
+    setReassignExternalDriverPhone(trip?.externalDriverPhone ?? '');
     setShowReassign(true);
   };
 
   const handleReassign = async () => {
-    if (!id || !reassignTruckId || !reassignDriverId) return;
+    if (!id) return;
+    if (reassignCarrierType === 'OWN') {
+      if (!reassignTruckId || !reassignDriverId) return;
+    } else {
+      if (!reassignExternalCarrierId && !reassignExternalPlateNumber) return;
+    }
     setReassignLoading(true);
     setReassignError('');
     try {
       await api.patch(`/trips/${id}/reassign`, {
-        truckId: Number(reassignTruckId),
-        driverId: Number(reassignDriverId),
+        carrierType: reassignCarrierType,
+        truckId: reassignTruckId ? Number(reassignTruckId) : null,
+        driverId: reassignDriverId ? Number(reassignDriverId) : null,
+        externalCarrierId: reassignExternalCarrierId ? Number(reassignExternalCarrierId) : null,
+        externalPlateNumber: reassignExternalPlateNumber,
+        externalDriverName: reassignExternalDriverName,
+        externalDriverPhone: reassignExternalDriverPhone,
       });
       setShowReassign(false);
       await refetchTrip();
@@ -347,8 +374,15 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     handleReassign,
     openAdjust,
     handleAdjustSubmit,
+    setReassignCarrierType,
     setReassignTruckId,
     setReassignDriverId,
+    setReassignExternalCarrierId,
+    setReassignExternalPlateNumber,
+    setReassignExternalDriverName,
+    setReassignExternalDriverPhone,
+    cancelLoading,
+    carrierCustomers: catalogData?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
     setShowReassign,
     setShowAdjust,
     setAdjustAmount,

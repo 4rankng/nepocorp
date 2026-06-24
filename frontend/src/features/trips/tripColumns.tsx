@@ -70,14 +70,16 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
     {
       id: 'truck',
       header: 'Xe',
-      accessorFn: (row) => row.truck?.licensePlate ?? '',
+      accessorFn: (row) => row.carrierType === 'EXTERNAL' ? (row.externalPlateNumber ?? 'Xe ngoài') : (row.truck?.licensePlate ?? ''),
       cell: ({ row }) => {
         const trip = row.original;
         const isCreated = trip.status === TripStatus.CREATED;
         const isCanceled = trip.status === TripStatus.CANCELED;
+        const isExternal = trip.carrierType === 'EXTERNAL';
+        const plate = isExternal ? (trip.externalPlateNumber || 'Xe ngoài') : (trip.truck?.licensePlate ?? '—');
         return (
-          <span className={`plate${isCreated || isCanceled ? ' idle' : ''}`}>
-            {trip.truck?.licensePlate ?? '—'}
+          <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${isExternal ? ' external' : ''}`}>
+            {plate}
           </span>
         );
       },

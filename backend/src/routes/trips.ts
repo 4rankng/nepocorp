@@ -245,11 +245,14 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
 // Reassign truck/driver (only for CREATED trips)
 router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const { truckId, driverId } = req.body;
-  if (!truckId || !driverId) {
-    return res.status(400).json({ error: 'truckId và driverId là bắt buộc' });
+  const data = req.body;
+  if (data.carrierType === 'OWN' && (!data.truckId || !data.driverId)) {
+    return res.status(400).json({ error: 'truckId và driverId là bắt buộc cho xe nhà' });
   }
-  const trip = await tripService.reassignTrip(id, { truckId: Number(truckId), driverId: Number(driverId) });
+  if (data.carrierType === 'EXTERNAL' && (!data.externalCarrierId && !data.externalPlateNumber)) {
+    return res.status(400).json({ error: 'Vui lòng chọn đối tác xe ngoài hoặc nhập biển số' });
+  }
+  const trip = await tripService.reassignTrip(id, data);
   await invalidateReportCaches();
   res.json(trip);
 }));

@@ -33,8 +33,8 @@ export default function TripEditPage() {
   const { rootRef } = usePageAnimations({ ready: !loading });
 
   const editOptions: TripOptions = useMemo(() => ({
-    customers: [],
-    carrierCustomers: [],
+    customers: catalogData?.customers.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    carrierCustomers: catalogData?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
     routes: catalogData?.routes.map(r => ({
       id: r.id,
       label: `${r.name}${r.distanceKm ? ` (${r.distanceKm} km)` : ''}`,
@@ -43,13 +43,13 @@ export default function TripEditPage() {
       isMountain: r.isMountain,
       fixedFuelAllowance: r.fixedFuelAllowance,
     })) ?? [],
-    trucks: [],
-    trailerTypes: [],
-    drivers: [],
-    trailers: [],
-    cargoTypes: [],
+    trucks: catalogData?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
+    trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
+    drivers: catalogData?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
+    trailers: catalogData?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
+    cargoTypes: catalogData?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
     pricingTables: [],
-    loading: false,
+    loading: !catalogData,
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
@@ -126,8 +126,9 @@ export default function TripEditPage() {
               <CardSection number={1} title="Tuyến đường & ngày" subtitle="Thời gian và tuyến vận chuyển">
                 <div className="tc-field-row tc-field-row--2">
                   <div className="tc-field">
-                    <label className="tc-field-label">Ngày khởi hành</label>
+                    <label className="tc-field-label">Ngày khởi hành <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
                     <input
+                      id="departureDate"
                       className="input"
                       type="date"
                       value={departureDate}
@@ -139,6 +140,7 @@ export default function TripEditPage() {
                     <div className="tc-field">
                       <label className="tc-field-label">Ngày hoàn thành</label>
                       <input
+                        id="completedAt"
                         className="input"
                         type="date"
                         value={completedAt}
@@ -150,8 +152,9 @@ export default function TripEditPage() {
                   )}
                 </div>
                 <div className="tc-field">
-                  <label className="tc-field-label">Tuyến đường</label>
+                  <label className="tc-field-label">Tuyến đường <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
                   <select
+                    id="routeId"
                     className="input"
                     value={routeId}
                     onChange={(e) => setRouteId(e.target.value)}
@@ -163,17 +166,201 @@ export default function TripEditPage() {
                     ))}
                   </select>
                 </div>
+
+                <div className="tc-field-row tc-field-row--2" style={{ marginTop: 14 }}>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Loại xe</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => form.setCarrierType('OWN')}
+                        className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
+                      >
+                        Xe nhà
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => form.setCarrierType('EXTERNAL')}
+                        className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
+                      >
+                        Xe ngoài
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {form.carrierType === 'OWN' && (
+                  <div className="tc-field-row tc-field-row--3" style={{ marginTop: 14 }}>
+                    <div className="tc-field">
+                      <label className="tc-field-label">Xe đầu <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                      <select
+                        id="truckId"
+                        className="input"
+                        value={form.truckId}
+                        onChange={(e) => form.setTruckId(e.target.value)}
+                      >
+                        <option value="">-- Chọn xe đầu --</option>
+                        {editOptions.trucks.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="tc-field">
+                      <label className="tc-field-label">Loại rơ moóc <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                      <select
+                        id="trailerType"
+                        className="input"
+                        value={form.trailerType}
+                        onChange={(e) => form.setTrailerType(e.target.value)}
+                      >
+                        <option value="">-- Chọn loại rơ moóc --</option>
+                        {editOptions.trailerTypes.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="tc-field">
+                      <label className="tc-field-label">Lái xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                      <select
+                        id="driverId"
+                        className="input"
+                        value={form.driverId}
+                        onChange={(e) => form.setDriverId(e.target.value)}
+                      >
+                        <option value="">-- Chọn lái xe --</option>
+                        {editOptions.drivers.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </CardSection>
 
               <JourneyLegsCard number={2} />
 
-              <CardSection number={3} title="Nhiên liệu" subtitle="Chế độ tính và bổ sung">
-                <FuelSection />
-              </CardSection>
+              {form.carrierType === 'EXTERNAL' ? (
+                <>
+                  <CardSection number={3} title="Thông tin xe ngoài" subtitle="Đối tác vận tải, biển số và lái xe ngoài">
+                    <div className="tc-field-row tc-field-row--2">
+                      <div className="tc-field">
+                        <label className="tc-field-label">Đối tác vận chuyển</label>
+                        <select
+                          id="externalCarrierId"
+                          className="input"
+                          value={form.externalCarrierId ?? ''}
+                          onChange={(e) => form.setExternalCarrierId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                          <option value="">-- Chọn đối tác --</option>
+                          {editOptions.carrierCustomers.map(c => (
+                            <option key={c.id} value={c.id}>{c.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="tc-field">
+                        <label className="tc-field-label">Giá cước thuê ngoài (gồm VAT) <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <input
+                          id="externalFreightCost"
+                          className="input mono"
+                          type="number"
+                          min={0}
+                          placeholder="VD: 5000000"
+                          value={form.externalFreightCost}
+                          onChange={(e) => form.setExternalFreightCost(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="tc-field-row tc-field-row--3">
+                      <div className="tc-field">
+                        <label className="tc-field-label">Biển số xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <input
+                          id="externalPlateNumber"
+                          className="input mono"
+                          type="text"
+                          placeholder="VD: 29A-12345"
+                          value={form.externalPlateNumber}
+                          onChange={(e) => form.setExternalPlateNumber(e.target.value)}
+                        />
+                      </div>
+                      <div className="tc-field">
+                        <label className="tc-field-label">Tên lái xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <input
+                          id="externalDriverName"
+                          className="input"
+                          type="text"
+                          placeholder="Tên lái xe"
+                          value={form.externalDriverName}
+                          onChange={(e) => form.setExternalDriverName(e.target.value)}
+                        />
+                      </div>
+                      <div className="tc-field">
+                        <label className="tc-field-label">SĐT lái xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <input
+                          id="externalDriverPhone"
+                          className="input mono"
+                          type="tel"
+                          placeholder="VD: 0912345678"
+                          value={form.externalDriverPhone}
+                          onChange={(e) => form.setExternalDriverPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardSection>
 
-              <CardSection number={4} title="Chi phí & Doanh thu" subtitle="VéBOT, phụ cấp, lương lái xe">
-                <AllowanceSection />
-              </CardSection>
+                  <CardSection number={4} title="Doanh thu &amp; Hoa hồng" subtitle="Doanh thu đóng/trả cont, kết hợp và hoa hồng">
+                    <div className="tc-field-row tc-field-row--2">
+                      <div className="tc-field">
+                        <label className="tc-field-label">Doanh thu đóng/ trả hàng (đ)</label>
+                        <input
+                          className="input mono"
+                          type="number"
+                          placeholder="VD: 4.200.000"
+                          value={form.revenueEmptyReturn}
+                          onChange={(e) => form.setRevenueEmptyReturn(e.target.value)}
+                        />
+                      </div>
+                      <div className="tc-field">
+                        <label className="tc-field-label">Doanh thu kết hợp (đ)</label>
+                        <input
+                          className="input mono"
+                          type="number"
+                          placeholder="VD: 2.000.000"
+                          value={form.revenueCombine}
+                          onChange={(e) => form.setRevenueCombine(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="tc-field-row">
+                      <div className="tc-field">
+                        <label className="tc-field-label">Hoa hồng khách hàng (đ)</label>
+                        <input
+                          className="input mono"
+                          type="number"
+                          placeholder="0"
+                          value={form.customerCommission}
+                          onChange={(e) => form.setCustomerCommission(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardSection>
+                </>
+              ) : (
+                <>
+                  <CardSection number={3} title="Nhiên liệu" subtitle="Chế độ tính và bổ sung">
+                    <FuelSection />
+                  </CardSection>
+
+                  <CardSection number={4} title="Chi phí &amp; Doanh thu" subtitle="VéBOT, phụ cấp, lương lái xe">
+                    <AllowanceSection />
+                  </CardSection>
+                </>
+              )}
 
               <CardSection number={5} span={2} title="Chi tiết container" subtitle="Số container, số seal, loại cont, trọng lượng — nhập tay từng cont">
                 <ContainerInstancesCard

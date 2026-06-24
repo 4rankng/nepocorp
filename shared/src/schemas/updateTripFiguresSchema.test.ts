@@ -71,3 +71,18 @@ test('accepts fuelSupplementLiters undefined without reason', () => {
   const result = updateTripFiguresSchema.safeParse(data);
   assert.strictEqual(result.success, true);
 });
+
+test('accepts null values for external carrier fields', () => {
+  const data = {
+    ...validBase,
+    externalCarrierId: null,
+    externalFreightCost: null,
+    externalPlateNumber: null,
+    externalDriverName: null,
+    externalDriverPhone: null,
+  };
+
+  const result = updateTripFiguresSchema.safeParse(data);
+  assert.strictEqual(result.success, true);
+});
+

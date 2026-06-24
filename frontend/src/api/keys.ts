@@ -94,7 +94,13 @@ export const qk = {
 
   trips: {
     all: ['trips'],
-    detail: (id: number | string | undefined) => ['trip', id] as const,
+    // Normalize id to a string: callers pass either the string id from the URL
+    // (useTripDetail) or the numeric id from the API response (e.g. save-flow
+    // setQueryData/invalidate + the 409 retry). TanStack matches keys by
+    // deep-equal, so ['trip', 68] !== ['trip', '68'] — leaving id un-coerced
+    // made every post-save cache write/refetch hit a phantom key, keeping the
+    // detail cache on a stale `version` and defeating the save retry-on-409.
+    detail: (id: number | string | undefined) => ['trip', String(id)] as const,
     adjustments: (id: number) => ['trip-adjustments', id] as const,
     /** Broad prefix — matches all trip-adjustments queries. */
     adjustmentsAll: ['trip-adjustments'] as const,

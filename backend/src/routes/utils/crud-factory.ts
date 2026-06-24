@@ -81,7 +81,7 @@ export function createCrudRouter<
     if (search && searchableField) {
       // Escape SQL LIKE metacharacters to prevent unintended wildcard expansion
       const escaped = search.replace(/[%_]/g, '\\$&');
-      conditions.push(like(column(table, searchableField), `%${escaped}%`));
+      conditions.push(sql`unaccent(${column(table, searchableField)}) ILIKE unaccent(${"%" + escaped + "%"})`);
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;

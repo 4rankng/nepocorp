@@ -54,8 +54,8 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
             <span className="trip-meta-sep">·</span>
             <span>{formatDayMonth(trip.departureDate)}</span>
             <span className="trip-meta-sep">·</span>
-            <span className={`plate${isCreated || isCanceled ? ' idle' : ''}`} style={{ fontSize: 10, padding: '2px 7px' }}>
-              {trip.truck?.licensePlate ?? '—'}
+            <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`} style={{ fontSize: 10, padding: '2px 7px' }}>
+              {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || 'Xe ngoài') : (trip.truck?.licensePlate ?? '—')}
             </span>
           </div>
         </div>

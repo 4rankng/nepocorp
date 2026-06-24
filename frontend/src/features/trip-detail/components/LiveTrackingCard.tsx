@@ -1,4 +1,4 @@
-import { Camera, Gauge, Fuel, Wrench, Clock, User, MapPin, Signal, RefreshCw } from 'lucide-react';
+import { Gauge, Fuel, Wrench, Clock, User, MapPin, Signal, RefreshCw } from 'lucide-react';
 import type { LiveFleetVehicle, LiveFleetDetails } from '@tingting/shared';
 import { LIVE_STATUS_COLOR, LIVE_STATUS_LABEL } from '../../../lib/liveFleet';
 import { formatDateTimeVN } from '../../../lib/format';
@@ -14,6 +14,19 @@ interface LiveTrackingCardProps {
 }
 
 const MONO = "'JetBrains Mono', monospace";
+
+/**
+ * Helper to determine if a telemetry field has a valid, non-empty value.
+ * Filters out null, undefined, empty strings, and raw dash/placeholder values.
+ */
+function hasVal(val: any): boolean {
+  if (val === null || val === undefined) return false;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    return trimmed !== '' && trimmed !== '—';
+  }
+  return true;
+}
 
 function Num({ value, unit }: { value: number | null | undefined; unit?: string }) {
   if (value === null || value === undefined) return <span style={{ color: '#9CA3AF' }}>—</span>;
@@ -55,6 +68,64 @@ export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
   const color = LIVE_STATUS_COLOR[vehicle.status];
   const updated = formatDateTimeVN(vehicle.lastSeenAt);
 
+  // Filter rows dynamically to omit empty / "-" fields
+  const motionRows = [
+    hasVal(vehicle.licensePlate) && <Row label="Biển số" key="plate"><span style={{ fontWeight: 700 }}>{vehicle.licensePlate}</span></Row>,
+    hasVal(vehicle.speed) && <Row label="Tốc độ" key="speed"><Num value={Math.round(vehicle.speed)} unit="km/h" /></Row>,
+    hasVal(vehicle.ignitionOn) && <Row label="Động cơ" key="ignition">{vehicle.ignitionOn ? 'Bật' : 'Tắt'}</Row>,
+    hasVal(vehicle.angle) && <Row label="Hướng" key="angle"><Num value={vehicle.angle} unit="°" /></Row>,
+    hasVal(vehicle.address) && <Row label="Địa điểm" key="addr"><Txt value={vehicle.address} /></Row>,
+  ].filter(Boolean);
+
+  const fuelRows = [
+    hasVal(vehicle.fuel) && <Row label="Dầu (lít)" key="fuel"><Num value={vehicle.fuel} /></Row>,
+    d && hasVal(d.fuelPercent) && <Row label="% dầu" key="fuelPercent"><Num value={d.fuelPercent} unit="%" /></Row>,
+  ].filter(Boolean);
+
+  const signalRows = d ? [
+    // GPS is always present since vehicle.status exists
+    <Row label="GPS" key="gps">{vehicle.status === 'offline' ? 'Mất' : 'Có'}</Row>,
+    hasVal(d.signalDb) && <Row label="GSM" key="gsm"><Num value={d.signalDb} unit="dB" /></Row>,
+  ].filter(Boolean) : [];
+
+  const odometerRows = d ? [
+    hasVal(d.odometerKm) && <Row label="Tổng số km" key="odometer"><Num value={d.odometerKm} unit="km" /></Row>,
+    hasVal(d.kmToday) && <Row label="km hôm nay" key="kmToday"><Num value={d.kmToday} unit="km" /></Row>,
+    hasVal(d.modelCar) && <Row label="Model xe" key="model"><Txt value={d.modelCar} /></Row>,
+  ].filter(Boolean) : [];
+
+  const engineRows = d ? [
+    hasVal(d.engineSince) && <Row label="Đề máy từ" key="engineSince"><Txt value={d.engineSince} /></Row>,
+    hasVal(d.doorStatus) && <Row label="Cửa" key="door"><Txt value={d.doorStatus} /></Row>,
+    hasVal(d.airConditioning) && <Row label="Điều hòa" key="ac"><Txt value={d.airConditioning} /></Row>,
+    hasVal(d.batteryV) && <Row label="Ắc quy" key="battery"><Txt value={d.batteryV} /></Row>,
+  ].filter(Boolean) : [];
+
+  const drivingRows = d ? [
+    hasVal(d.drivingTime) && <Row label="Lái (phiên)" key="drivingTime"><Txt value={d.drivingTime} /></Row>,
+    hasVal(d.drivingTimeToday) && <Row label="Lái hôm nay" key="drivingTimeToday"><Txt value={d.drivingTimeToday} /></Row>,
+    hasVal(d.stopCount) && <Row label="Số lần dừng" key="stopCount"><Num value={d.stopCount} /></Row>,
+    hasVal(d.overSpeedCount) && <Row label="Quá tốc độ" key="overSpeed"><Num value={d.overSpeedCount} /></Row>,
+    hasVal(d.parkedTime) && <Row label="Thời gian đỗ" key="parked"><Txt value={d.parkedTime} /></Row>,
+  ].filter(Boolean) : [];
+
+  const driverRows = d ? [
+    hasVal(d.driverLicense) && <Row label="GPLX" key="license"><Txt value={d.driverLicense} /></Row>,
+    hasVal(d.licenseExpiry) && <Row label="Hết hạn GPLX" key="expiry"><Txt value={d.licenseExpiry} /></Row>,
+    hasVal(d.driverPhone) && (
+      <Row label="SĐT" key="phone">
+        <a href={`tel:${d.driverPhone}`} style={{ color: 'var(--brand, #00B14F)' }}>{d.driverPhone}</a>
+      </Row>
+    ),
+  ].filter(Boolean) : [];
+
+  const hasRightColumn = d && (
+    odometerRows.length > 0 ||
+    engineRows.length > 0 ||
+    drivingRows.length > 0 ||
+    driverRows.length > 0
+  );
+
   return (
     <section className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
@@ -72,78 +143,63 @@ export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
         </span>
       </div>
 
-      {/* Live camera snapshot */}
-      {d?.cameraImage && (
-        <div style={{ marginTop: 10, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-2, #ECEFF1)', position: 'relative' }}>
-          <img
-            src={d.cameraImage}
-            alt="Ảnh camera"
-            style={{ display: 'block', width: '100%', maxHeight: 220, objectFit: 'cover' }}
-            onError={(e) => { (e.currentTarget.parentElement!.style.display = 'none'); }}
-          />
-          <span style={{ position: 'absolute', left: 8, top: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Camera size={11} /> Camera
-          </span>
+      {/* Responsive 2-column layout for detailed telemetry */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: hasRightColumn ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr',
+        gap: '20px',
+        marginTop: '12px'
+      }}>
+        {/* Left Column: Core motion, fuel, and signals */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {motionRows.length > 0 && (
+            <Section icon={<Gauge size={12} />} title="Vị trí & chuyển động">
+              {motionRows}
+            </Section>
+          )}
+
+          {fuelRows.length > 0 && (
+            <Section icon={<Fuel size={12} />} title="Nhiên liệu">
+              {fuelRows}
+            </Section>
+          )}
+
+          {d && signalRows.length > 0 && (
+            <Section icon={<Signal size={12} />} title="Tín hiệu">
+              {signalRows}
+            </Section>
+          )}
         </div>
-      )}
 
-      {/* Position & motion */}
-      <Section icon={<Gauge size={12} />} title="Vị trí & chuyển động">
-        <Row label="Biển số"><span style={{ fontWeight: 700 }}>{vehicle.licensePlate}</span></Row>
-        <Row label="Tốc độ"><Num value={Math.round(vehicle.speed)} unit="km/h" /></Row>
-        <Row label="Động cơ">{vehicle.ignitionOn ? 'Bật' : 'Tắt'}</Row>
-        {vehicle.angle ? <Row label="Hướng"><Num value={vehicle.angle} unit="°" /></Row> : null}
-        <Row label="Địa điểm"><Txt value={vehicle.address} /></Row>
-      </Section>
+        {/* Right Column: Odometer, engine power, driving behavior, and device card */}
+        {hasRightColumn && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {odometerRows.length > 0 && (
+              <Section icon={<MapPin size={12} />} title="Đồng hồ & xe">
+                {odometerRows}
+              </Section>
+            )}
 
-      {/* Fuel */}
-      <Section icon={<Fuel size={12} />} title="Nhiên liệu">
-        <Row label="Dầu (lít)"><Num value={vehicle.fuel} /></Row>
-        {d ? <Row label="% dầu"><Num value={d.fuelPercent} unit="%" /></Row> : null}
-      </Section>
+            {engineRows.length > 0 && (
+              <Section icon={<Wrench size={12} />} title="Động cơ & điện">
+                {engineRows}
+              </Section>
+            )}
 
-      {d && (
-        <>
-          {/* Odometer / vehicle */}
-          <Section icon={<MapPin size={12} />} title="Đồng hồ & xe">
-            <Row label="Tổng số km"><Num value={d.odometerKm} unit="km" /></Row>
-            <Row label="km hôm nay"><Num value={d.kmToday} unit="km" /></Row>
-            <Row label="Model xe"><Txt value={d.modelCar} /></Row>
-          </Section>
+            {drivingRows.length > 0 && (
+              <Section icon={<Clock size={12} />} title="Thời gian lái">
+                {drivingRows}
+              </Section>
+            )}
 
-          {/* Engine & power */}
-          <Section icon={<Wrench size={12} />} title="Động cơ & điện">
-            <Row label="Đề máy từ"><Txt value={d.engineSince} /></Row>
-            <Row label="Cửa"><Txt value={d.doorStatus} /></Row>
-            <Row label="Điều hòa"><Txt value={d.airConditioning} /></Row>
-            <Row label="Ắc quy"><Txt value={d.batteryV} /></Row>
-          </Section>
-
-          {/* Driving behaviour */}
-          <Section icon={<Clock size={12} />} title="Thời gian lái">
-            <Row label="Lái (phiên)"><Txt value={d.drivingTime} /></Row>
-            <Row label="Lái hôm nay"><Txt value={d.drivingTimeToday} /></Row>
-            <Row label="Số lần dừng"><Num value={d.stopCount} /></Row>
-            <Row label="Quá tốc độ"><Num value={d.overSpeedCount} /></Row>
-            <Row label="Thời gian đỗ"><Txt value={d.parkedTime} /></Row>
-          </Section>
-
-          {/* Signal */}
-          <Section icon={<Signal size={12} />} title="Tín hiệu">
-            <Row label="GPS">{vehicle.status === 'offline' ? 'Mất' : 'Có'}</Row>
-            <Row label="GSM"><Num value={d.signalDb} unit="dB" /></Row>
-          </Section>
-
-          {/* Driver (device card) */}
-          <Section icon={<User size={12} />} title="Lái xe (thẻ thiết bị)">
-            <Row label="GPLX"><Txt value={d.driverLicense} /></Row>
-            <Row label="Hết hạn GPLX"><Txt value={d.licenseExpiry} /></Row>
-            <Row label="SĐT">
-              {d.driverPhone ? <a href={`tel:${d.driverPhone}`} style={{ color: 'var(--brand, #00B14F)' }}>{d.driverPhone}</a> : <span style={{ color: '#9CA3AF' }}>—</span>}
-            </Row>
-          </Section>
-        </>
-      )}
+            {driverRows.length > 0 && (
+              <Section icon={<User size={12} />} title="Lái xe (thẻ thiết bị)">
+                {driverRows}
+              </Section>
+            )}
+          </div>
+        )}
+      </div>
 
       {!d && (
         <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--surface-2, #F5F7F6)', borderRadius: 8, fontSize: 12, color: 'var(--text-2, #6B7280)' }}>

@@ -199,7 +199,7 @@ export default function TripDetailPage() {
             </button>
             <button
               className="btn btn--primary btn--sm"
-              disabled={ui.reassignLoading || !ui.reassignTruckId || !ui.reassignDriverId}
+              disabled={ui.reassignLoading || (ui.reassignCarrierType === 'OWN' ? (!ui.reassignTruckId || !ui.reassignDriverId) : (!ui.reassignExternalCarrierId && !ui.reassignExternalPlateNumber))}
               onClick={page.handleReassign}
             >
               {ui.reassignLoading ? <Loader2 size={14} className="spin" /> : <Shuffle size={14} />}
@@ -213,20 +213,63 @@ export default function TripDetailPage() {
             {ui.reassignError}
           </div>
         )}
-        <div className="field">
-          <label>Xe đầu kéo</label>
-          <select className="input" value={ui.reassignTruckId} onChange={e => page.setReassignTruckId(e.target.value)}>
-            <option value="">-- Chọn xe --</option>
-            {page.reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
-          </select>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={() => page.setReassignCarrierType('OWN')}
+            style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'OWN' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'OWN' ? 'var(--brand-dark)' : 'var(--text-2)' }}
+          >
+            Xe nhà
+          </button>
+          <button
+            type="button"
+            onClick={() => page.setReassignCarrierType('EXTERNAL')}
+            style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-dark)' : 'var(--text-2)' }}
+          >
+            Xe ngoài
+          </button>
         </div>
-        <div className="field">
-          <label>Lái xe</label>
-          <select className="input" value={ui.reassignDriverId} onChange={e => page.setReassignDriverId(e.target.value)}>
-            <option value="">-- Chọn lái xe --</option>
-            {page.reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-        </div>
+
+        {ui.reassignCarrierType === 'OWN' ? (
+          <>
+            <div className="field">
+              <label>Xe đầu kéo</label>
+              <select className="input" value={ui.reassignTruckId} onChange={e => page.setReassignTruckId(e.target.value)}>
+                <option value="">-- Chọn xe --</option>
+                {page.reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Lái xe</label>
+              <select className="input" value={ui.reassignDriverId} onChange={e => page.setReassignDriverId(e.target.value)}>
+                <option value="">-- Chọn lái xe --</option>
+                {page.reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="field">
+              <label>Đối tác xe ngoài</label>
+              <select className="input" value={ui.reassignExternalCarrierId} onChange={e => page.setReassignExternalCarrierId(e.target.value)}>
+                <option value="">-- Chọn đối tác --</option>
+                {page.carrierCustomers.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Biển số xe</label>
+              <input type="text" className="input" placeholder="VD: 15C-12345" value={ui.reassignExternalPlateNumber} onChange={e => page.setReassignExternalPlateNumber(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Tên lái xe</label>
+              <input type="text" className="input" placeholder="Tên lái xe ngoài" value={ui.reassignExternalDriverName} onChange={e => page.setReassignExternalDriverName(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>SĐT lái xe</label>
+              <input type="text" className="input" placeholder="SĐT lái xe" value={ui.reassignExternalDriverPhone} onChange={e => page.setReassignExternalDriverPhone(e.target.value)} />
+            </div>
+          </>
+        )}
       </Modal>
 
       {/* ── Adjustment Drawer ───────────────────────────────────────────── */}

@@ -12,8 +12,13 @@ export interface Truck {
 }
 
 export interface ReassignState {
+  carrierType: 'OWN' | 'EXTERNAL';
   truckId: string;
   driverId: string;
+  externalCarrierId: string;
+  externalPlateNumber: string;
+  externalDriverName: string;
+  externalDriverPhone: string;
   loading: boolean;
   error: string;
 }

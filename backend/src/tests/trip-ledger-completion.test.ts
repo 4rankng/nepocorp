@@ -187,4 +187,36 @@ describe('trip completion ledger posting', () => {
       .orderBy(s.ledger.id);
     assert.equal(customerRows.at(-1)?.balance, '1500000');
   });
+
+  test('updating external carrier details on a trip persists in the database', async () => {
+    const { trip, customer } = await createInTransitTrip({
+      revenue: 800_000,
+      totalFuelCost: 100_000,
+    });
+
+    const updated = await updateTripFigures(trip.id, {
+      legs: [],
+      fuelMode: FuelMode.AUTO,
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 0,
+      hasReturnCargo: false,
+      expectedVersion: trip.version,
+      userId: 1,
+      carrierType: 'EXTERNAL',
+      externalCarrierId: customer.id,
+      externalFreightCost: 600_000,
+      externalPlateNumber: '29A-99999',
+      externalDriverName: 'Driver X',
+      externalDriverPhone: '0999999999',
+    });
+
+    assert.equal(updated.carrierType, 'EXTERNAL');
+    assert.equal(updated.externalCarrierId, customer.id);
+    assert.equal(updated.externalFreightCost, '600000');
+    assert.equal(updated.externalPlateNumber, '29A-99999');
+    assert.equal(updated.externalDriverName, 'Driver X');
+    assert.equal(updated.externalDriverPhone, '0999999999');
+  });
 });

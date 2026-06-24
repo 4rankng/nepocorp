@@ -91,8 +91,13 @@ export async function getTrips(filters: TripListFilters) {
     conditions.push(c); countConditions.push(c);
   }
   if (filters.truckId) {
-    const c = eq(s.trips.truckId, filters.truckId);
-    conditions.push(c); countConditions.push(c);
+    if (filters.truckId === -1) {
+      const c = eq(s.trips.carrierType, 'EXTERNAL');
+      conditions.push(c); countConditions.push(c);
+    } else {
+      const c = eq(s.trips.truckId, filters.truckId);
+      conditions.push(c); countConditions.push(c);
+    }
   }
   if (filters.driverId) {
     const c = eq(s.trips.driverId, filters.driverId);
@@ -121,12 +126,15 @@ export async function getTrips(filters: TripListFilters) {
     // List: full predicates (5 ILIKE + 2 EXISTS for container cross-refs)
     conditions.push(
       or(
-        sql`${s.trips.tripCode} ILIKE ${term}`,
+        sql`unaccent(${s.trips.tripCode}) ILIKE unaccent(${term})`,
         sql`${s.trips.id}::text ILIKE ${term}`,
-        sql`${s.customers.name} ILIKE ${term}`,
-        sql`${s.trucks.licensePlate} ILIKE ${term}`,
-        sql`${s.routes.name} ILIKE ${term}`,
-        sql`${s.trips.customerReference} ILIKE ${term}`,
+        sql`unaccent(${s.customers.name}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trucks.licensePlate}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.routes.name}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.customerReference}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
+        sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
         sql`EXISTS (SELECT 1 FROM ${s.tripContainers} WHERE ${s.tripContainers.tripId} = ${s.trips.id} AND ${s.tripContainers.containerNumber} ILIKE ${term})`,
         sql`EXISTS (SELECT 1 FROM ${s.tripExpenses} WHERE ${s.tripExpenses.tripId} = ${s.trips.id} AND ${s.tripExpenses.containerNumber} ILIKE ${term})`,
       )!
@@ -136,12 +144,15 @@ export async function getTrips(filters: TripListFilters) {
     // avoided. Page count is corrected on the next non-search fetch.
     countConditions.push(
       or(
-        sql`${s.trips.tripCode} ILIKE ${term}`,
+        sql`unaccent(${s.trips.tripCode}) ILIKE unaccent(${term})`,
         sql`${s.trips.id}::text ILIKE ${term}`,
-        sql`${s.customers.name} ILIKE ${term}`,
-        sql`${s.trucks.licensePlate} ILIKE ${term}`,
-        sql`${s.routes.name} ILIKE ${term}`,
-        sql`${s.trips.customerReference} ILIKE ${term}`,
+        sql`unaccent(${s.customers.name}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trucks.licensePlate}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.routes.name}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.customerReference}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
+        sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
       )!
     );
   }
@@ -160,6 +171,8 @@ export async function getTrips(filters: TripListFilters) {
     vehicleShiftAllowance: s.trips.vehicleShiftAllowance,
     tollCost: s.trips.tollCost,
     tollsDiscount: s.trips.tollsDiscount, tollsAddition: s.trips.tollsAddition, tollsStations: s.trips.tollsStations,
+    carrierType: s.trips.carrierType, externalCarrierId: s.trips.externalCarrierId,
+    externalPlateNumber: s.trips.externalPlateNumber, externalDriverName: s.trips.externalDriverName,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))
@@ -289,6 +302,10 @@ export async function getTripsSummary(dateFrom?: string, dateTo?: string): Promi
     .where(where)
     .orderBy(s.trucks.licensePlate);
 
+  const truckOptions = truckRows.map(r => ({ id: r.id, licensePlate: r.licensePlate ?? '' }));
+  // Always include 'Xe ngoài' (id: -1) as a filter option so users can always filter by external carriers.
+  truckOptions.push({ id: -1, licensePlate: 'Xe ngoài' });
+
   // Distinct customer options
   const customerRows = await db.selectDistinct({
     id: s.customers.id,
@@ -306,7 +323,7 @@ export async function getTripsSummary(dateFrom?: string, dateTo?: string): Promi
     totalRevenue: Number(agg?.totalRevenue ?? 0),
     missingFuel: Number(agg?.missingFuel ?? 0),
     avgPer100,
-    truckOptions: truckRows,
+    truckOptions,
     customerOptions: customerRows,
   };
 }

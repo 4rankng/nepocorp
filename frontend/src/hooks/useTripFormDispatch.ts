@@ -17,6 +17,7 @@ import type { PricingTable, TripDetail, TripLeg, PaginatedResponse } from '@ting
 import { tripClient } from '../api/tripClient';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
+import { useToast } from '../components/shared/Toast';
 
 import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
@@ -93,6 +94,7 @@ export interface UseTripFormDispatchReturn {
 export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripFormDispatchReturn {
   const { state: s, options, isEditMode, existingTrip } = params;
   const queryClient = useQueryClient();
+  const { toast: showToast } = useToast();
   const lastPopulatedTripId = useRef<number | undefined>(undefined);
 
   // Broadcast OCR results to container-aware components via context.
@@ -396,7 +398,9 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (s.customerId) count++;
     if (s.routeId) count++;
     if (s.carrierType === 'EXTERNAL') {
-      count += 3;
+      if (s.externalFreightCost && s.externalFreightCost.trim()) count++;
+      if (s.externalDriverName && s.externalDriverName.trim()) count++;
+      if (s.externalDriverPhone && s.externalDriverPhone.trim()) count++;
     } else {
       if (s.truckId) count++;
       if (s.trailerType) count++;
@@ -405,7 +409,10 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (s.cargoTypeId) count++;
     if (s.departureDate) count++;
     return count;
-  }, [s.customerId, s.routeId, s.carrierType, s.truckId, s.trailerType, s.driverId, s.cargoTypeId, s.departureDate]);
+  }, [
+    s.customerId, s.routeId, s.carrierType, s.truckId, s.trailerType, s.driverId,
+    s.cargoTypeId, s.departureDate, s.externalFreightCost, s.externalDriverName, s.externalDriverPhone
+  ]);
 
   const completionStatus = useMemo((): CompletionStatus => {
     let fuelRevenue = 0;
@@ -479,30 +486,99 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       e?.preventDefault();
       s.setError("");
 
-      if (!isEditMode && requiredFieldsFilled < 7) {
-        s.setError("Vui lòng điền đầy đủ các trường bắt buộc.");
+      const focusAndScroll = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      };
+
+      // Compulsory fields check
+      if (!s.customerId) {
+        const msg = "Customer is required.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("customerId");
+        return;
+      }
+      if (!s.routeId) {
+        const msg = "Route is required.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("routeId");
+        return;
+      }
+      if (!s.cargoTypeId) {
+        const msg = "Cargo type is required.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("cargoTypeId");
+        return;
+      }
+      if (!s.departureDate) {
+        const msg = "Departure date is required.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("departureDate");
         return;
       }
 
+      if (s.carrierType === 'OWN') {
+        if (!s.truckId) {
+          const msg = "Truck is required.";
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          focusAndScroll("truckId");
+          return;
+        }
+        if (!s.trailerType) {
+          const msg = "Trailer type is required.";
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          focusAndScroll("trailerType");
+          return;
+        }
+        if (!s.driverId) {
+          const msg = "Driver is required.";
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          focusAndScroll("driverId");
+          return;
+        }
+      }
+      // EXTERNAL carrier trips: freight cost, plate, driver name and phone are
+      // optional at creation — the user may fill them in later. Only the carrier
+      // partner identity is required, and that is enforced by the backend schema.
+
       if (isEditMode) {
         if (legs.length === 0) {
-          s.setError('Cần có ít nhất 1 chặng đường.');
+          const msg = 'At least one journey leg is required.';
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
           return;
         }
         for (const leg of legs) {
           if (!leg.origin.trim() || !leg.destination.trim()) {
-            s.setError(`Chặng số ${leg.sequence}: cần điền cả điểm đi và điểm đến.`);
+            const msg = `Leg ${leg.sequence}: Both origin and destination are required.`;
+            s.setError(msg);
+            showToast({ kind: 'error', message: msg });
             return;
           }
           const kmRaw = (leg.km ?? '').toString().trim();
           if (kmRaw !== '' && (isNaN(Number(kmRaw)) || Number(kmRaw) < 0)) {
-            s.setError(`Chặng số ${leg.sequence}: Số km phải là số không âm.`);
+            const msg = `Leg ${leg.sequence}: Distance must be a non-negative number.`;
+            s.setError(msg);
+            showToast({ kind: 'error', message: msg });
             return;
           }
         }
         const supplementNum = Number(s.fuelSupplementLiters);
         if (supplementNum > 0 && !s.fuelSupplementReason.trim()) {
-          s.setError('Vui lòng điền lý do bổ sung dầu.');
+          const msg = 'Please enter a reason for fuel supplement.';
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          focusAndScroll("fuelSupplementReason");
           return;
         }
       }
@@ -520,14 +596,18 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             r.cargoWeightKg ||
             r.containerTypeId;
           if (hasAny && !r.containerNumber.trim()) {
-            s.setError('Mỗi cont phải có Số container. Xoá dòng trống nếu chưa nhập.');
+            const msg = 'Each container must have a container number. Delete empty rows if not entered.';
+            s.setError(msg);
+            showToast({ kind: 'error', message: msg });
             return;
           }
           // No half-filled seal rows: if any seal field is present, the number is required.
           for (const sl of r.seals) {
             const hasPartial = sl.sealNumber.trim() || sl.sealType.trim() || sl.notes.trim();
             if (hasPartial && !sl.sealNumber.trim()) {
-              s.setError('Mỗi seal phải có số seal. Xoá seal trống nếu chưa nhập.');
+              const msg = 'Each seal must have a seal number. Delete empty seals if not entered.';
+              s.setError(msg);
+              showToast({ kind: 'error', message: msg });
               return;
             }
           }
@@ -693,6 +773,15 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
             customerCommission: Number(s.customerCommission) || 0,
             tripWageDays: s.tripWageDays ? Number(s.tripWageDays) : undefined,
+            carrierType: s.carrierType,
+            externalCarrierId: s.carrierType === 'EXTERNAL' ? (s.externalCarrierId ?? null) : null,
+            externalFreightCost: s.carrierType === 'EXTERNAL' ? (s.externalFreightCost ? Number(s.externalFreightCost) : null) : null,
+            externalPlateNumber: s.carrierType === 'EXTERNAL' ? (s.externalPlateNumber.trim() || null) : null,
+            externalDriverName: s.carrierType === 'EXTERNAL' ? (s.externalDriverName.trim() || null) : null,
+            externalDriverPhone: s.carrierType === 'EXTERNAL' ? (s.externalDriverPhone.trim() || null) : null,
+            truckId: s.carrierType === 'OWN' ? (s.truckId ? Number(s.truckId) : null) : null,
+            driverId: s.carrierType === 'OWN' ? (s.driverId ? Number(s.driverId) : null) : null,
+            trailerType: s.carrierType === 'OWN' ? (s.trailerType || null) : null,
           };
 
           const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
@@ -734,9 +823,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             });
           } catch (instErr) {
             console.error('Trip instructions upsert failed:', instErr);
-            s.setError(instErr instanceof ApiError
-              ? `Hướng dẫn chưa lưu: ${instErr.message}`
-              : 'Hướng dẫn chưa lưu. Vui lòng thử lại.');
+            const msg = instErr instanceof ApiError
+              ? `Instructions not saved: ${instErr.message}`
+              : 'Instructions not saved. Please try again.';
+            s.setError(msg);
+            showToast({ kind: 'error', message: msg });
             return undefined;
           }
           return existingTrip.id;
@@ -795,14 +886,14 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
               kmNum < 0
             ) {
               throw new Error(
-                `Chặng số ${leg.sequence} chưa hợp lệ (cần Điểm đi + Điểm đến; Km phải là số không âm).`,
+                `Leg ${leg.sequence} is invalid (Both origin and destination are required; Distance must be a non-negative number).`,
               );
             }
           }
 
           const supplementNum = Number(s.fuelSupplementLiters);
           if (supplementNum > 0 && !s.fuelSupplementReason.trim()) {
-            throw new Error("Vui lòng điền lý do bổ sung dầu.");
+            throw new Error("Please enter a reason for fuel supplement.");
           }
 
           if (legsToSubmit.length === 0) {
@@ -861,16 +952,19 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         return trip.id;
       } catch (err) {
         if (isEditMode && err instanceof ApiError && err.status === 409) {
-          s.setError("Xung đột phiên bản: số liệu của bạn đã cũ so với hệ thống.");
+          const msg = "Version conflict: your local data is stale. Please reload.";
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
           throw err;
         }
+        let msg = "An error occurred. Please try again.";
         if (err instanceof ApiError) {
-          s.setError(err.message);
+          msg = err.message;
         } else if (err instanceof Error) {
-          s.setError(err.message);
-        } else {
-          s.setError("Có lỗi xảy ra. Vui lòng thử lại.");
+          msg = err.message;
         }
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
         return undefined;
       } finally {
         s.setSubmitting(false);

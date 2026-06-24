@@ -495,7 +495,7 @@ export default function CustomersPage() {
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
               )}
-              {filtered.map(c => (
+              {filtered.map((c, index) => (
                   <tr key={c.id} role="button" tabIndex={0}
                     style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
                     onClick={() => navigate(`/customers/${c.id}`)}
@@ -542,9 +542,12 @@ export default function CustomersPage() {
                       </div>
                       {menuOpenId === c.id && (
                         <div style={{
-                          position: 'absolute', right: 12, top: '100%', zIndex: 20,
+                          position: 'absolute', right: 12, zIndex: 20,
                           background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
                           boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 140,
+                          ...(index >= filtered.length - 2 && filtered.length > 2
+                            ? { bottom: '100%', marginBottom: 4 }
+                            : { top: '100%' }),
                         }} onClick={(e) => e.stopPropagation()}>
                           <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
                             onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>

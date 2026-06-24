@@ -68,11 +68,11 @@ export const createTripSchema = z.object({
   fuelSupplierId: z.coerce.number().int().positive().optional().nullable(),
   vatRate: z.number().min(0).max(0.5).optional().default(0),
   carrierType: z.enum(['OWN', 'EXTERNAL']).optional().default('OWN'),
-  externalCarrierId: z.number().int().positive().optional(),
-  externalFreightCost: z.number().positive().optional(),
-  externalPlateNumber: z.string().max(20).optional(),
-  externalDriverName: z.string().max(100).optional(),
-  externalDriverPhone: z.string().max(20).optional(),
+  externalCarrierId: z.number().int().positive().nullable().optional(),
+  externalFreightCost: z.number().positive().nullable().optional(),
+  externalPlateNumber: z.string().max(20).nullable().optional(),
+  externalDriverName: z.string().max(100).nullable().optional(),
+  externalDriverPhone: z.string().max(20).nullable().optional(),
 }).superRefine((data, ctx) => {
   // OWN carrier trips require truckId and driverId; EXTERNAL trips require external fields
   if ((data.carrierType ?? 'OWN') === 'OWN') {
@@ -83,20 +83,11 @@ export const createTripSchema = z.object({
       ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho chuyến xe nội bộ' });
     }
   } else {
+    // EXTERNAL trips only require the carrier partner (who). The freight cost,
+    // plate, driver name and phone are trip details that may be filled in later
+    // after the trip is created — they are NOT required at creation time.
     if (!data.externalCarrierId) {
       ctx.addIssue({ code: 'custom', path: ['externalCarrierId'], message: 'Nhà xe ngoài là bắt buộc cho chuyến xe ngoài' });
-    }
-    if (!data.externalFreightCost) {
-      ctx.addIssue({ code: 'custom', path: ['externalFreightCost'], message: 'Cước xe ngoài là bắt buộc cho chuyến xe ngoài' });
-    }
-    if (!data.externalPlateNumber || data.externalPlateNumber.trim() === '') {
-      ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe ngoài là bắt buộc cho chuyến xe ngoài' });
-    }
-    if (!data.externalDriverName || data.externalDriverName.trim() === '') {
-      ctx.addIssue({ code: 'custom', path: ['externalDriverName'], message: 'Tên lái xe ngoài là bắt buộc cho chuyến xe ngoài' });
-    }
-    if (!data.externalDriverPhone || data.externalDriverPhone.trim() === '') {
-      ctx.addIssue({ code: 'custom', path: ['externalDriverPhone'], message: 'SĐT lái xe ngoài là bắt buộc cho chuyến xe ngoài' });
     }
   }
 });
@@ -130,11 +121,14 @@ export const updateTripFiguresSchema = z.object({
   routeId: z.coerce.number().int().positive().optional(),
   vatRate: z.number().min(0).max(0.5).optional(),
   carrierType: z.enum(['OWN', 'EXTERNAL']).optional(),
-  externalCarrierId: z.number().int().positive().optional(),
-  externalFreightCost: z.number().positive().optional(),
-  externalPlateNumber: z.string().max(20).optional(),
-  externalDriverName: z.string().max(100).optional(),
-  externalDriverPhone: z.string().max(20).optional(),
+  externalCarrierId: z.number().int().positive().nullable().optional(),
+  externalFreightCost: z.number().positive().nullable().optional(),
+  externalPlateNumber: z.string().max(20).nullable().optional(),
+  externalDriverName: z.string().max(100).nullable().optional(),
+  externalDriverPhone: z.string().max(20).nullable().optional(),
+  truckId: z.coerce.number().int().positive().nullable().optional(),
+  driverId: z.coerce.number().int().positive().nullable().optional(),
+  trailerType: z.string().max(20).nullable().optional(),
 }).superRefine((data, ctx) => {
   if (data.fuelSupplementLiters && data.fuelSupplementLiters > 0) {
     if (!data.fuelSupplementReason || data.fuelSupplementReason.trim() === '') {

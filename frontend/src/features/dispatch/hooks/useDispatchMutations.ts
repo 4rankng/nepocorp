@@ -47,37 +47,58 @@ export function useReassignMutations() {
   const queryClient = useQueryClient();
   const [reassignOpen, setReassignOpen] = useState<number | null>(null);
   const [reassignState, setReassignState] = useState<ReassignState>({
-    truckId: '',
-    driverId: '',
-    loading: false,
-    error: '',
+    carrierType: 'OWN',
+    truckId: '', driverId: '',
+    externalCarrierId: '', externalPlateNumber: '', externalDriverName: '', externalDriverPhone: '',
+    loading: false, error: '',
   });
 
   const openReassign = useCallback((trip: NormalizedTrip) => {
     setReassignOpen(trip.id);
     setReassignState({
-      truckId: String(trip.truckId),
-      driverId: String(trip.driverId),
-      loading: false,
-      error: '',
+      carrierType: trip.carrierType || 'OWN',
+      truckId: String(trip.truckId ?? ''),
+      driverId: String(trip.driverId ?? ''),
+      externalCarrierId: String(trip.externalCarrierId ?? ''),
+      externalPlateNumber: trip.externalPlateNumber || '',
+      externalDriverName: trip.externalDriverName || '',
+      externalDriverPhone: trip.externalDriverPhone || '',
+      loading: false, error: '',
     });
   }, []);
 
   const closeReassign = useCallback(() => {
     setReassignOpen(null);
-    setReassignState({ truckId: '', driverId: '', loading: false, error: '' });
+    setReassignState({ 
+      carrierType: 'OWN', 
+      truckId: '', driverId: '', 
+      externalCarrierId: '', externalPlateNumber: '', externalDriverName: '', externalDriverPhone: '',
+      loading: false, error: '' 
+    });
   }, []);
 
   const handleReassign = useCallback(async (tripId: number) => {
-    if (!reassignState.truckId || !reassignState.driverId) {
-      setReassignState((s) => ({ ...s, error: 'Vui lòng chọn xe và lái xe' }));
-      return;
+    if (reassignState.carrierType === 'OWN') {
+      if (!reassignState.truckId || !reassignState.driverId) {
+        setReassignState((s) => ({ ...s, error: 'Vui lòng chọn xe và lái xe' }));
+        return;
+      }
+    } else {
+      if (!reassignState.externalCarrierId && !reassignState.externalPlateNumber) {
+        setReassignState((s) => ({ ...s, error: 'Vui lòng chọn đối tác hoặc nhập biển số' }));
+        return;
+      }
     }
     setReassignState((s) => ({ ...s, loading: true, error: '' }));
     try {
       await tripClient.reassignTrip(tripId, {
-        truckId: Number(reassignState.truckId),
-        driverId: Number(reassignState.driverId),
+        carrierType: reassignState.carrierType,
+        truckId: reassignState.truckId ? Number(reassignState.truckId) : null,
+        driverId: reassignState.driverId ? Number(reassignState.driverId) : null,
+        externalCarrierId: reassignState.externalCarrierId ? Number(reassignState.externalCarrierId) : null,
+        externalPlateNumber: reassignState.externalPlateNumber,
+        externalDriverName: reassignState.externalDriverName,
+        externalDriverPhone: reassignState.externalDriverPhone,
       });
       await queryClient.invalidateQueries({ queryKey: qk.trips.dispatch });
       closeReassign();
@@ -85,7 +106,7 @@ export function useReassignMutations() {
       const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật';
       setReassignState((s) => ({ ...s, loading: false, error: msg }));
     }
-  }, [reassignState.truckId, reassignState.driverId, queryClient, closeReassign]);
+  }, [reassignState, queryClient, closeReassign]);
 
   return { reassignOpen, reassignState, setReassignState, openReassign, closeReassign, handleReassign };
 }

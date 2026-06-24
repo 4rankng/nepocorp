@@ -32,15 +32,15 @@ function Field({ label, required, children }: { label: string; required?: boolea
 export function TripInfoCard(props: TripInfoCardProps) {
   const form = useTripFormContext();
 
-  const sel = (value: string, onChange: (v: string) => void, options: SelectOption[], placeholder: string) => (
-    <select className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
+  const sel = (value: string, onChange: (v: string) => void, options: SelectOption[], placeholder: string, id?: string) => (
+    <select id={id} className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
       <option value="">{props.loading ? 'Đang tải…' : placeholder}</option>
       {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
     </select>
   );
 
-  const selStatic = (value: string, onChange: (v: string) => void, options: TrailerTypeOption[], placeholder: string) => (
-    <select className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
+  const selStatic = (value: string, onChange: (v: string) => void, options: TrailerTypeOption[], placeholder: string, id?: string) => (
+    <select id={id} className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
       <option value="">{props.loading ? 'Đang tải…' : placeholder}</option>
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -55,27 +55,28 @@ export function TripInfoCard(props: TripInfoCardProps) {
       <div className="tc-form-row">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Khách hàng" required>
-            {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng')}
+            {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId')}
           </Field>
           <Field label="Tuyến đường" required>
-            {sel(form.routeId, form.setRouteId, props.routes, 'Chọn tuyến đường')}
+            {sel(form.routeId, form.setRouteId, props.routes, 'Chọn tuyến đường', 'routeId')}
             <RouteChips routes={props.routes} onSelect={(id) => form.setRouteId(String(id))} />
           </Field>
           <Field label="Loại hàng" required>
-            {sel(form.cargoTypeId, form.setCargoTypeId, props.cargoTypes, 'Chọn loại hàng')}
+            {sel(form.cargoTypeId, form.setCargoTypeId, props.cargoTypes, 'Chọn loại hàng', 'cargoTypeId')}
           </Field>
           <Field label="Mã tham chiếu khách hàng">
-            <input className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
+            <input id="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>(không bắt buộc)</span>
           </Field>
           <Field label="Số cont" required>
-            <input className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
+            <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số lượng container (mặc định: 1)</span>
           </Field>
 
           {/* VAT rate */}
           <Field label="Thuế VAT">
             <select
+              id="vatRate"
               className="input"
               style={selectStyle}
               value={form.vatRate}
@@ -112,13 +113,13 @@ export function TripInfoCard(props: TripInfoCardProps) {
           {form.carrierType === 'OWN' && (
             <>
               <Field label="Xe đầu" required>
-                {sel(form.truckId, form.setTruckId, props.trucks, 'Chọn xe đầu')}
+                {sel(form.truckId, form.setTruckId, props.trucks, 'Chọn xe đầu', 'truckId')}
               </Field>
               <Field label="Loại rơ moóc" required>
-                {selStatic(form.trailerType, form.setTrailerType, props.trailerTypes, 'Chọn loại rơ moóc')}
+                {selStatic(form.trailerType, form.setTrailerType, props.trailerTypes, 'Chọn loại rơ moóc', 'trailerType')}
               </Field>
               <Field label="Lái xe" required>
-                {sel(form.driverId, form.setDriverId, props.drivers, 'Chọn lái xe')}
+                {sel(form.driverId, form.setDriverId, props.drivers, 'Chọn lái xe', 'driverId')}
               </Field>
             </>
           )}
@@ -127,6 +128,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
             <>
               <Field label="Đối tác vận chuyển">
                 <select
+                  id="externalCarrierId"
                   className="input"
                   style={selectStyle}
                   value={form.externalCarrierId ?? ''}
@@ -141,6 +143,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
               </Field>
               <Field label="Giá cước thuê ngoài (gồm VAT)">
                 <input
+                  id="externalFreightCost"
                   className="input mono"
                   type="number"
                   min={0}
@@ -151,6 +154,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
               </Field>
               <Field label="Biển số xe">
                 <input
+                  id="externalPlateNumber"
                   className="input mono"
                   type="text"
                   placeholder="VD: 29A-12345"
@@ -160,6 +164,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
               </Field>
               <Field label="Tên lái xe">
                 <input
+                  id="externalDriverName"
                   className="input"
                   type="text"
                   placeholder="Tên lái xe thuê ngoài"
@@ -169,6 +174,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
               </Field>
               <Field label="SĐT lái xe">
                 <input
+                  id="externalDriverPhone"
                   className="input mono"
                   type="tel"
                   placeholder="VD: 0912345678"
@@ -192,7 +198,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
           )}
 
           <Field label="Ngày khởi hành" required>
-            <input className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
+            <input id="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
           </Field>
         </div>
       </div>

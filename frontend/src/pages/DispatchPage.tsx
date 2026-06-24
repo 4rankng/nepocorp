@@ -5,6 +5,7 @@ import { Plus, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'l
 import { EmptyState } from '../design-system';
 import { useDispatchData } from '../hooks/useQueries';
 import { useLiveFleet } from '../hooks/useTripQueries';
+import { useCatalogs } from '../hooks/useCatalogs';
 import type { NormalizedTrip } from '../hooks/useTripQueries';
 import { LiveFleetMap } from '../features/dispatch/components/LiveFleetMap';
 import { useDispatchMutations, useReassignMutations } from '../features/dispatch/hooks/useDispatchMutations';
@@ -26,6 +27,10 @@ export default function DispatchPage() {
   const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
   const activeTrips = useMemo<NormalizedTrip[]>(() => data?.activeTrips ?? [], [data]);
   const pendingTotal: number = data?.pendingTotal ?? 0;
+  const { data: catalogData } = useCatalogs();
+  const carrierCustomers = useMemo(() => 
+    catalogData?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
+  [catalogData]);
   const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
 
   const { actionLoading, dispatching, toasts, setToasts, handleDispatch, confirmDialog } = useDispatchMutations(pendingTrips);
@@ -125,7 +130,7 @@ export default function DispatchPage() {
             action={<button className="btn btn--primary" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>}
           />
         ) : pendingTrips.map((trip) => (
-          <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
+          <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} carrierCustomers={carrierCustomers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
         ))}
         {pendingTrips.length > 0 && <div className="orders-foot"><span>{pendingTotal} đơn hàng</span><Link to='/trips'>Lịch sử điều vận →</Link></div>}
       </div>

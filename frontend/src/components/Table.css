@@ -18,6 +18,7 @@
   scrollbar-color: rgba(0, 90, 45, 0.25) transparent;
   scrollbar-width: thin;
   overscroll-behavior-x: contain;
+  min-height: 180px; /* Prevent clipping of dropdown menus in short tables */
 }
 .table-scroll::-webkit-scrollbar { height: 8px; }
 .table-scroll::-webkit-scrollbar-thumb {

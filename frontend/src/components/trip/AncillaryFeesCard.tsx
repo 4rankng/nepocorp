@@ -358,7 +358,14 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                     <MoreVertical size={14} />
                                   </button>
                                   {activeActionId === fee.id && (
-                                    <div className="fee-action-dropdown" role="menu">
+                                    <div
+                                      className="fee-action-dropdown"
+                                      role="menu"
+                                      style={i >= expenses.length - 2 && expenses.length > 2
+                                        ? { top: 'auto', bottom: '100%', marginTop: 0, marginBottom: 4 }
+                                        : undefined
+                                      }
+                                    >
                                       <button
                                         type="button"
                                         className="fee-action-dropdown__item"

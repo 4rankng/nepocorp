@@ -26,8 +26,12 @@ describe('qk.* factory — key identity', () => {
 
   it('parameterized accessors embed their args in order', () => {
     expect(qk.salary.list(2026, 6)).toEqual(['salary-list', 2026, 6]);
-    expect(qk.trips.detail(42)).toEqual(['trip', 42]);
+    expect(qk.trips.detail(42)).toEqual(['trip', '42']);
     expect(qk.trips.tripDetail(99)).toEqual(['trip-detail', '99']);
+    // Regression: a numeric id (API response) and a string id (URL param) MUST
+    // produce the same key, or post-save cache writes / the 409 retry silently
+    // miss the real detail query and keep a stale `version`. See keys.ts.
+    expect(qk.trips.detail(42)).toEqual(qk.trips.detail('42'));
   });
 
   it('different args produce different keys', () => {

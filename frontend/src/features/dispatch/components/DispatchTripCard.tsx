@@ -15,6 +15,7 @@ interface DispatchTripCardProps {
   setReassignState: React.Dispatch<React.SetStateAction<ReassignState>>;
   trucks: Truck[];
   drivers: Driver[];
+  carrierCustomers: { id: number; label: string }[];
   onDispatch: () => void;
   onOpenReassign: () => void;
   onCloseReassign: () => void;
@@ -30,6 +31,7 @@ export function DispatchTripCard({
   setReassignState,
   trucks,
   drivers,
+  carrierCustomers,
   onDispatch,
   onOpenReassign,
   onCloseReassign,
@@ -81,6 +83,7 @@ export function DispatchTripCard({
             setReassignState={setReassignState}
             trucks={trucks}
             drivers={drivers}
+            carrierCustomers={carrierCustomers}
             onSave={onReassign}
             onCancel={onCloseReassign}
           />

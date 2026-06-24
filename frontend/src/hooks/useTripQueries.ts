@@ -23,18 +23,24 @@ export interface NormalizedTrip {
   departureDate: string;
   notes?: string;
   tripCode?: string;
+  carrierType?: 'OWN' | 'EXTERNAL';
+  externalCarrierId?: number | null;
+  externalPlateNumber?: string | null;
+  externalDriverName?: string | null;
+  externalDriverPhone?: string | null;
 }
 
 export function normalizeTrip(t: TripDetail): NormalizedTrip {
+  const isExternal = t.carrierType === 'EXTERNAL';
   return {
     id: t.id,
     customerId: t.customerId,
     customerName: t.customer?.name ?? '',
     customerReference: t.customerReference ?? undefined,
     truckId: t.truckId,
-    truckPlate: t.truck?.licensePlate ?? '',
+    truckPlate: isExternal ? (t.externalPlateNumber ?? 'Xe ngoài') : (t.truck?.licensePlate ?? ''),
     driverId: t.driverId,
-    driverName: t.driver?.name ?? '',
+    driverName: isExternal ? (t.externalDriverName ?? 'Lái xe ngoài') : (t.driver?.name ?? ''),
     routeId: t.routeId,
     routeName: t.route?.name ?? '',
     trailerType: t.trailerType ?? '',
@@ -43,6 +49,11 @@ export function normalizeTrip(t: TripDetail): NormalizedTrip {
     departureDate: t.departureDate ?? '',
     notes: t.notes ?? undefined,
     tripCode: t.tripCode ?? undefined,
+    carrierType: t.carrierType as 'OWN' | 'EXTERNAL' | undefined,
+    externalCarrierId: t.externalCarrierId,
+    externalPlateNumber: t.externalPlateNumber,
+    externalDriverName: t.externalDriverName,
+    externalDriverPhone: t.externalDriverPhone,
   };
 }
 

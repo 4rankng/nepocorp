@@ -58,8 +58,13 @@ export interface TripUIState {
   actionLoading: boolean;
   actionError: string;
   showReassign: boolean;
+  reassignCarrierType: 'OWN' | 'EXTERNAL';
   reassignTruckId: string;
   reassignDriverId: string;
+  reassignExternalCarrierId: string;
+  reassignExternalPlateNumber: string;
+  reassignExternalDriverName: string;
+  reassignExternalDriverPhone: string;
   reassignLoading: boolean;
   reassignError: string;
   showAdjust: boolean;
@@ -80,6 +85,7 @@ export interface TripDetailPageData {
   permissions: TripPermissions;
   ui: TripUIState;
   fuelPriceConfig: number | null;
+  carrierCustomers: { id: number; label: string }[];
   adjustments: unknown[];
   reassignTrucks: { id: number; licensePlate: string }[];
   reassignDrivers: { id: number; name: string }[];
@@ -95,11 +101,17 @@ export interface TripDetailPageData {
   handleReassign: () => Promise<void>;
   openAdjust: () => void;
   handleAdjustSubmit: () => Promise<void>;
+  setReassignCarrierType: (v: 'OWN' | 'EXTERNAL') => void;
   setReassignTruckId: (v: string) => void;
   setReassignDriverId: (v: string) => void;
+  setReassignExternalCarrierId: (v: string) => void;
+  setReassignExternalPlateNumber: (v: string) => void;
+  setReassignExternalDriverName: (v: string) => void;
+  setReassignExternalDriverPhone: (v: string) => void;
   setShowReassign: (v: boolean) => void;
   setShowAdjust: (v: boolean) => void;
   setAdjustAmount: (v: string) => void;
   setAdjustNote: (v: string) => void;
   setAdjustRef: (v: string) => void;
+  cancelLoading: boolean;
 }
