@@ -13,6 +13,7 @@ import {
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getTripDistance,
 } from './tripHelpers';
+import { XeNgoaiBadge } from './XeNgoaiBadge';
 
 const formatMoney = (n: number): string =>
   formatCurrency(n).replace(' ₫', '').replace('₫', '').trim();
@@ -53,7 +54,10 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
               <span className="trip-meta-sep">·</span>
               <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
             </div>
-            <div className="trip-customer" title={customerName}>{customerName}</div>
+            <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span>{customerName}</span>
+              {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
+            </div>
             {missingIndicators.length > 0 && (
               <div className="trip-missing-row">
                 {missingIndicators.map((m, i) => (
@@ -70,13 +74,15 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
     {
       id: 'truck',
       header: 'Xe',
-      accessorFn: (row) => row.carrierType === 'EXTERNAL' ? (row.externalPlateNumber ?? 'Xe ngoài') : (row.truck?.licensePlate ?? ''),
+      accessorFn: (row) => row.carrierType === 'EXTERNAL' ? (row.externalPlateNumber ?? '') : (row.truck?.licensePlate ?? ''),
       cell: ({ row }) => {
         const trip = row.original;
         const isCreated = trip.status === TripStatus.CREATED;
         const isCanceled = trip.status === TripStatus.CANCELED;
         const isExternal = trip.carrierType === 'EXTERNAL';
-        const plate = isExternal ? (trip.externalPlateNumber || 'Xe ngoài') : (trip.truck?.licensePlate ?? '—');
+        // External trips are flagged by the "Xe ngoài" badge beside the customer
+        // name, so the plate cell only shows an actual plate — '—' when absent.
+        const plate = isExternal ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—');
         return (
           <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${isExternal ? ' external' : ''}`}>
             {plate}

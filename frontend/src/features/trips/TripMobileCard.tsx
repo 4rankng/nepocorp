@@ -12,6 +12,7 @@ import {
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getTripDistance,
 } from './tripHelpers';
+import { XeNgoaiBadge } from './XeNgoaiBadge';
 
 const formatMoney = (n: number): string =>
   formatCurrency(n).replace(' ₫', '').replace('₫', '').trim();
@@ -48,14 +49,17 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
     >
       <div className="trip-mcard__top">
         <div className="left">
-          <div className="trip-mcard__name">{trip.customer?.name ?? '—'}</div>
+          <div className="trip-mcard__name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span>{trip.customer?.name ?? '—'}</span>
+            {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
+          </div>
           <div className="trip-mcard__id">
             {buildTripCode(trip)}
             <span className="trip-meta-sep">·</span>
             <span>{formatDayMonth(trip.departureDate)}</span>
             <span className="trip-meta-sep">·</span>
             <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`} style={{ fontSize: 10, padding: '2px 7px' }}>
-              {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || 'Xe ngoài') : (trip.truck?.licensePlate ?? '—')}
+              {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—')}
             </span>
           </div>
         </div>
