@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCompact } from '../lib/format';
+import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
@@ -261,7 +261,7 @@ export default function DashboardPage() {
     if (overdue > 0) {
       items.push({
         icon: 'warn',
-        title: `Có ${formatCompact(overdue)} ₫ công nợ quá hạn`,
+        title: `Có ${formatNumber(overdue)} ₫ công nợ quá hạn`,
         sub: 'Vui lòng xem & nhắc khách hàng',
         action: { label: 'Xem công nợ', onClick: () => navigate('/debt') },
       });
@@ -382,7 +382,7 @@ export default function DashboardPage() {
             <DeltaPill mom={revenueMoM} />
           </div>
           <div className="val"><span ref={el => { kpiRefs.current.revenue = el; }}>{fmtVN(revenue)}</span> <i>đ</i></div>
-          <div className="foot">Tháng trước · {formatCompact(prevRevenue)} đ</div>
+          <div className="foot">Tháng trước · {formatNumber(prevRevenue)} đ</div>
         </div>
         <div className="wf-kpi">
           <div className="row1">
@@ -507,7 +507,7 @@ export default function DashboardPage() {
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cơ cấu chi phí</div>
-                <div className="sub">{String(currentMonth).padStart(2, '0')}/{currentYear} · tổng {formatCompact(costs)} đ</div>
+                <div className="sub">{String(currentMonth).padStart(2, '0')}/{currentYear} · tổng {formatNumber(costs)} đ</div>
               </div>
             </div>
             <div className="body">
@@ -567,7 +567,7 @@ export default function DashboardPage() {
                   <div key={i} className="wf-rrow">
                     <span className="rk">{i + 1}</span>
                     <span className="rt" title={r.name}>{r.name}</span>
-                    <span className="rv">{formatCompact(r.profit)}</span>
+                    <span className="rv">{formatNumber(r.profit)}</span>
                   </div>
                 ))}
               </div>

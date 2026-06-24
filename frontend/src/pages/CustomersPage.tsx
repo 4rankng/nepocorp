@@ -9,7 +9,7 @@ import { downloadCSV } from '../lib/csv';
 import { labelStyle } from '../utils/formStyles';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
 import { EmptyState } from '../design-system';
-import { formatCurrency, formatCompact } from '../lib/format';
+import { formatCurrency, formatNumber } from '../lib/format';
 import type { Customer, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
@@ -344,11 +344,11 @@ export default function CustomersPage() {
         />
         <KPI
           label="Top 4 KH / doanh thu"
-          value={top4Revenue.total > 0 ? formatCompact(top4Revenue.total) : '—'}
+          value={top4Revenue.total > 0 ? formatNumber(top4Revenue.total) : '—'}
           variant={top4Revenue.total > 0 ? 'success' : 'warn'}
           icon={BarChart3}
           meta={top4Revenue.total > 0
-            ? `${top4Revenue.customers.length} KH · ${formatCompact(top4Revenue.total)} ₫`
+            ? `${top4Revenue.customers.length} KH · ${formatNumber(top4Revenue.total)} ₫`
             : 'Chưa có dữ liệu doanh thu'
           }
         />
@@ -445,7 +445,7 @@ export default function CustomersPage() {
                 <div className="m-card__row">
                   <span className="m-card__row-label">Công nợ</span>
                   <span className="m-card__row-value" style={debtMap.get(c.id) ? { color: 'var(--danger)' } : undefined}>
-                    <Money value={debtMap.get(c.id) ?? 0} compact />
+                    <Money value={debtMap.get(c.id) ?? 0} />
                   </span>
                 </div>
                 <div className="m-card-edit-row">
@@ -542,7 +542,7 @@ export default function CustomersPage() {
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       <span style={debtMap.get(c.id) ? { color: 'var(--danger)', fontFamily: 'var(--font-mono)' } : { color: 'var(--ink-3)' }}>
-                        <Money value={debtMap.get(c.id) ?? 0} compact />
+                        <Money value={debtMap.get(c.id) ?? 0} />
                       </span>
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>

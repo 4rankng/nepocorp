@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, ChevronLeft, Receipt, AlertTriangle, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
-import { formatCurrency, formatCompact, formatDate } from '../lib/format';
+import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
 import { EmptyState } from '../design-system';
@@ -198,7 +198,7 @@ export default function ExpenseListPage() {
             {stats.unpaidCount}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatCompact(stats.unpaidAmount)}</div>
+          <div className="expense-kpi-meta">{formatNumber(stats.unpaidAmount)}</div>
         </div>
 
         <div className="expense-kpi-card expense-kpi-card--paid">
@@ -212,7 +212,7 @@ export default function ExpenseListPage() {
             {stats.paidCount}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatCompact(stats.paidAmount)}</div>
+          <div className="expense-kpi-meta">{formatNumber(stats.paidAmount)}</div>
         </div>
       </div>
 

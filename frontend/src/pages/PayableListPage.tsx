@@ -11,7 +11,6 @@ import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { useMediaQuery } from '../hooks/useMediaQuery';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -187,7 +186,7 @@ export default function PayableListPage() {
   const error = queryError ? (queryError as Error).message : null;
   const [search, setSearch] = useState('');
   const prefersReduced = usePrefersReducedMotion();
-  const compact = useMediaQuery('(max-width: 640px)');
+  const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
 
   /* ── Commission modal ── */
   const [commissionOpen, setCommissionOpen] = useState(false);

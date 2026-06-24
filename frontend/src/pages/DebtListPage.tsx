@@ -11,7 +11,6 @@ import type { CustomerAging } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtListPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -96,7 +95,7 @@ export default function DebtListPage() {
 
   /* ── Animation hooks ── */
   const prefersReduced = usePrefersReducedMotion();
-  const compact = useMediaQuery('(max-width: 640px)');
+  const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
   const { rootRef } = usePageAnimations({
     ready: !loading,
     selectors: ['.hero-kpi-card', '.hero-kpi-mini', '.debt-aging-card', '.debt-data-card'],

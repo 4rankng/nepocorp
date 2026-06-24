@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, FileText, CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
-import { formatCompact, formatDate } from '../lib/format';
+import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import {
   ADVANCE_SETTLEMENT_STATUS_LABELS,
@@ -119,12 +119,12 @@ function SettlementGridRow({
 
       {/* Expense */}
       <div className="as-amount">
-        <Money value={Number(s.totalExpenseAmount)} compact />
+        <Money value={Number(s.totalExpenseAmount)} />
       </div>
 
       {/* Refund */}
       <div className="as-refund">
-        {Number(s.refundAmount) > 0 ? <Money value={Number(s.refundAmount)} compact /> : '—'}
+        {Number(s.refundAmount) > 0 ? <Money value={Number(s.refundAmount)} /> : '—'}
       </div>
 
       {/* Date */}
@@ -380,7 +380,7 @@ export default function AdminAdvanceSettlementsPage() {
         <AsKPI
           label="Chờ xử lý"
           value={stats.counts.PENDING}
-          meta={`${formatCompact(stats.totals.PENDING)} ₫`}
+          meta={`${formatNumber(stats.totals.PENDING)} ₫`}
           variant="warn"
           active={statusFilter === AdvanceSettlementStatus.PENDING}
           hasItems={stats.counts.PENDING > 0}
@@ -389,7 +389,7 @@ export default function AdminAdvanceSettlementsPage() {
         <AsKPI
           label="KT đã kiểm tra"
           value={stats.counts.CHECKED_BY_ACCOUNTANT}
-          meta={`${formatCompact(stats.totals.CHECKED_BY_ACCOUNTANT)} ₫`}
+          meta={`${formatNumber(stats.totals.CHECKED_BY_ACCOUNTANT)} ₫`}
           variant="info"
           active={statusFilter === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT}
           hasItems={stats.counts.CHECKED_BY_ACCOUNTANT > 0}
@@ -398,7 +398,7 @@ export default function AdminAdvanceSettlementsPage() {
         <AsKPI
           label="Đã duyệt"
           value={stats.counts.APPROVED}
-          meta={`${formatCompact(stats.totals.APPROVED)} ₫`}
+          meta={`${formatNumber(stats.totals.APPROVED)} ₫`}
           variant="success"
           active={statusFilter === AdvanceSettlementStatus.APPROVED}
           onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.APPROVED ? '' : AdvanceSettlementStatus.APPROVED)}
@@ -406,7 +406,7 @@ export default function AdminAdvanceSettlementsPage() {
         <AsKPI
           label="Tồn tạm ứng"
           value={balancesData?.items.length ?? 0}
-          meta={`${formatCompact(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
+          meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="warn"
           active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}

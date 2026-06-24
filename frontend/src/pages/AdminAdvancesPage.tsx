@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
-import { formatCurrency, formatCompact, formatDate } from '../lib/format';
+import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
@@ -305,7 +305,7 @@ export default function AdminAdvancesPage() {
         <AdvKPI
           label="Chờ duyệt"
           value={stats.counts.PENDING}
-          meta={`${formatCompact(stats.totals.PENDING)} ₫`}
+          meta={`${formatNumber(stats.totals.PENDING)} ₫`}
           variant="warn"
           active={statusFilter === AdvanceRequestStatus.PENDING}
           hasItems={stats.counts.PENDING > 0}
@@ -314,7 +314,7 @@ export default function AdminAdvancesPage() {
         <AdvKPI
           label="Đã duyệt"
           value={stats.counts.APPROVED}
-          meta={`${formatCompact(stats.totals.APPROVED)} ₫`}
+          meta={`${formatNumber(stats.totals.APPROVED)} ₫`}
           variant="success"
           active={statusFilter === AdvanceRequestStatus.APPROVED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.APPROVED ? '' : AdvanceRequestStatus.APPROVED)}
@@ -322,7 +322,7 @@ export default function AdminAdvancesPage() {
         <AdvKPI
           label="Từ chối"
           value={stats.counts.REJECTED}
-          meta={`${formatCompact(stats.totals.REJECTED)} ₫`}
+          meta={`${formatNumber(stats.totals.REJECTED)} ₫`}
           variant="danger"
           active={statusFilter === AdvanceRequestStatus.REJECTED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
@@ -330,7 +330,7 @@ export default function AdminAdvancesPage() {
         <AdvKPI
           label="Tồn tạm ứng"
           value={balancesData?.items.length ?? 0}
-          meta={`${formatCompact(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
+          meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="success"
           active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}
