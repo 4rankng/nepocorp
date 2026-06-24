@@ -119,19 +119,23 @@ export interface Trailer {
 }
 
 // ─── N1 — Tires ───────────────────────────────────────────────────────────
-// A single tire tracked by its immutable `serial`. truckId null = in stock /
-// spare; cost is VND (numeric(15,0) serializes as a string).
+// A single tire tracked by its immutable `serial`. A tire mounts on a truck
+// (truckId) OR a trailer (trailerId); both null = spare in stock. DISPOSED
+// tires are retained for traceability. cost is VND (numeric(15,0) → string).
 export interface Tire {
   id: number;
   serial: string;
   truckId: number | null;
+  trailerId: number | null;
   position: string | null;
   size: string | null;
   installedAt: string | null;
   removedAt: string | null;
   supplierId: number | null;
   cost: string;
-  warrantyUntil: string | null;
+  purchasedAt: string | null;
+  disposalDate: string | null;
+  disposalReason: string | null;
   status: TireStatus;
   createdAt: string;
   updatedAt: string;
@@ -146,17 +150,6 @@ export interface TirePosition {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-}
-
-/** Warranty-expiry alert for a tire (mirrors VehicleAlert shape). */
-export interface VehicleTireAlert {
-  tireId: number;
-  serial: string;
-  /** ISO date string 'YYYY-MM-DD'. */
-  date: string;
-  /** Whole days from `today` until `date` (negative = past). */
-  daysUntil: number;
-  status: VehicleAlertStatus;
 }
 
 export interface Route {

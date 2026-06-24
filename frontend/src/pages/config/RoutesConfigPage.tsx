@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
+import { useBackShortcut } from '../../hooks/useBackShortcut';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { labelStyle } from '../../utils/formStyles';
@@ -332,6 +333,8 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
 export default function RoutesConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
+  const handleBack = () => navigate('/config');
+  useBackShortcut(handleBack);
   const [routeFilter, setRouteFilter] = useState<'all' | 'plain' | 'mountain'>('all');
   const [search, setSearch] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
@@ -438,7 +441,7 @@ export default function RoutesConfigPage() {
       <div className="page-header">
         <button
           type="button"
-          onClick={() => navigate('/config')}
+          onClick={handleBack}
           aria-label="Quay lại danh sách cấu hình"
           className="page-header__back-btn"
           style={{ marginRight: 4 }}

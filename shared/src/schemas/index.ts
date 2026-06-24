@@ -340,19 +340,34 @@ export const trailerSchema = z.object({
 export const tireSchema = z.object({
   serial: z.string().min(1, 'Số serial lốp không được để trống').max(64),
   truckId: z.coerce.number().int().positive().optional().nullable(),
+  // A tire mounts on EITHER a truck (đầu kéo) or a trailer (rơ-moóc); both are
+  // nullable so a spare in stock has neither set.
+  trailerId: z.coerce.number().int().positive().optional().nullable(),
   position: z.string().trim().min(1).max(64).optional().nullable(),
   size: z.string().max(32).optional().nullable(),
   installedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   removedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   supplierId: z.coerce.number().int().positive().optional().nullable(),
   cost: numericMoney.optional().default(0),
-  warrantyUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  // Ngày mua lốp (replaces the old warranty-expiry field). Drives "tuổi lốp".
+  purchasedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  disposalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  disposalReason: z.string().trim().max(120).optional().nullable(),
   status: z.enum(TIRE_STATUSES).optional().default('IN_STOCK'),
 });
 
+// Install accepts either a truck or a trailer target (exactly one required).
 export const installTireSchema = z.object({
-  truckId: z.coerce.number().int().positive(),
+  truckId: z.coerce.number().int().positive().optional().nullable(),
+  trailerId: z.coerce.number().int().positive().optional().nullable(),
   position: z.string().trim().min(1).max(64).optional().nullable(),
+}).refine((d) => d.truckId || d.trailerId, {
+  message: 'Phải chọn xe đầu kéo hoặc rơ-moóc để lắp lốp',
+  path: ['truckId'],
+});
+
+export const disposeTireSchema = z.object({
+  reason: z.string().trim().min(1, 'Chọn lý do thanh lý').max(120),
 });
 
 export const tirePositionSchema = z.object({
@@ -712,6 +727,7 @@ export type TruckInput = z.infer<typeof truckSchema>;
 export type TrailerInput = z.infer<typeof trailerSchema>;
 export type TireInput = z.infer<typeof tireSchema>;
 export type InstallTireInput = z.infer<typeof installTireSchema>;
+export type DisposeTireInput = z.infer<typeof disposeTireSchema>;
 export type TirePositionInput = z.infer<typeof tirePositionSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;
 export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;

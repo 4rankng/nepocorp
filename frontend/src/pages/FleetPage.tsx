@@ -72,13 +72,13 @@ function fleetStatusColor(status: string): string {
   return '#6B7280';
 }
 
-const TireQuickLink = memo(function TireQuickLink({ truckId, count }: { truckId: number; count: number }) {
+const TireQuickLink = memo(function TireQuickLink({ to, count }: { to: string; count: number }) {
   return (
     <Link
-      to={routes.fleetTires(truckId)}
+      to={to}
       className={`fleet-tire-link${count === 0 ? ' fleet-tire-link--empty' : ''}`}
       onClick={(e) => e.stopPropagation()}
-      aria-label={`Quản lý lốp xe, hiện có ${count} lốp`}
+      aria-label={`Quản lý lốp, hiện có ${count} lốp`}
     >
       <span className="fleet-tire-link__count">{count}</span>
       <span>Lốp</span>
@@ -96,14 +96,14 @@ const TireDetailList = memo(function TireDetailList({ truckId, tires }: { truckI
   const mountedTires = tires.filter((tire) => tire.truckId === truckId && tire.status === 'IN_USE');
 
   if (mountedTires.length === 0) {
-    return <TireQuickLink truckId={truckId} count={0} />;
+    return <TireQuickLink to={routes.fleetTires(truckId)} count={0} />;
   }
 
   return (
     <div className="fleet-tire-detail">
       <div className="fleet-tire-detail__head">
         <span><strong>{mountedTires.length}</strong> lốp đang lắp</span>
-        <TireQuickLink truckId={truckId} count={mountedTires.length} />
+        <TireQuickLink to={routes.fleetTires(truckId)} count={mountedTires.length} />
       </div>
       <div className="fleet-tire-detail__list">
         {mountedTires.map((tire) => (
@@ -114,7 +114,7 @@ const TireDetailList = memo(function TireDetailList({ truckId, tires }: { truckI
             </div>
             <div className="fleet-tire-detail__meta">
               <span>{tire.size || '—'}</span>
-              {tire.warrantyUntil && <span>BH {formatDate(tire.warrantyUntil)}</span>}
+              {tire.purchasedAt && <span>Mua {formatDate(tire.purchasedAt)}</span>}
               <StatusPill variant={tireStatusVariant(tire.status)}>
                 {TIRE_STATUS_LABELS[tire.status]}
               </StatusPill>
@@ -225,6 +225,7 @@ function TrailerCard({ trailers, trucks, crud }: {
   crud: ReturnType<typeof useCRUD>;
 }) {
   const [viewingId, setViewingId] = useState<number | null>(null);
+  const { data: tires = [] } = useTires();
   // Build reverse lookup: trailerId → truck plate, so we can show which đầu
   // kéo each rơ-moóc is currently coupled to.
   const truckByTrailer = useMemo(() => {
@@ -232,6 +233,16 @@ function TrailerCard({ trailers, trucks, crud }: {
     trucks.forEach(t => { if (t.currentTrailerId) m.set(t.currentTrailerId, t); });
     return m;
   }, [trucks]);
+  // Count IN_USE tires per rơ-moóc for the Lốp quick-link badge.
+  const tireCountByTrailer = useMemo(() => {
+    const counts = new Map<number, number>();
+    (tires as Tire[]).forEach((tire) => {
+      if (tire.trailerId && tire.status === 'IN_USE') {
+        counts.set(tire.trailerId, (counts.get(tire.trailerId) ?? 0) + 1);
+      }
+    });
+    return counts;
+  }, [tires]);
   const ft40 = trailers.filter(t => t.type === TrailerType.FT40).length;
   const ft20 = trailers.filter(t => t.type === TrailerType.FT20).length;
   const active = trailers.filter(t => t.status === 'ACTIVE').length;
@@ -265,6 +276,7 @@ function TrailerCard({ trailers, trucks, crud }: {
                 <th>Biển số rơ-moóc</th>
                 <th>Loại</th>
                 <th>Đầu kéo đang ghép</th>
+                <th>Lốp</th>
               </tr>
             </thead>
             <tbody>
@@ -296,6 +308,9 @@ function TrailerCard({ trailers, trucks, crud }: {
                         ? <span className="fleet-pair"><Plate plate={coupledTruck.licensePlate} tag="VN" /></span>
                         : <span className="fleet-unassigned">— Chưa ghép —</span>
                       }
+                    </td>
+                    <td>
+                      <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} />
                     </td>
                   </tr>
                 );
@@ -343,6 +358,10 @@ function TrailerCard({ trailers, trucks, crud }: {
                   <span className="m-card__row-label">Đầu kéo ghép</span>
                   <span className="m-card__row-value">{coupledTruck ? coupledTruck.licensePlate : '— Chưa ghép —'}</span>
                 </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Lốp</span>
+                  <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} />
+                </div>
                 <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); crud.setEditingId(t.id); }}>Sửa</button>
                   <button className="btn btn--ghost btn--sm" style={{ color: 'var(--danger)' }} onClick={e => { e.stopPropagation(); crud.doDelete(t.id); }}>Xóa</button>
@@ -381,6 +400,7 @@ function TrailerCard({ trailers, trucks, crud }: {
             { label: 'Biển số rơ-moóc', value: <Plate plate={t.licensePlate} tag="RM" /> },
             { label: 'Loại', value: <TypeChip type={t.type} /> },
             { label: 'Đầu kéo đang ghép', value: coupledTruck ? <Plate plate={coupledTruck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa ghép —</span> },
+            { label: 'Lốp', value: <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} /> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
           ];
         })()}
@@ -490,7 +510,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                     }
                   </td>
                   <td>
-                    <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} />
+                    <TireQuickLink to={routes.fleetTires(t.id)} count={tireCountByTruck.get(t.id) ?? 0} />
                   </td>
                 </tr>
               ))}
@@ -534,7 +554,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Lốp</span>
-                  <TireQuickLink truckId={t.id} count={tireCountByTruck.get(t.id) ?? 0} />
+                  <TireQuickLink to={routes.fleetTires(t.id)} count={tireCountByTruck.get(t.id) ?? 0} />
                 </div>
                 <div className="fleet-card-actions">
                   <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); setViewingId(t.id); }}>Xem</button>

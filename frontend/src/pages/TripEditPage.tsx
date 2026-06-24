@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
+import { ShareLinkButton } from '../components/shared';
+import { routes } from '../lib/routes';
 import { useTripDetail } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useTripForm } from '../hooks/useTripForm';
@@ -20,6 +22,8 @@ import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCar
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import { TripInstructionsCard } from '../components/trip/TripInstructionsCard';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
+import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import type { TripOptions } from '../hooks/useTripOptions';
 import './TripForm.css';
 import './TripEditPage.css';
@@ -54,6 +58,19 @@ export default function TripEditPage() {
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
   const { error, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt } = form;
+
+  // The trip form hydrates from `existingTrip` via an effect inside the form
+  // hook (one render after `trip` arrives), so gate the dirty baseline on a
+  // `formHydrated` flag that flips the render *after* population — otherwise
+  // the populate pass would read as a spurious "dirty" on every load.
+  const [formHydrated, setFormHydrated] = useState(false);
+  useEffect(() => { setFormHydrated(!!trip && !!catalogData); }, [trip, catalogData]);
+  const guard = useDirtyGuard([form], formHydrated);
+  const handleBack = () => { if (trip) navigate(`/trips/${trip.id}`); };
+  useBackShortcut(handleBack, {
+    isDirty: guard.isDirty,
+    confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
+  });
 
   const onSubmit = async (e: React.FormEvent) => {
     try {
@@ -103,7 +120,7 @@ export default function TripEditPage() {
     <TripFormProvider form={form}>
       <div ref={rootRef}>
         <header className="tc-page-head">
-          <button className="tc-back-btn" onClick={() => navigate(`/trips/${trip.id}`)} aria-label="Quay lại">
+          <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
             <ArrowLeft size={18} />
           </button>
           <div className="tc-title-wrap">
@@ -117,6 +134,9 @@ export default function TripEditPage() {
               </span>
             </h1>
             <p className="tc-page-sub">{trip.customer?.name ?? ''} · {trip.route?.name ?? ''}</p>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <ShareLinkButton path={routes.tripDetail(trip.id)} />
           </div>
         </header>
 
@@ -423,7 +443,7 @@ export default function TripEditPage() {
                 <button
                   type="button"
                   className="btn btn--secondary tc-rail-btn tc-rail-btn--secondary"
-                  onClick={() => navigate(`/trips/${trip.id}`)}
+                  onClick={handleBack}
                   disabled={submitting}
                 >
                   Hủy bỏ
@@ -439,7 +459,7 @@ export default function TripEditPage() {
           <button
             type="button"
             className="btn btn--secondary tc-mobile-btn"
-            onClick={() => navigate(`/trips/${trip.id}`)}
+            onClick={handleBack}
             disabled={submitting}
           >
             Hủy

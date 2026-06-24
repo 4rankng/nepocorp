@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { TRIP_STATUS_LABELS, TripStatus, type TripDetail } from '@tingting/shared';
 import type { TripPermissions } from '../types';
+import { ShareLinkButton } from '../../../components/shared';
 
 interface TripHeaderProps {
   trip: TripDetail;
@@ -61,6 +62,7 @@ export function TripHeader({
       </div>
 
       <div className="header-actions">
+        <ShareLinkButton />
         {canEdit && (
           <button className="btn tdp-edit-btn" onClick={onEdit}>
             <Pencil size={15} />Chỉnh sửa

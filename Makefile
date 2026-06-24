@@ -1,6 +1,7 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
         deploy deploy-backend deploy-frontend deploy-infra \
+        demo demo-backend demo-frontend \
         prod-migrate prod-migrate-file \
         backup restore adminer-on adminer-off
 
@@ -120,6 +121,20 @@ deploy-backend: push-backend
 deploy-frontend: push-frontend
 	$(MAKE) -C frontend deploy
 
+# ─── Demo deploy (vantai.tingting.vip) ────────────────────────────────────────
+# Same Docker Hub images as production; deploys to the demo server at /opt/vantai.
+
+## demo: Build, push images, and deploy backend+frontend to vantai (demo) server
+demo: demo-backend demo-frontend
+
+## demo-backend: Push & deploy backend to vantai (+ run migrations)
+demo-backend: push-backend
+	$(MAKE) -C deploy/vantai deploy-backend
+
+## demo-frontend: Push & deploy frontend to vantai
+demo-frontend: push-frontend
+	$(MAKE) -C deploy/vantai deploy-frontend
+
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB
 prod-migrate:
 	@echo "==> Applying migrations on production..."
@@ -232,6 +247,11 @@ help: ## Show this help
 	@echo "  \033[36mdeploy-backend\033[0m Pull & restart backend + run migrations"
 	@echo "  \033[36mdeploy-frontend\033[0m Pull & restart frontend on droplet"
 	@echo "  \033[36mdeploy-infra  \033[0m Restart infra services (postgres, redis)"
+	@echo ""
+	@echo "Demo deploy (Docker Hub → vantai.tingting.vip):"
+	@echo "  \033[36mdemo          \033[0m Build, push images & deploy all to vantai"
+	@echo "  \033[36mdemo-backend  \033[0m Push & deploy backend to vantai (+ migrations)"
+	@echo "  \033[36mdemo-frontend \033[0m Push & deploy frontend to vantai"
 	@echo "  \033[36mprod-migrate  \033[0m Apply all SQL migrations to production DB"
 	@echo "  \033[36mprod-migrate-file \033[0m Apply single migration (FILE=xxx.sql)"
 	@echo "  \033[36mbackup        \033[0m Dump production DB → OneDrive"

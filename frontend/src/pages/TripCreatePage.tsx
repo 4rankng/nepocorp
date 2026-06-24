@@ -14,6 +14,9 @@ import { TripSummaryCard } from '../components/trip/TripSummaryCard';
 import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
 import { ActionBar } from '../components/trip/ActionBar';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
+import { useDirtyGuard } from '../hooks/useDirtyGuard';
+import { useConfirm } from '../components/UI';
 import './TripForm.css';
 import './TripCreatePage.css';
 
@@ -24,6 +27,14 @@ export default function TripCreatePage() {
   const { rootRef } = usePageAnimations({
     ready: !options.loading,
     selectors: ['.tc-create-hero', '.tc-create-bento'],
+  });
+
+  const { confirm, dialog } = useConfirm();
+  const guard = useDirtyGuard([form], !options.loading);
+  const handleBack = () => navigate('/trips');
+  useBackShortcut(handleBack, {
+    isDirty: guard.isDirty,
+    confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
   });
 
   const handleSubmit = async () => {
@@ -38,7 +49,7 @@ export default function TripCreatePage() {
       <div ref={rootRef} className="tc-create-wrap">
         <section className="tc-create-hero">
           <div className="tc-hero-top">
-            <button className="tc-back-btn" onClick={() => navigate('/trips')} aria-label="Quay lại">
+            <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
               <ArrowLeft size={18} />
             </button>
             <div className="tc-hero-title-block">
@@ -98,9 +109,11 @@ export default function TripCreatePage() {
 
         <ActionBar
           loading={options.loading}
-          onCancel={() => navigate('/trips')}
+          onCancel={handleBack}
           onSubmit={handleSubmit}
         />
+
+        {dialog}
       </div>
     </TripFormProvider>
   );

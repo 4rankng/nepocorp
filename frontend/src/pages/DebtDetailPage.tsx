@@ -11,7 +11,9 @@ import { api } from '../lib/api';
 import { Modal } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
+import { ShareLinkButton } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
 
@@ -70,6 +72,9 @@ export default function DebtDetailPage() {
   const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
   const error = queryError ? (queryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
+
+  const handleBack = () => navigate(backPath);
+  useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
 
@@ -163,7 +168,7 @@ export default function DebtDetailPage() {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
-          <button className="dd-back" onClick={() => navigate(backPath)}>
+          <button className="dd-back" onClick={handleBack}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -246,7 +251,7 @@ export default function DebtDetailPage() {
     <div ref={rootRef} className="debt-detail-page">
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
-        <button className="dd-back" onClick={() => navigate(backPath)}>
+        <button className="dd-back" onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar">{initials}</div>
@@ -278,6 +283,7 @@ export default function DebtDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
+          <ShareLinkButton />
           {hasDebt && (
             <button
               className="btn btn--primary"

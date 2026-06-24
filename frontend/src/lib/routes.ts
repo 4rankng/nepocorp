@@ -29,6 +29,7 @@ export const routes = {
   dispatch: '/dispatch',
   fleet: '/fleet',
   fleetTires: (truckId: number | string) => `/fleet/${truckId}/tires`,
+  fleetTrailerTires: (trailerId: number | string) => `/fleet/trailers/${trailerId}/tires`,
   trips: '/trips',
   tripNew: '/trips/new',
   tripDetail: (id: number | string) => `/trips/${id}`,
@@ -152,4 +153,17 @@ export function titleForPath(pathname: string): string {
   const match = titleRules.find(rule => rule.test(pathname));
   if (!match) return 'NEPO';
   return typeof match.title === 'function' ? match.title(pathname) : match.title;
+}
+
+/**
+ * Build an absolute URL (https://host/path) from a SPA path, using the
+ * browser's own origin. Used by the share-link feature so a copied URL works
+ * on whichever production domain the sharer is on (nepo vs vantai) without
+ * any backend/env config.
+ *
+ * Pure CSR (Vite SPA) — `window` is always defined at call time. Call from
+ * event handlers / component bodies, not at module top-level.
+ */
+export function absoluteUrl(path: string): string {
+  return `${window.location.origin}${path}`;
 }

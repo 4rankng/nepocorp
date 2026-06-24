@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { registerOverlay, unregisterOverlay } from '../lib/overlayState';
 
 interface PhotoViewerProps {
   urls: string[];
@@ -55,6 +56,12 @@ export function PhotoViewer({ urls, initialIndex = 0, onClose }: PhotoViewerProp
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose, go, zoom, resetView]);
+
+  // Register as an open overlay so the ESC "go back" shortcut yields while open
+  useEffect(() => {
+    registerOverlay();
+    return () => unregisterOverlay();
+  }, []);
 
   // Scroll-to-zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {

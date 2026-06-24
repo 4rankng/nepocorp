@@ -21,7 +21,9 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { useToast } from '../../components/shared/Toast';
+import { ShareLinkButton } from '../../components/shared';
 import { usePageAnimations } from '../../hooks/animations';
+import { useBackShortcut } from '../../hooks/useBackShortcut';
 import type { TruckCapEntry, PaginatedResponse, Truck } from '@tingting/shared';
 import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import { qk } from '../../api/keys';
@@ -87,6 +89,8 @@ function computeActiveIds(items: TruckCapEntry[]): Set<number> {
 export default function TruckOwnersConfigPage() {
   const { truckId } = useParams<{ truckId: string }>();
   const navigate = useNavigate();
+  const handleBack = () => navigate('/config/trucks');
+  useBackShortcut(handleBack);
   const id = Number(truckId);
   const { confirm, dialog } = useConfirm();
   const { toast: showToast } = useToast();
@@ -174,10 +178,11 @@ export default function TruckOwnersConfigPage() {
       <PageHeader
         title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
         description="Danh sách đối tác sở hữu xe và tỷ lệ chia lợi nhuận của xe này."
+        action={<ShareLinkButton />}
       />
 
       <div style={{ marginBottom: 16 }}>
-        <button className="btn btn--secondary" style={{ height: 36, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={() => navigate('/config/trucks')}>
+        <button className="btn btn--secondary" style={{ height: 36, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={handleBack}>
           <ArrowLeft size={14} /> Quay lại danh sách xe
         </button>
       </div>

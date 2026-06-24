@@ -12,15 +12,16 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
-  tireSchema, installTireSchema, tirePositionSchema,
+  tireSchema, installTireSchema, disposeTireSchema, tirePositionSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
+import { ApiError } from '../errors';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields } from '../services/config.service';
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
-import { installTire, isHttpError } from '../services/tire.service';
+import { installTire, removeTire, disposeTire, isHttpError } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -143,10 +144,28 @@ router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
 // Generic CRUD for the catalog (list/create/update/soft-delete). The lifecycle
 // transitions (install/remove) are dedicated endpoints below because they touch
 // multiple fields atomically and validate the target truck exists.
-router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, { searchableField: 'serial', maxLimit: 2000 }));
+router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, {
+  searchableField: 'serial',
+  maxLimit: 2000,
+  // A tire mounts on a truck OR a trailer — never both. installTireSchema
+  // already enforces this on the lifecycle endpoint; mirror it on generic CRUD
+  // create/update so a row can't be saved mounted on two vehicles at once.
+  beforeCreate: (data) => {
+    if (data.truckId && data.trailerId) {
+      throw new ApiError(400, 'Lốp chỉ lắp trên xe đầu kéo hoặc rơ-moóc, không cả hai');
+    }
+    return data;
+  },
+  beforeUpdate: (_id, data) => {
+    if (data.truckId && data.trailerId) {
+      throw new ApiError(400, 'Lốp chỉ lắp trên xe đầu kéo hoặc rơ-moóc, không cả hai');
+    }
+    return data;
+  },
+}));
 
-// Lifecycle endpoints — MANAGER/ADMIN only (writes). The mount-level config
-// Casbin gate already restricts broadly; requireRoles tightens write actions.
+// Lifecycle endpoints — MANAGER/ACCOUNTANT/ADMIN only (writes). The mount-level
+// config Casbin gate already restricts broadly; requireRoles tightens write actions.
 export const tireLifecycleRouter = Router();
 tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
@@ -154,9 +173,37 @@ tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER, 
   const data = installTireSchema.parse(req.body);
   try {
     const tire = await installTire(id, {
-      truckId: data.truckId,
+      truckId: data.truckId ?? null,
+      trailerId: data.trailerId ?? null,
       position: data.position ?? null,
     });
+    await cacheInvalidatePattern('catalogs:*');
+    res.json(tire);
+  } catch (e) {
+    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+
+tireLifecycleRouter.post('/:id/remove', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+  try {
+    const tire = await removeTire(id);
+    await cacheInvalidatePattern('catalogs:*');
+    res.json(tire);
+  } catch (e) {
+    if (isHttpError(e)) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+
+tireLifecycleRouter.post('/:id/dispose', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
+  const data = disposeTireSchema.parse(req.body);
+  try {
+    const tire = await disposeTire(id, { reason: data.reason });
     await cacheInvalidatePattern('catalogs:*');
     res.json(tire);
   } catch (e) {

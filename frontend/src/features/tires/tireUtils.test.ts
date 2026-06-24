@@ -48,14 +48,14 @@ describe('tireUtils', () => {
       size: ' 11R22.5 ',
       installedAt: '',
       supplierText: 'Lốp Miền Nam',
-      warrantyUntil: '',
+      purchasedAt: '',
     }, suppliers)).toEqual({
       serial: 'ABC123',
       position: 'Trước trái',
       size: '11R22.5',
       installedAt: null,
       supplierId: 7,
-      warrantyUntil: null,
+      purchasedAt: null,
     });
   });
 });

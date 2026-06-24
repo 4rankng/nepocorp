@@ -2,7 +2,7 @@ export {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
-  TIRE_STATUSES, TIRE_STATUS_LABELS,
+  TIRE_STATUSES, TIRE_STATUS_LABELS, TIRE_DISPOSAL_REASONS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
   AdvanceRequestStatus, AdvanceSettlementStatus,
@@ -36,7 +36,7 @@ export type {
   DebtOffset,
   ApprovalItemType,
   VehicleAlertField, VehicleAlertStatus, VehicleAlert,
-  Tire, TirePosition, VehicleTireAlert,
+  Tire, TirePosition,
   BillingDocument, BillingDocumentLine, BillingDocumentType, BillingDocumentEntityType,
   BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
@@ -62,7 +62,7 @@ export {
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
   commissionSchema,
   driverPayoutSchema,
-  tireSchema, installTireSchema, tirePositionSchema,
+  tireSchema, installTireSchema, disposeTireSchema, tirePositionSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
 } from './schemas';
@@ -108,5 +108,5 @@ export { computeTripTotals, computeRoadAllowance } from './calculations/tripTota
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
-export { computeVehicleAlerts, VEHICLE_ALERT_LABELS, computeTireAlerts } from './calculations/vehicleAlerts';
+export { computeVehicleAlerts, VEHICLE_ALERT_LABELS } from './calculations/vehicleAlerts';
 export type { VehicleAlertInput } from './calculations/vehicleAlerts';

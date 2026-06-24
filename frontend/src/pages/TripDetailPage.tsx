@@ -7,6 +7,7 @@ import { Modal, Drawer } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import { TripStatus } from '@tingting/shared';
 
 // Feature: logic (.ts) + UI (.tsx)
@@ -27,6 +28,9 @@ export default function TripDetailPage() {
   // Only poll live GPS when this trip is actually in transit — a completed /
   // cancelled trip never has a live vehicle, so avoid polling the cache forever.
   const { data: liveFleet } = useLiveFleet({ enabled: page.trip?.status === TripStatus.IN_TRANSIT });
+
+  const handleBack = () => navigate('/trips');
+  useBackShortcut(handleBack);
 
   /* ── Loading / Error / Empty guards ────────────────────────────────── */
   if (page.loading) {
@@ -64,7 +68,7 @@ export default function TripDetailPage() {
         trip={trip}
         permissions={permissions}
         actionLoading={ui.actionLoading}
-        onBack={() => navigate('/trips')}
+        onBack={handleBack}
         onEdit={() => navigate(`/trips/${trip.id}/edit`)}
         onDispatch={() => page.handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
         onComplete={() => page.handleAction('complete', () => api.post(`/trips/${trip.id}/complete`, {}))}

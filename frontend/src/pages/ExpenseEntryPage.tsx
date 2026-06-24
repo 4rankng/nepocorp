@@ -4,9 +4,12 @@ import { Loader2, Upload, X, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { configClient } from '../api/configClient';
-import { PageHeader } from '../components/UI';
+import { PageHeader, useConfirm } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { useBackShortcut } from '../hooks/useBackShortcut';
+import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import { useToast } from '../components/shared/Toast';
+import { ShareLinkButton } from '../components/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePageAnimations } from '../hooks/animations';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
@@ -92,6 +95,10 @@ export default function ExpenseEntryPage() {
   const [pageError, setPageError] = useState('');
   const [photos, setPhotos] = useState<{ id: number; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  // True once an edit-mode expense has been hydrated into the form (see effect
+  // below) — the "ready" baseline for the discard-dirty guard so the
+  // server-populate pass isn't mistaken for a user edit.
+  const [hydrated, setHydrated] = useState(!isEdit);
 
   const { data: catalogData } = useCatalogs();
   const trucks = catalogData?.trucks ?? [];
@@ -136,6 +143,14 @@ export default function ExpenseEntryPage() {
 
   const { rootRef } = usePageAnimations({ ready: !loadingExpense });
 
+  const { confirm, dialog } = useConfirm();
+  const guard = useDirtyGuard([form], hydrated);
+  const handleBack = () => navigate('/expenses');
+  useBackShortcut(handleBack, {
+    isDirty: guard.isDirty,
+    confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
+  });
+
   useEffect(() => {
     if (existingExpense) {
       setForm({
@@ -152,6 +167,7 @@ export default function ExpenseEntryPage() {
         note: existingExpense.note || '',
       });
       setExpenseType(existingExpense.truckId ? (existingExpense.vehicleComponent as 'TRUCK' | 'TRAILER') : 'COMPANY');
+      setHydrated(true);
     }
   }, [existingExpense]);
 
@@ -407,12 +423,16 @@ export default function ExpenseEntryPage() {
 
   return (
     <div ref={rootRef} className="expense-page-wrap">
+      {dialog}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <ShareLinkButton />
+      </div>
 
       <div className="expense-page-container">
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
           description={isEdit ? 'Cập nhật thông tin chi phí phát sinh' : 'Nhập thông tin chi phí phát sinh'}
-          onBack={() => navigate('/expenses')}
+          onBack={handleBack}
         />
 
         <form onSubmit={handleSubmit} className="expense-page-form">
@@ -768,7 +788,7 @@ export default function ExpenseEntryPage() {
                 <button
                   type="button"
                   className="btn btn--secondary expense-btn-cancel"
-                  onClick={() => navigate('/expenses')}
+                  onClick={handleBack}
                 >
                   Hủy
                 </button>

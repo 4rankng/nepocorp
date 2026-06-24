@@ -5,8 +5,9 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { Money } from '../components/shared/Money';
 import { EmptyIllustration } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupExpensesByType } from '../lib/expense-breakdown';
-import { PageHeader } from '../components/UI';
+import { PageHeader, useConfirm } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import type { AdvanceRequestWithRefs } from '@tingting/shared';
@@ -61,6 +62,14 @@ export default function ForwarderSettlementCreatePage() {
   const [note, setNote] = useState('');
   const [created, setCreated] = useState<CreatedSettlement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const { confirm, dialog } = useConfirm();
+  const handleBack = () => navigate('/my-settlements');
+  const isDirty = () => !created && (selectedRequestIds.size > 0 || selectedExpenseIds.size > 0 || note.trim() !== '' || refundAmount !== '0');
+  useBackShortcut(handleBack, {
+    isDirty,
+    confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
+  });
 
   const { data: requestsData } = useForwarderAdvanceRequests();
   const { data: unlinkedData } = useUnlinkedExpenses();
@@ -185,13 +194,13 @@ export default function ForwarderSettlementCreatePage() {
   if (created) {
     return (
       <div className="fset-page">
-        <button className="btn btn--ghost btn--sm" onClick={() => navigate('/my-settlements')} style={{ marginBottom: 4 }}>
+        <button className="btn btn--ghost btn--sm" onClick={handleBack} style={{ marginBottom: 4 }}>
           <ArrowLeft size={14} /> Danh sách phiếu thanh toán
         </button>
         <PageHeader
           title="Tạo phiếu thanh toán"
           description="Thanh toán tạm ứng"
-          onBack={() => navigate('/my-settlements')}
+          onBack={handleBack}
         />
 
         <div className="fset-create-success fade-up">
@@ -205,7 +214,7 @@ export default function ForwarderSettlementCreatePage() {
             <button className="btn btn--primary" onClick={() => navigate(`/my-settlements/${created.id}`)}>
               <ChevronRight size={14} /> Xem chi tiết
             </button>
-            <button className="btn btn--ghost" onClick={() => navigate('/my-settlements')}>
+            <button className="btn btn--ghost" onClick={handleBack}>
               <ArrowLeft size={14} /> Quay lại danh sách
             </button>
           </div>
@@ -218,7 +227,7 @@ export default function ForwarderSettlementCreatePage() {
   // ── Form state ──
   return (
     <div ref={rootRef} className="fset-page">
-      <button className="btn btn--ghost btn--sm" onClick={() => navigate('/my-settlements')} style={{ marginBottom: 4 }}>
+      <button className="btn btn--ghost btn--sm" onClick={handleBack} style={{ marginBottom: 4 }}>
         <ArrowLeft size={14} /> Danh sách phiếu thanh toán
       </button>
       <PageHeader
@@ -465,7 +474,7 @@ export default function ForwarderSettlementCreatePage() {
 
         {/* ── Actions ── */}
         <div className="fset-form-actions">
-          <button type="button" className="btn btn--secondary" onClick={() => navigate('/my-settlements')}>
+          <button type="button" className="btn btn--secondary" onClick={handleBack}>
             <ArrowLeft size={14} /> Hủy bỏ
           </button>
           <button
@@ -478,6 +487,8 @@ export default function ForwarderSettlementCreatePage() {
           </button>
         </div>
       </form>
+
+      {dialog}
     </div>
   );
 }

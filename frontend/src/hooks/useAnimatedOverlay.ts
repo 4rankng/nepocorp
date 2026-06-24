@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createScope } from 'animejs';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
+import { registerOverlay, unregisterOverlay } from '../lib/overlayState';
 
 type AnimScope = ReturnType<typeof createScope>;
 
@@ -127,6 +128,14 @@ export function useAnimatedOverlay({
       scopeRef.current = null;
     };
   }, []);
+
+  // Register as an open overlay while visible (open + exit animation) so the ESC
+  // "go back" shortcut yields and lets this overlay consume ESC instead.
+  useEffect(() => {
+    if (!visible) return;
+    registerOverlay();
+    return () => unregisterOverlay();
+  }, [visible]);
 
   // Guarded close — prevents double-fire during exit animation
   const handleClose = useCallback(() => {

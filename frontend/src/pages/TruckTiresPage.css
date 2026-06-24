@@ -177,14 +177,17 @@
   min-width: 0;
 }
 
-.ttp-col-serial { width: 14%; }
-.ttp-col-position { width: 16%; }
-.ttp-col-size { width: 9%; }
-.ttp-col-installed { width: 11%; }
-.ttp-col-days { width: 11%; }
-.ttp-col-supplier { width: 18%; }
-.ttp-col-warranty { width: 14%; }
-.ttp-col-actions { width: 7%; }
+.ttp-col-serial { width: 12%; }
+.ttp-col-position { width: 13%; }
+.ttp-col-size { width: 7%; }
+.ttp-col-installed { width: 10%; }
+.ttp-col-days { width: 9%; }
+.ttp-col-purchased { width: 10%; }
+.ttp-col-age { width: 8%; }
+.ttp-col-supplier { width: 17%; }
+.ttp-col-disposal { width: 20%; }
+.ttp-col-disposal-date { width: 12%; }
+.ttp-col-actions { width: 14%; }
 
 .ttp-table thead th.ttp-actions-heading {
   text-align: right;
@@ -447,6 +450,12 @@
   color: #B42318;
   border-color: rgba(180, 35, 24, 0.22);
   background: rgba(180, 35, 24, 0.06);
+}
+
+.ttp-icon-btn--unmount {
+  color: #B54708;
+  border-color: rgba(217, 119, 6, 0.24);
+  background: rgba(217, 119, 6, 0.07);
 }
 
 .ttp-dialog-overlay {
@@ -972,4 +981,76 @@
   .ttp-position-list {
     max-height: none;
   }
+}
+
+/* ─── Disposed (thanh lý) section ─────────────────────────────────────────── */
+.ttp-disposed {
+  background: var(--bg-2, #f8f9fa);
+}
+
+.ttp-table--disposed tbody td {
+  color: var(--fg-3);
+}
+
+.ttp-row-disposed .ttp-serial {
+  color: var(--fg-2);
+}
+
+/* ─── Unmount / dispose dialog ────────────────────────────────────────────── */
+.ttp-dialog--unmount {
+  width: min(480px, 100%);
+}
+
+.ttp-unmount-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px 4px;
+}
+
+.ttp-unmount-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  background: var(--bg-1, #fff);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ttp-unmount-choice.is-active {
+  border-color: rgba(0, 177, 79, 0.45);
+  background: rgba(0, 177, 79, 0.06);
+}
+
+.ttp-unmount-choice input[type='radio'] {
+  margin-top: 3px;
+  accent-color: #00B14F;
+}
+
+.ttp-unmount-choice__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ttp-unmount-choice__main strong {
+  color: var(--ink, var(--fg-1));
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.ttp-unmount-choice__main small {
+  color: var(--fg-3);
+  font-size: 12px;
+}
+
+.ttp-unmount-reason {
+  padding: 4px 20px 0;
+}
+
+.ttp-unmount-reason-custom {
+  margin-top: 8px;
 }

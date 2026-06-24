@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
+import { useBackShortcut } from '../../hooks/useBackShortcut';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -250,6 +251,8 @@ function PenaltyReasonForm({
 export default function PenaltyReasonsConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
+  const handleBack = () => navigate('/config');
+  useBackShortcut(handleBack);
   const { confirm, dialog } = useConfirm();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -341,7 +344,7 @@ export default function PenaltyReasonsConfigPage() {
           <button
             className="btn btn--secondary btn--icon"
             style={{ borderRadius: 'var(--r)', marginTop: '2px' }}
-            onClick={() => navigate('/config')}
+            onClick={handleBack}
             aria-label="Quay lại"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

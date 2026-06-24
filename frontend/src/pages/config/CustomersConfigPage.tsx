@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
+import { useBackShortcut } from '../../hooks/useBackShortcut';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Users, Plus, Loader2 } from 'lucide-react';
@@ -90,6 +91,8 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
 export default function CustomersConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();
+  const handleBack = () => navigate('/config');
+  useBackShortcut(handleBack);
   const [customerFilter, setCustomerFilter] = useState<'all' | 'high-risk' | 'active' | 'locked'>('all');
   const [search, setSearch] = useState('');
 
@@ -167,7 +170,7 @@ export default function CustomersConfigPage() {
       <div className="page-header">
         <button
           type="button"
-          onClick={() => navigate('/config')}
+          onClick={handleBack}
           aria-label="Quay lại danh sách cấu hình"
           className="page-header__back-btn"
           style={{ marginRight: 4 }}

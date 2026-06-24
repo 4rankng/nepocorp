@@ -90,13 +90,15 @@ export const CONFIG = {
 } as const;
 
 // ─── Fleet / Tires (N1) ──────────────────────────────────────────────────────
-// Tire CRUD + lifecycle (install/remove). Mounted under the config catch-all
-// so existing config Casbin gating applies; writes additionally requireRoles
-// MANAGER/ADMIN.
+// Tire CRUD + lifecycle (install/remove/dispose). Mounted under the config
+// catch-all so existing config Casbin gating applies; writes additionally
+// requireRoles MANAGER/ACCOUNTANT/ADMIN.
 export const TIRES = {
   LIST: '/fleet/tires',
   DETAIL: (id: number) => `/fleet/tires/${id}`,
   INSTALL: (id: number) => `/fleet/tires/${id}/install`,
+  REMOVE: (id: number) => `/fleet/tires/${id}/remove`,
+  DISPOSE: (id: number) => `/fleet/tires/${id}/dispose`,
 } as const;
 
 // ─── Financial ──────────────────────────────────────────────────────────────────

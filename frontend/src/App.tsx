@@ -121,6 +121,7 @@ function AppRoutes() {
           <Route path="/dispatch" element={adminOnly(page(<DispatchPage />))} />
           <Route path="/fleet" element={adminOnly(page(<FleetPage />))} />
 <Route path="/fleet/:id/tires" element={officeStaffOnly(page(<TruckTiresPage />))} />
+<Route path="/fleet/trailers/:id/tires" element={officeStaffOnly(page(<TruckTiresPage vehicle="trailer" />))} />
           <Route path="/trips" element={adminOnly(page(<TripListPage />))} />
           <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />
           <Route path="/trips/:id" element={adminOnly(page(<TripDetailPage />))} />

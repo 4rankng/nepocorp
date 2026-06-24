@@ -7,7 +7,9 @@ import { api } from '../lib/api';
 import { useForwarderSettlementDetail, useAdminSettlementDetail } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
+import { ShareLinkButton } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -140,6 +142,9 @@ export default function SettlementPrintPage() {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  const handleBack = () => navigate(-1);
+  useBackShortcut(handleBack);
+
   const handlePrint = async () => {
     const endpoint = isPortal 
       ? `/forwarder/me/advance-settlements/${id}/export?format=html`
@@ -195,10 +200,11 @@ export default function SettlementPrintPage() {
           description={s.forwarderName || ''}
           action={
             <div className="settlement-detail__header-actions">
+              <ShareLinkButton />
               <StatusPill variant={settlementStatusVariant(s.status)}>
                 {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
               </StatusPill>
-              <button className="btn btn--secondary btn--sm" onClick={() => navigate(-1)}>
+              <button className="btn btn--secondary btn--sm" onClick={handleBack}>
                 <ArrowLeft size={14} /> Trở về
               </button>
               <button className="btn btn--primary btn--sm" onClick={handlePrint}>

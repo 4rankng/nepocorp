@@ -8,9 +8,11 @@ import { AlertTriangle, Phone, Building2, ArrowLeft, CreditCard, Download, FileS
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
+import { ShareLinkButton } from '../components/shared';
 import { useConfirm, Modal } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
 import './DebtDetailPage.css';
@@ -61,6 +63,9 @@ export default function PayableDetailPage() {
   const { toast: showToast } = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { rootRef } = usePageAnimations({ ready: !loading });
+
+  const handleBack = () => navigate(backPath);
+  useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -165,7 +170,7 @@ export default function PayableDetailPage() {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
-          <button className="dd-back" onClick={() => navigate(backPath)}>
+          <button className="dd-back" onClick={handleBack}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -192,7 +197,7 @@ export default function PayableDetailPage() {
     <div ref={rootRef} className="debt-detail-page">
       {/* Supplier Header */}
       <div className="dd-header">
-        <button className="dd-back" onClick={() => navigate(backPath)}>
+        <button className="dd-back" onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar" style={{ background: 'var(--warning)', color: '#fff' }}>
@@ -223,6 +228,7 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
+          <ShareLinkButton />
           <div ref={exportMenuRef} style={{ position: 'relative' }}>
             <button
               className="btn btn--secondary"

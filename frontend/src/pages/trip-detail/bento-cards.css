@@ -285,10 +285,14 @@
   padding: 10px 20px 20px;
 }
 
-/* ── Info List (2-col grid inside BasicInfoCard) ────────────────────────── */
+/* ── Info List (2-col grid inside BasicInfoCard / ExternalCarrierCard) ───
+   Auto-fits 1–2 columns: a single row when the card is ≥ ~584px wide
+   (260 + 24 + 260 + padding), otherwise collapses to one-per-row so long
+   Vietnamese values like "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ VẬN TẢI AN
+   KHÁNH" don't get squeezed into a 150px column. */
 .info-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   column-gap: 24px;
   row-gap: 0;
 }

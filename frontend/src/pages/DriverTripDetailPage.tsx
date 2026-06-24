@@ -5,9 +5,11 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
+import { ShareLinkButton } from '../components/shared';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { DriverContainerCard } from '../components/trip/DriverContainerCard';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import './DriverTripDetailPage.css';
 
 interface TripLeg {
@@ -102,6 +104,9 @@ export default function DriverTripDetailPage() {
     loadTrip(false);
   }, [loadTrip]);
 
+  const handleBack = () => navigate('/my-trips');
+  useBackShortcut(handleBack);
+
   if (initialLoad) return (
     <div className="dt-loader-container">
       <Loader2 size={24} className="spin" style={{ display: 'inline-block' }} />
@@ -111,7 +116,7 @@ export default function DriverTripDetailPage() {
 
   if (error || !trip) return (
     <div className="dt-error-container">
-      <button className="dt-back-btn" onClick={() => navigate('/my-trips')} style={{ marginBottom: 16 }}>
+      <button className="dt-back-btn" onClick={handleBack} style={{ marginBottom: 16 }}>
         <ArrowLeft size={16} /> Quay lại
       </button>
       <div className="panel dt-error-card">
@@ -127,7 +132,7 @@ export default function DriverTripDetailPage() {
         <div className="dt-header">
           <button
             className="dt-back-btn"
-            onClick={() => navigate('/my-trips')}
+            onClick={handleBack}
             aria-label="Quay lại"
           >
             <ArrowLeft size={18} />
@@ -144,6 +149,9 @@ export default function DriverTripDetailPage() {
                 <span className="dt-subtitle">{trip.customerName}</span>
               )}
             </div>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <ShareLinkButton />
           </div>
         </div>
 

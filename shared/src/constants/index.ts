@@ -235,13 +235,26 @@ export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
   [TrailerType.FT40]: '40FT',
 };
 
-export const TIRE_STATUSES = ['IN_STOCK', 'IN_USE'] as const;
+export const TIRE_STATUSES = ['IN_STOCK', 'IN_USE', 'DISPOSED'] as const;
 export type TireStatus = typeof TIRE_STATUSES[number];
 
 export const TIRE_STATUS_LABELS: Record<TireStatus, string> = {
   IN_STOCK: 'Dự phòng',
   IN_USE: 'Đang dùng',
+  DISPOSED: 'Đã thanh lý',
 };
+
+// Lý do thanh lý lốp (chọn từ danh sách khi tháo lốp để thanh lý). "Khác" cho
+// phép nhập ghi chú tự do ở phía UI; backend chỉ bắt buộc chuỗi khác rỗng.
+export const TIRE_DISPOSAL_REASONS = [
+  'Hư hỏng',
+  'Mòn gai lốp',
+  'Rò rỉ',
+  'Hết tuổi thọ',
+  'Bán',
+  'Mất',
+  'Khác',
+] as const;
 
 // ─── Notification ───────────────────────────────────────────────────────────
 export enum NotificationType {

@@ -8,6 +8,7 @@ import { formatCurrency, removeDiacritics } from '../lib/format';
 import { Money } from '../components/shared/Money';
 import { Panel, Modal, ConfirmDialog } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 import {
   useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary,
 } from '../hooks/useSalaryQueries';
@@ -408,6 +409,9 @@ export default function SalaryAttendancePage() {
 
   const { data: salaryList, isLoading: listLoading } = useSalaryList(year, month);
   const { rootRef } = usePageAnimations({ ready: !listLoading });
+
+  const handleBack = () => setSelectedDriverId(null);
+  useBackShortcut(handleBack);
   const { data: workDayData, isLoading: wdLoading } = useDriverWorkDays(selectedDriverId, year, month);
   const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
@@ -846,7 +850,7 @@ export default function SalaryAttendancePage() {
             <div className="mobile-back-bar">
               <button
                 className="btn btn--secondary"
-                onClick={() => setSelectedDriverId(null)}
+                onClick={handleBack}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
               >
                 <ChevronLeft size={16} /> Quay lại danh sách

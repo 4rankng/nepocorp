@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { tireClient } from '../api/tireClient';
+import { tireClient, type TireWritePayload } from '../api/tireClient';
 import { qk } from '../api/keys';
 import type { Tire } from '@tingting/shared';
 
-export function useTires(truckId?: number) {
+/** All non-deleted tires; callers filter client-side by truckId / trailerId. */
+export function useTires() {
   return useQuery<Tire[]>({
-    queryKey: qk.catalogs.tires(truckId),
-    queryFn: () => tireClient.list(truckId),
+    queryKey: qk.catalogs.tiresAll,
+    queryFn: () => tireClient.list(),
     staleTime: 60 * 1000,
   });
 }
@@ -14,7 +15,7 @@ export function useTires(truckId?: number) {
 function useInvalidateTires() {
   const queryClient = useQueryClient();
   return () => {
-    // Invalidate the broad 'tires' prefix so every per-truck view + the
+    // Invalidate the broad 'tires' prefix so every per-vehicle view + the
     // unfiltered stock list refetch. Routed through qk so a key rename can't
     // silently break invalidation. (code-review MEDIUM)
     queryClient.invalidateQueries({ queryKey: qk.catalogs.tiresAll });
@@ -24,8 +25,7 @@ function useInvalidateTires() {
 export function useCreateTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
-    mutationFn: (data: Parameters<typeof tireClient.create>[0]) =>
-      tireClient.create(data),
+    mutationFn: (data: TireWritePayload) => tireClient.create(data),
     onSuccess: invalidate,
   });
 }
@@ -33,7 +33,7 @@ export function useCreateTire() {
 export function useUpdateTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof tireClient.update>[1] }) =>
+    mutationFn: ({ id, data }: { id: number; data: TireWritePayload }) =>
       tireClient.update(id, data),
     onSuccess: invalidate,
   });
@@ -50,8 +50,31 @@ export function useDeleteTire() {
 export function useInstallTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
-    mutationFn: ({ id, truckId, position }: { id: number; truckId: number; position?: string | null }) =>
-      tireClient.install(id, truckId, position ?? null),
+    mutationFn: (args: { id: number; truckId?: number | null; trailerId?: number | null; position?: string | null }) =>
+      tireClient.install(args.id, {
+        truckId: args.truckId ?? null,
+        trailerId: args.trailerId ?? null,
+        position: args.position ?? null,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+/** Remove a tire from its vehicle → IN_STOCK (spare). */
+export function useRemoveTire() {
+  const invalidate = useInvalidateTires();
+  return useMutation({
+    mutationFn: (id: number) => tireClient.remove(id),
+    onSuccess: invalidate,
+  });
+}
+
+/** Dispose of (thanh lý) a tire with a reason → DISPOSED. */
+export function useDisposeTire() {
+  const invalidate = useInvalidateTires();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      tireClient.dispose(id, reason),
     onSuccess: invalidate,
   });
 }

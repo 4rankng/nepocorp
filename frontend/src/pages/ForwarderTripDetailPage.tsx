@@ -5,7 +5,8 @@ import { formatDate, formatCurrency } from '../lib/format';
 import { api } from '../lib/api';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
-import { StatusPill, FormGroup } from '../components/UI';
+import { StatusPill, FormGroup, useConfirm } from '../components/UI';
+import { ShareLinkButton } from '../components/shared';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
@@ -13,6 +14,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { useQuery } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { usePageAnimations } from '../hooks/animations';
+import { useBackShortcut } from '../hooks/useBackShortcut';
 
 /** Forwarder container instance shape returned by the trip-detail API. */
 interface ForwarderContainer {
@@ -76,6 +78,16 @@ export default function ForwarderTripDetailPage() {
   const [expensePhotos, setExpensePhotos] = useState<Record<number, string[]>>({});
   const [uploadingExpenseId, setUploadingExpenseId] = useState<number | null>(null);
 
+  const { confirm, dialog } = useConfirm();
+  const handleBack = () => navigate('/my-forwarder-trips');
+  const isDirty = () =>
+    (showContainerForm && Boolean(containerForm.containerNumber || containerForm.sealNumber || containerForm.notes)) ||
+    (showExpenseForm && Boolean(expenseForm.buyAmount || expenseForm.supplierId || expenseForm.invoiceNumber || expenseForm.declarationNumber || expenseForm.note));
+  useBackShortcut(handleBack, {
+    isDirty,
+    confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
+  });
+
   async function loadExpensePhotos(expenseId: number) {
     try {
       const res = await api.get<{ items: Array<{ id: number; storageKey: string }> }>(`/forwarder/me/expenses/${expenseId}/photos`);
@@ -105,7 +117,7 @@ export default function ForwarderTripDetailPage() {
 
   if (queryError || !trip) return (
     <div style={{ padding: 24 }}>
-      <button className="btn btn--ghost" onClick={() => navigate('/my-forwarder-trips')} style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button className="btn btn--ghost" onClick={handleBack} style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
         <ArrowLeft size={16} /> Quay lại
       </button>
       <div style={{ textAlign: 'center', padding: 40, color: 'var(--danger)' }}>
@@ -221,11 +233,12 @@ export default function ForwarderTripDetailPage() {
 
   return (
     <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
+      {dialog}
       {/* Back button + Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 8px' }}>
         <button
           className="btn btn--ghost btn--icon"
-          onClick={() => navigate('/my-forwarder-trips')}
+          onClick={handleBack}
           aria-label="Quay lại"
           style={{ width: 40, height: 40, borderRadius: '50%' }}
         >
@@ -247,6 +260,7 @@ export default function ForwarderTripDetailPage() {
             <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: '4px 0 0' }}>{trip.customerName}</p>
           )}
         </div>
+        <ShareLinkButton />
       </div>
 
       {/* Trip Info Card */}

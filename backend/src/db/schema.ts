@@ -111,27 +111,36 @@ export const suppliers = pgTable('suppliers', {
 });
 
 // ─── N1 — Tires ──────────────────────────────────────────────────────────────
-// Tracks individual tires by serial, truck assignment, install/remove dates,
-// supplier, and warranty metadata. Status is a plain string so the app can stay
-// aligned with the requirement wording instead of baking extra lifecycle states
-// into a database enum.
+// Tracks individual tires by serial, vehicle assignment (truck OR trailer),
+// install/remove dates, supplier, purchase date, and disposal metadata. Status
+// is a plain string so the app can stay aligned with the requirement wording
+// instead of baking extra lifecycle states into a database enum.
 export const tires = pgTable('tires', {
   id: serial('id').primaryKey(),
   serial: varchar('serial', { length: 64 }).notNull().unique(),
   truckId: integer('truck_id').references(() => trucks.id),
+  // A tire mounts on a truck OR a trailer; both nullable for a spare in stock.
+  // onDelete:'set null' mirrors migration 0070 (a deleted rơ-moóc unlinks its
+  // tires instead of blocking the delete); keeps schema.ts ↔ migration in sync.
+  trailerId: integer('trailer_id').references(() => trailers.id, { onDelete: 'set null' }),
   position: varchar('position', { length: 64 }),
   size: varchar('size', { length: 32 }),
   installedAt: date('installed_at'),
   removedAt: date('removed_at'),
   supplierId: integer('supplier_id').references(() => suppliers.id),
   cost: numeric('cost', { precision: 15, scale: 0 }).default('0'),
-  warrantyUntil: date('warranty_until'),
+  // Ngày mua lốp (renamed from warranty_until). Drives "tuổi lốp" (tire age).
+  purchasedAt: date('purchased_at'),
   status: varchar('status', { length: 20 }).default('IN_STOCK'),
+  // Disposal (thanh lý) metadata — set when a tire is taken out of service.
+  disposalDate: date('disposal_date'),
+  disposalReason: varchar('disposal_reason', { length: 120 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (t) => ({
   truckIdx: index('tires_truck_id_idx').on(t.truckId),
+  trailerIdx: index('tires_trailer_id_idx').on(t.trailerId),
 }));
 
 export const tirePositions = pgTable('tire_positions', {

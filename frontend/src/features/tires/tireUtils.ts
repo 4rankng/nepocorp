@@ -4,13 +4,14 @@ import type { Supplier, Tire, TirePosition } from '@tingting/shared';
 export type TirePatch = Partial<{
   serial: string;
   truckId: number | null;
+  trailerId: number | null;
   position: string | null;
   size: string | null;
   installedAt: string | null;
   removedAt: string | null;
   supplierId: number | null;
   cost: number;
-  warrantyUntil: string | null;
+  purchasedAt: string | null;
   status: Tire['status'];
 }>;
 
@@ -20,8 +21,33 @@ export type TireEditDraft = {
   size: string;
   installedAt: string;
   supplierText: string;
-  warrantyUntil: string;
+  purchasedAt: string;
 };
+
+/**
+ * Whole days from `fromISO` (parsed as local midnight) to `toISO` (or now when
+ * `toISO` is null/omitted). Returns null when `fromISO` is missing/invalid, and
+ * is clamped to ≥ 0. Shared by tire age + days-in-service so both stay on the
+ * same local-midnight day math (no UTC drift).
+ */
+export function daysBetween(fromISO: string | null, toISO?: string | null): number | null {
+  if (!fromISO) return null;
+  const start = new Date(`${fromISO}T00:00:00`).getTime();
+  const end = toISO ? new Date(`${toISO}T00:00:00`).getTime() : Date.now();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  return Math.max(0, Math.floor((end - start) / 86_400_000));
+}
+
+/** Days since the tire was purchased (purchasedAt → today). Null when unknown. */
+export function tireAgeDays(purchasedAt: string | null): number | null {
+  return daysBetween(purchasedAt, null);
+}
+
+/** Today's date as local 'YYYY-MM-DD' (no UTC drift). Mirrors the backend todayISO(). */
+export function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export function cleanText(label: string): string {
   return label.trim().replace(/\s+/g, ' ');
@@ -93,7 +119,7 @@ export function draftFromTire(tire: Tire, suppliers: Supplier[]): TireEditDraft 
     size: tire.size ?? '',
     installedAt: tire.installedAt ?? '',
     supplierText: supplierTextFromId(suppliers, tire.supplierId),
-    warrantyUntil: tire.warrantyUntil ?? '',
+    purchasedAt: tire.purchasedAt ?? '',
   };
 }
 
@@ -104,6 +130,6 @@ export function patchFromDraft(draft: TireEditDraft, suppliers: Supplier[]): Tir
     size: draft.size.trim() || null,
     installedAt: draft.installedAt || null,
     supplierId: supplierIdFromText(suppliers, draft.supplierText),
-    warrantyUntil: draft.warrantyUntil || null,
+    purchasedAt: draft.purchasedAt || null,
   };
 }
