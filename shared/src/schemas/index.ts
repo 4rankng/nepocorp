@@ -66,6 +66,10 @@ export const createTripSchema = z.object({
   containerCount: z.coerce.number().int().min(1).max(10).optional(),
   fuelMode: z.nativeEnum(FuelMode).optional(),
   fuelSupplierId: z.coerce.number().int().positive().optional().nullable(),
+  // Per-trip actual pump price (₫/lít). Optional — when blank the trip falls
+  // back to the config snapshot (see fuelPriceApplied). Lets a manager record
+  // the real station price at creation instead of only on edit.
+  fuelActualUnitPrice: positiveNumeric.nullable().optional(),
   vatRate: z.number().min(0).max(0.5).optional().default(0),
   carrierType: z.enum(['OWN', 'EXTERNAL']).optional().default('OWN'),
   externalCarrierId: z.number().int().positive().nullable().optional(),

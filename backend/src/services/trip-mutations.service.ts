@@ -157,6 +157,7 @@ export async function createTrip(data: {
   externalDriverName?: string | null;
   externalDriverPhone?: string | null;
   fuelSupplierId?: number | null;
+  fuelActualUnitPrice?: number | null;
 }) {
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
@@ -260,6 +261,9 @@ export async function createTrip(data: {
       fuelSupplierId: data.fuelSupplierId ?? null,
       // Persist the chosen fuel mode (defaults to AUTO at the DB layer).
       fuelMode: data.fuelMode ?? FuelMode.AUTO,
+      // Per-trip actual pump price (nullable). fuelPriceApplied stays the config
+      // snapshot; the effective price = actual ?? snapshot is resolved at read.
+      fuelActualUnitPrice: data.fuelActualUnitPrice != null ? String(data.fuelActualUnitPrice) : null,
       revenue: String(revenue),
       revenueEmptyReturn: String(revenue),
       revenueCombine: '0',

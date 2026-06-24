@@ -18,6 +18,9 @@ export interface FuelVoucherData {
   fuelActualUnitPrice: number;
   totalFuelCost: number;
   fuelPriceApplied: number;
+  // Price actually applied to this trip: the per-trip pump price when one was
+  // recorded, else the config snapshot. Both voucher price cells render this.
+  effectiveFuelPrice: number;
   supplierName: string | null;
   supplierNote: string | null;
 }
@@ -60,6 +63,9 @@ export async function buildFuelVoucherData(tripId: number): Promise<FuelVoucherD
     fuelActualUnitPrice: Number(row.fuelActualUnitPrice ?? 0),
     totalFuelCost: Number(row.totalFuelCost ?? 0),
     fuelPriceApplied: Number(row.fuelPriceApplied ?? 0),
+    effectiveFuelPrice: Number(row.fuelActualUnitPrice) > 0
+      ? Number(row.fuelActualUnitPrice)
+      : Number(row.fuelPriceApplied ?? 0),
     supplierName: row.supplierName,
     supplierNote: row.supplierNote,
   };
@@ -299,7 +305,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
           <td class="center">1</td>
           <td>Nhiên liệu (Diesel)</td>
           <td class="right">${formatVND(data.fuelLiters)}</td>
-          <td class="right">${formatVND(data.fuelActualUnitPrice)}</td>
+          <td class="right">${formatVND(data.effectiveFuelPrice)}</td>
           <td class="right">${formatVND(data.totalFuelCost)}</td>
         </tr>
         <tr class="total">
@@ -312,7 +318,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
     <div class="vendor">
       <div class="vrow"><span class="k">Nhà cung cấp:</span><span><strong>${escapeHtml(data.supplierName ?? '—')}</strong></span></div>
       ${data.supplierNote ? `<div class="vrow"><span class="k">Ghi chú:</span><span>${escapeHtml(data.supplierNote)}</span></div>` : ''}
-      <div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.fuelPriceApplied)} đ/Lít</span></div>
+      <div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.effectiveFuelPrice)} đ/Lít</span></div>
     </div>
 
     <div class="signatures">
@@ -444,7 +450,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   // Data row
   const dataRow = ws.getRow(row);
   dataRow.height = 20;
-  const values: (string | number)[] = [1, 'Nhiên liệu (Diesel)', data.fuelLiters, data.fuelActualUnitPrice, data.totalFuelCost];
+  const values: (string | number)[] = [1, 'Nhiên liệu (Diesel)', data.fuelLiters, data.effectiveFuelPrice, data.totalFuelCost];
   for (let i = 0; i < values.length; i++) {
     const c = dataRow.getCell(i + 1);
     c.value = values[i];
@@ -502,7 +508,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const priceRow = ws.getRow(row);
   priceRow.height = 16;
   ws.mergeCells(`A${row}:E${row}`);
-  priceRow.getCell(1).value = `Giá áp dụng: ${formatVND(data.fuelPriceApplied)} đ/Lít`;
+  priceRow.getCell(1).value = `Giá áp dụng: ${formatVND(data.effectiveFuelPrice)} đ/Lít`;
   priceRow.getCell(1).font = { name: F, size: 10, color: { argb: 'FF374151' } };
   row++;
 

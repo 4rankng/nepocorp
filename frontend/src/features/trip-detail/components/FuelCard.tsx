@@ -20,6 +20,12 @@ const fmtLiters = (v: number) => roundInt(v).toString();
 export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
 
+  // Effective price applied to this trip: the per-trip pump price when one was
+  // recorded, else the config snapshot. Mirrors the voucher's effectiveFuelPrice
+  // so the detail card and the phiếu bốc dầu always agree.
+  const actualPrice = trip.fuelActualUnitPrice != null ? Number(trip.fuelActualUnitPrice) : 0;
+  const effectiveFuelPrice = actualPrice > 0 ? actualPrice : fuelPriceConfig;
+
   const handlePrintVoucher = async () => {
     // Open window synchronously before await to avoid popup blocker
     const win = window.open('', '_blank');
@@ -58,10 +64,10 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             <span className="v">{FUEL_MODE_LABELS[trip.fuelMode]}</span>
           </div>
           <div className="pl-row">
-            <span className="k">Đơn giá cấu hình</span>
+            <span className="k">Đơn giá áp dụng</span>
             <span className="v">
-              {fuelPriceConfig != null
-                ? <><Money value={fuelPriceConfig} /> <span className="v-unit">/lít</span></>
+              {effectiveFuelPrice != null
+                ? <><Money value={effectiveFuelPrice} /> <span className="v-unit">/lít</span></>
                 : '—'}
             </span>
           </div>

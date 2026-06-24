@@ -842,6 +842,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           carrierType: s.carrierType,
           vatRate: s.vatRate,
           fuelSupplierId: s.carrierType === 'OWN' ? (s.fuelSupplierId ?? null) : null,
+          // Per-trip actual pump price — only OWN trips consume fuel. Blank
+          // (null) falls back to the config snapshot server-side.
+          fuelActualUnitPrice: s.carrierType === 'OWN' && s.fuelActualUnitPrice !== ''
+            ? Number(s.fuelActualUnitPrice)
+            : null,
         };
         if (s.carrierType === 'OWN') {
           createPayload.truckId = Number(s.truckId);
