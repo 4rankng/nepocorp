@@ -92,12 +92,22 @@
   }
 
   .header-actions .btn {
-    flex: 1 1 calc(50% - 4px);
+    width: 100%;
     min-width: 0;
     justify-content: center;
     min-height: 42px;
     padding: 8px 14px;
     font-size: var(--fs-xs);
+  }
+
+  /* "Hủy chuyến" (btn--danger) is a rare / destructive action — on mobile
+     it should be visually subordinate to the primary CTA, not the same
+     full-bleed size as the lifecycle buttons above it. Trim the padding
+     and shrink the min-height so it reads as a less-emphatic option. */
+  .header-actions .btn--danger {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 11.5px;
   }
 
   .header-actions .btn--primary {

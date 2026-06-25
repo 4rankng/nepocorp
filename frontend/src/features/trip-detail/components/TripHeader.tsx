@@ -98,7 +98,7 @@ export function TripHeader({
           entry point to the actuals form on completed trips.
         */}
         {canEditActuals && !canEdit && (
-          <button className="btn btn--primary" onClick={onEdit}>
+          <button className="btn btn--secondary" onClick={onEdit}>
             <Pencil size={14} />Nhập số liệu
           </button>
         )}
