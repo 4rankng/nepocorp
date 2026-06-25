@@ -333,6 +333,343 @@
   color: var(--fg-on-brand);
 }
 
+/* ─── Grouped Ledger Layout ───────────────────────────────────────────────── */
+
+.dd-ledger-groups {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: #F8FAF9;
+}
+
+.dd-ledger-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.dd-ledger-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dd-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #FCFDFD;
+}
+
+.dd-section-head h3 {
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  margin: 0;
+  color: var(--ink);
+}
+
+.dd-section-head span {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-weight: 650;
+}
+
+.dd-section-totals {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.dd-section-totals b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+
+.dd-section-totals em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: #00803a;
+}
+
+.dd-section-items {
+  display: grid;
+  gap: 0;
+}
+
+.dd-trip-card,
+.dd-single-card {
+  border-bottom: 1px solid var(--bg-3);
+  background: var(--surface);
+}
+
+.dd-trip-card:last-child,
+.dd-single-card:last-child {
+  border-bottom: 0;
+}
+
+.dd-trip-card {
+  padding: 14px 16px;
+}
+
+.dd-trip-main {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(160px, max-content);
+  gap: 16px;
+  align-items: start;
+}
+
+.dd-trip-date,
+.dd-single-date {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.dd-trip-context {
+  min-width: 0;
+}
+
+.dd-trip-route,
+.dd-single-route {
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  color: var(--ink);
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-trip-subline,
+.dd-single-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-weight: 650;
+}
+
+.dd-trip-subline span,
+.dd-single-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.dd-trip-money {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  font-family: var(--font-mono);
+}
+
+.dd-trip-money strong {
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+
+.dd-trip-money span {
+  font-size: var(--fs-xs);
+  color: var(--danger);
+  font-weight: 750;
+}
+
+.dd-fee-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin: 12px 0 0 128px;
+}
+
+.dd-fee-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid #D7EBDD;
+  border-radius: 8px;
+  background: #F4FBF6;
+}
+
+.dd-fee-line span {
+  font-size: var(--fs-xs);
+  color: #0B6B38;
+  font-weight: 800;
+}
+
+.dd-fee-line b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.dd-raw-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0 0 128px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.dd-raw-toggle:hover {
+  color: var(--accent);
+}
+
+.dd-raw-notes {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0 128px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.dd-raw-notes div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.dd-raw-notes span {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.dd-raw-notes p {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dd-single-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 16px;
+  align-items: start;
+}
+
+.dd-single-body {
+  min-width: 0;
+}
+
+.dd-single-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dd-single-top strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  white-space: nowrap;
+}
+
+.dd-single-debit {
+  color: var(--ink);
+}
+
+.dd-single-credit {
+  color: #00803a;
+}
+
+.dd-ledger-section--service-fees .dd-section-head {
+  background: #F3FBF6;
+}
+
+.dd-ledger-section--freight .dd-section-head {
+  background: #F6FAFF;
+}
+
+@media (max-width: 900px) {
+  .dd-trip-main,
+  .dd-single-card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .dd-trip-money,
+  .dd-section-totals {
+    justify-items: start;
+  }
+  .dd-fee-breakdown,
+  .dd-raw-toggle,
+  .dd-raw-notes {
+    margin-left: 0;
+  }
+  .dd-trip-route,
+  .dd-single-route,
+  .dd-raw-notes p {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 640px) {
+  .debt-detail-page .dd-ledger-groups {
+    padding: 10px;
+    gap: 10px;
+  }
+  .debt-detail-page .dd-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  .debt-detail-page .dd-trip-card,
+  .debt-detail-page .dd-single-card {
+    padding: 12px;
+  }
+  .debt-detail-page .dd-fee-breakdown {
+    grid-template-columns: 1fr;
+  }
+  .debt-detail-page .dd-single-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .debt-detail-page .dd-raw-notes div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
 /* ─── Ledger Table ──────────────────────────────────────────────────────────── */
 
 .dd-table {
@@ -367,6 +704,22 @@
 .dd-table tbody tr:last-child td { border-bottom: none; }
 .dd-table tbody tr { transition: background .12s; }
 .dd-table tbody tr:hover { background: var(--surface-2); }
+.dd-ledger-group-row {
+  background: #F8FFFB;
+}
+.dd-ledger-group-row td {
+  font-weight: 650;
+}
+.dd-ledger-detail-row {
+  background: #FAFBFA;
+}
+.dd-ledger-detail-row td {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+}
+.dd-ledger-detail-row td:first-child {
+  padding-left: 54px;
+}
 
 .dd-td-date {
   font-family: var(--font-mono);
@@ -374,6 +727,26 @@
   color: var(--ink-2);
   font-size: var(--fs-sm);
   white-space: nowrap;
+}
+
+.dd-group-toggle {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.dd-group-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ─── Transaction Type Pill ─────────────────────────────────────────────────── */
@@ -410,6 +783,10 @@
   background: var(--info-soft);
   color: var(--info-text);
 }
+.dd-txn-pill--fee {
+  background: #EAF6ED;
+  color: #00702F;
+}
 .dd-txn-pill--pen {
   background: var(--danger-soft);
   color: var(--danger);
@@ -417,6 +794,34 @@
 .dd-txn-pill--other {
   background: var(--bg-3);
   color: var(--ink-2);
+}
+
+.dd-txn-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 360px;
+}
+
+.dd-txn-chip,
+.dd-txn-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: #EEF7F1;
+  color: #0B6B38;
+  border: 1px solid #D7EBDD;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dd-txn-more {
+  background: var(--bg-3);
+  color: var(--ink-2);
+  border-color: var(--line);
 }
 
 /* ─── Number Cells ──────────────────────────────────────────────────────────── */
@@ -437,6 +842,24 @@
   color: var(--ink-2);
   font-size: var(--fs-sm);
   white-space: nowrap;
+}
+.dd-group-detail-btn {
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dd-group-detail-btn:hover {
+  color: var(--accent);
 }
 .dd-td-note .dd-code {
   font-family: var(--font-mono);

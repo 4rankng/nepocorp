@@ -345,6 +345,8 @@ export interface LedgerEntry {
   createdAt: string;
   routeName?: string | null;
   containerNumbers?: string[];
+  tripId?: number | null;
+  serviceFeeLabel?: string | null;
 }
 
 export interface Penalty {

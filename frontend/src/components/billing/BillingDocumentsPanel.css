@@ -1,7 +1,7 @@
 .billing-panel {
-  width: min(720px, 100%);
+  width: 100%;
   margin: 2px 0 18px;
-  padding: 14px;
+  padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
@@ -11,10 +11,10 @@
 }
 
 .billing-panel__head {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 10px;
 }
 
@@ -50,6 +50,23 @@
   flex-shrink: 0;
 }
 
+.billing-panel__head-actions {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.billing-panel__history-toggle {
+  flex-shrink: 0;
+}
+
+.billing-panel__history-toggle .is-open {
+  transform: rotate(180deg);
+}
+
 .billing-panel__empty {
   padding: 10px 2px 2px;
   color: var(--ink-3);
@@ -59,6 +76,7 @@
 
 .billing-panel__list {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
   gap: 6px;
   max-height: min(55vh, 420px);
   overflow: auto;
@@ -130,16 +148,21 @@
 
 @media (max-width: 760px) {
   .billing-panel {
-    width: 100%;
     margin-bottom: 14px;
     padding: 12px;
   }
 
   .billing-panel__head {
     align-items: stretch;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
 
+  .billing-panel__head-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .billing-panel__history-toggle,
   .billing-panel__create {
     justify-content: center;
     width: 100%;

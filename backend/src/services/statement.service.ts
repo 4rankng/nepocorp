@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
-import { TxnType, computeFifoAging } from '@tingting/shared';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -10,7 +10,12 @@ import { CustomerAgingListItem } from './aging.service';
 type LedgerRow = typeof s.ledger.$inferSelect;
 // Ledger rows enriched with the related trip's route/container for display.
 // Customer statements populate these; supplier statements leave them undefined.
-type EnrichedLedgerRow = LedgerRow & { routeName?: string | null; containerNumbers?: string[] };
+type EnrichedLedgerRow = LedgerRow & {
+  routeName?: string | null;
+  containerNumbers?: string[];
+  tripId?: number | null;
+  serviceFeeLabel?: string | null;
+};
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
@@ -69,6 +74,20 @@ const TXN_LABELS: Record<string, string> = {
   SERVICE_FEE: 'Phí chi hộ',
 };
 
+function serviceFeeLabel(expenseType: string, billingLabel?: string | null, name?: string | null): string {
+  return (
+    billingLabel?.trim()
+    || name?.trim()
+    || FORWARDER_EXPENSE_TYPE_DEFAULTS[expenseType]?.billingLabel
+    || expenseType
+  );
+}
+
+function isLegacyServiceFeeRevenueRow(row: LedgerRow): boolean {
+  if (row.txnType !== TxnType.TRIP_REVENUE || !row.note) return false;
+  return row.note.includes('Tạm ứng/nộp hộ') || row.note.includes('Phí chi hộ');
+}
+
 const VENDOR_TXN_LABELS: Record<string, string> = {
   VENDOR_EXPENSE: 'Ghi nhận chi phí',
   VENDOR_PAYMENT: 'Thanh toán công nợ',
@@ -110,12 +129,78 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     });
   }
 
-  // Fetch routes and container numbers for related trips
-  const tripIds = Array.from(new Set(
+  // Fetch routes/container numbers for trip-backed ledger rows. SERVICE_FEE
+  // rows store trip_expenses.id in txnId, so resolve those fee ids back to
+  // their trip and configured billing label first.
+  const directlyLinkedTripIds = Array.from(new Set(
     ledgerRows
       .filter((r) => r.txnId && (r.txnType === TxnType.TRIP_REVENUE || r.txnType === TxnType.UNLOCK_REVERSAL || r.txnType === TxnType.PAYMENT_RECEIVED))
       .map((r) => r.txnId as number)
   ));
+
+  const serviceFeeIds = Array.from(new Set(
+    ledgerRows
+      .filter((r) => r.txnId && r.txnType === TxnType.SERVICE_FEE)
+      .map((r) => r.txnId as number)
+  ));
+
+  const serviceFeeMap = new Map<number, { tripId: number; label: string; containerNumber: string | null }>();
+  if (serviceFeeIds.length > 0) {
+    const feeRows = await db.select({
+      feeId: s.tripExpenses.id,
+      tripId: s.tripExpenses.tripId,
+      expenseType: s.tripExpenses.expenseType,
+      billingLabel: s.forwarderExpenseTypes.billingLabel,
+      typeName: s.forwarderExpenseTypes.name,
+      containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`,
+    })
+      .from(s.tripExpenses)
+      .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+      .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
+      .where(inArray(s.tripExpenses.id, serviceFeeIds));
+
+    for (const fee of feeRows) {
+      serviceFeeMap.set(fee.feeId, {
+        tripId: fee.tripId,
+        label: serviceFeeLabel(fee.expenseType, fee.billingLabel, fee.typeName),
+        containerNumber: fee.containerNumber ?? null,
+      });
+    }
+  }
+
+  const tripIds = Array.from(new Set([
+    ...directlyLinkedTripIds,
+    ...Array.from(serviceFeeMap.values()).map((fee) => fee.tripId),
+  ]));
+
+  const legacyFeeCandidates = new Map<string, Array<{ tripId: number; label: string; containerNumber: string | null }>>();
+  if (directlyLinkedTripIds.length > 0) {
+    const feeRows = await db.select({
+      tripId: s.tripExpenses.tripId,
+      sellAmount: s.tripExpenses.sellAmount,
+      expenseType: s.tripExpenses.expenseType,
+      billingLabel: s.forwarderExpenseTypes.billingLabel,
+      typeName: s.forwarderExpenseTypes.name,
+      containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`,
+    })
+      .from(s.tripExpenses)
+      .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
+      .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
+      .where(inArray(s.tripExpenses.tripId, directlyLinkedTripIds));
+
+    for (const fee of feeRows) {
+      const amount = Number(fee.sellAmount);
+      if (!Number.isFinite(amount) || amount <= 0) continue;
+      const key = `${fee.tripId}|${amount}`;
+      const existing = legacyFeeCandidates.get(key) ?? [];
+      existing.push({
+        tripId: fee.tripId,
+        label: serviceFeeLabel(fee.expenseType, fee.billingLabel, fee.typeName),
+        containerNumber: fee.containerNumber ?? null,
+      });
+      legacyFeeCandidates.set(key, existing);
+    }
+  }
 
   const tripDetailsMap = new Map<number, { routeName: string | null; containerNumbers: string[] }>();
   if (tripIds.length > 0) {
@@ -149,11 +234,30 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   }
 
   const enrichedLedgerRows = ledgerRows.map((r) => {
-    const details = r.txnId ? tripDetailsMap.get(r.txnId) : undefined;
+    const feeDetails = r.txnType === TxnType.SERVICE_FEE && r.txnId
+      ? serviceFeeMap.get(r.txnId)
+      : undefined;
+    const directTripId = r.txnId && (
+      r.txnType === TxnType.TRIP_REVENUE
+      || r.txnType === TxnType.UNLOCK_REVERSAL
+      || r.txnType === TxnType.PAYMENT_RECEIVED
+    )
+      ? r.txnId
+      : null;
+    const legacyFeeDetails = directTripId && isLegacyServiceFeeRevenueRow(r)
+      ? legacyFeeCandidates.get(`${directTripId}|${Number(r.debit)}`)?.shift()
+      : undefined;
+    const tripId = feeDetails?.tripId ?? legacyFeeDetails?.tripId ?? directTripId;
+    const details = tripId ? tripDetailsMap.get(tripId) : undefined;
+    const feeContainerNumber = feeDetails?.containerNumber ?? legacyFeeDetails?.containerNumber ?? null;
     return {
       ...r,
       routeName: details?.routeName ?? null,
-      containerNumbers: details?.containerNumbers ?? [],
+      containerNumbers: feeContainerNumber
+        ? [feeContainerNumber]
+        : details?.containerNumbers ?? [],
+      tripId,
+      serviceFeeLabel: feeDetails?.label ?? legacyFeeDetails?.label ?? null,
     };
   });
 

@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, FileText, Download, Pencil, Trash2, Receipt } from 'lucide-react';
+import { ChevronDown, FileText, Download, History, Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
@@ -37,6 +37,7 @@ export default function BillingDocumentsPanel({
   const queryClient = useQueryClient();
   const [localBuilderOpen, setLocalBuilderOpen] = useState(false);
   const [editing, setEditing] = useState<BillingDocument | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const queryKey = ['billing-docs', type, entityType, entityId];
   const { data: docs = [] } = useQuery<BillingDocument[]>({
@@ -93,46 +94,63 @@ export default function BillingDocumentsPanel({
       <div className="billing-panel__head">
         <div className="billing-panel__title">
           <Receipt size={15} />
-          <span>{type === 'DEBIT_NOTE' ? 'Giấy báo nợ đã lưu' : 'Bảng kê thanh toán đã lưu'}</span>
-          <small>{docs.length > 0 ? `${docs.length} tài liệu` : 'Chưa có tài liệu'}</small>
+          <span>{type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê thanh toán'}</span>
+          <small>{docs.length > 0 ? `${docs.length} đã lưu` : 'Chưa có lịch sử'}</small>
         </div>
-        <button className="btn btn--secondary billing-panel__create" onClick={openNew}>
-          <Plus size={14} /> {buttonLabel}
-        </button>
+        <div className="billing-panel__head-actions">
+          {docs.length > 0 && (
+            <button
+              className="btn btn--ghost billing-panel__history-toggle"
+              type="button"
+              onClick={() => setHistoryOpen((open) => !open)}
+              aria-expanded={historyOpen}
+              aria-controls="billing-history-list"
+            >
+              <History size={14} />
+              {historyOpen ? 'Ẩn lịch sử' : 'Xem lịch sử'}
+              <ChevronDown size={14} className={historyOpen ? 'is-open' : undefined} />
+            </button>
+          )}
+          <button className="btn btn--secondary billing-panel__create" type="button" onClick={openNew}>
+            <Plus size={14} /> {buttonLabel}
+          </button>
+        </div>
       </div>
 
-      {docs.length === 0 ? (
-        <div className="billing-panel__empty">
-          Chưa có tài liệu nào.
-        </div>
-      ) : (
-        <div className="billing-panel__list">
-          {docs.map((doc) => (
-            <div
-              key={doc.id}
-              className="billing-panel__row"
-            >
-              <div className="billing-panel__doc">
-                <FileText size={15} />
-                <span>{doc.rangeFrom} → {doc.rangeTo}</span>
-                <strong className="mono">
-                  {formatCurrency(doc.totalInclVat).replace(' ₫', '')}đ
-                </strong>
+      {historyOpen && (
+        docs.length === 0 ? (
+          <div className="billing-panel__empty">
+            Chưa có tài liệu nào.
+          </div>
+        ) : (
+          <div className="billing-panel__list" id="billing-history-list">
+            {docs.map((doc) => (
+              <div
+                key={doc.id}
+                className="billing-panel__row"
+              >
+                <div className="billing-panel__doc">
+                  <FileText size={15} />
+                  <span>{doc.rangeFrom} → {doc.rangeTo}</span>
+                  <strong className="mono">
+                    {formatCurrency(doc.totalInclVat).replace(' ₫', '')}đ
+                  </strong>
+                </div>
+                <div className="billing-panel__actions">
+                  <button className="btn-icon" title="Sửa" aria-label="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
+                    <Pencil size={13} />
+                  </button>
+                  <button className="btn-icon" title="Xuất Excel" aria-label="Xuất Excel" onClick={() => exportDoc(doc)} style={iconBtn}>
+                    <Download size={13} />
+                  </button>
+                  <button className="btn-icon" title="Xóa" aria-label="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
-              <div className="billing-panel__actions">
-                <button className="btn-icon" title="Sửa" aria-label="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
-                  <Pencil size={13} />
-                </button>
-                <button className="btn-icon" title="Xuất Excel" aria-label="Xuất Excel" onClick={() => exportDoc(doc)} style={iconBtn}>
-                  <Download size={13} />
-                </button>
-                <button className="btn-icon" title="Xóa" aria-label="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {builderOpen && (

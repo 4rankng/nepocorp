@@ -132,12 +132,11 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 10px;
 }
 
-.billing-builder__table-wrap,
-.billing-builder__summary {
+.billing-builder__table-wrap {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -360,42 +359,12 @@
   display: none;
 }
 
-.billing-builder__summary {
-  padding: 8px 14px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(160px, max-content));
-  justify-content: start;
-  gap: 28px;
-}
-
-.billing-builder__total,
-.billing-builder__stat {
-  display: grid;
-  gap: 3px;
-  padding: 0;
-  border-bottom: 0;
-}
-
-.billing-builder__total span,
-.billing-builder__stat span,
 .billing-builder__note span {
   color: var(--ink-3);
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 850;
-}
-
-.billing-builder__total strong {
-  color: var(--accent-700, #087f3b);
-  font-size: 20px;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-
-.billing-builder__stat strong {
-  font-size: 18px;
-  line-height: 1.1;
 }
 
 .billing-builder__note {
@@ -516,17 +485,7 @@
 
   .billing-builder__content {
     min-height: 0;
-    grid-template-rows: auto auto auto;
-  }
-
-  .billing-builder__summary {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .billing-builder__total strong,
-  .billing-builder__stat strong {
-    font-size: 18px;
+    grid-template-rows: auto auto;
   }
 
   .billing-builder__table-wrap {
@@ -567,6 +526,17 @@
     gap: 4px;
   }
 
+  .billing-builder__mobile-route textarea.input.billing-builder__route-field {
+    height: auto;
+    min-height: 84px;
+    max-height: 132px;
+    padding: 6px 8px;
+    border: 1px solid rgba(8, 127, 59, 0.16);
+    border-radius: 8px;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.72);
+  }
+
   .billing-builder__mobile-route strong {
     padding-top: 20px;
     color: var(--accent-700, #087f3b);
@@ -583,6 +553,17 @@
     display: grid;
     gap: 8px;
     border-top: 1px solid var(--line);
+  }
+
+  .billing-builder__mobile-item textarea.input.billing-builder__text-field {
+    height: auto;
+    min-height: 88px;
+    max-height: 132px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: auto;
+    background: #fff;
   }
 
   .billing-builder__mobile-item.is-excluded {

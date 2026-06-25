@@ -104,8 +104,6 @@ export default function BillingDocumentBuilder({
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const visibleLines = useMemo(() => lines.filter((line) => !line.excluded).length, [lines]);
-  const total = useMemo(() => lines.reduce((sum, line) => sum + lineTotal(line), 0), [lines]);
   const groupedLines = useMemo<BillingRouteGroup[]>(() => {
     const groups: BillingRouteGroup[] = [];
     let index = 0;
@@ -356,17 +354,6 @@ export default function BillingDocumentBuilder({
         </section>
 
         <section className="billing-builder__content">
-          <div className="billing-builder__summary" aria-label="Tổng hợp">
-            <div className="billing-builder__total">
-              <span>Tổng cộng</span>
-              <strong className="mono">{formatCurrency(total).replace(' ₫', '')}đ</strong>
-            </div>
-            <div className="billing-builder__stat">
-              <span>Dòng hiển thị</span>
-              <strong>{visibleLines}/{lines.length}</strong>
-            </div>
-          </div>
-
           <div className="billing-builder__table-wrap">
             {loading ? (
               <div className="billing-builder__state">

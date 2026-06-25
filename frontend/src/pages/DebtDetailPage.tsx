@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
-import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
+import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
@@ -20,6 +20,7 @@ import './DebtDetailPage.css';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.TRIP_REVENUE]:      { label: 'DOANH THU CHUYẾN', pill: 'dd-txn-pill dd-txn-pill--rev' },
+  [TxnType.SERVICE_FEE]:       { label: 'PHÍ CHI HỘ',       pill: 'dd-txn-pill dd-txn-pill--fee' },
   [TxnType.PAYMENT_RECEIVED]:  { label: 'THU TIỀN',         pill: 'dd-txn-pill dd-txn-pill--pay' },
   [TxnType.PENALTY]:           { label: 'PHẠT',             pill: 'dd-txn-pill dd-txn-pill--pen' },
   [TxnType.MANAGEMENT_FEE]:    { label: 'PHÍ QUẢN LÝ',     pill: 'dd-txn-pill dd-txn-pill--other' },
@@ -41,13 +42,19 @@ const AGING_RANGES = [
 
 // ── Ledger filter type ─────────────────────────────────────────────────────
 
-type LedgerFilter = 'all' | typeof TxnType.PAYMENT_RECEIVED | typeof TxnType.ADJUSTMENT | typeof TxnType.TRIP_REVENUE;
+type LedgerFilter =
+  | 'all'
+  | typeof TxnType.PAYMENT_RECEIVED
+  | typeof TxnType.ADJUSTMENT
+  | typeof TxnType.TRIP_REVENUE
+  | typeof TxnType.SERVICE_FEE;
 
 const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: 'all',              label: 'Tất cả' },
   { key: TxnType.PAYMENT_RECEIVED, label: 'Thu tiền' },
   { key: TxnType.ADJUSTMENT,       label: 'Điều chỉnh' },
   { key: TxnType.TRIP_REVENUE,     label: 'Doanh thu' },
+  { key: TxnType.SERVICE_FEE,      label: 'Phí chi hộ' },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -59,6 +66,179 @@ function normalizeAging(buckets: AgingBucket[]): number[] {
     if (i < 4) amounts[i] = b.amount;
   });
   return amounts;
+}
+
+type LedgerDisplayRow =
+  | { kind: 'single'; key: string; row: LedgerEntry }
+  | {
+      kind: 'group';
+      key: string;
+      rows: LedgerEntry[];
+      date: string;
+      routeName: string | null;
+      containerNumbers: string[];
+      labels: string[];
+      debit: number;
+      credit: number;
+      balance: number;
+      note: string;
+    };
+
+type LedgerSectionKey = 'service-fees' | 'freight' | 'payments' | 'adjustments' | 'other';
+
+interface LedgerSection {
+  key: LedgerSectionKey;
+  title: string;
+  countLabel: string;
+  items: LedgerDisplayRow[];
+  debit: number;
+  credit: number;
+}
+
+function rowDisplayLabel(row: LedgerEntry): string {
+  if (row.serviceFeeLabel?.trim()) {
+    return row.serviceFeeLabel.trim();
+  }
+  return (TXN_META[row.txnType] ?? DEFAULT_META).label;
+}
+
+function rowGroupKey(row: LedgerEntry): string | null {
+  if (row.txnType !== TxnType.TRIP_REVENUE && row.txnType !== TxnType.SERVICE_FEE) return null;
+  const day = String(row.timestamp).slice(0, 10);
+  const family = row.serviceFeeLabel || row.txnType === TxnType.SERVICE_FEE ? 'fees' : row.txnType;
+  const tripKey = row.tripId ?? (row.txnType === TxnType.TRIP_REVENUE ? row.txnId : null);
+  if (tripKey) return `${day}|${family}|trip:${tripKey}`;
+  const routeKey = row.routeName?.trim() || '';
+  const containerKey = (row.containerNumbers ?? []).join(',');
+  if (!routeKey && !containerKey) return null;
+  return `${day}|${family}|${routeKey}|${containerKey}`;
+}
+
+function groupLedgerRows(rows: LedgerEntry[]): LedgerDisplayRow[] {
+  const displayRows: LedgerDisplayRow[] = [];
+  const groups = new Map<string, Extract<LedgerDisplayRow, { kind: 'group' }>>();
+
+  for (const row of rows) {
+    const key = rowGroupKey(row);
+    if (!key) {
+      displayRows.push({ kind: 'single', key: `row:${row.id}`, row });
+      continue;
+    }
+
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        kind: 'group',
+        key,
+        rows: [],
+        date: row.timestamp,
+        routeName: row.routeName ?? null,
+        containerNumbers: row.containerNumbers ?? [],
+        labels: [],
+        debit: 0,
+        credit: 0,
+        balance: parseFloat(row.balance) || 0,
+        note: '',
+      };
+      groups.set(key, group);
+      displayRows.push(group);
+    }
+
+    group.rows.push(row);
+    group.debit += parseFloat(row.debit) || 0;
+    group.credit += parseFloat(row.credit) || 0;
+    if (!group.labels.includes(rowDisplayLabel(row))) {
+      group.labels.push(rowDisplayLabel(row));
+    }
+    if (!group.routeName && row.routeName) group.routeName = row.routeName;
+    if (group.containerNumbers.length === 0 && row.containerNumbers?.length) {
+      group.containerNumbers = row.containerNumbers;
+    }
+  }
+
+  for (const group of groups.values()) {
+    const notes = Array.from(new Set(group.rows.map((row) => row.note?.trim()).filter(Boolean) as string[]));
+    group.note = group.rows.length > 1
+      ? `${group.rows.length} khoản${notes[0] ? ` - ${notes[0]}` : ''}`
+      : notes[0] ?? '';
+  }
+
+  return displayRows.map((item) => {
+    if (item.kind !== 'group' || item.rows.length > 1) return item;
+    return { kind: 'single', key: `row:${item.rows[0].id}`, row: item.rows[0] };
+  });
+}
+
+function displayRowAmounts(item: LedgerDisplayRow): { debit: number; credit: number } {
+  if (item.kind === 'group') return { debit: item.debit, credit: item.credit };
+  return {
+    debit: parseFloat(item.row.debit) || 0,
+    credit: parseFloat(item.row.credit) || 0,
+  };
+}
+
+function displayRowSectionKey(item: LedgerDisplayRow): LedgerSectionKey {
+  const firstRow = item.kind === 'group' ? item.rows[0] : item.row;
+  if (!firstRow) return 'other';
+  if (item.kind === 'group' && item.rows.some(row => row.serviceFeeLabel || row.txnType === TxnType.SERVICE_FEE)) {
+    return 'service-fees';
+  }
+  if (firstRow.serviceFeeLabel || firstRow.txnType === TxnType.SERVICE_FEE) return 'service-fees';
+  if (firstRow.txnType === TxnType.TRIP_REVENUE) return 'freight';
+  if (firstRow.txnType === TxnType.PAYMENT_RECEIVED) return 'payments';
+  if (firstRow.txnType === TxnType.ADJUSTMENT || firstRow.txnType === TxnType.UNLOCK_REVERSAL) return 'adjustments';
+  return 'other';
+}
+
+function ledgerSectionMeta(key: LedgerSectionKey): { title: string; countUnit: string } {
+  switch (key) {
+    case 'service-fees':
+      return { title: 'Phí chi hộ theo container', countUnit: 'nhóm' };
+    case 'freight':
+      return { title: 'Doanh thu chuyến', countUnit: 'chuyến' };
+    case 'payments':
+      return { title: 'Thanh toán đã thu', countUnit: 'phiếu' };
+    case 'adjustments':
+      return { title: 'Điều chỉnh', countUnit: 'dòng' };
+    default:
+      return { title: 'Giao dịch khác', countUnit: 'dòng' };
+  }
+}
+
+function groupLedgerSections(items: LedgerDisplayRow[]): LedgerSection[] {
+  const order: LedgerSectionKey[] = ['service-fees', 'freight', 'payments', 'adjustments', 'other'];
+  const sectionMap = new Map<LedgerSectionKey, LedgerSection>();
+
+  for (const item of items) {
+    const key = displayRowSectionKey(item);
+    const meta = ledgerSectionMeta(key);
+    let section = sectionMap.get(key);
+    if (!section) {
+      section = {
+        key,
+        title: meta.title,
+        countLabel: '',
+        items: [],
+        debit: 0,
+        credit: 0,
+      };
+      sectionMap.set(key, section);
+    }
+    const amounts = displayRowAmounts(item);
+    section.items.push(item);
+    section.debit += amounts.debit;
+    section.credit += amounts.credit;
+  }
+
+  return order
+    .map(key => {
+      const section = sectionMap.get(key);
+      if (!section) return null;
+      const meta = ledgerSectionMeta(key);
+      section.countLabel = `${section.items.length} ${meta.countUnit}`;
+      return section;
+    })
+    .filter(Boolean) as LedgerSection[];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -79,6 +259,7 @@ export default function DebtDetailPage() {
   useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
+  const [expandedLedgerGroups, setExpandedLedgerGroups] = useState<Set<string>>(() => new Set());
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -145,8 +326,26 @@ export default function DebtDetailPage() {
   const filteredRows = useMemo(() => {
     if (!statement) return [];
     if (ledgerFilter === 'all') return statement.ledgerRows;
+    if (ledgerFilter === TxnType.SERVICE_FEE) {
+      return statement.ledgerRows.filter(r => r.txnType === TxnType.SERVICE_FEE || Boolean(r.serviceFeeLabel));
+    }
+    if (ledgerFilter === TxnType.TRIP_REVENUE) {
+      return statement.ledgerRows.filter(r => r.txnType === TxnType.TRIP_REVENUE && !r.serviceFeeLabel);
+    }
     return statement.ledgerRows.filter(r => r.txnType === ledgerFilter);
   }, [statement, ledgerFilter]);
+
+  const displayRows = useMemo(() => groupLedgerRows(filteredRows), [filteredRows]);
+  const ledgerSections = useMemo(() => groupLedgerSections(displayRows), [displayRows]);
+
+  const toggleLedgerGroup = (key: string) => {
+    setExpandedLedgerGroups((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const activeAgingIdx = useMemo(() => {
     let max = -1, idx = 0;
@@ -405,7 +604,9 @@ export default function DebtDetailPage() {
       <section className="dd-ledger">
         <div className="dd-ledger-head">
           <h2>Sổ kế toán</h2>
-          <span className="dd-cnt">{filteredRows.length} giao dịch</span>
+          <span className="dd-cnt">
+            {ledgerSections.length} nhóm loại / {displayRows.length} mục / {filteredRows.length} giao dịch
+          </span>
           <div className="dd-filters">
             {FILTER_OPTIONS.map(f => (
               <button
@@ -418,33 +619,20 @@ export default function DebtDetailPage() {
             ))}
           </div>
         </div>
-        <div className="table-scroll">
-          <table className="dd-table">
-            <thead>
-              <tr>
-                <th>NGÀY</th>
-                <th>TUYẾN</th>
-                <th>SỐ CONTAINER</th>
-                <th>LOẠI GIAO DỊCH</th>
-                <th className="dd-r">NỢ</th>
-                <th className="dd-r">CÓ</th>
-                <th className="dd-r">SỐ DƯ</th>
-                <th>GHI CHÚ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map(row => (
-                <LedgerRow key={row.id} row={row} />
-              ))}
-              {filteredRows.length === 0 && (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
-                    Không có giao dịch
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="dd-ledger-groups">
+          {ledgerSections.map(section => (
+            <LedgerSectionBlock
+              key={section.key}
+              section={section}
+              expandedLedgerGroups={expandedLedgerGroups}
+              onToggleGroup={toggleLedgerGroup}
+            />
+          ))}
+          {ledgerSections.length === 0 && (
+            <div className="dd-ledger-empty">
+              Không có giao dịch
+            </div>
+          )}
         </div>
       </section>
 
@@ -524,32 +712,130 @@ export default function DebtDetailPage() {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function LedgerRow({ row }: { row: LedgerEntry }) {
+function money(value: number): string {
+  return formatCurrency(value).replace(' ₫', '') + 'đ';
+}
+
+function LedgerSectionBlock({
+  section,
+  expandedLedgerGroups,
+  onToggleGroup,
+}: {
+  section: LedgerSection;
+  expandedLedgerGroups: Set<string>;
+  onToggleGroup: (key: string) => void;
+}) {
+  return (
+    <section className={`dd-ledger-section dd-ledger-section--${section.key}`}>
+      <div className="dd-section-head">
+        <div>
+          <h3>{section.title}</h3>
+          <span>{section.countLabel}</span>
+        </div>
+        <div className="dd-section-totals">
+          {section.debit > 0 && <b>{money(section.debit)}</b>}
+          {section.credit > 0 && <em>{money(section.credit)} đã thu</em>}
+        </div>
+      </div>
+      <div className="dd-section-items">
+        {section.items.map(item => (
+          item.kind === 'group'
+            ? (
+              <LedgerTripGroupCard
+                key={item.key}
+                group={item}
+                expanded={expandedLedgerGroups.has(item.key)}
+                onToggle={() => onToggleGroup(item.key)}
+              />
+            )
+            : <LedgerSingleCard key={item.key} row={item.row} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LedgerTripGroupCard({
+  group,
+  expanded,
+  onToggle,
+}: {
+  group: Extract<LedgerDisplayRow, { kind: 'group' }>;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <article className="dd-trip-card">
+      <div className="dd-trip-main">
+        <div className="dd-trip-date">{formatDate(group.date)}</div>
+        <div className="dd-trip-context">
+          <div className="dd-trip-route">{group.routeName || 'Chưa có tuyến'}</div>
+          <div className="dd-trip-subline">
+            <span>{group.containerNumbers.length > 0 ? group.containerNumbers.join(', ') : 'Không có container'}</span>
+            <span>{group.rows.length} khoản</span>
+          </div>
+        </div>
+        <div className="dd-trip-money">
+          <strong>{money(group.debit)}</strong>
+          <span>Số dư sau nhóm {money(group.balance)}</span>
+        </div>
+      </div>
+
+      <div className="dd-fee-breakdown">
+        {group.rows.map(row => {
+          const amount = parseFloat(row.debit) || 0;
+          return (
+            <div key={row.id} className="dd-fee-line">
+              <span>{rowDisplayLabel(row)}</span>
+              <b>{money(amount)}</b>
+            </div>
+          );
+        })}
+      </div>
+
+      <button className="dd-raw-toggle" onClick={onToggle}>
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {expanded ? 'Ẩn ghi chú gốc' : 'Ghi chú gốc'}
+      </button>
+
+      {expanded && (
+        <div className="dd-raw-notes">
+          {group.rows.map(row => (
+            <div key={row.id}>
+              <span>{rowDisplayLabel(row)}</span>
+              <p>{row.note || 'Không có ghi chú'}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function LedgerSingleCard({ row }: { row: LedgerEntry }) {
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
   const meta = TXN_META[row.txnType] ?? DEFAULT_META;
+  const label = rowDisplayLabel(row);
+  const isPayment = credit > 0;
 
   return (
-    <tr>
-      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
-      <td>{row.routeName || '—'}</td>
-      <td>
-        {row.containerNumbers && row.containerNumbers.length > 0
-          ? row.containerNumbers.join(', ')
-          : '—'}
-      </td>
-      <td><span className={meta.pill}>{meta.label}</span></td>
-      <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}
-      </td>
-      <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}
-      </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : ''}`}>
-        {formatCurrency(balance).replace(' ₫', '')}đ
-      </td>
-      <td className="dd-td-note">{row.note || ''}</td>
-    </tr>
+    <article className="dd-single-card">
+      <div className="dd-single-date">{formatDate(row.timestamp)}</div>
+      <div className="dd-single-body">
+        <div className="dd-single-top">
+          <span className={meta.pill}>{label}</span>
+          <strong className={isPayment ? 'dd-single-credit' : 'dd-single-debit'}>
+            {money(isPayment ? credit : debit)}
+          </strong>
+        </div>
+        <div className="dd-single-route">{row.routeName || row.note || 'Không có tuyến'}</div>
+        <div className="dd-single-meta">
+          <span>{row.containerNumbers?.length ? row.containerNumbers.join(', ') : row.receiptId || 'Không có container'}</span>
+          <span>Số dư {money(balance)}</span>
+        </div>
+      </div>
+    </article>
   );
 }
