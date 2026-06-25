@@ -68,6 +68,9 @@ export default function DebtDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const backPath = location.pathname.startsWith('/customers/') ? '/customers' : '/debt';
+  const detailPath = location.pathname.startsWith('/customers/') ? `/customers/${id}` : `/debt/${id}`;
+  const billingCreatePath = `${detailPath}/billing/new`;
+  const isCreatingBillingDocument = location.pathname === billingCreatePath;
   const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
   const error = queryError ? (queryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
@@ -309,6 +312,9 @@ export default function DebtDetailPage() {
           entityId={Number(id)}
           entityName={statement?.customer.name ?? ''}
           buttonLabel="Tạo giấy báo nợ"
+          createBuilderOpen={isCreatingBillingDocument}
+          onOpenCreate={() => navigate(billingCreatePath)}
+          onBuilderClose={() => navigate(detailPath, { replace: true })}
         />
       )}
 

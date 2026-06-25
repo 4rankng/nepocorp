@@ -131,6 +131,7 @@ function AppRoutes() {
           <Route path="/profit" element={adminOnly(page(<ProfitPage />))} />
           <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />
           <Route path="/debt/:id" element={adminOnly(page(<DebtDetailPage />))} />
+          <Route path="/debt/:id/billing/new" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/penalties" element={adminOnly(page(<PenaltyPage />))} />
           <Route path="/advances" element={adminOnly(page(<AdminAdvancesPage />))} />
           <Route path="/admin/advance-settlements" element={officeStaffOnly(page(<AdminAdvanceSettlementsPage />))} />
@@ -138,6 +139,7 @@ function AppRoutes() {
           <Route path="/my-penalties" element={driverOnly(page(<DriverPenaltyPage />))} />
           <Route path="/customers" element={adminOnly(page(<CustomersPage />))} />
           <Route path="/customers/:id" element={adminOnly(page(<DebtDetailPage />))} />
+          <Route path="/customers/:id/billing/new" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/routes" element={<Navigate to="/config/routes" replace />} />
           <Route path="/trucks" element={<Navigate to="/fleet" replace />} />
           <Route path="/drivers" element={<Navigate to="/fleet" replace />} />

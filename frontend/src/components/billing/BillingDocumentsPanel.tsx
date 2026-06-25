@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
 import BillingDocumentBuilder from './BillingDocumentBuilder';
+import './BillingDocumentsPanel.css';
 import type {
   BillingDocument, BillingDocumentType, BillingDocumentEntityType,
 } from '@tingting/shared';
@@ -17,12 +18,24 @@ interface Props {
   entityName: string;
   /** Create-button label, e.g. "Tạo giấy báo nợ". */
   buttonLabel: string;
+  createBuilderOpen?: boolean;
+  onOpenCreate?: () => void;
+  onBuilderClose?: () => void;
 }
 
-export default function BillingDocumentsPanel({ type, entityType, entityId, entityName, buttonLabel }: Props) {
+export default function BillingDocumentsPanel({
+  type,
+  entityType,
+  entityId,
+  entityName,
+  buttonLabel,
+  createBuilderOpen = false,
+  onOpenCreate,
+  onBuilderClose,
+}: Props) {
   const { toast: showToast } = useToast();
   const queryClient = useQueryClient();
-  const [builderOpen, setBuilderOpen] = useState(false);
+  const [localBuilderOpen, setLocalBuilderOpen] = useState(false);
   const [editing, setEditing] = useState<BillingDocument | null>(null);
 
   const queryKey = ['billing-docs', type, entityType, entityId];
@@ -34,8 +47,21 @@ export default function BillingDocumentsPanel({ type, entityType, entityId, enti
 
   const refresh = () => queryClient.invalidateQueries({ queryKey });
 
-  const openNew = () => { setEditing(null); setBuilderOpen(true); };
-  const openEdit = (doc: BillingDocument) => { setEditing(doc); setBuilderOpen(true); };
+  const builderOpen = createBuilderOpen || localBuilderOpen;
+  const openNew = () => {
+    setEditing(null);
+    if (onOpenCreate) {
+      onOpenCreate();
+    } else {
+      setLocalBuilderOpen(true);
+    }
+  };
+  const openEdit = (doc: BillingDocument) => { setEditing(doc); setLocalBuilderOpen(true); };
+  const closeBuilder = () => {
+    setLocalBuilderOpen(false);
+    setEditing(null);
+    if (createBuilderOpen) onBuilderClose?.();
+  };
 
   const exportDoc = async (doc: BillingDocument) => {
     try {
@@ -63,45 +89,44 @@ export default function BillingDocumentsPanel({ type, entityType, entityId, enti
   };
 
   return (
-    <div className="billing-panel" style={{ marginTop: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--fg-2)' }}>
-          <Receipt size={14} /> {type === 'DEBIT_NOTE' ? 'Giấy báo nợ đã lưu' : 'Bảng kê thanh toán đã lưu'}
+    <div className="billing-panel">
+      <div className="billing-panel__head">
+        <div className="billing-panel__title">
+          <Receipt size={15} />
+          <span>{type === 'DEBIT_NOTE' ? 'Giấy báo nợ đã lưu' : 'Bảng kê thanh toán đã lưu'}</span>
+          <small>{docs.length > 0 ? `${docs.length} tài liệu` : 'Chưa có tài liệu'}</small>
         </div>
-        <button className="btn btn--secondary" onClick={openNew}>
+        <button className="btn btn--secondary billing-panel__create" onClick={openNew}>
           <Plus size={14} /> {buttonLabel}
         </button>
       </div>
 
       {docs.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: 'var(--fg-3)', padding: '4px 0' }}>
+        <div className="billing-panel__empty">
           Chưa có tài liệu nào.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="billing-panel__list">
           {docs.map((doc) => (
             <div
               key={doc.id}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12.5,
-              }}
+              className="billing-panel__row"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <FileText size={14} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
-                <span style={{ whiteSpace: 'nowrap' }}>{doc.rangeFrom} → {doc.rangeTo}</span>
-                <span className="mono" style={{ fontWeight: 600 }}>
+              <div className="billing-panel__doc">
+                <FileText size={15} />
+                <span>{doc.rangeFrom} → {doc.rangeTo}</span>
+                <strong className="mono">
                   {formatCurrency(doc.totalInclVat).replace(' ₫', '')}đ
-                </span>
+                </strong>
               </div>
-              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                <button className="btn-icon" title="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
+              <div className="billing-panel__actions">
+                <button className="btn-icon" title="Sửa" aria-label="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
                   <Pencil size={13} />
                 </button>
-                <button className="btn-icon" title="Xuất Excel" onClick={() => exportDoc(doc)} style={iconBtn}>
+                <button className="btn-icon" title="Xuất Excel" aria-label="Xuất Excel" onClick={() => exportDoc(doc)} style={iconBtn}>
                   <Download size={13} />
                 </button>
-                <button className="btn-icon" title="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
+                <button className="btn-icon" title="Xóa" aria-label="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
                   <Trash2 size={13} />
                 </button>
               </div>
@@ -113,7 +138,7 @@ export default function BillingDocumentsPanel({ type, entityType, entityId, enti
       {builderOpen && (
         <BillingDocumentBuilder
           isOpen={builderOpen}
-          onClose={() => { setBuilderOpen(false); setEditing(null); }}
+          onClose={closeBuilder}
           type={type}
           entityType={entityType}
           entityId={entityId}
@@ -128,5 +153,5 @@ export default function BillingDocumentsPanel({ type, entityType, entityId, enti
 
 const iconBtn: CSSProperties = {
   background: 'none', border: 'none', cursor: 'pointer',
-  display: 'inline-flex', alignItems: 'center', padding: 4, color: 'var(--fg-2)',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 4, color: 'var(--fg-2)',
 };
