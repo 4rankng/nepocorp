@@ -363,31 +363,76 @@
 .dd-route-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
+  box-shadow: var(--sh-sm);
 }
 
 .dd-route-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
-  padding: 16px 18px;
+  align-items: start;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--line);
-  background: #FAFCFB;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAF9 100%);
 }
 
 .dd-route-card-head h3 {
-  font-size: var(--fs-md);
+  font-size: 18px;
   line-height: 1.4;
   font-weight: 850;
   margin: 0;
   color: var(--ink);
 }
 
-.dd-route-card-head span {
-  display: inline-block;
-  margin-top: 5px;
+.dd-route-title {
+  min-width: 0;
+}
+
+.dd-route-endpoints {
+  display: grid;
+  gap: 5px;
+}
+
+.dd-route-endpoint {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.dd-route-endpoint span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.dd-route-endpoint strong {
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.dd-route-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.dd-route-metrics span,
+.dd-route-card-total span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
   font-size: var(--fs-xs);
   color: var(--ink-3);
   font-family: var(--font-mono);
@@ -397,13 +442,20 @@
 .dd-route-card-total {
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 5px;
   white-space: nowrap;
+}
+
+.dd-route-card-total span {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 18%, var(--line));
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
 }
 
 .dd-route-card-total b {
   font-family: var(--font-mono);
-  font-size: var(--fs-lg);
+  font-size: 24px;
+  line-height: 1;
   color: var(--ink);
 }
 
@@ -415,15 +467,123 @@
   color: #00803a;
 }
 
-.dd-route-breakdowns {
+.dd-route-containers {
+  padding: 10px;
+}
+
+.dd-accounting-ledger {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.dd-accounting-row {
   display: grid;
+  grid-template-columns: 96px minmax(220px, 1.7fr) minmax(120px, 0.7fr) minmax(120px, max-content) minmax(90px, max-content);
   gap: 12px;
-  padding: 12px;
+  align-items: center;
+  min-height: 38px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--bg-3);
+}
+
+.dd-accounting-row:last-child {
+  border-bottom: 0;
+}
+
+.dd-accounting-row--head {
+  min-height: 34px;
+  background: #F6F8F7;
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.dd-accounting-row--container {
+  background: #FBFCFC;
+  border-top: 1px solid var(--line);
+}
+
+.dd-accounting-row--head + .dd-accounting-row--container {
+  border-top: 0;
+}
+
+.dd-accounting-row--container b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+
+.dd-accounting-row--container em {
+  margin-left: 8px;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.dd-accounting-row--container span:nth-child(3) {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+}
+
+.dd-accounting-row--entry {
+  min-height: 34px;
+  background: var(--surface);
+}
+
+.dd-accounting-row--entry span:first-child,
+.dd-accounting-row--entry strong,
+.dd-accounting-row--container strong {
+  font-family: var(--font-mono);
+  font-weight: 900;
+}
+
+.dd-accounting-row--entry span:first-child {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.dd-accounting-row--entry span:nth-child(2) {
+  position: relative;
+  padding-left: 16px;
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.dd-accounting-row--entry span:nth-child(2)::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 7px;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.dd-accounting-row--entry span:nth-child(3) {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.dd-accounting-row strong {
+  justify-self: end;
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .dd-breakdown-section {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--surface);
 }
@@ -431,9 +591,9 @@
 .dd-breakdown-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
+  gap: 12px;
   align-items: start;
-  padding: 11px 14px;
+  padding: 10px 12px;
   background: #FCFDFD;
   border-bottom: 1px solid var(--line);
 }
@@ -457,7 +617,7 @@
 
 .dd-breakdown-head strong {
   font-family: var(--font-mono);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   color: var(--ink);
   white-space: nowrap;
 }
@@ -479,14 +639,14 @@
 }
 
 .dd-trip-card {
-  padding: 14px 16px;
+  padding: 12px;
 }
 
 .dd-trip-main {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) minmax(160px, max-content);
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
 }
 
 .dd-trip-date,
@@ -517,7 +677,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--ink-3);
@@ -543,32 +703,43 @@
 }
 
 .dd-trip-money strong {
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   color: var(--ink);
 }
 
 .dd-fee-breakdown {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 8px;
-  margin: 12px 0 0 128px;
+  margin: 10px 0 0 104px;
+  overflow: hidden;
+  border: 1px solid #D7EBDD;
+  border-radius: 8px;
+  background: #FBFFFC;
 }
 
 .dd-fee-line {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
-  border: 1px solid #D7EBDD;
-  border-radius: 8px;
-  background: #F4FBF6;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #E1F0E6;
+}
+
+.dd-fee-line:last-child {
+  border-bottom: 0;
+}
+
+.dd-fee-line--head {
+  min-height: 28px;
+  background: #F1FAF4;
 }
 
 .dd-fee-line span {
   font-size: var(--fs-xs);
-  color: #0B6B38;
-  font-weight: 800;
+  color: #24613E;
+  font-weight: 750;
+  min-width: 0;
 }
 
 .dd-fee-line b {
@@ -578,28 +749,52 @@
   white-space: nowrap;
 }
 
+.dd-fee-line--head span,
+.dd-fee-line--head b {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .dd-single-card {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 16px;
-  padding: 14px 16px;
-  align-items: start;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px;
+  align-items: center;
 }
 
 .dd-single-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.dd-single-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.dd-single-card > strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 
-.dd-single-top strong {
+.dd-single-container {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   font-family: var(--font-mono);
-  font-size: var(--fs-md);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -620,6 +815,13 @@
 }
 
 @media (max-width: 900px) {
+  .dd-accounting-ledger {
+    overflow-x: auto;
+  }
+  .dd-accounting-row {
+    grid-template-columns: 86px minmax(190px, 1.5fr) minmax(110px, 0.7fr) minmax(104px, max-content) minmax(82px, max-content);
+    min-width: 700px;
+  }
   .dd-trip-main,
   .dd-single-card {
     grid-template-columns: 1fr;
@@ -647,13 +849,23 @@
     padding: 0 0 8px;
   }
   .debt-detail-page .dd-route-card-head {
+    grid-template-columns: minmax(0, 1fr);
     align-items: flex-start;
-    flex-direction: column;
     gap: 8px;
     padding: 12px;
   }
-  .debt-detail-page .dd-route-breakdowns {
+  .debt-detail-page .dd-route-endpoint {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .debt-detail-page .dd-route-endpoint strong {
+    font-size: var(--fs-sm);
+  }
+  .debt-detail-page .dd-route-containers {
     padding: 8px;
+  }
+  .debt-detail-page .dd-accounting-row {
+    padding: 7px 10px;
   }
   .debt-detail-page .dd-breakdown-head {
     grid-template-columns: minmax(0, 1fr);
