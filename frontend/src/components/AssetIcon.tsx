@@ -149,7 +149,6 @@ export function AssetIcon({
 
   if (!entry) {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.warn(`[AssetIcon] Unknown icon ${name ?? slug ?? '(none)'}`);
     }
     return null;

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, type ReactElement } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';

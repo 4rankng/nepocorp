@@ -259,6 +259,28 @@ export class LedgerService {
         });
       }
     }
+
+    // ── 6. Ancillary fees — sell side (customer AR for phí chi hộ) ──
+    // The buy side (AP to supplier/forwarder) is posted above in section 5.
+    // The sell side (what the customer owes us for the chi hộ service) hits
+    // the customer's AR ledger so debt notices and statements agree. Only
+    // APPROVED fees are posted HERE, at lock time; a fee still PENDING at
+    // lock is skipped on both sides and only enters the ledger if it is
+    // approved and the trip is re-locked (e.g. via a figures edit).
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      const sellAmt = Number(fee.sellAmount);
+      if (sellAmt <= 0) continue;
+      await this.postEntry(tx, {
+        txnType: TxnType.SERVICE_FEE,
+        txnId: fee.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: sellAmt,
+        credit: 0,
+        note: label ? `Phí chi hộ chuyến ${label}` : 'Phí chi hộ',
+      });
+    }
   }
 
   /**
@@ -357,6 +379,24 @@ export class LedgerService {
           note: label ? `Chi hộ DV chuyến ${label} (Hoàn tác)` : 'Chi hộ dịch vụ (Hoàn tác)',
         });
       }
+    }
+
+    // ── 6. Reverse ancillary fees — sell side (customer AR for phí chi hộ) ──
+    // Mirrors section 6 of postTripLock: swap debit↔credit so the net customer
+    // contribution from this trip's sell-side fees returns to zero.
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      const sellAmt = Number(fee.sellAmount);
+      if (sellAmt <= 0) continue;
+      await this.postEntry(tx, {
+        txnType: TxnType.UNLOCK_REVERSAL,
+        txnId: fee.id,
+        entityType: 'CUSTOMER',
+        entityId: trip.customerId,
+        debit: 0,
+        credit: sellAmt,
+        note: label ? `Phí chi hộ chuyến ${label} (Hoàn tác)` : 'Phí chi hộ (Hoàn tác)',
+      });
     }
   }
 

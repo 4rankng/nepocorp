@@ -1,5 +1,5 @@
 export {
-  TripStatus, FuelMode, LoadingType, Role, TxnType,
+  TripStatus, BILLABLE_TRIP_STATUSES, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
   TIRE_STATUSES, TIRE_STATUS_LABELS, TIRE_DISPOSAL_REASONS,

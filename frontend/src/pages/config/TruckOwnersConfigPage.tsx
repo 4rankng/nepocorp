@@ -102,7 +102,7 @@ export default function TruckOwnersConfigPage() {
 
   // Truck catalog (for the header plate).
   const { data: truck } = useQuery<Truck | undefined>({
-    queryKey: ['truck', id],
+    queryKey: qk.catalogs.truckDetail(id),
     queryFn: async () => {
       const r = await api.get<Truck | { items: Truck[] }>(`/trucks/${id}`);
       // The factory's GET /:id returns the row directly.
@@ -162,7 +162,7 @@ export default function TruckOwnersConfigPage() {
       await api.delete(`${ENDPOINT}/${rowId}`);
       await refresh();
       // Invalidate catalog caches so distribution preview picks up the change.
-      await queryClient.invalidateQueries({ queryKey: ['distribution-history'] });
+      await queryClient.invalidateQueries({ queryKey: qk.dashboard.distributionHistory });
     } catch (e) {
       showToast({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi xóa' });
     }

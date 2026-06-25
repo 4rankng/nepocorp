@@ -66,6 +66,7 @@ const TXN_LABELS: Record<string, string> = {
   DRIVER_SALARY: 'Lương lái xe',
   UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
   EXTERNAL_CARRIER_COST: 'Cước thuê ngoài',
+  SERVICE_FEE: 'Phí chi hộ',
 };
 
 const VENDOR_TXN_LABELS: Record<string, string> = {

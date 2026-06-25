@@ -249,6 +249,7 @@ export function LeafletMap({
     // Depend on livePosition's primitive fields, not the object: the caller
     // rebuilds it as a fresh object literal each render, which would otherwise
     // trigger clearLayers + redraw + fitBounds on every unrelated re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     polylinePath, legs, originName, destinationName, gpsTrail?.encodedPolyline,
     livePosition?.lat, livePosition?.lng, livePosition?.angle,

@@ -3,6 +3,7 @@ import * as s from '../db/schema';
 import { eq, and, gte, lte, isNull, inArray, desc, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
+import { BILLABLE_TRIP_STATUSES } from '@tingting/shared';
 import type { Tx } from './trip-shared';
 import type {
   BillingDocument,
@@ -54,7 +55,7 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
 
   const conditions: SQL<unknown>[] = [
     eq(s.trips.customerId, customerId),
-    eq(s.trips.status, 'LOCKED'),
+    inArray(s.trips.status, [...BILLABLE_TRIP_STATUSES]),
     isNull(s.trips.deletedAt),
     gte(s.trips.departureDate, from),
     lte(s.trips.departureDate, to),
@@ -113,7 +114,7 @@ async function buildCarrierPaymentLines(carrierId: number, from: string, to: str
   }).from(s.trips).leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .where(and(
       eq(s.trips.externalCarrierId, carrierId),
-      eq(s.trips.status, 'LOCKED'),
+      inArray(s.trips.status, [...BILLABLE_TRIP_STATUSES]),
       isNull(s.trips.deletedAt),
       gte(s.trips.departureDate, from),
       lte(s.trips.departureDate, to),
@@ -309,57 +310,175 @@ export async function deleteDocument(id: number): Promise<void> {
 
 // ─── Excel export ─────────────────────────────────────────────────────────────
 
+const SERVICE_FEE_EXPORT_LABELS: Record<string, string> = {
+  LIFTING: 'Phí nâng container',
+  LOWERING: 'Phí hạ container',
+  CUSTOMS: 'Phí hải quan',
+  INFRASTRUCTURE: 'Phí hạ tầng',
+  WEIGHING: 'Phí cân hàng',
+  INSPECTION: 'Phí kiểm hóa',
+  INSPECTION_SVC: 'Phí dịch vụ kiểm hóa',
+  OTHER: 'Phí chi hộ khác',
+};
+
+function exportDescription(line: BillingDocumentLine): string {
+  const raw = line.description?.trim() ?? '';
+  if (line.lineType !== 'SERVICE_FEE') return raw;
+  return SERVICE_FEE_EXPORT_LABELS[raw.toUpperCase()] ?? raw;
+}
+
+function formatVietnameseDate(raw: string): string {
+  const [year, month, day] = raw.split('-');
+  if (!year || !month || !day) return raw;
+  return `${day}/${month}/${year}`;
+}
+
 export async function buildBillingXlsx(doc: BillingDocument): Promise<Buffer> {
-  const ExcelJS = await import('exceljs');
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
   const wb = new ExcelJS.Workbook();
+  wb.creator = 'NEPO Logistics';
+  wb.created = new Date();
+  wb.modified = new Date();
+
   const ws = wb.addWorksheet(doc.type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê thanh toán');
+  const isDebitNote = doc.type === 'DEBIT_NOTE';
+  const title = isDebitNote ? 'GIẤY BÁO NỢ' : 'BẢNG KÊ THANH TOÁN';
+  const entityLabel = isDebitNote ? 'Khách hàng' : 'Đối tác';
+  const tableStart = 7;
+  const dataStart = tableStart + 1;
 
-  ws.mergeCells('A1:F1');
-  ws.getCell('A1').value = doc.type === 'DEBIT_NOTE' ? 'GIẤY BÁO NỢ' : 'BẢNG KÊ THANH TOÁN';
-  ws.getCell('A1').font = { bold: true, size: 14 };
-  ws.getCell('A1').alignment = { horizontal: 'center' };
-  ws.getCell('A2').value = `${doc.type === 'DEBIT_NOTE' ? 'Khách hàng' : 'Đối tác'}: ${doc.entityName ?? ''}`;
-  ws.getCell('A3').value = `Kỳ: ${doc.rangeFrom} → ${doc.rangeTo}`;
-  if (doc.note) ws.getCell('A4').value = doc.note;
+  ws.properties.defaultRowHeight = 22;
+  ws.pageSetup = {
+    paperSize: 9,
+    orientation: 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    horizontalCentered: true,
+    margins: {
+      left: 0.35, right: 0.35, top: 0.45, bottom: 0.45, header: 0.2, footer: 0.2,
+    },
+  };
+  ws.views = [{ state: 'frozen', ySplit: tableStart }];
 
-  const headerRow = ws.getRow(6);
-  headerRow.values = ['Diễn giải', 'Tuyến', 'Số Cont', 'ĐVT', 'Số tiền (VNĐ)', ''];
-  headerRow.font = { bold: true };
+  ws.mergeCells('A1:E1');
+  ws.getCell('A1').value = title;
+  ws.getCell('A1').font = { name: 'Arial', bold: true, size: 18, color: { argb: 'FF111827' } };
+  ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(1).height = 32;
+
+  ws.mergeCells('A2:E2');
+  ws.getCell('A2').value = `${entityLabel}: ${doc.entityName ?? ''}`;
+  ws.getCell('A2').font = { name: 'Arial', bold: true, size: 12, color: { argb: 'FF111827' } };
+  ws.getCell('A2').alignment = { horizontal: 'left', vertical: 'middle' };
+
+  ws.mergeCells('A3:E3');
+  ws.getCell('A3').value = `Kỳ: ${formatVietnameseDate(doc.rangeFrom)} - ${formatVietnameseDate(doc.rangeTo)}`;
+  ws.getCell('A3').font = { name: 'Arial', size: 11, color: { argb: 'FF374151' } };
+  ws.getCell('A3').alignment = { horizontal: 'left', vertical: 'middle' };
+
+  if (doc.note) {
+    ws.mergeCells('A4:E4');
+    ws.getCell('A4').value = `Ghi chú: ${doc.note}`;
+    ws.getCell('A4').font = { name: 'Arial', italic: true, size: 10, color: { argb: 'FF4B5563' } };
+    ws.getCell('A4').alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+    ws.getRow(4).height = 30;
+  }
+
+  for (let r = 1; r <= 5; r++) {
+    ws.getRow(r).eachCell({ includeEmpty: true }, (cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+    });
+  }
+
+  const headerRow = ws.getRow(tableStart);
+  headerRow.values = ['Diễn giải', 'Tuyến', 'Số cont', 'ĐVT', 'Số tiền (VNĐ)'];
+  headerRow.height = 26;
+  headerRow.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+  headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
   headerRow.eachCell((cell) => {
-    cell.border = { bottom: { style: 'thin' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF1F2937' } },
+      left: { style: 'thin', color: { argb: 'FF1F2937' } },
+      bottom: { style: 'thin', color: { argb: 'FF1F2937' } },
+      right: { style: 'thin', color: { argb: 'FF1F2937' } },
+    };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
   });
 
-  let rowIdx = 7;
+  let rowIdx = dataStart;
   for (const line of doc.lines) {
     if (line.excluded) continue;
     const amt = effectiveAmount(line);
     const row = ws.getRow(rowIdx++);
     row.values = [
-      line.description,
+      exportDescription(line),
       line.routeName ?? '',
       (line.containerNumbers ?? []).join(', '),
       'lần',
-      amt,
-      '',
+      amt || 0,
     ];
+    row.height = 24;
+    row.font = { name: 'Arial', size: 10, color: { argb: 'FF111827' } };
+    row.alignment = { vertical: 'middle', wrapText: false };
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      cell.border = {
+        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      };
+      if (colNumber === 5) {
+        cell.numFmt = '#,##0';
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    });
     if (line.lineType !== 'FREIGHT') {
-      row.getCell(1).font = { italic: true, color: { argb: 'FF555555' } };
+      row.getCell(1).font = { name: 'Arial', italic: true, color: { argb: 'FF4B5563' } };
+      row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
     }
     if (line.amountOverride != null && line.amountOverride !== line.baseAmount) {
-      row.getCell(5).font = { bold: true };
+      row.getCell(5).font = { name: 'Arial', bold: true, color: { argb: 'FF111827' } };
     }
   }
 
+  const lastDataRow = rowIdx - 1;
   const totalRow = ws.getRow(rowIdx + 1);
-  totalRow.values = ['', '', '', 'TỔNG CỘNG', doc.totalInclVat, ''];
-  totalRow.font = { bold: true };
-  totalRow.getCell(5).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+  totalRow.values = ['', '', '', 'TỔNG CỘNG', {
+    formula: lastDataRow >= dataStart ? `SUM(E${dataStart}:E${lastDataRow})` : '0',
+    result: doc.totalInclVat,
+  }];
+  totalRow.height = 28;
+  totalRow.font = { name: 'Arial', bold: true, size: 11, color: { argb: 'FF111827' } };
+  totalRow.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' };
+  totalRow.getCell(5).numFmt = '#,##0';
+  totalRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+  totalRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+  totalRow.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+  totalRow.getCell(4).border = {
+    top: { style: 'thin', color: { argb: 'FF111827' } },
+    bottom: { style: 'double', color: { argb: 'FF111827' } },
+  };
+  totalRow.getCell(5).border = {
+    top: { style: 'thin', color: { argb: 'FF111827' } },
+    bottom: { style: 'double', color: { argb: 'FF111827' } },
+  };
 
   ws.columns = [
-    { width: 44 }, { width: 22 }, { width: 22 }, { width: 8 }, { width: 16 }, { width: 2 },
+    { width: 54 }, { width: 42 }, { width: 24 }, { width: 10 }, { width: 18 },
   ];
+  ws.getColumn(1).alignment = { wrapText: false, vertical: 'middle' };
+  ws.getColumn(2).alignment = { wrapText: false, vertical: 'middle' };
+  ws.getColumn(3).alignment = { wrapText: false, vertical: 'middle' };
+  ws.getColumn(4).alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getColumn(5).numFmt = '#,##0';
+
+  ws.autoFilter = {
+    from: { row: tableStart, column: 1 },
+    to: { row: Math.max(tableStart, lastDataRow), column: 5 },
+  };
 
   const ab = await wb.xlsx.writeBuffer();
   return Buffer.from(ab);

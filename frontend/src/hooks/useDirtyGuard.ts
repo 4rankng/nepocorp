@@ -42,7 +42,6 @@ export function useDirtyGuard(
       return;
     }
     dirtyRef.current = snapshot !== baselineRef.current;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, snapshot]);
 
   return {

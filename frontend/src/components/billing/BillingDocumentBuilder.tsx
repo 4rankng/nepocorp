@@ -1,16 +1,16 @@
-import { useState, useMemo, type CSSProperties } from 'react';
-import { Download, Plus, Trash2, Save, Filter, Loader2 } from 'lucide-react';
-import { Modal } from '../UI';
+import { useState, useMemo, useEffect, useRef, type CSSProperties } from 'react';
+import { Download, Plus, Trash2, Filter, Loader2, X, ReceiptText } from 'lucide-react';
 import { useToast } from '../shared/Toast';
+import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
+import './BillingDocumentBuilder.css';
 import type {
   BillingDocument,
   BillingDocumentType,
   BillingDocumentEntityType,
   BillingDocumentLine,
-  BillingDraftLine,
 } from '@tingting/shared';
 
 interface Props {
@@ -59,8 +59,40 @@ export default function BillingDocumentBuilder({
   const [savedId, setSavedId] = useState<number | null>(initialDoc?.id ?? null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  // StrictMode (React 18 dev) double-invokes mount effects; without a ref
+  // guard, the auto-generate below fires twice → 2 POSTs to
+  // /billing-documents/generate + 2 toasts. The ref persists across the
+  // double-invoke but resets when the builder closes, so re-opening still
+  // auto-generates. Mirrors the pattern in ContainerInstancesCard.tsx.
+  const autoGenerateRef = useRef(false);
 
   const total = useMemo(() => lines.reduce((s, l) => s + effective(l), 0), [lines]);
+  const serviceFeeTotal = useMemo(
+    () => lines.filter((l) => l.lineType === 'SERVICE_FEE').reduce((s, l) => s + effective(l), 0),
+    [lines],
+  );
+  const visibleLineCount = useMemo(() => lines.filter((l) => !l.excluded).length, [lines]);
+  const excludedLineCount = lines.length - visibleLineCount;
+
+  // Auto-load lines the first time the builder opens so the user lands on
+  // pre-populated rows instead of an empty state. Skipped when editing an
+  // existing document (lines are pre-loaded from initialDoc) or when the
+  // builder is being reopened with state already restored.
+  useEffect(() => {
+    if (!isOpen) {
+      autoGenerateRef.current = false; // reset so re-open auto-generates again
+      return;
+    }
+    if (isEdit) return;
+    if (lines.length > 0 || savedId) return;
+    if (autoGenerateRef.current) return; // StrictMode dev double-invoke guard
+    autoGenerateRef.current = true;
+    void generate();
+    // Intentionally only depends on isOpen: re-running on every state change
+    // (lines / savedId / loading) would cause re-generation loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const generate = async () => {
     setLoading(true);
@@ -100,203 +132,287 @@ export default function BillingDocumentBuilder({
     setLines((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const save = async () => {
+  const buildPayload = () => ({
+    type, entityType, entityId, entityName,
+    rangeFrom, rangeTo,
+    note: note.trim() || null,
+    lines: lines.map((l, i) => ({
+      sourceType: l.sourceType, sourceId: l.sourceId,
+      lineType: l.lineType, description: l.description,
+      routeName: l.routeName ?? null,
+      containerNumbers: l.containerNumbers ?? null,
+      baseAmount: Number(l.baseAmount),
+      amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
+      excluded: l.excluded ?? false, sortOrder: i,
+    })),
+  });
+
+  const persistDocument = async ({ notify = true }: { notify?: boolean } = {}) => {
     if (lines.length === 0) {
       showToast({ kind: 'error', message: 'Chưa có dòng nào để lưu. Hãy lọc dòng trước.' });
-      return;
+      return null;
     }
     setSaving(true);
     try {
-      const payload = {
-        type, entityType, entityId, entityName,
-        rangeFrom, rangeTo,
-        note: note.trim() || null,
-        lines: lines.map((l, i) => ({
-          sourceType: l.sourceType, sourceId: l.sourceId,
-          lineType: l.lineType, description: l.description,
-          routeName: l.routeName ?? null,
-          containerNumbers: l.containerNumbers ?? null,
-          baseAmount: Number(l.baseAmount),
-          amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
-          excluded: l.excluded ?? false, sortOrder: i,
-        })),
-      };
       // Edit mode always updates the ORIGINAL document — re-filtering ("Lọc
       // dòng") must not turn the next save into a duplicate POST. New mode
       // creates on first save, then updates via savedId.
       const updateId = isEdit ? (initialDoc?.id ?? null) : savedId;
       const saved = updateId
-        ? await financialClient.updateBillingDocument(updateId, payload)
-        : await financialClient.saveBillingDocument(payload);
+        ? await financialClient.updateBillingDocument(updateId, buildPayload())
+        : await financialClient.saveBillingDocument(buildPayload());
       setSavedId(saved.id);
-      showToast({ kind: 'success', message: 'Đã lưu tài liệu.' });
+      if (notify) showToast({ kind: 'success', message: 'Đã lưu tài liệu.' });
       onSaved?.();
+      return saved;
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi lưu tài liệu' });
+      return null;
     } finally {
       setSaving(false);
     }
   };
 
   const exportXlsx = async () => {
-    if (!savedId) {
-      showToast({ kind: 'error', message: 'Hãy lưu tài liệu trước khi xuất Excel.' });
-      return;
-    }
+    if (exporting || saving) return;
+    setExporting(true);
     try {
-      const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(savedId));
+      const saved = await persistDocument({ notify: false });
+      if (!saved) return;
+      const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(saved.id));
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke-thanh-toan'}-${entityName}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
+      showToast({ kind: 'success', message: 'Đã lưu và xuất Excel.' });
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất Excel' });
+    } finally {
+      setExporting(false);
     }
   };
 
-  const cellStyle: CSSProperties = { padding: '4px 6px', borderBottom: '1px solid var(--border)' };
-  const inputBase: CSSProperties = { width: '100%', padding: '4px 6px', fontSize: 12.5 };
+  const busy = loading || saving || exporting;
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [busy, isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const cellStyle: CSSProperties = { verticalAlign: 'middle' };
+  const inputBase: CSSProperties = { width: '100%', minWidth: 0 };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`${TITLE[type]} — ${entityName}`}
-      maxWidth={880}
-      footer={
-        <>
-          <button className="btn btn--secondary" onClick={onClose}>Đóng</button>
-          <button
-            className="btn btn--secondary"
-            onClick={exportXlsx}
-            disabled={!savedId}
-            title={savedId ? 'Xuất Excel' : 'Lưu trước khi xuất'}
-          >
-            <Download size={14} /> Xuất Excel
-          </button>
-          <button className="btn btn--primary" onClick={save} disabled={saving || lines.length === 0}>
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {isEdit ? 'Cập nhật' : 'Lưu'}
-          </button>
-        </>
-      }
-    >
-      {/* Range + generate */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12, flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-          Từ ngày
-          <input type="date" className="input" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-          Đến ngày
-          <input type="date" className="input" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} />
-        </label>
-        <button className="btn btn--secondary" onClick={generate} disabled={loading}>
-          {loading ? <Loader2 size={14} className="spin" /> : <Filter size={14} />}
-          Lọc dòng
-        </button>
-        <button className="btn btn--ghost" onClick={addAdhoc} type="button">
-          <Plus size={14} /> Thêm dòng
-        </button>
-      </div>
-
-      {/* Lines table */}
-      {lines.length === 0 ? (
-        <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
-          Chọn khoảng thời gian rồi bấm <b>Lọc dòng</b> để xem các dòng cước / phí trong kỳ.
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto', maxHeight: 360 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: 'var(--fg-3)' }}>
-                <th style={cellStyle}>Diễn giải</th>
-                <th style={cellStyle}>Tuyến</th>
-                <th style={cellStyle}>Số Cont</th>
-                <th style={{ ...cellStyle, textAlign: 'right' }}>Số tiền (đ)</th>
-                <th style={cellStyle}>Hiện</th>
-                <th style={cellStyle}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map((l, i) => {
-                const amt = l.amountOverride != null ? l.amountOverride : l.baseAmount;
-                return (
-                  <tr key={i} style={{ opacity: l.excluded ? 0.45 : 1 }}>
-                    <td style={cellStyle}>
-                      <input
-                        className="input"
-                        style={inputBase}
-                        value={l.description}
-                        onChange={(e) => updateLine(i, { description: e.target.value })}
-                      />
-                    </td>
-                    <td style={cellStyle}>
-                      <input
-                        className="input"
-                        style={{ ...inputBase, color: 'var(--fg-2)' }}
-                        value={l.routeName ?? ''}
-                        onChange={(e) => updateLine(i, { routeName: e.target.value || null })}
-                      />
-                    </td>
-                    <td style={{ ...cellStyle, color: 'var(--fg-2)' }}>
-                      {(l.containerNumbers ?? []).join(', ') || '—'}
-                    </td>
-                    <td style={{ ...cellStyle, textAlign: 'right' }}>
-                      <input
-                        type="number"
-                        className="input mono"
-                        style={{ ...inputBase, textAlign: 'right', width: 120 }}
-                        value={amt}
-                        onChange={(e) => updateLine(i, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
-                      />
-                    </td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={!l.excluded}
-                        onChange={(e) => updateLine(i, { excluded: !e.target.checked })}
-                      />
-                    </td>
-                    <td style={cellStyle}>
-                      <button
-                        className="btn-icon"
-                        title="Xóa dòng"
-                        onClick={() => removeLine(i)}
-                        style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Note + total */}
-      <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, flex: '1 1 280px' }}>
-          Ghi chú
-          <textarea
-            className="input"
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Điều khoản thanh toán, ghi chú cho khách hàng/đối tác..."
-          />
-        </label>
-        <div style={{ textAlign: 'right', minWidth: 200 }}>
-          <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>TỔNG CỘNG</div>
-          <div className="mono" style={{ fontSize: 20, fontWeight: 700 }}>
-            {formatCurrency(total).replace(' ₫', '')}<span style={{ fontSize: 13 }}>đ</span>
+    <section className="billing-builder" role="dialog" aria-modal="true" aria-labelledby="billing-builder-title">
+      <header className="billing-builder__header">
+        <div className="billing-builder__title-block">
+          <div className="billing-builder__mark" aria-hidden="true">
+            <ReceiptText size={22} />
+          </div>
+          <div>
+            <div className="billing-builder__eyebrow">
+              {type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê thanh toán'}
+            </div>
+            <h1 id="billing-builder-title">{isEdit ? 'Chỉnh sửa tài liệu' : TITLE[type]}</h1>
+            <p>{entityName}</p>
           </div>
         </div>
+        <div className="billing-builder__header-actions">
+          <button className="btn btn--secondary" onClick={onClose} disabled={busy}>
+            <X size={14} />
+            Đóng
+          </button>
+          <button
+            className="btn btn--primary"
+            onClick={exportXlsx}
+            disabled={busy || lines.length === 0}
+            title="Tự lưu tài liệu rồi xuất Excel"
+          >
+            {exporting || saving ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+            {exporting || saving ? 'Đang lưu & xuất...' : 'Xuất Excel'}
+          </button>
+        </div>
+      </header>
+
+      <div className="billing-builder__toolbar" aria-label="Bộ lọc tài liệu">
+        <label className="billing-builder__field">
+          <span>Từ ngày</span>
+          <input type="date" className="input" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} disabled={busy} />
+        </label>
+        <label className="billing-builder__field">
+          <span>Đến ngày</span>
+          <input type="date" className="input" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} disabled={busy} />
+        </label>
+        <div className="billing-builder__toolbar-actions">
+          <button
+            className={lines.length === 0 ? 'btn btn--primary' : 'btn btn--secondary'}
+            type="button"
+            onClick={generate}
+            disabled={busy}
+          >
+            {loading ? <Loader2 size={14} className="spin" /> : <Filter size={14} />}
+            Lọc dòng
+          </button>
+          <button className="btn btn--ghost" onClick={addAdhoc} type="button" disabled={busy}>
+            <Plus size={14} /> Thêm dòng
+          </button>
+        </div>
+        <div className="billing-builder__counts" aria-live="polite">
+          <span>{visibleLineCount} dòng hiện</span>
+          {excludedLineCount > 0 && <span>{excludedLineCount} dòng ẩn</span>}
+        </div>
       </div>
-    </Modal>
+
+      <div className="billing-builder__content">
+        <main className="billing-builder__main">
+          <div className="billing-builder__section-head">
+            <div>
+              <h2>Dòng thanh toán</h2>
+              <span>{lines.length} dòng trong tài liệu</span>
+            </div>
+          </div>
+
+          {lines.length === 0 ? (
+            <div className="billing-builder__empty">
+              <AssetIcon name="document" size={46} />
+              <p>Chọn khoảng thời gian rồi bấm <b>Lọc dòng</b>.</p>
+            </div>
+          ) : (
+            <div className="billing-builder__table-shell">
+              <table className="billing-builder__table">
+                <colgroup>
+                  <col className="billing-builder__col-desc" />
+                  <col className="billing-builder__col-route" />
+                  <col className="billing-builder__col-cont" />
+                  <col className="billing-builder__col-amount" />
+                  <col className="billing-builder__col-visible" />
+                  <col className="billing-builder__col-action" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Diễn giải</th>
+                    <th>Tuyến</th>
+                    <th>Số Cont</th>
+                    <th className="billing-builder__num">Số tiền (đ)</th>
+                    <th className="billing-builder__center">Hiện</th>
+                    <th aria-label="Thao tác"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((l, i) => {
+                    const amt = l.amountOverride !== null && l.amountOverride !== undefined ? l.amountOverride : l.baseAmount;
+                    return (
+                      <tr key={i} className={l.excluded ? 'billing-builder__row--excluded' : undefined}>
+                        <td style={cellStyle}>
+                          <input
+                            className="input billing-builder__text-input"
+                            style={inputBase}
+                            value={l.description}
+                            title={l.description}
+                            disabled={busy}
+                            onChange={(e) => updateLine(i, { description: e.target.value })}
+                          />
+                        </td>
+                        <td style={cellStyle}>
+                          <input
+                            className="input billing-builder__text-input"
+                            style={inputBase}
+                            value={l.routeName ?? ''}
+                            title={l.routeName ?? ''}
+                            disabled={busy}
+                            onChange={(e) => updateLine(i, { routeName: e.target.value || null })}
+                          />
+                        </td>
+                        <td
+                          className="billing-builder__containers"
+                          style={cellStyle}
+                          title={(l.containerNumbers ?? []).join(', ')}
+                        >
+                          {(l.containerNumbers ?? []).join(', ') || '-'}
+                        </td>
+                        <td style={cellStyle}>
+                          <input
+                            type="number"
+                            className="input mono billing-builder__amount-input"
+                            style={inputBase}
+                            value={amt}
+                            disabled={busy}
+                            onChange={(e) => updateLine(i, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
+                          />
+                        </td>
+                        <td className="billing-builder__center" style={cellStyle}>
+                          <input
+                            type="checkbox"
+                            checked={!l.excluded}
+                            disabled={busy}
+                            aria-label={`Hiện dòng ${i + 1}`}
+                            onChange={(e) => updateLine(i, { excluded: !e.target.checked })}
+                          />
+                        </td>
+                        <td className="billing-builder__center" style={cellStyle}>
+                          <button
+                            className="billing-builder__delete"
+                            title="Xóa dòng"
+                            aria-label={`Xóa dòng ${i + 1}`}
+                            onClick={() => removeLine(i)}
+                            disabled={busy}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
+
+        <aside className="billing-builder__summary" aria-label="Tổng hợp tài liệu">
+          <div className="billing-builder__summary-icon" aria-hidden="true">
+            <AssetIcon name="receivables" size={38} />
+          </div>
+          {serviceFeeTotal > 0 && entityType === 'CUSTOMER' && (
+            <div className="billing-builder__summary-row">
+              <span>Phí chi hộ</span>
+              <strong className="mono">
+                {formatCurrency(serviceFeeTotal).replace(' ₫', '')}<small>đ</small>
+              </strong>
+            </div>
+          )}
+          <div className="billing-builder__grand-total">
+            <span>Tổng cộng</span>
+            <strong className="mono">
+              {formatCurrency(total).replace(' ₫', '')}<small>đ</small>
+            </strong>
+          </div>
+          {serviceFeeTotal > 0 && entityType === 'CUSTOMER' && (
+            <p className="billing-builder__hint">
+              Phí chi hộ gồm các khoản đã thanh toán hộ khách như cảng, hải quan, nâng/hạ container.
+            </p>
+          )}
+          <label className="billing-builder__note">
+            <span>Ghi chú</span>
+            <textarea
+              className="input"
+              rows={8}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Điều khoản thanh toán, ghi chú cho khách hàng/đối tác..."
+              disabled={busy}
+            />
+          </label>
+        </aside>
+      </div>
+    </section>
   );
 }

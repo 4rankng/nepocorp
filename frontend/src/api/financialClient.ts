@@ -137,5 +137,5 @@ export const financialClient = {
 
   /** Direct URL for authenticated blob download (used with fetch + auth header). */
   getBillingDocumentExportUrl: (id: number) =>
-    `/api${FINANCIAL.BILLING_DOCUMENT_EXPORT(id)}`,
+    FINANCIAL.BILLING_DOCUMENT_EXPORT(id),
 };

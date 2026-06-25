@@ -136,12 +136,26 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [prefersReduced]);
 
   const addToast = useCallback((options: ToastOptions): string => {
+    // Dedupe: if an identical (kind, message) toast is already on screen (not
+    // exiting), don't stack a duplicate. Common source: React StrictMode
+    // double-mounting effects, or a caller firing the same notification
+    // twice in a row.
+    const existingId = (() => {
+      for (const t of toasts) {
+        if (!t.exiting && t.kind === options.kind && t.message === options.message) {
+          return t.id;
+        }
+      }
+      return null;
+    })();
+    if (existingId) return existingId;
+
     const id = `toast-${++counter.current}`;
     const duration = options.duration ?? 4500;
     setToasts(prev => [...prev, { id, kind: options.kind, message: options.message }]);
     timers.current.set(id, setTimeout(() => dismiss(id), duration));
     return id;
-  }, [dismiss]);
+  }, [toasts, dismiss]);
 
   // Clean up all timers and animations on unmount
   useEffect(() => {

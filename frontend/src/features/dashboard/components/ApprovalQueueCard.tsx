@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NavigateFunction } from 'react-router-dom';
 import { Receipt, Wallet, CheckCircle2, FileCheck2, ChevronRight, Check, Loader2 } from 'lucide-react';
-import { api } from '../../../lib/api';
 import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';

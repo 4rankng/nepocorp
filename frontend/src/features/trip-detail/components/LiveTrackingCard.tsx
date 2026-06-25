@@ -19,7 +19,7 @@ const MONO = "'JetBrains Mono', monospace";
  * Helper to determine if a telemetry field has a valid, non-empty value.
  * Filters out null, undefined, empty strings, and raw dash/placeholder values.
  */
-function hasVal(val: any): boolean {
+function hasVal(val: unknown): boolean {
   if (val === null || val === undefined) return false;
   if (typeof val === 'string') {
     const trimmed = val.trim();

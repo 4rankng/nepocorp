@@ -64,7 +64,9 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const [adjustSubmitting, setAdjustSubmitting] = useState(false);
   const [adjustError, setAdjustError] = useState('');
 
-  const [cancelLoading, setCancelLoading] = useState(false);
+  // No cancel action is wired in this hook yet; keep the slot in the return
+  // shape as a stable `false` so consumers don't need to change.
+  const cancelLoading = false;
 
   const ui: TripUIState = {
     actionLoading,

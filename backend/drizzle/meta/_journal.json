@@ -505,6 +505,20 @@
       "when": 1782319104267,
       "tag": "0071_keen_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1782360871517,
+      "tag": "0072_safe_quasimodo",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1782360900000,
+      "tag": "0073_backfill_service_fee_ar",
+      "breakpoints": true
     }
   ]
 }

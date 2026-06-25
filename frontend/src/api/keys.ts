@@ -41,6 +41,8 @@ export const qk = {
     /** The single bootstrap blob — used by trip form, dispatch, etc. */
     all: ['catalogs'],
     trucksDrivers: ['trucks-drivers'],
+    /** Single truck row — GET /trucks/:id (config-page header, etc.). */
+    truckDetail: (id: number | string | undefined) => ['truck', id] as const,
     routesDropdown: ['routes-dropdown'],
     roadAllowances: ['road-allowances'],
     roadConfig: ['road-config'],

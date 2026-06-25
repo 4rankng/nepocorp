@@ -6,6 +6,14 @@ export enum TripStatus {
   CANCELED = 'CANCELED',
 }
 
+/** Trip statuses whose revenue/AP has posted to the ledger → billable on debt notices
+ *  (giấy báo nợ) and carrier payment statements. Revenue posts at COMPLETED
+ *  (postTripLock fires on IN_TRANSIT→COMPLETED); LOCKED is a frozen-figures superset of
+ *  COMPLETED. CREATED / IN_TRANSIT / CANCELED have no posted AR and are excluded.
+ *  NOTE: P&L (pnl.service) and profit distribution remain LOCKED-only by spec — a
+ *  distinct concept (grossProfit is finalized at lock) — and must NOT use this set. */
+export const BILLABLE_TRIP_STATUSES = [TripStatus.COMPLETED, TripStatus.LOCKED] as const;
+
 export enum FuelMode {
   AUTO = 'AUTO',
   FLAT_RATE = 'FLAT_RATE',
@@ -48,6 +56,7 @@ export enum TxnType {
   UNLOCK_REVERSAL = 'UNLOCK_REVERSAL',
   COMMISSION = 'COMMISSION',
   DRIVER_PAYOUT = 'DRIVER_PAYOUT',
+  SERVICE_FEE = 'SERVICE_FEE',
 }
 
 export enum CarrierType {

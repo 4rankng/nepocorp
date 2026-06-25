@@ -8,7 +8,6 @@ import penaltiesRoutes from './penalties.routes';
 import reportsRoutes from './reports.routes';
 import advancesRoutes from './advances.routes';
 import debtOffsetsRoutes from './debt-offsets.routes';
-import debitNotesRoutes from './debit-notes.routes';
 import billingDocumentsRoutes from './billing-documents.routes';
 
 // Audit event registrations
@@ -34,7 +33,6 @@ router.use(penaltiesRoutes);
 router.use(reportsRoutes);
 router.use(advancesRoutes);
 router.use(debtOffsetsRoutes);
-router.use(debitNotesRoutes);
 router.use(billingDocumentsRoutes);
 
 // Audit: saving a billing document (debit note / payment statement snapshot)
