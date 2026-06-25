@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
-import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
@@ -95,6 +95,14 @@ interface LedgerSection {
   credit: number;
 }
 
+interface LedgerRouteGroup {
+  key: string;
+  title: string;
+  items: LedgerDisplayRow[];
+  debit: number;
+  credit: number;
+}
+
 function rowDisplayLabel(row: LedgerEntry): string {
   if (row.serviceFeeLabel?.trim()) {
     return row.serviceFeeLabel.trim();
@@ -177,6 +185,11 @@ function displayRowAmounts(item: LedgerDisplayRow): { debit: number; credit: num
   };
 }
 
+function displayRowRouteTitle(item: LedgerDisplayRow): string {
+  if (item.kind === 'group') return item.routeName || 'Chưa có tuyến';
+  return item.row.routeName || item.row.note || 'Chưa có tuyến';
+}
+
 function displayRowSectionKey(item: LedgerDisplayRow): LedgerSectionKey {
   const firstRow = item.kind === 'group' ? item.rows[0] : item.row;
   if (!firstRow) return 'other';
@@ -241,6 +254,28 @@ function groupLedgerSections(items: LedgerDisplayRow[]): LedgerSection[] {
     .filter(Boolean) as LedgerSection[];
 }
 
+function groupDisplayRowsByRoute(items: LedgerDisplayRow[]): LedgerRouteGroup[] {
+  const routeGroups: LedgerRouteGroup[] = [];
+  const byRoute = new Map<string, LedgerRouteGroup>();
+
+  for (const item of items) {
+    const title = displayRowRouteTitle(item);
+    const key = title.trim().toLowerCase();
+    let group = byRoute.get(key);
+    if (!group) {
+      group = { key, title, items: [], debit: 0, credit: 0 };
+      byRoute.set(key, group);
+      routeGroups.push(group);
+    }
+    const amounts = displayRowAmounts(item);
+    group.items.push(item);
+    group.debit += amounts.debit;
+    group.credit += amounts.credit;
+  }
+
+  return routeGroups;
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function DebtDetailPage() {
@@ -259,7 +294,6 @@ export default function DebtDetailPage() {
   useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
-  const [expandedLedgerGroups, setExpandedLedgerGroups] = useState<Set<string>>(() => new Set());
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -336,16 +370,7 @@ export default function DebtDetailPage() {
   }, [statement, ledgerFilter]);
 
   const displayRows = useMemo(() => groupLedgerRows(filteredRows), [filteredRows]);
-  const ledgerSections = useMemo(() => groupLedgerSections(displayRows), [displayRows]);
-
-  const toggleLedgerGroup = (key: string) => {
-    setExpandedLedgerGroups((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
+  const ledgerRouteGroups = useMemo(() => groupDisplayRowsByRoute(displayRows), [displayRows]);
 
   const activeAgingIdx = useMemo(() => {
     let max = -1, idx = 0;
@@ -602,11 +627,7 @@ export default function DebtDetailPage() {
 
       {/* ── Ledger Card ─────────────────────────────────────────────────── */}
       <section className="dd-ledger">
-        <div className="dd-ledger-head">
-          <h2>Sổ kế toán</h2>
-          <span className="dd-cnt">
-            {ledgerSections.length} nhóm loại / {displayRows.length} mục / {filteredRows.length} giao dịch
-          </span>
+        <div className="dd-ledger-toolbar">
           <div className="dd-filters">
             {FILTER_OPTIONS.map(f => (
               <button
@@ -620,15 +641,10 @@ export default function DebtDetailPage() {
           </div>
         </div>
         <div className="dd-ledger-groups">
-          {ledgerSections.map(section => (
-            <LedgerSectionBlock
-              key={section.key}
-              section={section}
-              expandedLedgerGroups={expandedLedgerGroups}
-              onToggleGroup={toggleLedgerGroup}
-            />
+          {ledgerRouteGroups.map(routeGroup => (
+            <LedgerRouteCard key={routeGroup.key} routeGroup={routeGroup} />
           ))}
-          {ledgerSections.length === 0 && (
+          {ledgerRouteGroups.length === 0 && (
             <div className="dd-ledger-empty">
               Không có giao dịch
             </div>
@@ -716,38 +732,44 @@ function money(value: number): string {
   return formatCurrency(value).replace(' ₫', '') + 'đ';
 }
 
-function LedgerSectionBlock({
-  section,
-  expandedLedgerGroups,
-  onToggleGroup,
-}: {
-  section: LedgerSection;
-  expandedLedgerGroups: Set<string>;
-  onToggleGroup: (key: string) => void;
-}) {
+function LedgerRouteCard({ routeGroup }: { routeGroup: LedgerRouteGroup }) {
+  const sections = groupLedgerSections(routeGroup.items);
+
   return (
-    <section className={`dd-ledger-section dd-ledger-section--${section.key}`}>
-      <div className="dd-section-head">
+    <article className="dd-route-card">
+      <div className="dd-route-card-head">
         <div>
-          <h3>{section.title}</h3>
-          <span>{section.countLabel}</span>
+          <h3>{routeGroup.title}</h3>
+          <span>{routeGroup.items.length} mục</span>
         </div>
-        <div className="dd-section-totals">
-          {section.debit > 0 && <b>{money(section.debit)}</b>}
-          {section.credit > 0 && <em>{money(section.credit)} đã thu</em>}
+        <div className="dd-route-card-total">
+          {routeGroup.debit > 0 && <b>{money(routeGroup.debit)}</b>}
+          {routeGroup.credit > 0 && <em>{money(routeGroup.credit)} đã thu</em>}
         </div>
       </div>
-      <div className="dd-section-items">
+      <div className="dd-route-breakdowns">
+        {sections.map(section => (
+          <LedgerBreakdownSection key={section.key} section={section} />
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function LedgerBreakdownSection({ section }: { section: LedgerSection }) {
+  return (
+    <section className={`dd-breakdown-section dd-breakdown-section--${section.key}`}>
+      <div className="dd-breakdown-head">
+        <div>
+          <h4>{section.title}</h4>
+          <span>{section.countLabel}</span>
+        </div>
+        <strong>{money(section.debit || section.credit)}</strong>
+      </div>
+      <div className="dd-breakdown-items">
         {section.items.map(item => (
           item.kind === 'group'
-            ? (
-              <LedgerTripGroupCard
-                key={item.key}
-                group={item}
-                expanded={expandedLedgerGroups.has(item.key)}
-                onToggle={() => onToggleGroup(item.key)}
-              />
-            )
+            ? <LedgerTripGroupCard key={item.key} group={item} />
             : <LedgerSingleCard key={item.key} row={item.row} />
         ))}
       </div>
@@ -755,21 +777,12 @@ function LedgerSectionBlock({
   );
 }
 
-function LedgerTripGroupCard({
-  group,
-  expanded,
-  onToggle,
-}: {
-  group: Extract<LedgerDisplayRow, { kind: 'group' }>;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
+function LedgerTripGroupCard({ group }: { group: Extract<LedgerDisplayRow, { kind: 'group' }> }) {
   return (
     <article className="dd-trip-card">
       <div className="dd-trip-main">
         <div className="dd-trip-date">{formatDate(group.date)}</div>
         <div className="dd-trip-context">
-          <div className="dd-trip-route">{group.routeName || 'Chưa có tuyến'}</div>
           <div className="dd-trip-subline">
             <span>{group.containerNumbers.length > 0 ? group.containerNumbers.join(', ') : 'Không có container'}</span>
             <span>{group.rows.length} khoản</span>
@@ -777,7 +790,6 @@ function LedgerTripGroupCard({
         </div>
         <div className="dd-trip-money">
           <strong>{money(group.debit)}</strong>
-          <span>Số dư sau nhóm {money(group.balance)}</span>
         </div>
       </div>
 
@@ -792,22 +804,6 @@ function LedgerTripGroupCard({
           );
         })}
       </div>
-
-      <button className="dd-raw-toggle" onClick={onToggle}>
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        {expanded ? 'Ẩn ghi chú gốc' : 'Ghi chú gốc'}
-      </button>
-
-      {expanded && (
-        <div className="dd-raw-notes">
-          {group.rows.map(row => (
-            <div key={row.id}>
-              <span>{rowDisplayLabel(row)}</span>
-              <p>{row.note || 'Không có ghi chú'}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </article>
   );
 }
@@ -819,18 +815,22 @@ function LedgerSingleCard({ row }: { row: LedgerEntry }) {
   const meta = TXN_META[row.txnType] ?? DEFAULT_META;
   const label = rowDisplayLabel(row);
   const isPayment = credit > 0;
+  const showTypeBadge = !(row.txnType === TxnType.TRIP_REVENUE && !row.serviceFeeLabel);
 
   return (
     <article className="dd-single-card">
       <div className="dd-single-date">{formatDate(row.timestamp)}</div>
       <div className="dd-single-body">
         <div className="dd-single-top">
-          <span className={meta.pill}>{label}</span>
+          {showTypeBadge ? (
+            <span className={meta.pill}>{label}</span>
+          ) : (
+            <span className="dd-single-type-spacer" aria-hidden="true" />
+          )}
           <strong className={isPayment ? 'dd-single-credit' : 'dd-single-debit'}>
             {money(isPayment ? credit : debit)}
           </strong>
         </div>
-        <div className="dd-single-route">{row.routeName || row.note || 'Không có tuyến'}</div>
         <div className="dd-single-meta">
           <span>{row.containerNumbers?.length ? row.containerNumbers.join(', ') : row.receiptId || 'Không có container'}</span>
           <span>Số dư {money(balance)}</span>

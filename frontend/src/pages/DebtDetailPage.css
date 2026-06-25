@@ -276,14 +276,14 @@
   margin-top: 6px;
 }
 
-/* ─── Ledger Card ───────────────────────────────────────────────────────────── */
+/* ─── Ledger Route Groups ───────────────────────────────────────────────────── */
 
 .dd-ledger {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh);
-  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
   animation: fade-up .45s var(--ease) both;
   animation-delay: .12s;
 }
@@ -305,6 +305,15 @@
   color: var(--ink-3);
   font-weight: 600;
   font-family: var(--font-mono);
+}
+
+.dd-ledger-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 0 10px;
+  border-bottom: 0;
+  background: transparent;
 }
 
 .dd-filters {
@@ -338,8 +347,8 @@
 .dd-ledger-groups {
   display: grid;
   gap: 14px;
-  padding: 16px;
-  background: #F8FAF9;
+  padding: 0;
+  background: transparent;
 }
 
 .dd-ledger-empty {
@@ -351,53 +360,54 @@
   border-radius: 10px;
 }
 
-.dd-ledger-section {
+.dd-route-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
 }
 
-.dd-section-head {
+.dd-route-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 13px 16px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--line);
-  background: #FCFDFD;
+  background: #FAFCFB;
 }
 
-.dd-section-head h3 {
-  font-size: var(--fs-sm);
-  font-weight: 800;
+.dd-route-card-head h3 {
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  font-weight: 850;
   margin: 0;
   color: var(--ink);
 }
 
-.dd-section-head span {
+.dd-route-card-head span {
   display: inline-block;
-  margin-top: 3px;
+  margin-top: 5px;
   font-size: var(--fs-xs);
   color: var(--ink-3);
   font-family: var(--font-mono);
-  font-weight: 650;
+  font-weight: 700;
 }
 
-.dd-section-totals {
+.dd-route-card-total {
   display: grid;
   justify-items: end;
   gap: 2px;
   white-space: nowrap;
 }
 
-.dd-section-totals b {
+.dd-route-card-total b {
   font-family: var(--font-mono);
-  font-size: var(--fs-md);
+  font-size: var(--fs-lg);
   color: var(--ink);
 }
 
-.dd-section-totals em {
+.dd-route-card-total em {
   font-style: normal;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
@@ -405,7 +415,54 @@
   color: #00803a;
 }
 
-.dd-section-items {
+.dd-route-breakdowns {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.dd-breakdown-section {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.dd-breakdown-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 11px 14px;
+  background: #FCFDFD;
+  border-bottom: 1px solid var(--line);
+}
+
+.dd-breakdown-head h4 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.dd-breakdown-head span {
+  display: inline-block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-weight: 700;
+}
+
+.dd-breakdown-head strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.dd-breakdown-items {
   display: grid;
   gap: 0;
 }
@@ -445,7 +502,6 @@
   min-width: 0;
 }
 
-.dd-trip-route,
 .dd-single-route {
   font-size: var(--fs-sm);
   font-weight: 750;
@@ -491,12 +547,6 @@
   color: var(--ink);
 }
 
-.dd-trip-money span {
-  font-size: var(--fs-xs);
-  color: var(--danger);
-  font-weight: 750;
-}
-
 .dd-fee-breakdown {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -526,56 +576,6 @@
   font-size: var(--fs-xs);
   color: var(--ink);
   white-space: nowrap;
-}
-
-.dd-raw-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin: 10px 0 0 128px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink-3);
-  font-size: var(--fs-xs);
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.dd-raw-toggle:hover {
-  color: var(--accent);
-}
-
-.dd-raw-notes {
-  display: grid;
-  gap: 6px;
-  margin: 8px 0 0 128px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-}
-
-.dd-raw-notes div {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 10px;
-  align-items: baseline;
-}
-
-.dd-raw-notes span {
-  font-size: var(--fs-xs);
-  font-weight: 800;
-  color: var(--ink-2);
-}
-
-.dd-raw-notes p {
-  margin: 0;
-  font-size: var(--fs-xs);
-  color: var(--ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .dd-single-card {
@@ -611,11 +611,11 @@
   color: #00803a;
 }
 
-.dd-ledger-section--service-fees .dd-section-head {
+.dd-breakdown-section--service-fees .dd-breakdown-head {
   background: #F3FBF6;
 }
 
-.dd-ledger-section--freight .dd-section-head {
+.dd-breakdown-section--freight .dd-breakdown-head {
   background: #F6FAFF;
 }
 
@@ -626,17 +626,13 @@
     gap: 8px;
   }
   .dd-trip-money,
-  .dd-section-totals {
+  .dd-route-card-total {
     justify-items: start;
   }
-  .dd-fee-breakdown,
-  .dd-raw-toggle,
-  .dd-raw-notes {
+  .dd-fee-breakdown {
     margin-left: 0;
   }
-  .dd-trip-route,
-  .dd-single-route,
-  .dd-raw-notes p {
+  .dd-single-route {
     white-space: normal;
   }
 }
@@ -646,10 +642,22 @@
     padding: 10px;
     gap: 10px;
   }
-  .debt-detail-page .dd-section-head {
+  .debt-detail-page .dd-ledger-toolbar {
+    justify-content: flex-start;
+    padding: 0 0 8px;
+  }
+  .debt-detail-page .dd-route-card-head {
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
+    padding: 12px;
+  }
+  .debt-detail-page .dd-route-breakdowns {
+    padding: 8px;
+  }
+  .debt-detail-page .dd-breakdown-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
     padding: 12px;
   }
   .debt-detail-page .dd-trip-card,
@@ -663,10 +671,6 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
-  }
-  .debt-detail-page .dd-raw-notes div {
-    grid-template-columns: 1fr;
-    gap: 2px;
   }
 }
 
