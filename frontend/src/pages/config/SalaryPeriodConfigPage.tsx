@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { usePageAnimations } from '../../hooks/animations';
 import { Field } from '../../components/config/Field';
 import { CalendarDays, Settings2, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../../components/UI';
 import { useSalaryPeriodDefault, useUpdateSalaryPeriodDefault } from '../../hooks/useSalaryQueries';
 import './SalaryPeriodConfigPage.css';
 
@@ -18,6 +20,7 @@ export default function SalaryPeriodConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const { data: defaultConfig, error: queryError } = useSalaryPeriodDefault();
   const updateDefault = useUpdateSalaryPeriodDefault();
+  const navigate = useNavigate();
 
   const [mode, setMode] = useState<'calendar' | 'custom'>('calendar');
   const [startDay, setStartDay] = useState(26);
@@ -65,12 +68,12 @@ export default function SalaryPeriodConfigPage() {
 
   return (
     <div ref={pageRef} className="sp-wrap" style={{ maxWidth: 840 }}>
-      <header className="sp-page-header">
-        <div>
-          <h1>Kỳ lương</h1>
-          <p>Thiết lập quy tắc mặc định cho chu kỳ chấm công và tính lương.</p>
-        </div>
-      </header>
+      <PageHeader 
+        title="Kỳ lương" 
+        description="Thiết lập quy tắc mặc định cho chu kỳ chấm công và tính lương." 
+        onBack={() => navigate('/config')} 
+        iconName="payroll" 
+      />
 
       {/* ── Global Default Rule ── */}
       <div className="sp-default-card">

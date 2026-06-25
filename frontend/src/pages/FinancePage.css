@@ -383,16 +383,18 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  padding: 3px 12px;
+  padding: 6px 14px;
   font-family: var(--font-body);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--wf-ink-3);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
-  line-height: 1.5;
+  line-height: 1.4;
+  /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
+  min-height: 32px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);

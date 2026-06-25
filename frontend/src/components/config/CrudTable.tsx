@@ -43,6 +43,7 @@ interface CrudTableProps<T extends { id: number }> {
   emptyTitle?: string;
   emptyHint?: string;
   pageSlug?: string;
+  iconName?: import('../../components/AssetIcon').AssetIconName;
 }
 
 export function CrudTable<T extends { id: number }>({
@@ -53,6 +54,7 @@ export function CrudTable<T extends { id: number }>({
   emptyTitle = 'Chưa có dữ liệu',
   emptyHint,
   pageSlug,
+  iconName,
 }: CrudTableProps<T>) {
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
@@ -96,7 +98,7 @@ export function CrudTable<T extends { id: number }>({
 
   return (
     <div className={wrapperClass}>
-      <PageHeader title={title} description={description} onBack={() => navigate(backTo)} />
+      <PageHeader title={title} description={description} onBack={() => navigate(backTo)} iconName={iconName} />
       <Panel flush>
         <div className="toolbar">
           <div style={{ flex: 1, minWidth: 0 }}>

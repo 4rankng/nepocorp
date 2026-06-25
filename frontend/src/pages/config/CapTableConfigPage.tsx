@@ -64,10 +64,11 @@ export default function CapTableConfigPage() {
   return (
     <div ref={pageRef}>
     <CrudTable<CapTableHistory>
-      title="Thông tin công ty & Cổ phần" description="Lịch sử vốn góp cổ đông — tỷ lệ tự động tính từ số vốn góp đang hiệu lực"
+      title="Cổ đông & Vốn góp" description="Danh sách cổ đông và lịch sử góp vốn"
       endpoint="/cap-table" colSpan={5}
       showDelete={false}
       pageSlug="cap-table"
+      iconName="analytics"
       emptyIllustration="empty-pie.svg"
       emptyTitle="Chưa có cổ đông"
       emptyHint="Thêm thông tin vốn góp để hệ thống tự động tính tỷ lệ cổ phần."

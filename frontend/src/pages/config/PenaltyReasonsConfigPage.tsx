@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 import { useCRUD } from '../../hooks/useCRUD';
-import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
+import { Modal, useConfirm, Btn, FormGroup, PageHeader } from '../../components/UI';
 import type { PenaltyReason } from '@tingting/shared';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 
@@ -340,34 +340,20 @@ export default function PenaltyReasonsConfigPage() {
   return (
     <div ref={pageRef} className="penalty-reasons-page" style={{ minHeight: '100%' }}>
       {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="page-header">
-        <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <button
-            className="btn btn--secondary btn--icon"
-            style={{ borderRadius: 'var(--r)', marginTop: '2px' }}
-            onClick={handleBack}
-            aria-label="Quay lại"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="page-title">Danh mục lỗi vi phạm</h1>
-            <p className="page-subtitle">
-              Quản lý các loại lỗi vi phạm của lái xe và quy định mức phạt mặc định để áp dụng nhanh chóng.
-            </p>
-          </div>
-        </div>
-        <div className="page-actions">
+      <PageHeader 
+        title="Danh mục lỗi vi phạm" 
+        description="Quản lý các loại lỗi vi phạm của lái xe và quy định mức phạt mặc định để áp dụng nhanh chóng." 
+        onBack={handleBack} 
+        iconName="alert"
+        action={
           <button className="btn btn--primary" onClick={() => crud.setShowAddForm(true)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             Thêm lỗi mới
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── KPI Stats ───────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ marginTop: '8px' }}>

@@ -305,7 +305,10 @@ fontSize: 13,
       {/* ── Page Header ── */}
       <header className="page-header">
         <div className="page-header-main">
-          <h1 className="page-title">Nhật ký người dùng</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src="/assets/icons/20-security-shield-bao-mat.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+            Nhật ký người dùng
+          </h1>
           <p className="page-subtitle">
             Hệ thống giám sát và ghi nhận hoạt động vận hành thời gian thực
           </p>

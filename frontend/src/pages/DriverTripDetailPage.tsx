@@ -137,7 +137,8 @@ export default function DriverTripDetailPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="dt-header-title-block">
-            <h1 className="dt-title">
+            <h1 className="dt-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/assets/icons/03-trip-log-so-chuyen-chuyen-xe.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
               {trip.routeName || 'Lệnh vận chuyển'}
             </h1>
             <div className="dt-meta">

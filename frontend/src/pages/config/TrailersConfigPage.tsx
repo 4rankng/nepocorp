@@ -46,6 +46,7 @@ export default function TrailersConfigPage() {
       title="Rơ-moóc" description="Danh sách rơ-moóc — phân loại theo kích thước và trạng thái đăng kiểm"
       endpoint="/trailers" colSpan={5}
       pageSlug="trailers"
+      iconName="truck"
       emptyIllustration="empty-fleet.svg"
       emptyTitle="Chưa có rơ-moóc"
       emptyHint="Thêm rơ-moóc đầu tiên để bắt đầu phân chuyến."

@@ -41,6 +41,7 @@ export default function TrucksConfigPage() {
       title="Xe đầu kéo" description="Biển số các đầu kéo container đang vận hành — định mức mặc định và trạng thái bảo dưỡng"
       endpoint="/trucks" colSpan={4}
       pageSlug="trucks"
+      iconName="truck"
       emptyIllustration="empty-trucks.svg"
       emptyTitle="Chưa có xe đầu kéo"
       emptyHint="Thêm xe đầu kéo để bắt đầu phân chuyến và theo dõi bảo dưỡng."

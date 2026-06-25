@@ -83,17 +83,16 @@
      on phones we keep the buttons at their natural size and let them
      flow into multiple rows if the viewport is narrow. */
   .header-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     width: 100%;
     gap: 8px;
-    justify-content: stretch;
     padding-top: 8px;
     padding-bottom: 6px;
   }
 
   .header-actions .btn {
-    width: 100%;
+    flex: 1 1 calc(50% - 4px);
     min-width: 0;
     justify-content: center;
     min-height: 42px;
@@ -102,7 +101,7 @@
   }
 
   .header-actions .btn--primary {
-    grid-column: span 2;
+    flex: 1 1 100%;
   }
 
   /* Tighter title on phones */
@@ -214,7 +213,7 @@
    drop to 2 per row by giving each button a slightly larger basis. */
 @media (max-width: 420px) {
   .header-actions .btn {
-    grid-column: span 2;
+    flex: 1 1 100%;
   }
 
   /* .btn--ghost has no background by default (it's designed for desktop
@@ -237,14 +236,6 @@
 
   .header-actions .btn--ghost:hover {
     background: var(--surface-2, var(--surface));
-  }
-
-  /* ShareLinkButton is the first child of .header-actions. Below 640px its
-     label is hidden, so it renders as a small icon-only cell pinned to the
-     top of the action cluster — looks like a stray element. Hide it on
-     narrow phones; users can copy the URL from the address bar. */
-  .header-actions .share-link-btn {
-    display: none;
   }
 }
 

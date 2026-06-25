@@ -72,11 +72,17 @@
 }
 .btn--ghost:hover { background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft)); color: var(--ink); box-shadow: var(--sh-sm); }
 .btn--danger {
-  background: var(--surface);
-  color: var(--danger);
-  border-color: var(--danger-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, var(--danger) 0%, color-mix(in srgb, var(--danger) 80%, black) 100%);
+  color: var(--fg-on-brand);
+  border-color: transparent;
+  box-shadow: 0 2px 5px rgba(227, 36, 52, 0.25);
 }
-.btn--danger:hover { background: var(--danger-soft); }
+.btn--danger:hover {
+  box-shadow: 0 4px 8px rgba(227, 36, 52, 0.35);
+  transform: translateY(-1px);
+}
 .btn--sm { min-height: 30px; padding: 6px 10px; font-size: var(--fs-xs); }
 .btn--lg { padding: 12px 22px; font-size: 15px; border-radius: 12px; min-height: 46px; }
 .btn--icon { padding: 9px; }

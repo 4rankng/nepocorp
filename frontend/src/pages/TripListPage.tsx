@@ -265,7 +265,10 @@ export default function TripListPage() {
         <div className="hero-top">
           <div className="hero-title-block">
             <div className="hero-eyebrow">Sổ chuyến · {todayLabel}</div>
-            <h1 className="hero-h1">Sổ chuyến đi</h1>
+            <h1 className="hero-h1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/assets/icons/03-trip-log-so-chuyen-chuyen-xe.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+              Sổ chuyến đi
+            </h1>
             <div className="hero-sub">
               {statusCounts.all} chuyến đã ghi nhận
               {statusCounts[TripStatus.COMPLETED] > 0 && (

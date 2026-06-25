@@ -60,7 +60,7 @@ export default function FuelConfigPage() {
 
   return (
     <div ref={pageRef} className="cfg-page cfg-page--fuel">
-      <PageHeader title="Định mức nhiên liệu" description="Định mức tiêu hao theo xe và loại tải · đơn giá dầu hiện hành · ngưỡng cảnh báo TTBQ" onBack={() => navigate('/config')} />
+      <PageHeader title="Định mức nhiên liệu" description="Định mức tiêu hao theo xe và loại tải · đơn giá dầu hiện hành · ngưỡng cảnh báo TTBQ" onBack={() => navigate('/config')} iconName="fuel" />
       <Panel title="Cấu hình tính nhiên liệu" subtitle="Thông số dùng để tính chi phí nhiên liệu cho mỗi chuyến">
         <div className="cfg-form-grid">
           <div className="field">

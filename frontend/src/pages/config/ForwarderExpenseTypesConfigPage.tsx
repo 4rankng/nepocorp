@@ -257,8 +257,10 @@ export default function ForwarderExpenseTypesConfigPage() {
       description="Các khoản phí phát sinh do giao nhận nhập — nâng hạ, hải quan, cân xe, kiểm tra…"
       endpoint="/forwarder-expense-types"
       colSpan={5}
+      iconName="expense"
       showDelete={false}
       pageSlug="forwarder-expense-types"
+      // Force reload
       emptyIllustration="empty-expenses.svg"
       emptyTitle="Chưa có loại chi phí"
       emptyHint="Thêm các loại chi phí giao nhận để nhân viên ghi nhận khi phát sinh."

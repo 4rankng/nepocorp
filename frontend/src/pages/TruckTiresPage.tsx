@@ -208,7 +208,10 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             <ArrowLeft size={14} />
             Quay lại đội xe
           </Link>
-          <h1>{vehicleLabel}</h1>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src="/assets/icons/04-truck-xe-tai.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+            {vehicleLabel}
+          </h1>
           <div className="ttp-sub">
             Theo dõi serial lốp, vị trí lắp, ngày mua, tuổi lốp, nhà cung cấp và thanh lý lốp cũ.
           </div>

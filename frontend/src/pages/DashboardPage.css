@@ -355,9 +355,13 @@
   display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
   background: none; border: 0; padding: 0;
   border-radius: 8px;
+  /* fix visual-audit 2026-06-25 BUG-1: tap target ≥ 36px on desktop */
+  min-height: 36px;
+  padding-inline: 8px;
+  transition: background 120ms ease, color 120ms ease;
 }
 .dash-wf .wf-link svg { width: 13px; height: 13px; }
-.dash-wf .wf-link:hover { color: var(--wf-green-700); }
+.dash-wf .wf-link:hover { color: var(--wf-green-700); background: var(--wf-bg); }
 
 /* ── Chart day/month toggle ── */
 .dash-wf .wf-chart-toggle {
@@ -368,16 +372,18 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  padding: 3px 12px;
+  padding: 6px 14px;
   font-family: var(--font-body);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--wf-ink-3);
   background: transparent;
   border: none;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
-  line-height: 1.5;
+  line-height: 1.4;
+  /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
+  min-height: 32px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);
@@ -525,7 +531,7 @@
 .dash-wf .wf-arow .tx .t { font-size: var(--fs-xs); font-weight: 700; line-height: 1.35; }
 .dash-wf .wf-arow .tx .s { font-size: var(--fs-2xs); color: var(--wf-ink-3); margin-top: 1px; line-height: 1.35; }
 .dash-wf .wf-arow .go { flex: 0 0 auto; }
-.dash-wf .wf-minibtn { height: 30px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--wf-border-2); background: var(--surface); font-family: var(--font-body); font-weight: 600; font-size: var(--fs-2xs); cursor: pointer; color: var(--wf-ink); }
+.dash-wf .wf-minibtn { min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--wf-border-2); background: var(--surface); font-family: var(--font-body); font-weight: 600; font-size: var(--fs-xs); cursor: pointer; color: var(--wf-ink); }
 .dash-wf .wf-minibtn.green { background: var(--wf-green); border-color: var(--wf-green); color: var(--fg-on-brand); }
 .dash-wf .wf-minibtn:hover { filter: brightness(0.98); }
 .dash-wf .wf-divider { height: 1px; background: var(--wf-border); margin: 2px 8px; }

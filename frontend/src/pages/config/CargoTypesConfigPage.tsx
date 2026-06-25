@@ -28,6 +28,7 @@ export default function CargoTypesConfigPage() {
       title="Loại hàng hóa" description="Bảng quy chuẩn loại hàng hóa vận chuyển — ảnh hưởng đến việc phân xe theo chặng"
       endpoint="/cargo-types" colSpan={3}
       pageSlug="cargo-types"
+      iconName="cargo"
       emptyTitle="Chưa có loại hàng hóa"
       emptyHint="Thêm loại hàng hóa đầu tiên để bắt đầu phân loại chuyến."
       columns={[
