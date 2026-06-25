@@ -28,7 +28,14 @@ interface Props {
 interface BillingRouteGroup {
   key: string;
   routeName: string;
-  startIndex: number;
+  lines: Array<{ line: BillingDocumentLine; index: number }>;
+  subtotal: number;
+  visibleCount: number;
+}
+
+interface BillingContainerGroup {
+  key: string;
+  label: string;
   lines: Array<{ line: BillingDocumentLine; index: number }>;
   subtotal: number;
   visibleCount: number;
@@ -50,10 +57,26 @@ const SERVICE_FEE_LABELS: Record<string, string> = {
   OTHER: 'Phí chi hộ khác',
 };
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeFreightDescription(line: BillingDocumentLine): BillingDocumentLine {
+  if (line.lineType !== 'FREIGHT') return line;
+  const routeName = line.routeName?.trim();
+  if (!routeName) return line;
+  const description = line.description
+    .replace(new RegExp(`\\s+[—-]\\s+${escapeRegExp(routeName)}`, 'i'), '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return description && description !== line.description ? { ...line, description } : line;
+}
+
 function normalizeLine(line: BillingDocumentLine): BillingDocumentLine {
-  if (line.lineType !== 'SERVICE_FEE') return line;
-  const label = SERVICE_FEE_LABELS[line.description?.trim().toUpperCase() ?? ''];
-  return label ? { ...line, description: label } : line;
+  const normalized = normalizeFreightDescription(line);
+  if (normalized.lineType !== 'SERVICE_FEE') return normalized;
+  const label = SERVICE_FEE_LABELS[normalized.description?.trim().toUpperCase() ?? ''];
+  return label ? { ...normalized, description: label } : normalized;
 }
 
 function lineTotal(line: BillingDocumentLine): number {
@@ -72,6 +95,46 @@ function thisMonthRange(): { from: string; to: string } {
 function displayDate(value: string): string {
   const [year, month, day] = value.split('-');
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function splitRouteName(routeName: string): { origin: string; destination: string } | null {
+  const normalized = routeName.replace(/\s+/g, ' ').trim();
+  const separator = normalized.match(/\s[-–—]\s/);
+  if (!separator || separator.index === undefined) return null;
+  const origin = normalized.slice(0, separator.index).trim();
+  const destination = normalized.slice(separator.index + separator[0].length).trim();
+  return origin && destination ? { origin, destination } : null;
+}
+
+function lineTypeLabel(line: BillingDocumentLine): string {
+  if (line.lineType === 'FREIGHT') return 'Doanh thu';
+  if (line.lineType === 'SERVICE_FEE') return 'Phí chi hộ';
+  return 'Khác';
+}
+
+function containerLabel(line: BillingDocumentLine): string {
+  return (line.containerNumbers ?? []).join(', ') || 'Không có container';
+}
+
+function groupLinesByContainer(lines: Array<{ line: BillingDocumentLine; index: number }>): BillingContainerGroup[] {
+  const groups: BillingContainerGroup[] = [];
+  const byContainer = new Map<string, BillingContainerGroup>();
+
+  for (const item of lines) {
+    const label = containerLabel(item.line);
+    const key = label.trim().toLowerCase();
+    let group = byContainer.get(key);
+    if (!group) {
+      group = { key, label, lines: [], subtotal: 0, visibleCount: 0 };
+      byContainer.set(key, group);
+      groups.push(group);
+    }
+    group.lines.push(item);
+    group.subtotal += lineTotal(item.line);
+    if (!item.line.excluded) group.visibleCount += 1;
+  }
+
+  return groups;
 }
 
 function documentFileName(type: BillingDocumentType, entityName: string): string {
@@ -115,7 +178,6 @@ export default function BillingDocumentBuilder({
       groups.push({
         key: `${route || 'no-route'}-${index}`,
         routeName: route,
-        startIndex: index,
         lines: groupLines,
         subtotal: groupLines.reduce((sum, item) => sum + lineTotal(item.line), 0),
         visibleCount: groupLines.filter((item) => !item.line.excluded).length,
@@ -183,20 +245,6 @@ export default function BillingDocumentBuilder({
 
   const updateLine = (index: number, patch: Partial<BillingDocumentLine>) => {
     setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)));
-    setSavedId(null);
-  };
-
-  const updateRouteGroup = (index: number, routeName: string) => {
-    setLines((prev) => {
-      const current = prev[index]?.routeName ?? '';
-      let start = index;
-      while (start > 0 && (prev[start - 1]?.routeName ?? '') === current) start -= 1;
-      let end = index;
-      while (end + 1 < prev.length && (prev[end + 1]?.routeName ?? '') === current) end += 1;
-      return prev.map((line, i) => (
-        i >= start && i <= end ? { ...line, routeName: routeName || null } : line
-      ));
-    });
     setSavedId(null);
   };
 
@@ -378,132 +426,170 @@ export default function BillingDocumentBuilder({
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>Diễn giải</th>
-                      <th>Số cont</th>
+                      <th>Container / khoản mục</th>
+                      <th>Loại</th>
                       <th>ĐVT</th>
                       <th>Số tiền (VNĐ)</th>
                       <th aria-label="Thao tác"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {groupedLines.map((group) => (
-                      <Fragment key={group.key}>
-                        <tr className="billing-builder__route-row">
-                          <td colSpan={5}>
-                            <div className="billing-builder__route-summary">
-                              <div className="billing-builder__route-main">
-                                <span>Tuyến</span>
-                                <textarea
-                                  className="input billing-builder__text-field billing-builder__route-field"
-                                  value={group.routeName}
-                                  rows={1}
-                                  aria-label="Tuyến"
-                                  placeholder="Chưa có tuyến"
-                                  disabled={busy}
-                                  onChange={(e) => updateRouteGroup(group.startIndex, e.target.value)}
-                                />
+                    {groupedLines.map((group) => {
+                      const routeParts = splitRouteName(group.routeName);
+                      const containerGroups = groupLinesByContainer(group.lines);
+                      return (
+                        <Fragment key={group.key}>
+                          <tr className="billing-builder__route-row">
+                            <td colSpan={5}>
+                              <div className="billing-builder__route-summary">
+                                <div className="billing-builder__route-lines">
+                                  {routeParts ? (
+                                    <>
+                                      <div className="billing-builder__route-line">
+                                        <span>Điểm đi</span>
+                                        <strong>{routeParts.origin}</strong>
+                                      </div>
+                                      <div className="billing-builder__route-line">
+                                        <span>Điểm đến</span>
+                                        <strong>{routeParts.destination}</strong>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="billing-builder__route-line">
+                                      <span>Tuyến</span>
+                                      <strong>{group.routeName || 'Chưa có tuyến'}</strong>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="billing-builder__route-metrics">
+                                  <span>{group.visibleCount}/{group.lines.length} dòng</span>
+                                  <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
+                                </div>
                               </div>
-                              <div className="billing-builder__route-metrics">
-                                <span>{group.visibleCount}/{group.lines.length} dòng</span>
-                                <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                        {group.lines.map(({ line, index }) => {
-                          const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
-                          return (
-                            <tr key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}`} className={`billing-builder__item-row${line.excluded ? ' is-excluded' : ''}`}>
-                              <td>
-                                <textarea
-                                  className="input billing-builder__text-field"
-                                  value={line.description}
-                                  rows={2}
-                                  disabled={busy}
-                                  onChange={(e) => updateLine(index, { description: e.target.value })}
-                                />
-                              </td>
-                              <td className="billing-builder__containers">
-                                {(line.containerNumbers ?? []).join(', ') || '-'}
-                              </td>
-                              <td className="billing-builder__unit">lần</td>
-                              <td>
-                                <input
-                                  type="number"
-                                  className="input mono billing-builder__amount"
-                                  value={amount}
-                                  disabled={busy}
-                                  onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
-                                />
-                              </td>
-                              <td className="billing-builder__row-actions">
-                                <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                  <Trash2 size={15} />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </Fragment>
-                    ))}
+                            </td>
+                          </tr>
+                          {containerGroups.map((containerGroup) => (
+                            <Fragment key={`${group.key}-${containerGroup.key}`}>
+                              <tr className="billing-builder__container-row">
+                                <td colSpan={3}>
+                                  <div className="billing-builder__container-summary">
+                                    <strong>{containerGroup.label}</strong>
+                                    <span>{containerGroup.visibleCount}/{containerGroup.lines.length} khoản</span>
+                                  </div>
+                                </td>
+                                <td className="billing-builder__subtotal mono">{formatCurrency(containerGroup.subtotal).replace(' ₫', '')}</td>
+                                <td />
+                              </tr>
+                              {containerGroup.lines.map(({ line, index }) => {
+                                const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
+                                return (
+                                  <tr key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}`} className={`billing-builder__item-row${line.excluded ? ' is-excluded' : ''}`}>
+                                    <td>
+                                      <textarea
+                                        className="input billing-builder__text-field"
+                                        value={line.description}
+                                        rows={1}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { description: e.target.value })}
+                                      />
+                                    </td>
+                                    <td className="billing-builder__type">{lineTypeLabel(line)}</td>
+                                    <td className="billing-builder__unit">lần</td>
+                                    <td>
+                                      <input
+                                        type="number"
+                                        className="input mono billing-builder__amount"
+                                        value={amount}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
+                                      />
+                                    </td>
+                                    <td className="billing-builder__row-actions">
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
+                                        <Trash2 size={15} />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </Fragment>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
 
                 <div className="billing-builder__mobile-groups">
-                  {groupedLines.map((group) => (
-                    <section className="billing-builder__mobile-group" key={`${group.key}-mobile`}>
-                      <div className="billing-builder__mobile-route">
-                        <div>
-                          <span>Tuyến</span>
-                          <textarea
-                            className="input billing-builder__text-field billing-builder__route-field"
-                            value={group.routeName}
-                            rows={1}
-                            aria-label="Tuyến"
-                            placeholder="Chưa có tuyến"
-                            disabled={busy}
-                            onChange={(e) => updateRouteGroup(group.startIndex, e.target.value)}
-                          />
+                  {groupedLines.map((group) => {
+                    const routeParts = splitRouteName(group.routeName);
+                    const containerGroups = groupLinesByContainer(group.lines);
+                    return (
+                      <section className="billing-builder__mobile-group" key={`${group.key}-mobile`}>
+                        <div className="billing-builder__mobile-route">
+                          <div>
+                            {routeParts ? (
+                              <>
+                                <span>Điểm đi</span>
+                                <strong>{routeParts.origin}</strong>
+                                <span>Điểm đến</span>
+                                <strong>{routeParts.destination}</strong>
+                              </>
+                            ) : (
+                              <>
+                                <span>Tuyến</span>
+                                <strong>{group.routeName || 'Chưa có tuyến'}</strong>
+                              </>
+                            )}
+                          </div>
+                          <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
                         </div>
-                        <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
-                      </div>
-                      <div className="billing-builder__mobile-items">
-                        {group.lines.map(({ line, index }) => {
-                          const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
-                          return (
-                            <div key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}-mobile`} className={`billing-builder__mobile-item${line.excluded ? ' is-excluded' : ''}`}>
-                              <textarea
-                                className="input billing-builder__text-field"
-                                value={line.description}
-                                rows={2}
-                                disabled={busy}
-                                onChange={(e) => updateLine(index, { description: e.target.value })}
-                              />
-                              <div className="billing-builder__mobile-row">
-                                <span>Số cont</span>
-                                <strong>{(line.containerNumbers ?? []).join(', ') || '-'}</strong>
+                        <div className="billing-builder__mobile-items">
+                          {containerGroups.map((containerGroup) => (
+                            <section className="billing-builder__mobile-container" key={`${group.key}-${containerGroup.key}-mobile`}>
+                              <div className="billing-builder__mobile-container-head">
+                                <strong>{containerGroup.label}</strong>
+                                <b className="mono">{formatCurrency(containerGroup.subtotal).replace(' ₫', '')}</b>
                               </div>
-                              <div className="billing-builder__mobile-money">
-                                <label>
-                                  <span>Số tiền</span>
-                                  <input
-                                    type="number"
-                                    className="input mono billing-builder__amount"
-                                    value={amount}
-                                    disabled={busy}
-                                    onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
-                                  />
-                                </label>
-                                <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                  <Trash2 size={17} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ))}
+                              {containerGroup.lines.map(({ line, index }) => {
+                                const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
+                                return (
+                                  <div key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}-mobile`} className={`billing-builder__mobile-item${line.excluded ? ' is-excluded' : ''}`}>
+                                    <textarea
+                                      className="input billing-builder__text-field"
+                                      value={line.description}
+                                      rows={2}
+                                      disabled={busy}
+                                      onChange={(e) => updateLine(index, { description: e.target.value })}
+                                    />
+                                    <div className="billing-builder__mobile-row">
+                                      <span>Loại</span>
+                                      <strong>{lineTypeLabel(line)}</strong>
+                                    </div>
+                                    <div className="billing-builder__mobile-money">
+                                      <label>
+                                        <span>Số tiền</span>
+                                        <input
+                                          type="number"
+                                          className="input mono billing-builder__amount"
+                                          value={amount}
+                                          disabled={busy}
+                                          onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
+                                        />
+                                      </label>
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
+                                        <Trash2 size={17} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </section>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
                 </div>
               </>
             )}

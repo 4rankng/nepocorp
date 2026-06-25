@@ -502,8 +502,9 @@
 }
 
 .dd-accounting-row--container {
-  background: #FBFCFC;
+  background: #F0FAF4;
   border-top: 1px solid var(--line);
+  box-shadow: inset 3px 0 0 #12A150;
 }
 
 .dd-accounting-row--head + .dd-accounting-row--container {
@@ -513,6 +514,7 @@
 .dd-accounting-row--container b {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
+  font-weight: 750;
   color: var(--ink-2);
 }
 
@@ -526,9 +528,9 @@
 }
 
 .dd-accounting-row--container span:nth-child(3) {
-  color: var(--ink-3);
+  color: #087F3B;
   font-size: var(--fs-xs);
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .dd-accounting-row--entry {
@@ -537,7 +539,6 @@
 }
 
 .dd-accounting-row--entry span:first-child,
-.dd-accounting-row--entry strong,
 .dd-accounting-row--container strong {
   font-family: var(--font-mono);
   font-weight: 900;
@@ -546,7 +547,7 @@
 .dd-accounting-row--entry span:first-child {
   color: var(--ink-2);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .dd-accounting-row--entry span:nth-child(2) {
@@ -554,7 +555,7 @@
   padding-left: 16px;
   color: var(--ink);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .dd-accounting-row--entry span:nth-child(2)::before {
@@ -570,15 +571,20 @@
 .dd-accounting-row--entry span:nth-child(3) {
   color: var(--ink-3);
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .dd-accounting-row strong {
   justify-self: end;
   color: var(--ink);
   font-size: var(--fs-xs);
-  font-weight: 850;
+  font-weight: 500;
   white-space: nowrap;
+}
+
+.dd-accounting-row--container strong {
+  color: #064E2A;
+  font-weight: 900;
 }
 
 .dd-breakdown-section {

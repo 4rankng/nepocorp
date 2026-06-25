@@ -151,33 +151,34 @@
 
 .billing-builder__table {
   width: 100%;
-  min-width: 780px;
+  min-width: 820px;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
 }
 
 .billing-builder__col-desc { width: auto; }
-.billing-builder__col-containers { width: 220px; }
+.billing-builder__col-containers { width: 118px; }
 .billing-builder__col-unit { width: 64px; }
-.billing-builder__col-amount { width: 170px; }
+.billing-builder__col-amount { width: 150px; }
 .billing-builder__col-action { width: 46px; }
 
 .billing-builder__table th {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 10px;
-  background: #245982;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: 1px solid #173a56;
-  color: #fff;
-  font-size: 13px;
+  padding: 7px 10px;
+  background: #f4f7f5;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 10px;
   line-height: 1.15;
   letter-spacing: 0;
   text-align: left;
-  text-transform: none;
+  text-transform: uppercase;
   white-space: nowrap;
+  font-weight: 800;
 }
 
 .billing-builder__table th:nth-child(3) { text-align: center; }
@@ -185,9 +186,9 @@
 .billing-builder__table th:nth-child(5) { text-align: center; }
 
 .billing-builder__table td {
-  padding: 4px 8px;
-  border-right: 1px solid #d0d7de;
-  border-bottom: 1px solid #d0d7de;
+  padding: 5px 10px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   vertical-align: middle;
   background: #fff;
   color: #111827;
@@ -202,8 +203,8 @@
 }
 
 .billing-builder textarea.input.billing-builder__text-field {
-  height: 38px;
-  min-height: 38px;
+  height: 30px;
+  min-height: 30px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -212,8 +213,8 @@
   background: transparent;
   box-shadow: none;
   line-height: 1.22;
-  font-size: 12.5px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 500;
   color: #111827;
 }
 
@@ -225,22 +226,24 @@
 .billing-builder textarea.input.billing-builder__route-field {
   height: 26px;
   min-height: 26px;
-  font-size: 13.5px;
-  font-weight: 850;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.billing-builder__containers {
+.billing-builder__containers,
+.billing-builder__type {
   color: #1f2937;
-  font-size: 12.5px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 550;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .billing-builder__unit {
   text-align: center;
-  font-size: 12.5px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
 }
 
 .billing-builder input.input.billing-builder__amount {
@@ -254,8 +257,8 @@
   background: transparent;
   box-shadow: none;
   text-align: right;
-  font-weight: 750;
-  font-size: 12.5px;
+  font-weight: 600;
+  font-size: 12px;
   line-height: 34px;
   color: #111827;
 }
@@ -272,42 +275,51 @@
 
 .billing-builder__route-row td {
   padding: 0;
-  background: #edf5f0;
-  border-top: 1px solid #b7c9bf;
-  border-bottom: 1px solid #b7c9bf;
+  background: #f8faf9;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .billing-builder__route-summary {
-  min-height: 44px;
-  padding: 7px 12px;
+  min-height: 52px;
+  padding: 8px 12px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  border-left: 4px solid var(--accent-700, #087f3b);
 }
 
-.billing-builder__route-main {
+.billing-builder__route-lines {
   min-width: 0;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-.billing-builder__route-main > span,
+.billing-builder__route-line {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.billing-builder__route-line > span,
 .billing-builder__mobile-route span,
 .billing-builder__mobile-row span,
 .billing-builder__mobile-money span {
   color: var(--ink-3);
   font-size: 10px;
-  letter-spacing: 0.07em;
+  letter-spacing: 0;
   text-transform: uppercase;
-  font-weight: 850;
+  font-weight: 700;
 }
 
-.billing-builder__route-main .billing-builder__route-field {
-  color: #0f2f23;
+.billing-builder__route-line strong {
+  min-width: 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 600;
 }
 
 .billing-builder__route-metrics {
@@ -321,17 +333,51 @@
 .billing-builder__route-metrics span {
   color: var(--ink-3);
   font-size: 11px;
-  font-weight: 750;
+  font-weight: 650;
 }
 
 .billing-builder__route-metrics strong {
-  color: var(--accent-700, #087f3b);
-  font-size: 13.5px;
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 850;
 }
 
 .billing-builder__item-row td:first-child {
-  padding-left: 14px;
+  padding-left: 28px;
+}
+
+.billing-builder__container-row td {
+  background: #fbfcfc;
+  border-bottom-color: var(--line);
+}
+
+.billing-builder__container-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.billing-builder__container-summary strong {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.billing-builder__container-summary span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.billing-builder__subtotal {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+  white-space: nowrap;
 }
 
 .billing-builder__action {
@@ -516,8 +562,8 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
     align-items: start;
-    background: #edf5f0;
-    border-left: 4px solid var(--accent-700, #087f3b);
+    background: #f8faf9;
+    border-bottom: 1px solid var(--line);
   }
 
   .billing-builder__mobile-route > div {
@@ -526,21 +572,17 @@
     gap: 4px;
   }
 
-  .billing-builder__mobile-route textarea.input.billing-builder__route-field {
-    height: auto;
-    min-height: 84px;
-    max-height: 132px;
-    padding: 6px 8px;
-    border: 1px solid rgba(8, 127, 59, 0.16);
-    border-radius: 8px;
-    overflow: auto;
-    background: rgba(255, 255, 255, 0.72);
+  .billing-builder__mobile-route > div > strong {
+    color: var(--ink-2);
+    font-size: 12.5px;
+    line-height: 1.35;
+    font-weight: 600;
   }
 
-  .billing-builder__mobile-route strong {
-    padding-top: 20px;
-    color: var(--accent-700, #087f3b);
-    font-size: 14px;
+  .billing-builder__mobile-route > strong {
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 850;
     white-space: nowrap;
   }
 
@@ -548,16 +590,53 @@
     display: grid;
   }
 
+  .billing-builder__mobile-container {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+
+  .billing-builder__mobile-container:first-child {
+    border-top: 0;
+  }
+
+  .billing-builder__mobile-container-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fbfcfc;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .billing-builder__mobile-container-head strong {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ink-2);
+  }
+
+  .billing-builder__mobile-container-head b {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
   .billing-builder__mobile-item {
     padding: 10px 12px;
     display: grid;
     gap: 8px;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--bg-3);
+  }
+
+  .billing-builder__mobile-container-head + .billing-builder__mobile-item {
+    border-top: 0;
   }
 
   .billing-builder__mobile-item textarea.input.billing-builder__text-field {
     height: auto;
-    min-height: 88px;
+    min-height: 64px;
     max-height: 132px;
     padding: 8px 10px;
     border: 1px solid var(--line);
@@ -579,6 +658,7 @@
   .billing-builder__mobile-row strong {
     color: #1f2937;
     font-size: 13px;
+    font-weight: 600;
     line-height: 1.35;
     overflow-wrap: anywhere;
   }
