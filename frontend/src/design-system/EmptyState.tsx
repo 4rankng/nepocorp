@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 import './EmptyState.css';
 
 export interface EmptyStateProps {
@@ -14,7 +15,7 @@ export function EmptyState({ title, description, illustration, action, className
     <div className={`ds-empty-state ${className ?? ''}`}>
       {illustration && (
         <img
-          src={illustration}
+          src={resolveEmptyIllustration(illustration)}
           alt=""
           aria-hidden="true"
           className="ds-empty-state__illustration"

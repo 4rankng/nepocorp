@@ -230,6 +230,7 @@ export default function FinancePage() {
     <div ref={rootRef} style={{ paddingBottom: 40 }}>
       <PageHeader
         title="Báo cáo lãi lỗ"
+        iconName="analytics"
         description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
         action={
           <div className="page-actions">

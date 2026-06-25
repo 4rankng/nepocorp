@@ -7,6 +7,7 @@ import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import type { CounterTarget } from '../hooks/animations';
 import './DriverEarningsPage.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 interface PenaltyEntry {
   id: number;
@@ -272,7 +273,7 @@ export default function DriverEarningsPage() {
         {penalties.length === 0 ? (
           <div className="earnings-penalties-empty">
             <img
-              src="/assets/illustrations/empty-earnings.svg"
+              src={resolveEmptyIllustration('empty-earnings')}
               alt=""
               aria-hidden="true"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

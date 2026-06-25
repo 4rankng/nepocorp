@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import type { SearchItem, SearchItemType } from '../data/searchRegistry';
 import { EmptyIllustration } from './shared';
+import { AssetIcon } from './AssetIcon';
 
 interface Props {
   items: SearchItem[];
@@ -66,7 +67,6 @@ export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }:
         <div key={group.type}>
           <div style={groupHeaderStyle}>{group.label}</div>
           {group.entries.map(({ item, flatIdx }) => {
-            const Icon = item.icon;
             const isActive = flatIdx === activeIndex;
             return (
               <button
@@ -79,7 +79,9 @@ export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }:
                 onMouseEnter={() => onHover(flatIdx)}
                 onClick={() => onSelect(item)}
               >
-                <Icon size={15} style={{ flexShrink: 0, color: 'var(--fg-2)' }} />
+                <span style={{ flexShrink: 0, width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <AssetIcon name={item.iconName} size={18} />
+                </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-1)', lineHeight: 1.3 }}>
                     {highlightText(item.label, query)}

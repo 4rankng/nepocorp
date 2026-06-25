@@ -19,6 +19,7 @@ import {
   formatTenure, computeStreak,
   type Severity,
 } from '../utils';
+import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 
 function SeverityIcon({ severity }: { severity: Severity }) {
   switch (severity) {
@@ -579,7 +580,7 @@ export function PenaltyTable({
           {reasons.length === 0 ? (
             <div className="penalty-empty-reasons">
               <img
-                src="/assets/illustrations/empty-penalty-reasons.svg"
+                src={resolveEmptyIllustration('empty-penalty-reasons')}
                 alt=""
                 aria-hidden="true"
                 className="penalty-empty-reasons__img"

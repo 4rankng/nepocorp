@@ -14,6 +14,7 @@ import { initPushService } from './services/push.service';
 import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
+import { agentRoutes } from './routes/agent';
 import financialRoutes from './routes/financial';
 import expenseRoutes from './routes/expense';
 import driverRoutes from './routes/driver';
@@ -98,6 +99,9 @@ app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/ocr', authMiddleware, casbinAuthz('ocr'), ocrRoutes);
 app.use('/api/notifications', authMiddleware, casbinAuthz('notifications'), notificationRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+// Command-and-insight assistant (bot). Acts as the caller; office roles only.
+// 503 while BOT_ENABLE is off. Mounts before the catch-all /api.
+app.use('/api/agent', authMiddleware, casbinAuthz('agent'), agentRoutes);
 // Catalog bootstrap is used by both office pages and portal forms. The router
 // trims sensitive catalogs for DRIVER/FORWARDER before responding.
 app.use('/api', authMiddleware, catalogBootstrapRouter);

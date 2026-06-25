@@ -3,6 +3,7 @@ import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { animate, stagger, createScope, spring, utils } from 'animejs';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useAuth } from '../hooks/useAuth';
+import { AssetIcon } from '../components/AssetIcon';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -233,6 +234,33 @@ export default function LoginPage() {
       </div>
 
       <img src="/assets/illustrations/bg-transport-world.svg" alt="" className="login-bg-svg" />
+
+      <div className="login-asset-strip" aria-hidden="true">
+        <AssetIcon name="overview" size={36} />
+        <AssetIcon name="dispatch" size={36} />
+        <AssetIcon name="trip-log" size={36} />
+        <AssetIcon name="truck" size={36} />
+        <AssetIcon name="driver" size={36} />
+        <AssetIcon name="customer" size={36} />
+        <AssetIcon name="supplier" size={36} />
+        <AssetIcon name="warehouse" size={36} />
+        <AssetIcon name="cargo" size={36} />
+        <AssetIcon name="route" size={36} />
+        <AssetIcon name="location" size={36} />
+        <AssetIcon name="schedule" size={36} />
+        <AssetIcon name="fuel" size={36} />
+        <AssetIcon name="expense" size={36} />
+        <AssetIcon name="receivables" size={36} />
+        <AssetIcon name="payroll" size={36} />
+        <AssetIcon name="attendance" size={36} />
+        <AssetIcon name="analytics" size={36} />
+        <AssetIcon name="alert" size={36} />
+        <AssetIcon name="document" size={36} />
+        <AssetIcon name="notification" size={36} />
+        <AssetIcon name="settings" size={36} />
+        <AssetIcon name="users-hr" size={36} />
+        <AssetIcon name="checklist" size={36} />
+      </div>
 
       <p className="login-footer">
         &copy; {new Date().getFullYear()} TingTing &middot; Hải Phòng

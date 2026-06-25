@@ -19,6 +19,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { Money } from '../components/shared/Money';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
 import { usePageAnimations } from '../hooks/animations';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 type FilterKey = 'all' | 'active' | 'inactive';
 
@@ -409,7 +410,7 @@ export default function SupplierListPage() {
               )}
               {!loading && filtered.length === 0 && (
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
-                  <img src="/assets/illustrations/empty-clients.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <img src={resolveEmptyIllustration('empty-clients')} alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
               )}

@@ -120,7 +120,7 @@ export default function ForwarderSettlementsPage() {
 
   if (loadingSettlements) return (
     <div className="fset-page">
-      <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" />
+      <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" iconName="document" />
       <div className="fset-loading">
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
         <p style={{ marginTop: 8 }}>Đang tải danh sách phiếu thanh toán…</p>

@@ -9,6 +9,7 @@ import { qk } from '../../api/keys';
 import { useCRUD } from '../../hooks/useCRUD';
 import { Modal, useConfirm, Btn, FormGroup } from '../../components/UI';
 import type { PenaltyReason } from '@tingting/shared';
+import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 
 /* ─── Page-scoped styles ─── */
 const pageStyles = `
@@ -457,7 +458,7 @@ export default function PenaltyReasonsConfigPage() {
       ) : filteredItems.length === 0 ? (
         <div className="empty-state">
           <img
-            src="/assets/illustrations/empty-penalties.svg"
+            src={resolveEmptyIllustration('empty-penalties')}
             alt=""
             aria-hidden="true"
             style={{ width: 160, height: 132, objectFit: 'contain' }}

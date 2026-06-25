@@ -498,6 +498,13 @@
       "when": 1782400000000,
       "tag": "0070_tire_purchase_and_disposal",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1782319104267,
+      "tag": "0071_keen_siren",
+      "breakpoints": true
     }
   ]
 }

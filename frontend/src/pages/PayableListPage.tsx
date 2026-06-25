@@ -13,6 +13,7 @@ import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 
@@ -501,7 +502,7 @@ export default function PayableListPage() {
               <div className="m-card-list">
                 {filteredPayables.length === 0 ? (
                   <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <img src="/assets/illustrations/empty-payables.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <img src={resolveEmptyIllustration('empty-payables')} alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     Không tìm thấy dữ liệu.
                   </div>
                 ) : (
@@ -606,7 +607,7 @@ export default function PayableListPage() {
                       <tr>
                         <td colSpan={7} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                            <img src="/assets/illustrations/empty-payables.svg" alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={resolveEmptyIllustration('empty-payables')} alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             Không tìm thấy dữ liệu công nợ phải trả.
                           </div>
                         </td>

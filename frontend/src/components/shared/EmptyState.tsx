@@ -1,6 +1,7 @@
 import React from 'react';
 import { Inbox } from 'lucide-react';
 import { Btn } from '../UI';
+import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 import './EmptyState.css';
 
 interface EmptyStateProps {
@@ -17,7 +18,7 @@ export function EmptyState({ icon: Icon = Inbox, illustration, title, descriptio
     <div className={`empty-state-panel ${className}`}>
       {illustration ? (
         <img
-          src={illustration}
+          src={resolveEmptyIllustration(illustration)}
           alt=""
           aria-hidden="true"
           className="empty-state-panel__illustration"

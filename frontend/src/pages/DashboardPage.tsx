@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
+import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
@@ -253,14 +254,15 @@ export default function DashboardPage() {
 
   // ── Attention items (compose from real data) ────────────────────────────
   const attention = useMemo(() => {
-    const items: Array<{ icon: 'ok' | 'cal' | 'info' | 'warn'; title: string; sub: string; action?: { label: string; onClick: () => void; green?: boolean } }> = [];
+    type AttIcon = AssetIconName | 'ok' | 'cal' | 'info' | 'warn';
+    const items: Array<{ icon: AttIcon; title: string; sub: string; action?: { label: string; onClick: () => void; green?: boolean } }> = [];
 
     const overdue = (receivablesSummary?.buckets ?? [])
       .filter(b => b.range !== '0-30')
       .reduce((sum, b) => sum + (b.amount ?? 0), 0);
     if (overdue > 0) {
       items.push({
-        icon: 'warn',
+        icon: 'receivables',
         title: `Có ${formatNumber(overdue)} ₫ công nợ quá hạn`,
         sub: 'Vui lòng xem & nhắc khách hàng',
         action: { label: 'Xem công nợ', onClick: () => navigate('/debt') },
@@ -271,7 +273,7 @@ export default function DashboardPage() {
 
     if (createdTripsCount > 0) {
       items.push({
-        icon: 'info',
+        icon: 'dispatch',
         title: `${createdTripsCount} đơn hàng chờ phân xe`,
         sub: 'Phân xe ngay để xuất phát đúng hẹn',
         action: { label: 'Phân xe', onClick: () => navigate('/dispatch') },
@@ -282,7 +284,7 @@ export default function DashboardPage() {
 
     if ((renewalReminders?.length ?? 0) > 0) {
       items.push({
-        icon: 'cal',
+        icon: 'schedule',
         title: `${renewalReminders.length} hạng mục cần gia hạn`,
         sub: 'Bảo hiểm · đăng kiểm · phí đường bộ',
         action: { label: 'Xem chi phí', onClick: () => navigate('/expenses') },
@@ -293,7 +295,7 @@ export default function DashboardPage() {
 
     if ((fuelWarnings?.length ?? 0) > 0) {
       items.push({
-        icon: 'warn',
+        icon: 'fuel',
         title: `${fuelWarnings.length} chuyến vượt định mức dầu`,
         sub: 'Cần xem lại số liệu khai báo',
         action: { label: 'Xem chuyến', onClick: () => navigate('/trips?fuelWarn=1') },
@@ -302,7 +304,7 @@ export default function DashboardPage() {
 
     if (revenue > 0) {
       items.push({
-        icon: 'info',
+        icon: 'analytics',
         title: `Báo cáo lợi nhuận ${currentMonth}/${currentYear} sẵn sàng`,
         sub: 'Xác nhận để chốt sổ tháng',
         action: { label: 'Xem', onClick: () => navigate('/profit'), green: true },
@@ -378,7 +380,9 @@ export default function DashboardPage() {
       <div className="wf-kpis">
         <div className="wf-kpi">
           <div className="row1">
-            <span className="lbl">Doanh thu · {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
+            <span className="lbl">
+              <AssetIcon name="analytics" size={14} /> Doanh thu · {String(currentMonth).padStart(2, '0')}/{currentYear}
+            </span>
             <DeltaPill mom={revenueMoM} />
           </div>
           <div className="val"><span ref={el => { kpiRefs.current.revenue = el; }}>{fmtVN(revenue)}</span> <i>đ</i></div>
@@ -386,7 +390,9 @@ export default function DashboardPage() {
         </div>
         <div className="wf-kpi">
           <div className="row1">
-            <span className="lbl">Tổng chi phí</span>
+            <span className="lbl">
+              <AssetIcon name="expense" size={14} /> Tổng chi phí
+            </span>
             <DeltaPill mom={costsMoM} />
           </div>
           <div className="val"><span ref={el => { kpiRefs.current.costs = el; }}>{fmtVN(costs)}</span> <i>đ</i></div>
@@ -394,7 +400,9 @@ export default function DashboardPage() {
         </div>
         <div className="wf-kpi">
           <div className="row1">
-            <span className="lbl">Lợi nhuận gộp</span>
+            <span className="lbl">
+              <AssetIcon name="truck" size={14} /> Lợi nhuận gộp
+            </span>
             <DeltaPill mom={grossMoM} />
           </div>
           <div className="val"><span ref={el => { kpiRefs.current.gross = el; }}>{fmtVN(grossProfit)}</span> <i>đ</i></div>
@@ -402,7 +410,9 @@ export default function DashboardPage() {
         </div>
         <div className="wf-kpi">
           <div className="row1">
-            <span className="lbl">Lợi nhuận ròng</span>
+            <span className="lbl">
+              <AssetIcon name="payroll" size={14} /> Lợi nhuận ròng
+            </span>
             <DeltaPill mom={netMoM} />
           </div>
           <div className="val"><span ref={el => { kpiRefs.current.net = el; }}>{fmtVN(netProfit)}</span> <i>đ</i></div>
@@ -412,7 +422,9 @@ export default function DashboardPage() {
         </div>
         <div className="wf-kpi">
           <div className="row1">
-            <span className="lbl">Công nợ phải thu</span>
+            <span className="lbl">
+              <AssetIcon name="receivables" size={14} /> Công nợ phải thu
+            </span>
           </div>
           <div className="val"><span>{fmtVN(receivablesSummary?.totalOutstanding ?? 0)}</span> <i>đ</i></div>
           <div className="foot">{receivablesSummary?.overdueCustomers ?? 0} khách quá hạn</div>
@@ -595,15 +607,28 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="body">
-              {attention.map((item, i) => (
+              {attention.map((item, i) => {
+                // AttIcon = AssetIconName | 'ok' | 'cal' | 'info' | 'warn'. The
+                // legacy svg branch only draws 'ok'/'cal'; every other value is
+                // an AssetIconName rendered through <AssetIcon>. (The previous
+                // `(icon) in ({} …)` check was always false — `in` on an EMPTY
+                // object — so every asset icon rendered null: blank squares with
+                // no icon and no severity color.)
+                const isAssetIcon =
+                  item.icon !== 'ok' && item.icon !== 'cal' && item.icon !== 'info' && item.icon !== 'warn';
+                const legacyIconClass = !isAssetIcon ? ` wf-ic-${item.icon}` : '';
+                return (
                 <React.Fragment key={i}>
                   {i === attention.length - 1 && attention.length > 1 && <div className="wf-divider" />}
                   <div className="wf-arow">
-                    <div className={`ic wf-ic-${item.icon}`}>
-                      {item.icon === 'ok' && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                      {item.icon === 'cal' && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>}
-                      {item.icon === 'info' && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>}
-                      {item.icon === 'warn' && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>}
+                    <div className={`ic${legacyIconClass}`}>
+                      {isAssetIcon ? (
+                        <AssetIcon name={item.icon as AssetIconName} size={18} />
+                      ) : item.icon === 'ok' ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      ) : item.icon === 'cal' ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                      ) : null}
                     </div>
                     <div className="tx">
                       <div className="t">{item.title}</div>
@@ -616,7 +641,8 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </React.Fragment>
-              ))}
+              );
+              })}
             </div>
           </div>
 

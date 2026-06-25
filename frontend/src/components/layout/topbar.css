@@ -506,6 +506,9 @@
   transition: background 120ms var(--ease), color 120ms var(--ease);
 }
 .icon-btn:hover { background: var(--surface-3); color: var(--ink); }
+.icon-btn img {
+  width: 20px; height: 20px; object-fit: contain;
+}
 
 .user-btn {
   display: inline-flex; align-items: center; gap: 8px;

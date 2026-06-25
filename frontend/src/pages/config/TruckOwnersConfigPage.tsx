@@ -177,6 +177,7 @@ export default function TruckOwnersConfigPage() {
     <div ref={pageRef}>
       <PageHeader
         title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
+        iconName="truck"
         description="Danh sách đối tác sở hữu xe và tỷ lệ chia lợi nhuận của xe này."
         action={<ShareLinkButton />}
       />

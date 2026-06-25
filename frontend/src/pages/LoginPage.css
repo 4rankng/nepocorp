@@ -180,6 +180,29 @@
   z-index: 1;
   pointer-events: none;
 }
+.login-asset-strip {
+  position: absolute;
+  bottom: 44px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  max-width: min(960px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 0 16px;
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 1;
+}
+.login-asset-strip img {
+  filter: saturate(0.85);
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
 .password-toggle {
   position: absolute;
   right: 8px;

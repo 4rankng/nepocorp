@@ -530,6 +530,12 @@
 .dash-wf .wf-minibtn:hover { filter: brightness(0.98); }
 .dash-wf .wf-divider { height: 1px; background: var(--wf-border); margin: 2px 8px; }
 
+.dash-wf .wf-kpi .row1 .lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ── Audit log feed widget ──
    Mirrors the .wf-att attention list visually but is denser and
    link-styled. Each row shows: dot, action label (with category icon),
@@ -577,6 +583,41 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* Audit log feed — .audit-event-tag + .audit-dot are also defined in
+   AuditLogPage.css, but the dashboard embeds AuditLogWidget and never
+   imports that stylesheet. Without these rules the lucide icons inside
+   .audit-event-tag collapse against the label text (no gap, no flex) and
+   the colored category dots lose their background + border-radius.
+   Scoped under .dash-wf to avoid leaking into other pages. */
+.dash-wf .audit-event-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+  line-height: 1.3;
+}
+.dash-wf .audit-event-tag svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.dash-wf .audit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--wf-border-2);
+}
+.dash-wf .audit-dot--create   { background: var(--wf-green); }
+.dash-wf .audit-dot--update   { background: var(--wf-blue); }
+.dash-wf .audit-dot--delete   { background: var(--wf-red); }
+.dash-wf .audit-dot--trip     { background: #7c3aed; }
+.dash-wf .audit-dot--finance  { background: var(--wf-amber); }
+.dash-wf .audit-dot--auth     { background: var(--wf-ink-3); }
 
 @media (max-width: 1100px) {
   .dash-wf .wf-grid { grid-template-columns: 1fr; }

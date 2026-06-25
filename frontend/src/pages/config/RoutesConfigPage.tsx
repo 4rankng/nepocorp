@@ -9,6 +9,7 @@ import { configClient } from '../../api/configClient';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useConfirm, Modal } from '../../components/UI';
+import { AssetIcon } from '../../components/AssetIcon';
 import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
@@ -448,9 +449,14 @@ export default function RoutesConfigPage() {
         >
           <ArrowLeft size={18} />
         </button>
-        <div className="page-header-main">
-          <h1 className="page-title">Tuyến đường & Cự ly</h1>
-          <p className="page-subtitle"><strong>{totalCount}</strong> tuyến đang quản lý · {mountainCount} tuyến núi · {usedThisMonth} tuyến chạy trong {monthLabel}</p>
+        <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div className="page-header-icon" aria-hidden="true">
+            <AssetIcon name="route" size={28} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="page-title">Tuyến đường & Cự ly</h1>
+            <p className="page-subtitle"><strong>{totalCount}</strong> tuyến đang quản lý · {mountainCount} tuyến núi · {usedThisMonth} tuyến chạy trong {monthLabel}</p>
+          </div>
         </div>
         <div className="page-actions">
           <button className="btn btn--primary" onClick={() => crud.setShowAddForm(true)}><Plus size={14} /> Thêm tuyến</button>

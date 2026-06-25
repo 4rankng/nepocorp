@@ -968,3 +968,50 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   uniqueIndex('push_sub_user_endpoint_idx').on(table.userId, table.endpoint),
   index('push_sub_user_idx').on(table.userId),
 ]);
+
+// ─── Agent (command-and-insight assistant) ─────────────────────────────────
+// Conversation history for the bot. Persisted to Postgres (not Redis) for
+// auditability — every user turn, assistant answer, and tool call is
+// reconstructable. The bot has no identity of its own: every conversation is
+// scoped to a user and the bot acts with that user's role (re-checked inside
+// each tool). `role` is a snapshot of the user's role at conversation time, so
+// a later role change never rewrites history.
+
+export const agentConversations = pgTable('agent_conversations', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  role: roleEnum('role').notNull(),
+  title: varchar('title', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('agent_conversations_user_updated_idx').on(table.userId, table.updatedAt),
+]);
+
+// A turn in a conversation. `role` here is the message author ('user' |
+// 'assistant'), distinct from the conversation's RBAC role above.
+//   - content     : plain text (user message or an assistant 'text' answer)
+//   - response    : the structured AgentResponse (insight_card | directive |
+//                   text) for assistant turns; null for user turns
+//   - toolTrace   : jsonb array of { toolName, toolCallId, args, result, ok }
+//                   — the full reasoning path, attached to the assistant turn
+//                   that issued the calls. (The plan modelled these as separate
+//                   columns; a jsonb trace is used instead because one turn
+//                   fans out to N tool calls.)
+//   - directives  : directives emitted this turn, denormalised for fast
+//                   "what did the bot do" / audit queries
+//   - tokens*     : cost accounting
+export const agentMessages = pgTable('agent_messages', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').references(() => agentConversations.id).notNull(),
+  role: varchar('role', { length: 16 }).notNull(),
+  content: text('content'),
+  response: jsonb('response'),
+  toolTrace: jsonb('tool_trace'),
+  directives: jsonb('directives'),
+  tokensIn: integer('tokens_in'),
+  tokensOut: integer('tokens_out'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('agent_messages_conversation_idx').on(table.conversationId),
+]);

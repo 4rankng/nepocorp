@@ -48,7 +48,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   );
 
   const capabilities = await userService.getCapabilities(user.role);
-  res.json({ token, user: { ...user, fullName: displayName, capabilities } });
+  res.json({ token, user: { ...user, fullName: displayName, capabilities, botEnabled: config.botEnabled } });
 }));
 
 // ─── Current user ────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Respons
     throw new ApiError(401, 'Vai trò đã thay đổi, vui lòng đăng nhập lại');
   }
   const capabilities = await userService.getCapabilities(profile.role);
-  res.json({ ...profile, capabilities });
+  res.json({ ...profile, capabilities, botEnabled: config.botEnabled });
 }));
 
 router.post('/logout', authMiddleware, asyncHandler(async (req: Request, res: Response) => {

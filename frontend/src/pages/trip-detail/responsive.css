@@ -216,6 +216,36 @@
   .header-actions .btn {
     grid-column: span 2;
   }
+
+  /* .btn--ghost has no background by default (it's designed for desktop
+     where it sits next to filled buttons). On phones it ends up looking
+     like a plain text link, not a button. Promote it to a filled card so
+     the action cluster reads as a uniform list of tappable buttons. */
+  .header-actions .btn--ghost {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--line-2);
+    box-shadow: var(--sh-sm);
+    /* Force centered content in case .btn--ghost's `padding: 9px 10px`
+       rule from the base CSS file wins the cascade over the mobile
+       `justify-content: center` rule (it doesn't normally, but be explicit
+       so the button never reads as a left-aligned text link). */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-actions .btn--ghost:hover {
+    background: var(--surface-2, var(--surface));
+  }
+
+  /* ShareLinkButton is the first child of .header-actions. Below 640px its
+     label is hidden, so it renders as a small icon-only cell pinned to the
+     top of the action cluster — looks like a stray element. Hide it on
+     narrow phones; users can copy the URL from the address bar. */
+  .header-actions .share-link-btn {
+    display: none;
+  }
 }
 
 /* ── Journey legs: stack origin / arrow / destination on phones ────────── */

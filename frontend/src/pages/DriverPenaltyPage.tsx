@@ -69,7 +69,7 @@ export default function DriverPenaltyPage() {
     <div ref={rootRef} className="driver-penalty-page">
 
       {/* ── Page header ─────────────────────────────────────────────────────── */}
-      <PageHeader title="Kỷ luật của tôi" description="Lịch sử vi phạm và khấu trừ lương của bạn" />
+      <PageHeader title="Kỷ luật của tôi" description="Lịch sử vi phạm và khấu trừ lương của bạn" iconName="alert" />
 
       {/* ── Zone 1: Status banner ───────────────────────────────────────────── */}
       {isLoadingPeriod ? (

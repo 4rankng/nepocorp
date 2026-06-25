@@ -431,6 +431,7 @@ export default function ExpenseEntryPage() {
       <div className="expense-page-container">
         <PageHeader
           title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'}
+          iconName="expense"
           description={isEdit ? 'Cập nhật thông tin chi phí phát sinh' : 'Nhập thông tin chi phí phát sinh'}
           onBack={handleBack}
         />

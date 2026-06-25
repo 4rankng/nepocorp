@@ -40,6 +40,7 @@ import {
 } from '../features/trips';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './TripListPage.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 export default function TripListPage() {
   const { rootRef } = usePageAnimations({
@@ -438,7 +439,7 @@ export default function TripListPage() {
             <div className="table-empty">Đang tải…</div>
           ) : table.rows.length === 0 ? (
             <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
-              <img src="/assets/illustrations/empty-trips.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src={resolveEmptyIllustration('empty-trips')} alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               Không tìm thấy chuyến đi nào.
             </div>
           ) : (

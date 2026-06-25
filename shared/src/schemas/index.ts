@@ -5,6 +5,11 @@ import {
   TIRE_STATUSES,
 } from '../constants';
 
+// Agent (command-and-insight assistant) wire contract — directive / widget /
+// response / message / SSE-event schemas. Self-contained module kept separate
+// from the entity-CRUD schemas below. See ./agent.ts for the design notes.
+export * from './agent';
+
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
 export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);

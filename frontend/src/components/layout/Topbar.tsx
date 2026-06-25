@@ -11,6 +11,7 @@ import type { SearchItem } from '../../data/searchRegistry';
 import { SearchDropdown } from '../SearchDropdown';
 import type { TopbarProps } from './types';
 import { NotificationBell } from './NotificationBell';
+import { AgentAssistant } from '../agent/AgentAssistant';
 import { useTopbarEntrance } from '../../hooks/useTopbarEntrance';
 
 const MONTHS = [
@@ -244,6 +245,7 @@ function Topbar({
       <div className="topbar__actions">
         {!isDriver && <MonthNavigator />}
         {!isDriver && <NotificationBell />}
+        <AgentAssistant />
       </div>
     </header>
   );

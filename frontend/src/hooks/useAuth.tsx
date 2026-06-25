@@ -13,6 +13,8 @@ export interface AuthUser {
   role: Role;
   fullName?: string;
   capabilities?: string[];
+  /** Assistant (bot) enabled for this deployment (BOT_ENABLE). Launcher hides when false. */
+  botEnabled?: boolean;
 }
 
 interface AuthContextType {

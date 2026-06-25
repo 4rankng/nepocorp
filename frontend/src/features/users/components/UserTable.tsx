@@ -9,6 +9,7 @@ import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
 import { UserStatusBadge } from './UserStatusBadge';
 import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
+import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 
 interface UserTableProps {
   users: UserRow[];
@@ -395,7 +396,7 @@ function DesktopTable({
               <tr>
                 <td colSpan={5}>
                   <div className="users-empty">
-                    <img src="/assets/illustrations/empty-users.svg" alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <img src={resolveEmptyIllustration('empty-users')} alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
                     <p className="users-empty__desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
                   </div>

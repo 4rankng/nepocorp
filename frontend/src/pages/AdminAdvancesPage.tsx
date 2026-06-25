@@ -17,6 +17,7 @@ import {
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
 import './AdminAdvancesPage.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -360,7 +361,7 @@ export default function AdminAdvancesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="adv-empty">
-            <img src="/assets/illustrations/empty-advances.svg" alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 4 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <img src={resolveEmptyIllustration('empty-advances')} alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain', marginBottom: 4 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div className="adv-empty-text">Không có yêu cầu tạm ứng nào</div>
             <div className="adv-empty-hint">Giao nhận có thể gửi yêu cầu từ ứng dụng di động</div>
           </div>

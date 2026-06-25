@@ -77,7 +77,11 @@ router.get('/pricing', asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'customerId và routeId là bắt buộc' });
   }
 
-  res.json(await getPricing(customerId, routeId, date));
+  const pricing = await getPricing(customerId, routeId, date);
+  // Preserve the legacy {price: number} shape for HTTP callers; null (no row)
+  // surfaces as 0 here. Only the in-process agent tool sees null (so it can
+  // distinguish "no pricing table" from a real 0-VND price).
+  res.json({ price: pricing.price ?? 0 });
 }));
 
 // ─── CRUD routes ─────────────────────────────────────────────────────────────

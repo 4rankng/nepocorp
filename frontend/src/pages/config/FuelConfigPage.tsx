@@ -7,6 +7,7 @@ import { useFuelConfig, useSaveFuelConfig } from '../../hooks/useCatalogQueries'
 import { PageHeader, Panel } from '../../components/UI';
 import type { FuelPriceHistory } from '@tingting/shared';
 import './config-page.css';
+import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 
 export default function FuelConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
@@ -115,7 +116,7 @@ export default function FuelConfigPage() {
           <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink-3)' }}>Đang tải…</div>
         ) : history.length === 0 ? (
           <div className="cfg-empty" style={{ padding: '24px 16px' }}>
-            <img src="/assets/illustrations/empty-config.svg" alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <img src={resolveEmptyIllustration('empty-config')} alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div className="cfg-empty__title">Chưa có lịch sử</div>
             <div className="cfg-empty__hint">Lịch sử thay đổi giá sẽ hiển thị sau lần lưu đầu tiên.</div>
           </div>

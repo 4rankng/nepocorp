@@ -7,6 +7,7 @@ import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
 import { qk } from '../../../api/keys';
+import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 
 const TYPE_LABEL: Partial<Record<ApprovalItemType, string>> = {
   ancillaryFees: 'Phí phụ trợ',
@@ -86,7 +87,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
       {total === 0 ? (
         <div className="approval-queue__empty">
           <img
-            src="/assets/illustrations/empty-audit.svg"
+            src={resolveEmptyIllustration('empty-audit')}
             alt=""
             className="approval-queue__empty-art"
             aria-hidden

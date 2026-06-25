@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
 import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../lib/audit-helpers';
 import './AuditLogPage.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -443,7 +444,7 @@ fontSize: 13,
                   <tr>
                     <td colSpan={4} style={{ textAlign: 'center', padding: '24px 48px', color: 'var(--ink-3)' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                        <img src="/assets/illustrations/empty-audit.svg" alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        <img src={resolveEmptyIllustration('empty-audit')} alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         Không tìm thấy bản ghi nào khớp bộ lọc hiện tại.
                       </div>
                     </td>

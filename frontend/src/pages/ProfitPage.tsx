@@ -175,6 +175,7 @@ export default function ProfitPage() {
       {/* Header */}
       <PageHeader
         title="Phân chia lợi nhuận"
+        iconName="analytics"
         description="Báo cáo phân bổ lợi nhuận ròng giữa các đối tác góp vốn."
       />
 

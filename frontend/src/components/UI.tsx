@@ -140,14 +140,23 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
 
 /* ─── Page Header ───────────────────────────────────────────────────────── */
 
+import { AssetIcon, type AssetIconName } from './AssetIcon';
+
 interface PageHeaderProps {
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
   onBack?: () => void;
+  /**
+   * Branded icon key (rendered via <AssetIcon> against /assets/icons/<slug>.png).
+   * The icon appears in a 44×44 tinted chip next to the title. The branded
+   * PNGs have a white background, so the chip gives them a clean container
+   * on any page surface. Only use on light-background pages.
+   */
+  iconName?: AssetIconName;
 }
 
-export function PageHeader({ title, description, action, onBack }: PageHeaderProps) {
+export function PageHeader({ title, description, action, onBack, iconName }: PageHeaderProps) {
   return (
     <div className="page-header">
       <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -160,6 +169,11 @@ export function PageHeader({ title, description, action, onBack }: PageHeaderPro
           >
             <ArrowLeft size={16} />
           </button>
+        )}
+        {iconName && (
+          <div className="page-header-icon" aria-hidden="true">
+            <AssetIcon name={iconName} size={28} />
+          </div>
         )}
         <div style={{ minWidth: 0 }}>
           <h1 className="page-title">{title}</h1>

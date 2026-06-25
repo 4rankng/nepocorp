@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { PageHeader } from '../components/UI';
+import { AssetIcon } from '../components/AssetIcon';
 import { api } from '../lib/api';
 import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
@@ -10,26 +11,6 @@ import { qk } from '../api/keys';
 import './ConfigPage.css';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
-const ICON_BASE = '/assets/icons/nepo';
-
-const CONFIG_ICON_MAP: Record<string, string> = {
-  fuel: 'config-fuel',
-  'road-allowances': 'config-road-allowances',
-  'trip-expense': 'config-trip-expense',
-  'penalty-reasons': 'config-penalty-reasons',
-  drivers: 'config-drivers',
-  'cap-table': 'config-cap-table',
-  customers: 'config-customers',
-  routes: 'config-routes',
-  trucks: 'config-trucks',
-  'tire-positions': 'config-trip-expense',
-  trailers: 'config-trailers',
-  'cargo-types': 'config-cargo-types',
-  'pricing-tables': 'config-pricing-tables',
-  'salary-periods': 'config-salary-periods',
-  'expense-categories': 'config-expense-categories',
-  'forwarder-expense-types': 'config-forwarder-expense-types',
-};
 
 type ListResponse = { total: number };
 
@@ -126,16 +107,10 @@ export default function ConfigPage() {
   };
 
   const cards = CONFIG_ITEMS.map(item => {
-    const Icon = item.icon;
-    const assetName = CONFIG_ICON_MAP[item.id];
     return {
       title: item.label,
       desc: item.description ?? '',
-      icon: assetName ? (
-        <img src={`${ICON_BASE}/${assetName}.svg`} alt="" aria-hidden="true" />
-      ) : (
-        <Icon size={20} />
-      ),
+      icon: <AssetIcon name={item.iconName} size={26} />,
       path: item.path,
       action: item.action ?? 'Sửa',
       ...(statusInfo[item.id] ?? { status: '—' }),
@@ -160,6 +135,7 @@ export default function ConfigPage() {
     <div ref={rootRef}>
       <PageHeader
         title="Cấu hình hệ thống"
+        iconName="settings"
         description="Quản lý định mức, quy tắc tính toán, người dùng & tích hợp hệ thống"
       />
 

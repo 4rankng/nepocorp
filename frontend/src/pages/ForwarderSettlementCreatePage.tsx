@@ -199,6 +199,7 @@ export default function ForwarderSettlementCreatePage() {
         </button>
         <PageHeader
           title="Tạo phiếu thanh toán"
+          iconName="document"
           description="Thanh toán tạm ứng"
           onBack={handleBack}
         />

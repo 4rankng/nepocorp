@@ -7,6 +7,7 @@ import { PageHeader, Panel } from '../components/UI';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './DriverTripsPage.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 interface TripSummary {
   id: number;
@@ -68,7 +69,7 @@ export default function DriverTripsPage() {
     <div>
       <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
-        <img src="/assets/illustrations/empty-trips.svg" alt="No trips" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <img src={resolveEmptyIllustration('empty-trips')} alt="No trips" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <h3 className="empty-state-title">Chưa có lệnh vận chuyển nào</h3>
         <p className="empty-state-desc">
           Bạn chưa được phân công lệnh vận chuyển nào. Khi có chuyến đi mới, thông tin chi tiết sẽ xuất hiện tại đây.

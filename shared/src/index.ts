@@ -65,6 +65,9 @@ export {
   tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
+  agentDirectiveSchema, agentWidgetSchema, widgetFormatSchema, agentActionChipSchema,
+  agentResponseSchema, agentMessageSchema, agentConversationSchema, agentEventSchema,
+  agentRouteKeySchema, AGENT_ROUTE_KEYS,
 } from './schemas';
 
 export {
@@ -93,6 +96,8 @@ export type {
   TireInput, InstallTireInput,
   GenerateBillingDocumentInput, SaveBillingDocumentInput, BillingDocumentLineInput,
   BachKhoaVehicle,
+  AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentResponse,
+  AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

@@ -28,6 +28,13 @@ export const qk = {
     me: ['auth', 'me'],
   },
 
+  /* ── Agent (command-and-insight assistant) ─────────────────────────── */
+  // Chat is streamed (not cached); only conversation history is cached.
+  agent: {
+    conversations: ['agent', 'conversations'] as const,
+    conversation: (id: string) => ['agent', 'conversation', id] as const,
+  },
+
   /* ── Catalog (the big bootstrap + individual lookup tables) ─────────── */
 
   catalogs: {

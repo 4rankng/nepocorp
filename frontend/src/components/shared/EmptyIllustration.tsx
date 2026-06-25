@@ -1,9 +1,9 @@
 import React from 'react';
-
-const ILLUSTRATION_BASE = '/assets/illustrations';
+import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 
 interface EmptyIllustrationProps {
-  /** Illustration asset name, without path or extension — e.g. "empty-trucks". */
+  /** Illustration asset name, without path or extension — e.g. "empty-trucks".
+   *  Resolved via resolveEmptyIllustration to one of the four on-brand PNGs. */
   name: string;
   /** Pixel width. Pass together with `height` for inline-sized illustrations. */
   width?: number;
@@ -29,7 +29,7 @@ export function EmptyIllustration({ name, width, height, className, style }: Emp
     : {};
   return (
     <img
-      src={`${ILLUSTRATION_BASE}/${name}.svg`}
+      src={resolveEmptyIllustration(name)}
       alt=""
       aria-hidden="true"
       className={className}

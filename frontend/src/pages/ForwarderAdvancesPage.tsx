@@ -88,7 +88,7 @@ export default function ForwarderAdvancesPage() {
 
   if (loading) return (
     <div className="fadv-page">
-      <PageHeader title="Tạm ứng" description="Yêu cầu tạm ứng và theo dõi trạng thái" />
+      <PageHeader title="Tạm ứng" description="Yêu cầu tạm ứng và theo dõi trạng thái" iconName="expense" />
       <div className="fadv-loading">
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
         <p style={{ marginTop: 8 }}>Đang tải danh sách tạm ứng…</p>

@@ -26,6 +26,14 @@ function parseTrustProxy(raw: string | undefined): boolean | number {
   return isProd ? 1 : false;
 }
 
+// Strict boolean parse for feature flags. `z.coerce.boolean()` treats any
+// non-empty string (including "false") as true, so flags must be parsed
+// explicitly: only "true"/"1"/"yes" enable. Everything else stays off.
+function parseFlag(raw: string | undefined, fallback = false): boolean {
+  if (raw === undefined || raw === '') return fallback;
+  return raw === 'true' || raw === '1' || raw === 'yes';
+}
+
 const configSchema = z.object({
   port: z.coerce.number().int().positive().default(3001),
   databaseUrl: z.string().url().min(1),
@@ -60,6 +68,17 @@ const configSchema = z.object({
   vapidPublicKey: z.string().default(''),
   vapidPrivateKey: z.string().default(''),
   vapidSubject: z.string().default(VAPID_SUBJECT_DEFAULT),
+  // Command-and-insight assistant (bot). Optional — the agent endpoints
+  // return 503 while `botEnabled` is off, and the frontend launcher hides.
+  // MiniMax key is empty until the owner signs off on data exposure (R2) and
+  // the tool-calling + JSON-mode spike is verified (R1).
+  botEnabled: z.boolean().default(false),
+  minimaxApiKey: z.string().default(''),
+  minimaxBaseUrl: z.string().url().default('https://api.minimaxi.com/v1'),
+  minimaxModel: z.string().default('MiniMax-M3'),
+  minimaxTimeoutMs: z.coerce.number().int().positive().default(60000),
+  // Hard cap on the ReAct tool-calling loop (R5: runaway guard).
+  agentMaxIterations: z.coerce.number().int().positive().default(6),
 });
 
 const raw = {
@@ -84,6 +103,12 @@ const raw = {
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
   vapidSubject: process.env.VAPID_SUBJECT,
+  botEnabled: parseFlag(process.env.BOT_ENABLE),
+  minimaxApiKey: process.env.MINIMAX_API_KEY,
+  minimaxBaseUrl: process.env.MINIMAX_BASE_URL,
+  minimaxModel: process.env.MINIMAX_MODEL,
+  minimaxTimeoutMs: process.env.MINIMAX_TIMEOUT_MS,
+  agentMaxIterations: process.env.AGENT_MAX_ITERATIONS,
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -110,6 +135,12 @@ const withDefaults = {
   vapidPublicKey: raw.vapidPublicKey || '',
   vapidPrivateKey: raw.vapidPrivateKey || '',
   vapidSubject: raw.vapidSubject || VAPID_SUBJECT_DEFAULT,
+  botEnabled: raw.botEnabled,
+  minimaxApiKey: raw.minimaxApiKey || '',
+  minimaxBaseUrl: raw.minimaxBaseUrl || 'https://api.minimaxi.com/v1',
+  minimaxModel: raw.minimaxModel || 'MiniMax-M3',
+  minimaxTimeoutMs: raw.minimaxTimeoutMs || 60000,
+  agentMaxIterations: raw.agentMaxIterations || 6,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -149,4 +180,10 @@ export const config = result.success ? result.data : configSchema.parse({
   vapidPublicKey: '',
   vapidPrivateKey: '',
   vapidSubject: VAPID_SUBJECT_DEFAULT,
+  botEnabled: false,
+  minimaxApiKey: '',
+  minimaxBaseUrl: 'https://api.minimaxi.com/v1',
+  minimaxModel: 'MiniMax-M3',
+  minimaxTimeoutMs: 60000,
+  agentMaxIterations: 6,
 });

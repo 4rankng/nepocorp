@@ -372,6 +372,7 @@ export default function AdminAdvanceSettlementsPage() {
     <div ref={rootRef} className="as-page">
       <PageHeader
         title="Duyệt hoàn ứng"
+        iconName="checklist"
         description="Kiểm tra và duyệt phiếu thanh toán tạm ứng của giao nhận"
       />
 

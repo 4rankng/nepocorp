@@ -857,6 +857,7 @@ export default function FleetPage() {
     <div className="fleet-page" ref={rootRef}>
       <PageHeader
         title="Đội xe"
+        iconName="truck"
         description="Quản lý xe đầu kéo, rơ-moóc và lái xe trong một trang"
         action={
           <div style={styles.actionRow}>

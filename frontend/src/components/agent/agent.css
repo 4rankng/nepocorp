@@ -1,0 +1,302 @@
+/* Agent assistant — launcher button, chat thread, insight cards, composer.
+   Namespaced `agent-*` to avoid collisions. Uses design tokens (--accent,
+   --surface, --ink, --bg, radii, fonts). No !important (page/component-scoped). */
+
+.agent-launcher {
+  color: var(--ink, #101513);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Thread ─────────────────────────────────────────────────────────────── */
+.agent-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+}
+.agent-empty {
+  color: var(--ink-muted, #6b7280);
+  text-align: center;
+  margin-top: 32px;
+  font-size: 14px;
+}
+.agent-empty__hint {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+.agent-bubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: var(--r, 12px);
+  font-size: 14px;
+  line-height: 1.45;
+  word-wrap: break-word;
+}
+.agent-bubble--user {
+  align-self: flex-end;
+  background: var(--accent, #00b14f);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.agent-bubble--assistant {
+  align-self: flex-start;
+  background: var(--surface-2, #f0f2f1);
+  color: var(--ink, #101513);
+  border-bottom-left-radius: 4px;
+}
+
+/* ── Insight card ───────────────────────────────────────────────────────── */
+.agent-card {
+  align-self: stretch;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--r-lg, 18px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--sh-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+.agent-card__title {
+  font-family: var(--font-display, 'Be Vietnam Pro');
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink, #101513);
+}
+.agent-card__summary {
+  font-size: 13.5px;
+  color: var(--ink-muted, #4b5563);
+  line-height: 1.5;
+}
+.agent-card__widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.agent-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agent-action-chip {
+  border: 1px solid var(--accent, #00b14f);
+  color: var(--accent, #00b14f);
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.agent-action-chip:hover {
+  background: var(--accent-soft, rgba(0, 177, 79, 0.1));
+}
+
+/* ── KPI grid ───────────────────────────────────────────────────────────── */
+.agent-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.agent-kpi {
+  background: var(--bg, #f5f7f6);
+  border-radius: var(--r, 12px);
+  padding: 10px 12px;
+}
+.agent-kpi__label {
+  font-size: 12px;
+  color: var(--ink-muted, #6b7280);
+}
+.agent-kpi__value {
+  font-family: var(--font-mono, 'JetBrains Mono');
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink, #101513);
+  margin-top: 2px;
+}
+.agent-kpi__delta {
+  font-size: 11px;
+  margin-top: 2px;
+}
+.agent-kpi__delta.is-up { color: var(--success, #16a34a); }
+.agent-kpi__delta.is-down { color: var(--danger, #dc2626); }
+
+/* ── Bar chart (CSS flex, no dependency) ────────────────────────────────── */
+.agent-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 90px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.agent-bar-row__name {
+  color: var(--ink-muted, #4b5563);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-bar-row__track {
+  background: var(--bg, #f0f2f1);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+.agent-bar-row__fill {
+  background: var(--accent, #00b14f);
+  height: 100%;
+  border-radius: 999px;
+  min-width: 2px;
+}
+.agent-bar-row__value {
+  font-family: var(--font-mono, 'JetBrains Mono');
+  text-align: right;
+  color: var(--ink, #101513);
+}
+
+/* ── Line chart (inline SVG) ────────────────────────────────────────────── */
+.agent-line {
+  width: 100%;
+  height: 120px;
+  display: block;
+}
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+.agent-table-wrap {
+  overflow-x: auto;
+}
+.agent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.agent-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink-muted, #6b7280);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.agent-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  color: var(--ink, #101513);
+}
+.agent-table td:last-child,
+.agent-table th:last-child {
+  text-align: right;
+}
+
+/* ── Callout ────────────────────────────────────────────────────────────── */
+.agent-callout {
+  border-radius: var(--r, 12px);
+  padding: 10px 12px;
+  font-size: 13px;
+  border-left: 3px solid;
+}
+.agent-callout--info {
+  background: var(--info-soft, #eef2ff);
+  border-color: var(--info, #3b82f6);
+  color: var(--info-text, #1e40af);
+}
+.agent-callout--warning {
+  background: var(--warning-soft, #fffbeb);
+  border-color: var(--warning, #f59e0b);
+  color: var(--warning-text, #92400e);
+}
+.agent-callout--danger {
+  background: var(--danger-soft, #fef2f2);
+  border-color: var(--danger, #dc2626);
+  color: var(--danger-text, #991b1b);
+}
+
+/* ── Anomaly list ───────────────────────────────────────────────────────── */
+.agent-anomaly-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-anomaly {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  border-radius: var(--r-sm, 8px);
+  background: var(--bg, #f5f7f6);
+  border-left: 3px solid var(--ink-muted, #9ca3af);
+}
+.agent-anomaly--med { border-left-color: var(--warning, #f59e0b); }
+.agent-anomaly--high { border-left-color: var(--danger, #dc2626); }
+.agent-anomaly__label { font-weight: 600; font-size: 13px; }
+.agent-anomaly__detail { font-size: 12px; color: var(--ink-muted, #6b7280); }
+
+/* ── Thinking + error ───────────────────────────────────────────────────── */
+.agent-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-muted, #6b7280);
+  font-size: 13px;
+}
+.agent-thinking__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #00b14f);
+  animation: agent-pulse 1s ease-in-out infinite;
+}
+@keyframes agent-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.agent-error {
+  color: var(--danger, #dc2626);
+  font-size: 13px;
+  background: var(--danger-soft, #fef2f2);
+  padding: 8px 10px;
+  border-radius: var(--r-sm, 8px);
+}
+
+/* ── Composer (drawer footer) ───────────────────────────────────────────── */
+.agent-composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+.agent-composer__input {
+  flex: 1;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--r, 12px);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--font-body, 'Be Vietnam Pro');
+  outline: none;
+}
+.agent-composer__input:focus {
+  border-color: var(--accent, #00b14f);
+}
+.agent-composer__send {
+  background: var(--accent, #00b14f);
+  color: #fff;
+  border: none;
+  border-radius: var(--r, 12px);
+  padding: 0 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.agent-composer__send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

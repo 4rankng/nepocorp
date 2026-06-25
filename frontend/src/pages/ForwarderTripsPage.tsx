@@ -11,6 +11,7 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useDebouncedValue } from '../design-system';
 import './ForwarderTripsPage.css';
 import '../components/shared/HeroKpiRow.css';
+import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 interface TripSummary {
   id: number;
@@ -115,7 +116,7 @@ export default function ForwarderTripsPage() {
     <div>
       <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
       <div className="empty-state">
-        <img src="/assets/illustrations/empty-forwarder.svg" alt="No trips" />
+        <img src={resolveEmptyIllustration('empty-forwarder')} alt="No trips" />
         <h3 className="empty-state-title">Chưa có chuyến đi nào</h3>
         <p className="empty-state-desc">
           Hiện chưa có chuyến đi nào trong hệ thống. Khi có chuyến đi mới, thông tin sẽ xuất hiện tại đây.

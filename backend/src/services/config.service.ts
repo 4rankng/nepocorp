@@ -63,7 +63,7 @@ export async function getPricing(customerId: number, routeId: number, date: stri
     .orderBy(desc(s.pricingTables.effectiveDate))
     .limit(1);
 
-  return { price: pricing ? Number(pricing.price) : 0 };
+  return { price: pricing ? Number(pricing.price) : null };
 }
 
 export async function getFuelConfig(): Promise<typeof s.fuelConfig.$inferSelect | null> {
