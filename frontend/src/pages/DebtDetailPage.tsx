@@ -11,7 +11,6 @@ import { api } from '../lib/api';
 import { Modal } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
-import { ShareLinkButton } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
@@ -283,7 +282,6 @@ export default function DebtDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
-          <ShareLinkButton />
           {hasDebt && (
             <button
               className="btn btn--primary"

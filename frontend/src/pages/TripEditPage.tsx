@@ -5,8 +5,6 @@ import { ApiError } from '../lib/api';
 import { TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
-import { ShareLinkButton } from '../components/shared';
-import { routes } from '../lib/routes';
 import { useTripDetail } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useTripForm } from '../hooks/useTripForm';
@@ -134,9 +132,6 @@ export default function TripEditPage() {
               </span>
             </h1>
             <p className="tc-page-sub">{trip.customer?.name ?? ''} · {trip.route?.name ?? ''}</p>
-          </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <ShareLinkButton path={routes.tripDetail(trip.id)} />
           </div>
         </header>
 

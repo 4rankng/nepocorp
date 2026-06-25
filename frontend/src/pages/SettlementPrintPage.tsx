@@ -7,7 +7,6 @@ import { api } from '../lib/api';
 import { useForwarderSettlementDetail, useAdminSettlementDetail } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
-import { ShareLinkButton } from '../components/shared';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import './SettlementPrintPage.css';
@@ -201,7 +200,6 @@ export default function SettlementPrintPage() {
           description={s.forwarderName || ''}
           action={
             <div className="settlement-detail__header-actions">
-              <ShareLinkButton />
               <StatusPill variant={settlementStatusVariant(s.status)}>
                 {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
               </StatusPill>

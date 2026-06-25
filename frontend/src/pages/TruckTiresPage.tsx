@@ -7,7 +7,6 @@ import type { Supplier } from '@tingting/shared';
 import { ConfirmDialog } from '../components/UI';
 import { StatusStrip, StatusSwatch } from '../components/shared/StatusStrip';
 import { useToast } from '../components/shared/Toast';
-import { ShareLinkButton } from '../components/shared';
 import { formatErrorMessage } from '../lib/api';
 import { routes } from '../lib/routes';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -215,7 +214,6 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           </div>
         </div>
         <div className="ttp-actions">
-          <ShareLinkButton />
           <a className="ttp-primary-action" href="#ttp-add-title">
             <Plus size={15} />
             Thêm lốp

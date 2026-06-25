@@ -4,7 +4,6 @@ import { Plus } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { JourneyLegRow } from './JourneyLegRow';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
-import { useMotionPath } from '../../hooks/animations';
 
 interface JourneyLegsCardProps {
   collapsible?: boolean;
@@ -26,15 +25,6 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
   } = form;
   const totalKm = legs.reduce((sum, leg) => sum + (Number(leg.km) || 0), 0);
 
-  const { rootRef: motionRootRef } = useMotionPath({
-    pathSelector: '.tc-journey-path',
-    targetSelector: '.tc-journey-dot',
-    duration: 3500,
-    ease: 'linear',
-    loop: true,
-    enabled: legs.length === 0,
-  });
-
   return (
     <CardSection
       number={number != null ? number : undefined}
@@ -46,14 +36,8 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
     >
       {legs.length === 0 ? (
         <div className="tc-journey-empty">
-          <div ref={motionRootRef} className="tc-journey-empty__illustration" style={{ position: 'relative' }}>
-            <svg aria-hidden="true" width="60" height="40" viewBox="0 0 60 40">
-              <circle cx="8" cy="32" r="4" fill="#16A34A" />
-              <path className="tc-journey-path" d="M8 28 Q 15 8, 30 20 T 52 8" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="3,3" fill="none" />
-              <circle cx="52" cy="8" r="4" fill="#DC2626" />
-            </svg>
-            {/* HTML dot overlay — createMotionPath targets HTML elements, not SVG */}
-            <div className="tc-journey-dot" style={{ position: 'absolute', width: 5, height: 5, background: '#005A2D', borderRadius: '50%', left: -2.5, top: -2.5, opacity: 0, boxShadow: '0 0 3px rgba(0,90,45,0.4)' }} />
+          <div className="tc-journey-empty__illustration" style={{ position: 'relative', border: 'none', background: 'transparent' }}>
+            <img src="/assets/illustrations/empty-routes.svg" alt="" style={{ width: 80, height: 60, objectFit: 'contain' }} />
           </div>
           <div className="tc-journey-empty__text">
             <h4 style={{ margin: '0 0 4px', fontSize: '14.5px', fontWeight: 700, color: 'var(--fg-1)' }}>Chưa có chặng nào</h4>

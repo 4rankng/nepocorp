@@ -8,7 +8,6 @@ import { AlertTriangle, Phone, Building2, ArrowLeft, CreditCard, Download, FileS
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
-import { ShareLinkButton } from '../components/shared';
 import { useConfirm, Modal } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
@@ -228,7 +227,6 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
-          <ShareLinkButton />
           <div ref={exportMenuRef} style={{ position: 'relative' }}>
             <button
               className="btn btn--secondary"

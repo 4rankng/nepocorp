@@ -6,7 +6,6 @@ import { api } from '../lib/api';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill, FormGroup, useConfirm } from '../components/UI';
-import { ShareLinkButton } from '../components/shared';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
@@ -260,7 +259,6 @@ export default function ForwarderTripDetailPage() {
             <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: '4px 0 0' }}>{trip.customerName}</p>
           )}
         </div>
-        <ShareLinkButton />
       </div>
 
       {/* Trip Info Card */}

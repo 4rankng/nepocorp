@@ -5,7 +5,6 @@ import { api } from '../lib/api';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
-import { ShareLinkButton } from '../components/shared';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { DriverContainerCard } from '../components/trip/DriverContainerCard';
 import { usePageAnimations } from '../hooks/animations';
@@ -149,9 +148,6 @@ export default function DriverTripDetailPage() {
                 <span className="dt-subtitle">{trip.customerName}</span>
               )}
             </div>
-          </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <ShareLinkButton />
           </div>
         </div>
 

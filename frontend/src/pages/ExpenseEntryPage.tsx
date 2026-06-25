@@ -9,7 +9,6 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import { useToast } from '../components/shared/Toast';
-import { ShareLinkButton } from '../components/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePageAnimations } from '../hooks/animations';
 import { FINANCIAL, CONFIG } from '@tingting/shared';
@@ -424,9 +423,6 @@ export default function ExpenseEntryPage() {
   return (
     <div ref={rootRef} className="expense-page-wrap">
       {dialog}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <ShareLinkButton />
-      </div>
 
       <div className="expense-page-container">
         <PageHeader

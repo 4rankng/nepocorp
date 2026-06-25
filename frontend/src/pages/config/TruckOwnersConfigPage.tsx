@@ -21,7 +21,6 @@ import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { useToast } from '../../components/shared/Toast';
-import { ShareLinkButton } from '../../components/shared';
 import { usePageAnimations } from '../../hooks/animations';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
 import type { TruckCapEntry, PaginatedResponse, Truck } from '@tingting/shared';
@@ -179,7 +178,6 @@ export default function TruckOwnersConfigPage() {
         title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
         iconName="truck"
         description="Danh sách đối tác sở hữu xe và tỷ lệ chia lợi nhuận của xe này."
-        action={<ShareLinkButton />}
       />
 
       <div style={{ marginBottom: 16 }}>

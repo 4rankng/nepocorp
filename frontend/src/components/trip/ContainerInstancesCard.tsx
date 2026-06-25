@@ -409,8 +409,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         </div>
       )}
       {rows.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)' }}>
-          <p style={{ marginBottom: 12 }}>Chưa có cont nào. Bấm "Thêm cont" để bắt đầu.</p>
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img src="/assets/illustrations/empty-matching.svg" alt="Empty" style={{ width: 120, height: 120, opacity: 0.8, marginBottom: 16 }} />
+          <p style={{ margin: 0, fontWeight: 500 }}>Chưa có cont nào. Bấm "Thêm cont" để bắt đầu.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
