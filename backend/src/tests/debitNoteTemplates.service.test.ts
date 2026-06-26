@@ -1,5 +1,6 @@
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { client } from '../db';
 import {
   buildBillingXlsx,
   renderTemplatedXlsx,
@@ -29,6 +30,10 @@ const baseDoc: BillingDocument = {
 };
 const debitDoc = baseDoc;
 const paymentDoc: BillingDocument = { ...baseDoc, type: 'PAYMENT_STATEMENT', entityType: 'VENDOR', entityName: 'NCC X' };
+
+after(async () => {
+  await client.end();
+});
 
 const columns: DebitNoteTemplateColumn[] = [
   { id: 'desc', label: 'Diễn giải', variable: 'description', width: 40, align: 'left', format: 'text', total: false },
@@ -64,6 +69,20 @@ test('buildBillingXlsx(null template) → valid xlsx for PAYMENT_STATEMENT (lega
 test('renderTemplatedXlsx with default snapshot → valid xlsx', async () => {
   const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
   assert.ok(isXlsx(buf), 'templated render should produce a valid xlsx');
+});
+
+test('renderTemplatedXlsx writes Vietnamese amount in words for grand total', async () => {
+  const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const wb = new ExcelJS.Workbook();
+  await (wb.xlsx.load as (data: unknown) => Promise<unknown>)(buf);
+  const ws = wb.worksheets[0];
+  const wordsRow = ws.getColumn(1).values.find((value) =>
+    typeof value === 'string' && value.startsWith('Bằng chữ:'));
+  assert.equal(wordsRow, 'Bằng chữ: Năm triệu bốn trăm nghìn đồng');
 });
 
 test('renderTemplatedXlsx with letterhead + terms → valid xlsx', async () => {

@@ -110,8 +110,8 @@
   min-height: calc(100vh - 142px);
   padding: 14px 28px 24px;
   display: grid;
-  grid-template-columns: minmax(720px, 1fr) 430px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -124,9 +124,9 @@
 .debit-editor-settings {
   display: grid;
   grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.4fr) minmax(130px, 0.7fr) minmax(150px, 0.8fr) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: end;
-  padding: 12px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -144,7 +144,7 @@
 .debit-editor-field {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 3px;
 }
 
 .debit-editor-field > span {
@@ -155,13 +155,13 @@
 
 .debit-editor-color {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr);
   gap: 8px;
 }
 
 .debit-editor-color input[type='color'] {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   padding: 2px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -169,7 +169,7 @@
 }
 
 .debit-editor-check {
-  min-height: 42px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -225,7 +225,7 @@
 }
 
 .debit-editor-table-toolbar {
-  min-height: 54px;
+  min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -255,26 +255,23 @@
 
 .debit-editor-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 560px;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
 }
 
-.debit-editor-table__col-order { width: 52px; }
-.debit-editor-table__col-label { width: auto; }
-.debit-editor-table__col-variable { width: 190px; }
-.debit-editor-table__col-format { width: 116px; }
-.debit-editor-table__col-align { width: 108px; }
-.debit-editor-table__col-width { width: 82px; }
-.debit-editor-table__col-total { width: 64px; }
-.debit-editor-table__col-actions { width: 182px; }
+.debit-editor-table__col-order { width: 46px; }
+.debit-editor-table__col-label { width: 180px; }
+.debit-editor-table__col-variable { width: auto; }
+.debit-editor-table__col-total { width: 54px; }
+.debit-editor-table__col-show { width: 54px; }
 
 .debit-editor-table th {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 10px;
+  padding: 7px 8px;
   background: #f4f7f5;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -289,7 +286,7 @@
 }
 
 .debit-editor-table td {
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
@@ -309,8 +306,8 @@
 }
 
 .debit-editor-label-textarea {
-  min-height: 44px;
-  height: 44px;
+  min-height: 34px;
+  height: 34px;
   resize: vertical;
   line-height: 1.24;
   font-size: 13px;
@@ -319,12 +316,81 @@
 
 .debit-editor-table select.input,
 .debit-editor-table input.input {
-  height: 38px;
-  min-height: 38px;
+  height: 34px;
+  min-height: 34px;
+}
+
+.debit-editor-inline-textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  color: #111827;
+  line-height: 1.22;
+}
+
+.debit-editor-inline-textarea:focus,
+.debit-editor-inline-select:focus,
+.debit-editor-inline-number:focus {
+  outline: 2px solid rgba(36, 89, 130, 0.24);
+  outline-offset: 2px;
+}
+
+.debit-editor-table .debit-editor-inline-input,
+.debit-editor-table .debit-editor-inline-select,
+.debit-editor-table .debit-editor-inline-number {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.debit-editor-table .debit-editor-inline-number {
+  text-align: right;
+}
+
+.debit-editor-table .debit-editor-inline-input {
+  font-weight: 650;
+}
+
+.debit-editor-settings .debit-editor-inline-textarea,
+.debit-editor-settings .debit-editor-inline-select {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.debit-editor-settings .debit-editor-inline-select {
+  padding-right: 20px;
+}
+
+.debit-editor-settings-textarea {
+  white-space: nowrap;
 }
 
 .debit-editor-table td:nth-child(1),
-.debit-editor-table td:nth-child(7) {
+.debit-editor-table td:nth-child(4) {
   text-align: center;
 }
 
@@ -332,7 +398,20 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: 2px;
+}
+
+.debit-editor-row-actions .btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+}
+
+.debit-editor-row-actions .btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--ink);
 }
 
 .debit-editor-delete {
@@ -340,9 +419,9 @@
 }
 
 .debit-editor-preview {
-  position: sticky;
-  top: 14px;
+  position: static;
   min-width: 0;
+  order: -1;
 }
 
 .debit-editor-preview__sheet {
@@ -351,6 +430,7 @@
   background: #fff;
   box-shadow: var(--sh-sm);
   overflow: hidden;
+  max-width: 100%;
 }
 
 .debit-editor-preview__issuer {
@@ -409,11 +489,12 @@
   overflow: auto;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  max-height: 360px;
 }
 
 .debit-editor-preview__table {
   width: 100%;
-  min-width: 650px;
+  min-width: 980px;
   border-collapse: collapse;
 }
 
@@ -425,6 +506,8 @@
   line-height: 1.18;
   font-weight: 850;
   white-space: pre-line;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .debit-editor-preview__table td {
@@ -433,6 +516,8 @@
   color: #111827;
   font-size: 12px;
   white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .debit-editor-preview__table tbody tr:nth-child(even) td {
@@ -440,7 +525,7 @@
 }
 
 .debit-editor-preview__total {
-  text-align: right;
+  text-align: center;
   font-weight: 850;
   background: #e5e7eb !important;
   border-top: 2px double #111827 !important;
@@ -457,13 +542,14 @@
   font-weight: 800;
 }
 
-@media (max-width: 1180px) {
+@media (min-width: 1500px) {
   .debit-editor-workspace {
-    grid-template-columns: minmax(0, 1fr);
+    padding-left: 36px;
+    padding-right: 36px;
   }
 
-  .debit-editor-preview {
-    position: static;
+  .debit-editor-preview__table-wrap {
+    max-height: 430px;
   }
 }
 
@@ -480,6 +566,7 @@
 
   .debit-editor-workspace {
     padding: 12px 16px 18px;
+    gap: 10px;
   }
 
   .debit-editor-settings,
@@ -490,5 +577,30 @@
 
   .debit-editor-table-wrap {
     overflow: auto;
+  }
+
+  .debit-editor-table {
+    min-width: 520px;
+  }
+
+  .debit-editor-table__col-order {
+    width: 42px;
+  }
+
+  .debit-editor-table__col-label {
+    width: 150px;
+  }
+
+  .debit-editor-table__col-total,
+  .debit-editor-table__col-show {
+    width: 48px;
+  }
+
+  .debit-editor-preview__table {
+    min-width: 760px;
+  }
+
+  .debit-editor-preview__table-wrap {
+    max-height: 300px;
   }
 }

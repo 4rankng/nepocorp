@@ -262,18 +262,18 @@ export const debitNoteColumnSchema = z.object({
 });
 
 export const defaultDebitNoteColumns: Array<z.infer<typeof debitNoteColumnSchema>> = [
-  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 6, align: 'center', format: 'number', total: false },
-  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
-  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 12, align: 'center', format: 'text', total: false },
-  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 10, align: 'center', format: 'text', total: false },
-  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 24, align: 'left', format: 'text', total: false },
-  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 32, align: 'left', format: 'text', total: false },
-  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 40, align: 'left', format: 'text', total: false },
-  { id: 'sl20', label: "20'", variable: 'container20Count', width: 8, align: 'center', format: 'number', total: true },
-  { id: 'sl40', label: "40'", variable: 'container40Count', width: 8, align: 'center', format: 'number', total: true },
-  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 18, align: 'left', format: 'text', total: false },
-  { id: 'gia_vc', label: 'Giá VC\n(Chưa VAT)', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
-  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 14, align: 'left', format: 'text', total: false },
+  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 4.56, align: 'center', format: 'number', total: false },
+  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 11.28, align: 'center', format: 'date', total: false },
+  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 11.7, align: 'center', format: 'text', total: false },
+  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 8.14, align: 'center', format: 'text', total: false },
+  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 18.99, align: 'left', format: 'text', total: false },
+  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 40.84, align: 'left', format: 'text', total: false },
+  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 45.13, align: 'left', format: 'text', total: false },
+  { id: 'sl20', label: "20'", variable: 'container20Count', width: 5.41, align: 'center', format: 'number', total: true },
+  { id: 'sl40', label: "40'", variable: 'container40Count', width: 6.28, align: 'center', format: 'number', total: true },
+  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 15.7, align: 'left', format: 'text', total: false },
+  { id: 'gia_vc', label: 'Giá VC \n (Chưa VAT)', variable: 'amount', width: 13.85, align: 'right', format: 'currency', total: true },
+  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 8.7, align: 'left', format: 'text', total: false },
 ];
 
 export const debitNoteTemplateSchema = z.object({

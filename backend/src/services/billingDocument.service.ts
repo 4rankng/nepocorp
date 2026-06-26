@@ -48,19 +48,22 @@ export function docTotal(lines: BillingDocumentLine[]): number {
 // ─── Debit-note templates ─────────────────────────────────────────────────────
 
 const DEFAULT_DEBIT_NOTE_COLUMNS: DebitNoteTemplateColumn[] = [
-  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 6, align: 'center', format: 'number', total: false },
-  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
-  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 12, align: 'center', format: 'text', total: false },
-  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 10, align: 'center', format: 'text', total: false },
-  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 24, align: 'left', format: 'text', total: false },
-  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 32, align: 'left', format: 'text', total: false },
-  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 40, align: 'left', format: 'text', total: false },
-  { id: 'sl20', label: "20'", variable: 'container20Count', width: 8, align: 'center', format: 'number', total: true },
-  { id: 'sl40', label: "40'", variable: 'container40Count', width: 8, align: 'center', format: 'number', total: true },
-  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 18, align: 'left', format: 'text', total: false },
-  { id: 'gia_vc', label: 'Giá VC\n(Chưa VAT)', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
-  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 14, align: 'left', format: 'text', total: false },
+  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 4.56, align: 'center', format: 'number', total: false },
+  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 11.28, align: 'center', format: 'date', total: false },
+  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 11.7, align: 'center', format: 'text', total: false },
+  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 8.14, align: 'center', format: 'text', total: false },
+  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 18.99, align: 'left', format: 'text', total: false },
+  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 40.84, align: 'left', format: 'text', total: false },
+  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 45.13, align: 'left', format: 'text', total: false },
+  { id: 'sl20', label: "20'", variable: 'container20Count', width: 5.41, align: 'center', format: 'number', total: true },
+  { id: 'sl40', label: "40'", variable: 'container40Count', width: 6.28, align: 'center', format: 'number', total: true },
+  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 15.7, align: 'left', format: 'text', total: false },
+  { id: 'gia_vc', label: 'Giá VC \n (Chưa VAT)', variable: 'amount', width: 13.85, align: 'right', format: 'currency', total: true },
+  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 8.7, align: 'left', format: 'text', total: false },
 ];
+
+const VIETSUN_TABLE_COLUMN_BY_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col]));
+const VIETSUN_TABLE_WIDTH_BY_COLUMN_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col.width]));
 
 function normalizeTemplateColumns(cols: unknown): DebitNoteTemplateColumn[] {
   return Array.isArray(cols) && cols.length > 0
@@ -330,6 +333,7 @@ function buildTripRenderData(input: {
   note?: string | null;
 }): BillingLineRenderData {
   const containerCount = input.containers.length;
+  const routeParts = splitRouteName(input.trip.routeName ?? '');
   return {
     tripCode: input.trip.tripCode ?? null,
     departureDate: input.trip.departureDate,
@@ -341,9 +345,9 @@ function buildTripRenderData(input: {
     actionType: input.legs?.loadingType === 'HANG' ? 'ĐÓNG'
               : input.legs?.loadingType === 'VO'   ? 'TRẢ'
               : null,
-    origin: input.legs?.origin ?? null,
-    destination: input.trip.routeName ?? input.legs?.destination ?? null,
-    deliveryAddress: input.legs?.destination ?? input.trip.routeName ?? null,
+    origin: input.legs?.origin ?? routeParts?.origin ?? null,
+    destination: routeParts?.destination ?? input.trip.routeName ?? input.legs?.destination ?? null,
+    deliveryAddress: input.legs?.destination ?? null,
     container20Count: countContainers(input.containers, '20') || null,
     container40Count: countContainers(input.containers, '40') || null,
     containerCount: containerCount || null,
@@ -608,6 +612,66 @@ function formatMonthYear(raw: string): string {
   return `${month}.${year}`;
 }
 
+const VIETNAMESE_DIGITS = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+const VIETNAMESE_TRIPLE_UNITS = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ', 'tỷ tỷ'];
+
+function readVietnameseTriple(value: number, forceHundreds: boolean): string {
+  const hundred = Math.floor(value / 100);
+  const ten = Math.floor((value % 100) / 10);
+  const unit = value % 10;
+  const parts: string[] = [];
+
+  if (hundred > 0 || forceHundreds) {
+    parts.push(`${VIETNAMESE_DIGITS[hundred]} trăm`);
+  }
+
+  if (ten > 1) {
+    parts.push(`${VIETNAMESE_DIGITS[ten]} mươi`);
+    if (unit === 1) parts.push('mốt');
+    else if (unit === 5) parts.push('lăm');
+    else if (unit > 0) parts.push(VIETNAMESE_DIGITS[unit]);
+  } else if (ten === 1) {
+    parts.push('mười');
+    if (unit === 5) parts.push('lăm');
+    else if (unit > 0) parts.push(VIETNAMESE_DIGITS[unit]);
+  } else if (unit > 0) {
+    if (hundred > 0 || forceHundreds) parts.push('lẻ');
+    parts.push(VIETNAMESE_DIGITS[unit]);
+  }
+
+  return parts.join(' ');
+}
+
+function sentenceCase(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
+function amountToVietnameseWords(amount: number): string {
+  const rounded = Math.round(amount);
+  if (!Number.isFinite(rounded)) return '';
+  if (rounded === 0) return 'Không đồng';
+
+  const sign = rounded < 0 ? 'Âm ' : '';
+  let remaining = Math.abs(rounded);
+  const triples: number[] = [];
+  while (remaining > 0) {
+    triples.push(remaining % 1000);
+    remaining = Math.floor(remaining / 1000);
+  }
+
+  const words: string[] = [];
+  for (let idx = triples.length - 1; idx >= 0; idx--) {
+    const triple = triples[idx];
+    if (triple === 0) continue;
+    const hasHigherGroup = words.length > 0;
+    const text = readVietnameseTriple(triple, hasHigherGroup && triple < 100);
+    const unit = VIETNAMESE_TRIPLE_UNITS[idx] ?? '';
+    words.push(unit ? `${text} ${unit}` : text);
+  }
+
+  return `${sign}${sentenceCase(words.join(' '))} đồng`;
+}
+
 // Verbatim legacy renderer (pre-template). Kept move-only so the regression
 // oracle holds: buildBillingXlsx(doc, null) delegates here and is byte-identical
 // to pre-template output for BOTH DEBIT_NOTE and PAYMENT_STATEMENT docs.
@@ -640,8 +704,6 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
       left: 0.35, right: 0.35, top: 0.45, bottom: 0.45, header: 0.2, footer: 0.2,
     },
   };
-  ws.views = [{ state: 'frozen', ySplit: tableStart }];
-
   ws.mergeCells('A1:D1');
   ws.getCell('A1').value = title;
   ws.getCell('A1').font = { name: 'Arial', bold: true, size: 18, color: { argb: 'FF111827' } };
@@ -817,7 +879,10 @@ function renderColumnValue(line: BillingDocumentLine, col: DebitNoteTemplateColu
     case 'departureDate': {
       const raw = data.departureDate;
       if (!raw) return null;
-      const date = new Date(`${raw}T00:00:00`);
+      const [year, month, day] = String(raw).split('-').map(Number);
+      const date = year && month && day
+        ? new Date(Date.UTC(year, month - 1, day))
+        : new Date(`${raw}T00:00:00`);
       return Number.isNaN(date.getTime()) ? String(raw) : date;
     }
     case 'truckPlate': return data.truckPlate ?? null;
@@ -850,10 +915,25 @@ function splitRouteName(routeName: string): { origin: string; destination: strin
 }
 
 async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Promise<BillingDocumentLine[]> {
-  const tripIds = Array.from(new Set(lines
+  const directTripIds = lines
     .filter((line) => line.sourceType === 'TRIP' && line.sourceId && !line.renderData)
     .map((line) => Number(line.sourceId))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const expenseIds = Array.from(new Set(lines
+    .filter((line) => line.sourceType === 'EXPENSE' && line.sourceId && !line.renderData)
+    .map((line) => Number(line.sourceId))
     .filter((id) => Number.isFinite(id) && id > 0)));
+
+  const expenseTripRows = expenseIds.length > 0
+    ? await db.select({ id: s.tripExpenses.id, tripId: s.tripExpenses.tripId })
+      .from(s.tripExpenses)
+      .where(inArray(s.tripExpenses.id, expenseIds))
+    : [];
+  const tripIdByExpenseId = new Map(expenseTripRows.map((row) => [row.id, row.tripId]));
+  const tripIds = Array.from(new Set([
+    ...directTripIds,
+    ...expenseTripRows.map((row) => row.tripId),
+  ]));
   if (tripIds.length === 0) return lines;
 
   const trips = await db.select({
@@ -873,8 +953,14 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
   const legsByTrip = await loadLegRenderDataByTrip(tripIds);
 
   return lines.map((line) => {
-    if (line.renderData || line.sourceType !== 'TRIP' || !line.sourceId) return line;
-    const trip = tripsById.get(Number(line.sourceId));
+    if (line.renderData || !line.sourceId) return line;
+    const tripId = line.sourceType === 'TRIP'
+      ? Number(line.sourceId)
+      : line.sourceType === 'EXPENSE'
+        ? tripIdByExpenseId.get(Number(line.sourceId))
+        : null;
+    if (!tripId) return line;
+    const trip = tripsById.get(tripId);
     if (!trip) return line;
     const containers = containersByTrip.get(trip.id) ?? [];
     return {
@@ -891,10 +977,81 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
   });
 }
 
-function applyColumnFormat(cell: { numFmt?: string; alignment?: unknown }, col: DebitNoteTemplateColumn): void {
-  if (col.format === 'date') cell.numFmt = 'dd/mm/yyyy';
-  if (col.format === 'number' || col.format === 'currency') cell.numFmt = '#,##0';
-  cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
+function applyInferredColumnFormat(cell: { numFmt?: string; alignment?: unknown }, value: unknown): void {
+  if (value instanceof Date) {
+    cell.numFmt = 'm/d/yyyy';
+  } else if (typeof value === 'number') {
+    cell.numFmt = '#,##0';
+  }
+  cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+}
+
+function renderedValueLength(value: unknown): number {
+  if (value == null) return 0;
+  if (value instanceof Date) return 10;
+  if (typeof value === 'number') return value.toLocaleString('en-US').length;
+  if (typeof value === 'object' && 'formula' in value) {
+    const result = (value as { result?: unknown }).result;
+    return renderedValueLength(result);
+  }
+  return String(value)
+    .split('\n')
+    .reduce((max, part) => Math.max(max, part.trim().length), 0);
+}
+
+function autoColumnWidth(header: string, values: unknown[]): number {
+  const lengths = [header, ...values].map(renderedValueLength).filter((len) => len > 0);
+  if (lengths.length === 0) return 8;
+  const avg = lengths.reduce((sum, len) => sum + len, 0) / lengths.length;
+  const headerMin = renderedValueLength(header) + 2;
+  return Math.max(4, Math.min(42, Math.ceil(Math.max(avg * 1.35 + 2, headerMin))));
+}
+
+function renderDebitNoteColumnLabel(col: DebitNoteTemplateColumn): string {
+  const reference = VIETSUN_TABLE_COLUMN_BY_ID.get(col.id);
+  if (!reference) return col.label;
+  const compact = (value: string) => value.replace(/\s+/g, '');
+  return compact(col.label) === compact(reference.label) ? reference.label : col.label;
+}
+
+function aggregateDebitNoteExportLines(lines: BillingDocumentLine[]): BillingDocumentLine[] {
+  const groups = new Map<string, BillingDocumentLine>();
+  const passthrough: BillingDocumentLine[] = [];
+
+  for (const line of lines) {
+    if (line.excluded) continue;
+    const data = line.renderData ?? {};
+    const keyParts = [
+      data.departureDate ?? '',
+      data.truckPlate ?? '',
+      data.actionType ?? '',
+      data.origin ?? '',
+      data.destination ?? line.routeName ?? '',
+      data.deliveryAddress ?? '',
+      (line.containerNumbers ?? []).join('|'),
+      data.container20Count ?? '',
+      data.container40Count ?? '',
+    ];
+    const canGroup = line.sourceType === 'TRIP' || line.sourceType === 'EXPENSE';
+    if (!canGroup) {
+      passthrough.push(line);
+      continue;
+    }
+
+    const key = keyParts.join('\u001f');
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, { ...line, lineType: 'FREIGHT', baseAmount: effectiveAmount(line), amountOverride: null });
+      continue;
+    }
+    groups.set(key, {
+      ...existing,
+      baseAmount: effectiveAmount(existing) + effectiveAmount(line),
+      amountOverride: null,
+    });
+  }
+
+  return [...groups.values(), ...passthrough].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 /**
@@ -930,259 +1087,216 @@ export async function renderTemplatedXlsx(
   wb.created = new Date();
   wb.modified = new Date();
 
-  const ws = wb.addWorksheet('Giấy báo nợ');
+  const ws = wb.addWorksheet(`Tháng ${Number(doc.rangeTo.slice(5, 7)) || Number(doc.rangeFrom.slice(5, 7)) || 1}`);
 
-  const cols = normalizeTemplateColumns(snap.columns);
+  const cols = normalizeTemplateColumns(snap.columns).filter((col) => col.width > 0);
   const nCols = cols.length;
+  const widthSamples: unknown[][] = cols.map(() => []);
   const amountIdx = cols.findIndex((col) => col.variable === 'amount') + 1;
   const totalColumns = cols
     .map((col, idx) => ({ col, idx: idx + 1 }))
-    .filter(({ col }) => col.total || col.variable === 'amount');
-  const accent = hexToArgb(snap.accentColor);
+    .filter(({ col }) => col.total);
+  const lines = await enrichLinesForDebitNoteRender(doc.lines);
+  const dataLines = aggregateDebitNoteExportLines(lines);
+  const customer = doc.entityType === 'CUSTOMER'
+    ? (await db.select({
+      name: s.customers.name,
+      taxCode: s.customers.taxCode,
+      contactPerson: s.customers.contactPerson,
+      contactInfo: s.customers.contactInfo,
+    }).from(s.customers).where(eq(s.customers.id, doc.entityId)).limit(1))[0]
+    : null;
+
+  const thinBlack = { style: 'thin' as const, color: { argb: 'FF000000' } };
+  const hairBlack = { style: 'hair' as const, color: { argb: 'FF000000' } };
+  const baseFont = { name: 'Times New Roman', size: 11, color: { argb: 'FF000000' } };
+  const boldFont = { ...baseFont, bold: true };
+  const moneyFmt = '_(* #,##0_);_(* \\(#,##0\\);_(* \\-??_);_(@_)';
+  const nColsForIntro = Math.max(nCols, 12);
 
   ws.properties.defaultRowHeight = 22;
   ws.pageSetup = {
     paperSize: 9,
     orientation: snap.orientation === 'portrait' ? 'portrait' : 'landscape',
     fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true,
-    margins: { left: 0.35, right: 0.35, top: 0.45, bottom: 0.45, header: 0.2, footer: 0.2 },
+    margins: { left: 0.5, right: 0.2, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 },
   };
 
-  let row = 1;
-  const bandStart = 1;
+  const introRowHeights = new Map<number, number>([
+    [1, 13.5],
+    [2, 26.25],
+    [3, 19.5],
+    [16, 20.1],
+  ]);
+  for (let r = 1; r <= 16; r++) ws.getRow(r).height = introRowHeights.get(r) ?? 18;
+  ws.getRow(17).height = 15;
+  if (nCols > 1) ws.mergeCells(17, 1, 17, nCols);
 
-  // Optional letterhead: issuer block (top-left) + logo (top-right).
-  const logoBuffer = snap.logoStorageKey ? await storageService.read(snap.logoStorageKey) : null;
-  const hasIssuer = !!(snap.issuerName || snap.issuerAddress || snap.issuerTaxCode);
-  if (logoBuffer || hasIssuer) {
-    if (snap.issuerName) {
-      const c = ws.getCell(row, 1);
-      c.value = snap.issuerName;
-      c.font = { name: 'Arial', bold: true, size: 12, color: { argb: 'FF111827' } };
-      row++;
-    }
-    if (snap.issuerAddress) {
-      const c = ws.getCell(row, 1);
-      c.value = snap.issuerAddress;
-      c.font = { name: 'Arial', size: 10, color: { argb: 'FF374151' } };
-      row++;
-    }
-    if (snap.issuerTaxCode) {
-      const c = ws.getCell(row, 1);
-      c.value = `Mã số thuế: ${snap.issuerTaxCode}`;
-      c.font = { name: 'Arial', size: 10, color: { argb: 'FF374151' } };
-      row++;
-    }
-    if (logoBuffer) {
-      try {
-        // base64 (not buffer) avoids the @types/node Buffer-generic friction with
-        // ExcelJS's addImage typing.
-        const imageId = wb.addImage({ base64: logoBuffer.toString('base64'), extension: 'png' });
-        ws.addImage(imageId, { tl: { col: Math.max(0, nCols - 1), row: 0 }, ext: { width: 130, height: 50 } });
-      } catch {
-        // ExcelJS couldn't embed the image (bad format/bytes) — skip, keep text.
-      }
-    }
-    row++; // spacer after letterhead
+  ws.mergeCells(2, 1, 2, nColsForIntro);
+  ws.getCell(2, 1).value = `${snap.titleText || 'BẢNG KÊ CƯỚC VẬN CHUYỂN'} THÁNG ${formatMonthYear(doc.rangeTo)}`;
+  ws.getCell(2, 1).font = { name: 'Times New Roman', size: 16, bold: true };
+  ws.getCell(2, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+  ws.mergeCells(3, 1, 3, nColsForIntro);
+  ws.getCell(3, 1).value = `(Kèm hoá đơn GTGT số: ${doc.note?.trim() || '........'}   ngày ${formatVietnameseDate(doc.rangeTo)})`;
+  ws.getCell(3, 1).font = { name: 'Times New Roman', size: 12, bold: true };
+  ws.getCell(3, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+  const customerName = customer?.name ?? doc.entityName ?? '';
+  const issuerName = snap.issuerName ?? 'CÔNG TY TNHH NEPO';
+  const introRows: Array<{ row: number; value: string; bold?: boolean }> = [
+    { row: 4, value: `BÊN A (BÊN THUÊ DỊCH VỤ): ${customerName}`, bold: true },
+    { row: 5, value: `Địa chỉ: ${customer?.contactInfo ?? ''}` },
+    { row: 6, value: `Mã số thuế: ${customer?.taxCode ?? ''}` },
+    { row: 7, value: `Đại diện bởi : ${customer?.contactPerson ?? ''}` },
+    { row: 8, value: 'Chức vụ: Giám Đốc' },
+    { row: 9, value: `BÊN B (BÊN CUNG CẤP DỊCH VỤ): ${issuerName}`, bold: true },
+    { row: 10, value: `Địa chỉ: ${snap.issuerAddress ?? ''}` },
+    { row: 11, value: `Mã số thuế: ${snap.issuerTaxCode ?? ''}` },
+    { row: 12, value: `Đại diện bởi : ${snap.signatureRightLabel ?? ''}` },
+    { row: 13, value: 'Chức vụ: Giám Đốc' },
+    { row: 14, value: snap.termsText?.split('\n')[0] ?? '- Số TK ' },
+    { row: 15, value: snap.termsText?.split('\n')[1] ?? '- Tại ngân hàng ' },
+    { row: 16, value: 'Cùng thống nhất tiến hành đối chiếu sản lượng và doanh thu dịch vụ Bên B đã hoàn thành cung cấp/thực hiện cho Bên A như sau:' },
+  ];
+  for (const item of introRows) {
+    const cell = ws.getCell(item.row, 1);
+    cell.value = item.value;
+    cell.font = item.bold ? boldFont : baseFont;
+    cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
   }
 
-  // Title.
-  ws.mergeCells(row, 1, row, nCols);
-  const titleCell = ws.getCell(row, 1);
-  titleCell.value = snap.titleText;
-  titleCell.font = { name: 'Arial', bold: true, size: 18, color: { argb: 'FF111827' } };
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws.getRow(row).height = 32;
-  row++;
+  const headerTop = 18;
+  const headerBottom = 19;
+  const quantityIndexes = cols
+    .map((col, idx) => ({ col, idx: idx + 1 }))
+    .filter(({ col }) => col.variable === 'container20Count' || col.variable === 'container40Count');
+  const quantityStart = quantityIndexes.length > 0 ? Math.min(...quantityIndexes.map((x) => x.idx)) : 0;
+  const quantityEnd = quantityIndexes.length > 0 ? Math.max(...quantityIndexes.map((x) => x.idx)) : 0;
 
-  // Entity.
-  ws.mergeCells(row, 1, row, nCols);
-  const entCell = ws.getCell(row, 1);
-  entCell.value = `Khách hàng: ${doc.entityName ?? ''}`;
-  entCell.font = { name: 'Arial', bold: true, size: 12, color: { argb: 'FF111827' } };
-  entCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  row++;
-
-  // Period.
-  ws.mergeCells(row, 1, row, nCols);
-  const perCell = ws.getCell(row, 1);
-  perCell.value = `Kỳ: ${formatVietnameseDate(doc.rangeFrom)} - ${formatVietnameseDate(doc.rangeTo)}`;
-  perCell.font = { name: 'Arial', size: 11, color: { argb: 'FF374151' } };
-  perCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  row++;
-
-  // Optional note.
-  if (doc.note) {
-    ws.mergeCells(row, 1, row, nCols);
-    const noteCell = ws.getCell(row, 1);
-    noteCell.value = `Ghi chú: ${doc.note}`;
-    noteCell.font = { name: 'Arial', italic: true, size: 10, color: { argb: 'FF4B5563' } };
-    noteCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
-    ws.getRow(row).height = 30;
-    row++;
+  for (let c = 1; c <= nCols; c++) {
+    const col = cols[c - 1];
+    const label = renderDebitNoteColumnLabel(col);
+    const isQuantityChild = col.variable === 'container20Count' || col.variable === 'container40Count';
+    const topCell = ws.getCell(headerTop, c);
+    const bottomCell = ws.getCell(headerBottom, c);
+    if (isQuantityChild) {
+      bottomCell.value = label;
+    } else {
+      topCell.value = label;
+      ws.mergeCells(headerTop, c, headerBottom, c);
+    }
+  }
+  if (quantityStart > 0 && quantityEnd >= quantityStart) {
+    ws.mergeCells(headerTop, quantityStart, headerTop, quantityEnd);
+    ws.getCell(headerTop, quantityStart).value = 'Số lượng';
   }
 
-  const bandEnd = row - 1;
-  for (let r = bandStart; r <= bandEnd; r++) {
-    ws.getRow(r).eachCell({ includeEmpty: true }, (cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
-    });
+  for (let r = headerTop; r <= headerBottom; r++) {
+    ws.getRow(r).height = 14.25;
+    for (let c = 1; c <= nCols; c++) {
+      const cell = ws.getCell(r, c);
+      cell.font = boldFont;
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+    }
   }
 
-  // Column header.
-  const headerRow = row;
-  for (let c = 0; c < cols.length; c++) {
-    const cell = ws.getCell(headerRow, c + 1);
-    cell.value = cols[c].label;
-    cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
-    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    cell.border = {
-      top: { style: 'thin', color: { argb: 'FF1F2937' } },
-      left: { style: 'thin', color: { argb: 'FF1F2937' } },
-      bottom: { style: 'thin', color: { argb: 'FF1F2937' } },
-      right: { style: 'thin', color: { argb: 'FF1F2937' } },
-    };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: accent } };
-  }
-  ws.getRow(headerRow).height = 26;
-  ws.views = [{ state: 'frozen', ySplit: headerRow }];
-  row++;
-
-  // Data rows, optionally grouped (ROUTE | LINE_TYPE | NONE).
-  const groupKey = (l: BillingDocumentLine): string | null => {
-    if (snap.groupingMode === 'ROUTE') return l.routeName ?? '';
-    if (snap.groupingMode === 'LINE_TYPE') return l.typeLabel ?? '';
-    return null;
-  };
+  const firstDataRow = 20;
+  let row = firstDataRow;
   const dataRows: number[] = [];
-  let i = 0;
-  while (i < doc.lines.length) {
-    const key = groupKey(doc.lines[i]);
-    let end = i + 1;
-    if (key !== null) {
-      while (end < doc.lines.length && groupKey(doc.lines[end]) === key) end++;
-    }
-    const groupLines = doc.lines.slice(i, end).filter((l) => !l.excluded);
-    i = end;
-    if (groupLines.length === 0) continue;
-
-    if (key !== null) {
-      const subtotal = groupLines.reduce((s, l) => s + effectiveAmount(l), 0);
-      const bandRowNum = row++;
-      if (nCols > 1) ws.mergeCells(bandRowNum, 1, bandRowNum, nCols - 1);
-      const label = snap.groupingMode === 'LINE_TYPE'
-        ? `${key || 'Khác'} (${groupLines.length} dòng)`
-        : `Tuyến: ${key || 'Chưa có tuyến'} (${groupLines.length} dòng)`;
-      ws.getCell(bandRowNum, 1).value = label;
-      if (amountIdx > 0) {
-        ws.getCell(bandRowNum, amountIdx).value = subtotal;
-        ws.getCell(bandRowNum, amountIdx).numFmt = '#,##0';
-        ws.getCell(bandRowNum, amountIdx).alignment = { horizontal: 'right', vertical: 'middle' };
-      }
-      const bandRow = ws.getRow(bandRowNum);
-      bandRow.height = 28;
-      bandRow.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FF123B2A' } };
-      bandRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        cell.border = {
-          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF5EF' } };
-        if (amountIdx > 0 && colNumber === amountIdx) {
-          cell.numFmt = '#,##0';
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-        }
-      });
-    }
-
-    for (const line of groupLines) {
-      const r = row++;
-      dataRows.push(r);
-      for (let c = 0; c < cols.length; c++) {
-        const col = cols[c];
-        const cell = ws.getCell(r, c + 1);
-        cell.value = renderColumnValue(line, col, dataRows.length);
-        applyColumnFormat(cell, col);
-        cell.font = { name: 'Arial', size: 10, color: { argb: 'FF111827' } };
-        cell.border = {
-          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        };
-      }
-      ws.getRow(r).height = 24;
-      if (line.lineType !== 'FREIGHT') {
-        ws.getCell(r, 1).font = { name: 'Arial', italic: true, color: { argb: 'FF4B5563' } };
-        ws.getCell(r, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
-      }
-      if (line.amountOverride != null && line.amountOverride !== line.baseAmount) {
-        if (amountIdx > 0) ws.getCell(r, amountIdx).font = { name: 'Arial', bold: true, color: { argb: 'FF111827' } };
+  for (const line of dataLines) {
+    const r = row++;
+    dataRows.push(r);
+    for (let c = 0; c < cols.length; c++) {
+      const col = cols[c];
+      const cell = ws.getCell(r, c + 1);
+      const value = renderColumnValue(line, col, dataRows.length);
+      widthSamples[c].push(value);
+      cell.value = value;
+      applyInferredColumnFormat(cell, value);
+      cell.font = baseFont;
+      cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: hairBlack };
+      if (col.variable === 'amount') cell.numFmt = moneyFmt;
+      if (col.variable === 'rowIndex' && r > firstDataRow) {
+        cell.value = { formula: `A${r - 1}+1`, result: dataRows.length };
+        cell.numFmt = '#,##0';
       }
     }
+    ws.getRow(r).height = 27;
   }
 
-  // Total.
-  const totalRowNum = row + 1;
-  if (nCols > 1) ws.mergeCells(totalRowNum, 1, totalRowNum, nCols - 1);
-  ws.getCell(totalRowNum, 1).value = 'TỔNG CỘNG';
-  ws.getCell(totalRowNum, 1).alignment = { horizontal: 'right', vertical: 'middle' };
+  const subtotalRow = row++;
+  const vatRow = row++;
+  const grandRow = row++;
+  const wordsRow = row++;
+  const amountSubtotal = amountIdx > 0
+    ? dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0)
+    : 0;
+  const grandTotal = Math.round(amountSubtotal * 1.08);
+
+  if (nCols >= 6) {
+    ws.mergeCells(subtotalRow, 1, subtotalRow, Math.min(6, nCols));
+    ws.mergeCells(vatRow, 1, vatRow, Math.min(6, nCols));
+    ws.mergeCells(grandRow, 1, grandRow, Math.min(6, nCols));
+  }
+  ws.getCell(subtotalRow, 1).value = 'CỘNG';
+  ws.getCell(vatRow, 1).value = 'THUẾ GTGT 8%';
+  ws.getCell(grandRow, 1).value = 'TỔNG THANH TOÁN';
   for (const { col, idx } of totalColumns) {
-    const totalCell = ws.getCell(totalRowNum, idx);
-    const result = col.variable === 'amount'
-      ? doc.totalInclVat
-      : doc.lines.filter((l) => !l.excluded).reduce((sum, line, dataIdx) => {
-        const v = renderColumnValue(line, col, dataIdx + 1);
-        return sum + (typeof v === 'number' && Number.isFinite(v) ? v : 0);
-      }, 0);
-    // Sum explicit data-row cells instead of a contiguous range so subtotal band
-    // rows between groups never double-count into the final total.
+    const totalCell = ws.getCell(subtotalRow, idx);
+    const result = dataLines.reduce((sum, line, dataIdx) => {
+      const v = renderColumnValue(line, col, dataIdx + 1);
+      return sum + (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    }, 0);
     totalCell.value = dataRows.length > 0
-      ? { formula: `SUM(${dataRows.map((r) => `${colLetter(idx)}${r}`).join(',')})`, result }
+      ? { formula: `SUM(${colLetter(idx)}${dataRows[0]}:${colLetter(idx)}${dataRows[dataRows.length - 1]})`, result }
       : result;
-    applyColumnFormat(totalCell, col);
+    widthSamples[idx - 1]?.push(result);
+    applyInferredColumnFormat(totalCell, result);
+    if (col.variable === 'amount') totalCell.numFmt = moneyFmt;
   }
-  const totalRow = ws.getRow(totalRowNum);
-  totalRow.height = 28;
-  totalRow.font = { name: 'Arial', bold: true, size: 11, color: { argb: 'FF111827' } };
-  totalRow.eachCell({ includeEmpty: true }, (cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
-    cell.border = {
-      top: { style: 'thin', color: { argb: 'FF111827' } },
-      bottom: { style: 'double', color: { argb: 'FF111827' } },
-    };
-  });
-  row = totalRowNum + 1;
+  if (amountIdx > 0) {
+    ws.getCell(vatRow, amountIdx).value = { formula: `${colLetter(amountIdx)}${subtotalRow}*0.08` };
+    ws.getCell(grandRow, amountIdx).value = { formula: `${colLetter(amountIdx)}${subtotalRow}+${colLetter(amountIdx)}${vatRow}` };
+    ws.getCell(vatRow, amountIdx).numFmt = moneyFmt;
+    ws.getCell(grandRow, amountIdx).numFmt = moneyFmt;
+    widthSamples[amountIdx - 1]?.push(amountSubtotal * 0.08, grandTotal);
+  }
 
-  // Optional terms + signature block.
-  if (snap.termsText) {
-    ws.mergeCells(row, 1, row, nCols);
-    const tCell = ws.getCell(row, 1);
-    tCell.value = snap.termsText;
-    tCell.font = { name: 'Arial', italic: true, size: 9, color: { argb: 'FF4B5563' } };
-    tCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
-    ws.getRow(row).height = 40;
-    row++;
-  }
-  if (snap.signatureLeftLabel || snap.signatureRightLabel) {
-    row++; // blank spacer
-    const sigLabelRow = row++;
-    ws.getCell(sigLabelRow, 1).value = snap.signatureLeftLabel ?? '';
-    ws.getCell(sigLabelRow, 1).font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FF111827' } };
-    ws.getCell(sigLabelRow, 1).alignment = { horizontal: 'center', vertical: 'middle' };
-    if (nCols > 1) {
-      ws.getCell(sigLabelRow, nCols).value = snap.signatureRightLabel ?? '';
-      ws.getCell(sigLabelRow, nCols).font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FF111827' } };
-      ws.getCell(sigLabelRow, nCols).alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getCell(wordsRow, 1).value = `Bằng chữ: ${amountToVietnameseWords(grandTotal)}`;
+  if (nCols > 1) ws.mergeCells(wordsRow, 1, wordsRow, nCols);
+
+  for (let r = subtotalRow; r <= wordsRow; r++) {
+    ws.getRow(r).height = r === wordsRow ? 24.95 : 27;
+    for (let c = 1; c <= nCols; c++) {
+      const cell = ws.getCell(r, c);
+      cell.font = { ...boldFont, bold: r !== wordsRow ? true : false };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: r === wordsRow ? undefined : hairBlack };
     }
-    row += 3; // space for handwritten signatures
   }
 
-  // Column widths follow the template.
+  const signatureRow = row++;
+  const leftEnd = nCols >= 11 ? 5 : Math.max(1, Math.floor(nCols / 2));
+  const rightStart = nCols >= 11 ? 9 : Math.min(nCols, leftEnd + 1);
+  const rightEnd = nCols >= 11 ? 11 : nCols;
+  if (leftEnd > 1) ws.mergeCells(signatureRow, 1, signatureRow, leftEnd);
+  if (rightStart < rightEnd) ws.mergeCells(signatureRow, rightStart, signatureRow, rightEnd);
+  ws.getCell(signatureRow, 1).value = customerName;
+  ws.getCell(signatureRow, rightStart).value = issuerName;
+  for (const cell of [ws.getCell(signatureRow, 1), ws.getCell(signatureRow, rightStart)]) {
+    cell.font = boldFont;
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = { top: thinBlack };
+  }
+  ws.getRow(signatureRow).height = 24.95;
+
   for (let c = 0; c < cols.length; c++) {
-    ws.getColumn(c + 1).width = cols[c].width;
+    ws.getColumn(c + 1).width =
+      VIETSUN_TABLE_WIDTH_BY_COLUMN_ID.get(cols[c].id) ??
+      autoColumnWidth(renderDebitNoteColumnLabel(cols[c]), widthSamples[c] ?? []);
   }
-
   const ab = await wb.xlsx.writeBuffer();
   return Buffer.from(ab);
 }

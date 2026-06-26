@@ -554,6 +554,13 @@
       "when": 1782477609219,
       "tag": "0078_foamy_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1782482778690,
+      "tag": "0079_smiling_gorilla_man",
+      "breakpoints": true
     }
   ]
 }
