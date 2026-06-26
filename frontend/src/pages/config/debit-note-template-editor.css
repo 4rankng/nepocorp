@@ -274,8 +274,8 @@
 
 .debit-editor-column-designer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.34fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
   padding: 12px;
   align-items: start;
 }
@@ -350,15 +350,6 @@
   overflow-wrap: anywhere;
 }
 
-.debit-editor-column-preview__table th small {
-  min-width: 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 10px;
-  line-height: 1.15;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
 .debit-editor-column-preview__table td {
   height: 42px;
   padding: 7px 8px;
@@ -382,11 +373,19 @@
 .debit-editor-column-inspector {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(260px, 0.34fr) minmax(0, 1fr) minmax(260px, 0.32fr);
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8faf9;
+}
+
+.debit-editor-column-stack {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
 }
 
 .debit-editor-column-inspector__header {
@@ -411,10 +410,9 @@
 }
 
 .debit-editor-variable-grid {
-  max-height: 220px;
-  overflow: auto;
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
   gap: 6px;
 }
 
@@ -458,9 +456,9 @@
 
 .debit-editor-column-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(92px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
-  align-items: end;
+  align-content: start;
 }
 
 .debit-editor-table {
@@ -765,6 +763,21 @@
   }
 }
 
+@media (max-width: 1180px) {
+  .debit-editor-column-inspector {
+    grid-template-columns: minmax(240px, 0.4fr) minmax(0, 1fr);
+  }
+
+  .debit-editor-column-options {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .debit-editor-variable-grid {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+}
+
 @media (max-width: 860px) {
   .debit-editor-page {
     margin: -16px;
@@ -795,13 +808,14 @@
       "issuer-logo";
   }
 
-  .debit-editor-column-designer {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
+  .debit-editor-column-inspector,
   .debit-editor-column-options,
   .debit-editor-variable-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .debit-editor-column-options {
+    grid-column: auto;
   }
 
   .debit-editor-table-wrap {
@@ -831,5 +845,950 @@
 
   .debit-editor-preview__table-wrap {
     max-height: 300px;
+  }
+}
+
+/* Document-template editor layout: nav + live preview + focused inspector. */
+.debit-editor-page {
+  background:
+    linear-gradient(130deg, color-mix(in srgb, var(--accent) 5%, var(--bg)) 0%, var(--bg) 46%),
+    var(--bg);
+}
+
+.debit-editor-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.debit-editor-workspace {
+  grid-template-columns: 172px minmax(0, 1fr) minmax(340px, 420px);
+  gap: 16px;
+  max-width: 1560px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.debit-editor-side-nav {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 8px;
+}
+
+.debit-editor-side-nav button {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 2px 10px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+}
+
+.debit-editor-side-nav button::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.debit-editor-side-nav button:hover,
+.debit-editor-side-nav button:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  color: var(--ink);
+  outline: none;
+}
+
+.debit-editor-side-nav button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.debit-editor-side-nav button.is-active::before {
+  background: var(--accent);
+}
+
+.debit-editor-side-nav svg {
+  grid-row: span 2;
+  align-self: center;
+  color: currentColor;
+  stroke-width: 1.8;
+}
+
+.debit-editor-side-nav span {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.debit-editor-side-nav small {
+  min-width: 0;
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.debit-editor-preview-pane,
+.debit-editor-inspector {
+  min-width: 0;
+}
+
+.debit-editor-preview {
+  position: sticky;
+  top: 96px;
+  order: initial;
+  width: 100%;
+  min-width: 0;
+}
+
+.debit-editor-preview__sheet {
+  width: 100%;
+  min-width: 0;
+  border-radius: 10px;
+  box-shadow: var(--sh);
+}
+
+.debit-editor-inspector {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--sh-sm);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.debit-editor-inspector__header {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.debit-editor-inspector__header span {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.debit-editor-inspector__header strong {
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.debit-editor-inspector .debit-editor-settings,
+.debit-editor-inspector .debit-editor-settings--issuer,
+.debit-editor-inspector .debit-editor-settings--footer {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.debit-editor-inspector .debit-editor-settings--issuer .debit-editor-field {
+  grid-area: auto;
+}
+
+.debit-editor-inspector .debit-editor-check {
+  width: fit-content;
+  min-height: 40px;
+}
+
+.debit-editor-inspector .debit-editor-table-wrap {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.debit-editor-inspector .debit-editor-column-designer {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px;
+}
+
+.debit-editor-inspector .debit-editor-column-inspector {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.debit-editor-inspector .debit-editor-variable-grid {
+  max-height: 260px;
+  overflow: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.debit-editor-column-inspector__header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.debit-editor-column-inspector__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.debit-editor-column-cards {
+  display: none;
+}
+
+.debit-editor-column-preview__table th small {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+  line-height: 1.15;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.debit-editor-column-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.debit-editor-column-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.debit-editor-column-card.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+}
+
+.debit-editor-column-card.is-selected::before {
+  background: var(--accent);
+}
+
+.debit-editor-column-card.is-hidden {
+  opacity: 0.62;
+}
+
+.debit-editor-column-card > button {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.debit-editor-column-card > button span {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.debit-editor-column-card > button small {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.debit-editor-column-card > div:nth-child(2) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.debit-editor-column-card > div:nth-child(2) span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.debit-editor-column-card__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 4px;
+}
+
+@media (max-width: 1200px) {
+  .debit-editor-workspace {
+    grid-template-columns: 132px minmax(0, 1fr) minmax(320px, 380px);
+  }
+
+  .debit-editor-side-nav button {
+    grid-template-columns: 20px minmax(0, 1fr);
+    padding: 10px;
+  }
+
+  .debit-editor-side-nav small {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .debit-editor-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 16px 18px;
+  }
+
+  .debit-editor-side-nav,
+  .debit-editor-preview,
+  .debit-editor-inspector {
+    position: static;
+  }
+
+  .debit-editor-side-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .debit-editor-side-nav button {
+    min-width: 128px;
+  }
+
+  .debit-editor-inspector {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .debit-editor-topbar {
+    gap: 12px;
+  }
+
+  .debit-editor-title {
+    align-items: flex-start;
+  }
+
+  .debit-editor-page .billing-builder__icon {
+    display: none;
+  }
+
+  .debit-editor-topbar__actions {
+    width: 100%;
+  }
+
+  .debit-editor-topbar__actions .btn {
+    flex: 1;
+  }
+
+  .debit-editor-preview__sheet,
+  .debit-editor-inspector {
+    border-radius: 8px;
+  }
+
+  .debit-editor-column-preview {
+    display: none;
+  }
+
+  .debit-editor-column-cards {
+    display: grid;
+    gap: 8px;
+  }
+
+  .debit-editor-column-inspector__header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+/* Direct-edit canvas mode. */
+.debit-editor-history-actions {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.debit-editor-history-actions .btn {
+  border-radius: 0;
+  border: 0;
+}
+
+.debit-editor-history-actions .btn + .btn {
+  border-left: 1px solid var(--line);
+}
+
+.debit-editor-preview-pane {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.debit-editor-canvas-frame {
+  width: min(100%, 980px);
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--sh);
+}
+
+.debit-editor-canvas-dragbar {
+  height: 30px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.debit-editor-canvas-dragbar span:nth-child(2) {
+  text-align: center;
+}
+
+.debit-editor-page-boundary {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 700px;
+  padding: 24px 22px 210px;
+  border: 1px dashed var(--line-2);
+  background: var(--surface);
+}
+
+.debit-editor-canvas-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+}
+
+.debit-editor-canvas-input:hover:not(:disabled) {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.debit-editor-canvas-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+  background: var(--surface);
+}
+
+.debit-editor-canvas-input.is-selected,
+.debit-editor-preview__issuer.is-selected,
+.debit-editor-preview__signatures label.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.debit-editor-preview__issuer {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.debit-editor-preview__issuer div {
+  gap: 1px;
+}
+
+.debit-editor-canvas-input--issuer {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.debit-editor-preview__title.debit-editor-canvas-input {
+  display: block;
+  height: auto;
+  margin: 26px auto 0;
+  padding: 8px 10px 4px;
+  border-radius: 8px;
+  resize: none;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.debit-editor-preview__subtitle {
+  padding-bottom: 18px;
+}
+
+.debit-editor-preview__table-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-height: none;
+  overflow: auto;
+}
+
+.debit-editor-preview__table {
+  min-width: 860px;
+}
+
+.debit-editor-preview__table th {
+  position: relative;
+  padding: 0;
+}
+
+.debit-editor-preview__table th.is-selected {
+  z-index: 2;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.debit-editor-preview__table th.is-selected::before,
+.debit-editor-preview__table th.is-selected::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.debit-editor-preview__table th.is-selected::before {
+  left: -5px;
+  top: -5px;
+}
+
+.debit-editor-preview__table th.is-selected::after {
+  right: -5px;
+  bottom: -5px;
+}
+
+.debit-editor-preview__table th button {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.debit-editor-preview__table th button span {
+  font-size: 12px;
+  line-height: 1.18;
+  font-weight: 850;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.debit-editor-preview__table th button small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.debit-editor-canvas-th-input {
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 8px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: #fff;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.18;
+  font-weight: 850;
+  outline: none;
+}
+
+.debit-editor-selection-toolbar {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 4;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--sh);
+}
+
+.debit-editor-selection-toolbar button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.debit-editor-selection-toolbar button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.debit-editor-preview__signatures {
+  min-height: 126px;
+  padding-top: 42px;
+  border: 0;
+}
+
+.debit-editor-preview__signatures label {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.debit-editor-canvas-input--signature {
+  max-width: 220px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.debit-editor-preview__signatures label span {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 650;
+}
+
+.debit-editor-preview__signatures label strong {
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.debit-editor-canvas-toolbar {
+  position: sticky;
+  bottom: 18px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--sh);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.debit-editor-canvas-toolbar button,
+.debit-editor-zoom-control {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.debit-editor-canvas-toolbar button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.debit-editor-zoom-control {
+  padding: 0;
+  overflow: hidden;
+}
+
+.debit-editor-zoom-control button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.debit-editor-zoom-control span {
+  min-width: 52px;
+  text-align: center;
+}
+
+.debit-editor-selected-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.debit-editor-selected-panel__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+}
+
+.debit-editor-selected-panel__identity > svg {
+  stroke-width: 1.8;
+}
+
+.debit-editor-selected-panel__identity div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.debit-editor-selected-panel__identity span,
+.debit-editor-selected-group > strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.debit-editor-selected-panel__identity strong {
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.debit-editor-selected-group {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.debit-editor-property-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.debit-editor-width-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.debit-editor-width-input .input {
+  height: 38px;
+  border: 0;
+  box-shadow: none;
+}
+
+.debit-editor-width-input span {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.debit-editor-align-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.debit-editor-align-control button {
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.debit-editor-align-control button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.debit-editor-switch-list {
+  display: grid;
+  gap: 8px;
+}
+
+.debit-editor-switch-list label {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.debit-editor-switch-list input {
+  width: 36px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.debit-editor-variable-search {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-3);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.debit-editor-selected-variable-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.debit-editor-selected-variable-grid button {
+  min-width: 0;
+  min-height: 50px;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.debit-editor-selected-variable-grid button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.debit-editor-selected-variable-grid span {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debit-editor-selected-variable-grid small {
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.debit-editor-selected-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.debit-editor-danger-action {
+  color: var(--danger);
+}
+
+.flip-x {
+  transform: scaleX(-1);
+}
+
+@media (max-width: 1023px) {
+  .debit-editor-canvas-frame {
+    width: 100%;
+  }
+
+  .debit-editor-page-boundary {
+    min-height: 620px;
+    padding: 20px 16px 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .debit-editor-canvas-frame {
+    padding: 8px;
+  }
+
+  .debit-editor-page-boundary {
+    padding: 16px 10px 110px;
+  }
+
+  .debit-editor-preview__title.debit-editor-canvas-input {
+    font-size: 22px;
+    line-height: 1.18;
+  }
+
+  .debit-editor-canvas-toolbar {
+    width: calc(100vw - 32px);
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .debit-editor-property-grid,
+  .debit-editor-selected-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
