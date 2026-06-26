@@ -200,9 +200,17 @@ async function produceFinalAnswer(
 ): Promise<{ response: AgentResponse; usage: { promptTokens: number; completionTokens: number } }> {
   const tryParse = (content: string | null): AgentResponse | null => {
     if (!content) return null;
+    // MiniMax-M3 is a hybrid reasoning model: it prepends <think>…</think>
+    // blocks to EVERY response — including json_object mode — so the raw
+    // content looks like '<think>…</think>\n\n{"type":"text",…}'. Parsing that
+    // verbatim throws, the final answer never validated, and every turn
+    // degraded to the generic apology. Strip reasoning blocks first, then fall
+    // back to the first balanced {...} object in case prose/tags remain.
+    const stripped = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const candidate = stripped || content;
+    const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
     try {
-      const json = JSON.parse(content);
-      const parsed = agentResponseSchema.safeParse(json);
+      const parsed = agentResponseSchema.safeParse(JSON.parse(jsonObj));
       return parsed.success ? parsed.data : null;
     } catch {
       return null;
@@ -251,6 +259,34 @@ function safeParseArgs(raw: string): unknown {
   } catch {
     return {};
   }
+}
+
+/**
+ * Find the first balanced `{…}` JSON object in `s`. Reasoning models sometimes
+ * wrap the JSON in leftover prose or tags even after stripping <think>; this
+ * locates the real object without trusting the string to start with `{`.
+ * Returns null if no balanced object is present.
+ */
+function extractFirstJsonObject(s: string): string | null {
+  const start = s.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 /** Cap the JSON view fed back to the model to bound token cost. */
