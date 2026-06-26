@@ -22,6 +22,8 @@ import type {
   RoadAllowance,
   Trailer,
   PricingTable,
+  DebitNoteTemplate,
+  DebitNoteTemplateInput,
 } from '@tingting/shared';
 
 export const configClient = {
@@ -97,4 +99,20 @@ export const configClient = {
   getAllSuppliers: () => fetchAllPaginated<Supplier>(CONFIG.SUPPLIERS),
 
   getAllExpenseCategories: () => fetchAllPaginated<ExpenseCategory>(CONFIG.EXPENSE_CATEGORIES),
+
+  // ─── Debit-note (Giấy báo nợ) templates ────────────────────────────────────
+  /** All templates, unpaginated — for the config page list + dropdowns. */
+  getDebitNoteTemplates: () => fetchAllPaginated<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATES),
+
+  getDebitNoteTemplate: (id: number) =>
+    api.get<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATE(id)),
+
+  saveDebitNoteTemplate: (data: DebitNoteTemplateInput) =>
+    api.post<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATES, data),
+
+  updateDebitNoteTemplate: (id: number, data: DebitNoteTemplateInput) =>
+    api.put<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATE(id), data),
+
+  deleteDebitNoteTemplate: (id: number) =>
+    api.delete<{ ok: true }>(CONFIG.DEBIT_NOTE_TEMPLATE(id)),
 };

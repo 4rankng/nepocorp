@@ -74,6 +74,7 @@ export const routes = {
   configContainerTypes: '/config/container-types',
   configPorts: '/config/ports',
   configForwarderExpenseTypes: '/config/forwarder-expense-types',
+  configDebitNoteTemplates: '/config/debit-note-templates',
 
   /* ── Driver portal ──────────────────────────────────────────────────── */
 

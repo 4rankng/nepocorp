@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { getInitials } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import {
   Search, Activity, Users, Clock, TrendingUp, Download, FileText,
@@ -205,7 +204,7 @@ export default function AuditLogPage() {
         <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
             <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 42, height: 42, fontSize: 14 }}>
-              {getInitials(entry.userName)}
+              <Users size={18} aria-hidden="true" />
             </div>
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
@@ -482,7 +481,7 @@ fontSize: 13,
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 26, height: 26, fontSize: 10 }}>
-                              {getInitials(entry.userName)}
+                              <Users size={13} aria-hidden="true" />
                             </div>
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

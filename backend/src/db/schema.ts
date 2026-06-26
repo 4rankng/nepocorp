@@ -164,6 +164,7 @@ export const customers = pgTable('customers', {
   status: customerStatusEnum('status').default('ACTIVE'),
   isCarrier: boolean('is_carrier').notNull().default(false),
   debitNoteMode: varchar('debit_note_mode', { length: 20 }).notNull().default('MONTHLY'),
+  debitNoteTemplateId: integer('debit_note_template_id').references(() => debitNoteTemplates.id),
   linkedSupplierId: integer('linked_supplier_id').references(() => suppliers.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -382,6 +383,46 @@ export const ledger = pgTable('ledger', {
 // entityType CUSTOMER = AR debit-note customer OR AP external carrier (carriers
 // live in customers per decision D-E/F); entityType VENDOR = AP supplier.
 
+// ─── Debit-note (Giấy báo nợ) templates ──────────────────────────────────────
+// Form-driven, Excel-only layout presets. Single default enforced in code by the
+// transactional route handler (NOT a partial unique index — see migration 0076 +
+// the salary_periods.isDefault precedent). document_type is reserved for
+// forward-compat; the resolver guards to DEBIT_NOTE today.
+export const debitNoteTemplates = pgTable('debit_note_templates', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  isDefault: boolean('is_default').notNull().default(false),
+  documentType: varchar('document_type', { length: 20 }).notNull().default('DEBIT_NOTE'),
+  logoStorageKey: varchar('logo_storage_key', { length: 500 }),
+  titleText: varchar('title_text', { length: 100 }).notNull().default('GIẤY BÁO NỢ'),
+  issuerName: varchar('issuer_name', { length: 200 }),
+  issuerAddress: varchar('issuer_address', { length: 300 }),
+  issuerTaxCode: varchar('issuer_tax_code', { length: 50 }),
+  accentColor: varchar('accent_color', { length: 20 }).notNull().default('#1F4E79'),
+  showContainerColumn: boolean('show_container_column').notNull().default(true),
+  showUnitColumn: boolean('show_unit_column').notNull().default(true),
+  groupingMode: varchar('grouping_mode', { length: 20 }).notNull().default('ROUTE'),
+  columns: jsonb('columns').$type<Array<{
+    id: string;
+    label: string;
+    variable: string;
+    width: number;
+    align: 'left' | 'center' | 'right';
+    format: 'text' | 'date' | 'number' | 'currency';
+    total?: boolean;
+  }>>().notNull().default(sql`'[]'::jsonb`),
+  // Phase 2: rendered read-only in UI; reserved for a future vndToWords() helper.
+  amountInWords: boolean('amount_in_words').notNull().default(false),
+  orientation: varchar('orientation', { length: 10 }).notNull().default('landscape'),
+  termsText: text('terms_text'),
+  signatureLeftLabel: varchar('signature_left_label', { length: 100 }).default('Khách hàng'),
+  signatureRightLabel: varchar('signature_right_label', { length: 100 }).default('Kế toán trưởng'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
 export const billingDocuments = pgTable('billing_documents', {
   id: serial('id').primaryKey(),
   type: varchar('type', { length: 20 }).notNull(),               // DEBIT_NOTE | PAYMENT_STATEMENT
@@ -391,6 +432,11 @@ export const billingDocuments = pgTable('billing_documents', {
   rangeFrom: date('range_from').notNull(),
   rangeTo: date('range_to').notNull(),
   note: text('note'),
+  debitNoteTemplateId: integer('debit_note_template_id').references(() => debitNoteTemplates.id),
+  // Frozen render-only copy so historical debit notes re-export identically
+  // after the template (or its logo) is edited/deleted. Untyped jsonb; the
+  // service casts to DebitNoteTemplateSnapshot.
+  debitNoteTemplateSnapshot: jsonb('debit_note_template_snapshot'),
   totalInclVat: numeric('total_incl_vat', { precision: 15, scale: 0 }).notNull().default('0'),
   createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -411,6 +457,7 @@ export const billingDocumentLines = pgTable('billing_document_lines', {
   description: text('description').notNull(),
   routeName: varchar('route_name', { length: 255 }),
   containerNumbers: text('container_numbers'),                   // comma-joined (no PG arrays in this schema)
+  renderData: jsonb('render_data').$type<Record<string, unknown>>(),
   baseAmount: numeric('base_amount', { precision: 15, scale: 0 }).notNull().default('0'),
   amountOverride: numeric('amount_override', { precision: 15, scale: 0 }),
   excluded: boolean('excluded').default(false).notNull(),

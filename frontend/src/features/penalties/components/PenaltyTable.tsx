@@ -4,11 +4,10 @@ import { useMonth } from '../../../hooks/useMonth';
 import {
   Shield, ShieldCheck, Download, Plus, FileText,
   Zap, Trophy, Users, AlertTriangle, Clock,
-  DollarSign, XCircle, Loader2,
+  DollarSign, XCircle, Loader2, UserRound,
 } from 'lucide-react';
 import { Panel, Btn, KPI, PageHeader } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
-import { getInitials, avatarColorById } from '../../../lib/avatar';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
 import type { Driver, PenaltyReason, Truck } from '@tingting/shared';
@@ -285,15 +284,14 @@ export function PenaltyTable({
         <div className="mobile-only">
           <div className="penalty-m-cards">
             {driverDetails.map((d) => {
-              const ac = avatarColorById(d.id);
               const gc = getGradeClass(d.grade);
               const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'danger';
               return (
                 <div key={d.id} className="penalty-m-card" onClick={() => onOpenDrawer(d.id)}>
                   <div className="penalty-m-card__top">
                     <div className="left">
-                      <div className="penalty-driver-avatar" style={{ background: ac.bg, color: ac.fg }}>
-                        {getInitials(d.name)}
+                      <div className="penalty-driver-avatar">
+                        <UserRound size={18} aria-hidden="true" />
                       </div>
                       <div className="penalty-m-card__info">
                         <div className="penalty-m-card__name">{d.name}</div>
@@ -356,7 +354,6 @@ export function PenaltyTable({
                 <tbody>
                   {driverDetails.map((d, idx) => {
                     const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-                    const ac = avatarColorById(d.id);
                     const streakPct = Math.min(100, (d.streakDays / 180) * 100);
                     const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
                     const moneyClass = d.fineYTD === 0 ? 'zero' : '';
@@ -368,8 +365,8 @@ export function PenaltyTable({
                         </td>
                         <td>
                           <span className="penalty-driver-cell">
-                            <span className="penalty-driver-mini" style={{ background: ac.bg, color: ac.fg }}>
-                              {getInitials(d.name)}
+                            <span className="penalty-driver-mini">
+                              <UserRound size={14} aria-hidden="true" />
                             </span>
                             <span className="penalty-driver-info">
                               <div className="name">{d.name}</div>
@@ -514,13 +511,12 @@ export function PenaltyTable({
             <>
               <div className="plog-list">
                 {filteredPenalties.map(p => {
-                  const pac = avatarColorById(p.driverId ?? 0);
                   const canceled = p.status === 'CANCELED';
                   return (
                     <div key={p.id} className={`plog-item${canceled ? ' plog-item--canceled' : ''}`}>
                       <StatusStrip color={canceled ? '#94A3B8' : '#059669'} />
-                      <div className="plog-avatar" style={{ background: pac.bg, color: pac.fg }}>
-                        {getInitials(p.driverName || 'T')}
+                      <div className="plog-avatar">
+                        <UserRound size={15} aria-hidden="true" />
                       </div>
                       <div className="plog-body">
                         <div className="plog-name">{p.driverName || 'Lái xe'}</div>

@@ -63,6 +63,7 @@ export const qk = {
     containerTypes: ['container-types'],
     sealTypes: ['seal-types'],
     trailers: ['trailers'],
+    debitNoteTemplates: ['debit-note-templates'],
     pricingTables: ['pricing-tables'],
     allSuppliers: ['all-suppliers'],
     allExpenseCategories: ['all-expense-categories'],
@@ -92,6 +93,7 @@ export const qk = {
     'container-types',
     'seal-types',
     'trailers',
+    'debit-note-templates',
     'pricing-tables',
     'all-suppliers',
     'all-expense-categories',
@@ -309,6 +311,7 @@ export const qk = {
     sealTypes: ['cfg-count', 'seal-types'],
     ports: ['cfg-count', 'ports'],
     forwarderExpenseTypes: ['cfg-count', 'forwarder-expense-types'],
+    debitNoteTemplates: ['cfg-count', 'debit-note-templates'],
   },
 
   /* ── Generic CRUD page (CrudTable uses [endpoint] as key) ──────────── */

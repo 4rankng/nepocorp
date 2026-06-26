@@ -87,6 +87,8 @@ export const CONFIG = {
   CONTAINER_TYPES: '/container-types',
   SEAL_TYPES: '/seal-types',
   FUEL_PRICE_HISTORY: '/fuel-price-history',
+  DEBIT_NOTE_TEMPLATES: '/debit-note-templates',
+  DEBIT_NOTE_TEMPLATE: (id: number) => `/debit-note-templates/${id}`,
 } as const;
 
 // ─── Fleet / Tires (N1) ──────────────────────────────────────────────────────

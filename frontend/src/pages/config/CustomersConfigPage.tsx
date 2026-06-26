@@ -12,7 +12,7 @@ import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
 import { qk } from '../../api/keys';
-import type { Customer, TripDetail } from '@tingting/shared';
+import type { Customer, TripDetail, DebitNoteTemplate } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import './config-page.css';
 
@@ -30,6 +30,12 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
   const [contactInfo, setContactInfo] = useState(item?.contactInfo || '');
   const [creditLimit, setCreditLimit] = useState(item?.creditLimit || '');
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  const [debitNoteTemplateId, setDebitNoteTemplateId] = useState<number | null>(item?.debitNoteTemplateId ?? null);
+  const { data: templates } = useQuery<DebitNoteTemplate[]>({
+    queryKey: qk.catalogs.debitNoteTemplates,
+    queryFn: () => configClient.getDebitNoteTemplates(),
+    staleTime: 60_000,
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -67,6 +73,19 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
         <textarea className="input" value={contactInfo} onChange={e => setContactInfo(e.target.value)} placeholder="SĐT, email, địa chỉ khác…" rows={3} style={{ resize: 'vertical' }} />
       </Field>
 
+      <Field label="Mẫu giấy báo nợ">
+        <select
+          className="input"
+          value={debitNoteTemplateId ?? ''}
+          onChange={e => setDebitNoteTemplateId(e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">Dùng mẫu mặc định</option>
+          {(templates ?? []).map(t => (
+            <option key={t.id} value={t.id}>{t.name}{t.isDefault ? ' — mặc định' : ''}</option>
+          ))}
+        </select>
+      </Field>
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
         <button type="button" className="btn btn--secondary" onClick={oncancel} disabled={saving}>Hủy</button>
         <button type="button" className="btn btn--primary" onClick={() => {
@@ -79,6 +98,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
             contactInfo: contactInfo.trim() || null,
             creditLimit: creditLimit ? String(creditLimit) : null,
             status,
+            debitNoteTemplateId,
           });
         }} disabled={saving}>
           {saving && <Loader2 size={14} className="spin" style={{ marginRight: 6 }} />}

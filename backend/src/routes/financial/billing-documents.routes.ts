@@ -55,10 +55,19 @@ router.delete('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHan
   res.json({ ok: true });
 }));
 
-// GET /api/finance/billing-documents/:id/export — xlsx (route + container columns)
+// GET /api/finance/billing-documents/:id/export?templateId= — xlsx. For
+// DEBIT_NOTE, renders from the resolved template snapshot (override → frozen
+// snapshot → customer → default); falls back to the legacy renderer when no
+// template applies (and always for PAYMENT_STATEMENT). ?templateId= lets a user
+// re-export once with a different template without re-saving the doc.
 router.get('/finance/billing-documents/:id/export', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   const doc = await billingService.getDocument(Number(req.params.id));
-  const buffer = await billingService.buildBillingXlsx(doc);
+  const overrideRaw = req.query.templateId;
+  const templateIdOverride = overrideRaw ? Number(overrideRaw) : null;
+  const snap = await billingService.resolveDebitNoteTemplateForDoc(doc, { templateIdOverride });
+  const buffer = snap
+    ? await billingService.renderTemplatedXlsx(doc, snap)
+    : await billingService.buildLegacyXlsx(doc);
   const kind = doc.type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke-thanh-toan';
   const name = doc.entityName ?? String(doc.entityId);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

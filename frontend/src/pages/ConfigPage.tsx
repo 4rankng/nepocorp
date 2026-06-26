@@ -48,6 +48,7 @@ export default function ConfigPage() {
     expenseCategories,
     fuelConfig,
     forwarderExpenseTypes,
+    debitNoteTemplates,
   ] = useQueries({
     queries: [
       { queryKey: qk.configCounts.penaltyReasons,        queryFn: () => api.get<ListResponse>('/penalty-reasons?limit=1'),    staleTime: 60_000 },
@@ -65,6 +66,7 @@ export default function ConfigPage() {
       { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
       { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
+      { queryKey: qk.configCounts.debitNoteTemplates,   queryFn: () => api.get<ListResponse>('/debit-note-templates?limit=1'),   staleTime: 60_000 },
     ],
   });
 
@@ -104,6 +106,7 @@ export default function ConfigPage() {
     'salary-periods':           { status: salaryStatus() },
     'expense-categories':       { status: countLabel(expenseCategories.data?.total, 'hạng mục') },
     'forwarder-expense-types':  { status: countLabel(forwarderExpenseTypes.data?.total, 'loại') },
+    'debit-note-templates':     { status: countLabel(debitNoteTemplates.data?.total, 'mẫu') },
   };
 
   const cards = CONFIG_ITEMS.map(item => {

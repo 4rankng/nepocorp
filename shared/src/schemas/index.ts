@@ -197,6 +197,7 @@ export const billingDocumentLineSchema = z.object({
   description: z.string().min(1),
   routeName: z.string().nullable().optional(),
   containerNumbers: z.array(z.string()).nullable().optional(),
+  renderData: z.record(z.unknown()).nullable().optional(),
   baseAmount: nonNegNumeric,
   amountOverride: nonNegNumeric.nullable().optional(),
   excluded: z.boolean().optional(),
@@ -220,7 +221,86 @@ export const saveBillingDocumentSchema = z.object({
   rangeTo: z.string().min(1),
   note: z.string().nullable().optional(),
   lines: z.array(billingDocumentLineSchema).min(1),
+  // Resolved at save time so the chosen template is snapshotted onto the doc
+  // (re-exports stay stable). Null/undefined = use resolution (customer/default).
+  debitNoteTemplateId: z.coerce.number().int().positive().nullable().optional(),
 });
+
+// ─── Debit-note (Giấy báo nợ) templates ──────────────────────────────────────
+// Excel-style templates built around user-defined columns. Each column binds to
+// a whitelisted variable so accountants can reproduce customer statement files
+// without typing fragile formulas or free-form placeholders.
+export const debitNoteColumnVariableSchema = z.enum([
+  'rowIndex',
+  'departureDate',
+  'truckPlate',
+  'actionType',
+  'origin',
+  'destination',
+  'deliveryAddress',
+  'container20Count',
+  'container40Count',
+  'containerNumbers',
+  'routeName',
+  'description',
+  'lineTypeLabel',
+  'unit',
+  'amount',
+  'note',
+  'tripCode',
+]);
+
+export const debitNoteColumnSchema = z.object({
+  id: z.string().min(1).max(50),
+  label: z.string().min(1).max(80),
+  variable: debitNoteColumnVariableSchema,
+  // min(0) so users can hide a column (rendered as a 0-width hairline in xlsx).
+  width: z.coerce.number().min(0).max(80).default(14),
+  align: z.enum(['left', 'center', 'right']).default('left'),
+  format: z.enum(['text', 'date', 'number', 'currency']).default('text'),
+  total: z.boolean().default(false),
+});
+
+export const defaultDebitNoteColumns: Array<z.infer<typeof debitNoteColumnSchema>> = [
+  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 6, align: 'center', format: 'number', total: false },
+  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
+  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 12, align: 'center', format: 'text', total: false },
+  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 10, align: 'center', format: 'text', total: false },
+  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 24, align: 'left', format: 'text', total: false },
+  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 32, align: 'left', format: 'text', total: false },
+  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 40, align: 'left', format: 'text', total: false },
+  { id: 'sl20', label: "20'", variable: 'container20Count', width: 8, align: 'center', format: 'number', total: true },
+  { id: 'sl40', label: "40'", variable: 'container40Count', width: 8, align: 'center', format: 'number', total: true },
+  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 18, align: 'left', format: 'text', total: false },
+  { id: 'gia_vc', label: 'Giá VC\n(Chưa VAT)', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
+  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 14, align: 'left', format: 'text', total: false },
+];
+
+export const debitNoteTemplateSchema = z.object({
+  name: z.string().min(1).max(100),
+  isDefault: z.boolean().default(false),
+  documentType: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']).default('DEBIT_NOTE'),
+  logoStorageKey: z.string().max(500).nullable().default(null),
+  titleText: z.string().min(1).max(100).default('GIẤY BÁO NỢ'),
+  issuerName: z.string().max(200).nullable().default(null),
+  issuerAddress: z.string().max(300).nullable().default(null),
+  issuerTaxCode: z.string().max(50).nullable().default(null),
+  accentColor: z.string().min(1).max(20).default('#1F4E79'),
+  showContainerColumn: z.boolean().default(true),
+  showUnitColumn: z.boolean().default(true),
+  groupingMode: z.enum(['ROUTE', 'LINE_TYPE', 'NONE']).default('ROUTE'),
+  columns: z.array(debitNoteColumnSchema).min(1).max(24).default(defaultDebitNoteColumns),
+  // Phase 2: rendered read-only in UI; reserved for a future vndToWords() helper.
+  amountInWords: z.boolean().default(false),
+  orientation: z.enum(['landscape', 'portrait']).default('landscape'),
+  termsText: z.string().nullable().default(null),
+  signatureLeftLabel: z.string().max(100).nullable().default('Khách hàng'),
+  signatureRightLabel: z.string().max(100).nullable().default('Kế toán trưởng'),
+});
+
+export type DebitNoteTemplateInput = z.infer<typeof debitNoteTemplateSchema>;
+export type DebitNoteColumnInput = z.infer<typeof debitNoteColumnSchema>;
+export type DebitNoteColumnVariableInput = z.infer<typeof debitNoteColumnVariableSchema>;
 
 // ─── Commission (manual posting) ────────────────────────────────────────────
 // Records a commission payable owed to a supplier (VENDOR ledger, COMMISSION
@@ -320,6 +400,7 @@ export const customerSchema = z.object({
   status: z.nativeEnum(CustomerStatus).optional().default(CustomerStatus.ACTIVE),
   isCarrier: z.boolean().optional().default(false),
   debitNoteMode: z.enum(['MONTHLY', 'PER_BATCH']).optional().default('MONTHLY'),
+  debitNoteTemplateId: z.number().int().positive().optional().nullable(),
   linkedSupplierId: z.number().int().positive().optional().nullable(),
 });
 

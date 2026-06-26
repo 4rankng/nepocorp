@@ -122,8 +122,9 @@
   border-radius: 10px;
   display: grid;
   place-items: center;
-  font-weight: 700;
-  font-size: var(--fs-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   flex-shrink: 0;
 }
 

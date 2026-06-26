@@ -121,11 +121,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: var(--fs-2xs);
-  font-weight: 700;
   color: var(--fg-on-brand);
   flex-shrink: 0;
-  font-family: var(--font-mono);
 }
 .avatar-ring--1 { background: #7c3aed; }
 .avatar-ring--2 { background: var(--accent); }

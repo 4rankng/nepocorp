@@ -1,17 +1,21 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Download, Filter, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
+import { configClient } from '../../api/configClient';
+import { qk } from '../../api/keys';
 import './BillingDocumentBuilder.css';
 import type {
   BillingDocument,
   BillingDocumentType,
   BillingDocumentEntityType,
   BillingDocumentLine,
+  DebitNoteTemplate,
 } from '@tingting/shared';
 
 interface Props {
@@ -163,6 +167,17 @@ export default function BillingDocumentBuilder({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // Selected debit-note template (DEBIT_NOTE only). null = auto (customer's
+  // assigned template → global default), resolved + snapshotted server-side.
+  const [templateId, setTemplateId] = useState<number | null>(initialDoc?.debitNoteTemplateId ?? null);
+
+  const isDebitNote = type === 'DEBIT_NOTE';
+  const { data: templates } = useQuery<DebitNoteTemplate[]>({
+    queryKey: qk.catalogs.debitNoteTemplates,
+    queryFn: () => configClient.getDebitNoteTemplates(),
+    staleTime: 60_000,
+    enabled: isDebitNote && isOpen,
+  });
 
   const groupedLines = useMemo<BillingRouteGroup[]>(() => {
     const groups: BillingRouteGroup[] = [];
@@ -196,6 +211,7 @@ export default function BillingDocumentBuilder({
       setLines(((initialDoc.lines as BillingDocumentLine[]) ?? []).map(normalizeLine));
       setNote(initialDoc.note ?? '');
       setSavedId(initialDoc.id);
+      setTemplateId(initialDoc.debitNoteTemplateId ?? null);
       return;
     }
 
@@ -205,6 +221,7 @@ export default function BillingDocumentBuilder({
     setLines([]);
     setNote('');
     setSavedId(null);
+    setTemplateId(null);
   }, [isOpen, initialDoc]);
 
   const generateDraft = async (from = rangeFrom, to = rangeTo, silent = false) => {
@@ -279,6 +296,7 @@ export default function BillingDocumentBuilder({
     rangeFrom,
     rangeTo,
     note: note.trim() || null,
+    debitNoteTemplateId: templateId,
     lines: lines.map((line, index) => ({
       sourceType: line.sourceType,
       sourceId: line.sourceId,
@@ -326,7 +344,7 @@ export default function BillingDocumentBuilder({
       const saved = await persistDocument({ notify: false });
       if (!saved) return;
 
-      const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(saved.id));
+      const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(saved.id, templateId));
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -392,6 +410,24 @@ export default function BillingDocumentBuilder({
             <span>Đến ngày</span>
             <input type="date" className="input" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} disabled={busy} />
           </label>
+          {isDebitNote && (
+            <label>
+              <span>Mẫu xuất</span>
+              <select
+                className="input"
+                value={templateId ?? ''}
+                onChange={(e) => setTemplateId(e.target.value === '' ? null : Number(e.target.value))}
+                disabled={busy}
+              >
+                <option value="">Mặc định (theo khách hàng)</option>
+                {(templates ?? []).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}{t.isDefault ? ' — mặc định' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button className="btn btn--secondary" type="button" onClick={() => generateDraft(rangeFrom, rangeTo)} disabled={busy}>
             {loading ? <Loader2 size={15} className="spin" /> : <Filter size={15} />}
             Lọc lại

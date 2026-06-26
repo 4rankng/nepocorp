@@ -53,6 +53,14 @@ const AVATAR_CLS: Record<Role, string> = {
   [Role.FORWARDER]: 'user-avatar--forwarder',
 };
 
+const AVATAR_ICON: Record<Role, typeof Users> = {
+  [Role.ADMIN]: ShieldCheck,
+  [Role.MANAGER]: UserCog,
+  [Role.ACCOUNTANT]: KeyRound,
+  [Role.DRIVER]: Users,
+  [Role.FORWARDER]: UserCog,
+};
+
 const ROLE_FILTER_CLS: Record<string, string> = {
   [Role.ADMIN]: 'filter-pill--admin',
   [Role.MANAGER]: 'filter-pill--manager',
@@ -60,6 +68,15 @@ const ROLE_FILTER_CLS: Record<string, string> = {
   [Role.DRIVER]: 'filter-pill--driver',
   [Role.FORWARDER]: 'filter-pill--forwarder',
 };
+
+function RoleAvatar({ role }: { role: Role }) {
+  const Icon = AVATAR_ICON[role] || Users;
+  return (
+    <div className={`user-avatar ${AVATAR_CLS[role]}`}>
+      <Icon size={18} aria-hidden="true" />
+    </div>
+  );
+}
 
 /** Can the current user edit this row? Full managers can; scoped accountants can only edit drivers. */
 function canEditRow(u: UserRow, canManage: boolean, canEditDriversOnly: boolean) {
@@ -416,9 +433,7 @@ function DesktopTable({
                   <td style={{ position: 'relative' }}>
                     <StatusStrip status={u.status} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
-                        {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
-                      </div>
+                      <RoleAvatar role={u.role} />
                       <div>
                         <div className="user-name">
                           {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
@@ -510,9 +525,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                 >
               <StatusStrip status={u.status} />
               <div className="users-mobile-card__header">
-                <div className={`user-avatar ${AVATAR_CLS[u.role]}`}>
-                  {(u.fullName || u.username || u.email || '?').charAt(0).toUpperCase()}
-                </div>
+                <RoleAvatar role={u.role} />
                 <div className="users-mobile-card__info">
                   <div className="users-mobile-card__name">
                     {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}

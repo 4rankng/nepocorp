@@ -37,6 +37,24 @@ export class LocalStorageService {
   async exists(key: string): Promise<boolean> {
     return fs.existsSync(path.join(this.uploadDir, key));
   }
+
+  /**
+   * Read a stored file's bytes. Resolves the key under uploadDir with a
+   * path-traversal guard (mirrors the /api/photos serving route). Returns null
+   * for a missing or unreadable file so callers (e.g. logo embed into an XLSX)
+   * can degrade gracefully rather than fail the whole export.
+   */
+  async read(key: string): Promise<Buffer | null> {
+    if (key.includes('..')) return null;
+    const filePath = path.resolve(this.uploadDir, key);
+    if (!filePath.startsWith(path.resolve(this.uploadDir) + path.sep)) return null;
+    if (!fs.existsSync(filePath)) return null;
+    try {
+      return await fs.promises.readFile(filePath);
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const storageService = new LocalStorageService();

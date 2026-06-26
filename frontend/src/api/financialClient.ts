@@ -135,7 +135,10 @@ export const financialClient = {
   deleteBillingDocument: (id: number) =>
     api.delete<{ ok: true }>(FINANCIAL.BILLING_DOCUMENT(id)),
 
-  /** Direct URL for authenticated blob download (used with fetch + auth header). */
-  getBillingDocumentExportUrl: (id: number) =>
-    FINANCIAL.BILLING_DOCUMENT_EXPORT(id),
+  /** Direct URL for authenticated blob download (used with fetch + auth header).
+   *  Optional templateId overrides the doc's saved template for this export. */
+  getBillingDocumentExportUrl: (id: number, templateId?: number | null) => {
+    const base = FINANCIAL.BILLING_DOCUMENT_EXPORT(id);
+    return templateId ? `${base}?templateId=${templateId}` : base;
+  },
 };

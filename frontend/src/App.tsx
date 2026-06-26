@@ -64,6 +64,8 @@ const SalaryAttendancePage = lazy(() => import('./pages/SalaryAttendancePage'));
 const ExpenseCategoriesConfigPage = lazy(() => import('./pages/config/ExpenseCategoriesConfigPage'));
 const ForwarderExpenseTypesConfigPage = lazy(() => import('./pages/config/ForwarderExpenseTypesConfigPage'));
 const TirePositionsConfigPage = lazy(() => import('./pages/config/TirePositionsConfigPage'));
+const DebitNoteTemplatesConfigPage = lazy(() => import('./pages/config/DebitNoteTemplatesConfigPage'));
+const DebitNoteTemplateEditorPage = lazy(() => import('./pages/config/DebitNoteTemplateEditorPage'));
 
 function PageLoader() {
   return (
@@ -165,6 +167,9 @@ function AppRoutes() {
           <Route path="/config/seal-types" element={<Navigate to="/config" replace />} />
           <Route path="/config/ports" element={<Navigate to="/config" replace />} />
           <Route path="/config/forwarder-expense-types" element={adminOnly(page(<ForwarderExpenseTypesConfigPage />))} />
+          <Route path="/config/debit-note-templates" element={officeStaffOnly(page(<DebitNoteTemplatesConfigPage />))} />
+          <Route path="/config/debit-note-templates/new" element={officeStaffOnly(page(<DebitNoteTemplateEditorPage />))} />
+          <Route path="/config/debit-note-templates/:id" element={officeStaffOnly(page(<DebitNoteTemplateEditorPage />))} />
           <Route path="/suppliers" element={adminOnly(page(<SupplierListPage />))} />
           <Route path="/suppliers/:id" element={adminOnly(page(<PayableDetailPage />))} />
           <Route path="/expenses" element={adminOnly(page(<ExpenseListPage />))} />

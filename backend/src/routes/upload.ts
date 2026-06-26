@@ -184,6 +184,44 @@ export async function deleteTripPhotosByType(
 
 const uploadRouter = Router();
 
+/**
+ * Save a debit-note template logo. Distinct from saveTripPhoto: no trip_photos
+ * row (logos belong to templates, not trips), stored under a dedicated
+ * `debit-note-templates/{id}/` prefix (avoids the expense-photos/ collision),
+ * and normalized to PNG so ExcelJS can embed it into the xlsx (webp isn't
+ * supported by addImage). The template row stores the returned storageKey.
+ */
+export async function saveDebitNoteLogo(
+  file: { buffer: Buffer },
+  templateId: number,
+): Promise<{ storageKey: string; url: string }> {
+  const mime = sniffImageType(file.buffer);
+  if (!mime) {
+    throw new ApiError(400, 'Định dạng file không được hỗ trợ hoặc file bị hỏng');
+  }
+  const processedBuffer = await sharp(file.buffer)
+    .rotate()
+    .resize(640, 320, { fit: 'inside', withoutEnlargement: true })
+    .png()
+    .toBuffer();
+  const uuid = crypto.randomUUID();
+  const key = `debit-note-templates/${templateId}/logo-${uuid}.png`;
+  await storageService.upload(processedBuffer, key);
+  return { storageKey: key, url: `/api/photos/${encodeURIComponent(key)}` };
+}
+
+// Logo upload for debit-note templates. Office-staff only (config Casbin gate
+// applies at the config router; this route sits on the upload router which is
+// authenticated — role enforcement happens on serve via /api/photos).
+uploadRouter.post('/debit-note-template-logo', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file;
+  const templateId = parseInt(req.body.template_id);
+  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
+  if (isNaN(templateId)) return res.status(400).json({ error: 'template_id không hợp lệ' });
+  const saved = await saveDebitNoteLogo(file, templateId);
+  res.status(201).json({ ok: true, storageKey: saved.storageKey, url: saved.url });
+}));
+
 uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   const file = req.file;
   const tripId = parseInt(req.body.trip_id);
@@ -224,7 +262,8 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
   // (this router is mounted behind assetAuthMiddleware).
   const tripMatch = key.match(/^trips\/(\d+)\//);
   const expenseMatch = key.match(/^expense-photos\/(\d+)\//);
-  if (!tripMatch && !expenseMatch) {
+  const templateLogoMatch = key.match(/^debit-note-templates\/(\d+)\//);
+  if (!tripMatch && !expenseMatch && !templateLogoMatch) {
     return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
   }
 
@@ -278,6 +317,14 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
     }
     // allow → fall through to serve (MANAGER/ACCOUNTANT/ADMIN, or an ACTIVE
     // forwarder reading an own-owned trip-expense receipt).
+  } else if (templateLogoMatch) {
+    // Debit-note template logos are config artifacts (company letterheads), not
+    // financial evidence. Readable by office staff only (ADMIN/MANAGER/ACCOUNTANT);
+    // DRIVER/FORWARDER never see debit-note templates.
+    const role = getUser(req).role;
+    if (role !== Role.ADMIN && role !== Role.MANAGER && role !== Role.ACCOUNTANT) {
+      return res.status(403).json({ error: 'Không có quyền truy cập ảnh này' });
+    }
   }
 
   const uploadDir = path.resolve(config.uploadDir || path.join(process.cwd(), 'uploads'));

@@ -189,9 +189,6 @@
   }
 
   .profile-bento-card--avatar .bento-avatar {
-    font-size: 26px;
-    font-weight: 800;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     width: 52px;
     height: 52px;
     border-radius: 50%;
@@ -437,5 +434,4 @@
     }
   }
 }
-
 

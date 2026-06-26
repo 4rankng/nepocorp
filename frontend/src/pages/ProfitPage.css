@@ -123,9 +123,6 @@
   width: 36px; height: 36px;
   border-radius: 50%;
   display: grid; place-items: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-sm);
   color: var(--fg-on-brand);
   flex-shrink: 0;
 }

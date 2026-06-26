@@ -67,6 +67,7 @@ export const CONFIG_ITEMS: SearchItem[] = [
   { id: 'salary-periods',         type: 'config', label: 'Kỳ lương',                      description: 'Cấu hình kỳ lương hàng tháng. Mặc định: ngày 26 tháng trước đến ngày 25 tháng này.',               path: '/config/salary-periods',      iconName: 'payroll',      action: 'Sửa' },
   { id: 'expense-categories',     type: 'config', label: 'Hạng mục chi phí',              description: 'Phân loại chi phí vận hành. Bật định kỳ để theo dõi ngày gia hạn bảo hiểm, đăng kiểm, bảo dưỡng.', path: '/config/expense-categories',  iconName: 'expense',      action: 'Sửa' },
   { id: 'forwarder-expense-types',type: 'config', label: 'Loại chi phí giao nhận',       description: 'Danh mục các khoản chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe, kiểm tra…).', path: '/config/forwarder-expense-types', iconName: 'document', action: 'Sửa' },
+  { id: 'debit-note-templates',  type: 'config', label: 'Mẫu giấy báo nợ',             description: 'Tạo và chọn mẫu xuất Excel giấy báo nợ theo từng khách hàng — logo, tiêu đề, cột, màu, điều khoản.',     path: '/config/debit-note-templates',  iconName: 'document',    action: 'Sửa' },
 ];
 
 const ACTION_ITEMS: SearchItem[] = [

@@ -64,6 +64,7 @@ export interface Customer {
   status: CustomerStatus;
   isCarrier: boolean;
   debitNoteMode: 'MONTHLY' | 'PER_BATCH';
+  debitNoteTemplateId?: number | null;
   linkedSupplierId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -952,6 +953,38 @@ export type BillingDocumentType = 'DEBIT_NOTE' | 'PAYMENT_STATEMENT';
 export type BillingDocumentEntityType = 'CUSTOMER' | 'VENDOR';
 export type BillingLineSourceType = 'TRIP' | 'EXPENSE' | 'ADHOC';
 export type BillingLineType = 'FREIGHT' | 'SERVICE_FEE' | 'ADHOC';
+export type DebitNoteColumnVariable =
+  | 'rowIndex'
+  | 'departureDate'
+  | 'truckPlate'
+  | 'actionType'
+  | 'origin'
+  | 'destination'
+  | 'deliveryAddress'
+  | 'container20Count'
+  | 'container40Count'
+  | 'containerNumbers'
+  | 'routeName'
+  | 'description'
+  | 'lineTypeLabel'
+  | 'unit'
+  | 'amount'
+  | 'note'
+  | 'tripCode';
+
+export interface BillingLineRenderData {
+  tripCode?: string | null;
+  departureDate?: string | null;
+  truckPlate?: string | null;
+  actionType?: string | null;
+  origin?: string | null;
+  destination?: string | null;
+  deliveryAddress?: string | null;
+  container20Count?: number | null;
+  container40Count?: number | null;
+  containerCount?: number | null;
+  note?: string | null;
+}
 
 export interface BillingDocumentLine {
   id?: number;
@@ -964,6 +997,7 @@ export interface BillingDocumentLine {
   description: string;
   routeName?: string | null;
   containerNumbers?: string[] | null;
+  renderData?: BillingLineRenderData | null;
   baseAmount: number;             // generated amount (incl-VAT, VND)
   amountOverride?: number | null; // edited amount; effective = override ?? baseAmount
   excluded?: boolean;             // hidden from this document
@@ -983,6 +1017,10 @@ export interface BillingDocument {
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
+  // Template used to render this doc (DEBIT_NOTE only). The snapshot is the
+  // frozen render-only copy actually used at export — see DebitNoteTemplateSnapshot.
+  debitNoteTemplateId?: number | null;
+  debitNoteTemplateSnapshot?: DebitNoteTemplateSnapshot | null;
   lines: BillingDocumentLine[];
 }
 
@@ -998,6 +1036,71 @@ export interface BillingDocumentDraft {
   rangeTo: string;
   lines: BillingDraftLine[];
   totalInclVat: number;
+}
+
+// ─── Debit-note (Giấy báo nợ) templates ──────────────────────────────────────
+// Excel-only column templates. Accountants define the table columns and bind
+// each column to a supported variable from BillingDocumentLine/renderData.
+export interface DebitNoteTemplateColumn {
+  id: string;
+  label: string;
+  variable: DebitNoteColumnVariable;
+  width: number;
+  align: 'left' | 'center' | 'right';
+  format: 'text' | 'date' | 'number' | 'currency';
+  total: boolean;
+}
+
+export interface DebitNoteTemplate {
+  id: number;
+  name: string;
+  isDefault: boolean;
+  documentType: BillingDocumentType;
+  logoStorageKey: string | null;
+  titleText: string;
+  issuerName: string | null;
+  issuerAddress: string | null;
+  issuerTaxCode: string | null;
+  accentColor: string;
+  showContainerColumn: boolean;
+  showUnitColumn: boolean;
+  groupingMode: 'ROUTE' | 'LINE_TYPE' | 'NONE';
+  columns: DebitNoteTemplateColumn[];
+  amountInWords: boolean;        // Phase 2 — rendered read-only in UI
+  orientation: 'landscape' | 'portrait';
+  termsText: string | null;
+  signatureLeftLabel: string | null;
+  signatureRightLabel: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+/**
+ * Frozen render-only copy of a template, stored on each billing document so a
+ * historical debit note re-exports identically after the template (or its logo)
+ * is edited or deleted. `logoStorageKey` is the canonical storage key (NOT raw
+ * bytes) — the server reads bytes for XLSX render, the frontend builds a preview
+ * URL — so a deleted logo file can't break historical exports.
+ */
+export interface DebitNoteTemplateSnapshot {
+  id: number | null;
+  name: string;
+  titleText: string;
+  issuerName: string | null;
+  issuerAddress: string | null;
+  issuerTaxCode: string | null;
+  accentColor: string;
+  showContainerColumn: boolean;
+  showUnitColumn: boolean;
+  groupingMode: 'ROUTE' | 'LINE_TYPE' | 'NONE';
+  columns: DebitNoteTemplateColumn[];
+  orientation: 'landscape' | 'portrait';
+  termsText: string | null;
+  signatureLeftLabel: string | null;
+  signatureRightLabel: string | null;
+  logoStorageKey: string | null;
 }
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

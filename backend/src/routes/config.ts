@@ -16,6 +16,7 @@ import {
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
+import debitNoteTemplatesRouter from './config/debit-note-templates.routes';
 import { ApiError } from '../errors';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields, validateCustomerUniqueness } from '../services/config.service';
 import { cacheInvalidatePattern } from '../lib/redis';
@@ -144,6 +145,9 @@ router.use('/suppliers', createCrudRouter(s.suppliers, supplierSchema, {
   afterUpdate: mirrorSupplierLink,
 }));
 router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseCategorySchema, { searchableField: 'name' }));
+// Debit-note templates — dedicated transactional router (NOT crud-factory) so the
+// single-default invariant is enforced atomically. See the route file's header.
+router.use('/debit-note-templates', debitNoteTemplatesRouter);
 router.use('/tire-positions', createCrudRouter(s.tirePositions, tirePositionSchema, { searchableField: 'name' }));
 
 // Drivers — special handling (includes user_id, no delete per spec §4.2)

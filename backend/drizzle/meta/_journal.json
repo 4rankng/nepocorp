@@ -533,6 +533,27 @@
       "when": 1782464897926,
       "tag": "0075_tricky_wrecker",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1782480000000,
+      "tag": "0076_debit_note_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1782490000000,
+      "tag": "0077_seed_default_debit_note_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1782477609219,
+      "tag": "0078_foamy_blacklash",
+      "breakpoints": true
     }
   ]
 }

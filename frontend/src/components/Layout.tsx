@@ -103,14 +103,6 @@ function getPageTitle(pathname: string): string {
   return titleForPath(pathname);
 }
 
-const getInitials = (name?: string | null) => {
-  if (!name) return 'TX';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return 'TX';
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
 // ─── Layout component ─────────────────────────────────────────────────────
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -422,7 +414,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* Avatar & Role Card (Vertical Span) */}
               <div className="profile-bento-card profile-bento-card--avatar">
                 <div className="bento-avatar">
-                  {getInitials(user.fullName)}
+                  <User size={26} aria-hidden="true" />
                 </div>
                 <div className="bento-role-badge">
                   <Shield size={10} />

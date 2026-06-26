@@ -19,6 +19,7 @@ p, ACCOUNTANT, trips, read
 p, ACCOUNTANT, trips, write
 p, ACCOUNTANT, config, read
 p, ACCOUNTANT, config, write
+p, ACCOUNTANT, config, delete
 p, ACCOUNTANT, financial, read
 p, ACCOUNTANT, financial, write
 p, ACCOUNTANT, audit_logs, read

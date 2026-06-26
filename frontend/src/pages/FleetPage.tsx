@@ -7,7 +7,6 @@ import {
   Download, Filter, CheckCircle,
   Pencil, Trash2, X, Loader2, ArrowRight,
 } from 'lucide-react';
-import { getInitials, avatarColorByName } from '../lib/avatar';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
@@ -37,11 +36,10 @@ import './FleetPage.css';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const AvatarInitials = memo(function AvatarInitials({ name }: { name: string }) {
-  const c = avatarColorByName(name);
+const DriverAvatarIcon = memo(function DriverAvatarIcon() {
   return (
-    <span className="fleet-avatar" style={{ background: c.bg, color: c.fg }}>
-      {getInitials(name)}
+    <span className="fleet-avatar" aria-hidden="true">
+      <UserCheck size={14} />
     </span>
   );
 });
@@ -502,7 +500,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                     {driverByTruck.has(t.id)
                       ? (
                         <span className="fleet-assigned">
-                          <AvatarInitials name={driverByTruck.get(t.id)!.name} />
+                          <DriverAvatarIcon />
                           <span className="name">{driverByTruck.get(t.id)!.name}</span>
                         </span>
                       )
@@ -588,7 +586,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
           return [
             { label: 'Biển số xe đầu', value: <Plate plate={t.licensePlate} tag="VN" /> },
             { label: 'Rơ-moóc', value: tr ? <span className="fleet-pair"><Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} /></span> : <span className="fleet-unassigned">—</span> },
-            { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><AvatarInitials name={driver.name} /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
+            { label: 'Lái xe gán', value: driver ? <span className="fleet-assigned"><DriverAvatarIcon /><span className="name">{driver.name}</span></span> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Trạng thái', value: <StatusDot status={t.status} /> },
             { label: 'Lốp', value: <TireDetailList truckId={t.id} tires={tires as Tire[]} /> },
           ];
@@ -673,7 +671,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                   </td>
                   <td>
                     <span className="fleet-assigned">
-                      <AvatarInitials name={d.name} />
+                      <DriverAvatarIcon />
                       <span className="name">{d.name}</span>
                     </span>
                   </td>
@@ -726,7 +724,7 @@ function DriverCard({ drivers, truckMap, crud }: {
                 <StatusStrip color={fleetStatusColor(d.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <AvatarInitials name={d.name} />
+                    <DriverAvatarIcon />
                     <span style={{ marginLeft: 6 }}>{d.name}</span>
                   </span>
                 </div>
@@ -780,7 +778,7 @@ function DriverCard({ drivers, truckMap, crud }: {
           if (!d) return [];
           const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
           return [
-            { label: 'Họ và tên', value: <span className="fleet-assigned"><AvatarInitials name={d.name} /><span className="name">{d.name}</span></span> },
+            { label: 'Họ và tên', value: <span className="fleet-assigned"><DriverAvatarIcon /><span className="name">{d.name}</span></span> },
             { label: 'Số điện thoại', value: d.phone || '—' },
             { label: 'Xe phân công', value: truck ? <Plate plate={truck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa phân —</span> },
             { label: 'Lương cơ bản', value: d.baseSalary ? <span className="fleet-salary">{Number(d.baseSalary).toLocaleString('vi-VN')}<span className="unit">đ</span></span> : <span className="fleet-salary empty">—</span> },

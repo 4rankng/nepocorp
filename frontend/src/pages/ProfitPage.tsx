@@ -281,14 +281,13 @@ export default function ProfitPage() {
               <div className="partner-grid">
                 {activeCapTable.map((partner, i) => {
                   const isPrimary = i === 0;
-                  const avatarChar = partner.partnerName.charAt(partner.partnerName.lastIndexOf(' ') + 1) || partner.partnerName.charAt(0);
                   const partnerShare = Math.round(netProfit * partner.percentage / 100);
 
                   return (
                     <div key={i} className={`partner-card ${isPrimary ? 'partner-card--primary' : ''}`}>
                       <div className="partner-card__head">
                         <div className={`partner-card__avatar ${isPrimary ? 'partner-card__avatar--primary' : 'partner-card__avatar--secondary'}`}>
-                          {avatarChar}
+                          <Users size={18} aria-hidden="true" />
                         </div>
                         <div className="partner-card__info">
                           <div className="partner-card__name">
