@@ -93,14 +93,16 @@ function LineChart({ series }: Extract<AgentWidget, { type: 'line_chart' }>) {
 function DataTable({ columns, rows }: Extract<AgentWidget, { type: 'table' }>) {
   return (
     <div className="agent-table-wrap">
-      <table className="agent-table">
+      <table className={`agent-table agent-table--cols-${columns.length}`}>
         <thead>
           <tr>{columns.map((c, i) => <th key={i}>{c}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((row, ri) => (
             <tr key={ri}>
-              {row.map((cell, ci) => <td key={ci}>{String(cell)}</td>)}
+              {row.map((cell, ci) => (
+                <td key={ci} data-label={columns[ci] ?? ''}>{String(cell)}</td>
+              ))}
             </tr>
           ))}
         </tbody>

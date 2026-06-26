@@ -4,9 +4,10 @@
 // (capabilities.botEnabled). The drawer renders user bubbles + assistant
 // answers (text or <InsightCard>), a streaming "thinking" indicator, and an
 // input that sends each turn with the current route as context.
-import { useState, type FormEvent } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SendHorizontal } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Drawer } from '../UI';
 import { AssetIcon } from '../AssetIcon';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,10 +24,63 @@ export function AgentAssistant() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const isPinnedToBottom = useRef(true);
   const location = useLocation();
   const { send: sendDirective } = useAgentDirectives();
 
   const chat = useAgentChat({ onDirective: sendDirective });
+
+  const handleAction = useCallback(
+    (directive: AgentDirective) => {
+      sendDirective(directive);
+      if (directive.kind === 'navigate' || directive.kind === 'focus') {
+        setOpen(false);
+      }
+    },
+    [sendDirective],
+  );
+
+  const scrollToLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
+    bottomRef.current?.scrollIntoView({ block: 'end', behavior });
+  }, []);
+
+  const handleThreadScroll = useCallback(() => {
+    const el = threadRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isPinnedToBottom.current = distanceFromBottom < 80;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    isPinnedToBottom.current = true;
+    let frame = requestAnimationFrame(() => scrollToLatest('auto'));
+    const timers = [
+      window.setTimeout(() => scrollToLatest('auto'), 80),
+      window.setTimeout(() => scrollToLatest('auto'), 220),
+    ];
+    return () => {
+      cancelAnimationFrame(frame);
+      timers.forEach(window.clearTimeout);
+    };
+  }, [open, scrollToLatest]);
+
+  useLayoutEffect(() => {
+    if (!open || !isPinnedToBottom.current) return;
+    requestAnimationFrame(() => scrollToLatest('smooth'));
+  }, [open, chat.messages.length, chat.isThinking, scrollToLatest]);
+
+  useLayoutEffect(() => {
+    const el = threadRef.current;
+    if (!open || !el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (isPinnedToBottom.current) scrollToLatest('auto');
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open, scrollToLatest]);
 
   // Hide entirely unless this is an office-staff user on a bot-enabled deploy.
   if (!user || !OFFICE_ROLES.includes(user.role) || !user.botEnabled) return null;
@@ -64,7 +118,7 @@ export function AgentAssistant() {
           </span>
         }
       >
-        <div className="agent-thread">
+        <div className="agent-thread" ref={threadRef} onScroll={handleThreadScroll}>
           {chat.messages.length === 0 && (
             <div className="agent-empty">
               <AssetIcon name="assistant" size={96} className="agent-empty__icon" />
@@ -74,7 +128,7 @@ export function AgentAssistant() {
           )}
 
           {chat.messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onAction={sendDirective} />
+            <MessageBubble key={m.id} message={m} onAction={handleAction} />
           ))}
 
           {chat.isThinking && (
@@ -92,6 +146,7 @@ export function AgentAssistant() {
           )}
 
           {chat.error && <div className="agent-error">{chat.error}</div>}
+          <div ref={bottomRef} aria-hidden="true" />
         </div>
 
         <form className="agent-composer" onSubmit={submit}>
@@ -125,7 +180,11 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
       <span className="agent-message__avatar" aria-hidden="true">
         <AssetIcon name="assistant" size={24} />
       </span>
-      <div className="agent-bubble agent-bubble--assistant">{response?.type === 'text' ? response.content : message.content}</div>
+      <div className="agent-bubble agent-bubble--assistant agent-markdown">
+        <ReactMarkdown skipHtml>
+          {response?.type === 'text' ? response.content : message.content}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 }
