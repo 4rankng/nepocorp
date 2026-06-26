@@ -68,6 +68,9 @@ export async function callMiniMax(opts: {
   messages: MiniMaxMessage[];
   tools?: MiniMaxTool[];
   responseFormat?: MiniMaxResponseFormat;
+  /** Cap output tokens. Set high for the final structured answer so a rich
+   *  insight_card (plus any <think>) isn't truncated mid-JSON. */
+  maxTokens?: number;
   signal?: AbortSignal;
 }): Promise<MiniMaxCallResult> {
   if (!config.minimaxApiKey) {
@@ -85,6 +88,9 @@ export async function callMiniMax(opts: {
   }
   if (opts.responseFormat) {
     body.response_format = opts.responseFormat;
+  }
+  if (opts.maxTokens) {
+    body.max_tokens = opts.maxTokens;
   }
 
   const controller = new AbortController();

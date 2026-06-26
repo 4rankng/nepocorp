@@ -34,7 +34,8 @@ const RESPONSE_SHAPE_HINT = `Trả lời cuối cùng PHẢI là JSON theo đún
 - {"type":"text","content":"..."}  (giải thích ngắn / trợ giúp trang / câu trả lời đơn giản)
 - {"type":"insight_card","title":"...","summary":"nguyên nhân/tóm tắt 1-2 câu","widgets":[...],"actions":[{"label":"...","directive":{...}}]}  (câu hỏi phân tích: lợi nhuận, công nợ, chi phí, dầu...)
 - {"type":"directive","directive":{"kind":"navigate|focus|open|prefill",...}}  (chỉ điều hướng)
-widget có thể là: kpi_grid {items:[{label,value(number),format:"vnd|percent|number|days",delta?}]}, bar_chart {data:[{name,value}],format?}, line_chart {series:[{name,points:[{x,y}]}]}, table {columns,rows}, callout {variant:"info|warning|danger",text}, anomaly_list {items:[{label,detail,severity:"low|med|high"}]}.`;
+widget có thể là: kpi_grid {items:[{label,value(number),format:"vnd|percent|number|days",delta?}]}, bar_chart {data:[{name,value}],format?}, line_chart {series:[{name,points:[{x,y}]}]}, table {columns,rows}, callout {variant:"info|warning|danger",text}, anomaly_list {items:[{label,detail,severity:"low|med|high"}]}.
+LƯU Ý:(1) value LUÔN là số nguyên VND đầy đủ (VD 120000000, KHÔNG phải 120 hay "120 triệu"); (2) format CHỈ một trong vnd|percent|number|days — KHÔNG tự đặt đơn vị như vnd_million; (3) mỗi action PHẢI là {"label":...,"directive":{"kind":...}} — nếu không có directive hợp lệ thì bỏ hẳn actions.`;
 
 function buildSystemPrompt(ctx: AgentContext): string {
   return [
@@ -218,47 +219,64 @@ async function produceFinalAnswer(
     const candidate = stripped || content;
     const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
     try {
-      const parsed = agentResponseSchema.safeParse(JSON.parse(jsonObj));
-      return parsed.success ? parsed.data : null;
+      // Normalize the LLM's near-misses (invented format units, directive-less
+      // action chips) before strict validation so a good card isn't rejected.
+      const sanitized = sanitizeAgentJson(JSON.parse(jsonObj));
+      const parsed = agentResponseSchema.safeParse(sanitized);
+      if (!parsed.success) return null;
+      // An empty text answer means the model gave up on the schema — treat it
+      // as a failure so the retry / prose-fallback path supplies a real answer.
+      if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
+      return parsed.data;
     } catch {
       return null;
     }
   };
 
-  // json_object mode requires the final message to be a user/system turn. If
-  // the ReAct loop exhausted maxIterations, `messages` ends in a `tool` result
-  // and the provider rejects the call (HTTP 400). Prompt the model to
-  // synthesize so the final call is always well-formed.
-  const base =
-    messages[messages.length - 1]?.role === 'tool'
-      ? [...messages, { role: 'user' as const, content: 'Đã có đủ dữ liệu. Trả lời cuối cùng theo schema JSON.' }]
-      : messages;
+  // The model does not reliably emit the strict insight_card schema, so try the
+  // structured card ONCE; if it doesn't validate, ask for a plain prose answer
+  // (no schema / json_object burden). Either way the user gets the model's real
+  // analysis of the tool data the loop already gathered — never an empty "Xin
+  // lỗi". A client disconnect (abort) must throw so runAgent skips persistTurn.
+  const CARD_NUDGE =
+    'Dựa trên dữ liệu công cụ đã có, trả lời cuối cùng theo ĐÚNG schema JSON (một trong 3 dạng), chỉ trả JSON, không kèm giải thích.';
 
-  let usage = { promptTokens: 0, completionTokens: 0 };
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const result = await callMiniMax({
-        messages: attempt === 0
-          ? base
-          : [...base, { role: 'user', content: 'Output không hợp lệ. Trả lại JSON đúng schema.' }],
-        responseFormat: { type: 'json_object' },
-        signal,
-      });
-      usage = result.usage;
-      const parsed = tryParse(result.content);
-      if (parsed) return { response: parsed, usage };
-    } catch (e) {
-      // A client disconnect surfaces as an abort-timeout — let it throw so
-      // runAgent skips persistTurn (no DB writes for a gone client).
-      if (signal?.aborted) throw e;
-      // Any other failure (HTTP/parse): retry once, then degrade below —
-      // never surface a raw error over a missing final answer. Previously a
-      // thrown callMiniMax bypassed this graceful path entirely.
-      if (attempt === 1) console.error('[agent] produceFinalAnswer failed', e);
-    }
+  // 1) Best-effort structured insight_card (validated + sanitized).
+  try {
+    const card = await callMiniMax({
+      messages: [...messages, { role: 'user', content: CARD_NUDGE }],
+      responseFormat: { type: 'json_object' },
+      // Headroom for a rich card + any <think>, so output isn't truncated.
+      maxTokens: 16000,
+      signal,
+    });
+    const parsed = tryParse(card.content);
+    if (parsed) return { response: parsed, usage: card.usage };
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    console.error('[agent] structured card failed, falling back to prose', e);
   }
-  // Degrade gracefully — never leave the user without an answer.
-  return { response: { type: 'text', content: 'Xin lỗi, tôi không thể xử lý yêu cầu này lúc này.' }, usage };
+
+  // 2) Reliable prose answer — concise Vietnamese analysis, no JSON constraint.
+  try {
+    const prose = await callMiniMax({
+      messages: [
+        ...messages,
+        { role: 'user', content: 'Dựa trên dữ liệu trên, trả lời ngắn gọn, rõ ràng bằng tiếng Việt (2-4 câu). Không cần JSON.' },
+      ],
+      signal,
+    });
+    const text = (prose.content ?? '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    if (text) return { response: { type: 'text', content: text }, usage: prose.usage };
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    console.error('[agent] prose answer failed', e);
+  }
+
+  return {
+    response: { type: 'text', content: 'Xin lỗi, tôi không thể xử lý yêu cầu này lúc nào.' },
+    usage: { promptTokens: 0, completionTokens: 0 },
+  };
 }
 
 function safeParseArgs(raw: string): unknown {
@@ -267,6 +285,51 @@ function safeParseArgs(raw: string): unknown {
   } catch {
     return {};
   }
+}
+
+const WIDGET_FORMATS = new Set(['vnd', 'percent', 'number', 'days']);
+
+/**
+ * Tolerate the LLM's realistic-but-non-conformant output before strict Zod
+ * validation: coerce unknown numeric `format` values to a safe default and
+ * drop action chips without a usable directive. Keeps a good insight_card
+ * from degrading to the generic apology over a stray "vnd_million".
+ */
+function sanitizeAgentJson(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const obj = raw as Record<string, unknown>;
+  if (obj.type === 'insight_card') {
+    if (Array.isArray(obj.widgets)) {
+      obj.widgets = (obj.widgets as Record<string, unknown>[]).map((w) => {
+        if (!w) return w;
+        // The model often emits `kind` (the directive discriminator) for widgets;
+        // the widget union discriminates on `type`. Normalize so the card parses.
+        if (!w.type && typeof w.kind === 'string') {
+          w.type = w.kind;
+          delete w.kind;
+        }
+        if (typeof w.format === 'string' && !WIDGET_FORMATS.has(w.format)) w.format = 'number';
+        if (Array.isArray(w.items)) {
+          w.items = (w.items as Record<string, unknown>[]).map((it) => {
+            if (it) {
+              // format is required on kpi items — default missing/unknown to 'number'.
+              if (it.format === undefined || (typeof it.format === 'string' && !WIDGET_FORMATS.has(it.format))) {
+                it.format = 'number';
+              }
+            }
+            return it;
+          });
+        }
+        return w;
+      });
+    }
+    if (Array.isArray(obj.actions)) {
+      obj.actions = (obj.actions as Record<string, unknown>[]).filter(
+        (a) => !!a && typeof a === 'object' && typeof (a as Record<string, unknown>).directive === 'object',
+      );
+    }
+  }
+  return obj;
 }
 
 /**

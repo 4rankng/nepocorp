@@ -10,14 +10,10 @@ import {
   ArrowUp,
   Building2,
   Columns3,
-  Copy,
   Eye,
   EyeOff,
   FileText,
-  Hand,
   Loader2,
-  Maximize2,
-  MousePointer2,
   PenLine,
   Plus,
   RotateCcw,
@@ -69,7 +65,6 @@ const VARIABLES: Array<{ value: DebitNoteColumnVariable; label: string; sample: 
 const variableMap = new Map(VARIABLES.map(item => [item.value, item]));
 
 type EditorSection = 'general' | 'company' | 'columns' | 'footer';
-type CanvasMode = 'select' | 'pan';
 type SelectedTarget =
   | { type: 'general'; field?: 'name' | 'titleText' | 'orientation' | 'accentColor' }
   | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'logoStorageKey' }
@@ -169,9 +164,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function TemplatePreview({
   form,
   disabled,
-  mode,
-  previewing,
-  zoom,
   selectedTarget,
   onSelect,
   onSet,
@@ -179,9 +171,6 @@ function TemplatePreview({
 }: {
   form: DebitNoteTemplateInput;
   disabled: boolean;
-  mode: CanvasMode;
-  previewing: boolean;
-  zoom: number;
   selectedTarget: SelectedTarget;
   onSelect: (target: SelectedTarget) => void;
   onSet: <K extends keyof DebitNoteTemplateInput>(key: K, value: DebitNoteTemplateInput[K]) => void;
@@ -190,24 +179,41 @@ function TemplatePreview({
   const columns = (form.columns ?? []).filter(column => column.width > 0);
   const visible = columns.length > 0 ? columns : cloneStarterColumns();
   const totalColumns = visible.filter(column => column.total);
-  const canvasLocked = disabled || mode === 'pan' || previewing;
+  const canvasLocked = disabled;
+  const previewTerms = (form.termsText || '- Số TK \n- Tại ngân hàng ').split('\n');
 
   return (
     <aside className="debit-editor-preview" aria-label="Xem trước mẫu">
-      <div
-        className={`debit-editor-canvas-frame ${mode === 'pan' ? 'is-pan-mode' : ''} ${previewing ? 'is-preview-mode' : ''}`}
-        style={{ '--canvas-zoom': zoom / 100 } as React.CSSProperties}
-      >
+      <div className="debit-editor-canvas-frame">
         <div className="debit-editor-canvas-dragbar" aria-hidden="true">
           <span>⋮⋮</span>
-          <span>{mode === 'pan' ? 'Chế độ di chuyển trang' : previewing ? 'Đang xem trước mẫu' : 'Chọn nội dung để chỉnh'}</span>
+          <span>Chọn nội dung để chỉnh</span>
           <span>⋮⋮</span>
         </div>
         <div className="debit-editor-preview__sheet">
           <div className="debit-editor-page-boundary">
-            {(form.issuerName || form.issuerAddress || form.issuerTaxCode || form.logoStorageKey) && (
-              <div className={`debit-editor-preview__issuer ${selectedTarget.type === 'company' ? 'is-selected' : ''}`}>
-                <div>
+            <div className="debit-editor-preview__export-header">
+              <textarea
+                className={`debit-editor-preview__title debit-editor-canvas-input ${selectedTarget.type === 'general' && selectedTarget.field === 'titleText' ? 'is-selected' : ''}`}
+                value={form.titleText || ''}
+                placeholder="GIẤY BÁO NỢ"
+                rows={1}
+                onFocus={() => onSelect({ type: 'general', field: 'titleText' })}
+                onChange={event => onSet('titleText', event.target.value)}
+                disabled={canvasLocked}
+              />
+              <div>(Kèm hoá đơn GTGT số: ........ ngày 30/06/2026)</div>
+            </div>
+
+            <div className={`debit-editor-preview__intro ${selectedTarget.type === 'company' ? 'is-selected' : ''}`}>
+              <p><strong>BÊN A (BÊN THUÊ DỊCH VỤ): VIETSUN</strong></p>
+              <p>Địa chỉ: </p>
+              <p>Mã số thuế: </p>
+              <p>Đại diện bởi : </p>
+              <p>Chức vụ: Giám Đốc</p>
+              <p>
+                <strong>BÊN B (BÊN CUNG CẤP DỊCH VỤ): </strong>
+                <span className="debit-editor-preview__inline-field">
                   <input
                     className="debit-editor-canvas-input debit-editor-canvas-input--issuer"
                     value={form.issuerName ?? ''}
@@ -216,40 +222,41 @@ function TemplatePreview({
                     onChange={event => onSet('issuerName', event.target.value || null)}
                     disabled={canvasLocked}
                   />
+                </span>
+              </p>
+              <p>
+                Địa chỉ:
+                <span className="debit-editor-preview__inline-field">
                   <input
                     className="debit-editor-canvas-input"
-                    value={form.issuerTaxCode ? `MST: ${form.issuerTaxCode}` : ''}
-                    placeholder="MST"
-                    onFocus={() => onSelect({ type: 'company', field: 'issuerTaxCode' })}
-                    onChange={event => onSet('issuerTaxCode', event.target.value.replace(/^MST:\\s*/i, '') || null)}
+                    value={form.issuerAddress ?? ''}
+                    placeholder="Địa chỉ"
+                    onFocus={() => onSelect({ type: 'company', field: 'issuerAddress' })}
+                    onChange={event => onSet('issuerAddress', event.target.value || null)}
                     disabled={canvasLocked}
                   />
-                  {form.issuerAddress && (
-                    <input
-                      className="debit-editor-canvas-input"
-                      value={form.issuerAddress}
-                      placeholder="Địa chỉ"
-                      onFocus={() => onSelect({ type: 'company', field: 'issuerAddress' })}
-                      onChange={event => onSet('issuerAddress', event.target.value || null)}
-                      disabled={canvasLocked}
-                    />
-                  )}
-                </div>
-                {form.logoStorageKey && (
-                  <img src={photoSrc(form.logoStorageKey)} alt="logo" />
-                )}
-              </div>
-            )}
-            <textarea
-              className={`debit-editor-preview__title debit-editor-canvas-input ${selectedTarget.type === 'general' && selectedTarget.field === 'titleText' ? 'is-selected' : ''}`}
-              value={form.titleText || ''}
-              placeholder="GIẤY BÁO NỢ"
-              rows={2}
-              onFocus={() => onSelect({ type: 'general', field: 'titleText' })}
-              onChange={event => onSet('titleText', event.target.value)}
-              disabled={canvasLocked}
-            />
-            <div className="debit-editor-preview__subtitle">Khách hàng: VIETSUN · Kỳ: 01/06 - 30/06</div>
+                </span>
+              </p>
+              <p>
+                Mã số thuế:
+                <span className="debit-editor-preview__inline-field">
+                  <input
+                    className="debit-editor-canvas-input"
+                    value={form.issuerTaxCode ?? ''}
+                    placeholder="MST"
+                    onFocus={() => onSelect({ type: 'company', field: 'issuerTaxCode' })}
+                    onChange={event => onSet('issuerTaxCode', event.target.value || null)}
+                    disabled={canvasLocked}
+                  />
+                </span>
+              </p>
+              <p>Đại diện bởi : {form.signatureRightLabel || ''}</p>
+              <p>Chức vụ: Giám Đốc</p>
+              <p>{previewTerms[0] ?? '- Số TK '}</p>
+              <p>{previewTerms[1] ?? '- Tại ngân hàng '}</p>
+              <p>Cùng thống nhất tiến hành đối chiếu sản lượng và doanh thu dịch vụ Bên B đã hoàn thành cung cấp/thực hiện cho Bên A như sau:</p>
+            </div>
+
             <div className="debit-editor-preview__table-wrap">
               <table className="debit-editor-preview__table">
                 <thead>
@@ -260,7 +267,11 @@ function TemplatePreview({
                         <th
                           key={column.id}
                           className={isSelected ? 'is-selected' : undefined}
-                          style={{ background: form.accentColor, width: `${Math.max(column.width || 8, 8) * 9}px` }}
+                          style={{
+                            background: form.accentColor,
+                            width: `${Math.max(column.width || 8, 8) * 12}px`,
+                            minWidth: `${Math.max(column.width || 8, 8) * 12}px`,
+                          }}
                           onClick={() => {
                             if (!canvasLocked) onSelect({ type: 'column', columnId: column.id });
                           }}
@@ -566,94 +577,92 @@ function ColumnTable({
 
 function ColumnPropertyPanel({
   column,
-  columnsCount,
+  columns,
   disabled,
   onChange,
-  onMove,
-  onDuplicate,
-  onRemove,
+  onSelectColumn,
+  onToggleColumnVisibility,
 }: {
   column: DebitNoteTemplateColumn;
-  columnsCount: number;
+  columns: DebitNoteTemplateColumn[];
   disabled: boolean;
   onChange: (patch: Partial<DebitNoteTemplateColumn>) => void;
-  onMove: (direction: -1 | 1) => void;
-  onDuplicate: () => void;
-  onRemove: () => void;
+  onSelectColumn: (columnId: string) => void;
+  onToggleColumnVisibility: (column: DebitNoteTemplateColumn) => void;
 }) {
-  const variable = variableMap.get(column.variable);
-
   return (
     <section className="debit-editor-selected-panel">
-      <div className="debit-editor-selected-panel__identity">
-        <Columns3 size={19} />
-        <div>
-          <span>Cột đang chọn</span>
-          <strong>{column.label || 'Chưa đặt tên'}</strong>
-        </div>
+      <div className="debit-editor-column-picker" aria-label="Chọn cột">
+        {columns.map((item, index) => {
+          const visible = item.width > 0;
+          const isActive = item.id === column.id;
+          return (
+            <div key={item.id} className={`debit-editor-column-picker__card ${isActive ? 'is-active' : ''} ${visible ? '' : 'is-hidden'}`}>
+              <button
+                type="button"
+                className="debit-editor-column-picker__select"
+                onClick={() => onSelectColumn(item.id)}
+                disabled={disabled}
+                aria-pressed={isActive}
+              >
+                <span>{item.label || `Cột ${index + 1}`}</span>
+                <small>{visible ? `Hiện · ${variableLabel(item.variable)}` : `Ẩn · ${variableLabel(item.variable)}`}</small>
+              </button>
+              <button
+                type="button"
+                className="debit-editor-column-picker__visibility"
+                onClick={() => onToggleColumnVisibility(item)}
+                disabled={disabled}
+                aria-label={visible ? `Ẩn cột ${item.label || `Cột ${index + 1}`}` : `Hiện cột ${item.label || `Cột ${index + 1}`}`}
+                title={visible ? 'Ẩn cột' : 'Hiện cột'}
+              >
+                {visible ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <div className="debit-editor-selected-group">
         <strong>Thuộc tính cột</strong>
-        <Field label="Tiêu đề cột">
-          <input
-            className="input"
-            value={column.label}
-            disabled={disabled}
-            onChange={event => onChange({ label: event.target.value })}
-          />
-        </Field>
         <Field label="Biến dữ liệu">
           <select
             className="input"
             value={column.variable}
             disabled={disabled}
-            onChange={event => onChange({ variable: event.target.value as DebitNoteColumnVariable })}
+            onChange={event => {
+              const variable = event.target.value as DebitNoteColumnVariable;
+              onChange({ variable, label: variableLabel(variable) });
+            }}
           >
             {VARIABLES.map(item => (
               <option key={item.value} value={item.value}>{item.label}</option>
             ))}
           </select>
         </Field>
-        <div className="debit-editor-property-grid">
-          <Field label="Độ rộng">
-            <div className="debit-editor-width-input">
-              <input
-                className="input"
-                type="number"
-                min={6}
-                max={40}
-                value={column.width || 14}
-                disabled={disabled || column.width === 0}
-                onChange={event => onChange({ width: Number(event.target.value) || 14 })}
-              />
-              <span>px</span>
-            </div>
-          </Field>
-          <Field label="Căn lề">
-            <div className="debit-editor-align-control" role="group" aria-label="Căn lề">
-              {[
-                { value: 'left' as const, label: 'Trái', Icon: AlignLeft },
-                { value: 'center' as const, label: 'Giữa', Icon: AlignCenter },
-                { value: 'right' as const, label: 'Phải', Icon: AlignRight },
-              ].map(item => {
-                const Icon = item.Icon;
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    className={column.align === item.value ? 'is-active' : undefined}
-                    onClick={() => onChange({ align: item.value })}
-                    disabled={disabled}
-                    aria-label={item.label}
-                  >
-                    <Icon size={15} />
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-        </div>
+        <Field label="Căn lề">
+          <div className="debit-editor-align-control" role="group" aria-label="Căn lề">
+            {[
+              { value: 'left' as const, label: 'Trái', Icon: AlignLeft },
+              { value: 'center' as const, label: 'Giữa', Icon: AlignCenter },
+              { value: 'right' as const, label: 'Phải', Icon: AlignRight },
+            ].map(item => {
+              const Icon = item.Icon;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={column.align === item.value ? 'is-active' : undefined}
+                  onClick={() => onChange({ align: item.value })}
+                  disabled={disabled}
+                  aria-label={item.label}
+                >
+                  <Icon size={15} />
+                </button>
+              );
+            })}
+          </div>
+        </Field>
         <div className="debit-editor-switch-list">
           <label>
             <span>Hiện cột</span>
@@ -674,56 +683,6 @@ function ColumnPropertyPanel({
             />
           </label>
         </div>
-        <Field label="Định dạng">
-          <select
-            className="input"
-            value={column.format}
-            disabled={disabled}
-            onChange={event => onChange({ format: event.target.value as DebitNoteTemplateColumn['format'] })}
-          >
-            <option value="text">Văn bản</option>
-            <option value="number">Số nguyên</option>
-            <option value="currency">Tiền tệ</option>
-            <option value="date">Ngày</option>
-          </select>
-        </Field>
-      </div>
-
-      <div className="debit-editor-selected-group">
-        <strong>Biến dữ liệu</strong>
-        <div className="debit-editor-variable-search">Tìm biến dữ liệu...</div>
-        <div className="debit-editor-selected-variable-grid">
-          {VARIABLES.slice(0, 8).map(item => (
-            <button
-              key={item.value}
-              type="button"
-              className={item.value === column.variable ? 'is-active' : undefined}
-              onClick={() => onChange({ variable: item.value })}
-              disabled={disabled}
-            >
-              <span>{item.label}</span>
-              <small>{item.value === column.variable ? variable?.sample || 'Đang dùng' : item.sample || 'Văn bản'}</small>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="debit-editor-selected-group">
-        <strong>Hành động</strong>
-        <div className="debit-editor-selected-actions">
-          <button type="button" className="btn btn--secondary" onClick={() => onMove(-1)} disabled={disabled}>
-            <ArrowLeft size={15} /> Sang trái
-          </button>
-          <button type="button" className="btn btn--secondary" onClick={() => onMove(1)} disabled={disabled}>
-            Sang phải <ArrowLeft size={15} className="flip-x" />
-          </button>
-          <button type="button" className="btn btn--secondary" onClick={onDuplicate} disabled={disabled}>
-            <Copy size={15} /> Nhân cột
-          </button>
-          <button type="button" className="btn btn--ghost debit-editor-danger-action" onClick={onRemove} disabled={disabled || columnsCount <= 1}>
-            <Trash2 size={15} /> Xóa cột
-          </button>
-        </div>
       </div>
     </section>
   );
@@ -742,9 +701,6 @@ export default function DebitNoteTemplateEditorPage() {
   const [form, setForm] = useState<DebitNoteTemplateInput>(() => blankTemplate());
   const [activeSection, setActiveSection] = useState<EditorSection>('columns');
   const [selectedTarget, setSelectedTarget] = useState<SelectedTarget>(() => ({ type: 'column', columnId: cloneStarterColumns()[0]?.id ?? '' }));
-  const [zoom, setZoom] = useState(100);
-  const [canvasMode, setCanvasMode] = useState<CanvasMode>('select');
-  const [previewing, setPreviewing] = useState(false);
 
   const backToList = () => navigate('/config/debit-note-templates');
   useBackShortcut(backToList);
@@ -767,7 +723,6 @@ export default function DebitNoteTemplateEditorPage() {
       ? (form.columns ?? []).find(column => column.id === selectedTarget.columnId) ?? null
       : null
   ), [form.columns, selectedTarget]);
-  const selectedColumnVisible = selectedColumn ? selectedColumn.width > 0 : false;
   const set = <K extends keyof DebitNoteTemplateInput>(key: K, value: DebitNoteTemplateInput[K]) => {
     setForm(previous => ({ ...previous, [key]: value }));
   };
@@ -793,44 +748,6 @@ export default function DebitNoteTemplateEditorPage() {
       columns: (previous.columns ?? []).map(column => column.id === columnId ? { ...column, ...patch } : column),
     }));
   };
-  const moveColumn = (columnId: string, direction: -1 | 1) => {
-    setForm(previous => {
-      const columns = [...(previous.columns ?? [])];
-      const index = columns.findIndex(column => column.id === columnId);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= columns.length) return previous;
-      [columns[index], columns[target]] = [columns[target], columns[index]];
-      return { ...previous, columns };
-    });
-  };
-  const duplicateColumn = (columnId: string) => {
-    setForm(previous => {
-      const columns = [...(previous.columns ?? [])];
-      const index = columns.findIndex(column => column.id === columnId);
-      if (index < 0) return previous;
-      const clone = { ...columns[index], id: `cot_${Date.now()}_${index}`, label: `${columns[index].label} (bản sao)` };
-      columns.splice(index + 1, 0, clone);
-      setSelectedTarget({ type: 'column', columnId: clone.id });
-      setActiveSection('columns');
-      return { ...previous, columns };
-    });
-  };
-  const removeColumn = (columnId: string) => {
-    setForm(previous => {
-      const columns = previous.columns ?? [];
-      if (columns.length <= 1) return previous;
-      const index = columns.findIndex(column => column.id === columnId);
-      const next = columns.filter(column => column.id !== columnId);
-      const nextSelected = next[Math.max(0, Math.min(index, next.length - 1))];
-      if (nextSelected) setSelectedTarget({ type: 'column', columnId: nextSelected.id });
-      return { ...previous, columns: next };
-    });
-  };
-  const toggleSelectedColumnVisibility = () => {
-    if (!selectedColumn) return;
-    updateColumn(selectedColumn.id, { width: selectedColumn.width > 0 ? 0 : 14 });
-  };
-
   useEffect(() => {
     if (selectedTarget.type !== 'column') return;
     const columns = form.columns ?? [];
@@ -916,12 +833,11 @@ export default function DebitNoteTemplateEditorPage() {
       return (
         <ColumnPropertyPanel
           column={selectedColumn}
-          columnsCount={(form.columns ?? []).length}
+          columns={form.columns ?? []}
           disabled={busy}
           onChange={patch => updateColumn(selectedColumn.id, patch)}
-          onMove={direction => moveColumn(selectedColumn.id, direction)}
-          onDuplicate={() => duplicateColumn(selectedColumn.id)}
-          onRemove={() => removeColumn(selectedColumn.id)}
+          onSelectColumn={columnId => selectTarget({ type: 'column', columnId })}
+          onToggleColumnVisibility={item => updateColumn(item.id, { width: item.width > 0 ? 0 : 14 })}
         />
       );
     }
@@ -1090,80 +1006,20 @@ export default function DebitNoteTemplateEditorPage() {
             <TemplatePreview
               form={form}
               disabled={busy}
-              mode={canvasMode}
-              previewing={previewing}
-              zoom={zoom}
               selectedTarget={selectedTarget}
               onSelect={selectTarget}
               onSet={set}
               onUpdateColumn={updateColumn}
             />
-            <div className="debit-editor-canvas-toolbar" aria-label="Công cụ xem mẫu">
-              <button
-                type="button"
-                className={canvasMode === 'select' && !previewing ? 'is-active' : undefined}
-                onClick={() => {
-                  setCanvasMode('select');
-                  setPreviewing(false);
-                }}
-                aria-label="Chọn"
-                aria-pressed={canvasMode === 'select' && !previewing}
-              >
-                <MousePointer2 size={16} />
-              </button>
-              <button
-                type="button"
-                className={canvasMode === 'pan' && !previewing ? 'is-active' : undefined}
-                onClick={() => {
-                  setCanvasMode('pan');
-                  setPreviewing(false);
-                }}
-                aria-label="Di chuyển"
-                aria-pressed={canvasMode === 'pan' && !previewing}
-              >
-                <Hand size={16} />
-              </button>
-              <div className="debit-editor-zoom-control">
-                <button type="button" onClick={() => setZoom(value => Math.max(80, value - 10))} aria-label="Thu nhỏ">-</button>
-                <span>{zoom}%</span>
-                <button type="button" onClick={() => setZoom(value => Math.min(130, value + 10))} aria-label="Phóng to">+</button>
-              </div>
-              <button type="button" onClick={() => setZoom(100)} aria-label="Vừa khung">
-                <Maximize2 size={16} />
-              </button>
-              <button
-                type="button"
-                className={selectedColumn && !selectedColumnVisible ? 'is-active' : undefined}
-                onClick={toggleSelectedColumnVisibility}
-                disabled={busy || !selectedColumn}
-                aria-label={selectedColumnVisible ? 'Ẩn cột đang chọn' : 'Hiện cột đang chọn'}
-                aria-pressed={selectedColumn ? !selectedColumnVisible : false}
-                title={selectedColumn ? (selectedColumnVisible ? 'Ẩn cột đang chọn' : 'Hiện cột đang chọn') : 'Chọn một cột trước'}
-              >
-                {selectedColumnVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-                <span>{selectedColumnVisible ? 'Ẩn cột' : 'Hiện cột'}</span>
-              </button>
-              <button
-                type="button"
-                className={previewing ? 'is-active' : undefined}
-                onClick={() => {
-                  setPreviewing(value => !value);
-                  setCanvasMode('select');
-                }}
-                aria-label="Xem trước"
-                aria-pressed={previewing}
-              >
-                <Eye size={16} />
-                <span>Xem trước</span>
-              </button>
-            </div>
           </section>
 
           <aside className="debit-editor-inspector" aria-label={`Chỉnh ${activeSectionLabel}`}>
-            <div className="debit-editor-inspector__header">
-              <span>Đang chỉnh</span>
-              <strong>{activeSectionLabel}</strong>
-            </div>
+            {selectedTarget.type !== 'column' && (
+              <div className="debit-editor-inspector__header">
+                <span>Đang chỉnh</span>
+                <strong>{activeSectionLabel}</strong>
+              </div>
+            )}
             {renderInspector()}
           </aside>
         </main>

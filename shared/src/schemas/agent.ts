@@ -6,7 +6,7 @@ import { z } from 'zod';
  * This is the single source of truth for what travels between the backend
  * orchestrator (MiniMax) and the frontend drawer. Three layers:
  *
- *   1. Directive      — how the agent drives the UI (navigate/focus/open/prefill)
+ *   1. Directive      — how the agent drives the UI (navigate/focus/open/prefill/toast/scrollTo)
  *   2. Widget         — a typed, natively-rendered card building block
  *   3. AgentResponse  — the assistant's final answer: text | insight_card | directive
  *
@@ -70,19 +70,48 @@ export type AgentRouteKey = (typeof AGENT_ROUTE_KEYS)[number];
 
 export const agentRouteKeySchema = z.enum(AGENT_ROUTE_KEYS);
 
+// ─── Openable component ids (modal/drawer/form targets) ─────────────────────
+// Advisory closed set of componentIds pages MAY register via `useAgentOpenable`.
+// Currently EMPTY: no page registers a handler yet, so an `open`/`prefill`
+// directive would silently no-op — the system prompt steers the LLM to
+// `navigate`/`focus` instead. When a page registers a handler, add its id here
+// so it can be listed in the prompt. The schema stays a plain string because
+// registrations are dynamic per mounted page (the backend cannot authoritatively
+// enumerate them); this array is the *intended* registry, not an enforcement.
+export const AGENT_COMPONENT_IDS = [] as const;
+export const agentComponentIdSchema = z.string().min(1);
+
 // ─── Directive (UI driver) ─────────────────────────────────────────────────
 // Discriminator is `kind` so the frontend switch is exhaustive. `navigate`/
-// `focus` target a registered page; `open`/`prefill` target a per-page
-// component (modal/drawer/form) registered via `useAgentOpenable`.
+// `focus` target a registered page (and may carry highlight/animation intent);
+// `open`/`prefill` target a per-page component registered via `useAgentOpenable`;
+// `toast`/`scrollTo` are fire-and-forget client actions (no ack).
 const directiveParamsSchema = z
   .record(z.string(), z.union([z.string(), z.number()]))
   .optional();
+
+/** Scroll-to + ring-highlight an element by id for a bounded duration. */
+const highlightSchema = z.object({
+  targetId: z.string().min(1),
+  durationMs: z.number().min(300).max(5000).optional(),
+});
+
+/**
+ * Route-transition intent. `fade` renders via the View Transitions API
+ * (progressive enhancement — no-op where unsupported). `slide-left`/`slide-right`
+ * are ACCEPTED by the schema but currently RENDER AS FADE until a transition
+ * library is wired up; do not claim they slide.
+ */
+const routeAnimationSchema = z.enum(['none', 'fade', 'slide-left', 'slide-right']);
 
 export const agentDirectiveSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('navigate'),
     routeKey: agentRouteKeySchema,
     params: directiveParamsSchema,
+    /** Optional emphasis after navigation lands (scroll + highlight a metric). */
+    highlight: highlightSchema.optional(),
+    animation: routeAnimationSchema.optional(),
   }),
   z.object({
     kind: z.literal('focus'),
@@ -90,21 +119,39 @@ export const agentDirectiveSchema = z.discriminatedUnion('kind', [
     routeKey: agentRouteKeySchema,
     id: z.union([z.string(), z.number()]),
     prefix: z.string().optional(),
+    /** Highlight-ring duration in ms (defaults to 2000 on the frontend). */
+    durationMs: z.number().min(300).max(5000).optional(),
   }),
   z.object({
     kind: z.literal('open'),
     /** componentId matches a handler registered in the target page's useAgentOpenable. */
-    componentId: z.string().min(1),
+    componentId: agentComponentIdSchema,
     prefill: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     kind: z.literal('prefill'),
-    componentId: z.string().min(1),
+    componentId: agentComponentIdSchema,
     values: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    kind: z.literal('toast'),
+    variant: z.enum(['success', 'error', 'warning', 'info']),
+    message: z.string().min(1),
+    durationMs: z.number().min(1000).max(10000).optional(),
+  }),
+  z.object({
+    kind: z.literal('scrollTo'),
+    targetId: z.string().min(1),
+    durationMs: z.number().min(300).max(5000).optional(),
   }),
 ]);
 
 export type AgentDirective = z.infer<typeof agentDirectiveSchema>;
+
+/** Kinds the frontend confirms back via `agent:action_result` (deterministic
+ *  outcome). Others (open/prefill/toast/scrollTo) are fire-and-forget. */
+export const ACKED_DIRECTIVE_KINDS = ['navigate', 'focus'] as const;
+export type AckedDirectiveKind = (typeof ACKED_DIRECTIVE_KINDS)[number];
 
 // ─── Widgets ───────────────────────────────────────────────────────────────
 export const widgetFormatSchema = z.enum(['vnd', 'percent', 'number', 'days']);
@@ -223,6 +270,8 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     toolName: z.string(),
     /** Echo of the args the LLM chose (truncated/summarised for display). */
     args: z.unknown().optional(),
+    /** Optional lifecycle marker for a richer thinking indicator. */
+    status: z.enum(['started', 'running', 'completed']).optional(),
   }),
   z.object({
     event: z.literal('tool_result'),
@@ -231,10 +280,15 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     ok: z.boolean(),
     /** Short human label of what was returned, for the "thinking" indicator. */
     label: z.string().optional(),
+    status: z.enum(['started', 'running', 'completed']).optional(),
   }),
   z.object({
     event: z.literal('directive'),
     directive: agentDirectiveSchema,
+    /** Present when the frontend must confirm execution via `agent:action_result`
+     *  (navigate/focus). Absent → fire-and-forget. */
+    actionId: z.string().optional(),
+    requiresAck: z.boolean().optional(),
   }),
   z.object({
     event: z.literal('done'),
@@ -249,3 +303,16 @@ export const agentEventSchema = z.discriminatedUnion('event', [
 ]);
 
 export type AgentEvent = z.infer<typeof agentEventSchema>;
+
+// ─── Client→server action acknowledgment ────────────────────────────────────
+// Emitted on the `agent:action_result` socket event for directives the server
+// tagged with `requiresAck: true`. Lets the orchestrator await confirmed
+// execution before composing the final "Đã mở trang…" text — so it never claims
+// success for a directive the client never applied (e.g. drawer closed,
+// disconnected, unknown route).
+export const agentActionResultSchema = z.object({
+  actionId: z.string(),
+  status: z.enum(['ok', 'error', 'timeout']),
+  reason: z.string().optional(),
+});
+export type AgentActionResult = z.infer<typeof agentActionResultSchema>;

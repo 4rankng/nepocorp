@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, Loader2, Plus, Star, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Star, Trash2 } from 'lucide-react';
 import { AssetIcon } from '../../components/AssetIcon';
 import { PageHeader, useConfirm } from '../../components/UI';
 import { useToast } from '../../components/shared/Toast';
@@ -67,9 +67,12 @@ export default function DebitNoteTemplatesConfigPage() {
           </div>
         ) : templates.length === 0 ? (
           <div className="cfg-empty debit-template-list-empty">
-            <div className="debit-template-list-empty__icon" aria-hidden="true">
-              <FileText size={34} />
-            </div>
+            <img
+              className="debit-template-list-empty__image"
+              src="/assets/illustrations/empty-debit-note-template.png"
+              alt=""
+              loading="lazy"
+            />
             <div className="debit-template-list-empty__copy">
               <strong>Chưa có mẫu nào</strong>
               <span>Tạo mẫu Excel để xuất giấy báo nợ theo khách hàng.</span>

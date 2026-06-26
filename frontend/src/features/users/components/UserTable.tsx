@@ -121,7 +121,6 @@ export function UserTable({
         <div className="kpi">
           <div className="kpi__top">
             <span className="kpi__label">Tổng tài khoản</span>
-            <div className="kpi__icon"><Users size={18} /></div>
           </div>
           <div className="kpi__value">{total}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
@@ -135,7 +134,6 @@ export function UserTable({
         <div className="kpi kpi--warn">
           <div className="kpi__top">
             <span className="kpi__label">Nhân sự văn phòng</span>
-            <div className="kpi__icon"><UserCog size={18} /></div>
           </div>
           <div className="kpi__value">{staffCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
@@ -149,7 +147,6 @@ export function UserTable({
         <div className="kpi kpi--success">
           <div className="kpi__top">
             <span className="kpi__label">Lái xe</span>
-            <div className="kpi__icon"><ShieldCheck size={18} /></div>
           </div>
           <div className="kpi__value">{driverCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
@@ -163,7 +160,6 @@ export function UserTable({
         <div className="kpi kpi--danger">
           <div className="kpi__top">
             <span className="kpi__label">Bị khoá / Ngưng</span>
-            <div className="kpi__icon"><Lock size={18} /></div>
           </div>
           <div className="kpi__value">{inactiveCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>

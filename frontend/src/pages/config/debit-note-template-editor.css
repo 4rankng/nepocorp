@@ -850,48 +850,49 @@
 
 /* Document-template editor layout: nav + live preview + focused inspector. */
 .debit-editor-page {
-  background:
-    linear-gradient(130deg, color-mix(in srgb, var(--accent) 5%, var(--bg)) 0%, var(--bg) 46%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .debit-editor-topbar {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(14px) saturate(140%);
+  position: static;
+  z-index: auto;
+  background: #fff;
+  backdrop-filter: none;
 }
 
 .debit-editor-workspace {
-  grid-template-columns: 172px minmax(0, 1fr) minmax(340px, 420px);
-  gap: 16px;
-  max-width: 1560px;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  grid-template-areas:
+    "nav inspector"
+    "preview preview";
+  gap: 18px;
+  max-width: 1680px;
   margin: 0 auto;
   align-items: start;
 }
 
 .debit-editor-side-nav {
-  position: sticky;
-  top: 96px;
+  grid-area: nav;
+  position: static;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .debit-editor-side-nav button {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr);
   gap: 2px 10px;
-  padding: 12px 12px 12px 14px;
+  min-height: 58px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.86);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
   color: var(--ink-2);
   text-align: left;
   cursor: pointer;
-  box-shadow: var(--sh-sm);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .debit-editor-side-nav button::before {
@@ -899,9 +900,9 @@
   position: absolute;
   left: 0;
   top: 50%;
-  width: 3px;
-  height: 20px;
-  border-radius: 0 2px 2px 0;
+  width: 4px;
+  height: 32px;
+  border-radius: 0 4px 4px 0;
   background: transparent;
   transform: translateY(-50%);
 }
@@ -917,6 +918,7 @@
   border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
   background: var(--surface);
   color: var(--ink);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .debit-editor-side-nav button.is-active::before {
@@ -928,12 +930,14 @@
   align-self: center;
   color: currentColor;
   stroke-width: 1.8;
+  width: 20px;
+  height: 20px;
 }
 
 .debit-editor-side-nav span {
   min-width: 0;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 850;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -942,7 +946,7 @@
   min-width: 0;
   color: var(--ink-3);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1.3;
 }
 
@@ -952,8 +956,7 @@
 }
 
 .debit-editor-preview {
-  position: sticky;
-  top: 96px;
+  position: static;
   order: initial;
   width: 100%;
   min-width: 0;
@@ -967,29 +970,30 @@
 }
 
 .debit-editor-inspector {
-  position: sticky;
-  top: 96px;
+  grid-area: inspector;
+  position: static;
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 0;
+  width: 100%;
+  padding: 0 16px 16px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: var(--sh-sm);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
   backdrop-filter: blur(12px) saturate(140%);
 }
 
 .debit-editor-inspector__header {
   display: grid;
-  gap: 3px;
-  padding-bottom: 10px;
+  gap: 4px;
+  padding: 10px 0 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .debit-editor-inspector__header span {
   color: var(--ink-3);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 850;
   line-height: 1;
   letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
@@ -997,7 +1001,7 @@
 
 .debit-editor-inspector__header strong {
   color: var(--ink);
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1.2;
   font-weight: 850;
 }
@@ -1005,9 +1009,9 @@
 .debit-editor-inspector .debit-editor-settings,
 .debit-editor-inspector .debit-editor-settings--issuer,
 .debit-editor-inspector .debit-editor-settings--footer {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   grid-template-areas: none;
-  gap: 12px;
+  gap: 16px 18px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1019,9 +1023,48 @@
   grid-area: auto;
 }
 
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(4) {
+  grid-column: 1 / -1;
+}
+
+.debit-editor-inspector .debit-editor-field {
+  gap: 6px;
+}
+
+.debit-editor-inspector .debit-editor-field > span {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.debit-editor-inspector .debit-editor-settings .debit-editor-inline-textarea,
+.debit-editor-inspector .debit-editor-settings .debit-editor-inline-input,
+.debit-editor-inspector .debit-editor-settings .debit-editor-inline-select {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 2px;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.debit-editor-inspector .debit-editor-small-textarea {
+  min-height: 112px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .debit-editor-inspector .debit-editor-check {
   width: fit-content;
-  min-height: 40px;
+  min-height: 36px;
+  align-self: end;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 750;
 }
 
 .debit-editor-inspector .debit-editor-table-wrap {
@@ -1154,12 +1197,14 @@
 
 @media (max-width: 1200px) {
   .debit-editor-workspace {
-    grid-template-columns: 132px minmax(0, 1fr) minmax(320px, 380px);
+    grid-template-columns: minmax(176px, 240px) minmax(0, 1fr);
+    gap: 16px;
   }
 
   .debit-editor-side-nav button {
-    grid-template-columns: 20px minmax(0, 1fr);
-    padding: 10px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    min-height: 68px;
+    padding: 12px;
   }
 
   .debit-editor-side-nav small {
@@ -1170,6 +1215,10 @@
 @media (max-width: 1023px) {
   .debit-editor-workspace {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "nav"
+      "inspector"
+      "preview";
     padding: 12px 16px 18px;
   }
 
@@ -1256,54 +1305,21 @@
 }
 
 .debit-editor-preview-pane {
+  grid-area: preview;
   position: relative;
   display: grid;
   gap: 14px;
-  justify-items: center;
+  justify-items: stretch;
 }
 
 .debit-editor-canvas-frame {
-  --canvas-zoom: 1;
-  width: min(100%, 980px);
+  width: 100%;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--sh);
-  zoom: var(--canvas-zoom);
-  transition: zoom 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
-}
-
-.debit-editor-canvas-frame.is-pan-mode .debit-editor-page-boundary {
-  cursor: grab;
-}
-
-.debit-editor-canvas-frame.is-preview-mode {
-  border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
-}
-
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-input:disabled,
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-th-input:disabled {
-  opacity: 1;
-  -webkit-text-fill-color: currentColor;
-}
-
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-input.is-selected,
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__issuer.is-selected,
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__signatures label.is-selected {
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected {
-  outline: 0;
-  box-shadow: none;
-}
-
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected::before,
-.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected::after {
-  display: none;
 }
 
 .debit-editor-canvas-dragbar {
@@ -1402,12 +1418,16 @@
 }
 
 .debit-editor-preview__table {
-  min-width: 860px;
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
 }
 
 .debit-editor-preview__table th {
   position: relative;
   padding: 0;
+  box-sizing: border-box;
+  min-width: 96px;
 }
 
 .debit-editor-preview__table th.is-selected {
@@ -1456,7 +1476,8 @@
   line-height: 1.18;
   font-weight: 850;
   white-space: pre-line;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .debit-editor-preview__table th button small {
@@ -1471,6 +1492,7 @@
   padding: 9px 8px;
   border: 0;
   resize: none;
+  overflow: hidden;
   background: transparent;
   color: #fff;
   text-align: center;
@@ -1517,135 +1539,143 @@
   font-weight: 650;
 }
 
-.debit-editor-canvas-toolbar {
-  position: sticky;
-  bottom: 18px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--sh);
-  backdrop-filter: blur(12px) saturate(140%);
-}
-
-.debit-editor-canvas-toolbar button,
-.debit-editor-zoom-control {
-  min-height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 10px;
-  background: var(--surface);
-  color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.debit-editor-canvas-toolbar button.is-active {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
-}
-
-.debit-editor-canvas-toolbar button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.debit-editor-zoom-control {
-  padding: 0;
-  overflow: hidden;
-}
-
-.debit-editor-zoom-control button {
-  min-height: 32px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.debit-editor-zoom-control span {
-  min-width: 52px;
-  text-align: center;
-}
-
 .debit-editor-selected-panel {
   display: grid;
-  gap: 14px;
+  gap: 0;
 }
 
-.debit-editor-selected-panel__identity {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--accent);
-}
-
-.debit-editor-selected-panel__identity > svg {
-  stroke-width: 1.8;
-}
-
-.debit-editor-selected-panel__identity div {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.debit-editor-selected-panel__identity span,
 .debit-editor-selected-group > strong {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 850;
 }
 
-.debit-editor-selected-panel__identity strong {
+.debit-editor-column-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.debit-editor-column-picker__card {
   min-width: 0;
-  font-size: 16px;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  align-items: stretch;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.debit-editor-column-picker__select,
+.debit-editor-column-picker__visibility {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.debit-editor-column-picker__select {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.debit-editor-column-picker__visibility {
+  display: grid;
+  place-items: center;
+  border-left: 1px solid var(--line);
+  color: var(--ink-3);
+}
+
+.debit-editor-column-picker__card:hover,
+.debit-editor-column-picker__card:focus-within {
+  border-color: rgba(16, 185, 129, 0.45);
+  outline: 0;
+}
+
+.debit-editor-column-picker__card.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.debit-editor-column-picker__card.is-hidden {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface) 74%, var(--surface-2));
+  color: var(--ink-3);
+}
+
+.debit-editor-column-picker__select:disabled,
+.debit-editor-column-picker__visibility:disabled {
+  cursor: not-allowed;
+}
+
+.debit-editor-column-picker span,
+.debit-editor-column-picker small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debit-editor-column-picker span {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.debit-editor-column-picker small {
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.debit-editor-column-picker__card.is-active small,
+.debit-editor-column-picker__card.is-active .debit-editor-column-picker__visibility {
+  color: var(--accent);
+}
+
+.debit-editor-column-picker__card.is-hidden .debit-editor-column-picker__visibility {
+  color: var(--ink-3);
 }
 
 .debit-editor-selected-group {
   display: grid;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 18px;
+  padding: 16px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--line);
 }
 
-.debit-editor-property-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+.debit-editor-selected-group > strong {
+  grid-column: 1 / -1;
+  font-size: 16px;
+  line-height: 1.25;
 }
 
-.debit-editor-width-input {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 36px;
-  align-items: center;
-  border: 1px solid var(--line-2);
-  border-radius: 10px;
-  background: var(--surface);
-  overflow: hidden;
+.debit-editor-selected-group .debit-editor-field {
+  gap: 6px;
 }
 
-.debit-editor-width-input .input {
-  height: 38px;
-  border: 0;
-  box-shadow: none;
+.debit-editor-selected-group .debit-editor-field > span {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
 }
 
-.debit-editor-width-input span {
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 800;
+.debit-editor-selected-group .input {
+  min-height: 36px;
+  font-size: 15px;
+  font-weight: 650;
 }
 
 .debit-editor-align-control {
@@ -1675,8 +1705,10 @@
 }
 
 .debit-editor-switch-list {
+  grid-column: 1 / -1;
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 18px;
 }
 
 .debit-editor-switch-list label {
@@ -1685,83 +1717,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 0 2px;
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 750;
+  line-height: 1.2;
 }
 
 .debit-editor-switch-list input {
   width: 36px;
   height: 20px;
   accent-color: var(--accent);
-}
-
-.debit-editor-variable-search {
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--ink-3);
-  background: var(--surface);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.debit-editor-selected-variable-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.debit-editor-selected-variable-grid button {
-  min-width: 0;
-  min-height: 50px;
-  display: grid;
-  gap: 2px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-}
-
-.debit-editor-selected-variable-grid button.is-active {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.debit-editor-selected-variable-grid span {
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 850;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.debit-editor-selected-variable-grid small {
-  color: var(--ink-3);
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.debit-editor-selected-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.debit-editor-danger-action {
-  color: var(--danger);
-}
-
-.flip-x {
-  transform: scaleX(-1);
 }
 
 @media (max-width: 1023px) {
@@ -1789,14 +1755,4 @@
     line-height: 1.18;
   }
 
-  .debit-editor-canvas-toolbar {
-    width: calc(100vw - 32px);
-    overflow-x: auto;
-    justify-content: flex-start;
-  }
-
-  .debit-editor-property-grid,
-  .debit-editor-selected-actions {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
