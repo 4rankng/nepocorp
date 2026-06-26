@@ -18,6 +18,13 @@ export default defineConfig({
         target: 'http://localhost:3090',
         changeOrigin: true,
       },
+      // socket.io (assistant transport). `ws: true` proxies the WebSocket
+      // upgrade handshake; without it the engine.io upgrade fails in dev.
+      '/socket.io': {
+        target: 'http://localhost:3090',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 });

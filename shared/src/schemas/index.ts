@@ -6,7 +6,7 @@ import {
 } from '../constants';
 
 // Agent (command-and-insight assistant) wire contract — directive / widget /
-// response / message / SSE-event schemas. Self-contained module kept separate
+// response / message / live-event schemas. Self-contained module kept separate
 // from the entity-CRUD schemas below. See ./agent.ts for the design notes.
 export * from './agent';
 

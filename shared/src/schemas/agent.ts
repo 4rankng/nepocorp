@@ -213,9 +213,10 @@ export const agentConversationSchema = z.object({
 });
 export type AgentConversation = z.infer<typeof agentConversationSchema>;
 
-// ─── SSE event stream ──────────────────────────────────────────────────────
-// POST /api/agent/chat streams `text/event-stream` whose `data:` payloads are
-// one of these. The frontend parses with `agentEventSchema` for type safety.
+// ─── Live event stream ─────────────────────────────────────────────────────
+// The assistant streams these over a socket.io `/agent` namespace (`agent:event`
+// frames) — tool activity, directives, then a terminal `done`/`error`. The
+// frontend parses each frame with `agentEventSchema` for type safety.
 export const agentEventSchema = z.discriminatedUnion('event', [
   z.object({
     event: z.literal('tool_start'),

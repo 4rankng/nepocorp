@@ -15,6 +15,7 @@ import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
 import { agentRoutes } from './routes/agent';
+import { initAgentSocket } from './agentSocket';
 import financialRoutes from './routes/financial';
 import expenseRoutes from './routes/expense';
 import driverRoutes from './routes/driver';
@@ -127,6 +128,10 @@ const server = app.listen(config.port, () => {
   console.log(`NEPO API running on port ${config.port} [${config.nodeEnv}]`);
 });
 
+// Command-and-insight assistant real-time transport. Attached to the same
+// http.Server Express uses; returns null when the bot is disabled.
+const agentIo = initAgentSocket(server);
+
 // ── Graceful shutdown (tsx watch sends SIGTERM on restart) ─────────────────
 let shuttingDown = false;
 async function shutdown(signal: string) {
@@ -134,6 +139,7 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   console.log(`\n${signal} received — shutting down…`);
 
+  agentIo?.close();              // stop the assistant socket.io server
   server.close();                // stop accepting new connections
   await dbClient.end();          // drain Postgres pool
   await disconnectRedis();       // close Redis connection

@@ -102,6 +102,22 @@ server {
         client_max_body_size 20m;
     }
 
+    # socket.io — the command-and-insight assistant transport (/agent
+    # namespace, path /socket.io). Must reach the backend (3090), not the
+    # frontend SPA. WebSocket upgrade + long read timeout for multi-tool turns.
+    location /socket.io/ {
+        proxy_pass         http://127.0.0.1:3090;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
     location /adminer/ {
         proxy_pass         http://127.0.0.1:8080/;
         proxy_http_version 1.1;

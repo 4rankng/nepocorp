@@ -1,8 +1,10 @@
 // Agent routes — the command-and-insight assistant surface.
 //
-//   POST /chat            — SSE stream of AgentEvent frames (tool activity,
-//                           directives, then a `done` with the final response).
-//   GET  /conversations   — the user's recent conversations (sidebar history).
+// The live chat transport is socket.io (`agentSocket.ts`, `/agent` namespace) —
+// it streams AgentEvent frames (tool activity, directives, then `done` with the
+// final response) over a socket instead of an SSE HTTP request. These REST
+// routes only carry conversation history:
+//   GET  /conversations     — the user's recent conversations (sidebar history).
 //   GET  /conversations/:id — full message history for one conversation.
 //
 // Auth/mount: `app.use('/api/agent', authMiddleware, casbinAuthz('agent'), …)`
@@ -14,8 +16,6 @@ import { db } from '../db';
 import * as schema from '../db/schema';
 import { config } from '../config';
 import { getUser } from '../middleware/auth';
-import { runAgent } from '../services/agent/orchestrator';
-import type { AgentContext } from '../services/agent/tool.types';
 import { agentResponseSchema, type AgentConversation } from '@tingting/shared';
 
 export const agentRoutes = Router();
@@ -28,68 +28,6 @@ function disabled(res: Response): boolean {
   }
   return false;
 }
-
-function writeSseFrame(res: Response, payload: unknown): void {
-  // The client may have disconnected (req 'close' → AbortController.abort)
-  // between frames; writing to a closed stream throws
-  // ERR_STREAM_WRITE_AFTER_END and would escape as an unhandled rejection.
-  if (res.destroyed || res.writableEnded) return;
-  try {
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  } catch {
-    /* socket already gone — nothing more to do */
-  }
-}
-
-agentRoutes.post('/chat', async (req: Request, res: Response) => {
-  if (disabled(res)) return;
-  const user = getUser(req);
-  const { message, conversationId, currentRouteKey } = (req.body ?? {}) as {
-    message?: string;
-    conversationId?: string;
-    currentRouteKey?: string;
-  };
-  if (!message || typeof message !== 'string') {
-    res.status(400).json({ error: 'Thiếu nội dung tin nhắn' });
-    return;
-  }
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  // Disables nginx buffering so frames flush immediately (R3).
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.flushHeaders?.();
-
-  const ctx: AgentContext = {
-    userId: user.userId,
-    role: user.role,
-    username: user.username ?? undefined,
-    currentRouteKey,
-  };
-
-  // Abort the upstream MiniMax call if the client disconnects mid-stream.
-  const ac = new AbortController();
-  req.on('close', () => ac.abort());
-
-  try {
-    const { response, conversationId: convId } = await runAgent({
-      ctx,
-      message,
-      conversationId,
-      emit: (event) => writeSseFrame(res, event),
-      signal: ac.signal,
-    });
-    writeSseFrame(res, { event: 'done', response, conversationId: convId });
-  } catch (e) {
-    console.error('[agent] chat failed', e);
-    // Generic message only — never relay raw error text (Drizzle/PG errors can
-    // leak schema/SQL identifiers) over the SSE stream.
-    writeSseFrame(res, { event: 'error', message: 'Đã có lỗi khi xử lý. Vui lòng thử lại.' });
-  } finally {
-    res.end();
-  }
-});
 
 agentRoutes.get('/conversations', async (req: Request, res: Response) => {
   if (disabled(res)) return;
