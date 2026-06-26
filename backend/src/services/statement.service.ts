@@ -131,10 +131,17 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
   // Fetch routes/container numbers for trip-backed ledger rows. SERVICE_FEE
   // rows store trip_expenses.id in txnId, so resolve those fee ids back to
-  // their trip and configured billing label first.
+  // their trip and configured billing label first. EXTERNAL_CARRIER_COST
+  // (cước thuê ngoài) also stores the trip id in txnId, so it gets the same
+  // route/container enrichment as a regular trip revenue row.
   const directlyLinkedTripIds = Array.from(new Set(
     ledgerRows
-      .filter((r) => r.txnId && (r.txnType === TxnType.TRIP_REVENUE || r.txnType === TxnType.UNLOCK_REVERSAL || r.txnType === TxnType.PAYMENT_RECEIVED))
+      .filter((r) => r.txnId && (
+        r.txnType === TxnType.TRIP_REVENUE
+        || r.txnType === TxnType.UNLOCK_REVERSAL
+        || r.txnType === TxnType.PAYMENT_RECEIVED
+        || r.txnType === TxnType.EXTERNAL_CARRIER_COST
+      ))
       .map((r) => r.txnId as number)
   ));
 
@@ -241,6 +248,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
       r.txnType === TxnType.TRIP_REVENUE
       || r.txnType === TxnType.UNLOCK_REVERSAL
       || r.txnType === TxnType.PAYMENT_RECEIVED
+      || r.txnType === TxnType.EXTERNAL_CARRIER_COST
     )
       ? r.txnId
       : null;
@@ -657,8 +665,8 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   });
 
   // Set column widths
-  sheet.getColumn(1).width = 12; // Ngày
-  sheet.getColumn(2).width = 25; // Tuyến đường
+  sheet.getColumn(1).width = 14; // Ngày (a bit wider — header label "Ngày" + ISO dates need breathing room)
+  sheet.getColumn(2).width = 28; // Tuyến đường
   sheet.getColumn(3).width = 22; // Số Container
   sheet.getColumn(4).width = 22; // Loại giao dịch
   sheet.getColumn(5).width = 16; // Nợ

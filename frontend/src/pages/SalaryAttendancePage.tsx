@@ -551,7 +551,7 @@ export default function SalaryAttendancePage() {
           <div className="hero-title-block">
             <div className="hero-eyebrow">Kỳ lương</div>
             <h1 className="hero-h1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="/assets/icons/08-payroll-luong.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+              <img src="/assets/icons/16-payroll-luong-tien-luong.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
               Lương & Chấm công
             </h1>
             <div className="hero-sub">Tháng {month} · {year} · {aggregates.total} lái xe</div>

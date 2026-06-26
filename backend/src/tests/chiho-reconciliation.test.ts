@@ -384,6 +384,27 @@ describe('US-007 LOCKED-immutability prerequisite', () => {
 });
 
 describe('US-007 aging: SERVICE_FEE AR surfaces in customer aging', () => {
+  test('customer aging search matches Vietnamese names without requiring tones', async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const accentedName = `Công ty Hải Đăng ${suffix}`;
+    const { customer } = await createLockedTripWithFees({
+      revenue: 44_000,
+      departureDate: '2026-06-23',
+      fees: [],
+    });
+
+    await db.update(s.customers)
+      .set({ name: accentedName })
+      .where(eq(s.customers.id, customer.id));
+
+    const list = await getCustomerAgingList({ search: `Hai Dang ${suffix}` });
+    const found = list.customers.find(c => c.customerId === customer.id);
+
+    assert.ok(found, 'unaccented search finds the accented Vietnamese customer name');
+    assert.equal(found!.customerName, accentedName);
+    assert.equal(found!.totalOutstanding, 44_000);
+  });
+
   test('customer with only a SERVICE_FEE debit appears in aging list with balance=fee and days≈0', async () => {
     // Seed a customer whose ONLY AR is a chi hộ fee (no freight revenue).
     const { customer, customerName, expenseRows } = await createLockedTripWithFees({

@@ -6,6 +6,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, isNull, desc, and, lte, ne } from 'drizzle-orm';
 import { cacheGet, cacheInvalidate } from '../lib/redis';
+import { ApiError } from '../errors';
 
 // ─── Bootstrap ──────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,71 @@ export async function getEffectiveFuelPrice(date: Date): Promise<number | null> 
     .orderBy(desc(s.fuelPriceHistory.effectiveDate))
     .limit(1);
   return row ? Number(row.unitPrice) : null;
+}
+
+function normalizeCustomerName(value: string | null | undefined): string {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function normalizeTaxCode(value: string | null | undefined): string {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, '')
+    .toLowerCase();
+}
+
+/**
+ * Prevent duplicate active customers.
+ *
+ * Rules:
+ * - A non-empty tax code must be unique across active customers.
+ * - If tax code is blank, a blank-tax customer name must be unique.
+ * - Same name + same tax code is always considered a duplicate.
+ */
+export async function validateCustomerUniqueness(
+  data: { name?: string | null; taxCode?: string | null },
+  customerId?: number,
+) {
+  let current: typeof s.customers.$inferSelect | undefined;
+  if (customerId != null) {
+    [current] = await db.select()
+      .from(s.customers)
+      .where(and(eq(s.customers.id, customerId), isNull(s.customers.deletedAt)))
+      .limit(1);
+    if (!current) throw new ApiError(404, 'Không tìm thấy khách hàng');
+  }
+
+  const finalName = normalizeCustomerName(data.name ?? current?.name);
+  const finalTaxCode = normalizeTaxCode(data.taxCode ?? current?.taxCode);
+  if (!finalName) return;
+
+  const conditions = [isNull(s.customers.deletedAt)];
+  if (customerId != null) conditions.push(ne(s.customers.id, customerId));
+
+  const activeCustomers = await db.select({
+    id: s.customers.id,
+    name: s.customers.name,
+    taxCode: s.customers.taxCode,
+  }).from(s.customers)
+    .where(and(...conditions));
+
+  const taxCodeConflict = finalTaxCode
+    ? activeCustomers.find((customer) => normalizeTaxCode(customer.taxCode) === finalTaxCode)
+    : undefined;
+  if (taxCodeConflict) {
+    throw new ApiError(409, `Mã số thuế đã tồn tại ở khách hàng "${taxCodeConflict.name}"`);
+  }
+
+  const exactConflict = activeCustomers.find((customer) =>
+    normalizeCustomerName(customer.name) === finalName &&
+    normalizeTaxCode(customer.taxCode) === finalTaxCode,
+  );
+  if (exactConflict) {
+    throw new ApiError(409, `Khách hàng "${exactConflict.name}" đã tồn tại`);
+  }
 }
 
 // ─── Customer ↔ Supplier link mirroring ────────────────────────────────────

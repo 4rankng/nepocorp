@@ -78,6 +78,8 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
     lines.push({
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
       description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      typeLabel: 'Doanh thu',
+      unit: 'lần',
       routeName: trip.routeName ?? null,
       containerNumbers: containers,
       baseAmount: Number(trip.revenue ?? 0),
@@ -92,6 +94,8 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
       lines.push({
         sourceType: 'EXPENSE', sourceId: fee.id, lineType: 'SERVICE_FEE',
         description: fee.billingLabel ?? fee.name ?? fee.expenseType,
+        typeLabel: 'Phí chi hộ',
+        unit: 'lần',
         routeName: trip.routeName ?? null, containerNumbers: containers,
         baseAmount: amt, amountOverride: null, excluded: false, sortOrder: sortOrder++,
       });
@@ -130,6 +134,8 @@ async function buildCarrierPaymentLines(carrierId: number, from: string, to: str
     lines.push({
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
       description: `Cước thuê ngoài${trip.routeName ? ` — ${trip.routeName}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      typeLabel: 'Doanh thu',
+      unit: 'lần',
       routeName: trip.routeName ?? null,
       containerNumbers: containersByTrip.get(trip.id) ?? null,
       baseAmount: amt, amountOverride: null, excluded: false, sortOrder: sortOrder++,
@@ -153,6 +159,8 @@ async function buildSupplierPaymentLines(supplierId: number, from: string, to: s
     lines.push({
       sourceType: 'EXPENSE', sourceId: row.txnId ?? null, lineType: 'SERVICE_FEE',
       description: row.note || 'Chi phí nhà cung cấp',
+      typeLabel: 'Phí chi hộ',
+      unit: 'lần',
       routeName: null, containerNumbers: null,
       baseAmount: credit, amountOverride: null, excluded: false, sortOrder: sortOrder++,
     });
@@ -250,6 +258,7 @@ async function persistLines(tx: Tx, documentId: number, lines: BillingDocumentLi
     lines.map((l) => ({
       documentId,
       sourceType: l.sourceType, sourceId: l.sourceId ?? null, lineType: l.lineType,
+      typeLabel: l.typeLabel, unit: l.unit,
       description: l.description, routeName: l.routeName ?? null,
       containerNumbers: joinContainers(l.containerNumbers),
       baseAmount: String(Number(l.baseAmount)),
@@ -295,6 +304,7 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
     lines: lines.map((l) => ({
       id: l.id, documentId: l.documentId, sourceType: l.sourceType as BillingDocumentLine['sourceType'],
       sourceId: l.sourceId ?? null, lineType: l.lineType as BillingDocumentLine['lineType'],
+      typeLabel: l.typeLabel, unit: l.unit,
       description: l.description, routeName: l.routeName,
       containerNumbers: splitContainers(l.containerNumbers),
       baseAmount: Number(l.baseAmount), amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
@@ -452,7 +462,7 @@ export async function buildBillingXlsx(doc: BillingDocument): Promise<Buffer> {
       row.values = [
         exportDescription(line),
         (line.containerNumbers ?? []).join(', '),
-        'lần',
+        line.unit,
         amt || 0,
       ];
       row.height = 24;

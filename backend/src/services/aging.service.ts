@@ -147,15 +147,31 @@ export function paginateAgingRows<T>(
   };
 }
 
+function normalizeVietnameseSearchText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
 async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number>> {
   const escaped = search.replace(/[%_]/g, '\\$&');
   const pattern = `%${escaped}%`;
+  const normalizedSearch = normalizeVietnameseSearchText(search);
   const ids = new Set<number>();
 
-  // Name + contact match — case-insensitive
-  const byName = await db.select({ id: s.customers.id }).from(s.customers)
-    .where(sql`lower(${s.customers.name}) like lower(${pattern}) OR lower(coalesce(${s.customers.contactInfo}, '')) like lower(${pattern})`);
-  byName.forEach(r => ids.add(r.id));
+  // Name + contact match — case- and tone-insensitive for Vietnamese text.
+  const customers = await db.select({
+    id: s.customers.id,
+    name: s.customers.name,
+    contactInfo: s.customers.contactInfo,
+  }).from(s.customers);
+  for (const customer of customers) {
+    const haystack = normalizeVietnameseSearchText(`${customer.name} ${customer.contactInfo ?? ''}`);
+    if (haystack.includes(normalizedSearch)) ids.add(customer.id);
+  }
 
   // Container match via trip_containers
   const byContainer = await db

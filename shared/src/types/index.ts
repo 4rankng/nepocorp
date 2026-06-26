@@ -959,6 +959,8 @@ export interface BillingDocumentLine {
   sourceType: BillingLineSourceType;
   sourceId: number | null;        // tripId | tripExpenseId | null (ADHOC)
   lineType: BillingLineType;
+  typeLabel: string;              // Custom label for lineType (e.g. Doanh thu, Phí chi hộ)
+  unit: string;                   // Custom unit (e.g. lần, chuyến)
   description: string;
   routeName?: string | null;
   containerNumbers?: string[] | null;

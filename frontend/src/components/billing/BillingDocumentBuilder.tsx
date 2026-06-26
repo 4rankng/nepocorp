@@ -76,7 +76,8 @@ function normalizeLine(line: BillingDocumentLine): BillingDocumentLine {
   const normalized = normalizeFreightDescription(line);
   if (normalized.lineType !== 'SERVICE_FEE') return normalized;
   const label = SERVICE_FEE_LABELS[normalized.description?.trim().toUpperCase() ?? ''];
-  return label ? { ...normalized, description: label } : normalized;
+  if (label) normalized.description = label;
+  return normalized;
 }
 
 function lineTotal(line: BillingDocumentLine): number {
@@ -106,11 +107,7 @@ function splitRouteName(routeName: string): { origin: string; destination: strin
   return origin && destination ? { origin, destination } : null;
 }
 
-function lineTypeLabel(line: BillingDocumentLine): string {
-  if (line.lineType === 'FREIGHT') return 'Doanh thu';
-  if (line.lineType === 'SERVICE_FEE') return 'Phí chi hộ';
-  return 'Khác';
-}
+// removed lineTypeLabel since we use typeLabel string now
 
 function containerLabel(line: BillingDocumentLine): string {
   return (line.containerNumbers ?? []).join(', ') || 'Không có container';
@@ -255,6 +252,8 @@ export default function BillingDocumentBuilder({
         sourceType: 'ADHOC',
         sourceId: null,
         lineType: 'ADHOC',
+        typeLabel: 'Khác',
+        unit: 'lần',
         description: '',
         routeName: null,
         containerNumbers: null,
@@ -284,6 +283,8 @@ export default function BillingDocumentBuilder({
       sourceType: line.sourceType,
       sourceId: line.sourceId,
       lineType: line.lineType,
+      typeLabel: line.typeLabel || 'Khác',
+      unit: line.unit || 'lần',
       description: line.description,
       routeName: line.routeName ?? null,
       containerNumbers: line.containerNumbers ?? null,
@@ -493,8 +494,25 @@ export default function BillingDocumentBuilder({
                                         onChange={(e) => updateLine(index, { description: e.target.value })}
                                       />
                                     </td>
-                                    <td className="billing-builder__type">{lineTypeLabel(line)}</td>
-                                    <td className="billing-builder__unit">lần</td>
+                                    <td>
+                                      <textarea
+                                        className="input billing-builder__text-field"
+                                        value={line.typeLabel}
+                                        rows={1}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { typeLabel: e.target.value })}
+                                      />
+                                    </td>
+                                    <td>
+                                      <textarea
+                                        className="input billing-builder__text-field"
+                                        style={{ textAlign: 'center' }}
+                                        value={line.unit}
+                                        rows={1}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { unit: e.target.value })}
+                                      />
+                                    </td>
                                     <td>
                                       <input
                                         type="number"
@@ -564,7 +582,23 @@ export default function BillingDocumentBuilder({
                                     />
                                     <div className="billing-builder__mobile-row">
                                       <span>Loại</span>
-                                      <strong>{lineTypeLabel(line)}</strong>
+                                      <textarea
+                                        className="input billing-builder__text-field"
+                                        value={line.typeLabel}
+                                        rows={1}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { typeLabel: e.target.value })}
+                                      />
+                                    </div>
+                                    <div className="billing-builder__mobile-row">
+                                      <span>ĐVT</span>
+                                      <textarea
+                                        className="input billing-builder__text-field"
+                                        value={line.unit}
+                                        rows={1}
+                                        disabled={busy}
+                                        onChange={(e) => updateLine(index, { unit: e.target.value })}
+                                      />
                                     </div>
                                     <div className="billing-builder__mobile-money">
                                       <label>

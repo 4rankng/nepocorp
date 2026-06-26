@@ -35,14 +35,16 @@
   height: 44px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: linear-gradient(150deg, #00702F, var(--sidebar));
-  color: var(--fg-on-brand);
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: var(--fs-md);
-  letter-spacing: .02em;
-  box-shadow: 0 10px 22px -12px rgba(0, 90, 45, .7);
+  box-shadow: 0 10px 22px -16px rgba(15, 23, 42, 0.22);
+}
+
+.dd-avatar__icon {
+  width: 28px;
+  height: 28px;
 }
 
 .dd-meta { flex: 1; min-width: 0; }

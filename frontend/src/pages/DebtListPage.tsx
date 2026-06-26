@@ -3,7 +3,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { api } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
-import { Search, ChevronRight, Wallet, AlertTriangle, AlertCircle, Users, Clock } from 'lucide-react';
+import {
+  Search,
+  AlertTriangle,
+  Users,
+  Clock,
+  CalendarCheck2,
+  Hourglass,
+  AlertOctagon,
+  Building2,
+  Phone,
+  Loader2,
+} from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
@@ -11,6 +22,7 @@ import type { CustomerAging } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { AssetIcon } from '../components/AssetIcon';
 import './DebtListPage.css';
 import '../components/shared/HeroKpiRow.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
@@ -58,6 +70,14 @@ const AGING_BUCKETS: AgingBucket[] = [
   { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'overdue' },
   { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'high-risk' },
 ];
+
+/* Map bucket → lucide icon (semantic progression: on-time → critical) */
+const BUCKET_ICONS: Record<string, typeof CalendarCheck2> = {
+  current: CalendarCheck2,
+  d30: Clock,
+  d60: Hourglass,
+  over90: AlertOctagon,
+};
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
@@ -201,7 +221,6 @@ export default function DebtListPage() {
   }, [loading, totals, prefersReduced, animateCounters, compact]);
 
   /* ── Helpers ── */
-  const agingTotal = totals.current + totals.d30 + totals.d60 + totals.over90;
   const heroMoney = moneyParts(totals.total, false);
 
   const handleBucketClick = (bucket: AgingBucket) => {
@@ -213,6 +232,7 @@ export default function DebtListPage() {
       <PageHeader
         title="Công nợ phải thu"
         description={`${totalCustomers} khách hàng · cập nhật vừa xong`}
+        iconName="receivables"
         action={
           <div className="page-actions">
             <button 
@@ -236,9 +256,11 @@ export default function DebtListPage() {
         * ══════════════════════════════════════════════════════════════════════ */}
       <div className="hero-kpi-row debt-hero-row">
         {/* Hero card — spans 3 columns */}
-        <div className="hero-kpi-card debt-hero asset-ledger-watermark">
+        <div className="hero-kpi-card debt-hero">
           <div className="debt-hero__content">
-            <span className="hero-kpi-card__eyebrow">Tổng công nợ phải thu</span>
+            <span className="hero-kpi-card__eyebrow">
+              Tổng công nợ phải thu
+            </span>
             <div className="hero-kpi-card__amount debt-hero__amount">
               <span ref={(el) => { counterRefs.current.heroTotal = el; }}>
                 {prefersReduced ? heroMoney.num : '0'}
@@ -249,8 +271,13 @@ export default function DebtListPage() {
               {totalCustomers} khách hàng · cập nhật vừa xong
             </span>
           </div>
-          <div className="hero-kpi-card__watermark" aria-hidden="true">
-            <Wallet size={72} strokeWidth={1} />
+          <div className="debt-hero__art" aria-hidden="true">
+            <img
+              src={resolveEmptyIllustration('finance')}
+              alt=""
+              className="debt-hero__illustration"
+              draggable={false}
+            />
           </div>
         </div>
 
@@ -265,7 +292,9 @@ export default function DebtListPage() {
               </span>
               <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
-            <AlertTriangle size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
+            <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
+              <AssetIcon name="alert" size={38} />
+            </div>
           </div>
           <div className="hero-kpi-mini debt-kpi-mini--warning">
             <div className="hero-kpi-mini__body">
@@ -276,7 +305,9 @@ export default function DebtListPage() {
               </span>
               <span className="hero-kpi-mini__label">rủi ro cao</span>
             </div>
-            <AlertCircle size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
+            <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
+              <AssetIcon name="analytics" size={38} />
+            </div>
           </div>
         </div>
       </div>
@@ -289,11 +320,11 @@ export default function DebtListPage() {
           const amount = totals[bucket.amountKey];
           const count = totals[bucket.countKey];
           const money = moneyParts(amount, compact);
-          const pct = agingTotal > 0 ? (amount / agingTotal) * 100 : 0;
           const isActive =
             (bucket.filterMode === 'current' && filterMode === 'current') ||
             (bucket.filterMode === 'overdue' && filterMode === 'overdue' && (bucket.amountKey === 'd30' || bucket.amountKey === 'd60')) ||
             (bucket.filterMode === 'high-risk' && filterMode === 'high-risk');
+          const BucketIcon = BUCKET_ICONS[bucket.key];
 
           return (
             <button
@@ -305,6 +336,14 @@ export default function DebtListPage() {
               aria-label={`${bucket.label}: ${formatCurrency(amount)}, ${count} khách hàng`}
             >
               <div className="debt-aging-card__header">
+                {BucketIcon && (
+                  <BucketIcon
+                    size={16}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                    style={{ color: bucket.color, flex: '0 0 auto' }}
+                  />
+                )}
                 <span className={`debt-aging__dot ${bucket.dotClass}`} />
                 <span className="debt-aging-card__label">{bucket.label}</span>
               </div>
@@ -320,12 +359,6 @@ export default function DebtListPage() {
                 <span className="debt-aging-card__unit">{money.unit}</span>
               </div>
               <div className="debt-aging-card__count">{count} khách hàng</div>
-              <div className="debt-aging-card__bar-track">
-                <div
-                  className="debt-aging-card__bar-fill"
-                  style={{ width: `${Math.max(pct, 2)}%`, background: bucket.color }}
-                />
-              </div>
             </button>
           );
         })}
@@ -385,8 +418,9 @@ export default function DebtListPage() {
         )}
 
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-3)' }}>
-            Đang tải dữ liệu công nợ...
+          <div className="debt-loading">
+            <Loader2 size={28} className="debt-loading__spin" aria-hidden="true" />
+            <span>Đang tải dữ liệu công nợ…</span>
           </div>
         ) : (
           <>
@@ -400,16 +434,12 @@ export default function DebtListPage() {
                   </div>
                 ) : (
                   filteredDebts.map(d => {
-                    const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
-                    const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
-                    const pct30     = totalAging > 0 ? (d.aging.d30    / totalAging) * 100 : 0;
-                    const pct60     = totalAging > 0 ? (d.aging.d60    / totalAging) * 100 : 0;
-                    const pct90     = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                     return (
                       <ClickableCard key={d.customerId} to={`/debt/${d.customerId}`} className="m-card">
                         <div className="m-card__top">
                           <span className="m-card__title">
                             <span className={`risk-dot risk-dot--${d.riskClass}`} />
+                            <Building2 size={15} aria-hidden="true" style={{ color: 'var(--ink-3)', flex: '0 0 auto' }} />
                             {d.customerName}
                             {d.linkedSupplierId != null && (
                               <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
@@ -424,17 +454,17 @@ export default function DebtListPage() {
                         {d.totalOutstanding > 0 && (
                           <>
                             {d.contactInfo && (
-                              <div className="m-card__meta">{d.contactInfo}</div>
+                              <div className="m-card__meta">
+                                <Phone size={12} aria-hidden="true" style={{ marginRight: 5, verticalAlign: '-1px', color: 'var(--ink-3)' }} />
+                                {d.contactInfo}
+                              </div>
                             )}
-                            <div className="aging-bar" style={{ height: 5, borderRadius: 3, overflow: 'hidden', display: 'flex', marginTop: 8, marginBottom: 4 }}>
-                              <div className="aging-bar__seg aging-bar__seg--ok"  style={{ width: `${pctCurrent}%` }} />
-                              <div className="aging-bar__seg aging-bar__seg--t1"  style={{ width: `${pct30}%` }} />
-                              <div className="aging-bar__seg aging-bar__seg--t2"  style={{ width: `${pct60}%` }} />
-                              <div className="aging-bar__seg aging-bar__seg--t4"  style={{ width: `${pct90}%` }} />
-                            </div>
                             {d.maxOverdueDays > 0 && (
                               <div className="m-card__row">
-                                <span className="m-card__row-label">Quá hạn lớn nhất</span>
+                                <span className="m-card__row-label">
+                                  <Clock size={12} aria-hidden="true" style={{ marginRight: 5, verticalAlign: '-1px' }} />
+                                  Quá hạn
+                                </span>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
                                   {d.maxOverdueDays} ngày
                                 </span>
@@ -452,44 +482,36 @@ export default function DebtListPage() {
             {/* ── Desktop table (>640px) ── */}
             <div className="desktop-only table-wrap">
               <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Khách hàng</th>
-                      <th className="num">Tổng nợ</th>
-                      <th className="num">Net công nợ</th>
-                      <th>Thông tin liên hệ</th>
-                      <th>Phân bổ tuổi nợ</th>
-                      <th className="num" style={{ textAlign: 'center' }}>Quá hạn lớn nhất</th>
-                      <th style={{ width: 48 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDebts.map(d => {
-                      const totalAging = d.aging.current + d.aging.d30 + d.aging.d60 + d.aging.over90;
-                      const pctCurrent = totalAging > 0 ? (d.aging.current / totalAging) * 100 : 100;
-                      const pct30 = totalAging > 0 ? (d.aging.d30 / totalAging) * 100 : 0;
-                      const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
-                      const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
-
-                      return (
-                        <tr
-                          key={d.customerId}
-                          role="button"
-                          tabIndex={0}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/debt/${d.customerId}`)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              navigate(`/debt/${d.customerId}`);
-                            }
-                          }}
-                        >
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--fg-1)' }}>
+                <table className="debt-list-table">
+                    <thead>
+                      <tr>
+                        <th>Khách hàng</th>
+                        <th className="num">Tổng nợ</th>
+                        <th className="num">Net công nợ</th>
+                        <th className="num" style={{ textAlign: 'center' }}>Quá hạn</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDebts.map(d => {
+                        return (
+                          <tr
+                            key={d.customerId}
+                            role="button"
+                            tabIndex={0}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate(`/debt/${d.customerId}`)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                navigate(`/debt/${d.customerId}`);
+                              }
+                            }}
+                          >
+                          <td className="debt-list-table__customer">
+                            <div className="debt-list-table__customer-main">
                               <span className={`risk-dot risk-dot--${d.riskClass}`} />
-                              {d.customerName}
+                              <Building2 size={14} aria-hidden="true" style={{ color: 'var(--fg-3)', flex: '0 0 auto' }} />
+                              <span className="debt-list-table__customer-name">{d.customerName}</span>
                               {d.linkedSupplierId != null && (
                                 <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
                                   2 chiều
@@ -521,28 +543,6 @@ export default function DebtListPage() {
                               : formatCurrency(d.netBalance)}
                           </td>
 
-                          <td style={{ fontSize: 13, color: 'var(--fg-2)' }}>
-                            {d.contactInfo || <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>}
-                          </td>
-
-                          <td style={{ verticalAlign: 'middle' }}>
-                            {d.totalOutstanding > 0 ? (
-                              <div
-                                className="aging-bar"
-                                title={`Trong hạn: ${Math.round(pctCurrent)}% | 31-60 ngày: ${Math.round(pct30)}% | 61-90 ngày: ${Math.round(pct60)}% | Trên 90 ngày: ${Math.round(pct90)}%`}
-                              >
-                                <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: `${pctCurrent}%` }} />
-                                <div className="aging-bar__seg aging-bar__seg--t1" style={{ width: `${pct30}%` }} />
-                                <div className="aging-bar__seg aging-bar__seg--t2" style={{ width: `${pct60}%` }} />
-                                <div className="aging-bar__seg aging-bar__seg--t4" style={{ width: `${pct90}%` }} />
-                              </div>
-                            ) : (
-                              <div className="aging-bar" title="Không có công nợ">
-                                <div className="aging-bar__seg aging-bar__seg--ok" style={{ width: '100%' }} />
-                              </div>
-                            )}
-                          </td>
-
                           <td className="num" style={{ textAlign: 'center', fontWeight: 600 }}>
                             {d.maxOverdueDays > 0 ? (
                               <span style={{ color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
@@ -553,16 +553,13 @@ export default function DebtListPage() {
                             )}
                           </td>
 
-                          <td style={{ textAlign: 'right' }}>
-                            <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
-                          </td>
                         </tr>
                       );
                     })}
 
                     {filteredDebts.length === 0 && (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
+                        <td colSpan={4} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                             <img src={resolveEmptyIllustration('empty-debts')} alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.

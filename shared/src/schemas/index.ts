@@ -192,6 +192,8 @@ export const billingDocumentLineSchema = z.object({
   sourceType: z.enum(['TRIP', 'EXPENSE', 'ADHOC']),
   sourceId: z.coerce.number().int().positive().nullable(),
   lineType: z.enum(['FREIGHT', 'SERVICE_FEE', 'ADHOC']),
+  typeLabel: z.string().min(1),
+  unit: z.string().min(1),
   description: z.string().min(1),
   routeName: z.string().nullable().optional(),
   containerNumbers: z.array(z.string()).nullable().optional(),

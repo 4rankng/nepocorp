@@ -6,9 +6,9 @@ import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
 import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
-import { getInitials } from '../lib/avatar';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
+import AssetIcon from '../components/AssetIcon';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
@@ -505,7 +505,6 @@ export default function DebtDetailPage() {
   }
 
   const { customer, ledgerRows } = statement;
-  const initials = getInitials(customer.name);
   const hasDebt = totalOutstanding > 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
   const unpaidTrips = statement.unpaidTrips ?? [];
@@ -576,7 +575,14 @@ export default function DebtDetailPage() {
         <button className="dd-back" onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
-        <div className="dd-avatar">{initials}</div>
+        <div className="dd-avatar">
+          <AssetIcon
+            name="customer"
+            size={28}
+            alt="Biểu tượng khách hàng"
+            className="dd-avatar__icon"
+          />
+        </div>
         <div className="dd-meta">
           <div className="dd-name-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h1>{customer.name}</h1>

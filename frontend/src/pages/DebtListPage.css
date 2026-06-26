@@ -15,18 +15,20 @@
 
 /* Debt page: hero card uses horizontal layout (flex row) instead of column */
 .debt-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 108px;
-  padding: 22px 24px;
+  position: relative;
+  display: block;
+  min-height: 160px;
+  padding: 16px 18px;
   border-radius: 16px;
   border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
 }
 
 .debt-hero__content {
   position: relative;
   z-index: 1;
+  max-width: none;
+  min-width: 0;
 }
 
 .debt-hero__amount {
@@ -39,6 +41,41 @@
   font-size: var(--fs-xs);
   font-weight: 600;
   opacity: 0.6;
+}
+
+.debt-hero__art {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  z-index: 0;
+  width: 176px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.debt-hero__art::before {
+  content: "";
+  position: absolute;
+  inset: 4px 6px 2px 2px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(150deg, rgba(0, 177, 79, 0.12), rgba(0, 177, 79, 0.01));
+  border: 1px solid rgba(0, 177, 79, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.debt-hero__illustration {
+  position: relative;
+  z-index: 1;
+  width: 144px;
+  height: 94px;
+  object-fit: contain;
+  filter: saturate(0.92) drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
 }
 
 /* Debt page: watermark tints for danger/warning mini KPIs */
@@ -54,6 +91,20 @@
 
 .debt-kpi-mini--warning .hero-kpi-mini__value {
   color: var(--warning-text);
+}
+
+.debt-kpi-mini__asset {
+  right: 12px;
+  bottom: 8px;
+}
+
+.debt-kpi-mini__asset img {
+  display: block;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  opacity: 0.94;
+  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.10));
 }
 
 /* Debt page: smaller gap in stack */
@@ -202,12 +253,51 @@
   gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(245, 248, 246, 0.92)),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .debt-filter-pills {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.debt-filter-bar .filter-pill {
+  padding: 8px 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 246, 244, 0.96));
+  border-color: rgba(15, 23, 42, 0.08);
+  color: var(--ink-2);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.debt-filter-bar .filter-pill:hover {
+  background: linear-gradient(180deg, #ffffff, #f6faf7);
+  border-color: rgba(0, 177, 79, 0.18);
+  color: var(--ink);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+}
+
+.debt-filter-bar .filter-pill.is-active {
+  background: linear-gradient(180deg, #18211d, #0f1613);
+  border-color: #101814;
+  color: #f7fbf8;
+  box-shadow: 0 10px 24px rgba(16, 24, 20, 0.18);
+}
+
+.debt-filter-bar .filter-pill__count {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--ink-2);
+}
+
+.debt-filter-bar .filter-pill.is-active .filter-pill__count {
+  background: rgba(255, 255, 255, 0.16);
+  color: #f7fbf8;
 }
 
 .debt-filter-spacer {
@@ -220,16 +310,17 @@
   display: flex;
   align-items: center;
   height: 34px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
-  border-radius: 10px;
+  flex: 1 1 320px;
+  background: linear-gradient(180deg, #ffffff, #f4f7f5);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
   min-width: 180px;
-  max-width: 260px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 4px 14px rgba(15, 23, 42, 0.04);
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .debt-filter-search:focus-within {
-  background: var(--surface);
+  background: #ffffff;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -239,7 +330,7 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ink-3);
+  color: color-mix(in srgb, var(--ink-3) 78%, var(--accent) 22%);
   pointer-events: none;
   flex-shrink: 0;
 }
@@ -252,10 +343,51 @@
   outline: none;
   font-size: var(--fs-xs);
   color: var(--ink);
+  font-weight: 500;
   height: 100%;
 }
 
-.debt-filter-search input::placeholder { color: var(--ink-3); }
+.debt-filter-search input::placeholder {
+  color: color-mix(in srgb, var(--ink-3) 84%, white);
+  opacity: 1;
+}
+
+.debt-list-table {
+  table-layout: fixed;
+}
+
+.debt-list-table thead th:nth-child(1) {
+  width: 46%;
+}
+
+.debt-list-table thead th:nth-child(2),
+.debt-list-table thead th:nth-child(3) {
+  width: 16%;
+}
+
+.debt-list-table thead th:nth-child(4) {
+  width: 12%;
+}
+
+.debt-list-table__customer {
+  white-space: normal;
+}
+
+.debt-list-table__customer-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.debt-list-table__customer-name {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
 
 /* ════════════════════════════════════════════════════════════════════════════
  *  Mobile overrides (≤640px)
@@ -268,12 +400,18 @@
   }
   .debt-list-page .hero-kpi-card.debt-hero {
     grid-column: 1 / -1;
-    min-height: 96px;
-    padding: 20px 22px;
+    min-height: 148px;
+    padding: 16px 18px;
   }
-  .debt-list-page .hero-kpi-card__watermark svg {
-    width: 52px;
-    height: 52px;
+  .debt-hero__art {
+    right: 12px;
+    bottom: 8px;
+    width: 160px;
+    height: 96px;
+  }
+  .debt-hero__illustration {
+    width: 128px;
+    height: 84px;
   }
   /* Mini KPIs: side by side on tablet */
   .debt-list-page .hero-kpi-stack.debt-kpi-stack {
@@ -298,15 +436,25 @@
   }
   .debt-list-page .hero-kpi-card.debt-hero {
     grid-column: auto;
-    min-height: auto;
-    padding: 18px;
+    min-height: 136px;
+    padding: 16px;
+    gap: 10px;
   }
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
     font-size: 24px;
   }
-  .debt-list-page .hero-kpi-card__watermark svg {
-    width: 48px;
-    height: 48px;
+  .debt-hero__art {
+    right: 10px;
+    bottom: 8px;
+    width: 144px;
+    height: 88px;
+  }
+  .debt-hero__art::before {
+    inset: 4px 6px 2px 2px;
+  }
+  .debt-hero__illustration {
+    width: 118px;
+    height: 78px;
   }
   .debt-list-page .hero-kpi-stack.debt-kpi-stack {
     flex-direction: row;
@@ -336,6 +484,7 @@
   /* Filter bar mobile */
   .debt-filter-bar {
     gap: 6px;
+    padding: 8px;
   }
   .debt-filter-pills {
     flex-wrap: wrap;
@@ -365,6 +514,14 @@
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
     font-size: 22px;
   }
+  .debt-hero__art {
+    width: 132px;
+    height: 82px;
+  }
+  .debt-hero__illustration {
+    width: 108px;
+    height: 72px;
+  }
   .debt-list-page .hero-kpi-mini {
     padding: 10px 12px;
     gap: 10px;
@@ -372,11 +529,37 @@
   .debt-list-page .hero-kpi-mini__value {
     font-size: 16px;
   }
-  .debt-list-page .hero-kpi-mini__watermark svg {
-    width: 26px;
-    height: 26px;
+  .debt-kpi-mini__asset img {
+    width: 30px;
+    height: 30px;
   }
   .debt-aging-card__amount {
     font-size: 15px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ *  Loading state — centered spinner + label
+ * ════════════════════════════════════════════════════════════════════════════ */
+.debt-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 56px 24px;
+  color: var(--ink-3, #5e6b76);
+  font-size: var(--fs-sm);
+}
+.debt-loading__spin {
+  color: var(--accent, #00b14f);
+  animation: debt-loading-spin 0.9s linear infinite;
+}
+@keyframes debt-loading-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .debt-loading__spin {
+    animation: none;
   }
 }

@@ -168,7 +168,17 @@ export const customers = pgTable('customers', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  uniqueIndex('customers_active_name_tax_code_uniq_idx')
+    .on(
+      sql`lower(btrim(${table.name}))`,
+      sql`coalesce(nullif(lower(btrim(${table.taxCode})), ''), '')`,
+    )
+    .where(sql`${table.deletedAt} is null`),
+  uniqueIndex('customers_active_tax_code_uniq_idx')
+    .on(sql`lower(btrim(${table.taxCode}))`)
+    .where(sql`${table.deletedAt} is null and nullif(btrim(${table.taxCode}), '') is not null`),
+]);
 
 export const routes = pgTable('routes', {
   id: serial('id').primaryKey(),
@@ -396,6 +406,8 @@ export const billingDocumentLines = pgTable('billing_document_lines', {
   sourceType: varchar('source_type', { length: 20 }).notNull(),  // TRIP | EXPENSE | ADHOC
   sourceId: integer('source_id'),                                // tripId | tripExpenseId | null(ADHOC)
   lineType: varchar('line_type', { length: 20 }).notNull(),      // FREIGHT | SERVICE_FEE | ADHOC
+  typeLabel: varchar('type_label', { length: 100 }).notNull().default('Khác'),
+  unit: varchar('unit', { length: 50 }).notNull().default('lần'),
   description: text('description').notNull(),
   routeName: varchar('route_name', { length: 255 }),
   containerNumbers: text('container_numbers'),                   // comma-joined (no PG arrays in this schema)

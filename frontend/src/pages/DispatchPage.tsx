@@ -69,7 +69,7 @@ export default function DispatchPage() {
           <div className="hero-title-block">
             <div className="hero-eyebrow">Phiên điều vận đang mở</div>
             <h1 className="hero-h1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="/assets/icons/06-dispatch-dieu-van.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+              <img src="/assets/icons/02-dispatch-dieu-phoi.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
               Điều vận hôm nay
             </h1>
             <div className="hero-sub">{formatFullDate(new Date())} · {pendingTotal} đơn hàng chờ phân xe</div>

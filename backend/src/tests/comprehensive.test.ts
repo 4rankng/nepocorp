@@ -218,6 +218,66 @@ test('E2E — Catalog endpoints CRUD reads & listings', async () => {
   }
 });
 
+test('E2E — Customer duplicate guard blocks create and update conflicts', async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const duplicateName = `KH trùng ${suffix}`;
+  const duplicateTaxCode = `DUP${Date.now().toString().slice(-8)}`;
+  const secondTaxCode = `${duplicateTaxCode}9`.slice(0, 20);
+
+  const firstCreate = await testFetch('/api/customers', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      name: duplicateName,
+      taxCode: duplicateTaxCode,
+      status: 'ACTIVE',
+    }),
+  });
+  assert.strictEqual(firstCreate.status, 201);
+
+  const secondCreate = await testFetch('/api/customers', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      name: duplicateName,
+      taxCode: duplicateTaxCode,
+      status: 'ACTIVE',
+    }),
+  });
+  assert.strictEqual(secondCreate.status, 409);
+  assert.match(String(secondCreate.data.error || ''), /đã tồn tại/i);
+
+  const secondUnique = await testFetch('/api/customers', {
+    method: 'POST',
+    token: adminToken,
+    body: JSON.stringify({
+      name: `${duplicateName} khác`,
+      taxCode: secondTaxCode,
+      status: 'ACTIVE',
+    }),
+  });
+  assert.strictEqual(secondUnique.status, 201);
+
+  const conflictingUpdate = await testFetch(`/api/customers/${secondUnique.data.id}`, {
+    method: 'PUT',
+    token: adminToken,
+    body: JSON.stringify({
+      taxCode: duplicateTaxCode,
+    }),
+  });
+  assert.strictEqual(conflictingUpdate.status, 409);
+  assert.match(String(conflictingUpdate.data.error || ''), /mã số thuế.*đã tồn tại/i);
+
+  await testFetch(`/api/customers/${firstCreate.data.id}`, {
+    method: 'DELETE',
+    token: adminToken,
+  });
+  await testFetch(`/api/customers/${secondUnique.data.id}`, {
+    method: 'DELETE',
+    token: adminToken,
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FLOW 3: Complete Trip Operations & Reassignments
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 {
-  "id": "00000000-0000-0000-0000-000000000073",
-  "prevId": "7ee92ad5-8751-475c-bf57-e711ef9b18c2",
+  "id": "680dcdee-500f-4754-a322-d5aa25f2217a",
+  "prevId": "61de7069-aa79-46d9-970f-11852ccbad37",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -635,6 +635,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "type_label": {
+          "name": "type_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Khác'"
+        },
+        "unit": {
+          "name": "unit",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'lần'"
+        },
         "description": {
           "name": "description",
           "type": "text",
@@ -1120,7 +1134,46 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "customers_active_name_tax_code_uniq_idx": {
+          "name": "customers_active_name_tax_code_uniq_idx",
+          "columns": [
+            {
+              "expression": "lower(btrim(\"name\"))",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(nullif(lower(btrim(\"tax_code\")), ''), '')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"customers\".\"deleted_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customers_active_tax_code_uniq_idx": {
+          "name": "customers_active_tax_code_uniq_idx",
+          "columns": [
+            {
+              "expression": "lower(btrim(\"tax_code\"))",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"customers\".\"deleted_at\" is null and nullif(btrim(\"customers\".\"tax_code\"), '') is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "customers_linked_supplier_id_suppliers_id_fk": {
           "name": "customers_linked_supplier_id_suppliers_id_fk",

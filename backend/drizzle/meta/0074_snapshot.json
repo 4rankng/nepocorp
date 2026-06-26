@@ -1,6 +1,6 @@
 {
-  "id": "00000000-0000-0000-0000-000000000073",
-  "prevId": "7ee92ad5-8751-475c-bf57-e711ef9b18c2",
+  "id": "61de7069-aa79-46d9-970f-11852ccbad37",
+  "prevId": "00000000-0000-0000-0000-000000000073",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -634,6 +634,20 @@
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true
+        },
+        "type_label": {
+          "name": "type_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Khác'"
+        },
+        "unit": {
+          "name": "unit",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'lần'"
         },
         "description": {
           "name": "description",

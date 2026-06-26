@@ -306,7 +306,7 @@ fontSize: 13,
       <header className="page-header">
         <div className="page-header-main">
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/assets/icons/20-security-shield-bao-mat.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+            <img src="/assets/icons/20-document-tai-lieu.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
             Nhật ký người dùng
           </h1>
           <p className="page-subtitle">

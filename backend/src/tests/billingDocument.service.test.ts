@@ -6,7 +6,7 @@ import {
 import type { BillingDocumentLine } from '@tingting/shared';
 
 const line = (over: Partial<BillingDocumentLine>): BillingDocumentLine => ({
-  sourceType: 'TRIP', sourceId: 1, lineType: 'FREIGHT', description: 'x',
+  sourceType: 'TRIP', sourceId: 1, lineType: 'FREIGHT', typeLabel: 'Khác', unit: 'lần', description: 'x',
   baseAmount: 1000, amountOverride: null, excluded: false, sortOrder: 0, ...over,
 });
 

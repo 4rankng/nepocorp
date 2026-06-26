@@ -17,7 +17,7 @@ import {
 import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
 import { ApiError } from '../errors';
-import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields } from '../services/config.service';
+import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields, validateCustomerUniqueness } from '../services/config.service';
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
@@ -88,6 +88,14 @@ router.get('/pricing', asyncHandler(async (req: Request, res: Response) => {
 
 router.use('/customers', createCrudRouter(s.customers, customerSchema, {
   searchableField: 'name',
+  beforeCreate: async (data) => {
+    await validateCustomerUniqueness(data);
+    return data;
+  },
+  beforeUpdate: async (id, data) => {
+    await validateCustomerUniqueness(data, id);
+    return data;
+  },
   afterCreate: mirrorCustomerLink,
   afterUpdate: mirrorCustomerLink,
 }));

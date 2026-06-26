@@ -519,6 +519,20 @@
       "when": 1782360900000,
       "tag": "0073_backfill_service_fee_ar",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1782459068492,
+      "tag": "0074_brief_raza",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1782464897926,
+      "tag": "0075_tricky_wrecker",
+      "breakpoints": true
     }
   ]
 }
