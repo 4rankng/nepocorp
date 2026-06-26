@@ -69,7 +69,7 @@ type SelectedTarget =
   | { type: 'general'; field?: 'name' | 'titleText' | 'orientation' | 'accentColor' }
   | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'logoStorageKey' }
   | { type: 'column'; columnId: string }
-  | { type: 'footer'; field?: 'signatureLeftLabel' | 'signatureRightLabel' | 'termsText' };
+  | { type: 'footer'; field?: 'signatureLeftLabel' | 'signatureLeftName' | 'signatureRightLabel' | 'signatureRightName' | 'termsText' };
 
 const EDITOR_SECTIONS: Array<{ id: EditorSection; label: string; meta: string; Icon: typeof FileText }> = [
   { id: 'general', label: 'Chung', meta: 'Tên mẫu, tiêu đề, khổ giấy', Icon: FileText },
@@ -92,7 +92,7 @@ function cloneStarterColumns(): DebitNoteTemplateColumn[] {
 
 function blankTemplate(): DebitNoteTemplateInput {
   return {
-    name: '',
+    name: 'Mẫu giấy báo nợ mới',
     isDefault: false,
     documentType: 'DEBIT_NOTE',
     logoStorageKey: null,
@@ -109,7 +109,9 @@ function blankTemplate(): DebitNoteTemplateInput {
     orientation: 'landscape',
     termsText: null,
     signatureLeftLabel: 'Khách hàng',
+    signatureLeftName: null,
     signatureRightLabel: 'Kế toán trưởng',
+    signatureRightName: null,
   };
 }
 
@@ -132,7 +134,9 @@ function toForm(template: DebitNoteTemplate): DebitNoteTemplateInput {
     orientation: template.orientation,
     termsText: template.termsText,
     signatureLeftLabel: template.signatureLeftLabel,
+    signatureLeftName: template.signatureLeftName,
     signatureRightLabel: template.signatureRightLabel,
+    signatureRightName: template.signatureRightName,
   };
 }
 
@@ -250,7 +254,7 @@ function TemplatePreview({
                   />
                 </span>
               </p>
-              <p>Đại diện bởi : {form.signatureRightLabel || ''}</p>
+              <p>Đại diện bởi : {form.signatureRightName || ''}</p>
               <p>Chức vụ: Giám Đốc</p>
               <p>{previewTerms[0] ?? '- Số TK '}</p>
               <p>{previewTerms[1] ?? '- Tại ngân hàng '}</p>
@@ -268,7 +272,6 @@ function TemplatePreview({
                           key={column.id}
                           className={isSelected ? 'is-selected' : undefined}
                           style={{
-                            background: form.accentColor,
                             width: `${Math.max(column.width || 8, 8) * 12}px`,
                             minWidth: `${Math.max(column.width || 8, 8) * 12}px`,
                           }}
@@ -327,7 +330,14 @@ function TemplatePreview({
                   disabled={canvasLocked}
                 />
                 <span>(Ký, họ tên)</span>
-                <strong>Nguyễn Văn A</strong>
+                <input
+                  className={`debit-editor-canvas-input debit-editor-canvas-input--signature-name ${selectedTarget.type === 'footer' && selectedTarget.field === 'signatureLeftName' ? 'is-selected' : ''}`}
+                  value={form.signatureLeftName || ''}
+                  placeholder="Tên người ký"
+                  onFocus={() => onSelect({ type: 'footer', field: 'signatureLeftName' })}
+                  onChange={event => onSet('signatureLeftName', event.target.value || null)}
+                  disabled={canvasLocked}
+                />
               </label>
               <label className={selectedTarget.type === 'footer' && selectedTarget.field === 'signatureRightLabel' ? 'is-selected' : undefined}>
                 <input
@@ -339,7 +349,14 @@ function TemplatePreview({
                   disabled={canvasLocked}
                 />
                 <span>(Ký, họ tên, đóng dấu)</span>
-                <strong>Trần Thị B</strong>
+                <input
+                  className={`debit-editor-canvas-input debit-editor-canvas-input--signature-name ${selectedTarget.type === 'footer' && selectedTarget.field === 'signatureRightName' ? 'is-selected' : ''}`}
+                  value={form.signatureRightName || ''}
+                  placeholder="Tên người ký"
+                  onFocus={() => onSelect({ type: 'footer', field: 'signatureRightName' })}
+                  onChange={event => onSet('signatureRightName', event.target.value || null)}
+                  disabled={canvasLocked}
+                />
               </label>
             </div>
           </div>
@@ -846,10 +863,10 @@ export default function DebitNoteTemplateEditorPage() {
       return (
         <section className="debit-editor-settings">
           <Field label="Tên mẫu *">
-            <textarea className="input debit-editor-inline-textarea debit-editor-settings-textarea" rows={1} value={form.name} onChange={event => set('name', event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.name} onChange={event => set('name', event.target.value)} disabled={busy} />
           </Field>
           <Field label="Tiêu đề">
-            <textarea className="input debit-editor-inline-textarea debit-editor-settings-textarea" rows={1} value={form.titleText} onChange={event => set('titleText', event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.titleText} onChange={event => set('titleText', event.target.value)} disabled={busy} />
           </Field>
           <Field label="Hướng giấy">
             <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.orientation} onChange={event => set('orientation', event.target.value as DebitNoteTemplateInput['orientation'])} disabled={busy}>
@@ -860,7 +877,7 @@ export default function DebitNoteTemplateEditorPage() {
           <Field label="Màu nhấn">
             <div className="debit-editor-color">
               <input type="color" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={busy} />
-              <textarea className="input mono debit-editor-inline-textarea debit-editor-settings-textarea" rows={1} value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={busy} />
+              <input className="input mono debit-editor-inline-input" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={busy} />
             </div>
           </Field>
           <label className="debit-editor-check">
@@ -923,13 +940,19 @@ export default function DebitNoteTemplateEditorPage() {
           </select>
         </Field>
         <Field label="Chữ ký trái">
-          <textarea className="input debit-editor-inline-textarea debit-editor-settings-textarea" rows={1} value={form.signatureLeftLabel ?? ''} onChange={event => set('signatureLeftLabel', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureLeftLabel ?? ''} onChange={event => set('signatureLeftLabel', event.target.value || null)} disabled={busy} />
+        </Field>
+        <Field label="Tên người ký trái">
+          <input className="input debit-editor-inline-input" value={form.signatureLeftName ?? ''} onChange={event => set('signatureLeftName', event.target.value || null)} disabled={busy} />
         </Field>
         <Field label="Chữ ký phải">
-          <textarea className="input debit-editor-inline-textarea debit-editor-settings-textarea" rows={1} value={form.signatureRightLabel ?? ''} onChange={event => set('signatureRightLabel', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureRightLabel ?? ''} onChange={event => set('signatureRightLabel', event.target.value || null)} disabled={busy} />
+        </Field>
+        <Field label="Tên người ký phải">
+          <input className="input debit-editor-inline-input" value={form.signatureRightName ?? ''} onChange={event => set('signatureRightName', event.target.value || null)} disabled={busy} />
         </Field>
         <Field label="Điều khoản">
-          <textarea className="input debit-editor-small-textarea" rows={3} value={form.termsText ?? ''} onChange={event => set('termsText', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.termsText ?? ''} onChange={event => set('termsText', event.target.value || null)} disabled={busy} />
         </Field>
       </section>
     );
@@ -947,7 +970,14 @@ export default function DebitNoteTemplateEditorPage() {
           </div>
           <div>
             <p className="billing-builder__eyebrow">{isNew ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}</p>
-            <h1>{isNew ? 'Mẫu giấy báo nợ mới' : form.name || 'Mẫu giấy báo nợ'}</h1>
+            <input
+              className="debit-editor-template-name"
+              value={form.name}
+              placeholder="Tên mẫu"
+              aria-label="Tên mẫu"
+              onChange={event => set('name', event.target.value)}
+              disabled={busy}
+            />
             <div className="billing-builder__meta">
               <span>{visibleColumns.length} cột đang hiện</span>
               <span>{form.orientation === 'landscape' ? 'Khổ ngang' : 'Khổ dọc'}</span>
@@ -1014,12 +1044,6 @@ export default function DebitNoteTemplateEditorPage() {
           </section>
 
           <aside className="debit-editor-inspector" aria-label={`Chỉnh ${activeSectionLabel}`}>
-            {selectedTarget.type !== 'column' && (
-              <div className="debit-editor-inspector__header">
-                <span>Đang chỉnh</span>
-                <strong>{activeSectionLabel}</strong>
-              </div>
-            )}
             {renderInspector()}
           </aside>
         </main>

@@ -71,6 +71,8 @@ export {
   agentDirectiveSchema, agentWidgetSchema, widgetFormatSchema, agentActionChipSchema,
   agentResponseSchema, agentMessageSchema, agentConversationSchema, agentEventSchema,
   agentRouteKeySchema, AGENT_ROUTE_KEYS,
+  ACKED_DIRECTIVE_KINDS,
+  agentActionResultSchema,
 } from './schemas';
 
 export {
@@ -102,6 +104,7 @@ export type {
   BachKhoaVehicle,
   AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentResponse,
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
+  AckedDirectiveKind, AgentActionResult,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

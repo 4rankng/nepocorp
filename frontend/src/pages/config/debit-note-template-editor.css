@@ -81,12 +81,33 @@
   background: var(--line-strong, #cfd8d3);
 }
 
-.debit-editor-title h1 {
+.debit-editor-title h1,
+.debit-editor-template-name {
+  width: min(520px, 56vw);
   margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
   font-size: 22px;
   line-height: 1.14;
   letter-spacing: 0;
   font-weight: 850;
+}
+
+.debit-editor-template-name {
+  display: block;
+  min-width: 220px;
+  outline: none;
+}
+
+.debit-editor-template-name:hover:not(:disabled),
+.debit-editor-template-name:focus {
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+
+.debit-editor-template-name::placeholder {
+  color: var(--ink-3);
 }
 
 .debit-editor-topbar__actions {
@@ -227,11 +248,6 @@
   color: var(--ink-3);
   font-size: 12px;
   font-weight: 700;
-}
-
-.debit-editor-small-textarea {
-  min-height: 42px;
-  resize: vertical;
 }
 
 .debit-editor-table-wrap {
@@ -975,7 +991,7 @@
   display: grid;
   gap: 0;
   width: 100%;
-  padding: 0 16px 16px;
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.92);
@@ -983,35 +999,12 @@
   backdrop-filter: blur(12px) saturate(140%);
 }
 
-.debit-editor-inspector__header {
-  display: grid;
-  gap: 4px;
-  padding: 10px 0 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-.debit-editor-inspector__header span {
-  color: var(--ink-3);
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1;
-  letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
-}
-
-.debit-editor-inspector__header strong {
-  color: var(--ink);
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 850;
-}
-
 .debit-editor-inspector .debit-editor-settings,
 .debit-editor-inspector .debit-editor-settings--issuer,
 .debit-editor-inspector .debit-editor-settings--footer {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   grid-template-areas: none;
-  gap: 16px 18px;
+  gap: 16px 20px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1023,44 +1016,85 @@
   grid-area: auto;
 }
 
+.debit-editor-inspector .debit-editor-settings--footer {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "group group"
+    "left-label left-name"
+    "right-label right-name"
+    "terms terms";
+}
+
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(1) {
+  grid-area: group;
+}
+
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(2) {
+  grid-area: left-label;
+}
+
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(3) {
+  grid-area: left-name;
+}
+
 .debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(4) {
-  grid-column: 1 / -1;
+  grid-area: right-label;
+}
+
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(5) {
+  grid-area: right-name;
+}
+
+.debit-editor-inspector .debit-editor-settings--footer .debit-editor-field:nth-child(6) {
+  grid-area: terms;
 }
 
 .debit-editor-inspector .debit-editor-field {
-  gap: 6px;
+  gap: 7px;
 }
 
 .debit-editor-inspector .debit-editor-field > span {
   color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
 .debit-editor-inspector .debit-editor-settings .debit-editor-inline-textarea,
 .debit-editor-inspector .debit-editor-settings .debit-editor-inline-input,
 .debit-editor-inspector .debit-editor-settings .debit-editor-inline-select {
-  height: 36px;
-  min-height: 36px;
-  padding: 0 2px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
   color: #111827;
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1.25;
 }
 
-.debit-editor-inspector .debit-editor-small-textarea {
-  min-height: 112px;
-  padding: 10px 12px;
+.debit-editor-inspector .debit-editor-settings .debit-editor-inline-select {
+  padding-right: 34px;
+}
+
+.debit-editor-inspector .debit-editor-color {
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.debit-editor-inspector .debit-editor-color input[type='color'] {
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.45;
 }
 
 .debit-editor-inspector .debit-editor-check {
   width: fit-content;
-  min-height: 36px;
+  min-height: 40px;
   align-self: end;
   color: var(--ink-2);
   font-size: 13px;
@@ -1242,6 +1276,17 @@
   .debit-editor-inspector {
     padding: 12px;
   }
+
+  .debit-editor-inspector .debit-editor-settings--footer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "group"
+      "left-label"
+      "left-name"
+      "right-label"
+      "right-name"
+      "terms";
+  }
 }
 
 @media (max-width: 640px) {
@@ -1342,10 +1387,13 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  min-height: 700px;
-  padding: 24px 22px 210px;
-  border: 1px dashed var(--line-2);
-  background: var(--surface);
+  min-height: 620px;
+  padding: 22px 28px 72px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: #fff;
+  color: #000;
+  font-family: "Times New Roman", Times, serif;
 }
 
 .debit-editor-canvas-input {
@@ -1372,6 +1420,13 @@
   background: var(--surface);
 }
 
+.debit-editor-page-boundary .debit-editor-canvas-input:disabled,
+.debit-editor-page-boundary .debit-editor-canvas-th-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
+  cursor: default;
+}
+
 .debit-editor-canvas-input.is-selected,
 .debit-editor-preview__issuer.is-selected,
 .debit-editor-preview__signatures label.is-selected {
@@ -1379,34 +1434,85 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-.debit-editor-preview__issuer {
-  padding: 10px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-}
-
-.debit-editor-preview__issuer div {
-  gap: 1px;
-}
-
 .debit-editor-canvas-input--issuer {
-  font-size: 13px;
-  font-weight: 850;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .debit-editor-preview__title.debit-editor-canvas-input {
   display: block;
   height: auto;
-  margin: 26px auto 0;
-  padding: 8px 10px 4px;
-  border-radius: 8px;
+  margin: 0 auto;
+  padding: 2px 8px;
+  border-radius: 4px;
   resize: none;
   overflow: hidden;
   white-space: normal;
+  color: #000;
+  text-align: center;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
-.debit-editor-preview__subtitle {
-  padding-bottom: 18px;
+.debit-editor-preview__export-header {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.debit-editor-preview__export-header > div {
+  color: #000;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.debit-editor-preview__intro {
+  display: grid;
+  gap: 0;
+  margin-bottom: 7px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #000;
+  font-size: 11px;
+  line-height: 1.28;
+}
+
+.debit-editor-preview__intro.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.debit-editor-preview__intro p {
+  min-height: 18px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.debit-editor-preview__intro strong {
+  font-weight: 700;
+}
+
+.debit-editor-preview__inline-field {
+  min-width: 180px;
+  flex: 1;
+}
+
+.debit-editor-preview__intro .debit-editor-canvas-input {
+  min-height: 18px;
+  padding: 0 2px;
+  border-radius: 3px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 400;
 }
 
 .debit-editor-preview__table-wrap {
@@ -1428,6 +1534,8 @@
   padding: 0;
   box-sizing: border-box;
   min-width: 96px;
+  border: 1px solid #000;
+  background: #fff;
 }
 
 .debit-editor-preview__table th.is-selected {
@@ -1460,21 +1568,22 @@
 
 .debit-editor-preview__table th button {
   width: 100%;
-  min-height: 58px;
+  min-height: 29px;
   display: grid;
   place-items: center;
   gap: 2px;
-  padding: 8px;
+  padding: 3px 5px;
   border: 0;
   background: transparent;
-  color: #fff;
+  color: #000;
   cursor: pointer;
 }
 
 .debit-editor-preview__table th button span {
-  font-size: 12px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
   line-height: 1.18;
-  font-weight: 850;
+  font-weight: 700;
   white-space: pre-line;
   overflow-wrap: normal;
   word-break: normal;
@@ -1488,24 +1597,45 @@
 
 .debit-editor-canvas-th-input {
   width: 100%;
-  min-height: 58px;
-  padding: 9px 8px;
+  min-height: 29px;
+  padding: 3px 5px;
   border: 0;
   resize: none;
   overflow: hidden;
   background: transparent;
-  color: #fff;
+  color: #000;
   text-align: center;
-  font-family: var(--font-body);
-  font-size: 12px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
   line-height: 1.18;
-  font-weight: 850;
+  font-weight: 700;
   outline: none;
 }
 
+.debit-editor-preview__table td {
+  height: 27px;
+  padding: 4px 6px;
+  border: 1px solid #000;
+  color: #000;
+  background: #fff;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.debit-editor-preview__table tbody tr:nth-child(even) td {
+  background: #fff;
+}
+
+.debit-editor-preview__total {
+  background: #fff !important;
+  border-top: 1px solid #000 !important;
+  font-weight: 700;
+}
+
 .debit-editor-preview__signatures {
-  min-height: 126px;
-  padding-top: 42px;
+  min-height: 78px;
+  padding-top: 18px;
   border: 0;
 }
 
@@ -1521,8 +1651,18 @@
 
 .debit-editor-canvas-input--signature {
   max-width: 220px;
-  font-weight: 850;
-  text-transform: uppercase;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.debit-editor-canvas-input--signature-name {
+  max-width: 220px;
+  margin-top: 18px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .debit-editor-preview__signatures label span {

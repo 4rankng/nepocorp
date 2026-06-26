@@ -1070,7 +1070,9 @@ export interface DebitNoteTemplate {
   orientation: 'landscape' | 'portrait';
   termsText: string | null;
   signatureLeftLabel: string | null;
+  signatureLeftName: string | null;
   signatureRightLabel: string | null;
+  signatureRightName: string | null;
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
@@ -1099,7 +1101,9 @@ export interface DebitNoteTemplateSnapshot {
   orientation: 'landscape' | 'portrait';
   termsText: string | null;
   signatureLeftLabel: string | null;
+  signatureLeftName: string | null;
   signatureRightLabel: string | null;
+  signatureRightName: string | null;
   logoStorageKey: string | null;
 }
 

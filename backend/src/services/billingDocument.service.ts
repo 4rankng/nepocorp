@@ -82,7 +82,9 @@ function rowToTemplate(row: typeof s.debitNoteTemplates.$inferSelect): DebitNote
     groupingMode: row.groupingMode as DebitNoteTemplate['groupingMode'],
     columns: normalizeTemplateColumns(row.columns),
     amountInWords: row.amountInWords, orientation: row.orientation as DebitNoteTemplate['orientation'],
-    termsText: row.termsText, signatureLeftLabel: row.signatureLeftLabel, signatureRightLabel: row.signatureRightLabel,
+    termsText: row.termsText,
+    signatureLeftLabel: row.signatureLeftLabel, signatureLeftName: row.signatureLeftName,
+    signatureRightLabel: row.signatureRightLabel, signatureRightName: row.signatureRightName,
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
@@ -132,7 +134,9 @@ export function templateToSnapshot(t: DebitNoteTemplate): DebitNoteTemplateSnaps
     accentColor: t.accentColor,
     showContainerColumn: t.showContainerColumn, showUnitColumn: t.showUnitColumn,
     groupingMode: t.groupingMode, columns: normalizeTemplateColumns(t.columns), orientation: t.orientation,
-    termsText: t.termsText, signatureLeftLabel: t.signatureLeftLabel, signatureRightLabel: t.signatureRightLabel,
+    termsText: t.termsText,
+    signatureLeftLabel: t.signatureLeftLabel, signatureLeftName: t.signatureLeftName,
+    signatureRightLabel: t.signatureRightLabel, signatureRightName: t.signatureRightName,
     logoStorageKey: t.logoStorageKey,
   };
 }
@@ -1137,7 +1141,7 @@ export async function renderTemplatedXlsx(
     issuerName,
     issuerAddress: snap.issuerAddress ?? '',
     issuerTaxCode: snap.issuerTaxCode ?? '',
-    issuerRepresentative: snap.signatureRightLabel ?? '',
+    issuerRepresentative: snap.signatureRightName ?? '',
     issuerPosition: 'Giám Đốc',
     subtotal: amountSubtotal.toLocaleString('en-US'),
     vatAmount: vatAmount.toLocaleString('en-US'),
@@ -1320,8 +1324,8 @@ export async function renderTemplatedXlsx(
   const rightEnd = nCols >= 11 ? 11 : nCols;
   if (leftEnd > 1) ws.mergeCells(signatureRow, 1, signatureRow, leftEnd);
   if (rightStart < rightEnd) ws.mergeCells(signatureRow, rightStart, signatureRow, rightEnd);
-  ws.getCell(signatureRow, 1).value = customerName;
-  ws.getCell(signatureRow, rightStart).value = issuerName;
+  ws.getCell(signatureRow, 1).value = snap.signatureLeftName?.trim() || customerName;
+  ws.getCell(signatureRow, rightStart).value = snap.signatureRightName?.trim() || issuerName;
   for (const cell of [ws.getCell(signatureRow, 1), ws.getCell(signatureRow, rightStart)]) {
     cell.font = boldFont;
     cell.alignment = { horizontal: 'center', vertical: 'middle' };

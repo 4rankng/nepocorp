@@ -13,6 +13,7 @@
 // ⚠️ Depends on the MiniMax spike (R1): tool-calling + JSON-mode shape. The
 // client is written to the OpenAI-compatible surface; verify before enabling.
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { randomUUID } from 'crypto';
 import { db } from '../../db';
 import * as schema from '../../db/schema';
 import { eq } from 'drizzle-orm';
@@ -20,9 +21,11 @@ import { config } from '../../config';
 import {
   agentResponseSchema,
   agentDirectiveSchema,
+  ACKED_DIRECTIVE_KINDS,
   type AgentEvent,
   type AgentResponse,
   type AgentDirective,
+  type AgentActionResult,
 } from '@tingting/shared';
 import { callMiniMax, type MiniMaxMessage, type MiniMaxTool } from '../llm/minimax.client';
 import { todayIsoVn } from './tools/period';
@@ -33,7 +36,7 @@ import { ToolError } from './tool.types';
 const RESPONSE_SHAPE_HINT = `Trả lời cuối cùng PHẢI là JSON theo đúng một trong 3 dạng:
 - {"type":"text","content":"..."}  (giải thích ngắn / trợ giúp trang / câu trả lời đơn giản)
 - {"type":"insight_card","title":"...","summary":"nguyên nhân/tóm tắt 1-2 câu","widgets":[...],"actions":[{"label":"...","directive":{...}}]}  (câu hỏi phân tích: lợi nhuận, công nợ, chi phí, dầu...)
-- {"type":"directive","directive":{"kind":"navigate|focus|open|prefill",...}}  (chỉ điều hướng)
+- {"type":"directive","directive":{"kind":"navigate|focus|open|prefill|toast|scrollTo",...}}  (chỉ điều hướng)
 widget có thể là: kpi_grid {items:[{label,value(number),format:"vnd|percent|number|days",delta?}]}, bar_chart {data:[{name,value}],format?}, line_chart {series:[{name,points:[{x,y}]}]}, table {columns,rows}, callout {variant:"info|warning|danger",text}, anomaly_list {items:[{label,detail,severity:"low|med|high"}]}.
 LƯU Ý:(1) value LUÔN là số nguyên VND đầy đủ (VD 120000000, KHÔNG phải 120 hay "120 triệu"); (2) format CHỈ một trong vnd|percent|number|days — KHÔNG tự đặt đơn vị như vnd_million; (3) mỗi action PHẢI là {"label":...,"directive":{"kind":...}} — nếu không có directive hợp lệ thì bỏ hẳn actions.`;
 
@@ -48,6 +51,7 @@ function buildSystemPrompt(ctx: AgentContext): string {
     '- LUÔN dùng công cụ để lấy số liệu; KHÔNG bịa số trong insight_card — chỉ dùng số công cụ trả về.',
     '- Với câu hỏi phân tích (lợi nhuận/công nợ/chi phí/dầu): dùng analyzer/report tool rồi trả insight_card có widgets phù hợp + tóm tắt nguyên nhân. Khi nói "tháng này", bỏ qua month/year (server tự lấy tháng hiện tại).',
     '- Với yêu cầu mở trang/tìm/xem: LUÔN gọi ui.navigate (hoặc trả {"type":"directive",...}). KHÔNG mô tả đường dẫn bằng text.',
+    '- KHÔNG dùng open/prefill — chưa có component nào đăng ký; chỉ dùng navigate/focus.',
     '- Với câu hỏi phụ thuộc trang hiện tại (giải thích trang, lỗi): trả text ngắn.',
     '- Trả lời bằng tiếng Việt.',
     ctx.currentRouteKey ? `Người dùng đang ở trang: ${ctx.currentRouteKey}.` : '',
@@ -68,6 +72,21 @@ function toolsToMiniMax(tools: AgentToolDef[]): MiniMaxTool[] {
   }));
 }
 
+/** Compose the terminal bubble for a navigate/focus directive from its ack. */
+function directiveAckText(
+  d: Extract<AgentDirective, { kind: 'navigate' | 'focus' }>,
+  ack: AgentActionResult,
+): AgentResponse {
+  const where = d.kind === 'focus' ? `${d.routeKey} #${d.id}` : d.routeKey;
+  if (ack.status === 'ok') {
+    return { type: 'text', content: `Đã mở trang ${where} cho bạn.` };
+  }
+  return {
+    type: 'text',
+    content: `Không mở được trang ${where}${ack.reason ? ` (${ack.reason})` : ''}. Bạn có thể mở thủ công.`,
+  };
+}
+
 export interface RunAgentResult {
   response: AgentResponse;
   conversationId: string | undefined;
@@ -83,6 +102,10 @@ export async function runAgent(opts: {
   priorMessages?: MiniMaxMessage[];
   emit: (event: AgentEvent) => void;
   signal?: AbortSignal;
+  /** When provided, navigate/focus directives are emitted with `requiresAck`
+   *  and this resolves once the frontend confirms execution (or times out).
+   *  Lets the agent compose accurate "đã mở / không mở được" text. */
+  awaitAck?: (actionId: string) => Promise<AgentActionResult>;
 }): Promise<RunAgentResult> {
   const { ctx, emit, signal } = opts;
   const tools = getToolsForRole(ctx.role);
@@ -161,11 +184,33 @@ export async function runAgent(opts: {
 
       emit({ event: 'tool_result', toolName: call.name, toolCallId: call.id, ok: true, label: toolResult.label });
 
-      // ui.* tools produce a directive — move the UI immediately.
+      // ui.* tools produce a directive — move the UI immediately. For
+      // navigate/focus we also request an ack so the LLM learns whether the
+      // page actually opened before it composes its final answer.
       if (call.name.startsWith('ui.')) {
         const parsed = agentDirectiveSchema.safeParse(toolResult.data);
         if (parsed.success) {
-          emit({ event: 'directive', directive: parsed.data as AgentDirective });
+          const d = parsed.data as AgentDirective;
+          if (
+            (ACKED_DIRECTIVE_KINDS as readonly string[]).includes(d.kind) &&
+            opts.awaitAck &&
+            !opts.signal?.aborted
+          ) {
+            const actionId = randomUUID();
+            emit({ event: 'directive', directive: d, actionId, requiresAck: true });
+            const ack = await opts.awaitAck(actionId);
+            if (opts.signal?.aborted) {
+              return { response: { type: 'text', content: '' }, conversationId: undefined, toolTrace };
+            }
+            // Replace the tool result with the ack outcome so the model's final
+            // answer reflects reality (it should say "đã mở" only if ok).
+            toolResult = {
+              data: { directive: d, opened: ack.status === 'ok', ackStatus: ack.status, reason: ack.reason },
+              label: ack.status === 'ok' ? toolResult.label : `${toolResult.label} — ${ack.status}`,
+            };
+          } else {
+            emit({ event: 'directive', directive: d });
+          }
         }
       }
 
@@ -180,8 +225,27 @@ export async function runAgent(opts: {
   if (opts.signal?.aborted) {
     return { response: { type: 'text', content: '' }, conversationId: undefined, toolTrace };
   }
-  const { response, usage: finalUsage } = await produceFinalAnswer(messages, signal);
+  let { response, usage: finalUsage } = await produceFinalAnswer(messages, signal);
   addUsage(finalUsage);
+
+  // Terminal directive ack: if the model's FINAL answer is itself a navigate/
+  // focus directive, confirm it actually landed before claiming success — then
+  // rewrite the answer to an honest text line so we never say "đã mở" for a
+  // page the client never applied (drawer closed, disconnected, unknown route).
+  if (
+    response.type === 'directive' &&
+    (ACKED_DIRECTIVE_KINDS as readonly string[]).includes(response.directive.kind) &&
+    opts.awaitAck &&
+    !opts.signal?.aborted
+  ) {
+    const actionId = randomUUID();
+    emit({ event: 'directive', directive: response.directive, actionId, requiresAck: true });
+    const ack = await opts.awaitAck(actionId);
+    response = directiveAckText(
+      response.directive as Extract<AgentDirective, { kind: 'navigate' | 'focus' }>,
+      ack,
+    );
+  }
 
   // ── Persist (resilient — never crash the chat over storage) ─────────────
   const conversationId = await persistTurn({

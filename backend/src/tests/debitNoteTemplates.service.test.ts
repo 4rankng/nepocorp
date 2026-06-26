@@ -47,7 +47,9 @@ const defaultSnapshot: DebitNoteTemplateSnapshot = {
   issuerName: null, issuerAddress: null, issuerTaxCode: null,
   accentColor: '#1F4E79', showContainerColumn: true, showUnitColumn: true, groupingMode: 'ROUTE',
   columns,
-  orientation: 'landscape', termsText: null, signatureLeftLabel: 'Khách hàng', signatureRightLabel: 'Kế toán trưởng',
+  orientation: 'landscape', termsText: null,
+  signatureLeftLabel: 'Khách hàng', signatureLeftName: null,
+  signatureRightLabel: 'Kế toán trưởng', signatureRightName: null,
   logoStorageKey: null,
 };
 
@@ -136,7 +138,8 @@ test('templateToSnapshot — copies render fields + resolved logo key', () => {
     titleText: 'GN', issuerName: 'Co', issuerAddress: 'Addr', issuerTaxCode: 'MST',
     accentColor: '#123456', showContainerColumn: false, showUnitColumn: true,
     groupingMode: 'NONE', columns, amountInWords: false, orientation: 'portrait',
-    termsText: 't', signatureLeftLabel: 'L', signatureRightLabel: 'R', createdBy: null,
+    termsText: 't', signatureLeftLabel: 'L', signatureLeftName: 'LN',
+    signatureRightLabel: 'R', signatureRightName: 'RN', createdBy: null,
     createdAt: '2026-06-30T00:00:00.000Z', updatedAt: '2026-06-30T00:00:00.000Z', deletedAt: null,
   };
   const snap = templateToSnapshot(tpl);

@@ -113,9 +113,8 @@ function AppRoutes() {
   );
 
   return (
-    <ToastProvider>
-      <Layout>
-        <Routes>
+    <Layout>
+      <Routes>
           <Route path="/" element={<Navigate to={isPortalUser ? portalHome : adminHome} replace />} />
           <Route
             path="/dashboard"
@@ -199,7 +198,6 @@ function AppRoutes() {
           />
         </Routes>
       </Layout>
-    </ToastProvider>
   );
 }
 
@@ -207,13 +205,15 @@ export default function App() {
   return (
     <ReducedMotionProvider>
       <AuthProvider>
-        <AgentDirectiveProvider>
-          <MonthProvider>
-            <SearchProvider>
-              <AppRoutes />
-            </SearchProvider>
-          </MonthProvider>
-        </AgentDirectiveProvider>
+        <ToastProvider>
+          <AgentDirectiveProvider>
+            <MonthProvider>
+              <SearchProvider>
+                <AppRoutes />
+              </SearchProvider>
+            </MonthProvider>
+          </AgentDirectiveProvider>
+        </ToastProvider>
       </AuthProvider>
     </ReducedMotionProvider>
   );

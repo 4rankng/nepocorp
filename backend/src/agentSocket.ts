@@ -14,7 +14,7 @@ import type { Server as HttpServer } from 'http';
 import { Server, type Namespace, type Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from './config';
-import { Role, type AgentEvent, type AgentResponse } from '@tingting/shared';
+import { Role, agentActionResultSchema, type AgentActionResult, type AgentEvent, type AgentResponse } from '@tingting/shared';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
 import { runAgent } from './services/agent/orchestrator';
@@ -127,6 +127,33 @@ function registerHandlers(agentNs: Namespace): void {
     // Per-session conversation memory (see renderResponseText/trimSessionHistory).
     const sessionHistory: MiniMaxMessage[] = [];
 
+    // Ack registry: directive events the orchestrator tags with `requiresAck`
+    // are awaited here until the frontend emits `agent:action_result` (or the
+    // timeout fires). Lets the agent confirm a navigation actually landed before
+    // it claims "đã mở trang…". One map per socket; cleared on disconnect.
+    const ACK_TIMEOUT_MS = 6000;
+    const pendingAcks = new Map<string, (r: AgentActionResult) => void>();
+    const awaitAck = (actionId: string): Promise<AgentActionResult> =>
+      new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          pendingAcks.delete(actionId);
+          resolve({ actionId, status: 'timeout' });
+        }, ACK_TIMEOUT_MS);
+        pendingAcks.set(actionId, (result) => {
+          clearTimeout(timer);
+          resolve(result);
+        });
+      });
+    socket.on('agent:action_result', (raw: unknown) => {
+      const parsed = agentActionResultSchema.safeParse(raw);
+      if (!parsed.success) return;
+      const resolve = pendingAcks.get(parsed.data.actionId);
+      if (resolve) {
+        pendingAcks.delete(parsed.data.actionId);
+        resolve(parsed.data);
+      }
+    });
+
     socket.on('agent:chat', async (input: ChatInput | null | undefined) => {
       const message = input?.message;
       if (typeof message !== 'string' || !message.trim()) {
@@ -156,6 +183,7 @@ function registerHandlers(agentNs: Namespace): void {
           priorMessages: sessionHistory.slice(),
           emit,
           signal: ac.signal,
+          awaitAck,
         });
         if (!ac.signal.aborted) {
           // Fold this completed turn into session memory for the next question.
@@ -179,6 +207,9 @@ function registerHandlers(agentNs: Namespace): void {
     socket.on('agent:cancel', () => current?.abort());
     socket.on('disconnect', (reason) => {
       console.log(`[agent-socket] disconnected: ${user.username ?? user.userId} (${reason})`);
+      // Resolve any in-flight acks as timeout so their promises don't hang.
+      for (const resolve of pendingAcks.values()) resolve({ actionId: '', status: 'timeout' });
+      pendingAcks.clear();
       current?.abort();
     });
   });

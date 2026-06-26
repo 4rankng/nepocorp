@@ -13,13 +13,19 @@
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { routes } from '../lib/routes';
+import { highlightElement } from '../lib/agentHighlight';
+import { useToast } from '../components/shared/Toast';
 import type { AgentDirective, AgentRouteKey } from '@tingting/shared';
 
 type OpenHandler = (d: Extract<AgentDirective, { kind: 'open' | 'prefill' }>) => void;
 
+/** Outcome of applying a directive — sent back as the ack for navigate/focus. */
+export type DirectiveOutcome = { status: 'ok' | 'error' | 'timeout'; reason?: string };
+
 interface AgentDirectiveContextValue {
-  /** Apply a directive (called by useAgentChat + action chips). */
-  send: (d: AgentDirective) => void;
+  /** Apply a directive (called by useAgentChat + action chips). Returns the
+   *  outcome so the caller can ack navigate/focus directives. */
+  send: (d: AgentDirective) => DirectiveOutcome;
   /** Register a modal/form handler for the current page (used by useAgentOpenable). */
   register: (componentId: string, handler: OpenHandler) => void;
   unregister: (componentId: string) => void;
@@ -51,6 +57,7 @@ function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | n
 export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
 
   const handlers = useRef<Map<string, OpenHandler>>(new Map());
   const pending = useRef<Map<string, Extract<AgentDirective, { kind: 'open' | 'prefill' }>[]>>(
@@ -79,35 +86,69 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const send = useCallback(
-    (d: AgentDirective) => {
+    (d: AgentDirective): DirectiveOutcome => {
       switch (d.kind) {
         case 'navigate': {
-          navigate(resolvePath(d.routeKey, d.params));
-          break;
+          const path = resolvePath(d.routeKey, d.params);
+          // fade/slide-* via the View Transitions API (progressive enhancement;
+          // slide-* currently render as fade — see agent.css). No-op where the
+          // API is unavailable, so navigation still works everywhere.
+          const go = () => navigate(path);
+          const doc = document as Document & {
+            startViewTransition?: (cb: () => void) => void;
+          };
+          if (d.animation && d.animation !== 'none' && typeof doc.startViewTransition === 'function') {
+            doc.startViewTransition(go);
+          } else {
+            go();
+          }
+          if (d.highlight?.targetId) {
+            // Target page mounts async — defer so the element exists.
+            const t = d.highlight.targetId;
+            const dur = d.highlight.durationMs;
+            window.setTimeout(() => {
+              highlightElement(t, dur);
+            }, 80);
+          }
+          return { status: 'ok' };
         }
         case 'focus': {
           // Navigate to the page, then drop a ?focus= seed so the page's
           // useFocusDeepLink scrolls + highlights (pages without it just navigate).
+          // fdur carries the optional ring duration.
           navigate(resolvePath(d.routeKey, { id: d.id }));
-          setSearchParams({ focus: String(d.id) }, { replace: true });
-          break;
+          const params: Record<string, string> = { focus: String(d.id) };
+          if (d.durationMs) params.fdur = String(d.durationMs);
+          setSearchParams(params, { replace: true });
+          return { status: 'ok' };
         }
         case 'open':
         case 'prefill': {
           const handler = handlers.current.get(d.componentId);
           if (handler) {
             handler(d);
+            return { status: 'ok' };
           } else {
             // Target page not mounted yet — stash for when it registers.
             const q = pending.current.get(d.componentId) ?? [];
             q.push(d);
             pending.current.set(d.componentId, q);
+            return { status: 'ok', reason: 'pending-mount' };
           }
-          break;
+        }
+        case 'toast': {
+          toast({ kind: d.variant, message: d.message, duration: d.durationMs });
+          return { status: 'ok' };
+        }
+        case 'scrollTo': {
+          const found = highlightElement(d.targetId, d.durationMs ?? 2000);
+          return found
+            ? { status: 'ok' }
+            : { status: 'error', reason: `#${d.targetId} không có trên trang` };
         }
       }
     },
-    [navigate, setSearchParams],
+    [navigate, setSearchParams, toast],
   );
 
   // Cold-mount seed: a shareable/refresh-safe `?agent=open:<componentId>` (with

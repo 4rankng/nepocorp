@@ -4,7 +4,7 @@ import { api, ApiError } from '../lib/api';
 import { Role } from '@tingting/shared';
 import { qk } from '../api/keys';
 import { getToken } from '../design-system/hooks/useToken';
-import { disposeAgentSocket } from '../api/agentClient';
+import { disposeAgentSocket, clearAgentConversation } from '../api/agentClient';
 
 export interface AuthUser {
   userId: number;
@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // token clears / cache writes.
     if (queryClient.getQueryData(qk.auth.me) === null) return;
     disposeAgentSocket(); // drop the assistant socket so a stale token isn't reused
+    clearAgentConversation(); // forget the resumed thread so the next user starts fresh
     api.clearToken();
     queryClient.setQueryData(qk.auth.me, null);
   }, [queryClient]);

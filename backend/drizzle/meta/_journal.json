@@ -561,6 +561,13 @@
       "when": 1782482778690,
       "tag": "0079_smiling_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1782580000000,
+      "tag": "0080_debit_note_signature_names",
+      "breakpoints": true
     }
   ]
 }

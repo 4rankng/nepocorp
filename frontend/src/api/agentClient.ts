@@ -13,7 +13,7 @@
 import { io, type Socket } from 'socket.io-client';
 import { api } from '../lib/api';
 import { getToken } from '../design-system/hooks/useToken';
-import { agentEventSchema, type AgentConversation, type AgentEvent } from '@tingting/shared';
+import { agentEventSchema, type AgentActionResult, type AgentConversation, type AgentEvent } from '@tingting/shared';
 
 export const agentClient = {
   /** Recent conversations for the current user (sidebar history). */
@@ -23,6 +23,37 @@ export const agentClient = {
   getConversation: (id: string) =>
     api.get<AgentConversation>(`/agent/conversations/${id}`),
 };
+
+// ── Conversation resume (survive reload) ────────────────────────────────────
+// The chat thread lives in React state (useAgentChat), which is lost on a full
+// page reload — and reloads DO happen: in dev, Vite HMR (the source alias for
+// @tingting/shared in vite.config.ts reloads the app on a shared-schema save);
+// in prod, the service-worker `controllerchange` fires on deploy. The
+// conversation is already persisted server-side by persistTurn — we only need
+// to remember which conversationId and rehydrate its messages on mount.
+const CONVERSATION_ID_KEY = 'agent.conversationId';
+
+export function loadSavedConversationId(): string | null {
+  try {
+    return localStorage.getItem(CONVERSATION_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function persistConversationId(id: string | null): void {
+  try {
+    if (id) localStorage.setItem(CONVERSATION_ID_KEY, id);
+    else localStorage.removeItem(CONVERSATION_ID_KEY);
+  } catch {
+    /* storage may be unavailable (private mode) — best-effort */
+  }
+}
+
+/** Drop the saved conversation (e.g. on logout) so the next session starts fresh. */
+export function clearAgentConversation(): void {
+  persistConversationId(null);
+}
 
 export interface StreamChatInput {
   message: string;
@@ -86,6 +117,17 @@ export function disposeAgentSocket(): void {
     cached.socket.disconnect();
     cached = null;
   }
+}
+
+/**
+ * Ack a directive the server tagged with `requiresAck` (navigate/focus). The
+ * server awaits this before composing its final "đã mở trang…" text, so it
+ * never claims success for a page the client never applied. Reuses the cached
+ * socket the directive arrived on; best-effort if it has since dropped.
+ */
+export function sendActionResult(r: AgentActionResult): void {
+  const socket = cached?.socket;
+  if (socket && socket.connected) socket.emit('agent:action_result', r);
 }
 
 /**
