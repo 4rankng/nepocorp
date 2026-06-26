@@ -92,6 +92,13 @@
   pointer-events: none;
 }
 
+.hero-kpi-card__watermark--asset {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  opacity: 0.18;
+}
+
 .hero-kpi-card.asset-ledger-watermark .hero-kpi-card__watermark {
   display: none;
 }
@@ -141,6 +148,13 @@
 .hero-kpi-mini__watermark svg {
   width: 40px;
   height: 40px;
+}
+
+.hero-kpi-mini__watermark--asset {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.18;
 }
 
 .hero-kpi-mini--accent .hero-kpi-mini__watermark { color: rgba(0, 177, 79, 0.14); }

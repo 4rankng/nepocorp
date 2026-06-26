@@ -42,7 +42,17 @@ export type AssetIconName =
   | 'notification'
   | 'settings'
   | 'users-hr'
-  | 'checklist';
+  | 'checklist'
+  | 'payables'
+  | 'advances'
+  | 'profit'
+  | 'cashflow'
+  | 'overdue'
+  | 'paid'
+  | 'unpaid'
+  | 'settlement'
+  | 'gross-margin'
+  | 'active-supplier';
 
 export interface AssetIconEntry {
   /** Short semantic name used in <AssetIcon name=...>. */
@@ -80,6 +90,16 @@ export const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   settings:     { name: 'settings',     slug: '22-settings-system-cai-dat-he-thong',                 label: 'Cài đặt hệ thống',     group: 'system' },
   'users-hr':   { name: 'users-hr',     slug: '23-users-hr-nguoi-dung-nhan-su',                      label: 'Người dùng / Nhân sự', group: 'people' },
   checklist:    { name: 'checklist',    slug: '24-checklist-approval-danh-sach-kiem-tra-phe-duyet',  label: 'Danh sách kiểm tra / Phê duyệt', group: 'operations' },
+  payables:     { name: 'payables',     slug: '25-payables-cong-no-phai-tra',                        label: 'Công nợ phải trả',     group: 'money' },
+  advances:     { name: 'advances',     slug: '26-advances-tam-ung',                                  label: 'Tạm ứng',              group: 'money' },
+  profit:       { name: 'profit',       slug: '27-profit-loi-nhuan',                                  label: 'Lợi nhuận',            group: 'reporting' },
+  cashflow:     { name: 'cashflow',     slug: '28-cashflow-dong-tien',                                label: 'Dòng tiền',            group: 'money' },
+  overdue:      { name: 'overdue',      slug: '29-overdue-qua-han',                                   label: 'Quá hạn',              group: 'money' },
+  paid:         { name: 'paid',         slug: '30-paid-da-thanh-toan',                                label: 'Đã thanh toán',        group: 'money' },
+  unpaid:       { name: 'unpaid',       slug: '31-unpaid-chua-thanh-toan',                            label: 'Chưa thanh toán',      group: 'money' },
+  settlement:   { name: 'settlement',   slug: '32-settlement-hoan-ung',                               label: 'Hoàn ứng',             group: 'money' },
+  'gross-margin': { name: 'gross-margin', slug: '33-gross-margin-bien-loi-nhuan',                     label: 'Biên lợi nhuận gộp',   group: 'reporting' },
+  'active-supplier': { name: 'active-supplier', slug: '34-active-supplier-nha-cung-cap-hoat-dong',    label: 'Nhà cung cấp hoạt động', group: 'people' },
 };
 
 /** Every icon name, exported for iteration / verification. */

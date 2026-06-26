@@ -2,8 +2,9 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { PayableSummary, PayablesCategory } from '@tingting/shared';
-import { Search, ChevronRight, Wallet, AlertTriangle, Users, Gift } from 'lucide-react';
+import { Search, ChevronRight, Gift } from 'lucide-react';
 import { PageHeader, Modal } from '../components/UI';
+import { AssetIcon } from '../components/AssetIcon';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -324,6 +325,7 @@ export default function PayableListPage() {
     <div ref={rootRef} className="payables-page">
       <PageHeader
         title="Công nợ phải trả"
+        iconName="payables"
         description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} NCC · cập nhật vừa xong`}
         action={
           <div className="page-actions">
@@ -348,7 +350,7 @@ export default function PayableListPage() {
       {/* ── Zone 1: Hero KPI Row ────────────────────────────────────────── */}
       <div className="hero-kpi-row">
         {/* Hero card — span 3 */}
-        <div className="hero-kpi-card asset-ledger-watermark">
+        <div className="hero-kpi-card">
           <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
           <span className="hero-kpi-card__amount">
             <span ref={heroTotalRef}>{prefersReduced ? heroMoney.num : 0}</span>
@@ -357,11 +359,7 @@ export default function PayableListPage() {
           <span className="hero-kpi-card__subtitle">
             {totals.supplierCount} nhà cung cấp · cập nhật vừa xong
           </span>
-          <Wallet
-            size={72}
-            className="hero-kpi-card__watermark"
-            aria-hidden="true"
-          />
+          <AssetIcon name="payables" size={86} className="hero-kpi-card__watermark hero-kpi-card__watermark--asset" />
         </div>
 
         {/* Stacked mini-KPI cards — span 1 */}
@@ -373,7 +371,7 @@ export default function PayableListPage() {
               </span>
               <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
-            <AlertTriangle size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
+            <AssetIcon name="overdue" size={44} className="hero-kpi-mini__watermark hero-kpi-mini__watermark--asset" />
           </div>
           <div className="hero-kpi-mini hero-kpi-mini--accent">
             <div className="hero-kpi-mini__body">
@@ -382,7 +380,7 @@ export default function PayableListPage() {
               </span>
               <span className="hero-kpi-mini__label">nhà cung cấp</span>
             </div>
-            <Users size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
+            <AssetIcon name="active-supplier" size={44} className="hero-kpi-mini__watermark hero-kpi-mini__watermark--asset" />
           </div>
         </div>
       </div>

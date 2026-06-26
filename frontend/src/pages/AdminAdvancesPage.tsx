@@ -7,6 +7,7 @@ import {
   AdvanceRequestStatus,
 } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import {
   useAdminAdvanceRequests,
@@ -54,12 +55,13 @@ interface AdvKPIProps {
   value: number;
   meta: string;
   variant: 'warn' | 'success' | 'danger';
+  iconName: AssetIconName;
   active?: boolean;
   hasItems?: boolean;
   onClick: () => void;
 }
 
-function AdvKPI({ label, value, meta, variant, active = false, hasItems = false, onClick }: AdvKPIProps) {
+function AdvKPI({ label, value, meta, variant, iconName, active = false, hasItems = false, onClick }: AdvKPIProps) {
   return (
     <div
       className={`adv-kpi adv-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}`}
@@ -71,6 +73,7 @@ function AdvKPI({ label, value, meta, variant, active = false, hasItems = false,
       <div className="adv-kpi__label">{label}</div>
       <div className="adv-kpi__value">{value}</div>
       <div className="adv-kpi__meta">{meta}</div>
+      <AssetIcon name={iconName} size={58} className="adv-kpi__asset" />
     </div>
   );
 }
@@ -298,6 +301,7 @@ export default function AdminAdvancesPage() {
     <div ref={rootRef} className="adv-page">
       <PageHeader
         title="Quản lý tạm ứng"
+        iconName="advances"
         description="Duyệt hoặc từ chối yêu cầu tạm ứng"
       />
 
@@ -308,6 +312,7 @@ export default function AdminAdvancesPage() {
           value={stats.counts.PENDING}
           meta={`${formatNumber(stats.totals.PENDING)} ₫`}
           variant="warn"
+          iconName="advances"
           active={statusFilter === AdvanceRequestStatus.PENDING}
           hasItems={stats.counts.PENDING > 0}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.PENDING ? '' : AdvanceRequestStatus.PENDING)}
@@ -317,6 +322,7 @@ export default function AdminAdvancesPage() {
           value={stats.counts.APPROVED}
           meta={`${formatNumber(stats.totals.APPROVED)} ₫`}
           variant="success"
+          iconName="paid"
           active={statusFilter === AdvanceRequestStatus.APPROVED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.APPROVED ? '' : AdvanceRequestStatus.APPROVED)}
         />
@@ -325,6 +331,7 @@ export default function AdminAdvancesPage() {
           value={stats.counts.REJECTED}
           meta={`${formatNumber(stats.totals.REJECTED)} ₫`}
           variant="danger"
+          iconName="unpaid"
           active={statusFilter === AdvanceRequestStatus.REJECTED}
           onClick={() => setStatusFilter(statusFilter === AdvanceRequestStatus.REJECTED ? '' : AdvanceRequestStatus.REJECTED)}
         />
@@ -333,6 +340,7 @@ export default function AdminAdvancesPage() {
           value={balancesData?.items.length ?? 0}
           meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="success"
+          iconName="cashflow"
           active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}
           onClick={() => { /* summary only — no filter */ }}

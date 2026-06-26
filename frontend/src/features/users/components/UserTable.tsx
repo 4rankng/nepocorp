@@ -10,6 +10,7 @@ import type { UserRow } from '../utils';
 import { UserStatusBadge } from './UserStatusBadge';
 import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
+import { PageHeader } from '../../../components/UI';
 
 interface UserTableProps {
   users: UserRow[];
@@ -81,15 +82,12 @@ export function UserTable({
   return (
     <>
       {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Quản lý <em>người dùng</em></h1>
-          <p className="page-subtitle">
-            {total} tài khoản · {staffCount} nhân sự · {driverCount} lái xe
-          </p>
-        </div>
-        {canManage && (
-          <div className="page-actions">
+      <PageHeader
+        title={<>Quản lý <em>người dùng</em></>}
+        iconName="users-hr"
+        description={`${total} tài khoản · ${staffCount} nhân sự · ${driverCount} lái xe`}
+        action={
+          canManage ? (
             <button
               className="btn btn--primary"
               onClick={onAdd}
@@ -97,9 +95,9 @@ export function UserTable({
             >
               <Plus size={14} /> Thêm tài khoản
             </button>
-          </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       {/* ── KPI grid ────────────────────────────────────────────────────── */}
       <div className="kpi-grid" style={{ marginBottom: 24 }}>

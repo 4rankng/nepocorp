@@ -6,6 +6,7 @@ import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { EmptyIllustration } from '../components/shared';
 import { PageHeader, Panel } from '../components/UI';
+import { AssetIcon } from '../components/AssetIcon';
 import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
@@ -230,7 +231,7 @@ export default function FinancePage() {
     <div ref={rootRef} style={{ paddingBottom: 40 }}>
       <PageHeader
         title="Báo cáo lãi lỗ"
-        iconName="analytics"
+        iconName="profit"
         description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
         action={
           <div className="page-actions">
@@ -274,6 +275,7 @@ export default function FinancePage() {
             ? <div className={`pnl-kpi__delta ${totalRevenue >= totalRevenueLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(totalRevenue, totalRevenueLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
+          <AssetIcon name="cashflow" size={54} className="pnl-kpi__asset" />
         </div>
         <div className="pnl-kpi pnl-kpi--profit">
           <div className="pnl-kpi__label">Lợi nhuận gộp</div>
@@ -282,6 +284,7 @@ export default function FinancePage() {
             ? <div className={`pnl-kpi__delta ${grossProfit >= grossProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(grossProfit, grossProfitLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
+          <AssetIcon name="profit" size={54} className="pnl-kpi__asset" />
         </div>
         <div className="pnl-kpi">
           <div className="pnl-kpi__label">Biên lợi nhuận gộp</div>
@@ -291,6 +294,7 @@ export default function FinancePage() {
           >
             {report?.tripCount ?? '—'} chuyến đã khóa
           </div>
+          <AssetIcon name="gross-margin" size={54} className="pnl-kpi__asset" />
         </div>
         <div className="pnl-kpi pnl-kpi--net">
           <div className="pnl-kpi__label">Lợi nhuận ròng</div>
@@ -299,6 +303,7 @@ export default function FinancePage() {
             ? <div className={`pnl-kpi__delta ${netProfit >= netProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(netProfit, netProfitLY)} so cùng kỳ</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
+          <AssetIcon name="paid" size={54} className="pnl-kpi__asset" />
         </div>
       </div>
 

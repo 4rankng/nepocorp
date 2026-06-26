@@ -83,6 +83,10 @@
   place-items: center;
   flex-shrink: 0;
 }
+.expense-kpi-label__icon img {
+  width: 22px;
+  height: 22px;
+}
 
 .expense-kpi-card--total .expense-kpi-label__icon {
   background: var(--surface-3);

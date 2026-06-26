@@ -89,6 +89,8 @@
 }
 
 .pnl-kpi {
+  position: relative;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -125,6 +127,17 @@
   font-size: var(--fs-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
+  padding-right: 42px;
+}
+.pnl-kpi__asset {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  opacity: 0.16;
+  pointer-events: none;
 }
 .pnl-kpi__delta--up   { color: var(--success, #10b981); }
 .pnl-kpi__delta--down { color: var(--danger,  #ef4444); }

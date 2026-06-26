@@ -145,6 +145,15 @@
   width: 48px;
   height: 48px;
 }
+.kpi__watermark img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+.kpi--compact .kpi__watermark img {
+  width: 48px;
+  height: 48px;
+}
 
 /* Mobile: shrink the watermark further and add right padding to value/meta
    so the icon doesn't overlap the text on small viewports (~375px). */

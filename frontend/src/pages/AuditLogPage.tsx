@@ -355,6 +355,7 @@ fontSize: 13,
           value={todayCount}
           unit="sự kiện"
           icon={Activity}
+          assetIconName="analytics"
           meta="Tìm thấy trong cơ sở dữ liệu"
         />
 
@@ -363,6 +364,7 @@ fontSize: 13,
           value={uniqueUsers || (loading ? '...' : 0)}
           unit="người dùng"
           icon={Users}
+          assetIconName="users-hr"
           variant="info"
           meta="Trong trang kết quả hiện tại"
         />
@@ -372,6 +374,7 @@ fontSize: 13,
           value={topCategory.count}
           unit={topCategory.label}
           icon={TrendingUp}
+          assetIconName="profit"
           variant="accent"
           meta="Chiếm ưu thế trong trang hiện tại"
         />
@@ -380,6 +383,7 @@ fontSize: 13,
           label="Hoạt động gần nhất"
           value={entries[0] ? formatTimeShort(entries[0].timestamp) : '—'}
           icon={Clock}
+          assetIconName="schedule"
           compact
           meta={entries[0] ? `${entries[0].message.slice(0, 30)}...` : 'Chưa có hoạt động'}
         />

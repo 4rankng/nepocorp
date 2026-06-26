@@ -11,6 +11,7 @@ import {
 } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import {
@@ -52,12 +53,13 @@ interface AsKPIProps {
   value: number;
   meta: string;
   variant: 'warn' | 'info' | 'success' | 'danger';
+  iconName: AssetIconName;
   active?: boolean;
   hasItems?: boolean;
   onClick: () => void;
 }
 
-function AsKPI({ label, value, meta, variant, active = false, hasItems = false, onClick }: AsKPIProps) {
+function AsKPI({ label, value, meta, variant, iconName, active = false, hasItems = false, onClick }: AsKPIProps) {
   return (
     <div
       className={`as-kpi as-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}`}
@@ -69,6 +71,7 @@ function AsKPI({ label, value, meta, variant, active = false, hasItems = false, 
       <div className="as-kpi__label">{label}</div>
       <div className="as-kpi__value">{value}</div>
       <div className="as-kpi__meta">{meta}</div>
+      <AssetIcon name={iconName} size={58} className="as-kpi__asset" />
     </div>
   );
 }
@@ -372,7 +375,7 @@ export default function AdminAdvanceSettlementsPage() {
     <div ref={rootRef} className="as-page">
       <PageHeader
         title="Duyệt hoàn ứng"
-        iconName="checklist"
+        iconName="settlement"
         description="Kiểm tra và duyệt phiếu thanh toán tạm ứng của giao nhận"
       />
 
@@ -383,6 +386,7 @@ export default function AdminAdvanceSettlementsPage() {
           value={stats.counts.PENDING}
           meta={`${formatNumber(stats.totals.PENDING)} ₫`}
           variant="warn"
+          iconName="settlement"
           active={statusFilter === AdvanceSettlementStatus.PENDING}
           hasItems={stats.counts.PENDING > 0}
           onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.PENDING ? '' : AdvanceSettlementStatus.PENDING)}
@@ -392,6 +396,7 @@ export default function AdminAdvanceSettlementsPage() {
           value={stats.counts.CHECKED_BY_ACCOUNTANT}
           meta={`${formatNumber(stats.totals.CHECKED_BY_ACCOUNTANT)} ₫`}
           variant="info"
+          iconName="cashflow"
           active={statusFilter === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT}
           hasItems={stats.counts.CHECKED_BY_ACCOUNTANT > 0}
           onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT ? '' : AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT)}
@@ -401,6 +406,7 @@ export default function AdminAdvanceSettlementsPage() {
           value={stats.counts.APPROVED}
           meta={`${formatNumber(stats.totals.APPROVED)} ₫`}
           variant="success"
+          iconName="paid"
           active={statusFilter === AdvanceSettlementStatus.APPROVED}
           onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.APPROVED ? '' : AdvanceSettlementStatus.APPROVED)}
         />
@@ -409,6 +415,7 @@ export default function AdminAdvanceSettlementsPage() {
           value={balancesData?.items.length ?? 0}
           meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="warn"
+          iconName="advances"
           active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}
           onClick={() => { /* summary only — no filter */ }}

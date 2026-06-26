@@ -6,7 +6,7 @@ import {
   Zap, Trophy, Users, AlertTriangle, Clock,
   DollarSign, XCircle, Loader2,
 } from 'lucide-react';
-import { Panel, Btn, KPI } from '../../../components/UI';
+import { Panel, Btn, KPI, PageHeader } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { getInitials, avatarColorById } from '../../../lib/avatar';
 import { formatCurrency, formatDate } from '../../../lib/format';
@@ -144,22 +144,20 @@ export function PenaltyTable({
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <h1 className="page-title">Kỷ luật</h1>
-              <span className="penalty-month-pill">
-                <span className="dot" />
-                {monthLabel} · {incidentCount === 0 ? 'An toàn' : `${incidentCount} vụ`}
-              </span>
-            </div>
-            <p className="page-subtitle">
-              Theo dõi vi phạm nghiệp vụ, mức phạt khấu trừ trực tiếp vào bảng lương lái xe
-            </p>
-          </div>
-        </div>
-        <div className="page-actions">
+      <PageHeader
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            Kỷ luật
+            <span className="penalty-month-pill">
+              <span className="dot" />
+              {monthLabel} · {incidentCount === 0 ? 'An toàn' : `${incidentCount} vụ`}
+            </span>
+          </span>
+        }
+        iconName="alert"
+        description="Theo dõi vi phạm nghiệp vụ, mức phạt khấu trừ trực tiếp vào bảng lương lái xe"
+        action={
+          <>
           <Btn variant="secondary" icon={<Download size={14} />} onClick={async () => {
             const headers = ['Lái xe', 'Mã lệnh', 'Lý do', 'Số tiền', 'Ngày'];
             const rows = filteredPenalties.map(p => [
@@ -182,8 +180,9 @@ export function PenaltyTable({
           <Btn variant="primary" icon={<Plus size={14} />} onClick={() => onOpenDrawer()}>
             Lập biên bản
           </Btn>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}
       {periodLoading ? (
@@ -198,6 +197,7 @@ export function PenaltyTable({
           value={incidentCount}
           unit="vụ"
           icon={Shield}
+          assetIconName="alert"
           variant="success"
           meta={
             <span className="penalty-kpi-meta">
@@ -210,6 +210,7 @@ export function PenaltyTable({
           label={`Tổng phạt ${monthLabel}`}
           value={formatCurrency(totalMonthAmount)}
           icon={DollarSign}
+          assetIconName="unpaid"
           meta={
             <span className="penalty-kpi-meta">
               <span>Khấu trừ vào bảng lương</span>
@@ -223,6 +224,7 @@ export function PenaltyTable({
           value={safeCount}
           unit={`/${drivers.length} lái xe`}
           icon={Users}
+          assetIconName="driver"
           variant="info"
           meta={
             <span className="penalty-kpi-meta">
@@ -238,6 +240,7 @@ export function PenaltyTable({
           value={longestStreak}
           unit="ngày"
           icon={Zap}
+          assetIconName="checklist"
           variant="warn"
           meta={
             <span className="penalty-kpi-meta">

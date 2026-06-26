@@ -40,6 +40,16 @@
   position: relative;
   overflow: hidden;
 }
+.as-page .as-kpi__asset {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  opacity: 0.18;
+  pointer-events: none;
+}
 .as-page .as-kpi::before {
   content: "";
   position: absolute;
@@ -96,6 +106,7 @@
   font-size: var(--fs-xs);
   color: var(--ink-2);
   margin-top: 6px;
+  padding-right: 48px;
 }
 
 /* Active selection ring per variant */

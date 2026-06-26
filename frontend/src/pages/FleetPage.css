@@ -50,6 +50,11 @@
   stroke-width: 1.7;
 }
 
+.fleet-page .kpi__watermark img {
+  width: 64px;
+  height: 64px;
+}
+
 .fleet-page .kpi--warn .kpi__watermark,
 .fleet-page .kpi--success .kpi__watermark,
 .fleet-page .kpi--accent .kpi__watermark,

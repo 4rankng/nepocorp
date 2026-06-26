@@ -247,6 +247,7 @@ export default function SupplierListPage() {
 
       <PageHeader
         title="Nhà cung cấp"
+        iconName="supplier"
         description={`${total} nhà cung cấp đang quản lý`}
         action={
           <>
@@ -281,6 +282,7 @@ export default function SupplierListPage() {
           label="Tổng nhà cung cấp"
           value={total}
           icon={Users}
+          assetIconName="supplier"
           meta={<span>{total} nhà cung cấp</span>}
         />
         <KPI
@@ -289,6 +291,7 @@ export default function SupplierListPage() {
           unit={`/ ${total}`}
           variant="success"
           icon={UserCheck}
+          assetIconName="active-supplier"
           meta={total > 0 ? `${activeCount}/${total} đang hoạt động` : ''}
         />
       </div>

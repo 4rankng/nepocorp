@@ -298,6 +298,7 @@ export default function CustomersPage() {
 
       <PageHeader
         title="Khách hàng"
+        iconName="customer"
         description={`${total} khách hàng đang quản lý`}
         action={
           <>
@@ -332,6 +333,7 @@ export default function CustomersPage() {
           label="Tổng khách hàng"
           value={total}
           icon={Users}
+          assetIconName="customer"
           meta={<span>{total} khách hàng</span>}
         />
         <KPI
@@ -340,6 +342,7 @@ export default function CustomersPage() {
           unit={`/ ${total}`}
           variant="success"
           icon={UserCheck}
+          assetIconName="active-supplier"
           meta={total > 0 ? `${Math.round((activeCount / total) * 100)}% hoạt động đều` : ''}
         />
         <KPI
@@ -347,6 +350,7 @@ export default function CustomersPage() {
           value={top4Revenue.total > 0 ? formatNumber(top4Revenue.total) : '—'}
           variant={top4Revenue.total > 0 ? 'success' : 'warn'}
           icon={BarChart3}
+          assetIconName="profit"
           meta={top4Revenue.total > 0
             ? `${top4Revenue.customers.length} KH · ${formatNumber(top4Revenue.total)} ₫`
             : 'Chưa có dữ liệu doanh thu'
@@ -357,6 +361,7 @@ export default function CustomersPage() {
           value={lockedCount}
           variant="danger"
           icon={Lock}
+          assetIconName="overdue"
           meta="Do nợ quá hạn"
         />
       </div>

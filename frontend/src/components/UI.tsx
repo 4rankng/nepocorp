@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, ArrowLeft, HelpCircle, X } from 'lucide-react';
 import { animate, utils, spring } from 'animejs';
+import { AssetIcon, type AssetIconName } from './AssetIcon';
 import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
 import { usePressAnimation } from '../hooks/animations/usePressAnimation';
 
@@ -106,13 +107,14 @@ interface KPIProps {
   value: string | number;
   unit?: string;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
+  assetIconName?: AssetIconName;
   meta?: React.ReactNode;
   variant?: 'success' | 'warn' | 'danger' | 'accent' | 'info' | 'default';
   compact?: boolean;
   onClick?: () => void;
 }
 
-export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default', compact, onClick }: KPIProps) {
+export function KPI({ label, value, unit, icon: Icon, assetIconName, meta, variant = 'default', compact, onClick }: KPIProps) {
   const variantClass = variant === 'default' ? '' : `kpi--${variant}`;
   return (
     <div
@@ -129,9 +131,13 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
         {unit && <span className="kpi__value-unit">{unit}</span>}
       </div>
       {meta && <div className="kpi__meta">{meta}</div>}
-      {Icon && (
+      {(assetIconName || Icon) && (
         <div className="kpi__watermark" aria-hidden="true">
-          <Icon size={72} />
+          {assetIconName ? (
+            <AssetIcon name={assetIconName} size={72} className="kpi__watermark-asset" />
+          ) : Icon ? (
+            <Icon size={72} />
+          ) : null}
         </div>
       )}
     </div>
@@ -139,8 +145,6 @@ export function KPI({ label, value, unit, icon: Icon, meta, variant = 'default',
 }
 
 /* ─── Page Header ───────────────────────────────────────────────────────── */
-
-import { AssetIcon, type AssetIconName } from './AssetIcon';
 
 interface PageHeaderProps {
   title: React.ReactNode;

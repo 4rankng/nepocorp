@@ -885,6 +885,7 @@ export default function FleetPage() {
           value={trucks.length}
           unit="xe"
           icon={Truck}
+          assetIconName="truck"
           variant="success"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
@@ -901,6 +902,7 @@ export default function FleetPage() {
           value={ft40 + ft20}
           unit="moóc"
           icon={Container}
+          assetIconName="cargo"
           variant="info"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
@@ -915,6 +917,7 @@ export default function FleetPage() {
           value={activeDrivers}
           unit="người"
           icon={UserCheck}
+          assetIconName="driver"
           variant="warn"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
@@ -930,6 +933,7 @@ export default function FleetPage() {
           value={readyToRun}
           unit={`/ ${activeTrucks + maintTrucks || trucks.length} đầu kéo`}
           icon={CheckCircle}
+          assetIconName="checklist"
           variant="default"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
