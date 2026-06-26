@@ -85,6 +85,24 @@ test('renderTemplatedXlsx writes Vietnamese amount in words for grand total', as
   assert.equal(wordsRow, 'Bằng chữ: Năm triệu bốn trăm nghìn đồng');
 });
 
+test('renderTemplatedXlsx resolves template variables in intro text', async () => {
+  const buf = await renderTemplatedXlsx({ ...debitDoc, entityId: 999_999 }, {
+    ...defaultSnapshot,
+    titleText: 'BẢNG {rangeMonth} - {customerName}',
+    termsText: '- Số TK {invoiceNo}\n- Tổng tiền {amountInWords}',
+  });
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const wb = new ExcelJS.Workbook();
+  await (wb.xlsx.load as (data: unknown) => Promise<unknown>)(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(2, 1).value, 'BẢNG 06.2026 - Công ty ABC');
+  assert.equal(ws.getCell(14, 1).value, '- Số TK ........');
+  assert.equal(ws.getCell(15, 1).value, '- Tổng tiền Năm triệu bốn trăm nghìn đồng');
+});
+
 test('renderTemplatedXlsx with letterhead + terms → valid xlsx', async () => {
   const withChrome: DebitNoteTemplateSnapshot = {
     ...defaultSnapshot,

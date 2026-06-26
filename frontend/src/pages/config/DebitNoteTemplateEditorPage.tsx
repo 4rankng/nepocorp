@@ -50,6 +50,21 @@ const VARIABLES: Array<{ value: DebitNoteColumnVariable; label: string; sample: 
 
 const variableMap = new Map(VARIABLES.map(item => [item.value, item]));
 
+const TEMPLATE_VARIABLES = [
+  ['{rangeMonth}', '06.2026'],
+  ['{invoiceNo}', '1C26TYY'],
+  ['{invoiceDate}', '30/06/2026'],
+  ['{customerName}', 'CÔNG TY VIETSUN'],
+  ['{customerAddress}', 'Địa chỉ khách hàng'],
+  ['{customerTaxCode}', '0201640426'],
+  ['{customerRepresentative}', 'Ông Lê Tuấn Dũng'],
+  ['{issuerName}', 'CÔNG TY TNHH NEPO'],
+  ['{issuerAddress}', 'Địa chỉ công ty'],
+  ['{issuerTaxCode}', '0201588208'],
+  ['{issuerRepresentative}', 'Ông Phan Kim Phụng'],
+  ['{amountInWords}', 'Một trăm triệu đồng'],
+] as const;
+
 function cloneStarterColumns(): DebitNoteTemplateColumn[] {
   return defaultDebitNoteColumns.map(column => ({ ...column }));
 }
@@ -477,6 +492,15 @@ export default function DebitNoteTemplateEditorPage() {
                 <Star size={15} />
                 <span>Mẫu mặc định</span>
               </label>
+            </section>
+
+            <section className="debit-editor-variable-strip" aria-label="Biến mẫu">
+              <span>Biến mẫu</span>
+              <div>
+                {TEMPLATE_VARIABLES.map(([token, sample]) => (
+                  <code key={token} title={sample}>{token}</code>
+                ))}
+              </div>
             </section>
 
             <section className="debit-editor-settings debit-editor-settings--issuer">

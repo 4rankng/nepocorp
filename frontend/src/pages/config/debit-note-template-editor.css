@@ -141,6 +141,44 @@
   grid-template-columns: minmax(160px, 0.7fr) minmax(180px, 0.8fr) minmax(180px, 0.8fr) minmax(320px, 1.4fr);
 }
 
+.debit-editor-variable-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--sh-sm);
+}
+
+.debit-editor-variable-strip > span {
+  flex: 0 0 auto;
+  padding-top: 3px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.debit-editor-variable-strip > div {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.debit-editor-variable-strip code {
+  padding: 3px 6px;
+  border: 1px solid rgba(0, 105, 56, 0.18);
+  border-radius: 6px;
+  color: #064e3b;
+  background: #f0fdf4;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
 .debit-editor-field {
   min-width: 0;
   display: grid;
@@ -573,6 +611,11 @@
   .debit-editor-settings--issuer,
   .debit-editor-settings--footer {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .debit-editor-variable-strip {
+    flex-direction: column;
+    gap: 6px;
   }
 
   .debit-editor-table-wrap {

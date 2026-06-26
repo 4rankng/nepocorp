@@ -672,6 +672,18 @@ function amountToVietnameseWords(amount: number): string {
   return `${sign}${sentenceCase(words.join(' '))} đồng`;
 }
 
+function hasTemplateToken(value: string): boolean {
+  return /\{\{?\s*[\w.]+\s*\}?\}/.test(value);
+}
+
+function renderTemplateText(template: string, variables: Record<string, string | number>): string {
+  return template.replace(/\{\{\s*([\w.]+)\s*\}\}|\{\s*([\w.]+)\s*\}/g, (match, doubleKey, singleKey) => {
+    const key = doubleKey ?? singleKey;
+    const value = variables[key];
+    return value == null ? match : String(value);
+  });
+}
+
 // Verbatim legacy renderer (pre-template). Kept move-only so the regression
 // oracle holds: buildBillingXlsx(doc, null) delegates here and is byte-identical
 // to pre-template output for BOTH DEBIT_NOTE and PAYMENT_STATEMENT docs.
@@ -1106,6 +1118,32 @@ export async function renderTemplatedXlsx(
       contactInfo: s.customers.contactInfo,
     }).from(s.customers).where(eq(s.customers.id, doc.entityId)).limit(1))[0]
     : null;
+  const amountSubtotal = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
+  const vatAmount = Math.round(amountSubtotal * 0.08);
+  const grandTotal = amountSubtotal + vatAmount;
+  const customerName = customer?.name ?? doc.entityName ?? '';
+  const issuerName = snap.issuerName ?? 'CÔNG TY TNHH NEPO';
+  const templateVariables: Record<string, string | number> = {
+    rangeFrom: formatVietnameseDate(doc.rangeFrom),
+    rangeTo: formatVietnameseDate(doc.rangeTo),
+    rangeMonth: formatMonthYear(doc.rangeTo),
+    invoiceNo: doc.note?.trim() || '........',
+    invoiceDate: formatVietnameseDate(doc.rangeTo),
+    customerName,
+    customerAddress: customer?.contactInfo ?? '',
+    customerTaxCode: customer?.taxCode ?? '',
+    customerRepresentative: customer?.contactPerson ?? '',
+    customerPosition: 'Giám Đốc',
+    issuerName,
+    issuerAddress: snap.issuerAddress ?? '',
+    issuerTaxCode: snap.issuerTaxCode ?? '',
+    issuerRepresentative: snap.signatureRightLabel ?? '',
+    issuerPosition: 'Giám Đốc',
+    subtotal: amountSubtotal.toLocaleString('en-US'),
+    vatAmount: vatAmount.toLocaleString('en-US'),
+    grandTotal: grandTotal.toLocaleString('en-US'),
+    amountInWords: amountToVietnameseWords(grandTotal),
+  };
 
   const thinBlack = { style: 'thin' as const, color: { argb: 'FF000000' } };
   const hairBlack = { style: 'hair' as const, color: { argb: 'FF000000' } };
@@ -1132,36 +1170,39 @@ export async function renderTemplatedXlsx(
   ws.getRow(17).height = 15;
   if (nCols > 1) ws.mergeCells(17, 1, 17, nCols);
 
+  const rawTitle = snap.titleText || 'BẢNG KÊ CƯỚC VẬN CHUYỂN';
+  const titleTemplate = hasTemplateToken(rawTitle) || /\bTHÁNG\b/i.test(rawTitle)
+    ? rawTitle
+    : `${rawTitle} THÁNG {rangeMonth}`;
   ws.mergeCells(2, 1, 2, nColsForIntro);
-  ws.getCell(2, 1).value = `${snap.titleText || 'BẢNG KÊ CƯỚC VẬN CHUYỂN'} THÁNG ${formatMonthYear(doc.rangeTo)}`;
+  ws.getCell(2, 1).value = renderTemplateText(titleTemplate, templateVariables);
   ws.getCell(2, 1).font = { name: 'Times New Roman', size: 16, bold: true };
   ws.getCell(2, 1).alignment = { horizontal: 'center', vertical: 'middle' };
 
   ws.mergeCells(3, 1, 3, nColsForIntro);
-  ws.getCell(3, 1).value = `(Kèm hoá đơn GTGT số: ${doc.note?.trim() || '........'}   ngày ${formatVietnameseDate(doc.rangeTo)})`;
+  ws.getCell(3, 1).value = renderTemplateText('(Kèm hoá đơn GTGT số: {invoiceNo}   ngày {invoiceDate})', templateVariables);
   ws.getCell(3, 1).font = { name: 'Times New Roman', size: 12, bold: true };
   ws.getCell(3, 1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-  const customerName = customer?.name ?? doc.entityName ?? '';
-  const issuerName = snap.issuerName ?? 'CÔNG TY TNHH NEPO';
+  const termsLines = renderTemplateText(snap.termsText ?? '- Số TK \n- Tại ngân hàng ', templateVariables).split('\n');
   const introRows: Array<{ row: number; value: string; bold?: boolean }> = [
-    { row: 4, value: `BÊN A (BÊN THUÊ DỊCH VỤ): ${customerName}`, bold: true },
-    { row: 5, value: `Địa chỉ: ${customer?.contactInfo ?? ''}` },
-    { row: 6, value: `Mã số thuế: ${customer?.taxCode ?? ''}` },
-    { row: 7, value: `Đại diện bởi : ${customer?.contactPerson ?? ''}` },
-    { row: 8, value: 'Chức vụ: Giám Đốc' },
-    { row: 9, value: `BÊN B (BÊN CUNG CẤP DỊCH VỤ): ${issuerName}`, bold: true },
-    { row: 10, value: `Địa chỉ: ${snap.issuerAddress ?? ''}` },
-    { row: 11, value: `Mã số thuế: ${snap.issuerTaxCode ?? ''}` },
-    { row: 12, value: `Đại diện bởi : ${snap.signatureRightLabel ?? ''}` },
-    { row: 13, value: 'Chức vụ: Giám Đốc' },
-    { row: 14, value: snap.termsText?.split('\n')[0] ?? '- Số TK ' },
-    { row: 15, value: snap.termsText?.split('\n')[1] ?? '- Tại ngân hàng ' },
+    { row: 4, value: 'BÊN A (BÊN THUÊ DỊCH VỤ): {customerName}', bold: true },
+    { row: 5, value: 'Địa chỉ: {customerAddress}' },
+    { row: 6, value: 'Mã số thuế: {customerTaxCode}' },
+    { row: 7, value: 'Đại diện bởi : {customerRepresentative}' },
+    { row: 8, value: 'Chức vụ: {customerPosition}' },
+    { row: 9, value: 'BÊN B (BÊN CUNG CẤP DỊCH VỤ): {issuerName}', bold: true },
+    { row: 10, value: 'Địa chỉ: {issuerAddress}' },
+    { row: 11, value: 'Mã số thuế: {issuerTaxCode}' },
+    { row: 12, value: 'Đại diện bởi : {issuerRepresentative}' },
+    { row: 13, value: 'Chức vụ: {issuerPosition}' },
+    { row: 14, value: termsLines[0] ?? '- Số TK ' },
+    { row: 15, value: termsLines[1] ?? '- Tại ngân hàng ' },
     { row: 16, value: 'Cùng thống nhất tiến hành đối chiếu sản lượng và doanh thu dịch vụ Bên B đã hoàn thành cung cấp/thực hiện cho Bên A như sau:' },
   ];
   for (const item of introRows) {
     const cell = ws.getCell(item.row, 1);
-    cell.value = item.value;
+    cell.value = renderTemplateText(item.value, templateVariables);
     cell.font = item.bold ? boldFont : baseFont;
     cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
   }
@@ -1230,10 +1271,6 @@ export async function renderTemplatedXlsx(
   const vatRow = row++;
   const grandRow = row++;
   const wordsRow = row++;
-  const amountSubtotal = amountIdx > 0
-    ? dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0)
-    : 0;
-  const grandTotal = Math.round(amountSubtotal * 1.08);
 
   if (nCols >= 6) {
     ws.mergeCells(subtotalRow, 1, subtotalRow, Math.min(6, nCols));
@@ -1261,10 +1298,10 @@ export async function renderTemplatedXlsx(
     ws.getCell(grandRow, amountIdx).value = { formula: `${colLetter(amountIdx)}${subtotalRow}+${colLetter(amountIdx)}${vatRow}` };
     ws.getCell(vatRow, amountIdx).numFmt = moneyFmt;
     ws.getCell(grandRow, amountIdx).numFmt = moneyFmt;
-    widthSamples[amountIdx - 1]?.push(amountSubtotal * 0.08, grandTotal);
+    widthSamples[amountIdx - 1]?.push(vatAmount, grandTotal);
   }
 
-  ws.getCell(wordsRow, 1).value = `Bằng chữ: ${amountToVietnameseWords(grandTotal)}`;
+  ws.getCell(wordsRow, 1).value = renderTemplateText('Bằng chữ: {amountInWords}', templateVariables);
   if (nCols > 1) ws.mergeCells(wordsRow, 1, wordsRow, nCols);
 
   for (let r = subtotalRow; r <= wordsRow; r++) {
