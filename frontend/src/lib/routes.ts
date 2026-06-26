@@ -135,6 +135,7 @@ const titleRules: TitleRule[] = [
   { test: p => p === routes.penalties || p === routes.myPenalties, title: 'Kỷ luật' },
   { test: p => p.startsWith(routes.customers), title: 'Khách hàng' },
   { test: p => p.startsWith(routes.configRoutes) || p.startsWith(routes.legacy.routes), title: 'Tuyến đường' },
+  { test: p => p.startsWith(routes.configDebitNoteTemplates), title: 'Mẫu giấy báo nợ' },
   { test: p => p === routes.config, title: 'Cấu hình hệ thống' },
   { test: p => p.startsWith(routes.config), title: 'Cấu hình' },
   { test: p => p === routes.users, title: 'Người dùng' },

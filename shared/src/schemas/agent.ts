@@ -61,6 +61,7 @@ export const AGENT_ROUTE_KEYS = [
   'configTrailers',
   'configFuel',
   'configSalaryPeriods',
+  'configDebitNoteTemplates',
   // Admin
   'users',
   'auditLogs',

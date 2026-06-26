@@ -51,9 +51,19 @@ const PAGE_DESCRIPTIONS: Record<AgentRouteKey, string> = {
   configTrailers: 'Cấu hình rơ-moóc.',
   configFuel: 'Cấu hình dầu (định mức, đơn giá).',
   configSalaryPeriods: 'Cấu hình kỳ lương.',
+  configDebitNoteTemplates: 'Mẫu giấy báo nợ — cấu hình mẫu Excel giấy báo nợ, chữ ký, thông tin công ty, cột xuất file.',
   users: 'Người dùng — danh sách tài khoản.',
   auditLogs: 'Nhật ký thao tác người dùng.',
 };
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase();
+}
 
 function buildDirectiveTool<A extends z.ZodTypeAny>(
   name: string,
@@ -109,9 +119,9 @@ export const uiTools: AgentToolDef[] = [
     async execute(rawArgs, ctx) {
       if (!OFFICE_ROLE_SET.includes(ctx.role)) return { data: [] };
       const { query } = z.object({ query: z.string().min(1) }).parse(rawArgs);
-      const q = query.toLowerCase();
+      const q = normalizeSearchText(query);
       const matches = (AGENT_ROUTE_KEYS as readonly AgentRouteKey[])
-        .filter((k) => k.toLowerCase().includes(q) || PAGE_DESCRIPTIONS[k].toLowerCase().includes(q))
+        .filter((k) => normalizeSearchText(k).includes(q) || normalizeSearchText(PAGE_DESCRIPTIONS[k]).includes(q))
         .map((k) => ({ routeKey: k, description: PAGE_DESCRIPTIONS[k] }));
       return { data: matches, label: `${matches.length} trang phù hợp` };
     },
