@@ -285,6 +285,7 @@ export const debitNoteTemplateSchema = z.object({
   issuerName: z.string().max(200).nullable().default(null),
   issuerAddress: z.string().max(300).nullable().default(null),
   issuerTaxCode: z.string().max(50).nullable().default(null),
+  issuerRepresentative: z.string().max(100).nullable().default(null),
   accentColor: z.string().min(1).max(20).default('#1F4E79'),
   showContainerColumn: z.boolean().default(true),
   showUnitColumn: z.boolean().default(true),

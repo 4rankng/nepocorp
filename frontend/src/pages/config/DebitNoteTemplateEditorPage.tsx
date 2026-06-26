@@ -62,7 +62,7 @@ const variableMap = new Map(VARIABLES.map(item => [item.value, item]));
 type EditorSection = 'general' | 'company' | 'columns' | 'footer';
 type SelectedTarget =
   | { type: 'general'; field?: 'name' | 'titleText' | 'orientation' | 'accentColor' }
-  | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'signatureRightName' | 'termsText' }
+  | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'issuerRepresentative' | 'termsText' }
   | { type: 'column'; columnId: string }
   | { type: 'footer'; field?: 'signatureLeftLabel' | 'signatureLeftName' | 'signatureRightLabel' | 'signatureRightName' | 'termsText' };
 
@@ -114,6 +114,7 @@ function blankTemplate(): DebitNoteTemplateInput {
     issuerName: 'CÔNG TY TNHH NEPO',
     issuerAddress: null,
     issuerTaxCode: null,
+    issuerRepresentative: null,
     accentColor: '#1F4E79',
     showContainerColumn: true,
     showUnitColumn: true,
@@ -139,6 +140,7 @@ function toForm(template: DebitNoteTemplate): DebitNoteTemplateInput {
     issuerName: template.issuerName,
     issuerAddress: template.issuerAddress,
     issuerTaxCode: template.issuerTaxCode,
+    issuerRepresentative: template.issuerRepresentative ?? null,
     accentColor: template.accentColor,
     showContainerColumn: template.showContainerColumn,
     showUnitColumn: template.showUnitColumn,
@@ -268,8 +270,8 @@ function TemplatePreview({
                   />
                 </span>
               </p>
-              <p className={selectedTarget.type === 'company' && selectedTarget.field === 'signatureRightName' ? 'is-selected' : undefined}>
-                Đại diện bởi : {form.signatureRightName || ''}
+              <p className={selectedTarget.type === 'company' && selectedTarget.field === 'issuerRepresentative' ? 'is-selected' : undefined}>
+                Đại diện bởi : {form.issuerRepresentative || ''}
               </p>
               <p>Chức vụ: Giám Đốc</p>
               <p>{previewTerms[0] ?? '- Số TK '}</p>
@@ -904,7 +906,7 @@ export default function DebitNoteTemplateEditorPage() {
             <input className="input debit-editor-inline-input" value={form.issuerAddress ?? ''} onChange={event => set('issuerAddress', event.target.value || null)} disabled={busy} />
           </Field>
           <Field label="Đại diện bởi">
-            <input className="input debit-editor-inline-input" value={form.signatureRightName ?? ''} onChange={event => set('signatureRightName', event.target.value || null)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.issuerRepresentative ?? ''} onChange={event => set('issuerRepresentative', event.target.value || null)} disabled={busy} />
           </Field>
           <Field label="Chức vụ">
             <input className="input debit-editor-inline-input" value="Giám Đốc" disabled />

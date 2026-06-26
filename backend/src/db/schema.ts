@@ -398,6 +398,7 @@ export const debitNoteTemplates = pgTable('debit_note_templates', {
   issuerName: varchar('issuer_name', { length: 200 }),
   issuerAddress: varchar('issuer_address', { length: 300 }),
   issuerTaxCode: varchar('issuer_tax_code', { length: 50 }),
+  issuerRepresentative: varchar('issuer_representative', { length: 100 }),
   accentColor: varchar('accent_color', { length: 20 }).notNull().default('#1F4E79'),
   showContainerColumn: boolean('show_container_column').notNull().default(true),
   showUnitColumn: boolean('show_unit_column').notNull().default(true),

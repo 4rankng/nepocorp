@@ -1061,6 +1061,7 @@ export interface DebitNoteTemplate {
   issuerName: string | null;
   issuerAddress: string | null;
   issuerTaxCode: string | null;
+  issuerRepresentative?: string | null;
   accentColor: string;
   showContainerColumn: boolean;
   showUnitColumn: boolean;
@@ -1093,6 +1094,7 @@ export interface DebitNoteTemplateSnapshot {
   issuerName: string | null;
   issuerAddress: string | null;
   issuerTaxCode: string | null;
+  issuerRepresentative?: string | null;
   accentColor: string;
   showContainerColumn: boolean;
   showUnitColumn: boolean;
