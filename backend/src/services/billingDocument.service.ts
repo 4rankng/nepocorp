@@ -1321,20 +1321,39 @@ export async function renderTemplatedXlsx(
     }
   }
 
-  const signatureRow = row++;
+  const signatureLabelRow = row++;
+  const signatureHintRow = row++;
+  const signatureNameRow = row + 3;
+  row = signatureNameRow + 1;
   const leftEnd = nCols >= 11 ? 5 : Math.max(1, Math.floor(nCols / 2));
   const rightStart = nCols >= 11 ? 9 : Math.min(nCols, leftEnd + 1);
   const rightEnd = nCols >= 11 ? 11 : nCols;
-  if (leftEnd > 1) ws.mergeCells(signatureRow, 1, signatureRow, leftEnd);
-  if (rightStart < rightEnd) ws.mergeCells(signatureRow, rightStart, signatureRow, rightEnd);
-  ws.getCell(signatureRow, 1).value = snap.signatureLeftName?.trim() || customerName;
-  ws.getCell(signatureRow, rightStart).value = snap.signatureRightName?.trim() || issuerName;
-  for (const cell of [ws.getCell(signatureRow, 1), ws.getCell(signatureRow, rightStart)]) {
+  for (const r of [signatureLabelRow, signatureHintRow, signatureNameRow]) {
+    if (leftEnd > 1) ws.mergeCells(r, 1, r, leftEnd);
+    if (rightStart < rightEnd) ws.mergeCells(r, rightStart, r, rightEnd);
+  }
+  ws.getCell(signatureLabelRow, 1).value = snap.signatureLeftLabel?.trim() || '';
+  ws.getCell(signatureLabelRow, rightStart).value = snap.signatureRightLabel?.trim() || '';
+  ws.getCell(signatureHintRow, 1).value = '(Ký, họ tên)';
+  ws.getCell(signatureHintRow, rightStart).value = '(Ký, họ tên, đóng dấu)';
+  ws.getCell(signatureNameRow, 1).value = snap.signatureLeftName?.trim() || '';
+  ws.getCell(signatureNameRow, rightStart).value = snap.signatureRightName?.trim() || '';
+  for (const cell of [ws.getCell(signatureLabelRow, 1), ws.getCell(signatureLabelRow, rightStart)]) {
     cell.font = boldFont;
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.border = { top: thinBlack };
   }
-  ws.getRow(signatureRow).height = 24.95;
+  for (const cell of [ws.getCell(signatureHintRow, 1), ws.getCell(signatureHintRow, rightStart)]) {
+    cell.font = { ...baseFont, italic: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  for (const cell of [ws.getCell(signatureNameRow, 1), ws.getCell(signatureNameRow, rightStart)]) {
+    cell.font = boldFont;
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+  ws.getRow(signatureLabelRow).height = 24.95;
+  ws.getRow(signatureHintRow).height = 18;
+  ws.getRow(signatureNameRow).height = 24.95;
 
   for (let c = 0; c < cols.length; c++) {
     ws.getColumn(c + 1).width =

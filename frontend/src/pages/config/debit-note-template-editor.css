@@ -155,10 +155,30 @@
 }
 
 .debit-editor-settings--issuer {
-  grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.75fr) minmax(180px, 0.8fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
-    "issuer-name issuer-tax issuer-logo"
-    "issuer-address issuer-address issuer-logo";
+    "issuer-name issuer-name"
+    "issuer-tax issuer-rep"
+    "issuer-address issuer-address"
+    "issuer-position issuer-account"
+    "issuer-bank issuer-bank";
+  align-items: stretch;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.debit-editor-settings--issuer .debit-editor-field {
+  min-height: 82px;
+  align-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--sh-sm);
 }
 
 .debit-editor-settings--issuer .debit-editor-field:nth-child(1) {
@@ -174,7 +194,19 @@
 }
 
 .debit-editor-settings--issuer .debit-editor-field:nth-child(4) {
-  grid-area: issuer-logo;
+  grid-area: issuer-rep;
+}
+
+.debit-editor-settings--issuer .debit-editor-field:nth-child(5) {
+  grid-area: issuer-position;
+}
+
+.debit-editor-settings--issuer .debit-editor-field:nth-child(6) {
+  grid-area: issuer-account;
+}
+
+.debit-editor-settings--issuer .debit-editor-field:nth-child(7) {
+  grid-area: issuer-bank;
 }
 
 .debit-editor-settings--footer {
@@ -803,7 +835,10 @@
       "issuer-name"
       "issuer-tax"
       "issuer-address"
-      "issuer-logo";
+      "issuer-rep"
+      "issuer-position"
+      "issuer-account"
+      "issuer-bank";
   }
 
   .debit-editor-column-inspector,
@@ -994,8 +1029,32 @@
   box-shadow: none;
 }
 
+.debit-editor-inspector .debit-editor-settings--issuer {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "issuer-name issuer-name"
+    "issuer-tax issuer-rep"
+    "issuer-address issuer-address"
+    "issuer-position issuer-account"
+    "issuer-bank issuer-bank";
+}
+
 .debit-editor-inspector .debit-editor-settings--issuer .debit-editor-field {
-  grid-area: auto;
+  min-height: 82px;
+}
+
+@media (max-width: 620px) {
+  .debit-editor-inspector .debit-editor-settings--issuer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "issuer-name"
+      "issuer-tax"
+      "issuer-address"
+      "issuer-rep"
+      "issuer-position"
+      "issuer-account"
+      "issuer-bank";
+  }
 }
 
 .debit-editor-inspector .debit-editor-settings--footer {

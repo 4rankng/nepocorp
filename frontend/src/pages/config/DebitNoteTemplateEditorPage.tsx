@@ -20,8 +20,6 @@ import {
   Save,
   Star,
   Trash2,
-  Redo2,
-  Undo2,
 } from 'lucide-react';
 import { AssetIcon } from '../../components/AssetIcon';
 import { useConfirm } from '../../components/UI';
@@ -127,7 +125,7 @@ function blankTemplate(): DebitNoteTemplateInput {
     signatureLeftLabel: 'Khách hàng',
     signatureLeftName: null,
     signatureRightLabel: 'Kế toán trưởng',
-    signatureRightName: 'Ông Phan Kim Phụng',
+    signatureRightName: null,
   };
 }
 
@@ -988,14 +986,6 @@ export default function DebitNoteTemplateEditorPage() {
           </div>
         </div>
         <div className="debit-editor-topbar__actions">
-          <div className="debit-editor-history-actions" aria-label="Lịch sử chỉnh sửa">
-            <button type="button" className="btn btn--ghost btn--icon" disabled aria-label="Hoàn tác">
-              <Undo2 size={16} />
-            </button>
-            <button type="button" className="btn btn--ghost btn--icon" disabled aria-label="Làm lại">
-              <Redo2 size={16} />
-            </button>
-          </div>
           {!isNew && (
             <button type="button" className="btn btn--ghost" onClick={removeTemplate} disabled={busy}>
               <Trash2 size={16} /> Xoá

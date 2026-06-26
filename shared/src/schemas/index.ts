@@ -297,7 +297,7 @@ export const debitNoteTemplateSchema = z.object({
   signatureLeftLabel: z.string().max(100).nullable().default('Khách hàng'),
   signatureLeftName: z.string().max(100).nullable().default(null),
   signatureRightLabel: z.string().max(100).nullable().default('Kế toán trưởng'),
-  signatureRightName: z.string().max(100).nullable().default('Ông Phan Kim Phụng'),
+  signatureRightName: z.string().max(100).nullable().default(null),
 });
 
 export type DebitNoteTemplateInput = z.infer<typeof debitNoteTemplateSchema>;
