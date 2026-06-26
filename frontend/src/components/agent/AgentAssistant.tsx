@@ -6,7 +6,9 @@
 // input that sends each turn with the current route as context.
 import { useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
+import { SendHorizontal } from 'lucide-react';
 import { Drawer } from '../UI';
+import { AssetIcon } from '../AssetIcon';
 import { useAuth } from '../../hooks/useAuth';
 import { useAgentChat } from '../../hooks/useAgentChat';
 import { useAgentDirectives } from '../../context/AgentDirectiveContext';
@@ -46,13 +48,26 @@ export function AgentAssistant() {
         aria-label="Mở trợ lý"
         onClick={() => setOpen(true)}
       >
-        <AgentIcon />
+        <AssetIcon name="assistant" size={24} className="agent-launcher__icon" />
       </button>
 
-      <Drawer isOpen={open} onClose={() => setOpen(false)} title="Trợ lý TingTing" subtitle="Hỏi dữ liệu, phân tích, hoặc điều hướng">
+      <Drawer
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        title="Trợ lý TingTing"
+        subtitle="Hỏi dữ liệu, phân tích, hoặc điều hướng"
+        className="agent-drawer"
+        headerGraphic={
+          <span className="agent-header-icon" aria-hidden="true">
+            <AssetIcon name="assistant" size={52} />
+            <span className="agent-header-icon__status" />
+          </span>
+        }
+      >
         <div className="agent-thread">
           {chat.messages.length === 0 && (
             <div className="agent-empty">
+              <AssetIcon name="assistant" size={96} className="agent-empty__icon" />
               <p>Hỏi tôi về chuyến, công nợ, lợi nhuận, chi phí…</p>
               <p className="agent-empty__hint">VD: <em>“Tháng này vì sao lợi nhuận thấp?”</em> hoặc <em>“mở công nợ khách X”</em></p>
             </div>
@@ -64,6 +79,9 @@ export function AgentAssistant() {
 
           {chat.isThinking && (
             <div className="agent-thinking">
+              <span className="agent-message__avatar" aria-hidden="true">
+                <AssetIcon name="assistant" size={24} />
+              </span>
               <span className="agent-thinking__dot" />
               {chat.activeTool ? (
                 <span className="agent-thinking__tool">{chat.activeTool.label ?? chat.activeTool.name}…</span>
@@ -85,7 +103,8 @@ export function AgentAssistant() {
             autoFocus
           />
           <button type="submit" className="agent-composer__send" disabled={chat.isThinking || !input.trim()}>
-            Gửi
+            <span>Gửi</span>
+            <SendHorizontal size={16} aria-hidden="true" />
           </button>
         </form>
       </Drawer>
@@ -101,15 +120,12 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
   if (response?.type === 'insight_card') {
     return <InsightCard card={response} onAction={onAction} />;
   }
-  return <div className="agent-bubble agent-bubble--assistant">{response?.type === 'text' ? response.content : message.content}</div>;
-}
-
-function AgentIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3a9 9 0 0 0-9 9v4a2 2 0 0 0 2 2h1v-6H5a7 7 0 0 1 14 0h-1v6h1a2 2 0 0 0 2-2v-4a9 9 0 0 0-9-9Z" fill="currentColor" />
-      <circle cx="9" cy="13" r="1.4" fill="var(--surface, #fff)" />
-      <circle cx="15" cy="13" r="1.4" fill="var(--surface, #fff)" />
-    </svg>
+    <div className="agent-message agent-message--assistant">
+      <span className="agent-message__avatar" aria-hidden="true">
+        <AssetIcon name="assistant" size={24} />
+      </span>
+      <div className="agent-bubble agent-bubble--assistant">{response?.type === 'text' ? response.content : message.content}</div>
+    </div>
   );
 }

@@ -59,58 +59,65 @@ export default function DebitNoteTemplatesConfigPage() {
         )}
       />
 
-      {isLoading ? (
-        <div className="cfg-empty debit-template-list-empty">
-          <Loader2 size={28} className="spin" />
-          <strong>Đang tải mẫu</strong>
-        </div>
-      ) : templates.length === 0 ? (
-        <div className="cfg-empty debit-template-list-empty">
-          <FileText size={36} />
-          <strong>Chưa có mẫu nào</strong>
-          <button type="button" className="btn btn--primary" onClick={() => navigate('/config/debit-note-templates/new')}>
-            <Plus size={16} /> Thêm mẫu
-          </button>
-        </div>
-      ) : (
-        <div className="debit-template-list">
-          {templates.map((template) => {
-            const visibleColumns = (template.columns ?? []).filter(column => column.width > 0).length;
-            return (
-              <div key={template.id} className="cfg-row debit-template-card">
-                <div className="debit-template-card__stripe" style={{ background: template.accentColor }} />
-                <div className="debit-template-card__icon" aria-hidden="true">
-                  <AssetIcon name="document" size={24} />
-                </div>
-                <div className="debit-template-card__main">
-                  <div className="debit-template-card__title">
-                    <strong>{template.name}</strong>
-                    {template.isDefault && (
-                      <span className="cfg-pill cfg-pill--success">
-                        <Star size={11} /> Mặc định
-                      </span>
-                    )}
+      <div className="debit-template-list-shell">
+        {isLoading ? (
+          <div className="cfg-empty debit-template-list-empty debit-template-list-empty--loading">
+            <Loader2 size={28} className="spin" />
+            <strong>Đang tải mẫu</strong>
+          </div>
+        ) : templates.length === 0 ? (
+          <div className="cfg-empty debit-template-list-empty">
+            <div className="debit-template-list-empty__icon" aria-hidden="true">
+              <FileText size={34} />
+            </div>
+            <div className="debit-template-list-empty__copy">
+              <strong>Chưa có mẫu nào</strong>
+              <span>Tạo mẫu Excel để xuất giấy báo nợ theo khách hàng.</span>
+            </div>
+            <button type="button" className="btn btn--primary" onClick={() => navigate('/config/debit-note-templates/new')}>
+              <Plus size={16} /> Thêm mẫu
+            </button>
+          </div>
+        ) : (
+          <div className="debit-template-list">
+            {templates.map((template) => {
+              const visibleColumns = (template.columns ?? []).filter(column => column.width > 0).length;
+              return (
+                <div key={template.id} className="cfg-row debit-template-card">
+                  <div className="debit-template-card__stripe" style={{ background: template.accentColor }} />
+                  <div className="debit-template-card__icon" aria-hidden="true">
+                    <AssetIcon name="document" size={24} />
                   </div>
-                  <div className="debit-template-card__meta">
-                    <span>{template.titleText}</span>
-                    <span>{visibleColumns} cột</span>
-                    <span>{groupLabel(template.groupingMode)}</span>
-                    <span>{template.orientation === 'landscape' ? 'Ngang' : 'Dọc'}</span>
+                  <div className="debit-template-card__main">
+                    <div className="debit-template-card__title">
+                      <strong>{template.name}</strong>
+                      {template.isDefault && (
+                        <span className="cfg-pill cfg-pill--success">
+                          <Star size={11} /> Mặc định
+                        </span>
+                      )}
+                    </div>
+                    <div className="debit-template-card__meta">
+                      <span>{template.titleText}</span>
+                      <span>{visibleColumns} cột</span>
+                      <span>{groupLabel(template.groupingMode)}</span>
+                      <span>{template.orientation === 'landscape' ? 'Ngang' : 'Dọc'}</span>
+                    </div>
+                  </div>
+                  <div className="debit-template-card__actions">
+                    <button type="button" className="btn btn--secondary" onClick={() => navigate(`/config/debit-note-templates/${template.id}`)}>
+                      Sửa
+                    </button>
+                    <button type="button" className="btn btn--ghost btn--icon" onClick={() => onDelete(template)} aria-label={`Xoá ${template.name}`}>
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
-                <div className="debit-template-card__actions">
-                  <button type="button" className="btn btn--secondary" onClick={() => navigate(`/config/debit-note-templates/${template.id}`)}>
-                    Sửa
-                  </button>
-                  <button type="button" className="btn btn--ghost btn--icon" onClick={() => onDelete(template)} aria-label={`Xoá ${template.name}`}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {confirmDialog}
     </div>

@@ -489,9 +489,11 @@ interface DrawerProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   onConfirm?: () => void;
+  className?: string;
+  headerGraphic?: React.ReactNode;
 }
 
-export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm }: DrawerProps) {
+export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm, className = '', headerGraphic }: DrawerProps) {
   useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -541,15 +543,18 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
         />
         <aside
           ref={asideRef}
-          className="drawer"
+          className={`drawer ${className}`.trim()}
           role="dialog"
           aria-modal="true"
           aria-hidden={!isOpen}
         >
           <header className="drawer__head">
-            <div style={{ minWidth: 0 }}>
-              <h2 className="drawer__title">{title}</h2>
-              {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
+            <div className="drawer__heading">
+              {headerGraphic}
+              <div style={{ minWidth: 0 }}>
+                <h2 className="drawer__title">{title}</h2>
+                {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
+              </div>
             </div>
             <button
               className="drawer__close"

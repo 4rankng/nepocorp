@@ -25,6 +25,7 @@ import {
   type AgentDirective,
 } from '@tingting/shared';
 import { callMiniMax, type MiniMaxMessage, type MiniMaxTool } from '../llm/minimax.client';
+import { todayIsoVn } from './tools/period';
 import { getToolsForRole, findTool } from './tool.registry';
 import type { AgentContext, AgentToolDef } from './tool.types';
 import { ToolError } from './tool.types';
@@ -39,10 +40,13 @@ function buildSystemPrompt(ctx: AgentContext): string {
   return [
     'Bạn là trợ lý TingTing — nền tảng vận tải/logistics cho công ty xe tải Việt Nam.',
     `Bạn đang hỗ trợ người dùng vai trò "${ctx.role}". v1 CHỈ ĐỌC: không tạo/sửa/xóa dữ liệu (chỉ mở form điền sẵn — người dùng tự lưu).`,
+    // Date awareness: without this the LLM invented "2025" for "tháng này" and
+    // every report dutifully returned zeros for a non-existent period.
+    `Hôm nay: ${todayIsoVn()} (YYYY-MM-DD). Khi người dùng nói "tháng này/quý này/nay", mặc định tháng/năm HIỆN TẠI — KHÔNG dùng năm khác.`,
     'Quy tắc:',
     '- LUÔN dùng công cụ để lấy số liệu; KHÔNG bịa số trong insight_card — chỉ dùng số công cụ trả về.',
-    '- Với câu hỏi phân tích (lợi nhuận/công nợ/chi phí/dầu): dùng analyzer/report tool rồi trả insight_card có widgets phù hợp + tóm tắt nguyên nhân.',
-    '- Với yêu cầu mở trang/tìm/xem: dùng ui.navigate/ui.focus/ui.search_pages, hoặc trả directive.',
+    '- Với câu hỏi phân tích (lợi nhuận/công nợ/chi phí/dầu): dùng analyzer/report tool rồi trả insight_card có widgets phù hợp + tóm tắt nguyên nhân. Khi nói "tháng này", bỏ qua month/year (server tự lấy tháng hiện tại).',
+    '- Với yêu cầu mở trang/tìm/xem: LUÔN gọi ui.navigate (hoặc trả {"type":"directive",...}). KHÔNG mô tả đường dẫn bằng text.',
     '- Với câu hỏi phụ thuộc trang hiện tại (giải thích trang, lỗi): trả text ngắn.',
     '- Trả lời bằng tiếng Việt.',
     ctx.currentRouteKey ? `Người dùng đang ở trang: ${ctx.currentRouteKey}.` : '',
@@ -73,6 +77,9 @@ export async function runAgent(opts: {
   ctx: AgentContext;
   message: string;
   conversationId?: string;
+  /** Prior turns in this session (in-memory, supplied by the socket layer) so
+   *  a follow-up question shares context. Compact text only — no widgets. */
+  priorMessages?: MiniMaxMessage[];
   emit: (event: AgentEvent) => void;
   signal?: AbortSignal;
 }): Promise<RunAgentResult> {
@@ -83,6 +90,7 @@ export async function runAgent(opts: {
 
   const messages: MiniMaxMessage[] = [
     { role: 'system', content: buildSystemPrompt(ctx) },
+    ...(opts.priorMessages ?? []),
     { role: 'user', content: opts.message },
   ];
 

@@ -75,7 +75,7 @@ const configSchema = z.object({
   botEnabled: z.boolean().default(false),
   minimaxApiKey: z.string().default(''),
   minimaxBaseUrl: z.string().url().default('https://api.minimaxi.com/v1'),
-  minimaxModel: z.string().default('MiniMax-M3'),
+  minimaxModel: z.string().default('MiniMax-M2.7-highspeed'),
   minimaxTimeoutMs: z.coerce.number().int().positive().default(60000),
   // Hard cap on the ReAct tool-calling loop (R5: runaway guard).
   agentMaxIterations: z.coerce.number().int().positive().default(6),
@@ -138,7 +138,7 @@ const withDefaults = {
   botEnabled: raw.botEnabled,
   minimaxApiKey: raw.minimaxApiKey || '',
   minimaxBaseUrl: raw.minimaxBaseUrl || 'https://api.minimaxi.com/v1',
-  minimaxModel: raw.minimaxModel || 'MiniMax-M3',
+  minimaxModel: raw.minimaxModel || 'MiniMax-M2.7-highspeed',
   minimaxTimeoutMs: raw.minimaxTimeoutMs || 60000,
   agentMaxIterations: raw.agentMaxIterations || 6,
 };
@@ -183,7 +183,7 @@ export const config = result.success ? result.data : configSchema.parse({
   botEnabled: false,
   minimaxApiKey: '',
   minimaxBaseUrl: 'https://api.minimaxi.com/v1',
-  minimaxModel: 'MiniMax-M3',
+  minimaxModel: 'MiniMax-M2.7-highspeed',
   minimaxTimeoutMs: 60000,
   agentMaxIterations: 6,
 });

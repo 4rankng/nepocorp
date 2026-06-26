@@ -9,6 +9,7 @@ import { getReceivablesSummary, getCustomerAgingList } from '../../aging.service
 import { db } from '../../../db';
 import { listExpenses } from '../../expense.service';
 import { defineReadTool, OFFICE_ROLES } from '../tool.types';
+import { resolvePeriod, todayIsoVn } from './period';
 
 const monthSchema = z.coerce.number().int().min(1).max(12);
 const yearSchema = z.coerce.number().int().min(2000);
@@ -21,32 +22,39 @@ export const analyzerTools = [
   defineReadTool({
     name: 'profit.breakdown',
     description:
-      'Phân tích lợi nhuận theo tháng kèm so sánh với tháng trước (doanh thu/chi phí/lợi nhuận/biên + chênh lệch). Dùng cho "tháng này vì sao lợi nhuận thấp/thay đổi thế nào". Trả về { current, prior } — hãy rút nguyên nhân chính (nhóm chi phí tăng/giảm) và trình bày dạng insight_card với kpi_grid + bar_chart theo nhóm chi phí.',
+      'Phân tích lợi nhuận theo tháng kèm so sánh với tháng trước (doanh thu/chi phí/lợi nhuận/biên + chênh lệch). Dùng cho "tháng này vì sao lợi nhuận thấp/thay đổi thế nào". Bỏ qua month/year để lấy tháng hiện tại. Trả về { current, prior } — hãy rút nguyên nhân chính (nhóm chi phí tăng/giảm) và trình bày dạng insight_card với kpi_grid + bar_chart theo nhóm chi phí.',
     allowedRoles: OFFICE_ROLES,
-    params: z.object({ month: monthSchema, year: yearSchema }),
+    params: z.object({ month: monthSchema.optional(), year: yearSchema.optional() }),
     run: async (args) => {
-      const prev = args.month === 1
-        ? { month: 12, year: args.year - 1 }
-        : { month: args.month - 1, year: args.year };
+      const p = resolvePeriod(args.month, args.year);
+      const prev = p.month === 1
+        ? { month: 12, year: p.year - 1 }
+        : { month: p.month - 1, year: p.year };
       const [current, prior] = await Promise.all([
-        getPnlReport(args.month, args.year),
+        getPnlReport(p.month, p.year),
         getPnlReport(prev.month, prev.year),
       ]);
       return { current, prior };
     },
-    label: (a) => `Phân tích LN ${a.month}/${a.year}`,
+    label: (a) => {
+      const p = resolvePeriod(a.month, a.year);
+      return `Phân tích LN ${p.month}/${p.year}`;
+    },
   }),
 
   defineReadTool({
     name: 'receivables.debt_insight',
     description:
-      'Phân tích công nợ phải thu: tổng nợ theo nhóm tuổi + các khách nợ nhiều nhất. Dùng cho "tình hình công nợ / ai nợ nhiều". Trình bày dạng insight_card với kpi_grid (tổng nợ, quá hạn, nhóm 90+) + table các khách nợ đứng đầu.',
+      'Phân tích công nợ phải thu: tổng nợ theo nhóm tuổi + các khách nợ nhiều nhất. Dùng cho "tình hình công nợ / ai nợ nhiều". Bỏ qua asOfDate để lấy số dư tới hiện tại. Trình bày dạng insight_card với kpi_grid (tổng nợ, quá hạn, nhóm 90+) + table các khách nợ đứng đầu.',
     allowedRoles: OFFICE_ROLES,
     params: z.object({ asOfDate: z.string().optional() }),
     run: async (args) => {
+      // Default to today (Vietnam) so the model can't cap the ledger window
+      // with a bogus past date and report zero debt.
+      const asOfDate = args.asOfDate ?? todayIsoVn();
       const [summary, topDebtors] = await Promise.all([
-        getReceivablesSummary({ asOfDate: args.asOfDate }),
-        getCustomerAgingList({ asOfDate: args.asOfDate, page: 1, limit: 10 }),
+        getReceivablesSummary({ asOfDate }),
+        getCustomerAgingList({ asOfDate, page: 1, limit: 10 }),
       ]);
       return { summary, topDebtors };
     },
@@ -56,29 +64,33 @@ export const analyzerTools = [
   defineReadTool({
     name: 'fuel.anomalies',
     description:
-      'Tìm các chuyến tiêu hao dầu VƯỢT định mức trong tháng (thực tế > lý thuyết). Dùng cho "chuyến nào tốn dầu bất thường". Trình bày dạng insight_card với anomaly_list + table các chuyến vượt mức (kèm chênh lệch).',
+      'Tìm các chuyến tiêu hao dầu VƯỢT định mức trong tháng (thực tế > lý thuyết). Dùng cho "chuyến nào tốn dầu bất thường". Bỏ qua month/year để lấy tháng hiện tại. Trình bày dạng insight_card với anomaly_list + table các chuyến vượt mức (kèm chênh lệch).',
     allowedRoles: OFFICE_ROLES,
-    params: z.object({ month: monthSchema, year: yearSchema }),
-    run: (args) => getFuelVarianceReport(args.month, args.year),
-    label: (a) => `Bất thường dầu ${a.month}/${a.year}`,
+    params: z.object({ month: monthSchema.optional(), year: yearSchema.optional() }),
+    run: (args) => {
+      const p = resolvePeriod(args.month, args.year);
+      return getFuelVarianceReport(p.month, p.year);
+    },
+    label: (a) => {
+      const p = resolvePeriod(a.month, a.year);
+      return `Bất thường dầu ${p.month}/${p.year}`;
+    },
   }),
 
   defineReadTool({
     name: 'expense.anomalies',
     description:
-      'Tìm chi phí phát sinh BẤT THƯỜNG trong tháng (cao đột biến so với cùng danh mục). Dùng cho "chi phí nào bất thường". Trình bày dạng insight_card với anomaly_list các khoản nổi bật.',
+      'Tìm chi phí phát sinh BẤT THƯỜNG trong tháng (cao đột biến so với cùng danh mục). Dùng cho "chi phí nào bất thường". Bỏ qua month/year để lấy tháng hiện tại. Trình bày dạng insight_card với anomaly_list các khoản nổi bật.',
     allowedRoles: OFFICE_ROLES,
     params: z.object({
       month: monthSchema.optional(),
       year: yearSchema.optional(),
     }),
     run: async (args) => {
-      // Default to the current month when none given. The LLM flags outliers
-      // by comparing amounts within a category (server-side statistical
-      // detection is Phase 2).
-      const now = new Date();
-      const month = args.month ?? now.getMonth() + 1;
-      const year = args.year ?? now.getFullYear();
+      // Default to the current Vietnam period when none given (./period.ts,
+      // TZ-safe). The LLM flags outliers by comparing amounts within a category
+      // (server-side statistical detection is Phase 2).
+      const { month, year } = resolvePeriod(args.month, args.year);
       const fromDate = `${year}-${pad(month)}-01`;
       const toDate = month === 12
         ? `${year + 1}-01-01`

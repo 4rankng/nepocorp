@@ -40,6 +40,12 @@
   gap: 16px;
   background: linear-gradient(to bottom, rgba(247, 248, 250, 0.6), transparent);
 }
+.drawer__heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .drawer__title {
   font-family: var(--font-display);
   font-size: 22px;

@@ -1263,6 +1263,7 @@
 }
 
 .debit-editor-canvas-frame {
+  --canvas-zoom: 1;
   width: min(100%, 980px);
   min-width: 0;
   padding: 12px;
@@ -1270,6 +1271,39 @@
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--sh);
+  zoom: var(--canvas-zoom);
+  transition: zoom 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.debit-editor-canvas-frame.is-pan-mode .debit-editor-page-boundary {
+  cursor: grab;
+}
+
+.debit-editor-canvas-frame.is-preview-mode {
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
+}
+
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-input:disabled,
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-th-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
+}
+
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-canvas-input.is-selected,
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__issuer.is-selected,
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__signatures label.is-selected {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected {
+  outline: 0;
+  box-shadow: none;
+}
+
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected::before,
+.debit-editor-canvas-frame.is-preview-mode .debit-editor-preview__table th.is-selected::after {
+  display: none;
 }
 
 .debit-editor-canvas-dragbar {
@@ -1447,37 +1481,6 @@
   outline: none;
 }
 
-.debit-editor-selection-toolbar {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  z-index: 4;
-  display: inline-flex;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: var(--sh);
-}
-
-.debit-editor-selection-toolbar button {
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.debit-editor-selection-toolbar button:hover:not(:disabled) {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
 .debit-editor-preview__signatures {
   min-height: 126px;
   padding-top: 42px;
@@ -1550,6 +1553,11 @@
   background: var(--accent-soft);
   color: var(--accent-ink);
   border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.debit-editor-canvas-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .debit-editor-zoom-control {

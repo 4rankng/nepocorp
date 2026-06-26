@@ -12,6 +12,7 @@ import {
   Columns3,
   Copy,
   Eye,
+  EyeOff,
   FileText,
   Hand,
   Loader2,
@@ -68,6 +69,7 @@ const VARIABLES: Array<{ value: DebitNoteColumnVariable; label: string; sample: 
 const variableMap = new Map(VARIABLES.map(item => [item.value, item]));
 
 type EditorSection = 'general' | 'company' | 'columns' | 'footer';
+type CanvasMode = 'select' | 'pan';
 type SelectedTarget =
   | { type: 'general'; field?: 'name' | 'titleText' | 'orientation' | 'accentColor' }
   | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'logoStorageKey' }
@@ -167,40 +169,38 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function TemplatePreview({
   form,
   disabled,
+  mode,
+  previewing,
+  zoom,
   selectedTarget,
   onSelect,
   onSet,
   onUpdateColumn,
-  onMoveColumn,
-  onDuplicateColumn,
-  onRemoveColumn,
 }: {
   form: DebitNoteTemplateInput;
   disabled: boolean;
+  mode: CanvasMode;
+  previewing: boolean;
+  zoom: number;
   selectedTarget: SelectedTarget;
   onSelect: (target: SelectedTarget) => void;
   onSet: <K extends keyof DebitNoteTemplateInput>(key: K, value: DebitNoteTemplateInput[K]) => void;
   onUpdateColumn: (columnId: string, patch: Partial<DebitNoteTemplateColumn>) => void;
-  onMoveColumn: (columnId: string, direction: -1 | 1) => void;
-  onDuplicateColumn: (columnId: string) => void;
-  onRemoveColumn: (columnId: string) => void;
 }) {
   const columns = (form.columns ?? []).filter(column => column.width > 0);
   const visible = columns.length > 0 ? columns : cloneStarterColumns();
   const totalColumns = visible.filter(column => column.total);
-  const selectedColumn = selectedTarget.type === 'column'
-    ? visible.find(column => column.id === selectedTarget.columnId)
-    : null;
-  const selectedColumnIndex = selectedColumn
-    ? (form.columns ?? []).findIndex(column => column.id === selectedColumn.id)
-    : -1;
+  const canvasLocked = disabled || mode === 'pan' || previewing;
 
   return (
     <aside className="debit-editor-preview" aria-label="Xem trước mẫu">
-      <div className="debit-editor-canvas-frame">
+      <div
+        className={`debit-editor-canvas-frame ${mode === 'pan' ? 'is-pan-mode' : ''} ${previewing ? 'is-preview-mode' : ''}`}
+        style={{ '--canvas-zoom': zoom / 100 } as React.CSSProperties}
+      >
         <div className="debit-editor-canvas-dragbar" aria-hidden="true">
           <span>⋮⋮</span>
-          <span>Kéo để di chuyển trang</span>
+          <span>{mode === 'pan' ? 'Chế độ di chuyển trang' : previewing ? 'Đang xem trước mẫu' : 'Chọn nội dung để chỉnh'}</span>
           <span>⋮⋮</span>
         </div>
         <div className="debit-editor-preview__sheet">
@@ -214,7 +214,7 @@ function TemplatePreview({
                     placeholder="Tên công ty"
                     onFocus={() => onSelect({ type: 'company', field: 'issuerName' })}
                     onChange={event => onSet('issuerName', event.target.value || null)}
-                    disabled={disabled}
+                    disabled={canvasLocked}
                   />
                   <input
                     className="debit-editor-canvas-input"
@@ -222,7 +222,7 @@ function TemplatePreview({
                     placeholder="MST"
                     onFocus={() => onSelect({ type: 'company', field: 'issuerTaxCode' })}
                     onChange={event => onSet('issuerTaxCode', event.target.value.replace(/^MST:\\s*/i, '') || null)}
-                    disabled={disabled}
+                    disabled={canvasLocked}
                   />
                   {form.issuerAddress && (
                     <input
@@ -231,7 +231,7 @@ function TemplatePreview({
                       placeholder="Địa chỉ"
                       onFocus={() => onSelect({ type: 'company', field: 'issuerAddress' })}
                       onChange={event => onSet('issuerAddress', event.target.value || null)}
-                      disabled={disabled}
+                      disabled={canvasLocked}
                     />
                   )}
                 </div>
@@ -247,23 +247,10 @@ function TemplatePreview({
               rows={2}
               onFocus={() => onSelect({ type: 'general', field: 'titleText' })}
               onChange={event => onSet('titleText', event.target.value)}
-              disabled={disabled}
+              disabled={canvasLocked}
             />
             <div className="debit-editor-preview__subtitle">Khách hàng: VIETSUN · Kỳ: 01/06 - 30/06</div>
             <div className="debit-editor-preview__table-wrap">
-              {selectedColumn && (
-                <div className="debit-editor-selection-toolbar" aria-label={`Thao tác cột ${selectedColumn.label}`}>
-                  <button type="button" onClick={() => onMoveColumn(selectedColumn.id, -1)} disabled={disabled || selectedColumnIndex <= 0} aria-label="Đưa cột sang trái">
-                    <ArrowLeft size={14} />
-                  </button>
-                  <button type="button" onClick={() => onDuplicateColumn(selectedColumn.id)} disabled={disabled} aria-label="Nhân cột">
-                    <Copy size={14} />
-                  </button>
-                  <button type="button" onClick={() => onRemoveColumn(selectedColumn.id)} disabled={disabled || (form.columns ?? []).length <= 1} aria-label="Xóa cột">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              )}
               <table className="debit-editor-preview__table">
                 <thead>
                   <tr>
@@ -274,7 +261,9 @@ function TemplatePreview({
                           key={column.id}
                           className={isSelected ? 'is-selected' : undefined}
                           style={{ background: form.accentColor, width: `${Math.max(column.width || 8, 8) * 9}px` }}
-                          onClick={() => onSelect({ type: 'column', columnId: column.id })}
+                          onClick={() => {
+                            if (!canvasLocked) onSelect({ type: 'column', columnId: column.id });
+                          }}
                         >
                           {isSelected ? (
                             <textarea
@@ -284,10 +273,10 @@ function TemplatePreview({
                               onClick={event => event.stopPropagation()}
                               onFocus={() => onSelect({ type: 'column', columnId: column.id })}
                               onChange={event => onUpdateColumn(column.id, { label: event.target.value })}
-                              disabled={disabled}
+                              disabled={canvasLocked}
                             />
                           ) : (
-                            <button type="button" disabled={disabled}>
+                            <button type="button" disabled={canvasLocked}>
                               <span>{column.label}</span>
                             </button>
                           )}
@@ -324,7 +313,7 @@ function TemplatePreview({
                   placeholder="Người lập biểu"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureLeftLabel' })}
                   onChange={event => onSet('signatureLeftLabel', event.target.value || null)}
-                  disabled={disabled}
+                  disabled={canvasLocked}
                 />
                 <span>(Ký, họ tên)</span>
                 <strong>Nguyễn Văn A</strong>
@@ -336,7 +325,7 @@ function TemplatePreview({
                   placeholder="Kế toán trưởng"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureRightLabel' })}
                   onChange={event => onSet('signatureRightLabel', event.target.value || null)}
-                  disabled={disabled}
+                  disabled={canvasLocked}
                 />
                 <span>(Ký, họ tên, đóng dấu)</span>
                 <strong>Trần Thị B</strong>
@@ -754,6 +743,8 @@ export default function DebitNoteTemplateEditorPage() {
   const [activeSection, setActiveSection] = useState<EditorSection>('columns');
   const [selectedTarget, setSelectedTarget] = useState<SelectedTarget>(() => ({ type: 'column', columnId: cloneStarterColumns()[0]?.id ?? '' }));
   const [zoom, setZoom] = useState(100);
+  const [canvasMode, setCanvasMode] = useState<CanvasMode>('select');
+  const [previewing, setPreviewing] = useState(false);
 
   const backToList = () => navigate('/config/debit-note-templates');
   useBackShortcut(backToList);
@@ -776,6 +767,7 @@ export default function DebitNoteTemplateEditorPage() {
       ? (form.columns ?? []).find(column => column.id === selectedTarget.columnId) ?? null
       : null
   ), [form.columns, selectedTarget]);
+  const selectedColumnVisible = selectedColumn ? selectedColumn.width > 0 : false;
   const set = <K extends keyof DebitNoteTemplateInput>(key: K, value: DebitNoteTemplateInput[K]) => {
     setForm(previous => ({ ...previous, [key]: value }));
   };
@@ -833,6 +825,10 @@ export default function DebitNoteTemplateEditorPage() {
       if (nextSelected) setSelectedTarget({ type: 'column', columnId: nextSelected.id });
       return { ...previous, columns: next };
     });
+  };
+  const toggleSelectedColumnVisibility = () => {
+    if (!selectedColumn) return;
+    updateColumn(selectedColumn.id, { width: selectedColumn.width > 0 ? 0 : 14 });
   };
 
   useEffect(() => {
@@ -1094,19 +1090,37 @@ export default function DebitNoteTemplateEditorPage() {
             <TemplatePreview
               form={form}
               disabled={busy}
+              mode={canvasMode}
+              previewing={previewing}
+              zoom={zoom}
               selectedTarget={selectedTarget}
               onSelect={selectTarget}
               onSet={set}
               onUpdateColumn={updateColumn}
-              onMoveColumn={moveColumn}
-              onDuplicateColumn={duplicateColumn}
-              onRemoveColumn={removeColumn}
             />
             <div className="debit-editor-canvas-toolbar" aria-label="Công cụ xem mẫu">
-              <button type="button" className="is-active" aria-label="Chọn">
+              <button
+                type="button"
+                className={canvasMode === 'select' && !previewing ? 'is-active' : undefined}
+                onClick={() => {
+                  setCanvasMode('select');
+                  setPreviewing(false);
+                }}
+                aria-label="Chọn"
+                aria-pressed={canvasMode === 'select' && !previewing}
+              >
                 <MousePointer2 size={16} />
               </button>
-              <button type="button" aria-label="Di chuyển">
+              <button
+                type="button"
+                className={canvasMode === 'pan' && !previewing ? 'is-active' : undefined}
+                onClick={() => {
+                  setCanvasMode('pan');
+                  setPreviewing(false);
+                }}
+                aria-label="Di chuyển"
+                aria-pressed={canvasMode === 'pan' && !previewing}
+              >
                 <Hand size={16} />
               </button>
               <div className="debit-editor-zoom-control">
@@ -1117,7 +1131,28 @@ export default function DebitNoteTemplateEditorPage() {
               <button type="button" onClick={() => setZoom(100)} aria-label="Vừa khung">
                 <Maximize2 size={16} />
               </button>
-              <button type="button" aria-label="Xem trước">
+              <button
+                type="button"
+                className={selectedColumn && !selectedColumnVisible ? 'is-active' : undefined}
+                onClick={toggleSelectedColumnVisibility}
+                disabled={busy || !selectedColumn}
+                aria-label={selectedColumnVisible ? 'Ẩn cột đang chọn' : 'Hiện cột đang chọn'}
+                aria-pressed={selectedColumn ? !selectedColumnVisible : false}
+                title={selectedColumn ? (selectedColumnVisible ? 'Ẩn cột đang chọn' : 'Hiện cột đang chọn') : 'Chọn một cột trước'}
+              >
+                {selectedColumnVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                <span>{selectedColumnVisible ? 'Ẩn cột' : 'Hiện cột'}</span>
+              </button>
+              <button
+                type="button"
+                className={previewing ? 'is-active' : undefined}
+                onClick={() => {
+                  setPreviewing(value => !value);
+                  setCanvasMode('select');
+                }}
+                aria-label="Xem trước"
+                aria-pressed={previewing}
+              >
                 <Eye size={16} />
                 <span>Xem trước</span>
               </button>

@@ -14,11 +14,12 @@ import type { Server as HttpServer } from 'http';
 import { Server, type Namespace, type Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from './config';
-import { Role, type AgentEvent } from '@tingting/shared';
+import { Role, type AgentEvent, type AgentResponse } from '@tingting/shared';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
 import { runAgent } from './services/agent/orchestrator';
 import type { AgentContext } from './services/agent/tool.types';
+import type { MiniMaxMessage } from './services/llm/minimax.client';
 
 const OFFICE_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
 
@@ -27,6 +28,36 @@ interface ChatInput {
   conversationId?: string;
   /** The SPA route the user is on when they ask — gives the LLM page context. */
   currentRouteKey?: string;
+}
+
+// ── Per-session memory ─────────────────────────────────────────────────────
+// The user/assistant exchanges for THIS socket, fed back to the LLM so a
+// follow-up question shares context. In-memory only — NOT persisted (the DB
+// history powers the sidebar separately). Compact text (no widgets/traces) and
+// char-capped to bound prompt size + latency.
+const SESSION_HISTORY_MAX_CHARS = 6000;
+
+/** Render a final AgentResponse as compact text for session replay. */
+function renderResponseText(response: AgentResponse): string {
+  switch (response.type) {
+    case 'text':
+      return response.content;
+    case 'insight_card':
+      return response.summary ?? response.title ?? '';
+    case 'directive':
+      return response.directive.kind === 'navigate' || response.directive.kind === 'focus'
+        ? `(đã mở trang ${response.directive.routeKey})`
+        : '(đã mở form)';
+  }
+}
+
+/** Drop oldest turns until the buffer is under the char budget (keep ≥ 2). */
+function trimSessionHistory(history: MiniMaxMessage[]): void {
+  let chars = history.reduce((n, m) => n + (m.content?.length ?? 0), 0);
+  while (chars > SESSION_HISTORY_MAX_CHARS && history.length > 2) {
+    const removed = history.shift()!;
+    chars -= removed.content?.length ?? 0;
+  }
 }
 
 /**
@@ -93,6 +124,8 @@ function registerHandlers(agentNs: Namespace): void {
     // At most one in-flight turn per socket — a new message (or cancel, or
     // disconnect) aborts the previous, mirroring the SSE `req.on('close')`.
     let current: AbortController | null = null;
+    // Per-session conversation memory (see renderResponseText/trimSessionHistory).
+    const sessionHistory: MiniMaxMessage[] = [];
 
     socket.on('agent:chat', async (input: ChatInput | null | undefined) => {
       const message = input?.message;
@@ -120,10 +153,16 @@ function registerHandlers(agentNs: Namespace): void {
           ctx,
           message,
           conversationId: input?.conversationId,
+          priorMessages: sessionHistory.slice(),
           emit,
           signal: ac.signal,
         });
         if (!ac.signal.aborted) {
+          // Fold this completed turn into session memory for the next question.
+          sessionHistory.push({ role: 'user', content: message });
+          const assistantText = renderResponseText(response);
+          if (assistantText) sessionHistory.push({ role: 'assistant', content: assistantText });
+          trimSessionHistory(sessionHistory);
           socket.emit('agent:event', { event: 'done', response, conversationId: convId } satisfies AgentEvent);
         }
       } catch (e) {

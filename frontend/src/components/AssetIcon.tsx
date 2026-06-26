@@ -52,7 +52,8 @@ export type AssetIconName =
   | 'unpaid'
   | 'settlement'
   | 'gross-margin'
-  | 'active-supplier';
+  | 'active-supplier'
+  | 'assistant';
 
 export interface AssetIconEntry {
   /** Short semantic name used in <AssetIcon name=...>. */
@@ -100,6 +101,7 @@ export const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   settlement:   { name: 'settlement',   slug: '32-settlement-hoan-ung',                               label: 'Hoàn ứng',             group: 'money' },
   'gross-margin': { name: 'gross-margin', slug: '33-gross-margin-bien-loi-nhuan',                     label: 'Biên lợi nhuận gộp',   group: 'reporting' },
   'active-supplier': { name: 'active-supplier', slug: '34-active-supplier-nha-cung-cap-hoat-dong',    label: 'Nhà cung cấp hoạt động', group: 'people' },
+  assistant:    { name: 'assistant',    slug: '35-assistant-tro-ly-tingting',                          label: 'Trợ lý TingTing',      group: 'system' },
 };
 
 /** Every icon name, exported for iteration / verification. */
