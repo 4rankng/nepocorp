@@ -13,6 +13,7 @@
 // ⚠️ Depends on the MiniMax spike (R1): tool-calling + JSON-mode shape. The
 // client is written to the OpenAI-compatible surface; verify before enabling.
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { ZodError } from 'zod';
 import { randomUUID } from 'crypto';
 import { db } from '../../db';
 import * as schema from '../../db/schema';
@@ -175,7 +176,7 @@ export async function runAgent(opts: {
       try {
         toolResult = await tool.execute(safeParseArgs(call.arguments), ctx);
       } catch (e) {
-        const msg = e instanceof ToolError ? e.message : e instanceof Error ? e.message : 'Lỗi công cụ';
+        const msg = formatToolError(e);
         emit({ event: 'tool_result', toolName: call.name, toolCallId: call.id, ok: false, label: msg });
         messages.push({ role: 'tool', tool_call_id: call.id, name: call.name, content: `Lỗi: ${msg}` });
         toolTrace.push({ toolName: call.name, ok: false, error: msg });
@@ -349,6 +350,12 @@ function safeParseArgs(raw: string): unknown {
   } catch {
     return {};
   }
+}
+
+function formatToolError(e: unknown): string {
+  if (e instanceof ToolError) return e.message;
+  if (e instanceof ZodError) return 'Tham số công cụ không hợp lệ, vui lòng thử lại.';
+  return e instanceof Error ? e.message : 'Lỗi công cụ';
 }
 
 const WIDGET_FORMATS = new Set(['vnd', 'percent', 'number', 'days']);

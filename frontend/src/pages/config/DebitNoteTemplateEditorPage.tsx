@@ -22,13 +22,10 @@ import {
   Trash2,
   Redo2,
   Undo2,
-  Upload,
 } from 'lucide-react';
 import { AssetIcon } from '../../components/AssetIcon';
 import { useConfirm } from '../../components/UI';
 import { useToast } from '../../components/shared/Toast';
-import { api } from '../../lib/api';
-import { photoSrc } from '../../lib/api/photo';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
@@ -67,7 +64,7 @@ const variableMap = new Map(VARIABLES.map(item => [item.value, item]));
 type EditorSection = 'general' | 'company' | 'columns' | 'footer';
 type SelectedTarget =
   | { type: 'general'; field?: 'name' | 'titleText' | 'orientation' | 'accentColor' }
-  | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'logoStorageKey' }
+  | { type: 'company'; field?: 'issuerName' | 'issuerTaxCode' | 'issuerAddress' | 'signatureRightName' | 'termsText' }
   | { type: 'column'; columnId: string }
   | { type: 'footer'; field?: 'signatureLeftLabel' | 'signatureLeftName' | 'signatureRightLabel' | 'signatureRightName' | 'termsText' };
 
@@ -90,6 +87,25 @@ function cloneStarterColumns(): DebitNoteTemplateColumn[] {
   return defaultDebitNoteColumns.map(column => ({ ...column }));
 }
 
+const DEFAULT_ACCOUNT_NUMBER = '190466529';
+const DEFAULT_BANK_NAME = 'TMCP Á Châu PGD Thái Phiên - Hải Phòng';
+
+function stripTermPrefix(value: string, prefixPattern: RegExp) {
+  return value.normalize('NFC').replace(prefixPattern, '').trim();
+}
+
+function getAccountTerms(termsText?: string | null) {
+  const [accountLine = '', bankLine = ''] = (termsText || '').split('\n');
+  return {
+    accountNumber: stripTermPrefix(accountLine, /^-\s*Số\s*TK\s*/i) || DEFAULT_ACCOUNT_NUMBER,
+    bankName: stripTermPrefix(bankLine, /^-\s*Tại\s+ngân\s+hàng\s*/i) || DEFAULT_BANK_NAME,
+  };
+}
+
+function buildAccountTerms(accountNumber: string, bankName: string) {
+  return `- Số TK ${accountNumber.trim()}\n- Tại ngân hàng ${bankName.trim()}`;
+}
+
 function blankTemplate(): DebitNoteTemplateInput {
   return {
     name: 'Mẫu giấy báo nợ mới',
@@ -107,11 +123,11 @@ function blankTemplate(): DebitNoteTemplateInput {
     columns: cloneStarterColumns(),
     amountInWords: false,
     orientation: 'landscape',
-    termsText: null,
+    termsText: buildAccountTerms(DEFAULT_ACCOUNT_NUMBER, DEFAULT_BANK_NAME),
     signatureLeftLabel: 'Khách hàng',
     signatureLeftName: null,
     signatureRightLabel: 'Kế toán trưởng',
-    signatureRightName: null,
+    signatureRightName: 'Ông Phan Kim Phụng',
   };
 }
 
@@ -184,7 +200,7 @@ function TemplatePreview({
   const visible = columns.length > 0 ? columns : cloneStarterColumns();
   const totalColumns = visible.filter(column => column.total);
   const canvasLocked = disabled;
-  const previewTerms = (form.termsText || '- Số TK \n- Tại ngân hàng ').split('\n');
+  const previewTerms = (form.termsText || '- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng').split('\n');
 
   return (
     <aside className="debit-editor-preview" aria-label="Xem trước mẫu">
@@ -254,7 +270,9 @@ function TemplatePreview({
                   />
                 </span>
               </p>
-              <p>Đại diện bởi : {form.signatureRightName || ''}</p>
+              <p className={selectedTarget.type === 'company' && selectedTarget.field === 'signatureRightName' ? 'is-selected' : undefined}>
+                Đại diện bởi : {form.signatureRightName || ''}
+              </p>
               <p>Chức vụ: Giám Đốc</p>
               <p>{previewTerms[0] ?? '- Số TK '}</p>
               <p>{previewTerms[1] ?? '- Tại ngân hàng '}</p>
@@ -714,7 +732,6 @@ export default function DebitNoteTemplateEditorPage() {
   const id = params.id === 'new' || !params.id ? null : Number(params.id);
   const isNew = id == null;
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<DebitNoteTemplateInput>(() => blankTemplate());
   const [activeSection, setActiveSection] = useState<EditorSection>('columns');
   const [selectedTarget, setSelectedTarget] = useState<SelectedTarget>(() => ({ type: 'column', columnId: cloneStarterColumns()[0]?.id ?? '' }));
@@ -765,6 +782,13 @@ export default function DebitNoteTemplateEditorPage() {
       columns: (previous.columns ?? []).map(column => column.id === columnId ? { ...column, ...patch } : column),
     }));
   };
+  const accountTerms = getAccountTerms(form.termsText);
+  const setAccountNumber = (accountNumber: string) => {
+    set('termsText', buildAccountTerms(accountNumber, accountTerms.bankName));
+  };
+  const setBankName = (bankName: string) => {
+    set('termsText', buildAccountTerms(accountTerms.accountNumber, bankName));
+  };
   useEffect(() => {
     if (selectedTarget.type !== 'column') return;
     const columns = form.columns ?? [];
@@ -796,7 +820,7 @@ export default function DebitNoteTemplateEditorPage() {
       await queryClient.invalidateQueries({ queryKey: qk.catalogs.debitNoteTemplates });
       await queryClient.invalidateQueries({ queryKey: ['debit-note-template', saved.id] });
       toast({ kind: 'success', message: 'Đã lưu mẫu giấy báo nợ.' });
-      if (isNew) navigate(`/config/debit-note-templates/${saved.id}`, { replace: true });
+      backToList();
     } catch (err) {
       toast({ kind: 'error', message: (err as Error).message || 'Không lưu được mẫu.' });
     } finally {
@@ -821,27 +845,7 @@ export default function DebitNoteTemplateEditorPage() {
     }
   };
 
-  const uploadLogo = async (file: File | undefined) => {
-    if (!file || !id) return;
-    setUploading(true);
-    try {
-      const data = new FormData();
-      data.append('file', file);
-      data.append('template_id', String(id));
-      const result = await api.upload('/upload/debit-note-template-logo', data) as { storageKey: string };
-      const next = { ...form, logoStorageKey: result.storageKey };
-      setForm(next);
-      await configClient.updateDebitNoteTemplate(id, next);
-      await queryClient.invalidateQueries({ queryKey: qk.catalogs.debitNoteTemplates });
-      toast({ kind: 'success', message: 'Đã tải logo.' });
-    } catch (err) {
-      toast({ kind: 'error', message: (err as Error).message || 'Không tải được logo.' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const busy = saving || uploading || isLoading;
+  const busy = saving || isLoading;
   const activeSectionLabel = selectedTarget.type === 'column'
     ? 'Cột đang chọn'
     : EDITOR_SECTIONS.find(section => section.id === activeSection)?.label ?? 'Chung';
@@ -901,19 +905,17 @@ export default function DebitNoteTemplateEditorPage() {
           <Field label="Địa chỉ">
             <input className="input debit-editor-inline-input" value={form.issuerAddress ?? ''} onChange={event => set('issuerAddress', event.target.value || null)} disabled={busy} />
           </Field>
-          <Field label="Logo">
-            <div className="debit-editor-logo">
-              {form.logoStorageKey && <img src={photoSrc(form.logoStorageKey)} alt="logo" />}
-              {id ? (
-                <label className="btn btn--ghost">
-                  {uploading ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
-                  {form.logoStorageKey ? 'Đổi logo' : 'Tải logo'}
-                  <input type="file" accept="image/*" onChange={event => uploadLogo(event.target.files?.[0])} disabled={busy} />
-                </label>
-              ) : (
-                <span>Lưu mẫu trước</span>
-              )}
-            </div>
+          <Field label="Đại diện bởi">
+            <input className="input debit-editor-inline-input" value={form.signatureRightName ?? ''} onChange={event => set('signatureRightName', event.target.value || null)} disabled={busy} />
+          </Field>
+          <Field label="Chức vụ">
+            <input className="input debit-editor-inline-input" value="Giám Đốc" disabled />
+          </Field>
+          <Field label="Số TK">
+            <input className="input debit-editor-inline-input" value={accountTerms.accountNumber} onChange={event => setAccountNumber(event.target.value)} disabled={busy} />
+          </Field>
+          <Field label="Tại ngân hàng">
+            <input className="input debit-editor-inline-input" value={accountTerms.bankName} onChange={event => setBankName(event.target.value)} disabled={busy} />
           </Field>
         </section>
       );

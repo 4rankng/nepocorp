@@ -293,11 +293,11 @@ export const debitNoteTemplateSchema = z.object({
   // Phase 2: rendered read-only in UI; reserved for a future vndToWords() helper.
   amountInWords: z.boolean().default(false),
   orientation: z.enum(['landscape', 'portrait']).default('landscape'),
-  termsText: z.string().nullable().default(null),
+  termsText: z.string().nullable().default('- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng'),
   signatureLeftLabel: z.string().max(100).nullable().default('Khách hàng'),
   signatureLeftName: z.string().max(100).nullable().default(null),
   signatureRightLabel: z.string().max(100).nullable().default('Kế toán trưởng'),
-  signatureRightName: z.string().max(100).nullable().default(null),
+  signatureRightName: z.string().max(100).nullable().default('Ông Phan Kim Phụng'),
 });
 
 export type DebitNoteTemplateInput = z.infer<typeof debitNoteTemplateSchema>;

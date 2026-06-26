@@ -568,6 +568,13 @@
       "when": 1782580000000,
       "tag": "0080_debit_note_signature_names",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1782660000000,
+      "tag": "0081_debit_note_columns_restore",
+      "breakpoints": true
     }
   ]
 }

@@ -96,26 +96,10 @@ export const uiTools: AgentToolDef[] = [
     (a) => ({ kind: 'focus', routeKey: a.routeKey, id: a.id, prefix: a.prefix }),
     (a) => `Tô sáng ${a.routeKey} #${a.id}`,
   ),
-  buildDirectiveTool(
-    'ui.open',
-    'Mở một thành phần (modal/drawer) đã đăng ký trong trang hiện tại, có thể kèm giá trị nh sẵn (prefill). Dùng cho "mở form tạo chuyến cho khách X".',
-    z.object({
-      componentId: z.string().min(1),
-      prefill: z.record(z.string(), z.unknown()).optional(),
-    }),
-    (a) => ({ kind: 'open', componentId: a.componentId, prefill: a.prefill }),
-    (a) => `Mở ${a.componentId}`,
-  ),
-  buildDirectiveTool(
-    'ui.prefill',
-    'Mở + điền sẵn giá trị vào một form (người dùng vẫn tự xác nhận để lưu). Dùng cho "tạo chuyến cho khách X".',
-    z.object({
-      componentId: z.string().min(1),
-      values: z.record(z.string(), z.unknown()),
-    }),
-    (a) => ({ kind: 'prefill', componentId: a.componentId, values: a.values }),
-    (a) => `Điền sẵn ${a.componentId}`,
-  ),
+  // Keep open/prefill out of the advertised tool list until pages actually
+  // register component handlers. The system prompt already tells the model not
+  // to use them; hiding the tools as well prevents malformed `prefill: "..."`
+  // arguments from leaking through as raw Zod errors in the chat bubble.
   {
     name: 'ui.search_pages',
     description:

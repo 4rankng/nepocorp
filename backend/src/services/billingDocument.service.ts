@@ -1188,7 +1188,10 @@ export async function renderTemplatedXlsx(
   ws.getCell(3, 1).font = { name: 'Times New Roman', size: 12, bold: true };
   ws.getCell(3, 1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-  const termsLines = renderTemplateText(snap.termsText ?? '- Số TK \n- Tại ngân hàng ', templateVariables).split('\n');
+  const termsLines = renderTemplateText(
+    snap.termsText ?? '- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng',
+    templateVariables,
+  ).split('\n');
   const introRows: Array<{ row: number; value: string; bold?: boolean }> = [
     { row: 4, value: 'BÊN A (BÊN THUÊ DỊCH VỤ): {customerName}', bold: true },
     { row: 5, value: 'Địa chỉ: {customerAddress}' },
