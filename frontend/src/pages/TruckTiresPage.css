@@ -92,7 +92,8 @@
   max-width: none;
 }
 
-.ttp-spares {
+.ttp-spares,
+.ttp-disposed {
   margin-top: 14px;
 }
 
@@ -1020,9 +1021,13 @@
     justify-content: flex-start;
   }
 
-  .ttp-workbench,
-  .ttp-spares {
+  .ttp-workbench {
     gap: 12px;
+  }
+
+  .ttp-spares,
+  .ttp-disposed {
+    margin-top: 12px;
   }
 
   .ttp-panel--table {

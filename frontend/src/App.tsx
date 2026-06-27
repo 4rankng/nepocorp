@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';
-import { AgentDirectiveProvider } from './context/AgentDirectiveContext';
+import { AgentDirectiveProvider } from './context/AgentDirectiveProvider';
 import { ReducedMotionProvider } from './hooks/usePrefersReducedMotion';
 import { Role } from '@tingting/shared';
 import Layout from './components/Layout';

@@ -66,7 +66,7 @@ export interface AssetIconEntry {
   group: 'operations' | 'fleet' | 'people' | 'cargo' | 'place' | 'money' | 'system' | 'reporting';
 }
 
-export const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
+const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   overview:     { name: 'overview',     slug: '01-overview-tong-quan',                              label: 'Tổng quan',            group: 'reporting' },
   dispatch:     { name: 'dispatch',     slug: '02-dispatch-dieu-phoi',                               label: 'Điều phối / Phân xe',  group: 'operations' },
   'trip-log':   { name: 'trip-log',     slug: '03-trip-log-so-chuyen-chuyen-xe',                    label: 'Sổ chuyến đi',         group: 'operations' },
@@ -142,7 +142,7 @@ export interface AssetIconProps {
  * fallback for unknown paths and the `<img>` element renders the broken
  * placeholder rectangle.
  */
-export function assetIconUrl(slug: string): string {
+function assetIconUrl(slug: string): string {
   return `/assets/icons/${slug}.png`;
 }
 
