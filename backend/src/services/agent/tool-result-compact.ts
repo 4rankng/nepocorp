@@ -140,12 +140,23 @@ function cutAtSafeBoundary(json: string, maxChars: number): string {
   }
 
   // No complete-value cut fits (budget is inside one big string/value): close
-  // the open string + containers, shrinking the slice until it fits.
+  // the open string + containers, shrinking the slice until it fits. If the
+  // open string is a property KEY (preceded by `{`/`,`), DROP the partial key
+  // — closing it would emit `{"partialkey"}` (key with no value = invalid JSON).
   for (let end = limit; end > 0; end--) {
     const slice = json.slice(0, end);
-    const sealed = endsInsideString(slice)
-      ? closeOpenContainers(slice.replace(/\\+$/, '') + '"')
-      : closeOpenContainers(slice);
+    let sealed: string;
+    if (!endsInsideString(slice)) {
+      sealed = closeOpenContainers(slice);
+    } else {
+      const openAt = openStringStart(slice);
+      const before = charBeforeSkippingWs(slice, openAt);
+      if (before === '{' || before === ',') {
+        sealed = closeOpenContainers(slice.slice(0, openAt).replace(/[\s,]*$/, ''));
+      } else {
+        sealed = closeOpenContainers(slice.replace(/\\+$/, '') + '"');
+      }
+    }
     if (sealed.length + note.length <= maxChars) return sealed + note;
   }
   return note;
@@ -186,6 +197,40 @@ function endsInsideString(slice: string): boolean {
     if (ch === '"') inString = !inString;
   }
   return inString;
+}
+
+/** Index of the opening `"` of the currently-open string in `slice`, or -1
+ *  when the slice does not end inside a string. */
+function openStringStart(slice: string): number {
+  let inString = false;
+  let escape = false;
+  let start = -1;
+  for (let i = 0; i < slice.length; i++) {
+    const ch = slice[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      if (inString) start = i;
+    }
+  }
+  return inString ? start : -1;
+}
+
+/** Last non-whitespace char in `slice` before `idx`, or '' if none. Used to
+ *  tell whether an open string is a KEY (after `{`/`,`) or a VALUE (after `:`). */
+function charBeforeSkippingWs(slice: string, idx: number): string {
+  for (let i = idx - 1; i >= 0; i--) {
+    const ch = slice[i];
+    if (ch !== ' ' && ch !== '\t' && ch !== '\n' && ch !== '\r') return ch;
+  }
+  return '';
 }
 
 /** Balance brackets/braces a truncation left open so the result is valid JSON. */

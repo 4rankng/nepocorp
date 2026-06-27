@@ -64,6 +64,13 @@ describe('compactToolResult', () => {
     parseJsonView(out); // re-balanced prefix → parseable
   });
 
+  test('char budget landing mid property-KEY drops the partial key (valid JSON)', () => {
+    const data = { extremely_long_descriptive_property_name_for_testing: 1 };
+    const out = compactToolResult(data, { maxChars: 35 });
+    assert.ok(out.length <= 35, `got ${out.length}`);
+    parseJsonView(out); // partial key dropped cleanly → valid (possibly {}) JSON
+  });
+
   test('primitive / non-object values pass through safely', () => {
     assert.strictEqual(compactToolResult(42), '42');
     assert.strictEqual(compactToolResult('hello'), '"hello"');

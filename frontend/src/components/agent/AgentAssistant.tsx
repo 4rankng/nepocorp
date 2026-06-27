@@ -366,7 +366,7 @@ function normalizeMarkdownEscapes(content: string): string {
   // literal backslash. Deliberately EXCLUDE `|` and `` ` ``: an escaped pipe
   // must survive into the renderer (otherwise it becomes a table column
   // separator inside a cell), and an escaped backtick must not open a code span.
-  return content.replace(/\\([\\*_\[\]{}()#+.!>-])/g, '$1');
+  return content.replace(/\\([\\*_[\]{}()#+.!>-])/g, '$1');
 }
 
 function plainMarkdownLabel(content: string): string {
