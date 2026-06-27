@@ -14,7 +14,7 @@
 // on the fast `highspeed` line until a latency benchmark justifies routing.
 
 /** Model used for every MiniMax call (ReAct loop + final structured answer). */
-export const MODEL_FAST = 'MiniMax-M2.7-highspeed';
+export const MODEL_FAST = 'MiniMax-M2.1-highspeed';
 
 /** OpenAI-compatible Chat Completions endpoint (international host). */
 export const MINIMAX_BASE_URL = 'https://api.minimax.io/v1';
