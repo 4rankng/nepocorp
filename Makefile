@@ -1,12 +1,16 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
-        deploy deploy-backend deploy-frontend deploy-infra \
+        deploy deploy-backend deploy-frontend \
         demo demo-backend demo-frontend \
         prod-migrate prod-migrate-file \
-        backup restore adminer-on adminer-off
+        backup restore adminer
 
 # ─── Ports ─────────────────────────────────────────────────────────────────────
 # PostgreSQL: 5440  |  Redis: 6390  |  Backend: 3090  |  Frontend: 7173
+
+# Local Adminer → PRODUCTION over a private SSH tunnel (make adminer).
+# Never public (the nginx /adminer/ block was removed). Avoids 8081 (local dev adminer).
+ADMINER_TUNNEL_PORT ?= 8082
 
 # ─── Full dev environment ─────────────────────────────────────────────────────
 dev: ## Start everything (db, redis, backend, frontend)
@@ -165,12 +169,6 @@ prod-migrate-file:
 	ssh root@$(PROD_SERVER) "rm -f /tmp/$(FILE)"
 	@echo "==> ✅ $(FILE) applied"
 
-## deploy-infra: Restart infra services (postgres, redis) on droplet
-deploy-infra:
-	@echo "Restarting infrastructure services on production..."
-	ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate postgres redis"
-	@echo "Infrastructure restarted."
-
 ## backup: Dump production PostgreSQL DB → OneDrive
 backup:
 	@echo "💾 Starting database backup from production..."
@@ -222,17 +220,22 @@ restore:
 	docker exec tingting-db psql -U postgres -d tingting -c "UPDATE users SET password_hash = '$$HASH';" && \
 	echo "✅ Restore complete! All passwords reset to admin123"
 
-## adminer-on: Start adminer container on production
-adminer-on:
-	@echo "🔓 Enabling adminer on production..."
-	@ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml --profile adminer up -d adminer"
-	@echo "✅ Adminer: https://$(PROD_SERVER)/adminer"
-
-## adminer-off: Stop adminer container on production (disables /adminer endpoint)
-adminer-off:
-	@echo "🔒 Disabling adminer on production..."
-	@ssh root@$(PROD_SERVER) "cd /opt/tingting && docker compose -f deploy/docker-compose.prod.yml stop adminer"
-	@echo "✅ Adminer container stopped — /adminer endpoint disabled"
+## adminer: Open prod Adminer over a private SSH tunnel → http://localhost:8082 (Ctrl-C to close)
+# Self-healing: starts the loopback-only adminer container on prod (127.0.0.1:8080,
+# never public), forwards localhost:8082 → prod loopback:8080, opens the page. Ctrl-C
+# closes the tunnel; the container stays on prod loopback (safe). Adminer reaches
+# postgres over the prod docker network (Server: postgres · DB/user: nepocorp).
+adminer:
+	@echo "🔓 Opening prod Adminer over SSH tunnel (private, no public exposure)..."
+	@ssh root@$(PROD_SERVER) "cd /opt/nepocorp/deploy && docker compose -f docker-compose.prod.yml --profile adminer up -d adminer"
+	@echo "⏳ Waiting for Adminer on prod 127.0.0.1:8080..."
+	@ssh root@$(PROD_SERVER) "for i in \$$(seq 1 30); do (ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | grep -qE '127\\.0\\.0\\.1:8080[[:space:]]' && exit 0; sleep 1; done; echo '❌ Adminer did not become ready in 30s' >&2; exit 1"
+	@echo "🌐 Adminer: http://localhost:$(ADMINER_TUNNEL_PORT)"
+	@echo "   System: PostgreSQL  ·  Server: postgres  ·  Database: nepocorp  ·  Username: nepocorp"
+	@echo "   Password: $$(ssh root@$(PROD_SERVER) "grep -E '^DB_PASSWORD=' /opt/nepocorp/deploy/.env 2>/dev/null | head -1 | cut -d= -f2-" || echo 'NepoProd2026 (default)')"
+	@echo "⏎  Press Ctrl-C to close the tunnel. (Container stays on prod loopback — safe to leave running.)"
+	@(sleep 1 && (open "http://localhost:$(ADMINER_TUNNEL_PORT)?server=postgres&db=nepocorp" || xdg-open "http://localhost:$(ADMINER_TUNNEL_PORT)?server=postgres&db=nepocorp" || true)) &
+	@ssh -N -L $(ADMINER_TUNNEL_PORT):127.0.0.1:8080 root@$(PROD_SERVER)
 
 # ─── Help ──────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -256,5 +259,4 @@ help: ## Show this help
 	@echo "  \033[36mprod-migrate-file \033[0m Apply single migration (FILE=xxx.sql)"
 	@echo "  \033[36mbackup        \033[0m Dump production DB → OneDrive"
 	@echo "  \033[36mrestore       \033[0m Restore latest backup to local dev DB"
-	@echo "  \033[36madminer-on    \033[0m Enable adminer on production"
-	@echo "  \033[36madminer-off   \033[0m Disable adminer on production"
+	@echo "  \033[36madminer       \033[0m Prod Adminer over private SSH tunnel → localhost:8082"

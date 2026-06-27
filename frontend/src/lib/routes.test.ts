@@ -42,6 +42,7 @@ describe('titleForPath (catalog-sourced, parity with pre-refactor behavior)', ()
     '/config/salary-periods': 'Cấu hình',
     '/users': 'Người dùng',
     '/audit-logs': 'Nhật ký người dùng',
+    '/chatbot-monitoring': 'Giám sát Chatbot',
     '/my-trips': 'Hành trình',
     '/my-trips/3': 'Hành trình',
     '/my-earnings': 'Thu nhập',
@@ -84,7 +85,7 @@ describe('agent route-key set parity (catalog ↔ AGENT_ROUTE_KEYS)', () => {
     }
   });
 
-  it('agent set size is unchanged (32 keys)', () => {
-    expect(AGENT_ROUTE_KEYS).toHaveLength(32);
+  it('agent set size is unchanged (33 keys)', () => {
+    expect(AGENT_ROUTE_KEYS).toHaveLength(33);
   });
 });

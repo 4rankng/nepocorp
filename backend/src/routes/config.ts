@@ -22,7 +22,7 @@ import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelP
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
-import { installTire, removeTire, disposeTire, transferTire, isHttpError } from '../services/tire.service';
+import { installTire, removeTire, disposeTire, transferTire, isHttpError, assertTireSerialAvailable } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -157,25 +157,28 @@ router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
 }));
 
 // ─── N1 — Tires ────────────────────────────────────────────────────────────
-// Generic CRUD for the catalog (list/create/update/soft-delete). The lifecycle
+// Generic CRUD for the catalog (list/create/update/delete). The lifecycle
 // transitions (install/remove) are dedicated endpoints below because they touch
 // multiple fields atomically and validate the target truck exists.
 router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, {
   searchableField: 'serial',
   maxLimit: 2000,
+  deleteMode: 'hard',
   // A tire mounts on a truck OR a trailer — never both. installTireSchema
   // already enforces this on the lifecycle endpoint; mirror it on generic CRUD
   // create/update so a row can't be saved mounted on two vehicles at once.
-  beforeCreate: (data) => {
+  beforeCreate: async (data) => {
     if (data.truckId && data.trailerId) {
       throw new ApiError(400, 'Lốp chỉ lắp trên xe đầu kéo hoặc rơ-moóc, không cả hai');
     }
+    await assertTireSerialAvailable(data.serial);
     return data;
   },
-  beforeUpdate: (_id, data) => {
+  beforeUpdate: async (id, data) => {
     if (data.truckId && data.trailerId) {
       throw new ApiError(400, 'Lốp chỉ lắp trên xe đầu kéo hoặc rơ-moóc, không cả hai');
     }
+    await assertTireSerialAvailable(data.serial, id);
     return data;
   },
 }));

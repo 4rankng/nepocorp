@@ -582,6 +582,27 @@
       "when": 1782740000000,
       "tag": "0082_debit_note_issuer_representative",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1782750000000,
+      "tag": "0083_agent_turn_metrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1782760000000,
+      "tag": "0084_hard_delete_tires",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1782536392701,
+      "tag": "0085_quiet_power_pack",
+      "breakpoints": true
     }
   ]
 }

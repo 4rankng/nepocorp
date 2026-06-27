@@ -33,6 +33,7 @@ export interface CrudRouterOptions<
 > {
   searchableField?: string;
   disableDelete?: boolean;
+  deleteMode?: 'soft' | 'hard';
   /** Override the default list-page maxLimit (100) for catalogs that may exceed
    *  it (e.g. tires), so list endpoints don't silently truncate. */
   maxLimit?: number;
@@ -42,6 +43,18 @@ export interface CrudRouterOptions<
   afterUpdate?: (item: TRow, data: Partial<TData>, req: Request) => Promise<void> | void;
   beforeDelete?: (id: number, req: Request) => Promise<void> | void;
   afterDelete?: (id: number, req: Request) => Promise<void> | void;
+}
+
+function apiErrorFromUniqueConstraint(err: unknown): ApiError | null {
+  // Drizzle wraps postgres errors; the underlying code is usually on err.cause.code.
+  const e = err as { code?: string; cause?: { code?: string; detail?: string }; detail?: string };
+  const pgCode = e.code || e.cause?.code;
+  if (pgCode !== '23505') return null;
+
+  const detail = e.cause?.detail || e.detail || '';
+  const fieldMatch = detail.match(/Key \(([^)]+)\)/);
+  const field = fieldMatch ? fieldMatch[1] : 'trường';
+  return new ApiError(409, `${field} đã tồn tại`);
 }
 
 export function createCrudRouter<
@@ -55,6 +68,7 @@ export function createCrudRouter<
   const {
     searchableField,
     disableDelete = false,
+    deleteMode = 'soft',
     maxLimit,
     beforeCreate,
     afterCreate,
@@ -105,14 +119,9 @@ export function createCrudRouter<
     try {
       [item] = await db.insert(tbl).values(data as Record<string, unknown>).returning();
     } catch (err: unknown) {
-      // Drizzle wraps postgres errors; the underlying code is on err.cause.code
-      const e = err as { code?: string; cause?: { code?: string; detail?: string }; detail?: string };
-      const pgCode = e.code || e.cause?.code;
-      if (pgCode === '23505') {
-        const detail = e.cause?.detail || e.detail || '';
-        const fieldMatch = detail.match(/Key \(([^)]+)\)/);
-        const field = fieldMatch ? fieldMatch[1] : 'trường';
-        throw new ApiError(409, `${field} đã tồn tại`);
+      const uniqueError = apiErrorFromUniqueConstraint(err);
+      if (uniqueError) {
+        throw uniqueError;
       }
       throw err;
     }
@@ -138,7 +147,16 @@ export function createCrudRouter<
     if (beforeUpdate) {
       data = (await beforeUpdate(id, data, req)) as typeof data;
     }
-    const [item] = await db.update(tbl).set({ ...data, updatedAt: new Date() } as Record<string, unknown>).where(eq(column(table, 'id'), id)).returning();
+    let item;
+    try {
+      [item] = await db.update(tbl).set({ ...data, updatedAt: new Date() } as Record<string, unknown>).where(eq(column(table, 'id'), id)).returning();
+    } catch (err: unknown) {
+      const uniqueError = apiErrorFromUniqueConstraint(err);
+      if (uniqueError) {
+        throw uniqueError;
+      }
+      throw err;
+    }
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     if (afterUpdate) {
       await afterUpdate(item, data, req);
@@ -150,11 +168,13 @@ export function createCrudRouter<
   sub.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
     if (disableDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     const id = parseInt(req.params.id as string);
-    if (!hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
+    if (deleteMode === 'soft' && !hasSoftDelete) return res.status(405).json({ error: 'Không hỗ trợ xóa' });
     if (beforeDelete) {
       await beforeDelete(id, req);
     }
-    const [item] = await db.update(tbl).set({ deletedAt: new Date(), updatedAt: new Date() } as Record<string, unknown>).where(eq(column(table, 'id'), id)).returning();
+    const [item] = deleteMode === 'hard'
+      ? await db.delete(tbl).where(eq(column(table, 'id'), id)).returning()
+      : await db.update(tbl).set({ deletedAt: new Date(), updatedAt: new Date() } as Record<string, unknown>).where(eq(column(table, 'id'), id)).returning();
     if (!item) return res.status(404).json({ error: 'Không tìm thấy' });
     if (afterDelete) {
       await afterDelete(id, req);

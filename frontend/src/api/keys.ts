@@ -64,6 +64,8 @@ export const qk = {
     sealTypes: ['seal-types'],
     trailers: ['trailers'],
     debitNoteTemplates: ['debit-note-templates'],
+    debitNoteTemplate: (id: number | string | null | undefined) =>
+      ['debit-note-template', id] as const,
     pricingTables: ['pricing-tables'],
     allSuppliers: ['all-suppliers'],
     allExpenseCategories: ['all-expense-categories'],
@@ -94,6 +96,7 @@ export const qk = {
     'seal-types',
     'trailers',
     'debit-note-templates',
+    'debit-note-template',
     'pricing-tables',
     'all-suppliers',
     'all-expense-categories',
@@ -270,6 +273,19 @@ export const qk = {
   auditLogs: {
     list: (pageSize: number, filter: unknown, search: string) =>
       ['audit-logs', pageSize, filter, search] as const,
+  },
+
+  /* ── Chatbot (agent) performance monitoring ─────────────────────────── */
+
+  chatbotMetrics: {
+    /** Broad prefix — matches every chatbot-metrics query. */
+    all: ['chatbotMetrics'] as const,
+    summary: (range: string) => ['chatbotMetrics', 'summary', range] as const,
+    latency: (range: string) => ['chatbotMetrics', 'latency', range] as const,
+    tools: (range: string) => ['chatbotMetrics', 'tools', range] as const,
+    timeseries: (range: string) => ['chatbotMetrics', 'timeseries', range] as const,
+    recent: (range: string, sort: string, limit: number) =>
+      ['chatbotMetrics', 'recent', range, sort, limit] as const,
   },
 
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */

@@ -1,0 +1,351 @@
+/* ============================================================================
+ * ChatbotMonitoringPage — page-scoped styles (prefix: .cbm-)
+ *
+ * Design tokens come from the app's CSS variables (--accent, --ink, --line,
+ * --surface, --danger, --warning). No `!important` anywhere on this page;
+ * specificity is kept low so the shared component classes (panel, table)
+ * continue to own their own styling.
+ * ========================================================================== */
+
+.cbm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cbm-section {
+  min-width: 0;
+}
+
+.cbm-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .cbm-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── KPI grid ───────────────────────────────────────────────────────────── */
+
+.cbm-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+.cbm-kpi-grid--tight {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 1200px) {
+  .cbm-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .cbm-kpi-grid,
+  .cbm-kpi-grid--tight {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cbm-kpi {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+.cbm-kpi--flat {
+  min-height: 80px;
+}
+
+/* SLA band accent — a thin left rail + tinted background */
+.cbm-kpi--green::before,
+.cbm-kpi--amber::before,
+.cbm-kpi--red::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 36px;
+  border-radius: 0 4px 4px 0;
+}
+.cbm-kpi--green::before { background: #10B981; }
+.cbm-kpi--amber::before { background: #F59E0B; }
+.cbm-kpi--red::before   { background: #EF4444; }
+
+.cbm-kpi--green { background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), var(--surface) 60%); }
+.cbm-kpi--amber { background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), var(--surface) 60%); }
+.cbm-kpi--red   { background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), var(--surface) 60%); }
+
+.cbm-kpi__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  /* wrap rather than truncate — no values are hidden */
+  white-space: normal;
+  word-break: break-word;
+}
+.cbm-kpi__value {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.cbm-kpi--green .cbm-kpi__value { color: #047857; }
+.cbm-kpi--red   .cbm-kpi__value { color: #B91C1C; }
+
+.cbm-kpi__dot {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cbm-kpi__dot--green { background: #10B981; }
+.cbm-kpi__dot--amber { background: #F59E0B; }
+.cbm-kpi__dot--red   { background: #EF4444; }
+
+/* ─── Latency breakdown bars ─────────────────────────────────────────────── */
+
+.cbm-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0;
+}
+.cbm-bar {
+  display: grid;
+  grid-template-columns: 110px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .cbm-bar {
+    grid-template-columns: 84px 1fr 72px;
+  }
+}
+.cbm-bar__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cbm-bar__track {
+  width: 100%;
+  height: 14px;
+  display: block;
+  overflow: visible;
+}
+.cbm-bar__bg {
+  fill: rgba(0, 0, 0, 0.06);
+}
+.cbm-bar__fill {
+  fill: var(--accent, #005A2D);
+  transition: width 0.3s ease;
+}
+.cbm-bar__fill--none {
+  fill: rgba(0, 0, 0, 0.18);
+}
+.cbm-bar__value {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink);
+}
+
+/* ─── Latency trend chart ────────────────────────────────────────────────── */
+
+.cbm-trend-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cbm-trend {
+  width: 100%;
+  height: 200px;
+  display: block;
+}
+.cbm-trend__bar {
+  fill: rgba(0, 90, 45, 0.10);
+}
+.cbm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cbm-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cbm-legend__sw {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cbm-legend__sw--bar { background: rgba(0, 90, 45, 0.25); height: 8px; width: 8px; border-radius: 2px; }
+.cbm-legend__sw--avg { background: var(--ink-3); }
+.cbm-legend__sw--p95 { background: var(--accent, #005A2D); }
+
+/* ─── Tables ─────────────────────────────────────────────────────────────── */
+
+.cbm-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.cbm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cbm-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.cbm-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: top;
+}
+.cbm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.cbm-table tbody tr:hover {
+  background: rgba(0, 90, 45, 0.03);
+}
+.cbm-num {
+  text-align: right;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Long-content cells wrap (never truncate); short codes stay inline */
+.cbm-cell-name {
+  font-weight: 600;
+  word-break: break-word;
+  max-width: 320px;
+}
+.cbm-cell-user {
+  max-width: 260px;
+}
+.cbm-cell-user__q {
+  display: block;
+  word-break: break-word;
+}
+.cbm-cell-time,
+.cbm-cell-model {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  white-space: nowrap;
+}
+.cbm-cell-trace {
+  max-width: 180px;
+}
+.cbm-trace {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  /* traceId is a long opaque string — wrap, do not truncate */
+  word-break: break-all;
+}
+.cbm-trace--none {
+  color: var(--ink-3);
+  opacity: 0.7;
+}
+
+/* Status pill (error/fallback/ok) */
+.cbm-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cbm-pill--ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+.cbm-pill--warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #B45309;
+}
+.cbm-pill--err {
+  background: rgba(239, 68, 68, 0.12);
+  color: #B91C1C;
+}
+
+/* ─── Segmented toggle (range + recent sort) ─────────────────────────────── */
+
+.cbm-seg {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+.cbm-seg--range {
+  margin-left: auto;
+}
+.cbm-seg__btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cbm-seg__btn:hover {
+  color: var(--ink);
+}
+.cbm-seg__btn.is-active {
+  background: var(--surface);
+  color: var(--accent, #005A2D);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.cbm-table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+/* When PageHeader renders its action slot, give the toggle a little room on
+ * narrow screens — the header already wraps gracefully. */
+@media (max-width: 640px) {
+  .cbm-cell-name,
+  .cbm-cell-user {
+    max-width: 160px;
+  }
+}

@@ -1,3 +1,4 @@
+import './lib/telemetry.js';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config';
@@ -22,6 +23,7 @@ import driverRoutes from './routes/driver';
 import forwarderRoutes from './routes/forwarder';
 import forwarderAdminRoutes from './routes/forwarder-admin';
 import adminGpsRoutes from './routes/admin-gps';
+import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
@@ -93,6 +95,11 @@ app.use('/api/forwarder/me', authMiddleware, casbinAuthz('forwarder_portal'), fo
 app.use('/api/forwarder-expenses', authMiddleware, casbinAuthz('financial'), forwarderAdminRoutes);
 // GPS route-DB admin (backfill + recapture) — MANAGER/ADMIN only (gps-admin action).
 app.use('/api/admin/gps', authMiddleware, casbinAuthz('gps-admin'), adminGpsRoutes);
+// Chatbot (agent) performance monitoring — ADMIN-only aggregation API. The
+// `chatbot-metrics` action needs no Casbin policy row: the ADMIN wildcard
+// (`p, ADMIN, *, *`) grants ADMIN and every other role gets 403. MUST mount
+// before the catch-all /api or it would be shadowed.
+app.use('/api/admin/chatbot', authMiddleware, casbinAuthz('chatbot-metrics'), adminChatbotMetricsRoutes);
 app.use('/api/maps', authMiddleware, casbinAuthz('maps'), mapsRoutes);
 app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);

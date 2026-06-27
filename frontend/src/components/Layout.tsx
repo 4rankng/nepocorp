@@ -25,6 +25,7 @@ import {
   Shield,
   Phone,
   ClipboardCheck,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
@@ -72,6 +73,9 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
 
         ...(role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT' ? [
           { key: 'users', label: 'Người dùng', path: routes.users, icon: Users, section: 'system' as const },
+        ] : []),
+        ...(role === 'ADMIN' ? [
+          { key: 'chatbot-monitoring', label: 'Giám sát Chatbot', path: routes.chatbotMonitoring, icon: Activity, section: 'system' as const },
         ] : []),
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'audit-logs', label: 'Nhật ký người dùng', path: routes.auditLogs, icon: ScrollText, section: 'system' as const },

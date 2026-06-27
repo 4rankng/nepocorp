@@ -133,3 +133,16 @@ export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
 export { computeVehicleAlerts, VEHICLE_ALERT_LABELS } from './calculations/vehicleAlerts';
 export type { VehicleAlertInput } from './calculations/vehicleAlerts';
+
+// ─── Chatbot (agent) performance monitoring ────────────────────────────────
+// Plain TS interfaces + API path constants for the ADMIN aggregation API and
+// the dashboard frontend. See ./schemas/chatbot-metrics.ts.
+export type {
+  ChatbotSlaThresholds,
+  ChatbotMetricSummary,
+  ChatbotLatencyBreakdown,
+  ChatbotMetricDay,
+  ChatbotToolStat,
+  ChatbotRecentTurn,
+} from './schemas/chatbot-metrics';
+export { CHATBOT_METRICS_PATHS } from './schemas/chatbot-metrics';

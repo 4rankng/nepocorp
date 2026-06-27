@@ -66,6 +66,7 @@ const ForwarderExpenseTypesConfigPage = lazy(() => import('./pages/config/Forwar
 const TirePositionsConfigPage = lazy(() => import('./pages/config/TirePositionsConfigPage'));
 const DebitNoteTemplatesConfigPage = lazy(() => import('./pages/config/DebitNoteTemplatesConfigPage'));
 const DebitNoteTemplateEditorPage = lazy(() => import('./pages/config/DebitNoteTemplateEditorPage'));
+const ChatbotMonitoringPage = lazy(() => import('./pages/ChatbotMonitoringPage'));
 
 function PageLoader() {
   return (
@@ -101,6 +102,10 @@ function AppRoutes() {
   const managerOrAdminOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
   // /users is the single home for everyone; accountants get scoped (driver-only) access.
   const officeStaffOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER || user?.role === Role.ACCOUNTANT ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
+  // Strict ADMIN-only — chatbot monitoring exposes raw turns and must never
+  // be reachable by MANAGER/ACCOUNTANT. Mirrors managerOrAdminOnly's shape:
+  // admit only when the role matches, else bounce to the portal or staff home.
+  const strictAdminOnly = (el: ReactElement) => (user?.role === Role.ADMIN ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
 
   // Wrap each page in its own ErrorBoundary so a crash in one route
   // doesn't block navigation to other routes.
@@ -178,6 +183,7 @@ function AppRoutes() {
           <Route path="/payables/:id" element={adminOnly(page(<PayableDetailPage />))} />
           <Route path="/salary" element={adminOnly(page(<SalaryAttendancePage />))} />
           <Route path="/users" element={officeStaffOnly(page(<UsersPage />))} />
+          <Route path="/chatbot-monitoring" element={strictAdminOnly(page(<ChatbotMonitoringPage />))} />
           <Route path="/audit-logs" element={managerOrAdminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-logs" element={<Navigate to="/audit-logs" replace />} />

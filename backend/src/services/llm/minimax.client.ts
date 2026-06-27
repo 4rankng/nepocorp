@@ -11,8 +11,13 @@
 // an OpenAI-compatible surface, so this is written to that shape; the spike
 // verifies + corrects if needed.
 import { config } from '../../config';
+import { withSpan, type SpanAttrs } from '../agent/telemetry.js';
 
 const TIMEOUT_MS = () => config.minimaxTimeoutMs;
+
+// Redaction gate: prompt/completion text is financial/customer data. Only emit
+// gen_ai prompt/completion attrs when explicitly opted in. Default OFF.
+const TRACE_PROMPTS = process.env.AGENT_TRACE_PROMPTS === '1';
 
 export interface MiniMaxFunctionCall {
   id: string;
@@ -44,6 +49,9 @@ export interface MiniMaxCallResult {
   content: string | null;
   toolCalls: MiniMaxFunctionCall[];
   usage: { promptTokens: number; completionTokens: number };
+  /** Wall-clock latency of this call measured by performance.now() (sampler-
+   *  independent — accurate even when OTel drops the span). */
+  latencyMs: number;
 }
 
 interface OpenAIChoice {
@@ -105,40 +113,66 @@ export async function callMiniMax(opts: {
     else opts.signal.addEventListener('abort', onParentAbort, { once: true });
   }
 
+  // ── Instrumented LLM call ────────────────────────────────────────────────
+  // latencyMs comes from withSpan's performance.now() timer, NOT span.duration
+  // (the sampler may discard the span — see telemetry.ts LATENCY CONTRACT).
+  const llmAttrs: SpanAttrs = {
+    'gen_ai.operation.name': 'chat',
+    'gen_ai.request.model': config.minimaxModel,
+    'gen_ai.system': 'minimax',
+  };
+  // Redaction: prompt/completion text is financial/customer data — only emit
+  // when AGENT_TRACE_PROMPTS=1.
+  if (TRACE_PROMPTS) {
+    llmAttrs['gen_ai.prompt'] = JSON.stringify(opts.messages).slice(0, 8000);
+  }
+
   try {
-    const res = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.minimaxApiKey}`,
+    const { result: callResult, durationMs: latencyMs } = await withSpan(
+      'agent.llm.react_call',
+      llmAttrs,
+      async () => {
+        const res = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.minimaxApiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => '<no body>');
+          console.error(`[agent] MiniMax → ${res.status}: ${errBody.slice(0, 500)}`);
+          throw new MiniMaxError(`MiniMax HTTP ${res.status}`, 'http');
+        }
+
+        const data = (await res.json()) as OpenAIResponse;
+        const choice = data.choices?.[0];
+        const msg = choice?.message;
+
+        const toolCalls: MiniMaxFunctionCall[] = (msg?.tool_calls ?? []).map((tc) => ({
+          id: tc.id,
+          name: tc.function.name,
+          arguments: tc.function.arguments,
+        }));
+
+        const promptTokens = data.usage?.prompt_tokens ?? 0;
+        const completionTokens = data.usage?.completion_tokens ?? 0;
+        return {
+          content: msg?.content ?? null,
+          toolCalls,
+          usage: { promptTokens, completionTokens },
+        };
       },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '<no body>');
-      console.error(`[agent] MiniMax → ${res.status}: ${errBody.slice(0, 500)}`);
-      throw new MiniMaxError(`MiniMax HTTP ${res.status}`, 'http');
-    }
-
-    const data = (await res.json()) as OpenAIResponse;
-    const choice = data.choices?.[0];
-    const msg = choice?.message;
-
-    const toolCalls: MiniMaxFunctionCall[] = (msg?.tool_calls ?? []).map((tc) => ({
-      id: tc.id,
-      name: tc.function.name,
-      arguments: tc.function.arguments,
-    }));
+    );
 
     return {
-      content: msg?.content ?? null,
-      toolCalls,
-      usage: {
-        promptTokens: data.usage?.prompt_tokens ?? 0,
-        completionTokens: data.usage?.completion_tokens ?? 0,
-      },
+      content: callResult.content,
+      toolCalls: callResult.toolCalls,
+      usage: callResult.usage,
+      latencyMs,
     };
   } catch (e) {
     if (e instanceof MiniMaxError) throw e;

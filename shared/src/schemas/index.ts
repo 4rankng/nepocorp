@@ -10,6 +10,10 @@ import {
 // from the entity-CRUD schemas below. See ./agent.ts for the design notes.
 export * from './agent';
 
+// Chatbot (agent) performance monitoring — plain TS interfaces + API path
+// constants consumed by the ADMIN aggregation API and the dashboard frontend.
+export * from './chatbot-metrics';
+
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
 export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
@@ -429,7 +433,7 @@ export const trailerSchema = z.object({
 // `serial` is the immutable identity; the rest is optional lifecycle metadata.
 // cost is coerced (form inputs send strings) into a number for storage.
 export const tireSchema = z.object({
-  serial: z.string().min(1, 'Số serial lốp không được để trống').max(64),
+  serial: z.string().trim().min(1, 'Số serial lốp không được để trống').max(64),
   truckId: z.coerce.number().int().positive().optional().nullable(),
   // A tire mounts on EITHER a truck (đầu kéo) or a trailer (rơ-moóc); both are
   // nullable so a spare in stock has neither set.

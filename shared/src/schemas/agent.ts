@@ -66,6 +66,7 @@ export const AGENT_ROUTE_KEYS = [
   // Admin
   'users',
   'auditLogs',
+  'chatbotMonitoring',
 ] as const;
 
 export type AgentRouteKey = (typeof AGENT_ROUTE_KEYS)[number];

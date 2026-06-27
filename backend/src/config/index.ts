@@ -79,6 +79,11 @@ const configSchema = z.object({
   minimaxTimeoutMs: z.coerce.number().int().positive().default(60000),
   // Hard cap on the ReAct tool-calling loop (R5: runaway guard).
   agentMaxIterations: z.coerce.number().int().positive().default(6),
+  // Chatbot SLA bands for the performance dashboard's user-perceived latency
+  // gauge. p95 <= green = healthy; green < p95 <= amber = degraded; p95 > amber
+  // = unhealthy. Tunable via env so ops can adjust without a redeploy.
+  agentSlaP95GreenMs: z.coerce.number().int().positive().default(5000),
+  agentSlaP95AmberMs: z.coerce.number().int().positive().default(12000),
 });
 
 const raw = {
@@ -109,6 +114,8 @@ const raw = {
   minimaxModel: process.env.MINIMAX_MODEL,
   minimaxTimeoutMs: process.env.MINIMAX_TIMEOUT_MS,
   agentMaxIterations: process.env.AGENT_MAX_ITERATIONS,
+  agentSlaP95GreenMs: process.env.AGENT_SLA_P95_GREEN_MS,
+  agentSlaP95AmberMs: process.env.AGENT_SLA_P95_AMBER_MS,
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -141,6 +148,8 @@ const withDefaults = {
   minimaxModel: raw.minimaxModel || 'MiniMax-M2.7-highspeed',
   minimaxTimeoutMs: raw.minimaxTimeoutMs || 60000,
   agentMaxIterations: raw.agentMaxIterations || 6,
+  agentSlaP95GreenMs: raw.agentSlaP95GreenMs || 5000,
+  agentSlaP95AmberMs: raw.agentSlaP95AmberMs || 12000,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -186,4 +195,6 @@ export const config = result.success ? result.data : configSchema.parse({
   minimaxModel: 'MiniMax-M2.7-highspeed',
   minimaxTimeoutMs: 60000,
   agentMaxIterations: 6,
+  agentSlaP95GreenMs: 5000,
+  agentSlaP95AmberMs: 12000,
 });

@@ -56,7 +56,7 @@ export function AgentAssistant() {
   useLayoutEffect(() => {
     if (!open) return;
     isPinnedToBottom.current = true;
-    let frame = requestAnimationFrame(() => scrollToLatest('auto'));
+    const frame = requestAnimationFrame(() => scrollToLatest('auto'));
     const timers = [
       window.setTimeout(() => scrollToLatest('auto'), 80),
       window.setTimeout(() => scrollToLatest('auto'), 220),

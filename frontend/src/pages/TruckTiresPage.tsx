@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUpToLine, Check, MoreVertical, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUpToLine, Check, ChevronDown, MoreVertical, Pencil, Plus, Settings2, Trash2, X } from 'lucide-react';
 import { TIRE_DISPOSAL_REASONS } from '@tingting/shared';
 import type { Tire, TirePosition } from '@tingting/shared';
 import type { Supplier } from '@tingting/shared';
@@ -43,6 +44,7 @@ import {
 import './TruckTiresPage.css';
 
 type VehicleKind = 'truck' | 'trailer';
+type PositionManagerOpener = (onSelect?: (value: string) => void) => void;
 
 const TIRE_STATUS_COLORS: Record<Tire['status'], string> = {
   IN_USE: '#16A34A',
@@ -165,6 +167,8 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
   const [installTarget, setInstallTarget] = useState<Tire | null>(null);
   const [transferTarget, setTransferTarget] = useState<Tire | null>(null);
   const [positionManagerOpen, setPositionManagerOpen] = useState(false);
+  const [positionManagerSelect, setPositionManagerSelect] = useState<((value: string) => void) | null>(null);
+  const { toast } = useToast();
 
   const busy = updateMut.isPending || deleteMut.isPending || removeMut.isPending || disposeMut.isPending || installMut.isPending || transferMut.isPending;
   const positionBusy = createPositionMut.isPending || updatePositionMut.isPending || deletePositionMut.isPending;
@@ -188,7 +192,8 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
     }
   };
 
-  const openPositionManager = () => {
+  const openPositionManager = (onSelect?: (value: string) => void) => {
+    setPositionManagerSelect(() => onSelect ?? null);
     setPositionManagerOpen(true);
     void syncUsedPositionsToCatalog();
   };
@@ -197,7 +202,12 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
     if (!deleteTarget) return;
     const target = deleteTarget;
     setDeleteTarget(null);
-    await deleteMut.mutateAsync(target.id);
+    try {
+      await deleteMut.mutateAsync(target.id);
+      toast({ kind: 'success', message: 'Đã xóa lốp.' });
+    } catch (err) {
+      toast({ kind: 'error', message: formatErrorMessage(err) });
+    }
   };
 
   return (
@@ -234,7 +244,7 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             <button
               type="button"
               className="ttp-tool-btn"
-              onClick={openPositionManager}
+              onClick={() => openPositionManager()}
             >
               <Settings2 size={15} />
               Vị trí lốp
@@ -246,15 +256,18 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             saving={createMut.isPending}
             onManagePositions={openPositionManager}
             onsave={async (d) => {
-              await createMut.mutateAsync({
-                ...d,
-                // "Thêm lốp" on a vehicle page mounts it now: IN_USE from today
-                // so it lists under this vehicle (not the spare pool) and Tháo
-                // lốp / Thanh lý work without the "chưa được lắp" 409.
-                status: 'IN_USE',
-                installedAt: todayISO(),
-                ...(isTruck ? { truckId: vehicleId } : { trailerId: vehicleId }),
-              });
+              try {
+                await createMut.mutateAsync({
+                  ...d,
+                  status: 'IN_USE',
+                  installedAt: todayISO(),
+                  ...(isTruck ? { truckId: vehicleId } : { trailerId: vehicleId }),
+                });
+                toast({ kind: 'success', message: 'Đã thêm lốp thành công' });
+              } catch (err) {
+                toast({ kind: 'error', message: formatErrorMessage(err) });
+                throw err;
+              }
             }}
           />
         </section>
@@ -325,8 +338,14 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           onManagePositions={openPositionManager}
           oncancel={() => setEditingTire(null)}
           onsave={async (patch) => {
-            await updateMut.mutateAsync({ id: editingTire.id, data: patch });
-            setEditingTire(null);
+            try {
+              await updateMut.mutateAsync({ id: editingTire.id, data: patch });
+              toast({ kind: 'success', message: 'Cập nhật lốp thành công' });
+              setEditingTire(null);
+            } catch (err) {
+              toast({ kind: 'error', message: formatErrorMessage(err) });
+              throw err;
+            }
           }}
         />
       )}
@@ -337,8 +356,24 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           tire={unmountTarget}
           saving={busy}
           oncancel={() => setUnmountTarget(null)}
-          onremove={async (id) => { await removeMut.mutateAsync(id); setUnmountTarget(null); }}
-          ondispose={async (id, reason) => { await disposeMut.mutateAsync({ id, reason }); setUnmountTarget(null); }}
+          onremove={async (id) => {
+            try {
+              await removeMut.mutateAsync(id);
+              toast({ kind: 'success', message: 'Đã tháo lốp về kho' });
+              setUnmountTarget(null);
+            } catch (err) {
+              toast({ kind: 'error', message: formatErrorMessage(err) });
+            }
+          }}
+          ondispose={async (id, reason) => {
+            try {
+              await disposeMut.mutateAsync({ id, reason });
+              toast({ kind: 'success', message: 'Đã thanh lý lốp' });
+              setUnmountTarget(null);
+            } catch (err) {
+              toast({ kind: 'error', message: formatErrorMessage(err) });
+            }
+          }}
         />
       )}
 
@@ -355,8 +390,13 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           onManagePositions={openPositionManager}
           oncancel={() => setInstallTarget(null)}
           oninstall={async (payload) => {
-            await installMut.mutateAsync({ id: installTarget.id, ...payload });
-            setInstallTarget(null);
+            try {
+              await installMut.mutateAsync({ id: installTarget.id, ...payload });
+              toast({ kind: 'success', message: 'Lắp lốp thành công' });
+              setInstallTarget(null);
+            } catch (err) {
+              toast({ kind: 'error', message: formatErrorMessage(err) });
+            }
           }}
         />
       )}
@@ -373,8 +413,13 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           onManagePositions={openPositionManager}
           oncancel={() => setTransferTarget(null)}
           ontransfer={async (payload) => {
-            await transferMut.mutateAsync({ id: transferTarget.id, ...payload });
-            setTransferTarget(null);
+            try {
+              await transferMut.mutateAsync({ id: transferTarget.id, ...payload });
+              toast({ kind: 'success', message: 'Điều chuyển lốp thành công' });
+              setTransferTarget(null);
+            } catch (err) {
+              toast({ kind: 'error', message: formatErrorMessage(err) });
+            }
           }}
         />
       )}
@@ -383,7 +428,11 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
         <TirePositionsManagerDialog
           positions={tirePositions}
           saving={positionBusy}
-          oncancel={() => setPositionManagerOpen(false)}
+          onselect={positionManagerSelect ?? undefined}
+          oncancel={() => {
+            setPositionManagerOpen(false);
+            setPositionManagerSelect(null);
+          }}
           oncreate={(data) => createPositionMut.mutateAsync(data)}
           onupdate={(id, data) => updatePositionMut.mutateAsync({ id, data })}
           ondelete={(id) => deletePositionMut.mutateAsync(id)}
@@ -393,7 +442,7 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
       <ConfirmDialog
         isOpen={!!deleteTarget}
         variant="danger"
-        message={deleteTarget ? `Xóa lốp ${deleteTarget.serial}? Hành động này sẽ ẩn lốp khỏi danh sách theo dõi.` : ''}
+        message={deleteTarget ? `Xóa lốp ${deleteTarget.serial}? Hành động này sẽ xóa hẳn lốp khỏi hệ thống.` : ''}
         confirmLabel={deleteMut.isPending ? 'Đang xóa…' : 'Xóa lốp'}
         cancelLabel="Hủy"
         onConfirm={() => { void handleDeleteConfirm(); }}
@@ -409,7 +458,7 @@ function AddTireForm({ positionLabels, suppliers, saving, onManagePositions, ons
   positionLabels: string[];
   suppliers: Supplier[];
   saving: boolean;
-  onManagePositions: () => void;
+  onManagePositions: PositionManagerOpener;
   onsave: (d: {
     serial: string;
     position: string | null;
@@ -417,7 +466,7 @@ function AddTireForm({ positionLabels, suppliers, saving, onManagePositions, ons
     supplierId: number | null;
     cost: number;
     purchasedAt: string | null;
-  }) => void;
+  }) => Promise<unknown> | void;
 }) {
   const [serial, setSerial] = useState('');
   const [positionText, setPositionText] = useState('');
@@ -426,23 +475,27 @@ function AddTireForm({ positionLabels, suppliers, saving, onManagePositions, ons
   const [cost, setCost] = useState('');
   const [purchasedAt, setPurchasedAt] = useState('');
 
-  const submit = () => {
+  const submit = async () => {
     if (!serial.trim()) return;
     const positionPayload = positionPayloadFromLabel(positionText);
-    onsave({
-      serial: serial.trim(),
-      ...positionPayload,
-      size: size.trim() || null,
-      supplierId: supplierIdFromText(suppliers, supplierText),
-      cost: cost ? Number(cost) : 0,
-      purchasedAt: purchasedAt || null,
-    });
-    setSerial('');
-    setPositionText('');
-    setSize('');
-    setSupplierText('');
-    setCost('');
-    setPurchasedAt('');
+    try {
+      await onsave({
+        serial: serial.trim(),
+        ...positionPayload,
+        size: size.trim() || null,
+        supplierId: supplierIdFromText(suppliers, supplierText),
+        cost: cost ? Number(cost) : 0,
+        purchasedAt: purchasedAt || null,
+      });
+      setSerial('');
+      setPositionText('');
+      setSize('');
+      setSupplierText('');
+      setCost('');
+      setPurchasedAt('');
+    } catch {
+      // Error handled by parent
+    }
   };
 
   return (
@@ -489,38 +542,115 @@ function AddTireForm({ positionLabels, suppliers, saving, onManagePositions, ons
 
 // ─── Tire table ─────────────────────────────────────────────────────────────
 
+function useFloatingPickerMenu(
+  open: boolean,
+  itemCount: number,
+  onClose: () => void,
+  options: { maxWidth?: number; maxHeight?: number } = {},
+) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+  const maxWidth = options.maxWidth ?? 420;
+  const maxHeightLimit = options.maxHeight ?? 280;
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuStyle(undefined);
+      return;
+    }
+
+    const updateMenuPosition = () => {
+      const root = rootRef.current;
+      const menu = menuRef.current;
+      if (!root || !menu) return;
+
+      const rect = root.getBoundingClientRect();
+      const gap = 8;
+      const viewportPadding = 8;
+      const menuWidth = Math.min(rect.width, maxWidth, window.innerWidth - viewportPadding * 2);
+      const availableBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
+      const availableAbove = rect.top - gap - viewportPadding;
+      const openUp = availableBelow < 180 && availableAbove > availableBelow;
+      const maxHeight = Math.max(180, Math.min(maxHeightLimit, openUp ? availableAbove : availableBelow));
+
+      setMenuStyle({
+        top: openUp ? Math.max(viewportPadding, rect.top - gap - maxHeight) : rect.bottom + gap,
+        left: Math.max(viewportPadding, Math.min(rect.left, window.innerWidth - menuWidth - viewportPadding)),
+        width: menuWidth,
+        maxHeight,
+        visibility: 'visible',
+      });
+    };
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [itemCount, maxHeightLimit, maxWidth, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      onClose();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onClose, open]);
+
+  return { rootRef, menuRef, menuStyle };
+}
+
 function PositionPicker({ value, labels, onChange, onManage }: {
   value: string;
   labels: string[];
   onChange: (value: string) => void;
-  onManage: () => void;
+  onManage: (onSelect?: (value: string) => void) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const filteredLabels = labels
-    .filter((label) => !value.trim() || textMatches(label, value))
-    .slice(0, 8);
+  const closeMenu = () => setOpen(false);
+  const { rootRef, menuRef, menuStyle } = useFloatingPickerMenu(open, labels.length, closeMenu);
+  const selectedLabel = cleanText(value);
 
   return (
-    <div className="ttp-position-picker">
-      <input
-        className="input"
-        value={value}
-        onFocus={() => setOpen(true)}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setOpen(true);
-        }}
-        onBlur={() => {
-          onChange(cleanText(value));
-          window.setTimeout(() => setOpen(false), 120);
-        }}
-        placeholder="VD: Trước trái hoặc Trục nâng trái"
+    <div ref={rootRef} className="ttp-position-picker">
+      <button
+        type="button"
+        className={`input ttp-position-select-trigger ${open ? 'is-open' : ''}`}
+        onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
-      />
+      >
+        <span className={selectedLabel ? '' : 'ttp-position-select-placeholder'}>
+          {selectedLabel || 'Chọn vị trí lắp'}
+        </span>
+        <ChevronDown size={16} className="ttp-position-select-chevron" />
+      </button>
       {open && (
-        <div className="ttp-position-picker-menu" role="listbox">
-          {filteredLabels.length > 0 ? filteredLabels.map((label) => (
+        <div
+          ref={menuRef}
+          className="ttp-position-picker-menu ttp-position-picker-menu--floating"
+          role="listbox"
+          style={menuStyle ?? { visibility: 'hidden' }}
+        >
+          {labels.length > 0 ? labels.map((label) => (
             <button
               key={label}
               type="button"
@@ -531,12 +661,12 @@ function PositionPicker({ value, labels, onChange, onManage }: {
                 setOpen(false);
               }}
               role="option"
-              aria-selected={cleanText(value) === label}
+              aria-selected={selectedLabel === label}
             >
               {label}
             </button>
           )) : (
-            <div className="ttp-position-picker-empty">Không có vị trí phù hợp</div>
+            <div className="ttp-position-picker-empty">Chưa có vị trí lốp</div>
           )}
           <button
             type="button"
@@ -544,7 +674,7 @@ function PositionPicker({ value, labels, onChange, onManage }: {
             onPointerDown={(e) => {
               e.preventDefault();
               setOpen(false);
-              onManage();
+              onManage((label) => onChange(label));
             }}
           >
             <Settings2 size={15} />
@@ -565,9 +695,11 @@ function SupplierPicker({ value, suppliers, onChange }: {
   const filteredSuppliers = suppliers
     .filter((supplier) => !value.trim() || textMatches(supplier.name, value))
     .slice(0, 8);
+  const closeMenu = () => setOpen(false);
+  const { rootRef, menuRef, menuStyle } = useFloatingPickerMenu(open, filteredSuppliers.length, closeMenu);
 
   return (
-    <div className="ttp-position-picker ttp-supplier-picker">
+    <div ref={rootRef} className="ttp-position-picker ttp-supplier-picker">
       <input
         className="input"
         value={value}
@@ -585,7 +717,12 @@ function SupplierPicker({ value, suppliers, onChange }: {
         aria-expanded={open}
       />
       {open && (
-        <div className="ttp-position-picker-menu ttp-supplier-picker-menu" role="listbox">
+        <div
+          ref={menuRef}
+          className="ttp-position-picker-menu ttp-position-picker-menu--floating ttp-supplier-picker-menu"
+          role="listbox"
+          style={menuStyle ?? { visibility: 'hidden' }}
+        >
           {filteredSuppliers.length > 0 ? filteredSuppliers.map((supplier) => (
             <button
               key={supplier.id}
@@ -637,9 +774,10 @@ function computeNextSortOrder(positions: TirePosition[]): number {
   return positions.length ? Math.max(...positions.map((p) => p.sortOrder)) + 10 : 10;
 }
 
-function TirePositionsManagerDialog({ positions, saving, oncreate, onupdate, ondelete, oncancel }: {
+function TirePositionsManagerDialog({ positions, saving, onselect, oncreate, onupdate, ondelete, oncancel }: {
   positions: TirePosition[];
   saving: boolean;
+  onselect?: (value: string) => void;
   oncreate: (data: { name: string; sortOrder?: number; status: TirePosition['status'] }) => Promise<unknown>;
   onupdate: (id: number, data: Partial<ReturnType<typeof tirePositionPayload>>) => Promise<unknown>;
   ondelete: (id: number) => Promise<unknown>;
@@ -685,6 +823,10 @@ function TirePositionsManagerDialog({ positions, saving, oncreate, onupdate, ond
       await oncreate(payload);
       setNewDraft(tirePositionDraft());
       toast({ kind: 'success', message: `Đã thêm vị trí "${payload.name}".` });
+      if (onselect) {
+        onselect(payload.name);
+        oncancel();
+      }
     } catch (err) {
       const message = formatErrorMessage(err);
       setError(message);
@@ -830,8 +972,19 @@ function TirePositionsManagerDialog({ positions, saving, oncreate, onupdate, ond
                   ) : (
                     <>
                       <div className="ttp-position-name">
-                        <span>{position.name}</span>
-                        <small>Hiển thị trong dropdown</small>
+                        <button
+                          type="button"
+                          className="ttp-position-select"
+                          onClick={() => {
+                            if (!onselect) return;
+                            onselect(position.name);
+                            oncancel();
+                          }}
+                          disabled={!onselect}
+                        >
+                          <span>{position.name}</span>
+                          <small>{onselect ? 'Chọn vị trí này' : 'Hiển thị trong dropdown'}</small>
+                        </button>
                       </div>
                       <div className="ttp-icon-actions">
                         <button
@@ -882,7 +1035,7 @@ function TireEditDialog({ tire, suppliers, positionLabels, saving, onManagePosit
   suppliers: Supplier[];
   positionLabels: string[];
   saving: boolean;
-  onManagePositions: () => void;
+  onManagePositions: PositionManagerOpener;
   onsave: (patch: TirePatch) => Promise<unknown> | void;
   oncancel: () => void;
 }) {
@@ -926,7 +1079,7 @@ function TireEditDialog({ tire, suppliers, positionLabels, saving, onManagePosit
         </div>
 
         <div className="ttp-edit-form">
-          <div className="ttp-field ttp-field--serial">
+          <div className="ttp-field">
             <label>Serial lốp *</label>
             <input
               className="input"
@@ -1133,11 +1286,27 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
     };
   }, [openMenuId]);
 
+  const handleTableKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    e.currentTarget.scrollBy({
+      left: e.key === 'ArrowRight' ? 220 : -220,
+      behavior: 'smooth',
+    });
+  };
+
   if (loading) return <div className="ttp-empty">Đang tải…</div>;
   if (tires.length === 0) return <div className="ttp-empty">{emptyHint}</div>;
 
   return (
-    <div className="ttp-table-wrap">
+    <div
+      className="ttp-table-wrap"
+      tabIndex={0}
+      role="region"
+      aria-label="Bảng lốp, dùng phím mũi tên trái phải để cuộn ngang"
+      onKeyDown={handleTableKeyDown}
+    >
       <table className="ttp-table">
         <colgroup>
           <col className="ttp-col-serial" />
@@ -1160,7 +1329,7 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
             <th>Ngày mua</th>
             <th>Tuổi lốp</th>
             <th>Nhà cung cấp</th>
-            <th className="ttp-actions-heading">Thao tác</th>
+            <th className="ttp-actions-heading" aria-label="Tác vụ"></th>
           </tr>
         </thead>
         <tbody>
@@ -1188,7 +1357,7 @@ function TireTable({ tires, suppliers, loading, emptyHint, busy, onedit, ondelet
                 <td className="ttp-supplier" data-label="Nhà cung cấp">
                   {supplierName(suppliers, t.supplierId)}
                 </td>
-                <td className="ttp-row-actions" data-label="Thao tác">
+                <td className="ttp-row-actions">
                   <TireRowActions
                     tire={t}
                     index={index}
@@ -1233,13 +1402,56 @@ function TireRowActions({ tire, index, total, open, onOpenChange, busy, oninstal
   ondelete: (tire: Tire) => void;
 }) {
   const flipUp = total > 2 && index >= total - 2;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuStyle(undefined);
+      return;
+    }
+
+    const updateMenuPosition = () => {
+      const root = rootRef.current;
+      const menu = menuRef.current;
+      if (!root || !menu) return;
+
+      const triggerRect = root.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const gap = 4;
+      const viewportPadding = 8;
+      const preferredTop = flipUp ? triggerRect.top - menuRect.height - gap : triggerRect.bottom + gap;
+      const fallbackTop = flipUp ? triggerRect.bottom + gap : triggerRect.top - menuRect.height - gap;
+      const preferredFits = preferredTop >= viewportPadding
+        && preferredTop + menuRect.height <= window.innerHeight - viewportPadding;
+      const rawTop = preferredFits ? preferredTop : fallbackTop;
+      const maxLeft = window.innerWidth - menuRect.width - viewportPadding;
+
+      setMenuStyle({
+        top: Math.max(viewportPadding, Math.min(rawTop, window.innerHeight - menuRect.height - viewportPadding)),
+        left: Math.max(viewportPadding, Math.min(triggerRect.right - menuRect.width, maxLeft)),
+        visibility: 'visible',
+      });
+    };
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [flipUp, open]);
+
   const run = (fn: (tire: Tire) => void) => {
     onOpenChange(false);
     fn(tire);
   };
 
   return (
-    <div className={`ttp-kebab-root ${open ? 'is-open' : ''}`}>
+    <div ref={rootRef} className={`ttp-kebab-root ${open ? 'is-open' : ''}`}>
       <button
         type="button"
         className={`ttp-kebab ${open ? 'is-active' : ''}`}
@@ -1253,7 +1465,12 @@ function TireRowActions({ tire, index, total, open, onOpenChange, busy, oninstal
         <MoreVertical size={15} />
       </button>
       {open && (
-        <div className={`ttp-kebab__menu ${flipUp ? 'ttp-kebab__menu--up' : ''}`} role="menu">
+        <div
+          ref={menuRef}
+          className="ttp-kebab__menu"
+          role="menu"
+          style={menuStyle ?? { visibility: 'hidden' }}
+        >
           {oninstall && (
             <button type="button" className="ttp-kebab__item" role="menuitem" disabled={busy} onClick={() => run(oninstall)}>
               <ArrowUpToLine size={14} />
@@ -1296,7 +1513,7 @@ function InstallTireDialog({ tire, tires, isTruck, vehicleId, vehicleLabel, posi
   vehicleLabel: string;
   positionLabels: string[];
   saving: boolean;
-  onManagePositions: () => void;
+  onManagePositions: PositionManagerOpener;
   oncancel: () => void;
   oninstall: (payload: { truckId?: number | null; trailerId?: number | null; position?: string | null }) => Promise<unknown> | void;
 }) {
@@ -1382,7 +1599,7 @@ function TransferTireDialog({ tire, tires, vehicles, currentVehicleLabel, positi
   currentVehicleLabel: string;
   positionLabels: string[];
   saving: boolean;
-  onManagePositions: () => void;
+  onManagePositions: PositionManagerOpener;
   oncancel: () => void;
   ontransfer: (payload: { truckId?: number | null; trailerId?: number | null; position?: string | null }) => Promise<unknown> | void;
 }) {

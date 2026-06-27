@@ -6,7 +6,7 @@
 #
 # After this script completes:
 #   1. make push && make deploy   (from local machine)
-#   2. make adminer-on            (optional, enable DB GUI)
+#   2. make adminer               (optional, private DB GUI over SSH tunnel)
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -118,15 +118,6 @@ server {
         proxy_send_timeout 300s;
     }
 
-    location /adminer/ {
-        proxy_pass         http://127.0.0.1:8080/;
-        proxy_http_version 1.1;
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-    }
-
     location / {
         proxy_pass         http://127.0.0.1:3000;
         proxy_http_version 1.1;
@@ -161,8 +152,8 @@ echo ""
 echo "  3. Enable SSL (first time only):"
 echo "     ssh root@nepo.tingting.vip 'certbot --nginx -d nepo.tingting.vip'"
 echo ""
-echo "  4. (Optional) Enable Adminer:"
-echo "     make adminer-on"
+echo "  4. (Optional) Open Adminer (private SSH tunnel):"
+echo "     make adminer"
 echo ""
 echo "  5. Test login:"
 echo "     https://nepo.tingting.vip"

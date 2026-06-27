@@ -740,7 +740,7 @@ export default function DebitNoteTemplateEditorPage() {
   useBackShortcut(backToList);
 
   const { data: template, isLoading } = useQuery<DebitNoteTemplate>({
-    queryKey: ['debit-note-template', id],
+    queryKey: qk.catalogs.debitNoteTemplate(id),
     queryFn: () => configClient.getDebitNoteTemplate(id as number),
     enabled: !isNew,
     staleTime: 30_000,
@@ -818,7 +818,7 @@ export default function DebitNoteTemplateEditorPage() {
         ? await configClient.saveDebitNoteTemplate(payload)
         : await configClient.updateDebitNoteTemplate(id as number, payload);
       await queryClient.invalidateQueries({ queryKey: qk.catalogs.debitNoteTemplates });
-      await queryClient.invalidateQueries({ queryKey: ['debit-note-template', saved.id] });
+      await queryClient.invalidateQueries({ queryKey: qk.catalogs.debitNoteTemplate(saved.id) });
       toast({ kind: 'success', message: 'Đã lưu mẫu giấy báo nợ.' });
       backToList();
     } catch (err) {

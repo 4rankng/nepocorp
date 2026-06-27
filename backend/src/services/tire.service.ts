@@ -1,6 +1,8 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, ne } from 'drizzle-orm';
+import { TIRE_STATUS_LABELS, type TireStatus } from '@tingting/shared';
+import { ApiError } from '../errors';
 
 /**
  * N1 — Tire lifecycle service.
@@ -34,6 +36,64 @@ export interface DisposeTireInput {
 class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);
+  }
+}
+
+type TireSerialConflict = {
+  id: number;
+  serial: string;
+  status: string | null;
+  truckPlate: string | null;
+  trailerPlate: string | null;
+  position: string | null;
+  deletedAt: Date | string | null;
+  disposalDate: string | null;
+};
+
+export function tireSerialConflictMessage(tire: TireSerialConflict): string {
+  const statusLabel = tire.status && tire.status in TIRE_STATUS_LABELS
+    ? TIRE_STATUS_LABELS[tire.status as TireStatus]
+    : tire.status || 'Không rõ trạng thái';
+  const location = tire.truckPlate
+    ? `xe ${tire.truckPlate}`
+    : tire.trailerPlate
+      ? `rơ-moóc ${tire.trailerPlate}`
+      : tire.status === 'IN_STOCK'
+        ? 'kho lốp dự phòng'
+        : tire.status === 'DISPOSED'
+          ? 'danh sách đã thanh lý'
+          : tire.deletedAt
+            ? 'bản ghi đã xóa'
+            : 'hệ thống';
+  const position = tire.position ? `, vị trí ${tire.position}` : '';
+  return `Serial lốp ${tire.serial} đã tồn tại (${statusLabel}, ${location}${position})`;
+}
+
+export async function assertTireSerialAvailable(serial: string | undefined, excludeTireId?: number) {
+  const normalizedSerial = serial?.trim();
+  if (!normalizedSerial) return;
+
+  const conditions = [eq(s.tires.serial, normalizedSerial)];
+  if (excludeTireId != null) conditions.push(ne(s.tires.id, excludeTireId));
+
+  const [existing] = await db.select({
+    id: s.tires.id,
+    serial: s.tires.serial,
+    status: s.tires.status,
+    truckPlate: s.trucks.licensePlate,
+    trailerPlate: s.trailers.licensePlate,
+    position: s.tires.position,
+    deletedAt: s.tires.deletedAt,
+    disposalDate: s.tires.disposalDate,
+  })
+    .from(s.tires)
+    .leftJoin(s.trucks, eq(s.tires.truckId, s.trucks.id))
+    .leftJoin(s.trailers, eq(s.tires.trailerId, s.trailers.id))
+    .where(and(...conditions))
+    .limit(1);
+
+  if (existing) {
+    throw new ApiError(409, tireSerialConflictMessage(existing));
   }
 }
 
