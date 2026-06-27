@@ -1025,7 +1025,7 @@ export interface BillingDocument {
 }
 
 /** Lines returned by the generate/preview step, before save. */
-export interface BillingDraftLine extends Omit<BillingDocumentLine, 'id' | 'documentId'> {}
+export type BillingDraftLine = Omit<BillingDocumentLine, 'id' | 'documentId'>;
 
 export interface BillingDocumentDraft {
   type: BillingDocumentType;

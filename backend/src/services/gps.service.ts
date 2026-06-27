@@ -483,7 +483,7 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
   // Planned route legs for every active trip (used by both live and fallback).
   const legsByTrip = await fetchLegsWithRoutes(activeTrips.map((t) => t.tripId));
 
-  let { vehicles, stale, error, persist } = composeFleet({
+  const { vehicles, stale: initialStale, error: initialError, persist } = composeFleet({
     activeTrips,
     providerVehicles,
     providerError,
@@ -491,6 +491,8 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
     legsByTrip,
     now,
   });
+  let stale = initialStale;
+  let error = initialError;
 
   // Fleet overview: also surface trucks NOT on an active trip, at their last-known
   // location — a live provider fix if one exists for the plate, else the persisted

@@ -308,7 +308,7 @@ export async function runAgent(opts: {
   // Hoisted out of the root-span body so the metrics row can be written AFTER
   // the span resolves: rootDurationMs + traceId come from withRootSpan's RETURN,
   // so referencing them inside the callback is a TDZ. Mutated inside the span.
-  let totalUsage = { promptTokens: 0, completionTokens: 0 };
+  const totalUsage = { promptTokens: 0, completionTokens: 0 };
   let conversationId: string | undefined;
   let assistantMessageId: number | undefined;
 
@@ -562,7 +562,8 @@ export async function runAgent(opts: {
         produceFinalAnswer(trimToolHistory(messages), signal),
       );
       metrics.latencyFinalMs += finalSpan.durationMs;
-      let { response, usage: finalUsage, fallbackUsed, fallbackReason } = finalSpan.result;
+      const { usage: finalUsage, fallbackUsed, fallbackReason } = finalSpan.result;
+      let response = finalSpan.result.response;
       metrics.fallbackUsed = fallbackUsed;
       // P0b — record WHY the final answer fell back (prefixed final_*), so the
       // dashboard can split fallback cause from ReAct-loop errors. Guard on
