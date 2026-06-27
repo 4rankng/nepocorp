@@ -16,7 +16,7 @@
  * this page (the `strictAdminOnly` guard in App.tsx redirects them).
  */
 import { useState } from 'react';
-import { PageHeader, Panel } from '../components/UI';
+import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
 import { SkeletonKPIs, SkeletonLine, SkeletonTable } from '../components/shared/Skeleton';
 import { useAuth } from '../hooks/useAuth';
@@ -36,6 +36,9 @@ import type {
   ChatbotRecentTurn,
 } from '@tingting/shared';
 import './ChatbotMonitoringPage.css';
+
+const BOT_OPS_ILLUSTRATION = '/assets/illustrations/chatbot-monitoring-ops.png';
+const BOT_ICON = '/assets/icons/35-assistant-tro-ly-tingting.png';
 
 /* ─── Vietnamese label maps ────────────────────────────────────────────────
  * The raw metrics rows carry enum-ish strings (role, errorKind). Per the
@@ -89,6 +92,11 @@ function fmtAvg(v: number | null | undefined, suffix = ''): string {
   const rounded = Math.abs(v) >= 100 ? Math.round(v) : Number(v.toFixed(1));
   return `${formatNumber(rounded)}${suffix}`;
 }
+function fmtCompactMs(v: number | null | undefined): string {
+  if (v == null) return '—';
+  if (v >= 1000) return `${(v / 1000).toFixed(1).replace('.', ',')}s`;
+  return `${Math.round(v)}ms`;
+}
 
 /* ─── SLA band colour from the API's thresholds ────────────────────────────
  * p95 < p95GreenMs → healthy (emerald); between green and amber → warning;
@@ -104,6 +112,162 @@ function p95BandTone(p95Ms: number | null, sla: { p95GreenMs: number; p95AmberMs
   if (p95Ms < sla.p95GreenMs) return 'green';
   if (p95Ms <= sla.p95AmberMs) return 'amber';
   return 'red';
+}
+
+function healthCopy(summary: ChatbotMetricSummary | undefined):
+  { tone: 'green' | 'amber' | 'red' | 'neutral'; label: string; detail: string } {
+  if (!summary || summary.turns === 0) {
+    return { tone: 'neutral', label: 'Đang chờ dữ liệu', detail: 'Chưa có lượt bot trong khoảng thời gian này.' };
+  }
+  const p95Tone = p95BandTone(summary.userPerceived.p95Ms, summary.sla);
+  if (summary.errorRate >= 0.2 || p95Tone === 'red') {
+    return { tone: 'red', label: 'Cần xử lý', detail: 'Độ trễ hoặc lỗi đang vượt ngưỡng vận hành.' };
+  }
+  if (summary.fallbackRate >= 0.2 || p95Tone === 'amber') {
+    return { tone: 'amber', label: 'Cần theo dõi', detail: 'Bot vẫn trả lời được, nhưng đang phải fallback nhiều hoặc p95 sát ngưỡng.' };
+  }
+  return { tone: 'green', label: 'Ổn định', detail: 'Độ trễ, lỗi và fallback đang trong vùng an toàn.' };
+}
+
+function mainBottleneck(breakdown: ChatbotLatencyBreakdown | undefined): { label: string; value: number | null } {
+  if (!breakdown) return { label: 'Chưa rõ', value: null };
+  const rows = [
+    { label: 'LLM', value: breakdown.llmMs },
+    { label: 'Công cụ', value: breakdown.toolsMs },
+    { label: 'Trả lời cuối', value: breakdown.finalMs },
+    { label: 'ACK chờ', value: breakdown.ackMs },
+    { label: 'Ghi DB', value: breakdown.persistMs },
+  ].filter((r): r is { label: string; value: number } => r.value != null);
+  return rows.sort((a, b) => b.value - a.value)[0] ?? { label: 'Chưa rõ', value: null };
+}
+
+function toolLabel(name: string): string {
+  const labels: Record<string, string> = {
+    'ui.navigate': 'Điều hướng trang',
+    'ui.search_pages': 'Tìm trang',
+    'approvals.queue': 'Hàng chờ duyệt',
+    'fleet.catalog': 'Dữ liệu đội xe',
+    'customers.list': 'Danh sách khách',
+  };
+  return labels[name] ?? name;
+}
+
+function BotHealthHero({
+  summary,
+  breakdown,
+  range,
+  rangeDays,
+  loading,
+  onRangeChange,
+}: {
+  summary: ChatbotMetricSummary | undefined;
+  breakdown: ChatbotLatencyBreakdown | undefined;
+  range: string;
+  rangeDays: number;
+  loading: boolean;
+  onRangeChange: (r: string) => void;
+}) {
+  const health = healthCopy(summary);
+  const turns = summary?.turns ?? 0;
+  const bottleneck = mainBottleneck(breakdown);
+  const tokensPerTurn = summary && summary.turns > 0 ? (summary.tokensIn + summary.tokensOut) / summary.turns : null;
+  const p95Tone = p95BandTone(summary?.userPerceived.p95Ms ?? null, summary?.sla);
+
+  return (
+    <section className={`cbm-hero cbm-hero--${health.tone}`}>
+      <div className="cbm-hero__copy">
+        <div className="cbm-eyebrow">
+          <span className={`cbm-live-dot cbm-live-dot--${health.tone}`} />
+          Bot ops cockpit
+        </div>
+        <h1>Giám sát Chatbot</h1>
+        <p>
+          Theo dõi thời gian từ lúc người dùng gửi tin nhắn đến khi câu trả lời xuất hiện,
+          cùng tỷ lệ lỗi, fallback và hành vi điều hướng của bot.
+        </p>
+        <div className="cbm-hero__actions">
+          <RangeToggle range={range} onChange={onRangeChange} />
+          <span className="cbm-window-note">{rangeDays} ngày gần nhất</span>
+        </div>
+      </div>
+
+      <div className="cbm-hero__visual" aria-hidden="true">
+        <img src={BOT_OPS_ILLUSTRATION} alt="" />
+      </div>
+
+      <div className="cbm-command-card">
+        <div className="cbm-command-card__top">
+          <img src={BOT_ICON} alt="" />
+          <div>
+            <span className="cbm-command-card__label">Tình trạng hiện tại</span>
+            <strong>{loading ? 'Đang tải' : health.label}</strong>
+          </div>
+        </div>
+        <p>{health.detail}</p>
+        <div className="cbm-command-grid">
+          <div>
+            <span>Lượt ghi nhận</span>
+            <strong>{fmtNum(turns)}</strong>
+          </div>
+          <div>
+            <span>Chờ p95</span>
+            <strong className={`cbm-tone-${p95Tone}`}>{fmtCompactMs(summary?.userPerceived.p95Ms)}</strong>
+          </div>
+          <div>
+            <span>Nút thắt</span>
+            <strong>{bottleneck.label}</strong>
+          </div>
+          <div>
+            <span>Token/lượt</span>
+            <strong>{fmtAvg(tokensPerTurn)}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OperationalInsights({
+  summary,
+  breakdown,
+  tools,
+}: {
+  summary: ChatbotMetricSummary | undefined;
+  breakdown: ChatbotLatencyBreakdown | undefined;
+  tools: ChatbotToolStat[] | undefined;
+}) {
+  if (!summary) return null;
+  const bottleneck = mainBottleneck(breakdown);
+  const topTool = (tools ?? []).slice().sort((a, b) => b.calls - a.calls)[0];
+  const toolCalls = tools?.reduce((sum, t) => sum + t.calls, 0) ?? 0;
+  const cards = [
+    {
+      title: 'Ưu tiên tối ưu',
+      value: bottleneck.label,
+      detail: bottleneck.value == null ? 'Chưa đủ dữ liệu giai đoạn.' : `${fmtMs(bottleneck.value)} trung bình, chiếm phần lớn thời gian phản hồi.`,
+    },
+    {
+      title: 'Hành vi người dùng',
+      value: summary.navigateRate > 0.4 ? 'Thiên về mở trang' : 'Thiên về hỏi đáp',
+      detail: `${fmtRate(summary.navigateRate)} lượt có điều hướng. Tỷ lệ cao nghĩa là bot đang dẫn người dùng tới đúng màn hình thao tác.`,
+    },
+    {
+      title: 'Công cụ bận nhất',
+      value: topTool ? toolLabel(topTool.name) : 'Chưa có',
+      detail: topTool ? `${fmtNum(topTool.calls)} / ${fmtNum(toolCalls)} lượt gọi công cụ trong kỳ.` : 'Chưa ghi nhận tool call.',
+    },
+  ];
+  return (
+    <section className="cbm-insights" aria-label="Tóm tắt vận hành bot">
+      {cards.map((card) => (
+        <article className="cbm-insight" key={card.title}>
+          <span>{card.title}</span>
+          <strong>{card.value}</strong>
+          <p>{card.detail}</p>
+        </article>
+      ))}
+    </section>
+  );
 }
 
 /* ============================================================================
@@ -130,31 +294,62 @@ function SummaryKpis({
 
   const p95Tone = p95BandTone(summary.userPerceived.p95Ms, summary.sla);
 
-  const cards: { label: string; value: string; tone?: string; hint?: string }[] = [
-    { label: 'p50 (người dùng)', value: fmtMs(summary.userPerceived.p50Ms) },
+  const tokensPerTurn = summary.turns > 0 ? (summary.tokensIn + summary.tokensOut) / summary.turns : 0;
+  const reliability = 1 - summary.errorRate;
+
+  const cards: { label: string; value: string; meta: string; tone?: string; hint?: string; progress?: number }[] = [
     {
-      label: 'p95 (người dùng)',
-      value: fmtMs(summary.userPerceived.p95Ms),
+      label: 'Tốc độ thường gặp',
+      value: fmtCompactMs(summary.userPerceived.p50Ms),
+      meta: '50% lượt hiện câu trả lời nhanh hơn mốc này.',
+      progress: summary.userPerceived.p50Ms && summary.sla ? Math.min(1, summary.userPerceived.p50Ms / summary.sla.p95AmberMs) : 0,
+    },
+    {
+      label: 'Thời gian chờ p95',
+      value: fmtCompactMs(summary.userPerceived.p95Ms),
+      meta: slaHint(summary.sla),
       tone: p95Tone,
       hint: slaHint(summary.sla),
-    },
-    { label: 'Tỷ lệ lỗi', value: fmtRate(summary.errorRate) },
-    { label: 'Tỷ lệ fallback', value: fmtRate(summary.fallbackRate) },
-    { label: 'Lượt / ngày', value: fmtAvg(turnsPerDay) },
-    {
-      label: 'Tỷ lệ huỷ khi lưu',
-      value: fmtRate(summary.abortRate),
-      hint: 'Số lượt người dùng đóng kết nối trước khi bot lưu xong — không phải lượt nào cũng được ghi nhận.',
+      progress: summary.userPerceived.p95Ms && summary.sla ? Math.min(1, summary.userPerceived.p95Ms / summary.sla.p95AmberMs) : 0,
     },
     {
-      label: 'Tỷ lệ điều hướng',
+      label: 'Độ tin cậy',
+      value: fmtRate(reliability),
+      meta: `${fmtRate(summary.errorRate)} lượt lỗi trong kỳ.`,
+      tone: reliability >= 0.95 ? 'green' : reliability >= 0.8 ? 'amber' : 'red',
+      progress: reliability,
+    },
+    {
+      label: 'Fallback',
+      value: fmtRate(summary.fallbackRate),
+      meta: 'Bot phải sửa dạng trả lời hoặc dùng nhánh dự phòng.',
+      tone: summary.fallbackRate >= 0.2 ? 'amber' : 'green',
+      progress: summary.fallbackRate,
+    },
+    {
+      label: 'Điều hướng',
       value: fmtRate(summary.navigateRate),
-      hint: 'Tỷ lệ lượt bot đưa người dùng đến trang/nút cần thiết (gọi ui.navigate). Cao = đáng tin cậy.',
+      meta: 'Lượt bot đưa người dùng tới đúng trang hoặc nút.',
+      progress: summary.navigateRate,
     },
     {
-      label: 'Tỷ lệ guardrail',
-      value: fmtRate(summary.guardrailRate),
-      hint: 'Tỷ lệ lượt guardrail phải tổng hợp điều hướng vì bot viết đường dẫn bằng text thay vì gọi ui.navigate. Thấp = bot tự tuân thủ.',
+      label: 'Token mỗi lượt',
+      value: fmtAvg(tokensPerTurn),
+      meta: `${fmtNum(summary.tokensIn + summary.tokensOut)} token tổng cộng.`,
+      progress: Math.min(1, tokensPerTurn / 80_000),
+    },
+    {
+      label: 'Lượt mỗi ngày',
+      value: fmtAvg(turnsPerDay),
+      meta: `${fmtNum(summary.turns)} lượt trong ${rangeDays} ngày.`,
+      progress: Math.min(1, turnsPerDay / 10),
+    },
+    {
+      label: 'Huỷ khi lưu',
+      value: fmtRate(summary.abortRate),
+      meta: 'Người dùng đóng kết nối trước khi bot lưu xong.',
+      hint: 'Số lượt người dùng đóng kết nối trước khi bot lưu xong — không phải lượt nào cũng được ghi nhận.',
+      progress: summary.abortRate,
     },
   ];
 
@@ -166,6 +361,12 @@ function SummaryKpis({
             {c.label}
           </span>
           <span className="cbm-kpi__value">{c.value}</span>
+          <span className="cbm-kpi__meta">{c.meta}</span>
+          {typeof c.progress === 'number' && (
+            <span className="cbm-kpi__meter" aria-hidden="true">
+              <i style={{ width: `${Math.max(3, Math.min(100, c.progress * 100))}%` }} />
+            </span>
+          )}
           {c.tone && (
             <span className={`cbm-kpi__dot cbm-kpi__dot--${c.tone}`} aria-hidden="true" />
           )}
@@ -361,6 +562,7 @@ function ToolsTable({ tools, loading }: { tools: ChatbotToolStat[] | undefined; 
   if (rows.length === 0) {
     return <EmptyState illustration="ops" title="Chưa có dữ liệu công cụ" description="Chưa có lượt gọi công cụ nào trong khoảng thời gian này." />;
   }
+  const totalCalls = Math.max(1, rows.reduce((sum, t) => sum + t.calls, 0));
 
   return (
     <div className="cbm-table-wrap">
@@ -368,24 +570,46 @@ function ToolsTable({ tools, loading }: { tools: ChatbotToolStat[] | undefined; 
         <thead>
           <tr>
             <th>Tên công cụ</th>
-            <th className="cbm-num">Lượt gọi</th>
+            <th>Ý nghĩa</th>
+            <th className="cbm-num">Tần suất</th>
             <th className="cbm-num">p95</th>
             <th className="cbm-num">Tỷ lệ lỗi</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((t) => (
-            <tr key={t.name}>
-              <td className="cbm-cell-name">{t.name}</td>
-              <td className="cbm-num">{fmtNum(t.calls)}</td>
-              <td className="cbm-num">{t.p95Ms == null ? '—' : fmtMs(t.p95Ms)}</td>
-              <td className="cbm-num">{fmtRate(t.errorRate)}</td>
-            </tr>
-          ))}
+          {rows.map((t) => {
+            const share = t.calls / totalCalls;
+            return (
+              <tr key={t.name}>
+                <td className="cbm-cell-name">
+                  <strong>{toolLabel(t.name)}</strong>
+                  <span>{t.name}</span>
+                </td>
+                <td>{toolMeaning(t.name)}</td>
+                <td className="cbm-num cbm-share-cell">
+                  <span>{fmtNum(t.calls)} lượt</span>
+                  <span className="cbm-share-meter" aria-hidden="true"><i style={{ width: `${Math.max(5, share * 100)}%` }} /></span>
+                </td>
+                <td className="cbm-num">{t.p95Ms == null ? '—' : fmtMs(t.p95Ms)}</td>
+                <td className="cbm-num">{fmtRate(t.errorRate)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
+}
+
+function toolMeaning(name: string): string {
+  const meanings: Record<string, string> = {
+    'ui.navigate': 'Đưa người dùng tới màn hình cần thao tác.',
+    'ui.search_pages': 'Tìm route phù hợp khi người dùng nói bằng ngôn ngữ tự nhiên.',
+    'approvals.queue': 'Đọc hàng chờ phê duyệt để trả lời câu hỏi vận hành.',
+    'fleet.catalog': 'Đọc danh mục xe, rơ-moóc và tài xế.',
+    'customers.list': 'Tra cứu khách hàng, công nợ hoặc hồ sơ liên quan.',
+  };
+  return meanings[name] ?? 'Công cụ dữ liệu nội bộ được bot gọi trong lượt trả lời.';
 }
 
 /* ============================================================================
@@ -478,7 +702,7 @@ function RecentTurnsTable({
             <th>Thời gian</th>
             <th>Người dùng</th>
             <th>Vai trò</th>
-            <th className="cbm-num">Độ trễ</th>
+            <th className="cbm-num">Thời gian chờ</th>
             <th>Trạng thái</th>
             <th>Mô hình</th>
             <th>Trace</th>
@@ -560,20 +784,28 @@ export default function ChatbotMonitoringPage() {
 
   return (
     <div className="cbm-page">
-      <PageHeader
-        title="Giám sát Chatbot"
-        description="Hiệu năng bot theo thời gian thực: độ trễ, lỗi, công cụ và chi phí."
-        action={<RangeToggle range={range} onChange={setRange} />}
+      <BotHealthHero
+        summary={summaryQ.data}
+        breakdown={latencyQ.data}
+        range={range}
+        rangeDays={rangeDays}
+        loading={summaryQ.isLoading}
+        onRangeChange={setRange}
       />
 
       {isWholeEmpty ? (
-        <EmptyState
-          illustration="ops"
-          title="Chưa có dữ liệu bot"
-          description="Trong khoảng thời gian này chưa có lượt trò chuyện nào được ghi nhận."
-        />
+        <div className="cbm-empty-card">
+          <img src={BOT_OPS_ILLUSTRATION} alt="" />
+          <EmptyState
+            illustration="ops"
+            title="Chưa có dữ liệu bot"
+            description="Trong khoảng thời gian này chưa có lượt trò chuyện nào được ghi nhận."
+          />
+        </div>
       ) : (
         <>
+          <OperationalInsights summary={summaryQ.data} breakdown={latencyQ.data} tools={toolsQ.data} />
+
           {/* Section 1 — Health summary */}
           <section className="cbm-section">
             <SummaryKpis summary={summaryQ.data} rangeDays={rangeDays} loading={summaryQ.isLoading} />
@@ -581,10 +813,10 @@ export default function ChatbotMonitoringPage() {
 
           {/* Section 2 — Latency breakdown + trend */}
           <section className="cbm-section cbm-grid-2">
-            <Panel title="Phân tích độ trễ" subtitle="Trung bình mỗi giai đoạn pipelines của bot.">
+            <Panel className="cbm-panel cbm-panel--latency" title="Độ trễ nằm ở đâu?" subtitle="Phân rã trung bình mỗi lượt: model, tool, trả lời cuối, ACK và ghi DB.">
               <LatencyBreakdownBars breakdown={latencyQ.data} loading={latencyQ.isLoading} />
             </Panel>
-            <Panel title="Xu hướng độ trễ & số lượt" subtitle="p95, trung bình và số lượt theo ngày.">
+            <Panel className="cbm-panel cbm-panel--trend" title="Nhịp vận hành theo ngày" subtitle="Số lượt, trung bình và p95 để nhìn spike theo thời gian.">
               <div className="cbm-trend-wrap">
                 <LatencyTrendChart days={timeseriesQ.data} loading={timeseriesQ.isLoading} />
                 <div className="cbm-legend">
@@ -598,14 +830,14 @@ export default function ChatbotMonitoringPage() {
 
           {/* Section 3 — Slowest tools */}
           <section className="cbm-section">
-            <Panel title="Công cụ gọi chậm nhất" subtitle="Sắp xếp theo p95 giảm dần. p95 đang là '—' cho đến khi đo được thời gian từng lượt gọi.">
+            <Panel className="cbm-panel" title="Bản đồ công cụ bot đang dùng" subtitle="Tần suất gọi và ý nghĩa vận hành của từng tool. p95 sẽ hiện khi có đo thời gian từng lượt gọi.">
               <ToolsTable tools={toolsQ.data} loading={toolsQ.isLoading} />
             </Panel>
           </section>
 
           {/* Section 4 — ReAct efficiency */}
           <section className="cbm-section">
-            <Panel title="Hiệu quả ReAct" subtitle="Vòng lặp suy luận, fallback, công cụ và token trên mỗi lượt.">
+            <Panel className="cbm-panel" title="Hiệu quả suy luận" subtitle="Bot mất bao nhiêu vòng, gọi bao nhiêu tool, và tiêu tốn bao nhiêu token cho một lượt.">
               <ReactEfficiency summary={summaryQ.data} loading={summaryQ.isLoading} />
             </Panel>
           </section>
@@ -613,6 +845,7 @@ export default function ChatbotMonitoringPage() {
           {/* Section 5 — Recent turns */}
           <section className="cbm-section">
             <Panel
+              className="cbm-panel"
               title="Lượt gần đây"
               subtitle={`20 lượt mới nhất · vai trò: ${roleLabel(user?.role ?? 'ADMIN')} (toàn quyền xem)`}
             >

@@ -73,9 +73,9 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     // Postgres ordered-set aggregate. Cast the column to double precision so the
     // percentile is computed on a continuous domain (integer percentiles would
     // round to the nearest sample).
-    upP50: sql<number | null>`percentile_cont(0.5)  within group (order by ${schema.agentTurnMetrics.latencyUserPerceivedMs}::double precision)`,
-    upP95: sql<number | null>`percentile_cont(0.95) within group (order by ${schema.agentTurnMetrics.latencyUserPerceivedMs}::double precision)`,
-    upP99: sql<number | null>`percentile_cont(0.99) within group (order by ${schema.agentTurnMetrics.latencyUserPerceivedMs}::double precision)`,
+    upP50: sql<number | null>`percentile_cont(0.5)  within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
+    upP95: sql<number | null>`percentile_cont(0.95) within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
+    upP99: sql<number | null>`percentile_cont(0.99) within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
     mpP50: sql<number | null>`percentile_cont(0.5)  within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
     mpP95: sql<number | null>`percentile_cont(0.95) within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
     mpP99: sql<number | null>`percentile_cont(0.99) within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
@@ -238,8 +238,8 @@ router.get('/metrics/timeseries', asyncHandler(async (req: Request, res: Respons
   const since = parseSince(req);
   const rows = await db.select({
     date: sql<string>`to_char(date_trunc('day', ${schema.agentTurnMetrics.createdAt}), 'YYYY-MM-DD')`,
-    avgMs: sql<number | null>`avg(${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision`,
-    p95Ms: sql<number | null>`percentile_cont(0.95) within group (order by ${schema.agentTurnMetrics.latencyUserPerceivedMs}::double precision)`,
+    avgMs: sql<number | null>`avg(coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs}))::double precision`,
+    p95Ms: sql<number | null>`percentile_cont(0.95) within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
     turns: sql<number>`count(*)::int`,
   })
     .from(schema.agentTurnMetrics)
@@ -282,7 +282,7 @@ router.get('/metrics/recent', asyncHandler(async (req: Request, res: Response) =
   // Order column depends on sort. slowest = user-perceived desc nulls last;
   // recent (default) = created_at desc.
   const orderExpr = sort === 'slowest'
-    ? sql`${schema.agentTurnMetrics.latencyUserPerceivedMs} desc nulls last`
+    ? sql`coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs}) desc nulls last`
     : desc(schema.agentTurnMetrics.createdAt);
 
   const rows = await db.select({
@@ -290,7 +290,7 @@ router.get('/metrics/recent', asyncHandler(async (req: Request, res: Response) =
     traceId: schema.agentTurnMetrics.traceId,
     createdAt: schema.agentTurnMetrics.createdAt,
     role: schema.agentTurnMetrics.role,
-    latencyUserPerceivedMs: schema.agentTurnMetrics.latencyUserPerceivedMs,
+    latencyUserPerceivedMs: sql<number | null>`coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})`,
     latencyTotalMs: schema.agentTurnMetrics.latencyTotalMs,
     errorKind: schema.agentTurnMetrics.errorKind,
     fallbackUsed: schema.agentTurnMetrics.fallbackUsed,

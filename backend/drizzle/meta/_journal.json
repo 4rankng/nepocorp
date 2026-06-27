@@ -610,6 +610,13 @@
       "when": 1782770000000,
       "tag": "0086_agent_metrics_nav_guardrail",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1782780000000,
+      "tag": "0087_agent_client_wait_ms",
+      "breakpoints": true
     }
   ]
 }

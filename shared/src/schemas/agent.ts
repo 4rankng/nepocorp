@@ -316,6 +316,8 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     response: agentResponseSchema,
     /** Set on the first turn — the id of the conversation that was created/used. */
     conversationId: z.string().optional(),
+    /** Assistant message id, used by the browser to report true wait time. */
+    messageId: z.number().int().positive().optional(),
   }),
   z.object({
     event: z.literal('error'),

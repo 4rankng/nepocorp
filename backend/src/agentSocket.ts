@@ -13,8 +13,11 @@
 import type { Server as HttpServer } from 'http';
 import { Server, type Namespace, type Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { and, eq } from 'drizzle-orm';
 import { config } from './config';
 import { Role, agentActionResultSchema, type AgentActionResult, type AgentEvent, type AgentResponse } from '@tingting/shared';
+import { db } from './db';
+import * as schema from './db/schema';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
 import { runAgent } from './services/agent/orchestrator';
@@ -28,6 +31,11 @@ interface ChatInput {
   conversationId?: string;
   /** The SPA route the user is on when they ask — gives the LLM page context. */
   currentRouteKey?: string;
+}
+
+interface ClientTimingInput {
+  messageId?: number;
+  elapsedMs?: number;
 }
 
 // ── Per-session memory ─────────────────────────────────────────────────────
@@ -154,6 +162,24 @@ function registerHandlers(agentNs: Namespace): void {
       }
     });
 
+    socket.on('agent:client_timing', async (raw: ClientTimingInput | null | undefined) => {
+      const messageId = Number(raw?.messageId);
+      const elapsedMs = Number(raw?.elapsedMs);
+      if (!Number.isInteger(messageId) || messageId <= 0) return;
+      if (!Number.isFinite(elapsedMs) || elapsedMs < 0 || elapsedMs > 10 * 60_000) return;
+      try {
+        await db
+          .update(schema.agentTurnMetrics)
+          .set({ latencyClientWaitMs: Math.round(elapsedMs) })
+          .where(and(
+            eq(schema.agentTurnMetrics.messageId, messageId),
+            eq(schema.agentTurnMetrics.userId, user.userId),
+          ));
+      } catch (err) {
+        console.warn('[agent-socket] client timing update failed', err);
+      }
+    });
+
     socket.on('agent:chat', async (input: ChatInput | null | undefined) => {
       const message = input?.message;
       if (typeof message !== 'string' || !message.trim()) {
@@ -176,7 +202,7 @@ function registerHandlers(agentNs: Namespace): void {
       };
 
       try {
-        const { response, conversationId: convId } = await runAgent({
+        const { response, conversationId: convId, assistantMessageId } = await runAgent({
           ctx,
           message,
           conversationId: input?.conversationId,
@@ -191,7 +217,13 @@ function registerHandlers(agentNs: Namespace): void {
           const assistantText = renderResponseText(response);
           if (assistantText) sessionHistory.push({ role: 'assistant', content: assistantText });
           trimSessionHistory(sessionHistory);
-          socket.emit('agent:event', { event: 'done', response, conversationId: convId } satisfies AgentEvent);
+          const doneEvent: AgentEvent = {
+            event: 'done',
+            response,
+            ...(convId ? { conversationId: convId } : {}),
+            ...(assistantMessageId ? { messageId: assistantMessageId } : {}),
+          };
+          socket.emit('agent:event', doneEvent);
         }
       } catch (e) {
         console.error('[agent-socket] chat failed', e);

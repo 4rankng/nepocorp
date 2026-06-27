@@ -1084,7 +1084,8 @@ export const agentMessages = pgTable('agent_messages', {
 //
 // DUAL-LATENCY + ACK-EXCLUSION INVARIANT (read before touching timings):
 //   - latency_total_ms       = LLM + tools + final (EXCLUDES ack waits).
-//   - latency_user_perceived_ms = total + ack + persist (what the user felt).
+//   - latency_user_perceived_ms = total + ack + persist (server-side fallback).
+//   - latency_client_wait_ms = browser send -> assistant response shown.
 //   - latency_ack_ms         : the ack/emit wait, tracked separately.
 //   - latency_tools_ms       : MUST NOT include the ack wait at the mid-loop
 //                              instrumentation site — subtract the ack wait
@@ -1097,6 +1098,7 @@ export const agentTurnMetrics = pgTable('agent_turn_metrics', {
   conversationId: integer('conversation_id').references(() => agentConversations.id),
   model: text('model'),
   latencyUserPerceivedMs: integer('latency_user_perceived_ms'),
+  latencyClientWaitMs: integer('latency_client_wait_ms'),
   latencyTotalMs: integer('latency_total_ms'),
   latencyLlmMs: integer('latency_llm_ms'),
   latencyToolsMs: integer('latency_tools_ms'),

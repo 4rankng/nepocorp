@@ -22,6 +22,7 @@ export interface ChatbotSlaThresholds {
 export interface ChatbotMetricSummary {
   turns: number;
   activeUsers: number;
+  /** Browser-measured wait when available: user sends message -> assistant response is shown. */
   userPerceived: {
     p50Ms: number | null;
     p95Ms: number | null;

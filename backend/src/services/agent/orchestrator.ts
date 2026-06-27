@@ -51,7 +51,7 @@ import logger from '../../lib/logger.js';
 // ── Latency computation (pure, unit-tested) ─────────────────────────────────
 // LATENCY CONTRACT — read before editing the metrics row:
 //   latency_total_ms          = LLM + tools + final            (EXCLUDES ack + persist)
-//   latency_user_perceived_ms = total + ack + persist (+overhead) = root durationMs
+//   latency_user_perceived_ms = server-side wait fallback = root durationMs
 //   latency_ack_ms / latency_persist_ms : tracked in their own columns
 // All durations come from performance.now() (via withSpan.durationMs or a local
 // timer), NEVER from the OTel span duration. See telemetry.ts LATENCY CONTRACT.
@@ -187,6 +187,7 @@ export function synthesizeNavigateFromProse(
 export interface RunAgentResult {
   response: AgentResponse;
   conversationId: string | undefined;
+  assistantMessageId: number | undefined;
   toolTrace: unknown[];
 }
 
@@ -557,7 +558,7 @@ export async function runAgent(opts: {
     }
   }
 
-  return runResult;
+  return { ...runResult, assistantMessageId };
 }
 
 async function produceFinalAnswer(
