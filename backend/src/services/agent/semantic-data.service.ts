@@ -15,6 +15,7 @@ export const SEMANTIC_ENTITIES = [
   'penalties',
   'debitNoteTemplates',
   'auditLogs',
+  'companyInfo',
 ] as const;
 
 export type SemanticEntity = (typeof SEMANTIC_ENTITIES)[number];
@@ -493,6 +494,53 @@ const ENTITIES: Record<SemanticEntity, EntityDef> = {
     },
     dateField: 'timestamp',
     defaultOrder: sql`a.timestamp DESC, a.id DESC`,
+  },
+  companyInfo: {
+    meta: {
+      entity: 'companyInfo',
+      title: 'Thông tin công ty',
+      description: 'Hồ sơ pháp lý của chính công ty: tên, địa chỉ, mã số thuế, người đại diện và tài khoản ngân hàng.',
+      searchableFields: ['name', 'address', 'taxCode', 'representative', 'representativeTitle', 'bankAccount', 'bankName'],
+      listFields: ['id', 'name', 'taxCode', 'representative', 'representativeTitle', 'bankAccount', 'bankName'],
+      detailFields: ['id', 'name', 'address', 'taxCode', 'representative', 'representativeTitle', 'bankAccount', 'bankName', 'updatedAt'],
+      filterFields: ['id', 'taxCode'],
+      aggregateMetrics: ['count'],
+      timelineFields: ['updatedAt'],
+    },
+    // setting_key literals below mirror Object.values(COMPANY_INFO_SETTING_KEYS)
+    // (services/company-info.service.ts). Raw SQL can't import the TS const, so
+    // keep them in sync when a key is added/renamed.
+    from: sql`(
+      SELECT
+        1 AS id,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.name') AS name,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.address') AS address,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.tax_code') AS tax_code,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.representative') AS representative,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.representative_title') AS representative_title,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.bank_account') AS bank_account,
+        MAX(setting_value) FILTER (WHERE setting_key = 'company.bank_name') AS bank_name,
+        MAX(updated_at) AS updated_at
+      FROM app_settings
+      WHERE setting_key LIKE 'company.%'
+      -- Guard the phantom row: an aggregate with no GROUP BY always yields one
+      -- row, so without this HAVING an empty app_settings would surface a
+      -- {id:1, name:null, …} "company" that doesn't really exist.
+      HAVING MAX(updated_at) IS NOT NULL
+    ) ci`,
+    fields: {
+      id: number(sql`ci.id`),
+      name: text(sql`ci.name`),
+      address: text(sql`ci.address`),
+      taxCode: text(sql`ci.tax_code`),
+      representative: text(sql`ci.representative`),
+      representativeTitle: text(sql`ci.representative_title`),
+      bankAccount: text(sql`ci.bank_account`),
+      bankName: text(sql`ci.bank_name`),
+      updatedAt: date(sql`ci.updated_at`),
+    },
+    dateField: 'updatedAt',
+    defaultOrder: sql`ci.id ASC`,
   },
 };
 

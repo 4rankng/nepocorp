@@ -8,6 +8,7 @@ import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import type { CompanyInfo } from '@tingting/shared';
 import './ConfigPage.css';
 
 const CHEVRON = <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
@@ -47,6 +48,7 @@ export default function ConfigPage() {
     salaryDefault,
     expenseCategories,
     fuelConfig,
+    companyInfo,
     forwarderExpenseTypes,
     debitNoteTemplates,
   ] = useQueries({
@@ -65,6 +67,7 @@ export default function ConfigPage() {
       { queryKey: qk.configCounts.salaryDefault,         queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
       { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
+      { queryKey: qk.configCounts.companyInfo,           queryFn: () => api.get<CompanyInfo>('/company-info'),                staleTime: 60_000 },
       { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.debitNoteTemplates,   queryFn: () => api.get<ListResponse>('/debit-note-templates?limit=1'),   staleTime: 60_000 },
     ],
@@ -89,8 +92,17 @@ export default function ConfigPage() {
     return fuelConfig.data ? 'Đã cấu hình' : 'Chưa cấu hình';
   }
 
+  function companyInfoStatus(): string {
+    if (companyInfo.isLoading) return '—';
+    // updatedAt is present only when company-info rows actually exist in the DB.
+    // The GET backfills hardcoded defaults, so taxCode is always populated and
+    // could never signal an un-configured state on its own.
+    return companyInfo.data?.updatedAt ? 'Đã cấu hình' : 'Chưa cấu hình';
+  }
+
   const statusInfo: Record<string, { status: string; statusColor?: string }> = {
     'fuel':                     { status: fuelStatus() },
+    'company-info':             { status: companyInfoStatus() },
     'road-allowances':          { status: countLabel(roadAllowances.data?.total, 'tuyến') },
     'trip-expense':             { status: '5 mục', statusColor: '#10B981' },
     'penalty-reasons':          { status: countLabel(penaltyReasons.data?.total, 'quy tắc') },

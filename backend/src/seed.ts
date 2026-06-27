@@ -3,6 +3,7 @@ import { db } from './db';
 import * as schema from './db/schema';
 import { Role, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { eq, and, desc, isNull } from 'drizzle-orm';
+import { COMPANY_INFO_SETTING_KEYS, COMPANY_INFO_DEFAULTS } from './services/company-info.service';
 
 async function seed() {
   const passwordHash = await bcrypt.hash('admin123', 10);
@@ -387,6 +388,16 @@ async function seed() {
     fetUpsertCount++;
   }
   console.log(`✅ Forwarder expense types upserted! (${fetUpsertCount} codes)`);
+
+  // ─── Own company info (used on config/document surfaces) ─────────────────
+  // Single source: COMPANY_INFO_DEFAULTS (services/company-info.service.ts),
+  // shared with routes/config.ts. Keep 0094_company_info_settings.sql in sync.
+  for (const field of Object.keys(COMPANY_INFO_SETTING_KEYS) as Array<keyof typeof COMPANY_INFO_SETTING_KEYS>) {
+    await db.insert(schema.appSettings)
+      .values({ key: COMPANY_INFO_SETTING_KEYS[field], value: COMPANY_INFO_DEFAULTS[field] })
+      .onConflictDoNothing();
+  }
+  console.log('✅ Company information defaults seeded!');
 
   process.exit(0);
 }

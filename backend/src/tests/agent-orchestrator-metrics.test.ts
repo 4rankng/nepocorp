@@ -24,7 +24,13 @@ import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { computeLatencies, trimToolHistory, type MetricsAccumulator } from '../services/agent/orchestrator.js';
+import {
+  computeLatencies,
+  parseAgentResponseContent,
+  sanitizeAgentJson,
+  trimToolHistory,
+  type MetricsAccumulator,
+} from '../services/agent/orchestrator.js';
 import type { MiniMaxMessage } from '../services/llm/minimax.client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -104,6 +110,77 @@ describe('trimToolHistory — P1.1 protocol-safe tool-history trim', () => {
     assert.equal(out[2], m[4]); // kept unit #2's assistant turn
     assert.equal(out[5], m[7]); // kept unit #3's tool reply
     assertProtocolSafe(out);
+  });
+});
+
+describe('agent final-answer parsing — fallback reducers', () => {
+  test('parses a valid assistant JSON response without another final LLM call', () => {
+    const parsed = parseAgentResponseContent('<think>hidden</think>{"type":"text","content":"Đã rõ."}');
+    assert.deepStrictEqual(parsed, { type: 'text', content: 'Đã rõ.' });
+  });
+
+  test('normalizes near-miss insight cards instead of forcing final_schema fallback', () => {
+    const parsed = parseAgentResponseContent(JSON.stringify({
+      type: 'card',
+      title: 'Công nợ',
+      summary: 'Tổng công nợ đang tăng.',
+      widgets: {
+        kind: 'kpi',
+        items: [
+          { label: 'Công nợ', value: '120.000.000', format: 'vnd_million' },
+        ],
+      },
+      actions: [
+        {
+          label: 'Mở công nợ',
+          directive: { kind: 'navigate', route_key: 'debt' },
+        },
+      ],
+    }));
+
+    assert.ok(parsed);
+    assert.strictEqual(parsed.type, 'insight_card');
+    if (parsed.type !== 'insight_card') return;
+    assert.strictEqual(parsed.widgets[0].type, 'kpi_grid');
+    const widget = parsed.widgets[0];
+    if (widget.type !== 'kpi_grid') return;
+    assert.strictEqual(widget.items[0].value, 120000000);
+    assert.strictEqual(widget.items[0].format, 'number');
+    assert.strictEqual(parsed.actions?.[0]?.directive.kind, 'navigate');
+  });
+
+  test('downgrades widget-less cards to text so useful summaries still validate', () => {
+    const out = sanitizeAgentJson({
+      type: 'insight_card',
+      title: 'Tóm tắt',
+      summary: 'Không có dữ liệu phù hợp trong kỳ này.',
+      widgets: [],
+    });
+    assert.deepStrictEqual(out, { type: 'text', content: 'Không có dữ liệu phù hợp trong kỳ này.' });
+  });
+
+  test('normalizes object-row tables into schema-safe matrix rows', () => {
+    const parsed = parseAgentResponseContent(JSON.stringify({
+      type: 'insight_card',
+      title: 'Top chi phí',
+      summary: 'Có 2 dòng chi phí lớn.',
+      widgets: [{
+        type: 'table',
+        columns: ['name', 'amount'],
+        rows: [
+          { name: 'Dầu', amount: '1,200,000' },
+          { name: 'Sửa chữa', amount: '800000' },
+        ],
+      }],
+    }));
+
+    assert.ok(parsed);
+    assert.strictEqual(parsed.type, 'insight_card');
+    if (parsed.type !== 'insight_card') return;
+    const table = parsed.widgets[0];
+    assert.strictEqual(table.type, 'table');
+    if (table.type !== 'table') return;
+    assert.deepStrictEqual(table.rows, [['Dầu', 1200000], ['Sửa chữa', 800000]]);
   });
 });
 

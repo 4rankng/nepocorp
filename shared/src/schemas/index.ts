@@ -529,6 +529,16 @@ export const fuelPriceHistorySchema = z.object({
   note: z.string().optional(),
 });
 
+export const companyInfoSchema = z.object({
+  name: z.string().trim().min(1, 'Tên công ty là bắt buộc'),
+  address: z.string().trim().min(1, 'Địa chỉ là bắt buộc'),
+  taxCode: z.string().trim().min(1, 'Mã số thuế là bắt buộc'),
+  representative: z.string().trim().min(1, 'Người đại diện là bắt buộc'),
+  representativeTitle: z.string().trim().min(1, 'Chức vụ là bắt buộc'),
+  bankAccount: z.string().trim().min(1, 'Số tài khoản là bắt buộc'),
+  bankName: z.string().trim().min(1, 'Ngân hàng là bắt buộc'),
+});
+
 export const penaltyReasonSchema = z.object({
   reasonText: z.string().min(1),
   defaultAmount: nonNegNumeric,
@@ -840,6 +850,7 @@ export type CargoTypeInput = z.infer<typeof cargoTypeSchema>;
 export type PricingTableInput = z.infer<typeof pricingTableSchema>;
 export type RoadAllowanceInput = z.infer<typeof roadAllowanceSchema>;
 export type FuelConfigInput = z.infer<typeof fuelConfigSchema>;
+export type CompanyInfoInput = z.infer<typeof companyInfoSchema>;
 export type PenaltyReasonInput = z.infer<typeof penaltyReasonSchema>;
 export type DriverInput = z.infer<typeof driverSchema>;
 export type ManagementFeeInput = z.infer<typeof managementFeeSchema>;

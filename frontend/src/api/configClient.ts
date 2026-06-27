@@ -7,6 +7,7 @@ import type {
   Driver,
   FuelConfig, FuelPriceHistory,
   RoadConfig,
+  CompanyInfo,
   SalaryPeriodRange,
   CapTableHistory,
   Supplier,
@@ -54,6 +55,10 @@ export const configClient = {
     loadedNorm: number; emptyNorm: number; supplement: number;
     unitPrice: number; warningThreshold: number; criticalThreshold: number;
   }) => api.put<FuelConfig>(CONFIG.FUEL_CONFIG, data),
+
+  getCompanyInfo: () => api.get<CompanyInfo>(CONFIG.COMPANY_INFO),
+
+  saveCompanyInfo: (data: CompanyInfo) => api.put<CompanyInfo>(CONFIG.COMPANY_INFO, data),
 
   getRoadConfig: () => api.get<RoadConfig | null>(CONFIG.ROAD_CONFIG),
 

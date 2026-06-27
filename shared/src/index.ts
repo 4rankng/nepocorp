@@ -22,7 +22,7 @@ export type { PushAudience, TireStatus } from './constants';
 
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
-  PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig,
+  PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig, AppSetting, CompanyInfo,
   Trip, TripLeg, TripDetail, TripInstruction, LedgerEntry, Penalty,
   CapTableHistory, TruckCapEntry, Distribution, ManagementFee, AuditLog, Notification, PushSubscriptionPayload,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
@@ -64,7 +64,7 @@ export {
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
-  fuelConfigSchema, fuelPriceHistorySchema, penaltyReasonSchema, driverSchema,
+  fuelConfigSchema, fuelPriceHistorySchema, companyInfoSchema, penaltyReasonSchema, driverSchema,
   managementFeeSchema, capTableSchema, truckCapSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
@@ -98,7 +98,7 @@ export type {
   CreatePenaltyInput, CreateAdjustmentInput, LoginInput,
   CustomerInput, TruckInput, TrailerInput, TirePositionInput, RouteInput,
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,
-  FuelConfigInput, PenaltyReasonInput, DriverInput,
+  FuelConfigInput, CompanyInfoInput, PenaltyReasonInput, DriverInput,
   ManagementFeeInput, CapTableInput, TruckCapInput,
   SalaryPeriodInput, SalaryPeriodDefaultInput,
   SupplierInput, ExpenseCategoryInput, ExpenseInput, VendorPaymentInput,

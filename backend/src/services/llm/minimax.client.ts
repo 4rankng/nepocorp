@@ -80,6 +80,20 @@ export class MiniMaxError extends Error {
   }
 }
 
+/** Strip any leaked `<think>…</think>` reasoning so it never enters the
+ *  `messages` history the orchestrator re-sends on every ReAct iteration.
+ *  With `reasoning_split: true` the content is already clean; this is the
+ *  backstop for hosts/models that still leak reasoning into `content`. Returns
+ *  null when only reasoning was present (no real answer). */
+export function stripThink(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const cleaned = s
+    .replace(/<think>[\s\S]*?<\/think>/gi, '') // closed reasoning blocks
+    .replace(/<think>[\s\S]*$/gi, '') // unclosed (truncated) reasoning → drop to end
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 export async function callMiniMax(opts: {
   messages: MiniMaxMessage[];
   tools?: MiniMaxTool[];
@@ -97,6 +111,14 @@ export async function callMiniMax(opts: {
     model: MODEL_FAST,
     messages: opts.messages,
     temperature: 0.2, // low — analytical answers + tool selection should be deterministic-ish
+    // reasoning_split is a MiniMax-native param (M2.5/M2.7 reasoning models) that
+    // routes chain-of-thought to a separate `reasoning_details` field instead of
+    // `content`, so the orchestrator doesn't re-bill leaked reasoning as input on
+    // every ReAct iteration. Confirmed against MiniMax's official API (LiteLLM
+    // issue #22392 documents the reasoning_details split). Output-format switch
+    // only — it does NOT toggle reasoning on/off. stripThink() below backstops
+    // any host/proxy that still leaks reasoning into content despite this flag.
+    reasoning_split: true,
   };
   if (opts.tools && opts.tools.length > 0) {
     body.tools = opts.tools;
@@ -169,7 +191,7 @@ export async function callMiniMax(opts: {
         const promptTokens = data.usage?.prompt_tokens ?? 0;
         const completionTokens = data.usage?.completion_tokens ?? 0;
         return {
-          content: msg?.content ?? null,
+          content: stripThink(msg?.content),
           toolCalls,
           usage: { promptTokens, completionTokens },
         };

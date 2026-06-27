@@ -60,6 +60,12 @@ const ENTITY_ALIASES: Record<string, z.infer<typeof semanticEntitySchema>> = {
   auditlogs: 'auditLogs',
   audit_log: 'auditLogs',
   audit_logs: 'auditLogs',
+  company: 'companyInfo',
+  companyinfo: 'companyInfo',
+  companyprofile: 'companyInfo',
+  thongtincongty: 'companyInfo',
+  congty: 'companyInfo',
+  nepo: 'companyInfo',
 };
 
 function normalizeSemanticEntityInput(raw: unknown): unknown {
@@ -92,7 +98,7 @@ export const dataTools = [
   defineReadTool({
     name: 'data.search',
     description:
-      'Tìm kiếm toàn hệ thống trên dữ liệu nghiệp vụ bằng từ khóa/định danh: số lốp, biển xe, mã chuyến, container, khách hàng, nhà cung cấp, tài xế, mẫu giấy báo nợ. Dùng trước khi trả lời câu hỏi factual nếu chưa biết entity/id.',
+      'Tìm kiếm toàn hệ thống trên dữ liệu nghiệp vụ bằng từ khóa/định danh: số lốp, biển xe, mã chuyến, container, khách hàng, nhà cung cấp, tài xế, mẫu giấy báo nợ, thông tin công ty. Dùng trước khi trả lời câu hỏi factual nếu chưa biết entity/id.',
     allowedRoles: OFFICE_ROLES,
     params: z.object({
       query: z.string().trim().min(1),

@@ -4,7 +4,9 @@
 // tiny inline SVG; tables/callouts/anomaly lists are plain markup. (Recharts
 // is not a dependency in this repo and "Simplicity First" says keep it that
 // way — these widgets cover every card the LLM emits.)
+import type { ReactNode } from 'react';
 import { formatCurrency } from '../../lib/format';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import type {
   AgentActionChip,
   AgentDirective,
@@ -128,15 +130,28 @@ function AnomalyList({ items }: Extract<AgentWidget, { type: 'anomaly_list' }>) 
   );
 }
 
-function renderWidget(w: AgentWidget): React.ReactNode {
-  switch (w.type) {
-    case 'kpi_grid': return <KpiGrid {...w} />;
-    case 'bar_chart': return <BarChart {...w} />;
-    case 'line_chart': return <LineChart {...w} />;
-    case 'table': return <DataTable {...w} />;
-    case 'callout': return <Callout {...w} />;
-    case 'anomaly_list': return <AnomalyList {...w} />;
-  }
+type WidgetRenderer = (widget: AgentWidget) => ReactNode;
+
+const WIDGET_RENDERERS: Record<AgentWidget['type'], WidgetRenderer> = {
+  kpi_grid: (widget) => widget.type === 'kpi_grid' ? <KpiGrid {...widget} /> : null,
+  bar_chart: (widget) => widget.type === 'bar_chart' ? <BarChart {...widget} /> : null,
+  line_chart: (widget) => widget.type === 'line_chart' ? <LineChart {...widget} /> : null,
+  table: (widget) => widget.type === 'table' ? <DataTable {...widget} /> : null,
+  callout: (widget) => widget.type === 'callout' ? <Callout {...widget} /> : null,
+  anomaly_list: (widget) => widget.type === 'anomaly_list' ? <AnomalyList {...widget} /> : null,
+};
+
+function WidgetFallback() {
+  return (
+    <div className="agent-widget-fallback" role="status">
+      Không thể hiển thị phần dữ liệu này.
+    </div>
+  );
+}
+
+function renderWidget(w: AgentWidget): ReactNode {
+  const renderer = WIDGET_RENDERERS[w.type];
+  return renderer ? renderer(w) : null;
 }
 
 export interface InsightCardProps {
@@ -151,7 +166,11 @@ export function InsightCard({ card, onAction }: InsightCardProps) {
       <div className="agent-card__summary">{card.summary}</div>
       <div className="agent-card__widgets">
         {card.widgets.map((w, i) => (
-          <div className="agent-card__widget" key={i}>{renderWidget(w)}</div>
+          <div className="agent-card__widget" key={i}>
+            <ErrorBoundary fallback={<WidgetFallback />}>
+              {renderWidget(w)}
+            </ErrorBoundary>
+          </div>
         ))}
       </div>
       {card.actions && card.actions.length > 0 && (

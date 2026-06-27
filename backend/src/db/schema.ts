@@ -890,6 +890,13 @@ export const roadConfig = pgTable('road_config', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const appSettings = pgTable('app_settings', {
+  key: varchar('setting_key', { length: 120 }).primaryKey(),
+  value: text('setting_value').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const tripCodeCounters = pgTable('trip_code_counters', {
   yearMonth: varchar('year_month', { length: 10 }).primaryKey(),
   counter: integer('counter').notNull(),

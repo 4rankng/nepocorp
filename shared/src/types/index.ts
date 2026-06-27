@@ -220,6 +220,24 @@ export interface RoadConfig {
   updatedAt: string;
 }
 
+export interface AppSetting {
+  key: string;
+  value: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompanyInfo {
+  name: string;
+  address: string;
+  taxCode: string;
+  representative: string;
+  representativeTitle: string;
+  bankAccount: string;
+  bankName: string;
+  updatedAt?: string | null;
+}
+
 export interface FuelPriceHistory {
   id: number;
   unitPrice: string;

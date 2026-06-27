@@ -52,6 +52,12 @@ function startSdk(): NodeSDK {
       [ATTR_SERVICE_NAME]: 'tingting-backend',
     }),
     traceExporter: buildExporter(),
+    // Disable metrics: the SDK otherwise defaults OTEL_METRICS_EXPORTER to
+    // 'otlp' and spins up a PeriodicExportingMetricReader pointing at
+    // http://localhost:4318/v1/metrics, which fails with AggregateError on
+    // every interval when no collector is running. We don't record any
+    // metrics, so opt out explicitly.
+    metricReaders: [],
     sampler: new TraceIdRatioBasedSampler(readSamplerRatio()),
     instrumentations: [getNodeAutoInstrumentations()],
   });

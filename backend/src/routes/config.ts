@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { COMPANY_INFO_SETTING_KEYS, companyInfoFromSettings } from '../services/company-info.service';
+import { eq, like, sql } from 'drizzle-orm';
 // auth + Casbin applied at mount point in index.ts
 import {
   customerSchema, truckSchema, trailerSchema, routeSchema,
@@ -12,6 +13,7 @@ import {
   supplierSchema, expenseCategorySchema,
   containerTypeSchema, sealTypeSchema, portSchema,
   forwarderExpenseTypeSchema,
+  companyInfoSchema,
   tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
 } from '@tingting/shared';
 import type { Request, Response } from 'express';
@@ -283,6 +285,37 @@ router.put('/fuel-config', asyncHandler(async (req: Request, res: Response) => {
   const data = fuelConfigSchema.parse(req.body);
   const { result, status } = await upsertFuelConfig(data, getUser(req).userId);
   res.status(status).json(result);
+}));
+
+// Company info — singleton stored as app_settings key/value rows
+router.get('/company-info', asyncHandler(async (_req: Request, res: Response) => {
+  // Only the company.* rows are ever relevant; don't load unrelated app_settings.
+  const rows = await db.select().from(s.appSettings).where(like(s.appSettings.key, 'company.%'));
+  res.json(companyInfoFromSettings(rows));
+}));
+
+router.put('/company-info', asyncHandler(async (req: Request, res: Response) => {
+  const data = companyInfoSchema.parse(req.body);
+  const now = new Date();
+  // Single atomic multi-row upsert. The previous loop issued 7 serial
+  // INSERT…ON CONFLICT statements with no transaction, so a mid-loop failure
+  // (connection blip) left a half-updated profile; the trailing re-SELECT was
+  // also redundant since the values are fully known from the validated input.
+  await db.insert(s.appSettings)
+    .values(
+      Object.entries(COMPANY_INFO_SETTING_KEYS).map(([field, key]) => ({
+        key,
+        value: data[field as keyof typeof COMPANY_INFO_SETTING_KEYS],
+      })),
+    )
+    .onConflictDoUpdate({
+      target: s.appSettings.key,
+      set: {
+        value: sql`excluded.setting_value`,
+        updatedAt: now,
+      },
+    });
+  res.json({ ...data, updatedAt: now.toISOString() });
 }));
 
 // Fuel price history

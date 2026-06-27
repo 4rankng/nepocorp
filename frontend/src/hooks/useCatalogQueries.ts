@@ -7,6 +7,7 @@ import type {
   Driver as DriverType,
   FuelConfig,
   RoadConfig,
+  CompanyInfo,
   SalaryPeriodRange,
   CapTableHistory,
   Port as PortType,
@@ -42,6 +43,14 @@ export function useRoadConfig() {
   return useQuery<RoadConfig | null>({
     queryKey: qk.catalogs.roadConfig,
     queryFn: () => configClient.getRoadConfig(),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useCompanyInfo() {
+  return useQuery<CompanyInfo>({
+    queryKey: qk.catalogs.companyInfo,
+    queryFn: () => configClient.getCompanyInfo(),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -111,6 +120,18 @@ export function useSaveRoadConfig() {
       configClient.saveRoadConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.catalogs.roadConfig });
+    },
+  });
+}
+
+export function useSaveCompanyInfo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof configClient.saveCompanyInfo>[0]) =>
+      configClient.saveCompanyInfo(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogs.companyInfo });
+      queryClient.invalidateQueries({ queryKey: qk.configCounts.companyInfo });
     },
   });
 }

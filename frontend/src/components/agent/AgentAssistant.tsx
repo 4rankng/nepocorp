@@ -4,10 +4,10 @@
 // (capabilities.botEnabled). The drawer renders user bubbles + assistant
 // answers (text or <InsightCard>), a streaming "thinking" indicator, and an
 // input that sends each turn with the current route as context.
-import { useCallback, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SendHorizontal } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import { Drawer } from '../UI';
 import { AssetIcon } from '../AssetIcon';
 import { useAuth } from '../../hooks/useAuth';
@@ -15,9 +15,10 @@ import { useAgentChat } from '../../hooks/useAgentChat';
 import { useAgentDirectives } from '../../context/AgentDirectiveContext';
 import { useTourController } from '../../context/TourControllerContext';
 import { Role, TOUR_CATALOG } from '@tingting/shared';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { InsightCard } from './InsightCard';
 import { TutorialCard } from './TutorialCard';
-import type { AgentDirective, AgentMessage, TourId } from '@tingting/shared';
+import type { AgentDirective, AgentMessage, AgentResponse, TourId } from '@tingting/shared';
 import './agent.css';
 
 const OFFICE_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
@@ -174,43 +175,75 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
   if (message.role === 'user') {
     return <div className="agent-bubble agent-bubble--user">{message.content}</div>;
   }
-  const response = message.response;
-  if (response?.type === 'insight_card') {
-    return <InsightCard card={response} onAction={onAction} />;
-  }
-  if (response?.type === 'tutorial') {
-    return <TutorialCard tutorial={response} onAction={onAction} />;
-  }
-  if (response?.type === 'start_tour') {
+  return (
+    <ErrorBoundary fallback={<AssistantRenderFallback />}>
+      <AssistantResponse message={message} onAction={onAction} />
+    </ErrorBoundary>
+  );
+}
+
+interface AgentRenderContext {
+  message: AgentMessage;
+  onAction: (d: AgentDirective) => void;
+}
+
+type ResponseRenderer = (response: AgentResponse, ctx: AgentRenderContext) => ReactNode;
+
+const RESPONSE_RENDERERS: Record<AgentResponse['type'], ResponseRenderer> = {
+  insight_card: (response, ctx) => (
+    response.type === 'insight_card' ? <InsightCard card={response} onAction={ctx.onAction} /> : null
+  ),
+  tutorial: (response, ctx) => (
+    response.type === 'tutorial' ? <TutorialCard tutorial={response} onAction={ctx.onAction} /> : null
+  ),
+  start_tour: (response) => {
+    if (response.type !== 'start_tour') return null;
     // Auto-launched by useAgentChat onStartTour; this arm covers the rehydrated
     // (reload) case so the stored message renders a meaningful bubble.
     const title = TOUR_CATALOG[response.tourId as TourId]?.title ?? response.tourId;
-    return (
-      <div className="agent-message agent-message--assistant">
-        <span className="agent-message__avatar" aria-hidden="true">
-          <AssetIcon name="assistant" size={24} />
-        </span>
-        <div className="agent-bubble agent-bubble--assistant agent-markdown">
-          <MarkdownContent content={`Đã mở hướng dẫn **${title}** cho bạn.`} />
-        </div>
-      </div>
-    );
+    return <AssistantTextBubble content={`Đã mở hướng dẫn **${title}** cho bạn.`} />;
+  },
+  directive: () => <AssistantTextBubble content="Đã mở trang cho bạn." />,
+  text: (response, ctx) => {
+    if (response.type !== 'text') return null;
+    return <AssistantTextBubble content={response.content} actions={response.actions} onAction={ctx.onAction} />;
+  },
+};
+
+function AssistantResponse({ message, onAction }: { message: AgentMessage; onAction: (d: AgentDirective) => void }) {
+  const response = message.response;
+  if (response) {
+    const renderer = RESPONSE_RENDERERS[response.type];
+    const rendered = renderer?.(response, { message, onAction });
+    if (rendered) return rendered;
   }
+  return <AssistantTextBubble content={message.content} />;
+}
+
+function AssistantTextBubble({
+  content,
+  actions,
+  onAction,
+}: {
+  content: string | undefined;
+  actions?: Extract<AgentResponse, { type: 'text' }>['actions'];
+  onAction?: (d: AgentDirective) => void;
+}) {
   return (
     <div className="agent-message agent-message--assistant">
       <span className="agent-message__avatar" aria-hidden="true">
         <AssetIcon name="assistant" size={24} />
       </span>
       <div className="agent-bubble agent-bubble--assistant agent-markdown">
-        <MarkdownContent content={response?.type === 'text' ? response.content : message.content} />
-        {response?.type === 'text' && response.actions && response.actions.length > 0 && (
+        <MarkdownContent content={content} />
+        {actions && actions.length > 0 && (
           <div className="agent-card__actions agent-text-actions">
-            {response.actions.map((action, index) => (
+            {actions.map((action, index) => (
               <button
                 type="button"
                 className="agent-action-chip"
                 key={`${action.label}-${index}`}
-                onClick={() => onAction(action.directive)}
+                onClick={() => onAction?.(action.directive)}
               >
                 {action.label}
               </button>
@@ -222,12 +255,20 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
   );
 }
 
+function AssistantRenderFallback() {
+  return <AssistantTextBubble content="Không thể hiển thị phản hồi này." />;
+}
+
 type MarkdownSegment =
   | { kind: 'markdown'; content: string }
   | { kind: 'table'; headers: string[]; rows: string[][] };
 
+const INLINE_MARKDOWN_COMPONENTS: Components = {
+  p: ({ children }) => <>{children}</>,
+};
+
 function MarkdownContent({ content }: { content: string | undefined }) {
-  const segments = parseMarkdownSegments(content ?? '');
+  const segments = parseMarkdownSegments(normalizeMarkdownEscapes(content ?? ''));
   if (segments.length === 0) return null;
 
   return (
@@ -249,7 +290,9 @@ function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] 
         <thead>
           <tr>
             {headers.map((header) => (
-              <th key={header}>{header}</th>
+              <th key={header}>
+                <MarkdownInline content={header} />
+              </th>
             ))}
           </tr>
         </thead>
@@ -257,8 +300,8 @@ function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] 
           {rows.map((row, rowIndex) => (
             <tr key={row.join('|') || rowIndex}>
               {headers.map((header, cellIndex) => (
-                <td key={`${header}-${cellIndex}`} data-label={header}>
-                  {row[cellIndex] ?? ''}
+                <td key={`${header}-${cellIndex}`} data-label={plainMarkdownLabel(header)}>
+                  <MarkdownInline content={row[cellIndex] ?? ''} />
                 </td>
               ))}
             </tr>
@@ -268,6 +311,17 @@ function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] 
     </div>
   );
 }
+
+const MarkdownInline = memo(function MarkdownInline({ content }: { content: string }) {
+  // Plain text is the common case for table cells (numbers/names); skip the
+  // react-markdown parse unless the cell actually contains markdown syntax.
+  if (!/[*_`~[\]()#\\]/.test(content)) return <>{content}</>;
+  return (
+    <ReactMarkdown skipHtml components={INLINE_MARKDOWN_COMPONENTS}>
+      {content}
+    </ReactMarkdown>
+  );
+});
 
 function parseMarkdownSegments(content: string): MarkdownSegment[] {
   const normalized = normalizeInlinePipeTables(content);
@@ -305,6 +359,21 @@ function parseMarkdownSegments(content: string): MarkdownSegment[] {
 
   flushMarkdown();
   return segments;
+}
+
+function normalizeMarkdownEscapes(content: string): string {
+  // Un-escape the model's stray backslash-punctuation so it doesn't render as a
+  // literal backslash. Deliberately EXCLUDE `|` and `` ` ``: an escaped pipe
+  // must survive into the renderer (otherwise it becomes a table column
+  // separator inside a cell), and an escaped backtick must not open a code span.
+  return content.replace(/\\([\\*_\[\]{}()#+.!>-])/g, '$1');
+}
+
+function plainMarkdownLabel(content: string): string {
+  return normalizeMarkdownEscapes(content)
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function normalizeInlinePipeTables(content: string): string {

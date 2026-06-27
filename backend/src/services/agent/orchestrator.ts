@@ -35,6 +35,7 @@ import {
 } from '@tingting/shared';
 import {
   callMiniMax,
+  stripThink,
   MODEL_FAST,
   AGENT_MAX_ITERATIONS,
   MiniMaxError,
@@ -43,6 +44,8 @@ import {
   type MiniMaxFunctionCall,
 } from '../llm/minimax.client';
 import { todayIsoVn } from './tools/period';
+import { compactToolResult } from './tool-result-compact';
+import { estimateTokensByComponent, formatAttribution } from './token-attribution';
 import { getToolsForRole, findTool } from './tool.registry';
 import {
   matchRoute,
@@ -366,6 +369,14 @@ export async function runAgent(opts: {
           console.error('[agent] persist failed (migration applied?)', e);
         }
 
+        // One per-turn token-attribution log: shows which prompt component
+        // (system / toolSchema / history / transcript) dominates tokens_in — the
+        // lever for latency. Counts only (no prompt text/PII). `measured` is the
+        // real billed prompt_tokens for cross-check vs the char estimate.
+        const attr = estimateTokensByComponent(messages, miniMaxTools);
+        console.log(
+          `[agent] token-attribution ${formatAttribution(attr)} measured=${totalUsage.promptTokens}`,
+        );
         return { response, conversationId, toolTrace };
       };
 
@@ -473,6 +484,8 @@ export async function runAgent(opts: {
           }
         };
 
+        let terminalDirectiveResponse: AgentResponse | undefined;
+
         // 1) READ-ONLY tools → concurrent. JS is single-threaded, so the
         // latencyToolsMs/errorKind mutations inside runExecute never interleave.
         await Promise.all(
@@ -513,6 +526,10 @@ export async function runAgent(opts: {
                   // PRE-PERSIST abort → no row.
                   return { response: { type: 'text' as const, content: '' }, conversationId: undefined, toolTrace };
                 }
+                terminalDirectiveResponse = directiveAckText(
+                  d as Extract<AgentDirective, { kind: 'navigate' | 'focus' }>,
+                  ack,
+                );
                 // Replace the tool result with the ack outcome so the model's
                 // final answer reflects reality ("đã mở" only if ok).
                 p.result = {
@@ -547,9 +564,20 @@ export async function runAgent(opts: {
           }
           emit({ event: 'tool_result', toolName: p.call.name, toolCallId: p.call.id, ok: true, label: p.result!.label });
           // Feed a size-capped JSON view back to the model.
-          const view = truncateForModel(p.result!.data);
+          const view = compactToolResult(p.result!.data);
           messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: view });
           toolTrace.push({ toolName: p.call.name, ok: true, args: p.parsedArgs, label: p.result!.label });
+        }
+
+        if (
+          terminalDirectiveResponse &&
+          pendings.length > 0 &&
+          pendings.every((p) =>
+            p.status === 'ok' &&
+            (p.call.name === 'ui.navigate' || p.call.name === 'ui.focus')
+          )
+        ) {
+          return persistResponse(terminalDirectiveResponse);
         }
       }
 
@@ -717,31 +745,10 @@ async function produceFinalAnswer(
   fallbackReason?: string;
 }> {
   let fallbackReason: string | undefined;
-  const tryParse = (content: string | null): AgentResponse | null => {
-    if (!content) return null;
-    // MiniMax-M3 is a hybrid reasoning model: it prepends <think>…</think>
-    // blocks to EVERY response — including json_object mode — so the raw
-    // content looks like '<think>…</think>\n\n{"type":"text",…}'. Parsing that
-    // verbatim throws, the final answer never validated, and every turn
-    // degraded to the generic apology. Strip reasoning blocks first, then fall
-    // back to the first balanced {...} object in case prose/tags remain.
-    const stripped = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-    const candidate = stripped || content;
-    const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
-    try {
-      // Normalize the LLM's near-misses (invented format units, directive-less
-      // action chips) before strict validation so a good card isn't rejected.
-      const sanitized = sanitizeAgentJson(JSON.parse(jsonObj));
-      const parsed = agentResponseSchema.safeParse(sanitized);
-      if (!parsed.success) return null;
-      // An empty text answer means the model gave up on the schema — treat it
-      // as a failure so the retry / prose-fallback path supplies a real answer.
-      if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
-      return parsed.data;
-    } catch {
-      return null;
-    }
-  };
+  const direct = parseLatestAssistantResponse(messages);
+  if (direct) {
+    return { response: direct, usage: { promptTokens: 0, completionTokens: 0 }, fallbackUsed: false };
+  }
 
   // The model does not reliably emit the strict insight_card schema, so try the
   // structured card ONCE; if it doesn't validate, ask for a plain prose answer
@@ -752,15 +759,19 @@ async function produceFinalAnswer(
     'Dựa trên dữ liệu công cụ đã có, trả lời cuối cùng theo ĐÚNG schema JSON (một trong 5 dạng), chỉ trả JSON, không kèm giải thích. Nếu có bước tiếp theo là mở trang/bấm nút, phải đặt trong actions[{label,directive}] với routeKey/params thật; không chỉ viết tên trang hoặc path trong content. Nếu cần bảng, ưu tiên insight_card widget type="table" hoặc Markdown table chuẩn trong text.';
 
   // 1) Best-effort structured insight_card (validated + sanitized).
+  let cardContent: string | null = null;
+  let cardUsage: { promptTokens: number; completionTokens: number } = { promptTokens: 0, completionTokens: 0 };
   try {
     const card = await callMiniMax({
       messages: [...messages, { role: 'user', content: CARD_NUDGE }],
       responseFormat: { type: 'json_object' },
-      // Headroom for a rich card + any <think>, so output isn't truncated.
-      maxTokens: 16000,
+      // Enough for a rich card, without inviting long prose that later fails JSON.
+      maxTokens: 6000,
       signal,
     });
-    const parsed = tryParse(card.content);
+    cardContent = card.content;
+    cardUsage = card.usage;
+    const parsed = parseAgentResponseContent(card.content);
     if (parsed) return { response: parsed, usage: card.usage, fallbackUsed: false };
     // Card came back but didn't validate (non-JSON or schema-invalid) → record
     // the schema failure as the fallback cause before degrading to prose.
@@ -769,6 +780,19 @@ async function produceFinalAnswer(
     if (signal?.aborted) throw e;
     fallbackReason = e instanceof MiniMaxError ? `final_${e.code}` : 'final_parse';
     console.error(`[agent] structured card failed (${fallbackReason}), falling back to prose`, e);
+  }
+
+  // 1b) SALVAGE — the structured card didn't validate, but its content usually
+  // still holds the model's real Vietnamese analysis (a near-miss JSON, or plain
+  // prose emitted despite json_object mode). Surface it instead of paying for a
+  // 2nd prose LLM call. Only fall through to the prose call when there is
+  // genuinely nothing human-readable to show. (cardContent is null when the card
+  // call itself threw, so this naturally skips on timeout/http/parse failures.)
+  if (cardContent) {
+    const salvaged = salvageText(cardContent);
+    if (salvaged) {
+      return { response: { type: 'text', content: salvaged }, usage: cardUsage, fallbackUsed: true, fallbackReason };
+    }
   }
 
   // 2) Reliable prose answer — concise Vietnamese analysis, no JSON constraint.
@@ -780,7 +804,7 @@ async function produceFinalAnswer(
       ],
       signal,
     });
-    const text = (prose.content ?? '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const text = stripThink(prose.content) ?? '';
     if (text) return { response: { type: 'text', content: text }, usage: prose.usage, fallbackUsed: true, fallbackReason };
   } catch (e) {
     if (signal?.aborted) throw e;
@@ -794,6 +818,64 @@ async function produceFinalAnswer(
     fallbackUsed: true,
     fallbackReason: fallbackReason ?? 'final_prose_failed',
   };
+}
+
+function parseLatestAssistantResponse(messages: MiniMaxMessage[]): AgentResponse | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'assistant') continue;
+    if (Array.isArray(m.tool_calls) && m.tool_calls.length > 0) continue;
+    const parsed = parseAgentResponseContent(m.content);
+    if (parsed) return parsed;
+    return null;
+  }
+  return null;
+}
+
+export function parseAgentResponseContent(content: string | null): AgentResponse | null {
+  if (!content) return null;
+  // MiniMax reasoning models may prepend <think> blocks even in JSON mode.
+  // Strip them, then fall back to the first balanced object if prose/tags remain.
+  const stripped = stripThink(content) ?? '';
+  const candidate = stripped || content;
+  const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
+  try {
+    const sanitized = sanitizeAgentJson(JSON.parse(jsonObj));
+    const parsed = agentResponseSchema.safeParse(sanitized);
+    if (!parsed.success) return null;
+    if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+/** Salvage a human-readable answer from a structured-card response that failed
+ *  schema validation, so we don't pay for a 2nd prose LLM call. The model often
+ *  wraps Vietnamese prose around a near-miss JSON, or emits plain text despite
+ *  json_object mode. We prefer a JSON text field (content/summary/title/…) over
+ *  raw JSON, and never dump raw JSON at the user. Returns null when only
+ *  reasoning or fragments were present (caller then uses the prose fallback). */
+function salvageText(content: string | null | undefined): string | null {
+  const stripped = stripThink(content);
+  if (!stripped || stripped.length < 5) return null;
+  const jsonObj = extractFirstJsonObject(stripped);
+  if (jsonObj) {
+    try {
+      const obj = JSON.parse(jsonObj) as Record<string, unknown>;
+      for (const key of ['content', 'summary', 'title', 'message', 'text']) {
+        const v = obj[key];
+        if (typeof v === 'string' && v.trim().length >= 5) return v.trim();
+      }
+      // Valid JSON but no usable text field — don't show raw JSON to the user.
+      return null;
+    } catch {
+      // Balanced {...} that isn't valid JSON — don't surface the raw blob to
+      // the user; hand off to the dedicated prose LLM call below instead.
+      return null;
+    }
+  }
+  return stripped;
 }
 
 function safeParseArgs(raw: string): unknown {
@@ -827,6 +909,22 @@ function formatZodIssues(error: ZodError): string {
 }
 
 const WIDGET_FORMATS = new Set(['vnd', 'percent', 'number', 'days']);
+const WIDGET_TYPE_ALIASES: Record<string, string> = {
+  kpi: 'kpi_grid',
+  kpiGrid: 'kpi_grid',
+  bar: 'bar_chart',
+  barChart: 'bar_chart',
+  line: 'line_chart',
+  lineChart: 'line_chart',
+  warning: 'callout',
+  note: 'callout',
+};
+const RESPONSE_TYPE_ALIASES: Record<string, string> = {
+  card: 'insight_card',
+  insight: 'insight_card',
+  message: 'text',
+  answer: 'text',
+};
 
 /**
  * Tolerate the LLM's realistic-but-non-conformant output before strict Zod
@@ -834,13 +932,39 @@ const WIDGET_FORMATS = new Set(['vnd', 'percent', 'number', 'days']);
  * drop action chips without a usable directive. Keeps a good insight_card
  * from degrading to the generic apology over a stray "vnd_million".
  */
-function sanitizeAgentJson(raw: unknown): unknown {
+export function sanitizeAgentJson(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object') return raw;
   const obj = raw as Record<string, unknown>;
+  if (typeof obj.kind === 'string' && obj.type === undefined) obj.type = obj.kind;
+  if (typeof obj.type === 'string' && RESPONSE_TYPE_ALIASES[obj.type]) obj.type = RESPONSE_TYPE_ALIASES[obj.type];
+  if (obj.type === undefined) {
+    if (typeof obj.content === 'string' || typeof obj.message === 'string' || typeof obj.text === 'string') obj.type = 'text';
+    else if (obj.directive && typeof obj.directive === 'object') obj.type = 'directive';
+    else if (obj.summary || obj.widgets) obj.type = 'insight_card';
+  }
+  if (obj.type === 'text' && typeof obj.content !== 'string') {
+    obj.content = typeof obj.message === 'string'
+      ? obj.message
+      : typeof obj.text === 'string'
+        ? obj.text
+        : typeof obj.summary === 'string'
+          ? obj.summary
+          : '';
+  }
+  if (obj.type === 'directive' && obj.directive && typeof obj.directive === 'object') {
+    obj.directive = sanitizeDirective(obj.directive);
+  }
   // text, insight_card, and tutorial may carry top-level `actions`; normalize
   // action chips for all three. text/tutorial have no `widgets`, so the widget
   // block below is a no-op for them.
   if (obj.type === 'text' || obj.type === 'insight_card' || obj.type === 'tutorial') {
+    if (obj.type === 'insight_card' && typeof obj.title !== 'string') {
+      obj.title = typeof obj.summary === 'string' ? obj.summary.slice(0, 80) : 'Tóm tắt';
+    }
+    if (obj.type === 'insight_card' && typeof obj.summary !== 'string') {
+      obj.summary = typeof obj.content === 'string' ? obj.content : typeof obj.title === 'string' ? obj.title : '';
+    }
+    if (obj.widgets && !Array.isArray(obj.widgets)) obj.widgets = [obj.widgets];
     if (Array.isArray(obj.widgets)) {
       obj.widgets = (obj.widgets as Record<string, unknown>[]).map((w) => {
         if (!w) return w;
@@ -850,6 +974,7 @@ function sanitizeAgentJson(raw: unknown): unknown {
           w.type = w.kind;
           delete w.kind;
         }
+        if (typeof w.type === 'string' && WIDGET_TYPE_ALIASES[w.type]) w.type = WIDGET_TYPE_ALIASES[w.type];
         if (typeof w.format === 'string' && !WIDGET_FORMATS.has(w.format)) w.format = 'number';
         if (Array.isArray(w.items)) {
           w.items = (w.items as Record<string, unknown>[]).map((it) => {
@@ -858,20 +983,100 @@ function sanitizeAgentJson(raw: unknown): unknown {
               if (it.format === undefined || (typeof it.format === 'string' && !WIDGET_FORMATS.has(it.format))) {
                 it.format = 'number';
               }
+              it.value = coerceNumeric(it.value);
+              it.delta = coerceNumeric(it.delta);
             }
             return it;
           });
         }
+        if (Array.isArray(w.data)) {
+          w.data = (w.data as Record<string, unknown>[]).map((point) => ({
+            ...point,
+            name: typeof point.name === 'string' ? point.name : String(point.label ?? point.title ?? ''),
+            value: coerceNumeric(point.value),
+          }));
+        }
+        if (Array.isArray(w.series)) {
+          w.series = (w.series as Record<string, unknown>[]).map((series) => ({
+            ...series,
+            points: Array.isArray(series.points)
+              ? (series.points as Record<string, unknown>[]).map((point) => ({ ...point, y: coerceNumeric(point.y) }))
+              : series.points,
+          }));
+        }
+        if (w.type === 'table') normalizeTableWidget(w);
+        if (w.type === 'callout' && typeof w.variant !== 'string') w.variant = 'info';
+        if (w.type === 'anomaly_list' && Array.isArray(w.items)) {
+          w.items = (w.items as Record<string, unknown>[]).map((item) => ({
+            ...item,
+            severity: item.severity === 'medium' ? 'med' : item.severity,
+          }));
+        }
         return w;
       });
     }
+    if (
+      obj.type === 'insight_card' &&
+      (!Array.isArray(obj.widgets) || obj.widgets.length === 0) &&
+      (typeof obj.summary === 'string' || typeof obj.content === 'string')
+    ) {
+      return { type: 'text', content: String(obj.summary ?? obj.content) };
+    }
     if (Array.isArray(obj.actions)) {
-      obj.actions = (obj.actions as Record<string, unknown>[]).filter(
-        (a) => !!a && typeof a === 'object' && typeof (a as Record<string, unknown>).directive === 'object',
-      );
+      obj.actions = (obj.actions as Record<string, unknown>[])
+        .map((a) => {
+          if (!a || typeof a !== 'object' || typeof a.directive !== 'object') return null;
+          return { ...a, directive: sanitizeDirective(a.directive) };
+        })
+        .filter(Boolean);
     }
   }
   return obj;
+}
+
+function sanitizeDirective(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const d = { ...(raw as Record<string, unknown>) };
+  if (typeof d.type === 'string' && d.kind === undefined) d.kind = d.type;
+  if (d.routeKey === undefined) d.routeKey = d.route_key ?? d.route ?? d.page ?? d.pageKey;
+  if (d.targetId === undefined && d.target_id !== undefined) d.targetId = d.target_id;
+  if (d.durationMs === undefined && d.duration_ms !== undefined) d.durationMs = coerceNumeric(d.duration_ms);
+  if (d.highlight && typeof d.highlight === 'object' && !Array.isArray(d.highlight)) {
+    const h = { ...(d.highlight as Record<string, unknown>) };
+    if (h.targetId === undefined) h.targetId = h.target_id ?? h.id;
+    if (h.durationMs === undefined) h.durationMs = coerceNumeric(h.duration_ms);
+    d.highlight = h;
+  }
+  return d;
+}
+
+function coerceNumeric(value: unknown): unknown {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : value;
+  if (typeof value !== 'string') return value;
+  const s = value.trim();
+  if (!s) return value;
+  const compact = s.replace(/\s/g, '').replace(/₫|đ|vnd|vnđ/gi, '');
+  if (/^-?\d+([.,]\d{3})+$/.test(compact)) return Number(compact.replace(/[.,]/g, ''));
+  if (/^-?\d+(,\d+)?$/.test(compact)) return Number(compact.replace(',', '.'));
+  if (/^-?\d+(\.\d+)?$/.test(compact)) return Number(compact);
+  return value;
+}
+
+function normalizeTableWidget(w: Record<string, unknown>) {
+  if (!Array.isArray(w.rows)) return;
+  const rows = w.rows;
+  if (rows.every((r) => Array.isArray(r))) return;
+  const objectRows = rows.filter((r) => r && typeof r === 'object' && !Array.isArray(r)) as Record<string, unknown>[];
+  if (objectRows.length !== rows.length) return;
+  const columns = Array.isArray(w.columns) && w.columns.every((c) => typeof c === 'string')
+    ? w.columns as string[]
+    : Array.from(new Set(objectRows.flatMap((r) => Object.keys(r))));
+  w.columns = columns;
+  w.rows = objectRows.map((r) => columns.map((c) => {
+    const v = r[c];
+    const n = coerceNumeric(v);
+    return typeof n === 'number' || typeof n === 'string' ? n : JSON.stringify(n ?? '');
+  }));
 }
 
 /**
@@ -902,16 +1107,10 @@ function extractFirstJsonObject(s: string): string | null {
   return null;
 }
 
-// P1.1 — per-tool-result char cap. Was 12_000 (~3k tokens/result); halved to
-// 6_000 so a tool-heavy turn doesn't re-bill multi-thousand-token raw-JSON dumps
-// on every ReAct iteration. Counts/summaries come from aggregate tools; a list
-// tool rarely needs more than the first ~6–12 rows verbatim for synthesis.
-const TOOL_RESULT_MAX_CHARS = 6_000;
-/** Cap the JSON view fed back to the model to bound token cost. */
-function truncateForModel(data: unknown): string {
-  const json = JSON.stringify(data);
-  return json.length > TOOL_RESULT_MAX_CHARS ? `${json.slice(0, TOOL_RESULT_MAX_CHARS)}…(đã cắt)` : json;
-}
+// Per-tool-result view compaction lives in ./tool-result-compact.ts
+// (structure-aware: caps rows, drops empty columns, and — unlike the old blunt
+// char slice — cuts at a safe boundary so JSON is never handed to the model
+// half-corrupted). See compactToolResult().
 
 /**
  * P1.1 — cap the accumulated within-turn tool-result history by CHAR BUDGET so

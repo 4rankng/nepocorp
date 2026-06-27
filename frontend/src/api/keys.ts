@@ -46,6 +46,7 @@ export const qk = {
     routesDropdown: ['routes-dropdown'],
     roadAllowances: ['road-allowances'],
     roadConfig: ['road-config'],
+    companyInfo: ['company-info'],
     fuelConfig: ['fuel-config'],
     salaryPeriod: (month: number, year: number) =>
       ['salary-period', month, year] as const,
@@ -82,6 +83,7 @@ export const qk = {
     'routes-dropdown',
     'road-allowances',
     'road-config',
+    'company-info',
     'fuel-config',
     'cap-table',
     'suppliers',
@@ -323,6 +325,7 @@ export const qk = {
     salaryDefault: ['cfg-count', 'salary-default'],
     expenseCategories: ['cfg-count', 'expense-categories'],
     fuelConfig: ['cfg-count', 'fuel-config'],
+    companyInfo: ['cfg-count', 'company-info'],
     containerTypes: ['cfg-count', 'container-types'],
     sealTypes: ['cfg-count', 'seal-types'],
     ports: ['cfg-count', 'ports'],

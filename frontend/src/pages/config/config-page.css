@@ -176,6 +176,70 @@
   gap: 12px;
 }
 
+/* ── Company info singleton ─────────────────────────────────────────────── */
+.cfg-page--company-info .company-info-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(360px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.cfg-page--company-info .company-info-form {
+  min-width: 0;
+}
+
+.cfg-page--company-info .company-info-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: clip;
+  min-width: 0;
+}
+
+.cfg-page--company-info .company-info-preview-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.45;
+}
+
+.cfg-page--company-info .company-info-preview-row__label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.cfg-page--company-info .company-info-preview-row__value {
+  min-width: 0;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+}
+
+.cfg-page--company-info .company-info-preview-row:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 1180px) {
+  .cfg-page--company-info .company-info-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .cfg-page--company-info .company-info-preview-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
 /* ── Debit-note template list ───────────────────────────────────────────── */
 .debit-template-list-shell {
   width: 100%;
