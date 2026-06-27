@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { MonthProvider } from './hooks/useMonth';
 import { AgentDirectiveProvider } from './context/AgentDirectiveProvider';
+import { TourControllerProvider } from './context/TourControllerContext';
+import { TourController } from './components/agent/TourController';
 import { ReducedMotionProvider } from './hooks/usePrefersReducedMotion';
 import { Role } from '@tingting/shared';
 import Layout from './components/Layout';
@@ -213,11 +215,16 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <AgentDirectiveProvider>
-            <MonthProvider>
-              <SearchProvider>
-                <AppRoutes />
-              </SearchProvider>
-            </MonthProvider>
+            <TourControllerProvider>
+              <MonthProvider>
+                <SearchProvider>
+                  <AppRoutes />
+                </SearchProvider>
+              </MonthProvider>
+              {/* Sibling of <AppRoutes/>, OUTSIDE the agent Drawer so it survives
+                  route changes and never inherits the drawer's navigate-close. */}
+              <TourController />
+            </TourControllerProvider>
           </AgentDirectiveProvider>
         </ToastProvider>
       </AuthProvider>

@@ -36,6 +36,15 @@ export interface ChatbotMetricSummary {
   errorRate: number;
   timeoutRate: number;
   fallbackRate: number;
+  /** P0b — fraction of turns where the final structured answer degraded to a
+   *  prose/apology fallback, captured via the errorKind column (final_* prefix).
+   *  This is the headline perf target (50% → <10%); `fallbackRate` is the raw
+   *  boolean and should track it closely. */
+  finalFallbackRate: number;
+  /** P0b — bucketed WHY the final answer fell back (final_timeout /
+   *  final_schema / final_parse / final_http / final_prose_failed) with counts.
+   *  Empty when no final_* fallbacks occurred in range. */
+  fallbackReasons: { reason: string; count: number }[];
   abortRate: number;
   /** Fraction of turns that emitted a navigate/focus directive (model OR the
    *  A3 guardrail). High = the bot reliably takes users to the right page. */

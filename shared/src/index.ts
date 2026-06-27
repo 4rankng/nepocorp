@@ -113,7 +113,7 @@ export type {
   GenerateBillingDocumentInput, SaveBillingDocumentInput, BillingDocumentLineInput,
   DebitNoteTemplateInput, DebitNoteColumnInput, DebitNoteColumnVariableInput,
   BachKhoaVehicle,
-  AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentResponse,
+  AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentTutorialStep, AgentResponse,
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
   AckedDirectiveKind, AgentActionResult,
 } from './schemas';
@@ -146,3 +146,9 @@ export type {
   ChatbotRecentTurn,
 } from './schemas/chatbot-metrics';
 export { CHATBOT_METRICS_PATHS } from './schemas/chatbot-metrics';
+
+// ─── Curated tour catalog (agent-guided walkthroughs) ───────────────────────
+// Single source for the backend tours.search tool + the frontend on-demand list
+// and TourController. See ./tours/catalog.ts.
+export { TOUR_CATALOG, TOUR_IDS, toursForRole, getTour } from './tours';
+export type { Tour, TourId } from './tours';

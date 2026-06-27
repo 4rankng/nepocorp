@@ -16,6 +16,7 @@ import {
 } from '@tingting/shared';
 import { OFFICE_ROLES, type AgentToolDef, type AgentContext } from '../tool.types';
 import { NAV_HIGHLIGHT_DEFAULTS } from '../routeMatcher';
+import { normalizeText as normalizeSearchText } from '../text';
 
 // OFFICE_ROLES is a readonly tuple of specific enum members; widen to Role[]
 // so .includes(ctx.role) type-checks (ctx.role is the full Role union).
@@ -43,15 +44,6 @@ const PAGE_SEARCH_ENTRIES: ReadonlyArray<{
   };
 });
 
-function normalizeSearchText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd')
-    .toLowerCase();
-}
-
 function buildDirectiveTool<A extends z.ZodTypeAny>(
   name: string,
   description: string,
@@ -64,6 +56,8 @@ function buildDirectiveTool<A extends z.ZodTypeAny>(
     description,
     params,
     allowedRoles: OFFICE_ROLES,
+    // Directive tools are side-effecting + ack-ordered → MUST stay serial.
+    readonly: false,
     async execute(rawArgs, ctx) {
       if (!OFFICE_ROLE_SET.includes(ctx.role)) {
         return { data: null, label: 'Không có quyền' };
@@ -188,6 +182,8 @@ export const uiTools: AgentToolDef[] = [
       'Tìm trang phù hợp theo từ khoá tiếng Việt (VD "lương", "công nợ", "chi phí"). Trả về danh sách {routeKey, description} để dùng cho ui.navigate/ui.focus.',
     allowedRoles: OFFICE_ROLES,
     params: z.object({ query: z.string().min(1) }),
+    // Pure in-memory catalog search — safe to run concurrently with data.* reads.
+    readonly: true,
     async execute(rawArgs, ctx) {
       if (!OFFICE_ROLE_SET.includes(ctx.role)) return { data: [] };
       const { query } = z.object({ query: z.string().min(1) }).parse(rawArgs);

@@ -11,7 +11,7 @@
 // `?agent=open:<componentId>` URL seed does the same for a cold mount / F5.
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { highlightElement } from '../lib/agentHighlight';
+import { highlightElement, isTourActive } from '../lib/agentHighlight';
 import { useToast } from '../components/shared/Toast';
 import { PAGE_CATALOG, type AgentDirective, type AgentRouteKey } from '@tingting/shared';
 import {
@@ -87,12 +87,12 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
           // (progressive enhancement; slide-* currently render as fade).
           const animation = d.animation ?? 'fade';
           navigate(path, { viewTransition: animation !== 'none' });
-          if (d.highlight?.targetId) {
+          if (d.highlight?.targetId && !isTourActive()) {
             // Target page mounts async — retry briefly so route code-splitting,
-            // data hooks, and drawer close animations do not make the spotlight miss.
-            const t = d.highlight.targetId;
-            const dur = d.highlight.durationMs;
-            retryHighlight(t, dur);
+            // data hooks, and drawer close animations do not make the spotlight
+            // miss. Fire-and-forget: `send` stays synchronous for the chat ack
+            // contract (never await here — see sendAndWait for the tour path).
+            void highlightWhenReady(d.highlight.targetId, d.highlight.durationMs);
           }
           return { status: 'ok' };
         }
@@ -125,6 +125,8 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
           return { status: 'ok' };
         }
         case 'scrollTo': {
+          // Suppress while a tour owns the spotlight (activeDriver singleton guard).
+          if (isTourActive()) return { status: 'ok' };
           const found = highlightElement(d.targetId, d.durationMs ?? 2000);
           return found
             ? { status: 'ok' }
@@ -133,6 +135,35 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
       }
     },
     [navigate, setSearchParams, toast],
+  );
+
+  // Async variant for the TourController: navigates then AWAITS the target
+  // mounting so the spotlight lands, resolving a DirectiveOutcome whose reason
+  // is 'highlight-missed' when it never appeared (graceful degradation). This
+  // path ignores the tourActive guard — the tour owns the spotlight. `send`
+  // (chat) stays synchronous; only the tour awaits.
+  const sendAndWait = useCallback(
+    async (d: AgentDirective): Promise<DirectiveOutcome> => {
+      switch (d.kind) {
+        case 'navigate': {
+          navigate(resolvePath(d.routeKey, d.params), {
+            viewTransition: (d.animation ?? 'fade') !== 'none',
+          });
+          if (d.highlight?.targetId) {
+            const landed = await highlightWhenReady(d.highlight.targetId, d.highlight.durationMs);
+            return landed ? { status: 'ok' } : { status: 'ok', reason: 'highlight-missed' };
+          }
+          return { status: 'ok' };
+        }
+        case 'scrollTo': {
+          const landed = await highlightWhenReady(d.targetId, d.durationMs ?? 2000);
+          return landed ? { status: 'ok' } : { status: 'ok', reason: 'highlight-missed' };
+        }
+        default:
+          return send(d);
+      }
+    },
+    [navigate, send],
   );
 
   // Cold-mount seed: a shareable/refresh-safe `?agent=open:<componentId>` (with
@@ -150,20 +181,26 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AgentDirectiveContext.Provider value={{ send, register, unregister }}>
+    <AgentDirectiveContext.Provider value={{ send, sendAndWait, register, unregister }}>
       {children}
     </AgentDirectiveContext.Provider>
   );
 }
 
-function retryHighlight(targetId: string, durationMs?: number) {
-  const startedAt = performance.now();
-  const attempt = () => {
-    if (highlightElement(targetId, durationMs)) return;
-    if (performance.now() - startedAt > 1800) return;
-    window.setTimeout(attempt, 120);
-  };
-  window.setTimeout(attempt, 180);
+/** Poll highlightElement until the target mounts (or 1.8s elapses), resolving
+ *  true on first hit / false on timeout. Promise-returning sibling of the old
+ *  fire-and-forget retry: `send` discards the promise (stays sync); `sendAndWait`
+ *  awaits it to learn whether the spotlight landed (graceful degradation). */
+function highlightWhenReady(targetId: string, durationMs?: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const startedAt = performance.now();
+    const attempt = () => {
+      if (highlightElement(targetId, durationMs)) return resolve(true);
+      if (performance.now() - startedAt > 1800) return resolve(false);
+      window.setTimeout(attempt, 120);
+    };
+    window.setTimeout(attempt, 180);
+  });
 }
 
 /** Parse `open:<componentId>` or `open:<componentId>:<base64-json-prefill>`. */

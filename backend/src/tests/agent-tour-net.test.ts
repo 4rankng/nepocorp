@@ -1,0 +1,51 @@
+// Unit tests for the tour net (synthesizeStartTourFromResponse) — the
+// deterministic safety net that validates an emitted {type:'start_tour'} and
+// catches a freeform tutorial that matches a catalog tour. Mirrors the A3
+// routeMatcher test style. Run via `npx tsx --test src/tests/*.test.ts`.
+import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { synthesizeStartTourFromResponse } from '../services/agent/orchestrator.js';
+import { Role, type AgentResponse } from '@tingting/shared';
+
+function text(c: string): AgentResponse {
+  return { type: 'text', content: c };
+}
+
+describe('synthesizeStartTourFromResponse', () => {
+  test('keeps a valid start_tour for an allowed role', () => {
+    const r = synthesizeStartTourFromResponse({ type: 'start_tour', tourId: 'create-trip' }, Role.MANAGER);
+    assert.strictEqual(r.type, 'start_tour');
+    assert.strictEqual(r.type === 'start_tour' && r.tourId, 'create-trip');
+  });
+
+  test('downgrades an unknown tourId to an honest text line', () => {
+    const r = synthesizeStartTourFromResponse({ type: 'start_tour', tourId: 'does-not-exist' }, Role.MANAGER);
+    assert.strictEqual(r.type, 'text');
+  });
+
+  test('downgrades a start_tour the role cannot see (create-trip is MANAGER/ADMIN)', () => {
+    const r = synthesizeStartTourFromResponse({ type: 'start_tour', tourId: 'create-trip' }, Role.ACCOUNTANT);
+    assert.strictEqual(r.type, 'text');
+  });
+
+  test('catches a freeform tutorial whose title matches a catalog tour', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'tutorial', title: 'Tạo chuyến vận chuyển', summary: 'x', steps: [{ title: 'a', body: 'b' }] },
+      Role.MANAGER,
+    );
+    assert.strictEqual(r.type, 'start_tour');
+    assert.strictEqual(r.type === 'start_tour' && r.tourId, 'create-trip');
+  });
+
+  test('leaves a narrow how-to tutorial alone (no strong title match)', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'tutorial', title: 'Đơn giá dầu điền ở đâu', summary: 'x', steps: [{ title: 'a', body: 'b' }] },
+      Role.MANAGER,
+    );
+    assert.strictEqual(r.type, 'tutorial');
+  });
+
+  test('passes text/insight responses through unchanged', () => {
+    assert.strictEqual(synthesizeStartTourFromResponse(text('hi'), Role.MANAGER).type, 'text');
+  });
+});

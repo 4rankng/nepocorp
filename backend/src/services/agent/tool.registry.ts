@@ -18,12 +18,18 @@ import { approvalTools } from './tools/approvals';
 import { ledgerTools } from './tools/ledger';
 import { auditTools } from './tools/audit';
 import { analyzerTools } from './tools/analyzers';
+import { dataTools } from './tools/data';
+import { reportTools } from './tools/reports';
 import { uiTools } from './tools/ui';
+import { toursTools } from './tools/tours';
 
 // The full library. Order matters only for readability of any debug dump;
 // the LLM selects by name+description, not position.
 const ALL_TOOLS: AgentToolDef[] = [
+  ...dataTools,
+  ...reportTools,
   ...uiTools,
+  ...toursTools,
   ...tripTools,
   ...receivablesTools,
   ...payablesTools,

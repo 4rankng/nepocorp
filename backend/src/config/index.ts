@@ -72,13 +72,13 @@ const configSchema = z.object({
   // return 503 while `botEnabled` is off, and the frontend launcher hides.
   // MiniMax key is empty until the owner signs off on data exposure (R2) and
   // the tool-calling + JSON-mode spike is verified (R1).
+  //
+  // ONLY `botEnabled` + `minimaxApiKey` are env-driven. Everything else the
+  // bot needs — model, base URL, call timeout, ReAct loop cap — is a hardcoded
+  // constant in services/llm/models.ts (MODEL_FAST / MINIMAX_BASE_URL /
+  // MINIMAX_TIMEOUT_MS / AGENT_MAX_ITERATIONS). See that file for the rationale.
   botEnabled: z.boolean().default(false),
   minimaxApiKey: z.string().default(''),
-  minimaxBaseUrl: z.string().url().default('https://api.minimaxi.com/v1'),
-  minimaxModel: z.string().default('MiniMax-M2.7-highspeed'),
-  minimaxTimeoutMs: z.coerce.number().int().positive().default(60000),
-  // Hard cap on the ReAct tool-calling loop (R5: runaway guard).
-  agentMaxIterations: z.coerce.number().int().positive().default(6),
   // Chatbot SLA bands for the performance dashboard's user-perceived latency
   // gauge. p95 <= green = healthy; green < p95 <= amber = degraded; p95 > amber
   // = unhealthy. Tunable via env so ops can adjust without a redeploy.
@@ -89,6 +89,11 @@ const configSchema = z.object({
   // user is still taken to the page. Kill-switch — disable via env without a
   // redeploy if the matcher ever false-positives in production.
   agentNavigateGuardrail: z.boolean().default(true),
+  // Tour net: validate an emitted {type:'start_tour} (role + existence) and
+  // conservatively launch a curated tour when the model rambled a freeform
+  // tutorial that matches one. Kill-switch — disable via env if it ever
+  // false-positives (e.g. hijacks a narrow how-to question).
+  agentTourGuardrail: z.boolean().default(true),
 });
 
 const raw = {
@@ -115,13 +120,10 @@ const raw = {
   vapidSubject: process.env.VAPID_SUBJECT,
   botEnabled: parseFlag(process.env.BOT_ENABLE),
   minimaxApiKey: process.env.MINIMAX_API_KEY,
-  minimaxBaseUrl: process.env.MINIMAX_BASE_URL,
-  minimaxModel: process.env.MINIMAX_MODEL,
-  minimaxTimeoutMs: process.env.MINIMAX_TIMEOUT_MS,
-  agentMaxIterations: process.env.AGENT_MAX_ITERATIONS,
   agentSlaP95GreenMs: process.env.AGENT_SLA_P95_GREEN_MS,
   agentSlaP95AmberMs: process.env.AGENT_SLA_P95_AMBER_MS,
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
+  agentTourGuardrail: parseFlag(process.env.AGENT_TOUR_GUARDRAIL, true),
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -150,13 +152,10 @@ const withDefaults = {
   vapidSubject: raw.vapidSubject || VAPID_SUBJECT_DEFAULT,
   botEnabled: raw.botEnabled,
   minimaxApiKey: raw.minimaxApiKey || '',
-  minimaxBaseUrl: raw.minimaxBaseUrl || 'https://api.minimaxi.com/v1',
-  minimaxModel: raw.minimaxModel || 'MiniMax-M2.7-highspeed',
-  minimaxTimeoutMs: raw.minimaxTimeoutMs || 60000,
-  agentMaxIterations: raw.agentMaxIterations || 6,
   agentSlaP95GreenMs: raw.agentSlaP95GreenMs || 5000,
   agentSlaP95AmberMs: raw.agentSlaP95AmberMs || 12000,
   agentNavigateGuardrail: raw.agentNavigateGuardrail,
+  agentTourGuardrail: raw.agentTourGuardrail,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -198,11 +197,8 @@ export const config = result.success ? result.data : configSchema.parse({
   vapidSubject: VAPID_SUBJECT_DEFAULT,
   botEnabled: false,
   minimaxApiKey: '',
-  minimaxBaseUrl: 'https://api.minimaxi.com/v1',
-  minimaxModel: 'MiniMax-M2.7-highspeed',
-  minimaxTimeoutMs: 60000,
-  agentMaxIterations: 6,
   agentSlaP95GreenMs: 5000,
   agentSlaP95AmberMs: 12000,
   agentNavigateGuardrail: true,
+  agentTourGuardrail: true,
 });

@@ -13,9 +13,11 @@ import { AssetIcon } from '../AssetIcon';
 import { useAuth } from '../../hooks/useAuth';
 import { useAgentChat } from '../../hooks/useAgentChat';
 import { useAgentDirectives } from '../../context/AgentDirectiveContext';
-import { Role } from '@tingting/shared';
+import { useTourController } from '../../context/TourControllerContext';
+import { Role, TOUR_CATALOG, toursForRole } from '@tingting/shared';
 import { InsightCard } from './InsightCard';
-import type { AgentDirective, AgentMessage } from '@tingting/shared';
+import { TutorialCard } from './TutorialCard';
+import type { AgentDirective, AgentMessage, TourId } from '@tingting/shared';
 import './agent.css';
 
 const OFFICE_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
@@ -29,6 +31,7 @@ export function AgentAssistant() {
   const isPinnedToBottom = useRef(true);
   const location = useLocation();
   const { send: sendDirective } = useAgentDirectives();
+  const { start: startTour } = useTourController();
 
   const handleDirective = useCallback(
     (directive: AgentDirective) => {
@@ -40,7 +43,10 @@ export function AgentAssistant() {
     [sendDirective],
   );
 
-  const chat = useAgentChat({ onDirective: handleDirective });
+  const chat = useAgentChat({ onDirective: handleDirective, onStartTour: startTour });
+
+  // On-demand tour launcher: role-filtered curated tours the user can self-start.
+  const visibleTours = user ? toursForRole(user.role) : [];
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
     bottomRef.current?.scrollIntoView({ block: 'end', behavior });
@@ -118,6 +124,26 @@ export function AgentAssistant() {
           </span>
         }
       >
+        {visibleTours.length > 0 && (
+          <div className="agent-tours">
+            <div className="agent-tours__label">Hướng dẫn nhanh</div>
+            <div className="agent-tours__chips">
+              {visibleTours.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="agent-tours__chip"
+                  onClick={() => {
+                    setOpen(false);
+                    startTour(t.id);
+                  }}
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="agent-thread" ref={threadRef} onScroll={handleThreadScroll}>
           {chat.messages.length === 0 && (
             <div className="agent-empty">
@@ -175,6 +201,24 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
   if (response?.type === 'insight_card') {
     return <InsightCard card={response} onAction={onAction} />;
   }
+  if (response?.type === 'tutorial') {
+    return <TutorialCard tutorial={response} onAction={onAction} />;
+  }
+  if (response?.type === 'start_tour') {
+    // Auto-launched by useAgentChat onStartTour; this arm covers the rehydrated
+    // (reload) case so the stored message renders a meaningful bubble.
+    const title = TOUR_CATALOG[response.tourId as TourId]?.title ?? response.tourId;
+    return (
+      <div className="agent-message agent-message--assistant">
+        <span className="agent-message__avatar" aria-hidden="true">
+          <AssetIcon name="assistant" size={24} />
+        </span>
+        <div className="agent-bubble agent-bubble--assistant agent-markdown">
+          <ReactMarkdown skipHtml>{`Đã mở hướng dẫn **${title}** cho bạn.`}</ReactMarkdown>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="agent-message agent-message--assistant">
       <span className="agent-message__avatar" aria-hidden="true">
@@ -184,6 +228,20 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
         <ReactMarkdown skipHtml>
           {response?.type === 'text' ? response.content : message.content}
         </ReactMarkdown>
+        {response?.type === 'text' && response.actions && response.actions.length > 0 && (
+          <div className="agent-card__actions agent-text-actions">
+            {response.actions.map((action, index) => (
+              <button
+                type="button"
+                className="agent-action-chip"
+                key={`${action.label}-${index}`}
+                onClick={() => onAction(action.directive)}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

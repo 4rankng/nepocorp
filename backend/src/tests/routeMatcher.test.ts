@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchRoute, sameRoute, hasOnlyNumericParams } from '../services/agent/routeMatcher.js';
-import { synthesizeNavigateFromProse } from '../services/agent/orchestrator.js';
+import { synthesizeNavigateFromProse, synthesizeTextActionsFromProse } from '../services/agent/orchestrator.js';
 
 test('matchRoute resolves a parametric path to routeKey + params', () => {
   const m = matchRoute('/fleet/1/tires');
@@ -88,4 +88,16 @@ test('synthesizeNavigateFromProse handles a static route with no default highlig
 
 test('synthesizeNavigateFromProse returns null when no path token is present', () => {
   assert.strictEqual(synthesizeNavigateFromProse('Xin lỗi, tôi không thể xử lý.', undefined), null);
+});
+
+test('synthesizeTextActionsFromProse creates a suggested action for a different tire page', () => {
+  const actions = synthesizeTextActionsFromProse(
+    'Bạn đang ở /fleet/4/tires — không đúng xe. Chuyển sang trang lốp của xe 15C-136.31 (/fleet/1/tires).',
+    '/fleet/4/tires',
+  );
+  assert.strictEqual(actions.length, 1);
+  assert.strictEqual(actions[0].label, 'Mở trang lốp');
+  assert.strictEqual(actions[0].directive.kind, 'navigate');
+  assert.strictEqual(actions[0].directive.routeKey, 'fleetTires');
+  assert.deepStrictEqual(actions[0].directive.params, { truckId: '1' });
 });

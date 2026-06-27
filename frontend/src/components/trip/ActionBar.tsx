@@ -37,7 +37,7 @@ export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
         <button className="btn btn--secondary desktop-only" type="button" disabled title="Chưa hỗ trợ">
           <Save size={16} /> Lưu nháp
         </button>
-        <button className="btn btn--primary" type="button" disabled={disabled || !allFilled} onClick={onSubmit}>
+        <button className="btn btn--primary" id="trip-new-submit" type="button" disabled={disabled || !allFilled} onClick={onSubmit}>
           {form.submitting ? <Loader2 size={16} className="spin" /> : <ArrowRight size={16} />}
           Tạo lệnh
         </button>

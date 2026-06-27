@@ -65,3 +65,22 @@ export function highlightElement(targetId: string, durationMs = 2000): boolean {
 
   return true;
 }
+
+// ── Tour-active guard ───────────────────────────────────────────────────────
+// While a curated tour is playing, the CHAT directive path suppresses its own
+// highlight so two Driver.js spotlights never fight over the `activeDriver`
+// singleton above. The TourController sets this on start/stop; the chat `send`
+// reads it. The tour's own `sendAndWait` path ignores the flag — it owns the
+// spotlight while a tour is active. (The discriminator is the entrypoint:
+// chat → `send`, tour → `sendAndWait`.)
+let tourActive = false;
+
+export function setTourActive(active: boolean): void {
+  tourActive = active;
+  // Clear any lingering spotlight when a tour ends so it doesn't outlive the run.
+  if (!active) clearActiveDriver();
+}
+
+export function isTourActive(): boolean {
+  return tourActive;
+}

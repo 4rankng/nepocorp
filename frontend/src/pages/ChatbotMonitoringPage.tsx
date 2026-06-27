@@ -612,6 +612,21 @@ function toolMeaning(name: string): string {
   return meanings[name] ?? 'Công cụ dữ liệu nội bộ được bot gọi trong lượt trả lời.';
 }
 
+/** P0b — map a `final_*` fallback-reason bucket to a short Vietnamese label for
+ *  the dashboard. Unknown prefixes render verbatim (minus the `final_` stem) so
+ *  new buckets the backend emits later stay visible without a frontend change. */
+function fallbackReasonLabel(reason: string): string {
+  switch (reason) {
+    case 'final_timeout': return 'Hết giờ gọi model';
+    case 'final_schema': return 'Sai cấu trúc JSON';
+    case 'final_parse': return 'Lỗi parse JSON';
+    case 'final_http': return 'Lỗi HTTP model';
+    case 'final_no_key': return 'Thiếu API key';
+    case 'final_prose_failed': return 'Cả 2 nhánh lỗi';
+    default: return reason.replace(/^final_/, '');
+  }
+}
+
 /* ============================================================================
  * Section 4 — ReAct efficiency
  * ========================================================================== */
@@ -637,14 +652,29 @@ function ReactEfficiency({
   ];
 
   return (
-    <div className="cbm-kpi-grid cbm-kpi-grid--tight">
-      {cards.map((c) => (
-        <div className="cbm-kpi cbm-kpi--flat" key={c.label}>
-          <span className="cbm-kpi__label">{c.label}</span>
-          <span className="cbm-kpi__value">{c.value}</span>
+    <>
+      <div className="cbm-kpi-grid cbm-kpi-grid--tight">
+        {cards.map((c) => (
+          <div className="cbm-kpi cbm-kpi--flat" key={c.label}>
+            <span className="cbm-kpi__label">{c.label}</span>
+            <span className="cbm-kpi__value">{c.value}</span>
+          </div>
+        ))}
+      </div>
+      {/* P0b — WHY turns fall back (final_* buckets). Only renders when the bot
+          has actually degraded in range; empty otherwise. Powers the 50%→<10%
+          target's root-cause readout (timeout vs schema vs parse vs http). */}
+      {summary.fallbackReasons.length > 0 && (
+        <div className="cbm-kpi-grid cbm-kpi-grid--tight" style={{ marginTop: '0.5rem' }}>
+          {summary.fallbackReasons.map((r) => (
+            <div className="cbm-kpi cbm-kpi--flat" key={r.reason} title={r.reason}>
+              <span className="cbm-kpi__label">{fallbackReasonLabel(r.reason)}</span>
+              <span className="cbm-kpi__value">{fmtRate(r.count / turns)}</span>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 

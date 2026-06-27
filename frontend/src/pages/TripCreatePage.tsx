@@ -70,7 +70,7 @@ export default function TripCreatePage() {
           </div>
         </section>
 
-        <div className="tc-create-bento">
+        <div className="tc-create-bento" id="trip-new-form">
           <div className="tc-bento-main">
             <TripInfoCard
               customers={options.customers}

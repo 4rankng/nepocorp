@@ -12,8 +12,16 @@
 // verifies + corrects if needed.
 import { config } from '../../config';
 import { withSpan, type SpanAttrs } from '../agent/telemetry.js';
+import {
+  MODEL_FAST,
+  MINIMAX_BASE_URL,
+  MINIMAX_TIMEOUT_MS,
+  AGENT_MAX_ITERATIONS,
+} from './models';
 
-const TIMEOUT_MS = () => config.minimaxTimeoutMs;
+// Re-export so callers (orchestrator) read model + endpoint constants from one
+// place. See models.ts for why these are hardcoded, not env-driven.
+export { MODEL_FAST, MINIMAX_BASE_URL, MINIMAX_TIMEOUT_MS, AGENT_MAX_ITERATIONS };
 
 // Redaction gate: prompt/completion text is financial/customer data. Only emit
 // gen_ai prompt/completion attrs when explicitly opted in. Default OFF.
@@ -86,7 +94,7 @@ export async function callMiniMax(opts: {
   }
 
   const body: Record<string, unknown> = {
-    model: config.minimaxModel,
+    model: MODEL_FAST,
     messages: opts.messages,
     temperature: 0.2, // low — analytical answers + tool selection should be deterministic-ish
   };
@@ -102,7 +110,7 @@ export async function callMiniMax(opts: {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS());
+  const timer = setTimeout(() => controller.abort(), MINIMAX_TIMEOUT_MS);
   // Honour a caller-supplied signal too (e.g. client disconnect). The listener
   // is removed in `finally` so a long-lived parent signal (the req-close signal
   // spans the whole SSE turn) doesn't accumulate one listener and retain each
@@ -118,7 +126,7 @@ export async function callMiniMax(opts: {
   // (the sampler may discard the span — see telemetry.ts LATENCY CONTRACT).
   const llmAttrs: SpanAttrs = {
     'gen_ai.operation.name': 'chat',
-    'gen_ai.request.model': config.minimaxModel,
+    'gen_ai.request.model': MODEL_FAST,
     'gen_ai.system': 'minimax',
   };
   // Redaction: prompt/completion text is financial/customer data — only emit
@@ -132,7 +140,7 @@ export async function callMiniMax(opts: {
       'agent.llm.react_call',
       llmAttrs,
       async () => {
-        const res = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
+        const res = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -177,7 +185,7 @@ export async function callMiniMax(opts: {
   } catch (e) {
     if (e instanceof MiniMaxError) throw e;
     if (e instanceof Error && e.name === 'AbortError') {
-      throw new MiniMaxError(`MiniMax timeout after ${TIMEOUT_MS()}ms`, 'timeout');
+      throw new MiniMaxError(`MiniMax timeout after ${MINIMAX_TIMEOUT_MS}ms`, 'timeout');
     }
     throw new MiniMaxError(
       `MiniMax request failed: ${e instanceof Error ? e.message : 'unknown'}`,

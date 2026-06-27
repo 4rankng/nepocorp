@@ -47,6 +47,14 @@ export interface AgentToolDef {
   description: string;
   params: ZodTypeAny;
   allowedRoles: readonly Role[];
+  /**
+   * P1.3 — `true` for pure read tools with no side effects and no ordering
+   * dependency (data.* queries). The orchestrator runs all readonly tools in a
+   * batch CONCURRENTLY. Undefined/`false` = side-effecting or ordered (ui.*
+   * directives, which await a UI ack in sequence) → runs SERIALLY in call order.
+   * Defaults to undefined so any tool not explicitly flagged stays serial (safe).
+   */
+  readonly?: boolean;
   execute: (args: unknown, ctx: AgentContext) => Promise<ToolResult>;
 }
 
@@ -90,6 +98,8 @@ export function defineReadTool<A extends ZodTypeAny>(config: {
     description,
     allowedRoles,
     params,
+    // defineReadTool backs every data.* query — pure reads, safe to parallelize.
+    readonly: true,
     async execute(rawArgs, ctx) {
       // Defense in depth (R6): registry already filtered, but re-check here so
       // a misconfigured registry can never let a tool run for the wrong role.

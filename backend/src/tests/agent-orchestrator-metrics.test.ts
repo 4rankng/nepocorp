@@ -24,13 +24,88 @@ import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { computeLatencies, type MetricsAccumulator } from '../services/agent/orchestrator.js';
+import { computeLatencies, trimToolHistory, type MetricsAccumulator } from '../services/agent/orchestrator.js';
+import type { MiniMaxMessage } from '../services/llm/minimax.client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ORCHESTRATOR_SRC = readFileSync(
   join(__dirname, '..', 'services', 'agent', 'orchestrator.ts'),
   'utf8',
 );
+
+describe('trimToolHistory — P1.1 protocol-safe tool-history trim', () => {
+  const sys = (s: string): MiniMaxMessage => ({ role: 'system', content: s });
+  const user = (s: string): MiniMaxMessage => ({ role: 'user', content: s });
+  const assistantToolCalls = (id: string): MiniMaxMessage => ({
+    role: 'assistant',
+    content: null,
+    tool_calls: [{ id, type: 'function', function: { name: 't', arguments: '{}' } }],
+  });
+  const toolReply = (id: string, content: string): MiniMaxMessage => ({
+    role: 'tool',
+    tool_call_id: id,
+    name: 't',
+    content,
+  });
+  // Every kept assistant(tool_calls) MUST be immediately followed by its tool
+  // reply, or the OpenAI tool-calling API 400s. This is the load-bearing invariant.
+  const assertProtocolSafe = (msgs: MiniMaxMessage[]) => {
+    for (let i = 0; i < msgs.length; i++) {
+      if (msgs[i].role === 'assistant' && (msgs[i].tool_calls?.length ?? 0) > 0) {
+        const next = msgs[i + 1];
+        assert.ok(next && next.role === 'tool', 'assistant(tool_calls) must be followed by its tool reply');
+      }
+    }
+  };
+
+  test('no tool history → unchanged', () => {
+    const m: MiniMaxMessage[] = [sys('s'), user('hi')];
+    assert.deepEqual(trimToolHistory(m), m);
+  });
+
+  test('under budget → unchanged (every unit kept)', () => {
+    const m: MiniMaxMessage[] = [
+      sys('s'), user('hi'),
+      assistantToolCalls('1'), toolReply('1', 'r1'),
+      assistantToolCalls('2'), toolReply('2', 'r2'),
+    ];
+    assert.deepEqual(trimToolHistory(m), m);
+    assertProtocolSafe(trimToolHistory(m));
+  });
+
+  test('over budget → oldest unit(s) dropped, seed + recent kept, protocol-safe', () => {
+    const big = 'x'.repeat(10_000); // 4 units × ~10k = ~40k > 24k budget
+    const m: MiniMaxMessage[] = [
+      sys('s'), user('hi'),
+      assistantToolCalls('1'), toolReply('1', big),
+      assistantToolCalls('2'), toolReply('2', big),
+      assistantToolCalls('3'), toolReply('3', big),
+      assistantToolCalls('4'), toolReply('4', big),
+    ];
+    const out = trimToolHistory(m);
+    assert.equal(out[0].role, 'system'); // seed preserved
+    assert.equal(out[1].role, 'user');
+    assert.equal(out.length, 6); // 2 seed + recent 2 units (2 asst + 2 tool)
+    assert.equal(out[2], m[6]); // kept unit #3's assistant turn
+    assert.equal(out[5], m[9]); // kept unit #4's tool reply
+    assertProtocolSafe(out);
+  });
+
+  test('never drops below KEEP_RECENT_TOOL_UNITS=2 even when each unit is huge', () => {
+    const huge = 'y'.repeat(50_000);
+    const m: MiniMaxMessage[] = [
+      sys('s'), user('hi'),
+      assistantToolCalls('1'), toolReply('1', huge),
+      assistantToolCalls('2'), toolReply('2', huge),
+      assistantToolCalls('3'), toolReply('3', huge),
+    ];
+    const out = trimToolHistory(m);
+    assert.equal(out.length, 6); // 2 seed + recent 2 units
+    assert.equal(out[2], m[4]); // kept unit #2's assistant turn
+    assert.equal(out[5], m[7]); // kept unit #3's tool reply
+    assertProtocolSafe(out);
+  });
+});
 
 describe('agent orchestrator metrics — static sampling-trap guard', () => {
   test('orchestrator source does not import SpanProcessor', () => {

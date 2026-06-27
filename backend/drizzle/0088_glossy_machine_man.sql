@@ -1,0 +1,1 @@
+ALTER TABLE "agent_turn_metrics" ADD COLUMN "latency_client_wait_ms" integer;

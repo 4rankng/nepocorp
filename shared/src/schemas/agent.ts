@@ -9,7 +9,7 @@ import { PAGE_CATALOG } from '../navigation/pageCatalog';
  *
  *   1. Directive      — how the agent drives the UI (navigate/focus/open/prefill/toast/scrollTo)
  *   2. Widget         — a typed, natively-rendered card building block
- *   3. AgentResponse  — the assistant's final answer: text | insight_card | directive
+ *   3. AgentResponse  — the assistant's final answer: text | insight_card | tutorial | start_tour | directive
  *
  * Kept in `shared` (not the flat `schemas/index.ts`, which is already 800+
  * lines of entity CRUD) because this is a self-contained, cross-boundary
@@ -235,16 +235,32 @@ export const agentWidgetSchema = z.discriminatedUnion('type', [
 
 export type AgentWidget = z.infer<typeof agentWidgetSchema>;
 
-// ─── Action chips (card-level shortcuts that fire a directive) ─────────────
+// ─── Action chips (response-level shortcuts that fire a directive) ─────────
 export const agentActionChipSchema = z.object({
   label: z.string(),
   directive: agentDirectiveSchema,
 });
 export type AgentActionChip = z.infer<typeof agentActionChipSchema>;
 
+// ─── Tutorial steps (assistant-guided UI walkthroughs) ─────────────────────
+export const agentTutorialStepSchema = z.object({
+  title: z.string(),
+  body: z.string(),
+  /** Optional field/value example shown as a compact hint. */
+  example: z.string().optional(),
+  /** Optional UI action for this step, usually scrollTo/highlight or navigate. */
+  directive: agentDirectiveSchema.optional(),
+});
+export type AgentTutorialStep = z.infer<typeof agentTutorialStepSchema>;
+
 // ─── Final response ────────────────────────────────────────────────────────
 export const agentResponseSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('text'), content: z.string() }),
+  z.object({
+    type: z.literal('text'),
+    content: z.string(),
+    /** Optional suggested next actions for prose answers (e.g. open the page named in text). */
+    actions: z.array(agentActionChipSchema).optional(),
+  }),
   z.object({
     type: z.literal('insight_card'),
     title: z.string(),
@@ -253,6 +269,18 @@ export const agentResponseSchema = z.discriminatedUnion('type', [
     widgets: z.array(agentWidgetSchema).min(1),
     actions: z.array(agentActionChipSchema).optional(),
   }),
+  z.object({
+    type: z.literal('tutorial'),
+    title: z.string(),
+    summary: z.string(),
+    steps: z.array(agentTutorialStepSchema).min(1).max(8),
+    actions: z.array(agentActionChipSchema).optional(),
+  }),
+  // Launch a curated tour from shared/src/tours/catalog.ts. The agent emits this
+  // as its final answer for workflow-shaped how-to requests (validated + caught
+  // by the orchestrator's tour net when the model rambles a freeform tutorial).
+  // The frontend MessageBubble arm calls TourController.start(tourId).
+  z.object({ type: z.literal('start_tour'), tourId: z.string().min(1) }),
   z.object({ type: z.literal('directive'), directive: agentDirectiveSchema }),
 ]);
 

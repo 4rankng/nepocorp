@@ -25,6 +25,9 @@ export interface UseAgentChatOptions {
   /** Called for every directive the stream emits (navigation/open/prefill).
    *  Returns the outcome so navigate/focus can be acked back to the server. */
   onDirective?: (d: AgentDirective) => DirectiveOutcome;
+  /** Called when the assistant's final answer launches a curated tour
+   *  ({type:'start_tour'}). Auto-launches the TourController. */
+  onStartTour?: (tourId: string) => void;
 }
 
 export interface UseAgentChat {
@@ -57,6 +60,8 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   // once per send) always sees the current handler.
   const directiveRef = useRef(opts.onDirective);
   directiveRef.current = opts.onDirective;
+  const startTourRef = useRef(opts.onStartTour);
+  startTourRef.current = opts.onStartTour;
   const abortRef = useRef<AbortController | null>(null);
   const pendingPageDirectiveRef = useRef<AgentDirective | null>(null);
   const turnStartedAtRef = useRef<number | null>(null);
@@ -150,14 +155,24 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
             { id: uid(), role: 'assistant', response, createdAt: new Date().toISOString() },
           ]);
           requestAnimationFrame(reportClientWait);
-          const pending = pendingPageDirectiveRef.current;
-          pendingPageDirectiveRef.current = null;
-          if (pending) {
+          // A curated-tour answer: launch it (deferred so the bubble paints first).
+          if (response.type === 'start_tour') {
+            const tourId = response.tourId;
             requestAnimationFrame(() => {
               window.setTimeout(() => {
-                directiveRef.current?.(pending);
+                startTourRef.current?.(tourId);
               }, 0);
             });
+          } else {
+            const pending = pendingPageDirectiveRef.current;
+            pendingPageDirectiveRef.current = null;
+            if (pending) {
+              requestAnimationFrame(() => {
+                window.setTimeout(() => {
+                  directiveRef.current?.(pending);
+                }, 0);
+              });
+            }
           }
         }
         break;

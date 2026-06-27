@@ -63,22 +63,22 @@ export default function FuelConfigPage() {
       <PageHeader title="Định mức nhiên liệu" description="Định mức tiêu hao theo xe và loại tải · đơn giá dầu hiện hành · ngưỡng cảnh báo TTBQ" onBack={() => navigate('/config')} iconName="fuel" />
       <Panel title="Cấu hình tính nhiên liệu" subtitle="Thông số dùng để tính chi phí nhiên liệu cho mỗi chuyến">
         <div className="cfg-form-grid">
-          <div className="field">
+          <div className="field" id="fuel-loaded-norm-field">
             <label>Định mức có tải (lít/100km)</label>
             <input className="input" type="number" step="0.1" value={form.loadedNorm} onChange={e => setForm(f => ({ ...f, loadedNorm: e.target.value }))} placeholder="VD: 35" />
           </div>
-          <div className="field">
+          <div className="field" id="fuel-empty-norm-field">
             <label>Định mức xe không (lít/100km)</label>
             <input className="input" type="number" step="0.1" value={form.emptyNorm} onChange={e => setForm(f => ({ ...f, emptyNorm: e.target.value }))} placeholder="VD: 22" />
           </div>
         </div>
         <div className="cfg-form-grid">
-          <div className="field">
+          <div className="field" id="fuel-supplement-field">
             <label>Bổ sung mặc định (lít)</label>
             <input className="input" type="number" step="0.1" value={form.supplement} onChange={e => setForm(f => ({ ...f, supplement: e.target.value }))} placeholder="VD: 3" />
             <p className="cfg-field-hint">Số lít bổ sung thêm mặc định cho mỗi chuyến.</p>
           </div>
-          <div className="field">
+          <div className="field" id="fuel-unit-price-field">
             <label>Đơn giá nhiên liệu hiện hành (đ/lít)</label>
             <input className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
           </div>
@@ -90,12 +90,12 @@ export default function FuelConfigPage() {
             <span className="cfg-section__heading-pill">TTBQ</span>
           </h4>
           <div className="cfg-form-grid">
-            <div className="field">
+            <div className="field" id="fuel-warning-threshold-field">
               <label>Ngưỡng cảnh báo (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.warningThreshold} onChange={e => setForm(f => ({ ...f, warningThreshold: e.target.value }))} placeholder="VD: 37" />
               <p className="cfg-field-hint cfg-field-hint--warn">TTBQ vượt ngưỡng này → cảnh báo vàng.</p>
             </div>
-            <div className="field">
+            <div className="field" id="fuel-critical-threshold-field">
               <label>Ngưỡng nghiêm trọng (lít/100km)</label>
               <input className="input" type="number" step="0.1" value={form.criticalThreshold} onChange={e => setForm(f => ({ ...f, criticalThreshold: e.target.value }))} placeholder="VD: 40" />
               <p className="cfg-field-hint cfg-field-hint--danger">TTBQ vượt ngưỡng này → cảnh báo đỏ.</p>
@@ -104,7 +104,7 @@ export default function FuelConfigPage() {
         </div>
 
         <div className="cfg-form-actions">
-          <button className="btn btn--primary" disabled={saving || !(Number(form.loadedNorm) > 0) || !(Number(form.emptyNorm) > 0) || !(Number(form.unitPrice) > 0)} onClick={handleSave}>
+          <button id="fuel-save-config-button" className="btn btn--primary" disabled={saving || !(Number(form.loadedNorm) > 0) || !(Number(form.emptyNorm) > 0) || !(Number(form.unitPrice) > 0)} onClick={handleSave}>
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             Lưu cấu hình
           </button>

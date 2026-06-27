@@ -1053,8 +1053,8 @@ export const agentConversations = pgTable('agent_conversations', {
 // A turn in a conversation. `role` here is the message author ('user' |
 // 'assistant'), distinct from the conversation's RBAC role above.
 //   - content     : plain text (user message or an assistant 'text' answer)
-//   - response    : the structured AgentResponse (insight_card | directive |
-//                   text) for assistant turns; null for user turns
+//   - response    : the structured AgentResponse (insight_card | tutorial |
+//                   directive | text) for assistant turns; null for user turns
 //   - toolTrace   : jsonb array of { toolName, toolCallId, args, result, ok }
 //                   — the full reasoning path, attached to the assistant turn
 //                   that issued the calls. (The plan modelled these as separate

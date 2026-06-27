@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -13,6 +13,7 @@ import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
+import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
 
@@ -401,6 +402,19 @@ export default function DebtDetailPage() {
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
   const { toast: showToast } = useToast();
+
+  // Agent "open/prefill" target: the bot can open this payment modal (and
+  // prefill the amount) when the user is on this page — the "do it for you"
+  // half of guidance. Read-only-safe: the user still reviews + submits.
+  useAgentOpenable(
+    'debt.record-payment',
+    useCallback((d) => {
+      const prefill = d.kind === 'prefill' ? d.values : d.prefill;
+      const amount = prefill && typeof prefill.amount === 'number' ? prefill.amount : undefined;
+      if (amount !== undefined) setPayAmount(String(amount));
+      setShowPay(true);
+    }, []),
+  );
 
   const downloadExport = async (format: string) => {
     try {

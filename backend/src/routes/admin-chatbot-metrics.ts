@@ -79,7 +79,11 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     mpP50: sql<number | null>`percentile_cont(0.5)  within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
     mpP95: sql<number | null>`percentile_cont(0.95) within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
     mpP99: sql<number | null>`percentile_cont(0.99) within group (order by ${schema.agentTurnMetrics.latencyTotalMs}::double precision)`,
-    errors: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} is not null)::int`,
+    errors: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} is not null and ${schema.agentTurnMetrics.errorKind} !~ '^final_')::int`,
+    // P0b — final-answer degradations: errorKind carries a `final_` prefix
+    // (final_timeout / final_schema / ...) when the structured card fell back to
+    // prose. Kept OUT of `errors` above so errorRate stays pure ReAct-loop only.
+    finalFallbacks: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} ~ '^final_')::int`,
     timeouts: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} = 'timeout')::int`,
     fallbacks: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.fallbackUsed})::int`,
     aborts: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.aborted})::int`,
@@ -105,6 +109,8 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
       errorRate: 0,
       timeoutRate: 0,
       fallbackRate: 0,
+      finalFallbackRate: 0,
+      fallbackReasons: [],
       abortRate: 0,
       navigateRate: 0,
       guardrailRate: 0,
@@ -119,6 +125,20 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
   }
 
   const turns = Number(r.turns);
+  // P0b — fallback-cause breakdown: a separate GROUP BY (the roll-up above is a
+  // single ungrouped aggregate) bucketing the `final_*` errorKind values so the
+  // dashboard can show WHY turns fall back. Only runs when there's data in range.
+  const reasonRows = await db.select({
+    reason: schema.agentTurnMetrics.errorKind,
+    count: sql<number>`count(*)::int`,
+  })
+    .from(schema.agentTurnMetrics)
+    .where(and(
+      gte(schema.agentTurnMetrics.createdAt, since),
+      sql`${schema.agentTurnMetrics.errorKind} ~ '^final_'`,
+    ))
+    .groupBy(schema.agentTurnMetrics.errorKind);
+
   const summary: ChatbotMetricSummary = {
     turns,
     activeUsers: Number(r.activeUsers),
@@ -135,6 +155,10 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     errorRate: computeRate(Number(r.errors), turns),
     timeoutRate: computeRate(Number(r.timeouts), turns),
     fallbackRate: computeRate(Number(r.fallbacks), turns),
+    finalFallbackRate: computeRate(Number(r.finalFallbacks), turns),
+    fallbackReasons: reasonRows
+      .map((rr) => ({ reason: rr.reason ?? '', count: Number(rr.count) }))
+      .sort((a, b) => b.count - a.count),
     abortRate: computeRate(Number(r.aborts), turns),
     navigateRate: computeRate(Number(r.navigateDirectives), turns),
     guardrailRate: computeRate(Number(r.guardrailFires), turns),
