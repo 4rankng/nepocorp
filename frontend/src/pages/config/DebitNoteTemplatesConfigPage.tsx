@@ -85,8 +85,22 @@ export default function DebitNoteTemplatesConfigPage() {
           <div className="debit-template-list">
             {templates.map((template) => {
               const visibleColumns = (template.columns ?? []).filter(column => column.width > 0).length;
+              const viewTemplate = () => navigate(`/config/debit-note-templates/${template.id}?mode=view`);
               return (
-                <div key={template.id} className="cfg-row debit-template-card">
+                <div
+                  key={template.id}
+                  className="cfg-row debit-template-card debit-template-card--clickable"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Xem mẫu ${template.name}`}
+                  onClick={viewTemplate}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      viewTemplate();
+                    }
+                  }}
+                >
                   <div className="debit-template-card__stripe" style={{ background: template.accentColor }} />
                   <div className="debit-template-card__icon" aria-hidden="true">
                     <AssetIcon name="document" size={24} />
@@ -107,11 +121,26 @@ export default function DebitNoteTemplatesConfigPage() {
                       <span>{template.orientation === 'landscape' ? 'Ngang' : 'Dọc'}</span>
                     </div>
                   </div>
-                  <div className="debit-template-card__actions">
-                    <button type="button" className="btn btn--secondary" onClick={() => navigate(`/config/debit-note-templates/${template.id}`)}>
+                  <div className="debit-template-card__actions" onKeyDown={event => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="btn btn--secondary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate(`/config/debit-note-templates/${template.id}`);
+                      }}
+                    >
                       Sửa
                     </button>
-                    <button type="button" className="btn btn--ghost btn--icon" onClick={() => onDelete(template)} aria-label={`Xoá ${template.name}`}>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--icon"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void onDelete(template);
+                      }}
+                      aria-label={`Xoá ${template.name}`}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>

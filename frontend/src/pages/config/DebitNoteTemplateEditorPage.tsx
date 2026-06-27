@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlignCenter,
@@ -726,11 +726,13 @@ function ColumnPropertyPanel({
 export default function DebitNoteTemplateEditorPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const id = params.id === 'new' || !params.id ? null : Number(params.id);
   const isNew = id == null;
+  const viewOnly = !isNew && searchParams.get('mode') === 'view';
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<DebitNoteTemplateInput>(() => blankTemplate());
   const [activeSection, setActiveSection] = useState<EditorSection>('columns');
@@ -846,6 +848,7 @@ export default function DebitNoteTemplateEditorPage() {
   };
 
   const busy = saving || isLoading;
+  const controlsDisabled = busy || viewOnly;
   const activeSectionLabel = selectedTarget.type === 'column'
     ? 'Cột đang chọn'
     : EDITOR_SECTIONS.find(section => section.id === activeSection)?.label ?? 'Chung';
@@ -855,7 +858,7 @@ export default function DebitNoteTemplateEditorPage() {
         <ColumnPropertyPanel
           column={selectedColumn}
           columns={form.columns ?? []}
-          disabled={busy}
+          disabled={controlsDisabled}
           onChange={patch => updateColumn(selectedColumn.id, patch)}
           onSelectColumn={columnId => selectTarget({ type: 'column', columnId })}
           onToggleColumnVisibility={item => updateColumn(item.id, { width: item.width > 0 ? 0 : 14 })}
@@ -867,25 +870,25 @@ export default function DebitNoteTemplateEditorPage() {
       return (
         <section className="debit-editor-settings">
           <Field label="Tên mẫu *">
-            <input className="input debit-editor-inline-input" value={form.name} onChange={event => set('name', event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.name} onChange={event => set('name', event.target.value)} disabled={controlsDisabled} />
           </Field>
           <Field label="Tiêu đề">
-            <input className="input debit-editor-inline-input" value={form.titleText} onChange={event => set('titleText', event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.titleText} onChange={event => set('titleText', event.target.value)} disabled={controlsDisabled} />
           </Field>
           <Field label="Hướng giấy">
-            <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.orientation} onChange={event => set('orientation', event.target.value as DebitNoteTemplateInput['orientation'])} disabled={busy}>
+            <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.orientation} onChange={event => set('orientation', event.target.value as DebitNoteTemplateInput['orientation'])} disabled={controlsDisabled}>
               <option value="landscape">Ngang</option>
               <option value="portrait">Dọc</option>
             </select>
           </Field>
           <Field label="Màu nhấn">
             <div className="debit-editor-color">
-              <input type="color" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={busy} />
-              <input className="input mono debit-editor-inline-input" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={busy} />
+              <input type="color" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={controlsDisabled} />
+              <input className="input mono debit-editor-inline-input" value={form.accentColor} onChange={event => set('accentColor', event.target.value)} disabled={controlsDisabled} />
             </div>
           </Field>
           <label className="debit-editor-check">
-            <input type="checkbox" checked={form.isDefault} onChange={event => set('isDefault', event.target.checked)} disabled={busy} />
+            <input type="checkbox" checked={form.isDefault} onChange={event => set('isDefault', event.target.checked)} disabled={controlsDisabled} />
             <Star size={15} />
             <span>Mẫu mặc định</span>
           </label>
@@ -897,25 +900,25 @@ export default function DebitNoteTemplateEditorPage() {
       return (
         <section className="debit-editor-settings debit-editor-settings--issuer">
           <Field label="Tên công ty">
-            <input className="input debit-editor-inline-input" value={form.issuerName ?? ''} onChange={event => set('issuerName', event.target.value || null)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.issuerName ?? ''} onChange={event => set('issuerName', event.target.value || null)} disabled={controlsDisabled} />
           </Field>
           <Field label="Mã số thuế">
-            <input className="input debit-editor-inline-input" value={form.issuerTaxCode ?? ''} onChange={event => set('issuerTaxCode', event.target.value || null)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.issuerTaxCode ?? ''} onChange={event => set('issuerTaxCode', event.target.value || null)} disabled={controlsDisabled} />
           </Field>
           <Field label="Địa chỉ">
-            <input className="input debit-editor-inline-input" value={form.issuerAddress ?? ''} onChange={event => set('issuerAddress', event.target.value || null)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.issuerAddress ?? ''} onChange={event => set('issuerAddress', event.target.value || null)} disabled={controlsDisabled} />
           </Field>
           <Field label="Đại diện bởi">
-            <input className="input debit-editor-inline-input" value={form.issuerRepresentative ?? ''} onChange={event => set('issuerRepresentative', event.target.value || null)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={form.issuerRepresentative ?? ''} onChange={event => set('issuerRepresentative', event.target.value || null)} disabled={controlsDisabled} />
           </Field>
           <Field label="Chức vụ">
             <input className="input debit-editor-inline-input" value="Giám Đốc" disabled />
           </Field>
           <Field label="Số TK">
-            <input className="input debit-editor-inline-input" value={accountTerms.accountNumber} onChange={event => setAccountNumber(event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={accountTerms.accountNumber} onChange={event => setAccountNumber(event.target.value)} disabled={controlsDisabled} />
           </Field>
           <Field label="Tại ngân hàng">
-            <input className="input debit-editor-inline-input" value={accountTerms.bankName} onChange={event => setBankName(event.target.value)} disabled={busy} />
+            <input className="input debit-editor-inline-input" value={accountTerms.bankName} onChange={event => setBankName(event.target.value)} disabled={controlsDisabled} />
           </Field>
         </section>
       );
@@ -926,7 +929,7 @@ export default function DebitNoteTemplateEditorPage() {
         <ColumnTable
           columns={form.columns ?? []}
           accentColor={form.accentColor}
-          disabled={busy}
+          disabled={controlsDisabled}
           onChange={columns => set('columns', columns)}
         />
       );
@@ -935,26 +938,26 @@ export default function DebitNoteTemplateEditorPage() {
     return (
       <section className="debit-editor-settings debit-editor-settings--footer">
         <Field label="Nhóm dòng">
-          <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.groupingMode} onChange={event => set('groupingMode', event.target.value as DebitNoteTemplateInput['groupingMode'])} disabled={busy}>
+          <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.groupingMode} onChange={event => set('groupingMode', event.target.value as DebitNoteTemplateInput['groupingMode'])} disabled={controlsDisabled}>
             <option value="ROUTE">Theo tuyến</option>
             <option value="LINE_TYPE">Theo loại dòng</option>
             <option value="NONE">Không nhóm</option>
           </select>
         </Field>
         <Field label="Chữ ký trái">
-          <input className="input debit-editor-inline-input" value={form.signatureLeftLabel ?? ''} onChange={event => set('signatureLeftLabel', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureLeftLabel ?? ''} onChange={event => set('signatureLeftLabel', event.target.value || null)} disabled={controlsDisabled} />
         </Field>
         <Field label="Tên người ký trái">
-          <input className="input debit-editor-inline-input" value={form.signatureLeftName ?? ''} onChange={event => set('signatureLeftName', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureLeftName ?? ''} onChange={event => set('signatureLeftName', event.target.value || null)} disabled={controlsDisabled} />
         </Field>
         <Field label="Chữ ký phải">
-          <input className="input debit-editor-inline-input" value={form.signatureRightLabel ?? ''} onChange={event => set('signatureRightLabel', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureRightLabel ?? ''} onChange={event => set('signatureRightLabel', event.target.value || null)} disabled={controlsDisabled} />
         </Field>
         <Field label="Tên người ký phải">
-          <input className="input debit-editor-inline-input" value={form.signatureRightName ?? ''} onChange={event => set('signatureRightName', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.signatureRightName ?? ''} onChange={event => set('signatureRightName', event.target.value || null)} disabled={controlsDisabled} />
         </Field>
         <Field label="Điều khoản">
-          <input className="input debit-editor-inline-input" value={form.termsText ?? ''} onChange={event => set('termsText', event.target.value || null)} disabled={busy} />
+          <input className="input debit-editor-inline-input" value={form.termsText ?? ''} onChange={event => set('termsText', event.target.value || null)} disabled={controlsDisabled} />
         </Field>
       </section>
     );
@@ -971,14 +974,14 @@ export default function DebitNoteTemplateEditorPage() {
             <AssetIcon name="document" size={34} />
           </div>
           <div>
-            <p className="billing-builder__eyebrow">{isNew ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}</p>
+            <p className="billing-builder__eyebrow">{viewOnly ? 'Xem mẫu' : isNew ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}</p>
             <input
               className="debit-editor-template-name"
               value={form.name}
               placeholder="Tên mẫu"
               aria-label="Tên mẫu"
               onChange={event => set('name', event.target.value)}
-              disabled={busy}
+              disabled={controlsDisabled}
             />
             <div className="billing-builder__meta">
               <span>{visibleColumns.length} cột đang hiện</span>
@@ -988,15 +991,21 @@ export default function DebitNoteTemplateEditorPage() {
           </div>
         </div>
         <div className="debit-editor-topbar__actions">
-          {!isNew && (
+          {viewOnly ? (
+            <button type="button" className="btn btn--primary" onClick={() => navigate(`/config/debit-note-templates/${id}`)} disabled={busy}>
+              <PenLine size={16} /> Sửa mẫu
+            </button>
+          ) : !isNew && (
             <button type="button" className="btn btn--ghost" onClick={removeTemplate} disabled={busy}>
               <Trash2 size={16} /> Xoá
             </button>
           )}
-          <button type="button" className="btn btn--primary" onClick={save} disabled={busy}>
-            {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
-            Lưu mẫu
-          </button>
+          {!viewOnly && (
+            <button type="button" className="btn btn--primary" onClick={save} disabled={busy}>
+              {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+              Lưu mẫu
+            </button>
+          )}
         </div>
       </header>
 
@@ -1029,7 +1038,7 @@ export default function DebitNoteTemplateEditorPage() {
           <section className="debit-editor-preview-pane">
             <TemplatePreview
               form={form}
-              disabled={busy}
+              disabled={controlsDisabled}
               selectedTarget={selectedTarget}
               onSelect={selectTarget}
               onSet={set}
