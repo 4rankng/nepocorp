@@ -47,6 +47,17 @@ export type {
 
 export { parseThreshold } from './types';
 
+// ─── Navigation catalog (single source for SPA paths/titles + agent search) ──
+export { PAGE_CATALOG } from './navigation/pageCatalog';
+export type {
+  PageCatalogEntry,
+  StaticPageEntry,
+  DynamicPageEntry,
+  PageCatalogKey,
+  PageSection,
+  PageAgentMeta,
+} from './navigation/pageCatalog';
+
 export {
   tripLegSchema, createTripSchema, updateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,

@@ -594,7 +594,8 @@
 
 @media (max-width: 640px) {
   .agent-drawer .drawer__head {
-    padding: 18px 18px 16px;
+    padding: calc(18px + constant(safe-area-inset-top, 0px)) 18px 16px;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 16px;
   }
   .agent-drawer .drawer__head::after {
     left: 18px;

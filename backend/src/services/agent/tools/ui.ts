@@ -9,8 +9,10 @@ import { z } from 'zod';
 import {
   agentRouteKeySchema,
   AGENT_ROUTE_KEYS,
+  PAGE_CATALOG,
   Role,
   type AgentRouteKey,
+  type PageAgentMeta,
 } from '@tingting/shared';
 import { OFFICE_ROLES, type AgentToolDef, type AgentContext } from '../tool.types';
 
@@ -18,43 +20,27 @@ import { OFFICE_ROLES, type AgentToolDef, type AgentContext } from '../tool.type
 // so .includes(ctx.role) type-checks (ctx.role is the full Role union).
 const OFFICE_ROLE_SET: readonly Role[] = OFFICE_ROLES;
 
-// Vietnamese descriptions of each navigable page — powers ui.search_pages and
-// gives the LLM enough context to pick the right routeKey. Keep in sync with
-// AGENT_ROUTE_KEYS (shared) + the frontend directive bridge.
-const PAGE_DESCRIPTIONS: Record<AgentRouteKey, string> = {
-  dashboard: 'Tổng quan — bảng điều khiển chính, KPI tháng.',
-  dispatch: 'Điều vận & phân xe — danh sách chuyến cần điều động, bản đồ GPS.',
-  fleet: 'Đội xe — danh sách xe đầu kéo, rơ-moóc, lốp.',
-  trips: 'Lệnh vận chuyển — danh sách tất cả chuyến.',
-  tripNew: 'Tạo lệnh vận chuyển — form tạo chuyến mới.',
-  tripDetail: 'Chi tiết một lệnh vận chuyển.',
-  tripEdit: 'Sửa lệnh vận chuyển.',
-  finance: 'Báo cáo lãi lỗ (P&L) theo tháng.',
-  profit: 'Phân chia lợi nhuận theo quý.',
-  debt: 'Công nợ phải thu — danh sách khách nợ.',
-  debtDetail: 'Chi tiết công nợ một khách.',
-  payables: 'Công nợ phải trả — danh sách nợ nhà cung cấp.',
-  payableDetail: 'Chi tiết công nợ phải trả.',
-  penalties: 'Kỷ luật — danh sách phạt tài xế.',
-  advances: 'Quản lý tạm ứng.',
-  adminAdvanceSettlements: 'Duyệt hoàn ứng.',
-  salary: 'Lương & Chấm công.',
-  expenses: 'Chi phí phát sinh.',
-  expenseNew: 'Ghi nhận chi phí phát sinh mới.',
-  expenseEdit: 'Sửa chi phí phát sinh.',
-  customers: 'Khách hàng — danh sách.',
-  suppliers: 'Nhà cung cấp — danh sách.',
-  config: 'Cấu hình hệ thống.',
-  configCustomers: 'Cấu hình khách hàng.',
-  configRoutes: 'Cấu hình tuyến đường.',
-  configTrucks: 'Cấu hình xe đầu kéo.',
-  configTrailers: 'Cấu hình rơ-moóc.',
-  configFuel: 'Cấu hình dầu (định mức, đơn giá).',
-  configSalaryPeriods: 'Cấu hình kỳ lương.',
-  configDebitNoteTemplates: 'Mẫu giấy báo nợ — cấu hình mẫu Excel giấy báo nợ, chữ ký, thông tin công ty, cột xuất file.',
-  users: 'Người dùng — danh sách tài khoản.',
-  auditLogs: 'Nhật ký thao tác người dùng.',
-};
+// Per-key search data, derived from PAGE_CATALOG (single source of truth). The
+// LLM resolves a user query ("mau giay bao no", "luong", "cong no") by matching
+// the title + description + aliases — not just the routeKey + description it
+// used to. The agent-keys sync guard in shared/src/schemas/agent.ts guarantees
+// every AgentRouteKey has `agent` data, so `agent!` is safe here.
+const PAGE_SEARCH_ENTRIES: ReadonlyArray<{
+  routeKey: AgentRouteKey;
+  title: string;
+  description: string;
+  aliases: readonly string[];
+}> = (AGENT_ROUTE_KEYS as readonly AgentRouteKey[]).map((k) => {
+  // Annotated as PageAgentMeta so optional `aliases` reads uniformly across the
+  // catalog's narrow per-entry agent types (only some entries declare aliases).
+  const meta: PageAgentMeta = PAGE_CATALOG[k].agent!;
+  return {
+    routeKey: k,
+    title: PAGE_CATALOG[k].title,
+    description: meta.description,
+    aliases: meta.aliases ?? [],
+  };
+});
 
 function normalizeSearchText(value: string): string {
   return value
@@ -120,9 +106,12 @@ export const uiTools: AgentToolDef[] = [
       if (!OFFICE_ROLE_SET.includes(ctx.role)) return { data: [] };
       const { query } = z.object({ query: z.string().min(1) }).parse(rawArgs);
       const q = normalizeSearchText(query);
-      const matches = (AGENT_ROUTE_KEYS as readonly AgentRouteKey[])
-        .filter((k) => normalizeSearchText(k).includes(q) || normalizeSearchText(PAGE_DESCRIPTIONS[k]).includes(q))
-        .map((k) => ({ routeKey: k, description: PAGE_DESCRIPTIONS[k] }));
+      const matches = PAGE_SEARCH_ENTRIES.filter(
+        (p) =>
+          normalizeSearchText(p.title).includes(q) ||
+          normalizeSearchText(p.description).includes(q) ||
+          p.aliases.some((a) => normalizeSearchText(a).includes(q)),
+      ).map((p) => ({ routeKey: p.routeKey, description: p.description }));
       return { data: matches, label: `${matches.length} trang phù hợp` };
     },
   },

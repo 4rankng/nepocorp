@@ -1,96 +1,95 @@
 /**
- * Single source of truth for every URL the SPA navigates to. Two reasons:
+ * Frontend projection of the shared page catalog (`PAGE_CATALOG` in
+ * `@tingting/shared`). The catalog is the single source of truth for every
+ * path string, page title, and agent-search description; this module exposes
+ * them in the shape the SPA has always consumed (`routes.tripDetail(id)`,
+ * `titleForPath(pathname)`, the `legacy` redirect aliases).
  *
- *   1. The original 50+ `<Route path="/...">` declarations in `App.tsx` and
- *      ~120 `navigate('/...')` / `<Link to="/...">` call sites had no
- *      authoritative list. A rename like `/audit-logs` → `/admin/audit`
- *      required grep + manual replacement + a redirect alias for the old
- *      path. Now both the redirect aliases and the live routes live here.
+ * Why a projection instead of consuming the catalog inline everywhere:
+ *   - Static paths stay plain string constants; parametric paths stay
+ *     functions whose signature requires the param, so `routes.tripDetail()`
+ *     with no id is still a compile error.
+ *   - `titleRules` stays a hand-ordered first-match array (its order IS the
+ *     precedence logic — e.g. `/trips/:id` vs `/trips/:id/edit`, config
+ *     sub-paths before the `/config` catch-all). Only the title *strings*
+ *     come from the catalog now, killing the copy-paste drift.
  *
- *   2. Some paths need parameters (`/trips/:id`, `/trips/:id/edit`,
- *      `/debt/:id`). Hard-coding the template in JSX loses type safety —
- *      `routes.tripDetail(undefined)` is now a compile error instead of a
- *      silent `navigate('/trips/undefined')`.
- *
- * Convention:
- *   - Static paths are plain string constants.
- *   - Parameterised paths are functions returning a string; the function
- *     signature requires the param so callers can't forget it.
- *   - The `legacy` object holds the path aliases we accept-and-redirect
- *     for backwards compatibility.
- *
- * Migration is incremental — old call sites with raw string literals
- * continue to work; new code should use the constants.
+ * Not here: RBAC. `App.tsx` route guards + Casbin remain the authority; the
+ * catalog deliberately carries no `roles`. The `legacy` aliases are kept here
+ * (not in the catalog) — they're accept-and-redirect shims, conceptually
+ * separate from the live page set.
  */
+import { PAGE_CATALOG } from '@tingting/shared';
+
 export const routes = {
   /* ── Top-level admin / manager pages ────────────────────────────────── */
 
-  dashboard: '/dashboard',
-  dispatch: '/dispatch',
-  fleet: '/fleet',
-  fleetTires: (truckId: number | string) => `/fleet/${truckId}/tires`,
-  fleetTrailerTires: (trailerId: number | string) => `/fleet/trailers/${trailerId}/tires`,
-  trips: '/trips',
-  tripNew: '/trips/new',
-  tripDetail: (id: number | string) => `/trips/${id}`,
-  tripEdit: (id: number | string) => `/trips/${id}/edit`,
-  finance: '/finance',
-  profit: '/profit',
-  debt: '/debt',
-  debtDetail: (id: number | string) => `/debt/${id}`,
-  penalties: '/penalties',
-  advances: '/advances',
-  adminAdvanceSettlements: '/admin/advance-settlements',
-  salary: '/salary',
-  users: '/users',
-  auditLogs: '/audit-logs',
-  customers: '/customers',
-  suppliers: '/suppliers',
-  expenses: '/expenses',
-  expenseNew: '/expenses/new',
-  expenseEdit: (id: number | string) => `/expenses/${id}/edit`,
-  payables: '/payables',
-  payableDetail: (id: number | string) => `/payables/${id}`,
-  login: '/login',
+  dashboard: PAGE_CATALOG.dashboard.path,
+  dispatch: PAGE_CATALOG.dispatch.path,
+  fleet: PAGE_CATALOG.fleet.path,
+  fleetTires: (truckId: number | string) => PAGE_CATALOG.fleetTires.path({ truckId }),
+  fleetTrailerTires: (trailerId: number | string) => PAGE_CATALOG.fleetTrailerTires.path({ trailerId }),
+  trips: PAGE_CATALOG.trips.path,
+  tripNew: PAGE_CATALOG.tripNew.path,
+  tripDetail: (id: number | string) => PAGE_CATALOG.tripDetail.path({ id }),
+  tripEdit: (id: number | string) => PAGE_CATALOG.tripEdit.path({ id }),
+  finance: PAGE_CATALOG.finance.path,
+  profit: PAGE_CATALOG.profit.path,
+  debt: PAGE_CATALOG.debt.path,
+  debtDetail: (id: number | string) => PAGE_CATALOG.debtDetail.path({ id }),
+  penalties: PAGE_CATALOG.penalties.path,
+  advances: PAGE_CATALOG.advances.path,
+  adminAdvanceSettlements: PAGE_CATALOG.adminAdvanceSettlements.path,
+  salary: PAGE_CATALOG.salary.path,
+  users: PAGE_CATALOG.users.path,
+  auditLogs: PAGE_CATALOG.auditLogs.path,
+  customers: PAGE_CATALOG.customers.path,
+  suppliers: PAGE_CATALOG.suppliers.path,
+  expenses: PAGE_CATALOG.expenses.path,
+  expenseNew: PAGE_CATALOG.expenseNew.path,
+  expenseEdit: (id: number | string) => PAGE_CATALOG.expenseEdit.path({ id }),
+  payables: PAGE_CATALOG.payables.path,
+  payableDetail: (id: number | string) => PAGE_CATALOG.payableDetail.path({ id }),
+  login: PAGE_CATALOG.login.path,
 
   /* ── Config (catalog admin) ─────────────────────────────────────────── */
 
-  config: '/config',
-  configTrailers: '/config/trailers',
-  configTrucks: '/config/trucks',
-  configTruckOwners: (truckId: number | string) => `/config/trucks/${truckId}/owners`,
-  configRoutes: '/config/routes',
-  configCargoTypes: '/config/cargo-types',
-  configPricingTables: '/config/pricing-tables',
-  configRoadAllowances: '/config/road-allowances',
-  configPenaltyReasons: '/config/penalty-reasons',
-  configFuel: '/config/fuel',
-  configTripExpense: '/config/trip-expense',
-  configCapTable: '/config/cap-table',
-  configCustomers: '/config/customers',
-  configManagementFees: '/config/management-fees',
-  configSalaryPeriods: '/config/salary-periods',
-  configExpenseCategories: '/config/expense-categories',
-  configContainerTypes: '/config/container-types',
-  configPorts: '/config/ports',
-  configForwarderExpenseTypes: '/config/forwarder-expense-types',
-  configDebitNoteTemplates: '/config/debit-note-templates',
+  config: PAGE_CATALOG.config.path,
+  configTrailers: PAGE_CATALOG.configTrailers.path,
+  configTrucks: PAGE_CATALOG.configTrucks.path,
+  configTruckOwners: (truckId: number | string) => PAGE_CATALOG.configTruckOwners.path({ truckId }),
+  configRoutes: PAGE_CATALOG.configRoutes.path,
+  configCargoTypes: PAGE_CATALOG.configCargoTypes.path,
+  configPricingTables: PAGE_CATALOG.configPricingTables.path,
+  configRoadAllowances: PAGE_CATALOG.configRoadAllowances.path,
+  configPenaltyReasons: PAGE_CATALOG.configPenaltyReasons.path,
+  configFuel: PAGE_CATALOG.configFuel.path,
+  configTripExpense: PAGE_CATALOG.configTripExpense.path,
+  configCapTable: PAGE_CATALOG.configCapTable.path,
+  configCustomers: PAGE_CATALOG.configCustomers.path,
+  configManagementFees: PAGE_CATALOG.configManagementFees.path,
+  configSalaryPeriods: PAGE_CATALOG.configSalaryPeriods.path,
+  configExpenseCategories: PAGE_CATALOG.configExpenseCategories.path,
+  configContainerTypes: PAGE_CATALOG.configContainerTypes.path,
+  configPorts: PAGE_CATALOG.configPorts.path,
+  configForwarderExpenseTypes: PAGE_CATALOG.configForwarderExpenseTypes.path,
+  configDebitNoteTemplates: PAGE_CATALOG.configDebitNoteTemplates.path,
 
   /* ── Driver portal ──────────────────────────────────────────────────── */
 
-  myTrips: '/my-trips',
-  myTripDetail: (id: number | string) => `/my-trips/${id}`,
-  myEarnings: '/my-earnings',
-  myPenalties: '/my-penalties',
+  myTrips: PAGE_CATALOG.myTrips.path,
+  myTripDetail: (id: number | string) => PAGE_CATALOG.myTripDetail.path({ id }),
+  myEarnings: PAGE_CATALOG.myEarnings.path,
+  myPenalties: PAGE_CATALOG.myPenalties.path,
 
   /* ── Forwarder portal ──────────────────────────────────────────────── */
 
-  myForwarderTrips: '/my-forwarder-trips',
-  myForwarderTripDetail: (id: number | string) => `/my-forwarder-trips/${id}`,
-  myAdvances: '/my-advances',
-  mySettlements: '/my-settlements',
-  mySettlementNew: '/my-settlements/new',
-  mySettlementDetail: (id: number | string) => `/my-settlements/${id}`,
+  myForwarderTrips: PAGE_CATALOG.myForwarderTrips.path,
+  myForwarderTripDetail: (id: number | string) => PAGE_CATALOG.myForwarderTripDetail.path({ id }),
+  myAdvances: PAGE_CATALOG.myAdvances.path,
+  mySettlements: PAGE_CATALOG.mySettlements.path,
+  mySettlementNew: PAGE_CATALOG.mySettlementNew.path,
+  mySettlementDetail: (id: number | string) => PAGE_CATALOG.mySettlementDetail.path({ id }),
 
   /* ── Legacy paths that the router redirects from (kept for old links) */
 
@@ -117,38 +116,42 @@ type TitleRule = {
   title: string | ((pathname: string) => string);
 };
 
+// Order is load-bearing precedence (first match wins). The title strings are
+// sourced from PAGE_CATALOG so they can't drift from the agent descriptions /
+// sidebar; only the generic `/config/*` fallback ("Cấu hình") stays a literal
+// since no single catalog entry owns it.
 const titleRules: TitleRule[] = [
-  { test: p => p === routes.dashboard, title: 'Tổng quan' },
-  { test: p => p.startsWith(routes.dispatch), title: 'Điều vận & Phân xe' },
-  { test: p => p.startsWith(routes.fleet), title: 'Đội xe' },
-  { test: p => /^\/trips\/(\d+)(?:\/edit)?$/.test(p), title: p => p.endsWith('/edit') ? 'Sửa lệnh vận chuyển' : 'Chi tiết lệnh vận chuyển' },
-  { test: p => p === routes.tripNew, title: 'Tạo lệnh vận chuyển' },
-  { test: p => p.startsWith(routes.trips), title: 'Lệnh vận chuyển' },
-  { test: p => p === routes.finance, title: 'Báo cáo lãi lỗ' },
-  { test: p => p.startsWith(routes.profit), title: 'Phân chia lợi nhuận' },
-  { test: p => p.startsWith(routes.debt), title: 'Công nợ phải thu' },
-  { test: p => p.startsWith(routes.payables), title: 'Công nợ phải trả' },
-  { test: p => p.startsWith(routes.expenseNew), title: 'Ghi nhận chi phí' },
-  { test: p => /^\/expenses\/\d+\/edit$/.test(p), title: 'Sửa chi phí' },
-  { test: p => p.startsWith(routes.expenses), title: 'Chi phí phát sinh' },
-  { test: p => p.startsWith(routes.suppliers), title: 'Nhà cung cấp' },
-  { test: p => p === routes.penalties || p === routes.myPenalties, title: 'Kỷ luật' },
-  { test: p => p.startsWith(routes.customers), title: 'Khách hàng' },
-  { test: p => p.startsWith(routes.configRoutes) || p.startsWith(routes.legacy.routes), title: 'Tuyến đường' },
-  { test: p => p.startsWith(routes.configDebitNoteTemplates), title: 'Mẫu giấy báo nợ' },
-  { test: p => p === routes.config, title: 'Cấu hình hệ thống' },
+  { test: p => p === routes.dashboard, title: PAGE_CATALOG.dashboard.title },
+  { test: p => p.startsWith(routes.dispatch), title: PAGE_CATALOG.dispatch.title },
+  { test: p => p.startsWith(routes.fleet), title: PAGE_CATALOG.fleet.title },
+  { test: p => /^\/trips\/(\d+)(?:\/edit)?$/.test(p), title: p => p.endsWith('/edit') ? PAGE_CATALOG.tripEdit.title : PAGE_CATALOG.tripDetail.title },
+  { test: p => p === routes.tripNew, title: PAGE_CATALOG.tripNew.title },
+  { test: p => p.startsWith(routes.trips), title: PAGE_CATALOG.trips.title },
+  { test: p => p === routes.finance, title: PAGE_CATALOG.finance.title },
+  { test: p => p.startsWith(routes.profit), title: PAGE_CATALOG.profit.title },
+  { test: p => p.startsWith(routes.debt), title: PAGE_CATALOG.debt.title },
+  { test: p => p.startsWith(routes.payables), title: PAGE_CATALOG.payables.title },
+  { test: p => p.startsWith(routes.expenseNew), title: PAGE_CATALOG.expenseNew.title },
+  { test: p => /^\/expenses\/\d+\/edit$/.test(p), title: PAGE_CATALOG.expenseEdit.title },
+  { test: p => p.startsWith(routes.expenses), title: PAGE_CATALOG.expenses.title },
+  { test: p => p.startsWith(routes.suppliers), title: PAGE_CATALOG.suppliers.title },
+  { test: p => p === routes.penalties || p === routes.myPenalties, title: PAGE_CATALOG.penalties.title },
+  { test: p => p.startsWith(routes.customers), title: PAGE_CATALOG.customers.title },
+  { test: p => p.startsWith(routes.configRoutes) || p.startsWith(routes.legacy.routes), title: PAGE_CATALOG.configRoutes.title },
+  { test: p => p.startsWith(routes.configDebitNoteTemplates), title: PAGE_CATALOG.configDebitNoteTemplates.title },
+  { test: p => p === routes.config, title: PAGE_CATALOG.config.title },
   { test: p => p.startsWith(routes.config), title: 'Cấu hình' },
-  { test: p => p === routes.users, title: 'Người dùng' },
-  { test: p => p === routes.auditLogs, title: 'Nhật ký người dùng' },
-  { test: p => p.startsWith(routes.myTrips), title: 'Hành trình' },
-  { test: p => p.startsWith(routes.myEarnings), title: 'Thu nhập' },
-  { test: p => p.startsWith(routes.myForwarderTrips), title: 'Chuyến đi' },
-  { test: p => p.startsWith(routes.myAdvances), title: 'Tạm ứng' },
-  { test: p => /^\/my-settlements\/\d+$/.test(p), title: 'Chi tiết phiếu thanh toán' },
-  { test: p => p.startsWith(routes.mySettlements), title: 'Phiếu thanh toán' },
-  { test: p => p.startsWith(routes.advances), title: 'Quản lý tạm ứng' },
-  { test: p => p.startsWith(routes.adminAdvanceSettlements), title: 'Duyệt hoàn ứng' },
-  { test: p => p.startsWith(routes.salary), title: 'Lương & Chấm công' },
+  { test: p => p === routes.users, title: PAGE_CATALOG.users.title },
+  { test: p => p === routes.auditLogs, title: PAGE_CATALOG.auditLogs.title },
+  { test: p => p.startsWith(routes.myTrips), title: PAGE_CATALOG.myTrips.title },
+  { test: p => p.startsWith(routes.myEarnings), title: PAGE_CATALOG.myEarnings.title },
+  { test: p => p.startsWith(routes.myForwarderTrips), title: PAGE_CATALOG.myForwarderTrips.title },
+  { test: p => p.startsWith(routes.myAdvances), title: PAGE_CATALOG.myAdvances.title },
+  { test: p => /^\/my-settlements\/\d+$/.test(p), title: PAGE_CATALOG.mySettlementDetail.title },
+  { test: p => p.startsWith(routes.mySettlements), title: PAGE_CATALOG.mySettlements.title },
+  { test: p => p.startsWith(routes.advances), title: PAGE_CATALOG.advances.title },
+  { test: p => p.startsWith(routes.adminAdvanceSettlements), title: PAGE_CATALOG.adminAdvanceSettlements.title },
+  { test: p => p.startsWith(routes.salary), title: PAGE_CATALOG.salary.title },
 ];
 
 export function titleForPath(pathname: string): string {

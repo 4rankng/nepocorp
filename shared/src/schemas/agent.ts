@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PAGE_CATALOG } from '../navigation/pageCatalog';
 
 /**
  * Agent (command-and-insight assistant) wire contract.
@@ -70,6 +71,22 @@ export const AGENT_ROUTE_KEYS = [
 export type AgentRouteKey = (typeof AGENT_ROUTE_KEYS)[number];
 
 export const agentRouteKeySchema = z.enum(AGENT_ROUTE_KEYS);
+
+// ─── Catalog ↔ route-key sync guard ─────────────────────────────────────────
+// `AGENT_ROUTE_KEYS` must EXACTLY equal the set of PAGE_CATALOG entries that
+// declare an `agent` sub-object. It is kept a hand-written `as const` tuple
+// because the `as const` is load-bearing for `z.enum` above — deriving it via
+// Object.keys().filter() would widen to `string[]` and break the enum. This
+// assertion fails tsc on drift in EITHER direction: an agent-bearing catalog
+// entry missing from the tuple, or a tuple key whose catalog entry has no
+// `agent` data.
+type _CatalogAgentKeys = {
+  [K in keyof typeof PAGE_CATALOG]: (typeof PAGE_CATALOG)[K] extends { agent: unknown } ? K : never;
+}[keyof typeof PAGE_CATALOG];
+type _TupleExtra = Exclude<_CatalogAgentKeys, AgentRouteKey>; // catalog agent key not listed in the tuple
+type _TupleMissing = Exclude<AgentRouteKey, _CatalogAgentKeys>; // tuple key with no catalog `agent` data
+const _agentKeysInSync: (_TupleExtra extends never ? true : _TupleExtra) &
+  (_TupleMissing extends never ? true : _TupleMissing) = true;
 
 // ─── Openable component ids (modal/drawer/form targets) ─────────────────────
 // Advisory closed set of componentIds pages MAY register via `useAgentOpenable`.

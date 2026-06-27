@@ -12,10 +12,9 @@
 // `?agent=open:<componentId>` URL seed does the same for a cold mount / F5.
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { routes } from '../lib/routes';
 import { highlightElement } from '../lib/agentHighlight';
 import { useToast } from '../components/shared/Toast';
-import type { AgentDirective, AgentRouteKey } from '@tingting/shared';
+import { PAGE_CATALOG, type AgentDirective, type AgentRouteKey } from '@tingting/shared';
 
 type OpenHandler = (d: Extract<AgentDirective, { kind: 'open' | 'prefill' }>) => void;
 
@@ -33,14 +32,15 @@ interface AgentDirectiveContextValue {
 
 const AgentDirectiveContext = createContext<AgentDirectiveContextValue | null>(null);
 
-/** Resolve a routeKey + optional params to an SPA path via the routes registry. */
+/** Resolve a routeKey + optional params to an SPA path via the page catalog.
+ *  Typed (no more `as Record<string, unknown>` cast): the catalog knows which
+ *  entries are parametric. Detail/edit routes take a single id; accept any of
+ *  the common param keys the LLM may emit (id, tripId, payableId, debtId,
+ *  expenseId, …) and fall back to the first numeric value present — otherwise
+ *  the builder gets 0 and the user lands on an empty /path/0 page. */
 function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | number>): string {
-  const entry = (routes as Record<string, unknown>)[routeKey];
-  if (typeof entry === 'function') {
-    // Detail/edit routes take a single id. Accept any of the common param
-    // keys the LLM may emit (id, tripId, payableId, debtId, expenseId, …)
-    // and fall back to the first numeric value present — otherwise the
-    // builder gets 0 and the user lands on an empty /path/0 page.
+  const entry = PAGE_CATALOG[routeKey];
+  if (typeof entry.path === 'function') {
     const id =
       params?.id ??
       params?.tripId ??
@@ -49,9 +49,9 @@ function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | n
       params?.expenseId ??
       (params ? Object.values(params).find((v) => typeof v === 'number' || /^\d+$/.test(String(v))) : undefined) ??
       0;
-    return (entry as (id: number | string) => string)(id);
+    return entry.path({ id });
   }
-  return typeof entry === 'string' ? entry : routes.dashboard;
+  return entry.path;
 }
 
 export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
