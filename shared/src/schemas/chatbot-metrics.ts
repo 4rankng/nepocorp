@@ -98,10 +98,10 @@ export interface ChatbotRecentTurn {
  * paths are relative to that mount point.
  */
 export const CHATBOT_METRICS_PATHS = {
-  base: '/api/admin/chatbot',
-  metrics: '/api/admin/chatbot/metrics',
-  latency: '/api/admin/chatbot/metrics/latency',
-  tools: '/api/admin/chatbot/metrics/tools',
-  timeseries: '/api/admin/chatbot/metrics/timeseries',
-  recent: '/api/admin/chatbot/metrics/recent',
+  base: '/admin/chatbot',
+  metrics: '/admin/chatbot/metrics',
+  latency: '/admin/chatbot/metrics/latency',
+  tools: '/admin/chatbot/metrics/tools',
+  timeseries: '/admin/chatbot/metrics/timeseries',
+  recent: '/admin/chatbot/metrics/recent',
 } as const;
