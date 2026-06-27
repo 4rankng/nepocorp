@@ -14,7 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAgentChat } from '../../hooks/useAgentChat';
 import { useAgentDirectives } from '../../context/AgentDirectiveContext';
 import { useTourController } from '../../context/TourControllerContext';
-import { Role, TOUR_CATALOG, toursForRole } from '@tingting/shared';
+import { Role, TOUR_CATALOG } from '@tingting/shared';
 import { InsightCard } from './InsightCard';
 import { TutorialCard } from './TutorialCard';
 import type { AgentDirective, AgentMessage, TourId } from '@tingting/shared';
@@ -44,9 +44,6 @@ export function AgentAssistant() {
   );
 
   const chat = useAgentChat({ onDirective: handleDirective, onStartTour: startTour });
-
-  // On-demand tour launcher: role-filtered curated tours the user can self-start.
-  const visibleTours = user ? toursForRole(user.role) : [];
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
     bottomRef.current?.scrollIntoView({ block: 'end', behavior });
@@ -124,26 +121,6 @@ export function AgentAssistant() {
           </span>
         }
       >
-        {visibleTours.length > 0 && (
-          <div className="agent-tours">
-            <div className="agent-tours__label">Hướng dẫn nhanh</div>
-            <div className="agent-tours__chips">
-              {visibleTours.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className="agent-tours__chip"
-                  onClick={() => {
-                    setOpen(false);
-                    startTour(t.id);
-                  }}
-                >
-                  {t.title}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="agent-thread" ref={threadRef} onScroll={handleThreadScroll}>
           {chat.messages.length === 0 && (
             <div className="agent-empty">
@@ -214,7 +191,7 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
           <AssetIcon name="assistant" size={24} />
         </span>
         <div className="agent-bubble agent-bubble--assistant agent-markdown">
-          <ReactMarkdown skipHtml>{`Đã mở hướng dẫn **${title}** cho bạn.`}</ReactMarkdown>
+          <MarkdownContent content={`Đã mở hướng dẫn **${title}** cho bạn.`} />
         </div>
       </div>
     );
@@ -225,9 +202,7 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
         <AssetIcon name="assistant" size={24} />
       </span>
       <div className="agent-bubble agent-bubble--assistant agent-markdown">
-        <ReactMarkdown skipHtml>
-          {response?.type === 'text' ? response.content : message.content}
-        </ReactMarkdown>
+        <MarkdownContent content={response?.type === 'text' ? response.content : message.content} />
         {response?.type === 'text' && response.actions && response.actions.length > 0 && (
           <div className="agent-card__actions agent-text-actions">
             {response.actions.map((action, index) => (
@@ -245,4 +220,110 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
       </div>
     </div>
   );
+}
+
+type MarkdownSegment =
+  | { kind: 'markdown'; content: string }
+  | { kind: 'table'; headers: string[]; rows: string[][] };
+
+function MarkdownContent({ content }: { content: string | undefined }) {
+  const segments = parseMarkdownSegments(content ?? '');
+  if (segments.length === 0) return null;
+
+  return (
+    <>
+      {segments.map((segment, index) => {
+        if (segment.kind === 'table') {
+          return <MarkdownTable key={`table-${index}`} headers={segment.headers} rows={segment.rows} />;
+        }
+        return <ReactMarkdown key={`markdown-${index}`} skipHtml>{segment.content}</ReactMarkdown>;
+      })}
+    </>
+  );
+}
+
+function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="agent-table-wrap agent-markdown-table">
+      <table className={`agent-table agent-table--cols-${headers.length}`}>
+        <thead>
+          <tr>
+            {headers.map((header) => (
+              <th key={header}>{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={row.join('|') || rowIndex}>
+              {headers.map((header, cellIndex) => (
+                <td key={`${header}-${cellIndex}`} data-label={header}>
+                  {row[cellIndex] ?? ''}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function parseMarkdownSegments(content: string): MarkdownSegment[] {
+  const normalized = normalizeInlinePipeTables(content);
+  const lines = normalized.split('\n');
+  const segments: MarkdownSegment[] = [];
+  const pendingMarkdown: string[] = [];
+
+  const flushMarkdown = () => {
+    const text = pendingMarkdown.join('\n').trim();
+    pendingMarkdown.length = 0;
+    if (text) segments.push({ kind: 'markdown', content: text });
+  };
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const header = parseTableRow(lines[i]);
+    const separator = parseTableRow(lines[i + 1] ?? '');
+    if (header && separator && isMarkdownTableSeparator(separator)) {
+      const rows: string[][] = [];
+      i += 2;
+      while (i < lines.length) {
+        const row = parseTableRow(lines[i]);
+        if (!row || isMarkdownTableSeparator(row)) break;
+        if (row.length === header.length) rows.push(row);
+        i += 1;
+      }
+      i -= 1;
+      if (rows.length > 0) {
+        flushMarkdown();
+        segments.push({ kind: 'table', headers: header, rows });
+        continue;
+      }
+    }
+    pendingMarkdown.push(lines[i]);
+  }
+
+  flushMarkdown();
+  return segments;
+}
+
+function normalizeInlinePipeTables(content: string): string {
+  return content
+    .replace(/:\s*\|/g, ':\n\n|')
+    .replace(/\|\s+\|/g, '|\n|');
+}
+
+function parseTableRow(line: string): string[] | null {
+  const trimmed = line.trim();
+  if (!trimmed.includes('|')) return null;
+  const cells = trimmed
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim());
+  return cells.length >= 2 && cells.every(Boolean) ? cells : null;
+}
+
+function isMarkdownTableSeparator(cells: string[]): boolean {
+  return cells.length >= 2 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
 }

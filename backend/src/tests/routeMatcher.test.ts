@@ -101,3 +101,11 @@ test('synthesizeTextActionsFromProse creates a suggested action for a different 
   assert.strictEqual(actions[0].directive.routeKey, 'fleetTires');
   assert.deepStrictEqual(actions[0].directive.params, { truckId: '1' });
 });
+
+test('synthesizeTextActionsFromProse does not guess navigation from page names alone', () => {
+  const actions = synthesizeTextActionsFromProse(
+    'Nếu cần thêm lốp, bạn có thể nhấn nút "+" trên trang Quản lý lốp.',
+    undefined,
+  );
+  assert.deepStrictEqual(actions, []);
+});

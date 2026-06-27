@@ -109,7 +109,7 @@ const RESPONSE_SHAPE_HINT = `Trả lời cuối cùng PHẢI là JSON theo đún
 - {"type":"start_tour","tourId":"create-trip|lock-trip-and-payment|fuel-config"}  (mở hướng dẫn từng bước CÓ SẴN — gọi tours.search để tìm tourId khi người dùng muốn hướng dẫn theo luồng công việc: tạo chuyến, chốt chuyến/thu tiền, định mức dầu)
 - {"type":"directive","directive":{"kind":"navigate|focus|open|prefill|toast|scrollTo",...}}  (chỉ điều hướng)
 widget có thể là: kpi_grid {items:[{label,value(number),format:"vnd|percent|number|days",delta?}]}, bar_chart {data:[{name,value}],format?}, line_chart {series:[{name,points:[{x,y}]}]}, table {columns,rows}, callout {variant:"info|warning|danger",text}, anomaly_list {items:[{label,detail,severity:"low|med|high"}]}.
-LƯU Ý:(1) value LUÔN là số nguyên VND đầy đủ (VD 120000000, KHÔNG phải 120 hay "120 triệu"); (2) format CHỈ một trong vnd|percent|number|days — KHÔNG tự đặt đơn vị như vnd_million; (3) mỗi action PHẢI là {"label":...,"directive":{"kind":...}} — nếu không có directive hợp lệ thì bỏ hẳn actions.`;
+LƯU Ý:(1) value LUÔN là số nguyên VND đầy đủ (VD 120000000, KHÔNG phải 120 hay "120 triệu"); (2) format CHỈ một trong vnd|percent|number|days — KHÔNG tự đặt đơn vị như vnd_million; (3) mỗi action PHẢI là {"label":...,"directive":{"kind":...}} — nếu không có directive hợp lệ thì bỏ hẳn actions; (4) khi câu trả lời text/tutorial/insight_card nhắc người dùng mở trang hoặc bấm nút tiếp theo, PHẢI thêm actions bằng directive thật, KHÔNG chỉ viết tên trang/path trong content; (5) nếu cần bảng, ưu tiên insight_card widget type="table"; nếu bắt buộc trả text thì dùng Markdown table chuẩn, có dòng trống trước bảng.`;
 
 function buildSystemPrompt(ctx: AgentContext): string {
   return [
@@ -130,8 +130,10 @@ function buildSystemPrompt(ctx: AgentContext): string {
     '- Với yêu cầu mở trang/tìm/xem: LUÔN gọi ui.navigate (hoặc trả {"type":"directive",...}). KHÔNG mô tả đường dẫn bằng text.',
     '- ĐẶC QUYỀN (tạo/sửa/xóa) mà bot KHÔNG được phép (v1 chỉ đọc): KHÔNG từ chối bằng text đường dẫn. LUÔN gọi ui.navigate để ĐƯA người dùng đến đúng trang + nút cần bấm — kèm highlight.targetId trỏ vào nút/phần tử đó (VD trên trang lốp dùng "ttp-add-trigger"). Người dùng tự lưu; bot chỉ dẫn chỗ.',
     '- ui.navigate nhận thêm highlight:{targetId,durationMs} để cuộn + tô sáng nút/phần tử cụ thể trên trang đích — dùng khi người dùng cần biết chính xác chỗ nào để bấm/nhập.',
+    '- Nếu không cần điều hướng ngay nhưng câu trả lời có bước tiếp theo là mở trang/bấm nút, trả text/insight_card/tutorial kèm actions[{label,directive}] với routeKey/params thật. KHÔNG chỉ viết "vào trang Quản lý lốp" hoặc một đường dẫn trong content.',
     '- open/prefill: CHỈ dùng với componentId đã đăng ký. Hiện có "debt.record-payment" (trang công nợ /debt/:id — mở form ghi nhận thanh toán; có thể kèm prefill.amount = số VND nếu người dùng nêu số tiền). Các component khác CHƯA đăng ký → dùng navigate/focus để dẫn người dùng tới nút.',
     'VÍ DỤ — người dùng: "thêm lốp xe cho đầu kéo 1". Bot không được thêm (chỉ đọc) → gọi ui.navigate({routeKey:"fleetTires", params:{truckId:1}, highlight:{targetId:"ttp-add-trigger", durationMs:4000}}) rồi trả {"type":"directive","directive":{...}}. KHÔNG viết đường dẫn /fleet/1/tires trong text.',
+    'VÍ DỤ — nếu trả lời factual "xe chưa có lốp, có thể thêm ở trang lốp" thì trả {"type":"text","content":"Xe hiện chưa có lốp nào được gắn.","actions":[{"label":"Mở trang lốp","directive":{"kind":"navigate","routeKey":"fleetTires","params":{"truckId":1},"highlight":{"targetId":"ttp-add-trigger","durationMs":4000}}}]}',
     'VÍ DỤ — người dùng: "mở trang tổng quan" → gọi ui.navigate({routeKey:"dashboard"}).',
     '- Với câu hỏi phụ thuộc trang hiện tại (giải thích trang, lỗi): trả text ngắn.',
     '- Trả lời bằng tiếng Việt.',
@@ -746,7 +748,7 @@ async function produceFinalAnswer(
   // analysis of the tool data the loop already gathered — never an empty "Xin
   // lỗi". A client disconnect (abort) must throw so runAgent skips persistTurn.
   const CARD_NUDGE =
-    'Dựa trên dữ liệu công cụ đã có, trả lời cuối cùng theo ĐÚNG schema JSON (một trong 5 dạng), chỉ trả JSON, không kèm giải thích.';
+    'Dựa trên dữ liệu công cụ đã có, trả lời cuối cùng theo ĐÚNG schema JSON (một trong 5 dạng), chỉ trả JSON, không kèm giải thích. Nếu có bước tiếp theo là mở trang/bấm nút, phải đặt trong actions[{label,directive}] với routeKey/params thật; không chỉ viết tên trang hoặc path trong content. Nếu cần bảng, ưu tiên insight_card widget type="table" hoặc Markdown table chuẩn trong text.';
 
   // 1) Best-effort structured insight_card (validated + sanitized).
   try {
