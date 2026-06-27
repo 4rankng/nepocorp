@@ -36,6 +36,13 @@ export interface ChatbotMetricSummary {
   timeoutRate: number;
   fallbackRate: number;
   abortRate: number;
+  /** Fraction of turns that emitted a navigate/focus directive (model OR the
+   *  A3 guardrail). High = the bot reliably takes users to the right page. */
+  navigateRate: number;
+  /** Fraction of turns where the A3 guardrail synthesized the navigate because
+   *  the model wrote a destination path in prose instead of calling ui.navigate.
+   *  Low = the model complies with the "don't write paths" rule on its own. */
+  guardrailRate: number;
   avgIterations: number | null;
   avgToolCallsPerTurn: number | null;
   tokensIn: number;

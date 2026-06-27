@@ -227,7 +227,7 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
           </div>
         </div>
         <div className="ttp-actions">
-          <a className="ttp-primary-action" href="#ttp-add-title">
+          <a id="ttp-add-trigger" className="ttp-primary-action" href="#ttp-add-title">
             <Plus size={15} />
             Thêm lốp
           </a>

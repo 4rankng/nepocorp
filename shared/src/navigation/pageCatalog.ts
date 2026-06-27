@@ -84,12 +84,20 @@ export const PAGE_CATALOG = {
     path: (p: Record<string, string | number>) => `/fleet/${p.truckId}/tires`,
     pathPattern: '/fleet/:truckId/tires',
     requiresParams: ['truckId'],
+    agent: {
+      description: 'Lốp xe đầu kéo — serial, vị trí lắp, tuổi lốp, nhà cung cấp, thanh lý lốp (theo đầu kéo).',
+      aliases: ['lốp', 'lop', 'lốp xe', 'vỏ xe', 'vo xe'],
+    },
   },
   fleetTrailerTires: {
     title: 'Lốp rơ-moóc',
     path: (p: Record<string, string | number>) => `/fleet/trailers/${p.trailerId}/tires`,
     pathPattern: '/fleet/trailers/:trailerId/tires',
     requiresParams: ['trailerId'],
+    agent: {
+      description: 'Lốp rơ-moóc — serial, vị trí lắp, tuổi lốp, thanh lý (theo rơ-moóc).',
+      aliases: ['lốp rơ moóc', 'vỏ rơ moóc', 'lốp moóc'],
+    },
   },
   trips: {
     title: 'Lệnh vận chuyển',

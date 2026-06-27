@@ -26,7 +26,7 @@ import {
  *  the common param keys the LLM may emit (id, tripId, payableId, debtId,
  *  expenseId, …) and fall back to the first numeric value present — otherwise
  *  the builder gets 0 and the user lands on an empty /path/0 page. */
-function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | number>): string {
+export function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | number>): string {
   const entry = PAGE_CATALOG[routeKey];
   if (typeof entry.path === 'function') {
     const id =
@@ -37,7 +37,12 @@ function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | n
       params?.expenseId ??
       (params ? Object.values(params).find((v) => typeof v === 'number' || /^\d+$/.test(String(v))) : undefined) ??
       0;
-    return entry.path({ id });
+    // Pass the resolved id under the builder's declared key. Most routes read
+    // `p.id`, but tire pages read `p.truckId` / `p.trailerId` — hardcoding
+    // `{ id }` would land on /fleet/undefined/tires. requiresParams is declared
+    // per parametric catalog entry and is the authoritative key name.
+    const key = entry.requiresParams[0] ?? 'id';
+    return entry.path({ [key]: id });
   }
   return entry.path;
 }

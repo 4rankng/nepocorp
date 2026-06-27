@@ -85,7 +85,7 @@ describe('agent route-key set parity (catalog ↔ AGENT_ROUTE_KEYS)', () => {
     }
   });
 
-  it('agent set size is unchanged (33 keys)', () => {
-    expect(AGENT_ROUTE_KEYS).toHaveLength(33);
+  it('agent set size is unchanged (35 keys)', () => {
+    expect(AGENT_ROUTE_KEYS).toHaveLength(35);
   });
 });

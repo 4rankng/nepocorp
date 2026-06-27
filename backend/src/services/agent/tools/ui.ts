@@ -15,6 +15,7 @@ import {
   type PageAgentMeta,
 } from '@tingting/shared';
 import { OFFICE_ROLES, type AgentToolDef, type AgentContext } from '../tool.types';
+import { NAV_HIGHLIGHT_DEFAULTS } from '../routeMatcher';
 
 // OFFICE_ROLES is a readonly tuple of specific enum members; widen to Role[]
 // so .includes(ctx.role) type-checks (ctx.role is the full Role union).
@@ -73,12 +74,35 @@ function buildDirectiveTool<A extends z.ZodTypeAny>(
   };
 }
 
+// Optional element highlight after navigation: scroll + ring-pulse a specific
+// button/section so the user sees exactly where to act. Mirrors the navigate
+// directive's `highlight` shape (validated by the shared schema at emit time).
+const highlightParamSchema = z.object({
+  targetId: z.string().min(1),
+  durationMs: z.number().int().min(300).max(5000).optional(),
+});
+
 export const uiTools: AgentToolDef[] = [
   buildDirectiveTool(
     'ui.navigate',
-    'Mở một trang trong ứng dụng (điều hướng SPA). Trả routeKey từ danh sách trang đã biết; dùng ui.search_pages nếu chưa chắc routeKey.',
-    z.object({ routeKey: agentRouteKeySchema, params: z.record(z.string(), z.union([z.string(), z.number()])).optional() }),
-    (a) => ({ kind: 'navigate', routeKey: a.routeKey, params: a.params }),
+    'Mở một trang trong ứng dụng (điều hướng SPA). Trả routeKey từ danh sách trang đã biết; dùng ui.search_pages nếu chưa chắc routeKey. Có thể kèm highlight:{targetId,durationMs} để cuộn + tô sáng nút/phần tử cụ thể trên trang đích (VD trang lốp: targetId "ttp-add-trigger"). Dùng highlight khi người dùng cần biết chính xác chỗ để bấm/nhập — đặc biệt khi bot không thể tự thực hiện hành động (v1 chỉ đọc) mà chỉ dẫn người dùng tới nút đó.',
+    z.object({
+      routeKey: agentRouteKeySchema,
+      params: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+      highlight: highlightParamSchema.optional(),
+    }),
+    (a) => ({
+      kind: 'navigate',
+      routeKey: a.routeKey,
+      params: a.params,
+      // Inject the default target when the model navigates to a known
+      // spotlightable page but didn't name one — the user still gets a pinpoint.
+      ...(a.highlight
+        ? { highlight: a.highlight }
+        : NAV_HIGHLIGHT_DEFAULTS[a.routeKey]
+          ? { highlight: { targetId: NAV_HIGHLIGHT_DEFAULTS[a.routeKey] } }
+          : {}),
+    }),
     (a) => `Mở trang ${a.routeKey}`,
   ),
   buildDirectiveTool(

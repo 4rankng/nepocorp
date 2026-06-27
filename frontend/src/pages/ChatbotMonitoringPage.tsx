@@ -146,6 +146,16 @@ function SummaryKpis({
       value: fmtRate(summary.abortRate),
       hint: 'Số lượt người dùng đóng kết nối trước khi bot lưu xong — không phải lượt nào cũng được ghi nhận.',
     },
+    {
+      label: 'Tỷ lệ điều hướng',
+      value: fmtRate(summary.navigateRate),
+      hint: 'Tỷ lệ lượt bot đưa người dùng đến trang/nút cần thiết (gọi ui.navigate). Cao = đáng tin cậy.',
+    },
+    {
+      label: 'Tỷ lệ guardrail',
+      value: fmtRate(summary.guardrailRate),
+      hint: 'Tỷ lệ lượt guardrail phải tổng hợp điều hướng vì bot viết đường dẫn bằng text thay vì gọi ui.navigate. Thấp = bot tự tuân thủ.',
+    },
   ];
 
   return (

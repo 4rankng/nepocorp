@@ -84,6 +84,11 @@ const configSchema = z.object({
   // = unhealthy. Tunable via env so ops can adjust without a redeploy.
   agentSlaP95GreenMs: z.coerce.number().int().positive().default(5000),
   agentSlaP95AmberMs: z.coerce.number().int().positive().default(12000),
+  // A3 guardrail: when the model writes a destination path in prose instead of
+  // calling ui.navigate, convert the turn into a real navigate directive so the
+  // user is still taken to the page. Kill-switch — disable via env without a
+  // redeploy if the matcher ever false-positives in production.
+  agentNavigateGuardrail: z.boolean().default(true),
 });
 
 const raw = {
@@ -116,6 +121,7 @@ const raw = {
   agentMaxIterations: process.env.AGENT_MAX_ITERATIONS,
   agentSlaP95GreenMs: process.env.AGENT_SLA_P95_GREEN_MS,
   agentSlaP95AmberMs: process.env.AGENT_SLA_P95_AMBER_MS,
+  agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -150,6 +156,7 @@ const withDefaults = {
   agentMaxIterations: raw.agentMaxIterations || 6,
   agentSlaP95GreenMs: raw.agentSlaP95GreenMs || 5000,
   agentSlaP95AmberMs: raw.agentSlaP95AmberMs || 12000,
+  agentNavigateGuardrail: raw.agentNavigateGuardrail,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -197,4 +204,5 @@ export const config = result.success ? result.data : configSchema.parse({
   agentMaxIterations: 6,
   agentSlaP95GreenMs: 5000,
   agentSlaP95AmberMs: 12000,
+  agentNavigateGuardrail: true,
 });

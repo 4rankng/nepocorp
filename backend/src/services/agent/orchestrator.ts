@@ -37,6 +37,12 @@ import {
 } from '../llm/minimax.client';
 import { todayIsoVn } from './tools/period';
 import { getToolsForRole, findTool } from './tool.registry';
+import {
+  matchRoute,
+  sameRoute,
+  hasOnlyNumericParams,
+  NAV_HIGHLIGHT_DEFAULTS,
+} from './routeMatcher';
 import type { AgentContext, AgentToolDef } from './tool.types';
 import { ToolError } from './tool.types';
 import { withSpan, withRootSpan, type SpanAttrs } from './telemetry.js';
@@ -60,6 +66,13 @@ export interface MetricsAccumulator {
   fallbackUsed: boolean;
   aborted: boolean;
   errorKind: string | undefined;
+  /** True iff a navigate/focus directive was emitted this turn (mid-loop tool,
+   *  terminal answer, or guardrail-synthesized). Powers the dashboard's
+   *  navigate-compliance KPI (A4) and gates the A3 guardrail. */
+  navigateDirectiveEmitted: boolean;
+  /** True iff the A3 guardrail converted a prose-with-path answer into a
+   *  navigate directive (the model failed to call ui.navigate on its own). */
+  guardrailFired: boolean;
 }
 
 export interface LatencyBreakdown {
@@ -100,7 +113,11 @@ function buildSystemPrompt(ctx: AgentContext): string {
     '- LUÔN dùng công cụ để lấy số liệu; KHÔNG bịa số trong insight_card — chỉ dùng số công cụ trả về.',
     '- Với câu hỏi phân tích (lợi nhuận/công nợ/chi phí/dầu): dùng analyzer/report tool rồi trả insight_card có widgets phù hợp + tóm tắt nguyên nhân. Khi nói "tháng này", bỏ qua month/year (server tự lấy tháng hiện tại).',
     '- Với yêu cầu mở trang/tìm/xem: LUÔN gọi ui.navigate (hoặc trả {"type":"directive",...}). KHÔNG mô tả đường dẫn bằng text.',
+    '- ĐẶC QUYỀN (tạo/sửa/xóa) mà bot KHÔNG được phép (v1 chỉ đọc): KHÔNG từ chối bằng text đường dẫn. LUÔN gọi ui.navigate để ĐƯA người dùng đến đúng trang + nút cần bấm — kèm highlight.targetId trỏ vào nút/phần tử đó (VD trên trang lốp dùng "ttp-add-trigger"). Người dùng tự lưu; bot chỉ dẫn chỗ.',
+    '- ui.navigate nhận thêm highlight:{targetId,durationMs} để cuộn + tô sáng nút/phần tử cụ thể trên trang đích — dùng khi người dùng cần biết chính xác chỗ nào để bấm/nhập.',
     '- KHÔNG dùng open/prefill — chưa có component nào đăng ký; chỉ dùng navigate/focus.',
+    'VÍ DỤ — người dùng: "thêm lốp xe cho đầu kéo 1". Bot không được thêm (chỉ đọc) → gọi ui.navigate({routeKey:"fleetTires", params:{truckId:1}, highlight:{targetId:"ttp-add-trigger", durationMs:4000}}) rồi trả {"type":"directive","directive":{...}}. KHÔNG viết đường dẫn /fleet/1/tires trong text.',
+    'VÍ DỤ — người dùng: "mở trang tổng quan" → gọi ui.navigate({routeKey:"dashboard"}).',
     '- Với câu hỏi phụ thuộc trang hiện tại (giải thích trang, lỗi): trả text ngắn.',
     '- Trả lời bằng tiếng Việt.',
     ctx.currentRouteKey ? `Người dùng đang ở trang: ${ctx.currentRouteKey}.` : '',
@@ -134,6 +151,37 @@ function directiveAckText(
     type: 'text',
     content: `Không mở được trang ${where}${ack.reason ? ` (${ack.reason})` : ''}. Bạn có thể mở thủ công.`,
   };
+}
+
+/** A3 guardrail helper: scan a prose answer for a path-like token that resolves
+ *  to an agent-navigable route DIFFERENT from the user's current page, and
+ *  return a navigate directive for it (with the page's default highlight target
+ *  when one is configured). Returns null when no usable path is found.
+ *  Deterministic + unit-tested; Vietnamese title/alias matching is intentionally
+ *  out of scope (match only on /path tokens for v1 determinism). */
+export function synthesizeNavigateFromProse(
+  text: string,
+  currentRouteKey: string | undefined,
+): Extract<AgentDirective, { kind: 'navigate' }> | null {
+  // /segment[/segment]… tokens, at least one segment after the leading slash.
+  const tokens = text.match(/\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9-]+)*/gi) ?? [];
+  const current = currentRouteKey ? matchRoute(currentRouteKey) : null;
+  for (const tok of tokens) {
+    const m = matchRoute(tok);
+    if (!m) continue;
+    // Parametric routes need a numeric id; static routes (no params) pass.
+    if (!hasOnlyNumericParams(m)) continue;
+    // Skip a redundant navigate to the page the user is already on.
+    if (sameRoute(m, current)) continue;
+    const defaultTarget = NAV_HIGHLIGHT_DEFAULTS[m.routeKey];
+    return {
+      kind: 'navigate',
+      routeKey: m.routeKey,
+      params: m.params,
+      ...(defaultTarget ? { highlight: { targetId: defaultTarget } } : {}),
+    };
+  }
+  return null;
 }
 
 export interface RunAgentResult {
@@ -176,6 +224,8 @@ export async function runAgent(opts: {
     fallbackUsed: false,
     aborted: false,
     errorKind: undefined,
+    navigateDirectiveEmitted: false,
+    guardrailFired: false,
   };
 
   // Hoisted out of the root-span body so the metrics row can be written AFTER
@@ -328,6 +378,7 @@ export async function runAgent(opts: {
                 !opts.signal?.aborted
               ) {
                 const actionId = randomUUID();
+                metrics.navigateDirectiveEmitted = true;
                 emit({ event: 'directive', directive: d, actionId, requiresAck: true });
                 // ACK WAIT — its own span so it stays OUT of latencyToolsMs.
                 const ackSpan = await withSpan(
@@ -372,6 +423,40 @@ export async function runAgent(opts: {
       let { response, usage: finalUsage, fallbackUsed } = finalSpan.result;
       metrics.fallbackUsed = fallbackUsed;
       addUsage(finalUsage);
+
+      // A3 — prose-with-path guardrail. MiniMax-M3 sometimes ignores the
+      // "call ui.navigate, don't write paths in text" rule and emits a plain
+      // prose answer naming a destination (e.g. "...tại /fleet/1/tires"). When
+      // that happens and no directive was emitted this turn, extract the path,
+      // resolve it via PAGE_CATALOG, and convert the answer into a real
+      // navigate directive. The terminal-ack block below then emits it, awaits
+      // the ack, and rewrites the bubble via directiveAckText — so we NEVER
+      // claim "đã mở" for a page the client never applied. Gated by a config
+      // kill-switch; the current-route guard skips a redundant navigate to the
+      // page the user is already on (routeKey AND params compared).
+      if (
+        config.agentNavigateGuardrail &&
+        response.type === 'text' &&
+        !metrics.navigateDirectiveEmitted &&
+        !opts.signal?.aborted
+      ) {
+        const synthesized = synthesizeNavigateFromProse(response.content, ctx.currentRouteKey);
+        if (synthesized) {
+          metrics.guardrailFired = true;
+          metrics.navigateDirectiveEmitted = true;
+          response = { type: 'directive', directive: synthesized };
+        }
+      }
+
+      // Telemetry: a navigate/focus directive in the terminal answer counts as
+      // "navigate emitted" whether or not the ack path ran — the frontend still
+      // applies the directive from the done event.
+      if (
+        response.type === 'directive' &&
+        (ACKED_DIRECTIVE_KINDS as readonly string[]).includes(response.directive.kind)
+      ) {
+        metrics.navigateDirectiveEmitted = true;
+      }
 
       // Terminal directive ack: if the model's FINAL answer is itself a
       // navigate/focus directive, confirm it actually landed before claiming
@@ -456,6 +541,8 @@ export async function runAgent(opts: {
         toolCallCount: metrics.toolCallCount,
         fallbackUsed: metrics.fallbackUsed,
         aborted: metrics.aborted,
+        navigateDirectiveEmitted: metrics.navigateDirectiveEmitted,
+        guardrailFired: metrics.guardrailFired,
         errorKind: metrics.errorKind,
         tokensIn: totalUsage.promptTokens,
         tokensOut: totalUsage.completionTokens,

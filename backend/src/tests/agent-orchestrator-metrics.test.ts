@@ -67,6 +67,8 @@ describe('computeLatencies — dual-latency invariant', () => {
       toolCallCount: 0,
       fallbackUsed: false,
       aborted: false,
+      navigateDirectiveEmitted: false,
+      guardrailFired: false,
       errorKind: undefined,
       ...over,
     };
@@ -128,6 +130,8 @@ describe('computeLatencies — sampling independence', () => {
       toolCallCount: 3,
       fallbackUsed: false,
       aborted: false,
+      navigateDirectiveEmitted: false,
+      guardrailFired: false,
       errorKind: undefined,
     };
     return computeLatencies(acc, 695);

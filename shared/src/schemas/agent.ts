@@ -34,6 +34,8 @@ export const AGENT_ROUTE_KEYS = [
   'dashboard',
   'dispatch',
   'fleet',
+  'fleetTires',
+  'fleetTrailerTires',
   'trips',
   'tripNew',
   'tripDetail',

@@ -1107,6 +1107,12 @@ export const agentTurnMetrics = pgTable('agent_turn_metrics', {
   toolCallCount: integer('tool_call_count').default(0),
   fallbackUsed: boolean('fallback_used').default(false),
   aborted: boolean('aborted').default(false),
+  // A4: navigate-compliance telemetry. navigateDirectiveEmitted = a navigate/
+  // focus directive was emitted this turn (model or guardrail); guardrailFired
+  // = the A3 guardrail synthesized the navigate because the model wrote a path
+  // in prose instead of calling ui.navigate.
+  navigateDirectiveEmitted: boolean('navigate_directive_emitted').default(false),
+  guardrailFired: boolean('guardrail_fired').default(false),
   errorKind: text('error_kind'),
   tokensIn: integer('tokens_in').default(0),
   tokensOut: integer('tokens_out').default(0),
