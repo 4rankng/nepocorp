@@ -42,6 +42,32 @@
 .agent-drawer * {
   box-sizing: border-box;
 }
+
+.agent-driver-popover {
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.12);
+  color: var(--ink);
+}
+
+.agent-driver-popover .driver-popover-title {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.agent-driver-popover .driver-popover-description {
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.agent-driver-popover .driver-popover-footer {
+  display: none;
+}
 .agent-drawer .drawer__head {
   position: relative;
   align-items: center;

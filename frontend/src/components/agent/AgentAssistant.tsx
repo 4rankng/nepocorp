@@ -30,17 +30,17 @@ export function AgentAssistant() {
   const location = useLocation();
   const { send: sendDirective } = useAgentDirectives();
 
-  const chat = useAgentChat({ onDirective: sendDirective });
-
-  const handleAction = useCallback(
+  const handleDirective = useCallback(
     (directive: AgentDirective) => {
-      sendDirective(directive);
       if (directive.kind === 'navigate' || directive.kind === 'focus') {
         setOpen(false);
       }
+      return sendDirective(directive);
     },
     [sendDirective],
   );
+
+  const chat = useAgentChat({ onDirective: handleDirective });
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
     bottomRef.current?.scrollIntoView({ block: 'end', behavior });
@@ -128,7 +128,7 @@ export function AgentAssistant() {
           )}
 
           {chat.messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onAction={handleAction} />
+            <MessageBubble key={m.id} message={m} onAction={handleDirective} />
           ))}
 
           {chat.isThinking && (

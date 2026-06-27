@@ -42,37 +42,6 @@
   color: var(--brand, var(--fg-1));
 }
 
-.ttp-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.ttp-primary-action {
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 13px;
-  border: 1px solid color-mix(in srgb, var(--accent, #00B14F) 24%, var(--line, #EAECEF));
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent, #00B14F) 10%, white), rgba(255, 255, 255, 0.96));
-  color: var(--accent-ink, #004D22);
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1;
-  text-decoration: none;
-  box-shadow: 0 8px 20px -18px rgba(0, 90, 45, 0.44);
-  white-space: nowrap;
-}
-
-.ttp-primary-action:hover {
-  border-color: color-mix(in srgb, var(--accent, #00B14F) 38%, var(--line, #EAECEF));
-  background: var(--accent-soft, #E6F7EE);
-}
-
 .ttp-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -993,15 +962,6 @@
 
   .ttp-header > div:first-child {
     min-width: 0;
-  }
-
-  .ttp-actions {
-    width: 100%;
-  }
-
-  .ttp-primary-action {
-    width: 100%;
-    min-height: 44px;
   }
 
   .ttp-header h1 {

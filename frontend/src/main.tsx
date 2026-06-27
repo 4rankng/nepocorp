@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { installChunkErrorHandler } from './lib/chunk-error';
 import 'leaflet/dist/leaflet.css';
+import 'driver.js/dist/driver.css';
 import './index.css';
 
 const queryClient = new QueryClient({

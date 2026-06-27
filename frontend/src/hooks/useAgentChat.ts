@@ -7,7 +7,8 @@
 //
 // Directives arrive two ways: as a mid-stream `directive` event (a ui.* tool
 // fired) and as the final `done` response when the whole answer IS a
-// navigation. Both are handed to `onDirective`.
+// navigation. Page-changing directives are queued until `done` so the app does
+// not navigate away before the assistant's final response lands.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   agentClient,
@@ -56,6 +57,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   const directiveRef = useRef(opts.onDirective);
   directiveRef.current = opts.onDirective;
   const abortRef = useRef<AbortController | null>(null);
+  const pendingPageDirectiveRef = useRef<AgentDirective | null>(null);
 
   // Persist the active conversationId so the thread can be resumed after a
   // reload. Cleared on logout (see useAuth → clearAgentConversation).
@@ -95,9 +97,15 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         setActiveTool({ name: event.toolName, label: event.label });
         break;
       case 'directive': {
-        const outcome = directiveRef.current?.(event.directive) ?? { status: 'ok' as const };
-        // Ack navigate/focus so the server only says "đã mở" once the page
-        // actually applied (or timed out). Other kinds are fire-and-forget.
+        const shouldDefer = isPageChangingDirective(event.directive);
+        if (shouldDefer) {
+          pendingPageDirectiveRef.current = event.directive;
+        }
+        const outcome = shouldDefer
+          ? { status: 'ok' as const, reason: 'queued-until-done' }
+          : directiveRef.current?.(event.directive) ?? { status: 'ok' as const };
+        // Ack queued navigate/focus directives as accepted so the server can
+        // finish composing the final answer; apply the page change after done.
         if (event.requiresAck && event.actionId) {
           sendActionResult({
             actionId: event.actionId,
@@ -113,21 +121,32 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         if (event.conversationId) setConversationId(event.conversationId);
         const response = event.response as AgentResponse;
         if (response.type === 'directive') {
-          directiveRef.current?.(response.directive);
+          pendingPageDirectiveRef.current = null;
           // A pure-navigation answer: still surface a short confirmation bubble.
           setMessages((prev) => [
             ...prev,
             { id: uid(), role: 'assistant', content: 'Đã mở trang cho bạn.', response, createdAt: new Date().toISOString() },
           ]);
+          window.setTimeout(() => {
+            directiveRef.current?.(response.directive);
+          }, 0);
         } else {
           setMessages((prev) => [
             ...prev,
             { id: uid(), role: 'assistant', response, createdAt: new Date().toISOString() },
           ]);
+          const pending = pendingPageDirectiveRef.current;
+          pendingPageDirectiveRef.current = null;
+          if (pending) {
+            window.setTimeout(() => {
+              directiveRef.current?.(pending);
+            }, 0);
+          }
         }
         break;
       }
       case 'error':
+        pendingPageDirectiveRef.current = null;
         setActiveTool(null);
         setIsThinking(false);
         setError(event.message);
@@ -145,6 +164,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
       ]);
 
       abortRef.current?.abort();
+      pendingPageDirectiveRef.current = null;
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -173,6 +193,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
+    pendingPageDirectiveRef.current = null;
     setMessages([]);
     setError(null);
     setActiveTool(null);
@@ -181,4 +202,8 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   }, []);
 
   return { messages, isThinking, activeTool, error, conversationId, send, reset };
+}
+
+function isPageChangingDirective(directive: AgentDirective): boolean {
+  return directive.kind === 'navigate' || directive.kind === 'focus';
 }

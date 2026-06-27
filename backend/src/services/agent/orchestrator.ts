@@ -319,7 +319,8 @@ export async function runAgent(opts: {
         }
 
         for (const call of result.toolCalls) {
-          emit({ event: 'tool_start', toolName: call.name, args: safeParseArgs(call.arguments) });
+          const parsedArgs = safeParseArgs(call.arguments);
+          emit({ event: 'tool_start', toolName: call.name, args: parsedArgs });
           const tool = findTool(call.name);
 
           if (!tool) {
@@ -342,7 +343,7 @@ export async function runAgent(opts: {
               const toolSpan = await withSpan(
                 'agent.tool.execute',
                 { 'gen_ai.tool.name': call.name },
-                async () => tool!.execute(safeParseArgs(call.arguments), ctx),
+                async () => tool!.execute(parsedArgs, ctx),
               );
               metrics.latencyToolsMs += toolSpan.durationMs;
               toolResult = toolSpan.result;
@@ -353,7 +354,7 @@ export async function runAgent(opts: {
               const msg = formatToolError(e);
               emit({ event: 'tool_result', toolName: call.name, toolCallId: call.id, ok: false, label: msg });
               messages.push({ role: 'tool', tool_call_id: call.id, name: call.name, content: `Lỗi: ${msg}` });
-              toolTrace.push({ toolName: call.name, ok: false, error: msg });
+              toolTrace.push({ toolName: call.name, ok: false, args: parsedArgs, error: msg });
               continue;
             }
           } catch (e) {
@@ -407,7 +408,7 @@ export async function runAgent(opts: {
           // Feed a size-capped JSON view back to the model.
           const view = truncateForModel(toolResult.data);
           messages.push({ role: 'tool', tool_call_id: call.id, name: call.name, content: view });
-          toolTrace.push({ toolName: call.name, ok: true, args: safeParseArgs(call.arguments), label: toolResult.label });
+          toolTrace.push({ toolName: call.name, ok: true, args: parsedArgs, label: toolResult.label });
         }
       }
 

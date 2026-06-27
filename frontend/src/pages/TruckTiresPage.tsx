@@ -226,12 +226,6 @@ export default function TruckTiresPage({ vehicle = 'truck' }: { vehicle?: Vehicl
             Theo dõi serial lốp, vị trí lắp, ngày mua, tuổi lốp, nhà cung cấp và thanh lý lốp cũ.
           </div>
         </div>
-        <div className="ttp-actions">
-          <a id="ttp-add-trigger" className="ttp-primary-action" href="#ttp-add-title">
-            <Plus size={15} />
-            Thêm lốp
-          </a>
-        </div>
       </div>
 
       <div className="ttp-workbench">

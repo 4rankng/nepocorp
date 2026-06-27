@@ -82,15 +82,77 @@ const highlightParamSchema = z.object({
   durationMs: z.number().int().min(300).max(5000).optional(),
 });
 
+function normalizeNavigateArgs(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const input = raw as Record<string, unknown>;
+  const next: Record<string, unknown> = { ...input };
+
+  next.routeKey =
+    input.routeKey ??
+    input.route_key ??
+    input.route ??
+    input.page ??
+    input.pageKey;
+
+  const topLevelParams: Record<string, string | number> = {};
+  for (const key of ['id', 'truckId', 'truck_id', 'trailerId', 'trailer_id']) {
+    const value = input[key];
+    if (typeof value === 'string' || typeof value === 'number') {
+      topLevelParams[key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())] = value;
+    }
+  }
+
+  if (
+    input.params &&
+    typeof input.params === 'object' &&
+    !Array.isArray(input.params)
+  ) {
+    next.params = { ...topLevelParams, ...(input.params as Record<string, unknown>) };
+  } else if (Object.keys(topLevelParams).length > 0) {
+    next.params = topLevelParams;
+  }
+
+  const highlight = input.highlight ?? input.targetId ?? input.target_id;
+  if (typeof highlight === 'string') {
+    next.highlight = {
+      targetId: highlight,
+      durationMs: coerceDuration(input.durationMs ?? input.duration_ms),
+    };
+  } else if (highlight && typeof highlight === 'object' && !Array.isArray(highlight)) {
+    const h = highlight as Record<string, unknown>;
+    next.highlight = {
+      ...h,
+      targetId: h.targetId ?? h.target_id ?? h.id,
+      durationMs: coerceDuration(h.durationMs ?? h.duration_ms),
+    };
+  }
+
+  return next;
+}
+
+function coerceDuration(value: unknown): number | undefined {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+const navigateParamsSchema = z.preprocess(
+  normalizeNavigateArgs,
+  z.object({
+    routeKey: agentRouteKeySchema,
+    params: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+    highlight: highlightParamSchema.optional(),
+  }),
+);
+
 export const uiTools: AgentToolDef[] = [
   buildDirectiveTool(
     'ui.navigate',
     'Mở một trang trong ứng dụng (điều hướng SPA). Trả routeKey từ danh sách trang đã biết; dùng ui.search_pages nếu chưa chắc routeKey. Có thể kèm highlight:{targetId,durationMs} để cuộn + tô sáng nút/phần tử cụ thể trên trang đích (VD trang lốp: targetId "ttp-add-trigger"). Dùng highlight khi người dùng cần biết chính xác chỗ để bấm/nhập — đặc biệt khi bot không thể tự thực hiện hành động (v1 chỉ đọc) mà chỉ dẫn người dùng tới nút đó.',
-    z.object({
-      routeKey: agentRouteKeySchema,
-      params: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-      highlight: highlightParamSchema.optional(),
-    }),
+    navigateParamsSchema,
     (a) => ({
       kind: 'navigate',
       routeKey: a.routeKey,

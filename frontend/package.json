@@ -19,6 +19,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tingting/shared": "workspace:*",
     "animejs": "^4.4.1",
+    "driver.js": "^1.6.0",
     "exceljs": "^4.4.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.511.0",

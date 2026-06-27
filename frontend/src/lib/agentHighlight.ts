@@ -1,22 +1,67 @@
-// agentHighlight — imperative scroll-to + ring-highlight used by the agent
+// agentHighlight — imperative scroll-to + Driver.js spotlight used by the agent
 // directive bridge (focus / scrollTo / navigate.highlight). Extracted from
 // useFocusDeepLink so the bridge can call it outside the URL `?focus=` flow.
-//
+import { driver, type Driver } from 'driver.js';
+
+let activeDriver: Driver | null = null;
+let activeTimer: number | null = null;
+
+function clearActiveDriver() {
+  if (activeTimer !== null) {
+    window.clearTimeout(activeTimer);
+    activeTimer = null;
+  }
+  activeDriver?.destroy();
+  activeDriver = null;
+}
+
 // Returns true when an element with `targetId` was found (and therefore
-// scrolled + ring-highlighted); false lets the caller report an honest ack.
+// scrolled + spotlight-highlighted); false lets the caller report an honest ack.
 export function highlightElement(targetId: string, durationMs = 2000): boolean {
   const el = document.getElementById(targetId);
   if (!el) return false;
+
+  clearActiveDriver();
+
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  // Web Animations API; a no-op where unsupported (very old browsers).
-  if (typeof el.animate === 'function') {
-    el.animate(
-      [
-        { boxShadow: 'inset 0 0 0 2px var(--accent), 0 0 0 2px rgba(59,130,246,0.25)' },
-        { boxShadow: 'none' },
-      ],
-      { duration: durationMs, easing: 'ease-out' },
-    );
-  }
+
+  activeDriver = driver({
+    animate: true,
+    duration: 400,
+    smoothScroll: true,
+    allowClose: true,
+    allowScroll: true,
+    overlayColor: '#0f172a',
+    overlayOpacity: 0.55,
+    stagePadding: 8,
+    stageRadius: 10,
+    popoverClass: 'agent-driver-popover',
+    showButtons: ['close'],
+    doneBtnText: 'Đã hiểu',
+    onDestroyed: () => {
+      activeDriver = null;
+      if (activeTimer !== null) {
+        window.clearTimeout(activeTimer);
+        activeTimer = null;
+      }
+    },
+  });
+
+  activeDriver.highlight({
+    element: el,
+    popover: {
+      title: 'Hướng dẫn',
+      description: 'Bấm vào vùng đang được tô sáng để tiếp tục.',
+      side: 'bottom',
+      align: 'center',
+      showButtons: ['close'],
+      doneBtnText: 'Đã hiểu',
+    },
+  });
+
+  activeTimer = window.setTimeout(() => {
+    clearActiveDriver();
+  }, durationMs);
+
   return true;
 }

@@ -83,25 +83,16 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
       switch (d.kind) {
         case 'navigate': {
           const path = resolvePath(d.routeKey, d.params);
-          // fade/slide-* via the View Transitions API (progressive enhancement;
-          // slide-* currently render as fade — see agent.css). No-op where the
-          // API is unavailable, so navigation still works everywhere.
-          const go = () => navigate(path);
-          const doc = document as Document & {
-            startViewTransition?: (cb: () => void) => void;
-          };
-          if (d.animation && d.animation !== 'none' && typeof doc.startViewTransition === 'function') {
-            doc.startViewTransition(go);
-          } else {
-            go();
-          }
+          // fade/slide-* via React Router's View Transitions integration
+          // (progressive enhancement; slide-* currently render as fade).
+          const animation = d.animation ?? 'fade';
+          navigate(path, { viewTransition: animation !== 'none' });
           if (d.highlight?.targetId) {
-            // Target page mounts async — defer so the element exists.
+            // Target page mounts async — retry briefly so route code-splitting,
+            // data hooks, and drawer close animations do not make the spotlight miss.
             const t = d.highlight.targetId;
             const dur = d.highlight.durationMs;
-            window.setTimeout(() => {
-              highlightElement(t, dur);
-            }, 80);
+            retryHighlight(t, dur);
           }
           return { status: 'ok' };
         }
@@ -163,6 +154,16 @@ export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
       {children}
     </AgentDirectiveContext.Provider>
   );
+}
+
+function retryHighlight(targetId: string, durationMs?: number) {
+  const startedAt = performance.now();
+  const attempt = () => {
+    if (highlightElement(targetId, durationMs)) return;
+    if (performance.now() - startedAt > 1800) return;
+    window.setTimeout(attempt, 120);
+  };
+  window.setTimeout(attempt, 180);
 }
 
 /** Parse `open:<componentId>` or `open:<componentId>:<base64-json-prefill>`. */
