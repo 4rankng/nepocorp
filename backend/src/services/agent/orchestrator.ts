@@ -14,6 +14,7 @@
 // client is written to the OpenAI-compatible surface; verify before enabling.
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ZodError } from 'zod';
+import { jsonrepair } from 'jsonrepair';
 import { randomUUID } from 'crypto';
 import { performance } from 'node:perf_hooks';
 import { db } from '../../db';
@@ -32,6 +33,7 @@ import {
   type AgentDirective,
   type AgentActionChip,
   type AgentActionResult,
+  PAGE_CATALOG,
 } from '@tingting/shared';
 import {
   callMiniMax,
@@ -163,7 +165,8 @@ function directiveAckText(
   d: Extract<AgentDirective, { kind: 'navigate' | 'focus' }>,
   ack: AgentActionResult,
 ): AgentResponse {
-  const where = d.kind === 'focus' ? `${d.routeKey} #${d.id}` : d.routeKey;
+  const title = PAGE_CATALOG[d.routeKey]?.title ?? d.routeKey;
+  const where = d.kind === 'focus' ? `${title} #${d.id}` : title;
   if (ack.status === 'ok') {
     return { type: 'text', content: `Đã mở trang ${where} cho bạn.` };
   }
@@ -585,13 +588,51 @@ export async function runAgent(opts: {
       if (opts.signal?.aborted) {
         return { response: { type: 'text' as const, content: '' }, conversationId: undefined, toolTrace };
       }
-      // produceFinalAnswer now also reports fallbackUsed; wrap for latency.
-      const finalSpan = await withSpan('agent.final_answer', undefined, async () =>
-        produceFinalAnswer(trimToolHistory(messages), signal),
+      // P1 — gate the redundant final-answer LLM call. The ReAct loop's terminal
+      // turn already produced an answer; only pay for a SEPARATE structured call
+      // when we need one. Three cases:
+      //   1. Model emitted valid 5-shape JSON in the loop → use it (no call).
+      //   2. Non-analytical turn (no tools, or only ui.* navigation/focus/search)
+      //      answered in prose → return the prose as text (no call). Dominant win:
+      //      ~−9s for every simple/navigation/help turn (the avg final-call cost).
+      //   3. Analytical turn (ran a data/structured tool) → one structured call
+      //      shapes the tool numbers into insight_card widgets.
+      let finalUsage: { promptTokens: number; completionTokens: number } = { promptTokens: 0, completionTokens: 0 };
+      let fallbackUsed = false;
+      let fallbackReason: string | undefined;
+      let response: AgentResponse;
+
+      // The terminal assistant turn = last assistant message with no pending
+      // tool_calls (the loop pushes it right before breaking on a no-tools turn).
+      const terminalAssistant = [...messages]
+        .reverse()
+        .find((m) => m.role === 'assistant' && !(m.tool_calls && m.tool_calls.length > 0));
+      const terminalStructured = terminalAssistant
+        ? parseAgentResponseContent(terminalAssistant.content)
+        : null;
+      // "Analytical" = a tool that returns data needing widget shaping ran.
+      // Everything except ui.* counts — tours.* + data/* stay on the structured
+      // path so start_tour / insight_card still compose correctly.
+      const usedDataTool = messages.some(
+        (m) => m.role === 'tool' && typeof m.name === 'string' && !m.name.startsWith('ui.'),
       );
-      metrics.latencyFinalMs += finalSpan.durationMs;
-      const { usage: finalUsage, fallbackUsed, fallbackReason } = finalSpan.result;
-      let response = finalSpan.result.response;
+
+      if (!terminalStructured && !usedDataTool && terminalAssistant && !opts.signal?.aborted) {
+        // Case 2 — non-analytical prose answer: return as text, no structured call.
+        response = { type: 'text' as const, content: stripThink(terminalAssistant.content) ?? '' };
+      } else {
+        // Case 1 (structured) + Case 3 (analytical) → structured final-answer path.
+        // produceFinalAnswer's parseLatestAssistantResponse fast-path covers Case 1
+        // with no call; only Case 3 actually pays for the json_object call.
+        const finalSpan = await withSpan('agent.final_answer', undefined, async () =>
+          produceFinalAnswer(trimToolHistory(messages), signal),
+        );
+        metrics.latencyFinalMs += finalSpan.durationMs;
+        finalUsage = finalSpan.result.usage;
+        fallbackUsed = finalSpan.result.fallbackUsed;
+        fallbackReason = finalSpan.result.fallbackReason;
+        response = finalSpan.result.response;
+      }
       metrics.fallbackUsed = fallbackUsed;
       // P0b — record WHY the final answer fell back (prefixed final_*), so the
       // dashboard can split fallback cause from ReAct-loop errors. Guard on
@@ -769,13 +810,23 @@ async function produceFinalAnswer(
       maxTokens: 6000,
       signal,
     });
-    cardContent = card.content;
     cardUsage = card.usage;
-    const parsed = parseAgentResponseContent(card.content);
-    if (parsed) return { response: parsed, usage: card.usage, fallbackUsed: false };
-    // Card came back but didn't validate (non-JSON or schema-invalid) → record
-    // the schema failure as the fallback cause before degrading to prose.
-    fallbackReason = 'final_schema';
+    // Truncation guard (finish_reason='length'): max_tokens hit mid-output → the
+    // JSON is incomplete. A healer (jsonrepair) would silently close it into a
+    // PARTIAL object, so we must NOT parse or salvage it — drop the content and
+    // let the prose path regenerate a complete answer. 'stop'/'tool_calls' are
+    // complete and safe to parse/heal.
+    if (card.finishReason === 'length') {
+      cardContent = null;
+      fallbackReason = 'final_truncated';
+    } else {
+      cardContent = card.content;
+      const parsed = parseAgentResponseContent(card.content);
+      if (parsed) return { response: parsed, usage: card.usage, fallbackUsed: false };
+      // Card came back but didn't validate (non-JSON or schema-invalid) → record
+      // the schema failure as the fallback cause before degrading to prose.
+      fallbackReason = 'final_schema';
+    }
   } catch (e) {
     if (signal?.aborted) throw e;
     fallbackReason = e instanceof MiniMaxError ? `final_${e.code}` : 'final_parse';
@@ -800,7 +851,14 @@ async function produceFinalAnswer(
     const prose = await callMiniMax({
       messages: [
         ...messages,
-        { role: 'user', content: 'Dựa trên dữ liệu trên, trả lời ngắn gọn, rõ ràng bằng tiếng Việt (2-4 câu). Không cần JSON.' },
+        {
+          role: 'user',
+          content: [
+            'Trả lời người dùng bằng tiếng Việt tự nhiên, ngắn gọn (2-4 câu).',
+            'Tuyệt đối không nhắc JSON, schema, tool, directive, routeKey, widget, hay quy tắc nội bộ.',
+            'Nếu người dùng hỏi đang nói về gì / vừa nói gì, hãy tóm tắt các lượt trước trong cuộc trò chuyện thay vì nói về định dạng trả lời.',
+          ].join(' '),
+        },
       ],
       signal,
     });
@@ -839,15 +897,40 @@ export function parseAgentResponseContent(content: string | null): AgentResponse
   const stripped = stripThink(content) ?? '';
   const candidate = stripped || content;
   const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
+  // JSON.parse with a jsonrepair fallback (Layer 1 healing): the model often
+  // emits structurally-near-valid JSON — trailing commas, single quotes, missing
+  // closing quotes, unbalanced brackets — that JSON.parse rejects but jsonrepair
+  // fixes deterministically (no LLM call, so it removes a fallback re-call).
+  // Truncation (finish_reason='length') is guarded upstream in produceFinalAnswer,
+  // so any text reaching here is a COMPLETE payload that is safe to repair.
+  const raw = tryParseJson(jsonObj);
+  if (raw === undefined) return null;
+  return validateSanitized(sanitizeAgentJson(raw));
+}
+
+/** JSON.parse with a deterministic jsonrepair fallback. Returns undefined when
+ *  even repair cannot yield a value (caller treats as "no structured answer"). */
+function tryParseJson(text: string): unknown {
   try {
-    const sanitized = sanitizeAgentJson(JSON.parse(jsonObj));
-    const parsed = agentResponseSchema.safeParse(sanitized);
-    if (!parsed.success) return null;
-    if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
-    return parsed.data;
+    return JSON.parse(text);
   } catch {
-    return null;
+    try {
+      return JSON.parse(jsonrepair(text));
+    } catch {
+      return undefined;
+    }
   }
+}
+
+/** Sanitize + Zod-validate a parsed object into an AgentResponse, applying the
+ *  text-quality guards (non-empty, no internal-contract leak). Null when the
+ *  object isn't a usable response. */
+function validateSanitized(sanitized: unknown): AgentResponse | null {
+  const parsed = agentResponseSchema.safeParse(sanitized);
+  if (!parsed.success) return null;
+  if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
+  if (parsed.data.type === 'text' && isInternalContractLeak(parsed.data.content)) return null;
+  return parsed.data;
 }
 
 /** Salvage a human-readable answer from a structured-card response that failed
@@ -865,7 +948,10 @@ function salvageText(content: string | null | undefined): string | null {
       const obj = JSON.parse(jsonObj) as Record<string, unknown>;
       for (const key of ['content', 'summary', 'title', 'message', 'text']) {
         const v = obj[key];
-        if (typeof v === 'string' && v.trim().length >= 5) return v.trim();
+        if (typeof v === 'string' && v.trim().length >= 5) {
+          const text = v.trim();
+          return isInternalContractLeak(text) ? null : text;
+        }
       }
       // Valid JSON but no usable text field — don't show raw JSON to the user.
       return null;
@@ -875,7 +961,22 @@ function salvageText(content: string | null | undefined): string | null {
       return null;
     }
   }
-  return stripped;
+  return isInternalContractLeak(stripped) ? null : stripped;
+}
+
+function isInternalContractLeak(text: string): boolean {
+  const normalized = normalizeForIntent(text);
+  return [
+    'schema json',
+    'dung schema',
+    'json schema',
+    'directive',
+    'routekey',
+    'widget',
+    'tool',
+    'insight_card',
+    'start_tour',
+  ].some((needle) => normalized.includes(needle));
 }
 
 function safeParseArgs(raw: string): unknown {

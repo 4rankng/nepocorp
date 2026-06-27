@@ -60,6 +60,11 @@ export interface MiniMaxCallResult {
   /** Wall-clock latency of this call measured by performance.now() (sampler-
    *  independent — accurate even when OTel drops the span). */
   latencyMs: number;
+  /** OpenAI `finish_reason` ('stop' | 'length' | 'tool_calls' | …). 'length'
+   *  means the model hit `max_tokens` mid-output → the content is TRUNCATED and
+   *  must never be trusted or JSON-healed (a healer would silently close a
+   *  partial object). Callers gate healing/repair on `!== 'length'`. */
+  finishReason: string | null;
 }
 
 interface OpenAIChoice {
@@ -67,6 +72,7 @@ interface OpenAIChoice {
     content?: string | null;
     tool_calls?: Array<{ id: string; type: string; function: { name: string; arguments: string } }>;
   };
+  finish_reason?: string;
 }
 interface OpenAIResponse {
   choices?: OpenAIChoice[];
@@ -194,6 +200,7 @@ export async function callMiniMax(opts: {
           content: stripThink(msg?.content),
           toolCalls,
           usage: { promptTokens, completionTokens },
+          finishReason: choice?.finish_reason ?? null,
         };
       },
     );
@@ -203,6 +210,7 @@ export async function callMiniMax(opts: {
       toolCalls: callResult.toolCalls,
       usage: callResult.usage,
       latencyMs,
+      finishReason: callResult.finishReason,
     };
   } catch (e) {
     if (e instanceof MiniMaxError) throw e;

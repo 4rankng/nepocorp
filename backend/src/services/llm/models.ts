@@ -23,5 +23,9 @@ export const MINIMAX_BASE_URL = 'https://api.minimax.io/v1';
  *  surfaces as a `timeout` MiniMaxError code. Applies to every call path. */
 export const MINIMAX_TIMEOUT_MS = 60_000;
 
-/** Hard cap on the ReAct tool-calling loop (runaway guard). */
-export const AGENT_MAX_ITERATIONS = 6;
+/** Hard cap on the ReAct tool-calling loop (runaway guard). Prod metrics show
+ *  the 6-iteration tail is where latency explodes (a 6-iter turn hit 78 s /
+ *  145 k prompt tokens): each extra iteration re-bills the whole growing
+ *  context to a slow reasoning model. Normal analytical turns converge in ≤3,
+ *  so 4 keeps a safety margin while killing the catastrophic tail. */
+export const AGENT_MAX_ITERATIONS = 4;

@@ -182,6 +182,36 @@ describe('agent final-answer parsing — fallback reducers', () => {
     if (table.type !== 'table') return;
     assert.deepStrictEqual(table.rows, [['Dầu', 1200000], ['Sửa chữa', 800000]]);
   });
+
+  test('Layer 1 healing: trailing comma the model emits is repaired (no fallback call)', () => {
+    const parsed = parseAgentResponseContent('{"type":"text","content":"Xong.",}');
+    assert.deepStrictEqual(parsed, { type: 'text', content: 'Xong.' });
+  });
+
+  test('Layer 1 healing: missing closing brace + single quotes are repaired', () => {
+    const parsed = parseAgentResponseContent("{'type':'text','content':'Đã rõ.'");
+    assert.ok(parsed, 'should parse after jsonrepair');
+    assert.strictEqual(parsed!.type, 'text');
+    if (parsed!.type === 'text') assert.strictEqual(parsed!.content, 'Đã rõ.');
+  });
+
+  test('Layer 1 healing: a malformed insight_card with multiple defects parses', () => {
+    const parsed = parseAgentResponseContent(
+      '{"type":"insight_card","title":"Công nợ","summary":"Tăng.","widgets":[{"type":"kpi_grid","items":[{"label":"Nợ","value":120000000,"format":"vnd",}]}],}',
+    );
+    assert.ok(parsed);
+    assert.strictEqual(parsed!.type, 'insight_card');
+    if (parsed!.type === 'insight_card') {
+      const w = parsed!.widgets[0];
+      assert.strictEqual(w.type, 'kpi_grid');
+    }
+  });
+
+  test('pure prose still yields null (no silent accept of a non-response)', () => {
+    // jsonrepair turns prose into a string array; that must NOT validate as an
+    // AgentResponse, so the caller falls through to the prose-salvage path.
+    assert.strictEqual(parseAgentResponseContent('chỉ là văn bản thường, không có json'), null);
+  });
 });
 
 describe('agent orchestrator metrics — static sampling-trap guard', () => {
