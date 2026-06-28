@@ -201,9 +201,10 @@ function TemplatePreview({
   const totalColumns = visible.filter(column => column.total);
   const canvasLocked = disabled;
   const previewTerms = (form.termsText || '- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng').split('\n');
+  const accentStyle = { '--accent': form.accentColor } as React.CSSProperties;
 
   return (
-    <aside className="debit-editor-preview" aria-label="Xem trước mẫu">
+    <aside className="debit-editor-preview" style={accentStyle} aria-label="Xem trước mẫu">
       <div className="debit-editor-canvas-frame">
         <div className="debit-editor-canvas-dragbar" aria-hidden="true">
           <span>⋮⋮</span>

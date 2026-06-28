@@ -267,6 +267,9 @@
   gap: 8px;
   min-width: 0;
 }
+.agent-field-list {
+  min-width: 0;
+}
 .agent-record-card {
   min-width: 0;
   overflow: hidden;
@@ -299,6 +302,15 @@
   color: var(--ink, #101513);
   font-size: 13px;
   font-weight: 500;
+}
+.agent-field-list .agent-record-field {
+  padding: 9px 0;
+}
+.agent-field-list .agent-record-field:first-child {
+  padding-top: 0;
+}
+.agent-field-list .agent-record-field:last-child {
+  padding-bottom: 0;
 }
 
 /* ── Insight card ───────────────────────────────────────────────────────── */

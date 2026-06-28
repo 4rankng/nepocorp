@@ -284,12 +284,29 @@ function MarkdownContent({ content }: { content: string | undefined }) {
 }
 
 function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  if (headers.length === 2) {
+    return (
+      <div className="agent-markdown-table agent-field-list">
+        {rows.map((row, rowIndex) => (
+          <div className="agent-record-field" key={row.join('|') || rowIndex}>
+            <div className="agent-record-field__label">
+              <MarkdownInline content={row[0]?.trim() || '-'} />
+            </div>
+            <div className="agent-record-field__value">
+              <MarkdownInline content={row[1]?.trim() || '-'} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="agent-markdown-table agent-record-list">
       {rows.map((row, rowIndex) => (
         <div className="agent-record-card" key={row.join('|') || rowIndex}>
           {headers.map((header, cellIndex) => {
-            const value = row[cellIndex]?.trim() || '—';
+            const value = row[cellIndex]?.trim() || '-';
             return (
               <div className="agent-record-field" key={`${rowIndex}-${header}-${cellIndex}`}>
                 <div className="agent-record-field__label">

@@ -14,6 +14,8 @@ import type {
   AgentWidget,
 } from '@tingting/shared';
 
+type TableCell = Extract<AgentWidget, { type: 'table' }>['rows'][number][number];
+
 function formatValue(value: number, format: 'vnd' | 'percent' | 'number' | 'days'): string {
   switch (format) {
     case 'vnd':
@@ -92,23 +94,37 @@ function LineChart({ series }: Extract<AgentWidget, { type: 'line_chart' }>) {
   );
 }
 
+function displayCell(cell: TableCell | undefined): string {
+  const value = cell === undefined ? '' : String(cell).trim();
+  return value || '-';
+}
+
 function DataTable({ columns, rows }: Extract<AgentWidget, { type: 'table' }>) {
+  if (columns.length === 2) {
+    return (
+      <div className="agent-field-list">
+        {rows.map((row, rowIndex) => (
+          <div className="agent-record-field" key={row.join('|') || rowIndex}>
+            <div className="agent-record-field__label">{displayCell(row[0])}</div>
+            <div className="agent-record-field__value">{displayCell(row[1])}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="agent-table-wrap">
-      <table className={`agent-table agent-table--cols-${columns.length}`}>
-        <thead>
-          <tr>{columns.map((c, i) => <th key={i}>{c}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.map((row, ri) => (
-            <tr key={ri}>
-              {row.map((cell, ci) => (
-                <td key={ci} data-label={columns[ci] ?? ''}>{String(cell)}</td>
-              ))}
-            </tr>
+    <div className="agent-record-list">
+      {rows.map((row, rowIndex) => (
+        <div className="agent-record-card" key={row.join('|') || rowIndex}>
+          {columns.map((column, columnIndex) => (
+            <div className="agent-record-field" key={`${rowIndex}-${column}-${columnIndex}`}>
+              <div className="agent-record-field__label">{column}</div>
+              <div className="agent-record-field__value">{displayCell(row[columnIndex])}</div>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      ))}
     </div>
   );
 }
