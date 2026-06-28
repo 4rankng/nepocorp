@@ -10,8 +10,10 @@ import { getUser } from '../middleware/auth';
 import { sniffImageType } from '../lib/format';
 import { saveTripPhoto } from './upload';
 import { extractContainerAndSeal } from '../services/ocr.service';
+import { ApiError } from '../errors';
 
-// auth + Casbin ('ocr') applied at mount point in index.ts
+// auth + Casbin ('ocr') applied at mount point in index.ts. Both routes below
+// inherit casbinAuthz('ocr') from that single mount — no per-route policy.
 const router = Router();
 
 const upload = multer({
@@ -19,10 +21,113 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB limit
 });
 
+/** Subset of AuthUser that the persist helper needs. */
+interface OcrUser {
+  userId: number;
+  role: Role;
+}
+
+/** Inputs to persistOcrPhoto. `tripId` is required — persist always links a trip. */
+interface PersistOcrInput {
+  file: { buffer: Buffer };
+  type: 'CONTAINER' | 'SEAL';
+  tripId: number;
+  /** Optional container row to link the photo to (must belong to `tripId`). */
+  containerId: number | null;
+  user: OcrUser;
+}
+
+/** The persisted photo plus the processed buffer callers may recognize on. */
+export interface PersistedOcrPhoto {
+  photoUrl: string;
+  storageKey: string;
+  buffer: Buffer;
+  mimeType: string;
+}
+
 /**
- * POST /api/ocr — recognize container & seal numbers from a photo.
+ * Parse an optional integer id from multipart body. Empty/absent → null; a
+ * non-numeric value → ApiError(400) so the caller gets a clean validation error
+ * rather than a NaN flowing into a DB query.
+ */
+function parseIdParam(raw: unknown, label: string): number | null {
+  if (raw === undefined || raw === '') return null;
+  const n = parseInt(String(raw), 10);
+  if (isNaN(n)) throw new ApiError(400, `${label} không hợp lệ`);
+  return n;
+}
+
+/**
+ * Shared persist + link prefix for OCR photos. Performs DRIVER trip-ownership
+ * (mirrors photosRouter) and container-belongs-to-trip validation, then saves
+ * the photo via the OCR pipeline (`forOcr: true` → q95 normalised JPEG) and
+ * returns the processed buffer so the caller may run recognition on it.
  *
- * Body (multipart): file (image), type ∈ {CONTAINER, SEAL}, optional trip_id.
+ * Throws `ApiError` on authz/validation failure → `asyncHandler` forwards to
+ * `globalErrorHandler`, which maps it to an HTTP response wire-identical to the
+ * previous inline `res.status(...).json(...)` calls.
+ *
+ * Used by BOTH OCR routes:
+ *   - `POST /`            (capture): persist, THEN recognize via
+ *     `extractContainerAndSeal`.
+ *   - `POST /persist-only` (flush): persist ONLY — recognition already happened
+ *     at capture, so the flush must NOT call Gemini again.
+ *
+ * Exported so the service-layer test (`ocr-persist.test.ts`) can exercise the
+ * ownership + container-link + persist logic directly, in the repo's
+ * `photo-authz.test.ts` idiom (no HTTP/supertest harness needed).
+ */
+export async function persistOcrPhoto({
+  file,
+  type,
+  tripId,
+  containerId,
+  user,
+}: PersistOcrInput): Promise<PersistedOcrPhoto> {
+  if (type !== 'CONTAINER' && type !== 'SEAL') {
+    throw new ApiError(400, 'Loại ảnh không hợp lệ (CONTAINER hoặc SEAL)');
+  }
+
+  // DRIVER may only attach photos to trips they own (mirrors photosRouter).
+  if (user.role === Role.DRIVER) {
+    const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
+      .where(eq(s.drivers.userId, user.userId)).limit(1);
+    if (!driver) throw new ApiError(403, 'Không có quyền truy cập');
+
+    const [trip] = await db.select().from(s.trips)
+      .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
+      .limit(1);
+    if (!trip) throw new ApiError(403, 'Không có quyền quét ảnh của chuyến này');
+  }
+
+  // Optional container_id → link to a specific container row (must belong to trip).
+  if (containerId !== null) {
+    const [container] = await db.select({ tripId: s.tripContainers.tripId })
+      .from(s.tripContainers)
+      .where(eq(s.tripContainers.id, containerId))
+      .limit(1);
+    if (!container || container.tripId !== tripId) {
+      throw new ApiError(400, 'Container không thuộc chuyến này');
+    }
+  }
+
+  const saved = await saveTripPhoto(file, tripId, type, user.userId, {
+    forOcr: true,
+    containerId,
+  });
+  return {
+    photoUrl: saved.url,
+    storageKey: saved.storageKey,
+    buffer: saved.buffer,
+    mimeType: saved.mimeType,
+  };
+}
+
+/**
+ * POST /api/ocr — recognize container & seal numbers from a photo (capture path).
+ *
+ * Body (multipart): file (image), type ∈ {CONTAINER, SEAL}, optional trip_id,
+ * optional container_id.
  *
  * - With trip_id (Edit): DRIVER ownership is enforced, the photo is persisted
  *   (OCR pipeline) and `photoUrl`/`storageKey` are returned.
@@ -34,54 +139,19 @@ const upload = multer({
 router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   const file = req.file;
   const type = req.body.type as 'CONTAINER' | 'SEAL';
-  const tripIdRaw = req.body.trip_id;
-  const containerIdRaw = req.body.container_id;
 
-  if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
+  if (!file) throw new ApiError(400, 'Không có file tải lên');
   if (type !== 'CONTAINER' && type !== 'SEAL') {
-    return res.status(400).json({ error: 'Loại ảnh không hợp lệ (CONTAINER hoặc SEAL)' });
+    throw new ApiError(400, 'Loại ảnh không hợp lệ (CONTAINER hoặc SEAL)');
   }
 
   const user = getUser(req);
+  const tripId = parseIdParam(req.body.trip_id, 'trip_id');
+  const containerId = parseIdParam(req.body.container_id, 'container_id');
 
-  // Optional trip_id → ownership check + persist photo (Edit branch).
-  let tripId: number | null = null;
-  if (tripIdRaw !== undefined && tripIdRaw !== '') {
-    tripId = parseInt(tripIdRaw, 10);
-    if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
-
-    // DRIVER may only OCR photos of their own trips (mirrors photosRouter).
-    if (user.role === Role.DRIVER) {
-      const [driver] = await db.select({ id: s.drivers.id }).from(s.drivers)
-        .where(eq(s.drivers.userId, user.userId)).limit(1);
-      if (!driver) return res.status(403).json({ error: 'Không có quyền truy cập' });
-
-      const [trip] = await db.select().from(s.trips)
-        .where(and(eq(s.trips.id, tripId), eq(s.trips.driverId, driver.id)))
-        .limit(1);
-      if (!trip) return res.status(403).json({ error: 'Không có quyền quét ảnh của chuyến này' });
-    }
-  }
-
-  // Phase 2: optional container_id → link the persisted photo to a specific
-  // container row so the detail page can render it under that container.
-  // We validate that the container actually belongs to the trip before
-  // accepting the link; a mismatch is a client bug, not a security issue,
-  // so we 400 rather than silently storing a dangling FK.
-  let containerId: number | null = null;
-  if (containerIdRaw !== undefined && containerIdRaw !== '') {
-    containerId = parseInt(containerIdRaw, 10);
-    if (isNaN(containerId)) return res.status(400).json({ error: 'container_id không hợp lệ' });
-    if (tripId === null) {
-      return res.status(400).json({ error: 'container_id yêu cầu trip_id' });
-    }
-    const [container] = await db.select({ tripId: s.tripContainers.tripId })
-      .from(s.tripContainers)
-      .where(eq(s.tripContainers.id, containerId))
-      .limit(1);
-    if (!container || container.tripId !== tripId) {
-      return res.status(400).json({ error: 'Container không thuộc chuyến này' });
-    }
+  // container_id only makes sense with a trip to link it to.
+  if (containerId !== null && tripId === null) {
+    throw new ApiError(400, 'container_id yêu cầu trip_id');
   }
 
   let photoUrl: string | undefined;
@@ -90,12 +160,11 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
   let ocrMime = sniffImageType(file.buffer) ?? 'image/jpeg';
 
   if (tripId !== null) {
-    // Persist (OCR pipeline) and reuse the processed buffer for recognition.
-    const saved = await saveTripPhoto(file, tripId, type, user.userId, {
-      forOcr: true,
-      containerId,
-    });
-    photoUrl = saved.url;
+    // Persist (OCR pipeline) + enforce ownership/container-link, then reuse the
+    // processed buffer for recognition. persistOcrPhoto throws ApiError on
+    // authz/validation failure → asyncHandler → globalErrorHandler.
+    const saved = await persistOcrPhoto({ file, type, tripId, containerId, user });
+    photoUrl = saved.photoUrl;
     storageKey = saved.storageKey;
     ocrBuffer = saved.buffer;
     ocrMime = saved.mimeType;
@@ -112,6 +181,54 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
     storageKey,
     model: result.model,
     error: result.error,
+  });
+}));
+
+/**
+ * POST /api/ocr/persist-only — persist + link a container/seal photo WITHOUT
+ * re-running recognition (the flush path).
+ *
+ * The create-mode flow already recognized the number at capture (`POST /api/ocr`);
+ * after `saveContainers` assigns ids, the buffered photo only needs to be
+ * persisted + linked to its container. Re-running Gemini here was pure waste —
+ * one redundant VLM call per buffered container/seal photo.
+ *
+ * This handler STRUCTURALLY cannot recognize: there is no reference to
+ * `extractContainerAndSeal` anywhere in it. That is deliberate — capture and
+ * flush send wire-identical multipart bodies (`{file, type, trip_id,
+ * container_id}`), so a `persist_only` flag on `POST /` would be a silent-
+ * suppression footgun (a leaked flag would disable recognition with no error).
+ * A dedicated route makes the intent unambiguous: the route IS the contract.
+ *
+ * Inherits `casbinAuthz('ocr')` from the mount at `index.ts` — no new Casbin
+ * policy row, no new mount line. Requires `trip_id` (the photo must link to a
+ * trip); `container_id` is optional (validated if present).
+ */
+router.post('/persist-only', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file;
+  const type = req.body.type as 'CONTAINER' | 'SEAL';
+
+  if (!file) throw new ApiError(400, 'Không có file tải lên');
+
+  const user = getUser(req);
+  const tripId = parseIdParam(req.body.trip_id, 'trip_id');
+  if (tripId === null) throw new ApiError(400, 'trip_id là bắt buộc');
+  const containerId = parseIdParam(req.body.container_id, 'container_id');
+
+  const saved = await persistOcrPhoto({ file, type, tripId, containerId, user });
+
+  // Distinct, greppable log line: `grep persist-only-flush` must yield ONLY
+  // intentional flushes — it is the prod-verification signal that the redundant
+  // recognition call is gone (capture keeps using POST /, which logs nothing
+  // here).
+  console.log(
+    `[ocr] persist-only-flush, recognition skipped (tripId=${tripId}, containerId=${containerId ?? '-'})`,
+  );
+
+  res.status(200).json({
+    ok: true,
+    photoUrl: saved.photoUrl,
+    storageKey: saved.storageKey,
   });
 }));
 

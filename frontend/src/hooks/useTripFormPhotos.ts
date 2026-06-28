@@ -182,6 +182,9 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
       formData.append('trip_id', String(tripId));
       formData.append('container_id', String(containerId));
     }
+    // Capture NEEDS the recognition result to fill the row, so it stays on the
+    // full `/ocr` endpoint. Flush (`flushPendingContainerPhotos`) uses
+    // `/ocr/persist-only` instead — it already has the number and only persists.
     const result = await api.upload('/ocr', formData) as OcrResponse;
     if (result.photoUrl) {
       return { url: result.photoUrl, ocrResult: result, pending: false };
@@ -192,11 +195,14 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
   }, []);
 
   /**
-   * After `saveContainers` assigns ids, upload the buffered per-container photos
-   * with their `container_id` and return a map of `blob:` → server URL so the
-   * caller can patch `photoKeys`. Rows deleted before save are dropped (object
-   * URL revoked). Uses `/ocr` (not `/upload`) because only `/ocr` accepts
-   * `container_id`; the redundant re-recognition is harmless.
+   * After `saveContainers` assigns ids, persist + link the buffered per-container
+   * photos and return a map of `blob:` → server URL so the caller can patch
+   * `photoKeys`. Rows deleted before save are dropped (object URL revoked).
+   *
+   * Uses `/ocr/persist-only` (NOT `/ocr`): recognition already ran at capture
+   * (`uploadContainerPhoto`), so flushing via the full `/ocr` endpoint would
+   * re-run Gemini for nothing. `/persist-only` persists + links the photo and
+   * SKIPS recognition. The consumed response shape is unchanged (`result.photoUrl`).
    */
   const flushPendingContainerPhotos = useCallback(async (
     tripId: number,
@@ -218,7 +224,7 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
       formData.append('type', p.type);
       formData.append('trip_id', String(tripId));
       formData.append('container_id', String(containerId));
-      const result = await api.upload('/ocr', formData) as OcrResponse;
+      const result = await api.upload('/ocr/persist-only', formData) as OcrResponse;
       if (result.photoUrl) {
         swaps.set(p.objectUrl, result.photoUrl);
       }
@@ -237,8 +243,22 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
     pendingContainerPhotosRef.current = keep;
   }, []);
 
+  /** Revoke + drop one buffered per-container photo before the row is saved. */
+  const revokeContainerPhoto = useCallback((rowKey: string, type: 'CONTAINER' | 'SEAL', objectUrl: string) => {
+    if (!objectUrl.startsWith('blob:')) return;
+    const keep: PendingContainerPhoto[] = [];
+    for (const p of pendingContainerPhotosRef.current) {
+      if (p.rowKey === rowKey && p.type === type && p.objectUrl === objectUrl) {
+        URL.revokeObjectURL(p.objectUrl);
+      } else {
+        keep.push(p);
+      }
+    }
+    pendingContainerPhotosRef.current = keep;
+  }, []);
+
   return {
     photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos,
-    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos,
+    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos, revokeContainerPhoto,
   };
 }

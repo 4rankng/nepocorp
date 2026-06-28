@@ -182,6 +182,52 @@ export async function deleteTripPhotosByType(
   return ids.length;
 }
 
+export async function deleteTripPhotoByStorageKey(
+  tripId: number,
+  type: TripPhotoType,
+  storageKey: string,
+  containerId?: number,
+): Promise<number> {
+  const buildConditions = (withContainer: boolean) => {
+    const c = [
+      eq(s.tripPhotos.tripId, tripId),
+      eq(s.tripPhotos.type, type),
+      eq(s.tripPhotos.storageKey, storageKey),
+    ];
+    if (withContainer && containerId !== undefined) {
+      c.push(eq(s.tripPhotos.tripContainerId, containerId));
+    }
+    return c;
+  };
+
+  let [row] = await db.select({ id: s.tripPhotos.id, storageKey: s.tripPhotos.storageKey })
+    .from(s.tripPhotos)
+    .where(and(...buildConditions(true)))
+    .limit(1);
+  // A container scope was requested but matched nothing: the photo may be a
+  // legacy/unscoped row (tripContainerId IS NULL — `NULL = <id>` is never true
+  // in SQL). Retry without the container filter so those photos are deletable
+  // instead of a silent 0-removal the UI would report as success. The match is
+  // still bound to (tripId, type, storageKey), and storageKey already encodes
+  // `trips/${tripId}/…` (route-validated), so no cross-trip leak.
+  if (!row && containerId !== undefined) {
+    [row] = await db.select({ id: s.tripPhotos.id, storageKey: s.tripPhotos.storageKey })
+      .from(s.tripPhotos)
+      .where(and(...buildConditions(false)))
+      .limit(1);
+  }
+  if (!row) return 0;
+
+  await storageService.delete(row.storageKey).catch(err => {
+    console.warn(
+      `[deleteTripPhotoByStorageKey] failed to delete ${row.storageKey}:`,
+      err instanceof Error ? err.message : err,
+    );
+  });
+  await db.delete(s.tripPhotos).where(eq(s.tripPhotos.id, row.id));
+  return 1;
+}
+
 const uploadRouter = Router();
 
 /**
@@ -240,6 +286,51 @@ uploadRouter.post('/', upload.single('file'), asyncHandler(async (req: Request, 
     storageKey: saved.storageKey,
     url: saved.url,
   });
+}));
+
+uploadRouter.post('/trips/:tripId/photos/:type/delete', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.tripId as string, 10);
+  if (isNaN(tripId)) return res.status(400).json({ error: 'trip_id không hợp lệ' });
+
+  const photoType = String(req.params.type).toUpperCase();
+  if (photoType !== 'CONTAINER' && photoType !== 'SEAL') {
+    return res.status(400).json({ error: 'Loại ảnh không hợp lệ (container hoặc seal)' });
+  }
+
+  const storageKey = String(req.body?.storage_key ?? req.body?.storageKey ?? '');
+  if (!storageKey || storageKey.includes('..')) {
+    return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
+  }
+  if (!storageKey.startsWith(`trips/${tripId}/`)) {
+    return res.status(400).json({ error: 'Ảnh không thuộc chuyến đi này' });
+  }
+
+  let containerId: number | undefined;
+  const containerIdRaw = req.body?.container_id ?? req.body?.containerId;
+  if (containerIdRaw !== undefined && containerIdRaw !== '') {
+    containerId = parseInt(String(containerIdRaw), 10);
+    if (isNaN(containerId)) return res.status(400).json({ error: 'container_id không hợp lệ' });
+  }
+
+  const [trip] = await db.select({ id: s.trips.id, status: s.trips.status })
+    .from(s.trips)
+    .where(eq(s.trips.id, tripId))
+    .limit(1);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  if (trip.status === 'LOCKED') {
+    throw new ApiError(409, 'Không thể xóa ảnh của chuyến đã chốt');
+  }
+
+  if (containerId !== undefined) {
+    const [container] = await db.select({ id: s.tripContainers.id })
+      .from(s.tripContainers)
+      .where(and(eq(s.tripContainers.id, containerId), eq(s.tripContainers.tripId, tripId)))
+      .limit(1);
+    if (!container) return res.status(404).json({ error: 'Không tìm thấy số cont' });
+  }
+
+  const removed = await deleteTripPhotoByStorageKey(tripId, photoType as TripPhotoType, storageKey, containerId);
+  res.json({ ok: true, removed });
 }));
 
 // Authenticated Photos serving Router

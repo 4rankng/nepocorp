@@ -72,6 +72,7 @@ export interface UseTripFormDispatchReturn {
   removePhoto: (idx: number) => void;
   uploadContainerPhoto: (file: File, tripId: number | undefined, rowKey: string, type: 'CONTAINER' | 'SEAL', containerId?: number) => Promise<ContainerPhotoUploadResult>;
   revokeRowPhotos: (rowKey: string) => void;
+  revokeContainerPhoto: (rowKey: string, type: 'CONTAINER' | 'SEAL', objectUrl: string) => void;
   suggestedPrice: number | null;
   estimatedFuelCost: number;
   estimatedTollCost: number;
@@ -125,7 +126,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
   const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
   const { photoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos,
-    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos } = useTripFormPhotos(s.setError, onOcrResult);
+    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos, revokeContainerPhoto } = useTripFormPhotos(s.setError, onOcrResult);
 
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
@@ -1002,7 +1003,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   return {
     legs, addLeg, removeLeg, updateLeg,
     photoUrls, uploading, uploadPhotos, removePhoto,
-    uploadContainerPhoto, revokeRowPhotos,
+    uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto,
     ocrResult,
     suggestedPrice,
     estimatedFuelCost,
