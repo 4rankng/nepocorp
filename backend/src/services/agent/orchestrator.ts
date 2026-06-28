@@ -46,7 +46,7 @@ import {
   type MiniMaxFunctionCall,
 } from '../llm/minimax.client';
 import { todayIsoVn } from './tools/period';
-import { compactToolResult } from './tool-result-compact';
+import { compactToolResult, cutAtSafeBoundary } from './tool-result-compact';
 import { estimateTokensByComponent, formatAttribution } from './token-attribution';
 import { getToolsForRole, findTool } from './tool.registry';
 import {
@@ -1251,7 +1251,50 @@ export function trimToolHistory(messages: MiniMaxMessage[]): MiniMaxMessage[] {
     if (JSON.stringify(units.flat()).length <= TOOL_HISTORY_BUDGET_CHARS) break;
     units.shift();
   }
-  return [...seed, ...units.flat()];
+
+  // HARD CAP (prod metrics 2026-06-28: turns hit 21–30k prompt tokens at
+  // ~0.26ms/token — the >20s tail). The KEEP_RECENT floor above stops at 2 units
+  // regardless of size, so two huge tool results could still blow the budget.
+  //
+  // Pass 1: re-cut the LARGEST tool-reply (largest-first = fastest convergence)
+  // with cutAtSafeBoundary — valid JSON + the same '…(đã cắt)' marker
+  // compactToolResult already uses. Stop the moment a cut doesn't shrink: below
+  // ~190 chars cutAtSafeBoundary only GROWS the string (appends the note), so
+  // halving can't help there — breaking avoids a wasted-iteration spin.
+  //
+  // Pass 2 (last resort, makes the cap actually hard): if still over budget —
+  // many small replies whose sum exceeds it, or huge non-tool messages — drop
+  // oldest WHOLE units (even below KEEP_RECENT) until it fits. A whole unit is
+  // its assistant(tool_calls) + trailing tool replies, so the remaining pairs
+  // stay protocol-safe. Last resort: only the seed remains.
+  //
+  // Both passes are no-ops when already under budget.
+  const MAX_TRIM_PASSES = 50; // backstop only — halving converges in ~log2(budget/200) ≈ 8
+  let kept: MiniMaxMessage[] = units.flat();
+  let guard = 0;
+  while (JSON.stringify(kept).length > TOOL_HISTORY_BUDGET_CHARS && guard++ < MAX_TRIM_PASSES) {
+    let worstIdx = -1;
+    let worstLen = -1;
+    for (let i = 0; i < kept.length; i++) {
+      const c = kept[i].content;
+      if (kept[i].role === 'tool' && typeof c === 'string' && c.length > worstLen) {
+        worstLen = c.length;
+        worstIdx = i;
+      }
+    }
+    if (worstIdx < 0) break; // no shrinkable tool-reply content
+    const target = kept[worstIdx].content as string;
+    const halved = Math.max(200, Math.floor(target.length / 2));
+    const next = cutAtSafeBoundary(target, halved);
+    if (next.length >= target.length) break; // couldn't shrink this one → Pass 1 done
+    kept[worstIdx] = { ...kept[worstIdx], content: next };
+  }
+  // Pass 2: drop oldest whole units until under budget (or only seed remains).
+  while (JSON.stringify(kept).length > TOOL_HISTORY_BUDGET_CHARS && kept.length > 0) {
+    kept.shift(); // leading assistant(tool_calls) (or a stray leading tool reply)
+    while (kept.length > 0 && kept[0].role === 'tool') kept.shift(); // …its now-orphaned replies
+  }
+  return [...seed, ...kept];
 }
 
 // ── Persistence ────────────────────────────────────────────────────────────

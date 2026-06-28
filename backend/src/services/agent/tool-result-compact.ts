@@ -119,7 +119,7 @@ function arrayLens(data: unknown): { target: unknown[] | null; key: string | nul
  *  value (} ] , outside a string) so the model sees whole objects; when the
  *  budget lands inside one big string value (no such boundary), it closes the
  *  open string literal + any open containers and shrinks until it fits. */
-function cutAtSafeBoundary(json: string, maxChars: number): string {
+export function cutAtSafeBoundary(json: string, maxChars: number): string {
   const note = '…(đã cắt)';
   if (json.length + note.length <= maxChars) return json + note;
 

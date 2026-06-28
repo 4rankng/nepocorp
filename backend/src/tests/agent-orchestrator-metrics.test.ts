@@ -97,19 +97,62 @@ describe('trimToolHistory — P1.1 protocol-safe tool-history trim', () => {
     assertProtocolSafe(out);
   });
 
-  test('never drops below KEEP_RECENT_TOOL_UNITS=2 even when each unit is huge', () => {
-    const huge = 'y'.repeat(50_000);
+  test('at KEEP_RECENT floor, huge tool replies are hard-truncated to fit the budget (valid JSON preserved)', () => {
+    // Real tool replies are VALID JSON (compactToolResult); mimic that shape so
+    // the hard cap's cutAtSafeBoundary truncates realistically. 3 units × ~30k
+    // each; KEEP_RECENT keeps the recent 2 (~60k); the hard cap re-cuts them to
+    // fit the 24k budget. Before the cap these survived uncapped — the
+    // prompt-bloat driver of the >20s tail (prod metrics 2026-06-28).
+    const bigJson = JSON.stringify({
+      rows: Array.from({ length: 500 }, (_, i) => ({ id: i, label: 'x'.repeat(40) })),
+    });
     const m: MiniMaxMessage[] = [
       sys('s'), user('hi'),
-      assistantToolCalls('1'), toolReply('1', huge),
-      assistantToolCalls('2'), toolReply('2', huge),
-      assistantToolCalls('3'), toolReply('3', huge),
+      assistantToolCalls('1'), toolReply('1', bigJson),
+      assistantToolCalls('2'), toolReply('2', bigJson),
+      assistantToolCalls('3'), toolReply('3', bigJson),
     ];
     const out = trimToolHistory(m);
-    assert.equal(out.length, 6); // 2 seed + recent 2 units
-    assert.equal(out[2], m[4]); // kept unit #2's assistant turn
-    assert.equal(out[5], m[7]); // kept unit #3's tool reply
+    // Still 2 seed + the 2 most-recent units — Pass 1 truncated them in place;
+    // Pass 2 (the below-KEEP_RECENT fallback) isn't triggered here.
+    assert.equal(out.length, 6);
+    assert.equal(out[2].role, 'assistant'); // unit #2's assistant turn kept
     assertProtocolSafe(out);
+    // Hard cap: serialized output bounded to the 24k tool-history budget + ~1k
+    // of seed/system overhead (was ~60k chars before the cap).
+    const serialized = JSON.stringify(out).length;
+    assert.ok(serialized <= 25_000, `hard cap should bound tool history, got ${serialized}`);
+    // Truncated tool replies stay VALID JSON (cutAtSafeBoundary preserves it) —
+    // regression guard against the mid-JSON-corruption defect.
+    const NOTE = '…(đã cắt)';
+    for (const msg of out) {
+      if (msg.role === 'tool' && typeof msg.content === 'string' && msg.content.endsWith(NOTE)) {
+        const json = msg.content.slice(0, -NOTE.length);
+        assert.doesNotThrow(() => JSON.parse(json), 'truncated tool reply must remain valid JSON');
+      }
+    }
+  });
+
+  test('Pass 2 fallback drops oldest whole units (below KEEP_RECENT) when replies cannot be shrunk enough', () => {
+    // Many units each with a SMALL (~150-char) reply that cutAtSafeBoundary
+    // cannot shrink (it grows sub-~190 inputs → Pass 1 stops immediately via the
+    // no-shrink break). Their sum exceeds the 24k budget, so Pass 2 must drop
+    // whole units to fit — the "hard cap is actually hard" guarantee. Remaining
+    // units stay protocol-safe (every assistant(tool_calls) keeps its replies).
+    const small = JSON.stringify({ id: 0, label: 'x'.repeat(130) }); // ~150 chars
+    const m: MiniMaxMessage[] = [sys('s'), user('hi')];
+    for (let i = 0; i < 120; i++) {
+      m.push(assistantToolCalls(String(i)));
+      m.push(toolReply(String(i), small));
+    }
+    const out = trimToolHistory(m);
+    assertProtocolSafe(out);
+    // Bounded to the budget + seed overhead (was ~32k chars of tool units).
+    assert.ok(JSON.stringify(out).length <= 25_000, `Pass 2 should bound tool history, got ${JSON.stringify(out).length}`);
+    // Seed always preserved; some units were dropped to fit.
+    assert.equal(out[0].role, 'system');
+    assert.equal(out[1].role, 'user');
+    assert.ok(out.length < m.length, 'Pass 2 should have dropped units to fit the budget');
   });
 });
 
