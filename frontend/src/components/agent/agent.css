@@ -261,6 +261,45 @@
 .agent-markdown-table:last-child {
   margin-bottom: 0;
 }
+.agent-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.agent-record-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: rgba(248, 250, 249, 0.72);
+}
+.agent-record-field {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(226, 231, 228, 0.86);
+}
+.agent-record-field:last-child {
+  border-bottom: 0;
+}
+.agent-record-field__label,
+.agent-record-field__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.agent-record-field__label {
+  color: var(--ink-muted, #6b7280);
+  font-size: 12px;
+  font-weight: 700;
+}
+.agent-record-field__value {
+  color: var(--ink, #101513);
+  font-size: 13px;
+  font-weight: 500;
+}
 
 /* ── Insight card ───────────────────────────────────────────────────────── */
 .agent-card {
@@ -444,40 +483,6 @@
 .agent-table th:last-child {
   text-align: right;
 }
-.agent-markdown-table .agent-table--cols-2 {
-  display: block;
-}
-.agent-markdown-table .agent-table--cols-2 thead {
-  display: none;
-}
-.agent-markdown-table .agent-table--cols-2 tbody {
-  display: block;
-}
-.agent-markdown-table .agent-table--cols-2 tr {
-  display: grid;
-  grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
-  column-gap: 14px;
-  align-items: start;
-  border-bottom: 1px solid var(--border, #e5e7eb);
-}
-.agent-markdown-table .agent-table--cols-2 td {
-  min-width: 0;
-  border-bottom: 0;
-  padding: 8px 8px;
-  text-align: left;
-}
-.agent-markdown-table .agent-table--cols-2 td:first-child {
-  color: var(--ink-muted, #6b7280);
-}
-.agent-markdown-table .agent-table--cols-2 td:last-child {
-  text-align: left;
-}
-.agent-markdown-table .agent-table--cols-2 tr:has(td:last-child:empty) {
-  grid-template-columns: 1fr;
-}
-.agent-markdown-table .agent-table--cols-2 tr:has(td:last-child:empty) td:first-child {
-  color: var(--ink, #101513);
-}
 
 @container (max-width: 360px) {
   .agent-card {
@@ -533,16 +538,10 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
-  .agent-markdown-table .agent-table--cols-2 tr {
+  .agent-record-field {
     grid-template-columns: minmax(88px, 0.42fr) minmax(0, 1fr);
-    align-items: start;
-  }
-  .agent-markdown-table .agent-table--cols-2 td {
-    padding: 6px;
-  }
-  .agent-markdown-table .agent-table--cols-2 td:last-child {
-    text-align: left;
-    font-variant-numeric: normal;
+    gap: 8px;
+    padding: 7px 8px;
   }
   .agent-bar-row {
     grid-template-columns: minmax(72px, 0.9fr) minmax(72px, 1fr);

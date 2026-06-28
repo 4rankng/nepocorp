@@ -285,29 +285,24 @@ function MarkdownContent({ content }: { content: string | undefined }) {
 
 function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
-    <div className="agent-table-wrap agent-markdown-table">
-      <table className={`agent-table agent-table--cols-${headers.length}`}>
-        <thead>
-          <tr>
-            {headers.map((header) => (
-              <th key={header}>
-                <MarkdownInline content={header} />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={row.join('|') || rowIndex}>
-              {headers.map((header, cellIndex) => (
-                <td key={`${header}-${cellIndex}`} data-label={plainMarkdownLabel(header)}>
-                  <MarkdownInline content={row[cellIndex] ?? ''} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="agent-markdown-table agent-record-list">
+      {rows.map((row, rowIndex) => (
+        <div className="agent-record-card" key={row.join('|') || rowIndex}>
+          {headers.map((header, cellIndex) => {
+            const value = row[cellIndex]?.trim() || '—';
+            return (
+              <div className="agent-record-field" key={`${rowIndex}-${header}-${cellIndex}`}>
+                <div className="agent-record-field__label">
+                  <MarkdownInline content={header} />
+                </div>
+                <div className="agent-record-field__value">
+                  <MarkdownInline content={value} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -367,13 +362,6 @@ function normalizeMarkdownEscapes(content: string): string {
   // must survive into the renderer (otherwise it becomes a table column
   // separator inside a cell), and an escaped backtick must not open a code span.
   return content.replace(/\\([\\*_[\]{}()#+.!>-])/g, '$1');
-}
-
-function plainMarkdownLabel(content: string): string {
-  return normalizeMarkdownEscapes(content)
-    .replace(/[*_`~]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 function normalizeInlinePipeTables(content: string): string {
