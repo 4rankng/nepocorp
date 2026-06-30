@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { updateTripFiguresSchema } from './index';
+import { bulkUpdateTripFiguresSchema, updateTripFiguresSchema } from './index';
 import { FuelMode, LoadingType } from '../constants';
 
 const validLegs = [
@@ -86,3 +86,18 @@ test('accepts null values for external carrier fields', () => {
   assert.strictEqual(result.success, true);
 });
 
+test('bulkUpdateTripFiguresSchema accepts per-row malformed figures for row-level handling', () => {
+  const result = bulkUpdateTripFiguresSchema.safeParse({
+    updates: [
+      { tripId: 1, mode: 'actuals', figures: { legs: [], fuelMode: 'AUTO' } },
+      { tripId: 2, mode: 'pre-departure', figures: validBase },
+    ],
+  });
+
+  assert.strictEqual(result.success, true);
+});
+
+test('bulkUpdateTripFiguresSchema rejects empty batches', () => {
+  const result = bulkUpdateTripFiguresSchema.safeParse({ updates: [] });
+  assert.strictEqual(result.success, false);
+});

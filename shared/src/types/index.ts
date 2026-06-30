@@ -819,11 +819,11 @@ export interface CreateTripRequest {
   fuelSupplierId?: number | null;
   vatRate?: number;
   carrierType?: 'OWN' | 'EXTERNAL';
-  externalCarrierId?: number;
-  externalFreightCost?: number;
-  externalPlateNumber?: string;
-  externalDriverName?: string;
-  externalDriverPhone?: string;
+  externalCarrierId?: number | null;
+  externalFreightCost?: number | null;
+  externalPlateNumber?: string | null;
+  externalDriverName?: string | null;
+  externalDriverPhone?: string | null;
 }
 
 export interface TripLegInput {
@@ -868,6 +868,29 @@ export interface UpdateTripFiguresRequest {
   externalPlateNumber?: string;
   externalDriverName?: string;
   externalDriverPhone?: string;
+}
+
+export type BulkTripFiguresMode = 'pre-departure' | 'actuals';
+
+export interface BulkUpdateTripFiguresRequest {
+  updates: Array<{
+    tripId: number;
+    mode?: BulkTripFiguresMode;
+    figures: UpdateTripFiguresRequest;
+  }>;
+}
+
+export interface BulkUpdateTripFiguresResult {
+  tripId: number;
+  ok: boolean;
+  trip?: Trip;
+  error?: string;
+}
+
+export interface BulkUpdateTripFiguresResponse {
+  results: BulkUpdateTripFiguresResult[];
+  updated: number;
+  failed: number;
 }
 
 export interface CreatePaymentRequest {

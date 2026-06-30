@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as gpsService from '../services/gps.service';
 import { captureTripGpsTrack, deriveRoutesForStoredTrip } from '../services/gps/capture.service';
@@ -26,6 +26,7 @@ import { createTripCommand, dispatchTripCommand } from '../services/trip-command
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
 registerAuditEvent('PUT', '/api/trips/', '/pre-departure', AuditEvent.TRIP_UPDATED_PRE_DEPARTURE);
 registerAuditEvent('PUT', '/api/trips/', '/actuals', AuditEvent.TRIP_UPDATED_ACTUALS);
+registerAuditEvent('POST', '/api/trips/bulk-figures', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/trips/', '/dispatch', AuditEvent.TRIP_DISPATCHED);
 registerAuditEvent('POST', '/api/trips/', '/complete', AuditEvent.TRIP_COMPLETED);
 registerAuditEvent('POST', '/api/trips/', '/lock', AuditEvent.TRIP_LOCKED);
@@ -107,6 +108,47 @@ router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
     totalFuel: summary.totalFuel,
     avgPer100: summary.avgPer100,
     missingFuel: summary.missingFuel,
+  });
+}));
+
+router.post('/bulk-figures', asyncHandler(async (req: Request, res: Response) => {
+  const payload = bulkUpdateTripFiguresSchema.parse(req.body);
+  const user = getUser(req);
+  const results = [];
+
+  for (const update of payload.updates) {
+    const parsedFigures = updateTripFiguresSchema.safeParse(update.figures);
+    if (!parsedFigures.success) {
+      results.push({
+        tripId: update.tripId,
+        ok: false,
+        error: parsedFigures.error.issues[0]?.message ?? 'Dữ liệu dòng không hợp lệ',
+      });
+      continue;
+    }
+
+    try {
+      const trip = await tripService.updateTripFigures(update.tripId, {
+        ...parsedFigures.data,
+        expectedVersion: parsedFigures.data.version,
+        userId: user.userId,
+      });
+      results.push({ tripId: update.tripId, ok: true, trip });
+    } catch (err) {
+      results.push({
+        tripId: update.tripId,
+        ok: false,
+        error: err instanceof Error ? err.message : 'Không thể cập nhật chuyến',
+      });
+    }
+  }
+
+  const updated = results.filter((r) => r.ok).length;
+  await invalidateReportCaches();
+  res.json({
+    results,
+    updated,
+    failed: results.length - updated,
   });
 }));
 
@@ -198,12 +240,14 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
 router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const confirmZeroRevenue = req.body.confirmZeroRevenue === true;
+  const confirmNoPhoto = req.body.confirmNoPhoto === true;
   const trip = await tripService.transitionTripStatus(
     id,
     TripStatus.LOCKED,
     getUser(req).userId,
     getUser(req).role,
     confirmZeroRevenue,
+    confirmNoPhoto,
   );
   await invalidateReportCaches(true);
   emitNotification({

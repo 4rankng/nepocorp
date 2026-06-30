@@ -32,6 +32,8 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
   const km = getTripDistance(trip);
   const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
   const revenue = Number(trip.revenue ?? 0);
+  const totalCost = Number(trip.totalCost ?? 0);
+  const grossProfit = Number(trip.grossProfit ?? 0);
   const missingIndicators = getMissingIndicators(trip);
   const tripContainers: TripListContainer[] = (trip as TripListRow).containers ?? [];
   const typeCodes = Array.from(new Set(tripContainers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
@@ -137,6 +139,18 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
           <span className="lab">Doanh thu</span>
           <span className={revenue > 0 ? 'val' : 'val empty'}>
             {revenue > 0 ? `${formatMoney(revenue)} ₫` : '—'}
+          </span>
+        </div>
+        <div className="mm">
+          <span className="lab">Tổng chi phí</span>
+          <span className={totalCost > 0 ? 'val' : 'val empty'}>
+            {totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}
+          </span>
+        </div>
+        <div className="mm">
+          <span className="lab">LN gộp</span>
+          <span className={grossProfit !== 0 ? `val${grossProfit < 0 ? ' warn' : ''}` : 'val empty'}>
+            {grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}
           </span>
         </div>
         <div className="mm">

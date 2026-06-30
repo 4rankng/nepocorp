@@ -152,6 +152,28 @@ export const updateTripFiguresSchema = z.object({
       });
     }
   }
+  // Revenue override footgun: splits are authoritative when present, so sending
+  // `revenue` together with a split silently discards `revenue`. Reject the
+  // ambiguous mixed payload with a clear error. (Frontend sends splits only and
+  // omits `revenue`, so it is unaffected.) feedback202606 A3 §9.
+  if (data.revenue !== undefined &&
+      (data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
+      path: ['revenue'],
+    });
+  }
+});
+
+export const bulkUpdateTripFiguresSchema = z.object({
+  updates: z.array(z.object({
+    tripId: z.coerce.number().int().positive(),
+    mode: z.enum(['pre-departure', 'actuals']).default('actuals'),
+    // Validate each row's figures independently in the route so one malformed
+    // spreadsheet row can return a row error without rejecting the whole batch.
+    figures: z.unknown(),
+  })).min(1).max(100),
 });
 
 
@@ -754,6 +776,7 @@ export const baseTripExpenseSchema = z.object({
   sellAmount: z.number().min(0).optional().default(0),
   settlementMethod: z.enum(['COMPANY_DIRECT', 'FORWARDER_ADVANCE']).default('FORWARDER_ADVANCE'),
   supplierId: z.number().int().positive().optional(),
+  forwarderId: z.number().int().positive().optional(),
   invoiceNumber: z.string().max(50).optional(),
   invoiceDate: z.string().optional(),
   declarationNumber: z.string().max(50).optional(),
@@ -778,6 +801,13 @@ export const tripExpenseSchema = baseTripExpenseSchema.superRefine((data, ctx) =
       code: 'custom',
       path: ['supplierId'],
       message: 'Nhà cung cấp là bắt buộc khi chọn công ty trả trực tiếp',
+    });
+  }
+  if (data.settlementMethod === 'FORWARDER_ADVANCE' && !data.forwarderId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['forwarderId'],
+      message: 'Forwarder là bắt buộc khi chọn tạm ứng qua forwarder',
     });
   }
 });
@@ -832,6 +862,7 @@ export const upsertTripInstructionsSchema = z.object({
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;
 export type UpdateTripFiguresInput = z.infer<typeof updateTripFiguresSchema>;
+export type BulkUpdateTripFiguresInput = z.infer<typeof bulkUpdateTripFiguresSchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type CreatePenaltyInput = z.infer<typeof createPenaltySchema>;
 export type CreateAdjustmentInput = z.infer<typeof createAdjustmentSchema>;

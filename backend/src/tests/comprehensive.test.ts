@@ -397,7 +397,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
   const lockRes = await testFetch(`/api/trips/${tripId}/lock`, {
     method: 'POST',
     token: adminToken,
-    body: JSON.stringify({ confirmZeroRevenue: false })
+    body: JSON.stringify({ confirmZeroRevenue: false, confirmNoPhoto: true })
   });
   assert.strictEqual(lockRes.status, 200);
   assert.strictEqual(lockRes.data.status, TripStatus.LOCKED);

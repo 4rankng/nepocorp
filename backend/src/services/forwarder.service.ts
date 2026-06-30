@@ -100,6 +100,21 @@ export async function createTripExpense(
     containerLabel = container.containerNumber;
   }
 
+  // Enforce counterparty consistency at the service layer (authoritative —
+  // catches every caller, including routes that hardcode forwarderId). A
+  // FORWARDER_ADVANCE fee requires a forwarder to pay it; a COMPANY_DIRECT fee
+  // requires a supplier. Without this, an APPROVED fee with no counterparty
+  // produces a one-sided ledger entry at completion (sell-side SERVICE_FEE
+  // posted with no matching buy side). The shared tripExpenseSchema refine
+  // mirrors this for routes that pass the fields from input.
+  const sm = data.settlementMethod ?? 'FORWARDER_ADVANCE';
+  if (sm === 'FORWARDER_ADVANCE' && data.forwarderId == null) {
+    throw new ApiError(422, 'Forwarder là bắt buộc khi chọn tạm ứng qua forwarder.');
+  }
+  if (sm === 'COMPANY_DIRECT' && data.supplierId == null) {
+    throw new ApiError(422, 'Nhà cung cấp là bắt buộc khi chọn công ty trả trực tiếp.');
+  }
+
   // forwarderId=null means accountant/manager-created → auto-approve.
   // forwarderId set means forwarder-created → requires manager approval.
   const approvalStatus = data.forwarderId == null ? 'APPROVED' : 'PENDING';

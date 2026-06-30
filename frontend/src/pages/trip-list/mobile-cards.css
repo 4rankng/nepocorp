@@ -30,16 +30,20 @@
 .trip-list-page .trip-mcard__name {
   font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
   margin-bottom: 2px;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .trip-mcard__id {
   font-family: var(--font-mono);
   font-size: var(--fs-2xs); font-weight: 600; color: var(--ink-3);
   display: inline-flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 .trip-list-page .trip-mcard__route {
   display: flex; align-items: center; gap: 8px;
   font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
   margin-bottom: 8px; flex-wrap: wrap;
+  overflow-wrap: anywhere;
 }
 .trip-list-page .trip-mcard__route .arr { display: inline-flex; color: var(--ink-3); opacity: 0.6; }
 .trip-list-page .trip-mcard__meta {
@@ -62,6 +66,104 @@
 }
 .trip-list-page .trip-mcard__meta .val.warn { color: var(--d-amber); }
 .trip-list-page .trip-mcard__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
+
+.trip-list-page .trip-mcard--quick {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trip-list-page .trip-mcard--quick.selected {
+  border-color: color-mix(in srgb, var(--tbl-green-600) 42%, var(--line));
+  box-shadow: 0 0 0 2px var(--tbl-green-100);
+}
+.trip-list-page .trip-mcard--quick.locked {
+  opacity: 0.72;
+}
+.trip-list-page .trip-mcard__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.trip-list-page .trip-mcard__check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--tbl-green-700);
+}
+.trip-list-page .quick-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 4px;
+}
+.trip-list-page .quick-card-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+.trip-list-page .quick-card-field > span {
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.trip-list-page .quick-card-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.trip-list-page .quick-card-summary div {
+  min-width: 0;
+}
+.trip-list-page .quick-card-summary span {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.trip-list-page .quick-card-summary b {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.trip-list-page .quick-card-error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .trip-list-page .trip-mcard {
+    padding: 12px;
+  }
+  .trip-list-page .trip-mcard__top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .trip-list-page .trip-mcard__meta,
+  .trip-list-page .quick-card-grid,
+  .trip-list-page .quick-card-summary {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ── Mobile card missing indicators ──────────────────────────────────── */
 .trip-list-page .trip-mcard__missing {
@@ -102,4 +204,3 @@
   background: var(--tbl-green-050);
 }
 /* Mobile cards completeness uses edge strip now, removing old borders */
-

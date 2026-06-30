@@ -5,6 +5,8 @@ import { TripStatus, Role, TxnType } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { transitionTripStatus } from '../services/trip-status-machine.service';
+import { LedgerService } from '../services/ledger.service';
+import { createTripExpense } from '../services/forwarder.service';
 
 /**
  * US-002 / US-003 — chi hộ (service-fee) sell-side AR posting.
@@ -145,6 +147,36 @@ async function ledgerRowsForTripCustomer(tripId: number, customerId: number) {
     .orderBy(s.ledger.id);
 }
 
+/**
+ * Insert an ancillary fee row directly, bypassing createInTransitTripWithFees
+ * (which forces a real counterparty). Used to construct null-counterparty
+ * APPROVED fees for the validation/skip tests. Registers the row for cleanup.
+ */
+async function insertRawFee(
+  tripId: number,
+  overrides: {
+    buyAmount: number;
+    sellAmount: number;
+    settlementMethod: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+    forwarderId?: number | null;
+    supplierId?: number | null;
+    approvalStatus?: string;
+  },
+) {
+  const [row] = await db.insert(s.tripExpenses).values({
+    tripId,
+    forwarderId: overrides.forwarderId ?? null,
+    expenseType: 'CHI_HO',
+    buyAmount: String(overrides.buyAmount),
+    sellAmount: String(overrides.sellAmount),
+    settlementMethod: overrides.settlementMethod,
+    supplierId: overrides.supplierId ?? null,
+    approvalStatus: overrides.approvalStatus ?? 'APPROVED',
+  }).returning();
+  createdExpenseIds.push(row.id);
+  return row;
+}
+
 describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
   test('posts a SERVICE_FEE debit to CUSTOMER for each APPROVED fee sell side at lock', async () => {
     const revenue = 5_000_000;
@@ -275,5 +307,177 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
         .reduce((acc, r) => acc + Number(r.credit), 0);
       assert.equal(debit, credit, `sell fee ${feeId}: debit ${debit} reversed by credit ${credit}`);
     }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Null-counterparty fee guards (validateAncillaryFees / strict vs skip)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  test('strict completion throws on an APPROVED null-counterparty fee and posts no SERVICE_FEE', async () => {
+    const { trip } = await createInTransitTripWithFees({ revenue: 5_000_000 }, []);
+    const fee = await insertRawFee(trip.id, {
+      buyAmount: 100_000,
+      sellAmount: 120_000,
+      settlementMethod: 'FORWARDER_ADVANCE',
+      forwarderId: null,
+      supplierId: null,
+      approvalStatus: 'APPROVED',
+    });
+
+    // Completion drives postTripLock with strict:true (default) → must throw.
+    await assert.rejects(
+      () => transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER),
+      /chưa có đối tác thanh toán/,
+    );
+
+    // The sell-side SERVICE_FEE for this fee must NOT have been posted.
+    const feeLedgerRows = await db.select().from(s.ledger)
+      .where(eq(s.ledger.txnId, fee.id));
+    assert.equal(feeLedgerRows.length, 0, 'no ledger row posted for the rejected fee');
+  });
+
+  test('non-strict postTripLock skips the null-counterparty fee but still posts unrelated entries', async () => {
+    // Build a minimal IN_TRANSIT trip (no driver — postTripLock does not require
+    // one) so the only entries are TRIP_REVENUE + the (skipped) fee.
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const [customer] = await db.insert(s.customers)
+      .values({ name: `ChiHo skip-cust ${suffix}` }).returning();
+    const [route] = await db.insert(s.routes)
+      .values({ name: `ChiHo skip-route ${suffix}` }).returning();
+    const [cargoType] = await db.insert(s.cargoTypes)
+      .values({ name: `ChiHo skip-cargo ${suffix}` }).returning();
+    createdCustomerIds.push(customer.id);
+    createdRouteIds.push(route.id);
+    createdCargoTypeIds.push(cargoType.id);
+
+    const [trip] = await db.insert(s.trips).values({
+      tripCode: `CH-SKIP-${suffix}`.slice(0, 50),
+      customerId: customer.id,
+      routeId: route.id,
+      cargoTypeId: cargoType.id,
+      status: TripStatus.IN_TRANSIT,
+      departureDate: '2026-06-20',
+      revenue: '5000000',
+      carrierType: 'OWN',
+    }).returning();
+    createdTripIds.push(trip.id);
+
+    const fee = await insertRawFee(trip.id, {
+      buyAmount: 100_000,
+      sellAmount: 120_000,
+      settlementMethod: 'FORWARDER_ADVANCE',
+      forwarderId: null,
+      supplierId: null,
+      approvalStatus: 'APPROVED',
+    });
+
+    // Commit the transaction so we can query the ledger afterward; the after()
+    // hook deletes ledger rows by txnId (tripId + feeId) so cleanup is covered.
+    const skipped = await db.transaction(async (tx) => {
+      return LedgerService.postTripLock(
+        tx,
+        {
+          id: trip.id,
+          tripCode: trip.tripCode,
+          customerId: trip.customerId,
+          driverId: null,
+          revenue: '5000000',
+          driverSalary: '0',
+          carrierType: 'OWN',
+          ancillaryFees: [
+            {
+              id: fee.id,
+              buyAmount: '100000',
+              sellAmount: '120000',
+              settlementMethod: 'FORWARDER_ADVANCE',
+              supplierId: null,
+              forwarderId: null,
+              approvalStatus: 'APPROVED',
+            },
+          ],
+        },
+        { strict: false },
+      );
+    });
+
+    // The bad fee id is reported as skipped.
+    assert.ok(skipped.includes(fee.id), `skipped ids ${JSON.stringify(skipped)} include fee ${fee.id}`);
+
+    // No ledger row for the skipped fee (neither buy nor sell side).
+    const feeRows = await db.select().from(s.ledger)
+      .where(eq(s.ledger.txnId, fee.id));
+    assert.equal(feeRows.length, 0, 'skipped fee produced no ledger row');
+
+    // The unrelated TRIP_REVENUE entry still posted.
+    const revenueRows = await db.select().from(s.ledger)
+      .where(and(
+        eq(s.ledger.txnId, trip.id),
+        eq(s.ledger.txnType, TxnType.TRIP_REVENUE),
+      ));
+    assert.equal(revenueRows.length, 1, 'TRIP_REVENUE still posted');
+    assert.equal(revenueRows[0].debit, '5000000');
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // D2: forwarder.service createTripExpense counterparty guard
+  // ─────────────────────────────────────────────────────────────────────────
+
+  test('createTripExpense rejects a FORWARDER_ADVANCE fee with no forwarder', async () => {
+    const { trip } = await createInTransitTripWithFees({ revenue: 1_000_000 }, []);
+    await assert.rejects(
+      () => createTripExpense(db, {
+        tripId: trip.id,
+        forwarderId: null,
+        expenseType: 'CHI_HO',
+        buyAmount: '100000',
+        sellAmount: '120000',
+        settlementMethod: 'FORWARDER_ADVANCE',
+        supplierId: null,
+        note: null,
+      }),
+      /Forwarder là bắt buộc/,
+    );
+  });
+
+  test('createTripExpense rejects a COMPANY_DIRECT fee with no supplier', async () => {
+    const { trip } = await createInTransitTripWithFees({ revenue: 1_000_000 }, []);
+    await assert.rejects(
+      () => createTripExpense(db, {
+        tripId: trip.id,
+        forwarderId: null,
+        expenseType: 'CHI_HO',
+        buyAmount: '100000',
+        sellAmount: '120000',
+        settlementMethod: 'COMPANY_DIRECT',
+        supplierId: null,
+        note: null,
+      }),
+      /Nhà cung cấp là bắt buộc/,
+    );
+  });
+
+  test('createTripExpense accepts a balanced FORWARDER_ADVANCE fee with a forwarder', async () => {
+    // createInTransitTripWithFees creates a forwarder user when asked for a
+    // FORWARDER_ADVANCE fee; we reuse that forwarderId here.
+    const { trip, forwarderId } = await createInTransitTripWithFees(
+      { revenue: 1_000_000 },
+      [{ buyAmount: 1, sellAmount: 1, settlementMethod: 'FORWARDER_ADVANCE' }],
+    );
+    assert.ok(forwarderId, 'helper created a forwarder');
+
+    const inserted = await createTripExpense(db, {
+      tripId: trip.id,
+      forwarderId: forwarderId!,
+      expenseType: 'CHI_HO',
+      buyAmount: '100000',
+      sellAmount: '120000',
+      settlementMethod: 'FORWARDER_ADVANCE',
+      supplierId: null,
+      note: null,
+    });
+    assert.ok(inserted.id, 'fee inserted');
+    assert.equal(inserted.forwarderId, forwarderId);
+    assert.equal(inserted.approvalStatus, 'PENDING'); // forwarder-created → pending approval
+    createdExpenseIds.push(inserted.id);
   });
 });

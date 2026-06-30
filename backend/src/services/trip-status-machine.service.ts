@@ -14,6 +14,7 @@ export async function transitionTripStatus(
   userId: number,
   userRole: string,
   confirmZeroRevenue?: boolean,
+  confirmNoPhoto?: boolean,
 ) {
   // Audit rows for status transitions are produced by the auditLogMiddleware
   // on the corresponding endpoint (POST /dispatch, /lock, /cancel) with full
@@ -118,6 +119,30 @@ export async function transitionTripStatus(
         throw new ApiError(422, 'Doanh thu bằng 0. Vui lòng xác nhận.');
       }
 
+      // Photo evidence gate (Bug 2): require at least 1 photo baseline, and
+      // when the trip's cargo type opts into requires_photos, additionally
+      // require ≥1 CONTAINER and ≥1 SEAL photo. confirmNoPhoto lets the user
+      // override (e.g. legacy trips with no photo evidence). Completion stays
+      // permissive (B2) — the gate lives only on the LOCK transition.
+      const photos = await tx.select({ type: s.tripPhotos.type })
+        .from(s.tripPhotos).where(eq(s.tripPhotos.tripId, tripId));
+      const anyCount = photos.length;
+      const containerCount = photos.filter(p => p.type === 'CONTAINER').length;
+      const sealCount = photos.filter(p => p.type === 'SEAL').length;
+
+      const [cargo] = await tx.select({ requiresPhotos: s.cargoTypes.requiresPhotos })
+        .from(s.cargoTypes).where(eq(s.cargoTypes.id, trip.cargoTypeId)).limit(1);
+      const requiresPhotos = cargo?.requiresPhotos === true; // null/false → baseline only
+
+      if (!confirmNoPhoto) {
+        if (anyCount < 1) {
+          throw new ApiError(422, 'Chưa có ảnh bằng chứng. Vui lòng tải lên ít nhất 1 ảnh hoặc xác nhận chốt không ảnh.');
+        }
+        if (requiresPhotos && (containerCount < 1 || sealCount < 1)) {
+          throw new ApiError(422, 'Loại hàng yêu cầu ảnh: phải có ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL (hoặc xác nhận chốt không ảnh).');
+        }
+      }
+
       // Conditional guard status update
       const [lockedTrip] = await tx.update(s.trips).set({
         status: TripStatus.LOCKED,
@@ -185,7 +210,7 @@ export async function transitionTripStatus(
             forwarderId: fee.forwarderId ?? null,
             approvalStatus: fee.approvalStatus,
           })),
-        });
+        }, { strict: false });
       }
 
       // Cancel audit row is written by the middleware for POST /cancel

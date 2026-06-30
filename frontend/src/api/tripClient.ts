@@ -8,6 +8,8 @@ import type {
   TripInstruction,
   CreateTripRequest,
   UpdateTripFiguresRequest,
+  BulkUpdateTripFiguresRequest,
+  BulkUpdateTripFiguresResponse,
   PaginatedResponse,
   LiveFleetResponse,
 } from '@tingting/shared';
@@ -80,10 +82,13 @@ export const tripClient = {
     opts?: { expectedUpdatedAt?: string },
   ) => api.put<Trip>(TRIPS.ACTUALS(id), data, opts),
 
+  bulkUpdateTripFigures: (data: BulkUpdateTripFiguresRequest) =>
+    api.post<BulkUpdateTripFiguresResponse>(TRIPS.BULK_FIGURES, data),
+
   dispatchTrip: (id: number) => api.post<Trip>(TRIPS.DISPATCH(id), {}),
 
-  lockTrip: (id: number, confirmZeroRevenue?: boolean) =>
-    api.post<Trip>(TRIPS.LOCK(id), { confirmZeroRevenue }),
+  lockTrip: (id: number, confirmZeroRevenue?: boolean, confirmNoPhoto?: boolean) =>
+    api.post<Trip>(TRIPS.LOCK(id), { confirmZeroRevenue, confirmNoPhoto }),
 
   cancelTrip: (id: number) => api.post<Trip>(TRIPS.CANCEL(id), {}),
 

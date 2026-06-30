@@ -3,6 +3,7 @@ import * as s from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
+import { ApiError } from '../errors';
 
 /** Common trip shape for ledger lock/unlock operations */
 interface TripLedgerParams {
@@ -161,18 +162,73 @@ export class LedgerService {
   }
 
   /**
+   * Detect APPROVED ancillary fees that have a buy side (buyAmount > 0) but no
+   * valid payable counterparty — these would produce a one-sided ledger entry
+   * (sell-side SERVICE_FEE posted with no matching buy side).
+   *  - strict:true  → throw ApiError(422) listing the offending fee id(s).
+   *  - strict:false → skip the fee ENTIRELY (post neither buy nor sell), log a
+   *    structured warning, and return the skipped fee ids so callers can surface
+   *    a non-blocking warning. Used on the relock / cancel-from-completed paths
+   *    where a legacy bad fee must not block an unrelated figures edit.
+   * Returns the skipped fee ids (empty in strict mode unless it threw).
+   */
+  private static validateAncillaryFees(
+    fees: TripLedgerParams['ancillaryFees'],
+    opts: { strict: boolean },
+  ): number[] {
+    if (!fees || fees.length === 0) return [];
+    const skipped: number[] = [];
+    for (const fee of fees) {
+      if (fee.approvalStatus !== 'APPROVED') continue;
+      if (Number(fee.buyAmount) <= 0) continue; // no buy side → sell-only is legitimate markup, not one-sided
+      const hasCounterparty =
+        (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) ||
+        (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId);
+      if (!hasCounterparty) {
+        if (opts.strict) {
+          throw new ApiError(
+            422,
+            `Phí chi hộ #${fee.id} đã duyệt nhưng chưa có đối tác thanh toán (nhà cung cấp / forwarder). Vui lòng gán đối tác hoặc đổi phương thức thanh toán.`,
+          );
+        }
+        skipped.push(fee.id);
+        console.warn('[ledger] null-counterparty APPROVED fee skipped (non-strict)', {
+          feeId: fee.id, settlementMethod: fee.settlementMethod,
+        });
+      }
+    }
+    return skipped;
+  }
+
+  /**
    * Seam to handle financial ledger posting when a trip is locked.
    * Isolates financial calculations and notes from the trip lifecycle machine.
+   *
+   * Returns the ids of ancillary fees that were skipped (non-strict mode only);
+   * in strict mode (default) a bad fee throws before any posting occurs.
    */
-  static async postTripLock(tx: Tx, trip: TripLedgerParams) {
+  static async postTripLock(
+    tx: Tx,
+    trip: TripLedgerParams,
+    opts?: { strict?: boolean },
+  ): Promise<number[]> {
     const revenue = Number(trip.revenue || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const carrierType = trip.carrierType ?? 'OWN';
     const fees = trip.ancillaryFees ?? [];
     const label = trip.tripCode || '';
 
+    // ── 0. Validate ancillary fees — reject or skip null-counterparty buy sides ──
+    const skippedFeeIds = this.validateAncillaryFees(fees, { strict: opts?.strict ?? true });
+    const postableFees = skippedFeeIds.length
+      ? fees.filter(f => !skippedFeeIds.includes(f.id))
+      : fees;
+
     // ── 1. Collect all entities to lock (sorted globally to prevent deadlocks) ──
-    const entitiesToLock = this.collectTripEntities(trip);
+    // Lock only entities for fees we will actually post, keeping the locked set
+    // consistent with the posted set.
+    const tripForLock = skippedFeeIds.length ? { ...trip, ancillaryFees: postableFees } : trip;
+    const entitiesToLock = this.collectTripEntities(tripForLock);
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Customer freight revenue (always incl-VAT, unchanged) ──
@@ -230,7 +286,7 @@ export class LedgerService {
     }
 
     // ── 5. Ancillary fees — buy side (only APPROVED fees) ──
-    for (const fee of fees) {
+    for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
       const buyAmt = Number(fee.buyAmount);
       if (buyAmt <= 0) continue;
@@ -267,7 +323,7 @@ export class LedgerService {
     // APPROVED fees are posted HERE, at lock time; a fee still PENDING at
     // lock is skipped on both sides and only enters the ledger if it is
     // approved and the trip is re-locked (e.g. via a figures edit).
-    for (const fee of fees) {
+    for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
       const sellAmt = Number(fee.sellAmount);
       if (sellAmt <= 0) continue;
@@ -281,6 +337,8 @@ export class LedgerService {
         note: label ? `Phí chi hộ chuyến ${label}` : 'Phí chi hộ',
       });
     }
+
+    return skippedFeeIds;
   }
 
   /**
@@ -288,15 +346,29 @@ export class LedgerService {
    * Posts compensating entries (swap debit↔credit) with UNLOCK_REVERSAL txnType.
    * The ledger is append-only — this does not modify existing rows.
    */
-  static async postTripUnlock(tx: Tx, trip: TripLedgerParams) {
+  static async postTripUnlock(
+    tx: Tx,
+    trip: TripLedgerParams,
+    opts?: { strict?: boolean },
+  ): Promise<number[]> {
     const revenue = Number(trip.revenue || 0);
     const driverSalary = Number(trip.driverSalary || 0);
     const carrierType = trip.carrierType ?? 'OWN';
     const fees = trip.ancillaryFees ?? [];
     const label = trip.tripCode || '';
 
+    // ── 0. Validate ancillary fees — reject or skip null-counterparty buy sides ──
+    // The unlock path must reverse exactly what the lock path posted, so we apply
+    // the same filter to keep lock/unlock symmetric (skipped fees appear on
+    // neither side in either direction).
+    const skippedFeeIds = this.validateAncillaryFees(fees, { strict: opts?.strict ?? true });
+    const postableFees = skippedFeeIds.length
+      ? fees.filter(f => !skippedFeeIds.includes(f.id))
+      : fees;
+
     // ── 1. Collect entities to lock (same as postTripLock) ──
-    const entitiesToLock = this.collectTripEntities(trip);
+    const tripForLock = skippedFeeIds.length ? { ...trip, ancillaryFees: postableFees } : trip;
+    const entitiesToLock = this.collectTripEntities(tripForLock);
     await this.lockEntities(tx, entitiesToLock);
 
     // ── 2. Reverse customer freight revenue (swap debit↔credit) ──
@@ -353,7 +425,7 @@ export class LedgerService {
     }
 
     // ── 5. Reverse ancillary fees (only APPROVED, swap debit↔credit) ──
-    for (const fee of fees) {
+    for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
       const buyAmt = Number(fee.buyAmount);
       if (buyAmt <= 0) continue;
@@ -384,7 +456,7 @@ export class LedgerService {
     // ── 6. Reverse ancillary fees — sell side (customer AR for phí chi hộ) ──
     // Mirrors section 6 of postTripLock: swap debit↔credit so the net customer
     // contribution from this trip's sell-side fees returns to zero.
-    for (const fee of fees) {
+    for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
       const sellAmt = Number(fee.sellAmount);
       if (sellAmt <= 0) continue;
@@ -398,6 +470,8 @@ export class LedgerService {
         note: label ? `Phí chi hộ chuyến ${label} (Hoàn tác)` : 'Phí chi hộ (Hoàn tác)',
       });
     }
+
+    return skippedFeeIds;
   }
 
   // ─── Read methods ────────────────────────────────────────────────────────────

@@ -18,6 +18,62 @@ import { XeNgoaiBadge } from './XeNgoaiBadge';
 const formatMoney = (n: number): string =>
   formatCurrency(n).replace(' ₫', '').replace('₫', '').trim();
 
+export interface TripQuickEditDraft {
+  fuelLiters: string;
+  roadAllowance: string;
+  driverSalary: string;
+  revenue: string;
+}
+
+export interface TripQuickEditOptions {
+  enabled: boolean;
+  selectedIds: Set<number>;
+  drafts: Record<number, TripQuickEditDraft>;
+  errors: Record<number, string>;
+  onToggleSelect: (tripId: number) => void;
+  onDraftChange: (tripId: number, field: keyof TripQuickEditDraft, value: string) => void;
+}
+
+function isQuickEditable(trip: TripDetail): boolean {
+  return trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
+}
+
+function moneyCell(value: number, extraClass = '') {
+  return (
+    <div className={`${value > 0 ? 'money' : 'money-empty'}${extraClass ? ` ${extraClass}` : ''}`}>
+      {value > 0 ? (
+        <>
+          {formatMoney(value)}
+          <span className="money-unit"> ₫</span>
+        </>
+      ) : '—'}
+    </div>
+  );
+}
+
+function QuickMoneyInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <input
+      className="quick-money-input"
+      type="text"
+      inputMode="numeric"
+      value={value}
+      disabled={disabled}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
 /**
  * Trip-list column definitions for TanStack React Table.
  *
@@ -31,8 +87,31 @@ const formatMoney = (n: number): string =>
  * .route-cell-flex, etc.) defined in TripListPage.css. The page wires
  * up the `<table>` via `useReactTable({ data, columns })`.
  */
-export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[] {
-  return [
+export function buildTripColumns(warnThreshold: number, quickEdit?: TripQuickEditOptions): ColumnDef<TripDetail>[] {
+  const quickColumns: ColumnDef<TripDetail>[] = quickEdit?.enabled ? [
+    {
+      id: 'select',
+      header: '',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const trip = row.original;
+        const editable = isQuickEditable(trip);
+        return (
+          <input
+            type="checkbox"
+            className="quick-row-check"
+            checked={quickEdit.selectedIds.has(trip.id)}
+            disabled={!editable}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => quickEdit.onToggleSelect(trip.id)}
+            aria-label={`Chọn chuyến ${buildTripCode(trip)}`}
+          />
+        );
+      },
+    },
+  ] : [];
+
+  const columns: ColumnDef<TripDetail>[] = [
     {
       id: 'trip',
       header: 'Chuyến · Mã',
@@ -168,6 +247,20 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
         const trip = row.original;
         const cons = calcConsumption(trip);
         const isCanceled = trip.status === TripStatus.CANCELED;
+        if (quickEdit?.enabled) {
+          const editable = isQuickEditable(trip);
+          const draft = quickEdit.drafts[trip.id];
+          return (
+            <div className="quick-edit-cell">
+              <QuickMoneyInput
+                value={draft?.fuelLiters ?? ''}
+                disabled={!editable}
+                onChange={(value) => quickEdit.onDraftChange(trip.id, 'fuelLiters', value)}
+              />
+              <span className="quick-unit">L</span>
+            </div>
+          );
+        }
         if (isCanceled) {
           return (
             <div className="cons-cell">
@@ -222,16 +315,20 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
       cell: ({ row }) => {
         const trip = row.original;
         const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
-        return (
-          <div className={road > 0 ? 'money' : 'money-empty'}>
-            {road > 0 ? (
-              <>
-                {formatMoney(road)}
-                <span className="money-unit"> ₫</span>
-              </>
-            ) : '—'}
-          </div>
-        );
+        if (quickEdit?.enabled) {
+          const editable = isQuickEditable(trip);
+          const draft = quickEdit.drafts[trip.id];
+          return (
+            <div className="quick-edit-cell">
+              <QuickMoneyInput
+                value={draft?.roadAllowance ?? ''}
+                disabled={!editable}
+                onChange={(value) => quickEdit.onDraftChange(trip.id, 'roadAllowance', value)}
+              />
+            </div>
+          );
+        }
+        return moneyCell(road);
       },
     },
     {
@@ -241,17 +338,52 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
       cell: ({ row }) => {
         const trip = row.original;
         const revenue = Number(trip.revenue ?? 0);
+        if (quickEdit?.enabled) {
+          const editable = isQuickEditable(trip);
+          const draft = quickEdit.drafts[trip.id];
+          return (
+            <div className="quick-edit-cell">
+              <QuickMoneyInput
+                value={draft?.revenue ?? ''}
+                disabled={!editable}
+                onChange={(value) => quickEdit.onDraftChange(trip.id, 'revenue', value)}
+              />
+            </div>
+          );
+        }
+        return moneyCell(revenue);
+      },
+    },
+    ...(quickEdit?.enabled ? [{
+      id: 'driverSalary',
+      header: 'Lương chuyến',
+      accessorFn: (row: TripDetail) => Number(row.driverSalary ?? 0),
+      cell: ({ row }) => {
+        const trip = row.original;
+        const editable = isQuickEditable(trip);
+        const draft = quickEdit.drafts[trip.id];
         return (
-          <div className={revenue > 0 ? 'money' : 'money-empty'}>
-            {revenue > 0 ? (
-              <>
-                {formatMoney(revenue)}
-                <span className="money-unit"> ₫</span>
-              </>
-            ) : '—'}
+          <div className="quick-edit-cell">
+            <QuickMoneyInput
+              value={draft?.driverSalary ?? ''}
+              disabled={!editable}
+              onChange={(value) => quickEdit.onDraftChange(trip.id, 'driverSalary', value)}
+            />
           </div>
         );
       },
+    } satisfies ColumnDef<TripDetail>] : []),
+    {
+      id: 'totalCost',
+      header: 'Tổng chi phí',
+      accessorFn: (row) => Number(row.totalCost ?? 0),
+      cell: ({ row }) => moneyCell(Number(row.original.totalCost ?? 0)),
+    },
+    {
+      id: 'grossProfit',
+      header: 'LN gộp',
+      accessorFn: (row) => Number(row.grossProfit ?? 0),
+      cell: ({ row }) => moneyCell(Number(row.original.grossProfit ?? 0), Number(row.original.grossProfit ?? 0) < 0 ? 'money-loss' : ''),
     },
     {
       id: 'status',
@@ -265,11 +397,15 @@ export function buildTripColumns(warnThreshold: number): ColumnDef<TripDetail>[]
             <span className={`status-pill ${pillClass}`}>
               {TRIP_STATUS_LABELS[trip.status]}
             </span>
+            {quickEdit?.enabled && quickEdit.errors[trip.id] && (
+              <span className="quick-row-error" title={quickEdit.errors[trip.id]}>Lỗi</span>
+            )}
           </div>
         );
       },
     },
   ];
+  return [...quickColumns, ...columns];
 }
 
 /** Computes the per-row CSS variable bag used by the page for stripe colors. */

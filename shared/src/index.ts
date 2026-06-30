@@ -59,7 +59,7 @@ export type {
 } from './navigation/pageCatalog';
 
 export {
-  tripLegSchema, createTripSchema, updateTripFiguresSchema,
+  tripLegSchema, createTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,

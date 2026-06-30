@@ -99,7 +99,7 @@ describe('trip completion ledger posting', () => {
     const { trip } = await createInTransitTrip();
 
     await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
-    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER);
+    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, false, true);
 
     const rows = await ledgerRowsForTrip(trip.id);
     assert.equal(rows.filter(r => r.txnType === TxnType.TRIP_REVENUE).length, 1);
@@ -111,7 +111,7 @@ describe('trip completion ledger posting', () => {
     const { trip } = await createInTransitTrip();
 
     await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
-    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER);
+    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, false, true);
     await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
 
     const rows = await ledgerRowsForTrip(trip.id);

@@ -129,10 +129,10 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Lương chuyến quy đổi (hệ thống tự điền, kế toán có thể sửa)
   - Doanh thu cuối cùng
   - **Cập nhật/bổ sung container** (Loại container, Số container nhập tay, Số seal nhập tay — nhập được bởi Kế toán, Giám đốc hoặc Giao nhận)
-  - Ảnh bốc xếp (bắt buộc nếu hàng hóa yêu cầu — vd: chè). Bên cạnh ảnh, có thể nhập số container/seal bằng text.
+  - Ảnh bốc xếp (CONTAINER, SEAL). Bên cạnh ảnh, có thể nhập số container/seal bằng text.
 - **Điều kiện chuyển trạng thái:**
-  - Phải có ít nhất 1 ảnh
-  - Nếu loại hàng yêu cầu ảnh: phải có cả ảnh CONTAINER và SEAL
+  - **Ảnh KHÔNG bắt buộc khi hoàn thành** (quyết định B2, 2026-06-18) — có thể đánh dấu "Hoàn thành" mà chưa có ảnh, và bổ sung/sửa ảnh sau.
+  - Yêu cầu về ảnh (nếu có) được kiểm tra ở bước **Chốt sổ** (Bước 4).
 - **Kết quả:** Trạng thái chuyển sang `COMPLETED`
 
 #### Bước 4: Chốt sổ (LOCKED)
@@ -141,10 +141,14 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 - **Quy trình chốt:**
   1. Hệ thống kiểm tra doanh thu > 0
   2. Nếu doanh thu = 0 → hiện cảnh báo "Doanh thu bằng 0. Xác nhận chốt?" → cần xác nhận
-  3. Hệ thống ghi sổ cái:
+  3. **Kiểm tra ảnh bằng chứng:**
+     - Phải có **ít nhất 1 ảnh** (loại bất kỳ) mới được chốt.
+     - Nếu loại hàng có `requires_photos = true` (vd: chè): phải có thêm **≥1 ảnh CONTAINER** và **≥1 ảnh SEAL**.
+     - Quản trị/Giám đốc có thể ghi đè bằng "Xác nhận chốt không ảnh" (cùng cơ chế với xác nhận doanh thu = 0).
+  4. Hệ thống ghi sổ cái:
      - **Nợ Khách hàng** (TRIP_REVENUE): tăng công nợ = doanh thu (gồm VAT). Doanh thu thực tế nội bộ = freightExVat − customerCommission.
      - **Có Lái xe** (DRIVER_SALARY): tăng lương = lương chuyến quy đổi
-  4. Ghi nhật ký kiểm toán
+  5. Ghi nhật ký kiểm toán
 - **Kết quả:** Trạng thái `LOCKED` — **không thể sửa đổi**, số liệu đã ghi sổ
 
 #### Bước 5: Hủy chuyến (CANCELED)
@@ -422,10 +426,10 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ (tiền vé công ty đã thanh toán), cộng thêm | |
 | 6 | Cập nhật **doanh thu** (nếu cần) | Nếu giá thực tế khác bảng giá → ghi đè | Hệ thống lưu giá gốc + giá ghi đè |
 | 7 | **Cập nhật/bổ sung container** | Loại container (dropdown), Số container (text), Số seal (text) | Nhập được bởi Kế toán, Giám đốc hoặc Giao nhận |
-| 8 | **Tải ảnh** | Ảnh CONTAINER, SEAL (bắt buộc nếu hàng yêu cầu). Bên cạnh ảnh, có thể nhập số cont/seal bằng text. | |
-| 9 | Nhấn **"Lưu"** | | ✅ Chuyến chuyển sang COMPLETED (nếu đủ ảnh) |
+| 8 | **Tải ảnh** (tùy chọn khi hoàn thành) | Ảnh CONTAINER, SEAL. Bên cạnh ảnh, có thể nhập số cont/seal bằng text. Có thể bổ sung/sửa ảnh sau. | |
+| 9 | Nhấn **"Lưu"** | | ✅ Chuyến chuyển sang COMPLETED |
 
-> **Lưu ý về ảnh:** Nếu loại hàng hóa có `requiresPhotos = true` (vd: chè), phải tải lên ít nhất 1 ảnh CONTAINER và 1 ảnh SEAL mới chuyển sang COMPLETED được.
+> **Lưu ý về ảnh (quyết định B2, 2026-06-18):** Ảnh **không bắt buộc** khi hoàn thành — có thể bổ sung/sửa bất cứ lúc nào trước khi chốt. Yêu cầu về ảnh (kể cả `requiresPhotos = true` như chè) chỉ được kiểm tra ở bước **Chốt sổ** (mục 4.4).
 
 ### 4.4 Chốt sổ chuyến
 
@@ -435,6 +439,7 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 2 | Nhấn vào chuyến → nút **"Chốt chuyến"** | |
 | 3a | Nếu doanh thu > 0 → xác nhận | ✅ LOCKED, ghi sổ cái |
 | 3b | Nếu doanh thu = 0 → xác nhận "Xác nhận chốt doanh thu = 0?" | ✅ LOCKED |
+| 4 | **Kiểm tra ảnh bằng chứng** | Phải có ≥1 ảnh (loại bất kỳ); nếu `requiresPhotos = true` (vd: chè) thì cần thêm ≥1 CONTAINER + ≥1 SEAL. Quản trị/Giám đốc có thể "Xác nhận chốt không ảnh" để ghi đè. |
 
 **Sổ cái ghi nhận khi chốt:**
 - **Khách hàng:** Nợ TRIP_REVENUE = doanh thu chuyến

@@ -3,24 +3,61 @@
   .trip-list-page .metrics { grid-template-columns: 1fr 1fr; }
   .trip-list-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
 }
+
+@media (max-width: 1680px) {
+  .trip-list-page.quick-edit-mode .table-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+  .trip-list-page.quick-edit-mode .table-hint,
+  .trip-list-page.quick-edit-mode .table-scroll-wrapper,
+  .trip-list-page.quick-edit-mode .table-head,
+  .trip-list-page.quick-edit-mode .table-row {
+    display: none;
+  }
+  .trip-list-page.quick-edit-mode .trip-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .trip-list-page.quick-edit-mode .trip-mcard {
+    margin-bottom: 0;
+  }
+}
+
 @media (max-width: 1023px) {
   .trip-list-page .table-head,
   .trip-list-page .table-row {
-    /* 7 visible cols: trip | truck | route | container | consumption | revenue | status */
-    grid-template-columns: minmax(180px, 1.4fr) 90px minmax(120px, 1.2fr) minmax(70px, 0.6fr) 80px 100px 90px;
+    /* 7 visible cols: trip | truck | route | consumption | revenue | gross profit | status */
+    grid-template-columns: minmax(180px, 1.4fr) 90px minmax(120px, 1.2fr) 80px 100px 100px 90px;
     min-width: unset;
     gap: 10px;
   }
+  .trip-list-page.quick-edit-mode .table-head,
+  .trip-list-page.quick-edit-mode .table-row {
+    min-width: 1280px;
+  }
+  .trip-list-page.quick-edit-mode .table-scroll-body {
+    overflow-x: auto;
+  }
+  .trip-list-page .table-head .col-container,
+  .trip-list-page .table-row .col-container,
   .trip-list-page .table-head .col-road,
-  .trip-list-page .table-row .col-road { display: none; }
+  .trip-list-page .table-row .col-road,
+  .trip-list-page .table-head .col-total-cost,
+  .trip-list-page .table-row .col-total-cost { display: none; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1180px) {
   .trip-list-page .table-card {
     background: transparent;
     border: none;
     border-radius: 0;
     overflow: visible;
+    box-shadow: none;
   }
   .trip-list-page .table-hint,
   .trip-list-page .table-scroll-wrapper,
@@ -29,7 +66,35 @@
     display: none;
   }
   .trip-list-page .trip-mobile-list {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .trip-list-page .trip-mcard {
+    margin-bottom: 0;
+    min-width: 0;
+  }
+  .trip-list-page .table-foot {
+    margin-top: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .trip-list-page .quick-edit-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .trip-list-page .quick-edit-toolbar__main {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .trip-list-page .quick-edit-toolbar__main .btn {
+    justify-content: center;
+    min-width: 0;
+  }
+  .trip-list-page .quick-edit-message {
+    text-align: left;
   }
 }
 
@@ -44,8 +109,31 @@
   .trip-list-page .filters-row-top { flex-direction: column; align-items: stretch; }
   .trip-list-page .filters-search { width: 100%; }
   .trip-list-page .filters-row-bottom { flex-wrap: wrap; }
+  .trip-list-page .trip-mobile-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .trip-list-page.quick-edit-mode .trip-mobile-list {
+    grid-template-columns: 1fr;
+  }
+  .trip-list-page .quick-edit-toolbar__main {
+    grid-template-columns: 1fr;
+  }
+  .trip-list-page .quick-edit-toolbar__main .btn {
+    min-height: 40px;
+  }
+  .trip-list-page .table-foot {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .trip-list-page .pagination {
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
 
-  /* Desktop table is hidden and mobile cards shown by the (max-width: 900px)
+  /* Desktop table is hidden and mobile cards shown by the (max-width: 1180px)
      block above, which already covers this narrower breakpoint. */
   .trip-list-page .infinite-sentinel {
     background: var(--surface);

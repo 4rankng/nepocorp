@@ -75,18 +75,18 @@
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-track { background: transparent; }
-/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | status
-   8 slots — KM merged into route, Loại cont + Số cont merged into Container. */
+/* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | tổng CP | LN gộp | status */
 .trip-list-page .table-head {
   display: grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
+  grid-template-columns: minmax(180px, 1.35fr) 84px minmax(150px, 1.45fr) minmax(76px, 0.65fr) 88px 98px 102px 102px 94px 96px;
   padding: 14px 16px;
-  gap: 12px;
+  gap: 10px;
   background:
     linear-gradient(90deg, rgba(0, 90, 45, 0.05), rgba(255, 255, 255, 0) 44%),
     var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   width: 100%;
+  min-width: 1108px;
   align-items: center;
   position: sticky;
   top: 0;
@@ -106,17 +106,23 @@
 
 .trip-list-page .table-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1.4fr) 110px minmax(180px, 1.6fr) minmax(90px, 0.7fr) minmax(90px, 0.7fr) 100px 110px 110px;
+  grid-template-columns: minmax(180px, 1.35fr) 84px minmax(150px, 1.45fr) minmax(76px, 0.65fr) 88px 98px 102px 102px 94px 96px;
   padding: 14px 16px;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   cursor: pointer;
   width: 100%;
+  min-width: 1108px;
   min-height: 60px;
   background: var(--surface);
   position: relative;
+}
+.trip-list-page.quick-edit-mode .table-head,
+.trip-list-page.quick-edit-mode .table-row {
+  grid-template-columns: 38px minmax(190px, 1.25fr) 90px minmax(160px, 1.35fr) minmax(80px, 0.6fr) 110px 118px 118px 118px 110px 110px 110px;
+  min-width: 1280px;
 }
 .trip-list-page .table-row::before {
   content: '';
@@ -424,6 +430,9 @@
   text-align: right;
   color: var(--ink);
 }
+.trip-list-page .money-loss {
+  color: var(--danger);
+}
 .trip-list-page .money-unit { font-size: var(--fs-2xs); color: var(--ink-3); font-weight: 600; margin-left: 2px; }
 .trip-list-page .money-empty {
   font-size: var(--fs-xs); color: var(--ink-3); opacity: 0.7;
@@ -434,8 +443,10 @@
 
 .trip-list-page .status-cell {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 4px;
   min-width: 0;
   width: 100%;
 }
@@ -451,6 +462,97 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 .trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
+
+.trip-list-page .quick-edit-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+.trip-list-page .quick-edit-toolbar__main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.trip-list-page .quick-edit-message {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+.trip-list-page .quick-edit-message.has-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.trip-list-page .quick-edit-row.selected {
+  background:
+    linear-gradient(90deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 52%),
+    var(--tbl-green-050);
+}
+.trip-list-page .quick-edit-row.locked {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+.trip-list-page .quick-row-check {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--tbl-green-700);
+}
+.trip-list-page .quick-edit-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.trip-list-page .quick-money-input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: right;
+}
+.trip-list-page .quick-money-input:focus {
+  outline: none;
+  border-color: var(--tbl-green-600);
+  box-shadow: 0 0 0 2px var(--tbl-green-100);
+}
+.trip-list-page .quick-money-input:disabled {
+  background: var(--surface-3);
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+.trip-list-page .quick-unit {
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+}
+.trip-list-page .quick-row-error {
+  max-width: 86px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+}
 
 .trip-list-page .pill-moi {
   background: #F3F4F6;

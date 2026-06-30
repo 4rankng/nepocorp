@@ -693,7 +693,7 @@ export async function updateTripFigures(
         fuelSupplierId: trip.fuelSupplierId ?? null,
         totalFuelCost: trip.totalFuelCost,
         ancillaryFees: mappedLedgerFees,
-      });
+      }, { strict: false });
 
       await LedgerService.postTripLock(tx, {
         id: updated.id,
@@ -708,7 +708,7 @@ export async function updateTripFigures(
         fuelSupplierId: updated.fuelSupplierId ?? null,
         totalFuelCost: updated.totalFuelCost,
         ancillaryFees: mappedLedgerFees,
-      });
+      }, { strict: false });
     }
 
     // 7. Persist physical leg segments

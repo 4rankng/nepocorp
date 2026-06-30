@@ -215,12 +215,12 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     }
   };
 
-  const handleLockClick = async () => {
+  const handleLockClick = async (confirmNoPhoto: boolean = false) => {
     if (!trip) return;
     setActionLoading(true);
     setActionError('');
     try {
-      await api.post(`/trips/${trip.id}/lock`, {});
+      await api.post(`/trips/${trip.id}/lock`, { confirmNoPhoto });
       await refetchTrip();
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
@@ -230,7 +230,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
         if (confirmed) {
           setActionLoading(true);
           try {
-            await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true });
+            await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true, confirmNoPhoto });
             await refetchTrip();
           } catch (retryErr: unknown) {
             setActionError((retryErr as Error).message || 'Lỗi khi khóa chuyến đi.');

@@ -154,7 +154,7 @@ async function createLockedTripWithFees(spec: TripSpec) {
   await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
   if (spec.lock !== false) {
     // Optional "chốt" freeze — still billable; exercised by the legacy LOCKED cases.
-    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, true);
+    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, true, true);
   }
 
   return { trip, customer, supplierId, forwarderId, expenseRows, customerName: customer.name };
@@ -520,7 +520,7 @@ async function createBillableTrip(ctx: BillableSeedCtx, spec: BillableTripSpec) 
   }
   await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
   if (spec.lock !== false) {
-    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, true);
+    await transitionTripStatus(trip.id, TripStatus.LOCKED, 1, Role.MANAGER, true, true);
   }
   return { trip };
 }

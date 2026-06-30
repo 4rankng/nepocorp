@@ -22,11 +22,15 @@ import { useQuery } from '@tanstack/react-query';
 import {
   useReactTable, getCoreRowModel, flexRender,
 } from '@tanstack/react-table';
-import { Download, Plus, MousePointerClick } from 'lucide-react';
+import { Download, Plus, MousePointerClick, Pencil, Save, X } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
-import { parseThreshold, TripStatus, type TripDetail } from '@tingting/shared';
+import {
+  FuelMode, parseThreshold, TripStatus,
+  TRIP_STATUS_LABELS,
+  type TripDetail, type UpdateTripFiguresRequest,
+} from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { ClickableCard } from '../components/shared/ClickableCard';
@@ -35,12 +39,109 @@ import {
   buildTripColumns, tripRowStyle,
   TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts,
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
-  type StatusFilter, type StatusCounts,
-  getTripDistance,
+  STATUS_PILL_CLASS,
+  type StatusFilter, type StatusCounts, type TripQuickEditDraft,
+  buildTripCode, getTripDistance,
 } from '../features/trips';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './TripListPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
+
+function draftNumber(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return '';
+  return String(n).replace(/\.00$/, '');
+}
+
+function parseDraftNumber(value: string): number | undefined {
+  const normalized = value.replace(/[^\d.,]/g, '').replace(',', '.');
+  if (!normalized) return undefined;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function quickDraftFromTrip(trip: TripDetail): TripQuickEditDraft {
+  return {
+    fuelLiters: draftNumber(trip.fuelLitersOverride ?? trip.fuelLiters),
+    roadAllowance: draftNumber(trip.roadAllowanceOverride ?? trip.totalRoadAllowance),
+    driverSalary: draftNumber(trip.driverSalary),
+    revenue: draftNumber(trip.revenue),
+  };
+}
+
+function isEditableInQuickMode(trip: TripDetail): boolean {
+  return trip.status !== TripStatus.LOCKED && trip.status !== TripStatus.CANCELED;
+}
+
+function draftChanged(trip: TripDetail, draft?: TripQuickEditDraft): boolean {
+  if (!draft) return false;
+  const original = quickDraftFromTrip(trip);
+  return draft.fuelLiters !== original.fuelLiters
+    || draft.roadAllowance !== original.roadAllowance
+    || draft.driverSalary !== original.driverSalary
+    || draft.revenue !== original.revenue;
+}
+
+function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDraft): UpdateTripFiguresRequest {
+  const original = quickDraftFromTrip(trip);
+  const fuelLiters = parseDraftNumber(draft.fuelLiters);
+  const roadAllowance = parseDraftNumber(draft.roadAllowance);
+  const driverSalary = parseDraftNumber(draft.driverSalary);
+  const revenue = parseDraftNumber(draft.revenue);
+  const fuelLitersChanged = draft.fuelLiters !== original.fuelLiters;
+
+  return {
+    legs: (trip.legs ?? []).map((leg) => ({
+      sequence: leg.sequence,
+      origin: leg.origin,
+      destination: leg.destination,
+      km: Number(leg.km),
+      loadingType: leg.loadingType,
+    })),
+    version: trip.version,
+    departureDate: trip.departureDate,
+    routeId: trip.routeId,
+    fuelMode: fuelLitersChanged ? FuelMode.FLAT_RATE : trip.fuelMode,
+    fuelLitersOverride: fuelLitersChanged ? (fuelLiters ?? null) : (trip.fuelLitersOverride != null ? Number(trip.fuelLitersOverride) : null),
+    fuelSupplementLiters: Number(trip.fuelSupplementLiters ?? 0),
+    fuelSupplementReason: trip.fuelSupplementReason ?? undefined,
+    fuelActualUnitPrice: trip.fuelActualUnitPrice != null ? Number(trip.fuelActualUnitPrice) : null,
+    fuelSupplierId: trip.fuelSupplierId ?? null,
+    tollsDiscount: Number(trip.tollsDiscount ?? 0),
+    tollsAddition: Number(trip.tollsAddition ?? 0),
+    tollsStations: trip.tollsStations ?? 0,
+    hasReturnCargo: trip.hasReturnCargo ?? false,
+    roadAllowanceOverride: roadAllowance ?? null,
+    driverSalary: driverSalary ?? 0,
+    revenue: revenue ?? 0,
+    customerCommission: Number(trip.customerCommission ?? 0),
+    tripWageDays: trip.tripWageDays ?? undefined,
+    twoPointDeliveryBonus: Number(trip.twoPointDeliveryBonus ?? 0),
+    vehicleShiftAllowance: Number(trip.vehicleShiftAllowance ?? 0),
+    notes: trip.notes ?? undefined,
+    carrierType: trip.carrierType,
+    externalCarrierId: trip.externalCarrierId ?? null,
+    externalFreightCost: trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null,
+    externalPlateNumber: trip.externalPlateNumber ?? null,
+    externalDriverName: trip.externalDriverName ?? null,
+    externalDriverPhone: trip.externalDriverPhone ?? null,
+  };
+}
+
+function columnClass(columnId: string): string {
+  if (columnId === 'select') return 'col-select center';
+  if (columnId === 'route') return 'col-route';
+  if (columnId === 'container') return 'col-container';
+  if (columnId === 'consumption') return 'col-consumption';
+  if (columnId === 'road') return 'col-road right';
+  if (columnId === 'revenue') return 'col-revenue right';
+  if (columnId === 'driverSalary') return 'col-driver-salary right';
+  if (columnId === 'totalCost') return 'col-total-cost right';
+  if (columnId === 'grossProfit') return 'col-gross-profit right';
+  if (columnId === 'status') return 'col-status center';
+  return '';
+}
 
 export default function TripListPage() {
   const { rootRef } = usePageAnimations({
@@ -81,6 +182,12 @@ export default function TripListPage() {
   const [truckFilter, setTruckFilter] = useState<number | ''>('');
   const [customerFilter, setCustomerFilter] = useState<number | ''>('');
   const [searchInput, setSearchInput] = useState('');
+  const [quickEdit, setQuickEdit] = useState(false);
+  const [quickDrafts, setQuickDrafts] = useState<Record<number, TripQuickEditDraft>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
+  const [quickErrors, setQuickErrors] = useState<Record<number, string>>({});
+  const [quickMessage, setQuickMessage] = useState('');
+  const [savingQuickEdit, setSavingQuickEdit] = useState(false);
 
   // Date range from salary period
   const dateFrom = salaryPeriod?.start;
@@ -158,6 +265,119 @@ export default function TripListPage() {
   const truckOptions = summary?.truckOptions ?? [];
   const customerOptions = summary?.customerOptions ?? [];
 
+  useEffect(() => {
+    if (!quickEdit) return;
+    setQuickDrafts((prev) => {
+      const next = { ...prev };
+      for (const trip of table.rows) {
+        if (!next[trip.id]) next[trip.id] = quickDraftFromTrip(trip);
+      }
+      return next;
+    });
+  }, [quickEdit, table.rows]);
+
+  const toggleQuickEdit = useCallback(() => {
+    setQuickEdit((current) => {
+      const next = !current;
+      setQuickErrors({});
+      setQuickMessage('');
+      setSelectedIds(new Set());
+      setQuickDrafts(next
+        ? Object.fromEntries(table.rows.map((trip) => [trip.id, quickDraftFromTrip(trip)]))
+        : {});
+      return next;
+    });
+  }, [table.rows]);
+
+  const handleToggleSelect = useCallback((tripId: number) => {
+    const trip = table.rows.find((item) => item.id === tripId);
+    if (!trip || !isEditableInQuickMode(trip)) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tripId)) next.delete(tripId);
+      else next.add(tripId);
+      return next;
+    });
+  }, [table.rows]);
+
+  const handleSelectVisible = useCallback(() => {
+    setSelectedIds((prev) => {
+      const editableIds = table.rows.filter(isEditableInQuickMode).map((trip) => trip.id);
+      const allVisibleSelected = editableIds.length > 0 && editableIds.every((id) => prev.has(id));
+      const next = new Set(prev);
+      for (const id of editableIds) {
+        if (allVisibleSelected) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  }, [table.rows]);
+
+  const handleDraftChange = useCallback((tripId: number, field: keyof TripQuickEditDraft, value: string) => {
+    const trip = table.rows.find((item) => item.id === tripId);
+    if (!trip || !isEditableInQuickMode(trip)) return;
+    setQuickDrafts((prev) => ({
+      ...prev,
+      [tripId]: {
+        ...(prev[tripId] ?? quickDraftFromTrip(trip)),
+        [field]: value,
+      },
+    }));
+    setSelectedIds((prev) => new Set(prev).add(tripId));
+    setQuickErrors((prev) => {
+      if (!prev[tripId]) return prev;
+      const next = { ...prev };
+      delete next[tripId];
+      return next;
+    });
+  }, [table.rows]);
+
+  const selectedDirtyTrips = useMemo(
+    () => table.rows.filter((trip) => selectedIds.has(trip.id) && isEditableInQuickMode(trip) && draftChanged(trip, quickDrafts[trip.id])),
+    [quickDrafts, selectedIds, table.rows],
+  );
+
+  const saveQuickEdit = useCallback(async () => {
+    if (selectedDirtyTrips.length === 0 || savingQuickEdit) {
+      setQuickMessage('Chưa có dòng đã chọn nào thay đổi.');
+      return;
+    }
+    setSavingQuickEdit(true);
+    setQuickMessage('');
+    setQuickErrors({});
+    try {
+      const response = await tripClient.bulkUpdateTripFigures({
+        updates: selectedDirtyTrips.map((trip) => ({
+          tripId: trip.id,
+          mode: trip.status === TripStatus.CREATED ? 'pre-departure' : 'actuals',
+          figures: figuresPayloadFromDraft(trip, quickDrafts[trip.id] ?? quickDraftFromTrip(trip)),
+        })),
+      });
+      const errors: Record<number, string> = {};
+      for (const result of response.results) {
+        if (!result.ok) errors[result.tripId] = result.error ?? 'Không thể lưu dòng này';
+      }
+      setQuickErrors(errors);
+      setQuickMessage(response.failed > 0
+        ? `Đã lưu ${response.updated} dòng, ${response.failed} dòng cần kiểm tra lại.`
+        : `Đã lưu ${response.updated} dòng.`);
+      if (response.updated > 0) {
+        await table.query.refetch();
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const result of response.results) {
+            if (result.ok) next.delete(result.tripId);
+          }
+          return next;
+        });
+      }
+    } catch (err) {
+      setQuickMessage(err instanceof Error ? err.message : 'Không thể lưu thay đổi.');
+    } finally {
+      setSavingQuickEdit(false);
+    }
+  }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, table.query]);
+
   // ── Export ──
   const handleExport = useCallback(async () => {
     const first = await tripClient.listTrips({
@@ -189,7 +409,7 @@ export default function TripListPage() {
       );
       for (const res of remaining) allTrips.push(...res.items);
     }
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Trạng thái'];
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Tổng chi phí', 'LN gộp', 'Trạng thái'];
     const rows = allTrips.map((t) => {
       const containers = (t as unknown as { containers?: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }> }).containers ?? [];
       const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
@@ -207,6 +427,8 @@ export default function TripListPage() {
         t.totalFuelCost ?? '',
         (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
         t.revenue ?? '',
+        t.totalCost ?? '',
+        t.grossProfit ?? '',
         t.status,
       ];
     });
@@ -222,14 +444,21 @@ export default function TripListPage() {
     await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
       title: 'SỔ CHUYẾN ĐI',
       subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
-      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'text'],
-      totalsColumns: [5, 8, 10, 11, 12],
+      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
+      totalsColumns: [5, 8, 10, 11, 12, 13, 14],
       totalsLabel: 'TỔNG CỘNG',
     });
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);
 
   // ── Table instance ──
-  const columns = useMemo(() => buildTripColumns(warnThreshold), [warnThreshold]);
+  const columns = useMemo(() => buildTripColumns(warnThreshold, {
+    enabled: quickEdit,
+    selectedIds,
+    drafts: quickDrafts,
+    errors: quickErrors,
+    onToggleSelect: handleToggleSelect,
+    onDraftChange: handleDraftChange,
+  }), [handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
   const tableInstance = useReactTable({
     data: table.rows,
     columns,
@@ -260,7 +489,7 @@ export default function TripListPage() {
   const todayLabel = `Tháng ${month}/${year}`;
 
   return (
-    <div ref={rootRef} className="trip-list-page" style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className={`trip-list-page${quickEdit ? ' quick-edit-mode' : ''}`} style={{ paddingBottom: 40 }}>
       <section className="hero hero--route-network">
         <div className="hero-top">
           <div className="hero-title-block">
@@ -278,6 +507,10 @@ export default function TripListPage() {
             </div>
           </div>
           <div className="hero-actions">
+            <button type="button" className={`btn ${quickEdit ? 'btn--primary' : 'btn--secondary'}`} onClick={toggleQuickEdit}>
+              {quickEdit ? <X size={15} /> : <Pencil size={15} />}
+              {quickEdit ? 'Thoát sửa nhanh' : 'Sửa nhanh'}
+            </button>
             <button type="button" className="btn btn--secondary" onClick={handleExport}>
               <Download size={15} />
               Xuất Excel
@@ -377,6 +610,31 @@ export default function TripListPage() {
           <span className="legend-item"><span className="legend-dot legend-dot--warn" />Chưa nhập đủ</span>
         </span>
       </div>
+      {quickEdit && (
+        <div className="quick-edit-toolbar">
+          <div className="quick-edit-toolbar__main">
+            <button type="button" className="btn btn--secondary" onClick={handleSelectVisible}>
+              Chọn trang này
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={savingQuickEdit || selectedDirtyTrips.length === 0}
+              onClick={saveQuickEdit}
+            >
+              <Save size={15} />
+              {savingQuickEdit ? 'Đang lưu…' : `Lưu ${selectedDirtyTrips.length} dòng`}
+            </button>
+            <button type="button" className="btn btn--secondary" onClick={toggleQuickEdit}>
+              <X size={15} />
+              Hủy
+            </button>
+          </div>
+          <div className={`quick-edit-message${Object.keys(quickErrors).length > 0 ? ' has-error' : ''}`}>
+            {quickMessage || 'Chỉ các chuyến chưa chốt/chưa hủy được sửa nhanh.'}
+          </div>
+        </div>
+      )}
       <div className="table-card">
         <div className="table-scroll-wrapper">
           <div className="table-scroll-body" ref={scrollRef} tabIndex={-1}>
@@ -384,14 +642,8 @@ export default function TripListPage() {
               {tableInstance.getHeaderGroups().map((headerGroup) => (
                 <React.Fragment key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
-                    let cls = '';
-                    if (header.column.id === 'route') cls = 'col-route';
-                    else if (header.column.id === 'consumption') cls = 'col-consumption';
-                    else if (header.column.id === 'road') cls = 'col-road right';
-                    else if (header.column.id === 'revenue') cls = 'col-revenue right';
-                    else if (header.column.id === 'status') cls = 'col-status center';
                     return (
-                      <div key={header.id} className={cls}>
+                      <div key={header.id} className={columnClass(header.column.id)}>
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                     );
@@ -408,25 +660,14 @@ export default function TripListPage() {
               tableInstance.getRowModel().rows.map((row) => (
                 <ClickableCard
                   key={row.id}
-                  to={`/trips/${row.original.id}`}
-                  className="table-row"
+                  to={quickEdit ? undefined : `/trips/${row.original.id}`}
+                  onClick={quickEdit ? () => handleToggleSelect(row.original.id) : undefined}
+                  className={`table-row${quickEdit ? ' quick-edit-row' : ''}${selectedIds.has(row.original.id) ? ' selected' : ''}${!isEditableInQuickMode(row.original) ? ' locked' : ''}`}
                   style={tripRowStyle(row.original) as CSSProperties}
                 >
                   {row.getVisibleCells().map((cell) => {
-                    let cls = '';
-                    if (cell.column.id === 'route') cls = 'col-route';
-                    else if (cell.column.id === 'consumption') cls = 'col-consumption';
-                    else if (cell.column.id === 'road') cls = 'col-road right';
-                    else if (cell.column.id === 'revenue') cls = 'col-revenue right';
-                    else if (cell.column.id === 'status') {
-                      return (
-                        <div key={cell.id} className="col-status center">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </div>
-                      );
-                    }
                     return (
-                      <div key={cell.id} className={cls}>
+                      <div key={cell.id} className={columnClass(cell.column.id)}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </div>
                     );
@@ -446,14 +687,90 @@ export default function TripListPage() {
               Không tìm thấy chuyến đi nào.
             </div>
           ) : (
-            table.rows.map((trip) => (
-              <TripMobileCard 
-                key={trip.id} 
-                trip={trip} 
-                warnThreshold={warnThreshold} 
-                style={tripRowStyle(trip) as CSSProperties}
-              />
-            ))
+            table.rows.map((trip) => {
+              if (!quickEdit) {
+                return (
+                  <TripMobileCard
+                    key={trip.id}
+                    trip={trip}
+                    warnThreshold={warnThreshold}
+                    style={tripRowStyle(trip) as CSSProperties}
+                  />
+                );
+              }
+
+              const editable = isEditableInQuickMode(trip);
+              const draft = quickDrafts[trip.id] ?? quickDraftFromTrip(trip);
+              const selected = selectedIds.has(trip.id);
+              const routeLabel = trip.route?.name ?? '—';
+              const totalCost = Number(trip.totalCost ?? 0);
+              const grossProfit = Number(trip.grossProfit ?? 0);
+              const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
+              const quickFields: Array<{ key: keyof TripQuickEditDraft; label: string; unit?: string }> = [
+                { key: 'fuelLiters', label: 'Dầu', unit: 'L' },
+                { key: 'roadAllowance', label: 'Đi đường', unit: '₫' },
+                { key: 'revenue', label: 'Doanh thu', unit: '₫' },
+                { key: 'driverSalary', label: 'Lương chuyến', unit: '₫' },
+              ];
+
+              return (
+                <div
+                  key={trip.id}
+                  className={`trip-mcard trip-mcard--quick${selected ? ' selected' : ''}${!editable ? ' locked' : ''}`}
+                  style={tripRowStyle(trip) as CSSProperties}
+                >
+                  <div className="trip-mcard__top">
+                    <label className="trip-mcard__check">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        disabled={!editable}
+                        onChange={() => handleToggleSelect(trip.id)}
+                      />
+                      <span>{editable ? 'Chọn' : 'Khóa'}</span>
+                    </label>
+                    <span className={`status-pill ${pillClass}`}>{TRIP_STATUS_LABELS[trip.status]}</span>
+                  </div>
+                  <div className="trip-mcard__name">{trip.customer?.name ?? '—'}</div>
+                  <div className="trip-mcard__id">
+                    {buildTripCode(trip)}
+                    <span className="trip-meta-sep">·</span>
+                    <span>{trip.departureDate ?? '—'}</span>
+                  </div>
+                  <div className="trip-mcard__route">{routeLabel}</div>
+
+                  <div className="quick-card-grid">
+                    {quickFields.map((field) => (
+                      <label key={field.key} className="quick-card-field">
+                        <span>{field.label}</span>
+                        <div className="quick-edit-cell">
+                          <input
+                            className="quick-money-input"
+                            inputMode="decimal"
+                            value={draft[field.key]}
+                            disabled={!editable}
+                            onChange={(event) => handleDraftChange(trip.id, field.key, event.target.value)}
+                          />
+                          {field.unit && <span className="quick-unit">{field.unit}</span>}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="quick-card-summary">
+                    <div>
+                      <span>Tổng chi phí</span>
+                      <b>{totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}</b>
+                    </div>
+                    <div>
+                      <span>LN gộp</span>
+                      <b className={grossProfit < 0 ? 'money-loss' : ''}>{grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}</b>
+                    </div>
+                  </div>
+                  {quickErrors[trip.id] && <div className="quick-card-error">{quickErrors[trip.id]}</div>}
+                </div>
+              );
+            })
           )}
         </div>
 
