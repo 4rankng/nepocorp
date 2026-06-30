@@ -26,6 +26,7 @@ export type {
   Trip, TripLeg, TripDetail, TripInstruction, LedgerEntry, Penalty,
   CapTableHistory, TruckCapEntry, Distribution, ManagementFee, AuditLog, Notification, PushSubscriptionPayload,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
+  BulkUpdateTripFiguresRequest, BulkUpdateTripFiguresResponse,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, CustomerStatement, AgingBucket, UnpaidTrip,
   SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlReport,

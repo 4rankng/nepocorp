@@ -121,11 +121,11 @@ function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDraft): U
     vehicleShiftAllowance: Number(trip.vehicleShiftAllowance ?? 0),
     notes: trip.notes ?? undefined,
     carrierType: trip.carrierType,
-    externalCarrierId: trip.externalCarrierId ?? null,
-    externalFreightCost: trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null,
-    externalPlateNumber: trip.externalPlateNumber ?? null,
-    externalDriverName: trip.externalDriverName ?? null,
-    externalDriverPhone: trip.externalDriverPhone ?? null,
+    externalCarrierId: trip.externalCarrierId ?? undefined,
+    externalFreightCost: trip.externalFreightCost != null ? Number(trip.externalFreightCost) : undefined,
+    externalPlateNumber: trip.externalPlateNumber ?? undefined,
+    externalDriverName: trip.externalDriverName ?? undefined,
+    externalDriverPhone: trip.externalDriverPhone ?? undefined,
   };
 }
 
