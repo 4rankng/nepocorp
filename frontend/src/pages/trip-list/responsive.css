@@ -32,7 +32,7 @@
   .trip-list-page .table-head,
   .trip-list-page .table-row {
     /* 7 visible cols: trip | truck | route | consumption | revenue | gross profit | status */
-    grid-template-columns: minmax(180px, 1.4fr) 90px minmax(120px, 1.2fr) 80px 100px 100px 90px;
+    grid-template-columns: minmax(180px, 1.4fr) 116px minmax(160px, 1.2fr) 92px 100px 100px 90px;
     min-width: unset;
     gap: 10px;
   }

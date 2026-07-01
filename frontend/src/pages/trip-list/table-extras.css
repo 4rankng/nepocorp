@@ -81,8 +81,13 @@
 }
 
 /* ── Column-specific sizing ────────────────────────────────────────── */
+.trip-list-page .col-truck,
+.trip-list-page .col-route,
 .trip-list-page .col-consumption {
-  min-width: 110px;
+  min-width: 0;
+}
+.trip-list-page .col-consumption {
+  min-width: 116px;
 }
 .trip-list-page .col-revenue {
   min-width: 100px;
@@ -133,4 +138,3 @@
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
-

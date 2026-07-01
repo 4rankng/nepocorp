@@ -4,7 +4,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'drizzle-orm';
-import { TripStatus } from '@tingting/shared';
+import { TripStatus, normalizeContainerNumber } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getTripInstructions } from './trip-instructions.service';
 import { resolveRoute } from './gps/route-capture';
@@ -76,6 +76,46 @@ export interface TripListFilters {
   search?: string;
 }
 
+function escapeLikeTerm(value: string): string {
+  return value.replace(/[\\%_]/g, (match) => `\\${match}`);
+}
+
+function normalizedContainerSql(column: unknown): SQL {
+  return sql`upper(regexp_replace(${column}, '[[:space:]-]', '', 'g'))`;
+}
+
+function containerNumberSearchConditions(rawTerm: string, normalizedTerm: string): SQL[] {
+  const conditions: SQL[] = [sql`${s.tripContainers.containerNumber} ILIKE ${rawTerm}`];
+  if (normalizedTerm !== '%%') {
+    conditions.push(sql`${normalizedContainerSql(s.tripContainers.containerNumber)} ILIKE ${normalizedTerm}`);
+  }
+  return conditions;
+}
+
+function expenseContainerSearchConditions(rawTerm: string, normalizedTerm: string): SQL[] {
+  const conditions: SQL[] = [sql`${s.tripExpenses.containerNumber} ILIKE ${rawTerm}`];
+  if (normalizedTerm !== '%%') {
+    conditions.push(sql`${normalizedContainerSql(s.tripExpenses.containerNumber)} ILIKE ${normalizedTerm}`);
+  }
+  return conditions;
+}
+
+function tripContainerExists(rawTerm: string, normalizedTerm: string): SQL {
+  return sql`EXISTS (
+    SELECT 1 FROM ${s.tripContainers}
+    WHERE ${s.tripContainers.tripId} = ${s.trips.id}
+      AND (${sql.join(containerNumberSearchConditions(rawTerm, normalizedTerm), sql` OR `)})
+  )`;
+}
+
+function tripExpenseContainerExists(rawTerm: string, normalizedTerm: string): SQL {
+  return sql`EXISTS (
+    SELECT 1 FROM ${s.tripExpenses}
+    WHERE ${s.tripExpenses.tripId} = ${s.trips.id}
+      AND (${sql.join(expenseContainerSearchConditions(rawTerm, normalizedTerm), sql` OR `)})
+  )`;
+}
+
 export async function getTrips(filters: TripListFilters) {
   const page = Math.max(1, filters.page ?? 1);
   const limit = Math.min(100, filters.limit ?? 50);
@@ -122,7 +162,8 @@ export async function getTrips(filters: TripListFilters) {
     conditions.push(c); countConditions.push(c);
   }
   if (filters.search) {
-    const term = `%${filters.search}%`;
+    const term = `%${escapeLikeTerm(filters.search)}%`;
+    const normalizedContainerTerm = `%${escapeLikeTerm(normalizeContainerNumber(filters.search))}%`;
     // List: full predicates (5 ILIKE + 2 EXISTS for container cross-refs)
     conditions.push(
       or(
@@ -135,13 +176,12 @@ export async function getTrips(filters: TripListFilters) {
         sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
         sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
-        sql`EXISTS (SELECT 1 FROM ${s.tripContainers} WHERE ${s.tripContainers.tripId} = ${s.trips.id} AND ${s.tripContainers.containerNumber} ILIKE ${term})`,
-        sql`EXISTS (SELECT 1 FROM ${s.tripExpenses} WHERE ${s.tripExpenses.tripId} = ${s.trips.id} AND ${s.tripExpenses.containerNumber} ILIKE ${term})`,
+        tripContainerExists(term, normalizedContainerTerm),
+        tripExpenseContainerExists(term, normalizedContainerTerm),
       )!
     );
-    // Count: simple ILIKE only — accepts an approximate page count while
-    // searching, but the dominant cost (correlated EXISTS on every row) is
-    // avoided. Page count is corrected on the next non-search fetch.
+    // Count mirrors the list predicates so container-only searches report a
+    // usable total and pagination state instead of showing rows with total=0.
     countConditions.push(
       or(
         sql`unaccent(${s.trips.tripCode}) ILIKE unaccent(${term})`,
@@ -153,6 +193,8 @@ export async function getTrips(filters: TripListFilters) {
         sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
         sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
+        tripContainerExists(term, normalizedContainerTerm),
+        tripExpenseContainerExists(term, normalizedContainerTerm),
       )!
     );
   }

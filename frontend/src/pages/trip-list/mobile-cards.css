@@ -31,6 +31,17 @@
   width: 100%;
   margin-top: 10px;
   min-height: 34px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+}
+.trip-list-page .trip-mcard:hover .trip-copy-btn--mobile,
+.trip-list-page .trip-mcard:focus-within .trip-copy-btn--mobile,
+.trip-list-page .trip-copy-btn--mobile:focus-visible,
+.trip-list-page .trip-copy-btn--mobile.is-copying {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 .trip-list-page .trip-mcard__top {
   display: flex; align-items: center; justify-content: space-between;
@@ -168,7 +179,6 @@
     align-items: flex-start;
     flex-direction: column;
   }
-  .trip-list-page .trip-mcard__meta,
   .trip-list-page .quick-card-grid,
   .trip-list-page .quick-card-summary {
     grid-template-columns: 1fr;

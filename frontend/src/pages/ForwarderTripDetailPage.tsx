@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
+import './ForwarderTripDetailPage.css';
 
 /** Forwarder container instance shape returned by the trip-detail API. */
 interface ForwarderContainer {
@@ -417,10 +418,10 @@ export default function ForwarderTripDetailPage() {
         </div>
 
         {showExpenseForm && (
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-1)', background: 'var(--bg-2)' }}>
+          <div className="fwd-expense-form">
             {/* Row 1: type + amounts + settlement */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 10 }}>
-              <FormGroup label="Loại chi phí" style={{ flex: '1 1 180px', minWidth: 160 }}>
+            <div className="fwd-expense-grid fwd-expense-grid--primary">
+              <FormGroup label="Loại chi phí">
                 <select
                   className="input"
                   value={expenseForm.expenseType}
@@ -434,7 +435,6 @@ export default function ForwarderTripDetailPage() {
 
               <FormGroup
                 label="Giá mua vào (VNĐ) *"
-                style={{ flex: '1 1 130px', minWidth: 120 }}
               >
                 <input
                   className={`input${expenseErrors.buyAmount ? ' input--error' : ''}`}
@@ -452,8 +452,7 @@ export default function ForwarderTripDetailPage() {
               </FormGroup>
 
               <FormGroup
-                label={`Giá bán ra (VNĐ)${FORWARDER_EXPENSE_TYPE_DEFAULTS[expenseForm.expenseType]?.defaultMarkup ? '' : ' (= mua vào)'}`}
-                style={{ flex: '1 1 130px', minWidth: 120 }}
+                label="Giá bán ra (VNĐ)"
               >
                 <input
                   className="input"
@@ -471,7 +470,7 @@ export default function ForwarderTripDetailPage() {
                 />
               </FormGroup>
 
-              <FormGroup label="Hình thức chi" style={{ flex: '1 1 180px', minWidth: 160 }}>
+              <FormGroup label="Hình thức chi">
                 <select
                   className="input"
                   value={expenseForm.settlementMethod}
@@ -488,9 +487,9 @@ export default function ForwarderTripDetailPage() {
             </div>
 
             {/* Row 2: supplier (when company-direct) + container number */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="fwd-expense-grid fwd-expense-grid--context">
               {expenseForm.settlementMethod === 'COMPANY_DIRECT' && (
-                <FormGroup label="Nhà cung cấp *" style={{ flex: '1 1 200px', minWidth: 180 }}>
+                <FormGroup label="Nhà cung cấp *">
                   <select
                     className={`input${expenseErrors.supplierId ? ' input--error' : ''}`}
                     value={expenseForm.supplierId}
@@ -513,13 +512,13 @@ export default function ForwarderTripDetailPage() {
               )}
 
               {containers.length === 0 && (
-                <div style={{ flex: '1 1 240px', minWidth: 220, color: 'var(--fg-3)', fontSize: 13, paddingTop: 28 }}>
+                <div className="fwd-expense-empty-container">
                   Chưa có container; chi phí này sẽ lưu như chi phí chung của chuyến.
                 </div>
               )}
 
               {containers.length === 1 && selectedExpenseContainer && (
-                <FormGroup label="Container áp dụng" style={{ flex: '1 1 220px', minWidth: 200 }}>
+                <FormGroup label="Container áp dụng">
                   <div
                     className="input"
                     style={{
@@ -540,7 +539,7 @@ export default function ForwarderTripDetailPage() {
               )}
 
               {containers.length > 1 && (
-                <FormGroup label="Container áp dụng" style={{ flex: '1 1 220px', minWidth: 200 }}>
+                <FormGroup label="Container áp dụng">
                   <select
                     className="input"
                     value={expenseForm.tripContainerId}
@@ -561,10 +560,10 @@ export default function ForwarderTripDetailPage() {
             </div>
 
             {/* Row 3: invoice + declaration + note */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 10 }}>
+            <div className="fwd-expense-grid fwd-expense-grid--invoice">
               {expenseForm.expenseType !== 'INFRASTRUCTURE' && (
                 <>
-                  <FormGroup label="Số hóa đơn" style={{ flex: '1 1 140px', minWidth: 120 }}>
+                  <FormGroup label="Số hóa đơn">
                     <input
                       className="input"
                       value={expenseForm.invoiceNumber}
@@ -573,7 +572,7 @@ export default function ForwarderTripDetailPage() {
                       style={{ fontFamily: 'var(--font-mono)' }}
                     />
                   </FormGroup>
-                  <FormGroup label="Ngày hóa đơn" style={{ flex: '1 1 140px', minWidth: 130 }}>
+                  <FormGroup label="Ngày hóa đơn">
                     <input
                       className="input"
                       type="date"
@@ -585,7 +584,7 @@ export default function ForwarderTripDetailPage() {
               )}
 
               {expenseForm.expenseType === 'CUSTOMS' && (
-                <FormGroup label="Số tờ khai hải quan *" style={{ flex: '1 1 160px', minWidth: 150 }}>
+                <FormGroup label="Số tờ khai hải quan *">
                   <input
                     className={`input${expenseErrors.declarationNumber ? ' input--error' : ''}`}
                     value={expenseForm.declarationNumber}
@@ -604,7 +603,7 @@ export default function ForwarderTripDetailPage() {
                 </FormGroup>
               )}
 
-              <FormGroup label="Ghi chú" style={{ flex: '2 1 180px', minWidth: 140 }}>
+              <FormGroup label="Ghi chú">
                 <input
                   className="input"
                   value={expenseForm.note}

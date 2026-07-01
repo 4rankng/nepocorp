@@ -183,7 +183,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
       </Link>
       <button
         type="button"
-        className="trip-copy-btn trip-copy-btn--mobile"
+        className={`trip-copy-btn trip-copy-btn--mobile${copyingPlan ? ' is-copying' : ''}`}
         disabled={copyingPlan}
         onClick={(event) => {
           event.preventDefault();
@@ -192,7 +192,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
         }}
       >
         <Copy size={13} />
-        <span>{copyingPlan ? 'Đang copy' : 'Copy kế hoạch'}</span>
+        <span>{copyingPlan ? 'Đang copy' : 'Copy'}</span>
       </button>
     </div>
   );

@@ -55,7 +55,7 @@ describe('useTableQueryState', () => {
     expect(typeof result.current.setPage).toBe('function');
   });
 
-  it('updates search and resets page on filter change', () => {
+  it('updates search and resets page on search/filter change', () => {
     const { result } = renderHook(
       () =>
         useTableQueryState<Row, { status?: string }>({
@@ -67,6 +67,11 @@ describe('useTableQueryState', () => {
     );
     act(() => result.current.setSearch('hello'));
     expect(result.current.search).toBe('hello');
+    act(() => result.current.setPage(3));
+    expect(result.current.page).toBe(3);
+    act(() => result.current.setSearch('world'));
+    expect(result.current.search).toBe('world');
+    expect(result.current.page).toBe(1);
     act(() => result.current.setPage(3));
     expect(result.current.page).toBe(3);
     act(() => result.current.setFilter('status', 'ACTIVE'));

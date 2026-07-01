@@ -78,7 +78,7 @@
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | tổng CP | LN gộp | status */
 .trip-list-page .table-head {
   display: grid;
-  grid-template-columns: minmax(180px, 1.35fr) 84px minmax(150px, 1.45fr) minmax(76px, 0.65fr) 88px 98px 102px 102px 94px 96px;
+  grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
   padding: 14px 16px;
   gap: 10px;
   background:
@@ -86,7 +86,7 @@
     var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   width: 100%;
-  min-width: 1108px;
+  min-width: 1460px;
   align-items: center;
   position: sticky;
   top: 0;
@@ -106,7 +106,7 @@
 
 .trip-list-page .table-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.35fr) 84px minmax(150px, 1.45fr) minmax(76px, 0.65fr) 88px 98px 102px 102px 94px 96px;
+  grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
   padding: 14px 16px;
   gap: 10px;
   align-items: center;
@@ -114,7 +114,7 @@
   transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   cursor: pointer;
   width: 100%;
-  min-width: 1108px;
+  min-width: 1460px;
   min-height: 60px;
   background: var(--surface);
   position: relative;
@@ -216,7 +216,20 @@
   letter-spacing: 0;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease, transform 120ms ease;
+}
+.trip-list-page .table-row .trip-copy-btn {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+}
+.trip-list-page .table-row:hover .trip-copy-btn,
+.trip-list-page .table-row:focus-within .trip-copy-btn,
+.trip-list-page .table-row .trip-copy-btn:focus-visible,
+.trip-list-page .table-row .trip-copy-btn.is-copying {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 .trip-list-page .trip-copy-btn svg {
   flex: none;
@@ -313,6 +326,9 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
   font-feature-settings: "tnum";
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .trip-list-page .plate::before {
   content: "";

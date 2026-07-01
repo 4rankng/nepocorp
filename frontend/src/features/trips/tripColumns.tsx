@@ -161,7 +161,7 @@ export function buildTripColumns(
             {actions?.onCopyPlan && !quickEdit?.enabled && (
               <button
                 type="button"
-                className="trip-copy-btn"
+                className={`trip-copy-btn${copyingThisPlan ? ' is-copying' : ''}`}
                 disabled={copyingThisPlan}
                 title="Copy kế hoạch vận chuyển thành chuyến mới"
                 aria-label={`Copy kế hoạch vận chuyển từ chuyến ${tripCode}`}

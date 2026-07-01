@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useQuery, type QueryKey, type UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type QueryKey, type UseQueryResult } from '@tanstack/react-query';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export interface TableQueryEndpoint<TItem, TParams extends Record<string, unknown>> {
@@ -74,6 +74,11 @@ export function useTableQueryState<
 
   const debouncedSearch = useDebouncedValue(search, opts.debounceMs ?? 300);
 
+  const setSearchAndResetPage = useCallback((next: string) => {
+    setPage(1);
+    setSearch(next);
+  }, []);
+
   const setFilter = useCallback(
     <K extends keyof TParams>(key: K, value: TParams[K] | undefined) => {
       setPage(1);
@@ -113,6 +118,7 @@ export function useTableQueryState<
     // eslint-disable-next-line @tingting/no-bare-query-key
     queryKey: [...opts.queryKey, appliedParams],
     queryFn: () => opts.endpoint(appliedParams),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
     enabled: opts.enabled ?? true,
   });
@@ -130,7 +136,7 @@ export function useTableQueryState<
 
   return {
     search,
-    setSearch,
+    setSearch: setSearchAndResetPage,
     filters,
     setFilter,
     setFilters,
