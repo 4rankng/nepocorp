@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Copy } from 'lucide-react';
 import {
   TripStatus, TRIP_STATUS_LABELS,
   type TripDetail,
@@ -10,7 +10,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
-  getTripDistance,
+  getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
@@ -21,9 +21,11 @@ export interface TripMobileCardProps {
   trip: TripDetail;
   warnThreshold: number;
   style?: React.CSSProperties;
+  copyingPlan?: boolean;
+  onCopyPlan?: (tripId: number) => void;
 }
 
-export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardProps) {
+export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopyPlan }: TripMobileCardProps) {
   const cons = calcConsumption(trip);
   const route = splitRoute(trip.route?.name);
   const isCanceled = trip.status === TripStatus.CANCELED;
@@ -33,22 +35,13 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
   const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
   const revenue = Number(trip.revenue ?? 0);
   const totalCost = Number(trip.totalCost ?? 0);
-  const grossProfit = Number(trip.grossProfit ?? 0);
+  const grossProfit = getTripDisplayGrossProfit(trip);
   const missingIndicators = getMissingIndicators(trip);
   const tripContainers: TripListContainer[] = (trip as TripListRow).containers ?? [];
   const typeCodes = Array.from(new Set(tripContainers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
 
-  return (
-    <Link
-      to={`/trips/${trip.id}`}
-      className="trip-mcard"
-      style={{
-        textDecoration: 'none',
-        color: 'inherit',
-        display: 'block',
-        ...style,
-      }}
-    >
+  const content = (
+    <>
       <div className="trip-mcard__top">
         <div className="left">
           <div className="trip-mcard__name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -160,6 +153,47 @@ export function TripMobileCard({ trip, warnThreshold, style }: TripMobileCardPro
           </span>
         </div>
       </div>
-    </Link>
+    </>
+  );
+
+  if (!onCopyPlan) {
+    return (
+      <Link
+        to={`/trips/${trip.id}`}
+        className="trip-mcard"
+        style={{
+          textDecoration: 'none',
+          color: 'inherit',
+          display: 'block',
+          ...style,
+        }}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="trip-mcard" style={style}>
+      <Link
+        to={`/trips/${trip.id}`}
+        className="trip-mcard__main-link"
+      >
+        {content}
+      </Link>
+      <button
+        type="button"
+        className="trip-copy-btn trip-copy-btn--mobile"
+        disabled={copyingPlan}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onCopyPlan(trip.id);
+        }}
+      >
+        <Copy size={13} />
+        <span>{copyingPlan ? 'Đang copy' : 'Copy kế hoạch'}</span>
+      </button>
+    </div>
   );
 }

@@ -83,7 +83,7 @@ router.get('/suppliers', asyncHandler(async (_req: Request, res: Response) => {
 
 router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
-  const parsed = tripExpenseSchema.safeParse(req.body);
+  const parsed = tripExpenseSchema.safeParse({ ...req.body, forwarderId: forwarder.id });
   if (!parsed.success) throwValidation(parsed.error);
   const expense = await createTripExpense(db, {
     tripId: parsed.data.tripId,

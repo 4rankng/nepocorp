@@ -480,4 +480,28 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
     assert.equal(inserted.approvalStatus, 'PENDING'); // forwarder-created → pending approval
     createdExpenseIds.push(inserted.id);
   });
+
+  test('createTripExpense accepts an office-approved FORWARDER_ADVANCE fee with a forwarder', async () => {
+    const { trip, forwarderId } = await createInTransitTripWithFees(
+      { revenue: 1_000_000 },
+      [{ buyAmount: 1, sellAmount: 1, settlementMethod: 'FORWARDER_ADVANCE' }],
+    );
+    assert.ok(forwarderId, 'helper created a forwarder');
+
+    const inserted = await createTripExpense(db, {
+      tripId: trip.id,
+      forwarderId: forwarderId!,
+      expenseType: 'CHI_HO',
+      buyAmount: '100000',
+      sellAmount: '120000',
+      settlementMethod: 'FORWARDER_ADVANCE',
+      supplierId: null,
+      approvalStatus: 'APPROVED',
+      note: null,
+    });
+    assert.ok(inserted.id, 'fee inserted');
+    assert.equal(inserted.forwarderId, forwarderId);
+    assert.equal(inserted.approvalStatus, 'APPROVED');
+    createdExpenseIds.push(inserted.id);
+  });
 });

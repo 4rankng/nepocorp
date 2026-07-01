@@ -22,6 +22,16 @@
   background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .trip-mcard:hover { border-color: var(--ink-2); }
+.trip-list-page .trip-mcard__main-link {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+.trip-list-page .trip-copy-btn--mobile {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 34px;
+}
 .trip-list-page .trip-mcard__top {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px; margin-bottom: 10px;

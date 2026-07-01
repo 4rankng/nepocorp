@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
-import { ArrowRight, AlertCircle, X as XIcon } from 'lucide-react';
+import { ArrowRight, AlertCircle, Copy, X as XIcon } from 'lucide-react';
 import {
   TripStatus, TRIP_STATUS_LABELS, DATA_COMPLETENESS_COLORS, TRIP_STATUS_COLORS,
   type TripDetail,
@@ -11,7 +11,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
-  getTripDistance,
+  getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
@@ -32,6 +32,11 @@ export interface TripQuickEditOptions {
   errors: Record<number, string>;
   onToggleSelect: (tripId: number) => void;
   onDraftChange: (tripId: number, field: keyof TripQuickEditDraft, value: string) => void;
+}
+
+export interface TripRowActions {
+  copyingPlanId?: number | null;
+  onCopyPlan?: (tripId: number) => void;
 }
 
 function isQuickEditable(trip: TripDetail): boolean {
@@ -87,7 +92,11 @@ function QuickMoneyInput({
  * .route-cell-flex, etc.) defined in TripListPage.css. The page wires
  * up the `<table>` via `useReactTable({ data, columns })`.
  */
-export function buildTripColumns(warnThreshold: number, quickEdit?: TripQuickEditOptions): ColumnDef<TripDetail>[] {
+export function buildTripColumns(
+  warnThreshold: number,
+  quickEdit?: TripQuickEditOptions,
+  actions?: TripRowActions,
+): ColumnDef<TripDetail>[] {
   const quickColumns: ColumnDef<TripDetail>[] = quickEdit?.enabled ? [
     {
       id: 'select',
@@ -121,32 +130,52 @@ export function buildTripColumns(warnThreshold: number, quickEdit?: TripQuickEdi
         const customerName = trip.customer?.name ?? '—';
         const tripCode = buildTripCode(trip);
         const missingIndicators = getMissingIndicators(trip);
+        const copyingThisPlan = actions?.copyingPlanId === trip.id;
         return (
-          <Link
-            to={`/trips/${trip.id}`}
-            className="trip-col"
-            style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="trip-name">
-              <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
-              <span className="trip-meta-sep">·</span>
-              <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
-            </div>
-            <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span>{customerName}</span>
-              {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
-            </div>
-            {missingIndicators.length > 0 && (
-              <div className="trip-missing-row">
-                {missingIndicators.map((m, i) => (
-                  <span key={i} className="missing-tag" title={m.label} aria-label={m.label}>
-                    <m.icon size={10} />
-                  </span>
-                ))}
+          <div className="trip-col">
+            <Link
+              to={`/trips/${trip.id}`}
+              className="trip-col__link"
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="trip-name">
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
+                <span className="trip-meta-sep">·</span>
+                <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
               </div>
+              <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span>{customerName}</span>
+                {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
+              </div>
+              {missingIndicators.length > 0 && (
+                <div className="trip-missing-row">
+                  {missingIndicators.map((m, i) => (
+                    <span key={i} className="missing-tag" title={m.label} aria-label={m.label}>
+                      <m.icon size={10} />
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Link>
+            {actions?.onCopyPlan && !quickEdit?.enabled && (
+              <button
+                type="button"
+                className="trip-copy-btn"
+                disabled={copyingThisPlan}
+                title="Copy kế hoạch vận chuyển thành chuyến mới"
+                aria-label={`Copy kế hoạch vận chuyển từ chuyến ${tripCode}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  actions.onCopyPlan?.(trip.id);
+                }}
+              >
+                <Copy size={13} />
+                <span>{copyingThisPlan ? 'Đang copy' : 'Copy'}</span>
+              </button>
             )}
-          </Link>
+          </div>
         );
       },
     },
@@ -382,8 +411,11 @@ export function buildTripColumns(warnThreshold: number, quickEdit?: TripQuickEdi
     {
       id: 'grossProfit',
       header: 'LN gộp',
-      accessorFn: (row) => Number(row.grossProfit ?? 0),
-      cell: ({ row }) => moneyCell(Number(row.original.grossProfit ?? 0), Number(row.original.grossProfit ?? 0) < 0 ? 'money-loss' : ''),
+      accessorFn: (row) => getTripDisplayGrossProfit(row),
+      cell: ({ row }) => {
+        const grossProfit = getTripDisplayGrossProfit(row.original);
+        return moneyCell(grossProfit, grossProfit < 0 ? 'money-loss' : '');
+      },
     },
     {
       id: 'status',

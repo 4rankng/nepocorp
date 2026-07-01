@@ -451,7 +451,10 @@ router.post('/:id/expenses', asyncHandler(async (req: Request, res: Response) =>
   const item = await db.transaction(async (tx) =>
     createTripExpense(tx, {
       tripId,
-      forwarderId: null,  // accountant/manager-created → APPROVED
+      forwarderId: parsed.data.settlementMethod === 'FORWARDER_ADVANCE'
+        ? (parsed.data.forwarderId ?? null)
+        : null,
+      approvalStatus: 'APPROVED',
       expenseType: parsed.data.expenseType,
       buyAmount: String(parsed.data.buyAmount),
       sellAmount: String(parsed.data.sellAmount ?? 0),

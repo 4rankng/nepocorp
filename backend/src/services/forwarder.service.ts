@@ -61,6 +61,7 @@ export async function createTripExpense(
     sellAmount?: string;
     settlementMethod?: string;
     supplierId?: number | null;
+    approvalStatus?: string;
     invoiceNumber?: string | null;
     invoiceDate?: string | null;
     declarationNumber?: string | null;
@@ -115,9 +116,10 @@ export async function createTripExpense(
     throw new ApiError(422, 'Nhà cung cấp là bắt buộc khi chọn công ty trả trực tiếp.');
   }
 
-  // forwarderId=null means accountant/manager-created → auto-approve.
-  // forwarderId set means forwarder-created → requires manager approval.
-  const approvalStatus = data.forwarderId == null ? 'APPROVED' : 'PENDING';
+  // By default, forwarder-owned rows need manager approval. Office routes can
+  // explicitly mark a row APPROVED when accountant/manager staff enter it on a
+  // forwarder's behalf after checking the invoice.
+  const approvalStatus = data.approvalStatus ?? (data.forwarderId == null ? 'APPROVED' : 'PENDING');
 
   const [inserted] = await txOrDb.insert(s.tripExpenses).values({
     tripId: data.tripId,

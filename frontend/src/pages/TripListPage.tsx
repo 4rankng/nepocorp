@@ -18,7 +18,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   useReactTable, getCoreRowModel, flexRender,
 } from '@tanstack/react-table';
@@ -29,7 +29,7 @@ import { formatCurrency } from '../lib/format';
 import {
   FuelMode, parseThreshold, TripStatus,
   TRIP_STATUS_LABELS,
-  type TripDetail, type UpdateTripFiguresRequest,
+  type CreateTripRequest, type TripDetail, type UpdateTripFiguresRequest,
 } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
@@ -41,7 +41,7 @@ import {
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
   STATUS_PILL_CLASS,
   type StatusFilter, type StatusCounts, type TripQuickEditDraft,
-  buildTripCode, getTripDistance,
+  buildTripCode, getTripDistance, getTripDisplayGrossProfit,
 } from '../features/trips';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './TripListPage.css';
@@ -68,6 +68,47 @@ function quickDraftFromTrip(trip: TripDetail): TripQuickEditDraft {
     driverSalary: draftNumber(trip.driverSalary),
     revenue: draftNumber(trip.revenue),
   };
+}
+
+function copyPlanPayloadFromTrip(trip: TripDetail): CreateTripRequest {
+  if (!trip.customerId || !trip.routeId || !trip.cargoTypeId || !trip.departureDate) {
+    throw new Error('Dòng này thiếu thông tin bắt buộc nên chưa thể copy kế hoạch.');
+  }
+
+  const payload: CreateTripRequest = {
+    customerId: trip.customerId,
+    routeId: trip.routeId,
+    cargoTypeId: trip.cargoTypeId,
+    departureDate: trip.departureDate,
+    containerCount: trip.containerCount ?? 1,
+    fuelMode: trip.fuelMode,
+    fuelSupplierId: trip.fuelSupplierId ?? null,
+    vatRate: trip.vatRate != null ? Number(trip.vatRate) : 0,
+    carrierType: trip.carrierType ?? 'OWN',
+  };
+
+  if (trip.customerReference?.trim()) {
+    payload.customerReference = trip.customerReference.trim();
+  }
+
+  if (trip.carrierType === 'EXTERNAL') {
+    payload.truckId = null;
+    payload.driverId = null;
+    payload.externalCarrierId = trip.externalCarrierId ?? null;
+    payload.externalFreightCost = trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null;
+    payload.externalPlateNumber = trip.externalPlateNumber ?? null;
+    payload.externalDriverName = trip.externalDriverName ?? null;
+    payload.externalDriverPhone = trip.externalDriverPhone ?? null;
+    return payload;
+  }
+
+  if (!trip.truckId || !trip.driverId) {
+    throw new Error('Chuyến nội bộ cần có xe và lái xe trước khi copy kế hoạch.');
+  }
+
+  payload.truckId = trip.truckId;
+  payload.driverId = trip.driverId;
+  return payload;
 }
 
 function isEditableInQuickMode(trip: TripDetail): boolean {
@@ -167,6 +208,7 @@ export default function TripListPage() {
     staggerDelay: 40,
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { month, year } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
   const { data: salaryPeriod } = useSalaryPeriod(month, year);
@@ -188,6 +230,9 @@ export default function TripListPage() {
   const [quickErrors, setQuickErrors] = useState<Record<number, string>>({});
   const [quickMessage, setQuickMessage] = useState('');
   const [savingQuickEdit, setSavingQuickEdit] = useState(false);
+  const [copyingPlanId, setCopyingPlanId] = useState<number | null>(null);
+  const [copyPlanMessage, setCopyPlanMessage] = useState('');
+  const [copyPlanError, setCopyPlanError] = useState(false);
 
   // Date range from salary period
   const dateFrom = salaryPeriod?.start;
@@ -378,6 +423,34 @@ export default function TripListPage() {
     }
   }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, table.query]);
 
+  const handleCopyPlan = useCallback(async (tripId: number) => {
+    if (copyingPlanId) return;
+    const sourceTrip = table.rows.find((trip) => trip.id === tripId);
+    if (!sourceTrip) {
+      setCopyPlanError(true);
+      setCopyPlanMessage('Không tìm thấy dòng cần copy. Vui lòng tải lại danh sách.');
+      return;
+    }
+
+    setCopyingPlanId(tripId);
+    setCopyPlanMessage('');
+    setCopyPlanError(false);
+    try {
+      const created = await tripClient.createTrip(copyPlanPayloadFromTrip(sourceTrip));
+      await Promise.all([
+        table.query.refetch(),
+        queryClient.invalidateQueries({ queryKey: qk.trips.summary(dateFrom, dateTo) }),
+        queryClient.invalidateQueries({ queryKey: qk.trips.all }),
+      ]);
+      setCopyPlanMessage(`Đã copy kế hoạch thành ${created.tripCode ?? 'chuyến mới'}.`);
+    } catch (err) {
+      setCopyPlanError(true);
+      setCopyPlanMessage(err instanceof Error ? err.message : 'Không thể copy kế hoạch vận chuyển.');
+    } finally {
+      setCopyingPlanId(null);
+    }
+  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query, table.rows]);
+
   // ── Export ──
   const handleExport = useCallback(async () => {
     const first = await tripClient.listTrips({
@@ -428,7 +501,7 @@ export default function TripListPage() {
         (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
         t.revenue ?? '',
         t.totalCost ?? '',
-        t.grossProfit ?? '',
+        getTripDisplayGrossProfit(t),
         t.status,
       ];
     });
@@ -458,7 +531,10 @@ export default function TripListPage() {
     errors: quickErrors,
     onToggleSelect: handleToggleSelect,
     onDraftChange: handleDraftChange,
-  }), [handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
+  }, {
+    copyingPlanId,
+    onCopyPlan: handleCopyPlan,
+  }), [copyingPlanId, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
   const tableInstance = useReactTable({
     data: table.rows,
     columns,
@@ -602,7 +678,7 @@ export default function TripListPage() {
       <div className="table-hint">
         <MousePointerClick size={13} strokeWidth={2.2} />
         <span>
-          <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến, sửa hoặc duyệt phí
+          <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến, bấm Copy để tạo dòng kế hoạch tương tự
           &nbsp;·&nbsp; dùng ← → để cuộn ngang
         </span>
         <span className="table-legend">
@@ -610,6 +686,11 @@ export default function TripListPage() {
           <span className="legend-item"><span className="legend-dot legend-dot--warn" />Chưa nhập đủ</span>
         </span>
       </div>
+      {copyPlanMessage && (
+        <div className={`copy-plan-message${copyPlanError ? ' has-error' : ''}`}>
+          {copyPlanMessage}
+        </div>
+      )}
       {quickEdit && (
         <div className="quick-edit-toolbar">
           <div className="quick-edit-toolbar__main">
@@ -695,6 +776,8 @@ export default function TripListPage() {
                     trip={trip}
                     warnThreshold={warnThreshold}
                     style={tripRowStyle(trip) as CSSProperties}
+                    copyingPlan={copyingPlanId === trip.id}
+                    onCopyPlan={handleCopyPlan}
                   />
                 );
               }
@@ -704,7 +787,7 @@ export default function TripListPage() {
               const selected = selectedIds.has(trip.id);
               const routeLabel = trip.route?.name ?? '—';
               const totalCost = Number(trip.totalCost ?? 0);
-              const grossProfit = Number(trip.grossProfit ?? 0);
+              const grossProfit = getTripDisplayGrossProfit(trip);
               const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
               const quickFields: Array<{ key: keyof TripQuickEditDraft; label: string; unit?: string }> = [
                 { key: 'fuelLiters', label: 'Dầu', unit: 'L' },

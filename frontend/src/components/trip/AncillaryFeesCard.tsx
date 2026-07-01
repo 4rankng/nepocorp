@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
 import { tripClient } from '../../api/tripClient';
+import { api } from '../../lib/api';
 import { formatCurrency, formatNumber } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
@@ -76,6 +77,7 @@ const EMPTY_FORM = {
   sellAmount: '',
   settlementMethod: 'FORWARDER_ADVANCE' as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
   supplierId: '',
+  forwarderId: '',
   containerNumber: '',
   invoiceNumber: '',
   invoiceDate: '',
@@ -87,6 +89,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: catalogData } = useCatalogs();
+  const { data: usersData } = useQuery({
+    queryKey: qk.catalogs.users,
+    queryFn: () => api.get<{ items: Array<{ id: number; username: string | null; fullName: string | null; role: string; status: string }> }>('/auth/users'),
+    staleTime: 5 * 60 * 1000,
+  });
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const canApprove = !!user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
@@ -110,6 +117,18 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   });
 
   const expenses: (TripExpense & { supplierName?: string | null })[] = data ?? [];
+  const forwarderOptions = useMemo(
+    () => (usersData?.items ?? [])
+      .filter(u => u.role === 'FORWARDER' && u.status === 'ACTIVE')
+      .sort((a, b) => (a.fullName || a.username || '').localeCompare(b.fullName || b.username || '', 'vi')),
+    [usersData?.items],
+  );
+
+  useEffect(() => {
+    if (form.settlementMethod !== 'FORWARDER_ADVANCE') return;
+    if (form.forwarderId || forwarderOptions.length !== 1) return;
+    setForm(f => ({ ...f, forwarderId: String(forwarderOptions[0].id) }));
+  }, [form.forwarderId, form.settlementMethod, forwarderOptions]);
 
   const handleExpenseTypeChange = (newType: string) => {
     const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, newType);
@@ -154,6 +173,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       sellAmount: fee.sellAmount ? String(fee.sellAmount) : '',
       settlementMethod: fee.settlementMethod as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
       supplierId: fee.supplierId ? String(fee.supplierId) : '',
+      forwarderId: fee.forwarderId ? String(fee.forwarderId) : '',
       containerNumber: fee.containerNumber || '',
       invoiceNumber: fee.invoiceNumber || '',
       invoiceDate: fee.invoiceDate || '',
@@ -179,6 +199,10 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       setFormError('Vui lòng chọn nhà cung cấp khi công ty trả trực tiếp.');
       return;
     }
+    if (form.settlementMethod === 'FORWARDER_ADVANCE' && !form.forwarderId) {
+      setFormError('Vui lòng chọn người chi hộ khi chọn tạm ứng qua forwarder.');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -187,6 +211,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
         sellAmount: form.sellAmount ? Number(form.sellAmount) : 0,
         settlementMethod: form.settlementMethod,
         supplierId: form.settlementMethod === 'COMPANY_DIRECT' && form.supplierId ? Number(form.supplierId) : undefined,
+        forwarderId: form.settlementMethod === 'FORWARDER_ADVANCE' && form.forwarderId ? Number(form.forwarderId) : undefined,
         containerNumber: form.containerNumber.trim() || undefined,
         invoiceNumber: form.invoiceNumber.trim() || undefined,
         invoiceDate: form.invoiceDate || undefined,
@@ -626,12 +651,33 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     <select
                       className="input"
                       value={form.settlementMethod}
-                      onChange={(e) => setForm(f => ({ ...f, settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE', supplierId: '' }))}
+                      onChange={(e) => setForm(f => ({
+                        ...f,
+                        settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
+                        supplierId: '',
+                        forwarderId: '',
+                      }))}
                     >
                       <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
                       <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
                     </select>
                   </div>
+
+                  {form.settlementMethod === 'FORWARDER_ADVANCE' && (
+                    <div className="field" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: 12 }}>Người chi hộ *</label>
+                      <select
+                        className="input"
+                        value={form.forwarderId}
+                        onChange={(e) => setForm(f => ({ ...f, forwarderId: e.target.value }))}
+                      >
+                        <option value="">-- Chọn người chi hộ --</option>
+                        {forwarderOptions.map(f => (
+                          <option key={f.id} value={f.id}>{f.fullName || f.username || `Forwarder #${f.id}`}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {form.settlementMethod === 'COMPANY_DIRECT' && (
                     <div className="field" style={{ gridColumn: '1 / -1' }}>

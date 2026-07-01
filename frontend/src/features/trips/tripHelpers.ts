@@ -57,6 +57,21 @@ export function calcConsumption(trip: TripDetail): ConsumptionInfo | null {
   return { liters: fuel, per100: (fuel / distance) * 100 };
 }
 
+export function getTripDisplayGrossProfit(trip: TripDetail): number {
+  if (trip.carrierType !== 'EXTERNAL') {
+    return Number(trip.grossProfit ?? 0);
+  }
+
+  const revenue = Number(trip.revenue ?? 0);
+  const externalFreightCost = Number(trip.externalFreightCost ?? 0);
+  if (!revenue || !externalFreightCost) {
+    return Number(trip.grossProfit ?? 0);
+  }
+
+  const vatRate = Number(trip.vatRate ?? 0.08);
+  return Math.round(revenue / (1 + vatRate)) - Math.round(externalFreightCost / (1 + vatRate));
+}
+
 export interface MissingIndicator {
   icon: LucideIcon;
   label: string;
