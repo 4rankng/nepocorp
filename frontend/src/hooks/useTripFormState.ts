@@ -85,6 +85,8 @@ export interface UseTripFormStateReturn {
   setCustomerReference: (v: string) => void;
   containerCount: string;
   setContainerCount: (v: string) => void;
+  plannedContainerTypeId: string;
+  setPlannedContainerTypeId: (v: string) => void;
 
   // Carrier
   carrierType: 'OWN' | 'EXTERNAL';
@@ -196,6 +198,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
   const [completedAt, setCompletedAt] = useState(isEditMode && existingTrip?.completedAt ? existingTrip.completedAt.slice(0, 10) : "");
   const [customerReference, setCustomerReference] = useState(isEditMode && existingTrip?.customerReference ? existingTrip.customerReference : "");
   const [containerCount, setContainerCount] = useState(isEditMode && existingTrip?.containerCount ? String(existingTrip.containerCount) : "1");
+  const [plannedContainerTypeId, setPlannedContainerTypeId] = useState("");
 
   // ── Carrier ──
   const [carrierType, setCarrierType] = useState<'OWN' | 'EXTERNAL'>(
@@ -311,6 +314,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     customerReference, setCustomerReference,
     completedAt, setCompletedAt,
     containerCount, setContainerCount,
+    plannedContainerTypeId, setPlannedContainerTypeId,
     carrierType, setCarrierType,
     vatRate, setVatRate,
     externalCarrierId, setExternalCarrierId,

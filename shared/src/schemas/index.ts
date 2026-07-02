@@ -252,7 +252,7 @@ export const saveBillingDocumentSchema = z.object({
   debitNoteTemplateId: z.coerce.number().int().positive().nullable().optional(),
 });
 
-// ─── Debit-note (Giấy báo nợ) templates ──────────────────────────────────────
+// ─── Billing document Excel templates ────────────────────────────────────────
 // Excel-style templates built around user-defined columns. Each column binds to
 // a whitelisted variable so accountants can reproduce customer statement files
 // without typing fragile formulas or free-form placeholders.
@@ -266,12 +266,17 @@ export const debitNoteColumnVariableSchema = z.enum([
   'deliveryAddress',
   'container20Count',
   'container40Count',
+  'containerCount',
   'containerNumbers',
   'routeName',
   'description',
   'lineTypeLabel',
   'unit',
   'amount',
+  'freightAmount',
+  'serviceFeeAmount',
+  'totalAmount',
+  'serviceFeeDescription',
   'note',
   'tripCode',
 ]);
@@ -288,6 +293,16 @@ export const debitNoteColumnSchema = z.object({
 });
 
 export const defaultDebitNoteColumns: Array<z.infer<typeof debitNoteColumnSchema>> = [
+  { id: 'ngay', label: 'Ngày tháng', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
+  { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'tripCode', width: 12, align: 'center', format: 'text', total: false },
+  { id: 'dien_giai', label: 'Diễn giải', variable: 'description', width: 52, align: 'left', format: 'text', total: false },
+  { id: 'dvt', label: 'ĐVT', variable: 'unit', width: 9, align: 'center', format: 'text', total: false },
+  { id: 'so_luong', label: 'Số lượng', variable: 'containerCount', width: 9, align: 'center', format: 'number', total: false },
+  { id: 'don_gia', label: 'Đơn giá', variable: 'amount', width: 15, align: 'right', format: 'currency', total: false },
+  { id: 'thanh_tien', label: 'Thành tiền', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
+];
+
+export const defaultPaymentStatementColumns: Array<z.infer<typeof debitNoteColumnSchema>> = [
   { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 4.56, align: 'center', format: 'number', total: false },
   { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 11.28, align: 'center', format: 'date', total: false },
   { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 11.7, align: 'center', format: 'text', total: false },
@@ -299,6 +314,7 @@ export const defaultDebitNoteColumns: Array<z.infer<typeof debitNoteColumnSchema
   { id: 'sl40', label: "40'", variable: 'container40Count', width: 6.28, align: 'center', format: 'number', total: true },
   { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 15.7, align: 'left', format: 'text', total: false },
   { id: 'gia_vc', label: 'Giá VC \n (Chưa VAT)', variable: 'amount', width: 13.85, align: 'right', format: 'currency', total: true },
+  { id: 'phi_chi_ho', label: 'Phí chi hộ', variable: 'serviceFeeAmount', width: 13.85, align: 'right', format: 'currency', total: true },
   { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 8.7, align: 'left', format: 'text', total: false },
 ];
 
@@ -319,12 +335,12 @@ export const debitNoteTemplateSchema = z.object({
   columns: z.array(debitNoteColumnSchema).min(1).max(24).default(defaultDebitNoteColumns),
   // Phase 2: rendered read-only in UI; reserved for a future vndToWords() helper.
   amountInWords: z.boolean().default(false),
-  orientation: z.enum(['landscape', 'portrait']).default('landscape'),
-  termsText: z.string().nullable().default('- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng'),
+  orientation: z.enum(['landscape', 'portrait']).default('portrait'),
+  termsText: z.string().nullable().default('Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán'),
   signatureLeftLabel: z.string().max(100).nullable().default('Khách hàng'),
   signatureLeftName: z.string().max(100).nullable().default(null),
-  signatureRightLabel: z.string().max(100).nullable().default('Kế toán trưởng'),
-  signatureRightName: z.string().max(100).nullable().default(null),
+  signatureRightLabel: z.string().max(100).nullable().default('Người lập'),
+  signatureRightName: z.string().max(100).nullable().default('Phan Kim Phụng'),
 });
 
 export type DebitNoteTemplateInput = z.infer<typeof debitNoteTemplateSchema>;
@@ -746,7 +762,7 @@ export const tripContainerPatchSchema = z.object({
 export const tripContainerBatchSchema = z.object({
   containers: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
-    containerTypeId: z.coerce.number().int().positive().optional().nullable(),
+    containerTypeId: z.coerce.number().int().positive('Loại container không được để trống'),
     containerNumber: z.string().min(1, 'Số container không được để trống'),
     sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
     cargoWeightKg: nonNegNumeric.optional().nullable(),

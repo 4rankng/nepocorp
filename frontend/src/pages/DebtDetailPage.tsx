@@ -644,18 +644,27 @@ export default function DebtDetailPage() {
         </div>
       </div>
 
-      {/* ── Debit-note builder (AR snapshot documents) ───────────────────── */}
+      {/* ── Customer billing document builders (AR snapshot documents) ────── */}
       {id && (
-        <BillingDocumentsPanel
-          type="DEBIT_NOTE"
-          entityType="CUSTOMER"
-          entityId={Number(id)}
-          entityName={statement?.customer.name ?? ''}
-          buttonLabel="Tạo giấy báo nợ"
-          createBuilderOpen={isCreatingBillingDocument}
-          onOpenCreate={() => navigate(billingCreatePath)}
-          onBuilderClose={() => navigate(detailPath, { replace: true })}
-        />
+        <>
+          <BillingDocumentsPanel
+            type="PAYMENT_STATEMENT"
+            entityType="CUSTOMER"
+            entityId={Number(id)}
+            entityName={statement?.customer.name ?? ''}
+            buttonLabel="Tạo bảng kê"
+          />
+          <BillingDocumentsPanel
+            type="DEBIT_NOTE"
+            entityType="CUSTOMER"
+            entityId={Number(id)}
+            entityName={statement?.customer.name ?? ''}
+            buttonLabel="Tạo giấy báo nợ"
+            createBuilderOpen={isCreatingBillingDocument}
+            onOpenCreate={() => navigate(billingCreatePath)}
+            onBuilderClose={() => navigate(detailPath, { replace: true })}
+          />
+        </>
       )}
 
       {/* ── Summary Card ────────────────────────────────────────────────── */}

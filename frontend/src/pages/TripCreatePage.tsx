@@ -24,6 +24,7 @@ export default function TripCreatePage() {
   const navigate = useNavigate();
   const options = useTripOptions();
   const form = useTripForm(options);
+  const expectedContainerCount = Math.min(10, Math.max(1, Number(form.containerCount) || 1));
   const { rootRef } = usePageAnimations({
     ready: !options.loading,
     selectors: ['.tc-create-hero', '.tc-create-bento'],
@@ -80,6 +81,7 @@ export default function TripCreatePage() {
               trailerTypes={options.trailerTypes}
               drivers={options.drivers}
               cargoTypes={options.cargoTypes}
+              containerTypes={options.containerTypes}
               loading={options.loading}
             />
           </div>
@@ -97,11 +99,10 @@ export default function TripCreatePage() {
               number={4}
               title="Container & Seal"
               subtitle="Số cont, seal và ảnh chụp từng cont"
-              badge="optional"
+              badge="required"
               collapsible
-              defaultCollapsed
             >
-              <ContainerInstancesCard />
+              <ContainerInstancesCard expectedCount={expectedContainerCount} />
             </CardSection>
           </div>
 

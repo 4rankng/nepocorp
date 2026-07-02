@@ -8,6 +8,14 @@
   align-items: start;
 }
 
+.ci-row--identity {
+  grid-template-columns: 1fr;
+}
+
+.ci-row--meta {
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+}
+
 .ci-label {
   display: block;
   font-size: 13px;
@@ -111,6 +119,8 @@ select.input.ci-input-sm {
 }
 
 .ci-seal-section {
+  display: grid;
+  gap: 8px;
   padding: 0;
 }
 
@@ -211,10 +221,16 @@ select.input.ci-input-sm {
   .ci-row {
     grid-template-columns: 1fr 1fr;
   }
+  .ci-row--identity,
+  .ci-row--meta {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @container (max-width: 400px) {
-  .ci-row {
+  .ci-row,
+  .ci-row--identity,
+  .ci-row--meta {
     grid-template-columns: 1fr;
   }
   .ci-evidence-stack {

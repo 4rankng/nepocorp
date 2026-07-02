@@ -14,6 +14,7 @@ interface TripInfoCardProps {
   trailerTypes: TrailerTypeOption[];
   drivers: SelectOption[];
   cargoTypes: SelectOption[];
+  containerTypes: SelectOption[];
   loading: boolean;
 }
 
@@ -31,6 +32,23 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 export function TripInfoCard(props: TripInfoCardProps) {
   const form = useTripFormContext();
+  const filledContainerTypeIds = form.containerRows
+    .map(row => row.containerTypeId)
+    .filter(Boolean)
+    .map(String);
+  const commonContainerTypeId = filledContainerTypeIds.length > 0 &&
+    filledContainerTypeIds.every(id => id === filledContainerTypeIds[0])
+      ? filledContainerTypeIds[0]
+      : '';
+  const plannedContainerTypeId = form.plannedContainerTypeId || commonContainerTypeId;
+
+  const setPlannedContainerTypeId = (value: string) => {
+    form.setPlannedContainerTypeId(value);
+    form.setContainerRows(prev => prev.map(row => ({
+      ...row,
+      containerTypeId: value ? Number(value) : '',
+    })));
+  };
 
   const sel = (value: string, onChange: (v: string) => void, options: SelectOption[], placeholder: string, id?: string) => (
     <select id={id} className="input" style={selectStyle} value={value} onChange={(e) => onChange(e.target.value)} disabled={props.loading}>
@@ -71,6 +89,9 @@ export function TripInfoCard(props: TripInfoCardProps) {
           <Field label="Số cont" required>
             <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số lượng container (mặc định: 1)</span>
+          </Field>
+          <Field label="Loại container" required>
+            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId')}
           </Field>
 
           {/* VAT rate */}

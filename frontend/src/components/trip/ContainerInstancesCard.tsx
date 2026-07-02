@@ -5,7 +5,6 @@ import { api } from '../../lib/api';
 import { photoSrc } from '../../lib/api/photo';
 import { useToast } from '../shared/Toast';
 import { qk } from '../../api/keys';
-import { useCatalogs } from '../../hooks/useCatalogs';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState';
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
@@ -30,9 +29,8 @@ import {
  * standalone save desynced the trip `version` cache and caused false 409s on
  * the next figures save.) This card is purely the editor.
  *
- * Each container row has two "Số cont" / "Số seal" photo capture buttons: one
- * targets CONTAINER photos (fills `containerNumber`), the other targets SEAL
- * photos (fills the primary seal row). Tapping opens `ContainerScanner`; the
+ * Each container row has container/seal photo capture buttons: container
+ * photos fill `containerNumber`, seal photos fill Seal 1 or Seal 2. Tapping opens `ContainerScanner`; the
  * captured frame is OCR'd via `POST /api/ocr`. When both `trip_id` and
  * `container_id` are present (edit mode, saved row) the photo persists
  * directly. When the row has no id yet (create mode, or an unsaved new row)
@@ -78,10 +76,10 @@ function rowKey() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-function emptyRow(): ContainerRow {
+function emptyRow(containerTypeId: number | '' = ''): ContainerRow {
   return {
     _key: rowKey(),
-    containerTypeId: '',
+    containerTypeId,
     containerNumber: '',
     sealNumber: '',
     cargoWeightKg: '',
@@ -89,6 +87,18 @@ function emptyRow(): ContainerRow {
     seals: [],
     photoKeys: { cont: [], seal: [] },
   };
+}
+
+function hasEditableContainerData(row: ContainerRow): boolean {
+  return Boolean(
+    row.containerNumber.trim() ||
+    row.containerTypeId ||
+    row.cargoWeightKg ||
+    row.notes.trim() ||
+    row.seals.some(sl => sl.sealNumber.trim() || sl.sealType.trim() || sl.notes.trim()) ||
+    row.photoKeys.cont.length > 0 ||
+    row.photoKeys.seal.length > 0,
+  );
 }
 
 function sealKey() {
@@ -136,12 +146,12 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
 
 export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
   const { toast } = useToast();
-  const { data: catalogs } = useCatalogs();
-  const containerTypes = catalogs?.containerTypes ?? [];
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
   const { ocrResult, containerRows: rows, setContainerRows: setRows,
-    uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto } = useTripFormContext();
+    uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto,
+    plannedContainerTypeId } = useTripFormContext();
+  const plannedTypeValue = plannedContainerTypeId ? Number(plannedContainerTypeId) : '';
   // Track whether we've seeded rows for this trip, to avoid clobbering local edits on refetch.
   const seededTripRef = useRef<number | null>(null);
   // Create-page (/trips/new) guard: seed initial empty rows exactly once,
@@ -152,7 +162,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   // capture; `uploading` is keyed by row `_key` + cont/seal so each button
   // spins independently; `lightbox` is scoped per row + type so cont and
   // seal galleries don't cross-pollinate.
-  const [scanner, setScanner] = useState<{ rowKey: string; type: 'CONTAINER' | 'SEAL' } | null>(null);
+  const [scanner, setScanner] = useState<{ rowKey: string; type: 'CONTAINER' | 'SEAL'; sealIndex?: 0 | 1 } | null>(null);
   const [uploading, setUploading] = useState<Record<string, { cont: boolean; seal: boolean }>>({});
   const [deletingPhotos, setDeletingPhotos] = useState<Record<string, { cont: boolean; seal: boolean }>>({});
   const [lightbox, setLightbox] = useState<{ rowKey: string; type: 'CONTAINER' | 'SEAL'; urls: string[]; index: number } | null>(null);
@@ -179,23 +189,27 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
       for (const value of ocrResult.containerNumbers) {
         let slot = next.find(r => !r.containerNumber.trim());
         if (!slot) {
-          slot = emptyRow();
+          slot = emptyRow(plannedTypeValue);
           next.push(slot);
         }
         slot.containerNumber = value;
       }
       if (hasSeal) {
         const sn = ocrResult.sealNumber!;
-        if (!next.length) next.push(emptyRow());
+        if (!next.length) next.push(emptyRow(plannedTypeValue));
         const target = next[0];
-        const primarySeal = target.seals[0] ?? emptySeal();
-        target.seals = [{ ...primarySeal, sealNumber: sn.toUpperCase() }];
-        target.sealNumber = sn.toUpperCase();
+        const slotIndex = target.seals.findIndex(sl => !sl.sealNumber.trim());
+        const sealIndex = slotIndex >= 0 && slotIndex < 2 ? slotIndex : Math.min(target.seals.length, 1);
+        const seals = [...target.seals];
+        const seal = seals[sealIndex] ?? emptySeal();
+        seals[sealIndex] = { ...seal, sealNumber: sn.toUpperCase() };
+        target.seals = seals.slice(0, 2);
+        target.sealNumber = target.seals[0]?.sealNumber ?? '';
       }
       return next;
     });
     toast({ kind: 'info', message: 'Đã nhận diện số cont/seal — xem lại trước khi lưu.' });
-  }, [ocrResult, setRows, toast]);
+  }, [ocrResult, plannedTypeValue, setRows, toast]);
 
   // Existing container instances for this trip. Phase 2 also returns per-type
   // photo keys but we ignore the trip-level keys — photos now live in
@@ -225,25 +239,22 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     if (!tripId) {
       if (createSeededRef.current) return;
       createSeededRef.current = true;
-      setRows(prev => prev.length > 0 ? prev : Array.from({ length: expectedCount }, () => emptyRow()));
+      setRows(prev => prev.length > 0 ? prev : Array.from({ length: expectedCount }, () => emptyRow(plannedTypeValue)));
       return;
     }
     if (!existing) return;
     if (seededTripRef.current === tripId) return;
     seededTripRef.current = tripId;
     const fromServer: ContainerRow[] = (existing.items || []).map((c) => {
-      // The backend can carry multiple seals, but this editor intentionally
-      // presents one primary seal per container to match the operational flow.
       let seals: SealFormRow[];
       if (c.seals && c.seals.length > 0) {
-        const primarySeal = c.seals[0];
-        seals = [{
-          id: primarySeal.id,
+        seals = c.seals.slice(0, 2).map((seal) => ({
+          id: seal.id,
           _key: sealKey(),
-          sealNumber: primarySeal.sealNumber,
-          sealType: primarySeal.sealType ?? '',
-          notes: primarySeal.notes ?? '',
-        }];
+          sealNumber: seal.sealNumber,
+          sealType: seal.sealType ?? '',
+          notes: seal.notes ?? '',
+        }));
       } else if (c.sealNumber) {
         seals = [{ _key: sealKey(), sealNumber: c.sealNumber, sealType: '', notes: '' }];
       } else {
@@ -269,26 +280,42 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     });
     // Top up empty rows to match the expected container count.
     while (fromServer.length < expectedCount) {
-      fromServer.push(emptyRow());
+      fromServer.push(emptyRow(plannedTypeValue));
     }
     setRows(fromServer);
-  }, [existing, expectedCount, tripId, setRows]);
+  }, [existing, expectedCount, plannedTypeValue, tripId, setRows]);
 
   useEffect(() => {
-    if (!rows.some(r => r.seals.length > 1)) return;
+    if (tripId || !createSeededRef.current) return;
+    setRows(prev => {
+      const next = [...prev];
+      while (next.length < expectedCount) {
+        next.push(emptyRow(plannedTypeValue));
+      }
+      while (next.length > expectedCount && !hasEditableContainerData(next[next.length - 1])) {
+        next.pop();
+      }
+      return next.length === prev.length ? prev : next;
+    });
+  }, [expectedCount, plannedTypeValue, tripId, setRows]);
+
+  useEffect(() => {
+    if (!plannedContainerTypeId) return;
     setRows(prev => prev.map(r => {
-      if (r.seals.length <= 1) return r;
-      const primarySeal = r.seals[0];
+      if (r.containerTypeId) return r;
+      return { ...r, containerTypeId: Number(plannedContainerTypeId) };
+    }));
+  }, [plannedContainerTypeId, setRows]);
+
+  useEffect(() => {
+    if (!rows.some(r => r.seals.length > 2)) return;
+    setRows(prev => prev.map(r => {
+      if (r.seals.length <= 2) return r;
+      const seals = r.seals.slice(0, 2);
       return {
         ...r,
-        seals: [{
-          id: primarySeal.id,
-          _key: primarySeal._key,
-          sealNumber: primarySeal.sealNumber,
-          sealType: primarySeal.sealType,
-          notes: primarySeal.notes,
-        }],
-        sealNumber: primarySeal.sealNumber,
+        seals,
+        sealNumber: seals[0]?.sealNumber ?? '',
       };
     }));
   }, [rows, setRows]);
@@ -297,7 +324,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     setRows(prev => prev.map(r => (r._key === key ? { ...r, [field]: value } : r)));
   };
 
-  const addRow = () => setRows(prev => [...prev, emptyRow()]);
+  const addRow = () => setRows(prev => [...prev, emptyRow(plannedTypeValue)]);
 
   const removeRow = (key: string) => {
     // Free any buffered blob: URLs for this row (they'd never resolve
@@ -306,46 +333,55 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     setRows(prev => prev.filter(r => r._key !== key));
   };
 
-  const updatePrimarySeal = (
+  const updateSeal = (
     rowKeyValue: string,
+    index: 0 | 1,
     field: 'sealNumber' | 'sealType' | 'notes',
     value: string,
   ) => {
     setRows(prev => prev.map(r => {
       if (r._key !== rowKeyValue) return r;
-      const primarySeal = r.seals[0] ?? emptySeal();
-      const seals = [{ ...primarySeal, [field]: value }];
-      return { ...r, seals, sealNumber: field === 'sealNumber' ? value : seals[0].sealNumber };
+      const seals = [...r.seals];
+      const seal = seals[index] ?? emptySeal();
+      seals[index] = { ...seal, [field]: value };
+      return { ...r, seals, sealNumber: seals[0]?.sealNumber ?? '' };
     }));
   };
 
-  const clearPrimarySeal = (rowKeyValue: string) => {
-    setRows(prev => prev.map(r => (
-      r._key === rowKeyValue ? { ...r, seals: [], sealNumber: '' } : r
-    )));
+  const clearSeal = (rowKeyValue: string, index: 0 | 1) => {
+    setRows(prev => prev.map(r => {
+      if (r._key !== rowKeyValue) return r;
+      const seals = [...r.seals];
+      seals[index] = emptySeal();
+      return { ...r, seals, sealNumber: index === 0 ? '' : (seals[0]?.sealNumber ?? '') };
+    }));
   };
 
-  const renderPhotoLane = (row: ContainerRow, pType: 'CONTAINER' | 'SEAL') => {
+  const renderPhotoLane = (row: ContainerRow, pType: 'CONTAINER' | 'SEAL', sealIndex?: 0 | 1) => {
     const field = pType === 'CONTAINER' ? 'cont' : 'seal';
-    const urls = row.photoKeys[field].slice(-1);
+    const title = pType === 'CONTAINER' ? 'Ảnh container' : `Ảnh seal ${(sealIndex ?? 0) + 1}`;
+    const allUrls = row.photoKeys[field].filter(Boolean);
+    const urls = pType === 'SEAL' && sealIndex != null
+      ? allUrls.slice(sealIndex, sealIndex + 1)
+      : allUrls.slice(-1);
     const busy = (uploading[row._key]?.[field] ?? false) || (deletingPhotos[row._key]?.[field] ?? false);
     const isCont = pType === 'CONTAINER';
     return (
       <div className="ci-photo-lane">
         <div className="ci-photo-lane__head">
           <span className="ci-photo-lane__title">
-            {isCont ? 'Ảnh container' : 'Ảnh seal'}
+            {title}
           </span>
           <button
             type="button"
             className="ci-photo-lane__capture"
             disabled={busy}
-            onClick={() => setScanner({ rowKey: row._key, type: pType })}
+            onClick={() => setScanner({ rowKey: row._key, type: pType, sealIndex })}
             aria-label={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
             title={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
           >
             {busy ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
-            <span>{urls.length > 0 ? 'Đổi ảnh' : (isCont ? 'Chụp cont' : 'Chụp seal')}</span>
+            <span>{urls.length > 0 ? 'Đổi ảnh' : (isCont ? 'Chụp cont' : `Chụp seal ${(sealIndex ?? 0) + 1}`)}</span>
           </button>
         </div>
         <div className="ci-photo-lane__drop" aria-busy={busy}>
@@ -354,7 +390,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               type="button"
               className="ci-photo-empty"
               disabled={busy}
-              onClick={() => setScanner({ rowKey: row._key, type: pType })}
+              onClick={() => setScanner({ rowKey: row._key, type: pType, sealIndex })}
               aria-label={isCont ? 'Chụp ảnh container' : 'Chụp ảnh seal'}
             >
               <ImageOff size={16} />
@@ -437,7 +473,10 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     const row = rows.find(r => r._key === target.rowKey);
     if (!row) { setScanner(null); return; }
     const field = target.type === 'CONTAINER' ? 'cont' : 'seal';
-    const previousUrls = row.photoKeys[field];
+    const sealIndex = target.sealIndex ?? 0;
+    const previousUrls = target.type === 'SEAL'
+      ? row.photoKeys.seal.filter(Boolean).slice(sealIndex, sealIndex + 1)
+      : row.photoKeys.cont.filter(Boolean).slice(-1);
     // Close the camera overlay immediately; OCR runs in the background and
     // writes back into the row when it resolves.
     setScanner(null);
@@ -455,9 +494,15 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
       for (const oldUrl of previousUrls) {
         if (oldUrl.startsWith('blob:')) revokeContainerPhoto(row._key, target.type, oldUrl);
       }
-      setRows(prev => prev.map(r => r._key === target.rowKey
-        ? { ...r, photoKeys: { ...r.photoKeys, [field]: [url] } }
-        : r));
+      setRows(prev => prev.map(r => {
+        if (r._key !== target.rowKey) return r;
+        if (target.type === 'SEAL') {
+          const sealPhotos = r.photoKeys.seal.filter(Boolean);
+          sealPhotos[sealIndex] = url;
+          return { ...r, photoKeys: { ...r.photoKeys, seal: sealPhotos } };
+        }
+        return { ...r, photoKeys: { ...r.photoKeys, cont: [url] } };
+      }));
       for (const oldUrl of previousUrls) {
         if (!oldUrl.startsWith('blob:')) {
           deletePersistedPhoto(row, target.type, oldUrl).catch(() => {
@@ -480,12 +525,14 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         if (sn) {
           setRows(prev => prev.map(r => {
             if (r._key !== target.rowKey) return r;
-            const primarySeal = r.seals[0] ?? emptySeal();
+            const seals = [...r.seals];
             const sealNumber = sn.toUpperCase();
+            const seal = seals[sealIndex] ?? emptySeal();
+            seals[sealIndex] = { ...seal, sealNumber };
             return {
               ...r,
-              seals: [{ ...primarySeal, sealNumber }],
-              sealNumber,
+              seals,
+              sealNumber: seals[0]?.sealNumber ?? '',
             };
           }));
         }
@@ -565,6 +612,46 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   );
   const showRequiresWarning = !!requiresPhotos && !hasAnyContainerPhoto;
 
+  const renderSealFields = (row: ContainerRow, index: 0 | 1) => {
+    const seal = row.seals[index];
+    const hasSealValue = !!(seal?.sealNumber.trim() || seal?.notes.trim());
+    return (
+      <div className="ci-seal-section">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>
+            Số seal {index + 1}
+          </span>
+        </div>
+        <div className="ci-seal-row">
+          <input
+            className="input ci-input-sm"
+            style={{ width: 180 }}
+            placeholder={`Số seal ${index + 1}`}
+            value={seal?.sealNumber ?? ''}
+            onChange={e => updateSeal(row._key, index, 'sealNumber', e.target.value.toUpperCase())}
+          />
+          <input
+            className="input ci-input-sm"
+            style={{ width: 180, flex: 1, minWidth: 120 }}
+            placeholder="Ghi chú seal (tuỳ chọn)"
+            value={seal?.notes ?? ''}
+            onChange={e => updateSeal(row._key, index, 'notes', e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon btn--sm"
+            style={{ minWidth: 28, minHeight: 28, visibility: hasSealValue ? 'visible' : 'hidden' }}
+            onClick={() => clearSeal(row._key, index)}
+            aria-label={`Xoá seal ${index + 1}`}
+            title={`Xoá seal ${index + 1}`}
+          >
+            <X size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       {showRequiresWarning && (
@@ -613,12 +700,13 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </button>
               </div>
 
-              <div className="ci-row">
+              <div className="ci-row ci-row--identity">
                 <div>
                   <label className="ci-label">
                     Số container <span style={{ color: 'var(--danger)' }}>*</span>
                   </label>
                   <input
+                    id={`containerNumber-${row._key}`}
                     className="input ci-input-sm"
                     style={{ width: '100%' }}
                     placeholder="VD: TCKU1234567"
@@ -656,98 +744,46 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     );
                   })()}
                 </div>
-                <div>
-                  <label className="ci-label">
-                    Loại container
-                  </label>
-                  <select
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    value={row.containerTypeId}
-                    onChange={e => updateRow(row._key, 'containerTypeId', e.target.value === '' ? '' : Number(e.target.value))}
-                  >
-                    <option value="">Chọn loại</option>
-                    {containerTypes.map(type => (
-                      <option key={type.id} value={type.id}>
-                        {type.name || type.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="ci-label">
-                    Trọng lượng (kg)
-                  </label>
-                  <input
-                    type="number"
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    placeholder="VD: 24500"
-                    value={row.cargoWeightKg}
-                    onChange={e => updateRow(row._key, 'cargoWeightKg', e.target.value)}
-                    min={0}
-                    max={99999999.99}
-                  />
-                </div>
-                <div>
-                  <label className="ci-label">
-                    Ghi chú
-                  </label>
-                  <input
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    placeholder="Ghi chú cont (tuỳ chọn)"
-                    value={row.notes}
-                    onChange={e => updateRow(row._key, 'notes', e.target.value)}
-                  />
-                </div>
               </div>
 
               <div className="ci-evidence-stack">
                 {renderPhotoLane(row, 'CONTAINER')}
 
-                {/* One operational seal number per container. */}
-                <div className="ci-seal-section">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-2)' }}>
-                      Số seal
-                    </span>
-                  </div>
-                  {(() => {
-                    const primarySeal = row.seals[0];
-                    const hasSealValue = !!(primarySeal?.sealNumber.trim() || primarySeal?.notes.trim());
-                    return (
-                      <div className="ci-seal-row">
-                        <input
-                          className="input ci-input-sm"
-                          style={{ width: 180 }}
-                          placeholder="Số seal"
-                          value={primarySeal?.sealNumber ?? ''}
-                          onChange={e => updatePrimarySeal(row._key, 'sealNumber', e.target.value.toUpperCase())}
-                        />
-                        <input
-                          className="input ci-input-sm"
-                          style={{ width: 180, flex: 1, minWidth: 120 }}
-                          placeholder="Ghi chú (tuỳ chọn)"
-                          value={primarySeal?.notes ?? ''}
-                          onChange={e => updatePrimarySeal(row._key, 'notes', e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn--ghost btn--icon btn--sm"
-                          style={{ minWidth: 28, minHeight: 28, visibility: hasSealValue ? 'visible' : 'hidden' }}
-                          onClick={() => clearPrimarySeal(row._key)}
-                          aria-label="Xoá seal"
-                          title="Xoá seal"
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    );
-                  })()}
-                </div>
+                {renderSealFields(row, 0)}
+                {renderPhotoLane(row, 'SEAL', 0)}
 
-                {renderPhotoLane(row, 'SEAL')}
+                {renderSealFields(row, 1)}
+                {renderPhotoLane(row, 'SEAL', 1)}
+
+                <div className="ci-row ci-row--meta">
+                  <div>
+                    <label className="ci-label">
+                      Trọng lượng (kg)
+                    </label>
+                    <input
+                      type="number"
+                      className="input ci-input-sm"
+                      style={{ width: '100%' }}
+                      placeholder="VD: 24500"
+                      value={row.cargoWeightKg}
+                      onChange={e => updateRow(row._key, 'cargoWeightKg', e.target.value)}
+                      min={0}
+                      max={99999999.99}
+                    />
+                  </div>
+                  <div>
+                    <label className="ci-label">
+                      Ghi chú
+                    </label>
+                    <input
+                      className="input ci-input-sm"
+                      style={{ width: '100%' }}
+                      placeholder="Ghi chú cont (tuỳ chọn)"
+                      value={row.notes}
+                      onChange={e => updateRow(row._key, 'notes', e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ))}

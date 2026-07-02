@@ -47,7 +47,7 @@ interface BillingContainerGroup {
 
 const TITLE: Record<BillingDocumentType, string> = {
   DEBIT_NOTE: 'Giấy báo nợ',
-  PAYMENT_STATEMENT: 'Bảng kê thanh toán',
+  PAYMENT_STATEMENT: 'Bảng kê',
 };
 
 const SERVICE_FEE_LABELS: Record<string, string> = {
@@ -139,7 +139,7 @@ function groupLinesByContainer(lines: Array<{ line: BillingDocumentLine; index: 
 }
 
 function documentFileName(type: BillingDocumentType, entityName: string): string {
-  const prefix = type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke-thanh-toan';
+  const prefix = type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke';
   return `${prefix}-${entityName}.xlsx`;
 }
 
@@ -167,16 +167,15 @@ export default function BillingDocumentBuilder({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
-  // Selected debit-note template (DEBIT_NOTE only). null = auto (customer's
-  // assigned template → global default), resolved + snapshotted server-side.
+  // Selected export template. null = auto (customer/default for debit notes,
+  // document-type default for payment statements), resolved + snapshotted server-side.
   const [templateId, setTemplateId] = useState<number | null>(initialDoc?.debitNoteTemplateId ?? null);
 
-  const isDebitNote = type === 'DEBIT_NOTE';
   const { data: templates } = useQuery<DebitNoteTemplate[]>({
-    queryKey: qk.catalogs.debitNoteTemplates,
-    queryFn: () => configClient.getDebitNoteTemplates(),
+    queryKey: [...qk.catalogs.debitNoteTemplates, type],
+    queryFn: () => configClient.getDebitNoteTemplates(type),
     staleTime: 60_000,
-    enabled: isDebitNote && isOpen,
+    enabled: isOpen,
   });
 
   const groupedLines = useMemo<BillingRouteGroup[]>(() => {
@@ -410,24 +409,22 @@ export default function BillingDocumentBuilder({
             <span>Đến ngày</span>
             <input type="date" className="input" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} disabled={busy} />
           </label>
-          {isDebitNote && (
-            <label>
-              <span>Mẫu xuất</span>
-              <select
-                className="input"
-                value={templateId ?? ''}
-                onChange={(e) => setTemplateId(e.target.value === '' ? null : Number(e.target.value))}
-                disabled={busy}
-              >
-                <option value="">Mặc định (theo khách hàng)</option>
-                {(templates ?? []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}{t.isDefault ? ' — mặc định' : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          <label>
+            <span>Mẫu xuất</span>
+            <select
+              className="input"
+              value={templateId ?? ''}
+              onChange={(e) => setTemplateId(e.target.value === '' ? null : Number(e.target.value))}
+              disabled={busy}
+            >
+              <option value="">{type === 'DEBIT_NOTE' ? 'Mặc định (theo khách hàng)' : 'Mặc định bảng kê'}</option>
+              {(templates ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.isDefault ? ' — mặc định' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn btn--secondary" type="button" onClick={() => generateDraft(rangeFrom, rangeTo)} disabled={busy}>
             {loading ? <Loader2 size={15} className="spin" /> : <Filter size={15} />}
             Lọc lại

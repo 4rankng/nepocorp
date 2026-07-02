@@ -29,6 +29,7 @@ import { qk } from '../../api/keys';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
 import {
   defaultDebitNoteColumns,
+  defaultPaymentStatementColumns,
   type DebitNoteColumnVariable,
   type DebitNoteTemplate,
   type DebitNoteTemplateColumn,
@@ -47,12 +48,17 @@ const VARIABLES: Array<{ value: DebitNoteColumnVariable; label: string; sample: 
   { value: 'deliveryAddress', label: 'Địa chỉ giao hàng', sample: 'Lô CN1F, CCN Quất Động' },
   { value: 'container20Count', label: "Cont 20'", sample: '1' },
   { value: 'container40Count', label: "Cont 40'", sample: '' },
+  { value: 'containerCount', label: 'Số lượng cont', sample: '1' },
   { value: 'containerNumbers', label: 'Số hiệu cont', sample: 'VSGU4230188' },
   { value: 'routeName', label: 'Tên tuyến', sample: 'HP - Quế Võ' },
   { value: 'description', label: 'Diễn giải', sample: 'Cước vận chuyển' },
   { value: 'lineTypeLabel', label: 'Loại dòng', sample: 'Doanh thu' },
   { value: 'unit', label: 'Đơn vị tính', sample: 'chuyến' },
   { value: 'amount', label: 'Số tiền', sample: '4.490.000' },
+  { value: 'freightAmount', label: 'Cước vận chuyển', sample: '4.490.000' },
+  { value: 'serviceFeeAmount', label: 'Phí chi hộ', sample: '550.000' },
+  { value: 'totalAmount', label: 'Tổng tiền dòng', sample: '5.040.000' },
+  { value: 'serviceFeeDescription', label: 'Diễn giải phí chi hộ', sample: 'Nâng hạ, vệ sinh cont' },
   { value: 'note', label: 'Ghi chú', sample: '-' },
   { value: 'tripCode', label: 'Mã chuyến', sample: 'TR-2606-001' },
 ];
@@ -81,8 +87,9 @@ function variableLabel(value: DebitNoteColumnVariable) {
   return variableMap.get(value)?.label ?? value;
 }
 
-function cloneStarterColumns(): DebitNoteTemplateColumn[] {
-  return defaultDebitNoteColumns.map(column => ({ ...column }));
+function cloneStarterColumns(documentType: DebitNoteTemplateInput['documentType'] = 'DEBIT_NOTE'): DebitNoteTemplateColumn[] {
+  const source = documentType === 'PAYMENT_STATEMENT' ? defaultPaymentStatementColumns : defaultDebitNoteColumns;
+  return source.map(column => ({ ...column }));
 }
 
 const DEFAULT_ACCOUNT_NUMBER = '190466529';
@@ -104,13 +111,35 @@ function buildAccountTerms(accountNumber: string, bankName: string) {
   return `- Số TK ${accountNumber.trim()}\n- Tại ngân hàng ${bankName.trim()}`;
 }
 
+function templateDefaultsForType(documentType: DebitNoteTemplateInput['documentType']): Pick<DebitNoteTemplateInput, 'titleText' | 'orientation' | 'termsText' | 'signatureRightLabel' | 'signatureRightName' | 'columns'> {
+  if (documentType === 'PAYMENT_STATEMENT') {
+    return {
+      titleText: 'BẢNG KÊ CƯỚC VẬN CHUYỂN',
+      orientation: 'landscape',
+      termsText: buildAccountTerms(DEFAULT_ACCOUNT_NUMBER, DEFAULT_BANK_NAME),
+      signatureRightLabel: 'Kế toán trưởng',
+      signatureRightName: null,
+      columns: cloneStarterColumns('PAYMENT_STATEMENT'),
+    };
+  }
+  return {
+    titleText: 'GIẤY BÁO NỢ',
+    orientation: 'portrait',
+    termsText: 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán',
+    signatureRightLabel: 'Người lập',
+    signatureRightName: 'Phan Kim Phụng',
+    columns: cloneStarterColumns('DEBIT_NOTE'),
+  };
+}
+
 function blankTemplate(): DebitNoteTemplateInput {
+  const defaults = templateDefaultsForType('DEBIT_NOTE');
   return {
     name: 'Mẫu giấy báo nợ mới',
     isDefault: false,
     documentType: 'DEBIT_NOTE',
     logoStorageKey: null,
-    titleText: 'GIẤY BÁO NỢ',
+    titleText: defaults.titleText,
     issuerName: 'CÔNG TY TNHH NEPO',
     issuerAddress: null,
     issuerTaxCode: null,
@@ -119,14 +148,14 @@ function blankTemplate(): DebitNoteTemplateInput {
     showContainerColumn: true,
     showUnitColumn: true,
     groupingMode: 'ROUTE',
-    columns: cloneStarterColumns(),
+    columns: defaults.columns,
     amountInWords: false,
-    orientation: 'landscape',
-    termsText: buildAccountTerms(DEFAULT_ACCOUNT_NUMBER, DEFAULT_BANK_NAME),
+    orientation: defaults.orientation,
+    termsText: defaults.termsText,
     signatureLeftLabel: 'Khách hàng',
     signatureLeftName: null,
-    signatureRightLabel: 'Kế toán trưởng',
-    signatureRightName: null,
+    signatureRightLabel: defaults.signatureRightLabel,
+    signatureRightName: defaults.signatureRightName,
   };
 }
 
@@ -763,6 +792,22 @@ export default function DebitNoteTemplateEditorPage() {
   const set = <K extends keyof DebitNoteTemplateInput>(key: K, value: DebitNoteTemplateInput[K]) => {
     setForm(previous => ({ ...previous, [key]: value }));
   };
+  const setDocumentType = (documentType: DebitNoteTemplateInput['documentType']) => {
+    const defaults = templateDefaultsForType(documentType);
+    setForm(previous => ({
+      ...previous,
+      documentType,
+      titleText: defaults.titleText,
+      name: previous.name === 'Mẫu giấy báo nợ mới' || previous.name === 'Mẫu bảng kê mới'
+        ? (documentType === 'PAYMENT_STATEMENT' ? 'Mẫu bảng kê mới' : 'Mẫu giấy báo nợ mới')
+        : previous.name,
+      orientation: defaults.orientation,
+      termsText: defaults.termsText,
+      signatureRightLabel: defaults.signatureRightLabel,
+      signatureRightName: defaults.signatureRightName,
+      columns: defaults.columns,
+    }));
+  };
   const selectTarget = (target: SelectedTarget) => {
     setSelectedTarget(target);
     setActiveSection(sectionFromTarget(target));
@@ -870,6 +915,12 @@ export default function DebitNoteTemplateEditorPage() {
     if (activeSection === 'general') {
       return (
         <section className="debit-editor-settings">
+          <Field label="Loại tài liệu">
+            <select className="input debit-editor-inline-select debit-editor-settings-select" value={form.documentType} onChange={event => setDocumentType(event.target.value as DebitNoteTemplateInput['documentType'])} disabled={controlsDisabled || !!id}>
+              <option value="DEBIT_NOTE">Giấy báo nợ</option>
+              <option value="PAYMENT_STATEMENT">Bảng kê</option>
+            </select>
+          </Field>
           <Field label="Tên mẫu *">
             <input className="input debit-editor-inline-input" value={form.name} onChange={event => set('name', event.target.value)} disabled={controlsDisabled} />
           </Field>

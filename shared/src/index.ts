@@ -78,7 +78,7 @@ export {
   driverPayoutSchema,
   tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
-  debitNoteTemplateSchema, debitNoteColumnSchema, debitNoteColumnVariableSchema, defaultDebitNoteColumns,
+  debitNoteTemplateSchema, debitNoteColumnSchema, debitNoteColumnVariableSchema, defaultDebitNoteColumns, defaultPaymentStatementColumns,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
   agentDirectiveSchema, agentWidgetSchema, widgetFormatSchema, agentActionChipSchema,
   agentResponseSchema, agentMessageSchema, agentConversationSchema, agentEventSchema,

@@ -42,6 +42,8 @@ export interface UseTripFormReturn {
   setCustomerReference: (v: string) => void;
   containerCount: string;
   setContainerCount: (v: string) => void;
+  plannedContainerTypeId: string;
+  setPlannedContainerTypeId: (v: string) => void;
 
   carrierType: 'OWN' | 'EXTERNAL';
   setCarrierType: (v: 'OWN' | 'EXTERNAL') => void;
@@ -174,6 +176,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     customerReference: s.customerReference, setCustomerReference: s.setCustomerReference,
     completedAt: s.completedAt, setCompletedAt: s.setCompletedAt,
     containerCount: s.containerCount, setContainerCount: s.setContainerCount,
+    plannedContainerTypeId: s.plannedContainerTypeId, setPlannedContainerTypeId: s.setPlannedContainerTypeId,
     carrierType: s.carrierType, setCarrierType: s.setCarrierType,
     vatRate: s.vatRate, setVatRate: s.setVatRate,
     externalCarrierId: s.externalCarrierId, setExternalCarrierId: s.setExternalCarrierId,

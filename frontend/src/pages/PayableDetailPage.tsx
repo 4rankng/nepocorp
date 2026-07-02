@@ -270,7 +270,7 @@ export default function PayableDetailPage() {
           entityType="VENDOR"
           entityId={Number(id)}
           entityName={typedStatement?.supplier.name ?? ''}
-          buttonLabel="Tạo bảng kê thanh toán"
+          buttonLabel="Tạo bảng kê"
         />
       )}
 

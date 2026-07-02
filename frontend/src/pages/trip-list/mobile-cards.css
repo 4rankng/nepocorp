@@ -28,9 +28,10 @@
   text-decoration: none;
 }
 .trip-list-page .trip-copy-btn--mobile {
-  width: 100%;
+  width: fit-content;
   margin-top: 10px;
   min-height: 34px;
+  align-self: flex-start;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-2px);
@@ -42,6 +43,13 @@
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+@media (hover: none), (pointer: coarse) {
+  .trip-list-page .trip-copy-btn--mobile {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 }
 .trip-list-page .trip-mcard__top {
   display: flex; align-items: center; justify-content: space-between;

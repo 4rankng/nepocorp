@@ -1,9 +1,10 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, gte, lte, isNull, inArray, desc, type SQL } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, inArray, desc, like, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
 import { BILLABLE_TRIP_STATUSES, LoadingType } from '@tingting/shared';
+import { companyInfoFromSettings } from './company-info.service';
 import type { Tx } from './trip-shared';
 import { storageService } from './storage.service';
 import type {
@@ -45,7 +46,7 @@ export function docTotal(lines: BillingDocumentLine[]): number {
   return lines.reduce((sum, l) => sum + effectiveAmount(l), 0);
 }
 
-// ─── Debit-note templates ─────────────────────────────────────────────────────
+// ─── Billing document templates ───────────────────────────────────────────────
 
 const DEFAULT_DEBIT_NOTE_COLUMNS: DebitNoteTemplateColumn[] = [
   { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 4.56, align: 'center', format: 'number', total: false },
@@ -64,6 +65,49 @@ const DEFAULT_DEBIT_NOTE_COLUMNS: DebitNoteTemplateColumn[] = [
 
 const VIETSUN_TABLE_COLUMN_BY_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col]));
 const VIETSUN_TABLE_WIDTH_BY_COLUMN_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col.width]));
+
+const DEFAULT_DEBIT_NOTE_SNAPSHOT: DebitNoteTemplateSnapshot = {
+  id: null,
+  name: 'Mặc định giấy báo nợ',
+  titleText: 'GIẤY BÁO NỢ',
+  issuerName: null,
+  issuerAddress: null,
+  issuerTaxCode: null,
+  issuerRepresentative: null,
+  accentColor: '#00A651',
+  showContainerColumn: true,
+  showUnitColumn: true,
+  groupingMode: 'NONE',
+  columns: [
+    { id: 'ngay', label: 'Ngày tháng', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
+    { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'tripCode', width: 12, align: 'center', format: 'text', total: false },
+    { id: 'dien_giai', label: 'Diễn giải', variable: 'description', width: 52, align: 'left', format: 'text', total: false },
+    { id: 'dvt', label: 'ĐVT', variable: 'unit', width: 9, align: 'center', format: 'text', total: false },
+    { id: 'so_luong', label: 'Số lượng', variable: 'containerCount', width: 9, align: 'center', format: 'number', total: false },
+    { id: 'don_gia', label: 'Đơn giá', variable: 'amount', width: 15, align: 'right', format: 'currency', total: false },
+    { id: 'thanh_tien', label: 'Thành tiền', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
+  ],
+  orientation: 'portrait',
+  termsText: 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán',
+  signatureLeftLabel: 'Khách hàng',
+  signatureLeftName: null,
+  signatureRightLabel: 'Người lập',
+  signatureRightName: 'Phan Kim Phụng',
+  logoStorageKey: null,
+};
+
+const DEFAULT_PAYMENT_STATEMENT_SNAPSHOT: DebitNoteTemplateSnapshot = {
+  ...DEFAULT_DEBIT_NOTE_SNAPSHOT,
+  name: 'Mặc định bảng kê',
+  titleText: 'BẢNG KÊ CƯỚC VẬN CHUYỂN',
+  accentColor: '#1F4E79',
+  groupingMode: 'NONE',
+  columns: [
+    ...DEFAULT_DEBIT_NOTE_COLUMNS.slice(0, 11),
+    { id: 'phi_chi_ho', label: 'Phí chi hộ', variable: 'serviceFeeAmount', width: 13.85, align: 'right', format: 'currency', total: true },
+    ...DEFAULT_DEBIT_NOTE_COLUMNS.slice(11),
+  ] as DebitNoteTemplateColumn[],
+};
 
 function normalizeTemplateColumns(cols: unknown): DebitNoteTemplateColumn[] {
   return Array.isArray(cols) && cols.length > 0
@@ -98,16 +142,25 @@ export async function getDebitNoteTemplate(id: number): Promise<DebitNoteTemplat
   return row ? rowToTemplate(row) : null;
 }
 
-export async function getDefaultDebitNoteTemplate(): Promise<DebitNoteTemplate | null> {
+function defaultSnapshotForType(type: string): DebitNoteTemplateSnapshot {
+  return type === 'PAYMENT_STATEMENT'
+    ? { ...DEFAULT_PAYMENT_STATEMENT_SNAPSHOT, columns: [...DEFAULT_PAYMENT_STATEMENT_SNAPSHOT.columns] }
+    : { ...DEFAULT_DEBIT_NOTE_SNAPSHOT, columns: [...DEFAULT_DEBIT_NOTE_SNAPSHOT.columns] };
+}
+
+export async function getDefaultDebitNoteTemplate(docType: BillingDocumentType = 'DEBIT_NOTE'): Promise<DebitNoteTemplate | null> {
   const [row] = await db.select().from(s.debitNoteTemplates)
-    .where(and(eq(s.debitNoteTemplates.isDefault, true), isNull(s.debitNoteTemplates.deletedAt))).limit(1);
+    .where(and(
+      eq(s.debitNoteTemplates.isDefault, true),
+      eq(s.debitNoteTemplates.documentType, docType),
+      isNull(s.debitNoteTemplates.deletedAt),
+    )).limit(1);
   return row ? rowToTemplate(row) : null;
 }
 
 /**
- * Resolve the template for a debit-note export. Non-DEBIT_NOTE docs always
- * return null (prevents vendor PAYMENT_STATEMENT exports from inheriting AR
- * styling). Order: explicit override → customer override → global default.
+ * Resolve the template for a billing document export. Order:
+ * explicit override → customer override → document-type default.
  * Soft-deleted templates are skipped (fall through to the next source).
  */
 export async function resolveDebitNoteTemplate(opts: {
@@ -115,16 +168,16 @@ export async function resolveDebitNoteTemplate(opts: {
   customerTemplateId?: number | null;
   docType?: string;
 }): Promise<DebitNoteTemplate | null> {
-  if (opts.docType && opts.docType !== 'DEBIT_NOTE') return null;
+  const docType = opts.docType === 'PAYMENT_STATEMENT' ? 'PAYMENT_STATEMENT' : 'DEBIT_NOTE';
   if (opts.templateIdOverride) {
     const t = await getDebitNoteTemplate(opts.templateIdOverride);
-    if (t) return t;
+    if (t && t.documentType === docType) return t;
   }
-  if (opts.customerTemplateId) {
+  if (docType === 'DEBIT_NOTE' && opts.customerTemplateId) {
     const t = await getDebitNoteTemplate(opts.customerTemplateId);
-    if (t) return t;
+    if (t && t.documentType === docType) return t;
   }
-  return getDefaultDebitNoteTemplate();
+  return getDefaultDebitNoteTemplate(docType);
 }
 
 /** Frozen render-only copy written onto each saved billing document. */
@@ -146,27 +199,32 @@ export function templateToSnapshot(t: DebitNoteTemplate): DebitNoteTemplateSnaps
 /**
  * Resolve the snapshot to render a doc with, applying the export precedence:
  * explicit `?templateId=` override → the doc's frozen snapshot (history
- * stability) → customer's assigned template → global default. Non-DEBIT_NOTE
- * docs return null (caller falls back to the legacy renderer).
+ * stability) → customer's assigned template (DEBIT_NOTE only) → document-type
+ * default → built-in standard snapshot.
  */
 export async function resolveDebitNoteTemplateForDoc(
   doc: { type: string; entityType: string; entityId: number; debitNoteTemplateSnapshot?: DebitNoteTemplateSnapshot | null },
   opts: { templateIdOverride?: number | null } = {},
 ): Promise<DebitNoteTemplateSnapshot | null> {
-  if (doc.type !== 'DEBIT_NOTE') return null;
+  const docType = doc.type === 'PAYMENT_STATEMENT' ? 'PAYMENT_STATEMENT' : 'DEBIT_NOTE';
   if (opts.templateIdOverride && opts.templateIdOverride > 0) {
     const t = await getDebitNoteTemplate(opts.templateIdOverride);
-    if (t) return templateToSnapshot(t);
+    if (t && t.documentType === docType) return templateToSnapshot(t);
   }
-  if (doc.debitNoteTemplateSnapshot) return doc.debitNoteTemplateSnapshot;
+  if (doc.debitNoteTemplateSnapshot) return {
+    ...doc.debitNoteTemplateSnapshot,
+    titleText: doc.type === 'PAYMENT_STATEMENT' && doc.debitNoteTemplateSnapshot.titleText === 'GIẤY BÁO NỢ'
+      ? 'BẢNG KÊ CƯỚC VẬN CHUYỂN'
+      : doc.debitNoteTemplateSnapshot.titleText,
+  };
   let customerTemplateId: number | null = null;
-  if (doc.entityType === 'CUSTOMER') {
+  if (docType === 'DEBIT_NOTE' && doc.entityType === 'CUSTOMER') {
     const [cust] = await db.select({ tplId: s.customers.debitNoteTemplateId })
       .from(s.customers).where(eq(s.customers.id, doc.entityId)).limit(1);
     customerTemplateId = cust?.tplId ?? null;
   }
-  const t = await resolveDebitNoteTemplate({ customerTemplateId, docType: doc.type });
-  return t ? templateToSnapshot(t) : null;
+  const t = await resolveDebitNoteTemplate({ customerTemplateId, docType });
+  return t ? templateToSnapshot(t) : defaultSnapshotForType(docType);
 }
 
 // ─── Generate (preview draft, pre-save) ───────────────────────────────────────
@@ -242,6 +300,84 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
         baseAmount: amt, amountOverride: null, excluded: false, sortOrder: sortOrder++,
       });
     }
+  }
+
+  return { lines, entityName };
+}
+
+/**
+ * Build customer payment-statement lines in the horizontal business shape:
+ * each trip / shipment is one row, while freight and approved ancillary fees are
+ * exposed as separate render variables for customer-specific table columns.
+ */
+async function buildCustomerPaymentStatementLines(customerId: number, from: string, to: string): Promise<{ lines: BillingDraftLine[]; entityName: string }> {
+  const [customer] = await db.select({ id: s.customers.id, name: s.customers.name })
+    .from(s.customers).where(and(eq(s.customers.id, customerId), isNull(s.customers.deletedAt)));
+  if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
+  const entityName = customer.name;
+
+  const trips = await db.select({
+    id: s.trips.id, tripCode: s.trips.tripCode, departureDate: s.trips.departureDate,
+    revenue: s.trips.revenue, routeName: s.routes.name, notes: s.trips.notes,
+    truckPlate: s.trucks.licensePlate, externalPlateNumber: s.trips.externalPlateNumber,
+  }).from(s.trips)
+    .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+    .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .where(and(
+      eq(s.trips.customerId, customerId),
+      inArray(s.trips.status, [...BILLABLE_TRIP_STATUSES]),
+      isNull(s.trips.deletedAt),
+      gte(s.trips.departureDate, from),
+      lte(s.trips.departureDate, to),
+    ))
+    .orderBy(s.trips.departureDate);
+
+  const tripIds = trips.map((t) => t.id);
+  const containersByTrip = await loadContainersByTrip(tripIds);
+  const legsByTrip = await loadLegRenderDataByTrip(tripIds);
+  const feesByTrip = await loadApprovedFeesByTrip(tripIds);
+
+  const lines: BillingDraftLine[] = [];
+  let sortOrder = 0;
+  for (const trip of trips) {
+    const containerInfo = containersByTrip.get(trip.id) ?? [];
+    const containers = containerNumbers(containerInfo);
+    const approvedFees = (feesByTrip.get(trip.id) ?? [])
+      .map((fee) => ({
+        label: fee.billingLabel ?? fee.name ?? fee.expenseType,
+        amount: Number(fee.sellAmount ?? 0),
+      }))
+      .filter((fee) => fee.amount > 0);
+    const freightAmount = Number(trip.revenue ?? 0);
+    const serviceFeeAmount = approvedFees.reduce((sum, fee) => sum + fee.amount, 0);
+    const totalAmount = freightAmount + serviceFeeAmount;
+    const serviceFeeDescription = approvedFees.map((fee) => fee.label).join(', ') || null;
+    const renderData = {
+      ...buildTripRenderData({
+        trip,
+        containers: containerInfo,
+        legs: legsByTrip.get(trip.id),
+        note: trip.notes ?? null,
+      }),
+      freightAmount,
+      serviceFeeAmount: serviceFeeAmount || null,
+      totalAmount,
+      serviceFeeDescription,
+    };
+
+    lines.push({
+      sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
+      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${serviceFeeDescription ? `; ${serviceFeeDescription}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      typeLabel: serviceFeeAmount > 0 ? 'Cước + chi hộ' : 'Doanh thu',
+      unit: 'lô',
+      routeName: trip.routeName ?? null,
+      containerNumbers: containers,
+      renderData,
+      baseAmount: totalAmount,
+      amountOverride: null,
+      excluded: false,
+      sortOrder: sortOrder++,
+    });
   }
 
   return { lines, entityName };
@@ -434,7 +570,13 @@ export async function generateDraft(input: GenerateBillingDocumentInput): Promis
   if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
     result = await buildCustomerDebitLines(entityId, from, to);
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'CUSTOMER') {
-    result = await buildCarrierPaymentLines(entityId, from, to);
+    const [customer] = await db.select({ isCarrier: s.customers.isCarrier })
+      .from(s.customers)
+      .where(and(eq(s.customers.id, entityId), isNull(s.customers.deletedAt)))
+      .limit(1);
+    result = customer?.isCarrier
+      ? await buildCarrierPaymentLines(entityId, from, to)
+      : await buildCustomerPaymentStatementLines(entityId, from, to);
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'VENDOR') {
     result = await buildSupplierPaymentLines(entityId, from, to);
   } else {
@@ -450,20 +592,16 @@ export async function generateDraft(input: GenerateBillingDocumentInput): Promis
 
 export async function saveDocument(input: SaveBillingDocumentInput, userId: number | null): Promise<BillingDocument> {
   const total = docTotal(input.lines as BillingDocumentLine[]);
-  // Resolve the debit-note template (DEBIT_NOTE only) and freeze a render-only
-  // snapshot onto the doc so re-exports stay stable after the template is
-  // edited/deleted. The frontend passes its chosen templateId; if absent, fall
-  // back to the customer's assigned template, then the global default.
+  // Resolve the document template and freeze a render-only snapshot onto the doc
+  // so re-exports stay stable after the template is edited/deleted.
   let resolvedTemplateId = input.debitNoteTemplateId ?? null;
   if (input.type === 'DEBIT_NOTE' && resolvedTemplateId == null && input.entityType === 'CUSTOMER') {
     const [cust] = await db.select({ tplId: s.customers.debitNoteTemplateId })
       .from(s.customers).where(eq(s.customers.id, input.entityId)).limit(1);
     resolvedTemplateId = cust?.tplId ?? null;
   }
-  const template = input.type === 'DEBIT_NOTE'
-    ? await resolveDebitNoteTemplate({ templateIdOverride: resolvedTemplateId, docType: input.type })
-    : null;
-  const snapshot = template ? templateToSnapshot(template) : null;
+  const template = await resolveDebitNoteTemplate({ templateIdOverride: resolvedTemplateId, docType: input.type });
+  const snapshot = template ? templateToSnapshot(template) : defaultSnapshotForType(input.type);
   // Insert doc + lines atomically — a failure between them must not leave an
   // orphan document (or its lines half-written).
   const docId = await db.transaction(async (tx) => {
@@ -498,10 +636,8 @@ export async function updateDocument(id: number, input: SaveBillingDocumentInput
       .from(s.customers).where(eq(s.customers.id, input.entityId)).limit(1);
     resolvedTemplateId = cust?.tplId ?? null;
   }
-  const template = input.type === 'DEBIT_NOTE'
-    ? await resolveDebitNoteTemplate({ templateIdOverride: resolvedTemplateId, docType: input.type })
-    : null;
-  const snapshot = template ? templateToSnapshot(template) : null;
+  const template = await resolveDebitNoteTemplate({ templateIdOverride: resolvedTemplateId, docType: input.type });
+  const snapshot = template ? templateToSnapshot(template) : defaultSnapshotForType(input.type);
   // Always-editable: replace lines on edit — delete + re-insert inside one
   // transaction so a mid-way failure cannot wipe the document's lines.
   await db.transaction(async (tx) => {
@@ -690,6 +826,66 @@ function renderTemplateText(template: string, variables: Record<string, string |
   });
 }
 
+type BillingPartyInfo = {
+  name: string;
+  address: string;
+  taxCode: string;
+  representative: string;
+  representativeTitle: string;
+  phone: string;
+};
+
+async function loadCompanyInfo() {
+  const rows = await db.select().from(s.appSettings).where(like(s.appSettings.key, 'company.%'));
+  return companyInfoFromSettings(rows);
+}
+
+async function loadCounterpartyInfo(doc: BillingDocument): Promise<BillingPartyInfo> {
+  if (doc.entityType === 'CUSTOMER') {
+    const [customer] = await db.select({
+      name: s.customers.name,
+      taxCode: s.customers.taxCode,
+      contactPerson: s.customers.contactPerson,
+      contactInfo: s.customers.contactInfo,
+      phone: s.customers.phone,
+    }).from(s.customers).where(eq(s.customers.id, doc.entityId)).limit(1);
+    return {
+      name: customer?.name ?? doc.entityName ?? '',
+      address: customer?.contactInfo ?? '',
+      taxCode: customer?.taxCode ?? '',
+      representative: customer?.contactPerson ?? '',
+      representativeTitle: 'Giám Đốc',
+      phone: customer?.phone ?? '',
+    };
+  }
+
+  const [supplier] = await db.select({
+    name: s.suppliers.name,
+    taxCode: s.suppliers.taxCode,
+    contactPerson: s.suppliers.contactPerson,
+    phone: s.suppliers.phone,
+    note: s.suppliers.note,
+  }).from(s.suppliers).where(eq(s.suppliers.id, doc.entityId)).limit(1);
+  return {
+    name: supplier?.name ?? doc.entityName ?? '',
+    address: supplier?.note ?? '',
+    taxCode: supplier?.taxCode ?? '',
+    representative: supplier?.contactPerson ?? '',
+    representativeTitle: 'Giám Đốc',
+    phone: supplier?.phone ?? '',
+  };
+}
+
+function customerCode(name: string, fallback: number): string {
+  const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd');
+  const words = normalized
+    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word && !['CONG', 'TY', 'TNHH', 'MTV', 'CP', 'CO', 'LTD'].includes(word.toUpperCase()));
+  const code = words.slice(0, 3).map((word) => word[0]?.toUpperCase()).join('');
+  return code || String(fallback);
+}
+
 // Verbatim legacy renderer (pre-template). Kept move-only so the regression
 // oracle holds: buildBillingXlsx(doc, null) delegates here and is byte-identical
 // to pre-template output for BOTH DEBIT_NOTE and PAYMENT_STATEMENT docs.
@@ -703,7 +899,7 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
   wb.created = new Date();
   wb.modified = new Date();
 
-  const ws = wb.addWorksheet(doc.type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê thanh toán');
+  const ws = wb.addWorksheet(doc.type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê');
   const isDebitNote = doc.type === 'DEBIT_NOTE';
   const title = isDebitNote ? 'GIẤY BÁO NỢ' : 'BẢNG KÊ THANH TOÁN';
   const entityLabel = isDebitNote ? 'Khách hàng' : 'Đối tác';
@@ -869,7 +1065,7 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
   return Buffer.from(ab);
 }
 
-// ─── Template-driven export (DEBIT_NOTE only) ────────────────────────────────
+// ─── Template-driven export ──────────────────────────────────────────────────
 
 /** Convert a #RRGGBB (or RRGGBB) accent to an ExcelJS ARGB color string. */
 function hexToArgb(hex: string): string {
@@ -910,12 +1106,17 @@ function renderColumnValue(line: BillingDocumentLine, col: DebitNoteTemplateColu
     case 'deliveryAddress': return data.deliveryAddress ?? null;
     case 'container20Count': return data.container20Count ?? null;
     case 'container40Count': return data.container40Count ?? null;
+    case 'containerCount': return data.containerCount ?? (line.containerNumbers?.length || null);
     case 'containerNumbers': return (line.containerNumbers ?? []).join(', ') || null;
     case 'routeName': return line.routeName ?? null;
     case 'description': return exportDescription(line);
     case 'lineTypeLabel': return line.typeLabel;
     case 'unit': return line.unit;
     case 'amount': return effectiveAmount(line) || 0;
+    case 'freightAmount': return data.freightAmount ?? null;
+    case 'serviceFeeAmount': return data.serviceFeeAmount ?? null;
+    case 'totalAmount': return data.totalAmount ?? (effectiveAmount(line) || 0);
+    case 'serviceFeeDescription': return data.serviceFeeDescription ?? null;
     case 'note': return data.note ?? null;
     case 'tripCode': return data.tripCode ?? (line.sourceType === 'TRIP' ? String(line.sourceId ?? '') : null);
     default: return null;
@@ -1073,16 +1274,232 @@ function aggregateDebitNoteExportLines(lines: BillingDocumentLine[]): BillingDoc
 }
 
 /**
- * Public entry point. `null`/`undefined` template OR any non-DEBIT_NOTE doc
- * delegates to the verbatim legacy renderer (byte-identical regression oracle).
- * A live DebitNoteTemplate is snapshotted, then rendered by renderTemplatedXlsx.
+ * Public entry point. `null`/`undefined` template or a mismatched document type
+ * delegates to the verbatim legacy renderer. A live template is snapshotted,
+ * then rendered by renderTemplatedXlsx.
  */
 export async function buildBillingXlsx(
   doc: BillingDocument,
   template?: DebitNoteTemplate | null,
 ): Promise<Buffer> {
-  if (!template || doc.type !== 'DEBIT_NOTE') return buildLegacyXlsx(doc);
+  if (!template) return buildLegacyXlsx(doc);
+  if (template.documentType !== doc.type) return buildLegacyXlsx(doc);
   return renderTemplatedXlsx(doc, templateToSnapshot(template));
+}
+
+async function renderDebitNoteXlsx(
+  doc: BillingDocument,
+  snap: DebitNoteTemplateSnapshot,
+): Promise<Buffer> {
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'NEPO Logistics';
+  wb.created = new Date();
+  wb.modified = new Date();
+
+  const ws = wb.addWorksheet('Giấy báo nợ');
+  const cols = normalizeTemplateColumns(snap.columns).filter((col) => col.width > 0);
+  const nCols = cols.length;
+  const headerCols = Math.max(nCols, 8);
+  const totalColumns = cols
+    .map((col, idx) => ({ col, idx: idx + 1 }))
+    .filter(({ col }) => col.total);
+  const company = await loadCompanyInfo();
+  const partner = await loadCounterpartyInfo(doc);
+  const lines = await enrichLinesForDebitNoteRender(doc.lines);
+  const dataLines = lines.filter((line) => !line.excluded);
+  const moneyFmt = '_(* #,##0_);_(* \\(#,##0\\);_(* \\-??_);_(@_)';
+  const baseFont = { name: 'Times New Roman', size: 11, color: { argb: 'FF000000' } };
+  const boldFont = { ...baseFont, bold: true };
+  const thinGray = { style: 'thin' as const, color: { argb: 'FFD8DCE3' } };
+  const thinBlack = { style: 'thin' as const, color: { argb: 'FF000000' } };
+  const accent = hexToArgb(snap.accentColor || '#00A651');
+
+  ws.properties.defaultRowHeight = 22;
+  ws.pageSetup = {
+    paperSize: 9,
+    orientation: snap.orientation === 'portrait' ? 'portrait' : 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    horizontalCentered: true,
+    margins: { left: 0.35, right: 0.35, top: 0.35, bottom: 0.45, header: 0.2, footer: 0.2 },
+  };
+
+  for (let c = 1; c <= headerCols; c++) {
+    ws.getColumn(c).width = cols[c - 1]?.width ?? 12;
+  }
+  for (let r = 1; r <= 13; r++) {
+    ws.getRow(r).height = r === 7 ? 24 : 18;
+    for (let c = 1; c <= headerCols; c++) {
+      ws.getCell(r, c).border = { top: thinGray, left: thinGray, right: thinGray, bottom: thinGray };
+    }
+  }
+
+  ws.mergeCells(1, 1, 3, 3);
+  const logoCell = ws.getCell(1, 1);
+  logoCell.value = 'NePO\nPower your success';
+  logoCell.font = { name: 'Arial', size: 24, bold: true, color: { argb: accent } };
+  logoCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+  const companyRows = [
+    { row: 1, value: company.name, bold: true },
+    { row: 2, value: company.address },
+    { row: 4, value: 'ĐT: 0225-8832393' },
+    { row: 5, value: 'E-mail: acc@nepocorp.com' },
+  ];
+  for (const item of companyRows) {
+    ws.mergeCells(item.row, 4, item.row, headerCols);
+    const cell = ws.getCell(item.row, 4);
+    cell.value = item.value;
+    cell.font = item.bold ? boldFont : baseFont;
+    cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: false };
+  }
+
+  ws.mergeCells(7, 2, 7, Math.min(4, headerCols));
+  ws.getCell(7, 2).value = 'GIẤY BÁO NỢ';
+  ws.getCell(7, 2).font = { name: 'Times New Roman', size: 14, bold: true, color: { argb: 'FF7A7F87' } };
+  ws.getCell(7, 2).alignment = { horizontal: 'left', vertical: 'middle' };
+
+  const noticeNo = doc.note?.trim() || `${customerCode(partner.name, doc.entityId)}${doc.rangeTo.replaceAll('-', '').slice(2)}`;
+  const leftMeta = [
+    ['Số :', noticeNo],
+    ['Ngày tháng:', formatVietnameseDate(doc.rangeTo)],
+    ['Mã khách:', customerCode(partner.name, doc.entityId)],
+  ];
+  leftMeta.forEach(([label, value], index) => {
+    const row = 9 + index;
+    ws.getCell(row, 2).value = label;
+    ws.getCell(row, 2).font = boldFont;
+    ws.getCell(row, 3).value = value;
+    ws.getCell(row, 3).font = boldFont;
+  });
+
+  ws.getCell(9, 5).value = 'Gửi tới:';
+  ws.getCell(9, 5).font = boldFont;
+  ws.mergeCells(9, 6, 9, headerCols);
+  ws.getCell(9, 6).value = [partner.representative || 'Phòng kế toán', partner.phone ? `(${partner.phone})` : ''].filter(Boolean).join(' ');
+  ws.getCell(10, 5).value = partner.name;
+  ws.getCell(10, 5).font = boldFont;
+  ws.mergeCells(10, 5, 10, headerCols);
+  ws.getCell(11, 5).value = partner.address;
+  ws.mergeCells(11, 5, 11, headerCols);
+  ws.getCell(13, 5).value = partner.taxCode ? `MST : ${partner.taxCode}` : 'MST :';
+  ws.mergeCells(13, 5, 13, headerCols);
+
+  const tableHeaderRow = 15;
+  for (let c = 0; c < cols.length; c++) {
+    const col = cols[c];
+    const cell = ws.getCell(tableHeaderRow, c + 1);
+    cell.value = col.label;
+    cell.font = boldFont;
+    cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
+    cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+  }
+  ws.getRow(tableHeaderRow).height = 28;
+
+  let row = tableHeaderRow + 1;
+  const dataRows: number[] = [];
+  for (const line of dataLines) {
+    const r = row++;
+    dataRows.push(r);
+    for (let c = 0; c < cols.length; c++) {
+      const col = cols[c];
+      const cell = ws.getCell(r, c + 1);
+      const value = renderColumnValue(line, col, dataRows.length);
+      cell.value = value;
+      applyInferredColumnFormat(cell, value);
+      cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
+      cell.font = baseFont;
+      cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+      if (col.format === 'currency' || col.variable === 'amount') cell.numFmt = moneyFmt;
+      if (col.format === 'date' && value instanceof Date) cell.numFmt = 'd/m/yy';
+    }
+    ws.getRow(r).height = 24;
+  }
+
+  const totalRow = row + 1;
+  const amountCol = totalColumns[0]?.idx ?? cols.findIndex((col) => col.variable === 'amount') + 1;
+  if (amountCol > 1) ws.mergeCells(totalRow, 1, totalRow, amountCol - 1);
+  ws.getCell(totalRow, 1).value = 'TỔNG CỘNG';
+  ws.getCell(totalRow, 1).font = boldFont;
+  ws.getCell(totalRow, 1).alignment = { horizontal: 'right', vertical: 'middle' };
+  if (amountCol > 0) {
+    const result = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
+    ws.getCell(totalRow, amountCol).value = dataRows.length > 0
+      ? { formula: `SUM(${colLetter(amountCol)}${dataRows[0]}:${colLetter(amountCol)}${dataRows[dataRows.length - 1]})`, result }
+      : result;
+    ws.getCell(totalRow, amountCol).numFmt = moneyFmt;
+    ws.getCell(totalRow, amountCol).font = boldFont;
+    ws.getCell(totalRow, amountCol).alignment = { horizontal: 'right', vertical: 'middle' };
+  }
+  for (let c = 1; c <= Math.max(nCols, amountCol); c++) {
+    ws.getCell(totalRow, c).border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+  }
+
+  const totalAmount = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
+  const noteRow = totalRow + 2;
+  ws.getCell(noteRow, 1).value = 'Lưu ý:';
+  ws.getCell(noteRow, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
+  if (nCols >= 3) ws.mergeCells(noteRow, 2, noteRow, Math.max(3, nCols - 2));
+  ws.getCell(noteRow, 2).value = snap.termsText || 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán';
+  ws.getCell(noteRow, 2).font = { ...baseFont, color: { argb: 'FF8A8A8A' } };
+
+  const wordsRow = noteRow + 2;
+  ws.getCell(wordsRow, 1).value = 'Bằng chữ:';
+  ws.getCell(wordsRow, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
+  if (nCols >= 3) ws.mergeCells(wordsRow, 2, wordsRow, nCols);
+  ws.getCell(wordsRow, 2).value = amountToVietnameseWords(totalAmount);
+  ws.getCell(wordsRow, 2).font = { ...boldFont, italic: true };
+
+  const bankTop = wordsRow + 2;
+  const bankEndCol = Math.max(4, Math.min(nCols, 6));
+  if (bankEndCol >= 1) ws.mergeCells(bankTop, 1, bankTop, bankEndCol);
+  const bankHeader = ws.getCell(bankTop, 1);
+  bankHeader.value = 'THÔNG TIN CHUYỂN KHOẢN';
+  bankHeader.font = boldFont;
+  bankHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  bankHeader.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+
+  const bankRows = [
+    ['Tên tài khoản:', company.name],
+    ['Số tài khoản:', company.bankAccount],
+    ['Ngân hàng:', company.bankName],
+  ];
+  bankRows.forEach(([label, value], index) => {
+    const r = bankTop + index + 1;
+    ws.getCell(r, 1).value = label;
+    ws.getCell(r, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
+    ws.getCell(r, 2).value = value;
+    ws.getCell(r, 2).font = boldFont;
+    if (bankEndCol >= 2) ws.mergeCells(r, 2, r, bankEndCol);
+    for (let c = 1; c <= bankEndCol; c++) {
+      ws.getCell(r, c).border = { top: thinGray, left: thinBlack, right: thinBlack, bottom: thinGray };
+    }
+  });
+
+  const thanksRow = bankTop + bankRows.length + 2;
+  if (nCols >= 4) ws.mergeCells(thanksRow, 1, thanksRow, Math.max(4, Math.min(nCols, 6)));
+  ws.getCell(thanksRow, 1).value = 'Cảm ơn quý khách hàng đã sử dụng dịch vụ của NePO!';
+  ws.getCell(thanksRow, 1).font = { ...boldFont, italic: true, color: { argb: 'FF8A8A8A' } };
+
+  const signatureStartCol = Math.max(bankEndCol + 1, nCols - 1);
+  if (signatureStartCol <= nCols) {
+    ws.mergeCells(bankTop + 1, signatureStartCol, bankTop + 1, nCols);
+    ws.getCell(bankTop + 1, signatureStartCol).value = snap.signatureRightLabel || 'Người lập';
+    ws.getCell(bankTop + 1, signatureStartCol).font = boldFont;
+    ws.getCell(bankTop + 1, signatureStartCol).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.mergeCells(bankTop + 5, signatureStartCol, bankTop + 5, nCols);
+    ws.getCell(bankTop + 5, signatureStartCol).value = snap.signatureRightName || company.representative.replace(/^Ông\s+|^Bà\s+/i, '');
+    ws.getCell(bankTop + 5, signatureStartCol).font = boldFont;
+    ws.getCell(bankTop + 5, signatureStartCol).alignment = { horizontal: 'center', vertical: 'middle' };
+  }
+
+  const ab = await wb.xlsx.writeBuffer();
+  return Buffer.from(ab);
 }
 
 /**
@@ -1096,6 +1513,8 @@ export async function renderTemplatedXlsx(
   doc: BillingDocument,
   snap: DebitNoteTemplateSnapshot,
 ): Promise<Buffer> {
+  if (doc.type === 'DEBIT_NOTE') return renderDebitNoteXlsx(doc, snap);
+
   const ExcelJSMod = await import('exceljs');
   const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
     ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
@@ -1116,19 +1535,13 @@ export async function renderTemplatedXlsx(
     .filter(({ col }) => col.total);
   const lines = await enrichLinesForDebitNoteRender(doc.lines);
   const dataLines = aggregateDebitNoteExportLines(lines);
-  const customer = doc.entityType === 'CUSTOMER'
-    ? (await db.select({
-      name: s.customers.name,
-      taxCode: s.customers.taxCode,
-      contactPerson: s.customers.contactPerson,
-      contactInfo: s.customers.contactInfo,
-    }).from(s.customers).where(eq(s.customers.id, doc.entityId)).limit(1))[0]
-    : null;
+  const partner = await loadCounterpartyInfo(doc);
+  const company = await loadCompanyInfo();
   const amountSubtotal = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
   const vatAmount = Math.round(amountSubtotal * 0.08);
   const grandTotal = amountSubtotal + vatAmount;
-  const customerName = customer?.name ?? doc.entityName ?? '';
-  const issuerName = snap.issuerName ?? 'CÔNG TY TNHH NEPO';
+  const customerName = partner.name || doc.entityName || '';
+  const issuerName = company.name;
   const templateVariables: Record<string, string | number> = {
     rangeFrom: formatVietnameseDate(doc.rangeFrom),
     rangeTo: formatVietnameseDate(doc.rangeTo),
@@ -1136,15 +1549,15 @@ export async function renderTemplatedXlsx(
     invoiceNo: doc.note?.trim() || '........',
     invoiceDate: formatVietnameseDate(doc.rangeTo),
     customerName,
-    customerAddress: customer?.contactInfo ?? '',
-    customerTaxCode: customer?.taxCode ?? '',
-    customerRepresentative: customer?.contactPerson ?? '',
-    customerPosition: 'Giám Đốc',
+    customerAddress: partner.address,
+    customerTaxCode: partner.taxCode,
+    customerRepresentative: partner.representative,
+    customerPosition: partner.representativeTitle,
     issuerName,
-    issuerAddress: snap.issuerAddress ?? '',
-    issuerTaxCode: snap.issuerTaxCode ?? '',
-    issuerRepresentative: snap.issuerRepresentative ?? '',
-    issuerPosition: 'Giám Đốc',
+    issuerAddress: company.address,
+    issuerTaxCode: company.taxCode,
+    issuerRepresentative: company.representative,
+    issuerPosition: company.representativeTitle,
     subtotal: amountSubtotal.toLocaleString('en-US'),
     vatAmount: vatAmount.toLocaleString('en-US'),
     grandTotal: grandTotal.toLocaleString('en-US'),
@@ -1191,7 +1604,7 @@ export async function renderTemplatedXlsx(
   ws.getCell(3, 1).alignment = { horizontal: 'center', vertical: 'middle' };
 
   const termsLines = renderTemplateText(
-    snap.termsText ?? '- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng',
+    snap.termsText ?? `- Số TK ${company.bankAccount}\n- Tại ngân hàng ${company.bankName}`,
     templateVariables,
   ).split('\n');
   const introRows: Array<{ row: number; value: string; bold?: boolean }> = [

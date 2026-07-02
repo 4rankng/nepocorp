@@ -1004,12 +1004,17 @@ export type DebitNoteColumnVariable =
   | 'deliveryAddress'
   | 'container20Count'
   | 'container40Count'
+  | 'containerCount'
   | 'containerNumbers'
   | 'routeName'
   | 'description'
   | 'lineTypeLabel'
   | 'unit'
   | 'amount'
+  | 'freightAmount'
+  | 'serviceFeeAmount'
+  | 'totalAmount'
+  | 'serviceFeeDescription'
   | 'note'
   | 'tripCode';
 
@@ -1024,6 +1029,10 @@ export interface BillingLineRenderData {
   container20Count?: number | null;
   container40Count?: number | null;
   containerCount?: number | null;
+  freightAmount?: number | null;
+  serviceFeeAmount?: number | null;
+  totalAmount?: number | null;
+  serviceFeeDescription?: string | null;
   note?: string | null;
 }
 
@@ -1058,8 +1067,8 @@ export interface BillingDocument {
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
-  // Template used to render this doc (DEBIT_NOTE only). The snapshot is the
-  // frozen render-only copy actually used at export — see DebitNoteTemplateSnapshot.
+  // Template used to render this doc. The snapshot is the frozen render-only
+  // copy actually used at export — see DebitNoteTemplateSnapshot.
   debitNoteTemplateId?: number | null;
   debitNoteTemplateSnapshot?: DebitNoteTemplateSnapshot | null;
   lines: BillingDocumentLine[];
@@ -1079,7 +1088,7 @@ export interface BillingDocumentDraft {
   totalInclVat: number;
 }
 
-// ─── Debit-note (Giấy báo nợ) templates ──────────────────────────────────────
+// ─── Billing document Excel templates ────────────────────────────────────────
 // Excel-only column templates. Accountants define the table columns and bind
 // each column to a supported variable from BillingDocumentLine/renderData.
 export interface DebitNoteTemplateColumn {

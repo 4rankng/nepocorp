@@ -70,7 +70,7 @@ export default function BillingDocumentsPanel({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke-thanh-toan'}-${entityName}.xlsx`;
+      a.download = `${type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke'}-${entityName}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -94,7 +94,7 @@ export default function BillingDocumentsPanel({
       <div className="billing-panel__head">
         <div className="billing-panel__title">
           <Receipt size={15} />
-          <span>{type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê thanh toán'}</span>
+          <span>{type === 'DEBIT_NOTE' ? 'Giấy báo nợ' : 'Bảng kê'}</span>
           <small>{docs.length > 0 ? `${docs.length} đã lưu` : 'Chưa có lịch sử'}</small>
         </div>
         <div className="billing-panel__head-actions">

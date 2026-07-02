@@ -25,6 +25,7 @@ import type {
   PricingTable,
   DebitNoteTemplate,
   DebitNoteTemplateInput,
+  BillingDocumentType,
 } from '@tingting/shared';
 
 export const configClient = {
@@ -107,7 +108,11 @@ export const configClient = {
 
   // ─── Debit-note (Giấy báo nợ) templates ────────────────────────────────────
   /** All templates, unpaginated — for the config page list + dropdowns. */
-  getDebitNoteTemplates: () => fetchAllPaginated<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATES),
+  getDebitNoteTemplates: (documentType?: BillingDocumentType) =>
+    fetchAllPaginated<DebitNoteTemplate>(
+      CONFIG.DEBIT_NOTE_TEMPLATES,
+      documentType ? { documentType } : undefined,
+    ),
 
   getDebitNoteTemplate: (id: number) =>
     api.get<DebitNoteTemplate>(CONFIG.DEBIT_NOTE_TEMPLATE(id)),

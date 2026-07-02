@@ -4,7 +4,6 @@ import { client } from '../db';
 import {
   buildBillingXlsx,
   renderTemplatedXlsx,
-  resolveDebitNoteTemplate,
   templateToSnapshot,
 } from '../services/billingDocument.service';
 import type {
@@ -53,9 +52,24 @@ const defaultSnapshot: DebitNoteTemplateSnapshot = {
   logoStorageKey: null,
 };
 
+const paymentSnapshot: DebitNoteTemplateSnapshot = {
+  ...defaultSnapshot,
+  titleText: 'BẢNG KÊ CƯỚC VẬN CHUYỂN',
+};
+
 // XLSX is a ZIP archive → starts with the PK\x03\x04 magic.
 function isXlsx(buf: Buffer): boolean {
   return buf.length > 4 && buf[0] === 0x50 && buf[1] === 0x4b;
+}
+
+async function loadWorkbook(buf: Buffer) {
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const wb = new ExcelJS.Workbook();
+  await (wb.xlsx.load as (data: unknown) => Promise<unknown>)(buf);
+  return wb;
 }
 
 test('buildBillingXlsx(null template) → valid xlsx for DEBIT_NOTE (legacy path)', async () => {
@@ -63,9 +77,9 @@ test('buildBillingXlsx(null template) → valid xlsx for DEBIT_NOTE (legacy path
   assert.ok(isXlsx(buf), 'should produce a zip/xlsx buffer');
 });
 
-test('buildBillingXlsx(null template) → valid xlsx for PAYMENT_STATEMENT (legacy, no AR bleed)', async () => {
+test('buildBillingXlsx(null template) → valid xlsx for PAYMENT_STATEMENT legacy fallback', async () => {
   const buf = await buildBillingXlsx(paymentDoc, null);
-  assert.ok(isXlsx(buf), 'payment statement must render via the legacy path');
+  assert.ok(isXlsx(buf), 'payment statement fallback should produce a valid xlsx');
 });
 
 test('renderTemplatedXlsx with default snapshot → valid xlsx', async () => {
@@ -73,36 +87,59 @@ test('renderTemplatedXlsx with default snapshot → valid xlsx', async () => {
   assert.ok(isXlsx(buf), 'templated render should produce a valid xlsx');
 });
 
-test('renderTemplatedXlsx writes Vietnamese amount in words for grand total', async () => {
+test('renderTemplatedXlsx DEBIT_NOTE writes the debt-note header, not the statement intro', async () => {
   const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
-    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
-    : ExcelJSMod;
-  const wb = new ExcelJS.Workbook();
-  await (wb.xlsx.load as (data: unknown) => Promise<unknown>)(buf);
+  const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  const wordsRow = ws.getColumn(1).values.find((value) =>
-    typeof value === 'string' && value.startsWith('Bằng chữ:'));
-  assert.equal(wordsRow, 'Bằng chữ: Năm triệu bốn trăm nghìn đồng');
+  assert.equal(ws.getCell(7, 2).value, 'GIẤY BÁO NỢ');
+  assert.equal(ws.getCell(9, 5).value, 'Gửi tới:');
+  const colAValues = ws.getColumn(1).values.filter((value) => typeof value === 'string') as string[];
+  assert.equal(colAValues.some((value) => value.includes('BÊN A')), false);
 });
 
-test('renderTemplatedXlsx resolves template variables in intro text', async () => {
-  const buf = await renderTemplatedXlsx({ ...debitDoc, entityId: 999_999 }, {
-    ...defaultSnapshot,
+test('renderTemplatedXlsx PAYMENT_STATEMENT resolves template variables in intro text', async () => {
+  const buf = await renderTemplatedXlsx({ ...paymentDoc, entityId: 999_999 }, {
+    ...paymentSnapshot,
     titleText: 'BẢNG {rangeMonth} - {customerName}',
     termsText: '- Số TK {invoiceNo}\n- Tổng tiền {amountInWords}',
   });
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
-    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
-    : ExcelJSMod;
-  const wb = new ExcelJS.Workbook();
-  await (wb.xlsx.load as (data: unknown) => Promise<unknown>)(buf);
+  const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  assert.equal(ws.getCell(2, 1).value, 'BẢNG 06.2026 - Công ty ABC');
+  assert.equal(ws.getCell(2, 1).value, 'BẢNG 06.2026 - NCC X');
+  assert.match(String(ws.getCell(4, 1).value), /^BÊN A/);
+  assert.match(String(ws.getCell(9, 1).value), /^BÊN B/);
   assert.equal(ws.getCell(14, 1).value, '- Số TK ........');
   assert.equal(ws.getCell(15, 1).value, '- Tổng tiền Năm triệu bốn trăm nghìn đồng');
+});
+
+test('renderTemplatedXlsx PAYMENT_STATEMENT renders horizontal freight and service-fee variables', async () => {
+  const horizontalDoc: BillingDocument = {
+    ...paymentDoc,
+    lines: [line({
+      baseAmount: 5_550_000,
+      renderData: {
+        freightAmount: 5_000_000,
+        serviceFeeAmount: 550_000,
+        totalAmount: 5_550_000,
+        serviceFeeDescription: 'Nâng hạ',
+      },
+    })],
+  };
+  const buf = await renderTemplatedXlsx(horizontalDoc, {
+    ...paymentSnapshot,
+    columns: [
+      { id: 'freight', label: 'Cước vận chuyển', variable: 'freightAmount', width: 16, align: 'right', format: 'currency', total: true },
+      { id: 'fee', label: 'Phí chi hộ', variable: 'serviceFeeAmount', width: 16, align: 'right', format: 'currency', total: true },
+      { id: 'total', label: 'Tổng tiền', variable: 'totalAmount', width: 16, align: 'right', format: 'currency', total: true },
+      { id: 'fee_desc', label: 'Diễn giải phí', variable: 'serviceFeeDescription', width: 24, align: 'left', format: 'text', total: false },
+    ],
+  });
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(20, 1).value, 5_000_000);
+  assert.equal(ws.getCell(20, 2).value, 550_000);
+  assert.equal(ws.getCell(20, 3).value, 5_550_000);
+  assert.equal(ws.getCell(20, 4).value, 'Nâng hạ');
 });
 
 test('renderTemplatedXlsx with letterhead + terms → valid xlsx', async () => {
@@ -123,12 +160,19 @@ test('renderTemplatedXlsx with toggled-off columns + flat grouping → valid xls
   assert.ok(isXlsx(buf), 'should render 2 columns (desc + amount) with no grouping bands');
 });
 
-test('resolveDebitNoteTemplate — non-DEBIT_NOTE docType returns null (no AR styling bleed)', async () => {
-  // Guard returns before any DB lookup, so no Postgres needed for this case.
-  const t = await resolveDebitNoteTemplate({
-    docType: 'PAYMENT_STATEMENT', templateIdOverride: 5, customerTemplateId: 7,
-  });
-  assert.equal(t, null);
+test('buildBillingXlsx ignores a template whose documentType does not match the doc', async () => {
+  const wrongTypeTemplate: DebitNoteTemplate = {
+    id: 10, name: 'Wrong', isDefault: false, documentType: 'DEBIT_NOTE',
+    logoStorageKey: null,
+    titleText: 'GIẤY BÁO NỢ', issuerName: null, issuerAddress: null, issuerTaxCode: null,
+    accentColor: '#123456', showContainerColumn: false, showUnitColumn: true,
+    groupingMode: 'NONE', columns, amountInWords: false, orientation: 'portrait',
+    termsText: null, signatureLeftLabel: 'L', signatureLeftName: null,
+    signatureRightLabel: 'R', signatureRightName: null, createdBy: null,
+    createdAt: '2026-06-30T00:00:00.000Z', updatedAt: '2026-06-30T00:00:00.000Z', deletedAt: null,
+  };
+  const buf = await buildBillingXlsx(paymentDoc, wrongTypeTemplate);
+  assert.ok(isXlsx(buf), 'mismatched template should fall back to legacy xlsx instead of cross-rendering');
 });
 
 test('templateToSnapshot — copies render fields + resolved logo key', () => {

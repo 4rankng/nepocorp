@@ -50,6 +50,7 @@ export default function TripEditPage() {
     drivers: catalogData?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
     trailers: catalogData?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
     cargoTypes: catalogData?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    containerTypes: catalogData?.containerTypes.map((c) => ({ id: c.id, label: c.name || c.code || `Loại #${c.id}` })) ?? [],
     pricingTables: [],
     loading: !catalogData,
   }), [catalogData]);
@@ -378,7 +379,7 @@ export default function TripEditPage() {
                 </>
               )}
 
-              <CardSection number={5} span={2} title="Chi tiết container" subtitle="Số container, số seal, loại cont, trọng lượng — nhập tay từng cont">
+              <CardSection number={5} span={2} title="Chi tiết container" subtitle="Số container, số seal, trọng lượng — nhập tay từng cont">
                 <ContainerInstancesCard
                   tripId={trip.id}
                   expectedCount={trip.containerCount ?? 1}

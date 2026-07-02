@@ -42,6 +42,7 @@ export interface TripOptions {
   drivers: SelectOption[];
   trailers: TrailerOption[];
   cargoTypes: SelectOption[];
+  containerTypes: SelectOption[];
   pricingTables: PricingTable[];
   loading: boolean;
 }
@@ -53,6 +54,7 @@ interface CatalogData {
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: string }> | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
   trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
+  containerTypes: Array<{ id: number; code: string | null; name: string | null }>;
 }
 
 export function useTripOptions(): TripOptions {
@@ -90,6 +92,7 @@ export function useTripOptions(): TripOptions {
     drivers: catalog?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
     trailers: catalog?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
     cargoTypes: catalog?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
+    containerTypes: catalog?.containerTypes.map((c) => ({ id: c.id, label: c.name || c.code || `Loại #${c.id}` })) ?? [],
     pricingTables: pricingQuery.data ?? [],
     loading: bootstrapQuery.isLoading || pricingQuery.isLoading,
   };

@@ -68,7 +68,7 @@ router.get('/finance/billing-documents/:id/export', requireRoles(...ROLES), asyn
   const buffer = snap
     ? await billingService.renderTemplatedXlsx(doc, snap)
     : await billingService.buildLegacyXlsx(doc);
-  const kind = doc.type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke-thanh-toan';
+  const kind = doc.type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke';
   const name = doc.entityName ?? String(doc.entityId);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', attachmentDisposition(`${kind}-${name}.xlsx`));

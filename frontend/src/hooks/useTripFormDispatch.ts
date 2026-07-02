@@ -408,11 +408,13 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       if (s.driverId) count++;
     }
     if (s.cargoTypeId) count++;
+    if (s.plannedContainerTypeId || s.containerRows.some(r => r.containerTypeId)) count++;
     if (s.departureDate) count++;
     return count;
   }, [
     s.customerId, s.routeId, s.carrierType, s.truckId, s.trailerType, s.driverId,
-    s.cargoTypeId, s.departureDate, s.externalFreightCost, s.externalDriverName, s.externalDriverPhone
+    s.cargoTypeId, s.plannedContainerTypeId, s.containerRows, s.departureDate,
+    s.externalFreightCost, s.externalDriverName, s.externalDriverPhone
   ]);
 
   const completionStatus = useMemo((): CompletionStatus => {
@@ -524,6 +526,13 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         focusAndScroll("departureDate");
         return;
       }
+      if (!s.plannedContainerTypeId && !s.containerRows.some(r => r.containerTypeId)) {
+        const msg = "Loại container là bắt buộc.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("plannedContainerTypeId");
+        return;
+      }
 
       if (s.carrierType === 'OWN') {
         if (!s.truckId) {
@@ -590,16 +599,38 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // has seal/weight/type but no Số container aborts BEFORE any trip
         // figures are written (avoids partial saves + a confusing backend
         // error). Mirrors the old per-card validation.
-        for (const r of s.containerRows) {
-          const hasAny =
-            r.containerNumber.trim() ||
-            r.seals.some(sl => sl.sealNumber.trim()) ||
-            r.cargoWeightKg ||
-            r.containerTypeId;
-          if (hasAny && !r.containerNumber.trim()) {
-            const msg = 'Each container must have a container number. Delete empty rows if not entered.';
+        const expectedContainers = resolveContainerCount(s.containerCount);
+        const rowHasAny = (r: ContainerFormRow) => Boolean(
+          r.containerNumber.trim() ||
+          r.seals.some(sl => sl.sealNumber.trim()) ||
+          r.cargoWeightKg ||
+          r.notes.trim() ||
+          r.containerTypeId ||
+          r.photoKeys.cont.length > 0 ||
+          r.photoKeys.seal.length > 0,
+        );
+        const plannedRows = s.containerRows.filter(rowHasAny);
+        if (plannedRows.length < expectedContainers) {
+          const msg = `Cần nhập đủ ${expectedContainers} cont theo số lượng đã khai báo.`;
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          const firstEmptyRow = s.containerRows.find(r => !rowHasAny(r));
+          if (firstEmptyRow) focusAndScroll(`containerNumber-${firstEmptyRow._key}`);
+          return;
+        }
+        for (const [idx, r] of plannedRows.entries()) {
+          if (!r.containerNumber.trim()) {
+            const msg = `Cont #${idx + 1}: cần nhập số container.`;
             s.setError(msg);
             showToast({ kind: 'error', message: msg });
+            focusAndScroll(`containerNumber-${r._key}`);
+            return;
+          }
+          if (!r.containerTypeId) {
+            const msg = `Cont #${idx + 1}: cần chọn loại container.`;
+            s.setError(msg);
+            showToast({ kind: 'error', message: msg });
+            focusAndScroll(`containerType-${r._key}`);
             return;
           }
           // No half-filled seal rows: if any seal field is present, the number is required.
@@ -619,12 +650,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // reconcile: insert/update by id, delete rows not in the list.
         const saveContainers = async (id: number) => {
           const containers = s.containerRows
-            .filter(r =>
-              r.containerNumber.trim() ||
-              r.seals.some(sl => sl.sealNumber.trim()) ||
-              r.cargoWeightKg ||
-              r.containerTypeId,
-            )
+            .filter(rowHasAny)
             .map(r => ({
               id: r.id,
               containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
@@ -983,6 +1009,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       isEditMode, existingTrip, requiredFieldsFilled, s.containerRows,
       s.customerId, s.routeId, s.truckId, s.trailerType,
       s.driverId, s.cargoTypeId, s.departureDate, s.customerReference, s.containerCount,
+      s.plannedContainerTypeId,
       hasOptionalData, legs, s.fuelMode, s.fuelLitersOverride,
       s.fuelSupplementLiters, s.fuelSupplementReason, s.tollsDiscount,
       s.tollsAddition, s.tollsStations, s.hasReturnCargo, s.driverSalary,
@@ -1012,7 +1039,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     completionStatus,
     completedSections,
     requiredFieldsFilled,
-    totalRequiredFields: 7,
+    totalRequiredFields: 8,
     handleSubmit,
     selectedRouteData,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,

@@ -25,18 +25,26 @@ import { parsePagination } from '../utils/pagination';
 
 const router = Router();
 
-/** Clear every other active default so the in-flight write can be the sole default. */
-async function clearOtherDefaults(tx: Parameters<Parameters<typeof db.transaction>[0]>[0]): Promise<void> {
+/** Clear every other active default of the same document type. */
+async function clearOtherDefaults(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], documentType: string): Promise<void> {
   await tx.update(s.debitNoteTemplates)
     .set({ isDefault: false, updatedAt: new Date() })
-    .where(and(eq(s.debitNoteTemplates.isDefault, true), isNull(s.debitNoteTemplates.deletedAt)));
+    .where(and(
+      eq(s.debitNoteTemplates.isDefault, true),
+      eq(s.debitNoteTemplates.documentType, documentType),
+      isNull(s.debitNoteTemplates.deletedAt),
+    ));
 }
 
 // GET / — list (search by name; default first, then by name)
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const { page, limit, offset } = parsePagination(req);
   const search = req.query.search as string;
+  const documentType = req.query.documentType as string | undefined;
   const conds = [isNull(s.debitNoteTemplates.deletedAt)];
+  if (documentType === 'DEBIT_NOTE' || documentType === 'PAYMENT_STATEMENT') {
+    conds.push(eq(s.debitNoteTemplates.documentType, documentType));
+  }
   if (search) {
     const escaped = search.replace(/[%_]/g, '\\$&');
     conds.push(sql`unaccent(${s.debitNoteTemplates.name}) ILIKE unaccent(${"%" + escaped + "%"})`);
@@ -65,7 +73,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const data = debitNoteTemplateSchema.parse(req.body);
   const createdBy = getUser(req).userId;
   const rows = await db.transaction(async (tx) => {
-    if (data.isDefault) await clearOtherDefaults(tx);
+    if (data.isDefault) await clearOtherDefaults(tx, data.documentType);
     return tx.insert(s.debitNoteTemplates).values({ ...data, createdBy }).returning();
   });
   await cacheInvalidate('catalogs:bootstrap');
@@ -78,7 +86,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });
   const data = debitNoteTemplateSchema.parse(req.body);
   const rows = await db.transaction(async (tx) => {
-    if (data.isDefault) await clearOtherDefaults(tx);
+    if (data.isDefault) await clearOtherDefaults(tx, data.documentType);
     return tx.update(s.debitNoteTemplates)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(s.debitNoteTemplates.id, id), isNull(s.debitNoteTemplates.deletedAt)))
