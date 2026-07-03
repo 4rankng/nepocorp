@@ -717,7 +717,7 @@ export const portSchema = z.object({
 export const tripContainerSchema = z.object({
   tripId: z.coerce.number().int().positive(),
   containerTypeId: z.coerce.number().int().positive().optional().nullable(),
-  containerNumber: z.string().min(1, 'Số container không được để trống').max(20, 'Số container không được quá 20 ký tự'),
+  containerNumber: z.string().max(50, 'Số container không được quá 50 ký tự').optional().nullable().transform(v => (v === '' ? null : v)),
   sealNumber: z.string().max(20, 'Số seal không được quá 20 ký tự').optional().nullable(),
   cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -743,7 +743,7 @@ export const tripContainerSealSchema = z.object({
 // driver actually sends will be updated on the row.
 export const tripContainerPatchSchema = z.object({
   containerTypeId: z.coerce.number().int().positive().optional().nullable(),
-  containerNumber: z.string().min(1, 'Số container không được để trống').optional(),
+  containerNumber: z.string().max(50, 'Số container không được quá 50 ký tự').optional().nullable().transform(v => (v === '' ? null : v)),
   sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
   cargoWeightKg: nonNegNumeric.optional().nullable(),
   notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
@@ -762,8 +762,8 @@ export const tripContainerPatchSchema = z.object({
 export const tripContainerBatchSchema = z.object({
   containers: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
-    containerTypeId: z.coerce.number().int().positive('Loại container không được để trống'),
-    containerNumber: z.string().min(1, 'Số container không được để trống'),
+    containerTypeId: z.coerce.number().int().positive().optional().nullable(),
+    containerNumber: z.string().max(50, 'Số container không được quá 50 ký tự').optional().nullable().transform(v => (v === '' ? null : v)),
     sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),
     cargoWeightKg: nonNegNumeric.optional().nullable(),
     notes: z.string().optional().nullable().transform(v => (v === '' ? null : v)),

@@ -251,7 +251,7 @@ export async function getTrips(filters: TripListFilters) {
   // "Loại container" + "Số container" columns (Pete's request 2026-06).
   // One extra query keyed by the page's trip ids — keeps the main JOIN small.
   const tripIds = items.map((it) => it.id);
-  const containersByTrip = new Map<number, Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }>>();
+  const containersByTrip = new Map<number, Array<{ containerNumber: string | null; containerTypeCode: string | null; containerTypeName: string | null }>>();
   if (tripIds.length > 0) {
     const containerRows = await db.select({
       tripId: s.tripContainers.tripId,

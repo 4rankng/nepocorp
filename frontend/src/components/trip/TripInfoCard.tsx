@@ -5,6 +5,7 @@ import type { SelectOption, RouteOption, TrailerTypeOption } from '../../hooks/u
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { formatCurrency } from '../../lib/format';
 import { selectStyle } from '../../utils/formStyles';
+import './TripInfoCard.css';
 
 interface TripInfoCardProps {
   customers: SelectOption[];
@@ -18,9 +19,9 @@ interface TripInfoCardProps {
   loading: boolean;
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) {
   return (
-    <div className="field">
+    <div className={`field${className ? ` ${className}` : ''}`}>
       <label>
         {label}
         {required && <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span>}
@@ -70,7 +71,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
   return (
     <CardSection number={1} title="Thông tin chuyến đi" subtitle="Khách hàng, tuyến, hàng hóa và phương tiện" badge="required">
-      <div className="tc-form-row">
+      <div className="tc-form-row trip-info-card__layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Khách hàng" required>
             {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId')}
@@ -85,28 +86,6 @@ export function TripInfoCard(props: TripInfoCardProps) {
           <Field label="Mã tham chiếu khách hàng">
             <input id="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>(không bắt buộc)</span>
-          </Field>
-          <Field label="Số cont" required>
-            <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
-            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số lượng container (mặc định: 1)</span>
-          </Field>
-          <Field label="Loại container" required>
-            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId')}
-          </Field>
-
-          {/* VAT rate */}
-          <Field label="Thuế VAT">
-            <select
-              id="vatRate"
-              className="input"
-              style={selectStyle}
-              value={form.vatRate}
-              onChange={(e) => form.setVatRate(Number(e.target.value))}
-            >
-              <option value={0.08}>8%</option>
-              <option value={0.10}>10%</option>
-              <option value={0}>Không VAT</option>
-            </select>
           </Field>
         </div>
 
@@ -220,6 +199,31 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
           <Field label="Ngày khởi hành" required>
             <input id="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
+          </Field>
+        </div>
+
+        <div className="trip-info-card__container-grid">
+          <Field label="Số cont" required>
+            <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
+            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Mặc định: 1</span>
+          </Field>
+          <Field label="Loại container" className="trip-info-card__container-type">
+            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId')}
+          </Field>
+
+          {/* VAT rate */}
+          <Field label="Thuế VAT">
+            <select
+              id="vatRate"
+              className="input"
+              style={selectStyle}
+              value={form.vatRate}
+              onChange={(e) => form.setVatRate(Number(e.target.value))}
+            >
+              <option value={0.08}>8%</option>
+              <option value={0.10}>10%</option>
+              <option value={0}>Không VAT</option>
+            </select>
           </Field>
         </div>
       </div>

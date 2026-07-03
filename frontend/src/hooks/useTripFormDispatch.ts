@@ -528,14 +528,6 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         focusAndScroll("departureDate");
         return;
       }
-      if (!s.plannedContainerTypeId && !s.containerRows.some(r => r.containerTypeId)) {
-        const msg = "Loại container là bắt buộc.";
-        s.setError(msg);
-        showToast({ kind: 'error', message: msg });
-        focusAndScroll("plannedContainerTypeId");
-        return;
-      }
-
       if (s.carrierType === 'OWN') {
         if (!s.truckId) {
           const msg = "Truck is required.";
@@ -600,8 +592,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // Container numbers/seals are operational actuals, not planning-time
         // required fields. A row that only carries the planned container type is
         // not persisted here; once the user starts entering actual container
-        // data, the row must have a container number so the backend can save it
-        // unambiguously.
+        // data, the row can still be saved while the container number is unknown.
         const rowHasActualData = (r: ContainerFormRow) => Boolean(
           r.containerNumber.trim() ||
           r.seals.some(sl => sl.sealNumber.trim()) ||
@@ -611,21 +602,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           r.photoKeys.seal.length > 0,
         );
         const actualRows = s.containerRows.filter(rowHasActualData);
-        for (const [idx, r] of actualRows.entries()) {
-          if (!r.containerNumber.trim()) {
-            const msg = `Cont #${idx + 1}: cần nhập số container.`;
-            s.setError(msg);
-            showToast({ kind: 'error', message: msg });
-            focusAndScroll(`containerNumber-${r._key}`);
-            return;
-          }
-          if (!r.containerTypeId) {
-            const msg = `Cont #${idx + 1}: cần chọn loại container.`;
-            s.setError(msg);
-            showToast({ kind: 'error', message: msg });
-            focusAndScroll(`containerType-${r._key}`);
-            return;
-          }
+        for (const r of actualRows) {
           // No half-filled seal rows: if any seal field is present, the number is required.
           for (const sl of r.seals) {
             const hasPartial = sl.sealNumber.trim() || sl.sealType.trim() || sl.notes.trim();
@@ -647,7 +624,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             .map(r => ({
               id: r.id,
               containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
-              containerNumber: r.containerNumber.trim(),
+              containerNumber: r.containerNumber.trim() || null,
               // seals[] is the source of truth; backend mirrors seals[0] into legacy sealNumber.
               seals: r.seals
                 .filter(sl => sl.sealNumber.trim())
@@ -670,14 +647,25 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           // map from pre-save `_key` → server-assigned container id (needed
           // for create mode where pre-save ids are all undefined).
           const itemToKey: Array<{ key: string; containerId: number }> = [];
-          // Match containers by containerNumber (preserve _key + its buffered photos).
+          // Match containers by id first, then containerNumber when present, then
+          // a same-type unused blank row. Blank container numbers are allowed, so
+          // number-only matching is not enough to preserve _key + buffered photos.
           // Match seals within each container by sealNumber (preserve seal _key).
           s.setContainerRows(items.map((c): ContainerFormRow => {
-            const match = s.containerRows.find(r =>
-              !usedKeys.has(r._key) &&
-              r.containerNumber.trim() &&
-              r.containerNumber.trim().toUpperCase() === (c.containerNumber ?? '').toUpperCase(),
-            );
+            const serverNumber = (c.containerNumber ?? '').trim().toUpperCase();
+            const serverTypeId = c.containerTypeId ?? '';
+            const match = s.containerRows.find(r => !usedKeys.has(r._key) && r.id === c.id)
+              ?? (serverNumber
+                ? s.containerRows.find(r =>
+                    !usedKeys.has(r._key) &&
+                    r.containerNumber.trim().toUpperCase() === serverNumber,
+                  )
+                : undefined)
+              ?? s.containerRows.find(r =>
+                !usedKeys.has(r._key) &&
+                !r.containerNumber.trim() &&
+                (r.containerTypeId || '') === serverTypeId,
+              );
             const _key = match?._key ?? Math.random().toString(36).slice(2, 9);
             if (match) usedKeys.add(_key);
             itemToKey.push({ key: _key, containerId: c.id });

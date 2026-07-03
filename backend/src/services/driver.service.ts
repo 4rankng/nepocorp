@@ -98,6 +98,7 @@ export async function getDriverTrips(driverId: number) {
 
   const containersByTrip = new Map<number, string[]>();
   for (const c of containerRows) {
+    if (!c.containerNumber) continue;
     const list = containersByTrip.get(c.tripId);
     if (list) list.push(c.containerNumber);
     else containersByTrip.set(c.tripId, [c.containerNumber]);

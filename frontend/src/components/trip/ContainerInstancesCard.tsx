@@ -703,7 +703,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               <div className="ci-row ci-row--identity">
                 <div>
                   <label className="ci-label">
-                    Số container <span style={{ color: 'var(--danger)' }}>*</span>
+                    Số container <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>(tuỳ chọn)</span>
                   </label>
                   <input
                     id={`containerNumber-${row._key}`}

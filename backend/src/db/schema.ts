@@ -702,7 +702,7 @@ export const tripContainers = pgTable('trip_containers', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),
   containerTypeId: integer('container_type_id').references(() => containerTypes.id),
-  containerNumber: varchar('container_number', { length: 50 }).notNull(),
+  containerNumber: varchar('container_number', { length: 50 }),
   // Kept for back-compat during the Phase 2 multi-seal migration. New writes
   // also maintain this as the "primary seal" mirror (= first child row in
   // trip_container_seals). To be dropped in a follow-up once no client reads it.

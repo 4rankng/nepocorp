@@ -446,11 +446,11 @@ async function buildSupplierPaymentLines(supplierId: number, from: string, to: s
   return { lines, entityName };
 }
 
-type ContainerRenderInfo = { containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null };
+type ContainerRenderInfo = { containerNumber: string | null; containerTypeCode: string | null; containerTypeName: string | null };
 type LegRenderInfo = { origin: string | null; destination: string | null; loadingType: LoadingType | null };
 
 function containerNumbers(containers: ContainerRenderInfo[]): string[] | null {
-  const list = containers.map((c) => c.containerNumber).filter(Boolean);
+  const list = containers.map((c) => c.containerNumber).filter((n): n is string => Boolean(n));
   return list.length > 0 ? list : null;
 }
 

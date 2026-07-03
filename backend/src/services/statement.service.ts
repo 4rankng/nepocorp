@@ -226,6 +226,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
     const containersByTrip = new Map<number, string[]>();
     for (const c of containerRows) {
+      if (!c.containerNumber) continue;
       if (!containersByTrip.has(c.tripId)) {
         containersByTrip.set(c.tripId, []);
       }

@@ -631,6 +631,20 @@
       "when": 1782790000000,
       "tag": "0094_company_info_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1782800000000,
+      "tag": "0095_optional_container_number",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1782985487171,
+      "tag": "0096_giant_warstar",
+      "breakpoints": true
     }
   ]
 }

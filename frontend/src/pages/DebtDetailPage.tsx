@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useCallback } from 'react';
+import { Fragment, useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -49,6 +49,8 @@ type LedgerFilter =
   | typeof TxnType.ADJUSTMENT
   | typeof TxnType.TRIP_REVENUE
   | typeof TxnType.SERVICE_FEE;
+
+type WorkspaceTab = 'statement' | 'debit-note' | 'payments' | 'ledger';
 
 const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: 'all',              label: 'Tất cả' },
@@ -391,6 +393,13 @@ export default function DebtDetailPage() {
   useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() =>
+    isCreatingBillingDocument ? 'debit-note' : 'statement',
+  );
+
+  useEffect(() => {
+    if (isCreatingBillingDocument) setWorkspaceTab('debit-note');
+  }, [isCreatingBillingDocument]);
 
   // Payment modal state — was missing entirely (BUG: no way to record
   // a payment from the debt detail page even though /api/payments/receive
@@ -488,6 +497,13 @@ export default function DebtDetailPage() {
     return max > 0 ? idx : -1;
   }, [agingAmounts]);
 
+  const lastPayment = useMemo(() => {
+    if (!statement) return null;
+    return [...statement.ledgerRows]
+      .filter((row) => row.txnType === TxnType.PAYMENT_RECEIVED)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0] ?? null;
+  }, [statement]);
+
   const totalOutstanding = statement?.totalOutstanding ?? 0;
 
   // ── Loading / Error ─────────────────────────────────────────────────────
@@ -522,6 +538,15 @@ export default function DebtDetailPage() {
   const hasDebt = totalOutstanding > 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
   const unpaidTrips = statement.unpaidTrips ?? [];
+  const oldestUnpaidTrip = unpaidTrips[0] ?? null;
+  const activeAgingRange = activeAgingIdx >= 0 ? AGING_RANGES[activeAgingIdx] : null;
+  const activeAgingAmount = activeAgingIdx >= 0 ? agingAmounts[activeAgingIdx] : 0;
+  const workspaceTabs: Array<{ key: WorkspaceTab; label: string; meta: string }> = [
+    { key: 'statement', label: 'Bảng kê', meta: 'Lập bảng kê thanh toán' },
+    { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
+    { key: 'payments', label: 'Thanh toán', meta: hasDebt ? `${unpaidTrips.length} chuyến chưa thu` : 'Không còn nợ' },
+    { key: 'ledger', label: 'Lịch sử', meta: `${ledgerRows.length} giao dịch` },
+  ];
 
   // FIFO-distribute the entered amount across the oldest unpaid trips,
   // then POST. The backend also re-applies FIFO inside the transaction
@@ -644,40 +669,39 @@ export default function DebtDetailPage() {
         </div>
       </div>
 
-      {/* ── Customer billing document builders (AR snapshot documents) ────── */}
-      {id && (
-        <>
-          <BillingDocumentsPanel
-            type="PAYMENT_STATEMENT"
-            entityType="CUSTOMER"
-            entityId={Number(id)}
-            entityName={statement?.customer.name ?? ''}
-            buttonLabel="Tạo bảng kê"
-          />
-          <BillingDocumentsPanel
-            type="DEBIT_NOTE"
-            entityType="CUSTOMER"
-            entityId={Number(id)}
-            entityName={statement?.customer.name ?? ''}
-            buttonLabel="Tạo giấy báo nợ"
-            createBuilderOpen={isCreatingBillingDocument}
-            onOpenCreate={() => navigate(billingCreatePath)}
-            onBuilderClose={() => navigate(detailPath, { replace: true })}
-          />
-        </>
-      )}
+      <section className="dd-account-strip" aria-label="Tóm tắt công nợ">
+        <article className={`dd-account-card${hasDebt ? ' dd-account-card--debt' : ' dd-account-card--clear'}`}>
+          <span>Dư nợ hiện tại</span>
+          <strong>{money(totalOutstanding)}</strong>
+          <small>{hasDebt ? 'Cần theo dõi thu hồi' : 'Đã tất toán'}</small>
+        </article>
+        <article className="dd-account-card">
+          <span>Chuyến chưa thu</span>
+          <strong>{unpaidTrips.length}</strong>
+          <small>{oldestUnpaidTrip ? `Cũ nhất ${formatDate(oldestUnpaidTrip.date)}` : 'Không phát sinh'}</small>
+        </article>
+        <article className="dd-account-card">
+          <span>Phiếu thu gần nhất</span>
+          <strong>{lastPayment ? money(parseFloat(lastPayment.credit) || 0) : '-'}</strong>
+          <small>{lastPayment ? formatDate(lastPayment.timestamp) : 'Chưa có phiếu thu'}</small>
+        </article>
+        <article className="dd-account-card">
+          <span>Nhóm tuổi nợ nổi bật</span>
+          <strong>{activeAgingRange ? activeAgingRange.label : 'Không nợ'}</strong>
+          <small>{activeAgingRange ? money(activeAgingAmount) : 'Không có số dư'}</small>
+        </article>
+      </section>
 
-      {/* ── Summary Card ────────────────────────────────────────────────── */}
-      <section className="dd-summary">
+      {/* ── Aging Summary ───────────────────────────────────────────────── */}
+      <section className="dd-summary dd-summary--aging">
         <div className="dd-sum-top">
           <div>
-            <div className="dd-sum-label">TỔNG CỘNG NỢ</div>
-            <div className={`dd-sum-total ${hasDebt ? '' : ' dd-sum-total--clear'}`}>
+            <div className="dd-sum-label">PHÂN BỔ TUỔI NỢ</div>
+            <p className="dd-sum-copy">
               {hasDebt
-                ? <>{formatCurrency(totalOutstanding).replace(' ₫', '')}<span className="dd-cur">đ</span></>
-                : <>0<span className="dd-cur">đ</span></>
-              }
-            </div>
+                ? 'Theo dõi phần công nợ nào đang tiến gần hạn hoặc đã quá hạn.'
+                : 'Khách hàng không còn công nợ đang mở.'}
+            </p>
             {hasDebt && (
               <div className="dd-sum-note">
                 <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
@@ -750,29 +774,119 @@ export default function DebtDetailPage() {
         </section>
       )}
 
-      {/* ── Ledger Card ─────────────────────────────────────────────────── */}
-      <section className="dd-ledger">
-        <div className="dd-ledger-toolbar">
-          <div className="dd-filters">
-            {FILTER_OPTIONS.map(f => (
+      <section className="dd-workspace" aria-label="Không gian làm việc công nợ">
+        <div className="dd-workspace-head">
+          <div>
+            <span className="dd-panel-eyebrow">Hồ sơ khách hàng</span>
+            <h2>Công cụ công nợ</h2>
+          </div>
+          <div className="dd-workspace-tabs" role="tablist" aria-label="Chọn nghiệp vụ công nợ">
+            {workspaceTabs.map((tab) => (
               <button
-                key={f.key}
-                className={`dd-filter-chip${ledgerFilter === f.key ? ' dd-filter-chip--on' : ''}`}
-                onClick={() => setLedgerFilter(f.key)}
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={workspaceTab === tab.key}
+                className={`dd-workspace-tab${workspaceTab === tab.key ? ' dd-workspace-tab--active' : ''}`}
+                onClick={() => setWorkspaceTab(tab.key)}
               >
-                {f.label}
+                <span>{tab.label}</span>
+                <small>{tab.meta}</small>
               </button>
             ))}
           </div>
         </div>
-        <div className="dd-ledger-groups">
-          {ledgerRouteGroups.map(routeGroup => (
-            <LedgerRouteCard key={routeGroup.key} routeGroup={routeGroup} />
-          ))}
-          {ledgerRouteGroups.length === 0 && (
-            <div className="dd-ledger-empty">
-              Không có giao dịch
-            </div>
+
+        <div className="dd-workspace-body">
+          {workspaceTab === 'statement' && id && (
+            <BillingDocumentsPanel
+              type="PAYMENT_STATEMENT"
+              entityType="CUSTOMER"
+              entityId={Number(id)}
+              entityName={statement?.customer.name ?? ''}
+              buttonLabel="Tạo bảng kê"
+            />
+          )}
+
+          {workspaceTab === 'debit-note' && id && (
+            <BillingDocumentsPanel
+              type="DEBIT_NOTE"
+              entityType="CUSTOMER"
+              entityId={Number(id)}
+              entityName={statement?.customer.name ?? ''}
+              buttonLabel="Tạo giấy báo nợ"
+              createBuilderOpen={isCreatingBillingDocument}
+              onOpenCreate={() => navigate(billingCreatePath)}
+              onBuilderClose={() => navigate(detailPath, { replace: true })}
+            />
+          )}
+
+          {workspaceTab === 'payments' && (
+            <section className="dd-payment-panel">
+              <div className="dd-payment-panel__main">
+                <span className="dd-panel-eyebrow">Phiếu thu</span>
+                <h2>{hasDebt ? 'Ghi nhận thanh toán khách hàng' : 'Khách hàng đã thanh toán đủ'}</h2>
+                <p>
+                  {hasDebt
+                    ? 'Khoản thu sẽ được phân bổ FIFO vào các chuyến còn nợ, bắt đầu từ chuyến cũ nhất.'
+                    : 'Không có chuyến nào đang mở công nợ để ghi nhận thêm thanh toán.'}
+                </p>
+                <button
+                  className="btn btn--primary"
+                  type="button"
+                  onClick={openPaymentModal}
+                  disabled={!hasDebt}
+                >
+                  <Plus size={14} />
+                  Ghi nhận thanh toán
+                </button>
+              </div>
+              <div className="dd-payment-panel__side" aria-label="Tóm tắt thanh toán">
+                <div>
+                  <span>Còn nợ</span>
+                  <strong>{money(totalOutstanding)}</strong>
+                </div>
+                <div>
+                  <span>Chuyến chưa thu</span>
+                  <strong>{unpaidTrips.length}</strong>
+                </div>
+                {oldestUnpaidTrip && (
+                  <div>
+                    <span>Chuyến cũ nhất</span>
+                    <strong>{formatDate(oldestUnpaidTrip.date)}</strong>
+                    <small>{money(oldestUnpaidTrip.outstanding)}</small>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {workspaceTab === 'ledger' && (
+            <section className="dd-ledger">
+              <div className="dd-ledger-toolbar">
+                <div className="dd-filters">
+                  {FILTER_OPTIONS.map(f => (
+                    <button
+                      key={f.key}
+                      className={`dd-filter-chip${ledgerFilter === f.key ? ' dd-filter-chip--on' : ''}`}
+                      onClick={() => setLedgerFilter(f.key)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="dd-ledger-groups">
+                {ledgerRouteGroups.map(routeGroup => (
+                  <LedgerRouteCard key={routeGroup.key} routeGroup={routeGroup} />
+                ))}
+                {ledgerRouteGroups.length === 0 && (
+                  <div className="dd-ledger-empty">
+                    Không có giao dịch
+                  </div>
+                )}
+              </div>
+            </section>
           )}
         </div>
       </section>

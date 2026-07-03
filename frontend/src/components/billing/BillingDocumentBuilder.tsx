@@ -403,16 +403,28 @@ export default function BillingDocumentBuilder({
         <section className="billing-builder__controls" aria-label="Khoảng thời gian và thao tác">
           <label>
             <span>Từ ngày</span>
-            <input type="date" className="input" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} disabled={busy} />
+            <input
+              type="date"
+              className="input billing-builder__date-input"
+              value={rangeFrom}
+              onChange={(e) => setRangeFrom(e.target.value)}
+              disabled={busy}
+            />
           </label>
           <label>
             <span>Đến ngày</span>
-            <input type="date" className="input" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} disabled={busy} />
+            <input
+              type="date"
+              className="input billing-builder__date-input"
+              value={rangeTo}
+              onChange={(e) => setRangeTo(e.target.value)}
+              disabled={busy}
+            />
           </label>
           <label>
             <span>Mẫu xuất</span>
             <select
-              className="input"
+              className="input billing-builder__template-select"
               value={templateId ?? ''}
               onChange={(e) => setTemplateId(e.target.value === '' ? null : Number(e.target.value))}
               disabled={busy}
@@ -425,10 +437,13 @@ export default function BillingDocumentBuilder({
               ))}
             </select>
           </label>
-          <button className="btn btn--secondary" type="button" onClick={() => generateDraft(rangeFrom, rangeTo)} disabled={busy}>
-            {loading ? <Loader2 size={15} className="spin" /> : <Filter size={15} />}
-            Lọc lại
-          </button>
+          <div className="billing-builder__action-cell">
+            <span className="billing-builder__action-spacer" aria-hidden="true">Lọc</span>
+            <button className="btn btn--secondary" type="button" onClick={() => generateDraft(rangeFrom, rangeTo)} disabled={busy}>
+              {loading ? <Loader2 size={15} className="spin" /> : <Filter size={15} />}
+              Lọc lại
+            </button>
+          </div>
           <button className="btn btn--ghost" type="button" onClick={addAdhoc} disabled={busy}>
             <Plus size={15} />
             Thêm dòng

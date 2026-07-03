@@ -628,7 +628,7 @@ export interface TripContainer {
   tripId: number;
   containerTypeId: number | null;
   containerTypeName: string | null; // joined display name
-  containerNumber: string;
+  containerNumber: string | null;
   sealNumber: string | null;
   cargoWeightKg: number | null;
   notes: string | null;
@@ -727,7 +727,7 @@ export interface ForwarderTripDetail {
     tripId: number;
     containerTypeId: number | null;
     containerTypeName: string | null;
-    containerNumber: string;
+    containerNumber: string | null;
     sealNumber: string | null;
     notes: string | null;
     createdBy: number;

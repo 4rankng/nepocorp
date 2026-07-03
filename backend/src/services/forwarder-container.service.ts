@@ -21,7 +21,7 @@ export async function derivePrimarySealNumber(
 export async function createTripContainer(data: {
   tripId: number;
   containerTypeId?: number | null;
-  containerNumber: string;
+  containerNumber?: string | null;
   sealNumber: string | null;
   cargoWeightKg?: string | number | null;
   notes: string | null;
@@ -37,7 +37,7 @@ export async function createTripContainer(data: {
   const [inserted] = await db.insert(s.tripContainers).values({
     tripId: data.tripId,
     containerTypeId: data.containerTypeId ?? null,
-    containerNumber: data.containerNumber,
+    containerNumber: data.containerNumber?.trim() || null,
     sealNumber: null,
     cargoWeightKg: data.cargoWeightKg != null ? String(data.cargoWeightKg) : null,
     notes: data.notes,
@@ -68,7 +68,7 @@ export async function updateTripContainer(
   containerId: number,
   patch: {
     containerTypeId?: number | null;
-    containerNumber?: string;
+    containerNumber?: string | null;
     sealNumber?: string | null;
     cargoWeightKg?: string | number | null;
     notes?: string | null;
@@ -92,7 +92,7 @@ export async function updateTripContainer(
 
   const set: Record<string, unknown> = { updatedAt: new Date() };
   if (patch.containerTypeId !== undefined) set.containerTypeId = patch.containerTypeId ?? null;
-  if (patch.containerNumber !== undefined) set.containerNumber = patch.containerNumber;
+  if (patch.containerNumber !== undefined) set.containerNumber = patch.containerNumber?.trim() || null;
   if (patch.sealNumber !== undefined) set.sealNumber = patch.sealNumber ?? null;
   if (patch.cargoWeightKg !== undefined) {
     set.cargoWeightKg = patch.cargoWeightKg != null ? String(patch.cargoWeightKg) : null;
@@ -284,7 +284,7 @@ export async function batchUpsertTripContainers(
   containers: Array<{
     id?: number;
     containerTypeId?: number | null;
-    containerNumber: string;
+    containerNumber?: string | null;
     sealNumber?: string | null;
     cargoWeightKg?: string | number | null;
     notes?: string | null;
@@ -312,7 +312,7 @@ export async function batchUpsertTripContainers(
     for (const c of containers) {
       const payload = {
         containerTypeId: c.containerTypeId ?? null,
-        containerNumber: c.containerNumber,
+        containerNumber: c.containerNumber?.trim() || null,
         sealNumber: null,
         cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : null,
         notes: c.notes ?? null,
