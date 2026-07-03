@@ -92,8 +92,17 @@ test('renderTemplatedXlsx DEBIT_NOTE writes the debt-note header, not the statem
   const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
+  assert.equal(ws.name, 'GBN');
+  assert.equal(ws.pageSetup.orientation, 'portrait');
   assert.equal(ws.getCell(7, 2).value, 'GIẤY BÁO NỢ');
   assert.equal(ws.getCell(9, 5).value, 'Gửi tới:');
+  assert.equal(ws.getCell(1, 4).font.name, 'Tahoma');
+  assert.equal(ws.getCell(1, 4).font.size, 12);
+  assert.equal(ws.getCell(1, 4).alignment.horizontal, 'right');
+  assert.equal(ws.getCell(9, 2).font.color?.argb, 'FF969696');
+  assert.equal(ws.getRow(6).height, 10.5);
+  assert.equal(ws.getRow(8).height, 9);
+  assert.equal(ws.getRow(15).height, 28);
   const colAValues = ws.getColumn(1).values.filter((value) => typeof value === 'string') as string[];
   assert.equal(colAValues.some((value) => value.includes('BÊN A')), false);
 });
@@ -106,9 +115,10 @@ test('renderTemplatedXlsx DEBIT_NOTE normalizes horizontal statement snapshots t
   });
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  assert.equal(ws.getCell(15, 1).value, 'Ngày tháng');
-  assert.equal(ws.getCell(15, 2).value, 'Số\nchứng từ');
-  assert.equal(ws.getCell(15, 3).value, 'Diễn giải');
+  assert.equal(ws.getCell(15, 2).value, 'Ngày tháng');
+  assert.equal(ws.getCell(15, 3).value, 'Số \nchứng từ');
+  assert.equal(ws.getCell(15, 4).value, 'Diễn giải');
+  assert.equal(ws.getCell(15, 8).value, 'Thành tiền');
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE embeds the default NEPO logo image', async () => {
@@ -129,8 +139,9 @@ test('renderTemplatedXlsx DEBIT_NOTE adds a shipment header row before charge ro
   const buf = await renderTemplatedXlsx(doc, defaultSnapshot);
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  assert.equal(ws.getCell(16, 1).value, "01x20' ABCD1234567");
-  assert.equal(ws.getCell(17, 1).value, 'Cước vận chuyển — HCM - Bình Dương (TRIP-1)');
+  assert.equal(ws.getCell(16, 4).value, "01x20' ABCD1234567");
+  assert.equal(ws.getCell(17, 4).value, 'Cước vận chuyển — HCM - Bình Dương (TRIP-1)');
+  assert.deepEqual(ws.getCell(61, 8).value, { formula: 'SUM(H16:H60)', result: 5_000_000 });
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE renders expense documentCode in Số chứng từ', async () => {
@@ -149,7 +160,7 @@ test('renderTemplatedXlsx DEBIT_NOTE renders expense documentCode in Số chứn
   const buf = await renderTemplatedXlsx(doc, { ...defaultSnapshot, columns: defaultDebitNoteColumns as DebitNoteTemplateColumn[] });
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  assert.equal(ws.getCell(17, 2).value, 'HD-001');
+  assert.equal(ws.getCell(17, 3).value, 'HD-001');
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE maps legacy chung_tu tripCode columns to documentCode', async () => {
@@ -171,7 +182,7 @@ test('renderTemplatedXlsx DEBIT_NOTE maps legacy chung_tu tripCode columns to do
   const buf = await renderTemplatedXlsx(doc, { ...defaultSnapshot, columns: legacyColumns });
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
-  assert.equal(ws.getCell(17, 2).value, 'TK-123');
+  assert.equal(ws.getCell(17, 3).value, 'TK-123');
 });
 
 test('renderTemplatedXlsx PAYMENT_STATEMENT resolves template variables in intro text', async () => {

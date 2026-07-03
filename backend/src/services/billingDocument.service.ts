@@ -1435,199 +1435,249 @@ async function renderDebitNoteXlsx(
   wb.created = new Date();
   wb.modified = new Date();
 
-  const ws = wb.addWorksheet('Giấy báo nợ');
-  const cols = normalizeTemplateColumns(snap.columns, 'DEBIT_NOTE').filter((col) => col.width > 0);
-  const nCols = cols.length;
-  const headerCols = Math.max(nCols, 8);
-  const totalColumns = cols
-    .map((col, idx) => ({ col, idx: idx + 1 }))
-    .filter(({ col }) => col.total);
+  const ws = wb.addWorksheet('GBN');
   const company = await loadCompanyInfo();
   const partner = await loadCounterpartyInfo(doc);
   const lines = await enrichLinesForDebitNoteRender(doc.lines);
   const dataLines = lines.filter((line) => !line.excluded);
   const lineGroups = groupDebitNoteLines(dataLines);
-  const moneyFmt = '_(* #,##0_);_(* \\(#,##0\\);_(* \\-??_);_(@_)';
-  const baseFont = { name: 'Times New Roman', size: 11, color: { argb: 'FF000000' } };
+  const totalAmount = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
+  const moneyFmt = '#,##0';
+  const baseFont = { name: 'Tahoma', size: 10, color: { argb: 'FF000000' } };
   const boldFont = { ...baseFont, bold: true };
+  const templateGrayFont = { ...baseFont, color: { argb: 'FF969696' } };
+  const labelFont = { ...templateGrayFont, bold: true };
+  const grayFont = { ...baseFont, color: { argb: 'FF808080' } };
   const thinGray = { style: 'thin' as const, color: { argb: 'FFD8DCE3' } };
   const thinBlack = { style: 'thin' as const, color: { argb: 'FF000000' } };
+  const tableBorder = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
   const accent = hexToArgb(snap.accentColor || '#00A651');
+  const dataStartRow = 16;
+  const minTotalRow = 61;
+  const renderedDataRowCount = lineGroups.reduce((sum, group) => sum + 1 + group.lines.length, 0);
+  const totalRow = Math.max(minTotalRow, dataStartRow + renderedDataRowCount);
+  const wordsRow = totalRow + 1;
+  const exchangeRow = totalRow + 3;
+  const bankTop = totalRow + 4;
+  const sheetRows = Math.max(70, bankTop + 5);
 
-  ws.properties.defaultRowHeight = 22;
+  const parseDateOnly = (raw: string | null | undefined): Date | string | null => {
+    if (!raw) return null;
+    const [year, month, day] = String(raw).split('-').map(Number);
+    if (!year || !month || !day) return raw;
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return Number.isNaN(parsed.getTime()) ? raw : parsed;
+  };
+  const splitAddress = (raw: string | null | undefined): [string, string] => {
+    const value = (raw || '').replace(/^Số\s+/i, '').replace(/,\s*Việt Nam$/i, '').trim();
+    if (!value) return ['', ''];
+    const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+    if (parts.length <= 1) return [value, ''];
+    const midpoint = Math.ceil(parts.length / 2);
+    return [parts.slice(0, midpoint).join(', '), parts.slice(midpoint).join(', ')];
+  };
+  const splitCompanyAddress = (raw: string | null | undefined): [string, string] => {
+    const value = (raw || '').replace(/^Số\s+/i, '').replace(/,\s*Việt Nam$/i, '').trim();
+    if (!value) return ['', ''];
+    const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+    const city = (parts.pop() ?? '').replace(/^Thành phố/i, 'Thành Phố');
+    const ward = parts.pop() ?? '';
+    const street = parts.join(', ');
+    const district = value.toLowerCase().includes('quận ngô quyền') ? '' : 'quận Ngô Quyền';
+    return [
+      [street, ward].filter(Boolean).join(', ') || value,
+      [district, city].filter(Boolean).join(', '),
+    ];
+  };
+
+  ws.properties.defaultRowHeight = 15;
   ws.pageSetup = {
     paperSize: 9,
-    orientation: snap.orientation === 'portrait' ? 'portrait' : 'landscape',
+    orientation: 'portrait',
     fitToPage: true,
     fitToWidth: 1,
     fitToHeight: 0,
-    horizontalCentered: true,
-    margins: { left: 0.35, right: 0.35, top: 0.35, bottom: 0.45, header: 0.2, footer: 0.2 },
+    horizontalCentered: false,
+    margins: { left: 0, right: 0, top: 0.5, bottom: 0.25, header: 0.3, footer: 0.3 },
   };
 
-  for (let c = 1; c <= headerCols; c++) {
-    ws.getColumn(c).width = cols[c - 1]?.width ?? 12;
-  }
-  for (let r = 1; r <= 13; r++) {
-    ws.getRow(r).height = r === 7 ? 24 : 18;
-    for (let c = 1; c <= headerCols; c++) {
-      ws.getCell(r, c).border = { top: thinGray, left: thinGray, right: thinGray, bottom: thinGray };
+  const columnWidths = [2, 10.5, 14.33, 36.5, 7.5, 8.66, 10.16, 12.5];
+  columnWidths.forEach((width, index) => {
+    ws.getColumn(index + 1).width = width;
+  });
+  for (let r = 1; r <= sheetRows; r++) {
+    if (r === 15) ws.getRow(r).height = 28;
+    for (let c = 1; c <= 8; c++) {
+      ws.getCell(r, c).font = baseFont;
     }
   }
+  ws.getRow(1).height = 15;
+  ws.getRow(6).height = 10.5;
+  ws.getRow(7).height = 18;
+  ws.getRow(8).height = 9;
+  ws.getRow(10).height = 15;
 
-  ws.mergeCells(1, 1, 3, 3);
-  const logoCell = ws.getCell(1, 1);
+  ws.mergeCells('B1:C5');
+  ws.mergeCells('D1:H1');
+  ws.mergeCells('D2:H2');
+  ws.mergeCells('E3:H3');
+  ws.mergeCells('E4:H4');
+  ws.mergeCells('E5:H5');
+  const logoCell = ws.getCell('B1');
   const logoBytes = await loadDebitNoteLogoBytes(snap.logoStorageKey);
   if (logoBytes) {
     const imageId = wb.addImage({ base64: logoBytes.toString('base64'), extension: 'png' });
-    ws.addImage(imageId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 185, height: 64 } });
+    ws.addImage(imageId, { tl: { col: 1.01, row: 0 }, ext: { width: 383, height: 126 } });
   } else {
     logoCell.value = 'NePO\nPower your success';
     logoCell.font = { name: 'Arial', size: 24, bold: true, color: { argb: accent } };
     logoCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
   }
 
-  const companyRows = [
-    { row: 1, value: company.name, bold: true },
-    { row: 2, value: company.address },
-    { row: 4, value: 'ĐT: 0225-8832393' },
-    { row: 5, value: 'E-mail: acc@nepocorp.com' },
-  ];
-  for (const item of companyRows) {
-    ws.mergeCells(item.row, 4, item.row, headerCols);
-    const cell = ws.getCell(item.row, 4);
-    cell.value = item.value;
-    cell.font = item.bold ? boldFont : baseFont;
-    cell.alignment = { horizontal: 'right', vertical: 'middle', wrapText: false };
+  const [companyAddress1, companyAddress2] = splitCompanyAddress(company.address);
+  ws.getCell('D1').value = company.name;
+  ws.getCell('D1').font = { ...boldFont, size: 12 };
+  ws.getCell('D2').value = companyAddress1 || company.address;
+  ws.getCell('E3').value = companyAddress2;
+  ws.getCell('E4').value = 'ĐT: 0225-8832393';
+  ws.getCell('E5').value = 'E-mail: acc@nepocorp.com';
+  for (const addressCell of ['D1', 'D2', 'E3', 'E4', 'E5']) {
+    ws.getCell(addressCell).font = addressCell === 'D1'
+      ? { ...boldFont, size: 12 }
+      : addressCell === 'E4' || addressCell === 'E5'
+        ? { ...templateGrayFont, bold: true }
+        : boldFont;
+    ws.getCell(addressCell).alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
   }
 
-  ws.mergeCells(7, 2, 7, Math.min(4, headerCols));
+  ws.mergeCells('B7:D7');
   ws.getCell(7, 2).value = 'GIẤY BÁO NỢ';
-  ws.getCell(7, 2).font = { name: 'Times New Roman', size: 14, bold: true, color: { argb: 'FF7A7F87' } };
+  ws.getCell(7, 2).font = { name: 'Tahoma', size: 14, bold: true, color: { argb: 'FF7A7F87' } };
   ws.getCell(7, 2).alignment = { horizontal: 'left', vertical: 'middle' };
 
   const noticeNo = doc.note?.trim() || `${customerCode(partner.name, doc.entityId)}${doc.rangeTo.replaceAll('-', '').slice(2)}`;
+  ws.mergeCells('C9:D9');
+  ws.mergeCells('C10:D10');
+  ws.mergeCells('C11:D11');
+  ws.mergeCells('F9:H9');
+  ws.mergeCells('E10:H10');
+  ws.mergeCells('E11:H11');
+  ws.mergeCells('E12:H12');
+  ws.mergeCells('E13:H13');
   const leftMeta = [
     ['Số :', noticeNo],
-    ['Ngày tháng:', formatVietnameseDate(doc.rangeTo)],
+    ['Ngày tháng:', parseDateOnly(doc.rangeTo)],
     ['Mã khách:', customerCode(partner.name, doc.entityId)],
   ];
   leftMeta.forEach(([label, value], index) => {
     const row = 9 + index;
     ws.getCell(row, 2).value = label;
-    ws.getCell(row, 2).font = boldFont;
+    ws.getCell(row, 2).font = labelFont;
     ws.getCell(row, 3).value = value;
-    ws.getCell(row, 3).font = boldFont;
+    ws.getCell(row, 3).font = row === 9 ? boldFont : baseFont;
+    ws.getCell(row, 3).alignment = { horizontal: 'left', vertical: 'middle' };
+    if (value instanceof Date) ws.getCell(row, 3).numFmt = 'd/m/yy';
   });
 
-  ws.getCell(9, 5).value = 'Gửi tới:';
-  ws.getCell(9, 5).font = boldFont;
-  ws.mergeCells(9, 6, 9, headerCols);
-  ws.getCell(9, 6).value = [partner.representative || 'Phòng kế toán', partner.phone ? `(${partner.phone})` : ''].filter(Boolean).join(' ');
+  const [partnerAddress1, partnerAddress2] = splitAddress(partner.address);
+  ws.getCell('E9').value = 'Gửi tới:';
+  ws.getCell('E9').font = labelFont;
+  ws.getCell('F9').value = [partner.representative || 'Phòng kế toán', partner.phone ? `(${partner.phone})` : ''].filter(Boolean).join(' ');
   ws.getCell(10, 5).value = partner.name;
   ws.getCell(10, 5).font = boldFont;
-  ws.mergeCells(10, 5, 10, headerCols);
-  ws.getCell(11, 5).value = partner.address;
-  ws.mergeCells(11, 5, 11, headerCols);
+  ws.getCell(11, 5).value = partnerAddress1;
+  ws.getCell(12, 5).value = partnerAddress2;
   ws.getCell(13, 5).value = partner.taxCode ? `MST : ${partner.taxCode}` : 'MST :';
-  ws.mergeCells(13, 5, 13, headerCols);
 
   const tableHeaderRow = 15;
-  for (let c = 0; c < cols.length; c++) {
-    const col = cols[c];
-    const cell = ws.getCell(tableHeaderRow, c + 1);
-    cell.value = col.label;
+  const fixedHeaders = ['Ngày tháng', 'Số \nchứng từ', 'Diễn giải', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền'];
+  fixedHeaders.forEach((header, index) => {
+    const cell = ws.getCell(tableHeaderRow, index + 2);
+    cell.value = header;
     cell.font = boldFont;
-    cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
-    cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
-  }
-  ws.getRow(tableHeaderRow).height = 28;
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = tableBorder;
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+  });
 
-  let row = tableHeaderRow + 1;
+  for (let r = dataStartRow; r < totalRow; r++) {
+    for (let c = 2; c <= 8; c++) {
+      const cell = ws.getCell(r, c);
+      cell.border = tableBorder;
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    }
+  }
+
+  let row = dataStartRow;
   const dataRows: number[] = [];
-  const descriptionCol = Math.max(1, cols.findIndex((col) => col.variable === 'description') + 1);
   for (const group of lineGroups) {
     const groupRow = row++;
-    for (let c = 0; c < cols.length; c++) {
-      const col = cols[c];
-      const cell = ws.getCell(groupRow, c + 1);
-      let value: string | number | Date | null = null;
-      if (col.variable === 'departureDate') {
-        value = renderColumnValue(group.first, col, dataRows.length + 1);
-      } else if (c + 1 === descriptionCol) {
-        value = group.label;
-      }
-      cell.value = value;
-      applyInferredColumnFormat(cell, value);
-      cell.alignment = { horizontal: c + 1 === descriptionCol ? 'center' : col.align, vertical: 'middle', wrapText: true };
-      cell.font = c + 1 === descriptionCol ? boldFont : baseFont;
-      cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
-      if (col.format === 'date' && value instanceof Date) cell.numFmt = 'd/m/yy';
-    }
-    ws.getRow(groupRow).height = 24;
+    const departureDate = renderColumnValue(group.first, DEFAULT_DEBIT_NOTE_COLUMNS[0], dataRows.length + 1);
+    ws.getCell(groupRow, 2).value = departureDate;
+    ws.getCell(groupRow, 2).font = baseFont;
+    ws.getCell(groupRow, 2).alignment = { horizontal: 'center', vertical: 'middle' };
+    if (departureDate instanceof Date) ws.getCell(groupRow, 2).numFmt = 'd/m/yy';
+    ws.getCell(groupRow, 4).value = group.label;
+    ws.getCell(groupRow, 4).font = boldFont;
+    ws.getCell(groupRow, 4).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
     for (const line of group.lines) {
       const r = row++;
       dataRows.push(r);
-      for (let c = 0; c < cols.length; c++) {
-        const col = cols[c];
-        const cell = ws.getCell(r, c + 1);
-        const rawValue = renderColumnValue(line, col, dataRows.length);
-        const value = col.variable === 'departureDate' ? null : rawValue;
-        cell.value = value;
-        applyInferredColumnFormat(cell, value);
-        cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
-        cell.font = baseFont;
-        cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
-        if (col.format === 'currency' || col.variable === 'amount') cell.numFmt = moneyFmt;
-        if (col.format === 'date' && value instanceof Date) cell.numFmt = 'd/m/yy';
-      }
-      ws.getRow(r).height = 24;
+      const amount = effectiveAmount(line);
+      const quantity = Number(line.renderData?.containerCount ?? line.containerNumbers?.length ?? 1) || 1;
+      const unitPrice = quantity > 1 ? Math.round(amount / quantity) : amount;
+      ws.getCell(r, 3).value = line.renderData?.documentCode ?? null;
+      ws.getCell(r, 4).value = exportDescription(line);
+      ws.getCell(r, 5).value = line.unit || 'cont';
+      ws.getCell(r, 6).value = quantity;
+      ws.getCell(r, 7).value = unitPrice;
+      ws.getCell(r, 8).value = { formula: `G${r}*F${r}`, result: amount };
+      ws.getCell(r, 3).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 4).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 5).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 6).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 7).alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 8).alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+      ws.getCell(r, 7).numFmt = moneyFmt;
+      ws.getCell(r, 8).numFmt = moneyFmt;
     }
   }
 
-  const totalRow = row + 1;
-  const amountCol = totalColumns[0]?.idx ?? cols.findIndex((col) => col.variable === 'amount') + 1;
-  if (amountCol > 1) ws.mergeCells(totalRow, 1, totalRow, amountCol - 1);
-  ws.getCell(totalRow, 1).value = 'TỔNG CỘNG';
-  ws.getCell(totalRow, 1).font = boldFont;
-  ws.getCell(totalRow, 1).alignment = { horizontal: 'right', vertical: 'middle' };
-  if (amountCol > 0) {
-    const result = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
-    ws.getCell(totalRow, amountCol).value = dataRows.length > 0
-      ? { formula: `SUM(${colLetter(amountCol)}${dataRows[0]}:${colLetter(amountCol)}${dataRows[dataRows.length - 1]})`, result }
-      : result;
-    ws.getCell(totalRow, amountCol).numFmt = moneyFmt;
-    ws.getCell(totalRow, amountCol).font = boldFont;
-    ws.getCell(totalRow, amountCol).alignment = { horizontal: 'right', vertical: 'middle' };
-  }
-  for (let c = 1; c <= Math.max(nCols, amountCol); c++) {
-    ws.getCell(totalRow, c).border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+  ws.mergeCells(totalRow, 2, totalRow, 5);
+  ws.mergeCells(totalRow, 6, totalRow, 7);
+  ws.getCell(totalRow, 2).value = `Lưu ý: ${snap.termsText || 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán'}`;
+  ws.getCell(totalRow, 2).font = grayFont;
+  ws.getCell(totalRow, 6).value = 'Tổng cộng';
+  ws.getCell(totalRow, 6).font = boldFont;
+  ws.getCell(totalRow, 6).alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getCell(totalRow, 8).value = { formula: `SUM(H${dataStartRow}:H${totalRow - 1})`, result: totalAmount };
+  ws.getCell(totalRow, 8).numFmt = moneyFmt;
+  ws.getCell(totalRow, 8).font = boldFont;
+  ws.getCell(totalRow, 8).alignment = { horizontal: 'right', vertical: 'middle' };
+  for (let c = 2; c <= 8; c++) {
+    ws.getCell(totalRow, c).border = tableBorder;
   }
 
-  const totalAmount = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
-  const noteRow = totalRow + 2;
-  ws.getCell(noteRow, 1).value = 'Lưu ý:';
-  ws.getCell(noteRow, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
-  if (nCols >= 3) ws.mergeCells(noteRow, 2, noteRow, Math.max(3, nCols - 2));
-  ws.getCell(noteRow, 2).value = snap.termsText || 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán';
-  ws.getCell(noteRow, 2).font = { ...baseFont, color: { argb: 'FF8A8A8A' } };
+  ws.getCell(wordsRow, 2).value = 'Bằng chữ:';
+  ws.getCell(wordsRow, 2).font = { ...boldFont, color: { argb: 'FF808080' } };
+  ws.mergeCells(wordsRow, 3, wordsRow, 8);
+  ws.getCell(wordsRow, 3).value = amountToVietnameseWords(totalAmount);
+  ws.getCell(wordsRow, 3).font = { ...boldFont, italic: true };
 
-  const wordsRow = noteRow + 2;
-  ws.getCell(wordsRow, 1).value = 'Bằng chữ:';
-  ws.getCell(wordsRow, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
-  if (nCols >= 3) ws.mergeCells(wordsRow, 2, wordsRow, nCols);
-  ws.getCell(wordsRow, 2).value = amountToVietnameseWords(totalAmount);
-  ws.getCell(wordsRow, 2).font = { ...boldFont, italic: true };
+  ws.getCell(exchangeRow, 2).value = 'Tỷ giá USD/VN : ';
+  ws.getCell(exchangeRow, 2).font = grayFont;
 
-  const bankTop = wordsRow + 2;
-  const bankEndCol = Math.max(4, Math.min(nCols, 6));
-  if (bankEndCol >= 1) ws.mergeCells(bankTop, 1, bankTop, bankEndCol);
-  const bankHeader = ws.getCell(bankTop, 1);
+  ws.mergeCells(bankTop, 2, bankTop, 5);
+  ws.mergeCells(bankTop, 7, bankTop, 8);
+  const bankHeader = ws.getCell(bankTop, 2);
   bankHeader.value = 'THÔNG TIN CHUYỂN KHOẢN';
   bankHeader.font = boldFont;
   bankHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-  bankHeader.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+  bankHeader.border = tableBorder;
+  ws.getCell(bankTop, 7).value = snap.signatureRightLabel || 'Người lập';
+  ws.getCell(bankTop, 7).font = boldFont;
+  ws.getCell(bankTop, 7).alignment = { horizontal: 'center', vertical: 'middle' };
 
   const bankRows = [
     ['Tên tài khoản:', company.name],
@@ -1636,31 +1686,25 @@ async function renderDebitNoteXlsx(
   ];
   bankRows.forEach(([label, value], index) => {
     const r = bankTop + index + 1;
-    ws.getCell(r, 1).value = label;
-    ws.getCell(r, 1).font = { ...boldFont, color: { argb: 'FF8A8A8A' } };
-    ws.getCell(r, 2).value = value;
-    ws.getCell(r, 2).font = boldFont;
-    if (bankEndCol >= 2) ws.mergeCells(r, 2, r, bankEndCol);
-    for (let c = 1; c <= bankEndCol; c++) {
-      ws.getCell(r, c).border = { top: thinGray, left: thinBlack, right: thinBlack, bottom: thinGray };
-    }
+    ws.mergeCells(r, 4, r, 8);
+    ws.getCell(r, 2).value = label;
+    ws.getCell(r, 2).font = { ...boldFont, color: { argb: 'FF808080' } };
+    ws.getCell(r, 4).value = value;
+    ws.getCell(r, 4).font = boldFont;
   });
 
-  const thanksRow = bankTop + bankRows.length + 2;
-  if (nCols >= 4) ws.mergeCells(thanksRow, 1, thanksRow, Math.max(4, Math.min(nCols, 6)));
-  ws.getCell(thanksRow, 1).value = 'Cảm ơn quý khách hàng đã sử dụng dịch vụ của NePO!';
-  ws.getCell(thanksRow, 1).font = { ...boldFont, italic: true, color: { argb: 'FF8A8A8A' } };
+  const signatureNameRow = bankTop + 4;
+  if (signatureNameRow <= sheetRows) {
+    ws.mergeCells(signatureNameRow, 7, signatureNameRow, 8);
+    ws.getCell(signatureNameRow, 7).value = snap.signatureRightName || company.representative.replace(/^Ông\s+|^Bà\s+/i, '');
+    ws.getCell(signatureNameRow, 7).font = boldFont;
+    ws.getCell(signatureNameRow, 7).alignment = { horizontal: 'center', vertical: 'middle' };
+  }
 
-  const signatureStartCol = Math.max(bankEndCol + 1, nCols - 1);
-  if (signatureStartCol <= nCols) {
-    ws.mergeCells(bankTop + 1, signatureStartCol, bankTop + 1, nCols);
-    ws.getCell(bankTop + 1, signatureStartCol).value = snap.signatureRightLabel || 'Người lập';
-    ws.getCell(bankTop + 1, signatureStartCol).font = boldFont;
-    ws.getCell(bankTop + 1, signatureStartCol).alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.mergeCells(bankTop + 5, signatureStartCol, bankTop + 5, nCols);
-    ws.getCell(bankTop + 5, signatureStartCol).value = snap.signatureRightName || company.representative.replace(/^Ông\s+|^Bà\s+/i, '');
-    ws.getCell(bankTop + 5, signatureStartCol).font = boldFont;
-    ws.getCell(bankTop + 5, signatureStartCol).alignment = { horizontal: 'center', vertical: 'middle' };
+  for (let r = bankTop; r <= bankTop + 3; r++) {
+    for (let c = 2; c <= 5; c++) {
+      ws.getCell(r, c).border = { top: thinGray, left: thinBlack, right: thinBlack, bottom: thinGray };
+    }
   }
 
   const ab = await wb.xlsx.writeBuffer();
@@ -1669,10 +1713,9 @@ async function renderDebitNoteXlsx(
 
 /**
  * Render a debit note from a frozen snapshot (the doc's
- * debit_note_template_snapshot). Dynamic columns + optional letterhead/logo,
- * terms, and signature block. Reads the logo bytes from storage (graceful skip
- * if the file is missing). Not byte-identical to legacy — it is the new
- * customized path — but with default field values it reproduces the legacy look.
+ * debit_note_template_snapshot). Debit notes use the fixed VTA-style vertical
+ * worksheet; payment statements below keep the dynamic horizontal columns.
+ * Reads the logo bytes from storage (graceful skip if the file is missing).
  */
 export async function renderTemplatedXlsx(
   doc: BillingDocument,
