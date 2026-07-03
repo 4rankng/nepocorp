@@ -9,7 +9,7 @@
 }
 
 .ci-row--identity {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
 }
 
 .ci-row--meta {

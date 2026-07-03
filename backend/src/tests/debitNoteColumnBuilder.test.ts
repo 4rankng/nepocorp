@@ -37,6 +37,7 @@ test('defaultDebitNoteColumns — exported as vertical debt-note columns', () =>
   assert.ok(Array.isArray(defaultDebitNoteColumns));
   assert.equal(defaultDebitNoteColumns.length, 7);
   assert.equal(defaultDebitNoteColumns[0].variable, 'departureDate');
+  assert.equal(defaultDebitNoteColumns[1].variable, 'documentCode');
   assert.equal(defaultDebitNoteColumns[2].variable, 'description');
   const amountCol = defaultDebitNoteColumns.find(c => c.id === 'thanh_tien');
   assert.ok(amountCol, 'amount column should exist');

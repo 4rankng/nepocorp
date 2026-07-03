@@ -1016,10 +1016,12 @@ export type DebitNoteColumnVariable =
   | 'totalAmount'
   | 'serviceFeeDescription'
   | 'note'
-  | 'tripCode';
+  | 'tripCode'
+  | 'documentCode';
 
 export interface BillingLineRenderData {
   tripCode?: string | null;
+  documentCode?: string | null;
   departureDate?: string | null;
   truckPlate?: string | null;
   actionType?: string | null;

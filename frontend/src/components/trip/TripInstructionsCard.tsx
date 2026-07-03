@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import './TripInstructionsCard.css';
 
@@ -14,10 +15,13 @@ import './TripInstructionsCard.css';
  * On the create page the card is not mounted, so the three fields stay
  * empty; the upsert only runs in the edit-mode branch of handleSubmit.
  */
+const NOTE_SUGGESTIONS_KEY = 'tingting.tripInstructions.noteSuggestions.v1';
+const MAX_SUGGESTIONS = 12;
+const BLOCKED_SUGGESTIONS = ['Lưu ý hun trùng'];
+
 // B1c — one-tap reminder templates the manager can drop into the notes so
-// drivers see consistent guidance (fumigation, weighing, seal, quarantine…).
-const REMINDER_TEMPLATES = [
-  'Lưu ý hun trùng',
+// drivers see consistent guidance. User-entered note lines are learned below.
+const DEFAULT_REMINDER_TEMPLATES = [
   'Lưu ý cân hàng',
   'Lưu ý kẹp seal tạm',
   'Lưu ý lấy mẫu kiểm dịch',
@@ -25,9 +29,79 @@ const REMINDER_TEMPLATES = [
   'Cẩn thận hàng giá trị cao',
 ];
 
+function normalizeSuggestion(value: string): string | null {
+  const text = value
+    .replace(/^[\s•\-–—]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (text.length < 3 || text.length > 100) return null;
+  return text;
+}
+
+function suggestionsFromNotes(notes: string): string[] {
+  return notes
+    .split(/\r?\n/)
+    .map(normalizeSuggestion)
+    .filter((value): value is string => !!value)
+    .filter((value) => !BLOCKED_SUGGESTIONS.includes(value));
+}
+
+function loadStoredSuggestions(): string[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(NOTE_SUGGESTIONS_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((value) => normalizeSuggestion(String(value)))
+      .filter((value): value is string => !!value)
+      .filter((value) => !DEFAULT_REMINDER_TEMPLATES.includes(value))
+      .filter((value) => !BLOCKED_SUGGESTIONS.includes(value))
+      .slice(0, MAX_SUGGESTIONS);
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredSuggestions(values: string[]) {
+  try {
+    localStorage.setItem(NOTE_SUGGESTIONS_KEY, JSON.stringify(values.slice(0, MAX_SUGGESTIONS)));
+  } catch {
+    // localStorage can be unavailable in private/locked-down browser contexts.
+  }
+}
+
 export function TripInstructionsCard() {
   const { contactName, setContactName, contactPhone, setContactPhone,
     instructionsNotes, setInstructionsNotes } = useTripFormContext();
+  const [learnedSuggestions, setLearnedSuggestions] = useState<string[]>(() => loadStoredSuggestions());
+  const reminderTemplates = useMemo(() => {
+    const seen = new Set<string>();
+    return [...learnedSuggestions, ...DEFAULT_REMINDER_TEMPLATES].filter((value) => {
+      if (BLOCKED_SUGGESTIONS.includes(value)) return false;
+      if (seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    });
+  }, [learnedSuggestions]);
+
+  useEffect(() => {
+    setLearnedSuggestions(prev => {
+      const next = prev.filter((value) => !BLOCKED_SUGGESTIONS.includes(value));
+      if (next.length !== prev.length) saveStoredSuggestions(next);
+      return next;
+    });
+  }, []);
+
+  function rememberCurrentNotes() {
+    const nextFromNotes = suggestionsFromNotes(instructionsNotes)
+      .filter((value) => !DEFAULT_REMINDER_TEMPLATES.includes(value))
+      .filter((value) => !BLOCKED_SUGGESTIONS.includes(value));
+    if (nextFromNotes.length === 0) return;
+    setLearnedSuggestions(prev => {
+      const next = [...nextFromNotes, ...prev].filter((value, index, arr) => arr.indexOf(value) === index).slice(0, MAX_SUGGESTIONS);
+      saveStoredSuggestions(next);
+      return next;
+    });
+  }
 
   // Append a templated reminder as a bullet line; skip if already present.
   function appendReminder(label: string) {
@@ -69,11 +143,12 @@ export function TripInstructionsCard() {
           placeholder="Hướng dẫn cho lái xe: giờ giao, địa chỉ cụ thể, lưu ý bốc xếp…"
           value={instructionsNotes}
           onChange={e => setInstructionsNotes(e.target.value)}
+          onBlur={rememberCurrentNotes}
         />
       </div>
       <div className="ti-reminders">
         <span className="ti-reminders__label">Mẫu nhanh:</span>
-        {REMINDER_TEMPLATES.map(t => (
+        {reminderTemplates.map(t => (
           <button key={t} type="button" className="ti-chip" onClick={() => appendReminder(t)}>
             {t}
           </button>

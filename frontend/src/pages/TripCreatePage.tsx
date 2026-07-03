@@ -103,7 +103,7 @@ export default function TripCreatePage() {
               collapsible
               defaultCollapsed
             >
-              <ContainerInstancesCard expectedCount={expectedContainerCount} />
+              <ContainerInstancesCard expectedCount={expectedContainerCount} containerTypes={options.containerTypes} />
             </CardSection>
           </div>
 

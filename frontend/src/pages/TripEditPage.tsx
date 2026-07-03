@@ -384,6 +384,7 @@ export default function TripEditPage() {
                   tripId={trip.id}
                   expectedCount={trip.containerCount ?? 1}
                   requiresPhotos={!!trip.cargoType?.requiresPhotos}
+                  containerTypes={editOptions.containerTypes}
                 />
               </CardSection>
 

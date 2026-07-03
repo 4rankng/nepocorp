@@ -10,6 +10,7 @@ import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import { PhotoViewer } from '../PhotoViewer';
 import './ContainerInstancesCard.css';
+import type { SelectOption } from '../../hooks/useTripOptions';
 import {
   normalizeContainerNumber,
   validateContainerFormat,
@@ -70,6 +71,9 @@ interface Props {
   /** When the cargo type requires cont/seal evidence, show a warning banner
    *  until at least one row has a cont or seal photo. */
   requiresPhotos?: boolean;
+  /** Catalog options for per-container type entry. Optional because old callers
+   *  only used this card for number/seal/photo capture. */
+  containerTypes?: SelectOption[];
 }
 
 function rowKey() {
@@ -144,7 +148,7 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
   };
 }
 
-export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
+export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos, containerTypes = [] }: Props) {
   const { toast } = useToast();
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
@@ -743,6 +747,25 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                       </div>
                     );
                   })()}
+                </div>
+                <div>
+                  <label className="ci-label">
+                    Loại container <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>(tuỳ chọn)</span>
+                  </label>
+                  <select
+                    id={`containerType-${row._key}`}
+                    className="input ci-input-sm"
+                    style={{ width: '100%' }}
+                    value={row.containerTypeId === '' ? '' : String(row.containerTypeId)}
+                    onChange={e => updateRow(row._key, 'containerTypeId', e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Chưa chọn loại cont</option>
+                    {containerTypes.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

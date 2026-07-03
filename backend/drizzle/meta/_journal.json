@@ -645,6 +645,20 @@
       "when": 1782985487171,
       "tag": "0096_giant_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1783077600000,
+      "tag": "0097_vertical_debit_note_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1783078500000,
+      "tag": "0098_debit_note_document_code_column",
+      "breakpoints": true
     }
   ]
 }

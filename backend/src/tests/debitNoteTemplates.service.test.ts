@@ -6,6 +6,7 @@ import {
   renderTemplatedXlsx,
   templateToSnapshot,
 } from '../services/billingDocument.service';
+import { defaultDebitNoteColumns, defaultPaymentStatementColumns } from '@tingting/shared';
 import type {
   BillingDocument,
   BillingDocumentLine,
@@ -95,6 +96,82 @@ test('renderTemplatedXlsx DEBIT_NOTE writes the debt-note header, not the statem
   assert.equal(ws.getCell(9, 5).value, 'Gửi tới:');
   const colAValues = ws.getColumn(1).values.filter((value) => typeof value === 'string') as string[];
   assert.equal(colAValues.some((value) => value.includes('BÊN A')), false);
+});
+
+test('renderTemplatedXlsx DEBIT_NOTE normalizes horizontal statement snapshots to vertical columns', async () => {
+  const buf = await renderTemplatedXlsx(debitDoc, {
+    ...defaultSnapshot,
+    columns: defaultPaymentStatementColumns as DebitNoteTemplateColumn[],
+    orientation: 'landscape',
+  });
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(15, 1).value, 'Ngày tháng');
+  assert.equal(ws.getCell(15, 2).value, 'Số\nchứng từ');
+  assert.equal(ws.getCell(15, 3).value, 'Diễn giải');
+});
+
+test('renderTemplatedXlsx DEBIT_NOTE embeds the default NEPO logo image', async () => {
+  const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0] as unknown as { getImages?: () => unknown[] };
+  assert.ok((ws.getImages?.() ?? []).length > 0, 'default logo image should be embedded');
+});
+
+test('renderTemplatedXlsx DEBIT_NOTE adds a shipment header row before charge rows', async () => {
+  const doc: BillingDocument = {
+    ...debitDoc,
+    lines: [line({
+      unit: "20'",
+      renderData: { departureDate: '2026-06-01', containerCount: 1, tripCode: 'TRIP-1' },
+    })],
+  };
+  const buf = await renderTemplatedXlsx(doc, defaultSnapshot);
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(16, 1).value, "01x20' ABCD1234567");
+  assert.equal(ws.getCell(17, 1).value, 'Cước vận chuyển — HCM - Bình Dương (TRIP-1)');
+});
+
+test('renderTemplatedXlsx DEBIT_NOTE renders expense documentCode in Số chứng từ', async () => {
+  const doc: BillingDocument = {
+    ...debitDoc,
+    lines: [line({
+      sourceType: 'EXPENSE',
+      sourceId: 99,
+      lineType: 'SERVICE_FEE',
+      typeLabel: 'Phí chi hộ',
+      unit: "20'",
+      description: 'Phí hạ hàng',
+      renderData: { departureDate: '2026-06-01', containerCount: 1, tripCode: 'TRIP-1', documentCode: 'HD-001' },
+    })],
+  };
+  const buf = await renderTemplatedXlsx(doc, { ...defaultSnapshot, columns: defaultDebitNoteColumns as DebitNoteTemplateColumn[] });
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(17, 2).value, 'HD-001');
+});
+
+test('renderTemplatedXlsx DEBIT_NOTE maps legacy chung_tu tripCode columns to documentCode', async () => {
+  const legacyColumns: DebitNoteTemplateColumn[] = [
+    { id: 'dien_giai', label: 'Diễn giải', variable: 'description', width: 40, align: 'left', format: 'text', total: false },
+    { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'tripCode', width: 12, align: 'center', format: 'text', total: false },
+    { id: 'amount', label: 'Số tiền', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
+  ];
+  const doc: BillingDocument = {
+    ...debitDoc,
+    lines: [line({
+      sourceType: 'EXPENSE',
+      sourceId: 99,
+      lineType: 'SERVICE_FEE',
+      description: 'Phí hạ hàng',
+      renderData: { departureDate: '2026-06-01', tripCode: 'TRIP-1', documentCode: 'TK-123' },
+    })],
+  };
+  const buf = await renderTemplatedXlsx(doc, { ...defaultSnapshot, columns: legacyColumns });
+  const wb = await loadWorkbook(buf);
+  const ws = wb.worksheets[0];
+  assert.equal(ws.getCell(17, 2).value, 'TK-123');
 });
 
 test('renderTemplatedXlsx PAYMENT_STATEMENT resolves template variables in intro text', async () => {

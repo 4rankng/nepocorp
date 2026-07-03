@@ -1,9 +1,16 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, gte, lte, isNull, inArray, desc, like, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
-import { BILLABLE_TRIP_STATUSES, LoadingType } from '@tingting/shared';
+import {
+  BILLABLE_TRIP_STATUSES,
+  LoadingType,
+  defaultDebitNoteColumns,
+  defaultPaymentStatementColumns,
+} from '@tingting/shared';
 import { companyInfoFromSettings } from './company-info.service';
 import type { Tx } from './trip-shared';
 import { storageService } from './storage.service';
@@ -48,23 +55,16 @@ export function docTotal(lines: BillingDocumentLine[]): number {
 
 // ─── Billing document templates ───────────────────────────────────────────────
 
-const DEFAULT_DEBIT_NOTE_COLUMNS: DebitNoteTemplateColumn[] = [
-  { id: 'stt', label: 'Stt', variable: 'rowIndex', width: 4.56, align: 'center', format: 'number', total: false },
-  { id: 'ngay', label: 'Ngày\nthực hiện', variable: 'departureDate', width: 11.28, align: 'center', format: 'date', total: false },
-  { id: 'bien_so', label: 'Biển số xe', variable: 'truckPlate', width: 11.7, align: 'center', format: 'text', total: false },
-  { id: 'dong_tra', label: 'Đóng/ Trả', variable: 'actionType', width: 8.14, align: 'center', format: 'text', total: false },
-  { id: 'diem_di', label: 'Điểm đi/ về', variable: 'origin', width: 18.99, align: 'left', format: 'text', total: false },
-  { id: 'diem_hang', label: 'Điểm đóng/ trả hàng', variable: 'destination', width: 40.84, align: 'left', format: 'text', total: false },
-  { id: 'dia_chi_hang', label: 'Điểm đóng/ trả hàng', variable: 'deliveryAddress', width: 45.13, align: 'left', format: 'text', total: false },
-  { id: 'sl20', label: "20'", variable: 'container20Count', width: 5.41, align: 'center', format: 'number', total: true },
-  { id: 'sl40', label: "40'", variable: 'container40Count', width: 6.28, align: 'center', format: 'number', total: true },
-  { id: 'so_cont', label: 'Số hiệu cont', variable: 'containerNumbers', width: 15.7, align: 'left', format: 'text', total: false },
-  { id: 'gia_vc', label: 'Giá VC \n (Chưa VAT)', variable: 'amount', width: 13.85, align: 'right', format: 'currency', total: true },
-  { id: 'ghi_chu', label: 'Ghi chú', variable: 'note', width: 8.7, align: 'left', format: 'text', total: false },
-];
+const cloneColumns = (cols: readonly DebitNoteTemplateColumn[]): DebitNoteTemplateColumn[] =>
+  cols.map((col) => ({ ...col }));
 
-const VIETSUN_TABLE_COLUMN_BY_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col]));
-const VIETSUN_TABLE_WIDTH_BY_COLUMN_ID = new Map(DEFAULT_DEBIT_NOTE_COLUMNS.map((col) => [col.id, col.width]));
+const DEFAULT_DEBIT_NOTE_COLUMNS: DebitNoteTemplateColumn[] =
+  cloneColumns(defaultDebitNoteColumns as DebitNoteTemplateColumn[]);
+const DEFAULT_PAYMENT_STATEMENT_COLUMNS: DebitNoteTemplateColumn[] =
+  cloneColumns(defaultPaymentStatementColumns as DebitNoteTemplateColumn[]);
+
+const VIETSUN_TABLE_COLUMN_BY_ID = new Map(DEFAULT_PAYMENT_STATEMENT_COLUMNS.map((col) => [col.id, col]));
+const VIETSUN_TABLE_WIDTH_BY_COLUMN_ID = new Map(DEFAULT_PAYMENT_STATEMENT_COLUMNS.map((col) => [col.id, col.width]));
 
 const DEFAULT_DEBIT_NOTE_SNAPSHOT: DebitNoteTemplateSnapshot = {
   id: null,
@@ -78,15 +78,7 @@ const DEFAULT_DEBIT_NOTE_SNAPSHOT: DebitNoteTemplateSnapshot = {
   showContainerColumn: true,
   showUnitColumn: true,
   groupingMode: 'NONE',
-  columns: [
-    { id: 'ngay', label: 'Ngày tháng', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
-    { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'tripCode', width: 12, align: 'center', format: 'text', total: false },
-    { id: 'dien_giai', label: 'Diễn giải', variable: 'description', width: 52, align: 'left', format: 'text', total: false },
-    { id: 'dvt', label: 'ĐVT', variable: 'unit', width: 9, align: 'center', format: 'text', total: false },
-    { id: 'so_luong', label: 'Số lượng', variable: 'containerCount', width: 9, align: 'center', format: 'number', total: false },
-    { id: 'don_gia', label: 'Đơn giá', variable: 'amount', width: 15, align: 'right', format: 'currency', total: false },
-    { id: 'thanh_tien', label: 'Thành tiền', variable: 'amount', width: 16, align: 'right', format: 'currency', total: true },
-  ],
+  columns: cloneColumns(DEFAULT_DEBIT_NOTE_COLUMNS),
   orientation: 'portrait',
   termsText: 'Vui lòng ghi số tham chiếu giấy báo nợ này trong chứng từ thanh toán',
   signatureLeftLabel: 'Khách hàng',
@@ -103,16 +95,35 @@ const DEFAULT_PAYMENT_STATEMENT_SNAPSHOT: DebitNoteTemplateSnapshot = {
   accentColor: '#1F4E79',
   groupingMode: 'NONE',
   columns: [
-    ...DEFAULT_DEBIT_NOTE_COLUMNS.slice(0, 11),
-    { id: 'phi_chi_ho', label: 'Phí chi hộ', variable: 'serviceFeeAmount', width: 13.85, align: 'right', format: 'currency', total: true },
-    ...DEFAULT_DEBIT_NOTE_COLUMNS.slice(11),
-  ] as DebitNoteTemplateColumn[],
+    ...DEFAULT_PAYMENT_STATEMENT_COLUMNS,
+  ],
 };
 
-function normalizeTemplateColumns(cols: unknown): DebitNoteTemplateColumn[] {
-  return Array.isArray(cols) && cols.length > 0
-    ? cols as DebitNoteTemplateColumn[]
+function looksLikePaymentStatementColumns(cols: DebitNoteTemplateColumn[]): boolean {
+  const variables = new Set(cols.map((col) => col.variable));
+  const ids = new Set(cols.map((col) => col.id));
+  const horizontalSignals = [
+    variables.has('rowIndex'),
+    variables.has('truckPlate'),
+    variables.has('actionType'),
+    variables.has('origin') && variables.has('deliveryAddress'),
+    ids.has('stt') && ids.has('bien_so'),
+    ids.has('gia_vc') && ids.has('so_cont'),
+  ];
+  return horizontalSignals.filter(Boolean).length >= 2;
+}
+
+function normalizeTemplateColumns(cols: unknown, docType: BillingDocumentType = 'DEBIT_NOTE'): DebitNoteTemplateColumn[] {
+  const fallback = docType === 'PAYMENT_STATEMENT'
+    ? DEFAULT_PAYMENT_STATEMENT_COLUMNS
     : DEFAULT_DEBIT_NOTE_COLUMNS;
+  if (!Array.isArray(cols) || cols.length === 0) return cloneColumns(fallback);
+
+  const parsed = cloneColumns(cols as DebitNoteTemplateColumn[]);
+  if (docType === 'DEBIT_NOTE' && looksLikePaymentStatementColumns(parsed)) {
+    return cloneColumns(DEFAULT_DEBIT_NOTE_COLUMNS);
+  }
+  return parsed;
 }
 
 function rowToTemplate(row: typeof s.debitNoteTemplates.$inferSelect): DebitNoteTemplate {
@@ -125,7 +136,7 @@ function rowToTemplate(row: typeof s.debitNoteTemplates.$inferSelect): DebitNote
     accentColor: row.accentColor,
     showContainerColumn: row.showContainerColumn, showUnitColumn: row.showUnitColumn,
     groupingMode: row.groupingMode as DebitNoteTemplate['groupingMode'],
-    columns: normalizeTemplateColumns(row.columns),
+    columns: normalizeTemplateColumns(row.columns, row.documentType as BillingDocumentType),
     amountInWords: row.amountInWords, orientation: row.orientation as DebitNoteTemplate['orientation'],
     termsText: row.termsText,
     signatureLeftLabel: row.signatureLeftLabel, signatureLeftName: row.signatureLeftName,
@@ -188,7 +199,7 @@ export function templateToSnapshot(t: DebitNoteTemplate): DebitNoteTemplateSnaps
     issuerRepresentative: t.issuerRepresentative,
     accentColor: t.accentColor,
     showContainerColumn: t.showContainerColumn, showUnitColumn: t.showUnitColumn,
-    groupingMode: t.groupingMode, columns: normalizeTemplateColumns(t.columns), orientation: t.orientation,
+    groupingMode: t.groupingMode, columns: normalizeTemplateColumns(t.columns, t.documentType), orientation: t.orientation,
     termsText: t.termsText,
     signatureLeftLabel: t.signatureLeftLabel, signatureLeftName: t.signatureLeftName,
     signatureRightLabel: t.signatureRightLabel, signatureRightName: t.signatureRightName,
@@ -267,6 +278,7 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
   for (const trip of trips) {
     const containerInfo = containersByTrip.get(trip.id) ?? [];
     const containers = containerNumbers(containerInfo);
+    const unit = containerUnit(containerInfo);
     const renderData = buildTripRenderData({
       trip,
       containers: containerInfo,
@@ -277,7 +289,7 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
       description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
       typeLabel: 'Doanh thu',
-      unit: 'lần',
+      unit,
       routeName: trip.routeName ?? null,
       containerNumbers: containers,
       renderData,
@@ -294,9 +306,13 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
         sourceType: 'EXPENSE', sourceId: fee.id, lineType: 'SERVICE_FEE',
         description: fee.billingLabel ?? fee.name ?? fee.expenseType,
         typeLabel: 'Phí chi hộ',
-        unit: 'lần',
+        unit,
         routeName: trip.routeName ?? null, containerNumbers: containers,
-        renderData: { ...renderData, note: fee.billingLabel ?? fee.name ?? fee.expenseType },
+        renderData: {
+          ...renderData,
+          documentCode: expenseDocumentCode(fee),
+          note: fee.billingLabel ?? fee.name ?? fee.expenseType,
+        },
         baseAmount: amt, amountOverride: null, excluded: false, sortOrder: sortOrder++,
       });
     }
@@ -448,10 +464,32 @@ async function buildSupplierPaymentLines(supplierId: number, from: string, to: s
 
 type ContainerRenderInfo = { containerNumber: string | null; containerTypeCode: string | null; containerTypeName: string | null };
 type LegRenderInfo = { origin: string | null; destination: string | null; loadingType: LoadingType | null };
+type ApprovedFeeRenderInfo = {
+  tripId: number;
+  id: number;
+  sellAmount: string | null;
+  expenseType: string;
+  billingLabel: string | null;
+  name: string | null;
+  invoiceNumber: string | null;
+  declarationNumber: string | null;
+};
 
 function containerNumbers(containers: ContainerRenderInfo[]): string[] | null {
   const list = containers.map((c) => c.containerNumber).filter((n): n is string => Boolean(n));
   return list.length > 0 ? list : null;
+}
+
+function containerUnit(containers: ContainerRenderInfo[]): string {
+  const c20 = countContainers(containers, '20');
+  const c40 = countContainers(containers, '40');
+  if (c20 > 0 && c40 === 0) return "20'";
+  if (c40 > 0 && c20 === 0) return "40'";
+  return 'cont';
+}
+
+function expenseDocumentCode(fee: Pick<ApprovedFeeRenderInfo, 'invoiceNumber' | 'declarationNumber'>): string | null {
+  return fee.invoiceNumber?.trim() || fee.declarationNumber?.trim() || null;
 }
 
 function countContainers(containers: ContainerRenderInfo[], size: '20' | '40'): number {
@@ -545,12 +583,13 @@ async function loadLegRenderDataByTrip(tripIds: number[]): Promise<Map<number, L
 }
 
 /** Bulk-load approved ancillary fees (sell side) grouped by trip — avoids N+1 per trip. */
-async function loadApprovedFeesByTrip(tripIds: number[]): Promise<Map<number, Array<{ id: number; sellAmount: string | null; expenseType: string; billingLabel: string | null; name: string | null }>>> {
-  const map = new Map<number, Array<{ id: number; sellAmount: string | null; expenseType: string; billingLabel: string | null; name: string | null }>>();
+async function loadApprovedFeesByTrip(tripIds: number[]): Promise<Map<number, ApprovedFeeRenderInfo[]>> {
+  const map = new Map<number, ApprovedFeeRenderInfo[]>();
   if (tripIds.length === 0) return map;
   const rows = await db.select({
     tripId: s.tripExpenses.tripId, id: s.tripExpenses.id,
     sellAmount: s.tripExpenses.sellAmount, expenseType: s.tripExpenses.expenseType,
+    invoiceNumber: s.tripExpenses.invoiceNumber, declarationNumber: s.tripExpenses.declarationNumber,
     billingLabel: s.forwarderExpenseTypes.billingLabel, name: s.forwarderExpenseTypes.name,
   }).from(s.tripExpenses)
     .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
@@ -1112,13 +1151,24 @@ function renderColumnValue(line: BillingDocumentLine, col: DebitNoteTemplateColu
     case 'description': return exportDescription(line);
     case 'lineTypeLabel': return line.typeLabel;
     case 'unit': return line.unit;
-    case 'amount': return effectiveAmount(line) || 0;
+    case 'amount': {
+      const amount = effectiveAmount(line) || 0;
+      if (col.id === 'don_gia') {
+        const qty = Number(data.containerCount ?? line.containerNumbers?.length ?? 1);
+        return qty > 1 ? Math.round(amount / qty) : amount;
+      }
+      return amount;
+    }
     case 'freightAmount': return data.freightAmount ?? null;
     case 'serviceFeeAmount': return data.serviceFeeAmount ?? null;
     case 'totalAmount': return data.totalAmount ?? (effectiveAmount(line) || 0);
     case 'serviceFeeDescription': return data.serviceFeeDescription ?? null;
     case 'note': return data.note ?? null;
-    case 'tripCode': return data.tripCode ?? (line.sourceType === 'TRIP' ? String(line.sourceId ?? '') : null);
+    case 'documentCode': return data.documentCode ?? null;
+    case 'tripCode':
+      return col.id === 'chung_tu'
+        ? data.documentCode ?? null
+        : data.tripCode ?? (line.sourceType === 'TRIP' ? String(line.sourceId ?? '') : null);
     default: return null;
   }
 }
@@ -1139,21 +1189,26 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
     .map((line) => Number(line.sourceId))
     .filter((id) => Number.isFinite(id) && id > 0);
   const expenseIds = Array.from(new Set(lines
-    .filter((line) => line.sourceType === 'EXPENSE' && line.sourceId && !line.renderData)
+    .filter((line) => line.sourceType === 'EXPENSE' && line.sourceId)
     .map((line) => Number(line.sourceId))
     .filter((id) => Number.isFinite(id) && id > 0)));
 
   const expenseTripRows = expenseIds.length > 0
-    ? await db.select({ id: s.tripExpenses.id, tripId: s.tripExpenses.tripId })
+    ? await db.select({
+      id: s.tripExpenses.id,
+      tripId: s.tripExpenses.tripId,
+      invoiceNumber: s.tripExpenses.invoiceNumber,
+      declarationNumber: s.tripExpenses.declarationNumber,
+    })
       .from(s.tripExpenses)
       .where(inArray(s.tripExpenses.id, expenseIds))
     : [];
-  const tripIdByExpenseId = new Map(expenseTripRows.map((row) => [row.id, row.tripId]));
+  const expenseById = new Map(expenseTripRows.map((row) => [row.id, row]));
   const tripIds = Array.from(new Set([
     ...directTripIds,
     ...expenseTripRows.map((row) => row.tripId),
   ]));
-  if (tripIds.length === 0) return lines;
+  if (tripIds.length === 0 && expenseById.size === 0) return lines;
 
   const trips = await db.select({
     id: s.trips.id,
@@ -1172,17 +1227,30 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
   const legsByTrip = await loadLegRenderDataByTrip(tripIds);
 
   return lines.map((line) => {
-    if (line.renderData || !line.sourceId) return line;
+    const expenseInfo = line.sourceType === 'EXPENSE' && line.sourceId
+      ? expenseById.get(Number(line.sourceId))
+      : undefined;
+    const documentCode = expenseInfo ? expenseDocumentCode(expenseInfo) : null;
+    if (line.renderData) {
+      return {
+        ...line,
+        renderData: {
+          ...line.renderData,
+          documentCode: line.renderData.documentCode ?? documentCode,
+        },
+      };
+    }
+    if (!line.sourceId) return line;
     const tripId = line.sourceType === 'TRIP'
       ? Number(line.sourceId)
       : line.sourceType === 'EXPENSE'
-        ? tripIdByExpenseId.get(Number(line.sourceId))
+        ? expenseInfo?.tripId
         : null;
     if (!tripId) return line;
     const trip = tripsById.get(tripId);
     if (!trip) return line;
     const containers = containersByTrip.get(trip.id) ?? [];
-    return {
+    const enrichedLine = {
       ...line,
       routeName: line.routeName ?? trip.routeName ?? null,
       containerNumbers: line.containerNumbers ?? containerNumbers(containers),
@@ -1192,6 +1260,13 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
         legs: legsByTrip.get(trip.id),
         note: trip.notes ?? null,
       }),
+    };
+    return {
+      ...enrichedLine,
+      renderData: {
+        ...enrichedLine.renderData,
+        documentCode,
+      },
     };
   });
 }
@@ -1273,6 +1348,66 @@ function aggregateDebitNoteExportLines(lines: BillingDocumentLine[]): BillingDoc
   return [...groups.values(), ...passthrough].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
+type DebitNoteLineGroup = {
+  key: string;
+  label: string;
+  first: BillingDocumentLine;
+  lines: BillingDocumentLine[];
+};
+
+function debitNoteGroupKey(line: BillingDocumentLine): string {
+  const data = line.renderData ?? {};
+  return [
+    data.tripCode ?? '',
+    data.departureDate ?? '',
+    line.routeName ?? '',
+    (line.containerNumbers ?? []).join('|'),
+  ].join('\u001f');
+}
+
+function debitNoteGroupLabel(line: BillingDocumentLine): string {
+  const qty = Number(line.renderData?.containerCount ?? line.containerNumbers?.length ?? 1) || 1;
+  const containerText = (line.containerNumbers ?? []).join(';');
+  const unit = line.unit || 'cont';
+  return `${String(qty).padStart(2, '0')}x${unit}${containerText ? ` ${containerText}` : ''}`;
+}
+
+function groupDebitNoteLines(lines: BillingDocumentLine[]): DebitNoteLineGroup[] {
+  const groups: DebitNoteLineGroup[] = [];
+  const byKey = new Map<string, DebitNoteLineGroup>();
+  for (const line of lines) {
+    const key = debitNoteGroupKey(line);
+    let group = byKey.get(key);
+    if (!group) {
+      group = { key, label: debitNoteGroupLabel(line), first: line, lines: [] };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    group.lines.push(line);
+  }
+  return groups;
+}
+
+async function loadDebitNoteLogoBytes(logoStorageKey?: string | null): Promise<Buffer | null> {
+  if (logoStorageKey) {
+    const stored = await storageService.read(logoStorageKey);
+    if (stored) return stored;
+  }
+
+  const candidates = [
+    path.resolve(process.cwd(), 'assets', 'Nepo.png'),
+    path.resolve(process.cwd(), 'backend', 'assets', 'Nepo.png'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      return await fs.promises.readFile(candidate);
+    } catch {
+      // Try the next runtime cwd variant.
+    }
+  }
+  return null;
+}
+
 /**
  * Public entry point. `null`/`undefined` template or a mismatched document type
  * delegates to the verbatim legacy renderer. A live template is snapshotted,
@@ -1301,7 +1436,7 @@ async function renderDebitNoteXlsx(
   wb.modified = new Date();
 
   const ws = wb.addWorksheet('Giấy báo nợ');
-  const cols = normalizeTemplateColumns(snap.columns).filter((col) => col.width > 0);
+  const cols = normalizeTemplateColumns(snap.columns, 'DEBIT_NOTE').filter((col) => col.width > 0);
   const nCols = cols.length;
   const headerCols = Math.max(nCols, 8);
   const totalColumns = cols
@@ -1311,6 +1446,7 @@ async function renderDebitNoteXlsx(
   const partner = await loadCounterpartyInfo(doc);
   const lines = await enrichLinesForDebitNoteRender(doc.lines);
   const dataLines = lines.filter((line) => !line.excluded);
+  const lineGroups = groupDebitNoteLines(dataLines);
   const moneyFmt = '_(* #,##0_);_(* \\(#,##0\\);_(* \\-??_);_(@_)';
   const baseFont = { name: 'Times New Roman', size: 11, color: { argb: 'FF000000' } };
   const boldFont = { ...baseFont, bold: true };
@@ -1341,9 +1477,15 @@ async function renderDebitNoteXlsx(
 
   ws.mergeCells(1, 1, 3, 3);
   const logoCell = ws.getCell(1, 1);
-  logoCell.value = 'NePO\nPower your success';
-  logoCell.font = { name: 'Arial', size: 24, bold: true, color: { argb: accent } };
-  logoCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  const logoBytes = await loadDebitNoteLogoBytes(snap.logoStorageKey);
+  if (logoBytes) {
+    const imageId = wb.addImage({ base64: logoBytes.toString('base64'), extension: 'png' });
+    ws.addImage(imageId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 185, height: 64 } });
+  } else {
+    logoCell.value = 'NePO\nPower your success';
+    logoCell.font = { name: 'Arial', size: 24, bold: true, color: { argb: accent } };
+    logoCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+  }
 
   const companyRows = [
     { row: 1, value: company.name, bold: true },
@@ -1403,22 +1545,45 @@ async function renderDebitNoteXlsx(
 
   let row = tableHeaderRow + 1;
   const dataRows: number[] = [];
-  for (const line of dataLines) {
-    const r = row++;
-    dataRows.push(r);
+  const descriptionCol = Math.max(1, cols.findIndex((col) => col.variable === 'description') + 1);
+  for (const group of lineGroups) {
+    const groupRow = row++;
     for (let c = 0; c < cols.length; c++) {
       const col = cols[c];
-      const cell = ws.getCell(r, c + 1);
-      const value = renderColumnValue(line, col, dataRows.length);
+      const cell = ws.getCell(groupRow, c + 1);
+      let value: string | number | Date | null = null;
+      if (col.variable === 'departureDate') {
+        value = renderColumnValue(group.first, col, dataRows.length + 1);
+      } else if (c + 1 === descriptionCol) {
+        value = group.label;
+      }
       cell.value = value;
       applyInferredColumnFormat(cell, value);
-      cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
-      cell.font = baseFont;
+      cell.alignment = { horizontal: c + 1 === descriptionCol ? 'center' : col.align, vertical: 'middle', wrapText: true };
+      cell.font = c + 1 === descriptionCol ? boldFont : baseFont;
       cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
-      if (col.format === 'currency' || col.variable === 'amount') cell.numFmt = moneyFmt;
       if (col.format === 'date' && value instanceof Date) cell.numFmt = 'd/m/yy';
     }
-    ws.getRow(r).height = 24;
+    ws.getRow(groupRow).height = 24;
+
+    for (const line of group.lines) {
+      const r = row++;
+      dataRows.push(r);
+      for (let c = 0; c < cols.length; c++) {
+        const col = cols[c];
+        const cell = ws.getCell(r, c + 1);
+        const rawValue = renderColumnValue(line, col, dataRows.length);
+        const value = col.variable === 'departureDate' ? null : rawValue;
+        cell.value = value;
+        applyInferredColumnFormat(cell, value);
+        cell.alignment = { horizontal: col.align, vertical: 'middle', wrapText: true };
+        cell.font = baseFont;
+        cell.border = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
+        if (col.format === 'currency' || col.variable === 'amount') cell.numFmt = moneyFmt;
+        if (col.format === 'date' && value instanceof Date) cell.numFmt = 'd/m/yy';
+      }
+      ws.getRow(r).height = 24;
+    }
   }
 
   const totalRow = row + 1;
@@ -1526,7 +1691,7 @@ export async function renderTemplatedXlsx(
 
   const ws = wb.addWorksheet(`Tháng ${Number(doc.rangeTo.slice(5, 7)) || Number(doc.rangeFrom.slice(5, 7)) || 1}`);
 
-  const cols = normalizeTemplateColumns(snap.columns).filter((col) => col.width > 0);
+  const cols = normalizeTemplateColumns(snap.columns, 'PAYMENT_STATEMENT').filter((col) => col.width > 0);
   const nCols = cols.length;
   const widthSamples: unknown[][] = cols.map(() => []);
   const amountIdx = cols.findIndex((col) => col.variable === 'amount') + 1;

@@ -279,6 +279,7 @@ export const debitNoteColumnVariableSchema = z.enum([
   'serviceFeeDescription',
   'note',
   'tripCode',
+  'documentCode',
 ]);
 
 export const debitNoteColumnSchema = z.object({
@@ -294,7 +295,7 @@ export const debitNoteColumnSchema = z.object({
 
 export const defaultDebitNoteColumns: Array<z.infer<typeof debitNoteColumnSchema>> = [
   { id: 'ngay', label: 'Ngày tháng', variable: 'departureDate', width: 12, align: 'center', format: 'date', total: false },
-  { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'tripCode', width: 12, align: 'center', format: 'text', total: false },
+  { id: 'chung_tu', label: 'Số\nchứng từ', variable: 'documentCode', width: 12, align: 'center', format: 'text', total: false },
   { id: 'dien_giai', label: 'Diễn giải', variable: 'description', width: 52, align: 'left', format: 'text', total: false },
   { id: 'dvt', label: 'ĐVT', variable: 'unit', width: 9, align: 'center', format: 'text', total: false },
   { id: 'so_luong', label: 'Số lượng', variable: 'containerCount', width: 9, align: 'center', format: 'number', total: false },
