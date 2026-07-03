@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import type { Role, TripDetail } from '@tingting/shared';
+import type { DashboardDecisionItem, DashboardDecisionKind, DashboardDecisionSeverity, Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
@@ -54,6 +55,30 @@ const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' })
   const sym = isUp ? '▲' : isDown ? '▼' : '·';
   return <span className={cls}>{sym} {mom.replace(/^[+-]/, '')}{suffix}</span>;
 };
+
+const DECISION_ICONS: Record<DashboardDecisionKind, AssetIconName> = {
+  receivables: 'receivables',
+  dispatch: 'dispatch',
+  renewal: 'schedule',
+  fuel: 'fuel',
+  'trip-lock': 'checklist',
+  'trip-data': 'document',
+  'profit-close': 'profit',
+  'all-clear': 'paid',
+};
+
+function decisionIcon(kind: DashboardDecisionKind): AssetIconName {
+  return DECISION_ICONS[kind] ?? 'alert';
+}
+
+function severityLabel(severity: DashboardDecisionSeverity): string {
+  switch (severity) {
+    case 'critical': return 'Gấp';
+    case 'warning': return 'Cần xử lý';
+    case 'success': return 'Ổn';
+    default: return 'Theo dõi';
+  }
+}
 
 // ─── Cost donut (5 slices, computed from cost breakdown) ────────────────────
 
@@ -108,8 +133,8 @@ export default function DashboardPage() {
   const {
     stats, loading, prevPnlReport,
     createdTripsCount,
-    renewalReminders, receivablesSummary,
-    yearlySeries, fuelWarnings,
+    receivablesSummary,
+    yearlySeries,
     recentAudit,
     derived, formattedNet,
     allTrips,
@@ -253,65 +278,45 @@ export default function DashboardPage() {
   }, [stats]);
 
   // ── Attention items (compose from real data) ────────────────────────────
-  const attention = useMemo(() => {
-    type AttIcon = AssetIconName | 'ok' | 'cal' | 'info' | 'warn';
-    const items: Array<{ icon: AttIcon; title: string; sub: string; action?: { label: string; onClick: () => void; green?: boolean } }> = [];
+  const attention = useMemo<DashboardDecisionItem[]>(() => {
+    if (stats?.decisionItems?.length) return stats.decisionItems;
 
-    const overdue = (receivablesSummary?.buckets ?? [])
-      .filter(b => b.range !== '0-30')
-      .reduce((sum, b) => sum + (b.amount ?? 0), 0);
-    if (overdue > 0) {
-      items.push({
-        icon: 'receivables',
-        title: `Có ${formatNumber(overdue)} ₫ công nợ quá hạn`,
-        sub: 'Vui lòng xem & nhắc khách hàng',
-        action: { label: 'Xem công nợ', onClick: () => navigate('/debt') },
-      });
-    } else {
-      items.push({ icon: 'ok', title: 'Không có công nợ quá hạn', sub: 'Toàn bộ khách hàng đã thanh toán đúng hạn' });
-    }
-
+    const fallback: DashboardDecisionItem[] = [];
     if (createdTripsCount > 0) {
-      items.push({
-        icon: 'dispatch',
+      fallback.push({
+        id: 'dispatch-created-trips-fallback',
+        kind: 'dispatch',
+        severity: 'warning',
         title: `${createdTripsCount} đơn hàng chờ phân xe`,
-        sub: 'Phân xe ngay để xuất phát đúng hẹn',
-        action: { label: 'Phân xe', onClick: () => navigate('/dispatch') },
-      });
-    } else {
-      items.push({ icon: 'ok', title: 'Không có đơn hàng chờ phân xe', sub: 'Tất cả đơn hàng đã được phân xe' });
-    }
-
-    if ((renewalReminders?.length ?? 0) > 0) {
-      items.push({
-        icon: 'schedule',
-        title: `${renewalReminders.length} hạng mục cần gia hạn`,
-        sub: 'Bảo hiểm · đăng kiểm · phí đường bộ',
-        action: { label: 'Xem chi phí', onClick: () => navigate('/expenses') },
-      });
-    } else {
-      items.push({ icon: 'cal', title: 'Không có hạng mục cần gia hạn', sub: 'Bảo hiểm · đăng kiểm · phí đường bộ' });
-    }
-
-    if ((fuelWarnings?.length ?? 0) > 0) {
-      items.push({
-        icon: 'fuel',
-        title: `${fuelWarnings.length} chuyến vượt định mức dầu`,
-        sub: 'Cần xem lại số liệu khai báo',
-        action: { label: 'Xem chuyến', onClick: () => navigate('/trips?fuelWarn=1') },
+        subtitle: 'Phân xe để không trễ giờ xuất phát',
+        actionLabel: 'Phân xe',
+        route: '/dispatch',
+        priority: 90,
       });
     }
-
     if (revenue > 0) {
-      items.push({
-        icon: 'analytics',
+      fallback.push({
+        id: 'profit-close-ready-fallback',
+        kind: 'profit-close',
+        severity: 'info',
         title: `Báo cáo lợi nhuận ${currentMonth}/${currentYear} sẵn sàng`,
-        sub: 'Xác nhận để chốt sổ tháng',
-        action: { label: 'Xem', onClick: () => navigate('/profit'), green: true },
+        subtitle: 'Xem lại số liệu trước khi phân bổ lợi nhuận',
+        actionLabel: 'Xem',
+        route: '/profit',
+        priority: 20,
       });
     }
-    return items.slice(0, 5);
-  }, [receivablesSummary, createdTripsCount, renewalReminders, fuelWarnings, revenue, currentMonth, currentYear, navigate]);
+    return fallback.length > 0
+      ? fallback
+      : [{
+          id: 'all-clear-fallback',
+          kind: 'all-clear',
+          severity: 'success',
+          title: 'Không có quyết định đang chờ',
+          subtitle: 'Công nợ, phân xe, gia hạn và số liệu đều ổn',
+          priority: 0,
+        }];
+  }, [stats?.decisionItems, createdTripsCount, revenue, currentMonth, currentYear]);
 
   // ── Trigger KPI counter animations once data loads ──
   useEffect(() => {
@@ -608,35 +613,32 @@ export default function DashboardPage() {
             </div>
             <div className="body">
               {attention.map((item, i) => {
-                // AttIcon = AssetIconName | 'ok' | 'cal' | 'info' | 'warn'. The
-                // legacy svg branch only draws 'ok'/'cal'; every other value is
-                // an AssetIconName rendered through <AssetIcon>. (The previous
-                // `(icon) in ({} …)` check was always false — `in` on an EMPTY
-                // object — so every asset icon rendered null: blank squares with
-                // no icon and no severity color.)
-                const isAssetIcon =
-                  item.icon !== 'ok' && item.icon !== 'cal' && item.icon !== 'info' && item.icon !== 'warn';
-                const legacyIconClass = !isAssetIcon ? ` wf-ic-${item.icon}` : '';
+                const iconName = decisionIcon(item.kind);
                 return (
                 <React.Fragment key={i}>
-                  {i === attention.length - 1 && attention.length > 1 && <div className="wf-divider" />}
-                  <div className="wf-arow">
-                    <div className={`ic${legacyIconClass}`}>
-                      {isAssetIcon ? (
-                        <AssetIcon name={item.icon as AssetIconName} size={18} />
-                      ) : item.icon === 'ok' ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                      ) : item.icon === 'cal' ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                      ) : null}
+                  {i > 0 && <div className="wf-divider" />}
+                  <div className={`wf-arow wf-arow--${item.severity}`}>
+                    <div className={`ic wf-ic-${item.severity}`}>
+                      <AssetIcon name={iconName} size={18} />
                     </div>
                     <div className="tx">
-                      <div className="t">{item.title}</div>
-                      <div className="s">{item.sub}</div>
+                      <div className="t">
+                        {item.title}
+                        <span className={`wf-severity wf-severity--${item.severity}`}>
+                          {severityLabel(item.severity)}
+                        </span>
+                      </div>
+                      <div className="s">{item.subtitle}</div>
                     </div>
-                    {item.action && (
+                    {item.route && item.actionLabel && (
                       <div className="go">
-                        <button className={`wf-minibtn${item.action.green ? ' green' : ''}`} onClick={item.action.onClick}>{item.action.label}</button>
+                        <button
+                          className={`wf-minibtn${item.severity === 'success' ? ' green' : ''}`}
+                          onClick={() => navigate(item.route!)}
+                        >
+                          <span>{item.actionLabel}</span>
+                          <ChevronRight className="wf-minibtn__icon" aria-hidden="true" />
+                        </button>
                       </div>
                     )}
                   </div>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NavigateFunction } from 'react-router-dom';
-import { Receipt, Wallet, CheckCircle2, FileCheck2, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Receipt, Wallet, CheckCircle2, FileCheck2, ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
@@ -37,6 +37,7 @@ const GROUP_ORDER: ApprovalItemType[] = [
   'advanceSettlementsCheck',
   'advanceSettlementsApprove',
 ];
+const PAGE_SIZE = 15;
 
 // Tooltip text per type — explains what the tick button does.
 const QUICK_ACTION_LABEL: Partial<Record<ApprovalItemType, string>> = {
@@ -53,23 +54,35 @@ interface Props {
 }
 
 export function ApprovalQueueCard({ data, loading, navigate }: Props) {
+  const [page, setPage] = useState(0);
   const items = useMemo(
     () => (data?.items ?? []).filter(item => item.type !== 'debtOffsets'),
     [data?.items],
   );
   const total = items.length;
-  const groupedView = items.length > 5;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageStart = currentPage * PAGE_SIZE;
+  const visibleItems = useMemo(
+    () => items.slice(pageStart, pageStart + PAGE_SIZE),
+    [items, pageStart],
+  );
+  const groupedView = visibleItems.length > 5;
+  const canPage = total > PAGE_SIZE;
 
   // Single-pass groupBy instead of O(n*k) filter per type
   const grouped = useMemo(() => {
     const map = new Map<ApprovalItemType, ApprovalQueueItem[]>();
-    for (const item of items) {
+    for (const item of visibleItems) {
       const group = map.get(item.type) ?? [];
       group.push(item);
       map.set(item.type, group);
     }
     return map;
-  }, [items]);
+  }, [visibleItems]);
+
+  const handlePrevPage = () => setPage(value => Math.max(0, value - 1));
+  const handleNextPage = () => setPage(value => Math.min(pageCount - 1, value + 1));
 
   return (
     <div className="wf-card approval-queue">
@@ -80,7 +93,38 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
             {loading ? 'Đang tải…' : total > 0 ? `${total} mục đang chờ` : 'Đã xử lý hết'}
           </div>
         </div>
-        {total > 0 && <span className="approval-queue__count">{total}</span>}
+        {total > 0 && (
+          <div className="approval-queue__head-actions">
+            {canPage && (
+              <div className="approval-queue__pager" aria-label="Phân trang cần duyệt">
+                <button
+                  type="button"
+                  className="approval-queue__page-btn"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 0}
+                  aria-label="Trang trước"
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={15} strokeWidth={2.3} />
+                </button>
+                <span className="approval-queue__page-label">
+                  {pageStart + 1}-{Math.min(pageStart + PAGE_SIZE, total)} / {total}
+                </span>
+                <button
+                  type="button"
+                  className="approval-queue__page-btn"
+                  onClick={handleNextPage}
+                  disabled={currentPage >= pageCount - 1}
+                  aria-label="Trang sau"
+                  title="Trang sau"
+                >
+                  <ChevronRight size={15} strokeWidth={2.3} />
+                </button>
+              </div>
+            )}
+            <span className="approval-queue__count">{total}</span>
+          </div>
+        )}
       </div>
 
       {total === 0 ? (
@@ -111,7 +155,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
         </div>
       ) : (
         <div className="approval-queue__body">
-          {items.map(item => (
+          {visibleItems.map(item => (
             <Row key={item.id} item={item} navigate={navigate} showTypeLabel />
           ))}
         </div>

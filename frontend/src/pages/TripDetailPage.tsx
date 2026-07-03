@@ -279,7 +279,7 @@ export default function TripDetailPage() {
       {/* ── Adjustment Drawer ───────────────────────────────────────────── */}
       <Drawer isOpen={ui.showAdjust} onClose={() => page.setShowAdjust(false)} title="Hóa đơn điều chỉnh">
         <p className="tdp-drawer-hint">
-          Số âm = Giảm doanh thu (Credit Note) · Số dương = Tăng doanh thu (Debit Note)
+          Số âm = Giảm doanh thu · Số dương = Tăng doanh thu
         </p>
         {ui.adjustError && (
           <div className="tdp-modal-error">

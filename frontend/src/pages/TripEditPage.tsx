@@ -57,6 +57,22 @@ export default function TripEditPage() {
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
   const { error, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt } = form;
+  const filledContainerTypeIds = form.containerRows
+    .map(row => row.containerTypeId)
+    .filter(Boolean)
+    .map(String);
+  const commonContainerTypeId = filledContainerTypeIds.length > 0 &&
+    filledContainerTypeIds.every(typeId => typeId === filledContainerTypeIds[0])
+      ? filledContainerTypeIds[0]
+      : '';
+  const plannedContainerTypeId = form.plannedContainerTypeId || commonContainerTypeId;
+  const setPlannedContainerTypeId = (value: string) => {
+    form.setPlannedContainerTypeId(value);
+    form.setContainerRows(prev => prev.map(row => ({
+      ...row,
+      containerTypeId: value ? Number(value) : '',
+    })));
+  };
 
   // The trip form hydrates from `existingTrip` via an effect inside the form
   // hook (one render after `trip` arrives), so gate the dirty baseline on a
@@ -153,6 +169,21 @@ export default function TripEditPage() {
                       required
                     />
                   </div>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Tuyến đường <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                    <select
+                      id="routeId"
+                      className="input"
+                      value={routeId}
+                      onChange={(e) => setRouteId(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Chọn tuyến đường --</option>
+                      {catalogData?.routes.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
                     <div className="tc-field">
                       <label className="tc-field-label">Ngày hoàn thành</label>
@@ -167,24 +198,6 @@ export default function TripEditPage() {
                       <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
                     </div>
                   )}
-                </div>
-                <div className="tc-field">
-                  <label className="tc-field-label">Tuyến đường <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
-                  <select
-                    id="routeId"
-                    className="input"
-                    value={routeId}
-                    onChange={(e) => setRouteId(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Chọn tuyến đường --</option>
-                    {catalogData?.routes.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="tc-field-row tc-field-row--2" style={{ marginTop: 14 }}>
                   <div className="tc-field">
                     <label className="tc-field-label">Loại xe</label>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -203,6 +216,22 @@ export default function TripEditPage() {
                         Xe ngoài
                       </button>
                     </div>
+                  </div>
+                  <div className="tc-field">
+                    <label className="tc-field-label">Loại container <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                    <select
+                      id="plannedContainerTypeId"
+                      className="input"
+                      value={plannedContainerTypeId}
+                      onChange={(e) => setPlannedContainerTypeId(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Chọn loại container --</option>
+                      {editOptions.containerTypes.map((type) => (
+                        <option key={type.id} value={type.id}>{type.label}</option>
+                      ))}
+                    </select>
+                    <div className="tc-field-hint">Số container/seal cập nhật ở Chi tiết container.</div>
                   </div>
                 </div>
 
@@ -384,7 +413,6 @@ export default function TripEditPage() {
                   tripId={trip.id}
                   expectedCount={trip.containerCount ?? 1}
                   requiresPhotos={!!trip.cargoType?.requiresPhotos}
-                  containerTypes={editOptions.containerTypes}
                 />
               </CardSection>
 

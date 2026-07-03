@@ -28,6 +28,7 @@ describe('trip command service', () => {
       customerId: 1,
       routeId: 2,
       cargoTypeId: 3,
+      containerTypeId: 4,
       departureDate: '2026-06-20',
     }, { userId: 99, role: Role.ADMIN }, deps);
 

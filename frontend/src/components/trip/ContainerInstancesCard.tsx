@@ -10,7 +10,6 @@ import type { ContainerFormRow, SealFormRow } from '../../hooks/useTripFormState
 import { ContainerScanner, dataUrlToFile } from '../shared/ContainerScanner';
 import { PhotoViewer } from '../PhotoViewer';
 import './ContainerInstancesCard.css';
-import type { SelectOption } from '../../hooks/useTripOptions';
 import {
   normalizeContainerNumber,
   validateContainerFormat,
@@ -21,7 +20,7 @@ import {
 /**
  * Card section embedded in `TripEditPage` / `TripCreatePage` that lets the
  * accountant or manager manage the per-container instances for a trip:
- * container number, a list of seals (customs, carrier, …), container type,
+ * container number, a list of seals (customs, carrier, …),
  * cargo weight, notes, and per-type photo galleries (cont / seal).
  *
  * The row state is owned by the form (`containerRows` in `useTripFormState`)
@@ -71,9 +70,6 @@ interface Props {
   /** When the cargo type requires cont/seal evidence, show a warning banner
    *  until at least one row has a cont or seal photo. */
   requiresPhotos?: boolean;
-  /** Catalog options for per-container type entry. Optional because old callers
-   *  only used this card for number/seal/photo capture. */
-  containerTypes?: SelectOption[];
 }
 
 function rowKey() {
@@ -148,7 +144,7 @@ function checkContainerNumber(cn: string): ContainerCheckStatus {
   };
 }
 
-export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos, containerTypes = [] }: Props) {
+export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
   const { toast } = useToast();
   // Rows live in the form state so the unified "Lưu cập nhật" submit persists
   // them; this card is the editor. `ocrResult` is the OCR broadcast channel.
@@ -705,68 +701,47 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               </div>
 
               <div className="ci-row ci-row--identity">
-                <div>
-                  <label className="ci-label">
-                    Số container <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>(tuỳ chọn)</span>
-                  </label>
-                  <input
-                    id={`containerNumber-${row._key}`}
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    placeholder="VD: TCKU1234567"
-                    value={row.containerNumber}
-                    onChange={e => updateRow(row._key, 'containerNumber', e.target.value.toUpperCase())}
-                  />
-                  {(() => {
-                    const st = checkContainerNumber(row.containerNumber);
-                    if (!st.warning) return null;
-                    return (
-                      <div style={{
-                        marginTop: 4,
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 4,
-                        alignItems: 'center',
-                        padding: '4px 6px',
-                        background: 'var(--warn-soft, #fff7e6)',
-                        color: 'var(--warn, #b7791f)',
-                        borderRadius: 6,
-                        fontSize: 13,
-                      }}>
-                        <span>⚠ {st.warning}</span>
-                        {st.suggestion && (
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--sm"
-                            style={{ minHeight: 22, padding: '0 8px', fontSize: 12 }}
-                            onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
-                          >
-                            Đổi thành {st.suggestion}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div>
-                  <label className="ci-label">
-                    Loại container <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>(tuỳ chọn)</span>
-                  </label>
-                  <select
-                    id={`containerType-${row._key}`}
-                    className="input ci-input-sm"
-                    style={{ width: '100%' }}
-                    value={row.containerTypeId === '' ? '' : String(row.containerTypeId)}
-                    onChange={e => updateRow(row._key, 'containerTypeId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">Chưa chọn loại cont</option>
-                    {containerTypes.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <label className="ci-label">
+                  Số container <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>(tuỳ chọn)</span>
+                </label>
+                <input
+                  id={`containerNumber-${row._key}`}
+                  className="input ci-input-sm"
+                  style={{ width: '100%' }}
+                  placeholder="VD: TCKU1234567"
+                  value={row.containerNumber}
+                  onChange={e => updateRow(row._key, 'containerNumber', e.target.value.toUpperCase())}
+                />
+                {(() => {
+                  const st = checkContainerNumber(row.containerNumber);
+                  if (!st.warning) return null;
+                  return (
+                    <div style={{
+                      marginTop: 4,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 4,
+                      alignItems: 'center',
+                      padding: '4px 6px',
+                      background: 'var(--warn-soft, #fff7e6)',
+                      color: 'var(--warn, #b7791f)',
+                      borderRadius: 6,
+                      fontSize: 13,
+                    }}>
+                      <span>⚠ {st.warning}</span>
+                      {st.suggestion && (
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          style={{ minHeight: 22, padding: '0 8px', fontSize: 12 }}
+                          onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
+                        >
+                          Đổi thành {st.suggestion}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="ci-evidence-stack">

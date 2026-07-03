@@ -73,6 +73,7 @@ export const createTripSchema = z.object({
   departureDate: z.string().min(1),
   customerReference: z.string().optional(),
   containerCount: z.coerce.number().int().min(1).max(10).optional(),
+  containerTypeId: z.coerce.number().int().positive({ message: 'Loại container là bắt buộc' }),
   fuelMode: z.nativeEnum(FuelMode).optional(),
   fuelSupplierId: z.coerce.number().int().positive().optional().nullable(),
   // Per-trip actual pump price (₫/lít). Optional — when blank the trip falls

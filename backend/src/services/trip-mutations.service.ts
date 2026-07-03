@@ -147,6 +147,7 @@ export async function createTrip(data: {
   departureDate: string;
   customerReference?: string;
   containerCount?: number;
+  containerTypeId: number;
   fuelMode?: FuelMode;
   createdBy?: number;
   vatRate?: number;
@@ -290,6 +291,16 @@ export async function createTrip(data: {
       externalDriverName: data.externalDriverName ?? null,
       externalDriverPhone: data.externalDriverPhone ?? null,
     }).returning();
+
+    await tx.insert(s.tripContainers).values(
+      Array.from({ length: containerCount }, () => ({
+        tripId: trip.id,
+        containerTypeId: data.containerTypeId,
+        containerNumber: null,
+        sealNumber: null,
+        createdBy: data.createdBy ?? null,
+      })),
+    );
 
     // Audit row is produced by auditLogMiddleware on POST /api/trips as
     // "Quản lý <actor> tạo lệnh vận chuyển <tripCode>". A service-level write

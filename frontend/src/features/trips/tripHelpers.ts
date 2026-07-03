@@ -3,6 +3,7 @@ import { TripStatus, type TripDetail } from '@tingting/shared';
 
 export interface TripListContainer {
   containerNumber: string;
+  containerTypeId: number | null;
   containerTypeCode: string | null;
   containerTypeName: string | null;
 }

@@ -13,7 +13,11 @@ interface JourneyCardProps {
   liveVehicle?: LiveFleetVehicle | null;
 }
 
-export function JourneyCard({ trip, derived, liveVehicle = null }: JourneyCardProps) {
+export function JourneyCard({
+  trip,
+  derived,
+  liveVehicle = null,
+}: JourneyCardProps) {
   const { totalKm } = derived;
   const hasPolyline = trip.legs?.some(leg => leg.polylinePath);
   const hasLegCoord = trip.legs?.some(leg => leg.originCoord) ?? false;

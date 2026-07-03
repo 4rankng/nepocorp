@@ -32,12 +32,12 @@
 
 @container (max-width: 620px) {
   .trip-info-card__container-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .trip-info-card__container-type {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 

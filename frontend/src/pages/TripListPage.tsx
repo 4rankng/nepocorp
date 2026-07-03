@@ -40,7 +40,7 @@ import {
   TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts,
   DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
   STATUS_PILL_CLASS,
-  type StatusFilter, type StatusCounts, type TripQuickEditDraft,
+  type StatusFilter, type StatusCounts, type TripListRow, type TripQuickEditDraft,
   buildTripCode, getTripDistance, getTripDisplayGrossProfit,
 } from '../features/trips';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
@@ -70,9 +70,13 @@ function quickDraftFromTrip(trip: TripDetail): TripQuickEditDraft {
   };
 }
 
-function copyPlanPayloadFromTrip(trip: TripDetail): CreateTripRequest {
+function copyPlanPayloadFromTrip(trip: TripListRow): CreateTripRequest {
   if (!trip.customerId || !trip.routeId || !trip.cargoTypeId || !trip.departureDate) {
     throw new Error('Dòng này thiếu thông tin bắt buộc nên chưa thể copy kế hoạch.');
+  }
+  const containerTypeId = trip.containers?.find(c => c.containerTypeId)?.containerTypeId;
+  if (!containerTypeId) {
+    throw new Error('Chuyến này chưa có loại container nên chưa thể copy kế hoạch.');
   }
 
   const payload: CreateTripRequest = {
@@ -81,6 +85,7 @@ function copyPlanPayloadFromTrip(trip: TripDetail): CreateTripRequest {
     cargoTypeId: trip.cargoTypeId,
     departureDate: trip.departureDate,
     containerCount: trip.containerCount ?? 1,
+    containerTypeId,
     fuelMode: trip.fuelMode,
     fuelSupplierId: trip.fuelSupplierId ?? null,
     vatRate: trip.vatRate != null ? Number(trip.vatRate) : 0,

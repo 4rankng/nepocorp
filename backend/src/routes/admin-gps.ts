@@ -12,9 +12,34 @@ import { and, inArray, gte, lte } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { captureTripGpsTrack, type CaptureResult } from '../services/gps/capture.service';
+import { captureTripGpsTrack, deriveRoutesForStoredTrip, type CaptureResult } from '../services/gps/capture.service';
 
 const router = Router();
+
+async function captureAndDeriveTripGps(tripId: number): Promise<CaptureResult> {
+  const capture = await captureTripGpsTrack(tripId); // never throws
+  if (capture.status !== 'ok') return capture;
+
+  try {
+    const derivation = await deriveRoutesForStoredTrip(tripId);
+    return {
+      ...capture,
+      legsDerived: derivation.legsDerived,
+      legsTotal: derivation.legsTotal,
+      status: derivation.legsDerived > 0 ? 'ok' : 'partial',
+    };
+  } catch (err: unknown) {
+    console.warn('[gps] derive after capture failed', {
+      tripId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      ...capture,
+      status: 'partial',
+      errorKind: 'derive_failed',
+    };
+  }
+}
 
 /**
  * POST /api/admin/gps/backfill
@@ -61,7 +86,7 @@ router.post('/backfill', asyncHandler(async (req: Request, res: Response) => {
   let ok = 0, partial = 0, failed = 0, empty = 0;
   const failures: Array<{ tripId: number; errorKind?: string }> = [];
   for (const t of page) {
-    const r: CaptureResult = await captureTripGpsTrack(t.id); // never throws
+    const r: CaptureResult = await captureAndDeriveTripGps(t.id);
     if (r.status === 'ok') ok++;
     else if (r.status === 'partial') partial++;
     else if (r.status === 'empty') empty++;
@@ -91,7 +116,7 @@ router.post('/recapture/:tripId', asyncHandler(async (req: Request, res: Respons
     res.status(400).json({ error: 'tripId không hợp lệ' });
     return;
   }
-  const result = await captureTripGpsTrack(tripId);
+  const result = await captureAndDeriveTripGps(tripId);
   res.json(result);
 }));
 

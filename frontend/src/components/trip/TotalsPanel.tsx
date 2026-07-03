@@ -112,7 +112,7 @@ export function TotalsPanel() {
 
       {/* 2. Revenue hero (inset) */}
       <section className="tc-totals__revenue">
-        <p className="tc-totals__revenue-label">Doanh thu (Expected)</p>
+        <p className="tc-totals__revenue-label">Doanh thu</p>
         <p className="tc-totals__revenue-value">
           <Money value={revenueNum} />
         </p>

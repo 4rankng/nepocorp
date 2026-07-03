@@ -216,7 +216,17 @@
   display: grid;
   gap: 14px;
 }
-.tc-field-row--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.tc-field-row--2,
+.tc-field-row--3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container (max-width: 620px) {
+  .tc-field-row--2,
+  .tc-field-row--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /* Input polish — match the deep-luxe palette */
 .tc-card .input {

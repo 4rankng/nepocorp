@@ -515,14 +515,21 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         return;
       }
       if (!s.cargoTypeId) {
-        const msg = "Cargo type is required.";
+        const msg = "Loại hàng là bắt buộc.";
         s.setError(msg);
         showToast({ kind: 'error', message: msg });
         focusAndScroll("cargoTypeId");
         return;
       }
+      if (!s.plannedContainerTypeId && !s.containerRows.some(r => r.containerTypeId)) {
+        const msg = "Loại container là bắt buộc.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("plannedContainerTypeId");
+        return;
+      }
       if (!s.departureDate) {
-        const msg = "Departure date is required.";
+        const msg = "Ngày khởi hành là bắt buộc.";
         s.setError(msg);
         showToast({ kind: 'error', message: msg });
         focusAndScroll("departureDate");
@@ -530,21 +537,21 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       }
       if (s.carrierType === 'OWN') {
         if (!s.truckId) {
-          const msg = "Truck is required.";
+          const msg = "Xe đầu kéo là bắt buộc.";
           s.setError(msg);
           showToast({ kind: 'error', message: msg });
           focusAndScroll("truckId");
           return;
         }
         if (!s.trailerType) {
-          const msg = "Trailer type is required.";
+          const msg = "Loại rơ moóc là bắt buộc.";
           s.setError(msg);
           showToast({ kind: 'error', message: msg });
           focusAndScroll("trailerType");
           return;
         }
         if (!s.driverId) {
-          const msg = "Driver is required.";
+          const msg = "Lái xe là bắt buộc.";
           s.setError(msg);
           showToast({ kind: 'error', message: msg });
           focusAndScroll("driverId");
@@ -589,11 +596,10 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
       s.setSubmitting(true);
       try {
-        // Container numbers/seals are operational actuals, not planning-time
-        // required fields. A row that only carries the planned container type is
-        // not persisted here; once the user starts entering actual container
-        // data, the row can still be saved while the container number is unknown.
-        const rowHasActualData = (r: ContainerFormRow) => Boolean(
+        // Container type is planning data and must be preserved even when the
+        // operational actuals (container number, seals, photos) are not known yet.
+        const rowShouldPersist = (r: ContainerFormRow) => Boolean(
+          r.containerTypeId ||
           r.containerNumber.trim() ||
           r.seals.some(sl => sl.sealNumber.trim()) ||
           r.cargoWeightKg ||
@@ -601,8 +607,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           r.photoKeys.cont.length > 0 ||
           r.photoKeys.seal.length > 0,
         );
-        const actualRows = s.containerRows.filter(rowHasActualData);
-        for (const r of actualRows) {
+        const rowsToPersist = s.containerRows.filter(rowShouldPersist);
+        for (const r of rowsToPersist) {
           // No half-filled seal rows: if any seal field is present, the number is required.
           for (const sl of r.seals) {
             const hasPartial = sl.sealNumber.trim() || sl.sealType.trim() || sl.notes.trim();
@@ -620,7 +626,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // reconcile: insert/update by id, delete rows not in the list.
         const saveContainers = async (id: number) => {
           const containers = s.containerRows
-            .filter(rowHasActualData)
+            .filter(rowShouldPersist)
             .map(r => ({
               id: r.id,
               containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
@@ -874,6 +880,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         }
         const count = resolveContainerCount(s.containerCount);
         createPayload.containerCount = count;
+        createPayload.containerTypeId = Number(s.plannedContainerTypeId || s.containerRows.find(r => r.containerTypeId)?.containerTypeId);
         const trip = await api.post<{ id: number }>("/trips", createPayload);
 
         // Upload any create-mode OCR photos now that we have a trip id,

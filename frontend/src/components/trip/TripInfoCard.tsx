@@ -203,12 +203,13 @@ export function TripInfoCard(props: TripInfoCardProps) {
         </div>
 
         <div className="trip-info-card__container-grid">
-          <Field label="Số cont" required>
+          <Field label="Số lượng cont" required>
             <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
             <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Mặc định: 1</span>
           </Field>
-          <Field label="Loại container" className="trip-info-card__container-type">
+          <Field label="Loại container" required className="trip-info-card__container-type">
             {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId')}
+            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số container/seal cập nhật sau</span>
           </Field>
 
           {/* VAT rate */}

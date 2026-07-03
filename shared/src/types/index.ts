@@ -815,6 +815,7 @@ export interface CreateTripRequest {
   departureDate: string;
   customerReference?: string;
   containerCount?: number;
+  containerTypeId: number;
   fuelMode?: FuelMode;
   fuelSupplierId?: number | null;
   vatRate?: number;
@@ -941,6 +942,30 @@ export interface DashboardStats {
   fleetStatus?: Record<string, number>;
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
   topShareholder?: { name: string; percentage: number } | null;
+  decisionItems?: DashboardDecisionItem[];
+}
+
+export type DashboardDecisionSeverity = 'critical' | 'warning' | 'info' | 'success';
+
+export type DashboardDecisionKind =
+  | 'receivables'
+  | 'dispatch'
+  | 'renewal'
+  | 'fuel'
+  | 'trip-lock'
+  | 'trip-data'
+  | 'profit-close'
+  | 'all-clear';
+
+export interface DashboardDecisionItem {
+  id: string;
+  kind: DashboardDecisionKind;
+  severity: DashboardDecisionSeverity;
+  title: string;
+  subtitle: string;
+  actionLabel?: string;
+  route?: string;
+  priority: number;
 }
 
 /** Parse a threshold value safely — returns fallback for NaN/null/undefined */

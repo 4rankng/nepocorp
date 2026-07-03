@@ -13,8 +13,8 @@ export function getStatusColor(status: string): string {
 }
 
 /**
- * Absolute-positioned color bar for the left edge of a table cell or card.
- * Parent must have `position: 'relative'`.
+ * Absolute-positioned short status marker on the left edge of a table cell or card.
+ * Parent must have `position: 'relative'`. This is intentionally NOT full-height.
  * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
 export function StatusStrip({ status, color }: { status?: string; color?: string }) {
@@ -27,7 +27,7 @@ export function StatusStrip({ status, color }: { status?: string; color?: string
       transform: 'translateY(-50%)',
       width: 4,
       height: 32,
-      borderRadius: '0 4px 4px 0',
+      borderRadius: '0 999px 999px 0',
       background: bg,
       pointerEvents: 'none',
     }} />
