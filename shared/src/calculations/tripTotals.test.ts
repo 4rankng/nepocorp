@@ -298,7 +298,8 @@ test('OWN trip with 8% VAT: freightExVat = revenue / 1.08', () => {
   assert.strictEqual(r.freightExVat, 10000000);  // 10800000 / 1.08
 });
 
-test('OWN trip with ancillary fees: serviceMargin included in grossProfit', () => {
+test('OWN trip with ancillary fees: service amounts do not affect transport grossProfit', () => {
+  const base = computeTripTotals({ ...BASE_A4, vatRate: 0.08 });
   const r = computeTripTotals({
     ...BASE_A4,
     vatRate: 0.08,
@@ -307,11 +308,12 @@ test('OWN trip with ancillary fees: serviceMargin included in grossProfit', () =
       { buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 },  // markup: sell ex-VAT 1000000, buy incl-VAT 540000 -> margin 460000
     ],
   });
-  // Per spec section 4.6.1 & 4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
-  // buy incl-VAT: 540000 + 540000 = 1080000; sell ex-vat: 500000 + 1000000 = 1500000
-  assert.strictEqual(r.totalServiceBuy, 1080000);
+  // Service/ocean-fee values are for debit notes and customer AR only.
+  // Transport P&L does not track the buy side or service margin.
+  assert.strictEqual(r.totalServiceBuy, 0);
   assert.strictEqual(r.totalServiceSell, 1500000);
-  assert.strictEqual(r.serviceMargin, 420000);  // 1500000 - 1080000
+  assert.strictEqual(r.serviceMargin, 0);
+  assert.strictEqual(r.grossProfit, base.grossProfit);
 });
 
 test('EXTERNAL trip: totalCost = externalFreightCost, margin uses incl-VAT cost (§4.7)', () => {
@@ -325,11 +327,11 @@ test('EXTERNAL trip: totalCost = externalFreightCost, margin uses incl-VAT cost 
   assert.strictEqual(r.externalFreightExVat, 5000000);  // informational ex-VAT field (display only)
   assert.strictEqual(r.externalMargin, 4600000);   // 10000000 ex-VAT − 5400000 incl-VAT (§4.7)
   assert.strictEqual(r.totalCost, 5400000);        // incl-VAT stored for AP
-  assert.strictEqual(r.grossProfit, 4600000);      // externalMargin + serviceMargin(0)
+  assert.strictEqual(r.grossProfit, 4600000);      // external carrier margin only
   assert.strictEqual(r.totalFuelCost, 920000);     // still computed but not in totalCost
 });
 
-test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () => {
+test('EXTERNAL trip with service fees: service amounts do not affect transport grossProfit', () => {
   const r = computeTripTotals({
     ...BASE_A4,
     vatRate: 0.08,
@@ -337,9 +339,10 @@ test('EXTERNAL trip with service fees: grossProfit includes serviceMargin', () =
     externalFreightCost: 5400000,
     ancillaryFees: [{ buyAmount: 540000, sellAmount: 1080000, vatRate: 0.08 }],
   });
-  // sell ex-VAT: 1000000, buy incl-VAT: 540000 -> serviceMargin = 460000
-  assert.strictEqual(r.serviceMargin, 460000);
-  assert.strictEqual(r.grossProfit, 5060000);  // externalMargin(4600000 incl-VAT) + serviceMargin(460000)
+  assert.strictEqual(r.serviceMargin, 0);
+  assert.strictEqual(r.totalServiceBuy, 0);
+  assert.strictEqual(r.totalServiceSell, 1000000);
+  assert.strictEqual(r.grossProfit, 4600000);
 });
 
 test('auto-calculated road allowance when tollsAddition is 0', () => {
@@ -431,5 +434,5 @@ test('commission does not affect EXTERNAL trip grossProfit (margin-based)', () =
   assert.strictEqual(r.recordedRevenue, 9500000);    // still computed (commission reduces it) but unused for EXTERNAL
   // externalMargin is based on freightExVat − externalFreightCost(incl-VAT), NOT recordedRevenue — so commission is irrelevant
   assert.strictEqual(r.externalMargin, 4600000);     // 10000000 ex-VAT − 5400000 incl-VAT (§4.7)
-  assert.strictEqual(r.grossProfit, 4600000);         // externalMargin + serviceMargin(0); commission had no effect
+  assert.strictEqual(r.grossProfit, 4600000);         // external carrier margin only; commission had no effect
 });

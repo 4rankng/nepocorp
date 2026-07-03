@@ -812,20 +812,6 @@ export const tripExpenseSchema = baseTripExpenseSchema.superRefine((data, ctx) =
       message: 'Số tờ khai là bắt buộc cho phí hải quan',
     });
   }
-  if (data.settlementMethod === 'COMPANY_DIRECT' && !data.supplierId) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['supplierId'],
-      message: 'Nhà cung cấp là bắt buộc khi chọn công ty trả trực tiếp',
-    });
-  }
-  if (data.settlementMethod === 'FORWARDER_ADVANCE' && !data.forwarderId) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['forwarderId'],
-      message: 'Forwarder là bắt buộc khi chọn tạm ứng qua forwarder',
-    });
-  }
 });
 
 export const forwarderExpenseTypeSchema = z.object({

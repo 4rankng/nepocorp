@@ -454,9 +454,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     photoUrls,
   ]);
 
+  const totalRequiredFields = 8;
+
   const completedSections = useMemo(() => {
     let count = 0;
-    if (completionStatus.mainInfo >= 7) count++;
+    if (completionStatus.mainInfo >= totalRequiredFields) count++;
     if (completionStatus.journey >= 1) count++;
     if (completionStatus.fuelRevenue >= 2) count++;
     if (completionStatus.images >= 1) count++;
@@ -595,30 +597,21 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
       s.setSubmitting(true);
       try {
-        // Containers share the unified save; validate up front so a row that
-        // has seal/weight/type but no Số container aborts BEFORE any trip
-        // figures are written (avoids partial saves + a confusing backend
-        // error). Mirrors the old per-card validation.
-        const expectedContainers = resolveContainerCount(s.containerCount);
-        const rowHasAny = (r: ContainerFormRow) => Boolean(
+        // Container numbers/seals are operational actuals, not planning-time
+        // required fields. A row that only carries the planned container type is
+        // not persisted here; once the user starts entering actual container
+        // data, the row must have a container number so the backend can save it
+        // unambiguously.
+        const rowHasActualData = (r: ContainerFormRow) => Boolean(
           r.containerNumber.trim() ||
           r.seals.some(sl => sl.sealNumber.trim()) ||
           r.cargoWeightKg ||
           r.notes.trim() ||
-          r.containerTypeId ||
           r.photoKeys.cont.length > 0 ||
           r.photoKeys.seal.length > 0,
         );
-        const plannedRows = s.containerRows.filter(rowHasAny);
-        if (plannedRows.length < expectedContainers) {
-          const msg = `Cần nhập đủ ${expectedContainers} cont theo số lượng đã khai báo.`;
-          s.setError(msg);
-          showToast({ kind: 'error', message: msg });
-          const firstEmptyRow = s.containerRows.find(r => !rowHasAny(r));
-          if (firstEmptyRow) focusAndScroll(`containerNumber-${firstEmptyRow._key}`);
-          return;
-        }
-        for (const [idx, r] of plannedRows.entries()) {
+        const actualRows = s.containerRows.filter(rowHasActualData);
+        for (const [idx, r] of actualRows.entries()) {
           if (!r.containerNumber.trim()) {
             const msg = `Cont #${idx + 1}: cần nhập số container.`;
             s.setError(msg);
@@ -650,7 +643,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         // reconcile: insert/update by id, delete rows not in the list.
         const saveContainers = async (id: number) => {
           const containers = s.containerRows
-            .filter(rowHasAny)
+            .filter(rowHasActualData)
             .map(r => ({
               id: r.id,
               containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
@@ -1039,7 +1032,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     completionStatus,
     completedSections,
     requiredFieldsFilled,
-    totalRequiredFields: 8,
+    totalRequiredFields,
     handleSubmit,
     selectedRouteData,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,

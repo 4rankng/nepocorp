@@ -138,10 +138,10 @@ function ExpenseTypeForm({
                 onChange={e => setDefaultMarkup(e.target.checked)}
                 style={{ width: 16, height: 16, cursor: 'pointer' }}
               />
-              <span>Cho phép cộng lãi</span>
+              <span>Cho phép báo khách khác số gốc</span>
             </label>
             <span style={{ fontSize: 11, color: 'var(--ink-3)', paddingLeft: 24 }}>
-              (Bán ra ≠ Mua vào)
+              (Báo khách ≠ số gốc)
             </span>
           </div>
         </div>

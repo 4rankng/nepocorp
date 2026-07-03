@@ -48,9 +48,9 @@ export interface ComputeTripTotalsOutput {
   grossProfit: number;
   freightExVat: number;        // revenue / (1 + vatRate); equals revenue when vatRate=0
   recordedRevenue: number;     // freightExVat - customerCommission; P&L revenue after commission
-  serviceMargin: number;       // sum(sellExVat - buyInclVat) across ancillary fees; 0 when none
-  totalServiceBuy: number;     // sum buyAmount incl-VAT (cost component, per spec section 4.6.1)
-  totalServiceSell: number;    // sum sellAmount ex-VAT (revenue component)
+  serviceMargin: number;       // service/ocean-fee profit tracking is intentionally out of scope
+  totalServiceBuy: number;     // retained for compatibility; not used in trip P&L
+  totalServiceSell: number;    // sum sellAmount ex-VAT for billing/AR reference only
   externalMargin: number;      // freightExVat - externalFreightCost(incl-VAT) per §4.7; 0 for OWN trips
   externalFreightExVat: number; // informational: externalFreightCost/(1+vatRate); 0 for OWN trips (display only — margin uses incl-VAT cost)
 }
@@ -141,18 +141,16 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     ? Math.round(input.revenue / (1 + vatRate))
     : input.revenue;
 
-  // Ancillary service margin -- per spec section 4.6.1 and 4.7:
-  //   sell side = ex-VAT (revenue perspective), buy side = incl-VAT (cost perspective).
-  //   This follows the asymmetric VAT principle: revenue ex-VAT, costs incl-VAT.
+  // Ancillary services/ocean-fee amounts are entered only for debit notes and
+  // customer receivables. The transport P&L deliberately excludes their buy
+  // side, payable, and margin tracking.
   const fees = input.ancillaryFees ?? [];
-  let totalServiceBuyInclVat = 0;
   let totalServiceSellExVat = 0;
   for (const fee of fees) {
     const feeVat = fee.vatRate ?? 0.080;
-    totalServiceBuyInclVat += fee.buyAmount;  // incl-VAT, no stripping
     totalServiceSellExVat  += feeVat > 0 ? Math.round(fee.sellAmount / (1 + feeVat)) : fee.sellAmount;
   }
-  const serviceMargin = totalServiceSellExVat - totalServiceBuyInclVat;
+  const serviceMargin = 0;
 
   // Toll cost — separate from road allowance for transparent P&L display.
   // computeRoadAllowance already subtracts tolls from the base rate (driver pays tolls
@@ -176,12 +174,12 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     externalMargin = freightExVat - extCost;
     // For external trips: cost = external freight only (no fuel/allowance/salary)
     totalCost = extCost;
-    grossProfit = externalMargin + serviceMargin;
+    grossProfit = externalMargin;
   } else {
     // OWN trip: total cost = fuel + road allowance (net) + tolls + ticket paid by company + salary + bonuses
     totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.tollsDiscount + input.driverSalary
       + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
-    grossProfit = recordedRevenue - totalCost + serviceMargin;
+    grossProfit = recordedRevenue - totalCost;
   }
 
   return {
@@ -197,7 +195,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     freightExVat,
     recordedRevenue,
     serviceMargin,
-    totalServiceBuy: totalServiceBuyInclVat,
+    totalServiceBuy: 0,
     totalServiceSell: totalServiceSellExVat,
     externalMargin,
     externalFreightExVat,

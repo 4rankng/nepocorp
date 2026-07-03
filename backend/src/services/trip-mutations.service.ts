@@ -530,9 +530,9 @@ export async function updateTripFigures(
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
     const customerCommission = data.customerCommission !== undefined ? data.customerCommission : Number(trip.customerCommission || 0);
 
-    // 4. Compute Totals using pure shared function
-    //    Query ancillary fees for this trip (exclude rejected) so service margin
-    //    is included in the stored grossProfit.
+    // 4. Compute Totals using pure shared function. Ancillary service/ocean-fee
+    //    amounts are receivables/debit-note data only; computeTripTotals keeps
+    //    them out of transport grossProfit.
     const tripFees = await tx.select({
       buyAmount: s.tripExpenses.buyAmount,
       sellAmount: s.tripExpenses.sellAmount,

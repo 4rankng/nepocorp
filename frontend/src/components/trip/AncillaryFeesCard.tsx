@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
 import { tripClient } from '../../api/tripClient';
-import { api } from '../../lib/api';
 import { formatCurrency, formatNumber } from '../../lib/format';
 import { useAuth } from '../../hooks/useAuth';
 import { useCatalogs } from '../../hooks/useCatalogs';
@@ -29,9 +28,9 @@ function AncillaryEmptyState() {
           <line x1="19" y1="23" x2="25" y2="23" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: '#14532d' }}>Chưa có chi phí dịch vụ</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#14532d' }}>Chưa có dịch vụ đi kèm</div>
       <div style={{ fontSize: 13, color: '#4b7a5a', maxWidth: 320, lineHeight: 1.5 }}>
-        Thêm phí nâng/hạ, hải quan, cân hàng… để theo dõi lãi dịch vụ cho chuyến này.
+        Thêm phí nâng/hạ, hải quan, cân hàng… để lên giấy báo nợ và theo dõi công nợ phải thu.
       </div>
     </div>
   );
@@ -89,11 +88,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: catalogData } = useCatalogs();
-  const { data: usersData } = useQuery({
-    queryKey: qk.catalogs.users,
-    queryFn: () => api.get<{ items: Array<{ id: number; username: string | null; fullName: string | null; role: string; status: string }> }>('/auth/users'),
-    staleTime: 5 * 60 * 1000,
-  });
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const canApprove = !!user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
@@ -117,19 +111,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   });
 
   const expenses: (TripExpense & { supplierName?: string | null })[] = data ?? [];
-  const forwarderOptions = useMemo(
-    () => (usersData?.items ?? [])
-      .filter(u => u.role === 'FORWARDER' && u.status === 'ACTIVE')
-      .sort((a, b) => (a.fullName || a.username || '').localeCompare(b.fullName || b.username || '', 'vi')),
-    [usersData?.items],
-  );
-
-  useEffect(() => {
-    if (form.settlementMethod !== 'FORWARDER_ADVANCE') return;
-    if (form.forwarderId || forwarderOptions.length !== 1) return;
-    setForm(f => ({ ...f, forwarderId: String(forwarderOptions[0].id) }));
-  }, [form.forwarderId, form.settlementMethod, forwarderOptions]);
-
   const handleExpenseTypeChange = (newType: string) => {
     const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, newType);
 
@@ -188,19 +169,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   const handleAdd = async () => {
     setFormError('');
     if (!form.buyAmount || Number(form.buyAmount) <= 0) {
-      setFormError('Vui lòng nhập số tiền mua vào hợp lệ.');
+      setFormError('Vui lòng nhập số tiền gốc hợp lệ.');
       return;
     }
     if (form.expenseType === 'CUSTOMS' && !form.declarationNumber.trim()) {
       setFormError('Số tờ khai là bắt buộc cho phí hải quan.');
-      return;
-    }
-    if (form.settlementMethod === 'COMPANY_DIRECT' && !form.supplierId) {
-      setFormError('Vui lòng chọn nhà cung cấp khi công ty trả trực tiếp.');
-      return;
-    }
-    if (form.settlementMethod === 'FORWARDER_ADVANCE' && !form.forwarderId) {
-      setFormError('Vui lòng chọn người chi hộ khi chọn tạm ứng qua forwarder.');
       return;
     }
     setSubmitting(true);
@@ -210,8 +183,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
         buyAmount: Number(form.buyAmount),
         sellAmount: form.sellAmount ? Number(form.sellAmount) : 0,
         settlementMethod: form.settlementMethod,
-        supplierId: form.settlementMethod === 'COMPANY_DIRECT' && form.supplierId ? Number(form.supplierId) : undefined,
-        forwarderId: form.settlementMethod === 'FORWARDER_ADVANCE' && form.forwarderId ? Number(form.forwarderId) : undefined,
+        supplierId: form.supplierId ? Number(form.supplierId) : undefined,
+        forwarderId: form.forwarderId ? Number(form.forwarderId) : undefined,
         containerNumber: form.containerNumber.trim() || undefined,
         invoiceNumber: form.invoiceNumber.trim() || undefined,
         invoiceDate: form.invoiceDate || undefined,
@@ -270,19 +243,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
 
   const totalBuy = expenses.reduce((s, e) => s + Number(e.buyAmount), 0);
   const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
-  const totalMargin = totalSell - totalBuy;
-
   const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, form.expenseType);
-
-  const buyVal = Number(form.buyAmount) || 0;
-  const sellVal = Number(form.sellAmount) || 0;
-  const liveMargin = sellVal - buyVal;
 
   return (
     <div>
       {isLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg-3)', fontSize: 13 }}>
-          <Loader2 size={14} className="spin" /> Đang tải chi phí…
+          <Loader2 size={14} className="spin" /> Đang tải dịch vụ…
         </div>
       ) : (
         <>
@@ -294,10 +261,9 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   <thead>
                     <tr>
                       <th>Loại phí</th>
-                      <th className="num" style={{ color: 'var(--ink-3)' }}>Mua vào</th>
-                      <th className="num" style={{ color: 'var(--ink-3)' }}>Bán ra</th>
-                      <th className="num" style={{ fontWeight: 700, color: 'var(--ink)' }}>Lãi DV</th>
-                      <th>Nhà CC</th>
+                      <th className="num" style={{ color: 'var(--ink-3)' }}>Gốc</th>
+                      <th className="num" style={{ color: 'var(--ink-3)' }}>Báo khách</th>
+                      <th className="num" style={{ fontWeight: 700, color: 'var(--ink)' }}>Báo nợ</th>
                       <th>Chứng từ</th>
                       <th>Trạng thái</th>
                     </tr>
@@ -306,7 +272,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     {expenses.map((fee, i) => {
                       const buy = Number(fee.buyAmount);
                       const sell = Number(fee.sellAmount);
-                      const margin = sell - buy;
                       const canDecide = canApprove && fee.approvalStatus === 'PENDING';
                       const isBusy = pendingId === fee.id;
                       return (
@@ -315,9 +280,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                             <div style={{ lineHeight: 1.25 }}>
                               <div>{feeTypeLabel(fee.expenseType)}</div>
                               <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', padding: '2px 4px', borderRadius: 4 }}>
-                                  {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
-                                </span>
                                 {fee.containerNumber && (
                                   <span style={{ fontSize: 11, color: 'var(--ink-3)' }} className="mono">
                                     {fee.containerNumber}
@@ -335,14 +297,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                           <td
                             className="num"
                             style={{
-                              color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)',
+                              color: sell > 0 ? 'var(--success)' : 'var(--ink-3)',
                               fontWeight: 700,
                             }}
                           >
-                            {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : ''}
-                          </td>
-                          <td style={{ fontSize: 12, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={fee.supplierName || ''}>
-                            {fee.supplierName ?? ''}
+                            {sell > 0 ? formatCurrency(sell) : ''}
                           </td>
                           <td
                             style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis' }}
@@ -441,7 +400,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         className="ancillary-fees__add-row"
                         onClick={() => { setForm(EMPTY_FORM); setFormError(''); setEditingId(null); setShowForm(true); }}
                       >
-                        <td colSpan={7}>
+                        <td colSpan={6}>
                           <Plus size={13} /> Thêm phí
                         </td>
                       </tr>
@@ -452,13 +411,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                       <td colSpan={1}>Tổng</td>
                       <td className="num">{formatNumber(totalBuy)}</td>
                       <td className="num">{formatNumber(totalSell)}</td>
-                      <td
-                        className="num"
-                        style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}
-                      >
-                        {formatNumber(totalMargin)}
-                      </td>
-                      <td colSpan={3}></td>
+                      <td className="num" style={{ color: 'var(--success)' }}>{formatNumber(totalSell)}</td>
+                      <td colSpan={2}></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -470,7 +424,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   {expenses.map((fee, i) => {
                     const buy = Number(fee.buyAmount);
                     const sell = Number(fee.sellAmount);
-                    const margin = sell - buy;
                     const canDecide = canApprove && fee.approvalStatus === 'PENDING';
                     const isBusy = pendingId === fee.id;
                     return (
@@ -478,9 +431,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         <div className="ancillary-fee-card__head">
                           <div className="ancillary-fee-card__name">
                             <span>{feeTypeLabel(fee.expenseType)}</span>
-                            <span className="ancillary-fee-card__badge">
-                              {fee.settlementMethod === 'COMPANY_DIRECT' ? 'Cty trả' : 'Tạm ứng'}
-                            </span>
                           </div>
                           <div className="ancillary-fee-card__status">
                             {fee.approvalStatus === 'APPROVED' ? (
@@ -495,28 +445,27 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
 
                         <div className="ancillary-fee-card__amounts">
                           <div className="ancillary-fee-card__amount">
-                            <span className="ancillary-fee-card__label">Mua vào</span>
+                            <span className="ancillary-fee-card__label">Gốc</span>
                             <span className="ancillary-fee-card__value mono">{buy > 0 ? formatCurrency(buy) : '—'}</span>
                           </div>
                           <div className="ancillary-fee-card__amount">
-                            <span className="ancillary-fee-card__label">Bán ra</span>
+                            <span className="ancillary-fee-card__label">Báo khách</span>
                             <span className="ancillary-fee-card__value mono">{sell > 0 ? formatCurrency(sell) : '—'}</span>
                           </div>
                           <div className="ancillary-fee-card__amount">
-                            <span className="ancillary-fee-card__label">Lãi DV</span>
+                            <span className="ancillary-fee-card__label">Báo nợ</span>
                             <span
                               className="ancillary-fee-card__value ancillary-fee-card__value--margin mono"
-                              style={{ color: margin > 0 ? 'var(--success)' : margin < 0 ? 'var(--danger)' : 'var(--ink-3)' }}
+                              style={{ color: sell > 0 ? 'var(--success)' : 'var(--ink-3)' }}
                             >
-                              {margin !== 0 ? `${formatCurrency(margin)} ${margin > 0 ? '↑' : '↓'}` : '—'}
+                              {sell > 0 ? formatCurrency(sell) : '—'}
                             </span>
                           </div>
                         </div>
 
-                        {(fee.containerNumber || fee.supplierName || fee.invoiceNumber || fee.declarationNumber) && (
+                        {(fee.containerNumber || fee.invoiceNumber || fee.declarationNumber) && (
                           <div className="ancillary-fee-card__meta">
                             {fee.containerNumber && <span className="mono">{fee.containerNumber}</span>}
-                            {fee.supplierName && <span>{fee.supplierName}</span>}
                             {fee.invoiceNumber && <span>HĐ {fee.invoiceNumber}</span>}
                             {fee.declarationNumber && <span>TK {fee.declarationNumber}</span>}
                           </div>
@@ -563,18 +512,16 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   <span className="ancillary-fees__mobile-totals-label">Tổng</span>
                   <div className="ancillary-fees__mobile-totals-nums">
                     <div>
-                      <span className="ancillary-fee-card__label">Mua</span>
+                      <span className="ancillary-fee-card__label">Gốc</span>
                       <span className="mono">{formatNumber(totalBuy)}</span>
                     </div>
                     <div>
-                      <span className="ancillary-fee-card__label">Bán</span>
+                      <span className="ancillary-fee-card__label">Báo khách</span>
                       <span className="mono">{formatNumber(totalSell)}</span>
                     </div>
                     <div>
-                      <span className="ancillary-fee-card__label">Lãi</span>
-                      <span className="mono" style={{ color: totalMargin >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
-                        {formatNumber(totalMargin)}
-                      </span>
+                      <span className="ancillary-fee-card__label">Báo nợ</span>
+                      <span className="mono" style={{ color: 'var(--success)', fontWeight: 700 }}>{formatNumber(totalSell)}</span>
                     </div>
                   </div>
                 </div>
@@ -597,7 +544,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
           {!readOnly && (
             <Modal
               isOpen={showForm}
-              title={editingId ? 'Sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ'}
+              title={editingId ? 'Sửa dịch vụ đi kèm' : 'Thêm dịch vụ đi kèm'}
               onClose={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
               onConfirm={handleAdd}
               footer={
@@ -647,56 +594,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   </div>
 
                   <div className="field">
-                    <label style={{ fontSize: 12 }}>Hình thức thanh toán</label>
-                    <select
-                      className="input"
-                      value={form.settlementMethod}
-                      onChange={(e) => setForm(f => ({
-                        ...f,
-                        settlementMethod: e.target.value as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
-                        supplierId: '',
-                        forwarderId: '',
-                      }))}
-                    >
-                      <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
-                      <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
-                    </select>
-                  </div>
-
-                  {form.settlementMethod === 'FORWARDER_ADVANCE' && (
-                    <div className="field" style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: 12 }}>Người chi hộ *</label>
-                      <select
-                        className="input"
-                        value={form.forwarderId}
-                        onChange={(e) => setForm(f => ({ ...f, forwarderId: e.target.value }))}
-                      >
-                        <option value="">-- Chọn người chi hộ --</option>
-                        {forwarderOptions.map(f => (
-                          <option key={f.id} value={f.id}>{f.fullName || f.username || `Forwarder #${f.id}`}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {form.settlementMethod === 'COMPANY_DIRECT' && (
-                    <div className="field" style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: 12 }}>Nhà cung cấp *</label>
-                      <select
-                        className="input"
-                        value={form.supplierId}
-                        onChange={(e) => setForm(f => ({ ...f, supplierId: e.target.value }))}
-                      >
-                        <option value="">-- Chọn nhà cung cấp --</option>
-                        {catalogData?.suppliers?.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="field">
-                    <label style={{ fontSize: 12 }}>Mua vào *</label>
+                    <label style={{ fontSize: 12 }}>Số tiền gốc *</label>
                     <InputWithPrefix
                       value={form.buyAmount}
                       onChange={handleBuyAmountChange}
@@ -709,7 +607,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
 
                   <div className="field">
                     <label style={{ fontSize: 12 }}>
-                      Bán ra {hasMarkup ? '' : '(= mua vào)'}
+                      Báo khách {hasMarkup ? '' : '(= số tiền gốc)'}
                     </label>
                     {hasMarkup ? (
                       <InputWithPrefix
@@ -736,8 +634,8 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   </div>
 
                   <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: liveMargin >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                      Lãi: <span className="mono">{formatCurrency(liveMargin)}</span>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--success)' }}>
+                      Báo nợ: <span className="mono">{formatCurrency(Number(form.sellAmount) || 0)}</span>
                     </div>
                   </div>
 

@@ -7,8 +7,8 @@
  *
  *   (a) Σ own-truck profit == adjustedGrossProfit.
  *       Scoped to OWN trucks only (`truck.id !== 0`). The "Xe ngoài" external
- *       bucket folds `externalMargin + serviceMargin` INTO its `profit`
- *       (pnl.service.ts:231) while adjustedGrossProfit counts OWN trips only
+ *       bucket folds external carrier margin INTO its `profit` while
+ *       adjustedGrossProfit counts OWN trips only
  *       (pnl.service.ts:36) — so the literal "Σ all trucks" form is FALSE when
  *       external trips exist. This is the own/external asymmetry flagged by the
  *       Critic; scoping to own trucks makes the invariant true and meaningful.
@@ -21,9 +21,8 @@
  *       truck-profit side excludes them; the algebraic netProfit check below
  *       guarantees the single-entry side.
  *
- *   (c) Own-truck `serviceMargin` is folded into both truck profit and
- *       netProfit through adjustedGrossProfit. This prevents the stale
- *       denormalized `trips.grossProfit` divergence found in feedback202606.
+ *   (c) Ancillary service/ocean-fee margin is intentionally excluded from
+ *       transport P&L. Those amounts feed debit notes and customer AR only.
  *
  * Tolerance: VND is integer (numeric scale 0). Revenue is rounded per-trip for
  * VAT stripping (pnl.service.ts:64), so Σ per-trip-rounded grossProfit can drift
@@ -162,30 +161,29 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
     );
   });
 
-  test('(c) own-truck serviceMargin is folded into netProfit through adjustedGrossProfit', () => {
+  test('(c) service/ocean-fee margin stays out of transport P&L', () => {
     if (!report) { assert.ok(true, 'no report'); return; }
-    // Service margin is part of report.grossProfit, so the netProfit formula
-    // remains simple while still including approved service fee margin.
+    assert.equal(report.serviceMarginTotal, 0, 'serviceMarginTotal is compatibility-only and stays zero');
+    for (const truck of report.trucks) {
+      assert.equal(truck.serviceMargin ?? 0, 0, `truck ${truck.plate || truck.id} serviceMargin stays zero`);
+    }
     const netProfitFormula =
       report.grossProfit - report.managementFee - report.companyExpenses + report.otherIncome;
     const diff = Math.abs(report.netProfit - netProfitFormula);
     assert.ok(
       diff <= tolerance(),
-      `netProfit (${report.netProfit}) must equal adjustedGrossProfit-inclusive formula (${netProfitFormula}); diff=${diff}.`,
+      `netProfit (${report.netProfit}) must equal transport-only formula (${netProfitFormula}); diff=${diff}.`,
     );
   });
 
-  test('(c.2) external "Xe ngoài" bucket folds serviceMargin into profit (asymmetry pinned)', () => {
+  test('(c.2) external "Xe ngoài" bucket profit equals external carrier margin only', () => {
     if (!report) { assert.ok(true, 'no report'); return; }
     const ext = report.trucks.find(t => t.id === 0);
     if (!ext) { assert.ok(true, 'no external trips this period'); return; }
-    // Own-truck serviceMargin is stranded (not in profit); external bucket's
-    // profit DOES include its serviceMargin (pnl.service.ts:231). Pin the
-    // asymmetry so it cannot drift silently in either direction.
-    const extProfitReconstructed = (ext.externalMargin ?? 0) + (ext.serviceMargin ?? 0);
+    const extProfitReconstructed = ext.externalMargin ?? 0;
     assert.ok(
       Math.abs(ext.profit - extProfitReconstructed) <= tolerance(),
-      `external "Xe ngoài" profit (${ext.profit}) must equal externalMargin + serviceMargin (${extProfitReconstructed}) — asymmetric to own trucks`,
+      `external "Xe ngoài" profit (${ext.profit}) must equal externalMargin (${extProfitReconstructed})`,
     );
   });
 });

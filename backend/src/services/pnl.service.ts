@@ -2,7 +2,7 @@
  * P&L Report Service
  *
  * P&L report generation with per-truck breakdown, maintenance expenses,
- * service margins, and external carrier trip margins.
+ * external carrier trip margins.
  */
 
 import { db } from '../db';
@@ -35,46 +35,13 @@ export async function getPnlReport(month: number, year: number) {
     // For P&L totals, only OWN trips contribute to freight revenue/costs
     const trips = ownTrips;
 
-    // Fetch all approved ancillary fees for trips in this period (one query)
-    const tripIds = monthTrips.map(t => t.id);
-    type TripExpenseRow = typeof s.tripExpenses.$inferSelect & { vatRate: string };
-    let allFees: TripExpenseRow[] = [];
-    if (tripIds.length > 0) {
-      const rows = await db.select({
-        fee: s.tripExpenses,
-        vatRate: s.forwarderExpenseTypes.vatRate,
-      }).from(s.tripExpenses)
-        .innerJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
-        .where(and(
-          inArray(s.tripExpenses.tripId, tripIds),
-          eq(s.tripExpenses.approvalStatus, 'APPROVED'),
-        ));
-      allFees = rows.map(r => ({ ...r.fee, vatRate: r.vatRate }));
-    }
-    // Build a map: tripId → fees[]
-    const tripFeeMap = new Map<number, TripExpenseRow[]>();
-    for (const fee of allFees) {
-      if (!tripFeeMap.has(fee.tripId)) tripFeeMap.set(fee.tripId, []);
-      tripFeeMap.get(fee.tripId)!.push(fee);
-    }
-    const serviceMarginForTrip = (tripId: number) => {
-      const tripFees = tripFeeMap.get(tripId) ?? [];
-      return tripFees.reduce((sum, f) => {
-        const feeVat = Number(f.vatRate || 0.080);
-        const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
-        const buyIncl = Number(f.buyAmount); // incl-VAT per spec §4.6.1
-        return sum + (sellEx - buyIncl);
-      }, 0);
-    };
-
     const totalRevenue = trips.reduce((sum, t) => {
       const rev = parseFloat(t.revenue || '0');
       const vat = Number(t.vatRate || 0);
       return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
     }, 0);
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
-    const ownServiceMarginTotal = trips.reduce((sum, t) => sum + serviceMarginForTrip(t.id), 0);
-    const grossProfit = totalRevenue - totalCosts + ownServiceMarginTotal;
+    const grossProfit = totalRevenue - totalCosts;
 
     const managementFee = 0;
 
@@ -157,14 +124,10 @@ export async function getPnlReport(month: number, year: number) {
       const tripVat = Number(trip.vatRate || 0);
       const tripRevenueExVat = tripVat > 0 ? Math.round(tripRev / (1 + tripVat)) : tripRev;
       const tripCosts = parseFloat(trip.totalCost || '0');
-      const tripServiceMargin = serviceMarginForTrip(trip.id);
       existing.revenue += tripRevenueExVat;
       existing.costs += tripCosts;
-      existing.profit += tripRevenueExVat - tripCosts + tripServiceMargin;
+      existing.profit += tripRevenueExVat - tripCosts;
       existing.trips++;
-      // Accumulate service margin from approved ancillary fees
-      // Per spec §4.6.1 & §4.7: sell ex-VAT, buy incl-VAT (asymmetric VAT)
-      existing.serviceMargin += tripServiceMargin;
       byTruck.set(trip.truckId, existing);
     }
     for (const [truckId, mtnExp] of maintenanceExpensesByTruck) {
@@ -201,16 +164,6 @@ export async function getPnlReport(month: number, year: number) {
 
     // Add "Xe ngoài" bucket for external carrier trips
     if (extTrips.length > 0) {
-      const extServiceMargin = extTrips.reduce((sum, t) => {
-        const tripFees = tripFeeMap.get(t.id) ?? [];
-        return sum + tripFees.reduce((s, f) => {
-          const feeVat = Number(f.vatRate || 0.080);
-          const sellEx = feeVat > 0 ? Math.round(Number(f.sellAmount) / (1 + feeVat)) : Number(f.sellAmount);
-          const buyIncl = Number(f.buyAmount);  // incl-VAT per spec §4.6.1
-          return s + (sellEx - buyIncl);
-        }, 0);
-      }, 0);
-
       const extMgmtMargin = extTrips.reduce((sum, t) => {
         const vat = Number(t.vatRate ?? 0);
         const rev = Number(t.revenue ?? 0);
@@ -232,8 +185,8 @@ export async function getPnlReport(month: number, year: number) {
         trips: extTrips.length,
         revenue: extRevenue,
         costs: extCosts,
-        profit: extMgmtMargin + extServiceMargin,
-        serviceMargin: extServiceMargin,
+        profit: extMgmtMargin,
+        serviceMargin: 0,
         externalMargin: extMgmtMargin,
         maintenanceExpenses: 0,
       });

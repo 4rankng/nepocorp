@@ -400,7 +400,7 @@ export default function TripEditPage() {
                 </div>
               </CardSection>
 
-              <CardSection number={7} span={2} title="Chi phí dịch vụ đi kèm" subtitle="Phí nâng/hạ, hải quan, cân hàng, kiểm hóa…">
+              <CardSection number={7} span={2} title="Dịch vụ đi kèm" subtitle="Phí nâng/hạ, hải quan, cân hàng, kiểm hóa… để lên giấy báo nợ">
                 <AncillaryFeesCard tripId={trip.id} />
               </CardSection>
 

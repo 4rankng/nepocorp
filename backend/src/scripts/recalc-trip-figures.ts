@@ -5,11 +5,12 @@
  * correct). Only fixes the three bugs:
  *   1. Revenue not stripped of VAT when computing grossProfit
  *   2. EXTERNAL trips using fuel/road/salary instead of externalFreightCost
- *   3. Service margin from ancillary fees was always 0
+ *   3. Ancillary service/ocean fees are receivables-only and excluded from
+ *      transport profit.
  *
- * For OWN trips:  grossProfit = freightExVat - totalCost + serviceMargin
+ * For OWN trips:  grossProfit = freightExVat - totalCost
  * For EXTERNAL:   totalCost = externalFreightCost
- *                 grossProfit = freightExVat - externalFreightExVat + serviceMargin
+ *                 grossProfit = freightExVat - externalFreightExVat
  *
  * Usage:
  *   cd backend && npx tsx src/scripts/recalc-trip-figures.ts [--dry-run]
@@ -17,7 +18,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, ne, inArray } from 'drizzle-orm';
+import { eq, and, isNull, ne } from 'drizzle-orm';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -40,36 +41,6 @@ async function main() {
     return;
   }
 
-  const tripIds = trips.map(t => t.id);
-
-  // Batch fetch ancillary fees (non-rejected)
-  const feesMap = new Map<number, Array<{ buyAmount: number; sellAmount: number; vatRate: number }>>();
-  const BATCH = 100;
-  for (let i = 0; i < tripIds.length; i += BATCH) {
-    const batch = tripIds.slice(i, i + BATCH);
-    const fees = await db.select({
-      tripId: s.tripExpenses.tripId,
-      buyAmount: s.tripExpenses.buyAmount,
-      sellAmount: s.tripExpenses.sellAmount,
-      vatRate: s.forwarderExpenseTypes.vatRate,
-    }).from(s.tripExpenses)
-      .innerJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
-      .where(
-        and(
-          inArray(s.tripExpenses.tripId, batch),
-          ne(s.tripExpenses.approvalStatus, 'REJECTED'),
-        )
-      );
-    for (const fee of fees) {
-      if (!feesMap.has(fee.tripId)) feesMap.set(fee.tripId, []);
-      feesMap.get(fee.tripId)!.push({
-        buyAmount: Number(fee.buyAmount || 0),
-        sellAmount: Number(fee.sellAmount || 0),
-        vatRate: Number(fee.vatRate || 0.080),
-      });
-    }
-  }
-
   let updated = 0;
   let unchanged = 0;
   let errors = 0;
@@ -79,16 +50,8 @@ async function main() {
       const vatRate = Number(trip.vatRate || 0);
       const carrierType = trip.carrierType ?? 'OWN';
       const revenue = Number(trip.revenue || 0);
-      const fees = feesMap.get(trip.id) ?? [];
 
       const freightExVat = stripVat(revenue, vatRate);
-
-      // Service margin: sum of (sellExVat - buyExVat) across ancillary fees
-      const serviceMargin = fees.reduce((sum, f) => {
-        const sellEx = stripVat(f.sellAmount, f.vatRate);
-        const buyEx = stripVat(f.buyAmount, f.vatRate);
-        return sum + (sellEx - buyEx);
-      }, 0);
 
       let newTotalCost: number;
       let newGrossProfit: number;
@@ -97,11 +60,11 @@ async function main() {
         const extCost = Number(trip.externalFreightCost || 0);
         const extCostExVat = stripVat(extCost, vatRate);
         newTotalCost = extCost;
-        newGrossProfit = (freightExVat - extCostExVat) + serviceMargin;
+        newGrossProfit = freightExVat - extCostExVat;
       } else {
         // OWN trip: keep stored totalCost (fuel/road/salary already correct)
         newTotalCost = Number(trip.totalCost || 0);
-        newGrossProfit = freightExVat - newTotalCost + serviceMargin;
+        newGrossProfit = freightExVat - newTotalCost;
       }
 
       const oldGrossProfit = Number(trip.grossProfit || 0);
@@ -122,7 +85,7 @@ async function main() {
       if (oldTotalCost !== newTotalCost) {
         parts.push(`cost ${oldTotalCost.toLocaleString()} → ${newTotalCost.toLocaleString()}`);
       }
-      parts.push(`vat=${vatRate} carrier=${carrierType} fees=${fees.length}`);
+      parts.push(`vat=${vatRate} carrier=${carrierType}`);
 
       console.log(`Trip ${trip.tripCode || trip.id}: ${parts.join(' | ')}`);
 

@@ -221,7 +221,7 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
     const { trip, customer } = await createInTransitTripWithFees(
       { revenue: 2_000_000 },
       [
-        // Sell side is zero — no AR posting should occur (buy side still posts).
+        // Sell side is zero — no AR posting should occur.
         { buyAmount: 70_000, sellAmount: 0, settlementMethod: 'COMPANY_DIRECT' },
       ],
     );
@@ -313,8 +313,8 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
   // Null-counterparty fee guards (validateAncillaryFees / strict vs skip)
   // ─────────────────────────────────────────────────────────────────────────
 
-  test('strict completion throws on an APPROVED null-counterparty fee and posts no SERVICE_FEE', async () => {
-    const { trip } = await createInTransitTripWithFees({ revenue: 5_000_000 }, []);
+  test('strict completion posts an APPROVED fee without a payable counterparty to customer AR', async () => {
+    const { trip, customer } = await createInTransitTripWithFees({ revenue: 5_000_000 }, []);
     const fee = await insertRawFee(trip.id, {
       buyAmount: 100_000,
       sellAmount: 120_000,
@@ -324,19 +324,19 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
       approvalStatus: 'APPROVED',
     });
 
-    // Completion drives postTripLock with strict:true (default) → must throw.
-    await assert.rejects(
-      () => transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER),
-      /chưa có đối tác thanh toán/,
-    );
+    await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
 
-    // The sell-side SERVICE_FEE for this fee must NOT have been posted.
     const feeLedgerRows = await db.select().from(s.ledger)
       .where(eq(s.ledger.txnId, fee.id));
-    assert.equal(feeLedgerRows.length, 0, 'no ledger row posted for the rejected fee');
+    assert.equal(feeLedgerRows.length, 1, 'SERVICE_FEE row posted for receivables-only fee');
+    assert.equal(feeLedgerRows[0].entityType, 'CUSTOMER');
+    assert.equal(feeLedgerRows[0].entityId, customer.id);
+    assert.equal(feeLedgerRows[0].txnType, TxnType.SERVICE_FEE);
+    assert.equal(feeLedgerRows[0].debit, '120000');
+    assert.equal(feeLedgerRows[0].credit, '0');
   });
 
-  test('non-strict postTripLock skips the null-counterparty fee but still posts unrelated entries', async () => {
+  test('non-strict postTripLock also posts a null-counterparty fee to customer AR', async () => {
     // Build a minimal IN_TRANSIT trip (no driver — postTripLock does not require
     // one) so the only entries are TRIP_REVENUE + the (skipped) fee.
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -400,13 +400,16 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
       );
     });
 
-    // The bad fee id is reported as skipped.
-    assert.ok(skipped.includes(fee.id), `skipped ids ${JSON.stringify(skipped)} include fee ${fee.id}`);
+    assert.deepEqual(skipped, [], 'receivables-only fees are not skipped for missing payable counterparties');
 
-    // No ledger row for the skipped fee (neither buy nor sell side).
+    // The fee still posts to CUSTOMER AR; no payable-side row is needed.
     const feeRows = await db.select().from(s.ledger)
       .where(eq(s.ledger.txnId, fee.id));
-    assert.equal(feeRows.length, 0, 'skipped fee produced no ledger row');
+    assert.equal(feeRows.length, 1, 'fee produced one SERVICE_FEE AR row');
+    assert.equal(feeRows[0].txnType, TxnType.SERVICE_FEE);
+    assert.equal(feeRows[0].entityType, 'CUSTOMER');
+    assert.equal(feeRows[0].debit, '120000');
+    assert.equal(feeRows[0].credit, '0');
 
     // The unrelated TRIP_REVENUE entry still posted.
     const revenueRows = await db.select().from(s.ledger)
@@ -422,38 +425,40 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
   // D2: forwarder.service createTripExpense counterparty guard
   // ─────────────────────────────────────────────────────────────────────────
 
-  test('createTripExpense rejects a FORWARDER_ADVANCE fee with no forwarder', async () => {
+  test('createTripExpense accepts a FORWARDER_ADVANCE fee with no forwarder', async () => {
     const { trip } = await createInTransitTripWithFees({ revenue: 1_000_000 }, []);
-    await assert.rejects(
-      () => createTripExpense(db, {
-        tripId: trip.id,
-        forwarderId: null,
-        expenseType: 'CHI_HO',
-        buyAmount: '100000',
-        sellAmount: '120000',
-        settlementMethod: 'FORWARDER_ADVANCE',
-        supplierId: null,
-        note: null,
-      }),
-      /Forwarder là bắt buộc/,
-    );
+    const inserted = await createTripExpense(db, {
+      tripId: trip.id,
+      forwarderId: null,
+      expenseType: 'CHI_HO',
+      buyAmount: '100000',
+      sellAmount: '120000',
+      settlementMethod: 'FORWARDER_ADVANCE',
+      supplierId: null,
+      note: null,
+    });
+    assert.ok(inserted.id, 'fee inserted without payable counterparty');
+    assert.equal(inserted.forwarderId, null);
+    assert.equal(inserted.approvalStatus, 'APPROVED');
+    createdExpenseIds.push(inserted.id);
   });
 
-  test('createTripExpense rejects a COMPANY_DIRECT fee with no supplier', async () => {
+  test('createTripExpense accepts a COMPANY_DIRECT fee with no supplier', async () => {
     const { trip } = await createInTransitTripWithFees({ revenue: 1_000_000 }, []);
-    await assert.rejects(
-      () => createTripExpense(db, {
-        tripId: trip.id,
-        forwarderId: null,
-        expenseType: 'CHI_HO',
-        buyAmount: '100000',
-        sellAmount: '120000',
-        settlementMethod: 'COMPANY_DIRECT',
-        supplierId: null,
-        note: null,
-      }),
-      /Nhà cung cấp là bắt buộc/,
-    );
+    const inserted = await createTripExpense(db, {
+      tripId: trip.id,
+      forwarderId: null,
+      expenseType: 'CHI_HO',
+      buyAmount: '100000',
+      sellAmount: '120000',
+      settlementMethod: 'COMPANY_DIRECT',
+      supplierId: null,
+      note: null,
+    });
+    assert.ok(inserted.id, 'fee inserted without payable counterparty');
+    assert.equal(inserted.supplierId, null);
+    assert.equal(inserted.approvalStatus, 'APPROVED');
+    createdExpenseIds.push(inserted.id);
   });
 
   test('createTripExpense accepts a balanced FORWARDER_ADVANCE fee with a forwarder', async () => {

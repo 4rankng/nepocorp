@@ -98,9 +98,10 @@ export default function TripCreatePage() {
             <CardSection
               number={4}
               title="Container & Seal"
-              subtitle="Số cont, seal và ảnh chụp từng cont"
-              badge="required"
+              subtitle="Cập nhật số cont, seal và ảnh chụp khi có dữ liệu thực tế"
+              badge="optional"
               collapsible
+              defaultCollapsed
             >
               <ContainerInstancesCard expectedCount={expectedContainerCount} />
             </CardSection>

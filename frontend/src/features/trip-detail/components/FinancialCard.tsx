@@ -22,7 +22,7 @@ function NegMoney({ value }: { value: number }) {
 export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
   const {
     revenue, fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
-    serviceCost, twoPointDeliveryBonus, vehicleShiftAllowance,
+    twoPointDeliveryBonus, vehicleShiftAllowance,
     totalCost, grossProfit,
   } = derived;
 
@@ -69,10 +69,6 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
           <div className="pl-row">
             <span className="k"><span className="swatch swatch--road" />Tiền lương lái xe</span>
             <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}><NegMoney value={driverSalary} /></span>
-          </div>
-          <div className="pl-row">
-            <span className="k"><span className="swatch swatch--road" />Chi phí dịch vụ</span>
-            <span className={`v ${serviceCost === 0 ? 'zero' : ''}`}><NegMoney value={serviceCost} /></span>
           </div>
           {showTwoPointBonus && (
             <div className="pl-row">

@@ -3,7 +3,6 @@ import * as s from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
-import { ApiError } from '../errors';
 
 /** Common trip shape for ledger lock/unlock operations */
 interface TripLedgerParams {
@@ -85,7 +84,6 @@ export class LedgerService {
     trip: TripLedgerParams
   ): Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> {
     const carrierType = trip.carrierType ?? 'OWN';
-    const fees = trip.ancillaryFees ?? [];
     const entities: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
 
     entities.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
@@ -101,19 +99,6 @@ export class LedgerService {
     if (trip.fuelSupplierId) {
       if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
         entities.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
-      }
-    }
-
-    for (const fee of fees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
-        if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === fee.supplierId)) {
-          entities.push({ entityType: 'VENDOR', entityId: fee.supplierId });
-        }
-      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
-        if (!entities.find(e => e.entityType === 'FORWARDER' && e.entityId === fee.forwarderId)) {
-          entities.push({ entityType: 'FORWARDER', entityId: fee.forwarderId });
-        }
       }
     }
 
@@ -162,42 +147,18 @@ export class LedgerService {
   }
 
   /**
-   * Detect APPROVED ancillary fees that have a buy side (buyAmount > 0) but no
-   * valid payable counterparty — these would produce a one-sided ledger entry
-   * (sell-side SERVICE_FEE posted with no matching buy side).
-   *  - strict:true  → throw ApiError(422) listing the offending fee id(s).
-   *  - strict:false → skip the fee ENTIRELY (post neither buy nor sell), log a
-   *    structured warning, and return the skipped fee ids so callers can surface
-   *    a non-blocking warning. Used on the relock / cancel-from-completed paths
-   *    where a legacy bad fee must not block an unrelated figures edit.
-   * Returns the skipped fee ids (empty in strict mode unless it threw).
+   * Ancillary services/ocean-fee amounts are now receivables-only: they may
+   * post SERVICE_FEE to the customer ledger for debit notes, but they no longer
+   * create payable/cost ledger entries. Keep this compatibility seam so callers
+   * that surface skipped-fee warnings do not need to change.
    */
   private static validateAncillaryFees(
     fees: TripLedgerParams['ancillaryFees'],
     opts: { strict: boolean },
   ): number[] {
-    if (!fees || fees.length === 0) return [];
-    const skipped: number[] = [];
-    for (const fee of fees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      if (Number(fee.buyAmount) <= 0) continue; // no buy side → sell-only is legitimate markup, not one-sided
-      const hasCounterparty =
-        (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) ||
-        (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId);
-      if (!hasCounterparty) {
-        if (opts.strict) {
-          throw new ApiError(
-            422,
-            `Phí chi hộ #${fee.id} đã duyệt nhưng chưa có đối tác thanh toán (nhà cung cấp / forwarder). Vui lòng gán đối tác hoặc đổi phương thức thanh toán.`,
-          );
-        }
-        skipped.push(fee.id);
-        console.warn('[ledger] null-counterparty APPROVED fee skipped (non-strict)', {
-          feeId: fee.id, settlementMethod: fee.settlementMethod,
-        });
-      }
-    }
-    return skipped;
+    void fees;
+    void opts;
+    return [];
   }
 
   /**
@@ -285,44 +246,10 @@ export class LedgerService {
       });
     }
 
-    // ── 5. Ancillary fees — buy side (only APPROVED fees) ──
-    for (const fee of postableFees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      const buyAmt = Number(fee.buyAmount);
-      if (buyAmt <= 0) continue;
-
-      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
-        // Company pays supplier → AP
-        await this.postEntry(tx, {
-          txnType: TxnType.VENDOR_EXPENSE,
-          txnId: fee.id,
-          entityType: 'VENDOR',
-          entityId: fee.supplierId,
-          debit: 0,
-          credit: buyAmt,
-          note: label ? `Chi phí DV chuyến ${label}` : 'Chi phí dịch vụ',
-        });
-      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
-        // Forwarder paid from advance → debit reduces their advance balance
-        await this.postEntry(tx, {
-          txnType: TxnType.FORWARDER_ADVANCE,
-          txnId: fee.id,
-          entityType: 'FORWARDER',
-          entityId: fee.forwarderId,
-          debit: buyAmt,   // FORWARDER balance += credit − debit; debit reduces it
-          credit: 0,
-          note: label ? `Chi hộ DV chuyến ${label}` : 'Chi hộ dịch vụ',
-        });
-      }
-    }
-
-    // ── 6. Ancillary fees — sell side (customer AR for phí chi hộ) ──
-    // The buy side (AP to supplier/forwarder) is posted above in section 5.
-    // The sell side (what the customer owes us for the chi hộ service) hits
-    // the customer's AR ledger so debt notices and statements agree. Only
-    // APPROVED fees are posted HERE, at lock time; a fee still PENDING at
-    // lock is skipped on both sides and only enters the ledger if it is
-    // approved and the trip is re-locked (e.g. via a figures edit).
+    // ── 5. Ancillary fees — sell side only (customer AR for phí chi hộ) ──
+    // These amounts exist to feed debit notes/statements and customer AR. Their
+    // buy side, payable, and profit are intentionally outside this transport
+    // management scope.
     for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;
       const sellAmt = Number(fee.sellAmount);
@@ -424,37 +351,8 @@ export class LedgerService {
       });
     }
 
-    // ── 5. Reverse ancillary fees (only APPROVED, swap debit↔credit) ──
-    for (const fee of postableFees) {
-      if (fee.approvalStatus !== 'APPROVED') continue;
-      const buyAmt = Number(fee.buyAmount);
-      if (buyAmt <= 0) continue;
-
-      if (fee.settlementMethod === 'COMPANY_DIRECT' && fee.supplierId) {
-        await this.postEntry(tx, {
-          txnType: TxnType.UNLOCK_REVERSAL,
-          txnId: fee.id,
-          entityType: 'VENDOR',
-          entityId: fee.supplierId,
-          debit: buyAmt,
-          credit: 0,
-          note: label ? `Chi phí DV chuyến ${label} (Hoàn tác)` : 'Chi phí dịch vụ (Hoàn tác)',
-        });
-      } else if (fee.settlementMethod === 'FORWARDER_ADVANCE' && fee.forwarderId) {
-        await this.postEntry(tx, {
-          txnType: TxnType.UNLOCK_REVERSAL,
-          txnId: fee.id,
-          entityType: 'FORWARDER',
-          entityId: fee.forwarderId,
-          debit: 0,
-          credit: buyAmt,
-          note: label ? `Chi hộ DV chuyến ${label} (Hoàn tác)` : 'Chi hộ dịch vụ (Hoàn tác)',
-        });
-      }
-    }
-
-    // ── 6. Reverse ancillary fees — sell side (customer AR for phí chi hộ) ──
-    // Mirrors section 6 of postTripLock: swap debit↔credit so the net customer
+    // ── 5. Reverse ancillary fees — sell side (customer AR for phí chi hộ) ──
+    // Mirrors section 5 of postTripLock: swap debit↔credit so the net customer
     // contribution from this trip's sell-side fees returns to zero.
     for (const fee of postableFees) {
       if (fee.approvalStatus !== 'APPROVED') continue;

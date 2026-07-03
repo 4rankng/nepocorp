@@ -13,9 +13,9 @@ export function ServiceCostsCard({ tripId, readOnly }: ServiceCostsCardProps) {
       <div className="card-head">
         <h2>
           <span className="hicon hicon--sm"><Receipt size={14} /></span>
-          Chi phí dịch vụ đi kèm
+          Dịch vụ đi kèm
           <span className="sub sub--inline">
-            • Phí nâng/hạ, hải quan, cân hàng…
+            • Lên giấy báo nợ và công nợ phải thu
           </span>
         </h2>
       </div>

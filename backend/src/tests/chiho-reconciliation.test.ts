@@ -301,8 +301,14 @@ describe('US-007 statement XLSX labels SERVICE_FEE as "Phí chi hộ"', () => {
     const chunks: Buffer[] = [];
     const sink = new PassThrough();
     sink.on('data', (c) => chunks.push(Buffer.from(c)));
+    const ended = new Promise<void>((resolve, reject) => {
+      sink.once('end', resolve);
+      sink.once('error', reject);
+    });
 
     await exportStatementXlsx(statement, '2026-06-30', sink);
+    sink.end();
+    await ended;
     const buf = Buffer.concat(chunks);
 
     const ExcelJSMod = await import('exceljs');
