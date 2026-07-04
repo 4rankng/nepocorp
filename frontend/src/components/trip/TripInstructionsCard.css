@@ -65,7 +65,7 @@
   background: var(--accent-soft, rgba(0, 177, 79, 0.08));
   border: 1px solid var(--accent, rgba(0, 177, 79, 0.25));
   border-radius: 999px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 8px 12px;
   line-height: 1.35;
   cursor: pointer;

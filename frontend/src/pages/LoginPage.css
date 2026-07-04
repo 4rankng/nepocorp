@@ -211,8 +211,10 @@
   background: transparent;
   border: none;
   padding: 0;
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
+  min-width: 45px;
+  min-height: 45px;
   border-radius: 10px;
   color: var(--ink-3);
   cursor: pointer;
@@ -308,7 +310,7 @@
   .login-submit { height: 48px; font-size: 15px; }
   .login-footer { font-size: var(--fs-2xs); bottom: 12px; padding: 0 16px; }
   /* Password toggle: keep the tap area comfortable on phones. */
-  .password-toggle { padding: 10px; min-width: 44px; min-height: 44px; }
+  .password-toggle { padding: 10px; min-width: 45px; min-height: 45px; }
   /* Username placeholder was getting clipped — give the input the full row width */
   .login-form .input { width: 100%; min-width: 0; }
   .login-form .field { min-width: 0; }

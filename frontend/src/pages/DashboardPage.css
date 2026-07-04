@@ -384,7 +384,7 @@
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
   /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
-  min-height: 38px;
+  min-height: 45px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);
@@ -1300,12 +1300,12 @@
 /* ── Mobile overrides for new styles ── */
 @media (max-width: 640px) {
   .dash-wf .wf-link {
-    min-height: 44px;
-    padding: 7px 2px;
+    min-height: 45px;
+    padding: 8px 8px;
   }
 
   .dash-wf .wf-chart-toggle__btn {
-    min-height: 44px;
+    min-height: 45px;
     padding: 8px 12px;
   }
 

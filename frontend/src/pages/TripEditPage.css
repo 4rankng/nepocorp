@@ -318,7 +318,7 @@
 .tc-rail-btn {
   width: 100%;
   justify-content: center;
-  min-height: 44px;
+  min-height: 45px;
   font-weight: 600;
   letter-spacing: 0.005em;
 }
@@ -391,7 +391,7 @@
   .tc-mobile-btn {
     flex: 1;
     justify-content: center;
-    min-height: 44px;
+    min-height: 45px;
   }
   .tc-mobile-btn--primary {
     flex: 2;

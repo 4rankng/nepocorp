@@ -1561,7 +1561,7 @@
 }
 
 .debit-editor-preview__intro .debit-editor-canvas-input {
-  min-height: 32px;
+  min-height: 45px;
   padding: 5px 4px;
   border-radius: 3px;
   font-family: "Times New Roman", Times, serif;

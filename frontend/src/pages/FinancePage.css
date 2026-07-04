@@ -408,7 +408,7 @@
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
-  min-height: 38px;
+  min-height: 45px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);

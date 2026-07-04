@@ -28,7 +28,8 @@
    `!important` (project rule). Inputs/selects sit inside `.ci-row` or the
    photos grid, so we anchor specificity at the row parent. */
 .input.ci-input-sm {
-  height: 36px;
+  min-height: 45px;
+  height: 45px;
   padding: 0 12px;
   font-size: 14px;
   border-radius: 8px;
@@ -73,7 +74,7 @@ select.input.ci-input-sm {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -128,8 +129,8 @@ select.input.ci-input-sm {
 /* Empty-photos placeholder so the cell has a visible affordance before the
    driver takes the first shot. Small footprint to match the compact chrome. */
 .ci-photo-empty {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 45px;
+  min-width: 45px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

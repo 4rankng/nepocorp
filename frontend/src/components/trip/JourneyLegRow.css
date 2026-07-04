@@ -67,6 +67,7 @@
 
 /* Compact input modifier */
 .input--sm {
+  min-height: 45px;
   padding: 7px 10px;
   font-size: var(--fs-sm);
 }

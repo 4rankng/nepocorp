@@ -10,7 +10,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 45px;
   padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border-1);
