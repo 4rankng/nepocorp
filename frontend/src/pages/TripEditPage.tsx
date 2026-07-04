@@ -16,6 +16,7 @@ import { TotalsPanel } from '../components/trip/TotalsPanel';
 import { PhotoUploader } from '../components/trip/PhotoUploader';
 import { JourneyLegsCard } from '../components/trip/JourneyLegsCard';
 import { CardSection } from '../components/trip/CardSection';
+import { InputWithPrefix } from '../components/trip/InputWithPrefix';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { AncillaryFeesCard } from '../components/trip/AncillaryFeesCard';
 import { TripInstructionsCard } from '../components/trip/TripInstructionsCard';
@@ -311,14 +312,14 @@ export default function TripEditPage() {
                       </div>
                       <div className="tc-field">
                         <label className="tc-field-label">Giá cước thuê ngoài (gồm VAT) <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
-                        <input
+                        <InputWithPrefix
                           id="externalFreightCost"
-                          className="input mono"
-                          type="number"
-                          min={0}
-                          placeholder="VD: 5000000"
                           value={form.externalFreightCost}
-                          onChange={(e) => form.setExternalFreightCost(e.target.value)}
+                          onChange={form.setExternalFreightCost}
+                          placeholder="VD: 5.000.000"
+                          prefix="đ"
+                          type="money"
+                          mono
                         />
                       </div>
                     </div>
@@ -363,34 +364,37 @@ export default function TripEditPage() {
                     <div className="tc-field-row tc-field-row--2">
                       <div className="tc-field">
                         <label className="tc-field-label">Doanh thu đóng/ trả hàng (đ)</label>
-                        <input
-                          className="input mono"
-                          type="number"
+                        <InputWithPrefix
                           placeholder="VD: 4.200.000"
                           value={form.revenueEmptyReturn}
-                          onChange={(e) => form.setRevenueEmptyReturn(e.target.value)}
+                          onChange={form.setRevenueEmptyReturn}
+                          prefix="đ"
+                          type="money"
+                          mono
                         />
                       </div>
                       <div className="tc-field">
                         <label className="tc-field-label">Doanh thu kết hợp (đ)</label>
-                        <input
-                          className="input mono"
-                          type="number"
+                        <InputWithPrefix
                           placeholder="VD: 2.000.000"
                           value={form.revenueCombine}
-                          onChange={(e) => form.setRevenueCombine(e.target.value)}
+                          onChange={form.setRevenueCombine}
+                          prefix="đ"
+                          type="money"
+                          mono
                         />
                       </div>
                     </div>
                     <div className="tc-field-row">
                       <div className="tc-field">
                         <label className="tc-field-label">Hoa hồng khách hàng (đ)</label>
-                        <input
-                          className="input mono"
-                          type="number"
+                        <InputWithPrefix
                           placeholder="0"
                           value={form.customerCommission}
-                          onChange={(e) => form.setCustomerCommission(e.target.value)}
+                          onChange={form.setCustomerCommission}
+                          prefix="đ"
+                          type="money"
+                          mono
                         />
                       </div>
                     </div>

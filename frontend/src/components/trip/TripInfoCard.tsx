@@ -1,5 +1,6 @@
 import React from 'react';
 import { CardSection } from './CardSection';
+import { InputWithPrefix } from './InputWithPrefix';
 import { RouteChips } from './RouteChips';
 import type { SelectOption, RouteOption, TrailerTypeOption } from '../../hooks/useTripOptions';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
@@ -142,14 +143,14 @@ export function TripInfoCard(props: TripInfoCardProps) {
                 </select>
               </Field>
               <Field label="Giá cước thuê ngoài (gồm VAT)">
-                <input
+                <InputWithPrefix
                   id="externalFreightCost"
-                  className="input mono"
-                  type="number"
-                  min={0}
-                  placeholder="VD: 5000000"
                   value={form.externalFreightCost}
-                  onChange={(e) => form.setExternalFreightCost(e.target.value)}
+                  onChange={form.setExternalFreightCost}
+                  placeholder="VD: 5.000.000"
+                  prefix="đ"
+                  type="money"
+                  mono
                 />
               </Field>
               <Field label="Biển số xe">

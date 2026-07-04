@@ -45,6 +45,7 @@ test('createTripSchema accepts a per-trip actual pump price', () => {
     customerId: 1,
     routeId: 1,
     cargoTypeId: 1,
+    containerTypeId: 1,
     departureDate: '2026-01-01',
     carrierType: 'EXTERNAL',
     externalCarrierId: 2,

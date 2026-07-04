@@ -27,10 +27,23 @@ import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } fro
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
 import type { ContainerFormRow, SealFormRow } from './useTripFormState';
 import { createFallbackLegsFromRouteName, resolveContainerCount } from './tripFormDispatchUtils';
+import { moneyInputToNumber } from '../lib/moneyInput';
 
 const FUEL_PRICE_PER_LITER = FUEL_PRICE_PER_LITER_FALLBACK;
 const LOADED_RATE = FUEL_LOADED_NORM_FALLBACK;
 const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
+
+function moneyOrZero(value: string): number {
+  return moneyInputToNumber(value) ?? 0;
+}
+
+function moneyOrUndefined(value: string): number | undefined {
+  return moneyInputToNumber(value);
+}
+
+function moneyOrNull(value: string): number | null {
+  return moneyInputToNumber(value) ?? null;
+}
 
 /** Shape returned by PUT /api/trips/:id/containers — same as Phase 2
  *  `TripContainer` with the new `seals[]` and `photos[]` sub-collections. */
@@ -117,8 +130,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     // is resolved server-side from whatever splits are actually sent
     // (undefined = not-provided; feedback202606 A3 §9).
     if (!s.revenueEmptyReturn.trim() && !s.revenueCombine.trim()) return;
-    const emptyReturn = Number(s.revenueEmptyReturn) || 0;
-    const combine = Number(s.revenueCombine) || 0;
+    const emptyReturn = moneyOrZero(s.revenueEmptyReturn);
+    const combine = moneyOrZero(s.revenueCombine);
     s.setRevenue(String(emptyReturn + combine));
     // 's' object omitted: individual s.* fields listed are the correct granularity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -362,8 +375,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
   const estimatedTollCost = useMemo(() => {
     const base = isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : 0;
-    const discount = Number(s.tollsDiscount) || 0;
-    const addition = Number(s.tollsAddition) || 0;
+    const discount = moneyOrZero(s.tollsDiscount);
+    const addition = moneyOrZero(s.tollsAddition);
     const stations = Number(s.tollsStations) || 0;
 
     const perStation = isEditMode && existingTrip?.tollPerStationApplied
@@ -388,9 +401,9 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       (Number(s.revenue) || 0) -
       estimatedFuelCost -
       estimatedTollCost -
-      (Number(s.driverSalary) || 0) -
-      (Number(s.twoPointDeliveryBonus) || 0) -
-      (Number(s.vehicleShiftAllowance) || 0),
+      moneyOrZero(s.driverSalary) -
+      moneyOrZero(s.twoPointDeliveryBonus) -
+      moneyOrZero(s.vehicleShiftAllowance),
     [s.revenue, estimatedFuelCost, estimatedTollCost, s.driverSalary, s.twoPointDeliveryBonus, s.vehicleShiftAllowance],
   );
 
@@ -767,29 +780,29 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
             fuelLitersOverride: s.fuelMode === FuelMode.FLAT_RATE ? (s.fuelLitersOverride ? Number(s.fuelLitersOverride) : 0) : undefined,
             fuelSupplementLiters: s.fuelSupplementLiters ? Number(s.fuelSupplementLiters) : 0,
             fuelSupplementReason: s.fuelSupplementReason.trim() || undefined,
-            tollsDiscount: s.tollsDiscount ? Number(s.tollsDiscount) : 0,
-            tollsAddition: s.tollsAddition ? Number(s.tollsAddition) : 0,
+            tollsDiscount: moneyOrZero(s.tollsDiscount),
+            tollsAddition: moneyOrZero(s.tollsAddition),
             tollsStations: s.tollsStations ? Number(s.tollsStations) : 0,
             hasReturnCargo: s.hasReturnCargo,
-            driverSalary: s.driverSalary ? Number(s.driverSalary) : undefined,
-            twoPointDeliveryBonus: s.twoPointDeliveryBonus ? Number(s.twoPointDeliveryBonus) : 0,
-            vehicleShiftAllowance: s.vehicleShiftAllowance ? Number(s.vehicleShiftAllowance) : 0,
+            driverSalary: moneyOrUndefined(s.driverSalary),
+            twoPointDeliveryBonus: moneyOrZero(s.twoPointDeliveryBonus),
+            vehicleShiftAllowance: moneyOrZero(s.vehicleShiftAllowance),
             // Revenue is split-based; `revenue` is derived and recomputed
             // server-side from the splits. Send splits as `undefined` when
             // untouched (NOT 0) so resolveRevenue preserves stored revenue, and
             // omit the derived `revenue` copy — sending it would zero stored
             // revenue whenever both splits are blank. feedback202606 A3 §9.
-            revenueEmptyReturn: s.revenueEmptyReturn.trim() ? Number(s.revenueEmptyReturn) : undefined,
-            revenueCombine: s.revenueCombine.trim() ? Number(s.revenueCombine) : undefined,
+            revenueEmptyReturn: moneyOrUndefined(s.revenueEmptyReturn),
+            revenueCombine: moneyOrUndefined(s.revenueCombine),
             notes: s.notes.trim() || undefined,
-            roadAllowanceOverride: s.roadAllowanceOverride !== '' ? Number(s.roadAllowanceOverride) : null,
-            fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,
+            roadAllowanceOverride: moneyOrNull(s.roadAllowanceOverride),
+            fuelActualUnitPrice: moneyOrNull(s.fuelActualUnitPrice),
             fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
-            customerCommission: Number(s.customerCommission) || 0,
+            customerCommission: moneyOrZero(s.customerCommission),
             tripWageDays: s.tripWageDays ? Number(s.tripWageDays) : undefined,
             carrierType: s.carrierType,
             externalCarrierId: s.carrierType === 'EXTERNAL' ? (s.externalCarrierId ?? null) : null,
-            externalFreightCost: s.carrierType === 'EXTERNAL' ? (s.externalFreightCost ? Number(s.externalFreightCost) : null) : null,
+            externalFreightCost: s.carrierType === 'EXTERNAL' ? moneyOrNull(s.externalFreightCost) : null,
             externalPlateNumber: s.carrierType === 'EXTERNAL' ? (s.externalPlateNumber.trim() || null) : null,
             externalDriverName: s.carrierType === 'EXTERNAL' ? (s.externalDriverName.trim() || null) : null,
             externalDriverPhone: s.carrierType === 'EXTERNAL' ? (s.externalDriverPhone.trim() || null) : null,
@@ -858,9 +871,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           fuelSupplierId: s.carrierType === 'OWN' ? (s.fuelSupplierId ?? null) : null,
           // Per-trip actual pump price — only OWN trips consume fuel. Blank
           // (null) falls back to the config snapshot server-side.
-          fuelActualUnitPrice: s.carrierType === 'OWN' && s.fuelActualUnitPrice !== ''
-            ? Number(s.fuelActualUnitPrice)
-            : null,
+          fuelActualUnitPrice: s.carrierType === 'OWN' ? moneyOrNull(s.fuelActualUnitPrice) : null,
         };
         if (s.carrierType === 'OWN') {
           createPayload.truckId = Number(s.truckId);
@@ -870,7 +881,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
           createPayload.truckId = null;
           createPayload.driverId = null;
           createPayload.externalCarrierId = s.externalCarrierId ?? undefined;
-          createPayload.externalFreightCost = s.externalFreightCost ? Number(s.externalFreightCost) : undefined;
+          createPayload.externalFreightCost = moneyOrUndefined(s.externalFreightCost);
           createPayload.externalPlateNumber = s.externalPlateNumber.trim() || undefined;
           createPayload.externalDriverName = s.externalDriverName.trim() || undefined;
           createPayload.externalDriverPhone = s.externalDriverPhone.trim() || undefined;
@@ -939,25 +950,25 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
               ? Number(s.fuelSupplementLiters)
               : 0,
             fuelSupplementReason: s.fuelSupplementReason.trim() || undefined,
-            tollsDiscount: s.tollsDiscount ? Number(s.tollsDiscount) : 0,
-            tollsAddition: s.tollsAddition ? Number(s.tollsAddition) : 0,
+            tollsDiscount: moneyOrZero(s.tollsDiscount),
+            tollsAddition: moneyOrZero(s.tollsAddition),
             tollsStations: s.tollsStations ? Number(s.tollsStations) : 0,
             hasReturnCargo: s.hasReturnCargo,
-            driverSalary: s.driverSalary ? Number(s.driverSalary) : undefined,
-            twoPointDeliveryBonus: s.twoPointDeliveryBonus ? Number(s.twoPointDeliveryBonus) : 0,
-            vehicleShiftAllowance: s.vehicleShiftAllowance ? Number(s.vehicleShiftAllowance) : 0,
+            driverSalary: moneyOrUndefined(s.driverSalary),
+            twoPointDeliveryBonus: moneyOrZero(s.twoPointDeliveryBonus),
+            vehicleShiftAllowance: moneyOrZero(s.vehicleShiftAllowance),
             // Revenue is split-based; `revenue` is derived and recomputed
             // server-side from the splits. Send splits as `undefined` when
             // untouched (NOT 0) so resolveRevenue preserves stored revenue, and
             // omit the derived `revenue` copy — sending it would zero stored
             // revenue whenever both splits are blank. feedback202606 A3 §9.
-            revenueEmptyReturn: s.revenueEmptyReturn.trim() ? Number(s.revenueEmptyReturn) : undefined,
-            revenueCombine: s.revenueCombine.trim() ? Number(s.revenueCombine) : undefined,
+            revenueEmptyReturn: moneyOrUndefined(s.revenueEmptyReturn),
+            revenueCombine: moneyOrUndefined(s.revenueCombine),
             notes: s.notes.trim() || undefined,
             photoUrls: finalPhotoUrls,
-            fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,
+            fuelActualUnitPrice: moneyOrNull(s.fuelActualUnitPrice),
             fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
-            customerCommission: Number(s.customerCommission) || 0,
+            customerCommission: moneyOrZero(s.customerCommission),
             tripWageDays: s.tripWageDays ? Number(s.tripWageDays) : undefined,
           };
           await api.put(`/trips/${trip.id}/pre-departure`, preDeparturePayload);

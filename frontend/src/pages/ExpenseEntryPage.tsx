@@ -15,6 +15,8 @@ import { FINANCIAL, CONFIG } from '@tingting/shared';
 import { expenseSchema } from '@tingting/shared';
 import type { ExpenseWithRefs, Supplier, ExpenseCategory } from '@tingting/shared';
 import { qk } from '../api/keys';
+import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
+import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import './ExpenseEntryPage.css';
 
 type FormState = {
@@ -103,9 +105,6 @@ export default function ExpenseEntryPage() {
   const trucks = catalogData?.trucks ?? [];
   const trailers = catalogData?.trailers ?? [];
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-
   // Quick-create supplier
   const [showNewSupplier, setShowNewSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState('');
@@ -116,23 +115,18 @@ export default function ExpenseEntryPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
-  // Catalog query is always enabled and short-stale so invalidations (after a
-  // quick-create, below) reliably refetch — the previous `enabled: !catalogsLoaded`
-  // gate permanently disabled refetch after first load, leaving the dropdown stale
-  // until a manual page refresh (B7 / D1).
-  useQuery({
+  const { data: expenseCatalogs, isLoading: loadingExpenseCatalogs } = useQuery({
     queryKey: qk.tripForm.expenseFormCatalogs,
-    queryFn: async () => {
+    queryFn: async (): Promise<ExpenseCatalogs> => {
       const [suppliers, categories] = await Promise.all([
         configClient.getAllSuppliers(),
         configClient.getAllExpenseCategories(),
       ]);
-      setSuppliers(suppliers);
-      setCategories(categories);
       return { suppliers, categories };
     },
     staleTime: 60 * 1000,
   });
+  const { suppliers, categories } = resolveExpenseCatalogs(expenseCatalogs);
 
   const { data: existingExpense, isLoading: loadingExpense } = useQuery<ExpenseWithRefs>({
     queryKey: qk.tripForm.expense(id!),
@@ -268,9 +262,19 @@ export default function ExpenseEntryPage() {
     setCreatingSupplier(true);
     try {
       const created = await api.post<Supplier>(CONFIG.SUPPLIERS, { name: newSupplierName.trim(), status: 'ACTIVE' });
-      setSuppliers(prev => [...prev, created]);
+      queryClient.setQueryData<ExpenseCatalogs>(
+        qk.tripForm.expenseFormCatalogs,
+        old => ({
+          suppliers: old?.suppliers.some(s => s.id === created.id)
+            ? old.suppliers
+            : [...(old?.suppliers ?? []), created],
+          categories: old?.categories ?? categories,
+        }),
+      );
       set('supplierId', created.id);
       await queryClient.invalidateQueries({ queryKey: qk.tripForm.expenseFormCatalogs });
+      await queryClient.invalidateQueries({ queryKey: qk.catalogs.allSuppliers });
+      await queryClient.invalidateQueries({ queryKey: qk.catalogs.all });
       setShowNewSupplier(false);
       setNewSupplierName('');
       toast({ kind: 'success', message: `Đã tạo nhà cung cấp "${created.name}".` });
@@ -286,9 +290,19 @@ export default function ExpenseEntryPage() {
     setCreatingCategory(true);
     try {
       const created = await api.post<ExpenseCategory>(CONFIG.EXPENSE_CATEGORIES, { name: newCategoryName.trim(), isRenewable: false, reminderLeadDays: 30 });
-      setCategories(prev => [...prev, created]);
+      queryClient.setQueryData<ExpenseCatalogs>(
+        qk.tripForm.expenseFormCatalogs,
+        old => ({
+          suppliers: old?.suppliers ?? suppliers,
+          categories: old?.categories.some(c => c.id === created.id)
+            ? old.categories
+            : [...(old?.categories ?? []), created],
+        }),
+      );
       set('categoryId', created.id);
       await queryClient.invalidateQueries({ queryKey: qk.tripForm.expenseFormCatalogs });
+      await queryClient.invalidateQueries({ queryKey: qk.catalogs.allExpenseCategories });
+      await queryClient.invalidateQueries({ queryKey: qk.catalogs.all });
       setShowNewCategory(false);
       setNewCategoryName('');
       toast({ kind: 'success', message: `Đã tạo hạng mục "${created.name}".` });
@@ -528,9 +542,12 @@ export default function ExpenseEntryPage() {
                     id="supplierId"
                     className="expense-input"
                     value={form.supplierId}
+                    disabled={loadingExpenseCatalogs}
                     onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
                   >
-                    <option value="">Chọn nhà cung cấp…</option>
+                    <option value="">
+                      {loadingExpenseCatalogs ? 'Đang tải nhà cung cấp…' : 'Chọn nhà cung cấp…'}
+                    </option>
                     {suppliers.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -575,9 +592,12 @@ export default function ExpenseEntryPage() {
                     id="categoryId"
                     className="expense-input"
                     value={form.categoryId}
+                    disabled={loadingExpenseCatalogs}
                     onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
                   >
-                    <option value="">Chọn hạng mục…</option>
+                    <option value="">
+                      {loadingExpenseCatalogs ? 'Đang tải hạng mục…' : 'Chọn hạng mục…'}
+                    </option>
                     {categories.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}

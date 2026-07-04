@@ -14,8 +14,10 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import { useQuery } from '@tanstack/react-query';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { FINANCIAL } from '@tingting/shared';
-import type { ExpenseWithRefs, PaginatedResponse, Supplier, ExpenseCategory } from '@tingting/shared';
+import type { ExpenseWithRefs, PaginatedResponse } from '@tingting/shared';
 import { qk } from '../api/keys';
+import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
+import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
@@ -74,26 +76,18 @@ export default function ExpenseListPage() {
   const { data: catalogData } = useCatalogs();
   const trucks = catalogData?.trucks ?? [];
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [catalogsLoaded, setCatalogsLoaded] = useState(false);
-
-  useQuery({
-    // eslint-disable-next-line @tingting/no-bare-query-key -- compound query combining suppliers + expense categories; no single qk domain key fits
-    queryKey: ['expense-catalogs'],
-    queryFn: async () => {
+  const { data: expenseCatalogs, isLoading: loadingExpenseCatalogs } = useQuery({
+    queryKey: qk.tripForm.expenseFormCatalogs,
+    queryFn: async (): Promise<ExpenseCatalogs> => {
       const [suppliers, categories] = await Promise.all([
         configClient.getAllSuppliers(),
         configClient.getAllExpenseCategories(),
       ]);
-      setSuppliers(suppliers);
-      setCategories(categories);
-      setCatalogsLoaded(true);
       return { suppliers, categories };
     },
-    enabled: !catalogsLoaded,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
+  const { suppliers, categories } = resolveExpenseCatalogs(expenseCatalogs);
 
   const expenses = expenseData?.items ?? [];
   const total = expenseData?.total ?? 0;
@@ -223,9 +217,10 @@ export default function ExpenseListPage() {
         <select
           className="expense-filter-bar__select"
           value={supplierId}
+          disabled={loadingExpenseCatalogs}
           onChange={e => { setSupplierId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
         >
-          <option value="">Tất cả NCC</option>
+          <option value="">{loadingExpenseCatalogs ? 'Đang tải NCC…' : 'Tất cả NCC'}</option>
           {suppliers.map(s => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -234,9 +229,10 @@ export default function ExpenseListPage() {
         <select
           className="expense-filter-bar__select"
           value={categoryId}
+          disabled={loadingExpenseCatalogs}
           onChange={e => { setCategoryId(e.target.value ? Number(e.target.value) : ''); setPage(1); }}
         >
-          <option value="">Tất cả hạng mục</option>
+          <option value="">{loadingExpenseCatalogs ? 'Đang tải hạng mục…' : 'Tất cả hạng mục'}</option>
           {categories.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}

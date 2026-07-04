@@ -4,6 +4,7 @@ import type { Supplier } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
 import { useCatalogs } from "../../hooks/useCatalogs";
+import { InputWithPrefix } from "./InputWithPrefix";
 import './FuelSection.css';
 import { selectStyleFullWidth, labelStyle } from '../../utils/formStyles';
 
@@ -52,12 +53,13 @@ export function FuelSection() {
   const unitPriceField = (
     <div className="field">
       <label style={labelStyle}>Đơn giá thực tế (đ/lít)</label>
-      <input
-        className="input"
-        type="number"
+      <InputWithPrefix
         placeholder="Để trống = dùng giá cấu hình"
         value={fuelActualUnitPrice}
-        onChange={(e) => setFuelActualUnitPrice(e.target.value)}
+        onChange={setFuelActualUnitPrice}
+        prefix="đ"
+        type="money"
+        mono
         style={{ width: "100%" }}
       />
       <p className="tc-field-hint">
