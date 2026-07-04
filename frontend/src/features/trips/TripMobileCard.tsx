@@ -53,7 +53,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
             <span className="trip-meta-sep">·</span>
             <span>{formatDayMonth(trip.departureDate)}</span>
             <span className="trip-meta-sep">·</span>
-            <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`} style={{ fontSize: 10, padding: '2px 7px' }}>
+            <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`}>
               {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—')}
             </span>
           </div>
@@ -79,10 +79,10 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
         <div className="trip-mcard__containers" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {typeCodes.map((code, i) => (
-              <span key={i} className="container-tag" style={{ fontSize: 10 }}>{code}</span>
+              <span key={i} className="container-tag">{code}</span>
             ))}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 8px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>
+          <div className="trip-mcard__container-numbers">
             {tripContainers.slice(0, 4).map((c, i) => (
               <span key={i}>{c.containerNumber}</span>
             ))}

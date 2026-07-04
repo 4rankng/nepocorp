@@ -84,13 +84,16 @@ export default function ExpenseCategoriesConfigPage() {
           className: 'center',
           render: (cat) => (
             <span style={{
-              display: 'inline-block',
-              padding: '2px 10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: 26,
+              padding: '4px 10px',
               borderRadius: 10,
-              fontSize: 11,
+              fontSize: 12,
+              lineHeight: 1.3,
               fontWeight: 600,
               background: cat.isRenewable ? 'var(--success-soft, #ecfdf5)' : 'var(--bg-2)',
-              color: cat.isRenewable ? 'var(--success)' : 'var(--fg-3)',
+              color: cat.isRenewable ? 'var(--success-text)' : 'var(--fg-2)',
             }}>
               {cat.isRenewable ? 'Có' : 'Không'}
             </span>
@@ -105,13 +108,16 @@ export default function ExpenseCategoriesConfigPage() {
           header: 'Trạng thái',
           render: (cat) => (
             <span style={{
-              display: 'inline-block',
-              padding: '2px 10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: 26,
+              padding: '4px 10px',
               borderRadius: 10,
-              fontSize: 11,
+              fontSize: 12,
+              lineHeight: 1.3,
               fontWeight: 600,
               background: cat.status === 'ACTIVE' ? 'var(--success-soft, #ecfdf5)' : 'var(--bg-2)',
-              color: cat.status === 'ACTIVE' ? 'var(--success)' : 'var(--fg-3)',
+              color: cat.status === 'ACTIVE' ? 'var(--success-text)' : 'var(--fg-2)',
             }}>
               {cat.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng'}
             </span>

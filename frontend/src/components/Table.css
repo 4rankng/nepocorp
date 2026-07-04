@@ -33,7 +33,7 @@
    without ellipsis; the .table-scroll wrapper provides horizontal
    scrolling on narrow containers. */
 .ancillary-fees__table { min-width: 720px; table-layout: fixed; width: 100%; }
-.ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-2xs); }
+.ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-xs); }
 .ancillary-fees__table thead th {
   background:
     linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 46%),
@@ -415,7 +415,7 @@ thead th {
   background: var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-2);
   text-transform: uppercase;
@@ -464,15 +464,15 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--ink-3);
 }
 .page-btn {
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 7px 10px;
   border-radius: 8px;
   color: var(--ink-2);
   font-size: var(--fs-xs);
   font-weight: 500;
   font-family: var(--font-mono);
-  line-height: 1.25;
+  line-height: 1.35;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -485,7 +485,7 @@ tbody tr:last-child td { border-bottom: none; }
 .tt-table thead th {
   text-align: left;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-2);
   padding: 14px 18px;
@@ -516,14 +516,14 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* Misc table helpers */
 .row-strong { font-weight: 600; color: var(--ink); font-size: 13px; }
-.row-meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.row-meta { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; line-height: 1.35; }
 
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
 .row-action {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
   border-radius: 8px;
   display: grid; place-items: center;
   color: var(--ink-3);

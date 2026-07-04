@@ -35,10 +35,12 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
+  line-height: 1.35;
 }
 
 .debt-hero__currency {
   font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 600;
   opacity: 0.6;
 }
@@ -187,7 +189,7 @@
 
 .debt-aging-card__label {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -200,6 +202,7 @@
   gap: 4px;
   font-family: var(--font-display);
   font-size: 22px;
+  line-height: 1.35;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.25;
@@ -208,13 +211,14 @@
 
 .debt-aging-card__unit {
   font-size: 14px;
+  line-height: 1.35;
   font-weight: 500;
   color: var(--ink-3);
 }
 
 .debt-aging-card__count {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
@@ -309,7 +313,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
   flex: 1 1 320px;
   background: linear-gradient(180deg, #ffffff, #f4f7f5);
   border: 1px solid rgba(15, 23, 42, 0.10);
@@ -344,7 +348,7 @@
   font-size: var(--fs-xs);
   color: var(--ink);
   font-weight: 500;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .debt-filter-search input::placeholder {

@@ -495,7 +495,7 @@
   letter-spacing: 0;
   min-width: 20px;
   min-height: 20px;
-  line-height: 1.25;
+  line-height: 1.35;
   padding: 0 5px;
 }
 
@@ -534,7 +534,7 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.user-btn .role { font-size: 13px; font-weight: 500; }
+.user-btn .role { font-size: var(--fs-xs); line-height: 1.35; font-weight: 500; }
 
 /* ─── Notification bell ─────────────────────────────────────────────────── */
 .notif-bell { position: relative; }

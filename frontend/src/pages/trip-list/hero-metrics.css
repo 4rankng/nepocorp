@@ -90,7 +90,7 @@
 .trip-list-page .hero-title-block { min-width: 0; }
 .trip-list-page .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: var(--fs-2xs); letter-spacing: 1.8px; font-weight: 700;
+  font-size: var(--fs-xs); letter-spacing: 1.2px; font-weight: 700;
   color: var(--accent-ink);
   text-transform: uppercase;
   margin-bottom: 9px;
@@ -153,7 +153,7 @@
 }
 .trip-list-page .metric.featured .metric-label { color: var(--accent-ink); }
 .trip-list-page .metric-label {
-  font-size: var(--fs-2xs); letter-spacing: 1.4px;
+  font-size: var(--fs-xs); letter-spacing: 1px;
   color: var(--ink-3);
   font-weight: 600;
   text-transform: uppercase;
@@ -163,14 +163,14 @@
 .trip-list-page .metric-value {
   max-width: 100%;
   font-size: clamp(18px, 1.85vw, var(--fs-2xl)); font-weight: 700;
-  line-height: 1.18; letter-spacing: 0;
+  line-height: 1.35; letter-spacing: 0;
   color: var(--ink);
 }
 .trip-list-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
-.trip-list-page .metric-unit { font-size: var(--fs-sm); color: var(--ink-3); font-weight: 500; margin-left: 4px; }
+.trip-list-page .metric-unit { font-size: var(--fs-sm); color: var(--ink-3); font-weight: 500; margin-left: 4px; line-height: 1.35; }
 .trip-list-page .metric-delta {
   margin-top: 8px;
-  font-size: var(--fs-2xs); font-weight: 600;
+  font-size: var(--fs-xs); font-weight: 600;
   display: inline-flex; align-items: center; gap: 4px;
   line-height: 1.4;
   word-break: break-word;
@@ -196,7 +196,8 @@
 .trip-list-page .breakdown-legend {
   margin-top: 8px;
   display: flex; flex-wrap: wrap; gap: 10px 14px;
-  font-size: var(--fs-2xs); color: var(--ink-2);
+  font-size: var(--fs-xs); color: var(--ink-2);
+  line-height: 1.35;
 }
 .trip-list-page .legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .trip-list-page .legend-dot { width: 7px; height: 7px; border-radius: 2px; }

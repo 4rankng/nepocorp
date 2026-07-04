@@ -656,7 +656,12 @@ export default function TripListPage() {
             </div>
           </div>
           <div className="metric">
-            <div className="metric-label">Tổng giá trị lệnh <span style={{ fontWeight: 400, fontSize: '0.85em', opacity: 0.7 }}>(tất cả trạng thái)</span></div>
+            <div className="metric-label">
+              Tổng giá trị lệnh{' '}
+              <span style={{ fontWeight: 500, fontSize: 'var(--fs-xs)', lineHeight: 1.35, opacity: 0.75 }}>
+                (tất cả trạng thái)
+              </span>
+            </div>
             <div className="metric-value d-mono">
               {formatMoney(summary?.totalRevenue ?? 0)}
               <span className="metric-unit">₫</span>

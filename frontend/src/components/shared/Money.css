@@ -9,17 +9,19 @@
   align-items: baseline;
   gap: 0.15em;
   flex-wrap: wrap;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 /* Digits + sign inherit size / weight / color from the parent context. */
 .money__num,
 .money__sign {
   font-family: var(--font-mono, inherit);
+  line-height: 1.35;
 }
 
 .money__unit {
-  font-size: 0.6em;
+  font-size: max(0.72em, 12px);
+  line-height: 1.35;
   font-weight: 500;
   opacity: 0.65;
   white-space: nowrap;

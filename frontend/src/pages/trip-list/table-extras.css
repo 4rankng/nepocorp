@@ -11,13 +11,13 @@
 .trip-list-page .page-info b { color: var(--ink); font-weight: 700; }
 .trip-list-page .pagination { display: flex; align-items: center; gap: 6px; }
 .trip-list-page .page-btn {
-  min-width: 40px; min-height: 40px;
+  min-width: 44px; min-height: 44px;
   padding: 0 8px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surface);
   border: 1px solid var(--tbl-line-strong);
   border-radius: 8px;
-  font-size: var(--fs-xs); font-weight: 600;
+  font-size: var(--fs-xs); font-weight: 600; line-height: 1.35;
   color: var(--ink-2);
   cursor: pointer;
   font-family: var(--font-body);
@@ -70,13 +70,13 @@
 }
 .trip-list-page .container-numbers-more {
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 
 /* ── Route KM inline ──────────────────────────────────────────────── */
 .trip-list-page .route-km-inline {
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 500;
 }
 

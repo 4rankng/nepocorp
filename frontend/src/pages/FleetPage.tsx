@@ -344,7 +344,7 @@ function TrailerCard({ trailers, trucks, crud }: {
                 <StatusStrip color={fleetStatusColor(t.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>RM</span>
+                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '3px 6px', borderRadius: 4, fontSize: 12, lineHeight: 1.35, letterSpacing: '0.5px' }}>RM</span>
                     {t.licensePlate}
                   </span>
                 </div>
@@ -538,7 +538,7 @@ function TruckCard({ trucks, driverByTruck, trailers, crud }: {
                 <StatusStrip color={fleetStatusColor(t.status)} />
                 <div className="m-card__top">
                   <span className="m-card__title">
-                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '2px 5px', borderRadius: 4, fontSize: 10, letterSpacing: '0.5px' }}>VN</span>
+                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: 'var(--ink)', color: '#fff', padding: '3px 6px', borderRadius: 4, fontSize: 12, lineHeight: 1.35, letterSpacing: '0.5px' }}>VN</span>
                     {t.licensePlate}
                   </span>
                 </div>

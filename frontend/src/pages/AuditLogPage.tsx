@@ -167,7 +167,7 @@ export default function AuditLogPage() {
             Chọn một dòng bất kỳ bên bảng để xem phân tích dữ liệu chi tiết của yêu cầu.
           </p>
           <div style={{ width: '100%', borderTop: '1px solid var(--line)', marginTop: 24, paddingTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
               <span>Phân bổ hoạt động nhóm</span>
             </div>
             <div className="audit-bar">
@@ -177,7 +177,7 @@ export default function AuditLogPage() {
               <div className="audit-bar__seg audit-bar__seg--penalty" style={{ width: `${filter === 'penalty' || filter === 'all' ? 10 : 0}%` }} title="Kỷ luật" />
               <div className="audit-bar__seg audit-bar__seg--auth" style={{ width: `${filter === 'auth' || filter === 'all' ? 5 : 0}%` }} title="Xác thực" />
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', marginTop: 12, fontSize: 11 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', marginTop: 12, fontSize: 12, lineHeight: 1.35 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} /> Chuyến đi
               </span>
@@ -246,7 +246,7 @@ export default function AuditLogPage() {
               <span className={`audit-method audit-method--${entry.method}`}>
                 {entry.method}
               </span>
-              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+              <span style={{ fontSize: 12, lineHeight: 1.35, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
                 {entry.path}
               </span>
             </div>
@@ -257,13 +257,13 @@ export default function AuditLogPage() {
           entry.payload && Object.keys(entry.payload).length > 0 ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Terminal size={12} />
                   Chi tiết tham số (JSON)
                 </div>
                 <button
                   className="btn btn--secondary btn--sm"
-                  style={{ padding: '2px 8px', fontSize: 11, height: 24 }}
+                  style={{ padding: '6px 10px', fontSize: 12, lineHeight: 1.35, minHeight: 32 }}
                   onClick={() => handleCopyPayload(entry.payload)}
                 >
                   {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -474,7 +474,7 @@ fontSize: 13,
                           <div style={{ fontSize: 12, color: 'var(--ink)', fontWeight: 500 }}>
                             {formatTimeShort(entry.timestamp)}
                           </div>
-                          <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                          <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             {formatExactTime(entry.timestamp).split(' ')[0]}
                           </div>
                         </td>
@@ -495,7 +495,7 @@ fontSize: 13,
                             <div className="audit-event-tag">
                               <span className={`audit-dot ${categoryDotClass(entry.category)}`} />
                               {categoryIcon(entry.category)}
-                              <span style={{ fontWeight: 600, fontSize: 11, color: 'var(--ink-2)' }}>
+                              <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)' }}>
                                 {ACTION_LABELS[entry.action] || entry.action}
                               </span>
                             </div>

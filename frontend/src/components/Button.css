@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 10px 15px;
   border-radius: 11px;
   font-family: var(--font-body);
@@ -85,10 +85,10 @@
   box-shadow: 0 4px 8px rgba(227, 36, 52, 0.35);
   transform: translateY(-1px);
 }
-.btn--sm { min-height: 38px; padding: 9px 12px; font-size: var(--fs-xs); }
+.btn--sm { min-height: 44px; padding: 9px 12px; font-size: var(--fs-xs); }
 .btn--lg { padding: 12px 22px; font-size: 15px; border-radius: 12px; min-height: 46px; }
-.btn--icon { width: 40px; min-width: 40px; padding: 0; }
-.btn--icon.btn--sm { width: 36px; min-width: 36px; min-height: 36px; padding: 0; }
+.btn--icon { width: 44px; min-width: 44px; padding: 0; }
+.btn--icon.btn--sm { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
 
 /* Legacy single-dash variants (.btn-primary/.btn-secondary/.btn-ghost/.btn-sm/
    .btn-icon) were retired during CTA unification — all call sites now use the
@@ -104,7 +104,7 @@
   }
 
   .btn--sm {
-    min-height: 40px;
+    min-height: 44px;
     padding: 9px 11px;
   }
 
@@ -115,8 +115,8 @@
   }
 
   .btn--icon.btn--sm {
-    width: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 }

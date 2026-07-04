@@ -99,8 +99,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 7px 13px;
+  min-height: 44px;
+  padding: 9px 13px;
   background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12));
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 10px;
@@ -127,9 +127,9 @@
 .filter-pill svg { width: 14px; height: 14px; }
 .filter-pill__count {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 2px 7px;
   background: rgba(0, 0, 0, 0.06);
   border-radius: 999px;
   margin-left: 2px;

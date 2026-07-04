@@ -513,12 +513,12 @@ export default function DebtListPage() {
                               <Building2 size={14} aria-hidden="true" style={{ color: 'var(--fg-3)', flex: '0 0 auto' }} />
                               <span className="debt-list-table__customer-name">{d.customerName}</span>
                               {d.linkedSupplierId != null && (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em' }}>
+                                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em' }}>
                                   2 chiều
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--fg-3)', marginLeft: 16 }}>
+                            <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
                               {d.totalOutstanding > 0
                                 ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
                                 : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}

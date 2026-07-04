@@ -15,22 +15,23 @@ export function XeNgoaiBadge() {
     <span
       aria-label="Xe ngoài (đối tác vận tải)"
       style={{
-        fontSize: 10,
+        fontSize: 12,
+        lineHeight: 1.35,
         fontWeight: 700,
         color: '#1d4ed8',
         background: '#dbeafe',
         border: '1px solid #bfdbfe',
         borderRadius: 4,
-        padding: '1px 5px',
+        padding: '3px 7px',
         letterSpacing: '0.02em',
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 3,
+        gap: 4,
         whiteSpace: 'nowrap',
         flexShrink: 0,
       }}
     >
-      <Truck size={11} aria-hidden="true" />
+      <Truck size={12} aria-hidden="true" />
       Xe ngoài
     </span>
   );

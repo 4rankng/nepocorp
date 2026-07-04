@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 5px;
@@ -68,8 +68,8 @@
 .audit-feed__item:last-child { border-bottom: none; }
 .audit-feed__time {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
-  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
   white-space: nowrap;
   min-width: 44px;
   padding-top: 2px;
@@ -81,11 +81,12 @@
   line-height: 1.45;
 }
 .audit-feed__meta {
-  font-size: var(--fs-2xs);
-  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
   margin-top: 3px;
   display: flex;
   gap: 8px;
+  line-height: 1.35;
 }
 
 /* ── Breakdown mini-bar ── */

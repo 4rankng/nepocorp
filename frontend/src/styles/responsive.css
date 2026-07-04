@@ -227,7 +227,7 @@
   thead.sticky-header { position: relative; }
 
   /* ── Page header ── */
-  .page-title { font-size: var(--fs-lg); line-height: 1.2; margin-bottom: 2px; }
+  .page-title { font-size: var(--fs-lg); line-height: 1.3; margin-bottom: 2px; }
   .page-subtitle { font-size: var(--fs-xs); line-height: 1.4; }
   .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .page-header .page-actions,
@@ -237,7 +237,7 @@
   .page-actions .btn,
   .header-actions .btn,
   .page-header .btn,
-  .page-header .btn-primary { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 40px; }
+  .page-header .btn-primary { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 44px; }
   .trip-detail-title { font-size: var(--fs-xl); gap: 8px; line-height: 1.2; }
   .trip-detail-title > span { flex: 1 1 auto; min-width: 0; }
   .trip-detail-subtitle { margin-left: 0; font-size: var(--fs-xs); }
@@ -254,13 +254,13 @@
     min-height: 0;
   }
   .kpi__top { margin-bottom: 4px; }
-  .kpi__label { font-size: var(--fs-2xs); line-height: 1.2; letter-spacing: 0.04em; }
+  .kpi__label { font-size: var(--fs-xs); line-height: 1.35; letter-spacing: 0.03em; }
   .kpi__icon { width: 20px; height: 20px; border-radius: 6px; }
   .kpi__icon svg { width: 11px; height: 11px; }
-  .kpi__value { font-size: var(--fs-lg); line-height: 1.25; margin: 2px 0; }
-  .kpi__value-unit { font-size: var(--fs-2xs); line-height: 1.25; margin-left: 2px; }
+  .kpi__value { font-size: var(--fs-lg); line-height: 1.35; margin: 2px 0; }
+  .kpi__value-unit { font-size: var(--fs-xs); line-height: 1.35; margin-left: 2px; }
   .kpi__meta {
-    font-size: var(--fs-2xs); line-height: 1.25;
+    font-size: var(--fs-xs); line-height: 1.35;
     gap: 3px; flex-wrap: wrap; margin-top: 2px;
     display: block;
   }
@@ -334,7 +334,8 @@
   .toolbar::-webkit-scrollbar { display: none; }
   .filter-tabs > *, .pill-row > * { flex-shrink: 0; }
   .filter-pill {
-    padding: 5px 9px;
+    min-height: 44px;
+    padding: 9px 12px;
     font-size: var(--fs-xs);
     white-space: nowrap;
   }
@@ -471,15 +472,15 @@
 
   /* ── Tap targets (Apple/Material want ≥44px) ── */
   .btn--sm,
-  .btn-sm { min-height: 38px; padding: 8px 12px; font-size: var(--fs-sm); }
+  .btn-sm { min-height: 44px; padding: 9px 12px; font-size: var(--fs-sm); }
   .btn--icon,
-  .btn-icon { min-width: 40px; min-height: 40px; padding: 10px; }
+  .btn-icon { min-width: 44px; min-height: 44px; padding: 10px; }
   .btn--icon.btn--sm,
-  .btn-icon.btn-sm { min-width: 36px; min-height: 36px; padding: 8px; }
+  .btn-icon.btn-sm { min-width: 44px; min-height: 44px; padding: 8px; }
   .row-actions .btn--icon,
   .row-actions .btn-icon,
   td .btn--icon,
-  td .btn-icon { min-width: 32px; min-height: 32px; padding: 6px; }
+  td .btn-icon { min-width: 44px; min-height: 44px; padding: 8px; }
   .input,
   select.input,
   input.input,
@@ -575,7 +576,7 @@
   .trip-hero__chip { font-size: var(--fs-xs); padding: 4px 9px; }
   .trip-hero__chip svg { width: 13px; height: 13px; }
   .trip-hero__actions { padding-top: 10px; gap: 6px; }
-  .trip-hero__actions .btn { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 40px; }
+  .trip-hero__actions .btn { flex: 1 1 auto; min-width: 0; justify-content: center; min-height: 44px; }
   .trip-hero__actions-divider { display: none; }
   .trip-hero__actions-spacer { display: none; }
   .trip-hero__warn { font-size: var(--fs-2xs); padding: 3px 7px; }
@@ -624,6 +625,36 @@
 
 } /* end PHONE ≤ 640px */
 
+@media (max-width: 900px) {
+  .btn,
+  .btn--sm,
+  .btn-sm {
+    min-height: 44px;
+  }
+
+  .btn--icon,
+  .btn-icon,
+  .btn--icon.btn--sm,
+  .btn-icon.btn-sm,
+  .row-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .filter-pill {
+    min-height: 44px;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea,
+  .input {
+    min-height: 44px;
+  }
+}
+
 
 /* ============================================================================
  * NARROW PHONE  ≤ 420px — last resort tweaks for very small devices
@@ -631,11 +662,11 @@
 @media (max-width: 420px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 10px 12px; }
-  .kpi__label { font-size: var(--fs-2xs); letter-spacing: 0.02em; }
+  .kpi__label { font-size: var(--fs-xs); line-height: 1.35; letter-spacing: 0.02em; }
   .kpi__value { font-size: 17px; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
-  .kpi__value-unit { font-size: var(--fs-xs); }
-  .kpi__meta { font-size: var(--fs-2xs); }
-  .page-title { font-size: var(--fs-xl); }
+  .kpi__value-unit { font-size: var(--fs-xs); line-height: 1.35; }
+  .kpi__meta { font-size: var(--fs-xs); line-height: 1.35; }
+  .page-title { font-size: var(--fs-xl); line-height: 1.3; }
   .aging-buckets { grid-template-columns: 1fr 1fr; gap: 8px; }
   .aging-buckets > .bucket:first-child { grid-column: 1 / -1; }
   .bucket { padding: 10px 12px; border-radius: 12px; }

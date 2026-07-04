@@ -9,7 +9,7 @@
 /* ── Table density: sparse config rows don't need 24px vertical td padding ── */
 .cfg-page .tt-table thead th {
   padding: 13px 18px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   letter-spacing: 0.06em;
   font-weight: 600;
   color: var(--ink-3);
@@ -55,20 +55,21 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  min-height: 26px;
+  padding: 4px 9px;
   margin-left: 8px;
   border-radius: 999px;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1.4;
   white-space: nowrap;
 }
-.cfg-pill--success { background: var(--accent-soft); color: var(--accent); }
+.cfg-pill--success { background: var(--accent-soft); color: var(--accent-ink); }
 .cfg-pill--warn    { background: rgba(245, 158, 11, 0.12); color: var(--warning-text); }
-.cfg-pill--neutral { background: var(--surface-3); color: var(--ink-3); }
+.cfg-pill--neutral { background: var(--surface-3); color: var(--ink-2); }
 
 /* Empty state uses the shared <EmptyState> (design-system); the page-scoped
    .cfg-empty* rules were retired during CTA unification. (.cfg-empty-row in
@@ -429,7 +430,7 @@
   .cfg-page .tt-table thead th { padding: 11px 12px; }
   .cfg-page .tt-table tbody td { padding: 12px 12px; }
   .cfg-page .toolbar { padding: 12px 14px 4px; gap: 8px; }
-  .cfg-page__summary { font-size: var(--fs-2xs); }
+  .cfg-page__summary { font-size: var(--fs-xs); }
   .cfg-page .table-scroll { overflow: visible; }
 
   .cfg-page:not(.routes-config-page) .table-wrap {
@@ -483,7 +484,7 @@
   .cfg-page:not(.routes-config-page) .tt-table tbody td[data-label]::before {
     content: attr(data-label);
     color: var(--ink-3);
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.06em;
     line-height: 1.45;
@@ -550,7 +551,7 @@
   .cfg-page--customers .cfg-customer-table tbody td[data-label]::before {
     content: attr(data-label);
     color: var(--ink-3);
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.06em;
     line-height: 1.45;

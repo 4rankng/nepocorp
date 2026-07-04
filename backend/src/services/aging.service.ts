@@ -147,31 +147,26 @@ export function paginateAgingRows<T>(
   };
 }
 
-function normalizeVietnameseSearchText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
-
 async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number>> {
   const escaped = search.replace(/[%_]/g, '\\$&');
   const pattern = `%${escaped}%`;
-  const normalizedSearch = normalizeVietnameseSearchText(search);
   const ids = new Set<number>();
 
-  // Name + contact match — case- and tone-insensitive for Vietnamese text.
-  const customers = await db.select({
-    id: s.customers.id,
-    name: s.customers.name,
-    contactInfo: s.customers.contactInfo,
-  }).from(s.customers);
-  for (const customer of customers) {
-    const haystack = normalizeVietnameseSearchText(`${customer.name} ${customer.contactInfo ?? ''}`);
-    if (haystack.includes(normalizedSearch)) ids.add(customer.id);
-  }
+  // Name + contact match — tone-insensitive Vietnamese search pushed to SQL via
+  // unaccent() (same pattern as trip-queries.service.ts). Replaces the prior
+  // loop that loaded every customer row into Node.js and string-matched in JS.
+  // The haystack is the SAME `name || ' ' || contactInfo` concatenation the JS
+  // used, so result sets are byte-identical — only WHERE it computes changes.
+  // ILIKE gives the case-insensitivity the old toLowerCase() did; unaccent()
+  // strips tones + maps đ→d, verified equivalent to the prior NFD helper on real
+  // customer names (e.g. "Hải Đăng" → "Hai Dang").
+  // No expression index: leading-wildcard ILIKE defeats btree, and a pg_trgm
+  // GIN only pays off at thousands of customers, not ~58.
+  const nameContactTerm = `%${escaped}%`;
+  const matched = await db.select({ id: s.customers.id }).from(s.customers).where(
+    sql`unaccent(COALESCE(${s.customers.name}, ''::text) || ' ' || COALESCE(${s.customers.contactInfo}, ''::text)) ILIKE unaccent(${nameContactTerm})`,
+  );
+  matched.forEach(r => ids.add(r.id));
 
   // Container match via trip_containers
   const byContainer = await db

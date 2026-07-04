@@ -32,7 +32,8 @@
   font-size: 13px;
   color: var(--fg-3);
   text-decoration: none;
-  padding: 6px 10px;
+  min-height: 44px;
+  padding: 8px 12px;
   border-radius: 8px;
   background: var(--bg-2, transparent);
   border: 1px solid var(--border-2);
@@ -99,7 +100,7 @@
   color: var(--fg-1);
   font-size: 15px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .ttp-section-head p {
@@ -110,7 +111,7 @@
 }
 
 .ttp-tool-btn {
-  min-height: 34px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -186,6 +187,8 @@
   background: var(--bg-2, #f8f9fa);
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-2);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   white-space: nowrap;
 }
 
@@ -419,7 +422,8 @@
 
 .ttp-add-submit {
   justify-content: center;
-  min-height: 38px;
+  min-height: 44px;
+  line-height: 1.35;
 }
 
 .ttp-pos-select {
@@ -504,8 +508,8 @@
 }
 
 .ttp-kebab {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -702,10 +706,10 @@
   display: inline-flex;
   margin-bottom: 5px;
   color: var(--accent, #00B14F);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: 0.08em;
-  line-height: 1.2;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
@@ -774,10 +778,10 @@
 
 .ttp-position-control span {
   color: var(--ink-2, var(--fg-2));
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 750;
   letter-spacing: 0.04em;
-  line-height: 1.2;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
@@ -895,9 +899,10 @@
 }
 
 .ttp-position-name small {
-  color: var(--ink-3, var(--fg-3));
-  font-size: 11px;
+  color: var(--ink-2, var(--fg-2));
+  font-size: var(--fs-xs);
   font-weight: 550;
+  line-height: 1.35;
 }
 
 .ttp-position-empty {
@@ -1060,9 +1065,10 @@
 
   .ttp-table tbody td::before {
     content: attr(data-label);
-    color: var(--fg-3);
-    font-size: 11px;
+    color: var(--fg-2);
+    font-size: var(--fs-xs);
     font-weight: 600;
+    line-height: 1.35;
   }
 
   .ttp-row-actions {
