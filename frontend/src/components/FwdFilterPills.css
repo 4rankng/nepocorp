@@ -14,17 +14,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 9999px;
   background: var(--surface);
   color: var(--ink-2);
   font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 500;
   cursor: pointer;
   transition: all 150ms ease;
   white-space: nowrap;
-  min-height: 36px;
+  min-height: 44px;
 }
 .fwd-filter-pill[data-status="CREATED"] {
   border-color: rgba(2, 132, 199, 0.22);
@@ -91,7 +92,7 @@
   box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
 }
 .fwd-filter-pill__count {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   min-width: 18px;
   min-height: 20px;
@@ -100,7 +101,7 @@
   border-radius: 9999px;
   background: rgba(0,0,0,0.08);
   padding: 0 5px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 .fwd-filter-pill--active .fwd-filter-pill__count {
   background: rgba(255,255,255,0.25);
@@ -113,8 +114,8 @@
   }
 
   .fwd-filter-pill {
-    min-height: 38px;
-    padding: 7px 13px;
+    min-height: 44px;
+    padding: 8px 14px;
     border-radius: 12px;
   }
 }

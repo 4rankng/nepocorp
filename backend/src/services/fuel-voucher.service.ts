@@ -2,6 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { ApiError } from '../errors';
+import { getCompanyInfo } from './company-info.service';
 
 // ── Helpers ──
 import { escapeHtml, formatVND, formatDateVi } from '../lib/format';
@@ -362,7 +363,8 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const borderAll = { top: thinB, bottom: thinB, left: thinB, right: thinB };
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'TingTing';
+  const company = await getCompanyInfo();
+  wb.creator = company.name;
   const ws = wb.addWorksheet('Phieu cap nhien lieu', {
     pageSetup: { paperSize: 9, orientation: 'portrait', fitToWidth: 1, margins: { left: 0.4, right: 0.4, top: 0.4, bottom: 0.3, header: 0.3, footer: 0.3 } },
   });

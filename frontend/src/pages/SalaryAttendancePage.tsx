@@ -784,7 +784,7 @@ export default function SalaryAttendancePage() {
                             <CheckCircle2 size={16} />
                             <span>Đã xác nhận</span>
                             {salary.confirmedAt && (
-                              <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 'auto' }}>
+                              <span style={{ fontSize: 12, lineHeight: 1.35, opacity: 0.7, marginLeft: 'auto' }}>
                                 {new Date(salary.confirmedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
                               </span>
                             )}

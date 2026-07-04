@@ -137,7 +137,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Số ngày tính lương</label>
           <input className="input mono" type="number" placeholder="1" min="1" max="31"
             value={form.tripWageDays} onChange={(e) => form.setTripWageDays(e.target.value)} />
-          <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+          <div className="tc-field-hint">
             Số ngày tính lương (mặc định = ngày đi → ngày về + 1)
           </div>
         </div>
@@ -188,7 +188,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         <div className="field">
           <label>Hoa hồng khách hàng (đ)</label>
           <InputWithPrefix value={form.customerCommission} onChange={form.setCustomerCommission} placeholder="0" prefix="đ" mono type="money" />
-          <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+          <div className="tc-field-hint">
             Trừ trực tiếp vào doanh thu chuyến. Mặc định 0 = không có hoa hồng.
           </div>
         </div>

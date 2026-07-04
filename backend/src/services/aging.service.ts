@@ -1,5 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
+import { cacheGet } from '../lib/redis';
 import { eq, and, sql, inArray, like } from 'drizzle-orm';
 import { computeFifoAging, TxnType } from '@tingting/shared';
 import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/shared';
@@ -129,6 +130,30 @@ function computeEntityResults(
   return results;
 }
 
+async function getEntityResultsCached(
+  config: AgingConfig,
+  opts: { asOfDate?: string; txnTypes?: TxnType[] } = {},
+): Promise<EntityAgingResult[]> {
+  // Cache the expensive "pull all ledger rows for an entity type + run FIFO
+  // aging" step. Keyed by (entityType, invertSigns, asOfDate|today, txnTypes) —
+  // never by entityIds, so the full per-entityType result is computed once per
+  // TTL and list callers filter in JS. Aging buckets are day-granular, so
+  // date-only keying is exact within a day; every ledger write invalidates via
+  // invalidateReportCaches() (route-layer, post-commit). The 300s TTL is only a
+  // safety net. JSON round-trip is lossless here — EntityAgingResult carries no
+  // Date objects (timestamps are ISO strings).
+  const asOfKey = opts.asOfDate ?? new Date().toISOString().slice(0, 10);
+  const txnKey = opts.txnTypes && opts.txnTypes.length > 0 ? opts.txnTypes.join(',') : 'all';
+  return cacheGet<EntityAgingResult[]>(
+    `reports:entity-results:${config.entityType}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}`,
+    300,
+    async () => {
+      const grouped = await fetchLedgerGrouped(config, { asOfDate: opts.asOfDate, txnTypes: opts.txnTypes });
+      return computeEntityResults(grouped, config);
+    },
+  );
+}
+
 export function paginateAgingRows<T>(
   rows: T[],
   opts: AgingPageOptions = {},
@@ -190,8 +215,7 @@ async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number
 // ─── Accounts Receivable (Customer aging) ────────────────────────────────────
 
 export async function getReceivablesSummary(opts: { asOfDate?: string } = {}) {
-  const grouped = await fetchLedgerGrouped({ entityType: 'CUSTOMER', invertSigns: false }, opts);
-  const results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
+  const results = await getEntityResultsCached({ entityType: 'CUSTOMER', invertSigns: false }, opts);
 
   const buckets = [
     { range: '0-30', label: 'Trong hạn', count: 0, amount: 0 },
@@ -281,11 +305,15 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
   // expectation that "/debt" supports lookup by container.
   const trimmedSearch = opts.search?.trim();
   const searchedCustomerIds = trimmedSearch ? await findCustomerIdsForAgingSearch(trimmedSearch) : undefined;
-  const grouped = await fetchLedgerGrouped(
+  // Full per-entityType result (cached); narrow by search in JS. The cache key
+  // intentionally omits entityIds so a search reuses the browse result.
+  const allResults = await getEntityResultsCached(
     { entityType: 'CUSTOMER', invertSigns: false },
-    { asOfDate: opts.asOfDate, entityIds: searchedCustomerIds ? [...searchedCustomerIds] : undefined },
+    { asOfDate: opts.asOfDate },
   );
-  const results = computeEntityResults(grouped, { entityType: 'CUSTOMER', invertSigns: false });
+  const results = searchedCustomerIds
+    ? allResults.filter(r => searchedCustomerIds.has(r.entityId))
+    : allResults;
 
   const customerIds = results.map(r => r.entityId);
   const customers = customerIds.length > 0
@@ -363,11 +391,10 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
     }
   })();
 
-  const grouped = await fetchLedgerGrouped(
+  const results = await getEntityResultsCached(
     { entityType: scope.entityType, invertSigns: scope.invertSigns },
     { asOfDate: opts.asOfDate, txnTypes: scope.txnTypes },
   );
-  const results = computeEntityResults(grouped, { entityType: scope.entityType, invertSigns: scope.invertSigns });
 
   let totalOutstanding = 0;
   let overdueSuppliers = 0;

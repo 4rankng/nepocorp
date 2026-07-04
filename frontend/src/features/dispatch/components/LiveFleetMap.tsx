@@ -30,7 +30,7 @@ function popupHtml(v: LiveFleetVehicle): string {
   return `<div style="min-width:210px; ${sans} font-size:13px; line-height:1.5;">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
       <strong style="font-size:14px;">${e(v.licensePlate)}</strong>
-      <span style="background:${color}22; color:${color}; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:600;">${label}</span>
+      <span style="background:${color}22; color:${color}; padding:3px 8px; border-radius:999px; font-size:12px; line-height:1.35; font-weight:600;">${label}</span>
     </div>
     ${v.tripCode ? `<div>Mã chuyến: <span style="${mono}">${e(v.tripCode)}</span></div>` : ''}
     ${v.customerName ? `<div>Khách hàng: ${e(v.customerName)}</div>` : ''}
@@ -38,7 +38,7 @@ function popupHtml(v: LiveFleetVehicle): string {
     <div>Tốc độ: <span style="${mono}">${Math.round(v.speed)} km/h</span> · ${v.ignitionOn ? 'động cơ bật' : 'động cơ tắt'}</div>
     ${v.driverName ? `<div>Lái xe: ${e(v.driverName)}</div>` : ''}
     ${v.address ? `<div style="color:#6B7280;">${e(v.address)}</div>` : ''}
-    <div style="color:#9CA3AF; font-size:11px; margin-top:4px;">Cập nhật: ${formatDateTimeVN(v.lastSeenAt)}</div>
+    <div style="color:#9CA3AF; font-size:12px; line-height:1.35; margin-top:4px;">Cập nhật: ${formatDateTimeVN(v.lastSeenAt)}</div>
   </div>`;
 }
 

@@ -10,11 +10,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  min-height: 44px;
+  padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border-1);
   border-radius: var(--radius-full);
   font-size: var(--fs-xs);
+  line-height: 1.35;
   color: var(--fg-2);
   cursor: pointer;
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);

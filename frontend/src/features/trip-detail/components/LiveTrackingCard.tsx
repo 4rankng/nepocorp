@@ -55,7 +55,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '14px 0 2px', color: 'var(--text-3, #9CA3AF)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '14px 0 2px', color: 'var(--text-3, #9CA3AF)', fontSize: 12, lineHeight: 1.35, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {icon} {title}
       </div>
       <div>{children}</div>
@@ -134,11 +134,11 @@ export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
             <span className="hicon" style={{ width: 22, height: 22 }}><MapPin size={14} /></span>
             Giám sát hành trình
           </h2>
-          <span style={{ background: `${color}22`, color, padding: '2px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+          <span style={{ background: `${color}22`, color, padding: '3px 9px', borderRadius: 999, fontSize: 12, lineHeight: 1.35, fontWeight: 700 }}>
             {LIVE_STATUS_LABEL[vehicle.status]}
           </span>
         </div>
-        <span title="Cập nhật tự động mỗi 25 giây" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-3, #9CA3AF)' }}>
+        <span title="Cập nhật tự động mỗi 25 giây" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, lineHeight: 1.35, color: 'var(--text-3, #9CA3AF)' }}>
           <RefreshCw size={11} /> {updated}
         </span>
       </div>

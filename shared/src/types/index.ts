@@ -235,6 +235,9 @@ export interface CompanyInfo {
   representativeTitle: string;
   bankAccount: string;
   bankName: string;
+  phone: string;
+  email: string;
+  logoStorageKey: string | null;
   updatedAt?: string | null;
 }
 
@@ -1133,7 +1136,6 @@ export interface DebitNoteTemplate {
   name: string;
   isDefault: boolean;
   documentType: BillingDocumentType;
-  logoStorageKey: string | null;
   titleText: string;
   issuerName: string | null;
   issuerAddress: string | null;
@@ -1159,10 +1161,8 @@ export interface DebitNoteTemplate {
 
 /**
  * Frozen render-only copy of a template, stored on each billing document so a
- * historical debit note re-exports identically after the template (or its logo)
- * is edited or deleted. `logoStorageKey` is the canonical storage key (NOT raw
- * bytes) — the server reads bytes for XLSX render, the frontend builds a preview
- * URL — so a deleted logo file can't break historical exports.
+ * historical debit note re-exports identically after the template is edited or
+ * deleted.
  */
 export interface DebitNoteTemplateSnapshot {
   id: number | null;
@@ -1183,7 +1183,6 @@ export interface DebitNoteTemplateSnapshot {
   signatureLeftName: string | null;
   signatureRightLabel: string | null;
   signatureRightName: string | null;
-  logoStorageKey: string | null;
 }
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

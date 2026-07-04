@@ -90,9 +90,14 @@
   }
   .setting-card__foot > *:not(:last-child):not(:first-child) { display: none; }
   .setting-card__status { white-space: normal; max-width: 160px; overflow: visible; overflow-wrap: anywhere; }
-  /* Chevron is enough of a "go in" affordance — drop the "Sửa" / "Xem" word */
-  .setting-card__action { gap: 0; font-size: 0; }
-  .setting-card__action svg { width: 14px; height: 14px; }
+  .setting-card__action {
+    min-height: 44px;
+    gap: 5px;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
+    padding: 0 2px;
+  }
+  .setting-card__action svg { width: 16px; height: 16px; }
 } /* end 640px */
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */

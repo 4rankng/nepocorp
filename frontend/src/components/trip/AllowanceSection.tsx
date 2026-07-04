@@ -135,7 +135,7 @@ export function AllowanceSection() {
               style={{ width: "100%" }}
             />
             {computedRoadAllowanceHint !== null && (
-              <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+              <div style={{ fontSize: 12, lineHeight: 1.35, color: "var(--fg-3)", marginTop: 4 }}>
                 Tự tính: {computedRoadAllowanceHint.toLocaleString("vi-VN")} đ
                 {roadAllowanceOverride && Number(roadAllowanceOverride) !== computedRoadAllowanceHint && (
                   <span style={{ color: "var(--warning)", marginLeft: 8 }}>
@@ -173,7 +173,7 @@ export function AllowanceSection() {
               type="money"
               style={{ width: "100%" }}
             />
-            <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Để trống = không có</div>
+            <div className="as-helper">Để trống = không có</div>
           </div>
         </div>
         <div className="field">
@@ -188,7 +188,7 @@ export function AllowanceSection() {
               type="money"
               style={{ width: "100%" }}
             />
-            <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>Chi phí lưu xe qua đêm (200k-400k/ngày)</div>
+            <div className="as-helper">Chi phí lưu xe qua đêm (200k-400k/ngày)</div>
           </div>
         </div>
       </div>
@@ -207,7 +207,7 @@ export function AllowanceSection() {
               style={{ width: "100%" }}
             />
             {suggestedPrice !== null && (
-              <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+              <div className="as-helper">
                 Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} đ{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} đ` : ''}
                 {revenueEmptyReturn && Number(revenueEmptyReturn) !== suggestedPrice * Number(containerCount) && (
                   <span style={{ color: "var(--warning)", marginLeft: 8 }}>
@@ -273,8 +273,10 @@ export function AllowanceSection() {
                   className="btn"
                   style={{
                     padding: 0,
-                    width: 36,
-                    height: 36,
+                    width: 44,
+                    height: 44,
+                    minWidth: 44,
+                    minHeight: 44,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -294,7 +296,7 @@ export function AllowanceSection() {
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+            <div className="as-helper">
               {tripWageDays && Number(tripWageDays) > 0 
                 ? `${tripWageDays} ngày = ${(Math.round(10000000 / 26) * Number(tripWageDays)).toLocaleString('vi-VN')} đ`
                 : '1 ngày = 384.615 đ'}

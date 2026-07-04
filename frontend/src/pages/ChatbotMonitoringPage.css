@@ -38,6 +38,7 @@
 
 .cbm-page .panel__title {
   font-size: 18px;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
@@ -114,7 +115,8 @@
   background: rgba(255, 255, 255, 0.68);
   color: var(--cbm-muted);
   font-family: var(--font-mono, "JetBrains Mono", monospace);
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -135,7 +137,7 @@
 .cbm-hero h1 {
   margin: 18px 0 10px;
   font-size: clamp(34px, 4vw, 58px);
-  line-height: 1.18;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
@@ -209,16 +211,17 @@
 .cbm-command-card__label {
   display: block;
   color: var(--cbm-muted);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  line-height: 1.35;
 }
 
 .cbm-command-card strong {
   display: block;
   font-size: 20px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .cbm-command-card p {
@@ -246,13 +249,15 @@
   display: block;
   margin-bottom: 5px;
   color: var(--cbm-muted);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .cbm-command-grid strong {
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-size: 16px;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
@@ -283,7 +288,8 @@
 .cbm-kpi__label {
   display: block;
   color: #89918b;
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -364,7 +370,7 @@
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-size: 25px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.35;
   letter-spacing: 0;
   color: var(--cbm-ink);
 }
@@ -533,7 +539,8 @@
   color: #8b948e;
   background: rgba(20, 30, 24, 0.035);
   border-bottom: 1px solid var(--cbm-line);
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 850;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -546,6 +553,7 @@
   border-bottom: 1px solid rgba(17, 23, 19, 0.08);
   color: #25302a;
   vertical-align: middle;
+  line-height: 1.35;
 }
 
 .cbm-table tbody tr:hover {
@@ -620,7 +628,8 @@
   max-width: 140px;
   color: #536059;
   font-family: var(--font-mono, "JetBrains Mono", monospace);
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   word-break: break-all;
 }
 
@@ -667,7 +676,7 @@
 
 .cbm-seg__btn {
   appearance: none;
-  min-height: 38px;
+  min-height: 44px;
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -675,6 +684,7 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 800;
+  line-height: 1.35;
   padding: 0 15px;
   white-space: nowrap;
 }

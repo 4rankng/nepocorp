@@ -43,7 +43,7 @@ export function FuelSection() {
           <option key={s.id} value={s.id}>{s.name}</option>
         ))}
       </select>
-      <p style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+      <p className="tc-field-hint">
         Lựa chọn nhà cung cấp nhiên liệu cho chuyến này để ghi nhận công nợ.
       </p>
     </div>
@@ -60,7 +60,7 @@ export function FuelSection() {
         onChange={(e) => setFuelActualUnitPrice(e.target.value)}
         style={{ width: "100%" }}
       />
-      <p style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4 }}>
+      <p className="tc-field-hint">
         Giá cấu hình áp dụng: {configPrice} đ/lít
       </p>
     </div>

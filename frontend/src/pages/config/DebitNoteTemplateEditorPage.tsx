@@ -138,9 +138,8 @@ function blankTemplate(): DebitNoteTemplateInput {
     name: 'Mẫu giấy báo nợ mới',
     isDefault: false,
     documentType: 'DEBIT_NOTE',
-    logoStorageKey: null,
     titleText: defaults.titleText,
-    issuerName: 'CÔNG TY TNHH NEPO',
+    issuerName: null,
     issuerAddress: null,
     issuerTaxCode: null,
     issuerRepresentative: null,
@@ -164,7 +163,6 @@ function toForm(template: DebitNoteTemplate): DebitNoteTemplateInput {
     name: template.name,
     isDefault: template.isDefault,
     documentType: template.documentType,
-    logoStorageKey: template.logoStorageKey,
     titleText: template.titleText,
     issuerName: template.issuerName,
     issuerAddress: template.issuerAddress,
@@ -229,7 +227,7 @@ function TemplatePreview({
   const visible = columns.length > 0 ? columns : cloneStarterColumns();
   const totalColumns = visible.filter(column => column.total);
   const canvasLocked = disabled;
-  const previewTerms = (form.termsText || '- Số TK 190466529\n- Tại ngân hàng TMCP Á Châu PGD Thái Phiên - Hải Phòng').split('\n');
+  const previewTerms = (form.termsText || '- Số TK ...\n- Tại ngân hàng ...').split('\n');
   const accentStyle = { '--accent': form.accentColor } as React.CSSProperties;
 
   return (

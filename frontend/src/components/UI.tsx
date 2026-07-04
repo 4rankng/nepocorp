@@ -400,7 +400,7 @@ export function FormGroup({ label, helpText, error, children, style }: FormGroup
         <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--danger)', marginTop: 4 }}>{error}</span>
       )}
       {helpText && !error && (
-        <span className="field-help" style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+        <span className="field-help" style={{ color: 'var(--ink-3)', marginTop: 2 }}>
           {helpText}
         </span>
       )}

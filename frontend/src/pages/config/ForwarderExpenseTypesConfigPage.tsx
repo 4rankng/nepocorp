@@ -63,12 +63,12 @@ function ExpenseTypeForm({
               title={item ? 'Mã liên kết với mã hệ thống — không sửa được sau khi tạo.' : undefined}
             />
             {isDuplicate && (
-              <span style={{ fontSize: 11, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
+              <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
                 Mã này đã tồn tại.
               </span>
             )}
             {item && (
-              <span style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2, display: 'block' }}>
+              <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 2, display: 'block' }}>
                 Mã liên kết với mã hệ thống — không sửa được sau khi tạo.
               </span>
             )}
@@ -140,7 +140,7 @@ function ExpenseTypeForm({
               />
               <span>Cho phép báo khách khác số gốc</span>
             </label>
-            <span style={{ fontSize: 11, color: 'var(--ink-3)', paddingLeft: 24 }}>
+            <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-3)', paddingLeft: 24 }}>
               (Báo khách ≠ số gốc)
             </span>
           </div>
@@ -285,7 +285,7 @@ export default function ForwarderExpenseTypesConfigPage() {
           header: 'Cộng lãi',
           render: (t) => (
             <span style={{
-              fontSize: 11, fontWeight: 600,
+              fontSize: 12, lineHeight: 1.35, fontWeight: 600,
               padding: '2px 8px', borderRadius: 4,
               background: t.defaultMarkup ? 'rgba(0,177,79,0.1)' : 'rgba(120,120,120,0.1)',
               color: t.defaultMarkup ? 'var(--brand)' : 'var(--fg-3)',

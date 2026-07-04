@@ -44,7 +44,8 @@
 
 /* ─── Notification drawer items ─────────────────────────────────────────── */
 .notif-section-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -114,7 +115,8 @@
 }
 
 .notif-time {
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   color: var(--ink-3);
   margin-top: 3px;
   font-family: var(--font-mono);

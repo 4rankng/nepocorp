@@ -74,7 +74,8 @@
 }
 
 .kpi-rail__eyebrow {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -499,7 +500,8 @@
 }
 
 .cf-label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -508,7 +510,7 @@
 
 .cf-value {
   font-size: 13px;
-  line-height: 1.22;
+  line-height: 1.35;
   font-weight: 600;
   color: var(--ink);
   word-break: break-word;

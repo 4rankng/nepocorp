@@ -134,9 +134,9 @@ function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     setDefaultLegs(defaultLegs.filter(l => l.id !== id));
   };
 
-  const hintStyle = { fontSize: 11, color: 'var(--fg-3)', marginTop: 4 } as const;
+  const hintStyle = { fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 } as const;
   const sectionLabelStyle = {
-    fontSize: 10.5, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,
+    fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,
     letterSpacing: '0.08em', marginBottom: 8, marginTop: 4,
   };
 

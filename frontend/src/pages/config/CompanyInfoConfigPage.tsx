@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { CompanyInfo } from '@tingting/shared';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Trash2, Upload } from 'lucide-react';
 import { PageHeader, Panel } from '../../components/UI';
 import { useCompanyInfo, useSaveCompanyInfo } from '../../hooks/useCatalogQueries';
+import { configClient } from '../../api/configClient';
+import { photoSrc } from '../../lib/api/photo';
 import { usePageAnimations } from '../../hooks/animations';
 import './config-page.css';
 
@@ -15,7 +17,12 @@ type CompanyInfoForm = {
   representativeTitle: string;
   bankAccount: string;
   bankName: string;
+  phone: string;
+  email: string;
+  logoStorageKey: string | null;
 };
+
+type TextCompanyInfoField = Exclude<keyof CompanyInfoForm, 'logoStorageKey'>;
 
 const EMPTY_FORM: CompanyInfoForm = {
   name: '',
@@ -25,9 +32,12 @@ const EMPTY_FORM: CompanyInfoForm = {
   representativeTitle: '',
   bankAccount: '',
   bankName: '',
+  phone: '',
+  email: '',
+  logoStorageKey: null,
 };
 
-const FIELD_LABELS: Array<{ key: keyof CompanyInfoForm; label: string }> = [
+const FIELD_LABELS: Array<{ key: TextCompanyInfoField; label: string }> = [
   { key: 'name', label: 'Tên công ty' },
   { key: 'address', label: 'Địa chỉ' },
   { key: 'taxCode', label: 'Mã số thuế' },
@@ -35,6 +45,8 @@ const FIELD_LABELS: Array<{ key: keyof CompanyInfoForm; label: string }> = [
   { key: 'representativeTitle', label: 'Chức vụ' },
   { key: 'bankAccount', label: 'Số tài khoản' },
   { key: 'bankName', label: 'Ngân hàng' },
+  { key: 'phone', label: 'Điện thoại' },
+  { key: 'email', label: 'Email' },
 ];
 
 export default function CompanyInfoConfigPage() {
@@ -60,12 +72,17 @@ export default function CompanyInfoConfigPage() {
             representativeTitle: data.representativeTitle ?? '',
             bankAccount: data.bankAccount ?? '',
             bankName: data.bankName ?? '',
+            phone: data.phone ?? '',
+            email: data.email ?? '',
+            logoStorageKey: data.logoStorageKey ?? null,
           }
         : EMPTY_FORM,
     );
   }
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canSave = useMemo(
     () => FIELD_LABELS.every(({ key }) => form[key].trim().length > 0),
@@ -74,6 +91,26 @@ export default function CompanyInfoConfigPage() {
 
   const updateField = (key: keyof CompanyInfoForm, value: string) => {
     setForm(current => ({ ...current, [key]: value }));
+  };
+
+  const handleLogoSelect = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setError(null);
+    try {
+      const result = await configClient.uploadCompanyLogo(file);
+      setForm(current => ({ ...current, logoStorageKey: result.storageKey }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Lỗi tải logo');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setForm(current => ({ ...current, logoStorageKey: null }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSave = async () => {
@@ -88,6 +125,9 @@ export default function CompanyInfoConfigPage() {
         representativeTitle: form.representativeTitle.trim(),
         bankAccount: form.bankAccount.trim(),
         bankName: form.bankName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        logoStorageKey: form.logoStorageKey,
       });
       navigate('/config');
     } catch (e) {
@@ -97,11 +137,13 @@ export default function CompanyInfoConfigPage() {
     }
   };
 
+  const logoSrc = photoSrc(form.logoStorageKey);
+
   return (
     <div ref={rootRef} className="cfg-page cfg-page--company-info">
       <PageHeader
         title="Thông tin công ty"
-        description="Hồ sơ pháp lý và tài khoản ngân hàng của Công ty TNHH NEPO"
+        description="Hồ sơ pháp lý, liên hệ và tài khoản ngân hàng — hiển thị trên các chứng từ xuất ra"
         onBack={() => navigate('/config')}
         iconName="document"
       />
@@ -116,6 +158,52 @@ export default function CompanyInfoConfigPage() {
           <>
             <div className="company-info-layout">
               <div className="company-info-form">
+                <div className="field cfg-row">
+                  <label>Logo công ty</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={e => handleLogoSelect(e.target.files)}
+                    />
+                    {logoSrc ? (
+                      <img
+                        src={logoSrc}
+                        alt="Logo công ty"
+                        style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', borderRadius: 6, border: '1px solid #dde3ea' }}
+                      />
+                    ) : (
+                      <div style={{ height: 80, width: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px dashed #dde3ea', color: 'var(--ink-3)', fontSize: 13 }}>
+                        Chưa có logo
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        disabled={uploadingLogo || saving}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {uploadingLogo ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
+                        {logoSrc ? 'Đổi logo' : 'Chọn logo'}
+                      </button>
+                      {logoSrc && (
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={uploadingLogo || saving}
+                          onClick={handleRemoveLogo}
+                        >
+                          <Trash2 size={14} />
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="cfg-form-grid cfg-row">
                   <div className="field">
                     <label>Tên công ty</label>
@@ -180,6 +268,25 @@ export default function CompanyInfoConfigPage() {
                       rows={2}
                       value={form.bankName}
                       onChange={e => updateField('bankName', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="cfg-form-grid cfg-row">
+                  <div className="field">
+                    <label>Điện thoại</label>
+                    <input
+                      className="input"
+                      value={form.phone}
+                      onChange={e => updateField('phone', e.target.value)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Email</label>
+                    <input
+                      className="input"
+                      value={form.email}
+                      onChange={e => updateField('email', e.target.value)}
                     />
                   </div>
                 </div>

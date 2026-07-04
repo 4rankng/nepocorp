@@ -38,12 +38,13 @@
 }
 
 .salary-summary-dark__label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: var(--accent-ink);
   margin: 0;
+  line-height: 1.35;
   position: relative;
 }
 
@@ -55,8 +56,9 @@
   background: var(--warning-soft);
   color: var(--warning-text);
   border: 1px solid rgba(245, 166, 35, 0.24);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 700;
+  line-height: 1.35;
   white-space: nowrap;
 }
 
@@ -72,7 +74,7 @@
   font-weight: 700;
   letter-spacing: 0;
   color: var(--ink);
-  line-height: 1.25;
+  line-height: 1.35;
   margin-bottom: 4px;
   position: relative;
 }
@@ -128,8 +130,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 10px;
   transition: color 0.15s ease;
 }
@@ -168,12 +170,13 @@
 }
 
 .salary-summary-dark__section {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   color: var(--ink-3);
   margin-top: 4px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1.35;
 }
 
 .salary-summary-dark__row--muted {

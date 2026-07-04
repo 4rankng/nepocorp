@@ -626,7 +626,7 @@ export default function DebtDetailPage() {
           <div className="dd-name-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h1>{customer.name}</h1>
             {customer.isCarrier && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '2px 6px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Truck size={12} aria-hidden="true" /> Xe ngoài
               </span>
             )}
@@ -765,7 +765,7 @@ export default function DebtDetailPage() {
               <p style={{ fontSize: 22, fontWeight: 800, color: '#c2410c', margin: 0 }}>
                 {formatCurrency(apBalance)}
               </p>
-              <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+              <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
                 Số ròng: {formatCurrency(arBalance - apBalance)}
               </p>
             </div>
@@ -940,7 +940,7 @@ export default function DebtDetailPage() {
               placeholder="VD: 5000000"
               autoFocus
             />
-            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+            <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
               Sẽ phân bổ FIFO vào {unpaidTrips.length} chuyến chưa thu, bắt đầu từ chuyến cũ nhất.
             </p>
           </div>
@@ -955,7 +955,7 @@ export default function DebtDetailPage() {
               onChange={e => setPayReceipt(e.target.value)}
               placeholder="VD: PT-20260601-01"
             />
-            <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+            <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
               Bắt buộc để đối chiếu với sao kê ngân hàng / sổ quỹ.
             </p>
           </div>

@@ -60,7 +60,8 @@
    Slightly muted and smaller so the digit+₫ remains the dominant signal. */
 .pl-row .v .v-unit {
   font-family: var(--font-sans, inherit);
-  font-size: 0.78em;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 500;
   color: var(--ink-3);
   margin-left: 2px;

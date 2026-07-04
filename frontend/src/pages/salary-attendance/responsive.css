@@ -164,17 +164,17 @@
     font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--ink);
-    line-height: 1.25;
+    line-height: 1.35;
     font-variant-numeric: tabular-nums;
   }
 
   .mobile-day-row__dow {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--ink-3);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    line-height: 1.25;
+    line-height: 1.35;
   }
 
   .mobile-day-row__dow.is-sunday {
@@ -367,7 +367,7 @@
     padding: 4px 2px !important;
     border-radius: 5px !important;
   }
-  .cal-cell-day-num { font-size: var(--fs-2xs) !important; }
+  .cal-cell-day-num { font-size: var(--fs-xs) !important; line-height: 1.35; }
   .cal-cell-icon-wrap svg { width: 14px; height: 14px; }
   .calendar-legend-item {
     font-size: var(--fs-2xs);
@@ -384,7 +384,7 @@
     padding: 14px;
   }
   .salary-summary-dark__big { font-size: var(--fs-2xl); }
-  .salary-summary-dark__label { font-size: 9px; }
+  .salary-summary-dark__label { font-size: var(--fs-xs); line-height: 1.35; }
   .salary-summary-dark__mini { font-size: var(--fs-2xs); }
   .salary-summary-dark__row { font-size: var(--fs-xs); }
   .salary-summary-dark__row-val { font-size: var(--fs-xs); }

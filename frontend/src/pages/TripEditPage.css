@@ -36,8 +36,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -68,6 +70,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  line-height: 1.35;
   line-height: 1.25;
 }
 
@@ -87,14 +90,14 @@
   gap: 6px;
   padding: 3px 11px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   background: var(--surface-2, #F7F8FA);
   color: var(--fg-2);
   border: 1px solid var(--line);
-  line-height: 1.25;
+  line-height: 1.35;
 }
 .tc-status-pill::before {
   content: '';
@@ -201,8 +204,9 @@
   letter-spacing: 0.01em;
 }
 .tc-field-hint {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--fg-3);
+  line-height: 1.35;
   margin-top: 2px;
   font-style: italic;
 }
@@ -314,7 +318,7 @@
 .tc-rail-btn {
   width: 100%;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
   font-weight: 600;
   letter-spacing: 0.005em;
 }

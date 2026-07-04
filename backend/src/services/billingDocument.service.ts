@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, gte, lte, isNull, inArray, desc, like, type SQL } from 'drizzle-orm';
@@ -11,7 +9,7 @@ import {
   defaultDebitNoteColumns,
   defaultPaymentStatementColumns,
 } from '@tingting/shared';
-import { companyInfoFromSettings } from './company-info.service';
+import { getCompanyInfo } from './company-info.service';
 import type { Tx } from './trip-shared';
 import { storageService } from './storage.service';
 import type {
@@ -85,7 +83,6 @@ const DEFAULT_DEBIT_NOTE_SNAPSHOT: DebitNoteTemplateSnapshot = {
   signatureLeftName: null,
   signatureRightLabel: 'Người lập',
   signatureRightName: 'Phan Kim Phụng',
-  logoStorageKey: null,
 };
 
 const DEFAULT_PAYMENT_STATEMENT_SNAPSHOT: DebitNoteTemplateSnapshot = {
@@ -130,7 +127,7 @@ function rowToTemplate(row: typeof s.debitNoteTemplates.$inferSelect): DebitNote
   return {
     id: row.id, name: row.name, isDefault: row.isDefault,
     documentType: row.documentType as DebitNoteTemplate['documentType'],
-    logoStorageKey: row.logoStorageKey, titleText: row.titleText,
+    titleText: row.titleText,
     issuerName: row.issuerName, issuerAddress: row.issuerAddress, issuerTaxCode: row.issuerTaxCode,
     issuerRepresentative: row.issuerRepresentative,
     accentColor: row.accentColor,
@@ -203,7 +200,6 @@ export function templateToSnapshot(t: DebitNoteTemplate): DebitNoteTemplateSnaps
     termsText: t.termsText,
     signatureLeftLabel: t.signatureLeftLabel, signatureLeftName: t.signatureLeftName,
     signatureRightLabel: t.signatureRightLabel, signatureRightName: t.signatureRightName,
-    logoStorageKey: t.logoStorageKey,
   };
 }
 
@@ -874,11 +870,6 @@ type BillingPartyInfo = {
   phone: string;
 };
 
-async function loadCompanyInfo() {
-  const rows = await db.select().from(s.appSettings).where(like(s.appSettings.key, 'company.%'));
-  return companyInfoFromSettings(rows);
-}
-
 async function loadCounterpartyInfo(doc: BillingDocument): Promise<BillingPartyInfo> {
   if (doc.entityType === 'CUSTOMER') {
     const [customer] = await db.select({
@@ -934,7 +925,8 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
     ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
     : ExcelJSMod;
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'NEPO Logistics';
+  const company = await getCompanyInfo();
+  wb.creator = company.name;
   wb.created = new Date();
   wb.modified = new Date();
 
@@ -1388,24 +1380,11 @@ function groupDebitNoteLines(lines: BillingDocumentLine[]): DebitNoteLineGroup[]
   return groups;
 }
 
-async function loadDebitNoteLogoBytes(logoStorageKey?: string | null): Promise<Buffer | null> {
-  if (logoStorageKey) {
-    const stored = await storageService.read(logoStorageKey);
-    if (stored) return stored;
-  }
-
-  const candidates = [
-    path.resolve(process.cwd(), 'assets', 'Nepo.png'),
-    path.resolve(process.cwd(), 'backend', 'assets', 'Nepo.png'),
-  ];
-  for (const candidate of candidates) {
-    try {
-      return await fs.promises.readFile(candidate);
-    } catch {
-      // Try the next runtime cwd variant.
-    }
-  }
-  return null;
+/** Read the company logo bytes from storage. Graceful skip (null) when no key
+ *  is set or the file is unreadable, so a missing logo never fails an export. */
+async function loadLogoBytes(logoStorageKey?: string | null): Promise<Buffer | null> {
+  if (!logoStorageKey) return null;
+  return storageService.read(logoStorageKey);
 }
 
 /**
@@ -1431,12 +1410,12 @@ async function renderDebitNoteXlsx(
     ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
     : ExcelJSMod;
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'NEPO Logistics';
+  const company = await getCompanyInfo();
+  wb.creator = company.name;
   wb.created = new Date();
   wb.modified = new Date();
 
   const ws = wb.addWorksheet('GBN');
-  const company = await loadCompanyInfo();
   const partner = await loadCounterpartyInfo(doc);
   const lines = await enrichLinesForDebitNoteRender(doc.lines);
   const dataLines = lines.filter((line) => !line.excluded);
@@ -1524,12 +1503,12 @@ async function renderDebitNoteXlsx(
   ws.mergeCells('E4:H4');
   ws.mergeCells('E5:H5');
   const logoCell = ws.getCell('B1');
-  const logoBytes = await loadDebitNoteLogoBytes(snap.logoStorageKey);
+  const logoBytes = await loadLogoBytes(company.logoStorageKey);
   if (logoBytes) {
     const imageId = wb.addImage({ base64: logoBytes.toString('base64'), extension: 'png' });
     ws.addImage(imageId, { tl: { col: 1.01, row: 0 }, ext: { width: 383, height: 126 } });
   } else {
-    logoCell.value = 'NePO\nPower your success';
+    logoCell.value = company.name;
     logoCell.font = { name: 'Arial', size: 24, bold: true, color: { argb: accent } };
     logoCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
   }
@@ -1539,8 +1518,8 @@ async function renderDebitNoteXlsx(
   ws.getCell('D1').font = { ...boldFont, size: 12 };
   ws.getCell('D2').value = companyAddress1 || company.address;
   ws.getCell('E3').value = companyAddress2;
-  ws.getCell('E4').value = 'ĐT: 0225-8832393';
-  ws.getCell('E5').value = 'E-mail: acc@nepocorp.com';
+  ws.getCell('E4').value = company.phone ? `ĐT: ${company.phone}` : '';
+  ws.getCell('E5').value = company.email ? `E-mail: ${company.email}` : '';
   for (const addressCell of ['D1', 'D2', 'E3', 'E4', 'E5']) {
     ws.getCell(addressCell).font = addressCell === 'D1'
       ? { ...boldFont, size: 12 }
@@ -1728,7 +1707,6 @@ export async function renderTemplatedXlsx(
     ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
     : ExcelJSMod;
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'NEPO Logistics';
   wb.created = new Date();
   wb.modified = new Date();
 
@@ -1744,7 +1722,13 @@ export async function renderTemplatedXlsx(
   const lines = await enrichLinesForDebitNoteRender(doc.lines);
   const dataLines = aggregateDebitNoteExportLines(lines);
   const partner = await loadCounterpartyInfo(doc);
-  const company = await loadCompanyInfo();
+  const company = await getCompanyInfo();
+  wb.creator = company.name;
+  const bangKeLogoBytes = await loadLogoBytes(company.logoStorageKey);
+  if (bangKeLogoBytes) {
+    const imageId = wb.addImage({ base64: bangKeLogoBytes.toString('base64'), extension: 'png' });
+    ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 150, height: 40 } });
+  }
   const amountSubtotal = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
   const vatAmount = Math.round(amountSubtotal * 0.08);
   const grandTotal = amountSubtotal + vatAmount;

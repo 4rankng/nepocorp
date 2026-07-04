@@ -346,7 +346,7 @@ export default function FinancePage() {
                       ? `Chưa có chuyến nào được khóa trong tháng ${month}/${year}`
                       : `Chưa có chuyến nào được khóa trong năm ${year}`}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--wf-ink-3)' }}>Khoá lệnh để xem xu hướng doanh thu</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--wf-ink-3)' }}>Khoá lệnh để xem xu hướng doanh thu</div>
                 </div>
               ) : (
                 <RevenueTrendChart
@@ -414,7 +414,7 @@ export default function FinancePage() {
               <div style={{ height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13, gap: 8 }}>
                 <EmptyIllustration name="empty-pie" width={126} height={104} />
                 <div>Chưa có dữ liệu chi phí</div>
-                <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
+                <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
               </div>
             )}
           </div>

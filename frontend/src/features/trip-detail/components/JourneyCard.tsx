@@ -39,7 +39,7 @@ export function JourneyCard({
               title="Vị trí trực tiếp từ GPS"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 6,
-                padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600,
+                padding: '3px 8px', borderRadius: 999, fontSize: 12, lineHeight: 1.35, fontWeight: 600,
                 background: `${LIVE_STATUS_COLOR[liveVehicle.status]}22`, color: LIVE_STATUS_COLOR[liveVehicle.status],
               }}
             >

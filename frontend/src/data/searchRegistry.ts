@@ -51,7 +51,7 @@ const ADMIN_BASE_ITEMS: SearchItem[] = [
 ];
 
 export const CONFIG_ITEMS: SearchItem[] = [
-  { id: 'company-info',           type: 'config', label: 'Thông tin công ty',             description: 'Tên pháp lý, địa chỉ, mã số thuế, người đại diện và tài khoản ngân hàng của NEPO.',           path: '/config/company-info',        iconName: 'document',     action: 'Sửa' },
+  { id: 'company-info',           type: 'config', label: 'Thông tin công ty',             description: 'Tên pháp lý, địa chỉ, mã số thuế, người đại diện, liên hệ và tài khoản ngân hàng.',           path: '/config/company-info',        iconName: 'document',     action: 'Sửa' },
   { id: 'fuel',                   type: 'config', label: 'Định mức nhiên liệu',           description: 'Định mức tiêu hao theo xe, loại tải (vỏ rỗng, <20t, >20t) và loại tuyến (đồng bằng / núi).', path: '/config/fuel',                iconName: 'fuel',         action: 'Sửa' },
   { id: 'road-allowances',        type: 'config', label: 'Tiền đi đường',                 description: 'Tiền chuẩn theo tuyến × loại rơ-mooc. Quy tắc: − vé QL5, + chuyến về có hàng, − phí/trạm.',     path: '/config/road-allowances',     iconName: 'route',        action: 'Sửa' },
   { id: 'trip-expense',           type: 'config', label: 'Chi phí chuyến đi',             description: 'Tiền kết hợp, trả hàng 2 điểm, lưu ca xe, tiền trạm BOT, thưởng chuyến về có hàng.',              path: '/config/trip-expense',        iconName: 'expense',      action: 'Sửa' },

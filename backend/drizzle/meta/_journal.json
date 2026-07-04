@@ -659,6 +659,13 @@
       "when": 1783078500000,
       "tag": "0098_debit_note_document_code_column",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1783164900000,
+      "tag": "0099_company_logo_and_contact",
+      "breakpoints": true
     }
   ]
 }

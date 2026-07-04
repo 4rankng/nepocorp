@@ -266,7 +266,7 @@ export default function ForwarderTripDetailPage() {
       {/* Trip Info Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
         <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Thông tin chuyến
           </span>
         </div>
@@ -309,7 +309,7 @@ export default function ForwarderTripDetailPage() {
       {/* Containers Section */}
       <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Số Container / Seal ({containers.length})
           </span>
           <button
@@ -405,7 +405,7 @@ export default function ForwarderTripDetailPage() {
       {/* Expenses Section */}
       <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Chi phí phát sinh ({expenses.length})
           </span>
           <button
@@ -445,7 +445,7 @@ export default function ForwarderTripDetailPage() {
                   min="1"
                 />
                 {expenseErrors.buyAmount && (
-                  <span style={{ fontSize: 11, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                  <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                     {expenseErrors.buyAmount}
                   </span>
                 )}
@@ -504,7 +504,7 @@ export default function ForwarderTripDetailPage() {
                     ))}
                   </select>
                   {expenseErrors.supplierId && (
-                    <span style={{ fontSize: 11, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                    <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                       {expenseErrors.supplierId}
                     </span>
                   )}
@@ -552,7 +552,7 @@ export default function ForwarderTripDetailPage() {
                       </option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 11, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
+                  <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
                     Chọn container từ danh sách đã nhập, không cần gõ lại số container.
                   </span>
                 </FormGroup>
@@ -596,7 +596,7 @@ export default function ForwarderTripDetailPage() {
                     style={{ fontFamily: 'var(--font-mono)' }}
                   />
                   {expenseErrors.declarationNumber && (
-                    <span style={{ fontSize: 11, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                    <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                       {expenseErrors.declarationNumber}
                     </span>
                   )}
@@ -648,16 +648,16 @@ export default function ForwarderTripDetailPage() {
                     </span>
                     {exp.approvalStatus === 'PENDING' && (
                       <span style={{
-                        fontSize: 11, fontWeight: 600,
+                        fontSize: 12, lineHeight: 1.35, fontWeight: 600,
                         color: '#92400e', background: '#fef3c7',
-                        borderRadius: 4, padding: '1px 6px', marginLeft: 6,
+                        borderRadius: 4, padding: '3px 7px', marginLeft: 6,
                       }}>Chờ duyệt</span>
                     )}
                     {exp.approvalStatus === 'REJECTED' && (
                       <span style={{
-                        fontSize: 11, fontWeight: 600,
+                        fontSize: 12, lineHeight: 1.35, fontWeight: 600,
                         color: 'var(--danger)', background: 'rgba(220,38,38,0.1)',
-                        borderRadius: 4, padding: '1px 6px', marginLeft: 6,
+                        borderRadius: 4, padding: '3px 7px', marginLeft: 6,
                       }}>Từ chối</span>
                     )}
                     {exp.note && (
@@ -669,7 +669,7 @@ export default function ForwarderTripDetailPage() {
                       {formatCurrency(exp.buyAmount)}
                     </div>
                     {exp.settlementMethod === 'COMPANY_DIRECT' && (
-                      <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Công ty trả</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>Công ty trả</div>
                     )}
                   </div>
                   {/* Photo upload button */}
@@ -719,7 +719,7 @@ export default function ForwarderTripDetailPage() {
                 )}
                 {/* Load photos on first render */}
                 {!expensePhotos[exp.id] && (
-                  <span style={{ fontSize: 11, color: 'var(--fg-3)', paddingLeft: 26, marginTop: 4, display: 'inline-block', cursor: 'pointer' }} onClick={() => loadExpensePhotos(exp.id)}>
+                  <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', paddingLeft: 26, marginTop: 4, display: 'inline-block', cursor: 'pointer' }} onClick={() => loadExpensePhotos(exp.id)}>
                     Xem ảnh hóa đơn
                   </span>
                 )}
@@ -734,7 +734,7 @@ export default function ForwarderTripDetailPage() {
       {/* Ghi chú */}
       <div className="panel" style={{ marginBottom: 16 }}>
         <div style={{ padding: '12px 20px' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+          <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
             Ghi chú
           </div>
           {trip.notes ? (
@@ -749,18 +749,18 @@ export default function ForwarderTripDetailPage() {
       {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
         <div className="panel" style={{ marginBottom: 16 }}>
           <div style={{ padding: '12px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
               Liên hệ & hướng dẫn
             </div>
             {trip.instructions.contactName && (
               <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>Liên hệ</span>
+                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>Liên hệ</span>
                 <span style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{trip.instructions.contactName}</span>
               </div>
             )}
             {trip.instructions.contactPhone && (
               <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>SĐT</span>
+                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>SĐT</span>
                 <a href={`tel:${trip.instructions.contactPhone}`} style={{ color: 'var(--brand, #00B14F)', textDecoration: 'none', fontWeight: 500 }}>{trip.instructions.contactPhone}</a>
               </div>
             )}

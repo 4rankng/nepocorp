@@ -440,7 +440,7 @@ export default function PayableDetailPage() {
             onChange={e => setPaymentReceiptId(e.target.value)}
             placeholder="VD: PT-20260531-01"
           />
-          <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4 }}>
+          <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
             Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
           </p>
         </div>

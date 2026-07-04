@@ -66,14 +66,14 @@ select.input.ci-input-sm {
   color: var(--fg-1);
   font-size: 13px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.35;
 }
 
 .ci-photo-lane__capture {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -128,7 +128,8 @@ select.input.ci-input-sm {
 /* Empty-photos placeholder so the cell has a visible affordance before the
    driver takes the first shot. Small footprint to match the compact chrome. */
 .ci-photo-empty {
-  min-height: 34px;
+  min-height: 44px;
+  min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

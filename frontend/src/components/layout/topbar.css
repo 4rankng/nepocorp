@@ -40,20 +40,20 @@
 .topbar__welcome {
   display: flex;
   flex-direction: column;
-  line-height: 1.3;
+  line-height: 1.35;
   min-width: 0;
 }
 
 .topbar__welcome .greeting {
   font-size: var(--fs-xs);
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--ink-3);
   white-space: nowrap;
 }
 
 .topbar__welcome .name {
   font-size: 15px;
-  line-height: 1.3;
+  line-height: 1.35;
   font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
@@ -120,14 +120,14 @@
 }
 .topbar-date__label {
   font-variant-numeric: tabular-nums;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 .topbar-date__period {
   font-size: var(--fs-xs);
   font-family: var(--font-mono);
   color: var(--ink-3);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 .topbar-date__caret {
   color: var(--ink-3);
@@ -176,7 +176,8 @@
 }
 .month-picker__title small {
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 600;
 }
 .month-picker__header {
@@ -310,10 +311,10 @@
 .month-picker__hint {
   min-width: 0;
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 650;
   text-align: right;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .topbar--driver .icon-btn {
@@ -398,7 +399,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
-  line-height: 1.3;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 .topbar__context strong {
@@ -406,7 +407,7 @@
   color: var(--ink);
   font-size: var(--fs-sm);
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -578,11 +579,11 @@
 .notif-item__body { min-width: 0; flex: 1; }
 .notif-item__title { font-size: 13px; font-weight: 600; color: var(--ink); }
 .notif-item__msg { font-size: 12px; color: var(--ink-2); margin-top: 2px; word-break: break-word; }
-.notif-item__time { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+.notif-item__time { font-size: var(--fs-xs); line-height: 1.35; color: var(--ink-3); margin-top: 4px; }
 .notif-panel__foot { padding: 10px 14px; border-top: 1px solid var(--line); }
 .notif-panel__push {
   width: 100%; background: var(--surface-3); border: 1px solid var(--line);
   border-radius: 8px; padding: 8px; font-size: 12px; color: var(--ink); cursor: pointer;
 }
 .notif-panel__push:disabled { opacity: 0.5; cursor: default; }
-.notif-panel__push-err { font-size: 11px; color: var(--danger); margin-top: 6px; }
+.notif-panel__push-err { font-size: var(--fs-xs); line-height: 1.35; color: var(--danger); margin-top: 6px; }

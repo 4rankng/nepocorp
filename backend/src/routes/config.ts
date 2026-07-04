@@ -301,11 +301,13 @@ router.put('/company-info', asyncHandler(async (req: Request, res: Response) => 
   // INSERT…ON CONFLICT statements with no transaction, so a mid-loop failure
   // (connection blip) left a half-updated profile; the trailing re-SELECT was
   // also redundant since the values are fully known from the validated input.
+  // setting_value is NOT NULL, so a null logoStorageKey (admin removed the
+  // logo) is stored as '' and coerced back to null on read.
   await db.insert(s.appSettings)
     .values(
       Object.entries(COMPANY_INFO_SETTING_KEYS).map(([field, key]) => ({
         key,
-        value: data[field as keyof typeof COMPANY_INFO_SETTING_KEYS],
+        value: (data[field as keyof typeof COMPANY_INFO_SETTING_KEYS] ?? '') as string,
       })),
     )
     .onConflictDoUpdate({
@@ -315,7 +317,7 @@ router.put('/company-info', asyncHandler(async (req: Request, res: Response) => 
         updatedAt: now,
       },
     });
-  res.json({ ...data, updatedAt: now.toISOString() });
+  res.json({ ...data, logoStorageKey: data.logoStorageKey ?? null, updatedAt: now.toISOString() });
 }));
 
 // Fuel price history

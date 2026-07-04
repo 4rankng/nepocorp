@@ -393,7 +393,6 @@ export const debitNoteTemplates = pgTable('debit_note_templates', {
   name: varchar('name', { length: 100 }).notNull(),
   isDefault: boolean('is_default').notNull().default(false),
   documentType: varchar('document_type', { length: 20 }).notNull().default('DEBIT_NOTE'),
-  logoStorageKey: varchar('logo_storage_key', { length: 500 }),
   titleText: varchar('title_text', { length: 100 }).notNull().default('GIẤY BÁO NỢ'),
   issuerName: varchar('issuer_name', { length: 200 }),
   issuerAddress: varchar('issuer_address', { length: 300 }),

@@ -124,10 +124,10 @@ export function UserTable({
           </div>
           <div className="kpi__value">{total}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <span className="kpi__meta--up" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--brand-soft)', color: 'var(--brand)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+            <span className="kpi__meta-pill kpi__meta--up">
               +0 mới
             </span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Đang hoạt động tốt</span>
+            <span className="kpi__meta-note">Đang hoạt động tốt</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
@@ -137,10 +137,10 @@ export function UserTable({
           </div>
           <div className="kpi__value">{staffCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(245, 158, 11, 0.1)', color: 'rgb(217, 119, 6)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+            <span className="kpi__meta-pill kpi__meta-pill--warn">
               Văn phòng
             </span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Admin · Quản lý · Kế toán</span>
+            <span className="kpi__meta-note">Admin · Quản lý · Kế toán</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><UserCog size={72} /></div>
         </div>
@@ -150,10 +150,10 @@ export function UserTable({
           </div>
           <div className="kpi__value">{driverCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: 'rgb(5, 150, 105)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+            <span className="kpi__meta-pill kpi__meta-pill--success">
               Hiện trường
             </span>
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Có quyền app lái xe</span>
+            <span className="kpi__meta-note">Có quyền app lái xe</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
         </div>
@@ -164,15 +164,15 @@ export function UserTable({
           <div className="kpi__value">{inactiveCount}</div>
           <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
             {inactiveCount > 0 ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(239, 68, 68, 0.1)', color: 'rgb(220, 38, 38)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              <span className="kpi__meta-pill kpi__meta-pill--danger">
                 Cần kiểm tra
               </span>
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(107, 114, 128, 0.1)', color: 'rgb(107, 114, 128)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
+              <span className="kpi__meta-pill kpi__meta-pill--neutral">
                 An toàn
               </span>
             )}
-            <span style={{ color: 'var(--ink-3)', fontSize: 11 }}>Không thể truy cập</span>
+            <span className="kpi__meta-note">Không thể truy cập</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><Lock size={72} /></div>
         </div>
@@ -286,7 +286,7 @@ export function UserTable({
                     disabled={currentPage === 1}
                     onClick={() => onPageChange(currentPage - 1)}
                     style={{
-                      minHeight: 36, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 9,
+                      minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === 1 ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 12,
                       color: currentPage === 1 ? 'var(--ink-4)' : 'var(--ink-2)'
@@ -302,7 +302,7 @@ export function UserTable({
                         className={`btn-page${currentPage === page ? ' is-active' : ''}`}
                         onClick={() => onPageChange(page)}
                         style={{
-                          minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
                           borderRadius: 9, border: currentPage === page ? '1px solid var(--brand)' : '1px solid var(--line-2)',
                           background: currentPage === page ? 'var(--brand)' : '#fff',
                           color: currentPage === page ? '#fff' : 'var(--ink)',
@@ -319,7 +319,7 @@ export function UserTable({
                     disabled={currentPage === totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
                     style={{
-                      minHeight: 36, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 9,
+                      minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === totalPages ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 12,
                       color: currentPage === totalPages ? 'var(--ink-4)' : 'var(--ink-2)'
@@ -541,9 +541,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                           setActiveMenuId(activeMenuId === u.id ? null : u.id);
                         }}
                         style={{
-                          background: 'none', border: 'none', width: 40, height: 40, borderRadius: '50%',
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: 'var(--ink-3)', transition: 'background 0.2s, color 0.2s', padding: 0
+                          padding: 0
                         }}
                       >
                         <MoreVertical size={16} />

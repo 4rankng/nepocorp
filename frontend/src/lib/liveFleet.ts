@@ -45,14 +45,14 @@ export function liveMarkerIcon(status: LiveFleetStatus, angle = 0): L.DivIcon {
       : '';
   return L.divIcon({
     className: 'custom-map-marker',
-    html: `<div style="position:relative; width:20px; height:20px;">
+    html: `<div style="position:relative; width:28px; height:28px;">
         ${arrow}
         <div style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%);
-          width:14px; height:14px; background:${color}; border:2px solid #FFFFFF; border-radius:50%;
+          width:20px; height:20px; background:${color}; border:2px solid #FFFFFF; border-radius:50%;
           box-shadow:0 0 8px ${color}99;"></div>
       </div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-    popupAnchor: [0, -12],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16],
   });
 }

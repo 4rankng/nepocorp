@@ -6,10 +6,11 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   height: auto;
   padding: 0 12px;
   font-size: var(--fs-md);
+  line-height: 1.35;
   font-family: inherit;
   color: var(--ink, var(--fg-1));
   background:
@@ -89,9 +90,10 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 38px;
+  min-height: 44px;
   padding: 8px 10px;
   font-size: var(--fs-sm);
+  line-height: 1.35;
   color: var(--ink, var(--fg-1));
   border-radius: 6px;
   cursor: pointer;

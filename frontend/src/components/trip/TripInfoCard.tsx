@@ -85,7 +85,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
           </Field>
           <Field label="Mã tham chiếu khách hàng">
             <input id="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
-            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>(không bắt buộc)</span>
+            <span className="tc-field-hint">(không bắt buộc)</span>
           </Field>
         </div>
 
@@ -205,11 +205,11 @@ export function TripInfoCard(props: TripInfoCardProps) {
         <div className="trip-info-card__container-grid">
           <Field label="Số lượng cont" required>
             <input id="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} />
-            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Mặc định: 1</span>
+            <span className="tc-field-hint">Mặc định: 1</span>
           </Field>
           <Field label="Loại container" required className="trip-info-card__container-type">
             {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId')}
-            <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Số container/seal cập nhật sau</span>
+            <span className="tc-field-hint">Số container/seal cập nhật sau</span>
           </Field>
 
           {/* VAT rate */}

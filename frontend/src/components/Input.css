@@ -5,8 +5,8 @@
 .input {
   display: flex;
   width: 100%;
-  min-height: 42px;
-  height: 42px;
+  min-height: 45px;
+  height: 45px;
   padding: 0 14px;
   font-family: var(--font-body);
   font-size: var(--fs-md);
@@ -75,8 +75,8 @@ select.input {
 
 @media (max-width: 640px) {
   .input {
-    min-height: 44px;
-    height: 44px;
+    min-height: 45px;
+    height: 45px;
     border-radius: 11px;
   }
 

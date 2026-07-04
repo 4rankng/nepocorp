@@ -443,11 +443,11 @@ export function PenaltyTable({
                   const drv = drivers.find(dr => dr.id === logDriverFilter);
                   return drv ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <span style={{ fontSize: 11, color: 'var(--brand)', fontWeight: 600 }}>
+                      <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--brand)', fontWeight: 600 }}>
                         Lọc theo: {drv.name}
                       </span>
                       <button
-                        style={{ fontSize: 10, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
+                        style={{ minHeight: 44, fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 6, padding: '0 10px', cursor: 'pointer' }}
                         onClick={() => setLogDriverFilter(null)}
                       >
                         ✕ Xóa lọc

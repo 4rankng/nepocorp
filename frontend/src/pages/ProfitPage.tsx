@@ -403,7 +403,7 @@ export default function ProfitPage() {
                     </div>
                   ) : preview.entity && preview.entity.length > 0 ? (
                     <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
                       <table style={{ width: '100%', fontSize: 12.5 }}>
                         <thead>
                           <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
@@ -444,7 +444,7 @@ export default function ProfitPage() {
 
                   {preview.perTruck && preview.perTruck.filter(t => t.partners.length > 0).length > 0 && (
                     <div style={{ marginTop: 10 }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
                       {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
                         <div key={t.truckId} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--bg-1)', borderRadius: 6 }}>
                           <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
@@ -483,7 +483,7 @@ export default function ProfitPage() {
                       ))}
                     </tbody>
                   </table>
-                  <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
                 </div>
               )}
             </Card>

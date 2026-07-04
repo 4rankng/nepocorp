@@ -277,11 +277,11 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                       return (
                         <tr key={fee.id ?? i}>
                           <td>
-                            <div style={{ lineHeight: 1.25 }}>
+                            <div style={{ lineHeight: 1.35 }}>
                               <div>{feeTypeLabel(fee.expenseType)}</div>
                               <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
                                 {fee.containerNumber && (
-                                  <span style={{ fontSize: 11, color: 'var(--ink-3)' }} className="mono">
+                                  <span style={{ fontSize: 'var(--fs-xs)', lineHeight: 1.35, color: 'var(--ink-3)' }} className="mono">
                                     {fee.containerNumber}
                                   </span>
                                 )}
@@ -310,7 +310,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                             {fee.invoiceNumber || fee.declarationNumber ? (
                               <>
                                 <span style={{ color: 'var(--ink)' }}>{fee.invoiceNumber ?? fee.declarationNumber}</span>
-                                {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 11 }}>· {fee.invoiceDate.slice(5)}</span>}
+                                {fee.invoiceDate && <span style={{ marginLeft: 4, fontSize: 'var(--fs-xs)', lineHeight: 1.35 }}>· {fee.invoiceDate.slice(5)}</span>}
                               </>
                             ) : ''}
                           </td>

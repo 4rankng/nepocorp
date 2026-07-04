@@ -49,9 +49,9 @@
 
   .leaflet-touch .leaflet-control-zoom a,
   .leaflet-control-zoom a {
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
   }
 }
 
@@ -105,19 +105,20 @@
     width: 100%;
     min-width: 0;
     justify-content: center;
-    min-height: 42px;
+    min-height: 44px;
     padding: 8px 14px;
     font-size: var(--fs-xs);
+    line-height: 1.35;
   }
 
   /* "Hủy chuyến" (btn--danger) is a rare / destructive action — on mobile
-     it should be visually subordinate to the primary CTA, not the same
-     full-bleed size as the lifecycle buttons above it. Trim the padding
-     and shrink the min-height so it reads as a less-emphatic option. */
+     it should be visually subordinate to the primary CTA, but it still needs
+     the same comfortable tap target as the rest of the action cluster. */
   .td-page-head .header-actions .btn--danger {
-    min-height: 36px;
-    padding: 6px 14px;
-    font-size: 11.5px;
+    min-height: 44px;
+    padding: 8px 14px;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
   }
 
   .td-page-head .header-actions .btn--primary {
@@ -213,11 +214,13 @@
   }
 
   .cf-label {
-    font-size: 10px;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
   }
 
   .cf-value {
     font-size: 12.5px;
+    line-height: 1.35;
   }
 
   /* KPI rail micro-grid stays 2x2 on mobile, but tighter */

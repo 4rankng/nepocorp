@@ -133,7 +133,7 @@
   border-radius: 50%;
 }
 .aging__donut-label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
-.aging__total { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; color: var(--ink); line-height: 1.25; }
+.aging__total { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; color: var(--ink); line-height: 1.35; }
 .aging__total-label { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
 .aging__list { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .aging__row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); }
@@ -306,7 +306,7 @@
 .dash-wf .wf-head .wf-sum .neg { color: var(--wf-red); font-weight: 700; }
 .dash-wf .wf-head .wf-acts { display: flex; gap: 9px; flex: 0 0 auto; }
 .dash-wf .wf-btn {
-  height: 38px; padding: 0 15px; border-radius: 10px;
+  min-height: 45px; padding: 0 15px; border-radius: 10px;
   font-family: var(--font-body); font-weight: 600; font-size: var(--fs-sm);
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
   border: 1px solid var(--wf-border-2); background: var(--surface); color: var(--wf-ink);
@@ -356,7 +356,7 @@
   background: none; border: 0; padding: 0;
   border-radius: 8px;
   /* fix visual-audit 2026-06-25 BUG-1: tap target ≥ 36px on desktop */
-  min-height: 36px;
+  min-height: 45px;
   padding-inline: 8px;
   transition: background 120ms ease, color 120ms ease;
 }
@@ -372,6 +372,7 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
+  min-height: 45px;
   padding: 8px 14px;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
@@ -412,7 +413,7 @@
 .dash-wf .wf-kpi .delta.down { color: var(--wf-red); background: #FBE5E3; }
 .dash-wf .wf-kpi .delta.flat { color: var(--wf-ink-2); background: var(--wf-bg); }
 .dash-wf .wf-kpi .delta.warn { color: var(--wf-amber); background: var(--wf-amber-soft); }
-.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; margin-top: 9px; line-height: 1.25; }
+.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; margin-top: 9px; line-height: 1.35; }
 .dash-wf .wf-kpi .val i { font-style: normal; font-size: 15px; color: var(--wf-ink-3); font-weight: 500; margin-left: 1px; }
 .dash-wf .wf-kpi .foot { font-size: var(--fs-2xs); color: var(--wf-ink-2); margin-top: 7px; }
 
@@ -497,7 +498,7 @@
 .dash-wf .wf-seg i { display: block; height: 100%; border-radius: 3px; }
 .dash-wf .wf-fstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
 .dash-wf .wf-fstat { padding: 9px 10px; border: 1px solid var(--wf-border); border-radius: 10px; background: var(--wf-card); }
-.dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; line-height: 1.25; display: flex; align-items: center; gap: 6px; }
+.dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; line-height: 1.35; display: flex; align-items: center; gap: 6px; }
 .dash-wf .wf-fstat .v .pip { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
 .dash-wf .wf-fstat .k { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-2xs); font-weight: 600; color: var(--wf-ink-3); margin-top: 6px; }
 .dash-wf .wf-util { display: flex; align-items: center; gap: 11px; margin-top: 13px; }
@@ -510,7 +511,7 @@
 .dash-wf .wf-cost .body { padding: 14px 16px 16px; display: flex; align-items: center; gap: 18px; }
 .dash-wf .wf-donut { flex: 0 0 auto; position: relative; width: 118px; height: 118px; }
 .dash-wf .wf-donut .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.dash-wf .wf-donut .ctr .big { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 700; line-height: 1.25; }
+.dash-wf .wf-donut .ctr .big { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 700; line-height: 1.35; }
 .dash-wf .wf-donut .ctr .sm { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-2xs); font-weight: 600; color: var(--wf-ink-3); margin-top: 4px; }
 .dash-wf .wf-clegend { flex: 1; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
 .dash-wf .wf-crow { display: flex; align-items: center; gap: 9px; font-size: var(--fs-xs); }
@@ -572,11 +573,11 @@
 .dash-wf .wf-severity {
   display: inline-flex;
   align-items: center;
-  min-height: 20px;
-  padding: 2px 7px;
+  min-height: 24px;
+  padding: 3px 8px;
   border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -586,7 +587,7 @@
 .dash-wf .wf-severity--success { color: var(--wf-green-700); background: var(--wf-green-soft); }
 .dash-wf .wf-arow .go { align-self: center; }
 .dash-wf .wf-minibtn {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 12px 0 14px;
   border-radius: 8px;
   border: 1px solid var(--wf-border-2);
@@ -594,6 +595,7 @@
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--fs-xs);
+  line-height: 1.35;
   cursor: pointer;
   color: var(--wf-ink);
   display: inline-flex;
@@ -805,11 +807,11 @@
 
   .dash-wf .wf-card-h .ttl {
     font-size: 15px;
-    line-height: 1.25;
+    line-height: 1.35;
   }
 
   .dash-wf .wf-card-h .sub {
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
 
   .dash-wf .wf-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -858,13 +860,13 @@
   .dash-wf .wf-arow .tx .t {
     gap: 5px;
     font-size: 12.5px;
-    line-height: 1.25;
+    line-height: 1.35;
   }
 
   .dash-wf .wf-arow .tx .s {
     margin-top: 2px;
-    font-size: 10.5px;
-    line-height: 1.3;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
@@ -872,9 +874,9 @@
   }
 
   .dash-wf .wf-severity {
-    min-height: 18px;
-    padding: 1px 6px;
-    font-size: 9.5px;
+    min-height: 24px;
+    padding: 3px 8px;
+    font-size: var(--fs-xs);
   }
 
   .dash-wf .wf-arow .go {
@@ -884,11 +886,11 @@
   }
 
   .dash-wf .wf-minibtn {
-    min-height: 40px;
+    min-height: 44px;
     padding: 0 9px 0 11px;
     border-radius: 9px;
-    font-size: 11.5px;
-    line-height: 1.25;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
   }
 
   .dash-wf .wf-minibtn__icon {
@@ -933,8 +935,8 @@
   gap: 5px;
 }
 .dash-wf .approval-queue__page-btn {
-  width: 36px;
-  height: 36px;
+  width: 45px;
+  height: 45px;
   border-radius: 8px;
   border: 1px solid var(--wf-border-2);
   background: var(--surface);
@@ -1008,7 +1010,7 @@
 .dash-wf .approval-queue__row {
   display: grid;
   /* icon | title/subtitle | amount | quick-approve | chevron */
-  grid-template-columns: 28px minmax(0, 1fr) auto 36px 14px;
+  grid-template-columns: 28px minmax(0, 1fr) auto 45px 14px;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1114,8 +1116,8 @@
    Small circular icon button that does NOT trigger row navigation
    (the row's onClick is stopped via e.stopPropagation in the handler). */
 .dash-wf .approval-queue__quick {
-  width: 36px;
-  height: 36px;
+  width: 45px;
+  height: 45px;
   border-radius: 8px;
   border: 1px solid var(--wf-border-2);
   background: var(--surface);
@@ -1298,12 +1300,12 @@
 /* ── Mobile overrides for new styles ── */
 @media (max-width: 640px) {
   .dash-wf .wf-link {
-    min-height: 36px;
+    min-height: 44px;
     padding: 7px 2px;
   }
 
   .dash-wf .wf-chart-toggle__btn {
-    min-height: 40px;
+    min-height: 44px;
     padding: 8px 12px;
   }
 

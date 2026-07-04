@@ -198,6 +198,10 @@
 .trip-list-page .trip-col__link {
   min-width: 0;
   width: 100%;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .trip-list-page .trip-copy-btn {
   display: inline-flex;

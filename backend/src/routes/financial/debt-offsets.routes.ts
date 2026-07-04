@@ -5,6 +5,7 @@ import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getDualEntities, createDebtOffset, approveDebtOffset, listDebtOffsets } from '../../services/debtOffset.service';
+import { invalidateReportCaches } from '../../lib/redis';
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.post('/finance/debt-offsets/:id/approve',
   asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string, 10);
     const result = await approveDebtOffset(id, getUser(req).userId, getUser(req).role);
+    await invalidateReportCaches();   // was missing — approve posts ADJUSTMENT ledger entries but busted no cache
     res.json(result);
   }),
 );

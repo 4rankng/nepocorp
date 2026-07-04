@@ -381,7 +381,7 @@ export default function ExpenseListPage() {
                       <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
                       {formatDate(e.expenseDate)}
                       {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
-                        <div style={{ fontSize: 11, color: 'var(--ink-4)' }} title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)">
+                        <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-4)' }} title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)">
                           nhập {formatDate(e.createdAt)}
                         </div>
                       )}

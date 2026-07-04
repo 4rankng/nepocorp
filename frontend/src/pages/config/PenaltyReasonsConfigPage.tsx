@@ -33,7 +33,8 @@ const pageStyles = `
     font-size: 13px;
   }
   .penalty-reasons-page .kpi-grid .kpi__meta {
-    font-size: 11px;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
   }
 
   /* ── Violation card grid ── */

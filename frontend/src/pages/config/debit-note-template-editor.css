@@ -512,8 +512,8 @@
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   color: var(--ink-3);
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   letter-spacing: 0;
   text-align: left;
   text-transform: uppercase;
@@ -694,8 +694,8 @@
   min-width: 0;
   display: grid;
   gap: 2px;
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
 }
 
 .debit-editor-preview__issuer strong {
@@ -749,7 +749,7 @@
   padding: 7px 8px;
   color: #fff;
   border: 1px solid #dbe3de;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1.18;
   font-weight: 850;
   white-space: pre-line;
@@ -1187,8 +1187,8 @@
 .debit-editor-column-preview__table th small {
   min-width: 0;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
@@ -1249,7 +1249,7 @@
 
 .debit-editor-column-card > button small {
   color: var(--ink-3);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 650;
   line-height: 1.3;
 }
@@ -1267,7 +1267,7 @@
   border-radius: 999px;
   background: var(--surface-3);
   color: var(--ink-2);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 800;
 }
 
@@ -1454,7 +1454,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  min-height: 32px;
+  min-height: 45px;
   height: auto;
   padding-block: 4px;
   line-height: 1.35;
@@ -1488,16 +1488,16 @@
 }
 
 .debit-editor-canvas-input--issuer {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
-  min-height: 32px;
+  min-height: 45px;
 }
 
 .debit-editor-preview__title.debit-editor-canvas-input {
   display: block;
   height: auto;
   margin: 0 auto;
-  min-height: 36px;
+  min-height: 45px;
   padding: 5px 8px;
   border-radius: 4px;
   resize: none;
@@ -1534,7 +1534,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   color: #000;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1.28;
 }
 
@@ -1565,7 +1565,7 @@
   padding: 5px 4px;
   border-radius: 3px;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1.35;
   font-weight: 400;
 }
@@ -1623,7 +1623,7 @@
 
 .debit-editor-preview__table th button {
   width: 100%;
-  min-height: 38px;
+  min-height: 45px;
   display: grid;
   place-items: center;
   gap: 2px;
@@ -1636,8 +1636,8 @@
 
 .debit-editor-preview__table th button span {
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 700;
   white-space: pre-line;
   overflow-wrap: normal;
@@ -1646,13 +1646,13 @@
 
 .debit-editor-preview__table th button small {
   color: rgba(255, 255, 255, 0.78);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
 }
 
 .debit-editor-canvas-th-input {
   width: 100%;
-  min-height: 36px;
+  min-height: 45px;
   padding: 7px 6px;
   border: 0;
   resize: none;
@@ -1661,7 +1661,7 @@
   color: #000;
   text-align: center;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1.3;
   font-weight: 700;
   outline: none;
@@ -1674,7 +1674,7 @@
   color: #000;
   background: #fff;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   line-height: 1.3;
 }
 
@@ -1707,17 +1707,17 @@
 .debit-editor-canvas-input--signature {
   max-width: 220px;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
-  min-height: 32px;
+  min-height: 45px;
 }
 
 .debit-editor-canvas-input--signature-name {
   max-width: 220px;
   margin-top: 18px;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
-  min-height: 32px;
+  font-size: var(--fs-xs);
+  min-height: 45px;
   font-weight: 700;
   text-align: center;
 }
@@ -1745,6 +1745,7 @@
   color: var(--ink);
   font-size: 15px;
   font-weight: 850;
+  line-height: 1.35;
 }
 
 .debit-editor-column-picker {
@@ -1857,7 +1858,7 @@
 .debit-editor-selected-group > strong {
   grid-column: 1 / -1;
   font-size: 16px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .debit-editor-selected-group .debit-editor-field {
@@ -2035,7 +2036,7 @@
   .debit-editor-preview__title.debit-editor-canvas-input {
     font-size: 18px;
     line-height: 1.35;
-    min-height: 38px;
+    min-height: 45px;
   }
 
 }

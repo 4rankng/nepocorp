@@ -51,8 +51,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -102,14 +104,14 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   background: var(--surface-2, #f1f5f4);
   color: var(--fg-2);
   border: 1px solid var(--line);
-  line-height: 1.25;
+  line-height: 1.35;
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -217,6 +219,7 @@
   border-color: var(--line-2);
   box-shadow: var(--sh-sm);
   font-weight: 700;
+  min-height: 44px;
 }
 
 .tdp-edit-btn:hover {

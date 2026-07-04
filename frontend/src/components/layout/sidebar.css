@@ -154,7 +154,8 @@
 /* wireframe-canonical section label */
 .nav-section-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.55);
@@ -378,11 +379,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 10px 12px;
   border-radius: 6px;
   font-size: 14px;
-  line-height: 1.3;
+  line-height: 1.35;
   font-weight: 500;
   color: var(--danger, #dc2626);
   cursor: pointer;

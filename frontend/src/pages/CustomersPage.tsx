@@ -389,7 +389,7 @@ export default function CustomersPage() {
             placeholder="Tìm theo tên, MST…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '7px 11px 7px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 12.5 }}
+            style={{ width: '100%', minHeight: 44, padding: '10px 11px 10px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 13, lineHeight: 1.35 }}
           />
         </div>
       </div>

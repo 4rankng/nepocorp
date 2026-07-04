@@ -50,7 +50,6 @@ const defaultSnapshot: DebitNoteTemplateSnapshot = {
   orientation: 'landscape', termsText: null,
   signatureLeftLabel: 'Khách hàng', signatureLeftName: null,
   signatureRightLabel: 'Kế toán trưởng', signatureRightName: null,
-  logoStorageKey: null,
 };
 
 const paymentSnapshot: DebitNoteTemplateSnapshot = {
@@ -121,11 +120,11 @@ test('renderTemplatedXlsx DEBIT_NOTE normalizes horizontal statement snapshots t
   assert.equal(ws.getCell(15, 8).value, 'Thành tiền');
 });
 
-test('renderTemplatedXlsx DEBIT_NOTE embeds the default NEPO logo image', async () => {
+test('renderTemplatedXlsx DEBIT_NOTE embeds no image when company has no logo', async () => {
   const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0] as unknown as { getImages?: () => unknown[] };
-  assert.ok((ws.getImages?.() ?? []).length > 0, 'default logo image should be embedded');
+  assert.equal((ws.getImages?.() ?? []).length, 0, 'no image should embed when no company logo is configured');
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE adds a shipment header row before charge rows', async () => {
@@ -251,7 +250,6 @@ test('renderTemplatedXlsx with toggled-off columns + flat grouping → valid xls
 test('buildBillingXlsx ignores a template whose documentType does not match the doc', async () => {
   const wrongTypeTemplate: DebitNoteTemplate = {
     id: 10, name: 'Wrong', isDefault: false, documentType: 'DEBIT_NOTE',
-    logoStorageKey: null,
     titleText: 'GIẤY BÁO NỢ', issuerName: null, issuerAddress: null, issuerTaxCode: null,
     accentColor: '#123456', showContainerColumn: false, showUnitColumn: true,
     groupingMode: 'NONE', columns, amountInWords: false, orientation: 'portrait',
@@ -263,10 +261,9 @@ test('buildBillingXlsx ignores a template whose documentType does not match the 
   assert.ok(isXlsx(buf), 'mismatched template should fall back to legacy xlsx instead of cross-rendering');
 });
 
-test('templateToSnapshot — copies render fields + resolved logo key', () => {
+test('templateToSnapshot — copies render fields', () => {
   const tpl: DebitNoteTemplate = {
     id: 9, name: 'A', isDefault: false, documentType: 'DEBIT_NOTE',
-    logoStorageKey: 'debit-note-templates/9/logo-x.png',
     titleText: 'GN', issuerName: 'Co', issuerAddress: 'Addr', issuerTaxCode: 'MST',
     accentColor: '#123456', showContainerColumn: false, showUnitColumn: true,
     groupingMode: 'NONE', columns, amountInWords: false, orientation: 'portrait',
@@ -278,6 +275,5 @@ test('templateToSnapshot — copies render fields + resolved logo key', () => {
   assert.equal(snap.id, 9);
   assert.equal(snap.titleText, 'GN');
   assert.equal(snap.showContainerColumn, false);
-  assert.equal(snap.logoStorageKey, 'debit-note-templates/9/logo-x.png');
   assert.equal(snap.accentColor, '#123456');
 });

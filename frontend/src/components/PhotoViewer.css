@@ -63,8 +63,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border: none;
   border-radius: var(--r-sm);
   background: transparent;
@@ -179,8 +181,10 @@
   }
 
   .pv-btn {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255,255,255,0.9);

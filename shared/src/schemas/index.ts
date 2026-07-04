@@ -324,7 +324,6 @@ export const debitNoteTemplateSchema = z.object({
   name: z.string().min(1).max(100),
   isDefault: z.boolean().default(false),
   documentType: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']).default('DEBIT_NOTE'),
-  logoStorageKey: z.string().max(500).nullable().default(null),
   titleText: z.string().min(1).max(100).default('GIẤY BÁO NỢ'),
   issuerName: z.string().max(200).nullable().default(null),
   issuerAddress: z.string().max(300).nullable().default(null),
@@ -577,6 +576,9 @@ export const companyInfoSchema = z.object({
   representativeTitle: z.string().trim().min(1, 'Chức vụ là bắt buộc'),
   bankAccount: z.string().trim().min(1, 'Số tài khoản là bắt buộc'),
   bankName: z.string().trim().min(1, 'Ngân hàng là bắt buộc'),
+  phone: z.string().trim().default(''),
+  email: z.string().trim().default(''),
+  logoStorageKey: z.string().nullable().optional(),
 });
 
 export const penaltyReasonSchema = z.object({

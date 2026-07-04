@@ -231,15 +231,13 @@ export async function deleteTripPhotoByStorageKey(
 const uploadRouter = Router();
 
 /**
- * Save a debit-note template logo. Distinct from saveTripPhoto: no trip_photos
- * row (logos belong to templates, not trips), stored under a dedicated
- * `debit-note-templates/{id}/` prefix (avoids the expense-photos/ collision),
- * and normalized to PNG so ExcelJS can embed it into the xlsx (webp isn't
- * supported by addImage). The template row stores the returned storageKey.
+ * Save the company logo. Stored under a dedicated `company-assets/` prefix
+ * (no DB row — the storage key lives in app_settings as company.logo_storage_key),
+ * normalized to PNG so ExcelJS can embed it into the xlsx (webp isn't supported
+ * by addImage). PUT /api/config/company-info persists the returned storageKey.
  */
-export async function saveDebitNoteLogo(
+export async function saveCompanyLogo(
   file: { buffer: Buffer },
-  templateId: number,
 ): Promise<{ storageKey: string; url: string }> {
   const mime = sniffImageType(file.buffer);
   if (!mime) {
@@ -251,20 +249,22 @@ export async function saveDebitNoteLogo(
     .png()
     .toBuffer();
   const uuid = crypto.randomUUID();
-  const key = `debit-note-templates/${templateId}/logo-${uuid}.png`;
+  const key = `company-assets/logo-${uuid}.png`;
   await storageService.upload(processedBuffer, key);
   return { storageKey: key, url: `/api/photos/${encodeURIComponent(key)}` };
 }
 
-// Logo upload for debit-note templates. Office-staff only (config Casbin gate
-// applies at the config router; this route sits on the upload router which is
-// authenticated — role enforcement happens on serve via /api/photos).
-uploadRouter.post('/debit-note-template-logo', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+// Company logo upload. Mirrors the config router role gate (config.ts): DRIVER
+// and FORWARDER cannot set the company identity. The storage key is persisted
+// to app_settings via PUT /api/config/company-info.
+uploadRouter.post('/company-logo', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  const role = getUser(req).role;
+  if (role === Role.DRIVER || role === Role.FORWARDER) {
+    return res.status(403).json({ error: 'Không có quyền tải logo công ty' });
+  }
   const file = req.file;
-  const templateId = parseInt(req.body.template_id);
   if (!file) return res.status(400).json({ error: 'Không có file tải lên' });
-  if (isNaN(templateId)) return res.status(400).json({ error: 'template_id không hợp lệ' });
-  const saved = await saveDebitNoteLogo(file, templateId);
+  const saved = await saveCompanyLogo(file);
   res.status(201).json({ ok: true, storageKey: saved.storageKey, url: saved.url });
 }));
 

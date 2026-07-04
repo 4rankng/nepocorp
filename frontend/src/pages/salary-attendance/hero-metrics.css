@@ -50,7 +50,7 @@
 .salary-page .hero-title-block { min-width: 0; }
 .salary-page .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: var(--fs-2xs); letter-spacing: 1.8px; font-weight: 700;
+  font-size: var(--fs-xs); line-height: 1.35; letter-spacing: 1.2px; font-weight: 700;
   color: var(--accent-ink);
   text-transform: uppercase;
   margin-bottom: 9px;
@@ -64,7 +64,7 @@
   font-family: var(--font-display);
   font-size: var(--fs-2xl); font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: 1.35;
   margin: 0 0 6px;
 }
 .salary-page .hero-sub {
@@ -113,7 +113,8 @@
 }
 .salary-page .metric.featured .metric-label { color: var(--accent-ink); }
 .salary-page .metric-label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   letter-spacing: 1.4px;
   color: var(--ink-3);
   font-weight: 600;
@@ -122,12 +123,12 @@
 }
 .salary-page .metric-value {
   font-size: var(--fs-2xl); font-weight: 700;
-  line-height: 1.18; letter-spacing: 0;
+  line-height: 1.35; letter-spacing: 0;
   color: var(--ink);
 }
 .salary-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
 .salary-page .metric-value-unit {
-  font-size: var(--fs-sm); color: var(--ink-3); font-weight: 500; margin-left: 2px;
+  font-size: var(--fs-sm); line-height: 1.35; color: var(--ink-3); font-weight: 500; margin-left: 2px;
 }
 .salary-page .metric-delta {
   margin-top: 8px;
@@ -196,8 +197,8 @@
     margin-bottom: 12px;
   }
   .salary-page .hero-top { flex-direction: column; gap: 10px; align-items: stretch; }
-  .salary-page .hero-h1 { font-size: var(--fs-lg); line-height: 1.25; margin-bottom: 3px; }
-  .salary-page .hero-eyebrow { font-size: 9px; margin-bottom: 6px; letter-spacing: 1.4px; }
+  .salary-page .hero-h1 { font-size: var(--fs-lg); line-height: 1.35; margin-bottom: 3px; }
+  .salary-page .hero-eyebrow { font-size: var(--fs-xs); line-height: 1.35; margin-bottom: 6px; letter-spacing: 1.2px; }
   .salary-page .hero-sub { font-size: var(--fs-xs); }
   .salary-page .hero-actions {
     width: 100%;
@@ -217,10 +218,12 @@
     flex: 0 1 auto;
   }
   .salary-page .hero-actions .btn--icon {
-    width: 40px;
-    min-width: 40px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
-    flex: 0 0 40px;
+    flex: 0 0 44px;
   }
   .salary-page .hero-month-label {
     min-width: 54px;
@@ -237,7 +240,8 @@
   .salary-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
   .salary-page .metric { padding: 8px 9px; min-width: 0; border-radius: 10px; }
   .salary-page .metric-label {
-    font-size: 9px;
+    font-size: var(--fs-xs);
+    line-height: 1.35;
     white-space: normal;
   overflow: visible;
   overflow-wrap: anywhere;

@@ -61,6 +61,12 @@ export const configClient = {
 
   saveCompanyInfo: (data: CompanyInfo) => api.put<CompanyInfo>(CONFIG.COMPANY_INFO, data),
 
+  uploadCompanyLogo: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.upload('/upload/company-logo', formData) as Promise<{ storageKey: string; url: string }>;
+  },
+
   getRoadConfig: () => api.get<RoadConfig | null>(CONFIG.ROAD_CONFIG),
 
   saveRoadConfig: (data: {

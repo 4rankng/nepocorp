@@ -1,5 +1,6 @@
 import { getAdvanceSettlement } from './advance.service';
 import { validateSettlementInputs } from './settlement-validation';
+import { getCompanyInfo } from './company-info.service';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, inArray, sql } from 'drizzle-orm';
@@ -233,7 +234,8 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
     const ExcelJSMod = await import('exceljs');
     const ExcelJS = (ExcelJSMod as unknown as { default?: typeof ExcelJSMod }).default ?? ExcelJSMod;
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'TingTing';
+    const company = await getCompanyInfo();
+    workbook.creator = company.name;
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Phiếu thanh toán', {
@@ -538,7 +540,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
     // ── 9. Footer ──
     const footerRow = sigRow2 + 2;
     sheet.mergeCells(`A${footerRow}:F${footerRow}`);
-    sheet.getCell(`A${footerRow}`).value = `In ngày ${new Date().toLocaleDateString('vi-VN')} — TingTing Logistics`;
+    sheet.getCell(`A${footerRow}`).value = `In ngày ${new Date().toLocaleDateString('vi-VN')} — ${company.name}`;
     sheet.getCell(`A${footerRow}`).font = { name: F, size: 8, italic: true, color: { argb: 'FF94A3B8' } };
     sheet.getCell(`A${footerRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 

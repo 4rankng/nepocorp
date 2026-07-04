@@ -714,7 +714,7 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
   ${SHARED_CSS}
 </style>
 </head><body>
-<h1>NEPO Logistics — ${escapeHtml(config.heading)}</h1>
+<h1>${escapeHtml(config.heading)}</h1>
 <div class="meta">
   ${config.entityLabel}: <strong>${escapeHtml(config.entityName)}</strong><br>
   ${contactHtml}<br>

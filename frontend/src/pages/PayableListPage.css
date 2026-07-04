@@ -59,7 +59,8 @@
 
 .aging-card__label {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs, 10px);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -74,7 +75,7 @@
   font-size: var(--fs-xl);
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: 1.35;
   color: var(--ink, #0A0A0A);
   margin-bottom: 4px;
 }
@@ -91,7 +92,8 @@
 .aging-card__count {
   display: block;
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs, 10px);
+  font-size: var(--fs-xs);
+  line-height: 1.35;
   color: var(--ink-3, #8B919B);
   margin-bottom: 10px;
 }
@@ -305,7 +307,7 @@
   }
 
   .payables-page .payables-category-chip {
-    min-height: 40px;
+    min-height: 44px;
     padding: 9px 14px;
   }
 
@@ -355,8 +357,8 @@
   color: var(--fg-2, #475569);
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.3;
-  min-height: 38px;
+  line-height: 1.35;
+  min-height: 44px;
   padding: 9px 16px;
   border-radius: 999px;
   cursor: pointer;

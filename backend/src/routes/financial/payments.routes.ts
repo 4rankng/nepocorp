@@ -8,7 +8,7 @@ import { emitNotification } from '../../services/notification.service';
 import * as financialService from '../../services/financial.service';
 import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, attachmentDisposition } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
-import { cacheInvalidate } from '../../lib/redis';
+import { invalidateReportCaches } from '../../lib/redis';
 import { getPayablesSummary } from '../../services/payables.service';
 import { recordCommission } from '../../services/commission.service';
 
@@ -25,7 +25,7 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     receiptId: data.receiptId,
     payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
   });
-  await cacheInvalidate('reports:dashboard');
+  await invalidateReportCaches();
   emitNotification({
     type: NotificationType.PAYMENT_RECEIVED,
     title: 'Thanh toán nhận được',
@@ -45,13 +45,14 @@ router.post('/adjustments', asyncHandler(async (req: Request, res: Response) => 
     note: data.note,
     signedAgreementRef: data.signedAgreementRef,
   });
-  await cacheInvalidate('reports:dashboard');
+  await invalidateReportCaches();
   res.status(201).json({ ok: true });
 }));
 
 router.post('/payments/vendor', asyncHandler(async (req: Request, res: Response) => {
   const data = vendorPaymentSchema.parse(req.body);
   const posted = await financialService.recordVendorPayment({ ...data, amount: String(data.amount) });
+  await invalidateReportCaches();   // was missing — vendor payments posted to the ledger but busted no cache
   res.json(posted);
 }));
 
@@ -98,7 +99,7 @@ router.get('/reports/payables-summary', asyncHandler(async (req: Request, res: R
 router.post('/commissions', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const data = commissionSchema.parse(req.body);
   const result = await recordCommission(data);
-  await cacheInvalidate('reports:dashboard');
+  await invalidateReportCaches();
   res.status(201).json(result);
 }));
 
@@ -121,7 +122,7 @@ router.post('/drivers/:driverId/payouts', requireRoles(Role.ADMIN, Role.MANAGER,
     note: data.note,
     receiptId: data.receiptId,
   });
-  await cacheInvalidate('reports:dashboard');
+  await invalidateReportCaches();
   res.status(201).json(entry);
 }));
 

@@ -1,7 +1,8 @@
 # Company Logo Config + De-hard-code Brand Literals
 
-**Status:** pending
+**Status:** done
 **Created:** 2026-07-04
+**Completed:** 2026-07-04
 **Scope owner:** backend + frontend + shared
 
 ## Problem

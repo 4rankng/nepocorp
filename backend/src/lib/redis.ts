@@ -88,6 +88,27 @@ export async function cacheInvalidatePattern(pattern: string): Promise<void> {
   }
 }
 
+/**
+ * Bust every report cache that derives from the ledger. Fail-open: each helper
+ * here already swallows Redis errors, and the outer catch is belt-and-suspenders
+ * so a ledger write is never broken by cache trouble. Call POST-commit (route
+ * layer, after the service's transaction resolves) — invalidating mid-tx would
+ * let a concurrent read recompute against not-yet-committed rows and cache a
+ * stale value.
+ */
+export async function invalidateReportCaches(): Promise<void> {
+  try {
+    await Promise.all([
+      cacheInvalidate('reports:dashboard'),
+      cacheInvalidatePattern('reports:pnl:*'),
+      cacheInvalidatePattern('reports:fuel-variance:*'),   // previously never invalidated — stale-data bug
+      cacheInvalidatePattern('reports:entity-results:*'),  // aging primitive cache (Phase A2)
+    ]);
+  } catch {
+    // Non-critical — never block a write
+  }
+}
+
 export async function isTokenBlacklisted(jti: string): Promise<boolean> {
   const client = getRedis();
   try {

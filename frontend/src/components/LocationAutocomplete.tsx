@@ -218,7 +218,7 @@ export function LocationAutocomplete({
                   {s.description}
                 </div>
                 {s.hint && (
-                  <div style={{ fontSize: 11, color: 'var(--fg-3, var(--ink-3))', marginTop: 1 }}>
+                  <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3, var(--ink-3))', marginTop: 1 }}>
                     {s.hint}
                   </div>
                 )}

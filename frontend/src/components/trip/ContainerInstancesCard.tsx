@@ -733,7 +733,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                         <button
                           type="button"
                           className="btn btn--ghost btn--sm"
-                          style={{ minHeight: 22, padding: '0 8px', fontSize: 12 }}
+                          style={{ padding: '0 10px', fontSize: 12 }}
                           onClick={() => updateRow(row._key, 'containerNumber', st.suggestion!)}
                         >
                           Đổi thành {st.suggestion}

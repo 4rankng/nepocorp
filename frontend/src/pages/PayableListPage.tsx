@@ -573,7 +573,7 @@ export default function PayableListPage() {
                           <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--fg-1)' }}>
                             {d.supplier.name}
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+                          <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>
                             {d.supplier.phone || '—'}
                           </div>
                         </td>
