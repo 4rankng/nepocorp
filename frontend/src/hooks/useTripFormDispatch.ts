@@ -1016,6 +1016,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       s.fuelActualUnitPrice,
       s.fuelSupplierId,
       s.customerCommission, s.tripWageDays,
+      s.twoPointDeliveryBonus, s.vehicleShiftAllowance,
       s.revenue, s.revenueEmptyReturn, s.revenueCombine, s.notes, photoUrls,
       s.contactName, s.contactPhone, s.instructionsNotes,
       flushPendingPhotos,
