@@ -351,12 +351,23 @@
 }
 
 @media (max-width: 640px) {
+  .app-body:has(.trip-edit-page) {
+    padding-inline: 0;
+    scrollbar-gutter: auto;
+  }
+
   .tc-content {
     grid-template-columns: 1fr;
     gap: 14px;
-    padding: 14px 14px 110px;
+    padding: 14px 0 110px;
+    max-width: none;
   }
-  .tc-bento { gap: 24px; padding: 16px; }
+  .tc-bento {
+    gap: 24px;
+    padding: 16px;
+    border-inline: 0;
+    border-radius: 0;
+  }
   .tc-page-head {
     padding: 16px 14px 14px;
   }

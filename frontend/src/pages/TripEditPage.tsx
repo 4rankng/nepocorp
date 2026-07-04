@@ -134,7 +134,7 @@ export default function TripEditPage() {
 
   return (
     <TripFormProvider form={form}>
-      <div ref={rootRef}>
+      <div ref={rootRef} className="trip-edit-page">
         <header className="tc-page-head">
           <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
             <ArrowLeft size={18} />
