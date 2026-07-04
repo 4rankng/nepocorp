@@ -181,7 +181,7 @@ export default function TruckOwnersConfigPage() {
       />
 
       <div style={{ marginBottom: 16 }}>
-        <button className="btn btn--secondary" style={{ height: 36, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={handleBack}>
+        <button className="btn btn--secondary" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={handleBack}>
           <ArrowLeft size={14} /> Quay lại danh sách xe
         </button>
       </div>
@@ -198,7 +198,7 @@ export default function TruckOwnersConfigPage() {
             Hiện tại: <strong style={{ color: 'var(--fg-1)' }}>{activeOwners.length}</strong> đối tác · {items.length - activeOwners.length} bản ghi lịch sử
           </div>
           {!showAddForm && (
-            <button className="btn btn--primary" style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowAddForm(true)}>
+            <button className="btn btn--primary" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowAddForm(true)}>
               <Plus size={14} /> Thêm đối tác
             </button>
           )}
@@ -246,8 +246,8 @@ export default function TruckOwnersConfigPage() {
                   </td>
                   <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                    <button className="btn btn--secondary" style={{ height: 28, padding: '0 10px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
-                    <button className="btn btn--danger" style={{ height: 28, padding: '0 10px' }} onClick={() => doDelete(r.id)}>Xóa</button>
+                    <button className="btn btn--secondary" style={{ minHeight: 36, padding: '0 12px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
+                    <button className="btn btn--danger" style={{ minHeight: 36, padding: '0 12px' }} onClick={() => doDelete(r.id)}>Xóa</button>
                   </td>
                 </tr>
               );

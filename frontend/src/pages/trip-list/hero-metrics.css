@@ -105,7 +105,7 @@
   font-family: var(--font-display);
   font-size: var(--fs-2xl); font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
   margin: 0 0 6px;
 }
 .trip-list-page .hero-sub { font-size: var(--fs-sm); color: var(--ink-2); }
@@ -163,7 +163,7 @@
 .trip-list-page .metric-value {
   max-width: 100%;
   font-size: clamp(18px, 1.85vw, var(--fs-2xl)); font-weight: 700;
-  line-height: 1; letter-spacing: 0;
+  line-height: 1.18; letter-spacing: 0;
   color: var(--ink);
 }
 .trip-list-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }

@@ -640,7 +640,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
           <button
             type="button"
             className="btn btn--ghost btn--icon btn--sm"
-            style={{ minWidth: 28, minHeight: 28, visibility: hasSealValue ? 'visible' : 'hidden' }}
+            style={{ minWidth: 40, minHeight: 40, visibility: hasSealValue ? 'visible' : 'hidden' }}
             onClick={() => clearSeal(row._key, index)}
             aria-label={`Xoá seal ${index + 1}`}
             title={`Xoá seal ${index + 1}`}

@@ -14,7 +14,7 @@
 
 .driver-penalty-page .page-title {
   font-size: var(--driver-penalty-title);
-  line-height: var(--lh-tight);
+  line-height: 1.25;
   letter-spacing: 0;
 }
 
@@ -112,7 +112,7 @@
 
 .penalty-kpi-grid .kpi__value {
   font-size: var(--driver-penalty-kpi) !important;
-  line-height: var(--lh-tight);
+  line-height: 1.25;
   margin-bottom: 6px;
   letter-spacing: 0;
   word-break: normal;
@@ -186,7 +186,7 @@
   border-radius: 9px;
   font-size: var(--driver-penalty-muted);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.25;
   color: var(--ink);
   background-position: right 12px center;
   background-size: 14px 14px;
@@ -361,8 +361,8 @@
   }
   .driver-penalty-page select.penalty-month-select {
     width: 150px;
-    height: 34px;
-    min-height: 34px;
+    height: 38px;
+    min-height: 38px;
     padding-inline: 11px 32px;
     font-size: var(--driver-penalty-muted);
   }

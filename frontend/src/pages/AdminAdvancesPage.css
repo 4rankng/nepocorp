@@ -95,7 +95,7 @@
   font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.25;
   margin-top: 8px;
   color: var(--ink);
 }

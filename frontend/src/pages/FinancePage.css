@@ -110,15 +110,16 @@
   font-family: var(--font-mono);
   letter-spacing: 0;
   color: var(--fg-1);
-  line-height: 1;
+  line-height: 1.25;
   margin-bottom: 4px;
   white-space: nowrap;
 }
 @media (max-width: 1100px) {
-  .pnl-kpi__value { font-size: var(--fs-md); }
+  .pnl-kpi__value { font-size: var(--fs-md); line-height: 1.25; }
 }
 .pnl-kpi__unit {
   font-size: var(--fs-xs);
+  line-height: 1.25;
   font-weight: 500;
   margin-left: 2px;
   color: var(--fg-2);
@@ -396,7 +397,7 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  padding: 6px 14px;
+  padding: 8px 14px;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -406,8 +407,7 @@
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
-  /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
-  min-height: 32px;
+  min-height: 38px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);

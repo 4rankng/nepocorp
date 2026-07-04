@@ -98,7 +98,7 @@
   font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.25;
   margin-top: 8px;
   color: var(--ink);
 }
@@ -180,7 +180,10 @@
   overflow: visible;
   overflow-wrap: anywhere;
   white-space: normal;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  line-height: 1.35;
 }
 .as-page .as-code-link:hover { text-decoration: underline; }
 
@@ -328,6 +331,10 @@
   overflow: visible;
   overflow-wrap: anywhere;
   white-space: normal;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  line-height: 1.35;
 }
 .as-page .as-mcard__name {
   font-weight: var(--fw-semibold);

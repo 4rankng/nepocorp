@@ -169,7 +169,7 @@ export default function PayableDetailPage() {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
-          <button className="dd-back" onClick={handleBack}>
+          <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -196,7 +196,7 @@ export default function PayableDetailPage() {
     <div ref={rootRef} className="debt-detail-page">
       {/* Supplier Header */}
       <div className="dd-header">
-        <button className="dd-back" onClick={handleBack}>
+        <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar" style={{ background: 'var(--warning)', color: '#fff' }}>

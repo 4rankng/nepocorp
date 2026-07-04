@@ -191,7 +191,7 @@
   font-weight: var(--fw-extrabold);
   color: var(--ink);
   letter-spacing: 0;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 .tc-totals__revenue-value .money__unit {
   color: var(--ink-3);

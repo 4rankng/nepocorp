@@ -111,7 +111,7 @@ export function AllowanceSection() {
                 type="checkbox"
                 checked={hasReturnCargo}
                 onChange={(e) => setHasReturnCargo(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: "var(--brand)", cursor: "pointer" }}
+                style={{ width: 36, height: 36, accentColor: "var(--brand)", cursor: "pointer" }}
               />
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg-1)" }}>
                 Chuyến về có hàng{returnCargoBonusApplied != null ? ` (+${(returnCargoBonusApplied / 1000).toFixed(0)}k)` : ''}

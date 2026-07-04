@@ -17,8 +17,8 @@
 }
 
 .dd-back {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--r);
   border: 1px solid var(--line);
   background: var(--surface);
@@ -54,7 +54,7 @@
   font-size: 24px;
   font-weight: 850;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
@@ -231,7 +231,7 @@
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--fs-2xl);
-  line-height: 1.05;
+  line-height: 1.25;
   color: var(--danger);
   letter-spacing: 0;
   margin-top: 12px;
@@ -590,13 +590,15 @@
 }
 
 .dd-filter-chip {
-  padding: 7px 13px;
+  min-height: 38px;
+  padding: 8px 14px;
   border-radius: 9px;
   border: 1px solid var(--line);
   background: var(--surface);
   font-family: var(--font-display);
   font-size: var(--fs-xs);
   font-weight: 600;
+  line-height: 1.3;
   color: var(--ink-2);
   cursor: pointer;
   transition: var(--t-fast);
@@ -722,7 +724,7 @@
 .dd-route-card-total b {
   font-family: var(--font-mono);
   font-size: 24px;
-  line-height: 1;
+  line-height: 1.25;
   color: var(--ink);
 }
 
@@ -1558,7 +1560,8 @@
   }
   .debt-detail-page .dd-filters::-webkit-scrollbar { display: none; }
   .debt-detail-page .dd-filter-chip {
-    padding: 5px 10px;
+    min-height: 40px;
+    padding: 8px 12px;
     font-size: var(--fs-xs);
     flex-shrink: 0;
   }

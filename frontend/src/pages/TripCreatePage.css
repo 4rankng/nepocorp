@@ -99,7 +99,7 @@
   font-size: var(--fs-2xl);
   font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
   margin: 0 0 6px;
   color: var(--ink);
 }
@@ -155,7 +155,7 @@
 
 /* Override summary card styles inside the light hero */
 .tc-hero-widgets .tc-summary-card::before {
-  opacity: 0;
+  display: none;
 }
 .tc-hero-widgets .tc-summary-card__label {
   color: var(--ink-3);
@@ -258,7 +258,7 @@
   .tc-create-wrap { padding: 8px 12px 0; }
   .tc-create-hero { padding: 16px; margin-bottom: 14px; }
   .tc-hero-top { gap: 12px; flex-wrap: wrap; }
-  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.2; }
+  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.25; }
   .tc-hero-widgets {
     grid-template-columns: 1fr;
     gap: 1px;

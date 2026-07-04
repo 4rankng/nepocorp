@@ -192,7 +192,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <div className="toast__body">
                   <div className="toast__message">{t.message}</div>
                 </div>
-                <button className="toast__close" onClick={() => dismiss(t.id)} type="button">
+                <button
+                  className="toast__close"
+                  onClick={() => dismiss(t.id)}
+                  type="button"
+                  aria-label="Đóng thông báo"
+                >
                   <X size={14} />
                 </button>
               </div>

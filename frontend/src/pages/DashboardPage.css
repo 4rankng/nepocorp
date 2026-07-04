@@ -133,7 +133,7 @@
   border-radius: 50%;
 }
 .aging__donut-label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
-.aging__total { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; color: var(--ink); line-height: 1; }
+.aging__total { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; color: var(--ink); line-height: 1.25; }
 .aging__total-label { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
 .aging__list { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .aging__row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); }
@@ -372,7 +372,7 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  padding: 6px 14px;
+  padding: 8px 14px;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -383,7 +383,7 @@
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
   /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
-  min-height: 32px;
+  min-height: 38px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);
@@ -412,7 +412,7 @@
 .dash-wf .wf-kpi .delta.down { color: var(--wf-red); background: #FBE5E3; }
 .dash-wf .wf-kpi .delta.flat { color: var(--wf-ink-2); background: var(--wf-bg); }
 .dash-wf .wf-kpi .delta.warn { color: var(--wf-amber); background: var(--wf-amber-soft); }
-.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; margin-top: 9px; line-height: 1.12; }
+.dash-wf .wf-kpi .val { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; margin-top: 9px; line-height: 1.25; }
 .dash-wf .wf-kpi .val i { font-style: normal; font-size: 15px; color: var(--wf-ink-3); font-weight: 500; margin-left: 1px; }
 .dash-wf .wf-kpi .foot { font-size: var(--fs-2xs); color: var(--wf-ink-2); margin-top: 7px; }
 
@@ -497,7 +497,7 @@
 .dash-wf .wf-seg i { display: block; height: 100%; border-radius: 3px; }
 .dash-wf .wf-fstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
 .dash-wf .wf-fstat { padding: 9px 10px; border: 1px solid var(--wf-border); border-radius: 10px; background: var(--wf-card); }
-.dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; line-height: 1; display: flex; align-items: center; gap: 6px; }
+.dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; line-height: 1.25; display: flex; align-items: center; gap: 6px; }
 .dash-wf .wf-fstat .v .pip { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
 .dash-wf .wf-fstat .k { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-2xs); font-weight: 600; color: var(--wf-ink-3); margin-top: 6px; }
 .dash-wf .wf-util { display: flex; align-items: center; gap: 11px; margin-top: 13px; }
@@ -506,10 +506,11 @@
 .dash-wf .wf-util .pct { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 700; color: var(--wf-green-700); }
 .dash-wf .wf-util .cap { font-size: var(--fs-2xs); color: var(--wf-ink-3); }
 
+.dash-wf .wf-cost { min-height: 216px; }
 .dash-wf .wf-cost .body { padding: 14px 16px 16px; display: flex; align-items: center; gap: 18px; }
 .dash-wf .wf-donut { flex: 0 0 auto; position: relative; width: 118px; height: 118px; }
 .dash-wf .wf-donut .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.dash-wf .wf-donut .ctr .big { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 700; line-height: 1; }
+.dash-wf .wf-donut .ctr .big { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 700; line-height: 1.25; }
 .dash-wf .wf-donut .ctr .sm { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-2xs); font-weight: 600; color: var(--wf-ink-3); margin-top: 4px; }
 .dash-wf .wf-clegend { flex: 1; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
 .dash-wf .wf-crow { display: flex; align-items: center; gap: 9px; font-size: var(--fs-xs); }
@@ -575,7 +576,7 @@
   padding: 2px 7px;
   border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -883,11 +884,11 @@
   }
 
   .dash-wf .wf-minibtn {
-    min-height: 36px;
+    min-height: 40px;
     padding: 0 9px 0 11px;
     border-radius: 9px;
     font-size: 11.5px;
-    line-height: 1;
+    line-height: 1.25;
   }
 
   .dash-wf .wf-minibtn__icon {
@@ -932,8 +933,8 @@
   gap: 5px;
 }
 .dash-wf .approval-queue__page-btn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   border: 1px solid var(--wf-border-2);
   background: var(--surface);
@@ -1007,7 +1008,7 @@
 .dash-wf .approval-queue__row {
   display: grid;
   /* icon | title/subtitle | amount | quick-approve | chevron */
-  grid-template-columns: 28px minmax(0, 1fr) auto 26px 14px;
+  grid-template-columns: 28px minmax(0, 1fr) auto 36px 14px;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1113,8 +1114,8 @@
    Small circular icon button that does NOT trigger row navigation
    (the row's onClick is stopped via e.stopPropagation in the handler). */
 .dash-wf .approval-queue__quick {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   border: 1px solid var(--wf-border-2);
   background: var(--surface);
@@ -1302,8 +1303,8 @@
   }
 
   .dash-wf .wf-chart-toggle__btn {
-    min-height: 34px;
-    padding: 6px 12px;
+    min-height: 40px;
+    padding: 8px 12px;
   }
 
   .dash-wf .wf-kpi .val {

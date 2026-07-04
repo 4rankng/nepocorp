@@ -73,14 +73,15 @@ select.input.ci-input-sm {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 28px;
-  padding: 0 9px;
+  min-height: 36px;
+  padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   color: var(--fg-2);
   font: inherit;
   font-size: 12px;
+  line-height: 1.35;
   font-weight: 650;
   cursor: pointer;
 }

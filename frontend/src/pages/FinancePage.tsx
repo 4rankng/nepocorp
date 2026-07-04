@@ -641,7 +641,7 @@ export default function FinancePage() {
               : ' Chưa cấu hình bảng cổ phần.'
             }{' '}
             <Link to='/profit'
-              style={{ color: 'var(--brand)', fontWeight: 600, textDecoration: 'none' }}
+              style={{ color: 'var(--brand)', display: 'inline-flex', alignItems: 'center', minHeight: 32, fontWeight: 600, textDecoration: 'none' }}
             >
               Xem chi tiết cổ phần →
             </Link>

@@ -166,7 +166,7 @@
 .fset-cont-badge {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-2);
   background: var(--surface-2);
   padding: 1px 7px;
@@ -257,7 +257,7 @@
 
 .fset-step-header__step {
   display: block;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   letter-spacing: 0.04em;
@@ -513,6 +513,28 @@
 
 .fset-search-bar__input::placeholder {
   color: var(--ink-3);
+}
+
+.fset-expense-group__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.fset-expense-group__toggle:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 
 .fset-search-bar__input:focus {

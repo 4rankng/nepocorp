@@ -421,7 +421,7 @@ export default function ExpenseListPage() {
             trên <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{total}</strong> phiếu
           </span>
           <div className="expense-pagination">
-            <button className="expense-page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+            <button className="expense-page-btn" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
               <ChevronLeft size={14} />
             </button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -432,7 +432,7 @@ export default function ExpenseListPage() {
                 </button>
               );
             })}
-            <button className="expense-page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+            <button className="expense-page-btn" aria-label="Trang sau" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
               <ChevronRight size={14} />
             </button>
           </div>

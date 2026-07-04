@@ -11,7 +11,7 @@
 .trip-list-page .page-info b { color: var(--ink); font-weight: 700; }
 .trip-list-page .pagination { display: flex; align-items: center; gap: 6px; }
 .trip-list-page .page-btn {
-  min-width: 34px; height: 34px;
+  min-width: 40px; min-height: 40px;
   padding: 0 8px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surface);

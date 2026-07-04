@@ -204,9 +204,9 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 26px;
+  min-height: 32px;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--tbl-green-600) 22%, var(--line));
   border-radius: 7px;
   background: color-mix(in srgb, var(--tbl-green-050) 70%, var(--surface));
@@ -406,7 +406,7 @@
   padding: 3px 8px;
   border-radius: 6px;
   border: 1px solid var(--line-2);
-  line-height: 1;
+  line-height: 1.25;
 }
 .trip-list-page .container-tag.multiplier {
   background: var(--brand-soft);

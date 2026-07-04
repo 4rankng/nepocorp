@@ -121,6 +121,7 @@
 
 .dt-card__meta-text {
   min-width: 0;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 

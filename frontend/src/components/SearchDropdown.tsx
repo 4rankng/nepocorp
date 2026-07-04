@@ -43,7 +43,7 @@ export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }:
   if (items.length === 0) {
     return (
       <div style={dropdownStyle}>
-        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+        <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 14, lineHeight: 1.45 }}>
           <EmptyIllustration name="empty-search" width={118} height={96} style={{ margin: '0 auto 8px', display: 'block' }} />
           <div>Không có kết quả</div>
         </div>
@@ -79,21 +79,24 @@ export function SearchDropdown({ items, query, activeIndex, onSelect, onHover }:
                 onMouseEnter={() => onHover(flatIdx)}
                 onClick={() => onSelect(item)}
               >
-                <span style={{ flexShrink: 0, width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ flexShrink: 0, width: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <AssetIcon name={item.iconName} size={18} />
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-1)', lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-1)', lineHeight: 1.35 }}>
                     {highlightText(item.label, query)}
                   </div>
                   {item.description && (
                     <div style={{
-                      fontSize: 11,
+                      fontSize: 12.5,
+                      lineHeight: 1.35,
                       color: 'var(--fg-3)',
-                      marginTop: 1,
+                      marginTop: 2,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                     }}>
                       {item.description}
                     </div>
@@ -121,16 +124,16 @@ const dropdownStyle: React.CSSProperties = {
   borderRadius: 12,
   boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
   zIndex: 999,
-  padding: '6px',
+  padding: '8px',
 };
 
 const groupHeaderStyle: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: 700,
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
   color: 'var(--fg-3)',
-  padding: '8px 10px 4px',
+  padding: '10px 10px 6px',
 };
 
 const itemStyle: React.CSSProperties = {
@@ -138,7 +141,8 @@ const itemStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: 10,
   width: '100%',
-  padding: '7px 10px',
+  minHeight: 44,
+  padding: '10px 12px',
   border: 'none',
   borderRadius: 7,
   cursor: 'pointer',

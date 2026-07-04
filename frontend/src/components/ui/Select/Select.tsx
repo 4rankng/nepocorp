@@ -14,9 +14,8 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      // h-9 = 36px — matches Input and Button default heights for inline form rows
       "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3",
-      "text-[13.5px] tracking-normal leading-none",
+      "text-sm tracking-normal leading-snug",
       "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]",
       "ring-offset-[var(--bg)]",
       "hover:border-[var(--line-2)]",
@@ -76,10 +75,9 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      // Tighter py-1.5 (24px item height) — dense data forms benefit from compact dropdowns
       "relative flex w-full cursor-default select-none items-center rounded-md",
-      "py-1.5 pl-7 pr-2",
-      "text-[13px] tracking-[-0.005em] text-[var(--ink-2)]",
+      "min-h-9 py-2 pl-8 pr-3",
+      "text-sm leading-snug tracking-normal text-[var(--ink-2)]",
       "outline-none transition-colors duration-100",
       "focus:bg-[var(--surface-2)] focus:text-[var(--ink)]",
       "data-[state=checked]:text-[var(--ink)] data-[state=checked]:font-medium",

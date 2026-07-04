@@ -513,7 +513,7 @@
   color: var(--ink);
   font-size: var(--fs-lg);
   font-weight: 750;
-  line-height: 1.15;
+  line-height: 1.25;
 }
 
 .fleet-detail__status {
@@ -562,7 +562,7 @@
   color: var(--fg-on-brand);
   font-size: var(--fs-2xs);
   letter-spacing: 0.5px;
-  line-height: 1.15;
+  line-height: 1.25;
 }
 
 .fleet-detail .fleet-pair,

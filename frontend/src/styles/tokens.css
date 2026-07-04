@@ -17,7 +17,7 @@
 
   --ink: #101513;
   --ink-2: #4D5852;
-  --ink-3: #8B919B;
+  --ink-3: #5F6872;
   --ink-4: #BABDC3;
 
   --line: #E2E7E4;
@@ -26,7 +26,7 @@
   --line-strong: #BAC5BE;
 
   --accent: #00B14F;
-  --accent-2: #008B3E;
+  --accent-2: #006F32;
   --accent-soft: #E6F7EE;
   --accent-ink: #004D22;
 
@@ -37,7 +37,7 @@
   --bg-glass: rgba(255, 255, 255, 0.82);
 
   --brand: #00B14F;
-  --brand-hover: #008B3E;
+  --brand-hover: #006F32;
   --brand-soft: #E6F7EE;
   --brand-2: #00B14F;
   --brand-grad: linear-gradient(135deg, #00B14F 0%, #008B3E 100%);
@@ -45,7 +45,7 @@
 
   --fg-1: #0A0A0A;
   --fg-2: #535963;
-  --fg-3: #8B919B;
+  --fg-3: #5F6872;
   --fg-on-brand: #FFFFFF;
   --fg-inverse: #FFFFFF;
 
@@ -157,7 +157,7 @@
   --ff-mono: var(--font-mono);
 
   /* --- Type scale --- */
-  --fs-2xs: 10px;
+  --fs-2xs: 12px;
   --fs-xs:  12px;
   --fs-sm:  14px;
   --fs-md:  16px;

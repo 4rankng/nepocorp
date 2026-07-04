@@ -43,13 +43,14 @@ export default function LoginPage() {
       const submitBtn = root.querySelector('.login-submit')!;
       const footer = root.querySelector('.login-footer')!;
 
-      // Set initial hidden states
-      utils.set(card, { opacity: 0, translateY: 40 });
+      // Keep the form readable immediately; motion should enhance the entry,
+      // not leave users staring at an empty panel on slower paints.
+      utils.set(card, { translateY: 28 });
       utils.set([logo, brandTitle, brandSub], { opacity: 0 });
       utils.set(divider, { opacity: 0, scaleX: 0 });
-      utils.set([heading, subtext], { opacity: 0, translateY: 10 });
-      utils.set(fields, { opacity: 0, translateY: 16 });
-      utils.set(submitBtn, { opacity: 0, scale: 0.92 });
+      utils.set([heading, subtext], { translateY: 8 });
+      utils.set(fields, { translateY: 10 });
+      utils.set(submitBtn, { scale: 0.96 });
       utils.set(footer, { opacity: 0, translateY: 8 });
 
       /* Phase 1: Logo spring scale with slight rotate */
@@ -73,8 +74,7 @@ export default function LoginPage() {
 
       /* Phase 3: Card slide-up with spring */
       animate(card, {
-        opacity: [0, 1],
-        translateY: [40, 0],
+        translateY: [28, 0],
         duration: 900,
         ease: spring({ stiffness: 120, damping: 18 }),
         delay: 150,
@@ -91,8 +91,7 @@ export default function LoginPage() {
 
       /* Phase 5: Heading + subtext */
       animate([heading, subtext], {
-        opacity: [0, 1],
-        translateY: [10, 0],
+        translateY: [8, 0],
         delay: stagger(60, { start: 550 }),
         duration: 450,
         ease: 'out(3)',
@@ -100,8 +99,7 @@ export default function LoginPage() {
 
       /* Phase 6: Form fields stagger */
       animate(fields, {
-        opacity: [0, 1],
-        translateY: [16, 0],
+        translateY: [10, 0],
         delay: stagger(80, { start: 650 }),
         duration: 450,
         ease: 'out(3)',
@@ -109,8 +107,7 @@ export default function LoginPage() {
 
       /* Phase 7: Submit button springs in */
       animate(submitBtn, {
-        opacity: [0, 1],
-        scale: [0.92, 1],
+        scale: [0.96, 1],
         duration: 700,
         ease: spring({ stiffness: 180, damping: 14 }),
         delay: 850,

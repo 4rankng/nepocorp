@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  line-height: 1.15;
+  line-height: 1.25;
 }
 
 .tc-page-sub {
@@ -94,6 +94,7 @@
   background: var(--surface-2, #F7F8FA);
   color: var(--fg-2);
   border: 1px solid var(--line);
+  line-height: 1.25;
 }
 .tc-status-pill::before {
   content: '';

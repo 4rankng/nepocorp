@@ -164,7 +164,7 @@
     font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--ink);
-    line-height: 1.1;
+    line-height: 1.25;
     font-variant-numeric: tabular-nums;
   }
 
@@ -174,7 +174,7 @@
     color: var(--ink-3);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    line-height: 1;
+    line-height: 1.25;
   }
 
   .mobile-day-row__dow.is-sunday {

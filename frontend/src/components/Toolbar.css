@@ -23,10 +23,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 32px;
+  min-height: 40px;
   background: rgba(248, 250, 249, 0.88);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   min-width: 180px;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
@@ -46,8 +46,27 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  min-height: 32px;
   color: var(--ink);
   height: 100%;
 }
 .toolbar__search input::placeholder { color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .toolbar {
+    padding: 10px;
+  }
+
+  .toolbar__search {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .toolbar__search input {
+    font-size: var(--fs-md);
+    min-height: 40px;
+  }
+}

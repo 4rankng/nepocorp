@@ -286,7 +286,7 @@ export function UserTable({
                     disabled={currentPage === 1}
                     onClick={() => onPageChange(currentPage - 1)}
                     style={{
-                      padding: '4px 8px', border: '1px solid var(--line-2)', borderRadius: 6,
+                      minHeight: 36, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === 1 ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 12,
                       color: currentPage === 1 ? 'var(--ink-4)' : 'var(--ink-2)'
@@ -302,8 +302,8 @@ export function UserTable({
                         className={`btn-page${currentPage === page ? ' is-active' : ''}`}
                         onClick={() => onPageChange(page)}
                         style={{
-                          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: 6, border: currentPage === page ? '1px solid var(--brand)' : '1px solid var(--line-2)',
+                          minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          borderRadius: 9, border: currentPage === page ? '1px solid var(--brand)' : '1px solid var(--line-2)',
                           background: currentPage === page ? 'var(--brand)' : '#fff',
                           color: currentPage === page ? '#fff' : 'var(--ink)',
                           fontWeight: currentPage === page ? '600' : 'normal',
@@ -319,7 +319,7 @@ export function UserTable({
                     disabled={currentPage === totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
                     style={{
-                      padding: '4px 8px', border: '1px solid var(--line-2)', borderRadius: 6,
+                      minHeight: 36, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === totalPages ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 12,
                       color: currentPage === totalPages ? 'var(--ink-4)' : 'var(--ink-2)'
@@ -541,7 +541,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                           setActiveMenuId(activeMenuId === u.id ? null : u.id);
                         }}
                         style={{
-                          background: 'none', border: 'none', width: 28, height: 28, borderRadius: '50%',
+                          background: 'none', border: 'none', width: 40, height: 40, borderRadius: '50%',
                           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: 'var(--ink-3)', transition: 'background 0.2s, color 0.2s', padding: 0
                         }}

@@ -27,6 +27,7 @@
   box-shadow: var(--sh-sm);
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 .kpi::before,
 .stat-card::before {
@@ -66,6 +67,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  line-height: 1.25;
 }
 .kpi__icon {
   width: 36px;
@@ -88,12 +90,16 @@
   font-size: var(--fs-xl);
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.12;
+  line-height: 1.25;
   margin-bottom: 6px;
   color: var(--ink);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 .kpi__value-unit {
   font-size: var(--fs-xs);
+  line-height: 1.25;
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 2px;
@@ -101,7 +107,7 @@
 .kpi--compact .kpi__value {
   font-size: var(--fs-sm);
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: 1.3;
   word-break: break-word;
 }
 .kpi--compact .kpi__value-unit {
@@ -116,6 +122,7 @@
   gap: 4px 8px;
   margin-top: auto;
   line-height: 1.3;
+  min-width: 0;
 }
 .kpi__meta--up { color: var(--accent); font-weight: 600; }
 .kpi__meta--down { color: var(--danger); font-weight: 600; }
@@ -192,6 +199,7 @@
   transition: box-shadow 180ms var(--ease), border-color 180ms var(--ease);
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .stat-card:hover { box-shadow: var(--sh); }
 
@@ -215,6 +223,7 @@
   padding: 16px 20px;
   background: var(--surface);
   position: relative;
+  min-width: 0;
 }
 .metric-strip__label {
   display: inline-flex;
@@ -234,8 +243,9 @@
   font-size: var(--fs-2xl);
   font-weight: var(--fw-semibold);
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
   color: var(--ink);
+  overflow-wrap: anywhere;
 }
 .metric-strip__value--success { color: var(--accent); }
 .metric-strip__value--danger  { color: var(--danger); }

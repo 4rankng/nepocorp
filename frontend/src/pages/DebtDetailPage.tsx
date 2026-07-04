@@ -520,7 +520,7 @@ export default function DebtDetailPage() {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
-          <button className="dd-back" onClick={handleBack}>
+          <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
@@ -611,7 +611,7 @@ export default function DebtDetailPage() {
     <div ref={rootRef} className="debt-detail-page">
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
-        <button className="dd-back" onClick={handleBack}>
+        <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
           <ArrowLeft size={20} />
         </button>
         <div className="dd-avatar">

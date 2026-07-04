@@ -48,8 +48,13 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
               {photoUrls.map((url, i) => (
                 <div key={i} className="photo-thumb">
                   <img src={url} alt={`Preview ${i + 1}`} />
-                  <button type="button" className="photo-thumb__remove" onClick={() => removePhoto(i)}>
-                    <X size={10} />
+                  <button
+                    type="button"
+                    className="photo-thumb__remove"
+                    aria-label={`Xóa ảnh ${i + 1}`}
+                    onClick={() => removePhoto(i)}
+                  >
+                    <X size={14} />
                   </button>
                 </div>
               ))}

@@ -4,9 +4,21 @@
 
 .ds-table-scroll {
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid var(--border-2, var(--line));
-  background: var(--surface, #fff);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.92));
+  box-shadow: var(--sh-sm);
+  scrollbar-color: rgba(0, 90, 45, 0.25) transparent;
+  scrollbar-width: thin;
+}
+
+.ds-table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.ds-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 90, 45, 0.22);
+  border-radius: 999px;
 }
 
 .ds-table {
@@ -18,13 +30,15 @@
 .ds-table thead th {
   text-align: left;
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--fg-3, var(--ink-3));
-  padding: 10px 12px;
-  background: var(--surface-2, var(--bg-2));
-  border-bottom: 1px solid var(--border-2, var(--line));
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  padding: 11px 12px;
+  background:
+    linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, var(--surface-2), var(--surface-3));
+  border-bottom: 1px solid var(--line-2);
   white-space: nowrap;
 }
 
@@ -34,10 +48,11 @@
 }
 
 .ds-table tbody td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-2, var(--line));
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
   color: var(--ink, var(--fg));
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .ds-table tbody tr:last-child td {
@@ -46,11 +61,16 @@
 
 .ds-table tbody tr.is-clickable {
   cursor: pointer;
-  transition: background 80ms;
+  transition: background 120ms var(--ease);
 }
 
 .ds-table tbody tr.is-clickable:hover {
-  background: var(--surface-2, var(--bg-2));
+  background: color-mix(in srgb, var(--accent-soft) 38%, white);
+}
+
+.ds-table tbody tr.is-clickable:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 68%, white);
+  outline-offset: -2px;
 }
 
 .ds-table__skeleton-row td {
@@ -90,19 +110,21 @@
 
 .ds-mobile-card {
   background: var(--surface, #fff);
-  border: 1px solid var(--border-2, var(--line));
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   padding: 12px 14px;
   color: var(--ink, var(--fg));
+  box-shadow: var(--sh-sm);
 }
 
 .ds-mobile-card.is-clickable {
   cursor: pointer;
-  transition: border-color 100ms, transform 100ms;
+  transition: border-color 120ms var(--ease), transform 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 
 .ds-mobile-card.is-clickable:hover {
-  border-color: var(--brand);
+  border-color: var(--line-strong);
+  box-shadow: var(--sh);
   transform: translateY(-1px);
 }
 

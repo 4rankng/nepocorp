@@ -290,7 +290,12 @@ export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEdi
               valid={pwValid}
               error={pwError}
               rightElement={
-                <button type="button" onClick={() => setShowPw(v => !v)} className="pw-toggle">
+                <button
+                  type="button"
+                  aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  onClick={() => setShowPw(v => !v)}
+                  className="pw-toggle"
+                >
                   {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               }
@@ -453,7 +458,12 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
             valid={pwValid}
             error={pwError}
             rightElement={
-              <button type="button" onClick={() => setShowPw(v => !v)} className="pw-toggle">
+              <button
+                type="button"
+                aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                onClick={() => setShowPw(v => !v)}
+                className="pw-toggle"
+              >
                 {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             }

@@ -25,14 +25,7 @@
 
 /* Subtle accent glow — top right */
 .salary-summary-dark::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 65%);
-  pointer-events: none;
+  content: none;
 }
 
 .salary-summary-dark__topline {
@@ -79,7 +72,7 @@
   font-weight: 700;
   letter-spacing: 0;
   color: var(--ink);
-  line-height: 1;
+  line-height: 1.25;
   margin-bottom: 4px;
   position: relative;
 }
@@ -135,10 +128,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 10px;
   transition: color 0.15s ease;
 }
 
 .salary-edit-link:hover {
+  background: var(--accent-soft);
   color: var(--accent);
 }
 

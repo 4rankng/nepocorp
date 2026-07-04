@@ -108,13 +108,14 @@
   font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.25;
   margin-bottom: 4px;
   color: var(--ink);
 }
 
 .expense-kpi-value-unit {
   font-size: var(--fs-md);
+  line-height: 1.25;
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -315,6 +316,7 @@
   font-weight: 700;
   font-size: var(--fs-sm);
   letter-spacing: 0;
+  line-height: 1.25;
 }
 
 .expense-amount--unpaid {
@@ -404,8 +406,8 @@
 }
 
 .expense-page-btn {
-  min-width: 30px;
-  height: 30px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0 8px;
   border-radius: 8px;
   color: var(--ink-2);
@@ -494,7 +496,7 @@
 
   .expense-list-page .page-title {
     font-size: 27px;
-    line-height: 1.12;
+    line-height: 1.25;
     letter-spacing: 0;
   }
 
@@ -557,7 +559,7 @@
 
   .expense-list-page .expense-kpi-value {
     font-size: var(--fs-xl);
-    line-height: 1.05;
+    line-height: 1.25;
     margin-bottom: 0;
   }
 
@@ -567,6 +569,7 @@
 
   .expense-list-page .expense-kpi-value-unit {
     font-size: 13px;
+    line-height: 1.25;
   }
 
   .expense-list-page .expense-kpi-meta {
@@ -661,7 +664,7 @@
     color: var(--ink);
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1;
+    line-height: 1.25;
   }
 
   .expense-list-page .expense-mobile-card__muted {
@@ -690,12 +693,12 @@
 
   .expense-list-page .m-card__row-value.expense-amount {
     font-size: 16px;
-    line-height: 1.1;
+    line-height: 1.25;
   }
 
   .expense-list-page .expense-mobile-card__summary .expense-amount {
     font-size: 18px;
-    line-height: 1.05;
+    line-height: 1.25;
   }
 
   .expense-list-page .expense-status {

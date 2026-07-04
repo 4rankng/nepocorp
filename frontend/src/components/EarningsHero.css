@@ -54,7 +54,7 @@
   letter-spacing: 0;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  line-height: 1.25;
   word-break: break-word;
 }
 .earnings-hero--positive .earnings-hero__value {

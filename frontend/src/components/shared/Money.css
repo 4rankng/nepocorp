@@ -9,6 +9,7 @@
   align-items: baseline;
   gap: 0.15em;
   flex-wrap: wrap;
+  line-height: 1.25;
 }
 
 /* Digits + sign inherit size / weight / color from the parent context. */

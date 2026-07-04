@@ -624,7 +624,13 @@ export function PenaltyTable({
             <div className="legend">
               <span>Cập nhật lần cuối: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{formatDate(new Date().toISOString().slice(0, 10))}</strong></span>
             </div>
-            <a href="/config/penalty-reasons" onClick={(e) => { e.preventDefault(); navigate('/config/penalty-reasons'); }} style={{ color: 'var(--accent-2)', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>Sửa bảng phạt →</a>
+            <a
+              href="/config/penalty-reasons"
+              className="penalty-config-link"
+              onClick={(e) => { e.preventDefault(); navigate('/config/penalty-reasons'); }}
+            >
+              Sửa bảng phạt →
+            </a>
           </div>
         </Panel>
       </div>

@@ -94,13 +94,13 @@
   font-size: var(--fs-2xs);
   font-weight: 700;
   min-width: 18px;
-  height: 18px;
+  min-height: 20px;
   display: inline-grid;
   place-items: center;
   border-radius: 9999px;
   background: rgba(0,0,0,0.08);
   padding: 0 5px;
-  line-height: 1;
+  line-height: 1.25;
 }
 .fwd-filter-pill--active .fwd-filter-pill__count {
   background: rgba(255,255,255,0.25);
