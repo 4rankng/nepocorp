@@ -209,7 +209,7 @@
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.25);
     color: #fff;
-    font-size: 9px;
+    font-size: var(--fs-xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -226,7 +226,7 @@
   }
 
   .profile-bento-card .bento-label {
-    font-size: 9px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--ink-3, #8B919B);
     text-transform: uppercase;

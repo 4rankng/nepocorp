@@ -248,7 +248,7 @@
 }
 .month-picker__cell-name {
   color: var(--ink-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -342,7 +342,7 @@
   }
 
   .month-picker__cell-name {
-    font-size: 9px;
+    font-size: var(--fs-xs);
   }
 }
 

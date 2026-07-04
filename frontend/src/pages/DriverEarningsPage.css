@@ -411,7 +411,7 @@
 
   .earnings-equation__item span {
     margin-bottom: 0;
-    font-size: 10px;
+    font-size: var(--fs-xs);
   }
 
   .earnings-equation__item strong {

@@ -105,7 +105,7 @@ const pageStyles = `
     margin-top: 14px; padding-top: 12px;
     border-top: 1px solid var(--line);
   }
-  .pr-fine .k { font-size: 10.5px; color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pr-fine .k { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
   .pr-fine .v {
     font-family: var(--font-mono);
     font-size: 16px; font-weight: 700;
@@ -114,7 +114,7 @@ const pageStyles = `
   }
   .pr-fine .v .cur { font-size: 12px; color: var(--ink-3); margin-left: 2px; }
   .pr-usage { text-align: right; }
-  .pr-usage .k { font-size: 10.5px; color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pr-usage .k { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
   .pr-usage .v { font-size: 12px; font-weight: 600; color: var(--ink-2); }
   .pr-usage .v b { font-family: var(--font-mono); color: var(--accent); font-size: 14px; }
   .pr-usage.zero .v b { color: var(--ink-3); }

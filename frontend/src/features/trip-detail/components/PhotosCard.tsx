@@ -61,7 +61,7 @@ export function PhotosCard({ photoUrls }: PhotosCardProps) {
                   <>
                     <ImageOff size={20} aria-hidden="true" />
                     <span>Ảnh {i + 1}</span>
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-4)' }}>Không tải được</span>
+                    <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Không tải được</span>
                   </>
                 ) : (
                   <img

@@ -27,7 +27,7 @@ function RoleTag({ role }: { role?: TruckCapRole | string | null }) {
   const label = TRUCK_CAP_ROLE_LABELS[TruckCapRole.DRIVER];
   return (
     <span style={{
-      marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: 'var(--warn)',
+      marginLeft: 6, fontSize: 12, fontWeight: 700, color: 'var(--warn)',
       background: 'var(--warn-soft)', padding: '1px 6px', borderRadius: 999,
       letterSpacing: '0.02em', verticalAlign: 'middle',
     }}>{label}</span>

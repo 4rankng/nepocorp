@@ -223,7 +223,7 @@ export default function AuditLogPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
           <div>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
               Thời gian
             </div>
             <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>
@@ -232,7 +232,7 @@ export default function AuditLogPage() {
           </div>
           {isAdmin && (
             <div>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
                 Địa chỉ IP
               </div>
               <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -480,7 +480,7 @@ fontSize: 13,
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 26, height: 26, fontSize: 10 }}>
+                            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 26, height: 26, fontSize: 12 }}>
                               <Users size={13} aria-hidden="true" />
                             </div>
                             <div style={{ minWidth: 0 }}>

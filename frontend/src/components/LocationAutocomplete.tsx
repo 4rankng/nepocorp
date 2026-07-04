@@ -226,7 +226,7 @@ export function LocationAutocomplete({
               {s.source === 'port' && (
                 <span
                   style={{
-                    fontSize: 9,
+                    fontSize: 12,
                     padding: '2px 6px',
                     borderRadius: 999,
                     background: 'rgba(16,185,129,0.15)',
