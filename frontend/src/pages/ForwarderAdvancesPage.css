@@ -121,9 +121,8 @@
   backdrop-filter: var(--glass-blur, blur(12px) saturate(140%));
   -webkit-backdrop-filter: var(--glass-blur, blur(12px) saturate(140%));
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
   border-radius: 16px;
-  padding: 20px 24px 20px 21px;
+  padding: 20px 24px;
   margin-bottom: 16px;
   box-shadow: 0 1px 2px rgba(9,9,11,0.04);
   animation: fadvFadeUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -275,7 +274,6 @@
 
   .fadv-form-panel {
     padding: 16px;
-    border-left-width: 3px;
   }
 
   .fadv-form-panel__fields {
@@ -310,10 +308,9 @@
   .fadv-empty__icon { animation: none; }
 }
 
-/* ── C2b/C2c — Settlement (hoàn ứng) summary strip ────────────────────────
+/* ── C2b/C2c — Settlement (hoàn ứng) summary cards ────────────────────────
  * Two compact cards under the advances hero: amount requested for
- * reimbursement (non-rejected settlements) and amount already paid (approved).
- * Mirrors the hero-kpi-mini stat-rail aesthetic, scoped to this page. */
+ * reimbursement (non-rejected settlements) and amount already paid (approved). */
 .fadv-settlement-summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -333,18 +330,6 @@
   border-radius: var(--r-lg, 14px);
   padding: 14px 16px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.fadv-settlement-summary__card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 4px;
-  height: 32px;
-  border-radius: 0 4px 4px 0;
-  background: var(--stat-rail);
-  transform: translateY(-50%);
 }
 
 .fadv-settlement-summary__card--info { --stat-rail: #2563EB; }

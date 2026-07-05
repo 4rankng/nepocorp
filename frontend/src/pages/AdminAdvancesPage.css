@@ -52,18 +52,6 @@
   opacity: 0.18;
   pointer-events: none;
 }
-.adv-page .adv-kpi::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 4px;
-  height: 32px;
-  border-radius: 0 4px 4px 0;
-  background: var(--stat-rail);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 .adv-page .adv-kpi--warn {
   --stat-rail: var(--warning);
   --stat-tint: var(--warning-soft);

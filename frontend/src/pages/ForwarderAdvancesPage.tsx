@@ -4,7 +4,6 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, AdvanceSettlementStatus, type AdvanceRequestStatus } from '@tingting/shared';
 import type { AdvanceRequestWithRefs, AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, FormGroup } from '../components/UI';
-import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance, useForwarderSettlements } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -275,14 +274,9 @@ export default function ForwarderAdvancesPage() {
               className="fadv-card-trip fade-up"
               data-status={req.status}
               style={{
-                position: 'relative',
-                overflow: 'hidden',
                 animationDelay: `${idx * 50}ms`,
               }}
             >
-              {/* Status strip — color indicates status */}
-              <StatusStrip color={STATUS_COLORS[req.status] || '#999'} />
-
               <div className="fadv-card-trip__body">
                 <div className="fadv-card-trip__icon"><Wallet size={16} /></div>
                 <div className="fadv-card-trip__main">

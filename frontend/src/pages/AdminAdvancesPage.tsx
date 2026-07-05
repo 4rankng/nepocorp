@@ -8,7 +8,6 @@ import {
 } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
-import { StatusStrip } from '../components/shared/StatusStrip';
 import {
   useAdminAdvanceRequests,
   useAdminAdvanceBalances,
@@ -96,8 +95,7 @@ function AdvanceGridRow({
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-grid-row" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
-      <StatusStrip color={STATUS_COLORS[req.status]} />
+    <div className="adv-grid-row" id={focusId}>
       {/* Requester */}
       <div className="adv-requester">
         <div className="adv-avatar">
@@ -179,8 +177,7 @@ function AdvanceMobileCard({
   const isPending = req.status === AdvanceRequestStatus.PENDING;
 
   return (
-    <div className="adv-mcard" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
-      <StatusStrip color={STATUS_COLORS[req.status]} />
+    <div className="adv-mcard" id={focusId}>
       {/* Top: avatar + name + status */}
       <div className="adv-mcard__top">
         <div className="adv-mcard__left">
