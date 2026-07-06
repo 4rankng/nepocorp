@@ -108,6 +108,12 @@ export default function CompanyInfoConfigPage() {
     }
   };
 
+  const handleChooseLogo = () => {
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = '';
+    fileInputRef.current.click();
+  };
+
   const handleRemoveLogo = () => {
     setForm(current => ({ ...current, logoStorageKey: null }));
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -184,7 +190,7 @@ export default function CompanyInfoConfigPage() {
                         type="button"
                         className="btn btn--primary"
                         disabled={uploadingLogo || saving}
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={handleChooseLogo}
                       >
                         {uploadingLogo ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
                         {logoSrc ? 'Đổi logo' : 'Chọn logo'}

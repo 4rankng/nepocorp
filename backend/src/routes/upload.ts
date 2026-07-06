@@ -336,6 +336,10 @@ uploadRouter.post('/trips/:tripId/photos/:type/delete', asyncHandler(async (req:
 // Authenticated Photos serving Router
 const photosRouter = Router();
 
+export function isCompanyLogoStorageKey(key: string): boolean {
+  return /^company-assets\/logo-[^/]+\.png$/.test(key);
+}
+
 photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) => {
   // Express types `{*path}` params as string | string[]; collapse to a single path.
   const rawKey = Array.isArray(req.params.path) ? req.params.path.join('/') : (req.params.path ?? '');
@@ -347,14 +351,14 @@ photosRouter.get('/{*path}', asyncHandler(async (req: Request, res: Response) =>
     return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
   }
 
-  // Two valid key shapes: trip photos (trips/<id>/…) and expense receipt
-  // photos (expense-photos/<id>/…, B1). Trip photos get a driver ownership
-  // check; expense photos are readable by any authenticated staff member
-  // (this router is mounted behind assetAuthMiddleware).
+  // Valid key shapes: trip photos, expense receipt photos, debit-note template
+  // logos, and the own-company logo. Trip photos get a driver ownership check;
+  // receipt photos delegate to strict storage-key authz below.
   const tripMatch = key.match(/^trips\/(\d+)\//);
   const expenseMatch = key.match(/^expense-photos\/(\d+)\//);
   const templateLogoMatch = key.match(/^debit-note-templates\/(\d+)\//);
-  if (!tripMatch && !expenseMatch && !templateLogoMatch) {
+  const companyLogoMatch = isCompanyLogoStorageKey(key);
+  if (!tripMatch && !expenseMatch && !templateLogoMatch && !companyLogoMatch) {
     return res.status(400).json({ error: 'Đường dẫn ảnh không hợp lệ' });
   }
 
