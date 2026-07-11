@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Restore the debit-note column-builder columns that migration 0079 was supposed
 -- to add, but which drizzle silently SKIPPED in some environments (incl. prod).
@@ -37,5 +36,3 @@ SET "columns" = '[
   {"id":"ghi_chu","label":"Ghi chú","variable":"note","width":14,"align":"left","format":"text"}
 ]'::jsonb
 WHERE "columns" = '[]'::jsonb;--> statement-breakpoint
-
-COMMIT;

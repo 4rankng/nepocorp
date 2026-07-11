@@ -10,7 +10,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
-    "test": "npx tsx --test src/tests/*.test.ts"
+    "test": "npx tsx --test --test-concurrency=1 src/tests/*.test.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

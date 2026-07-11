@@ -1,5 +1,5 @@
-ALTER TYPE "public"."txn_type" ADD VALUE 'VENDOR_EXPENSE';--> statement-breakpoint
-ALTER TYPE "public"."txn_type" ADD VALUE 'VENDOR_PAYMENT';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'VENDOR_EXPENSE';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'VENDOR_PAYMENT';--> statement-breakpoint
 CREATE TABLE "expense_categories" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,

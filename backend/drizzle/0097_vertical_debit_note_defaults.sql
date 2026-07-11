@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Debit notes are vertical fee breakdowns by shipment/container. Earlier
 -- migrations seeded the customer-facing DEBIT_NOTE default with the horizontal
@@ -30,5 +29,3 @@ WHERE
     OR "columns" @> '[{"id":"bien_so"}]'::jsonb
     OR "columns" @> '[{"id":"gia_vc"}]'::jsonb
   );
-
-COMMIT;

@@ -77,10 +77,13 @@ async function ensureTripExpense(forwarderId: number | null): Promise<number> {
 }
 
 async function ensureCompanyExpense(): Promise<number> {
-  const [supplier] = await db.select({ id: s.suppliers.id }).from(s.suppliers).limit(1);
-  const [cat] = await db.select({ id: s.expenseCategories.id }).from(s.expenseCategories).limit(1);
-  if (!supplier || !cat) {
-    throw new Error('photo-authz test needs at least one supplier + expense_category seeded');
+  let [supplier] = await db.select({ id: s.suppliers.id }).from(s.suppliers).limit(1);
+  if (!supplier) {
+    [supplier] = await db.insert(s.suppliers).values({ name: `${NS} supplier` }).returning({ id: s.suppliers.id });
+  }
+  let [cat] = await db.select({ id: s.expenseCategories.id }).from(s.expenseCategories).limit(1);
+  if (!cat) {
+    [cat] = await db.insert(s.expenseCategories).values({ name: `${NS} category` }).returning({ id: s.expenseCategories.id });
   }
   const [exp] = await db.insert(s.expenses).values({
     expenseDate: '2026-06-17', // date() column wants a 'YYYY-MM-DD' string, not Date
@@ -95,10 +98,20 @@ async function ensureCompanyExpense(): Promise<number> {
 }
 
 before(async () => {
-  // Reuse an existing trip (tripExpenses.tripId is NOT NULL FK). Dev/vantai
-  // seed has many; fail loudly if none rather than synthesizing a full trip.
-  const [trip] = await db.select({ id: s.trips.id }).from(s.trips).limit(1);
-  if (!trip) throw new Error('photo-authz test needs at least one trip seeded');
+  let [trip] = await db.select({ id: s.trips.id }).from(s.trips).limit(1);
+  if (!trip) {
+    const suffix = Date.now().toString();
+    const [customer] = await db.insert(s.customers).values({ name: `${NS} customer ${suffix}` }).returning();
+    const [route] = await db.insert(s.routes).values({ name: `${NS} route ${suffix}` }).returning();
+    const [cargo] = await db.insert(s.cargoTypes).values({ name: `${NS} cargo ${suffix}` }).returning();
+    [trip] = await db.insert(s.trips).values({
+      tripCode: `${NS}-${suffix}`,
+      customerId: customer.id,
+      routeId: route.id,
+      cargoTypeId: cargo.id,
+      departureDate: '2026-06-17',
+    }).returning({ id: s.trips.id });
+  }
   tripId = trip.id;
 
   fwdActive = await ensureUser('photoauthz_fwd1', Role.FORWARDER, 'ACTIVE');

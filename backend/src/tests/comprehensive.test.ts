@@ -12,7 +12,7 @@ import { Role, TripStatus, FuelMode, LoadingType } from '@tingting/shared';
 import { config } from '../config';
 import { initEnforcer } from '../casbin/enforcer';
 import { initAuditService } from '../services/audit.service';
-import { disconnectRedis } from '../lib/redis';
+import { cacheInvalidate, disconnectRedis } from '../lib/redis';
 
 
 // Import route handlers directly to avoid port conflicts
@@ -45,6 +45,7 @@ let driverId: number;
 let truckId: number;
 let routeId: number;
 let cargoTypeId: number;
+let containerTypeId: number;
 let adminUserId: number;
 let tripId: number;
 let allTrucks: typeof s.trucks.$inferSelect[];
@@ -88,6 +89,18 @@ before(async () => {
   let [crg] = await db.select().from(s.cargoTypes).limit(1);
   if (!crg) {
     [crg] = await db.insert(s.cargoTypes).values({ name: 'Hàng khô' }).returning();
+  }
+  const [fuel] = await db.select().from(s.fuelConfig).limit(1);
+  if (!fuel) {
+    await db.insert(s.fuelConfig).values({ loadedNorm: '43', emptyNorm: '25', unitPrice: '25000' });
+  }
+  await cacheInvalidate('config:fuel');
+  const [containerType] = await db.select().from(s.containerTypes).limit(1);
+  if (!containerType) {
+    const [created] = await db.insert(s.containerTypes).values({ code: '40HC', name: "40'HC" }).returning();
+    containerTypeId = created.id;
+  } else {
+    containerTypeId = containerType.id;
   }
   let [trck] = await db.select().from(s.trucks).limit(1);
   if (!trck) {
@@ -292,6 +305,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       truckId,
       driverId,
       cargoTypeId,
+      containerTypeId,
       departureDate: '2026-06-10',
       notes: 'Comprehensive E2E test trip'
     })

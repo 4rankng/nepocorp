@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Treat "Số chứng từ" as the expense document code, not the trip code. This
 -- keeps existing custom debit-note templates but updates the standard
@@ -20,5 +19,3 @@ WHERE
   "document_type" = 'DEBIT_NOTE'
   AND "deleted_at" IS NULL
   AND "columns" @> '[{"id":"chung_tu","variable":"tripCode"}]'::jsonb;
-
-COMMIT;

@@ -90,6 +90,7 @@ type _TupleExtra = Exclude<_CatalogAgentKeys, AgentRouteKey>; // catalog agent k
 type _TupleMissing = Exclude<AgentRouteKey, _CatalogAgentKeys>; // tuple key with no catalog `agent` data
 const _agentKeysInSync: (_TupleExtra extends never ? true : _TupleExtra) &
   (_TupleMissing extends never ? true : _TupleMissing) = true;
+void _agentKeysInSync;
 
 // ─── Openable component ids (modal/drawer/form targets) ─────────────────────
 // Advisory closed set of componentIds pages MAY register via `useAgentOpenable`.

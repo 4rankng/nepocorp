@@ -1,4 +1,3 @@
-BEGIN;
 
 ALTER TYPE "notification_type" ADD VALUE IF NOT EXISTS 'ADVANCE_SETTLEMENT_APPROVED';
 
@@ -89,5 +88,3 @@ WHERE te."forwarder_id" IS NOT NULL
   AND te."approval_status" = 'APPROVED'
   AND te."trip_container_id" IS NULL
 ON CONFLICT DO NOTHING;
-
-COMMIT;

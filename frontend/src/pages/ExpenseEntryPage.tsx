@@ -17,70 +17,9 @@ import type { ExpenseWithRefs, Supplier, ExpenseCategory } from '@tingting/share
 import { qk } from '../api/keys';
 import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
+import { EXPENSE_PHOTO_MAX_BYTES, convertHeicToJpeg, initialForm, type FormState } from './expense-entry-utils';
+import { ExpenseBasicFields, ExpenseLoading, ExpensePhotoAside } from './expense-entry-sections';
 import './ExpenseEntryPage.css';
-
-type FormState = {
-  expenseDate: string;
-  supplierId: number | '';
-  categoryId: number | '';
-  truckId: number | '';
-  vehicleComponent: 'TRUCK' | 'TRAILER';
-  amount: string;
-  paymentStatus: 'PAID' | 'UNPAID';
-  validFrom: string;
-  validTo: string;
-  receiptId: string;
-  note: string;
-};
-
-const initialForm: FormState = {
-  expenseDate: new Date().toISOString().slice(0, 10),
-  supplierId: '',
-  categoryId: '',
-  truckId: '',
-  vehicleComponent: 'TRUCK' as const,
-  amount: '',
-  paymentStatus: 'UNPAID',
-  validFrom: '',
-  validTo: '',
-  receiptId: '',
-  note: '',
-};
-
-// D1b: matches the backend multer limit (raised from 5 MB → 15 MB).
-const EXPENSE_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
-
-// D1b: iOS Safari saves photos as HEIC, which the server's libvips cannot
-// decode. Safari decodes HEIC natively, so convert to JPEG on the client via
-// <img>→canvas before upload. Browsers that can't decode HEIC (e.g. Chrome on
-// desktop) reject in the catch below with a clear message instead of a 500.
-async function convertHeicToJpeg(file: File): Promise<File> {
-  const dataUrl: string = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('read'));
-    reader.readAsDataURL(file);
-  });
-  const img: HTMLImageElement = await new Promise((resolve, reject) => {
-    const i = new Image();
-    i.onload = () => resolve(i);
-    i.onerror = () => reject(new Error('decode'));
-    i.src = dataUrl;
-  });
-  const canvas = document.createElement('canvas');
-  // Cap dimensions so a large iPhone HEIC doesn't blow up canvas memory (a
-  // 12MP photo is ~49MB of RGBA); 2560px matches the server's MAX_IMAGE_DIMENSION.
-  const MAX_DIM = 2560;
-  const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
-  canvas.width = Math.round(img.naturalWidth * scale);
-  canvas.height = Math.round(img.naturalHeight * scale);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas');
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  const blob: Blob | null = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
-  if (!blob) throw new Error('encode');
-  return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-}
 
 export default function ExpenseEntryPage() {
   const navigate = useNavigate();
@@ -426,12 +365,7 @@ export default function ExpenseEntryPage() {
   };
 
   if (isEdit && loadingExpense) {
-    return (
-      <div className="fade-up" style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
-        <Loader2 size={24} className="spin" />
-        <p style={{ marginTop: 12 }}>Đang tải…</p>
-      </div>
-    );
+    return <ExpenseLoading />;
   }
 
   return (
@@ -462,49 +396,7 @@ export default function ExpenseEntryPage() {
                 </div>
 
                 <div className="expense-panel__body expense-grid">
-              <div className="expense-group">
-                <label className="expense-label">Ngày phát sinh chi phí <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <input
-                  type="date"
-                  name="expenseDate"
-                  id="expenseDate"
-                  className="expense-input"
-                  value={form.expenseDate}
-                  onChange={e => set('expenseDate', e.target.value)}
-                />
-                {errors.expenseDate && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.expenseDate}</p>}
-              </div>
-
-              {/* A4 / A10 — system-stamped entry date, read-only. Distinct from the
-                  user-editable "Ngày phát sinh chi phí" above. Auto-recorded on save,
-                  so it is unknown (placeholder) until the row exists. */}
-              <div className="expense-group">
-                <label className="expense-label">Ngày nhập dữ liệu</label>
-                <div
-                  className="expense-input"
-                  style={{ color: 'var(--ink-3)', background: 'rgba(0,0,0,0.03)', cursor: 'default', display: 'flex', alignItems: 'center' }}
-                  title="Hệ thống tự ghi ngày nhập, không chỉnh sửa được"
-                >
-                  {isEdit && existingExpense?.createdAt
-                    ? formatDate(existingExpense.createdAt)
-                    : 'Tự động ghi khi lưu'}
-                </div>
-              </div>
-
-              <div className="expense-group">
-                <label className="expense-label">Trạng thái thanh toán <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <select
-                  name="paymentStatus"
-                  id="paymentStatus"
-                  className="expense-input"
-                  value={form.paymentStatus}
-                  onChange={e => set('paymentStatus', e.target.value as 'PAID' | 'UNPAID')}
-                >
-                  <option value="UNPAID">Ghi nợ</option>
-                  <option value="PAID">Trả ngay</option>
-                </select>
-                {errors.paymentStatus && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.paymentStatus}</p>}
-              </div>
+              <ExpenseBasicFields form={form} errors={errors} isEdit={isEdit} existingExpense={existingExpense} set={set} />
 
               <div className="expense-group" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -746,84 +638,7 @@ export default function ExpenseEntryPage() {
               </div>
             </div>
 
-            <div className="expense-layout__aside">
-              <div className="expense-panel expense-panel--photo">
-                <div className="expense-panel__header">
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
-                  <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm biên lai / chứng từ nếu có</p>
-                </div>
-                <div className="expense-panel__body expense-photo-body">
-                  {photos.length > 0 && (
-                    <div className="expense-photo-grid">
-                      {photos.map((p, idx) => (
-                        <div key={p.id} className="expense-photo-thumb">
-                          <img src={p.url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(idx)}
-                            className="expense-photo-remove"
-                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(227,36,52,0.9)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {isEdit ? (
-                    <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
-                      {uploading ? (
-                        <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 14, marginTop: 8 }}>Đang tải ảnh lên…</span></>
-                      ) : (
-                        <>
-                          <Upload size={28} style={{ color: 'var(--accent)', marginBottom: 6 }} />
-                          <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
-                          <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa 5MB</span>
-                        </>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={e => e.target.files && handlePhotoUpload(e.target.files)}
-                        disabled={uploading}
-                      />
-                    </label>
-                  ) : (
-                    <div className="expense-upload-zone" style={{ cursor: 'default', opacity: 0.7 }}>
-                      <Upload size={28} style={{ color: 'var(--ink-3)', marginBottom: 6 }} />
-                      <span style={{ fontSize: 14, color: 'var(--ink-3)', fontWeight: 500 }}>Lưu phiếu chi để đính kèm ảnh hóa đơn</span>
-                      <span style={{ fontSize: 12, color: 'var(--ink-4)', fontWeight: 400 }}>Ảnh được thêm sau khi tạo phiếu</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="expense-actions">
-                <button
-                  type="button"
-                  className="btn btn--secondary expense-btn-cancel"
-                  onClick={handleBack}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn--primary expense-btn-submit"
-                  disabled={submitting || uploading}
-                >
-                  {submitting ? (
-                    <><Loader2 size={18} className="spin" /> Đang lưu…</>
-                  ) : isEdit ? (
-                    <><Check size={18} /> Cập nhật</>
-                  ) : (
-                    <><Plus size={18} /> Tạo phiếu chi</>
-                  )}
-                </button>
-              </div>
-            </div>
+            <ExpensePhotoAside photos={photos} uploading={uploading} isEdit={isEdit} submitting={submitting} handleBack={handleBack} removePhoto={removePhoto} handlePhotoUpload={handlePhotoUpload} />
           </div>
         </form>
       </div>

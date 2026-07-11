@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Merge active duplicate customers before enforcing new unique indexes.
 -- Keeper selection is deterministic:
@@ -143,5 +142,3 @@ CREATE UNIQUE INDEX "customers_active_tax_code_uniq_idx"
 ON "customers" USING btree (lower(btrim("tax_code")))
 WHERE "customers"."deleted_at" is null
   and nullif(btrim("customers"."tax_code"), '') is not null;
-
-COMMIT;

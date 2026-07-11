@@ -1,5 +1,4 @@
-import { eq, ne, and, isNull, inArray, or, sql } from 'drizzle-orm';
-import { config } from '../config';
+import { eq, ne, and, isNull, inArray, sql } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { cacheGet } from '../lib/redis';

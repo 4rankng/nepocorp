@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, count, ilike, gte, lte, or } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, count, gte, lte, or } from 'drizzle-orm';
 import { getTripInstructions } from './trip-instructions.service';
 
 /**

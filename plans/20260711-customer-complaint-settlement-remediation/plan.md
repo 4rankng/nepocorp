@@ -35,4 +35,9 @@ See [phase-01-implementation.md](phase-01-implementation.md).
 - Billing documents: 20/20 focused tests passed.
 - Shared, backend, and frontend production builds passed.
 - Code review passed (9/10); `git diff --check` passed.
-- Known pre-existing checks outside this scope: the strict frontend size budget still reports 18 files over 600 lines, and the broader chi-hộ aging suite requires its existing local unaccent/cleanup setup.
+- Release-gate follow-up removed the strict frontend module-size violations, made the backend integration suites self-contained and serial, and repaired fresh database setup/seed ordering.
+- Dependency resolution pins `undici` to the Node-compatible 7.28 line.
+
+## Deployment
+
+Apply migrations `0100` through `0103` in journal order. Migration `0103` installs PostgreSQL `unaccent` when absent and repairs the legacy `trucks.next_inspection_date` schema gap; all fresh-schema migration SQL is safe to reapply during release verification.

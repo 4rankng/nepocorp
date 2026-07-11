@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Overhaul debit-note templates from fixed column toggles to a real column
 -- builder. The JSON shape is validated by shared/src/schemas before writes.
@@ -26,5 +25,3 @@ SET "columns" = '[
   {"id":"ghi_chu","label":"Ghi chú","variable":"note","width":14,"align":"left","format":"text"}
 ]'::jsonb
 WHERE "columns" = '[]'::jsonb;--> statement-breakpoint
-
-COMMIT;

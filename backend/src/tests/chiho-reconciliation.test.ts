@@ -1,4 +1,4 @@
-import { after, before, describe, test } from 'node:test';
+import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { and, eq, inArray } from 'drizzle-orm';
 import { TripStatus, Role, TxnType, FuelMode, LoadingType } from '@tingting/shared';
@@ -15,6 +15,7 @@ import { updateTripExpense, createTripExpense } from '../services/forwarder.serv
 import { updateTripFigures } from '../services/trip-mutations.service';
 import { LedgerService } from '../services/ledger.service';
 import { ApiError } from '../errors';
+import { disconnectRedis, invalidateReportCaches } from '../lib/redis';
 
 /**
  * US-007 — final-gate chi hộ reconciliation & regression tests.
@@ -48,6 +49,10 @@ after(async () => {
     await db.delete(s.tripExpenses).where(inArray(s.tripExpenses.id, createdExpenseIds));
   }
   if (createdTripIds.length > 0) {
+    // updateTripFigures replaces the trip's legs. They do not cascade when the
+    // parent trip is deleted, so remove them explicitly to keep teardown from
+    // aborting before the shared database connection can be closed.
+    await db.delete(s.tripLegs).where(inArray(s.tripLegs.tripId, createdTripIds));
     await db.delete(s.trips).where(inArray(s.trips.id, createdTripIds));
   }
   if (createdForwarderIds.length > 0) {
@@ -65,6 +70,8 @@ after(async () => {
   if (createdCargoTypeIds.length > 0) {
     await db.delete(s.cargoTypes).where(inArray(s.cargoTypes.id, createdCargoTypeIds));
   }
+  await invalidateReportCaches();
+  await disconnectRedis();
   await client.end();
 });
 
@@ -403,6 +410,9 @@ describe('US-007 aging: SERVICE_FEE AR surfaces in customer aging', () => {
       .set({ name: accentedName })
       .where(eq(s.customers.id, customer.id));
 
+    // These integration tests invoke services directly, bypassing the route's
+    // normal post-commit report-cache invalidation.
+    await invalidateReportCaches();
     const list = await getCustomerAgingList({ search: `Hai Dang ${suffix}` });
     const found = list.customers.find(c => c.customerId === customer.id);
 
@@ -428,6 +438,7 @@ describe('US-007 aging: SERVICE_FEE AR surfaces in customer aging', () => {
     // The full aging list (no txnType filter) must surface this customer with
     // the fee as its outstanding balance. Search by the unique name to find it
     // regardless of other pre-existing debtors in the dev DB.
+    await invalidateReportCaches();
     const list = await getCustomerAgingList({ search: customerName });
     const found = list.customers.find(c => c.customerId === customer.id);
     assert.ok(found, 'seeded customer appears in aging list');

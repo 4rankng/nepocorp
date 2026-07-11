@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import type { DashboardDecisionItem, DashboardDecisionKind, DashboardDecisionSeverity, Role, TripDetail } from '@tingting/shared';
+import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
-import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
+import { AssetIcon } from '../components/AssetIcon';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
@@ -16,6 +16,7 @@ import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueu
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import './DashboardPage.css';
+import { CostDonut, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type DonutSlice } from '../features/dashboard/components/dashboard-presenters';
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -31,92 +32,6 @@ import './DashboardPage.css';
  * with the legacy widgets.
  */
 
-const greeting = () => {
-  const h = new Date().getHours();
-  if (h < 12) return 'Chào buổi sáng';
-  if (h < 18) return 'Chào buổi chiều';
-  return 'Chào buổi tối';
-};
-
-const fmtVN = (n: number) => Math.round(n).toLocaleString('vi-VN');
-
-/** Convert a per-period series into cumulative running totals (lũy kế). */
-const runningSum = (arr: number[]): number[] => {
-  let acc = 0;
-  return arr.map((v) => (acc += v));
-};
-
-interface DeltaProps { mom: string | null; suffix?: string; flatLabel?: string; }
-const DeltaPill: React.FC<DeltaProps> = ({ mom, suffix = '', flatLabel = '0%' }) => {
-  if (!mom) return <span className="delta flat">{flatLabel}</span>;
-  const isUp = mom.startsWith('+');
-  const isDown = mom.startsWith('-');
-  const cls = isUp ? 'delta up' : isDown ? 'delta down' : 'delta flat';
-  const sym = isUp ? '▲' : isDown ? '▼' : '·';
-  return <span className={cls}>{sym} {mom.replace(/^[+-]/, '')}{suffix}</span>;
-};
-
-const DECISION_ICONS: Record<DashboardDecisionKind, AssetIconName> = {
-  receivables: 'receivables',
-  dispatch: 'dispatch',
-  renewal: 'schedule',
-  fuel: 'fuel',
-  'trip-lock': 'checklist',
-  'trip-data': 'document',
-  'profit-close': 'profit',
-  'all-clear': 'paid',
-};
-
-function decisionIcon(kind: DashboardDecisionKind): AssetIconName {
-  return DECISION_ICONS[kind] ?? 'alert';
-}
-
-function severityLabel(severity: DashboardDecisionSeverity): string {
-  switch (severity) {
-    case 'critical': return 'Gấp';
-    case 'warning': return 'Cần xử lý';
-    case 'success': return 'Ổn';
-    default: return 'Theo dõi';
-  }
-}
-
-// ─── Cost donut (5 slices, computed from cost breakdown) ────────────────────
-
-interface DonutSlice { name: string; pct: number; color: string; }
-function CostDonut({ slices, totalCompact }: { slices: DonutSlice[]; totalCompact: string }) {
-  // Each slice contributes (pct, offset) on a 100-unit circumference
-  let offset = 0;
-  const segs = slices.map(s => {
-    const dash = `${s.pct} ${100 - s.pct}`;
-    const seg = { color: s.color, dasharray: dash, offset: -offset };
-    offset += s.pct;
-    return seg;
-  });
-  return (
-    <div className="wf-donut">
-      <svg viewBox="0 0 42 42" style={{ width: 118, height: 118, transform: 'rotate(-90deg)' }}>
-        <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eef1ef" strokeWidth="7" />
-        {segs.map((s, i) => (
-          <circle key={i} cx="21" cy="21" r="15.9" fill="none" stroke={s.color}
-                  strokeWidth="7" strokeDasharray={s.dasharray} strokeDashoffset={s.offset} />
-        ))}
-      </svg>
-      <div className="ctr">
-        {(() => {
-          const spaceIdx = totalCompact.indexOf(' ');
-          const num  = spaceIdx > -1 ? totalCompact.slice(0, spaceIdx) : totalCompact;
-          const unit = spaceIdx > -1 ? totalCompact.slice(spaceIdx + 1) : '';
-          return (
-            <>
-              <span className="big">{num}</span>
-              <span className="sm">{unit ? `${unit} ₫` : '₫'}</span>
-            </>
-          );
-        })()}
-      </div>
-    </div>
-  );
-}
 
 // ─── Page component ─────────────────────────────────────────────────────────
 

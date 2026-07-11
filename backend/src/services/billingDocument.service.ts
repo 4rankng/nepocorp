@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, gte, lte, isNull, inArray, desc, like, type SQL } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, inArray, desc, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
 import { LedgerService } from './ledger.service';
