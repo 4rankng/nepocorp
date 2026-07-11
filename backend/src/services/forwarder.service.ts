@@ -3,7 +3,7 @@ import type { Tx } from './trip-shared';
 export type { Tx };
 import * as s from '../db/schema';
 import type { GuardedResult } from './approval.service';
-import { eq, and, isNull, desc, notInArray, sql } from 'drizzle-orm';
+import { eq, and, isNull, desc, notInArray, inArray, sql } from 'drizzle-orm';
 import { ApiError } from '../errors';
 export {
   getForwarderTrips,
@@ -27,6 +27,99 @@ export {
  * expense helpers accept either and route through whichever the caller holds.
  */
 type DbOrTx = typeof db | Tx;
+
+async function resetExpenseScope(
+  txOrDb: DbOrTx,
+  tripId: number,
+  tripContainerId: number | null,
+) {
+  const scopeWhere = tripContainerId == null
+    ? and(eq(s.tripExpenseCompletionScopes.tripId, tripId), isNull(s.tripExpenseCompletionScopes.tripContainerId))
+    : eq(s.tripExpenseCompletionScopes.tripContainerId, tripContainerId);
+  await txOrDb.update(s.tripExpenseCompletionScopes).set({
+    status: 'IN_PROGRESS',
+    completedBy: null,
+    completedAt: null,
+    updatedAt: new Date(),
+  }).where(scopeWhere);
+}
+
+export async function setTripExpenseCompletion(
+  tripId: number,
+  tripContainerId: number | null,
+  completed: boolean,
+  actorId: number,
+) {
+  return db.transaction(async (tx) => {
+    const scopeKey = tripContainerId ?? -tripId;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6103, ${scopeKey})`);
+    const [trip] = await tx.select({ status: s.trips.status }).from(s.trips)
+      .where(eq(s.trips.id, tripId)).limit(1);
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+    if (trip.status === 'LOCKED' || trip.status === 'CANCELED') {
+      throw new ApiError(409, 'Không thể cập nhật kê khai của chuyến đã khóa hoặc đã hủy');
+    }
+    if (tripContainerId != null) {
+      const [container] = await tx.select({ tripId: s.tripContainers.tripId })
+        .from(s.tripContainers).where(eq(s.tripContainers.id, tripContainerId)).limit(1);
+      if (!container || container.tripId !== tripId) {
+        throw new ApiError(400, 'Container không thuộc chuyến này');
+      }
+    }
+    if (!completed) {
+      const expenseScope = tripContainerId == null
+        ? and(eq(s.tripExpenses.tripId, tripId), isNull(s.tripExpenses.tripContainerId))
+        : eq(s.tripExpenses.tripContainerId, tripContainerId);
+      const [activeSettlement] = await tx.select({ id: s.advanceSettlements.id })
+        .from(s.tripExpenses)
+        .innerJoin(s.settlementExpenses, eq(s.settlementExpenses.tripExpenseId, s.tripExpenses.id))
+        .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+        .where(and(
+          expenseScope,
+          notInArray(s.advanceSettlements.status, ['REJECTED']),
+        )).limit(1);
+      if (activeSettlement) {
+        throw new ApiError(409, 'Chi phí đã gửi kế toán, không thể mở lại kê khai');
+      }
+    }
+
+    const scopeWhere = tripContainerId == null
+      ? and(eq(s.tripExpenseCompletionScopes.tripId, tripId), isNull(s.tripExpenseCompletionScopes.tripContainerId))
+      : eq(s.tripExpenseCompletionScopes.tripContainerId, tripContainerId);
+    const [existing] = await tx.select({ id: s.tripExpenseCompletionScopes.id })
+      .from(s.tripExpenseCompletionScopes).where(scopeWhere).limit(1);
+    const values = {
+      status: completed ? 'COMPLETED' : 'IN_PROGRESS',
+      completedBy: completed ? actorId : null,
+      completedAt: completed ? new Date() : null,
+      updatedAt: new Date(),
+    };
+    if (existing) {
+      const [updated] = await tx.update(s.tripExpenseCompletionScopes)
+        .set(values).where(eq(s.tripExpenseCompletionScopes.id, existing.id)).returning();
+      return updated;
+    }
+    const [inserted] = await tx.insert(s.tripExpenseCompletionScopes).values({
+      tripId,
+      tripContainerId,
+      ...values,
+    }).returning();
+    return inserted;
+  });
+}
+
+export async function getTripExpenseCompletionScopes(tripId: number) {
+  return db.select({
+    tripId: s.tripExpenseCompletionScopes.tripId,
+    tripContainerId: s.tripExpenseCompletionScopes.tripContainerId,
+    status: s.tripExpenseCompletionScopes.status,
+    completedBy: s.tripExpenseCompletionScopes.completedBy,
+    completedAt: s.tripExpenseCompletionScopes.completedAt,
+    completedByName: s.users.fullName,
+  }).from(s.tripExpenseCompletionScopes)
+    .leftJoin(s.users, eq(s.users.id, s.tripExpenseCompletionScopes.completedBy))
+    .where(eq(s.tripExpenseCompletionScopes.tripId, tripId));
+}
 
 export class NoForwarderProfileError extends Error {
   status = 404;
@@ -100,6 +193,8 @@ export async function createTripExpense(
     }
     containerLabel = container.containerNumber;
   }
+  const scopeKey = tripContainerId ?? -data.tripId;
+  await txOrDb.execute(sql`SELECT pg_advisory_xact_lock(6103, ${scopeKey})`);
 
   // Ancillary service/ocean-fee rows are now receivables-only for debit notes
   // and customer AR. They no longer require a payable counterparty because no
@@ -126,6 +221,9 @@ export async function createTripExpense(
     approvalStatus,
     note: data.note,
   }).returning();
+  if (data.forwarderId != null) {
+    await resetExpenseScope(txOrDb, data.tripId, tripContainerId);
+  }
   return inserted;
 }
 
@@ -147,6 +245,7 @@ export async function updateTripExpense(
     note?: string | null;
   },
 ) {
+  await txOrDb.execute(sql`SELECT pg_advisory_xact_lock(6102, ${id})`);
   // Fetch existing to check forwarderId — if forwarder-owned and sellAmount
   // is being updated, re-pend for manager review.
   // Also check parent trip status (spec §4.9: locked trips are immutable).
@@ -154,12 +253,30 @@ export async function updateTripExpense(
     .select({
       forwarderId: s.tripExpenses.forwarderId,
       tripId: s.tripExpenses.tripId,
+      tripContainerId: s.tripExpenses.tripContainerId,
     })
     .from(s.tripExpenses)
     .where(eq(s.tripExpenses.id, id))
     .limit(1);
 
   if (!existing) return null;
+  if (existing.forwarderId != null) {
+    const [activeLink] = await txOrDb.select({ id: s.settlementExpenses.id })
+      .from(s.settlementExpenses)
+      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+      .where(and(
+        eq(s.settlementExpenses.tripExpenseId, id),
+        notInArray(s.advanceSettlements.status, ['REJECTED']),
+      )).limit(1);
+    if (activeLink) throw new ApiError(409, 'Chi phí đã gửi kế toán, chỉ được điều chỉnh trên phiếu hoàn ứng');
+  }
+  const scopeKeys = [...new Set([
+    existing.tripContainerId ?? -existing.tripId,
+    patch.tripContainerId === undefined ? (existing.tripContainerId ?? -existing.tripId) : (patch.tripContainerId ?? -existing.tripId),
+  ])].sort((a, b) => a - b);
+  for (const scopeKey of scopeKeys) {
+    await txOrDb.execute(sql`SELECT pg_advisory_xact_lock(6103, ${scopeKey})`);
+  }
 
   // Guard: reject edits on expenses belonging to LOCKED trips
   const [trip] = await txOrDb.select({ status: s.trips.status })
@@ -203,7 +320,38 @@ export async function updateTripExpense(
     .set(setPatch)
     .where(eq(s.tripExpenses.id, id))
     .returning();
+  await resetExpenseScope(txOrDb, existing.tripId, existing.tripContainerId);
+  if (patch.tripContainerId !== undefined && patch.tripContainerId !== existing.tripContainerId) {
+    await resetExpenseScope(txOrDb, existing.tripId, patch.tripContainerId);
+  }
   return updated;
+}
+
+export async function updateForwarderTripExpense(
+  expenseId: number,
+  forwarderId: number,
+  patch: Parameters<typeof updateTripExpense>[2],
+) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6102, ${expenseId})`);
+    const [expense] = await tx.select({
+      id: s.tripExpenses.id,
+      tripId: s.tripExpenses.tripId,
+      ownerId: s.tripExpenses.forwarderId,
+      tripContainerId: s.tripExpenses.tripContainerId,
+    }).from(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId)).limit(1);
+    if (!expense) throw new ApiError(404, 'Không tìm thấy chi phí');
+    if (expense.ownerId !== forwarderId) throw new ApiError(403, 'Không có quyền sửa chi phí này');
+    const [activeLink] = await tx.select({ id: s.settlementExpenses.id })
+      .from(s.settlementExpenses)
+      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+      .where(and(
+        eq(s.settlementExpenses.tripExpenseId, expenseId),
+        notInArray(s.advanceSettlements.status, ['REJECTED']),
+      )).limit(1);
+    if (activeLink) throw new ApiError(409, 'Chi phí đã gửi kế toán, không thể sửa');
+    return updateTripExpense(tx, expenseId, patch);
+  });
 }
 
 export async function getTripExpenses(txOrDb: DbOrTx, tripId: number) {
@@ -220,6 +368,7 @@ export async function getTripExpenses(txOrDb: DbOrTx, tripId: number) {
     invoiceDate: s.tripExpenses.invoiceDate,
     declarationNumber: s.tripExpenses.declarationNumber,
     containerNumber: s.tripExpenses.containerNumber,
+    tripContainerId: s.tripExpenses.tripContainerId,
     approvalStatus: s.tripExpenses.approvalStatus,
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
@@ -236,14 +385,29 @@ export async function getTripExpenses(txOrDb: DbOrTx, tripId: number) {
 }
 
 export async function deleteTripExpense(expenseId: number, forwarderId: number) {
-  const [existing] = await db.select().from(s.tripExpenses)
-    .where(eq(s.tripExpenses.id, expenseId))
-    .limit(1);
-  if (!existing) return null;
-  // null forwarderId = accountant-created; cannot be deleted via forwarder portal
-  if (existing.forwarderId == null || existing.forwarderId !== forwarderId) return 'FORBIDDEN';
-  await db.delete(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId));
-  return 'DELETED';
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6102, ${expenseId})`);
+    const [existing] = await tx.select().from(s.tripExpenses)
+      .where(eq(s.tripExpenses.id, expenseId)).limit(1);
+    if (!existing) return null;
+    if (existing.forwarderId == null || existing.forwarderId !== forwarderId) return 'FORBIDDEN';
+    const scopeKey = existing.tripContainerId ?? -existing.tripId;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6103, ${scopeKey})`);
+    const [trip] = await tx.select({ status: s.trips.status }).from(s.trips)
+      .where(eq(s.trips.id, existing.tripId)).limit(1);
+    if (trip?.status === 'LOCKED') throw new ApiError(409, 'Không thể xóa chi phí của chuyến đã chốt');
+    const [activeLink] = await tx.select({ id: s.settlementExpenses.id })
+      .from(s.settlementExpenses)
+      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+      .where(and(
+        eq(s.settlementExpenses.tripExpenseId, expenseId),
+        notInArray(s.advanceSettlements.status, ['REJECTED']),
+      )).limit(1);
+    if (activeLink) throw new ApiError(409, 'Chi phí đã gửi kế toán, không thể xóa');
+    await tx.delete(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId));
+    await resetExpenseScope(tx, existing.tripId, existing.tripContainerId);
+    return 'DELETED';
+  });
 }
 
 /**
@@ -273,17 +437,29 @@ export async function getTripExpenseAuditInfo(expenseId: number) {
  */
 export async function deleteTripExpenseGuarded(tripId: number, expenseId: number): Promise<GuardedResult> {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6102, ${expenseId})`);
+    const [expense] = await tx.select({
+      tripId: s.tripExpenses.tripId,
+      tripContainerId: s.tripExpenses.tripContainerId,
+    }).from(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId)).limit(1);
+    if (!expense || expense.tripId !== tripId) {
+      return { error: 'Không tìm thấy chi phí của chuyến xe', status: 404 };
+    }
+    const scopeKey = expense.tripContainerId ?? -expense.tripId;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(6103, ${scopeKey})`);
     // Guard: trip must not be locked
     const [trip] = await tx.select({ status: s.trips.status })
       .from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) return { error: 'Không tìm thấy chuyến xe', status: 404 };
     if (trip.status === 'LOCKED') return { error: 'Không thể xóa chi phí trên chuyến đã khóa', status: 400 };
-    // Guard: expense must not be linked to any settlement
+    // Keep historical settlement snapshots referentially intact, including
+    // rejected submissions. Corrections can be edited and resubmitted instead.
     const [link] = await tx.select({ id: s.settlementExpenses.id })
       .from(s.settlementExpenses)
       .where(eq(s.settlementExpenses.tripExpenseId, expenseId)).limit(1);
     if (link) return { error: 'Không thể xóa chi phí đã được thanh toán', status: 400 };
     await tx.delete(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId));
+    await resetExpenseScope(tx, expense.tripId, expense.tripContainerId);
     return { ok: true as const };
   });
 }
@@ -306,25 +482,30 @@ export async function listUnlinkedTripExpenses(forwarderId: number) {
     expenseType: s.tripExpenses.expenseType,
     buyAmount: s.tripExpenses.buyAmount,
     approvalStatus: s.tripExpenses.approvalStatus,
+    tripContainerId: s.tripExpenses.tripContainerId,
+    completionStatus: sql<string>`COALESCE((
+      SELECT scope.status FROM trip_expense_completion_scopes scope
+      WHERE scope.trip_id = ${s.tripExpenses.tripId}
+        AND (scope.trip_container_id = ${s.tripExpenses.tripContainerId}
+          OR (scope.trip_container_id IS NULL AND ${s.tripExpenses.tripContainerId} IS NULL))
+      LIMIT 1
+    ), 'IN_PROGRESS')`,
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
     tripCode: s.trips.tripCode,
     departureDate: s.trips.departureDate,
     truckPlate: s.trucks.licensePlate,
-    containerNumbers: sql<string | null>`(
-      SELECT string_agg(tc.container_number, ', ' ORDER BY tc.id)
-      FROM trip_containers tc
-      WHERE tc.trip_id = ${s.tripExpenses.tripId}
-    )`,
+    containerNumbers: s.tripContainers.containerNumber,
   }).from(s.tripExpenses)
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
     // Intentionally scoped to forwarder-owned expenses only (forwarderId IS NOT NULL).
     // Accountant-created expenses (forwarderId = null) are excluded by design —
     // they are not eligible for forwarder advance settlement.
     .where(and(
       eq(s.tripExpenses.forwarderId, forwarderId),
-      eq(s.tripExpenses.approvalStatus, 'APPROVED'),
+      inArray(s.tripExpenses.approvalStatus, ['PENDING', 'APPROVED']),
     ))
     .orderBy(desc(s.tripExpenses.createdAt));
 

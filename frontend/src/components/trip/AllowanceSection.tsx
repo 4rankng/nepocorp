@@ -1,5 +1,5 @@
 import React from "react";
-import { computeRoadAllowance } from "@tingting/shared";
+import { computeRoadAllowance, computeTripDriverSalary } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { InputWithPrefix } from "./InputWithPrefix";
 import "./AllowanceSection.css";
@@ -19,6 +19,7 @@ export function AllowanceSection() {
     revenueCombine, setRevenueCombine,
     customerCommission, setCustomerCommission,
     tripWageDays, setTripWageDays,
+    driverBaseSalary,
     suggestedPrice,
     containerCount,
     roadAllowanceOverride, setRoadAllowanceOverride,
@@ -259,9 +260,8 @@ export function AllowanceSection() {
                 onChange={(e) => {
                   const days = e.target.value;
                   setTripWageDays(days);
-                  if (days) {
-                    const dailyRate = Math.round(10000000 / 26);
-                    setDriverSalary(String(dailyRate * Number(days)));
+                  if (days && driverBaseSalary > 0) {
+                    setDriverSalary(String(computeTripDriverSalary(driverBaseSalary, Number(days))));
                   }
                 }}
                 style={{ width: "100%" }}
@@ -288,8 +288,9 @@ export function AllowanceSection() {
                   }}
                   onClick={() => {
                     setTripWageDays(String(d));
-                    const dailyRate = Math.round(10000000 / 26);
-                    setDriverSalary(String(dailyRate * d));
+                    if (driverBaseSalary > 0) {
+                      setDriverSalary(String(computeTripDriverSalary(driverBaseSalary, d)));
+                    }
                   }}
                 >
                   {d}
@@ -297,9 +298,11 @@ export function AllowanceSection() {
               ))}
             </div>
             <div className="as-helper">
-              {tripWageDays && Number(tripWageDays) > 0 
-                ? `${tripWageDays} ngày = ${(Math.round(10000000 / 26) * Number(tripWageDays)).toLocaleString('vi-VN')} đ`
-                : '1 ngày = 384.615 đ'}
+              {driverBaseSalary > 0
+                ? tripWageDays && Number(tripWageDays) > 0
+                  ? `${tripWageDays} ngày = ${computeTripDriverSalary(driverBaseSalary, Number(tripWageDays)).toLocaleString('vi-VN')} đ`
+                  : `1 ngày = ${computeTripDriverSalary(driverBaseSalary, 1).toLocaleString('vi-VN')} đ`
+                : 'Chưa cấu hình lương cơ bản cho lái xe'}
             </div>
           </div>
         </div>

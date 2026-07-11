@@ -3,9 +3,11 @@ import * as s from '../db/schema';
 import { eq, and, gte, lte, isNull, inArray, desc, like, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
+import { LedgerService } from './ledger.service';
 import {
   BILLABLE_TRIP_STATUSES,
   LoadingType,
+  TxnType,
   defaultDebitNoteColumns,
   defaultPaymentStatementColumns,
 } from '@tingting/shared';
@@ -49,6 +51,18 @@ export function effectiveAmount(line: { excluded?: boolean | null; baseAmount: n
 
 export function docTotal(lines: BillingDocumentLine[]): number {
   return lines.reduce((sum, l) => sum + effectiveAmount(l), 0);
+}
+
+/**
+ * Amount this debit note adds to (or removes from) AR beyond the amounts that
+ * the trip lifecycle already posted. Source-backed rows contribute only their
+ * override/exclusion delta; ad-hoc rows contribute their full effective value.
+ */
+export function documentLedgerAdjustment(lines: BillingDocumentLine[]): number {
+  return Math.round(lines.reduce((sum, line) => {
+    const effective = effectiveAmount(line);
+    return sum + (line.sourceType === 'ADHOC' ? effective : effective - Number(line.baseAmount));
+  }, 0));
 }
 
 // ─── Billing document templates ───────────────────────────────────────────────
@@ -623,10 +637,31 @@ export async function generateDraft(input: GenerateBillingDocumentInput): Promis
   return { type, entityType, entityId, entityName: result.entityName, rangeFrom: from, rangeTo: to, lines: result.lines, totalInclVat: total };
 }
 
-// ─── Persistence (snapshot — never mutates ledger) ────────────────────────────
+// ─── Persistence + receivables reconciliation ────────────────────────────────
+
+async function postDebitNoteDelta(
+  tx: Tx,
+  input: { documentId: number; customerId: number; delta: number },
+): Promise<void> {
+  const delta = Math.round(input.delta);
+  if (delta === 0) return;
+  await LedgerService.postEntry(tx, {
+    txnType: TxnType.ADJUSTMENT,
+    txnId: input.documentId,
+    receiptId: `GBN:${input.documentId}`,
+    entityType: 'CUSTOMER',
+    entityId: input.customerId,
+    debit: delta > 0 ? delta : 0,
+    credit: delta < 0 ? Math.abs(delta) : 0,
+    note: `Điều chỉnh công nợ theo Giấy báo nợ #${input.documentId}`,
+  });
+}
 
 export async function saveDocument(input: SaveBillingDocumentInput, userId: number | null): Promise<BillingDocument> {
   const total = docTotal(input.lines as BillingDocumentLine[]);
+  const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
+    ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
+    : 0;
   // Resolve the document template and freeze a render-only snapshot onto the doc
   // so re-exports stay stable after the template is edited/deleted.
   let resolvedTemplateId = input.debitNoteTemplateId ?? null;
@@ -637,18 +672,58 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
   }
   const template = await resolveDebitNoteTemplate({ templateIdOverride: resolvedTemplateId, docType: input.type });
   const snapshot = template ? templateToSnapshot(template) : defaultSnapshotForType(input.type);
-  // Insert doc + lines atomically — a failure between them must not leave an
-  // orphan document (or its lines half-written).
+  // One active document per customer/vendor + exact period. Saving the same
+  // period replaces it in-place and posts only the accounting delta.
   const docId = await db.transaction(async (tx) => {
+    if (input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER') {
+      await LedgerService.lockEntity(tx, 'CUSTOMER', input.entityId);
+    }
+    const [existing] = input.type === 'DEBIT_NOTE'
+      ? await tx.select().from(s.billingDocuments).where(and(
+        eq(s.billingDocuments.type, input.type),
+        eq(s.billingDocuments.entityType, input.entityType),
+        eq(s.billingDocuments.entityId, input.entityId),
+        eq(s.billingDocuments.rangeFrom, input.rangeFrom),
+        eq(s.billingDocuments.rangeTo, input.rangeTo),
+        isNull(s.billingDocuments.deletedAt),
+      )).limit(1)
+      : [undefined];
+
+    if (existing) {
+      await tx.update(s.billingDocuments).set({
+        entityName: input.entityName ?? null,
+        note: input.note ?? null,
+        totalInclVat: String(total),
+        ledgerAdjustmentAmount: String(desiredAdjustment),
+        updatedAt: new Date(),
+        debitNoteTemplateId: template?.id ?? null,
+        debitNoteTemplateSnapshot: snapshot,
+      }).where(eq(s.billingDocuments.id, existing.id));
+      await tx.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, existing.id));
+      await persistLines(tx, existing.id, input.lines);
+      await postDebitNoteDelta(tx, {
+        documentId: existing.id,
+        customerId: input.entityId,
+        delta: desiredAdjustment - Number(existing.ledgerAdjustmentAmount),
+      });
+      return existing.id;
+    }
+
     const [doc] = await tx.insert(s.billingDocuments).values({
       type: input.type, entityType: input.entityType, entityId: input.entityId,
       entityName: input.entityName ?? null, rangeFrom: input.rangeFrom, rangeTo: input.rangeTo,
       note: input.note ?? null, totalInclVat: String(total), createdBy: userId,
+      ledgerAdjustmentAmount: String(desiredAdjustment),
       debitNoteTemplateId: template?.id ?? null,
       debitNoteTemplateSnapshot: snapshot,
     }).returning();
     if (!doc) throw new ApiError(500, 'Không lưu được tài liệu');
     await persistLines(tx, doc.id, input.lines);
+    await postDebitNoteDelta(tx, {
+      documentId: doc.id,
+      customerId: input.entityId,
+      delta: desiredAdjustment,
+    });
     return doc.id;
   });
   return getDocument(docId);
@@ -656,6 +731,9 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
 
 export async function updateDocument(id: number, input: SaveBillingDocumentInput): Promise<BillingDocument> {
   const total = docTotal(input.lines as BillingDocumentLine[]);
+  const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
+    ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
+    : 0;
   // Re-snapshot on every edit so the doc never shows stale template styling on
   // new line data (the doc is always-editable; snapshot = last-saved render
   // state). Preserve the existing template link unless the builder sent an
@@ -676,14 +754,29 @@ export async function updateDocument(id: number, input: SaveBillingDocumentInput
   // Always-editable: replace lines on edit — delete + re-insert inside one
   // transaction so a mid-way failure cannot wipe the document's lines.
   await db.transaction(async (tx) => {
+    if (input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER') {
+      await LedgerService.lockEntity(tx, 'CUSTOMER', input.entityId);
+    }
+    const [current] = await tx.select().from(s.billingDocuments)
+      .where(and(eq(s.billingDocuments.id, id), isNull(s.billingDocuments.deletedAt))).limit(1);
+    if (!current) throw new ApiError(404, 'Không tìm thấy tài liệu');
+    if (current.type !== input.type || current.entityType !== input.entityType || current.entityId !== input.entityId) {
+      throw new ApiError(400, 'Không thể đổi khách hàng hoặc loại của tài liệu đã lưu');
+    }
     await tx.update(s.billingDocuments).set({
       entityName: input.entityName ?? null, rangeFrom: input.rangeFrom, rangeTo: input.rangeTo,
       note: input.note ?? null, totalInclVat: String(total), updatedAt: new Date(),
+      ledgerAdjustmentAmount: String(desiredAdjustment),
       debitNoteTemplateId: template?.id ?? null,
       debitNoteTemplateSnapshot: snapshot,
     }).where(eq(s.billingDocuments.id, id));
     await tx.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, id));
     await persistLines(tx, id, input.lines);
+    await postDebitNoteDelta(tx, {
+      documentId: id,
+      customerId: input.entityId,
+      delta: desiredAdjustment - Number(current.ledgerAdjustmentAmount),
+    });
   });
   return getDocument(id);
 }
@@ -737,6 +830,7 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
     entityId: doc.entityId, entityName: doc.entityName ?? undefined,
     rangeFrom: doc.rangeFrom, rangeTo: doc.rangeTo, note: doc.note,
     totalInclVat: Number(doc.totalInclVat), createdBy: doc.createdBy,
+    ledgerAdjustmentAmount: Number(doc.ledgerAdjustmentAmount),
     debitNoteTemplateId: doc.debitNoteTemplateId ?? null,
     debitNoteTemplateSnapshot: (doc.debitNoteTemplateSnapshot as DebitNoteTemplateSnapshot | null) ?? null,
     createdAt: doc.createdAt.toISOString(), updatedAt: doc.updatedAt.toISOString(),
@@ -754,8 +848,26 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
 }
 
 export async function deleteDocument(id: number): Promise<void> {
-  await db.update(s.billingDocuments).set({ deletedAt: new Date() })
-    .where(eq(s.billingDocuments.id, id));
+  await db.transaction(async (tx) => {
+    const [initial] = await tx.select().from(s.billingDocuments)
+      .where(and(eq(s.billingDocuments.id, id), isNull(s.billingDocuments.deletedAt))).limit(1);
+    if (!initial) throw new ApiError(404, 'Không tìm thấy tài liệu');
+    if (initial.type === 'DEBIT_NOTE' && initial.entityType === 'CUSTOMER') {
+      await LedgerService.lockEntity(tx, 'CUSTOMER', initial.entityId);
+      // Re-read after acquiring the entity lock so a concurrent save cannot
+      // leave us reversing a stale adjustment amount.
+      const [doc] = await tx.select().from(s.billingDocuments)
+        .where(and(eq(s.billingDocuments.id, id), isNull(s.billingDocuments.deletedAt))).limit(1);
+      if (!doc) throw new ApiError(404, 'Không tìm thấy tài liệu');
+      await postDebitNoteDelta(tx, {
+        documentId: id,
+        customerId: doc.entityId,
+        delta: -Number(doc.ledgerAdjustmentAmount),
+      });
+    }
+    await tx.update(s.billingDocuments).set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(s.billingDocuments.id, id));
+  });
 }
 
 // ─── Excel export ─────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import { api, ApiError } from '../lib/api';
 import {
   FuelMode, LoadingType, TripStatus,
   FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK,
+  computeTripDriverSalary,
 } from '@tingting/shared';
 import type { PricingTable, TripDetail, TripLeg, PaginatedResponse } from '@tingting/shared';
 import { tripClient } from '../api/tripClient';
@@ -98,6 +99,7 @@ export interface UseTripFormDispatchReturn {
   ocrResult: OcrSignal | null;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
   selectedRouteData: RouteOption | null;
+  driverBaseSalary: number;
   roadAllowanceBaseApplied?: number;
   tollPerStationApplied?: number;
   returnCargoBonusApplied?: number;
@@ -312,10 +314,15 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (selectedRouteData.fixedFuelAllowance != null) {
       s.setFuelLitersOverride(String(selectedRouteData.fixedFuelAllowance));
     }
-    if (selectedRouteData.driverSalary != null) {
-      s.setDriverSalary(String(selectedRouteData.driverSalary));
-    } else if (roadConfig?.defaultDriverSalary && Number(roadConfig.defaultDriverSalary) > 0) {
-      s.setDriverSalary(String(roadConfig.defaultDriverSalary));
+    const hasConfiguredDriverSalary = (options.drivers.find(
+      (driver) => driver.id === Number(s.driverId),
+    )?.baseSalary ?? 0) > 0;
+    if (!hasConfiguredDriverSalary) {
+      if (selectedRouteData.driverSalary != null) {
+        s.setDriverSalary(String(selectedRouteData.driverSalary));
+      } else if (roadConfig?.defaultDriverSalary && Number(roadConfig.defaultDriverSalary) > 0) {
+        s.setDriverSalary(String(roadConfig.defaultDriverSalary));
+      }
     }
     if (roadConfig?.twoPointDeliveryBonus && Number(roadConfig.twoPointDeliveryBonus) > 0) {
       s.setTwoPointDeliveryBonus(String(roadConfig.twoPointDeliveryBonus));
@@ -329,17 +336,15 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRouteData, isEditMode, existingTrip]);
 
+  const driverBaseSalary = useMemo(
+    () => options.drivers.find((driver) => driver.id === Number(s.driverId))?.baseSalary ?? 0,
+    [options.drivers, s.driverId],
+  );
+
   useEffect(() => {
     if (isEditMode) return;
     if (!s.driverId || !s.departureDate) return;
-    if (selectedRouteData?.driverSalary != null) return;
-    if (roadConfig?.defaultDriverSalary && Number(roadConfig.defaultDriverSalary) > 0) return;
-
-    const driver = options?.drivers?.find((d: { id: number; baseSalary?: number | string }) => d.id === Number(s.driverId));
-    if (!driver) return;
-
-    const baseSalary = Number((driver as { id: number; baseSalary?: number | string }).baseSalary) || 0;
-    if (baseSalary <= 0) return;
+    if (driverBaseSalary <= 0) return;
 
     const startDate = new Date(s.departureDate);
     const days = s.completedAt
@@ -348,18 +353,10 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
 
     s.setTripWageDays(s.tripWageDays || String(days));
 
-    const [y, m] = s.departureDate.split('-').map(Number);
-    const daysInMonth = new Date(y, m, 0).getDate();
-    let sundays = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (new Date(y, m - 1, d).getDay() === 0) sundays++;
-    }
-    const standardWorkDays = daysInMonth - sundays;
-    const dailyRate = Math.round(baseSalary / standardWorkDays);
-    s.setDriverSalary(String(dailyRate * days));
+    s.setDriverSalary(String(computeTripDriverSalary(driverBaseSalary, days)));
     // 's' omitted: individual s.* fields listed are the correct granularity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.driverId, s.departureDate, s.completedAt, selectedRouteData, roadConfig, isEditMode, options?.drivers]);
+  }, [s.driverId, s.departureDate, s.completedAt, driverBaseSalary, isEditMode]);
 
   const estimatedFuelCost = useMemo(() => {
     if (s.fuelMode === FuelMode.FLAT_RATE) {
@@ -1042,6 +1039,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     totalRequiredFields,
     handleSubmit,
     selectedRouteData,
+    driverBaseSalary,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,
     tollPerStationApplied: isEditMode && existingTrip?.tollPerStationApplied
       ? Number(existingTrip.tollPerStationApplied)

@@ -1,7 +1,7 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
-  AdvanceRequestStatus, AdvanceSettlementStatus,
+  AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
   TireStatus, TruckCapRole,
 } from '../constants';
 
@@ -660,10 +660,20 @@ export interface TripExpense {
   invoiceDate: string | null;
   declarationNumber: string | null;
   containerNumber: string | null;
+  tripContainerId: number | null;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   note: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TripExpenseCompletionScope {
+  tripId: number;
+  tripContainerId: number | null;
+  status: ExpenseEntryStatus;
+  completedBy: number | null;
+  completedAt: string | null;
+  completedByName?: string | null;
 }
 
 export interface TripExpenseWithRefs extends TripExpense {
@@ -707,6 +717,16 @@ export interface AdvanceSettlementWithRefs extends AdvanceSettlement {
   checkerName?: string | null;
   approverName?: string | null;
   linkedRequests?: AdvanceRequest[];
+  linkedExpenses?: Array<TripExpense & {
+    tripCode?: string | null;
+    departureDate?: string | null;
+    customerName?: string | null;
+    submittedBuyAmount?: string | null;
+    submittedSellAmount?: string | null;
+    adjustmentReason?: string | null;
+    adjustedAt?: string | null;
+    adjustedByName?: string | null;
+  }>;
 }
 
 /** Trip detail projection returned by the forwarder GET /trips/:id endpoint. */
@@ -736,6 +756,8 @@ export interface ForwarderTripDetail {
     createdBy: number;
     createdAt: string;
   }>;
+  completionScopes: TripExpenseCompletionScope[];
+  completionProgress: { completed: number; total: number };
   expenses: Array<{
     id: number;
     tripId: number;
@@ -747,6 +769,9 @@ export interface ForwarderTripDetail {
     supplierId: number | null;
     supplierName: string | null;
     containerNumber: string | null;
+    tripContainerId: number | null;
+    activeSettlementId: number | null;
+    canEdit: boolean;
     invoiceNumber: string | null;
     invoiceDate: string | null;
     declarationNumber: string | null;
@@ -765,6 +790,8 @@ export interface TripExpenseWithSupplier extends TripExpense {
   departureDate?: string | null;
   truckPlate?: string | null;
   containerNumbers?: string | null;
+  completionStatus?: ExpenseEntryStatus;
+  completionProgress?: { completed: number; total: number };
 }
 
 // ─── API types ───────────────────────────────────────────────────────────────
@@ -1094,6 +1121,7 @@ export interface BillingDocument {
   rangeTo: string;
   note: string | null;
   totalInclVat: number;           // sum of non-excluded effective line amounts
+  ledgerAdjustmentAmount?: number; // net AR adjustment posted by this document
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;

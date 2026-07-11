@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Filter, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { Download, Filter, Loader2, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
@@ -283,7 +283,12 @@ export default function BillingDocumentBuilder({
   };
 
   const removeLine = (index: number) => {
-    setLines((prev) => prev.filter((_, i) => i !== index));
+    setLines((prev) => prev.flatMap((line, i) => {
+      if (i !== index) return [line];
+      // Preserve source rows as exclusions so saving can reduce the matching
+      // receivable. Ad-hoc rows have no pre-existing posting and can disappear.
+      return line.sourceType === 'ADHOC' ? [] : [{ ...line, excluded: !line.excluded }];
+    }));
     setSavedId(null);
   };
 
@@ -571,8 +576,8 @@ export default function BillingDocumentBuilder({
                                       />
                                     </td>
                                     <td className="billing-builder__row-actions">
-                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                        <Trash2 size={15} />
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
+                                        {line.excluded ? <RotateCcw size={15} /> : <Trash2 size={15} />}
                                       </button>
                                     </td>
                                   </tr>
@@ -659,8 +664,8 @@ export default function BillingDocumentBuilder({
                                           onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
                                         />
                                       </label>
-                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                        <Trash2 size={17} />
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
+                                        {line.excluded ? <RotateCcw size={17} /> : <Trash2 size={17} />}
                                       </button>
                                     </div>
                                   </div>

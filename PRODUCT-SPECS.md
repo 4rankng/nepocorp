@@ -164,7 +164,7 @@ net_salary = base_salary + adjustment − penalties
 ```
 
 * **BHXH/BHYT:** Phần doanh nghiệp đóng (`social_insurance`) được cấu hình cho từng lái xe (trường `social_insurance` trên bảng `drivers`) và **hạch toán chi phí riêng** — **KHÔNG** cộng vào `daily_rate`. Cả `daily_rate` và lương thực trả lái xe đều dùng `base_salary` gốc. *(Pete xác nhận 4/6, 11/6, 12/6 — cập nhật: social KHÔNG vào daily_rate)*
-* **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `base_salary / standard_work_days × trip_wage_days` (BHXH hạch toán riêng, KHÔNG vào công thức). Đây là khoản PHÂN BỔ chi phí vào chuyến, không cộng thêm vào thu nhập lái xe. Kế toán có thể sửa/ghi đè.
+* **Lương chuyến quy đổi (Trip Salary Auto-fill):** Khi kế toán nhập liệu chuyến đi (chọn lái xe, nhập ngày đi/ngày về), hệ thống **tự động điền** trường `driver_salary` theo công thức: `base_salary / 26 × trip_wage_days` (BHXH hạch toán riêng, KHÔNG vào công thức). Đây là khoản PHÂN BỔ chi phí vào chuyến, không cộng thêm vào thu nhập lái xe. Kế toán có thể sửa/ghi đè. Mẫu số biến động `standard_work_days` chỉ dùng cho chấm công/lương tháng.
 * **Dashboard thu nhập lái xe (5 thẻ):** Cổng lái xe hiển thị 5 thẻ tổng hợp thu nhập cộng dồn từ đầu tháng đến hiện tại:
     1. **Lương cơ bản tháng** (`base_salary_mtd`) — lương cứng tháng hiện tại.
     2. **Lương sản xuất (chuyến) cộng dồn** (`trip_salary_mtd`) — tổng `driver_salary` từ các chuyến đã chốt trong tháng.
@@ -207,7 +207,7 @@ net_salary = base_salary + adjustment − penalties
                + Thưởng giao 2 điểm (nếu có)
                + Lưu ca xe (nếu có)
   ```
-  Chi phí dịch vụ đi kèm **không** cộng trực tiếp vào tổng chi phí — biên lợi nhuận dịch vụ (service margin = bán ex-VAT − mua incl-VAT) được cộng riêng vào lợi nhuận gộp (xem §4.7). Lương chuyến quy đổi được hệ thống tự điền theo công thức `baseSalary / standard_work_days × tripWageDays` (BHXH hạch toán riêng, không vào công thức), kế toán có thể ghi đè.
+  Chi phí dịch vụ đi kèm **không** cộng trực tiếp vào tổng chi phí — biên lợi nhuận dịch vụ (service margin = bán ex-VAT − mua incl-VAT) được cộng riêng vào lợi nhuận gộp (xem §4.7). Lương chuyến quy đổi được hệ thống tự điền theo công thức `baseSalary / 26 × tripWageDays` (BHXH hạch toán riêng, không vào công thức), kế toán có thể ghi đè.
 
   **Lưu ý hiển thị:** Tiền đi đường trên thẻ phân tích tài chính hiển thị theo 2 dòng riêng biệt: (1) "Tiền đi đường" = số tiền lái xe thực nhận (đã trừ vé công ty), và (2) "Tiền vé (công ty thanh toán)" = khoản công ty trả hộ vé cho lái xe. Cả hai đều là chi phí công ty và được tính vào tổng chi phí.
 * **Công thức đối với Xe ngoài:** `Tổng chi phí = Giá cước thuê ngoài`.
@@ -392,7 +392,7 @@ Bảng `trip_instructions` (id, trip_id, contact_name, contact_phone, notes, man
 4. **[Kế toán]** Tôi muốn upload ảnh container/seal đối với chuyến chở chè khi đóng chuyến. Bên cạnh ảnh, có thể nhập số container/seal bằng text.
 5. **[Kế toán]** Tôi muốn thêm ghi chú/diễn giải cho chuyến đi.
 6. **[Kế toán]** Tôi muốn nhập **hoa hồng chi khách hàng** trên form chuyến, để hệ thống tính **doanh thu thực tế = giá cước (chưa VAT) − hoa hồng**. Hoa hồng ghi nhận ngay khi nhập, không đợi khóa chuyến. *(Mới — Pete xác nhận 11/6)*
-7. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** khi nhập liệu chuyến đi (chọn lái xe + nhập ngày đi/về), theo công thức `(lươngCB + BHXH) / 26 × số ngày chuyến`. Tôi có thể sửa lại hoặc điều chỉnh số ngày tính lương. *(Mới — Pete xác nhận 11/6)*
+7. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** khi nhập liệu chuyến đi (chọn lái xe + nhập ngày đi/về), theo công thức `lươngCB / 26 × số ngày chuyến`. BHXH được hạch toán riêng. Tôi có thể sửa lại hoặc điều chỉnh số ngày tính lương. *(Mới — Pete xác nhận 11/6)*
 
 ### MODULE 3: KIỂM SOÁT NHIÊN LIỆU & TIỀN ĐI ĐƯỜNG
 1. **[Hệ thống]** Tự động tính TTBQ (liters/km × 100) và hiển thị trên chi tiết chuyến đi. Đối chiếu định mức và cảnh báo hoãn sang giai đoạn sau.
@@ -450,10 +450,10 @@ Bảng `trip_instructions` (id, trip_id, contact_name, contact_phone, notes, man
 1. **[Kế toán]** Tôi muốn xem lịch chấm công tháng của từng lái xe — các ngày đi chuyến (`TRIP_DAY`) được hệ thống tự điền; tôi chỉ cần click vào ngày còn lại để gán `STANDBY` (chờ việc/sửa xe) hoặc `PERSONAL_LEAVE` (nghỉ không lương).
 2. **[Kế toán]** Tôi muốn hệ thống tự tính lương thực nhận tháng: lương cứng + tổng lương chuyến + lương bổ sung (ngày chờ việc) − khấu trừ nghỉ việc riêng + điều chỉnh công thiếu/thừa − phạt kỷ luật. Số ngày công chuẩn tính theo số ngày làm việc thực tế của tháng (không cố định 26).
 3. **[Kế toán]** Tôi muốn xác nhận kỳ lương (CONFIRMED) — sau đó hệ thống tự hạch toán chi phí chờ việc (`standby_cost`) vào chi phí chung trong báo cáo lãi lỗ.
-4. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** trên form chuyến (`driver_salary`) theo công thức `lươngCB / standard_work_days × trip_wage_days` (BHXH hạch toán riêng, KHÔNG vào công thức). Tôi có thể sửa lại hoặc điều chỉnh số ngày.
+4. **[Kế toán]** Tôi muốn hệ thống **tự điền lương chuyến quy đổi** trên form chuyến (`driver_salary`) theo công thức `lươngCB / 26 × trip_wage_days` (BHXH hạch toán riêng, KHÔNG vào công thức). Tôi có thể sửa lại hoặc điều chỉnh số ngày. Số ngày công chuẩn biến động theo tháng chỉ áp dụng cho chấm công/lương tháng, không áp dụng cho phân bổ lương chuyến.
 5. **[Quản lý]** Tôi muốn xem tổng kết lương tất cả lái xe theo tháng.
 6. **[Lái xe]** Tôi muốn xem lịch chấm công và thu nhập của mình (lương cứng, lương chuyến, lương bổ sung, khấu trừ nghỉ việc riêng, điều chỉnh, phạt, lương thực nhận) trên điện thoại. Chỉ xem, không sửa.
-7. **[Kế toán]** Tôi muốn cấu hình **BHXH/BHYT** cho từng lái xe (trường `social_insurance` trên trang cấu hình Lái xe) để hệ thống tính đúng `daily_rate` và lương chuyến quy đổi. *(Mới)*
+7. **[Kế toán]** Tôi muốn cấu hình **BHXH/BHYT** cho từng lái xe (trường `social_insurance` trên trang cấu hình Lái xe) để hạch toán riêng chi phí bảo hiểm; khoản này không tham gia `daily_rate` hoặc lương chuyến quy đổi. *(Mới)*
 8. **[Kế toán]** Tôi muốn xem **lương bổ sung** (từ ngày STANDBY do lỗi công ty) và **khấu trừ nghỉ việc riêng** (vượt 4 ngày Chủ nhật miễn trừ) trên bảng tổng kết lương tháng. *(Mới)*
 
 ### MODULE 11: QUẢN LÝ LỐP XE
@@ -529,7 +529,7 @@ Bảng `trip_instructions` (id, trip_id, contact_name, contact_phone, notes, man
 | Tổng tiền đi đường | Number | Không | Mặc định 0 |
 | Số trạm | Number | Không | Mặc định 0, nhân với 55.000 |
 | Chuyến về có hàng | Checkbox | Không | Nếu tích → + 300.000 VNĐ tiền đi đường |
-| Lương chuyến quy đổi | Number | Có (OWN) | Hệ thống tự điền theo `baseSalary / standard_work_days × tripWageDays` (BHXH riêng). Kế toán có thể sửa/ghi đè. Chỉ Xe nhà. *(Mới — auto-fill)* |
+| Lương chuyến quy đổi | Number | Có (OWN) | Hệ thống tự điền theo `baseSalary / 26 × tripWageDays` (BHXH riêng). Kế toán có thể sửa/ghi đè. Chỉ Xe nhà. *(Mới — auto-fill)* |
 | Số ngày tính lương (trip_wage_days) | Number | Không | Hệ thống tự tính từ ngày đi → ngày về. Kế toán có thể điều chỉnh khi chuyến kéo dài xuyên Chủ nhật. *(Mới — auto-populate)* |
 | Hoa hồng chi KH | Number | Không | Khoản chiết khấu/hoa hồng thương mại cho khách hàng theo từng chuyến. Ghi nhận ngay khi nhập (không đợi khóa). **Doanh thu thực tế = freightExVat − commission**. *(Mới)* |
 | Doanh thu đóng/ trả hàng | Number | Có | Doanh thu tiêu chuẩn trả hàng/container, INCL VAT |

@@ -10,14 +10,17 @@
 
 ### 1.1 Mô tả
 
-Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò FORWARDER. Nhân viên giao nhận xem danh sách chuyến đi, nhập số container/seal (loại container từ danh mục, số container, số seal — nhập text), ghi nhận chi phí phát sinh (nâng hạ, hải quan, cân xe, kiểm tra). Khác với Lái xe (chỉ đọc), FORWARDER có thao tác ghi (tạo container, tạo/xóa chi phí). Lưu ý: Kế toán và Giám đốc cũng có thể nhập container/seal từ form chuyến đi chính (không chỉ qua Forwarder Portal).
+Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò FORWARDER. Nhân viên giao nhận xem danh sách chuyến đi, nhập số container/seal (loại container từ danh mục, số container, số seal — nhập text), ghi nhận và điều chỉnh chi phí phát sinh (nâng hạ, hải quan, cân xe, kiểm tra). Khác với Lái xe (chỉ đọc), FORWARDER có thao tác ghi container, sửa/xóa chi phí chưa gửi và xác nhận kê xong theo container. Lưu ý: Kế toán và Giám đốc cũng có thể nhập container/seal từ form chuyến đi chính (không chỉ qua Forwarder Portal).
 
 ### 1.2 Nguyên tắc
 
 | Nguyên tắc | Chi tiết |
 |-----------|----------|
 | **Đọc + Ghi** | FORWARDER có thể tạo container/seal và chi phí phát sinh. Kế toán/Giám đốc cũng nhập được container/seal từ form chính. |
-| **Xóa có điều kiện** | Chỉ xóa được chi phí do chính mình tạo (ownership check) |
+| **Sửa/xóa có điều kiện** | Chỉ sửa hoặc xóa chi phí do chính mình tạo và chưa gửi trong phiếu hoàn ứng đang xử lý |
+| **Kê xong theo phạm vi** | Ops xác nhận từng container; chi phí chung có nhóm xác nhận riêng. Chỉ khoản thuộc nhóm đã kê xong mới được chọn vào phiếu hoàn ứng. |
+| **Một lần duyệt** | Không duyệt từng dòng chi phí. Kế toán điều chỉnh nếu cần và duyệt toàn bộ phiếu hoàn ứng một lần. |
+| **Phân quyền duyệt** | ACCOUNTANT (và ADMIN hỗ trợ) được điều chỉnh/duyệt/từ chối; MANAGER chỉ xem phiếu. |
 | **Xem tất cả chuyến** | FORWARDER xem danh sách mọi chuyến (không giới hạn theo phân công) |
 | **Không xem tài chính** | API loại trừ các trường revenue, totalCost, grossProfit, totalFuelCost |
 | **Chỉ FORWARDER** | ADMIN/MANAGER/DRIVER truy cập /my-forwarder-trips → redirect trang chủ |
@@ -47,13 +50,28 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 | `GET` | `/api/forwarder/me/trips/:id` | JWT + forwarder_portal:read | Chi tiết chuyến + containers + chi phí |
 | `POST` | `/api/forwarder/me/trips/:tripId/containers` | JWT + forwarder_portal:write | Thêm số container/seal |
 | `POST` | `/api/forwarder/me/expenses` | JWT + forwarder_portal:write | Ghi nhận chi phí phát sinh |
+| `PATCH` | `/api/forwarder/me/expenses/:id` | JWT + forwarder_portal:write | Sửa chi phí của chính mình khi chưa gửi kế toán |
 | `DELETE` | `/api/forwarder/me/expenses/:id` | JWT + forwarder_portal:write | Xóa chi phí (chỉ của mình) |
+| `PUT` | `/api/forwarder/me/trips/:tripId/expense-completion` | JWT + forwarder_portal:write | Xác nhận/mở lại kê khai theo container hoặc chi phí chung |
 
 #### Admin Forwarder (`/api/forwarder-expenses`)
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
 | `GET` | `/api/forwarder-expenses` | JWT + financial:read | Danh sách chi phí forwarder (filter: tripId, forwarderId, expenseType) |
+
+#### Hoàn ứng (`/api/advance-settlements`)
+
+| Method | Path | Auth | Mô tả |
+|--------|------|------|-------|
+| `GET` | `/api/advance-settlements` | ADMIN / ACCOUNTANT / MANAGER | Danh sách phiếu; MANAGER chỉ có quyền đọc |
+| `GET` | `/api/advance-settlements/:id` | ADMIN / ACCOUNTANT / MANAGER | Xem chi tiết phiếu; MANAGER chỉ có quyền đọc |
+| `PUT` | `/api/advance-settlements/:id` | ADMIN / ACCOUNTANT | Cập nhật phiếu đang chờ xử lý |
+| `PATCH` | `/api/advance-settlements/:id/expenses/:expenseId` | ADMIN / ACCOUNTANT | Điều chỉnh khoản hiện có; bắt buộc lý do |
+| `POST` | `/api/advance-settlements/:id/approve` | ADMIN / ACCOUNTANT | Duyệt trực tiếp một lần |
+| `POST` | `/api/advance-settlements/:id/reject` | ADMIN / ACCOUNTANT | Từ chối phiếu, giữ lịch sử và mở khoản để gửi lại |
+
+> `POST /api/advance-settlements/:id/check` chỉ được giữ để tương thích client cũ. Giao diện hiện tại không gọi bước này.
 
 ### 1.5 Sidebar Forwarder
 
@@ -94,7 +112,10 @@ Mỗi card chuyến có **badge nhỏ** ở góc trên phải hiển thị màu 
   - Form nhập: Số container (bắt buộc), Số seal (tuỳ chọn), Ghi chú (tuỳ chọn)
 - **Phần Chi phí phát sinh:** Danh sách chi phí đã ghi + nút "Thêm" để mở form
   - Form nhập: Loại chi phí (dropdown), Giá mua vào (VNĐ), Giá bán ra (VNĐ, mặc định tính theo markup cấu hình), Đối tác cung cấp (dropdown), Hình thức chi (COMPANY_DIRECT / FORWARDER_ADVANCE), Số hóa đơn, Ngày hóa đơn, Số tờ khai (hải quan), Ghi chú.
-  - Mỗi chi phí có nút xóa (chỉ hiển thị với chi phí do mình tạo)
+  - Chi phí được nhóm theo từng container và nhóm "Chi phí chung"; mỗi nhóm có nút **Đã kê xong/Mở lại**.
+  - Mỗi chi phí có nút sửa và xóa khi do chính mình tạo và chưa nằm trong phiếu hoàn ứng đang xử lý.
+  - Thêm/sửa/xóa một khoản làm nhóm tương ứng quay lại trạng thái **Đang kê**.
+  - Form lập phiếu hoàn ứng chỉ cho chọn chi phí trong nhóm **Đã kê xong**; nhóm **Đang kê** vẫn hiển thị nhưng không thể chọn.
 - **Chân tuyến:** Legs numbered, origin → destination, km, badge Hàng/Vô
 - **Ghi chú:** Nội dung ghi chú của chuyến
 
@@ -125,14 +146,21 @@ Mỗi card chuyến có **badge nhỏ** ở góc trên phải hiển thị màu 
 
 **Phiếu thanh toán theo số container (C1.4):** Khi in/xem phiếu thanh toán cho kế toán, mỗi phiếu hiển thị **rõ số container** mà khoản chi phí đó phát sinh (từ `tripContainerId` FK). Nếu 1 chuyến có nhiều container và mỗi container phát sinh chi phí riêng, hệ thống nhóm theo container — phiếu thanh toán **per-container** (mỗi container 1 block, header ghi rõ containerNumber).
 
-### 2.5 Xóa chi phí
+### 2.5 Sửa hoặc xóa chi phí
 
-1. Tìm chi phí cần xóa trong danh sách chi phí phát sinh
-2. Click icon **thùng rác** bên cạnh chi phí
-3. Chi phí bị xóa, danh sách cập nhật
-4. **Lưu ý:** Chỉ xóa được chi phí do chính mình tạo. Thử xóa chi phí của người khác → 403
+1. Tìm chi phí cần điều chỉnh trong đúng nhóm container.
+2. Click icon **bút chì**, sửa thông tin và lưu; hoặc click **thùng rác** để xóa.
+3. Nhóm chuyển về **Đang kê**; Ops kiểm tra lại và bấm **Đã kê xong**.
+4. Chi phí đã gửi kế toán bị khóa. Chi phí của người khác trả về 403; chi phí thuộc phiếu đang xử lý trả về 409.
 
-### 2.6 Tạm ứng (Advances) — 4 KPI
+### 2.6 Xác nhận kê xong và lập phiếu hoàn ứng
+
+1. Sau khi nhập đủ chi phí của một container, Ops bấm **Đã kê xong** tại nhóm đó; thực hiện riêng cho từng container.
+2. Khoản không gắn container thuộc nhóm **Chi phí chung** và phải được xác nhận riêng.
+3. Khi lập phiếu hoàn ứng, chỉ các khoản thuộc nhóm **Đã kê xong** được phép chọn.
+4. Nếu Ops thêm, sửa hoặc xóa khoản chưa gửi, nhóm tương ứng tự quay về **Đang kê** và phải xác nhận lại.
+
+### 2.7 Tạm ứng (Advances) — 4 KPI
 
 Trang "Tạm ứng" của giao nhận hiển thị 4 KPI tổng quan (C2.1–C2.3):
 
@@ -145,7 +173,7 @@ Trang "Tạm ứng" của giao nhận hiển thị 4 KPI tổng quan (C2.1–C2.
 
 Click mỗi KPI → lọc danh sách phiếu tương ứng.
 
-### 2.7 Phiếu thanh toán (Vouchers) — sắp xếp theo ngày vận chuyển (C3)
+### 2.8 Phiếu thanh toán (Vouchers) — sắp xếp theo ngày vận chuyển (C3)
 
 Trang "Phiếu thanh toán" hiển thị danh sách phiếu thanh toán đã tạo:
 
@@ -153,15 +181,18 @@ Trang "Phiếu thanh toán" hiển thị danh sách phiếu thanh toán đã t�
 - Click header "Ngày vận chuyển" để đảo chiều.
 - Mỗi phiếu hiển thị: Mã chuyến, Tuyến, Ngày vận chuyển, Số tiền, Trạng thái, Số container liên quan.
 
-### 2.8 Duyệt hoàn ứng (D3)
+### 2.9 Kế toán điều chỉnh và duyệt hoàn ứng (D3)
 
-Kế toán/giám đốc duyệt phiếu yêu cầu hoàn ứng từ giao nhận:
+Kế toán duyệt phiếu yêu cầu hoàn ứng từ giao nhận; Giám đốc chỉ xem:
 
-1. Truy cập `/payables/forwarder-advances` (hoặc menu tương đương) → danh sách phiếu yêu cầu hoàn ứng.
+1. Truy cập `/admin/advance-settlements` (**Duyệt hoàn ứng**) → danh sách phiếu yêu cầu hoàn ứng.
 2. Mỗi phiếu hiển thị: giao nhận, số tiền, container/lô liên quan, ngày yêu cầu, lý do.
-3. Bấm **Duyệt** → chuyển trạng thái Yêu cầu → **Đã duyệt** (ghi nhận ledger FORWARDER_ADVANCE_SETTLED).
-4. Sau khi chi tiền → bấm **Đã thanh toán** → trạng thái **Đã thanh toán** (ghi nhận FORWARDER_PAYMENT).
-5. Số dư tạm ứng của giao nhận giảm tương ứng sau bước 4.
+3. Nếu Ops kê sai và chuyến chưa khóa/hủy, kế toán mở khoản chi, nhập số đúng và **lý do điều chỉnh**; hệ thống tự tính lại tổng phiếu. Phiếu hiển thị số Ops gửi và số chốt gần nhất; toàn bộ lần sửa vẫn được ghi trong Nhật ký hệ thống.
+4. Bấm **Duyệt** một lần → phiếu và toàn bộ khoản bên trong chuyển sang **Đã duyệt**. Hệ thống ghi đúng một dòng `FORWARDER_SETTLEMENT` bằng tổng tạm ứng đã quyết toán (`chi phí + hoàn lại`).
+5. Ops nhận thông báo số tiền được hoàn chính thức; không cần xác nhận lại.
+6. Nếu toàn bộ hồ sơ không hợp lệ, kế toán có thể từ chối phiếu; các khoản được mở để lập phiếu mới nhưng phiếu cũ vẫn giữ lịch sử.
+
+> Trạng thái lịch sử `CHECKED_BY_ACCOUNTANT` được gom vào nhóm **Chờ xử lý** và kế toán có thể duyệt trực tiếp; luồng mới không tạo thêm bước duyệt trung gian này.
 
 ---
 
@@ -199,18 +230,29 @@ FORWARDER click "Thêm" ở phần Chi phí phát sinh
 → 201 Created, chi phí xuất hiện trong danh sách
 ```
 
-### 3.4 Xóa chi phí (ownership check)
+### 3.4 Sửa/xóa chi phí (ownership và settlement guard)
 
 ```
-FORWARDER click icon xóa chi phí
-→ DELETE /api/forwarder/me/expenses/:id
-→ Service kiểm tra: expense.forwarderId === forwarder.id?
-  ├── CÓ → Hard delete → 200 OK
-  ├── KHÔNG → 403 "Không có quyền xóa chi phí này"
-  └── Không tồn tại → 404 "Không tìm thấy chi phí"
+FORWARDER click bút chì hoặc icon xóa chi phí
+→ PATCH hoặc DELETE /api/forwarder/me/expenses/:id
+→ Service kiểm tra ownership + chuyến chưa khóa + không thuộc phiếu chưa bị từ chối
+  ├── HỢP LỆ → Sửa/xóa và chuyển scope về IN_PROGRESS
+  ├── KHÁC CHỦ → 403
+  ├── ĐÃ GỬI KẾ TOÁN → 409
+  └── Không tồn tại → 404
 ```
 
-### 3.5 Truy cập trái phép
+### 3.5 Xác nhận phạm vi và gửi hoàn ứng
+
+```
+FORWARDER bấm "Đã kê xong" tại một container hoặc "Chi phí chung"
+→ PUT /api/forwarder/me/trips/:tripId/expense-completion
+→ Scope chuyển IN_PROGRESS → COMPLETED
+→ Form lập phiếu chỉ cho chọn chi phí có scope COMPLETED
+→ Scope IN_PROGRESS bị chặn khi gửi
+```
+
+### 3.6 Truy cập trái phép
 
 ```
 FORWARDER cố vào /finance → Redirect /my-forwarder-trips
@@ -219,7 +261,20 @@ DRIVER cố vào /my-forwarder-trips → Redirect /my-trips
 FORWARDER gọi API admin (VD: POST /api/trips) → 403 Forbidden
 ```
 
-### 3.6 Admin xem chi phí forwarder
+### 3.7 Kế toán duyệt trực tiếp
+
+```
+ACCOUNTANT mở phiếu PENDING (hoặc dữ liệu cũ CHECKED_BY_ACCOUNTANT)
+→ Có thể PATCH khoản hiện có với adjustmentReason bắt buộc
+→ Hệ thống lưu số Ops kê, số kế toán chốt và tính lại totalExpenseAmount
+→ POST /api/advance-settlements/:id/approve
+→ Phiếu chuyển APPROVED, ghi ledger đúng một lần và gửi thông báo cho Ops
+MANAGER chỉ GET/xem, không có quyền điều chỉnh, duyệt hoặc từ chối
+```
+
+`PUT /api/advance-settlements/:id` nhận toàn bộ thành phần phiếu (`advanceRequestIds`, `tripExpenseIds`, `refundAmount`, `note`). Hệ thống chỉ chấp nhận tạm ứng đã duyệt và chi phí thuộc phạm vi **Đã kê xong**, cùng giao nhận, chưa nằm trong phiếu khác chưa bị từ chối; đồng thời kiểm tra `tạm ứng = chi phí + hoàn lại` trong cùng transaction. Chi tiết phiếu trả thêm `eligibleAdvanceRequests` và `eligibleExpenses` để kế toán thay đổi thành phần an toàn.
+
+### 3.8 Admin xem chi phí forwarder
 
 ```
 ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
@@ -276,7 +331,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
     { "id": 1, "containerNumber": "MSKU-123456", "sealNumber": "SEAL-001", "notes": null, "createdBy": 5 }
   ],
   "expenses": [
-    { "id": 1, "tripId": 1, "forwarderId": 5, "expenseType": "LIFTING", "amount": "500000", "note": "Nâng hạ tại kho", "createdAt": "2026-06-01T08:00:00Z", "forwarderName": "Nguyễn Văn Giao" }
+    { "id": 1, "tripId": 1, "forwarderId": 5, "tripContainerId": 1, "expenseType": "LIFTING", "buyAmount": "500000", "sellAmount": "500000", "settlementMethod": "FORWARDER_ADVANCE", "note": "Nâng hạ tại kho", "createdAt": "2026-06-01T08:00:00Z", "forwarderName": "Nguyễn Văn Giao" }
   ]
 }
 ```
@@ -297,8 +352,11 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 ```json
 {
   "tripId": 1,
+  "tripContainerId": 1,
   "expenseType": "LIFTING",
-  "amount": 500000,
+  "buyAmount": 500000,
+  "sellAmount": 500000,
+  "settlementMethod": "FORWARDER_ADVANCE",
   "note": "Nâng hạ tại kho"
 }
 ```
@@ -353,8 +411,9 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 
 | Status | Mã lỗi | Nguyên nhân |
 |--------|--------|-------------|
-| 400 | ZodError | Validation thất bại (thiếu trường, amount ≤ 0) |
-| 403 | Forbidden | Xóa chi phí của forwarder khác |
+| 400 | ZodError | Validation thất bại (thiếu trường, buyAmount ≤ 0 hoặc thiếu lý do điều chỉnh) |
+| 403 | Forbidden | Sửa/xóa chi phí của forwarder khác hoặc vai trò không có quyền duyệt |
+| 409 | Conflict | Chi phí thuộc chuyến đã chốt hoặc đã gửi trong phiếu chưa bị từ chối |
 | 404 | Not Found | Chuyến đi hoặc chi phí không tồn tại |
 
 ---
@@ -365,7 +424,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-GN-001 | FORWARDER truy cập portal | FORWARDER | Mở /my-forwarder-trips | Hiển thị danh sách chuyến, sidebar có 3 menu "Chuyến đi", "Tạm ứng", "Phiếu thanh toán" | High |
+| TC-GN-001 | FORWARDER truy cập portal | FORWARDER | Mở /my-forwarder-trips | Hiển thị danh sách chuyến, sidebar có menu "Chuyến đi" | High |
 | TC-GN-002 | ADMIN không vào forwarder portal | ADMIN | Mở /my-forwarder-trips | Redirect /dashboard | High |
 | TC-GN-003 | DRIVER không vào forwarder portal | DRIVER | Mở /my-forwarder-trips | Redirect /my-trips | High |
 | TC-GN-004 | FORWARDER không vào trang admin | FORWARDER | Mở /finance | Redirect /my-forwarder-trips | High |
@@ -415,7 +474,7 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | TC-GN-044 | Dropdown đủ 8 loại | Đang xem chi tiết | Click dropdown loại chi phí | Hiển thị: Nâng container, Hạ container, Cân hàng, Hải quan, Hạ tầng, Kiểm hóa, Phục vụ kiểm hóa, Khác | Medium |
 | TC-GN-045 | Tạo nhiều chi phí khác loại | Chưa có chi phí | Tạo 3 chi phí: LIFTING, CUSTOMS, WEIGHING | Cả 3 hiển thị đúng loại và số tiền | High |
 
-### 5.6 Xóa chi phí (Ownership Check)
+### 5.6 Sửa/xóa và kê xong chi phí
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
@@ -423,24 +482,38 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | TC-GN-051 | Không xóa chi phí người khác | FORWARDER A, chi phí của FORWARDER B | Click icon xóa chi phí của B | 403 "Không có quyền xóa chi phí này" | High |
 | TC-GN-052 | Xóa chi phí không tồn tại | Chi phí ID không tồn tại | Gọi DELETE /api/forwarder/me/expenses/999999 | 404 "Không tìm thấy chi phí" | Medium |
 | TC-GN-053 | Xóa rồi danh sách cập nhật | Có 2 chi phí | Xóa 1 chi phí | Chi phí bị xóa biến mất, chi phí còn lại vẫn hiện | High |
+| TC-GN-054 | Sửa chi phí của mình | Khoản chưa gửi, chuyến chưa chốt | Bấm bút chì, đổi giá mua và lưu | Khoản cập nhật; nhóm tương ứng về **Đang kê** | High |
+| TC-GN-055 | Khóa khoản đã gửi | Khoản thuộc phiếu PENDING | Thử sửa hoặc xóa | Bị chặn 409; dữ liệu không đổi | High |
+| TC-GN-056 | Kê xong riêng từng phạm vi | Chuyến có 2 container và chi phí chung | Xác nhận container 1 | Chỉ container 1 là **Đã kê xong**; các nhóm khác không đổi | High |
+| TC-GN-057 | Chỉ gửi phạm vi hoàn tất | Có nhóm COMPLETED và IN_PROGRESS | Mở/lưu phiếu hoàn ứng | Chỉ khoản thuộc COMPLETED chọn và gửi được | High |
 
-### 5.7 Admin xem chi phí forwarder
-
-| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
-|-------|---------|----------------|----------|-------------------|---------|
-| TC-GN-060 | ADMIN xem danh sách chi phí | ADMIN, có chi phí forwarder | Gọi GET /api/forwarder-expenses | Trả về danh sách với forwarderName, tripCode | High |
-| TC-GN-061 | Lọc theo chuyến | ADMIN | Gọi GET /api/forwarder-expenses?tripId=1 | Chỉ trả về chi phí của chuyến 1 | Medium |
-| TC-GN-062 | Lọc theo loại | ADMIN | Gọi GET /api/forwarder-expenses?expenseType=LIFTING | Chỉ trả về chi phí nâng hạ | Medium |
-| TC-GN-063 | FORWARDER không truy cập admin API | FORWARDER | Gọi GET /api/forwarder-expenses | 403 Forbidden (Casbin: FORWARDER không có financial:read) | High |
-
-### 5.8 Mobile UX
+### 5.7 Điều chỉnh và duyệt hoàn ứng
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-GN-070 | Layout mobile 375px | iPhone | Mở /my-forwarder-trips | Cards full width, text không cắt | Medium |
-| TC-GN-071 | Touch target card | Mobile | Nhấn card | Vùng nhấn ≥ 44px | Medium |
-| TC-GN-072 | Form nhập container mobile | Mobile | Mở form nhập container | Các trường nhập hiển thị đúng, dropdown/keyboard phù hợp | Medium |
-| TC-GN-073 | Sidebar mobile | Mobile | Toggle sidebar | 3 menu item "Chuyến đi", "Tạm ứng", "Phiếu thanh toán" đúng | Medium |
+| TC-GN-058 | Kế toán điều chỉnh khoản | Phiếu PENDING | Đổi số tiền, nhập lý do và lưu | Lưu số gốc/số chốt; tổng phiếu tự tính lại; Ops nhận thông báo | High |
+| TC-GN-059 | Bắt buộc lý do | Phiếu PENDING | Sửa khoản nhưng bỏ trống lý do | Validation chặn cập nhật | High |
+| TC-GN-060 | Duyệt một bước | Phiếu PENDING | ACCOUNTANT bấm Duyệt | Chuyển thẳng APPROVED, ledger theo tổng đã chốt, Ops nhận thông báo | High |
+| TC-GN-061 | Giám đốc chỉ xem | MANAGER | Mở phiếu rồi gọi API sửa/duyệt/từ chối | Xem được chi tiết; mutation bị 403 | High |
+| TC-GN-062 | Từ chối và gửi lại | Phiếu PENDING có chi phí | ACCOUNTANT từ chối; Ops lập phiếu mới | Phiếu cũ còn lịch sử; khoản được chọn lại ở phiếu mới | High |
+
+### 5.8 Admin xem chi phí forwarder
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-GN-070 | ADMIN xem danh sách chi phí | ADMIN, có chi phí forwarder | Gọi GET /api/forwarder-expenses | Trả về danh sách với forwarderName, tripCode | High |
+| TC-GN-071 | Lọc theo chuyến | ADMIN | Gọi GET /api/forwarder-expenses?tripId=1 | Chỉ trả về chi phí của chuyến 1 | Medium |
+| TC-GN-072 | Lọc theo loại | ADMIN | Gọi GET /api/forwarder-expenses?expenseType=LIFTING | Chỉ trả về chi phí nâng hạ | Medium |
+| TC-GN-073 | FORWARDER không truy cập admin API | FORWARDER | Gọi GET /api/forwarder-expenses | 403 Forbidden (Casbin: FORWARDER không có financial:read) | High |
+
+### 5.9 Mobile UX
+
+| TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
+|-------|---------|----------------|----------|-------------------|---------|
+| TC-GN-080 | Layout mobile 375px | iPhone | Mở /my-forwarder-trips | Cards full width, text không cắt | Medium |
+| TC-GN-081 | Touch target card | Mobile | Nhấn card | Vùng nhấn ≥ 44px | Medium |
+| TC-GN-082 | Form nhập container mobile | Mobile | Mở form nhập container | Các trường nhập hiển thị đúng, dropdown/keyboard phù hợp | Medium |
+| TC-GN-083 | Sidebar mobile | Mobile | Toggle sidebar | Menu "Chuyến đi" hiển thị và thao tác đúng | Medium |
 
 ---
 
@@ -452,12 +525,12 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 - Danh sách chuyến hiển thị **tất cả** chuyến (không giới hạn theo phân công) vì nhân viên giao nhận xử lý container/chi phí cho mọi chuyến
 - API `/api/forwarder/me/trips` loại trừ các trường tài chính: revenue, totalCost, grossProfit, totalFuelCost, driverSalary
 - Chi phí phát sinh là **hard delete** (không có deletedAt) — nhưng audit log middleware vẫn ghi lại thao tác DELETE
-- Mỗi chi phí ghi nhận `forwarderId` (user.id) để kiểm tra ownership khi xóa
+- Mỗi chi phí ghi nhận `forwarderId` (user.id) để kiểm tra ownership khi sửa/xóa
 
 ### API Response Format
 
 - Tất cả API forwarder portal trả về JSON với key snake_case (serializer middleware)
-- `amount` trả về dạng string (numeric PostgreSQL)
+- Các trường tiền như `buyAmount`, `sellAmount` trả về dạng string (numeric PostgreSQL)
 - `sealNumber`, `notes` có thể null
 
 ### Demo Account

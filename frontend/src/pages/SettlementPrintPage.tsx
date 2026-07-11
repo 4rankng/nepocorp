@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X, Pencil, Save, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
-import { useForwarderSettlementDetail, useAdminSettlementDetail } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
@@ -42,6 +42,11 @@ interface LinkedExpense {
   tripId: number;
   expenseType: string;
   buyAmount: string;
+  sellAmount?: string;
+  submittedBuyAmount?: string | null;
+  adjustmentReason?: string | null;
+  adjustedAt?: string | null;
+  completionStatus?: string | null;
   containerNumber: string | null;
   invoiceNumber: string | null;
   note: string | null;
@@ -70,6 +75,8 @@ interface SettlementData {
   createdAt: string;
   linkedRequests?: LinkedRequest[];
   linkedExpenses?: LinkedExpense[];
+  eligibleAdvanceRequests?: LinkedRequest[];
+  eligibleExpenses?: LinkedExpense[];
 }
 
 // ─── Build table rows grouped by date → container ───
@@ -139,6 +146,17 @@ export default function SettlementPrintPage() {
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [editingExpense, setEditingExpense] = useState<LinkedExpense | null>(null);
+  const [editedAmount, setEditedAmount] = useState('');
+  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
+  const [refundAmount, setRefundAmount] = useState('0');
+  const [settlementNote, setSettlementNote] = useState('');
+  const [selectionReady, setSelectionReady] = useState(false);
+  const updateExpense = useUpdateSettlementExpense();
+  const updateSettlement = useUpdateAdvanceSettlement();
+  const approveSettlement = useApproveSettlement();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleBack = () => navigate(-1);
@@ -156,6 +174,16 @@ export default function SettlementPrintPage() {
   const handleIframePrint = () => {
     iframeRef.current?.contentWindow?.print();
   };
+
+  const loadedSettlement = settlement as SettlementData | undefined;
+  useEffect(() => {
+    if (!loadedSettlement || selectionReady) return;
+    setSelectedRequestIds(new Set((loadedSettlement.linkedRequests ?? []).map(request => request.id)));
+    setSelectedExpenseIds(new Set((loadedSettlement.linkedExpenses ?? []).map(expense => expense.id)));
+    setRefundAmount(String(Number(loadedSettlement.refundAmount || 0)));
+    setSettlementNote(loadedSettlement.note ?? '');
+    setSelectionReady(true);
+  }, [loadedSettlement, selectionReady]);
 
   if (isLoading) {
     return (
@@ -189,6 +217,52 @@ export default function SettlementPrintPage() {
 
   const rows = buildPrintRows(expenses);
   const totalFromRows = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const canEditExpenses = !isPortal && (user?.role === 'ACCOUNTANT' || user?.role === 'ADMIN') && (s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT');
+
+  const requestCandidates = [...requests, ...(s.eligibleAdvanceRequests ?? [])]
+    .filter((request, index, items) => items.findIndex(item => item.id === request.id) === index);
+  const expenseCandidates = [...expenses, ...(s.eligibleExpenses ?? [])]
+    .filter((expense, index, items) => items.findIndex(item => item.id === expense.id) === index);
+
+  const toggleSelection = (setter: React.Dispatch<React.SetStateAction<Set<number>>>, id: number) => {
+    setter(previous => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleFinalize = async () => {
+    if (selectedRequestIds.size === 0) return;
+    await updateSettlement.mutateAsync({
+      settlementId: s.id,
+      advanceRequestIds: [...selectedRequestIds],
+      tripExpenseIds: [...selectedExpenseIds],
+      refundAmount: Number(refundAmount) || 0,
+      note: settlementNote.trim() || null,
+    });
+    await approveSettlement.mutateAsync(s.id);
+  };
+
+  const startEditingExpense = (expense: LinkedExpense) => {
+    setEditingExpense(expense);
+    setEditedAmount(expense.buyAmount);
+    setAdjustmentReason(expense.adjustmentReason ?? '');
+  };
+
+  const saveExpenseAdjustment = async () => {
+    if (!editingExpense || !adjustmentReason.trim() || Number(editedAmount) <= 0) return;
+    await updateExpense.mutateAsync({
+      settlementId: s.id,
+      expenseId: editingExpense.id,
+      buyAmount: Number(editedAmount),
+      invoiceNumber: editingExpense.invoiceNumber,
+      note: editingExpense.note,
+      adjustmentReason: adjustmentReason.trim(),
+    });
+    setEditingExpense(null);
+  };
 
   return (
     <div ref={rootRef}>
@@ -268,9 +342,47 @@ export default function SettlementPrintPage() {
           </div>
         )}
 
+        {canEditExpenses && (
+          <div className="settlement-detail__section no-print">
+            <h2 className="settlement-detail__section-title">Tạm ứng đưa vào phiếu</h2>
+            <p className="settlement-editor-hint">Chỉ các tạm ứng đã duyệt và còn đủ điều kiện mới có thể thêm vào phiếu.</p>
+            <div className="settlement-link-list">
+              {requestCandidates.map(request => (
+                <label key={request.id} className="settlement-link-option">
+                  <input type="checkbox" checked={selectedRequestIds.has(request.id)} onChange={() => toggleSelection(setSelectedRequestIds, request.id)} />
+                  <span>{request.reason}</span>
+                  <strong>{formatCurrency(Number(request.amount))}</strong>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Expense Table ── */}
         <div className="settlement-detail__section">
           <h2 className="settlement-detail__section-title">Chi tiết chi phí</h2>
+          {editingExpense && (
+            <div className="settlement-expense-editor no-print">
+              <div>
+                <strong>{EXPENSE_TYPE_LABELS[editingExpense.expenseType] || editingExpense.expenseType}</strong>
+                <span>Số Ops kê: {formatCurrency(Number(editingExpense.submittedBuyAmount ?? editingExpense.buyAmount))}</span>
+              </div>
+              <label>
+                Số tiền kế toán chốt
+                <input className="input" type="number" min="1" value={editedAmount} onChange={event => setEditedAmount(event.target.value)} />
+              </label>
+              <label>
+                Lý do điều chỉnh *
+                <input className="input" value={adjustmentReason} onChange={event => setAdjustmentReason(event.target.value)} placeholder="Ví dụ: Điều chỉnh theo hóa đơn thực tế" />
+              </label>
+              <div className="settlement-expense-editor__actions">
+                <button className="btn btn--ghost" onClick={() => setEditingExpense(null)}>Hủy</button>
+                <button className="btn btn--primary" disabled={!adjustmentReason.trim() || Number(editedAmount) <= 0 || updateExpense.isPending} onClick={saveExpenseAdjustment}>
+                  {updateExpense.isPending ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Lưu điều chỉnh
+                </button>
+              </div>
+            </div>
+          )}
           <div className="expense-grid">
             <div className="expense-grid__header">
               <span>Ngày</span>
@@ -296,6 +408,26 @@ export default function SettlementPrintPage() {
               <span></span>
             </div>
           </div>
+          {canEditExpenses && (
+            <div className="settlement-expense-actions no-print">
+              {expenseCandidates.map(expense => (
+                <div key={expense.id} className="settlement-expense-option">
+                  <label>
+                    <input type="checkbox" checked={selectedExpenseIds.has(expense.id)} onChange={() => toggleSelection(setSelectedExpenseIds, expense.id)} />
+                    <span>
+                      <strong>{expense.tripCode || 'Chuyến chưa có mã'} · {expense.containerNumber || 'Chi phí chung'}</strong>
+                      <small>{EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType} · {formatCurrency(Number(expense.buyAmount))}</small>
+                    </span>
+                  </label>
+                  {expenses.some(item => item.id === expense.id) && (
+                    <button className="btn btn--secondary btn--sm" onClick={() => startEditingExpense(expense)}>
+                      <Pencil size={14} /> Sửa số tiền
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Summary ── */}
@@ -322,6 +454,26 @@ export default function SettlementPrintPage() {
         {s.note && (
           <div className="settlement-detail__note">
             <strong>Ghi chú:</strong> {s.note}
+          </div>
+        )}
+
+        {canEditExpenses && (
+          <div className="settlement-finalize no-print">
+            <div className="settlement-finalize__fields">
+              <label>Tiền hoàn lại
+                <input className="input" type="number" min="0" value={refundAmount} onChange={event => setRefundAmount(event.target.value)} />
+              </label>
+              <label>Ghi chú
+                <textarea className="input" rows={2} value={settlementNote} onChange={event => setSettlementNote(event.target.value)} />
+              </label>
+            </div>
+            {(updateSettlement.error || approveSettlement.error) && (
+              <p className="settlement-finalize__error">{String(updateSettlement.error || approveSettlement.error)}</p>
+            )}
+            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || updateSettlement.isPending || approveSettlement.isPending} onClick={handleFinalize}>
+              {updateSettlement.isPending || approveSettlement.isPending ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+              Sửa và hoàn tất
+            </button>
           </div>
         )}
 

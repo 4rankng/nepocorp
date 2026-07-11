@@ -272,7 +272,9 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                     {expenses.map((fee, i) => {
                       const buy = Number(fee.buyAmount);
                       const sell = Number(fee.sellAmount);
-                      const canDecide = canApprove && fee.approvalStatus === 'PENDING';
+                      // Forwarder-owned fees are accepted with the settlement,
+                      // never as a separate per-line approval on this card.
+                      const canDecide = false;
                       const isBusy = pendingId === fee.id;
                       return (
                         <tr key={fee.id ?? i}>
@@ -321,7 +323,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                               ) : fee.approvalStatus === 'REJECTED' ? (
                                 <span title="Từ chối"><StatusPill variant="danger">Từ chối</StatusPill></span>
                               ) : (
-                                <span title="Chờ duyệt"><StatusPill variant="neutral">Chờ</StatusPill></span>
+                                <span title="Chờ hoàn ứng"><StatusPill variant="neutral">Chờ hoàn ứng</StatusPill></span>
                               )}
                               {canDecide && !readOnly && (
                                 <div
@@ -424,7 +426,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                   {expenses.map((fee, i) => {
                     const buy = Number(fee.buyAmount);
                     const sell = Number(fee.sellAmount);
-                    const canDecide = canApprove && fee.approvalStatus === 'PENDING';
+                    const canDecide = false;
                     const isBusy = pendingId === fee.id;
                     return (
                       <div className="ancillary-fee-card" key={fee.id ?? i}>
@@ -438,7 +440,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                             ) : fee.approvalStatus === 'REJECTED' ? (
                               <StatusPill variant="danger">Từ chối</StatusPill>
                             ) : (
-                              <StatusPill variant="neutral">Chờ duyệt</StatusPill>
+                              <StatusPill variant="neutral">Chờ hoàn ứng</StatusPill>
                             )}
                           </div>
                         </div>

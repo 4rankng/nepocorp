@@ -211,8 +211,9 @@ export const createAdjustmentSchema = z.object({
 });
 
 // ─── Billing Documents (debit notes + payment statements) ────────────────────
-// Saved SNAPSHOT documents — saving never mutates the ledger.
-// Generate returns a preview draft; Save persists the (possibly edited) draft.
+// Saved billing documents. DEBIT_NOTE saves reconcile edited/source-excluded
+// and ad-hoc amounts into customer AR via append-only adjustment entries;
+// PAYMENT_STATEMENT remains a presentation snapshot only.
 
 export const billingDocumentLineSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
@@ -809,6 +810,13 @@ export const baseTripExpenseSchema = z.object({
 });
 
 export const tripExpenseSchema = baseTripExpenseSchema.superRefine((data, ctx) => {
+  if (data.settlementMethod === 'FORWARDER_ADVANCE' && !data.forwarderId) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['forwarderId'],
+      message: 'Cần chọn nhân viên giao nhận cho khoản chi hộ tạm ứng',
+    });
+  }
   if (data.expenseType === 'CUSTOMS' && !data.declarationNumber) {
     ctx.addIssue({
       code: 'custom',
@@ -844,12 +852,26 @@ export const createAdvanceRequestSchema = z.object({
   reason: z.string().min(1, 'Lý do tạm ứng không được để trống'),
 });
 
+const positiveIds = z.array(z.coerce.number().int().positive());
+const uniquePositiveIds = positiveIds
+  .refine(ids => new Set(ids).size === ids.length, 'Danh sách không được chứa mục trùng lặp');
+const uniquePositiveIdsMinOne = positiveIds
+  .min(1, 'Phải chọn ít nhất 1 yêu cầu tạm ứng')
+  .refine(ids => new Set(ids).size === ids.length, 'Danh sách không được chứa mục trùng lặp');
+
 export const createAdvanceSettlementSchema = z.object({
   totalExpenseAmount: nonNegNumeric.optional(),
   refundAmount: nonNegNumeric.optional().default(0),
   note: z.string().optional().nullable(),
-  tripExpenseIds: z.array(z.coerce.number().int().positive()).optional(),
-  advanceRequestIds: z.array(z.coerce.number().int().positive()).min(1, 'Phải chọn ít nhất 1 yêu cầu tạm ứng'),
+  tripExpenseIds: uniquePositiveIds.optional(),
+  advanceRequestIds: uniquePositiveIdsMinOne,
+});
+
+export const updateAdvanceSettlementSchema = z.object({
+  refundAmount: nonNegNumeric,
+  note: z.string().trim().max(2000).optional().nullable(),
+  tripExpenseIds: uniquePositiveIds,
+  advanceRequestIds: uniquePositiveIdsMinOne,
 });
 
 // ─── Trip instructions (N2 / B1.3) ─────────────────────────────────────────
@@ -904,10 +926,22 @@ export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
 
 /** Partial update schema for trip expense — used by PUT /trips/:id/expenses/:eid */
 export const tripExpensePatchSchema = baseTripExpenseSchema.omit({ tripId: true }).partial();
+
+export const tripExpenseCompletionSchema = z.object({
+  tripContainerId: z.number().int().positive().nullable(),
+  completed: z.boolean(),
+});
+
+export const accountantSettlementExpensePatchSchema = tripExpensePatchSchema
+  .omit({ settlementMethod: true, forwarderId: true })
+  .extend({
+    adjustmentReason: z.string().trim().min(1, 'Cần nhập lý do điều chỉnh').max(500),
+  });
 export type DebtOffsetInput = z.infer<typeof debtOffsetSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
 export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;
+export type UpdateAdvanceSettlementInput = z.infer<typeof updateAdvanceSettlementSchema>;
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;
 export type SealTypeInput = z.infer<typeof sealTypeSchema>;
 export type PortInput = z.infer<typeof portSchema>;

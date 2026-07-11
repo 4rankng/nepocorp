@@ -6,10 +6,9 @@ import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc, lte, ne } from 'drizzle-orm';
 import { TripStatus, FuelMode, Role } from '@tingting/shared';
 import type { TripLegInput } from '@tingting/shared';
-import { computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
+import { resolveTripDriverSalary, computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { resolveTrailer } from './trip-shared';
-import { computeStandardWorkDays } from './attendance.service';
 import { LedgerService } from './ledger.service';
 
 // ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
@@ -498,10 +497,6 @@ export async function updateTripFigures(
     // AND the existing trip has no salary — this prevents overwriting an
     // explicit user-entered 0 with the route default.
     let driverSalary = data.driverSalary !== undefined ? data.driverSalary : Number(trip.driverSalary || 0);
-    if (data.driverSalary === undefined && driverSalary === 0 && route?.driverSalary) {
-      driverSalary = Number(route.driverSalary);
-    }
-
     // Salary auto-fill from driver's baseSalary (cost allocation, no BHXH per customer Pete).
     // Formula: baseSalary / 26 × tripWageDays
     // Only triggers when no salary is set yet and we have a driver + wage days.
@@ -518,24 +513,19 @@ export async function updateTripFigures(
       }
     }
 
-    if (data.driverSalary === undefined && driverSalary === 0 && trip.driverId) {
-      const [driver] = await tx.select({
-        baseSalary: s.drivers.baseSalary,
-      }).from(s.drivers).where(eq(s.drivers.id, trip.driverId)).limit(1);
-      if (driver?.baseSalary) {
-        const base = parseFloat(driver.baseSalary);
-        // Cost-allocation daily rate uses the same divisor as the monthly
-        // attendance salary (standardWorkDays for the departure month) so the
-        // per-trip allocation ties to the attendance dailyRate. A hardcoded
-        // /26 diverged from attendance.service — B8.
-        // Use the same effective departure date as the wage-day window above
-        // (data.departureDate ?? trip.departureDate) so the divisor's month and
-        // the wage-day count can't reference different months when a PATCH
-        // moves the trip into a new month.
-        const depDate = new Date(data.departureDate ?? trip.departureDate);
-        const swd = computeStandardWorkDays(depDate.getFullYear(), depDate.getMonth() + 1);
-        driverSalary = Math.round((base / swd) * (tripWageDays ?? 1));
+    if (data.driverSalary === undefined && driverSalary === 0) {
+      let baseSalary = 0;
+      if (trip.driverId) {
+        const [driver] = await tx.select({
+          baseSalary: s.drivers.baseSalary,
+        }).from(s.drivers).where(eq(s.drivers.id, trip.driverId)).limit(1);
+        baseSalary = Number(driver?.baseSalary) || 0;
       }
+      driverSalary = resolveTripDriverSalary(
+        baseSalary,
+        tripWageDays ?? 1,
+        Number(route?.driverSalary) || 0,
+      );
     }
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);

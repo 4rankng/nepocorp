@@ -57,6 +57,34 @@ export function useCreateForwarderExpense() {
   });
 }
 
+export function useUpdateForwarderExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, tripId: _tripId, ...data }: {
+      id: number; tripId: number; expenseType: string; buyAmount: number; sellAmount?: number;
+      settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE'; supplierId?: number | null;
+      invoiceNumber?: string | null; invoiceDate?: string | null; declarationNumber?: string | null;
+      tripContainerId?: number | null; note?: string | null;
+    }) => forwarderClient.updateExpense(id, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.forwarder.tripDetail(variables.tripId) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.unlinkedExpenses });
+    },
+  });
+}
+
+export function useSetForwarderExpenseCompletion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tripId, tripContainerId, completed }: { tripId: number; tripContainerId: number | null; completed: boolean }) =>
+      forwarderClient.setExpenseCompletion(tripId, { tripContainerId, completed }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.forwarder.tripDetail(variables.tripId) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.unlinkedExpenses });
+    },
+  });
+}
+
 export function useDeleteForwarderExpense() {
   const qc = useQueryClient();
   return useMutation({
@@ -192,6 +220,38 @@ export function useApproveSettlement() {
   return useMutation({
     mutationFn: (id: number) => forwarderClient.approveAdvanceSettlement(id),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+    },
+  });
+}
+
+export function useUpdateAdvanceSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ settlementId, ...data }: {
+      settlementId: number;
+      advanceRequestIds: number[];
+      tripExpenseIds: number[];
+      refundAmount: number;
+      note?: string | null;
+    }) => forwarderClient.updateAdvanceSettlement(settlementId, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(variables.settlementId) });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+    },
+  });
+}
+
+export function useUpdateSettlementExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ settlementId, expenseId, ...data }: {
+      settlementId: number; expenseId: number; buyAmount: number; sellAmount?: number;
+      invoiceNumber?: string | null; invoiceDate?: string | null; declarationNumber?: string | null;
+      note?: string | null; adjustmentReason: string;
+    }) => forwarderClient.updateSettlementExpense(settlementId, expenseId, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(variables.settlementId) });
       qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
     },
   });

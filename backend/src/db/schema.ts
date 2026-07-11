@@ -26,6 +26,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'TRIP_CREATED', 'TRIP_DISPATCHED', 'TRIP_IN_TRANSIT', 'TRIP_COMPLETED',
   'TRIP_LOCKED', 'TRIP_UNLOCKED', 'TRIP_CANCELED', 'PAYMENT_RECEIVED', 'PENALTY_CREATED',
   'PENALTY_CANCELED', 'OVERDUE_PAYMENT', 'SALARY_PERIOD_CLOSING', 'SYSTEM_ANNOUNCEMENT',
+  'ADVANCE_SETTLEMENT_APPROVED',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
 // ─── Config tables ───────────────────────────────────────────────────────────
@@ -373,13 +374,15 @@ export const ledger = pgTable('ledger', {
   index('ledger_entity_entity_idx').on(table.entityType, table.entityId),
   index('ledger_entity_entity_id_idx').on(table.entityType, table.entityId, table.id),
   index('ledger_entity_txn_timestamp_idx').on(table.entityType, table.txnType, table.timestamp),
+  uniqueIndex('ledger_forwarder_settlement_once_idx')
+    .on(table.txnType, table.txnId, table.entityType, table.entityId)
+    .where(sql`${table.txnType} = 'FORWARDER_SETTLEMENT'`),
 ]);
 
 // ─── Billing Documents (debit notes + payment statements) ─────────────────────
-// Saved SNAPSHOT documents composed by kế toán / quản lý. Editing/saving these
-// NEVER mutates the append-only ledger — they are presentation artifacts that
-// re-present already-posted receivable/payable figures with per-line edits
-// (amount override, ad-hoc lines, exclusions) for printing/sending.
+// Saved documents composed by kế toán / quản lý. PAYMENT_STATEMENT is a pure
+// presentation snapshot. DEBIT_NOTE edits reconcile amount overrides, ad-hoc
+// rows, and exclusions through append-only customer-ledger adjustments.
 // entityType CUSTOMER = AR debit-note customer OR AP external carrier (carriers
 // live in customers per decision D-E/F); entityType VENDOR = AP supplier.
 
@@ -440,12 +443,19 @@ export const billingDocuments = pgTable('billing_documents', {
   // service casts to DebitNoteTemplateSnapshot.
   debitNoteTemplateSnapshot: jsonb('debit_note_template_snapshot'),
   totalInclVat: numeric('total_incl_vat', { precision: 15, scale: 0 }).notNull().default('0'),
+  // Net AR delta contributed by this debit note beyond the trip/fee amounts
+  // that were already posted when the trip completed. Kept separately so an
+  // edit can post only the difference and repeated saves stay idempotent.
+  ledgerAdjustmentAmount: numeric('ledger_adjustment_amount', { precision: 15, scale: 0 }).notNull().default('0'),
   createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 }, (table) => [
   index('billing_documents_entity_idx').on(table.entityType, table.entityId),
+  uniqueIndex('billing_documents_active_period_unique')
+    .on(table.type, table.entityType, table.entityId, table.rangeFrom, table.rangeTo)
+    .where(sql`${table.deletedAt} IS NULL AND ${table.type} = 'DEBIT_NOTE'`),
 ]);
 
 export const billingDocumentLines = pgTable('billing_document_lines', {
@@ -797,6 +807,22 @@ export const tripExpensePhotos = pgTable('trip_expense_photos', {
   index('trip_expense_photos_storage_key_idx').on(table.storageKey),
 ]);
 
+export const tripExpenseCompletionScopes = pgTable('trip_expense_completion_scopes', {
+  id: serial('id').primaryKey(),
+  tripId: integer('trip_id').references(() => trips.id, { onDelete: 'cascade' }).notNull(),
+  // Null represents the trip-level "Chi phí chung" scope.
+  tripContainerId: integer('trip_container_id').references(() => tripContainers.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 20 }).notNull().default('IN_PROGRESS'),
+  completedBy: integer('completed_by').references(() => users.id),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('trip_expense_scope_container_unq').on(table.tripContainerId).where(sql`${table.tripContainerId} IS NOT NULL`),
+  uniqueIndex('trip_expense_scope_general_unq').on(table.tripId).where(sql`${table.tripContainerId} IS NULL`),
+  index('trip_expense_scope_trip_idx').on(table.tripId),
+]);
+
 export const advanceRequests = pgTable('advance_requests', {
   id: serial('id').primaryKey(),
   requesterId: integer('requester_id').references(() => users.id).notNull(),
@@ -839,9 +865,17 @@ export const settlementExpenses = pgTable('settlement_expenses', {
   id: serial('id').primaryKey(),
   settlementId: integer('settlement_id').references(() => advanceSettlements.id).notNull(),
   tripExpenseId: integer('trip_expense_id').references(() => tripExpenses.id).notNull(),
+  originalBuyAmount: numeric('original_buy_amount', { precision: 15, scale: 0 }).notNull(),
+  adjustedBuyAmount: numeric('adjusted_buy_amount', { precision: 15, scale: 0 }).notNull(),
+  submittedSellAmount: numeric('submitted_sell_amount', { precision: 15, scale: 0 }),
+  originalSnapshot: jsonb('original_snapshot').$type<Record<string, unknown>>().notNull(),
+  adjustedSnapshot: jsonb('adjusted_snapshot').$type<Record<string, unknown>>().notNull(),
+  adjustmentReason: text('adjustment_reason'),
+  adjustedBy: integer('adjusted_by').references(() => users.id),
+  adjustedAt: timestamp('adjusted_at'),
 }, (table) => [
   uniqueIndex('settlement_expense_unique_idx').on(table.settlementId, table.tripExpenseId),
-  uniqueIndex('settlement_expense_trip_expense_uniq_idx').on(table.tripExpenseId),
+  index('settlement_expense_trip_expense_idx').on(table.tripExpenseId),
 ]);
 
 // ─── Attendance ──────────────────────────────────────────────────────────────

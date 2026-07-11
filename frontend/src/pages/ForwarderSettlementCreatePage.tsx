@@ -10,7 +10,7 @@ import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader, useConfirm } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
-import type { AdvanceRequestWithRefs } from '@tingting/shared';
+import { ExpenseEntryStatus, type AdvanceRequestWithRefs } from '@tingting/shared';
 import './ForwarderSettlementsPage.css';
 
 /** Vietnamese fallback labels for expense type codes */
@@ -79,7 +79,7 @@ export default function ForwarderSettlementCreatePage() {
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequestWithRefs[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
   const unlinkedExpenses = useMemo(() => (unlinkedData?.items ?? []) as Array<{
-    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null; containerNumbers: string | null;
+    id: number; tripId: number; expenseType: string; buyAmount: string; approvalStatus?: string; completionStatus?: ExpenseEntryStatus; note: string | null; createdAt: string; tripCode: string | null; departureDate: string | null; truckPlate: string | null; containerNumbers: string | null;
   }>, [unlinkedData]);
   const expenseTypeOptions = useMemo(
     () => catalogs?.forwarderExpenseTypes ?? [],
@@ -167,6 +167,8 @@ export default function ForwarderSettlementCreatePage() {
   }
 
   function toggleExpense(id: number) {
+    const expense = unlinkedExpenses.find(item => item.id === id);
+    if (expense?.completionStatus !== ExpenseEntryStatus.COMPLETED) return;
     setSelectedExpenseIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -306,7 +308,7 @@ export default function ForwarderSettlementCreatePage() {
                         } else {
                           setSelectedExpenseIds(prev => {
                             const next = new Set(prev);
-                            filteredUnlinkedExpenses.forEach(e => next.add(e.id));
+                            filteredUnlinkedExpenses.filter(e => e.completionStatus === ExpenseEntryStatus.COMPLETED).forEach(e => next.add(e.id));
                             return next;
                           });
                         }
@@ -328,7 +330,9 @@ export default function ForwarderSettlementCreatePage() {
                 </div>
                 <div className="fset-check-list">
                   {groupedExpenses.map(g => {
-                    const allSelected = g.expenses.length > 0 && g.expenses.every(e => selectedExpenseIds.has(e.id));
+                    const eligibleExpenses = g.expenses.filter(e => e.completionStatus === ExpenseEntryStatus.COMPLETED);
+                    const groupComplete = eligibleExpenses.length === g.expenses.length;
+                    const allSelected = eligibleExpenses.length > 0 && eligibleExpenses.every(e => selectedExpenseIds.has(e.id));
                     const collapsed = collapsedGroups.has(g.key);
                     return (
                       <div key={g.key} className="fset-expense-group">
@@ -337,17 +341,19 @@ export default function ForwarderSettlementCreatePage() {
                             <input
                               type="checkbox"
                               checked={allSelected}
+                              disabled={!groupComplete}
                               onChange={() => {
                                 setSelectedExpenseIds(prev => {
                                   const next = new Set(prev);
-                                  if (allSelected) g.expenses.forEach(e => next.delete(e.id));
-                                  else g.expenses.forEach(e => next.add(e.id));
+                                  if (allSelected) eligibleExpenses.forEach(e => next.delete(e.id));
+                                  else eligibleExpenses.forEach(e => next.add(e.id));
                                   return next;
                                 });
                               }}
                             />
                             <span>{g.label}</span>
                             <span className="fset-check-all__count">{g.expenses.length}</span>
+                            {!groupComplete && <span className="fset-incomplete-label">Chưa kê xong</span>}
                           </label>
                           <button
                             type="button"
@@ -359,8 +365,8 @@ export default function ForwarderSettlementCreatePage() {
                           </button>
                         </div>
                         {!collapsed && g.expenses.map(exp => (
-                          <label key={exp.id} className={`fset-check-item fset-check-item--expense ${selectedExpenseIds.has(exp.id) ? 'fset-check-item--selected' : ''}`}>
-                            <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} onChange={() => toggleExpense(exp.id)} />
+                          <label key={exp.id} className={`fset-check-item fset-check-item--expense ${selectedExpenseIds.has(exp.id) ? 'fset-check-item--selected' : ''} ${exp.completionStatus !== ExpenseEntryStatus.COMPLETED ? 'fset-check-item--disabled' : ''}`}>
+                            <input type="checkbox" checked={selectedExpenseIds.has(exp.id)} disabled={exp.completionStatus !== ExpenseEntryStatus.COMPLETED} onChange={() => toggleExpense(exp.id)} />
                             <div className="fset-check-item__body">
                               <div className="fset-check-item__row">
                                 <span className="fset-check-item__label">
@@ -380,6 +386,7 @@ export default function ForwarderSettlementCreatePage() {
                                   <span className="fset-cont-badge">{exp.containerNumbers}</span>
                                 )}
                                 {exp.note && ` · ${exp.note}`}
+                                {exp.completionStatus !== ExpenseEntryStatus.COMPLETED && ' · Ops chưa xác nhận kê xong'}
                               </span>
                             </div>
                           </label>

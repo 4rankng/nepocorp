@@ -192,7 +192,10 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex-wrap: wrap;
 }
+.as-page .as-scope { flex-basis: 100%; padding-left: 38px; color: var(--ink-3); font-size: var(--fs-2xs); overflow-wrap: anywhere; }
+.as-page .as-scope strong { color: var(--success); }
 .as-page .as-avatar {
   width: 28px;
   height: 28px;

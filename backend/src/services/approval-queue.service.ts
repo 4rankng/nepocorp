@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { Role, FINANCIAL_ROLES, type ApprovalItemType } from '@tingting/shared';
-import { and, asc, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 
 export { type ApprovalItemType };
 
@@ -36,44 +36,6 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
 
   // Build query promises conditionally, then fire them all in parallel
   const queryPromises: Promise<ApprovalQueueItem[]>[] = [];
-
-  // Ancillary fees — FINANCIAL_ROLES can approve
-  if (isFinancial) {
-    queryPromises.push(
-      db
-        .select({
-          id: s.tripExpenses.id,
-          tripId: s.tripExpenses.tripId,
-          forwarderId: s.tripExpenses.forwarderId,
-          expenseType: s.tripExpenses.expenseType,
-          buyAmount: s.tripExpenses.buyAmount,
-          createdAt: s.tripExpenses.createdAt,
-          tripCode: s.trips.tripCode,
-          expenseTypeName: s.forwarderExpenseTypes.name,
-          requesterName: s.users.fullName,
-        })
-        .from(s.tripExpenses)
-        .innerJoin(s.trips, eq(s.trips.id, s.tripExpenses.tripId))
-        .leftJoin(s.forwarderExpenseTypes, eq(s.forwarderExpenseTypes.code, s.tripExpenses.expenseType))
-        .leftJoin(s.users, eq(s.users.id, s.tripExpenses.forwarderId))
-        .where(eq(s.tripExpenses.approvalStatus, 'PENDING'))
-        .orderBy(asc(s.tripExpenses.createdAt))
-        .limit(50)
-        .then(rows => rows.map(r => {
-          const amt = Number(r.buyAmount);
-          return {
-            id: `ancillaryFees:${r.id}`,
-            type: 'ancillaryFees' as const,
-            title: `Phí ${r.expenseTypeName ?? r.expenseType} ${formatVND(amt, true)} cho ${r.tripCode}`,
-            subtitle: `${r.requesterName ?? 'Forwarder'} · ${timeAgo(r.createdAt)}`,
-            amount: amt,
-            requestedAt: r.createdAt.toISOString(),
-            href: `/trips/${r.tripId}#fees`,
-            severity: isUrgent(r.createdAt) ? 'urgent' as const : 'normal' as const,
-          };
-        })),
-    );
-  }
 
   // Debt offsets & advances — only ADMIN and MANAGER can approve
   if (isAdmin || isManager) {
@@ -158,7 +120,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
         .innerJoin(s.users, eq(s.users.id, s.advanceSettlements.forwarderId))
         .where(
           and(
-            eq(s.advanceSettlements.status, 'PENDING'),
+            inArray(s.advanceSettlements.status, ['PENDING', 'CHECKED_BY_ACCOUNTANT']),
             ne(s.advanceSettlements.forwarderId, userId),
           ),
         )
@@ -167,52 +129,14 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
         .then(rows => rows.map(r => {
           const amt = Number(r.totalExpenseAmount) + Number(r.refundAmount);
           return {
-            id: `advanceSettlementsCheck:${r.id}`,
-            type: 'advanceSettlementsCheck' as const,
-            title: `Kiểm tra phiếu thanh toán ${formatVND(amt, true)} — ${r.requesterName}`,
-            subtitle: `Chờ kế toán kiểm tra · ${timeAgo(r.createdAt)}`,
+            id: `advanceSettlementsApprove:${r.id}`,
+            type: 'advanceSettlementsApprove' as const,
+            title: `Duyệt phiếu thanh toán ${formatVND(amt, true)} — ${r.requesterName}`,
+            subtitle: `Chờ kế toán duyệt · ${timeAgo(r.createdAt)}`,
             amount: amt,
             requestedAt: r.createdAt.toISOString(),
             href: `/settlements/${r.id}`,
             severity: isUrgent(r.createdAt) ? 'urgent' as const : 'normal' as const,
-          };
-        })),
-    );
-  }
-
-  if (isAdmin || isManager) {
-    queryPromises.push(
-      db
-        .select({
-          id: s.advanceSettlements.id,
-          totalExpenseAmount: s.advanceSettlements.totalExpenseAmount,
-          refundAmount: s.advanceSettlements.refundAmount,
-          checkedAt: s.advanceSettlements.checkedAt,
-          createdAt: s.advanceSettlements.createdAt,
-          requesterName: s.users.fullName,
-        })
-        .from(s.advanceSettlements)
-        .innerJoin(s.users, eq(s.users.id, s.advanceSettlements.forwarderId))
-        .where(
-          and(
-            eq(s.advanceSettlements.status, 'CHECKED_BY_ACCOUNTANT'),
-            ne(s.advanceSettlements.forwarderId, userId),
-          ),
-        )
-        .orderBy(asc(s.advanceSettlements.checkedAt))
-        .limit(50)
-        .then(rows => rows.map(r => {
-          const amt = Number(r.totalExpenseAmount) + Number(r.refundAmount);
-          const ts = r.checkedAt ?? r.createdAt;
-          return {
-            id: `advanceSettlementsApprove:${r.id}`,
-            type: 'advanceSettlementsApprove' as const,
-            title: `Duyệt phiếu thanh toán ${formatVND(amt, true)} — ${r.requesterName}`,
-            subtitle: `Đã kiểm tra · chờ giám đốc duyệt · ${timeAgo(ts)}`,
-            amount: amt,
-            requestedAt: ts.toISOString(),
-            href: `/settlements/${r.id}`,
-            severity: isUrgent(ts) ? 'urgent' as const : 'normal' as const,
           };
         })),
     );

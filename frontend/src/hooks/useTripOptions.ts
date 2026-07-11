@@ -10,6 +10,10 @@ export interface SelectOption {
   label: string;
 }
 
+export interface DriverOption extends SelectOption {
+  baseSalary: number;
+}
+
 export interface RouteOption extends SelectOption {
   name: string;
   distanceKm?: number;
@@ -39,7 +43,7 @@ export interface TripOptions {
   routes: RouteOption[];
   trucks: TruckOption[];
   trailerTypes: TrailerTypeOption[];
-  drivers: SelectOption[];
+  drivers: DriverOption[];
   trailers: TrailerOption[];
   cargoTypes: SelectOption[];
   containerTypes: SelectOption[];
@@ -50,11 +54,19 @@ export interface TripOptions {
 interface CatalogData {
   customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean }>;
   trucks: Array<{ id: number; licensePlate: string; currentTrailerId: number | null }>;
-  drivers: Array<{ id: number; name: string; assignedTruckId: number | null }>;
+  drivers: Array<{ id: number; name: string; assignedTruckId: number | null; baseSalary: string | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: string }> | null }>;
   cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
   trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
   containerTypes: Array<{ id: number; code: string | null; name: string | null }>;
+}
+
+export function toDriverOption(driver: CatalogData['drivers'][number]): DriverOption {
+  return {
+    id: driver.id,
+    label: driver.name,
+    baseSalary: Number(driver.baseSalary) || 0,
+  };
 }
 
 export function useTripOptions(): TripOptions {
@@ -89,7 +101,7 @@ export function useTripOptions(): TripOptions {
       })) ?? [],
     trucks: catalog?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
-    drivers: catalog?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
+    drivers: catalog?.drivers.map(toDriverOption) ?? [],
     trailers: catalog?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
     cargoTypes: catalog?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
     containerTypes: catalog?.containerTypes.map((c) => ({ id: c.id, label: c.name || c.code || `Loại #${c.id}` })) ?? [],

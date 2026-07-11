@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useClickOutside } from '../../hooks/useClickOutside';
-import { useUnreadCount, useNotifications, useMarkAllAsRead } from '../../hooks/useNotificationQueries';
+import { useUnreadCount, useNotifications, useMarkAllAsRead, useMarkAsRead } from '../../hooks/useNotificationQueries';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { AssetIcon } from '../AssetIcon';
+import type { Notification } from '@tingting/shared';
 
 /** Relative time in Vietnamese, e.g. "5 phút trước". */
 function timeAgo(iso: string): string {
@@ -25,18 +27,28 @@ function timeAgo(iso: string): string {
  * notifications, mark-all-read, and (where supported) a Web Push opt-in toggle.
  */
 export function NotificationBell() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: unreadData } = useUnreadCount();
   const { data, isLoading } = useNotifications(1, 20);
   const markAll = useMarkAllAsRead();
+  const markAsRead = useMarkAsRead();
   const push = usePushNotifications();
 
   const unread = unreadData?.count ?? 0;
   const items = data?.items ?? [];
 
   useClickOutside(containerRef, () => setOpen(false), { escapeKey: true, enabled: open });
+
+  const openNotification = (notification: Notification) => {
+    if (!notification.isRead) markAsRead.mutate(notification.id);
+    if (notification.relatedEntityType === 'advance_settlements' && notification.relatedEntityId) {
+      setOpen(false);
+      navigate(`/my-settlements/${notification.relatedEntityId}`);
+    }
+  };
 
   return (
     <div className="notif-bell" ref={containerRef}>
@@ -74,14 +86,19 @@ export function NotificationBell() {
               <div className="notif-panel__empty">Không có thông báo</div>
             ) : (
               items.map(n => (
-                <div key={n.id} className={`notif-item ${n.isRead ? '' : 'is-unread'}`}>
+                <button
+                  type="button"
+                  key={n.id}
+                  className={`notif-item ${n.isRead ? '' : 'is-unread'}`}
+                  onClick={() => openNotification(n)}
+                >
                   <span className="notif-item__dot" aria-hidden="true" />
                   <div className="notif-item__body">
                     <div className="notif-item__title">{n.title}</div>
                     {n.message && <div className="notif-item__msg">{n.message}</div>}
                     <div className="notif-item__time">{timeAgo(n.createdAt)}</div>
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>

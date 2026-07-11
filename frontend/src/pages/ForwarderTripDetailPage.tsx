@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign, Camera } from 'lucide-react';
+import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign, Camera, Pencil, CheckCircle2, RotateCcw } from 'lucide-react';
 import { formatDate, formatCurrency } from '../lib/format';
 import { api } from '../lib/api';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
+import { ExpenseEntryStatus, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill, FormGroup, useConfirm } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
+import { useUpdateForwarderExpense, useSetForwarderExpenseCompletion } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useQuery } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
@@ -44,6 +45,8 @@ export default function ForwarderTripDetailPage() {
 
   const createContainerMut = useCreateForwarderContainer();
   const createExpenseMut = useCreateForwarderExpense();
+  const updateExpenseMut = useUpdateForwarderExpense();
+  const completionMut = useSetForwarderExpenseCompletion();
   const deleteExpenseMut = useDeleteForwarderExpense();
 
   const { data: catalogs } = useCatalogs();
@@ -60,6 +63,7 @@ export default function ForwarderTripDetailPage() {
   const [containerForm, setContainerForm] = useState({ containerNumber: '', sealNumber: '', notes: '' });
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [expenseForm, setExpenseForm] = useState({
     expenseType: 'LIFTING' as string,
     buyAmount: '',
@@ -178,8 +182,7 @@ export default function ForwarderTripDetailPage() {
 
     const sellAmount = parseFloat(expenseForm.sellAmount) || 0;
     const supplierIdNum = expenseForm.supplierId ? parseInt(expenseForm.supplierId, 10) : undefined;
-    createExpenseMut.mutate(
-      {
+    const payload = {
         tripId,
         expenseType: expenseForm.expenseType,
         buyAmount,
@@ -191,7 +194,11 @@ export default function ForwarderTripDetailPage() {
         declarationNumber: expenseForm.declarationNumber.trim() || undefined,
         tripContainerId: expenseForm.tripContainerId ? parseInt(expenseForm.tripContainerId, 10) : undefined,
         note: expenseForm.note.trim() || undefined,
-      },
+      };
+    const mutation = editingExpenseId
+      ? updateExpenseMut.mutate.bind(updateExpenseMut, { ...payload, id: editingExpenseId, supplierId: supplierIdNum ?? null, tripContainerId: expenseForm.tripContainerId ? parseInt(expenseForm.tripContainerId, 10) : null })
+      : createExpenseMut.mutate.bind(createExpenseMut, payload);
+    mutation(
       {
         onSuccess: () => {
           setExpenseForm({
@@ -207,6 +214,7 @@ export default function ForwarderTripDetailPage() {
             note: '',
           });
           setExpenseErrors({});
+          setEditingExpenseId(null);
           setShowExpenseForm(false);
         },
       },
@@ -219,6 +227,9 @@ export default function ForwarderTripDetailPage() {
 
   const containers = (trip.containers || []) as ForwarderContainer[];
   const expenses = trip.expenses || [];
+  const completionScopes = trip.completionScopes ?? [];
+  const completedScopeCount = completionScopes.filter(scope => scope.status === ExpenseEntryStatus.COMPLETED).length;
+  const totalScopeCount = completionScopes.length;
   const legs = (trip.legs || []) as Array<{ id: number; sequence: number; origin: string; destination: string; km: number; loadingType: string; polylinePath?: string | null }>;
   const selectedExpenseContainer = containers.find(c => String(c.id) === expenseForm.tripContainerId);
   const openExpenseForm = () => {
@@ -230,6 +241,36 @@ export default function ForwarderTripDetailPage() {
       return willOpen;
     });
   };
+  const openExpenseEditor = (exp: typeof expenses[number]) => {
+    if (exp.activeSettlementId || !exp.canEdit) return;
+    setEditingExpenseId(exp.id);
+    setExpenseForm({
+      expenseType: exp.expenseType,
+      buyAmount: String(exp.buyAmount),
+      sellAmount: String(exp.sellAmount ?? ''),
+      settlementMethod: exp.settlementMethod === 'COMPANY_DIRECT' ? 'COMPANY_DIRECT' : 'FORWARDER_ADVANCE',
+      supplierId: exp.supplierId ? String(exp.supplierId) : '',
+      tripContainerId: exp.tripContainerId ? String(exp.tripContainerId) : '',
+      invoiceNumber: exp.invoiceNumber ?? '',
+      invoiceDate: exp.invoiceDate ? String(exp.invoiceDate).slice(0, 10) : '',
+      declarationNumber: exp.declarationNumber ?? '',
+      note: exp.note ?? '',
+    });
+    setExpenseErrors({});
+    setShowExpenseForm(true);
+  };
+  const generalExpenses = expenses.filter(exp => !exp.tripContainerId);
+  const expenseGroups = [
+    ...containers.map(container => ({
+      key: String(container.id),
+      tripContainerId: container.id as number | null,
+      label: `Container ${container.containerNumber}`,
+      expenses: expenses.filter(exp => exp.tripContainerId === container.id),
+    })),
+    ...(generalExpenses.length > 0 || completionScopes.some(scope => scope.tripContainerId == null)
+      ? [{ key: 'general', tripContainerId: null, label: 'Chi phí chung', expenses: generalExpenses }]
+      : []),
+  ];
 
   return (
     <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
@@ -406,7 +447,7 @@ export default function ForwarderTripDetailPage() {
       <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Chi phí phát sinh ({expenses.length})
+            Chi phí phát sinh ({expenses.length}) · {completedScopeCount}/{totalScopeCount} nhóm đã kê xong
           </span>
           <button
             className="btn btn--secondary btn--sm"
@@ -616,17 +657,17 @@ export default function ForwarderTripDetailPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button
                 className="btn btn--ghost btn--sm"
-                onClick={() => { setShowExpenseForm(false); setExpenseErrors({}); }}
-                disabled={createExpenseMut.isPending}
+                onClick={() => { setShowExpenseForm(false); setEditingExpenseId(null); setExpenseErrors({}); }}
+                disabled={createExpenseMut.isPending || updateExpenseMut.isPending}
               >
                 Hủy
               </button>
               <button
                 className="btn btn--primary btn--sm"
                 onClick={handleAddExpense}
-                disabled={createExpenseMut.isPending}
+                disabled={createExpenseMut.isPending || updateExpenseMut.isPending}
               >
-                {createExpenseMut.isPending ? 'Đang lưu…' : 'Lưu chi phí'}
+                {createExpenseMut.isPending || updateExpenseMut.isPending ? 'Đang lưu…' : editingExpenseId ? 'Lưu điều chỉnh' : 'Lưu chi phí'}
               </button>
             </div>
           </div>
@@ -638,7 +679,26 @@ export default function ForwarderTripDetailPage() {
           </div>
         ) : (
           <div style={{ padding: '4px 0' }}>
-            {expenses.map((exp) => (
+            {expenseGroups.map(group => {
+              const scope = completionScopes.find(item => item.tripContainerId === group.tripContainerId);
+              const completed = scope?.status === ExpenseEntryStatus.COMPLETED;
+              return <section key={group.key} className="fwd-expense-group">
+                <div className="fwd-expense-group__header">
+                  <div>
+                    <strong>{group.label}</strong>
+                    <span>{group.expenses.length} khoản</span>
+                  </div>
+                  <button
+                    className={`btn btn--sm ${completed ? 'btn--ghost' : 'btn--secondary'}`}
+                    onClick={() => completionMut.mutate({ tripId, tripContainerId: group.tripContainerId, completed: !completed })}
+                    disabled={completionMut.isPending}
+                    aria-label={`${completed ? 'Mở lại kê khai' : 'Đánh dấu đã kê xong'} cho ${group.label}`}
+                  >
+                    {completed ? <><RotateCcw size={15} /> Mở lại</> : <><CheckCircle2 size={15} /> Đã kê xong</>}
+                  </button>
+                </div>
+                {group.expenses.length === 0 && <div className="fwd-expense-group__empty">Chưa có khoản chi nào trong nhóm này</div>}
+                {group.expenses.map((exp) => (
               <div key={exp.id} style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <DollarSign size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
@@ -646,19 +706,12 @@ export default function ForwarderTripDetailPage() {
                     <span style={{ fontWeight: 600, fontSize: 13 }}>
                       {FORWARDER_EXPENSE_TYPE_DEFAULTS[exp.expenseType]?.name || forwarderExpenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType}
                     </span>
-                    {exp.approvalStatus === 'PENDING' && (
+                    {exp.activeSettlementId && (
                       <span style={{
                         fontSize: 12, lineHeight: 1.35, fontWeight: 600,
                         color: '#92400e', background: '#fef3c7',
                         borderRadius: 4, padding: '3px 7px', marginLeft: 6,
-                      }}>Chờ duyệt</span>
-                    )}
-                    {exp.approvalStatus === 'REJECTED' && (
-                      <span style={{
-                        fontSize: 12, lineHeight: 1.35, fontWeight: 600,
-                        color: 'var(--danger)', background: 'rgba(220,38,38,0.1)',
-                        borderRadius: 4, padding: '3px 7px', marginLeft: 6,
-                      }}>Từ chối</span>
+                      }}>Đã gửi kế toán</span>
                     )}
                     {exp.note && (
                       <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 8 }}>{exp.note}</span>
@@ -694,9 +747,18 @@ export default function ForwarderTripDetailPage() {
                     />
                   </label>
                   <button
-                    className="icon-btn"
+                    className="icon-btn fwd-expense-action"
+                    onClick={() => openExpenseEditor(exp)}
+                    disabled={Boolean(exp.activeSettlementId) || !exp.canEdit}
+                    aria-label={`Điều chỉnh ${FORWARDER_EXPENSE_TYPE_DEFAULTS[exp.expenseType]?.name || exp.expenseType}`}
+                    title={exp.activeSettlementId ? 'Khoản chi đã gửi kế toán' : !exp.canEdit ? 'Khoản chi do Ops khác kê' : 'Điều chỉnh chi phí'}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    className="icon-btn fwd-expense-action"
                     onClick={() => handleDeleteExpense(exp.id)}
-                    disabled={deleteExpenseMut.isPending}
+                    disabled={deleteExpenseMut.isPending || Boolean(exp.activeSettlementId) || !exp.canEdit}
                     title="Xóa chi phí"
                     style={{ color: 'var(--danger)', opacity: 0.6, padding: 4 }}
                   >
@@ -724,7 +786,9 @@ export default function ForwarderTripDetailPage() {
                   </span>
                 )}
               </div>
-            ))}
+                ))}
+              </section>;
+            })}
           </div>
         )}
       </div>

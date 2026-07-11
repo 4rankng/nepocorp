@@ -5,6 +5,7 @@ import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import * as billingService from '../../services/billingDocument.service';
 import { attachmentDisposition } from '../../services/statement.service';
+import { invalidateReportCaches } from '../../lib/redis';
 
 // Debit-note (AR) + payment-statement (AP) builder routes.
 // Mounted under the financial router → already gated by casbinAuthz('financial').
@@ -23,6 +24,7 @@ router.post('/finance/billing-documents/generate', requireRoles(...ROLES), async
 router.post('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   const data = saveBillingDocumentSchema.parse(req.body);
   const doc = await billingService.saveDocument(data, req.user?.userId ?? null);
+  await invalidateReportCaches();
   res.status(201).json(doc);
 }));
 
@@ -46,12 +48,15 @@ router.get('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandle
 // PUT /api/finance/billing-documents/:id — edit in place (always-editable)
 router.put('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   const data = saveBillingDocumentSchema.parse(req.body);
-  res.json(await billingService.updateDocument(Number(req.params.id), data));
+  const doc = await billingService.updateDocument(Number(req.params.id), data);
+  await invalidateReportCaches();
+  res.json(doc);
 }));
 
 // DELETE /api/finance/billing-documents/:id — soft delete
 router.delete('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   await billingService.deleteDocument(Number(req.params.id));
+  await invalidateReportCaches();
   res.json({ ok: true });
 }));
 

@@ -101,7 +101,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
   - Chế độ nhiên liệu (TỰ ĐỘNG hoặc KHOÁN)
   - Doanh thu (tự động tra bảng giá, có thể ghi đè)
   - **Hoa hồng chi KH** (`customerCommission`): khoản chiết khấu/hoa hồng cho khách hàng, nhập tay theo từng chuyến (không theo công thức). Ghi nhận ngay, không đợi khóa.
-  - **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `(baseSalary + BHXH) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè. Chỉ áp dụng cho Xe nhà. *(Pete xác nhận 12/6)*
+  - **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `baseSalary / 26 × tripWageDays`; BHXH được hạch toán riêng. Kế toán có thể sửa/ghi đè. Chỉ áp dụng cho Xe nhà. *(Pete xác nhận 12/6)*
   - **Số ngày tính lương** (`trip_wage_days`): hệ thống tự tính `daysBetween(departure, arrival) + 1`. Kế toán có thể ghi đè.
   - **Các container** (tùy chọn): mỗi dòng gồm Loại container (dropdown từ danh mục — VD: 20'DC, 40'HC), Số container (text nhập tay), Số seal (text nhập tay). Có thể thêm/xóa dòng.
 - **Hệ thống tự động:**

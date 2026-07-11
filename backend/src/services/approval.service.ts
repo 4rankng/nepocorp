@@ -70,10 +70,13 @@ export async function processExpenseApproval(
 ): Promise<GuardedResult> {
   return db.transaction(async (tx) => {
     // Verify expense belongs to the specified trip
-    const [expense] = await tx.select({ tripId: s.tripExpenses.tripId })
+    const [expense] = await tx.select({ tripId: s.tripExpenses.tripId, forwarderId: s.tripExpenses.forwarderId })
       .from(s.tripExpenses).where(eq(s.tripExpenses.id, expenseId)).limit(1);
     if (!expense) return { error: 'Không tìm thấy chi phí', status: 404 };
     if (expense.tripId !== tripId) return { error: 'Chi phí không thuộc chuyến xe này', status: 400 };
+    if (expense.forwarderId != null) {
+      return { error: 'Chi phí giao nhận được duyệt cùng phiếu hoàn ứng', status: 409 };
+    }
 
     await transitionApproval(tx, {
       table: 'trip_expenses',

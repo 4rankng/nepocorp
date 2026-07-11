@@ -69,6 +69,8 @@ Module Công nợ & Thanh toán cho phép theo dõi công nợ khách hàng, ghi
 - Xuất Giấy báo nợ (PDF/Excel): Hỗ trợ xuất theo Tháng (MONTHLY) hoặc Lô (PER_BATCH), chi tiết từng khoản phụ phí dịch vụ.
 - Đối trừ công nợ (Debt Netting): Khả dụng nếu khách hàng có liên kết với Nhà cung cấp.
 
+**Chỉnh sửa Giấy báo nợ:** Mỗi khách hàng chỉ có một Giấy báo nợ đang hiệu lực cho cùng một kỳ ngày; lưu lại sẽ thay thế bản hiện có. Sửa số tiền cước/phí chi hộ, thêm dòng riêng hoặc xóa dòng đều cập nhật công nợ bằng một bút toán `ADJUSTMENT` đúng phần chênh lệch. Lưu lặp lại khi số tiền không đổi không phát sinh thêm công nợ; xóa Giấy báo nợ sẽ hoàn lại phần điều chỉnh do chính Giấy báo nợ đó tạo ra.
+
 ### 2.3 Đối trừ công nợ (Debt Netting)
 Dành cho thực thể vừa là khách hàng (phải thu) vừa là đối tác (phải trả).
 1. Tại trang Chi tiết Công nợ, nếu có liên kết, hiển thị thêm thẻ "Công nợ phải trả" và nút "Đối trừ".

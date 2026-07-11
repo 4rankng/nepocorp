@@ -5,7 +5,7 @@ export {
   TIRE_STATUSES, TIRE_STATUS_LABELS, TIRE_DISPOSAL_REASONS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
-  AdvanceRequestStatus, AdvanceSettlementStatus,
+  AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS, PUSH_RULES,
   CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
@@ -69,8 +69,8 @@ export {
   managementFeeSchema, capTableSchema, truckCapSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
-  tripContainerSchema, tripContainerBatchSchema, tripContainerPatchSchema, tripContainerSealSchema, tripContainerSealBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema, forwarderExpenseTypeSchema,
-  createAdvanceRequestSchema, createAdvanceSettlementSchema,
+  tripContainerSchema, tripContainerBatchSchema, tripContainerPatchSchema, tripContainerSealSchema, tripContainerSealBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema, tripExpenseCompletionSchema, accountantSettlementExpensePatchSchema, forwarderExpenseTypeSchema,
+  createAdvanceRequestSchema, createAdvanceSettlementSchema, updateAdvanceSettlementSchema,
   upsertTripInstructionsSchema,
   containerTypeSchema, portSchema, sealTypeSchema,
   debtOffsetSchema, ANCILLARY_EXPENSE_TYPES,
@@ -105,7 +105,7 @@ export type {
   SupplierInput, ExpenseCategoryInput, ExpenseInput, VendorPaymentInput,
   CreateUserInput, UpdateUserInput,
   TripContainerInput, TripExpenseInput,
-  CreateAdvanceRequestInput, CreateAdvanceSettlementInput,
+  CreateAdvanceRequestInput, CreateAdvanceSettlementInput, UpdateAdvanceSettlementInput,
   ContainerTypeInput, PortInput, SealTypeInput,
   AncillaryExpenseType,
   UpdateProfileInput,
@@ -120,6 +120,7 @@ export type {
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';
+export { computeTripDriverSalary, resolveTripDriverSalary, TRIP_SALARY_WORK_DAYS } from './calculations/tripDriverSalary';
 export {
   normalizeContainerNumber,
   validateContainerFormat,

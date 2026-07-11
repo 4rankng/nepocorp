@@ -954,3 +954,13 @@
   .fset-empty__icon { animation: none; }
   .fset-create-form { animation: none; }
 }
+.fset-incomplete-label {
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fset-check-item--disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}

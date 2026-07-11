@@ -15,6 +15,8 @@ import {
   deleteExpensePhoto,
   listActiveSuppliersForForwarder,
   getTripExpenseAuditInfo,
+  updateForwarderTripExpense,
+  setTripExpenseCompletion,
 } from '../services/forwarder.service';
 import { exportSettlementXlsx, exportSettlementHtml, previewSettlementHtml, previewSettlementXlsx } from '../services/settlement-export.service';
 import { formatLocalDate } from '../lib/format';
@@ -23,7 +25,7 @@ import { resolveForwarder } from '../middleware/forwarder';
 import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
-import { tripContainerSchema, tripExpenseSchema } from '@tingting/shared';
+import { tripContainerSchema, tripExpenseSchema, tripExpensePatchSchema, tripExpenseCompletionSchema } from '@tingting/shared';
 import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance } from '../services/advance.service';
 import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
@@ -85,7 +87,7 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
   const parsed = tripExpenseSchema.safeParse({ ...req.body, forwarderId: forwarder.id });
   if (!parsed.success) throwValidation(parsed.error);
-  const expense = await createTripExpense(db, {
+  const expense = await db.transaction((tx) => createTripExpense(tx, {
     tripId: parsed.data.tripId,
     forwarderId: forwarder.id,  // forwarder-created → PENDING
     expenseType: parsed.data.expenseType,
@@ -99,8 +101,43 @@ router.post('/expenses', asyncHandler(async (req: Request, res: Response) => {
     containerNumber: parsed.data.containerNumber ?? null,
     tripContainerId: parsed.data.tripContainerId ?? null,
     note: parsed.data.note ?? null,
-  });
+  }));
   res.status(201).json(expense);
+}));
+
+router.patch('/expenses/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const expenseId = parseInt(req.params.id as string, 10);
+  const parsed = tripExpensePatchSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const item = await updateForwarderTripExpense(expenseId, forwarder.id, {
+    expenseType: parsed.data.expenseType,
+    buyAmount: parsed.data.buyAmount !== undefined ? String(parsed.data.buyAmount) : undefined,
+    sellAmount: parsed.data.sellAmount !== undefined ? String(parsed.data.sellAmount) : undefined,
+    settlementMethod: parsed.data.settlementMethod,
+    ...(parsed.data.supplierId !== undefined ? { supplierId: parsed.data.supplierId ?? null } : {}),
+    ...(parsed.data.invoiceNumber !== undefined ? { invoiceNumber: parsed.data.invoiceNumber ?? null } : {}),
+    ...(parsed.data.invoiceDate !== undefined ? { invoiceDate: parsed.data.invoiceDate ?? null } : {}),
+    ...(parsed.data.declarationNumber !== undefined ? { declarationNumber: parsed.data.declarationNumber ?? null } : {}),
+    ...(parsed.data.containerNumber !== undefined ? { containerNumber: parsed.data.containerNumber ?? null } : {}),
+    ...(parsed.data.tripContainerId !== undefined ? { tripContainerId: parsed.data.tripContainerId ?? null } : {}),
+    ...(parsed.data.note !== undefined ? { note: parsed.data.note ?? null } : {}),
+  });
+  res.json(item);
+}));
+
+router.put('/trips/:tripId/expense-completion', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const tripId = parseInt(req.params.tripId as string, 10);
+  const parsed = tripExpenseCompletionSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const scope = await setTripExpenseCompletion(
+    tripId,
+    parsed.data.tripContainerId,
+    parsed.data.completed,
+    forwarder.id,
+  );
+  res.json(scope);
 }));
 
 router.delete('/expenses/:id', asyncHandler(async (req: Request, res: Response) => {

@@ -63,6 +63,22 @@ export const forwarderClient = {
     return api.post(FORWARDER.EXPENSES, data);
   },
 
+  updateExpense: async (id: number, data: {
+    expenseType: string;
+    buyAmount: number;
+    sellAmount?: number;
+    settlementMethod?: 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE';
+    supplierId?: number | null;
+    invoiceNumber?: string | null;
+    invoiceDate?: string | null;
+    declarationNumber?: string | null;
+    tripContainerId?: number | null;
+    note?: string | null;
+  }) => api.patch(`/forwarder/me/expenses/${id}`, data),
+
+  setExpenseCompletion: async (tripId: number, data: { tripContainerId: number | null; completed: boolean }) =>
+    api.put(`/forwarder/me/trips/${tripId}/expense-completion`, data),
+
   deleteExpense: async (id: number) => {
     return api.delete(FORWARDER.EXPENSE(id));
   },
@@ -119,6 +135,21 @@ export const forwarderClient = {
   approveAdvanceSettlement: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_SETTLEMENT_APPROVE(id), {});
   },
+  updateAdvanceSettlement: async (id: number, data: {
+    advanceRequestIds: number[];
+    tripExpenseIds: number[];
+    refundAmount: number;
+    note?: string | null;
+  }) => api.put<AdvanceSettlementWithRefs>(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}`, data),
+  updateSettlementExpense: async (settlementId: number, expenseId: number, data: {
+    buyAmount: number;
+    sellAmount?: number;
+    invoiceNumber?: string | null;
+    invoiceDate?: string | null;
+    declarationNumber?: string | null;
+    note?: string | null;
+    adjustmentReason: string;
+  }) => api.patch(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${settlementId}/expenses/${expenseId}`, data),
   rejectAdvanceSettlement: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_SETTLEMENT_REJECT(id), {});
   },
