@@ -16,7 +16,6 @@ import { db } from '../src/db';
 import * as schema from '../src/db/schema';
 import { portalProvider } from '../src/services/gps/providers/portalProvider';
 import { normalizePlate } from '../src/services/gps/parse';
-import { getJourneyRange } from '../src/services/gps/reports';
 import {
   cleanPlaceName, encodePolyline, sliceLegByPlaces, dedupPoints, trailDistanceKm, haversineKm,
   type LngLat,
@@ -114,8 +113,9 @@ async function main() {
         if (!prev || cand.pts > prev.pts) byKey.set(key, cand);   // best = most points (richest coverage)
       }
       if (processed % 10 === 0) console.log(`  …${processed}/${trips.length} trips, ${byKey.size} pairs so far`);
-    } catch (e: any) {
-      failed++; console.log(`  trip #${t.tripId} failed: ${e?.message ?? e}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      failed++; console.log(`  trip #${t.tripId} failed: ${message}`);
     }
   }
 

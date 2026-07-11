@@ -5,6 +5,7 @@ import { useToast } from '../shared/Toast';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
+import { qk } from '../../api/keys';
 import BillingDocumentBuilder from './BillingDocumentBuilder';
 import './BillingDocumentsPanel.css';
 import type {
@@ -46,7 +47,15 @@ export default function BillingDocumentsPanel({
     enabled: !!entityId,
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey });
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey });
+    if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
+      void queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(entityId) });
+      void queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
+      void queryClient.invalidateQueries({ queryKey: qk.financial.debt });
+      void queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
+    }
+  };
 
   const builderOpen = createBuilderOpen || localBuilderOpen;
   const openNew = () => {

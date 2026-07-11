@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Company logo + contact fields move into app_settings as a single source of
 -- truth, edited at /config/company-info. The per-template logo column is
@@ -15,5 +14,3 @@ INSERT INTO "app_settings" ("setting_key", "setting_value") VALUES
   ('company.phone', '0225-8832393'),
   ('company.email', 'acc@nepocorp.com')
 ON CONFLICT ("setting_key") DO NOTHING;
-
-COMMIT;

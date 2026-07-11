@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NavigateFunction } from 'react-router-dom';
 import { Receipt, Wallet, CheckCircle2, FileCheck2, ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
-import { tripClient } from '../../../api/tripClient';
 import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
 import { qk } from '../../../api/keys';
@@ -189,9 +188,8 @@ function Row({
     }
   };
 
-  // Quick-approve / quick-check the item. The id format is "type:numericId"
-  // (e.g. "ancillaryFees:42"). For ancillaryFees we also need tripId, which
-  // is encoded in the href as "/trips/{tripId}#fees".
+  // Only advance requests retain quick approval. Settlements must be opened so
+  // the accountant reviews container completion and any corrections first.
   const handleQuickApprove = async (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();   // don't trigger row navigation
     e.preventDefault();
@@ -207,36 +205,12 @@ function Row({
     setApproving(true);
     setError(null);
     try {
-      switch (item.type) {
-        case 'ancillaryFees': {
-          // href: /trips/{tripId}#fees
-          const m = item.href.match(/\/trips\/(\d+)/);
-          const tripId = m ? Number(m[1]) : NaN;
-          if (!tripId) throw new Error('Không tìm thấy tripId');
-          await tripClient.approveTripExpense(tripId, numericId);
-          break;
-        }
-        case 'advances': {
-          await forwarderClient.approveAdvanceRequest(numericId);
-          break;
-        }
-        case 'advanceSettlementsCheck': {
-          await forwarderClient.checkAdvanceSettlement(numericId);
-          break;
-        }
-        case 'advanceSettlementsApprove': {
-          await forwarderClient.approveAdvanceSettlement(numericId);
-          break;
-        }
-        default:
-          throw new Error('Loại mục chưa hỗ trợ quick-approve');
-      }
+      if (item.type !== 'advances') throw new Error('Cần mở chi tiết để duyệt');
+      await forwarderClient.approveAdvanceRequest(numericId);
       // Refresh the queue so the approved item disappears / moves.
       await queryClient.invalidateQueries({ queryKey: qk.dashboard.approvalQueue(undefined, undefined) });
       // Also refresh the underlying data sources that the approve just changed.
-      queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpensesAll });
       queryClient.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
-      queryClient.invalidateQueries({ queryKey: qk.forwarder.settlements });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Lỗi khi duyệt');
     } finally {
@@ -264,19 +238,18 @@ function Row({
         </span>
       </span>
       <span className="approval-queue__amt">{fmtVN(item.amount)}<i>₫</i></span>
-      {/* Quick-approve tick — does NOT navigate. The user clicks the row body
-          to view the detail page. Disabled while in-flight to prevent double
-          clicks. title attr shows the action label and any error. */}
-      <button
-        type="button"
-        className="approval-queue__quick"
-        onClick={handleQuickApprove}
-        disabled={approving}
-        title={error ? `Lỗi: ${error}` : QUICK_ACTION_LABEL[item.type]}
-        aria-label={QUICK_ACTION_LABEL[item.type]}
-      >
-        {approving ? <Loader2 size={14} className="spin" /> : <Check size={14} strokeWidth={2.6} />}
-      </button>
+      {item.type === 'advances' && (
+        <button
+          type="button"
+          className="approval-queue__quick"
+          onClick={handleQuickApprove}
+          disabled={approving}
+          title={error ? `Lỗi: ${error}` : QUICK_ACTION_LABEL[item.type]}
+          aria-label={QUICK_ACTION_LABEL[item.type]}
+        >
+          {approving ? <Loader2 size={14} className="spin" /> : <Check size={14} strokeWidth={2.6} />}
+        </button>
+      )}
       <ChevronRight size={14} strokeWidth={2.2} className="approval-queue__caret" />
     </div>
   );

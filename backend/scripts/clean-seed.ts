@@ -19,7 +19,7 @@ async function geocode(place: string): Promise<[number, number] | null> {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(place)}&components=country:vn&language=vi&key=${config.googleMapsApiKey}`;
   try {
     const r = await fetch(url);
-    const d = await r.json() as any;
+    const d = await r.json() as { results?: Array<{ geometry?: { location?: { lat: number; lng: number } } }> };
     const loc = d.results?.[0]?.geometry?.location;
     const res: [number, number] | null = loc ? [loc.lat, loc.lng] : null;
     geoCache.set(place, res);

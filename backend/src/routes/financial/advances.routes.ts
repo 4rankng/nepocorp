@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role } from '@tingting/shared';
+import { Role, accountantSettlementExpensePatchSchema, updateAdvanceSettlementSchema } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
-import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, getOutstandingAdvanceBalances } from '../../services/advance.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
+import { throwValidation } from '../../lib/validation';
 import { formatLocalDate } from '../../lib/format';
 
 const router = Router();
@@ -55,17 +56,58 @@ router.post('/advance-settlements/:id/check', requireRoles(Role.ADMIN, Role.ACCO
   res.json(result);
 }));
 
-router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await approveAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 
-router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
+
+router.put('/advance-settlements/:id', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  const parsed = updateAdvanceSettlementSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const result = await updateAdvanceSettlement(id, parsed.data);
+  if (!result) return res.status(404).json({ error: 'Không tìm thấy phiếu hoàn ứng' });
+  res.locals.auditEntityKey = `phiếu hoàn ứng ${result.code}`;
+  res.json(result);
+}));
+
+router.patch(
+  '/advance-settlements/:id/expenses/:expenseId',
+  requireRoles(Role.ADMIN, Role.ACCOUNTANT),
+  asyncHandler(async (req: Request, res: Response) => {
+    const settlementId = parseInt(req.params.id as string, 10);
+    const expenseId = parseInt(req.params.expenseId as string, 10);
+    const parsed = accountantSettlementExpensePatchSchema.safeParse(req.body);
+    if (!parsed.success) throwValidation(parsed.error);
+    const result = await adjustSettlementExpense(
+      settlementId,
+      expenseId,
+      getUser(req).userId,
+      {
+        expenseType: parsed.data.expenseType,
+        buyAmount: parsed.data.buyAmount,
+        sellAmount: parsed.data.sellAmount,
+        ...(parsed.data.supplierId !== undefined ? { supplierId: parsed.data.supplierId ?? null } : {}),
+        ...(parsed.data.invoiceNumber !== undefined ? { invoiceNumber: parsed.data.invoiceNumber ?? null } : {}),
+        ...(parsed.data.invoiceDate !== undefined ? { invoiceDate: parsed.data.invoiceDate ?? null } : {}),
+        ...(parsed.data.declarationNumber !== undefined ? { declarationNumber: parsed.data.declarationNumber ?? null } : {}),
+        ...(parsed.data.containerNumber !== undefined ? { containerNumber: parsed.data.containerNumber ?? null } : {}),
+        ...(parsed.data.tripContainerId !== undefined ? { tripContainerId: parsed.data.tripContainerId ?? null } : {}),
+        ...(parsed.data.note !== undefined ? { note: parsed.data.note ?? null } : {}),
+        adjustmentReason: parsed.data.adjustmentReason,
+      },
+    );
+    res.locals.auditEntityKey = `phiếu hoàn ứng ${settlementId}, điều chỉnh chi phí: ${parsed.data.adjustmentReason}`;
+    res.json(result);
+  }),
+);
 
 // ─── Advance Settlement detail & export (admin) ───────────────────────────
 

@@ -67,7 +67,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
    - **Ghi chú** (tùy chọn)
 3. **Giá cước tự động điền** dựa trên cặp (KH + tuyến) từ bảng giá cước
 4. **Hoa hồng chi KH** (`customerCommission`): kế toán nhập tay khoản chiết khấu/hoa hồng thương mại cho khách hàng (không theo công thức). Ghi nhận ngay khi nhập, không đợi khóa chuyến. **Doanh thu thực tế = freightExVat − customerCommission.** *(Pete xác nhận 12/6)*
-5. **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `(baseSalary + BHXH) / 26 × tripWageDays`. Kế toán có thể sửa/ghi đè số tiền hoặc điều chỉnh `trip_wage_days`. Hành vi tương tự chi phí xăng dầu, vé cầu đường — tự điền, cho phép sửa. Chỉ áp dụng cho **Xe nhà** (OWN). *(Pete xác nhận 12/6)*
+5. **Lương chuyến quy đổi** (`driver_salary`): hệ thống **tự động điền** khi chọn lái xe + nhập ngày đi/về, theo công thức `baseSalary / 26 × tripWageDays`; BHXH được hạch toán riêng. Kế toán có thể sửa/ghi đè số tiền hoặc điều chỉnh `trip_wage_days`. Hành vi tương tự chi phí xăng dầu, vé cầu đường — tự điền, cho phép sửa. Chỉ áp dụng cho **Xe nhà** (OWN). *(Pete xác nhận 12/6)*
 6. **Số ngày tính lương** (`trip_wage_days`): hệ thống tự tính từ `daysBetween(departure, arrival) + 1`. Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ.
 7. Nhấn **"Lưu"** → chuyến tạo ở trạng thái CREATED
 

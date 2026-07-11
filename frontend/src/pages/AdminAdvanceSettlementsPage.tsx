@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, FileText, CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react';
+import { Loader2, FileText, Pencil, XCircle } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
@@ -17,8 +17,6 @@ import { Money } from '../components/shared/Money';
 import {
   useAdminSettlements,
   useAdminAdvanceBalances,
-  useCheckSettlement,
-  useApproveSettlement,
   useRejectSettlement,
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
@@ -34,7 +32,6 @@ type StatusFilter = '' | AdvanceSettlementStatus;
 const TABS: { key: StatusFilter; label: string }[] = [
   { key: '', label: 'Tất cả' },
   { key: AdvanceSettlementStatus.PENDING, label: 'Chờ xử lý' },
-  { key: AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT, label: 'KT đã kiểm tra' },
   { key: AdvanceSettlementStatus.APPROVED, label: 'Đã duyệt' },
   { key: AdvanceSettlementStatus.REJECTED, label: 'Từ chối' },
 ];
@@ -45,6 +42,23 @@ const STATUS_COLORS: Record<string, string> = {
   APPROVED: '#059669',
   REJECTED: '#DC2626',
 };
+
+function settlementStatusLabel(status: AdvanceSettlementStatus): string {
+  return status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT
+    ? 'Chờ xử lý'
+    : ADVANCE_SETTLEMENT_STATUS_LABELS[status];
+}
+
+function settlementScopeSummary(settlement: Settlement): { label: string; ready: boolean } {
+  const expenses = settlement.linkedExpenses ?? [];
+  if (expenses.length === 0) return { label: 'Chưa chọn chi phí', ready: false };
+  const groups = new Set(expenses.map(expense => `${expense.tripCode || 'Chuyến'} · ${expense.containerNumber || 'Chi phí chung'}`));
+  const ready = expenses.every(expense => {
+    const completionStatus = 'completionStatus' in expense ? expense.completionStatus : undefined;
+    return !completionStatus || completionStatus === 'COMPLETED';
+  });
+  return { label: [...groups].join(', '), ready };
+}
 
 /* ── Compact KPI card — mirrors AdminAdvancesPage .adv-kpi proportions ── */
 
@@ -80,27 +94,18 @@ function AsKPI({ label, value, meta, variant, iconName, active = false, hasItems
 
 function SettlementGridRow({
   s,
-  checkMutation,
-  approveMutation,
   rejectMutation,
   focusId,
   canApproveReject,
 }: {
   s: Settlement;
-  checkMutation: ReturnType<typeof useCheckSettlement>;
-  approveMutation: ReturnType<typeof useApproveSettlement>;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
   canApproveReject: boolean;
 }) {
-  const isChecking = checkMutation.isPending && checkMutation.variables === s.id;
-  const isApproving = approveMutation.isPending && approveMutation.variables === s.id;
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
-  const busy = isChecking || isApproving || isRejecting;
-
-  const isPending = s.status === AdvanceSettlementStatus.PENDING;
-  const isChecked = s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
-  const canAct = isPending || isChecked;
+  const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
+  const scope = settlementScopeSummary(s);
 
   return (
     <div className="as-grid-row" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
@@ -117,6 +122,9 @@ function SettlementGridRow({
         </div>
         <span className="as-forwarder-name">
           {s.forwarderName || `Đối tác ${s.forwarderId}`}
+        </span>
+        <span className="as-scope">
+          {scope.label} · <strong>{scope.ready ? 'Ops đã kê xong' : 'Đang kê'}</strong>
         </span>
       </div>
 
@@ -138,7 +146,7 @@ function SettlementGridRow({
       {/* Status */}
       <div>
         <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-          {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status]}
+          {settlementStatusLabel(s.status)}
         </StatusPill>
       </div>
 
@@ -146,33 +154,21 @@ function SettlementGridRow({
       <div className="as-actions">
         {canAct ? (
           <>
-            {isPending && (
-              <button
+            {canApproveReject && (
+              <Link
                 className="btn btn--ghost btn--icon btn--sm"
-                onClick={() => checkMutation.mutate(s.id)}
-                disabled={busy}
-                title="Kế toán kiểm tra"
-                style={{ color: 'var(--info, #2563EB)' }}
-              >
-                {isChecking ? <Loader2 size={16} className="spin" /> : <ClipboardCheck size={16} />}
-              </button>
-            )}
-            {isChecked && canApproveReject && (
-              <button
-                className="btn btn--ghost btn--icon btn--sm"
-                onClick={() => approveMutation.mutate(s.id)}
-                disabled={busy}
-                title="Duyệt hoàn ứng"
+                to={`/settlements/${s.id}`}
+                title="Sửa và hoàn tất"
                 style={{ color: 'var(--success)' }}
               >
-                {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
-              </button>
+                <Pencil size={16} />
+              </Link>
             )}
             {canApproveReject && (
               <button
                 className="btn btn--ghost btn--icon btn--sm"
                 onClick={() => rejectMutation.mutate(s.id)}
-                disabled={busy}
+                disabled={isRejecting}
                 title="Từ chối hoàn ứng"
                 style={{ color: 'var(--danger)' }}
               >
@@ -194,27 +190,18 @@ function SettlementGridRow({
 
 function SettlementMobileCard({
   s,
-  checkMutation,
-  approveMutation,
   rejectMutation,
   focusId,
   canApproveReject,
 }: {
   s: Settlement;
-  checkMutation: ReturnType<typeof useCheckSettlement>;
-  approveMutation: ReturnType<typeof useApproveSettlement>;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
   canApproveReject: boolean;
 }) {
-  const isChecking = checkMutation.isPending && checkMutation.variables === s.id;
-  const isApproving = approveMutation.isPending && approveMutation.variables === s.id;
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
-  const busy = isChecking || isApproving || isRejecting;
-
-  const isPending = s.status === AdvanceSettlementStatus.PENDING;
-  const isChecked = s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
-  const canAct = isPending || isChecked;
+  const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
+  const scope = settlementScopeSummary(s);
 
   return (
     <div className="as-mcard" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
@@ -233,7 +220,7 @@ function SettlementMobileCard({
           </div>
         </div>
         <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-          {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status]}
+          {settlementStatusLabel(s.status)}
         </StatusPill>
       </div>
 
@@ -254,6 +241,10 @@ function SettlementMobileCard({
       {/* Meta */}
       <div className="as-mcard__meta">
         <div className="as-mcard__meta-row">
+          <span className="as-mcard__meta-label">Phạm vi</span>
+          <span className="as-mcard__meta-value">{scope.label} · {scope.ready ? 'Ops đã kê xong' : 'Đang kê'}</span>
+        </div>
+        <div className="as-mcard__meta-row">
           <span className="as-mcard__meta-label">Ngày lập</span>
           <span className="as-mcard__meta-value">{formatDate(s.createdAt)}</span>
         </div>
@@ -262,31 +253,16 @@ function SettlementMobileCard({
       {/* Actions */}
       {canAct ? (
         <div className="as-mcard__actions">
-          {isPending && (
-            <button
-              className="btn btn--ghost"
-              onClick={() => checkMutation.mutate(s.id)}
-              disabled={busy}
-            >
-              {isChecking ? <Loader2 size={16} className="spin" /> : <ClipboardCheck size={16} />}
-              Kiểm tra
-            </button>
-          )}
-          {isChecked && canApproveReject && (
-            <button
-              className="btn btn--primary"
-              onClick={() => approveMutation.mutate(s.id)}
-              disabled={busy}
-            >
-              {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
-              Duyệt
-            </button>
+          {canApproveReject && (
+            <Link className="btn btn--primary" to={`/settlements/${s.id}`}>
+              <Pencil size={16} /> Sửa và hoàn tất
+            </Link>
           )}
           {canApproveReject && (
             <button
               className="btn btn--danger"
               onClick={() => rejectMutation.mutate(s.id)}
-              disabled={busy}
+              disabled={isRejecting}
             >
               {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
               Từ chối
@@ -314,13 +290,9 @@ export default function AdminAdvanceSettlementsPage() {
   const { data, isLoading } = useAdminSettlements();
   const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
-  const checkMutation = useCheckSettlement();
-  const approveMutation = useApproveSettlement();
   const rejectMutation = useRejectSettlement();
   const { user } = useAuth();
-  // Approve / Reject are ADMIN+MANAGER only (see advances.routes.ts:28,64).
-  // Accountant role is restricted to Check; the API would 403 the others.
-  const canApproveReject = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
+  const canApproveReject = user?.role === Role.ADMIN || user?.role === Role.ACCOUNTANT;
 
   const allSettlements: Settlement[] = useMemo(
     () => (data?.items ?? []) as Settlement[],
@@ -358,13 +330,19 @@ export default function AdminAdvanceSettlementsPage() {
 
   const filtered = useMemo(() => {
     if (!statusFilter) return allSettlements;
+    if (statusFilter === AdvanceSettlementStatus.PENDING) {
+      return allSettlements.filter((s) =>
+        s.status === AdvanceSettlementStatus.PENDING ||
+        s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT,
+      );
+    }
     return allSettlements.filter((s) => s.status === statusFilter);
   }, [allSettlements, statusFilter]);
 
   /* ── Tab counts ──────────────────────────────────────────────────────── */
   const tabCounts = useMemo(() => ({
     '': stats.counts.total,
-    [AdvanceSettlementStatus.PENDING]: stats.counts.PENDING,
+    [AdvanceSettlementStatus.PENDING]: stats.counts.PENDING + stats.counts.CHECKED_BY_ACCOUNTANT,
     [AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT]: stats.counts.CHECKED_BY_ACCOUNTANT,
     [AdvanceSettlementStatus.APPROVED]: stats.counts.APPROVED,
     [AdvanceSettlementStatus.REJECTED]: stats.counts.REJECTED,
@@ -383,23 +361,13 @@ export default function AdminAdvanceSettlementsPage() {
       <div className="as-kpi-row">
         <AsKPI
           label="Chờ xử lý"
-          value={stats.counts.PENDING}
-          meta={`${formatNumber(stats.totals.PENDING)} ₫`}
+          value={stats.counts.PENDING + stats.counts.CHECKED_BY_ACCOUNTANT}
+          meta={`${formatNumber(stats.totals.PENDING + stats.totals.CHECKED_BY_ACCOUNTANT)} ₫`}
           variant="warn"
           iconName="settlement"
           active={statusFilter === AdvanceSettlementStatus.PENDING}
-          hasItems={stats.counts.PENDING > 0}
+          hasItems={stats.counts.PENDING + stats.counts.CHECKED_BY_ACCOUNTANT > 0}
           onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.PENDING ? '' : AdvanceSettlementStatus.PENDING)}
-        />
-        <AsKPI
-          label="KT đã kiểm tra"
-          value={stats.counts.CHECKED_BY_ACCOUNTANT}
-          meta={`${formatNumber(stats.totals.CHECKED_BY_ACCOUNTANT)} ₫`}
-          variant="info"
-          iconName="cashflow"
-          active={statusFilter === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT}
-          hasItems={stats.counts.CHECKED_BY_ACCOUNTANT > 0}
-          onClick={() => setStatusFilter(statusFilter === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT ? '' : AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT)}
         />
         <AsKPI
           label="Đã duyệt"
@@ -466,8 +434,6 @@ export default function AdminAdvanceSettlementsPage() {
                 <SettlementGridRow
                   key={s.id}
                   s={s}
-                  checkMutation={checkMutation}
-                  approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
                   focusId={`as-${s.id}`}
                   canApproveReject={canApproveReject}
@@ -481,8 +447,6 @@ export default function AdminAdvanceSettlementsPage() {
                 <SettlementMobileCard
                   key={s.id}
                   s={s}
-                  checkMutation={checkMutation}
-                  approveMutation={approveMutation}
                   rejectMutation={rejectMutation}
                   focusId={`as-${s.id}`}
                   canApproveReject={canApproveReject}

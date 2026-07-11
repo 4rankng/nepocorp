@@ -154,6 +154,10 @@ function urlFor(payload: NotificationPayload, role: Role): string | undefined {
       return role === Role.DRIVER ? '/my-penalties' : '/penalties';
     case 'payments':
       return role === Role.DRIVER ? '/my-earnings' : '/finance';
+    case 'advance_settlements':
+      return role === Role.FORWARDER
+        ? (id ? `/my-settlements/${id}` : '/my-settlements')
+        : (id ? `/settlements/${id}` : '/payables/forwarder-advances');
     default:
       return undefined;
   }

@@ -1270,7 +1270,7 @@ export function trimToolHistory(messages: MiniMaxMessage[]): MiniMaxMessage[] {
   //
   // Both passes are no-ops when already under budget.
   const MAX_TRIM_PASSES = 50; // backstop only — halving converges in ~log2(budget/200) ≈ 8
-  let kept: MiniMaxMessage[] = units.flat();
+  const kept: MiniMaxMessage[] = units.flat();
   let guard = 0;
   while (JSON.stringify(kept).length > TOOL_HISTORY_BUDGET_CHARS && guard++ < MAX_TRIM_PASSES) {
     let worstIdx = -1;

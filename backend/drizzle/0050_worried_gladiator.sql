@@ -1,6 +1,6 @@
 CREATE TYPE "public"."tire_position" AS ENUM('FRONT_LEFT', 'FRONT_RIGHT', 'REAR_OUTER_LEFT', 'REAR_OUTER_RIGHT', 'REAR_INNER_LEFT', 'REAR_INNER_RIGHT', 'SPARE', 'OTHER');--> statement-breakpoint
 CREATE TYPE "public"."tire_status" AS ENUM('IN_STOCK', 'IN_USE', 'RETIRED');--> statement-breakpoint
-ALTER TYPE "public"."txn_type" ADD VALUE 'COMMISSION';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'COMMISSION';--> statement-breakpoint
 CREATE TABLE "tires" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"serial" varchar(64) NOT NULL,

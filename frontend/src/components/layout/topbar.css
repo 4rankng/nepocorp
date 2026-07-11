@@ -567,8 +567,12 @@
 .notif-panel__empty { padding: 28px 14px; text-align: center; font-size: 13px; color: var(--ink-3); }
 .notif-item {
   display: flex; gap: 8px; padding: 10px 14px;
-  border-bottom: 1px solid var(--surface-2);
+  width: 100%; border: 0; border-bottom: 1px solid var(--surface-2);
+  background: transparent; color: inherit; text-align: left; font: inherit;
+  cursor: pointer;
 }
+.notif-item:hover { background: var(--surface-2); }
+.notif-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .notif-item:last-child { border-bottom: none; }
 .notif-item.is-unread { background: var(--accent-soft); }
 .notif-item__dot {

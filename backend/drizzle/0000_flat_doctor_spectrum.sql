@@ -2,13 +2,13 @@ CREATE TYPE "public"."customer_status" AS ENUM('ACTIVE', 'LOCKED');--> statement
 CREATE TYPE "public"."driver_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."fuel_mode" AS ENUM('AUTO', 'FLAT_RATE');--> statement-breakpoint
 CREATE TYPE "public"."loading_type" AS ENUM('HANG', 'VO');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER');--> statement-breakpoint
+CREATE TYPE "public"."role" AS ENUM('ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER');--> statement-breakpoint
 CREATE TYPE "public"."trailer_status" AS ENUM('ACTIVE', 'MAINTENANCE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."trailer_type" AS ENUM('20FT', '40FT');--> statement-breakpoint
 CREATE TYPE "public"."trip_photo_type" AS ENUM('CONTAINER', 'SEAL', 'OTHER');--> statement-breakpoint
 CREATE TYPE "public"."trip_status" AS ENUM('CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED');--> statement-breakpoint
 CREATE TYPE "public"."truck_status" AS ENUM('ACTIVE', 'MAINTENANCE', 'INACTIVE');--> statement-breakpoint
-CREATE TYPE "public"."txn_type" AS ENUM('TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY');--> statement-breakpoint
+CREATE TYPE "public"."txn_type" AS ENUM('TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT', 'EXTERNAL_CARRIER_COST', 'FUEL_EXPENSE', 'UNLOCK_REVERSAL', 'COMMISSION', 'DRIVER_PAYOUT', 'SERVICE_FEE');--> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"timestamp" timestamp DEFAULT now() NOT NULL,

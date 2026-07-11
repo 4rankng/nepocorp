@@ -1,44 +1,18 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getActiveCapTable } from '../lib/cap-table';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import { CalendarDays } from 'lucide-react';
 import { EmptyIllustration } from '../components/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { AssetIcon } from '../components/AssetIcon';
-import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, type PnlReport } from '../hooks/useQueries';
+import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import type { TripDetail, CapTableHistory } from '@tingting/shared';
 import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
+import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyPct } from './finance-derived';
 import './FinancePage.css';
-
-/** Margin percentage — computed once, used in KPI strip, counter animation, and P&L table. */
-function marginPct(grossProfit: number, totalRevenue: number): string {
-  return totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : '0.0';
-}
-
-function yoyPct(current: number, previous: number): string {
-  if (previous == null || previous === 0) return current > 0 ? 'Mới' : '—';
-  const pct = ((current - previous) / previous * 100).toFixed(1);
-  return `${Number(pct) >= 0 ? '+' : ''}${pct}%`;
-}
-
-function yoyClass(current: number, previous: number): string {
-  if (previous == null) return '';
-  return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';
-}
-
-const runningSum = (arr: number[]): number[] => {
-  let acc = 0;
-  return arr.map((v) => (acc += v));
-};
-
-const EMPTY_TRIPS: TripDetail[] = [];
-const EMPTY_CAP: CapTableHistory[] = [];
-const EMPTY_YEARLY: (PnlReport | null)[] = [];
 
 export default function FinancePage() {
   const { month, year } = useMonth();
@@ -46,172 +20,24 @@ export default function FinancePage() {
   const { data: report, isLoading: loading, error: queryError } = usePnlReport(month, year);
   const { rootRef } = usePageAnimations({ ready: !loading });
 
-  const kpiRefs = useRef<{ revenue: HTMLSpanElement | null; gross: HTMLSpanElement | null; net: HTMLSpanElement | null; margin: HTMLSpanElement | null }>({
-    revenue: null, gross: null, net: null, margin: null,
-  });
+  const kpiRefs = useRef<{ revenue: HTMLSpanElement | null; gross: HTMLSpanElement | null; net: HTMLSpanElement | null; margin: HTMLSpanElement | null }>({ revenue: null, gross: null, net: null, margin: null });
   const prefersReduced = usePrefersReducedMotion();
 
   const { data: prevReport } = usePnlReport(month, year - 1);
 
-  const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(year, month);
-  const { data: capTableRaw = EMPTY_CAP } = useCapTable();
+  const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(year, month); const { data: capTableRaw = EMPTY_CAP } = useCapTable();
   const { data: yearlyData = EMPTY_YEARLY, isLoading: yearlyLoading } = useYearlyPnl(year);
 
   const error = queryError ? queryError.message || 'Không thể tải báo cáo' : null;
 
-  const compactNum = (v: number) => {
-    if (v === 0) return '0';
-    if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(1)}tỷ`.replace('.0', '');
-    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(1)}tr`.replace('.0', '');
-    return `${(v / 1e3).toFixed(0)}k`;
-  };
-
   const {
     fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
-    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
-    activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
-  } = useMemo(() => {
-    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-    const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalFuelCost || '0'), 0);
-    const realRoadCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
-    const realDriverCost = activeTrips.reduce((s, t) => s + parseFloat(t.driverSalary || '0'), 0);
-    const totalCosts = report?.totalCosts ?? 0;
-    
-    const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
-    const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(totalCosts * 0.55);
-    const roadCost   = hasRealCosts ? realRoadCost   : Math.round(totalCosts * 0.25);
-    const driverCost = hasRealCosts ? realDriverCost : Math.round(totalCosts * 0.20);
-    const maintenanceCost = report?.maintenanceExpensesTotal ?? 0;
-    const companyExpenses = report?.companyExpenses ?? 0;
+    totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY,
+    companyExpensesLY, netProfitLY, activeCapTable, revenueChartData, costPieData,
+    topTrucks, categoryBreakdown, truckBreakdown, trimmedChartData, activeChartData, hasChartData,
+  } = useFinanceDerived({ allTrips, report, prevReport, capTableRaw, yearlyData, month, chartView });
 
-    const totalRevenue = report?.totalRevenue ?? 0;
-    const otherRevenue = report?.otherIncome ?? 0;
-    const transRevenue = Math.max(0, totalRevenue - otherRevenue);
-    // totalCosts is already defined above
-    const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
-    const netProfit = report?.netProfit ?? (grossProfit - companyExpenses + otherRevenue);
-
-    const totalRevenueLY = prevReport?.totalRevenue ?? 0;
-    const otherRevenueLY = prevReport?.otherIncome ?? 0;
-    const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
-    const totalCostsLY = prevReport?.totalCosts ?? 0;
-    const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
-    const companyExpensesLY = prevReport?.companyExpenses ?? 0;
-    const netProfitLY = prevReport?.netProfit ?? (grossProfitLY - companyExpensesLY + otherRevenueLY);
-
-    const activeCapTable = getActiveCapTable(capTableRaw)
-      .map(c => ({ name: c.partnerName, pct: c.percentage }));
-
-    const revenueChartData = yearlyData.map((r, i) => ({
-      name: `T${i + 1}`,
-      'Doanh thu': (r?.totalRevenue ?? 0) / 1_000_000,
-      'LN gộp': (r?.grossProfit ?? 0) / 1_000_000,
-    }));
-
-    const costPieData = [
-      { name: 'Nhiên liệu', value: fuelCost, fill: '#059669' },
-      { name: 'Tiền đi đường', value: roadCost, fill: '#D97706' },
-      { name: 'Lương lái xe', value: driverCost, fill: '#2563EB' },
-      { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#DC2626' },
-    ].filter(d => d.value > 0.5);
-
-    const categoryBreakdown: Array<{ categoryName: string; total: number }> =
-      (report?.categoryBreakdown ?? []).map(c => ({
-        categoryName: c.categoryName,
-        total: parseFloat(c.total),
-      }));
-
-    const topTrucks = [...(report?.trucks ?? [])]
-      .sort((a, b) => b.profit - a.profit)
-      .slice(0, 5)
-      .map(t => ({
-        name: t.plate,
-        'LN gộp': t.profit,
-        maintenance: t.maintenanceExpenses ?? 0,
-      }));
-
-    // Per-truck breakdown from all active trips (not gated on locked status)
-    const truckMap = new Map<number, { id: number; plate: string; trips: number; revenue: number; costs: number; profit: number }>();
-    for (const t of activeTrips) {
-      const isExternal = t.carrierType === 'EXTERNAL';
-      const key = isExternal ? 0 : t.truckId;
-      const plate = isExternal ? 'Xe ngoài' : (t.truck?.licensePlate ?? `Truck #${t.truckId}`);
-      const rev = parseFloat(t.revenue ?? '0') + parseFloat(t.revenueEmptyReturn ?? '0');
-      const cost = parseFloat(t.totalCost ?? '0');
-      const gp = parseFloat(t.grossProfit ?? '0');
-      const existing = truckMap.get(key);
-      if (existing) {
-        existing.trips++;
-        existing.revenue += rev;
-        existing.costs += cost;
-        existing.profit += gp;
-      } else {
-        truckMap.set(key, { id: key, plate, trips: 1, revenue: rev, costs: cost, profit: gp });
-      }
-    }
-    const truckBreakdown = [...truckMap.values()].sort((a, b) => b.profit - a.profit);
-
-    return {
-      fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
-      totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
-      totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
-      activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
-    };
-  }, [allTrips, report, prevReport, capTableRaw, yearlyData]);
-
-  const trimmedChartData = useMemo(() => {
-    const firstDataIdx = revenueChartData.findIndex(d => d['Doanh thu'] > 0 || d['LN gộp'] > 0);
-    if (firstDataIdx < 0) return [];
-    const lastDataIdx = [...revenueChartData].reverse().findIndex(d => d['Doanh thu'] > 0 || d['LN gộp'] > 0);
-    return revenueChartData.slice(firstDataIdx, revenueChartData.length - lastDataIdx);
-  }, [revenueChartData]);
-
-  const currentChartMonthIdx = useMemo(() => {
-    return trimmedChartData.findIndex(d => d.name === `T${month}`);
-  }, [trimmedChartData, month]);
-
-  const dailyChartData = useMemo(() => {
-    const dayMap = new Map<string, { revenue: number; gross: number }>();
-    for (const t of allTrips) {
-      if (t.status === 'CANCELED') continue;
-      const dateKey = t.departureDate?.slice(0, 10);
-      if (!dateKey) continue;
-      const rev = Number(t.revenue) || 0;
-      const gp = Number(t.grossProfit) || 0;
-      const existing = dayMap.get(dateKey) ?? { revenue: 0, gross: 0 };
-      existing.revenue += rev;
-      existing.gross += gp;
-      dayMap.set(dateKey, existing);
-    }
-    const sorted = Array.from(dayMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .filter(([, v]) => v.revenue > 0 || v.gross > 0);
-    return {
-      labels: sorted.map(([d]) => String(parseInt(d.slice(8, 10), 10))),
-      revenue: runningSum(sorted.map(([, v]) => v.revenue / 1_000_000)),
-      gross: runningSum(sorted.map(([, v]) => v.gross / 1_000_000)),
-    };
-  }, [allTrips]);
-
-  const activeChartData = useMemo(() => {
-    if (chartView === 'day') {
-      return {
-        months: dailyChartData.labels,
-        revenue: dailyChartData.revenue,
-        gross: dailyChartData.gross,
-        currentIdx: undefined,
-      };
-    }
-    return {
-      months: trimmedChartData.map(d => d.name as string),
-      revenue: trimmedChartData.map(d => d['Doanh thu'] as number),
-      gross: trimmedChartData.map(d => d['LN gộp'] as number),
-      currentIdx: currentChartMonthIdx >= 0 ? currentChartMonthIdx : undefined,
-    };
-  }, [chartView, dailyChartData, trimmedChartData, currentChartMonthIdx]);
-
-  const hasChartData = chartView === 'day' ? dailyChartData.labels.length > 0 : trimmedChartData.length > 0;
 
   // ── KPI counter animation ──
   const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 100 });

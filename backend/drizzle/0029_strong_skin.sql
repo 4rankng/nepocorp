@@ -1,4 +1,4 @@
-ALTER TYPE "public"."txn_type" ADD VALUE 'EXTERNAL_CARRIER_COST';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'EXTERNAL_CARRIER_COST';--> statement-breakpoint
 CREATE TABLE "debt_offsets" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"customer_id" integer NOT NULL,

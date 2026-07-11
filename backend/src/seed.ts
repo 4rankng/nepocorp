@@ -40,10 +40,10 @@ async function seed() {
   const userByEmail = new Map(userAccounts.map(u => [u.email, u.id]));
 
   const driverSeeds = [
-    { userId: userByEmail.get('laixe@nepo.vn') ?? null, name: 'Phạm Văn Hùng',  phone: '0900000003', assignedTruckId: 1, baseSalary: '5000000', status: 'ACTIVE' as const },
-    { userId: userByEmail.get('thu@nepo.vn') ?? null,   name: 'Nguyễn Văn Thụ', phone: '0900000010', assignedTruckId: 2, baseSalary: '4500000', status: 'ACTIVE' as const },
-    { userId: userByEmail.get('quyet@nepo.vn') ?? null, name: 'Lê Văn Quyết',   phone: '0900000012', assignedTruckId: 3, baseSalary: '4500000', status: 'ACTIVE' as const },
-    { userId: userByEmail.get('pho@nepo.vn') ?? null,   name: 'Nguyễn Văn Phố', phone: '0900000011', assignedTruckId: 4, baseSalary: '5000000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('laixe@nepo.vn') ?? null, name: 'Phạm Văn Hùng',  phone: '0900000003', baseSalary: '5000000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('thu@nepo.vn') ?? null,   name: 'Nguyễn Văn Thụ', phone: '0900000010', baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('quyet@nepo.vn') ?? null, name: 'Lê Văn Quyết',   phone: '0900000012', baseSalary: '4500000', status: 'ACTIVE' as const },
+    { userId: userByEmail.get('pho@nepo.vn') ?? null,   name: 'Nguyễn Văn Phố', phone: '0900000011', baseSalary: '5000000', status: 'ACTIVE' as const },
   ];
 
   // Use onConflictDoNothing with a unique constraint on (name) if it exists,
@@ -174,6 +174,22 @@ async function seed() {
 
   for (const truck of trucks) {
     await db.insert(schema.trucks).values(truck).onConflictDoNothing();
+  }
+
+  const seededTrucks = await db.select({ id: schema.trucks.id, licensePlate: schema.trucks.licensePlate })
+    .from(schema.trucks);
+  const truckIdByPlate = new Map(seededTrucks.map(t => [t.licensePlate, t.id]));
+  const driverAssignments = [
+    ['Phạm Văn Hùng', '60C-12345'],
+    ['Nguyễn Văn Thụ', '60C-23456'],
+    ['Lê Văn Quyết', '60C-34567'],
+    ['Nguyễn Văn Phố', '60C-45678'],
+  ] as const;
+  for (const [name, plate] of driverAssignments) {
+    const assignedTruckId = truckIdByPlate.get(plate);
+    if (assignedTruckId) {
+      await db.update(schema.drivers).set({ assignedTruckId }).where(eq(schema.drivers.name, name));
+    }
   }
 
   console.log('✅ Trucks seeded!');

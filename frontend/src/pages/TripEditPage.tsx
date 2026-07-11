@@ -48,7 +48,11 @@ export default function TripEditPage() {
     })) ?? [],
     trucks: catalogData?.trucks.map((t) => ({ id: t.id, label: t.licensePlate, currentTrailerId: t.currentTrailerId ?? null })) ?? [],
     trailerTypes: [{ value: '20FT', label: '20FT' }, { value: '40FT', label: '40FT' }],
-    drivers: catalogData?.drivers.map((d) => ({ id: d.id, label: d.name })) ?? [],
+    drivers: catalogData?.drivers.map((d) => ({
+      id: d.id,
+      label: d.name,
+      baseSalary: Number(d.baseSalary) || 0,
+    })) ?? [],
     trailers: catalogData?.trailers?.map((t) => ({ id: t.id, label: t.licensePlate, type: t.type })) ?? [],
     cargoTypes: catalogData?.cargoTypes.map((c) => ({ id: c.id, label: c.name })) ?? [],
     containerTypes: catalogData?.containerTypes.map((c) => ({ id: c.id, label: c.name || c.code || `Loại #${c.id}` })) ?? [],

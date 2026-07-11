@@ -69,7 +69,7 @@ describe('OCR: OpenRouter (Qwen3-VL) migration', () => {
   });
 
   test('callOpenRouterVision: strips <think> reasoning before the JSON answer', async () => {
-    globalThis.fetch = (async (url: string | URL | Request) => {
+    globalThis.fetch = (async (_url: string | URL | Request) => {
       return res(orBody(`<think>reasoning about the image...</think>{"container_numbers":["${VALID_CONTAINER}"]}`));
     }) as unknown as typeof globalThis.fetch;
     try {

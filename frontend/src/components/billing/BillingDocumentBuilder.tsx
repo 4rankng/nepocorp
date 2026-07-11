@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Filter, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { Download, Filter, Loader2, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
@@ -9,6 +9,7 @@ import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
+import { documentFileName, groupLinesByContainer, lineTotal, normalizeLine, splitRouteName, thisMonthRange, displayDate, TITLE, type BillingRouteGroup } from './billing-document-builder-utils';
 import './BillingDocumentBuilder.css';
 import type {
   BillingDocument,
@@ -27,120 +28,6 @@ interface Props {
   entityName: string;
   initialDoc?: BillingDocument | null;
   onSaved?: () => void;
-}
-
-interface BillingRouteGroup {
-  key: string;
-  routeName: string;
-  lines: Array<{ line: BillingDocumentLine; index: number }>;
-  subtotal: number;
-  visibleCount: number;
-}
-
-interface BillingContainerGroup {
-  key: string;
-  label: string;
-  lines: Array<{ line: BillingDocumentLine; index: number }>;
-  subtotal: number;
-  visibleCount: number;
-}
-
-const TITLE: Record<BillingDocumentType, string> = {
-  DEBIT_NOTE: 'Giấy báo nợ',
-  PAYMENT_STATEMENT: 'Bảng kê',
-};
-
-const SERVICE_FEE_LABELS: Record<string, string> = {
-  LIFTING: 'Phí nâng container',
-  LOWERING: 'Phí hạ container',
-  CUSTOMS: 'Phí hải quan',
-  INFRASTRUCTURE: 'Phí hạ tầng',
-  WEIGHING: 'Phí cân hàng',
-  INSPECTION: 'Phí kiểm hóa',
-  INSPECTION_SVC: 'Phí dịch vụ kiểm hóa',
-  OTHER: 'Phí chi hộ khác',
-};
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function normalizeFreightDescription(line: BillingDocumentLine): BillingDocumentLine {
-  if (line.lineType !== 'FREIGHT') return line;
-  const routeName = line.routeName?.trim();
-  if (!routeName) return line;
-  const description = line.description
-    .replace(new RegExp(`\\s+[—-]\\s+${escapeRegExp(routeName)}`, 'i'), '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return description && description !== line.description ? { ...line, description } : line;
-}
-
-function normalizeLine(line: BillingDocumentLine): BillingDocumentLine {
-  const normalized = normalizeFreightDescription(line);
-  if (normalized.lineType !== 'SERVICE_FEE') return normalized;
-  const label = SERVICE_FEE_LABELS[normalized.description?.trim().toUpperCase() ?? ''];
-  if (label) normalized.description = label;
-  return normalized;
-}
-
-function lineTotal(line: BillingDocumentLine): number {
-  if (line.excluded) return 0;
-  return line.amountOverride != null ? Number(line.amountOverride) : Number(line.baseAmount);
-}
-
-function thisMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  return { from: fmt(from), to: fmt(to) };
-}
-
-function displayDate(value: string): string {
-  const [year, month, day] = value.split('-');
-  return year && month && day ? `${day}/${month}/${year}` : value;
-}
-
-function splitRouteName(routeName: string): { origin: string; destination: string } | null {
-  const normalized = routeName.replace(/\s+/g, ' ').trim();
-  const separator = normalized.match(/\s[-–—]\s/);
-  if (!separator || separator.index === undefined) return null;
-  const origin = normalized.slice(0, separator.index).trim();
-  const destination = normalized.slice(separator.index + separator[0].length).trim();
-  return origin && destination ? { origin, destination } : null;
-}
-
-// removed lineTypeLabel since we use typeLabel string now
-
-function containerLabel(line: BillingDocumentLine): string {
-  return (line.containerNumbers ?? []).join(', ') || 'Không có container';
-}
-
-function groupLinesByContainer(lines: Array<{ line: BillingDocumentLine; index: number }>): BillingContainerGroup[] {
-  const groups: BillingContainerGroup[] = [];
-  const byContainer = new Map<string, BillingContainerGroup>();
-
-  for (const item of lines) {
-    const label = containerLabel(item.line);
-    const key = label.trim().toLowerCase();
-    let group = byContainer.get(key);
-    if (!group) {
-      group = { key, label, lines: [], subtotal: 0, visibleCount: 0 };
-      byContainer.set(key, group);
-      groups.push(group);
-    }
-    group.lines.push(item);
-    group.subtotal += lineTotal(item.line);
-    if (!item.line.excluded) group.visibleCount += 1;
-  }
-
-  return groups;
-}
-
-function documentFileName(type: BillingDocumentType, entityName: string): string {
-  const prefix = type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke';
-  return `${prefix}-${entityName}.xlsx`;
 }
 
 export default function BillingDocumentBuilder({
@@ -283,7 +170,12 @@ export default function BillingDocumentBuilder({
   };
 
   const removeLine = (index: number) => {
-    setLines((prev) => prev.filter((_, i) => i !== index));
+    setLines((prev) => prev.flatMap((line, i) => {
+      if (i !== index) return [line];
+      // Preserve source rows as exclusions so saving can reduce the matching
+      // receivable. Ad-hoc rows have no pre-existing posting and can disappear.
+      return line.sourceType === 'ADHOC' ? [] : [{ ...line, excluded: !line.excluded }];
+    }));
     setSavedId(null);
   };
 
@@ -571,8 +463,8 @@ export default function BillingDocumentBuilder({
                                       />
                                     </td>
                                     <td className="billing-builder__row-actions">
-                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                        <Trash2 size={15} />
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
+                                        {line.excluded ? <RotateCcw size={15} /> : <Trash2 size={15} />}
                                       </button>
                                     </td>
                                   </tr>
@@ -659,8 +551,8 @@ export default function BillingDocumentBuilder({
                                           onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
                                         />
                                       </label>
-                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`Xóa dòng ${index + 1}`}>
-                                        <Trash2 size={17} />
+                                      <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
+                                        {line.excluded ? <RotateCcw size={17} /> : <Trash2 size={17} />}
                                       </button>
                                     </div>
                                   </div>

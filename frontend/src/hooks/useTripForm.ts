@@ -150,6 +150,7 @@ export interface UseTripFormReturn {
   vehicleShiftDefault?: number;
   isEditMode: boolean;
   selectedRouteData: RouteOption | null;
+  driverBaseSalary: number;
   resetForm?: () => void;
 }
 
@@ -231,6 +232,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     vehicleShiftDefault: d.vehicleShiftDefault,
     isEditMode,
     selectedRouteData: d.selectedRouteData,
+    driverBaseSalary: d.driverBaseSalary,
     resetForm: s.resetForm,
   };
 }

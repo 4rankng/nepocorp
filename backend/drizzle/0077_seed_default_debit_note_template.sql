@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Seed the default debit-note template. Field values mirror the legacy
 -- hardcoded xlsx layout (buildLegacyXlsx) so existing exports look unchanged.
@@ -15,5 +14,3 @@ SELECT
 WHERE NOT EXISTS (
 	SELECT 1 FROM "debit_note_templates" WHERE "is_default" = true AND "deleted_at" IS NULL
 );
-
-COMMIT;

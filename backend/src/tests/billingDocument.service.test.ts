@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  effectiveAmount, docTotal, splitContainers, joinContainers,
+  effectiveAmount, docTotal, documentLedgerAdjustment, splitContainers, joinContainers,
 } from '../services/billingDocument.service';
 import type { BillingDocumentLine } from '@tingting/shared';
 
@@ -34,6 +34,22 @@ test('docTotal — sums non-excluded effective amounts, honors overrides + exclu
     line({ sourceType: 'ADHOC', baseAmount: 0, amountOverride: 300 }), // 300 adhoc
   ];
   assert.equal(docTotal(lines), 2800);
+});
+
+test('documentLedgerAdjustment — sourced edits contribute only their delta', () => {
+  const lines = [
+    line({ sourceType: 'TRIP', baseAmount: 6_000_000, amountOverride: 6_200_000 }),
+    line({ sourceType: 'EXPENSE', lineType: 'SERVICE_FEE', baseAmount: 1_000_000, amountOverride: 1_080_000 }),
+  ];
+  assert.equal(documentLedgerAdjustment(lines), 280_000);
+});
+
+test('documentLedgerAdjustment — ad-hoc rows add fully and excluded source rows reduce AR', () => {
+  const lines = [
+    line({ sourceType: 'EXPENSE', lineType: 'SERVICE_FEE', baseAmount: 1_000_000, excluded: true }),
+    line({ sourceType: 'ADHOC', sourceId: null, lineType: 'ADHOC', baseAmount: 0, amountOverride: 400_000 }),
+  ];
+  assert.equal(documentLedgerAdjustment(lines), -600_000);
 });
 
 test('splitContainers — null/empty → null', () => {

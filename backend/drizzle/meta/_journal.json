@@ -666,6 +666,34 @@
       "when": 1783164900000,
       "tag": "0099_company_logo_and_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1783750000000,
+      "tag": "0100_forwarder_expense_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1783753726573,
+      "tag": "0101_debit_note_receivables_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1783754951050,
+      "tag": "0102_settlement_ledger_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1783756800000,
+      "tag": "0103_environment_schema_repairs",
+      "breakpoints": true
     }
   ]
 }

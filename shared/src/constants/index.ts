@@ -198,6 +198,11 @@ export enum AdvanceSettlementStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum ExpenseEntryStatus {
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+}
+
 export const CARRIER_TYPE_LABELS: Record<CarrierType, string> = {
   [CarrierType.OWN]: 'Xe nhà',
   [CarrierType.EXTERNAL]: 'Xe ngoài',
@@ -280,6 +285,7 @@ export enum NotificationType {
   OVERDUE_PAYMENT = 'OVERDUE_PAYMENT',
   SALARY_PERIOD_CLOSING = 'SALARY_PERIOD_CLOSING',
   SYSTEM_ANNOUNCEMENT = 'SYSTEM_ANNOUNCEMENT',
+  ADVANCE_SETTLEMENT_APPROVED = 'ADVANCE_SETTLEMENT_APPROVED',
 }
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
@@ -296,6 +302,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.OVERDUE_PAYMENT]: 'Thanh toán quá hạn',
   [NotificationType.SALARY_PERIOD_CLOSING]: 'Sắp chốt kỳ lương',
   [NotificationType.SYSTEM_ANNOUNCEMENT]: 'Thông báo hệ thống',
+  [NotificationType.ADVANCE_SETTLEMENT_APPROVED]: 'Phiếu hoàn ứng đã duyệt',
 };
 
 /**
@@ -314,6 +321,7 @@ export const PUSH_RULES: Partial<Record<NotificationType, PushAudience>> = {
   // Office action needed:
   [NotificationType.PAYMENT_RECEIVED]: 'financial',
   [NotificationType.TRIP_UNLOCKED]: 'financial',
+  [NotificationType.ADVANCE_SETTLEMENT_APPROVED]: 'all',
 };
 
 export * from './api-paths';

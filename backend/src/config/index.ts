@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config({ override: true });
+// Values supplied by the process (test runners, containers, and production
+// deploys) must take precedence over the developer's local .env file.
+dotenv.config();
 
 const isProd = process.env.NODE_ENV === 'production';
 

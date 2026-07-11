@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, count, ilike, gte, lte, or } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, count, gte, lte, or } from 'drizzle-orm';
 import { getTripInstructions } from './trip-instructions.service';
 
 /**
@@ -25,7 +25,7 @@ const hasPendingExpenseOrSettlement = sql<boolean>`EXISTS (
         FROM settlement_expenses se2
         INNER JOIN advance_settlements a2 ON a2.id = se2.settlement_id
         WHERE se2.trip_expense_id = te.id
-          AND a2.status IN ('PENDING', 'CHECKED_BY_ACCOUNTANT', 'REJECTED')
+          AND a2.status IN ('PENDING', 'CHECKED_BY_ACCOUNTANT')
       )
     )
 )`;
@@ -71,6 +71,16 @@ export async function getForwarderTrips(
       WHERE tc.trip_id = ${s.trips.id}
     )`,
     cargoTypeName: s.cargoTypes.name,
+    expenseScopesCompleted: sql<number>`(
+      SELECT count(*)::int FROM trip_expense_completion_scopes scope
+      WHERE scope.trip_id = ${s.trips.id}
+        AND scope.trip_container_id IS NOT NULL
+        AND scope.status = 'COMPLETED'
+    )`,
+    expenseScopesTotal: sql<number>`(
+      SELECT count(*)::int FROM trip_containers tc
+      WHERE tc.trip_id = ${s.trips.id}
+    )`,
     statusColor: sql<'paid' | 'pending' | 'none'>`CASE
       WHEN ${hasApprovedSettlement} THEN 'paid'
       WHEN ${hasPendingExpenseOrSettlement} THEN 'pending'
@@ -176,6 +186,16 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
     supplierId: s.tripExpenses.supplierId,
     supplierName: s.suppliers.name,
     containerNumber: s.tripExpenses.containerNumber,
+    tripContainerId: s.tripExpenses.tripContainerId,
+    activeSettlementId: sql<number | null>`(
+      SELECT se.settlement_id
+      FROM settlement_expenses se
+      JOIN advance_settlements aset ON aset.id = se.settlement_id
+      WHERE se.trip_expense_id = ${s.tripExpenses.id}
+        AND aset.status <> 'REJECTED'
+      ORDER BY se.id DESC
+      LIMIT 1
+    )`,
     invoiceNumber: s.tripExpenses.invoiceNumber,
     invoiceDate: s.tripExpenses.invoiceDate,
     declarationNumber: s.tripExpenses.declarationNumber,
@@ -183,6 +203,7 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
     forwarderName: s.users.fullName,
+    canEdit: sql<boolean>`${s.tripExpenses.forwarderId} = ${_forwarderId}`,
   }).from(s.tripExpenses)
     .leftJoin(s.users, eq(s.tripExpenses.forwarderId, s.users.id))
     .leftJoin(s.suppliers, eq(s.tripExpenses.supplierId, s.suppliers.id))
@@ -191,5 +212,40 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
 
   const instructions = await getTripInstructions(tripId);
 
-  return { ...trip, legs, containers, expenses, instructions };
+  const storedScopes = await db.select({
+    tripId: s.tripExpenseCompletionScopes.tripId,
+    tripContainerId: s.tripExpenseCompletionScopes.tripContainerId,
+    status: s.tripExpenseCompletionScopes.status,
+    completedBy: s.tripExpenseCompletionScopes.completedBy,
+    completedAt: s.tripExpenseCompletionScopes.completedAt,
+    completedByName: s.users.fullName,
+  }).from(s.tripExpenseCompletionScopes)
+    .leftJoin(s.users, eq(s.users.id, s.tripExpenseCompletionScopes.completedBy))
+    .where(eq(s.tripExpenseCompletionScopes.tripId, tripId));
+
+  const scopeByContainer = new Map(storedScopes.map(scope => [scope.tripContainerId, scope]));
+  const completionScopes = containers.map(container => scopeByContainer.get(container.id) ?? ({
+    tripId,
+    tripContainerId: container.id,
+    status: 'IN_PROGRESS',
+    completedBy: null,
+    completedAt: null,
+    completedByName: null,
+  }));
+  if (expenses.some(expense => expense.tripContainerId == null) || scopeByContainer.has(null)) {
+    completionScopes.push(scopeByContainer.get(null) ?? ({
+      tripId,
+      tripContainerId: null,
+      status: 'IN_PROGRESS',
+      completedBy: null,
+      completedAt: null,
+      completedByName: null,
+    }));
+  }
+  const completionProgress = {
+    completed: completionScopes.filter(scope => scope.tripContainerId != null && scope.status === 'COMPLETED').length,
+    total: containers.length,
+  };
+
+  return { ...trip, legs, containers, expenses, completionScopes, completionProgress, instructions };
 }

@@ -1,4 +1,3 @@
-BEGIN;
 
 -- Debit-note (Giấy báo nợ) templates. Form-driven, Excel-only layout presets
 -- that users build in the Cấu hình page and pick per customer at export time.
@@ -48,5 +47,3 @@ ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "debit_note_template_id" intege
 ALTER TABLE "billing_documents" ADD COLUMN IF NOT EXISTS "debit_note_template_id" integer REFERENCES "debit_note_templates"("id") ON DELETE SET NULL;--> statement-breakpoint
 
 ALTER TABLE "billing_documents" ADD COLUMN IF NOT EXISTS "debit_note_template_snapshot" jsonb;--> statement-breakpoint
-
-COMMIT;

@@ -1,9 +1,9 @@
 CREATE TYPE "public"."advance_request_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');--> statement-breakpoint
 CREATE TYPE "public"."advance_settlement_status" AS ENUM('PENDING', 'CHECKED_BY_ACCOUNTANT', 'APPROVED', 'REJECTED');--> statement-breakpoint
 CREATE TYPE "public"."forwarder_expense_type" AS ENUM('LIFTING', 'CUSTOMS', 'WEIGHING', 'INSPECTION', 'OTHER');--> statement-breakpoint
-ALTER TYPE "public"."role" ADD VALUE 'FORWARDER';--> statement-breakpoint
-ALTER TYPE "public"."txn_type" ADD VALUE 'FORWARDER_ADVANCE';--> statement-breakpoint
-ALTER TYPE "public"."txn_type" ADD VALUE 'FORWARDER_SETTLEMENT';--> statement-breakpoint
+ALTER TYPE "public"."role" ADD VALUE IF NOT EXISTS 'FORWARDER';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'FORWARDER_ADVANCE';--> statement-breakpoint
+ALTER TYPE "public"."txn_type" ADD VALUE IF NOT EXISTS 'FORWARDER_SETTLEMENT';--> statement-breakpoint
 CREATE TABLE "advance_requests" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"requester_id" integer NOT NULL,

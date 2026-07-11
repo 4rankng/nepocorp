@@ -151,27 +151,6 @@ export function geocodeFromLookup(
 }
 
 /**
- * One uncached Map4D text-search call, presented as a Bách Khoa-portal request.
- * Returns the raw result rows (empty on any failure).
- */
-async function textSearchOnce(text: string): Promise<Map4dPlace[]> {
-  if (!config.map4dApiKey) return [];
-  const url =
-    `${config.map4dApiUrl}/sdk/place/text-search` +
-    `?key=${encodeURIComponent(config.map4dApiKey)}` +
-    `&text=${encodeURIComponent(text)}` +
-    `&accuracy=0`;
-  try {
-    const res = await fetch(url, { headers: BACHKHOA_BROWSER_HEADERS });
-    if (!res.ok) return [];
-    const body = (await res.json()) as Map4dResponse;
-    return body?.code === 'ok' && Array.isArray(body.result) ? body.result : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
  * One uncached Google Maps Geocoding call (the fallback). Returns results
  * (empty on any failure / when the key is unset). Scoped to Vietnam.
  */

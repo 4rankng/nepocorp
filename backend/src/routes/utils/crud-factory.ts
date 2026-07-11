@@ -7,7 +7,7 @@
  */
 import { Router } from 'express';
 import { db } from '../../db';
-import { eq, isNull, sql, like, and } from 'drizzle-orm';
+import { eq, isNull, sql, and } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { AnyZodObject, output } from 'zod';
 import type { Request, Response } from 'express';

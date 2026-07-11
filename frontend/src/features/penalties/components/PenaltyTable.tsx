@@ -3,46 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { useMonth } from '../../../hooks/useMonth';
 import {
   Shield, ShieldCheck, Download, Plus, FileText,
-  Zap, Trophy, Users, AlertTriangle, Clock,
+  Zap, Trophy, Users, AlertTriangle,
   DollarSign, XCircle, Loader2, UserRound,
 } from 'lucide-react';
 import { Panel, Btn, KPI, PageHeader } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
-import type { Driver, PenaltyReason, Truck } from '@tingting/shared';
+import type { Driver, Truck } from '@tingting/shared';
 import type { PenaltyRow } from '../../../hooks/usePenalties';
 import { useSalaryPeriod } from '../../../hooks/useQueries';
 import {
   getSeverity, getSeverityLabel, getViolationGrade, getGradeClass,
   formatTenure, computeStreak,
-  type Severity,
 } from '../utils';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
-
-function SeverityIcon({ severity }: { severity: Severity }) {
-  switch (severity) {
-    case 'light':
-      return <Clock size={18} />;
-    case 'med':
-      return <AlertTriangle size={18} />;
-    case 'heavy':
-      return <Zap size={18} />;
-    case 'critical':
-      return <Shield size={18} />;
-  }
-}
-
-interface PenaltyTableProps {
-  penalties: PenaltyRow[];
-  drivers: Driver[];
-  reasons: PenaltyReason[];
-  trucks: Truck[];
-  listLoading: boolean;
-  canCancel: boolean;
-  onOpenDrawer: (driverId?: number) => void;
-  onCancelPenalty: (penalty: PenaltyRow) => void;
-}
+import { PenaltySeverityIcon } from './penalty-severity-icon';
+import type { PenaltyTableProps } from './penalty-table-types';
 
 export function PenaltyTable({
   penalties,
@@ -602,7 +579,7 @@ export function PenaltyTable({
               return (
                 <div className="penalty-vio-type-row" key={r.id}>
                   <div className={`penalty-vio-type-icon ${sev}`}>
-                    <SeverityIcon severity={sev} />
+                    <PenaltySeverityIcon severity={sev} />
                   </div>
                   <div className="penalty-vio-type-info">
                     <div className="penalty-vio-type-name">{r.reasonText}</div>
