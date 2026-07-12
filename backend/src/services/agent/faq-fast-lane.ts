@@ -112,16 +112,22 @@ async function trySemanticMatch(normalized: string): Promise<FaqMatch | null> {
   const lit = vecLiteral(vec);
   if (!lit) return null;
 
-  // Rule gate in SQL. Two correctness points:
+  // Rule gate in SQL. Correctness points:
   //  (1) Precedence: `=` binds tighter than `&&` in Postgres, so the
   //      forbidden-terms check MUST be wrapped in `NOT (...)` — writing
   //      `&& ... = ARRAY[]` parses as `&& (... = ARRAY[])` (type error).
   //  (2) Diacritics: `normalized` is already tone-stripped (normalizeForFaq),
-  //      so we split it into tokens in TS and bind the array directly. This
-  //      keeps both sides of the `<@` / `&&` comparison diacritic-consistent
-  //      (the seed stores tone-stripped required/forbidden terms too — see
+  //      so we split it into tokens in TS. This keeps both sides of the
+  //      `<@` / `&&` comparison diacritic-consistent (the seed stores
+  //      tone-stripped required/forbidden terms too — see
   //      0104_faq_knowledge_base.sql).
+  //  (3) Array binding: postgres.js renders a bare JS array param as a ROW/
+  //      record constructor `($1,$2,...)`, NOT a PG array — so
+  //      `${queryTokens}::text[]` raises "cannot cast type record to text[]"
+  //      (42846). Build the array via an explicit ARRAY[..] constructor with
+  //      sql.join so each token is a separate typed param.
   const queryTokens = normalized.split(/\s+/).filter(Boolean);
+  const tokensArray = sql.join(queryTokens.map((t) => sql`${t}::text`), sql.raw(','));
   // postgres-js returns rows directly (no .rows wrapper) — cast as the codebase does.
   const rows = (await db.execute(sql`
     SELECT id, question, answer,
@@ -129,8 +135,8 @@ async function trySemanticMatch(normalized: string): Promise<FaqMatch | null> {
     FROM faq_entries
     WHERE embedding IS NOT NULL
       AND is_active = TRUE
-      AND ${s.faqEntries.requiredTerms} <@ ${queryTokens}::text[]
-      AND NOT (${s.faqEntries.forbiddenTerms} && ${queryTokens}::text[])
+      AND ${s.faqEntries.requiredTerms} <@ ARRAY[${tokensArray}]
+      AND NOT (${s.faqEntries.forbiddenTerms} && ARRAY[${tokensArray}])
     ORDER BY embedding <=> ${lit}::vector
     LIMIT ${TOP_K}
   `)) as unknown as SemanticRow[];

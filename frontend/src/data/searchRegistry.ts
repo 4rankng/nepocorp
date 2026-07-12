@@ -99,12 +99,22 @@ export function getSearchItems(role: string): SearchItem[] {
   const normRole = String(role || '').toUpperCase();
   switch (normRole) {
     case 'ADMIN':
-    case 'MANAGER':
       return [
         ...ADMIN_BASE_ITEMS,
         { id: 'users',      type: 'page', label: 'Người dùng',         path: '/users',      iconName: 'users-hr' },
         { id: 'audit-logs', type: 'page', label: 'Nhật ký người dùng', path: '/audit-logs', iconName: 'document' },
         ...CONFIG_ITEMS,
+        ...ACTION_ITEMS,
+      ];
+    case 'MANAGER':
+      // Same office surface as ADMIN, but adminOnly config items (LLM settings,
+      // FAQ management) are hidden — the backend route guard (requireRoles ADMIN)
+      // would 403 them anyway, so showing the card is misleading UX.
+      return [
+        ...ADMIN_BASE_ITEMS,
+        { id: 'users',      type: 'page', label: 'Người dùng',         path: '/users',      iconName: 'users-hr' },
+        { id: 'audit-logs', type: 'page', label: 'Nhật ký người dùng', path: '/audit-logs', iconName: 'document' },
+        ...CONFIG_ITEMS.filter(i => !i.adminOnly),
         ...ACTION_ITEMS,
       ];
     case 'ACCOUNTANT':

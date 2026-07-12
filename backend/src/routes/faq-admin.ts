@@ -64,9 +64,10 @@ const ENTRY_COLUMNS = {
   hasEmbedding: sql<boolean>`${s.faqEntries.embedding} IS NOT NULL`,
 } as const;
 
-// Drizzle's inferred row type — timestamps are `Date` at the DB layer. The
-// global snakeCaseSerializer converts these to ISO strings at the HTTP
-// boundary, so the client sees the shared `FaqEntry` (string timestamps).
+// Drizzle's inferred row type — timestamps are `Date` at the DB layer. They
+// serialize to ISO strings in the JSON response via Date.prototype.toJSON
+// (invoked by res.json's JSON.stringify), so the client sees the shared
+// `FaqEntry` (string timestamps) without any explicit conversion here.
 type FaqEntryRow = {
   id: number;
   question: string;
@@ -179,8 +180,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 
   const ok = await embedAndStore(created.id, created.question, created.questionVariants);
   // Re-fetch so updatedAt reflects the embedding write. Note: `entry` carries
-  // Date timestamps at the DB layer; the global snakeCaseSerializer converts
-  // them to ISO strings at the HTTP boundary (same as every other route here).
+  // Date timestamps at the DB layer; res.json serializes them to ISO strings
+  // via Date.prototype.toJSON, so the client receives string timestamps.
   const entry = (await fetchEntryForResponse(created.id)) ?? (created as unknown as FaqEntryRow);
   const body: { entry: unknown; embeddingStatus: FaqEmbeddingStatus } = {
     entry,
