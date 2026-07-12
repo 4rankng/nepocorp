@@ -1,25 +1,12 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ChevronLeft, ChevronRight, Loader2,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock, Unlock, Wallet,
-} from 'lucide-react';
-import { formatCurrency, removeDiacritics } from '../lib/format';
+import { Truck, Coffee, XCircle, Moon, DollarSign, Info, Edit } from 'lucide-react';
 import { Money } from '../components/shared/Money';
-import { Panel, Modal, ConfirmDialog } from '../components/UI';
-import { usePageAnimations } from '../hooks/animations';
-import { useBackShortcut } from '../hooks/useBackShortcut';
-import {
-  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary,
-} from '../hooks/useSalaryQueries';
+import { Modal } from '../components/UI';
 import { usePostDriverPayout } from '../hooks/useFinancialQueries';
-import { useAuth } from '../hooks/useAuth';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
-import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
-import { EmptyIllustration } from '../components/shared';
 import './SalaryAttendancePage.css';
-import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 
 export const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 

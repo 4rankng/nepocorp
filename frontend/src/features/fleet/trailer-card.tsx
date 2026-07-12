@@ -1,37 +1,21 @@
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { EmptyIllustration } from "../../components/shared";
-import { Truck, Container, UserCheck, Plus, Search, Download, Filter, CheckCircle, Pencil, Trash2, X, Loader2, ArrowRight } from "lucide-react";
-import { downloadCSV } from "../../lib/csv";
-import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from "../../components/UI";
+import { Truck, Plus, Pencil, Trash2, X, Loader2, ArrowRight } from "lucide-react";
+import { Panel, StatusPill, Modal } from "../../components/UI";
 import { StatusStrip } from "../../components/shared/StatusStrip";
 import { useCRUD } from "../../hooks/useCRUD";
-import { useTrucksAndDrivers } from "../../hooks/useCatalogQueries";
 import { useTires } from "../../hooks/useTireQueries";
-import { usePageAnimations } from "../../hooks/animations";
-import { configClient } from "../../api/configClient";
-import { qk } from "../../api/keys";
-import type { TireStatus } from "@tingting/shared";
-import { TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from "@tingting/shared";
-import type { Tire, Truck as TruckType, Driver } from "@tingting/shared";
+import { TrailerType, TRAILER_TYPE_LABELS } from "@tingting/shared";
+import type { Tire, Truck as TruckType } from "@tingting/shared";
 import { routes } from "../../lib/routes";
-import { formatDate } from "../../lib/format";
 
 // Extracted form modals + shared fleet constants
-import { TruckFormModal, DriverFormModal, TrailerFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
+import { TrailerFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
 
 import "../../pages/FleetPage.css";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const DriverAvatarIcon = memo(function DriverAvatarIcon() {
-  return (
-    <span className="fleet-avatar" aria-hidden="true">
-      <UserCheck size={14} />
-    </span>
-  );
-});
 
 const Plate = memo(function Plate({ plate, tag }: { plate: string; tag: string }) {
   return (
@@ -70,45 +54,6 @@ const TireQuickLink = memo(function TireQuickLink({ to, count }: { to: string; c
       <span>Lốp</span>
       <ArrowRight size={13} />
     </Link>
-  );
-});
-
-function tireStatusVariant(status: TireStatus): "neutral" | "success" | "warn" {
-  if (status === "IN_USE") return "success";
-  return "neutral";
-}
-
-const TireDetailList = memo(function TireDetailList({ truckId, tires }: { truckId: number; tires: Tire[] }) {
-  const mountedTires = tires.filter((tire) => tire.truckId === truckId && tire.status === "IN_USE");
-
-  if (mountedTires.length === 0) {
-    return <TireQuickLink to={routes.fleetTires(truckId)} count={0} />;
-  }
-
-  return (
-    <div className="fleet-tire-detail">
-      <div className="fleet-tire-detail__head">
-        <span>
-          <strong>{mountedTires.length}</strong> lốp đang lắp
-        </span>
-        <TireQuickLink to={routes.fleetTires(truckId)} count={mountedTires.length} />
-      </div>
-      <div className="fleet-tire-detail__list">
-        {mountedTires.map((tire) => (
-          <div className="fleet-tire-detail__row" key={tire.id}>
-            <div className="fleet-tire-detail__main">
-              <span className="fleet-tire-detail__serial">{tire.serial}</span>
-              <span className="fleet-tire-detail__position">{tire.position || "Chưa nhập vị trí"}</span>
-            </div>
-            <div className="fleet-tire-detail__meta">
-              <span>{tire.size || "—"}</span>
-              {tire.purchasedAt && <span>Mua {formatDate(tire.purchasedAt)}</span>}
-              <StatusPill variant={tireStatusVariant(tire.status)}>{TIRE_STATUS_LABELS[tire.status]}</StatusPill>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 });
 

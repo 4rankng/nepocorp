@@ -1,7 +1,6 @@
 import type React from 'react';
-import { EyeOff } from 'lucide-react';
-import type { DebitNoteColumnVariable, DebitNoteTemplate, DebitNoteTemplateColumn, DebitNoteTemplateInput } from '@tingting/shared';
-import { cloneStarterColumns, variableLabel, sampleCell, type SelectedTarget } from './debit-note-template-editor-utils';
+import type { DebitNoteTemplateColumn, DebitNoteTemplateInput } from '@tingting/shared';
+import { cloneStarterColumns, sampleCell, type SelectedTarget } from './debit-note-template-editor-utils';
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

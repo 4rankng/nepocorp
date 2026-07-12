@@ -12,11 +12,6 @@ import {
 } from '@tingting/shared';
 import './config-page.css';
 
-// Empty-string sentinel = "no new value entered; keep the stored key". The
-// backend treats an empty/absent key field as "leave untouched", so an admin
-// can switch provider or re-save without re-entering the key.
-const KEEP_EXISTING = '';
-
 export default function LlmSettingsConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
   const navigate = useNavigate();

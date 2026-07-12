@@ -964,10 +964,14 @@ async function produceFinalAnswer(
     const text = stripThink(prose.content) ?? '';
     if (text) return { response: { type: 'text', content: text }, usage: prose.usage, fallbackUsed: true, fallbackReason };
   } catch (e) {
-    if (signal?.aborted) throw e;
+    // Emit END on BOTH paths (abort + error) so a START always pairs with an
+    // END — otherwise the frontend leaves a dangling streaming bubble. On abort
+    // the agentSocket emit is a no-op (gated on !aborted), but emitting keeps
+    // the START/END invariant honest for any non-gated emit path.
     if (emit && proseStreamId) {
       emit({ type: 'TEXT_MESSAGE_END', messageId: proseStreamId });
     }
+    if (signal?.aborted) throw e;
     console.error('[agent] prose answer failed', e);
   }
 

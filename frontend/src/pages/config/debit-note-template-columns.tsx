@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Eye, EyeOff, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import type { DebitNoteColumnVariable, DebitNoteTemplate, DebitNoteTemplateColumn, DebitNoteTemplateInput } from '@tingting/shared';
-import { cloneStarterColumns, variableLabel, variableMap, VARIABLES, makeColumn, type SelectedTarget } from './debit-note-template-editor-utils';
+import { useEffect, useState } from 'react';
+import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Eye, EyeOff, Plus, RotateCcw } from 'lucide-react';
+import type { DebitNoteColumnVariable, DebitNoteTemplateColumn } from '@tingting/shared';
+import { cloneStarterColumns, variableLabel, variableMap, VARIABLES, makeColumn } from './debit-note-template-editor-utils';
 import { Field } from './debit-note-template-preview';
 
 export function ColumnTable({

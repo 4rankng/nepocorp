@@ -1,20 +1,13 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  ChevronLeft, ChevronRight, Loader2,
-  Truck, Coffee, XCircle, Moon, DollarSign, Search, Info, Edit, CheckCircle2, Lock, Unlock, Wallet,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Search, Info, CheckCircle2, Lock, Unlock, Wallet } from 'lucide-react';
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { Money } from '../components/shared/Money';
-import { Panel, Modal, ConfirmDialog } from '../components/UI';
+import { Panel, ConfirmDialog } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
-import {
-  useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary,
-} from '../hooks/useSalaryQueries';
-import { usePostDriverPayout } from '../hooks/useFinancialQueries';
+import { useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary } from '../hooks/useSalaryQueries';
 import { useAuth } from '../hooks/useAuth';
-import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
+import type { WorkDayRecord } from '../api/salaryClient';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
 import { EmptyIllustration } from '../components/shared';

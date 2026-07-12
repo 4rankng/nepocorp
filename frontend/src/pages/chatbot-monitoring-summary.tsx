@@ -1,22 +1,6 @@
-import { Panel } from '../components/UI';
-import { EmptyState } from '../components/shared';
-import { SkeletonKPIs, SkeletonLine, SkeletonTable } from '../components/shared/Skeleton';
-import { useAuth } from '../hooks/useAuth';
-import {
-  useChatbotMetricsSummary,
-  useChatbotLatencyBreakdown,
-  useChatbotTools,
-  useChatbotTimeseries,
-  useChatbotRecent,
-} from '../hooks/useChatbotMetrics';
-import { formatNumber, formatDateTimeVN } from '../lib/format';
-import type {
-  ChatbotMetricSummary,
-  ChatbotLatencyBreakdown,
-  ChatbotToolStat,
-  ChatbotMetricDay,
-  ChatbotRecentTurn,
-} from '@tingting/shared';
+import { SkeletonKPIs } from '../components/shared/Skeleton';
+import { formatNumber } from '../lib/format';
+import type { ChatbotMetricSummary, ChatbotLatencyBreakdown, ChatbotToolStat } from '@tingting/shared';
 import './ChatbotMonitoringPage.css';
 
 export function RangeToggle({ range, onChange }: { range: string; onChange: (range: string) => void }) {

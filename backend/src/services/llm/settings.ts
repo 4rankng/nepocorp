@@ -17,7 +17,7 @@
 // present, MiniMax first (matches pre-feature behaviour).
 import { db } from '../../db';
 import * as s from '../../db/schema';
-import { eq, like } from 'drizzle-orm';
+import { like } from 'drizzle-orm';
 import { config } from '../../config';
 import { decryptSecret } from '../crypto';
 import type { LlmProvider } from '@tingting/shared';

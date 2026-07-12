@@ -1,36 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUpToLine, Check, ChevronDown, MoreVertical, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { TIRE_DISPOSAL_REASONS } from "@tingting/shared";
-import type { Tire, TirePosition } from "@tingting/shared";
+import type { Tire } from "@tingting/shared";
 import type { Supplier } from "@tingting/shared";
-import { ConfirmDialog } from "../../components/UI";
-import { StatusStrip, StatusSwatch } from "../../components/shared/StatusStrip";
-import { useToast } from "../../components/shared/Toast";
 import { formatErrorMessage } from "../../lib/api";
-import { routes } from "../../lib/routes";
-import { useBackShortcut } from "../../hooks/useBackShortcut";
-import {
-  buildPositionLabels,
-  buildUsedPositionLabels,
-  cleanText,
-  daysBetween,
-  displayTirePosition,
-  draftFromTire,
-  normalizedCatalogLabel,
-  patchFromDraft,
-  positionPayloadFromLabel,
-  supplierIdFromText,
-  supplierName,
-  tireAgeDays,
-  todayISO,
-  textMatches,
-  type TireEditDraft,
-  type TirePatch,
-} from "../../features/tires/tireUtils";
-import { useTires, useCreateTire, useUpdateTire, useDeleteTire, useInstallTire, useRemoveTire, useDisposeTire, useTransferTire } from "../../hooks/useTireQueries";
-import { useAllSuppliers, useCreateTirePosition, useDeleteTirePosition, useTirePositions, useTrailers, useTrucksAndDrivers, useUpdateTirePosition } from "../../hooks/useCatalogQueries";
+import { draftFromTire, patchFromDraft, positionPayloadFromLabel, type TireEditDraft, type TirePatch } from "../../features/tires/tireUtils";
 import "../../pages/TruckTiresPage.css";
 
 type VehicleKind = "truck" | "trailer";

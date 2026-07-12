@@ -1,25 +1,18 @@
-import { useState, useCallback, useMemo, memo } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { EmptyIllustration } from "../components/shared";
-import { Truck, Container, UserCheck, Plus, Search, Download, Filter, CheckCircle, Pencil, Trash2, X, Loader2, ArrowRight } from "lucide-react";
+import { Truck, Container, UserCheck, Download, Filter, CheckCircle } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
-import { PageHeader, Panel, StatusPill, Btn, KPI, Modal } from "../components/UI";
-import { StatusStrip } from "../components/shared/StatusStrip";
+import { PageHeader, Btn, KPI } from "../components/UI";
 import { useCRUD } from "../hooks/useCRUD";
 import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
-import { useTires } from "../hooks/useTireQueries";
 import { usePageAnimations } from "../hooks/animations";
 import { configClient } from "../api/configClient";
 import { qk } from "../api/keys";
-import type { TireStatus } from "@tingting/shared";
-import { TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from "@tingting/shared";
-import type { Tire, Truck as TruckType, Driver } from "@tingting/shared";
-import { routes } from "../lib/routes";
-import { formatDate } from "../lib/format";
+import { TrailerType } from "@tingting/shared";
+import type { Truck as TruckType, Driver } from "@tingting/shared";
 
 // Extracted form modals + shared fleet constants
-import { TruckFormModal, DriverFormModal, TrailerFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from "../features/fleet";
+import { TRUCK_STATUS, fleetStyles as styles } from "../features/fleet";
 
 import "./FleetPage.css";
 

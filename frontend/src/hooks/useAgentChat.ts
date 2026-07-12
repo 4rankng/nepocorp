@@ -234,6 +234,10 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
       setError(null);
       setIsThinking(true);
       setReceived(false);
+      // Clear any streaming bubble left dangling by an aborted previous turn
+      // (abort resolves agentClient without a RUN_FINISHED/ERROR frame, so the
+      // RUN_FINISHED/ERROR clear paths don't fire — clear explicitly here).
+      setStreamingMessage(null);
       setMessages((prev) => [
         ...prev,
         { id: uid(), role: 'user', content: message, createdAt: new Date().toISOString() },

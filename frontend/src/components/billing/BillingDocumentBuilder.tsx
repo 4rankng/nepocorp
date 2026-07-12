@@ -59,7 +59,7 @@ export default function BillingDocumentBuilder({
   const [templateId, setTemplateId] = useState<number | null>(initialDoc?.debitNoteTemplateId ?? null);
 
   const { data: templates } = useQuery<DebitNoteTemplate[]>({
-    queryKey: [...qk.catalogs.debitNoteTemplates, type],
+    queryKey: qk.catalogs.debitNoteTemplatesByType(type),
     queryFn: () => configClient.getDebitNoteTemplates(type),
     staleTime: 60_000,
     enabled: isOpen,

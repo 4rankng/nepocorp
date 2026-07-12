@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
@@ -34,8 +34,8 @@ export default function FinancePage() {
     fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
     totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY,
-    companyExpensesLY, netProfitLY, activeCapTable, revenueChartData, costPieData,
-    topTrucks, categoryBreakdown, truckBreakdown, trimmedChartData, activeChartData, hasChartData,
+    companyExpensesLY, netProfitLY, activeCapTable, costPieData,
+    topTrucks, categoryBreakdown, truckBreakdown, activeChartData, hasChartData,
   } = useFinanceDerived({ allTrips, report, prevReport, capTableRaw, yearlyData, month, chartView });
 
 

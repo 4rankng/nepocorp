@@ -1,9 +1,8 @@
-import { Fragment, useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
-import type { LedgerEntry, AgingBucket } from '@tingting/shared';
 import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { api } from '../lib/api';
@@ -16,27 +15,7 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
-import {
-  accountingLinesForItem, displayRowAmounts, displayRowContainers, displayRowFallbackLabel,
-  displayRowItemCount, displayRowRouteTitle, groupDisplayRowsByRoute, groupItemsByContainer,
-  groupLedgerRows, groupLedgerSections, LedgerAccountingLines, LedgerRouteCard, normalizeAging,
-  routeContainers, money, FILTER_OPTIONS, type LedgerDisplayRow, type LedgerFilter, type WorkspaceTab,
-} from './debt-detail-ledger';
-
-// ── Txn type label + pill variant ──────────────────────────────────────────
-
-const TXN_META: Record<string, { label: string; pill: string }> = {
-  [TxnType.TRIP_REVENUE]:      { label: 'DOANH THU CHUYẾN', pill: 'dd-txn-pill dd-txn-pill--rev' },
-  [TxnType.SERVICE_FEE]:       { label: 'PHÍ CHI HỘ',       pill: 'dd-txn-pill dd-txn-pill--fee' },
-  [TxnType.PAYMENT_RECEIVED]:  { label: 'THU TIỀN',         pill: 'dd-txn-pill dd-txn-pill--pay' },
-  [TxnType.PENALTY]:           { label: 'PHẠT',             pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.MANAGEMENT_FEE]:    { label: 'PHÍ QUẢN LÝ',     pill: 'dd-txn-pill dd-txn-pill--other' },
-  [TxnType.ADJUSTMENT]:        { label: 'ĐIỀU CHỈNH',      pill: 'dd-txn-pill dd-txn-pill--adj' },
-  [TxnType.DRIVER_SALARY]:     { label: 'LƯƠNG LÁI XE',    pill: 'dd-txn-pill dd-txn-pill--other' },
-  [TxnType.UNLOCK_REVERSAL]:   { label: 'HOÀN TÁC',         pill: 'dd-txn-pill dd-txn-pill--adj' },
-  [TxnType.EXTERNAL_CARRIER_COST]: { label: 'CƯỚC THUÊ NGOÀI', pill: 'dd-txn-pill dd-txn-pill--other' },
-};
-const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
+import { groupDisplayRowsByRoute, groupLedgerRows, LedgerRouteCard, normalizeAging, money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
 
 // ── Aging constants ────────────────────────────────────────────────────────
 

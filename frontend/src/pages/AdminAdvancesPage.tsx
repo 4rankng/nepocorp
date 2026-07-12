@@ -41,12 +41,6 @@ const TABS: { key: StatusFilter; label: string }[] = [
   { key: AdvanceRequestStatus.REJECTED, label: 'Từ chối' },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#D97706',
-  APPROVED: '#059669',
-  REJECTED: '#DC2626',
-};
-
 /* ── Compact KPI card — matches dashboard .wf-kpi proportions ─────────── */
 
 interface AdvKPIProps {

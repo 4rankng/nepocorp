@@ -1,25 +1,10 @@
-import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
 import { SkeletonKPIs, SkeletonLine, SkeletonTable } from '../components/shared/Skeleton';
-import { useAuth } from '../hooks/useAuth';
-import {
-  useChatbotMetricsSummary,
-  useChatbotLatencyBreakdown,
-  useChatbotTools,
-  useChatbotTimeseries,
-  useChatbotRecent,
-} from '../hooks/useChatbotMetrics';
-import { formatNumber, formatDateTimeVN } from '../lib/format';
-import type {
-  ChatbotMetricSummary,
-  ChatbotLatencyBreakdown,
-  ChatbotToolStat,
-  ChatbotMetricDay,
-  ChatbotRecentTurn,
-} from '@tingting/shared';
+import { formatDateTimeVN } from '../lib/format';
+import type { ChatbotMetricSummary, ChatbotLatencyBreakdown, ChatbotToolStat, ChatbotMetricDay, ChatbotRecentTurn } from '@tingting/shared';
 import './ChatbotMonitoringPage.css';
 
-import { errorKindLabel, fmtAvg, fmtCompactMs, fmtMs, fmtNum, fmtRate, roleLabel, toolLabel } from './chatbot-monitoring-summary';
+import { errorKindLabel, fmtAvg, fmtMs, fmtNum, fmtRate, roleLabel, toolLabel } from './chatbot-monitoring-summary';
 
 export function LatencyBreakdownBars({
   breakdown,

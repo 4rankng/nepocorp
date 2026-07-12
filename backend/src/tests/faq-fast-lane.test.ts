@@ -18,7 +18,6 @@ import {
   isExactMatch,
   SCORE_FLOOR,
   MARGIN,
-  type FaqMatch,
 } from '../services/agent/faq-fast-lane.js';
 
 describe('faq fast lane — exact match (Stage 1)', () => {

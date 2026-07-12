@@ -6,11 +6,10 @@ import { photoSrc } from "../../lib/api/photo";
 import { useToast } from "../shared/Toast";
 import { qk } from "../../api/keys";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
-import type { ContainerFormRow, SealFormRow } from "../../hooks/useTripFormState";
+import type { SealFormRow } from "../../hooks/useTripFormState";
 import { ContainerScanner, dataUrlToFile } from "../shared/ContainerScanner";
 import { PhotoViewer } from "../PhotoViewer";
 import "./ContainerInstancesCard.css";
-import { normalizeContainerNumber, validateContainerFormat, validateCheckDigit, suggestCorrections } from "@tingting/shared";
 
 
 

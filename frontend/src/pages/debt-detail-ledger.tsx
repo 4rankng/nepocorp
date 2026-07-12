@@ -2,7 +2,6 @@ import { Fragment } from 'react';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry, AgingBucket } from '@tingting/shared';
 import { formatCurrency, formatDate } from '../lib/format';
-import AssetIcon from '../components/AssetIcon';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.TRIP_REVENUE]: { label: 'DOANH THU CHUYẾN', pill: 'dd-txn-pill dd-txn-pill--rev' },

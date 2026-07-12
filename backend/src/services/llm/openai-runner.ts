@@ -278,7 +278,7 @@ export async function runOpenAiStreamingCompletion(
           throw new MiniMaxError(`${cfg.providerId} stream: empty response body`, 'parse');
         }
 
-        return parseSSEStream(res.body, onText, controller.signal, cfg.providerId);
+        return parseSSEStream(res.body, onText, controller.signal);
       },
     );
 
@@ -337,7 +337,6 @@ async function parseSSEStream(
   body: ReadableStream<Uint8Array>,
   onText: (delta: string) => void,
   signal: AbortSignal,
-  providerId: string,
 ): Promise<{
   content: string | null;
   toolCalls: MiniMaxFunctionCall[];
@@ -421,11 +420,14 @@ async function parseSSEStream(
   }
 
   function finalize() {
-    const toolCalls: MiniMaxFunctionCall[] = [...toolCallAccum.values()]
-      .sort((a, b) => {
-        // Preserve index order (Map preserves insertion, but sort defensively).
-        return 0;
-      })
+    // Preserve `index` order: the Map is keyed by the provider's tool_call
+    // index, and conformant streams emit in index order (so insertion order
+    // already matches). Sort defensively by index in case a provider emits
+    // out of order — the orchestrator feeds these back to the model in array
+    // order, so order matters for the tool-calling protocol.
+    const toolCalls: MiniMaxFunctionCall[] = [...toolCallAccum.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, tc]) => tc)
       .filter((tc) => tc.name || tc.arguments);
     return {
       content: content.length > 0 ? content : null,

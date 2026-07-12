@@ -1,40 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  ArrowLeft,
-  ArrowDown,
-  ArrowUp,
-  Building2,
-  Columns3,
-  Eye,
-  EyeOff,
-  FileText,
-  Loader2,
-  PenLine,
-  Plus,
-  RotateCcw,
-  Save,
-  Star,
-  Trash2,
-} from 'lucide-react';
+import { ArrowLeft, Loader2, PenLine, Save, Star, Trash2 } from 'lucide-react';
 import { AssetIcon } from '../../components/AssetIcon';
 import { useConfirm } from '../../components/UI';
 import { useToast } from '../../components/shared/Toast';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
-import {
-  defaultDebitNoteColumns,
-  defaultPaymentStatementColumns,
-  type DebitNoteColumnVariable,
-  type DebitNoteTemplate,
-  type DebitNoteTemplateColumn,
-  type DebitNoteTemplateInput,
-} from '@tingting/shared';
+import { type DebitNoteTemplate, type DebitNoteTemplateColumn, type DebitNoteTemplateInput } from '@tingting/shared';
 import { blankTemplate, buildAccountTerms, cloneStarterColumns, EDITOR_SECTIONS, getAccountTerms, sectionFromTarget, templateDefaultsForType, toForm, type EditorSection, type SelectedTarget } from './debit-note-template-editor-utils';
 import { Field, TemplatePreview } from './debit-note-template-preview';
 import { ColumnPropertyPanel, ColumnTable } from './debit-note-template-columns';

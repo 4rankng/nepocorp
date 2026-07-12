@@ -1,18 +1,8 @@
-import React, { useMemo, useState, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
+import React from 'react';
+import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
-import type { TripExpense } from '@tingting/shared';
-import { tripClient } from '../../api/tripClient';
-import { formatCurrency, formatNumber } from '../../lib/format';
-import { useAuth } from '../../hooks/useAuth';
-import { useCatalogs } from '../../hooks/useCatalogs';
+import { formatNumber } from '../../lib/format';
 import type { CatalogData } from '../../hooks/useCatalogs';
-import { InputWithPrefix } from './InputWithPrefix';
-import { StatusPill, useConfirm, Modal } from '../UI';
-import { useClickOutside } from '../../hooks/useClickOutside';
-import { qk } from '../../api/keys';
 
 export function AncillaryTableTotals({ buy, sell }: { buy: number; sell: number }) {
   return <tfoot><tr><td colSpan={1}>Tổng</td><td className="num">{formatNumber(buy)}</td>

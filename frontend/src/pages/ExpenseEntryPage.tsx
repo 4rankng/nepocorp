@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, Upload, X, Plus, Check } from 'lucide-react';
+import { Loader2, X, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
 import { configClient } from '../api/configClient';
 import { PageHeader, useConfirm } from '../components/UI';
 import { useCatalogs } from '../hooks/useCatalogs';

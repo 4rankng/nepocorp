@@ -18,24 +18,9 @@
 import { useState } from 'react';
 import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
-import { SkeletonKPIs, SkeletonLine, SkeletonTable } from '../components/shared/Skeleton';
 import { useAuth } from '../hooks/useAuth';
-import {
-  useChatbotMetricsSummary,
-  useChatbotLatencyBreakdown,
-  useChatbotTools,
-  useChatbotTimeseries,
-  useChatbotRecent,
-} from '../hooks/useChatbotMetrics';
-import { formatNumber, formatDateTimeVN } from '../lib/format';
-import type {
-  ChatbotMetricSummary,
-  ChatbotLatencyBreakdown,
-  ChatbotToolStat,
-  ChatbotMetricDay,
-  ChatbotRecentTurn,
-} from '@tingting/shared';
-import { BOT_OPS_ILLUSTRATION, BotHealthHero, OperationalInsights, RangeToggle, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
+import { useChatbotMetricsSummary, useChatbotLatencyBreakdown, useChatbotTools, useChatbotTimeseries, useChatbotRecent } from '../hooks/useChatbotMetrics';
+import { BOT_OPS_ILLUSTRATION, BotHealthHero, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
 import { LatencyBreakdownBars, LatencyTrendChart, ReactEfficiency, RecentTurnsTable, ToolsTable } from './chatbot-monitoring-details';
 import './ChatbotMonitoringPage.css';
 

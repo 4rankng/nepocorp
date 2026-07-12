@@ -1,22 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMonth } from '../../../hooks/useMonth';
-import {
-  Shield, ShieldCheck, Download, Plus, FileText,
-  Zap, Trophy, Users, AlertTriangle,
-  DollarSign, XCircle, Loader2, UserRound,
-} from 'lucide-react';
+import { Shield, ShieldCheck, Download, Plus, FileText, Zap, Trophy, Users, DollarSign, XCircle, Loader2, UserRound } from 'lucide-react';
 import { Panel, Btn, KPI, PageHeader } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { formatCurrency, formatDate } from '../../../lib/format';
 import { downloadCSV } from '../../../lib/csv';
-import type { Driver, Truck } from '@tingting/shared';
-import type { PenaltyRow } from '../../../hooks/usePenalties';
+import type { Truck } from '@tingting/shared';
 import { useSalaryPeriod } from '../../../hooks/useQueries';
-import {
-  getSeverity, getSeverityLabel, getViolationGrade, getGradeClass,
-  formatTenure, computeStreak,
-} from '../utils';
+import { getSeverity, getSeverityLabel, getViolationGrade, getGradeClass, formatTenure, computeStreak } from '../utils';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 import { PenaltySeverityIcon } from './penalty-severity-icon';
 import type { PenaltyTableProps } from './penalty-table-types';

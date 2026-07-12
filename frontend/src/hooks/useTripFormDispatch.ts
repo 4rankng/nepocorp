@@ -7,18 +7,13 @@
  * pricing, driver salary), and exposes the submit handler.
  */
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from '../lib/api';
-import {
-  FuelMode, LoadingType, TripStatus,
-  FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK,
-  computeTripDriverSalary,
-} from '@tingting/shared';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../lib/api';
+import { FuelMode, LoadingType, FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK, computeTripDriverSalary } from '@tingting/shared';
 import type { PricingTable, TripDetail, TripLeg, PaginatedResponse } from '@tingting/shared';
 import { tripClient } from '../api/tripClient';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
-import { useToast } from '../components/shared/Toast';
 
 import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
@@ -26,7 +21,6 @@ import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
-import type { ContainerFormRow, SealFormRow } from './useTripFormState';
 import { createFallbackLegsFromRouteName, resolveContainerCount } from './tripFormDispatchUtils';
 import { moneyInputToNumber } from '../lib/moneyInput';
 import { useTripFormSubmit } from './use-trip-form-submit';
@@ -38,26 +32,6 @@ const EMPTY_RATE = FUEL_EMPTY_NORM_FALLBACK;
 function moneyOrZero(value: string): number {
   return moneyInputToNumber(value) ?? 0;
 }
-function moneyOrUndefined(value: string): number | undefined {
-  return moneyInputToNumber(value);
-}
-
-function moneyOrNull(value: string): number | null {
-  return moneyInputToNumber(value) ?? null;
-}
-
-/** Shape returned by PUT /api/trips/:id/containers — same as Phase 2
- *  `TripContainer` with the new `seals[]` and `photos[]` sub-collections. */
-type ServerContainerAfterSave = {
-  id: number;
-  containerTypeId?: number | null;
-  containerNumber?: string | null;
-  sealNumber?: string | null;
-  cargoWeightKg?: string | number | null;
-  notes?: string | null;
-  seals?: Array<{ id: number; sealNumber: string; sealType?: string | null; notes?: string | null }>;
-  photos?: Array<{ id: number; type: 'CONTAINER' | 'SEAL'; storageKey: string; uploadedAt: string }>;
-};
 
 /** OCR recognition result broadcast to container-aware components (e.g. the
  *  container instances card) via the trip-form context. `nonce` lets consumers
@@ -109,8 +83,6 @@ export interface UseTripFormDispatchReturn {
 
 export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripFormDispatchReturn {
   const { state: s, options, isEditMode, existingTrip } = params;
-  const queryClient = useQueryClient();
-  const { toast: showToast } = useToast();
   const lastPopulatedTripId = useRef<number | undefined>(undefined);
 
   // Broadcast OCR results to container-aware components via context.

@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Pencil, Trash2, Sparkles, AlertTriangle } from 'lucide-react';
 import { faqClient } from '../../api/faqClient';
+import { qk } from '../../api/keys';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
 import { Modal, useConfirm, PageHeader } from '../../components/UI';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
-import type { FaqEntry, FaqEntryCreate, FaqEmbeddingStatus } from '@tingting/shared';
-
-/* ─── Query key ─── */
-const FAQ_KEY = ['faq-entries'] as const;
+import type { FaqEntry, FaqEntryCreate } from '@tingting/shared';
 
 /* ─── Page-scoped styles ───
  * Mirrors the PenaltyReasons config page conventions: white cards on a grid,
@@ -348,11 +346,11 @@ export default function FaqEntriesConfigPage() {
   const [embedWarning, setEmbedWarning] = useState<string | null>(null);
 
   const invalidate = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: FAQ_KEY });
+    await queryClient.invalidateQueries({ queryKey: qk.faq.all });
   }, [queryClient]);
 
   const { data, isLoading } = useQuery({
-    queryKey: [...FAQ_KEY, { search: searchTerm, includeInactive: showInactive }],
+    queryKey: qk.faq.list(searchTerm, showInactive),
     queryFn: () => faqClient.list({
       search: searchTerm.trim() || undefined,
       includeInactive: showInactive,

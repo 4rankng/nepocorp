@@ -1,31 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  useReactTable, getCoreRowModel, flexRender,
-} from '@tanstack/react-table';
-import { Download, Plus, MousePointerClick, Pencil, Save, X } from 'lucide-react';
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
+import { MousePointerClick, Save, X } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
-import {
-  FuelMode, parseThreshold, TripStatus,
-  TRIP_STATUS_LABELS,
-  type CreateTripRequest, type TripDetail, type UpdateTripFiguresRequest,
-} from '@tingting/shared';
+import { parseThreshold, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
-import {
-  buildTripColumns, tripRowStyle,
-  TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts,
-  DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney,
-  STATUS_PILL_CLASS,
-  type StatusFilter, type StatusCounts, type TripListRow, type TripQuickEditDraft,
-  buildTripCode, getTripDistance, getTripDisplayGrossProfit,
-} from '../features/trips';
-import { usePageAnimations, useListAnimations } from '../hooks/animations';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
 import { columnClass, copyPlanPayloadFromTrip, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';

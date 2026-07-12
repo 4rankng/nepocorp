@@ -167,6 +167,24 @@ describe('runOpenAiStreamingCompletion — SSE parsing', () => {
     assert.strictEqual(result.content, null);
     assert.strictEqual(result.toolCalls.length, 1);
   });
+
+  test('preserves tool_call order by index even when emitted out of order', async () => {
+    // A provider that emits index 1 before index 0 (non-conformant but defensive).
+    const mk = (delta: unknown) => `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
+    const body = sseStream([
+      mk({ tool_calls: [{ index: 1, id: 'c1', function: { name: 'second', arguments: '{}' } }] }),
+      mk({ tool_calls: [{ index: 0, id: 'c0', function: { name: 'first', arguments: '{}' } }] }),
+      'data: [DONE]\n\n',
+    ]);
+    const result = await withMockFetch(body, () =>
+      runOpenAiStreamingCompletion(cfg, { messages: [] }, () => {}),
+    );
+    assert.strictEqual(result.toolCalls.length, 2);
+    assert.strictEqual(result.toolCalls[0].id, 'c0', 'index 0 sorts first');
+    assert.strictEqual(result.toolCalls[0].name, 'first');
+    assert.strictEqual(result.toolCalls[1].id, 'c1');
+    assert.strictEqual(result.toolCalls[1].name, 'second');
+  });
 });
 
 describe('runOpenAiStreamingCompletion — cleanContent runs once on accumulated text', () => {

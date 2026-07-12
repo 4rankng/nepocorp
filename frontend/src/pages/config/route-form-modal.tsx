@@ -1,21 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePageAnimations } from '../../hooks/animations';
-import { useBackShortcut } from '../../hooks/useBackShortcut';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { labelStyle } from '../../utils/formStyles';
-import { MapPin, Route, Plus, Pencil, Trash2, Loader2, Save, X, Mountain, ArrowLeft } from 'lucide-react';
-import { configClient } from '../../api/configClient';
-import { tripClient } from '../../api/tripClient';
-import { formatCurrency } from '../../lib/format';
-import { useConfirm, Modal } from '../../components/UI';
-import { AssetIcon } from '../../components/AssetIcon';
+import { Plus, Trash2, Loader2, Save, X, Mountain } from 'lucide-react';
+import { Modal } from '../../components/UI';
 import { LocationAutocomplete } from '../../components/LocationAutocomplete';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
-import { useCRUD } from '../../hooks/useCRUD';
-import { qk } from '../../api/keys';
-import type { Route as RouteType, RoadAllowance } from '@tingting/shared';
+import type { Route as RouteType } from '@tingting/shared';
 import { LoadingType } from '@tingting/shared';
 
 /**

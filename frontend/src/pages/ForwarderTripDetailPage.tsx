@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Calendar, MapPin, Package, Trash2, Loader2, AlertCircle, Plus, DollarSign, Camera, Pencil, CheckCircle2, RotateCcw } from 'lucide-react';
-import { formatDate, formatCurrency } from '../lib/format';
+import { ArrowLeft, Truck, Calendar, MapPin, Package, Plus, CheckCircle2, RotateCcw } from 'lucide-react';
+import { formatDate } from '../lib/format';
 import { api } from '../lib/api';
 import { ExpenseEntryStatus, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';

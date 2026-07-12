@@ -1,40 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUpToLine, Check, ChevronDown, MoreVertical, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
-import { TIRE_DISPOSAL_REASONS } from "@tingting/shared";
-import type { Tire, TirePosition } from "@tingting/shared";
-import type { Supplier } from "@tingting/shared";
+import { ArrowLeft, Settings2 } from "lucide-react";
+import type { Tire } from "@tingting/shared";
 import { ConfirmDialog } from "../components/UI";
-import { StatusStrip, StatusSwatch } from "../components/shared/StatusStrip";
+import { StatusSwatch } from "../components/shared/StatusStrip";
 import { useToast } from "../components/shared/Toast";
 import { formatErrorMessage } from "../lib/api";
 import { routes } from "../lib/routes";
 import { useBackShortcut } from "../hooks/useBackShortcut";
-import {
-  buildPositionLabels,
-  buildUsedPositionLabels,
-  cleanText,
-  daysBetween,
-  displayTirePosition,
-  draftFromTire,
-  normalizedCatalogLabel,
-  patchFromDraft,
-  positionPayloadFromLabel,
-  supplierIdFromText,
-  supplierName,
-  tireAgeDays,
-  todayISO,
-  textMatches,
-  type TireEditDraft,
-  type TirePatch,
-} from "../features/tires/tireUtils";
+import { buildPositionLabels, buildUsedPositionLabels, normalizedCatalogLabel, todayISO } from "../features/tires/tireUtils";
 import { useTires, useCreateTire, useUpdateTire, useDeleteTire, useInstallTire, useRemoveTire, useDisposeTire, useTransferTire } from "../hooks/useTireQueries";
 import { useAllSuppliers, useCreateTirePosition, useDeleteTirePosition, useTirePositions, useTrailers, useTrucksAndDrivers, useUpdateTirePosition } from "../hooks/useCatalogQueries";
 import "./TruckTiresPage.css";
 
 type VehicleKind = "truck" | "trailer";
-type PositionManagerOpener = (onSelect?: (value: string) => void) => void;
 
 const TIRE_STATUS_COLORS: Record<Tire["status"], string> = {
   IN_USE: "#16A34A",
@@ -59,24 +38,6 @@ function TireLegend() {
       ))}
     </div>
   );
-}
-
-/** Days a tire has been in service: installedAt → removedAt, or → today if still in use. (A10c) */
-function daysInService(installedAt: string | null, removedAt: string | null): number | null {
-  return daysBetween(installedAt, removedAt);
-}
-
-/** Positions already taken by an IN_USE tire on a given vehicle — fast feedback
- *  in the install/transfer dialogs that mirrors the backend 409. Labels and the
- *  stored `position` are the same cleaned string, so this compares apples-to-apples. */
-function occupiedPositionsOn(tires: Tire[], kind: VehicleKind, vehicleId: number): Set<string> {
-  const set = new Set<string>();
-  for (const t of tires) {
-    if (t.status !== "IN_USE") continue;
-    const onThis = kind === "truck" ? t.truckId === vehicleId : t.trailerId === vehicleId;
-    if (onThis && t.position) set.add(t.position);
-  }
-  return set;
 }
 
 /**

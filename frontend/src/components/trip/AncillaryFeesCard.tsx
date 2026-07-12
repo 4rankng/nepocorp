@@ -1,14 +1,12 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, FINANCIAL_ROLES } from '@tingting/shared';
+import { ANCILLARY_EXPENSE_TYPES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
 import { tripClient } from '../../api/tripClient';
-import { formatCurrency, formatNumber } from '../../lib/format';
-import { useAuth } from '../../hooks/useAuth';
+import { formatCurrency } from '../../lib/format';
 import { useCatalogs } from '../../hooks/useCatalogs';
-import type { CatalogData } from '../../hooks/useCatalogs';
 import { InputWithPrefix } from './InputWithPrefix';
 import { StatusPill, useConfirm, Modal } from '../UI';
 import { useClickOutside } from '../../hooks/useClickOutside';
@@ -17,11 +15,9 @@ import { AncillaryEmptyState, AncillaryMobileTotals, AncillaryTableTotals, EMPTY
 
 export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { data: catalogData } = useCatalogs();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
-  const canApprove = !!user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
