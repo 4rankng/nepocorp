@@ -2,13 +2,14 @@
 //
 // Sends a user message to the SSE endpoint and folds the streamed events into
 // React state: tool activity (for the "thinking" indicator), directives
-// (forwarded to the AgentDirective bridge), and the final assistant answer
-// (text | insight_card | directive).
+// (forwarded to the AgentDirective bridge), the streaming text bubble, and the
+// final assistant answer (text | insight_card | directive).
 //
-// Directives arrive two ways: as a mid-stream `directive` event (a ui.* tool
-// fired) and as the final `done` response when the whole answer IS a
-// navigation. Page-changing directives are queued until `done` so the app does
-// not navigate away before the assistant's final response lands.
+// Directives arrive two ways: as a mid-stream `DIRECTIVE` event (a ui.* tool
+// fired) and as the final `RUN_FINISHED` response when the whole answer IS a
+// navigation. Page-changing directives are queued until `RUN_FINISHED` so the
+// app does not navigate away before the assistant's final response lands.
+// Event names follow the AG-UI protocol taxonomy.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   agentClient,
@@ -33,12 +34,17 @@ export interface UseAgentChatOptions {
 export interface UseAgentChat {
   messages: AgentMessage[];
   isThinking: boolean;
-  /** True once the server has acknowledged receipt (the `received` event) but
-   *  hasn't finished — lets the thinking indicator show "Đang xử lý…" (server
-   *  has it) vs the initial "Đang suy nghĩ…" (still in flight). */
+  /** True once the server has acknowledged receipt (the `RUN_STARTED` event)
+   *  but hasn't finished — lets the thinking indicator show "Đang xử lý…"
+   *  (server has it) vs the initial "Đang suy nghĩ…" (still in flight). */
   received: boolean;
   /** The tool currently running, for the thinking indicator. */
   activeTool: { name: string; label?: string } | null;
+  /** A pending assistant bubble being streamed token-by-token
+   *  (TEXT_MESSAGE_START/CONTENT/END). Renders live while `isThinking`; the
+   *  authoritative final message arrives in RUN_FINISHED and replaces it. Null
+   *  when no stream is active (structured card answers never stream). */
+  streamingMessage: { id: string; content: string } | null;
   error: string | null;
   conversationId: string | null;
   send: (message: string, currentRouteKey?: string) => Promise<void>;
@@ -56,6 +62,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   const [isThinking, setIsThinking] = useState(false);
   const [received, setReceived] = useState(false);
   const [activeTool, setActiveTool] = useState<UseAgentChat['activeTool']>(null);
+  const [streamingMessage, setStreamingMessage] = useState<UseAgentChat['streamingMessage']>(null);
   const [error, setError] = useState<string | null>(null);
   // Seed from localStorage so a page reload (Vite HMR / service-worker deploy /
   // manual refresh) can rehydrate the same thread instead of starting blank.
@@ -100,19 +107,36 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   }, []);
 
   const handleEvent = useCallback((event: AgentEvent) => {
-    switch (event.event) {
-      case 'received':
+    switch (event.type) {
+      case 'RUN_STARTED':
         // Server has the message — upgrade the thinking indicator's label.
         setReceived(true);
         break;
-      case 'tool_start':
+      case 'TOOL_CALL_START':
         setActiveTool({ name: event.toolName, label: undefined });
         break;
-      case 'tool_result':
-        // Keep the tool name but surface its result label; cleared on `done`.
+      case 'TOOL_CALL_END':
+        // Keep the tool name but surface its result label; cleared on RUN_FINISHED.
         setActiveTool({ name: event.toolName, label: event.label });
         break;
-      case 'directive': {
+      case 'TEXT_MESSAGE_START':
+        // Begin accumulating a streaming text bubble. Cleared by RUN_FINISHED.
+        setStreamingMessage({ id: event.messageId, content: '' });
+        break;
+      case 'TEXT_MESSAGE_CONTENT':
+        // Append a token delta to the in-flight streaming bubble.
+        setStreamingMessage((prev) =>
+          prev && prev.id === event.messageId
+            ? { ...prev, content: prev.content + event.delta }
+            : prev,
+        );
+        break;
+      case 'TEXT_MESSAGE_END':
+        // The stream is over, but RUN_FINISHED carries the authoritative text
+        // (it may differ if stripThink trimmed leading markup). Leave the bubble
+        // in place; RUN_FINISHED finalizes/replaces it.
+        break;
+      case 'DIRECTIVE': {
         const shouldDefer = isPageChangingDirective(event.directive);
         if (shouldDefer) {
           pendingPageDirectiveRef.current = event.directive;
@@ -131,10 +155,15 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         }
         break;
       }
-      case 'done': {
+      case 'RUN_FINISHED': {
         setActiveTool(null);
         setIsThinking(false);
         setReceived(false);
+        // The authoritative final message (added below) replaces the streaming
+        // bubble. For a streamed text answer its content equals the accumulated
+        // deltas (stripThink only trims leading markup); for a structured card
+        // the streamed text was suppressed, so there was nothing to replace.
+        setStreamingMessage(null);
         if (event.conversationId) setConversationId(event.conversationId);
         const response = event.response as AgentResponse;
         const reportClientWait = () => {
@@ -187,12 +216,13 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         }
         break;
       }
-      case 'error':
+      case 'RUN_ERROR':
         turnStartedAtRef.current = null;
         pendingPageDirectiveRef.current = null;
         setActiveTool(null);
         setIsThinking(false);
         setReceived(false);
+        setStreamingMessage(null);
         setError(event.message);
         break;
     }
@@ -219,10 +249,10 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
           { message, conversationId: conversationId ?? undefined, currentRouteKey, signal: controller.signal },
           handleEvent,
         );
-        // Stream closed. If a terminal `done`/`error` frame validated, the
-        // handler already cleared isThinking; if the final frame was malformed
-        // and silently dropped by the parser, release the spinner so the drawer
-        // doesn't hang on a perpetual "thinking" state.
+        // Stream closed. If a terminal RUN_FINISHED/RUN_ERROR frame validated,
+        // the handler already cleared isThinking; if the final frame was
+        // malformed and silently dropped by the parser, release the spinner so
+        // the drawer doesn't hang on a perpetual "thinking" state.
         if (!controller.signal.aborted) {
           setIsThinking(false);
           setActiveTool(null);
@@ -246,10 +276,11 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
     setError(null);
     setActiveTool(null);
     setIsThinking(false);
+    setStreamingMessage(null);
     setConversationId(null);
   }, []);
 
-  return { messages, isThinking, received, activeTool, error, conversationId, send, reset };
+  return { messages, isThinking, received, activeTool, streamingMessage, error, conversationId, send, reset };
 }
 
 function isPageChangingDirective(directive: AgentDirective): boolean {

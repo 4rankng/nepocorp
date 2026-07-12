@@ -8,8 +8,9 @@
 //     instead of `EventSource` (which cannot send headers).
 //
 // `streamAgentChat` keeps the old `(input, onEvent) => Promise<void>` contract:
-// it resolves on the terminal `done`/`error` frame, so the chat hook is
-// transport-agnostic. Each frame is still Zod-validated against `agentEventSchema`.
+// it resolves on the terminal `RUN_FINISHED`/`RUN_ERROR` frame, so the chat hook
+// is transport-agnostic. Each frame is still Zod-validated against
+// `agentEventSchema`. Event names follow the AG-UI protocol taxonomy.
 import { io, type Socket } from 'socket.io-client';
 import { api } from '../lib/api';
 import { getToken } from '../design-system/hooks/useToken';
@@ -168,17 +169,17 @@ export async function streamAgentChat(
       if (!result.success) return; // malformed frame — keep listening
       const ev = result.data as AgentEvent;
       onEvent(ev);
-      if (ev.event === 'done' || ev.event === 'error') finish();
+      if (ev.type === 'RUN_FINISHED' || ev.type === 'RUN_ERROR') finish();
     };
     // Surface transport-level failures as an error bubble and close the turn.
     const onDisconnect = () => {
       if (settled) return;
-      onEvent({ event: 'error', message: 'Mất kết nối với trợ lý' } as AgentEvent);
+      onEvent({ type: 'RUN_ERROR', message: 'Mất kết nối với trợ lý' } as AgentEvent);
       finish();
     };
     const onConnectError = (err: Error) => {
       if (settled) return;
-      onEvent({ event: 'error', message: err.message || 'Không kết nối được trợ lý' } as AgentEvent);
+      onEvent({ type: 'RUN_ERROR', message: err.message || 'Không kết nối được trợ lý' } as AgentEvent);
       finish();
     };
 

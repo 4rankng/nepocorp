@@ -13,7 +13,7 @@ import {
   OPENROUTER_BASE_URL,
   OPENROUTER_TIMEOUT_MS,
 } from './models';
-import { runOpenAiCompletion } from './openai-runner';
+import { runOpenAiCompletion, runOpenAiStreamingCompletion } from './openai-runner';
 import { MiniMaxError } from './minimax.client';
 import type { LlmProvider, LlmCompleteOptions } from './provider';
 
@@ -39,6 +39,25 @@ export function createOpenRouterProvider(
           timeoutMs: OPENROUTER_TIMEOUT_MS,
         },
         opts,
+      );
+    },
+    async streamComplete(
+      opts: LlmCompleteOptions,
+      onText: (delta: string) => void,
+    ) {
+      if (!key) {
+        throw new MiniMaxError('OpenRouter chưa cấu hình (thiếu API key)', 'no_key');
+      }
+      return runOpenAiStreamingCompletion(
+        {
+          providerId: 'openrouter',
+          baseUrl: OPENROUTER_BASE_URL,
+          apiKey: key,
+          model,
+          timeoutMs: OPENROUTER_TIMEOUT_MS,
+        },
+        opts,
+        onText,
       );
     },
   };

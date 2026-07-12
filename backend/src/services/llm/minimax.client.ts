@@ -23,7 +23,7 @@ import {
   MINIMAX_TIMEOUT_MS,
   AGENT_MAX_ITERATIONS,
 } from './models';
-import { runOpenAiCompletion } from './openai-runner';
+import { runOpenAiCompletion, runOpenAiStreamingCompletion } from './openai-runner';
 import type { LlmProvider, LlmCompleteOptions } from './provider';
 import { getActiveProvider } from './provider-registry';
 
@@ -84,16 +84,45 @@ export class MiniMaxError extends Error {
   }
 }
 
-/** Strip any leaked `<think>…</think>` reasoning so it never enters the
- *  `messages` history the orchestrator re-sends on every ReAct iteration.
- *  With `reasoning_split: true` the content is already clean; this is the
- *  backstop for hosts/models that still leak reasoning into `content`. Returns
- *  null when only reasoning was present (no real answer). */
+/** Strip model-internal markup that leaks into `content` so it never enters the
+ *  `messages` history the orchestrator re-sends on every ReAct iteration, and
+ *  never reaches the user's chat bubble. Two leak classes are cleaned:
+ *
+ *  1. `<think>…</think>` reasoning blocks. With `reasoning_split: true` the
+ *     content is already clean; this is the backstop for hosts/models that
+ *     still leak reasoning into `content`.
+ *  2. `<minimax:tool_call …>…</minimax:tool_call>` (and the broader
+ *     `<minimax:TAG …>` family / bare `<tool_call>`). MiniMax serializes its
+ *     tool-call intent as inline markup inside `content` IN ADDITION to the
+ *     structured `tool_calls` array the orchestrator actually executes — so the
+ *     inline copy is a purely parasitic duplicate that must not be shown to
+ *     users or re-billed as prompt tokens on the next iteration.
+ *
+ *  Returns null when only markup was present (no real answer). */
 export function stripThink(s: string | null | undefined): string | null {
   if (!s) return null;
   const cleaned = s
-    .replace(/<think>[\s\S]*?<\/think>/gi, '') // closed reasoning blocks
-    .replace(/<think>[\s\S]*$/gi, '') // unclosed (truncated) reasoning → drop to end
+    // Reasoning blocks — closed, then unclosed (truncated → drop to end).
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/gi, '')
+    // Inline tool-call / model-internal markup leaked into `content`. Covers the
+    // `<minimax:TAG …>…</minimax:TAG>` family (observed: minimax:tool_call) and
+    // the bare `<tool_call>…</tool_call>` variant. ORDER MATTERS: matched
+    // open…close pairs and self-closing tags must be removed BEFORE orphan
+    // close-tags and unclosed-open-to-end, otherwise an empty closed block
+    // (`<TAG …></TAG>`) loses its close tag first and its open tag is then
+    // greedily consumed to end-of-string, eating trailing prose. No trailing
+    // `\s*` is appended (matches `<think>`'s style; the final `.trim()` handles
+    // edges and internal double-spaces are left as-is).
+    // 1. closed blocks (non-greedy open…close pair)
+    .replace(/<(?:minimax:[a-z_]+|tool_call)\b[^>]*>[\s\S]*?<\/(?:minimax:[a-z_]+|tool_call)>/gi, '')
+    // 2. self-closing <TAG …/>
+    .replace(/<(?:minimax:[a-z_]+|tool_call)\b[^>]*\/>/gi, '')
+    // 3. stray orphan close tags (close with no surviving open)
+    .replace(/<\/(?:minimax:[a-z_]+|tool_call)>/gi, '')
+    // 4. unclosed open tag → drop to end (truncated output; no `>` required,
+    //    mirroring the `<think>` unclosed branch)
+    .replace(/<(?:minimax:[a-z_]+|tool_call)\b[\s\S]*$/gi, '')
     .trim();
   return cleaned.length > 0 ? cleaned : null;
 }
@@ -123,6 +152,30 @@ export function createMiniMaxProvider(key: string, model: string = MODEL_FAST): 
         opts,
       );
     },
+    async streamComplete(
+      opts: LlmCompleteOptions,
+      onText: (delta: string) => void,
+    ): Promise<MiniMaxCallResult> {
+      if (!key) {
+        throw new MiniMaxError('MiniMax chưa cấu hình (thiếu API key)', 'no_key');
+      }
+      return runOpenAiStreamingCompletion(
+        {
+          providerId: 'minimax',
+          baseUrl: MINIMAX_BASE_URL,
+          apiKey: key,
+          model,
+          timeoutMs: MINIMAX_TIMEOUT_MS,
+          // Same MiniMax-native params + cleanContent as the buffered path. The
+          // cleanContent (stripThink) hook runs ONCE on the accumulated stream
+          // (never per-delta) — see runOpenAiStreamingCompletion.
+          extraBody: { reasoning_split: true },
+          cleanContent: stripThink,
+        },
+        opts,
+        onText,
+      );
+    },
   };
 }
 
@@ -140,4 +193,24 @@ export async function callMiniMax(opts: {
 }): Promise<MiniMaxCallResult> {
   const provider = await getActiveProvider();
   return provider.complete(opts);
+}
+
+/** Streaming delegate to the ACTIVE provider. Mirrors `callMiniMax` but streams
+ *  content deltas via `onText` as tokens arrive. Used by the orchestrator for
+ *  live TEXT_MESSAGE_* emission on text answers. The resolved result is the
+ *  same buffered shape (content accumulated, tool_calls assembled, usage
+ *  captured) — so a call site can switch between `callMiniMax` and
+ *  `callMiniMaxStream` with no other change. */
+export async function callMiniMaxStream(
+  opts: {
+    messages: MiniMaxMessage[];
+    tools?: MiniMaxTool[];
+    responseFormat?: MiniMaxResponseFormat;
+    maxTokens?: number;
+    signal?: AbortSignal;
+  },
+  onText: (delta: string) => void,
+): Promise<MiniMaxCallResult> {
+  const provider = await getActiveProvider();
+  return provider.streamComplete(opts, onText);
 }

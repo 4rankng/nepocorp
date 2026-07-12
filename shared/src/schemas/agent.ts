@@ -312,18 +312,26 @@ export type AgentConversation = z.infer<typeof agentConversationSchema>;
 
 // ─── Live event stream ─────────────────────────────────────────────────────
 // The assistant streams these over a socket.io `/agent` namespace (`agent:event`
-// frames) — tool activity, directives, then a terminal `done`/`error`. The
-// frontend parses each frame with `agentEventSchema` for type safety.
-export const agentEventSchema = z.discriminatedUnion('event', [
+// frames). The event names follow the AG-UI (Agent–User Interaction) protocol's
+// lifecycle/tool/text-message taxonomy (RUN_STARTED, TOOL_CALL_*, RUN_FINISHED,
+// RUN_ERROR, TEXT_MESSAGE_*), with a typed DIRECTIVE extension carrying our rich
+// navigate/focus/open/prefill/toast/scrollTo UI-driver payload. The transport is
+// still Socket.IO — we adopt the protocol's contract, not its SDK.
+//
+// NOTE the discriminator is `type` (AG-UI BaseEvent convention), NOT `event`.
+// Do not confuse these event `type` literals with the `AgentResponse.type`
+// discriminator (text/insight_card/tutorial/start_tour/directive) above — they
+// are separate unions that happen to share the string 'directive'.
+export const agentEventSchema = z.discriminatedUnion('type', [
   z.object({
     // Emitted instantly on agent:chat receipt, before any LLM/FAQ work. Gives
     // the frontend a perceived-latency floor: "Đang xử lý…" replaces the static
     // spinner the moment the server has the message, not after the first LLM
     // call returns. Fire-and-forget; no client response expected.
-    event: z.literal('received'),
+    type: z.literal('RUN_STARTED'),
   }),
   z.object({
-    event: z.literal('tool_start'),
+    type: z.literal('TOOL_CALL_START'),
     toolName: z.string(),
     /** Echo of the args the LLM chose (truncated/summarised for display). */
     args: z.unknown().optional(),
@@ -331,7 +339,7 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     status: z.enum(['started', 'running', 'completed']).optional(),
   }),
   z.object({
-    event: z.literal('tool_result'),
+    type: z.literal('TOOL_CALL_END'),
     toolName: z.string(),
     toolCallId: z.string().optional(),
     ok: z.boolean(),
@@ -339,8 +347,10 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     label: z.string().optional(),
     status: z.enum(['started', 'running', 'completed']).optional(),
   }),
+  // Typed domain extension (AG-UI would model this as a CUSTOM event; we keep a
+  // dedicated variant so the `AgentDirective` payload + ack semantics are typed).
   z.object({
-    event: z.literal('directive'),
+    type: z.literal('DIRECTIVE'),
     directive: agentDirectiveSchema,
     /** Present when the frontend must confirm execution via `agent:action_result`
      *  (navigate/focus). Absent → fire-and-forget. */
@@ -348,7 +358,7 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     requiresAck: z.boolean().optional(),
   }),
   z.object({
-    event: z.literal('done'),
+    type: z.literal('RUN_FINISHED'),
     response: agentResponseSchema,
     /** Set on the first turn — the id of the conversation that was created/used. */
     conversationId: z.string().optional(),
@@ -359,8 +369,29 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     fastLane: z.boolean().optional(),
   }),
   z.object({
-    event: z.literal('error'),
+    type: z.literal('RUN_ERROR'),
     message: z.string(),
+  }),
+  // ── Text-message streaming (token-by-token for {type:'text'} answers) ─────
+  // AG-UI text-message triad. Emitted only for streamable prose answers
+  // (terminal ReAct prose + the produceFinalAnswer prose fallback). Structured
+  // answers (insight_card/tutorial/directive/start_tour) need complete JSON for
+  // Zod validation, so they are buffered and arrive whole in RUN_FINISHED.
+  // The frontend correlates START/CONTENT/END by `messageId` into one pending
+  // bubble; RUN_FINISHED carries the authoritative full text for persistence.
+  z.object({
+    type: z.literal('TEXT_MESSAGE_START'),
+    messageId: z.string(),
+  }),
+  z.object({
+    type: z.literal('TEXT_MESSAGE_CONTENT'),
+    messageId: z.string(),
+    /** Non-empty incremental token/chunk. */
+    delta: z.string(),
+  }),
+  z.object({
+    type: z.literal('TEXT_MESSAGE_END'),
+    messageId: z.string(),
   }),
 ]);
 

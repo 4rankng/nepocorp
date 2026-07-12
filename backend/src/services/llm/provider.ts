@@ -36,8 +36,17 @@ export interface LlmProvider {
   readonly id: 'minimax' | 'openrouter';
   /** Model id sent in the request body + recorded on metrics rows. */
   readonly model: string;
-  /** Run one OpenAI-compatible completion. */
+  /** Run one OpenAI-compatible completion (buffered). */
   complete(opts: LlmCompleteOptions): Promise<MiniMaxCallResult>;
+  /** Streaming variant: invokes `onText` per content delta as tokens arrive,
+   *  then resolves with the same buffered `MiniMaxCallResult` (content
+   *  accumulated, tool_calls assembled, usage captured). Used for the agent's
+   *  live text-message streaming. Falls back to `complete` when a provider
+   *  does not implement streaming. */
+  streamComplete(
+    opts: LlmCompleteOptions,
+    onText: (delta: string) => void,
+  ): Promise<MiniMaxCallResult>;
 }
 
 // Re-export the shared shapes so downstream code can import everything from one

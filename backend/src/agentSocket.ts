@@ -3,8 +3,9 @@
 //
 // Replaces the former `POST /api/agent/chat` SSE handler with the same
 // contract: the orchestrator's `emit(event)` is wired to `socket.emit`, so
-// `tool_start` / `tool_result` / `directive` stream live and the terminal
-// `done` / `error` frames close the turn. Conversation-history stays on REST.
+// `TOOL_CALL_START` / `TOOL_CALL_END` / `DIRECTIVE` stream live and the
+// terminal `RUN_FINISHED` / `RUN_ERROR` frames close the turn. Conversation-
+// history stays on REST. Event names follow the AG-UI protocol taxonomy.
 //
 // Auth mirrors `middleware/auth.ts`: the JWT travels in the socket.io handshake
 // (`auth.token`) so the bot still impersonates the caller; the handshake is
@@ -126,7 +127,7 @@ function registerHandlers(agentNs: Namespace): void {
     // Defense in depth: auth passed, but re-check the office-role gate (mirrors
     // the Casbin `agent` policy + frontend launcher visibility).
     if (!user || !OFFICE_ROLES.includes(user.role)) {
-      socket.emit('agent:event', { event: 'error', message: 'Trợ lý chưa được bật' } satisfies AgentEvent);
+      socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Trợ lý chưa được bật' } satisfies AgentEvent);
       socket.disconnect();
       return;
     }
@@ -188,7 +189,7 @@ function registerHandlers(agentNs: Namespace): void {
     socket.on('agent:chat', async (input: ChatInput | null | undefined) => {
       const message = input?.message;
       if (typeof message !== 'string' || !message.trim()) {
-        socket.emit('agent:event', { event: 'error', message: 'Thiếu nội dung tin nhắn' } satisfies AgentEvent);
+        socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Thiếu nội dung tin nhắn' } satisfies AgentEvent);
         return;
       }
       current?.abort();
@@ -210,7 +211,7 @@ function registerHandlers(agentNs: Namespace): void {
         // Immediate perceived-latency floor: tell the client we have the message
         // before any LLM/FAQ work. The frontend swaps "Đang suy nghĩ…" → a
         // richer "Đang xử lý…" state on receipt.
-        emit({ event: 'received' } satisfies AgentEvent);
+        emit({ type: 'RUN_STARTED' } satisfies AgentEvent);
 
         // ── FAQ fast lane ──────────────────────────────────────────────────
         // Zero-LLM path: seeded domain questions (penalty rules, fuel modes,
@@ -227,7 +228,7 @@ function registerHandlers(agentNs: Namespace): void {
           sessionHistory.push({ role: 'assistant', content: faq.answer });
           trimSessionHistory(sessionHistory);
           const faqDone: AgentEvent = {
-            event: 'done',
+            type: 'RUN_FINISHED',
             response: { type: 'text', content: faq.answer },
             fastLane: true,
           };
@@ -255,7 +256,7 @@ function registerHandlers(agentNs: Namespace): void {
           if (assistantText) sessionHistory.push({ role: 'assistant', content: assistantText });
           trimSessionHistory(sessionHistory);
           const doneEvent: AgentEvent = {
-            event: 'done',
+            type: 'RUN_FINISHED',
             response,
             ...(convId ? { conversationId: convId } : {}),
             ...(assistantMessageId ? { messageId: assistantMessageId } : {}),
@@ -266,7 +267,7 @@ function registerHandlers(agentNs: Namespace): void {
         console.error('[agent-socket] chat failed', e);
         // Generic message only — never relay raw error text over the wire.
         if (!ac.signal.aborted) {
-          socket.emit('agent:event', { event: 'error', message: 'Đã có lỗi khi xử lý. Vui lòng thử lại.' } satisfies AgentEvent);
+          socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Đã có lỗi khi xử lý. Vui lòng thử lại.' } satisfies AgentEvent);
         }
       } finally {
         if (current === ac) current = null;

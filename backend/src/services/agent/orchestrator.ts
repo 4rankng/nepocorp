@@ -5,7 +5,7 @@
 //   1. system prompt (role-aware, current route, "use only tool numbers")
 //   2. loop (≤ agentMaxIterations): callMiniMax(tools) → execute each
 //      tool_call (role-checked) → feed results back. ui.* tools also emit a
-//      `directive` event so the UI moves immediately.
+//      `DIRECTIVE` event so the UI moves immediately.
 //   3. final call with JSON-mode → AgentResponse (Zod-validated; retry once,
 //      then degrade to text).
 //   4. persist the turn (resilient — a missing migration must not kill chat).
@@ -37,6 +37,7 @@ import {
 } from '@tingting/shared';
 import {
   callMiniMax,
+  callMiniMaxStream,
   stripThink,
   MODEL_FAST,
   AGENT_MAX_ITERATIONS,
@@ -403,11 +404,57 @@ export async function runAgent(opts: {
         // Local timer around the await because withSpan re-throws on failure
         // (so durationMs is unobtainable from its return on the error path).
         const llmStart = performance.now();
+        // ── Streaming peek-then-commit (Phase 2) ─────────────────────────────
+        // The loop call streams tokens. We EAGERLY emit TEXT_MESSAGE_* for prose
+        // deltas, but BUFFER a small prefix first to detect structured output:
+        // the terminal turn may be JSON (Case 1: in-loop structured answer that
+        // becomes an insight_card/tutorial) — streaming raw JSON tokens is poor
+        // UX, so if the first non-whitespace char is `{` or `[` we suppress
+        // streaming entirely (the card arrives whole in RUN_FINISHED). Once a
+        // stream is committed (prose confirmed), all subsequent deltas stream.
+        // OpenAI-compatible models emit EITHER tool_calls OR content per turn,
+        // so a tool-request turn never triggers onText at all.
+        const streamMessageId = randomUUID();
+        const PROBE = 3; // sniff up to 3 chars of leading content before deciding
+        let probeBuf = '';
+        let probing = true;
+        let textEmitted = false;
+        let suppressedByJson = false;
+        const onText = (delta: string): void => {
+          if (suppressedByJson) return;
+          if (probing) {
+            probeBuf += delta;
+            if (probeBuf.length < PROBE && !/\s*\S/.exec(probeBuf)) return; // keep buffering whitespace
+            const firstChar = probeBuf.trim()[0];
+            if (firstChar === '{' || firstChar === '[') {
+              // Structured JSON turn — suppress streaming; card arrives whole.
+              suppressedByJson = true;
+              probeBuf = '';
+              return;
+            }
+            // Confirmed prose — flush the probe buffer as the first delta.
+            probing = false;
+            if (!textEmitted) {
+              emit({ type: 'TEXT_MESSAGE_START', messageId: streamMessageId });
+              textEmitted = true;
+            }
+            if (probeBuf) {
+              emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: streamMessageId, delta: probeBuf });
+            }
+            probeBuf = '';
+            return;
+          }
+          emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: streamMessageId, delta });
+        };
         try {
           const wrapped = await withSpan(
             'agent.llm.react_call',
             { 'gen_ai.request.model': MODEL_FAST },
-            async () => callMiniMax({ messages: trimToolHistory(messages), tools: miniMaxTools, signal }),
+            async () =>
+              callMiniMaxStream(
+                { messages: trimToolHistory(messages), tools: miniMaxTools, signal },
+                onText,
+              ),
           );
           metrics.latencyLlmMs += wrapped.durationMs;
           result = wrapped.result;
@@ -419,6 +466,22 @@ export async function runAgent(opts: {
           throw e;
         }
         addUsage(result.usage);
+        // Edge: a short answer (≤PROBE chars) resolved while still probing and
+        // confirmed prose — flush it now as a complete stream.
+        if (probing && !suppressedByJson && probeBuf.trim()) {
+          if (!textEmitted) {
+            emit({ type: 'TEXT_MESSAGE_START', messageId: streamMessageId });
+            textEmitted = true;
+          }
+          emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: streamMessageId, delta: probeBuf });
+        }
+        probing = false;
+        probeBuf = '';
+        // Retire the streaming bubble: emit END only if we started a stream
+        // (prose turn). JSON-suppressed / tool turns never started one.
+        if (textEmitted) {
+          emit({ type: 'TEXT_MESSAGE_END', messageId: streamMessageId });
+        }
 
         if (result.toolCalls.length === 0) {
           // Model is ready to answer — break to the structured final call.
@@ -469,7 +532,7 @@ export async function runAgent(opts: {
           status: 'pending' as const,
         }));
         // tool_start events fire in original order (the UI shows them sequentially).
-        for (const p of pendings) emit({ event: 'tool_start', toolName: p.call.name, args: p.parsedArgs });
+        for (const p of pendings) emit({ type: 'TOOL_CALL_START', toolName: p.call.name, args: p.parsedArgs });
 
         // Execute ONE tool (withSpan → latencyToolsMs; errorKind on failure). No
         // ack handling here — that is serial + ordered for side-effecting ui.*.
@@ -525,7 +588,7 @@ export async function runAgent(opts: {
               ) {
                 const actionId = randomUUID();
                 metrics.navigateDirectiveEmitted = true;
-                emit({ event: 'directive', directive: d, actionId, requiresAck: true });
+                emit({ type: 'DIRECTIVE', directive: d, actionId, requiresAck: true });
                 const ackSpan = await withSpan(
                   'agent.socket.ack_wait',
                   { directive_kind: d.kind },
@@ -548,7 +611,7 @@ export async function runAgent(opts: {
                   label: ack.status === 'ok' ? p.result.label : `${p.result.label} — ${ack.status}`,
                 };
               } else {
-                emit({ event: 'directive', directive: d });
+                emit({ type: 'DIRECTIVE', directive: d });
               }
             }
           }
@@ -561,19 +624,19 @@ export async function runAgent(opts: {
         for (const p of pendings) {
           if (p.status === 'missing') {
             const msg = `Công cụ không tồn tại: ${p.call.name}`;
-            emit({ event: 'tool_result', toolName: p.call.name, toolCallId: p.call.id, ok: false, label: msg });
+            emit({ type: 'TOOL_CALL_END', toolName: p.call.name, toolCallId: p.call.id, ok: false, label: msg });
             messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: msg });
             toolTrace.push({ toolName: p.call.name, ok: false, error: msg });
             continue;
           }
           metrics.toolCallCount += 1;
           if (p.status === 'error') {
-            emit({ event: 'tool_result', toolName: p.call.name, toolCallId: p.call.id, ok: false, label: p.errorLabel ?? 'Công cụ cần tham số khác' });
+            emit({ type: 'TOOL_CALL_END', toolName: p.call.name, toolCallId: p.call.id, ok: false, label: p.errorLabel ?? 'Công cụ cần tham số khác' });
             messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: `Lỗi: ${p.errorMsg}` });
             toolTrace.push({ toolName: p.call.name, ok: false, args: p.parsedArgs, error: p.errorMsg });
             continue;
           }
-          emit({ event: 'tool_result', toolName: p.call.name, toolCallId: p.call.id, ok: true, label: p.result!.label });
+          emit({ type: 'TOOL_CALL_END', toolName: p.call.name, toolCallId: p.call.id, ok: true, label: p.result!.label });
           // Feed a size-capped JSON view back to the model.
           const view = compactToolResult(p.result!.data);
           messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: view });
@@ -643,7 +706,7 @@ export async function runAgent(opts: {
         // output was NOT valid structured JSON. produceFinalAnswer re-tries with
         // a dedicated json_object call, then a prose fallback if that fails.
         const finalSpan = await withSpan('agent.final_answer', undefined, async () =>
-          produceFinalAnswer(trimToolHistory(messages), signal),
+          produceFinalAnswer(trimToolHistory(messages), signal, emit),
         );
         metrics.latencyFinalMs += finalSpan.durationMs;
         finalUsage = finalSpan.result.usage;
@@ -724,7 +787,7 @@ export async function runAgent(opts: {
         !opts.signal?.aborted
       ) {
         const actionId = randomUUID();
-        emit({ event: 'directive', directive: response.directive, actionId, requiresAck: true });
+        emit({ type: 'DIRECTIVE', directive: response.directive, actionId, requiresAck: true });
         // TERMINAL ACK WAIT — its own span, tracked in latencyAckMs.
         const ackSpan = await withSpan(
           'agent.socket.ack_wait',
@@ -790,7 +853,8 @@ export async function runAgent(opts: {
 
 async function produceFinalAnswer(
   messages: MiniMaxMessage[],
-  signal?: AbortSignal,
+  signal: AbortSignal | undefined,
+  emit: ((event: AgentEvent) => void) | undefined,
 ): Promise<{
   response: AgentResponse;
   usage: { promptTokens: number; completionTokens: number };
@@ -865,25 +929,45 @@ async function produceFinalAnswer(
   }
 
   // 2) Reliable prose answer — concise Vietnamese analysis, no JSON constraint.
+  // This is the highest-value streaming target: it is a DEDICATED prose call
+  // (guaranteed non-JSON), and it only fires on the degraded fallback path
+  // where the user has waited longest. Stream tokens live via TEXT_MESSAGE_*.
+  const proseStreamId = emit ? randomUUID() : undefined;
   try {
-    const prose = await callMiniMax({
-      messages: [
-        ...messages,
-        {
-          role: 'user',
-          content: [
-            'Trả lời người dùng bằng tiếng Việt tự nhiên, ngắn gọn (2-4 câu).',
-            'Tuyệt đối không nhắc JSON, schema, tool, directive, routeKey, widget, hay quy tắc nội bộ.',
-            'Nếu người dùng hỏi đang nói về gì / vừa nói gì, hãy tóm tắt các lượt trước trong cuộc trò chuyện thay vì nói về định dạng trả lời.',
-          ].join(' '),
-        },
-      ],
-      signal,
-    });
+    const onProseText = (delta: string): void => {
+      if (!emit || !proseStreamId) return;
+      emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: proseStreamId, delta });
+    };
+    if (emit && proseStreamId) {
+      emit({ type: 'TEXT_MESSAGE_START', messageId: proseStreamId });
+    }
+    const prose = await callMiniMaxStream(
+      {
+        messages: [
+          ...messages,
+          {
+            role: 'user',
+            content: [
+              'Trả lời người dùng bằng tiếng Việt tự nhiên, ngắn gọn (2-4 câu).',
+              'Tuyệt đối không nhắc JSON, schema, tool, directive, routeKey, widget, hay quy tắc nội bộ.',
+              'Nếu người dùng hỏi đang nói về gì / vừa nói gì, hãy tóm tắt các lượt trước trong cuộc trò chuyện thay vì nói về định dạng trả lời.',
+            ].join(' '),
+          },
+        ],
+        signal,
+      },
+      onProseText,
+    );
+    if (emit && proseStreamId) {
+      emit({ type: 'TEXT_MESSAGE_END', messageId: proseStreamId });
+    }
     const text = stripThink(prose.content) ?? '';
     if (text) return { response: { type: 'text', content: text }, usage: prose.usage, fallbackUsed: true, fallbackReason };
   } catch (e) {
     if (signal?.aborted) throw e;
+    if (emit && proseStreamId) {
+      emit({ type: 'TEXT_MESSAGE_END', messageId: proseStreamId });
+    }
     console.error('[agent] prose answer failed', e);
   }
 

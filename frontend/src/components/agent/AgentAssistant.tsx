@@ -135,7 +135,21 @@ export function AgentAssistant() {
             <MessageBubble key={m.id} message={m} onAction={handleDirective} />
           ))}
 
-          {chat.isThinking && (
+          {/* Live streaming bubble: tokens accumulate here before RUN_FINISHED
+              replaces it with the finalized message. Only renders once the first
+              token lands (content non-empty); before that the thinking dots show. */}
+          {chat.isThinking && chat.streamingMessage && chat.streamingMessage.content && (
+            <div className="agent-message agent-message--assistant">
+              <span className="agent-message__avatar" aria-hidden="true">
+                <AssetIcon name="assistant" size={24} />
+              </span>
+              <div className="agent-bubble agent-bubble--assistant agent-markdown">
+                <MarkdownContent content={chat.streamingMessage.content} />
+              </div>
+            </div>
+          )}
+
+          {chat.isThinking && (!chat.streamingMessage || !chat.streamingMessage.content) && (
             <div className="agent-thinking">
               <span className="agent-message__avatar" aria-hidden="true">
                 <AssetIcon name="assistant" size={24} />
