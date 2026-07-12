@@ -14,6 +14,11 @@ export * from './agent';
 // constants consumed by the ADMIN aggregation API and the dashboard frontend.
 export * from './chatbot-metrics';
 
+// Admin LLM provider settings (MiniMax / OpenRouter selection + API keys).
+// Zod update schema + response interface; used by the ADMIN-only settings route
+// and the frontend config page.
+export * from './llm-settings';
+
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
 export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);

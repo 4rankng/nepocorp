@@ -29,3 +29,23 @@ export const MINIMAX_TIMEOUT_MS = 60_000;
  *  context to a slow reasoning model. Normal analytical turns converge in ≤3,
  *  so 4 keeps a safety margin while killing the catastrophic tail. */
 export const AGENT_MAX_ITERATIONS = 4;
+
+// ─── OpenRouter (optional alternate agent provider) ─────────────────────────
+// The admin can switch the chatbot agent to OpenRouter from the settings page
+// (provider abstraction in services/llm/provider-registry.ts). OpenRouter is
+// OpenAI-compatible, so the agent call shape is identical to MiniMax; the only
+// differences are the base URL, the absence of MiniMax's `reasoning_split`, and
+// the model id. Like the MiniMax constants above, these are code constants —
+// not env-driven — to keep a single source of truth and prevent drift.
+//
+// `deepseek/deepseek-v4-flash` (DeepSeek V4 Flash) is the default: an efficiency-
+// optimized MoE (284B total / 13B active, 1M context, ~$0.077/$0.154 per M tokens)
+// explicitly built for chat systems + agent workflows with reasoning + tool use.
+// Change here (one line) to route to a different OpenRouter model. NOTE: OCR has
+// its OWN OpenRouter usage (qwen/qwen3-vl-32b-instruct in ocr.service.ts) — these
+// constants are for the agent only and do not overlap.
+export const OPENROUTER_MODEL = 'deepseek/deepseek-v4-flash';
+export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+/** Per-call HTTP timeout — matches MiniMax so agent latency budgets are
+ *  provider-agnostic. */
+export const OPENROUTER_TIMEOUT_MS = 60_000;

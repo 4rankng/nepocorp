@@ -1,31 +1,41 @@
 // MiniMax LLM client — OpenAI-compatible Chat Completions.
 //
-// Mirrors ocr.service.ts: raw `fetch` (no SDK), key guard, AbortController
-// timeout, friendly error on missing key. Supports BOTH:
-//   - tool/function calling (the ReAct loop): pass `tools`
-//   - JSON-mode structured output (the final insight card): pass `responseFormat`
+// The fetch/parse/timeout logic now lives in openai-runner.ts (shared with the
+// OpenRouter client). This file keeps:
+//   - the canonical type aliases (MiniMaxMessage/Tool/FunctionCall/CallResult)
+//     used across the agent code + tests (named MiniMax for historical reasons;
+//     they are generic OpenAI shapes)
+//   - stripThink (MiniMax-specific reasoning cleanup)
+//   - callMiniMax — a thin shim that delegates to the ACTIVE provider, so the
+//     orchestrator's 3 call sites + tests are unchanged whether the admin
+//     picked MiniMax or OpenRouter. The active provider + key are resolved
+//     live from the DB via provider-registry.ts (no process restart needed).
+//   - createMiniMaxProvider(key, model) — a concrete LlmProvider instance for
+//     the registry to use when MiniMax is active.
 //
-// ⚠️ PREREQUISITE: the exact request/response shape (tool_calls, arguments as
-// JSON-string, response_format json_schema enforcement) MUST be confirmed by
-// the MiniMax spike before this is relied on (plan risk R1). MiniMax advertises
-// an OpenAI-compatible surface, so this is written to that shape; the spike
-// verifies + corrects if needed.
-import { config } from '../../config';
-import { withSpan, type SpanAttrs } from '../agent/telemetry.js';
+// `reasoning_split` is a MiniMax-native param that routes chain-of-thought to a
+// separate `reasoning_details` field so the orchestrator doesn't re-bill leaked
+// reasoning as input on every ReAct iteration. stripThink() backstops any host
+// that still leaks reasoning into `content` despite this flag.
 import {
   MODEL_FAST,
   MINIMAX_BASE_URL,
   MINIMAX_TIMEOUT_MS,
   AGENT_MAX_ITERATIONS,
 } from './models';
+import { runOpenAiCompletion } from './openai-runner';
+import type { LlmProvider, LlmCompleteOptions } from './provider';
+import { getActiveProvider } from './provider-registry';
 
 // Re-export so callers (orchestrator) read model + endpoint constants from one
 // place. See models.ts for why these are hardcoded, not env-driven.
 export { MODEL_FAST, MINIMAX_BASE_URL, MINIMAX_TIMEOUT_MS, AGENT_MAX_ITERATIONS };
-
-// Redaction gate: prompt/completion text is financial/customer data. Only emit
-// gen_ai prompt/completion attrs when explicitly opted in. Default OFF.
-const TRACE_PROMPTS = process.env.AGENT_TRACE_PROMPTS === '1';
+// Re-export the live model the active provider is using, so the orchestrator's
+// telemetry/metrics rows reflect the configured provider instead of a hardcoded
+// MiniMax constant. Awaitable because the active provider is DB-resolved.
+export async function getActiveModel(): Promise<string> {
+  return (await getActiveProvider()).model;
+}
 
 export interface MiniMaxFunctionCall {
   id: string;
@@ -67,18 +77,6 @@ export interface MiniMaxCallResult {
   finishReason: string | null;
 }
 
-interface OpenAIChoice {
-  message?: {
-    content?: string | null;
-    tool_calls?: Array<{ id: string; type: string; function: { name: string; arguments: string } }>;
-  };
-  finish_reason?: string;
-}
-interface OpenAIResponse {
-  choices?: OpenAIChoice[];
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
-}
-
 export class MiniMaxError extends Error {
   constructor(message: string, readonly code: 'no_key' | 'http' | 'timeout' | 'parse' = 'http') {
     super(message);
@@ -100,129 +98,46 @@ export function stripThink(s: string | null | undefined): string | null {
   return cleaned.length > 0 ? cleaned : null;
 }
 
+/** Build a concrete MiniMax provider instance bound to a live key + model.
+ *  Used by provider-registry.ts when MiniMax is the active provider. */
+export function createMiniMaxProvider(key: string, model: string = MODEL_FAST): LlmProvider {
+  return {
+    id: 'minimax',
+    model,
+    async complete(opts: LlmCompleteOptions): Promise<MiniMaxCallResult> {
+      if (!key) {
+        throw new MiniMaxError('MiniMax chưa cấu hình (thiếu API key)', 'no_key');
+      }
+      return runOpenAiCompletion(
+        {
+          providerId: 'minimax',
+          baseUrl: MINIMAX_BASE_URL,
+          apiKey: key,
+          model,
+          timeoutMs: MINIMAX_TIMEOUT_MS,
+          // reasoning_split is a MiniMax-native param (M2.5/M2.7 reasoning
+          // models) — output-format switch only, does NOT toggle reasoning.
+          extraBody: { reasoning_split: true },
+          cleanContent: stripThink,
+        },
+        opts,
+      );
+    },
+  };
+}
+
+/** Delegate to the ACTIVE provider (MiniMax or OpenRouter, per admin settings).
+ *  This keeps the orchestrator's existing `callMiniMax({...})` call sites
+ *  unchanged: they don't need to know which provider is configured. The active
+ *  provider + key are resolved live from the DB (cached) so an admin key change
+ *  takes effect on the next call without a process restart. */
 export async function callMiniMax(opts: {
   messages: MiniMaxMessage[];
   tools?: MiniMaxTool[];
   responseFormat?: MiniMaxResponseFormat;
-  /** Cap output tokens. Set high for the final structured answer so a rich
-   *  insight_card (plus any <think>) isn't truncated mid-JSON. */
   maxTokens?: number;
   signal?: AbortSignal;
 }): Promise<MiniMaxCallResult> {
-  if (!config.minimaxApiKey) {
-    throw new MiniMaxError('MiniMax chưa cấu hình (thiếu MINIMAX_API_KEY)', 'no_key');
-  }
-
-  const body: Record<string, unknown> = {
-    model: MODEL_FAST,
-    messages: opts.messages,
-    temperature: 0.2, // low — analytical answers + tool selection should be deterministic-ish
-    // reasoning_split is a MiniMax-native param (M2.5/M2.7 reasoning models) that
-    // routes chain-of-thought to a separate `reasoning_details` field instead of
-    // `content`, so the orchestrator doesn't re-bill leaked reasoning as input on
-    // every ReAct iteration. Confirmed against MiniMax's official API (LiteLLM
-    // issue #22392 documents the reasoning_details split). Output-format switch
-    // only — it does NOT toggle reasoning on/off. stripThink() below backstops
-    // any host/proxy that still leaks reasoning into content despite this flag.
-    reasoning_split: true,
-  };
-  if (opts.tools && opts.tools.length > 0) {
-    body.tools = opts.tools;
-    body.tool_choice = 'auto';
-  }
-  if (opts.responseFormat) {
-    body.response_format = opts.responseFormat;
-  }
-  if (opts.maxTokens) {
-    body.max_tokens = opts.maxTokens;
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), MINIMAX_TIMEOUT_MS);
-  // Honour a caller-supplied signal too (e.g. client disconnect). The listener
-  // is removed in `finally` so a long-lived parent signal (the req-close signal
-  // spans the whole SSE turn) doesn't accumulate one listener and retain each
-  // per-call controller across every ReAct iteration.
-  const onParentAbort = () => controller.abort();
-  if (opts.signal) {
-    if (opts.signal.aborted) controller.abort();
-    else opts.signal.addEventListener('abort', onParentAbort, { once: true });
-  }
-
-  // ── Instrumented LLM call ────────────────────────────────────────────────
-  // latencyMs comes from withSpan's performance.now() timer, NOT span.duration
-  // (the sampler may discard the span — see telemetry.ts LATENCY CONTRACT).
-  const llmAttrs: SpanAttrs = {
-    'gen_ai.operation.name': 'chat',
-    'gen_ai.request.model': MODEL_FAST,
-    'gen_ai.system': 'minimax',
-  };
-  // Redaction: prompt/completion text is financial/customer data — only emit
-  // when AGENT_TRACE_PROMPTS=1.
-  if (TRACE_PROMPTS) {
-    llmAttrs['gen_ai.prompt'] = JSON.stringify(opts.messages).slice(0, 8000);
-  }
-
-  try {
-    const { result: callResult, durationMs: latencyMs } = await withSpan(
-      'agent.llm.react_call',
-      llmAttrs,
-      async () => {
-        const res = await fetch(`${MINIMAX_BASE_URL}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.minimaxApiKey}`,
-          },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errBody = await res.text().catch(() => '<no body>');
-          console.error(`[agent] MiniMax → ${res.status}: ${errBody.slice(0, 500)}`);
-          throw new MiniMaxError(`MiniMax HTTP ${res.status}`, 'http');
-        }
-
-        const data = (await res.json()) as OpenAIResponse;
-        const choice = data.choices?.[0];
-        const msg = choice?.message;
-
-        const toolCalls: MiniMaxFunctionCall[] = (msg?.tool_calls ?? []).map((tc) => ({
-          id: tc.id,
-          name: tc.function.name,
-          arguments: tc.function.arguments,
-        }));
-
-        const promptTokens = data.usage?.prompt_tokens ?? 0;
-        const completionTokens = data.usage?.completion_tokens ?? 0;
-        return {
-          content: stripThink(msg?.content),
-          toolCalls,
-          usage: { promptTokens, completionTokens },
-          finishReason: choice?.finish_reason ?? null,
-        };
-      },
-    );
-
-    return {
-      content: callResult.content,
-      toolCalls: callResult.toolCalls,
-      usage: callResult.usage,
-      latencyMs,
-      finishReason: callResult.finishReason,
-    };
-  } catch (e) {
-    if (e instanceof MiniMaxError) throw e;
-    if (e instanceof Error && e.name === 'AbortError') {
-      throw new MiniMaxError(`MiniMax timeout after ${MINIMAX_TIMEOUT_MS}ms`, 'timeout');
-    }
-    throw new MiniMaxError(
-      `MiniMax request failed: ${e instanceof Error ? e.message : 'unknown'}`,
-      'parse',
-    );
-  } finally {
-    clearTimeout(timer);
-    if (opts.signal) opts.signal.removeEventListener('abort', onParentAbort);
-  }
+  const provider = await getActiveProvider();
+  return provider.complete(opts);
 }

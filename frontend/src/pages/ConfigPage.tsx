@@ -4,10 +4,12 @@ import { Search } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { AssetIcon } from '../components/AssetIcon';
 import { api } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
 import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import { Role } from '@tingting/shared';
 import type { CompanyInfo } from '@tingting/shared';
 import './ConfigPage.css';
 
@@ -32,6 +34,8 @@ export default function ConfigPage() {
   const navigate = useNavigate();
   const { searchQuery } = useSearch();
   const { rootRef } = usePageAnimations({ ready: true });
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.ADMIN;
 
   const [
     penaltyReasons,
@@ -121,7 +125,9 @@ export default function ConfigPage() {
     'debit-note-templates':     { status: countLabel(debitNoteTemplates.data?.total, 'mẫu') },
   };
 
-  const cards = CONFIG_ITEMS.map(item => {
+  const cards = CONFIG_ITEMS
+    .filter(item => !item.adminOnly || isAdmin)
+    .map(item => {
     return {
       title: item.label,
       desc: item.description ?? '',

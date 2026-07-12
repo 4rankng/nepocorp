@@ -7,6 +7,8 @@ import { disconnectRedis } from './lib/redis';
 import { initEnforcer } from './casbin/enforcer';
 import { authMiddleware, assetAuthMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
+import { requireRoles } from './middleware/casbin';
+import { Role } from '@tingting/shared';
 import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
@@ -24,6 +26,7 @@ import forwarderRoutes from './routes/forwarder';
 import forwarderAdminRoutes from './routes/forwarder-admin';
 import adminGpsRoutes from './routes/admin-gps';
 import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
+import llmSettingsRoutes from './routes/llm-settings';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
@@ -100,6 +103,11 @@ app.use('/api/admin/gps', authMiddleware, casbinAuthz('gps-admin'), adminGpsRout
 // (`p, ADMIN, *, *`) grants ADMIN and every other role gets 403. MUST mount
 // before the catch-all /api or it would be shadowed.
 app.use('/api/admin/chatbot', authMiddleware, casbinAuthz('chatbot-metrics'), adminChatbotMetricsRoutes);
+// Admin LLM provider settings (MiniMax / OpenRouter selection + API keys).
+// ADMIN-only: the `llm-settings` Casbin resource has no policy row, so only the
+// ADMIN wildcard (`p, ADMIN, *, *`) matches; requireRoles(Role.ADMIN) is the
+// belt-and-suspenders gate. MUST mount before the catch-all /api.
+app.use('/api/admin/llm-settings', authMiddleware, casbinAuthz('llm-settings'), requireRoles(Role.ADMIN), llmSettingsRoutes);
 app.use('/api/maps', authMiddleware, casbinAuthz('maps'), mapsRoutes);
 app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);

@@ -57,9 +57,20 @@ function extractEntityId(path: string, body: Record<string, unknown>): number | 
 function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!body) return {};
   const rest: Record<string, unknown> = { ...body };
+  // Auth credentials — never persisted to audit logs.
   delete rest.password;
   delete rest.passwordHash;
   delete rest.password_hash;
+  // API keys / secrets — the LLM settings PUT carries provider keys; stripping
+  // them here prevents plaintext keys from landing in audit_logs.payload.
+  delete rest.apiKey;
+  delete rest.openrouterApiKey;
+  delete rest.openrouter_api_key;
+  delete rest.minimaxApiKey;
+  delete rest.minimax_api_key;
+  delete rest.minimaxKey;
+  delete rest.openrouterKey;
+  delete rest.settingsEncryptionKey;
   return rest;
 }
 

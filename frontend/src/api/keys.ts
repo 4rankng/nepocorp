@@ -290,6 +290,14 @@ export const qk = {
       ['chatbotMetrics', 'recent', range, sort, limit] as const,
   },
 
+  /* ── Admin LLM provider settings (MiniMax / OpenRouter) ─────────────── */
+
+  llmSettings: {
+    /** Singleton — the single GET is the only read. */
+    all: ['llmSettings'] as const,
+    detail: ['llmSettings', 'detail'] as const,
+  },
+
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */
 
   tripForm: {

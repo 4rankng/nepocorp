@@ -149,6 +149,21 @@ export type {
 } from './schemas/chatbot-metrics';
 export { CHATBOT_METRICS_PATHS } from './schemas/chatbot-metrics';
 
+// ─── Admin LLM provider settings (MiniMax / OpenRouter) ─────────────────────
+// ADMIN-only settings API + frontend config page. See ./schemas/llm-settings.ts.
+export {
+  LLM_PROVIDERS,
+  LLM_PROVIDER_MODELS,
+  LLM_PROVIDER_LABELS,
+  LLM_SETTINGS_PATHS,
+  llmSettingsUpdateSchema,
+} from './schemas/llm-settings';
+export type {
+  LlmProvider,
+  LlmSettingsResponse,
+  LlmSettingsUpdate,
+} from './schemas/llm-settings';
+
 // ─── Curated tour catalog (agent-guided walkthroughs) ───────────────────────
 // Single source for the backend tours.search tool + the frontend on-demand list
 // and TourController. See ./tours/catalog.ts.

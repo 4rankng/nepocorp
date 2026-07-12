@@ -90,6 +90,11 @@ const configSchema = z.object({
   // MINIMAX_TIMEOUT_MS / AGENT_MAX_ITERATIONS). See that file for the rationale.
   botEnabled: z.boolean().default(false),
   minimaxApiKey: z.string().default(''),
+  // Master key for at-rest encryption of DB-stored secrets (LLM API keys set
+  // via the admin settings page). Optional; when empty, services/crypto.ts
+  // derives a key from JWT_SECRET so existing deployments keep working. Set an
+  // explicit 32-byte (base64/hex) key in prod for clean rotation. See crypto.ts.
+  settingsEncryptionKey: z.string().default(''),
   // Chatbot SLA bands for the performance dashboard's user-perceived latency
   // gauge. p95 <= green = healthy; green < p95 <= amber = degraded; p95 > amber
   // = unhealthy. Tunable via env so ops can adjust without a redeploy.
@@ -132,6 +137,7 @@ const raw = {
   vapidSubject: process.env.VAPID_SUBJECT,
   botEnabled: parseFlag(process.env.BOT_ENABLE),
   minimaxApiKey: process.env.MINIMAX_API_KEY,
+  settingsEncryptionKey: process.env.SETTINGS_ENCRYPTION_KEY,
   agentSlaP95GreenMs: process.env.AGENT_SLA_P95_GREEN_MS,
   agentSlaP95AmberMs: process.env.AGENT_SLA_P95_AMBER_MS,
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
@@ -165,6 +171,7 @@ const withDefaults = {
   vapidSubject: raw.vapidSubject || VAPID_SUBJECT_DEFAULT,
   botEnabled: raw.botEnabled,
   minimaxApiKey: raw.minimaxApiKey || '',
+  settingsEncryptionKey: raw.settingsEncryptionKey || '',
   agentSlaP95GreenMs: raw.agentSlaP95GreenMs || 5000,
   agentSlaP95AmberMs: raw.agentSlaP95AmberMs || 12000,
   agentNavigateGuardrail: raw.agentNavigateGuardrail,
@@ -211,6 +218,7 @@ export const config = result.success ? result.data : configSchema.parse({
   vapidSubject: VAPID_SUBJECT_DEFAULT,
   botEnabled: false,
   minimaxApiKey: '',
+  settingsEncryptionKey: '',
   agentSlaP95GreenMs: 5000,
   agentSlaP95AmberMs: 12000,
   agentNavigateGuardrail: true,

@@ -11,6 +11,8 @@ export interface SearchItem {
   /** Semantic icon name from the project's asset icon set (`/assets/icons`). */
   iconName: AssetIconName;
   action?: string;
+  /** When true, the item is ADMIN-only and filtered out for other roles. */
+  adminOnly?: boolean;
 }
 
 function normalise(str: string): string {
@@ -69,6 +71,8 @@ export const CONFIG_ITEMS: SearchItem[] = [
   { id: 'expense-categories',     type: 'config', label: 'Hạng mục chi phí',              description: 'Phân loại chi phí vận hành. Bật định kỳ để theo dõi ngày gia hạn bảo hiểm, đăng kiểm, bảo dưỡng.', path: '/config/expense-categories',  iconName: 'expense',      action: 'Sửa' },
   { id: 'forwarder-expense-types',type: 'config', label: 'Loại chi phí giao nhận',       description: 'Danh mục các khoản chi phí phát sinh do nhân viên giao nhận nhập (nâng hạ, hải quan, cân xe, kiểm tra…).', path: '/config/forwarder-expense-types', iconName: 'document', action: 'Sửa' },
   { id: 'debit-note-templates',  type: 'config', label: 'Mẫu giấy báo nợ',             description: 'Tạo và chọn mẫu xuất Excel giấy báo nợ theo từng khách hàng — logo, tiêu đề, cột, màu, điều khoản.',     path: '/config/debit-note-templates',  iconName: 'document',    action: 'Sửa' },
+  // ADMIN-only — filtered out for MANAGER/ACCOUNTANT in getSearchItems below.
+  { id: 'llm-settings',          type: 'config', label: 'Nhà cung cấp AI',              description: 'Chọn nhà cung cấp LLM (MiniMax / OpenRouter) cho trợ lý ảo và cấu hình API key. Mã hóa AES-256 khi lưu.', path: '/config/llm-settings',          iconName: 'settings',    action: 'Sửa', adminOnly: true },
 ];
 
 const ACTION_ITEMS: SearchItem[] = [
@@ -103,7 +107,7 @@ export function getSearchItems(role: string): SearchItem[] {
         ...ACTION_ITEMS,
       ];
     case 'ACCOUNTANT':
-      return [...ADMIN_BASE_ITEMS, ...CONFIG_ITEMS];
+      return [...ADMIN_BASE_ITEMS, ...CONFIG_ITEMS.filter(i => !i.adminOnly)];
     case 'DRIVER':
       return DRIVER_ITEMS;
     case 'FORWARDER':
