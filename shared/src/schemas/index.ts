@@ -19,6 +19,10 @@ export * from './chatbot-metrics';
 // and the frontend config page.
 export * from './llm-settings';
 
+// Admin FAQ knowledge base management — create/update/delete entries with
+// automatic embedding regeneration on save. Backs the chatbot fast lane.
+export * from './faq';
+
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
 export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);

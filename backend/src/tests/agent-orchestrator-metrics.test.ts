@@ -294,6 +294,7 @@ describe('computeLatencies — dual-latency invariant', () => {
       aborted: false,
       navigateDirectiveEmitted: false,
       guardrailFired: false,
+      finalAvoided: false,
       errorKind: undefined,
       ...over,
     };
@@ -357,6 +358,7 @@ describe('computeLatencies — sampling independence', () => {
       aborted: false,
       navigateDirectiveEmitted: false,
       guardrailFired: false,
+      finalAvoided: false,
       errorKind: undefined,
     };
     return computeLatencies(acc, 695);

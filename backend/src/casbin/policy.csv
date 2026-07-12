@@ -8,6 +8,7 @@ p, MANAGER, config, write
 p, MANAGER, config, delete
 p, MANAGER, financial, read
 p, MANAGER, financial, write
+p, MANAGER, financial, delete
 p, MANAGER, users, read
 p, MANAGER, users, write
 p, MANAGER, users, delete
@@ -22,6 +23,7 @@ p, ACCOUNTANT, config, write
 p, ACCOUNTANT, config, delete
 p, ACCOUNTANT, financial, read
 p, ACCOUNTANT, financial, write
+p, ACCOUNTANT, financial, delete
 p, ACCOUNTANT, audit_logs, read
 p, ACCOUNTANT, maps, read
 p, ACCOUNTANT, upload, write

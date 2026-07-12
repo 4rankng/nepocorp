@@ -85,6 +85,7 @@ export {
   agentRouteKeySchema, AGENT_ROUTE_KEYS,
   ACKED_DIRECTIVE_KINDS,
   agentActionResultSchema,
+  faqEntryCreateSchema, faqEntryUpdateSchema, FAQ_ADMIN_PATHS,
 } from './schemas';
 
 export {
@@ -117,6 +118,7 @@ export type {
   AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentTutorialStep, AgentResponse,
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
   AckedDirectiveKind, AgentActionResult,
+  FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

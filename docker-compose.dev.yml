@@ -1,6 +1,9 @@
 services:
   db:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = upstream postgres:16 + the `vector` extension
+    # preinstalled. Required for the FAQ fast lane (vector(1536) cosine index).
+    # Switched from postgres:16-alpine — the stock alpine image lacks the extension.
+    image: pgvector/pgvector:pg16
     container_name: tingting-db
     environment:
       POSTGRES_USER: postgres

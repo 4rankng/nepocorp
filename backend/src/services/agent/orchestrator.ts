@@ -85,6 +85,13 @@ export interface MetricsAccumulator {
   /** True iff the A3 guardrail converted a prose-with-path answer into a
    *  navigate directive (the model failed to call ui.navigate on its own). */
   guardrailFired: boolean;
+  /** True iff Case 1 short-circuited produceFinalAnswer — the ReAct loop's
+   *  terminal assistant message already held valid structured JSON, so NO
+   *  separate json_object call was made. Measures the double-call collapse:
+   *  high = the model reliably emits in-loop JSON; low = Case 3 (structured
+   *  retry) fires often and the collapse isn't helping. In-memory only —
+   *  persisted indirectly via latencyFinalMs === 0. */
+  finalAvoided: boolean;
 }
 
 export interface LatencyBreakdown {
@@ -309,6 +316,7 @@ export async function runAgent(opts: {
     errorKind: undefined,
     navigateDirectiveEmitted: false,
     guardrailFired: false,
+    finalAvoided: false,
   };
 
   // Hoisted out of the root-span body so the metrics row can be written AFTER
@@ -620,10 +628,20 @@ export async function runAgent(opts: {
       if (!terminalStructured && !usedDataTool && terminalAssistant && !opts.signal?.aborted) {
         // Case 2 — non-analytical prose answer: return as text, no structured call.
         response = { type: 'text' as const, content: stripThink(terminalAssistant.content) ?? '' };
+      } else if (terminalStructured && !opts.signal?.aborted) {
+        // Case 1 — the ReAct loop's terminal assistant message already contains
+        // valid structured JSON (insight_card / tutorial / text / directive /
+        // start_tour). Trust it directly and SKIP produceFinalAnswer entirely.
+        // This is the double-call collapse: analytical turns whose model emits
+        // valid in-loop JSON no longer pay for a separate json_object call.
+        // produceFinalAnswer (Case 3 below) is now only the genuine fallback for
+        // analytical turns where the loop output is NOT valid structured JSON.
+        response = terminalStructured;
+        metrics.finalAvoided = true;
       } else {
-        // Case 1 (structured) + Case 3 (analytical) → structured final-answer path.
-        // produceFinalAnswer's parseLatestAssistantResponse fast-path covers Case 1
-        // with no call; only Case 3 actually pays for the json_object call.
+        // Case 3 — analytical turn (a data tool ran) but the loop's terminal
+        // output was NOT valid structured JSON. produceFinalAnswer re-tries with
+        // a dedicated json_object call, then a prose fallback if that fails.
         const finalSpan = await withSpan('agent.final_answer', undefined, async () =>
           produceFinalAnswer(trimToolHistory(messages), signal),
         );

@@ -175,7 +175,7 @@ Legend: `[ ]` pending · `[~]` in progress · `[x]` Passed · `[!]` Bug found (s
 | 15 | 2026-06-02 | Section 8 (8.1-8.3) Profit Distribution | 2 | All Passed + patched (frontend getActiveCapTable + backend resolveCapTableSnapshot both fixed to use stored percentage field) |
 | 16 | 2026-06-02 | Section 9 (9.1-9.3) Penalties | 0 | All Passed (penalty from catalog reason, duplicate custom reason warning, penalty deduction in driver income) |
 | 17 | 2026-06-02 | Sections 10–16 (Fleet/Dispatch, Customers, Config, Driver Portal, Expenses+AP, Forwarder, Cross-cutting) | 1 (patched) | All Passed. Driver-portal 500→404 patched in `backend/src/services/driver.service.ts`. |
-| 18 | 2026-07-12 | Pete & Ngọc Ánh feedback (8 issues): GBN description, GBN→công nợ propagation, ops expense edit, one-step approval, settled-advance exclusion, kê khai visibility, salary 370,370 | 1 open (Issue #1 GBN description NOT on HEAD) | 7/8 FIXED & verified (live API + tests). Issue #1 fix `formatFreightDescription` exists on branch `feat/declaration-settlement-streamline` but is not merged/deployed. See `iterations/2026-07-12-01-pete-ngoc-anh-feedback-verification.md`. |
+| 18 | 2026-07-12 | Pete & Ngọc Ánh feedback (8 issues): GBN description, GBN→công nợ propagation, ops expense edit, one-step approval, settled-advance exclusion, kê khai visibility, salary 370,370 | 1 re-diagnosed + fixed (Issue #1) | All 8 FIXED & verified live on staging. Issue #1 re-diagnosed (route name was correct; real defect was inlined trip code) and fixed separately. Incidental: Casbin `financial delete` granted to MANAGER/ACCOUNTANT. See `iterations/2026-07-12-01-pete-ngoc-anh-feedback-verification.md`. |
 
 ---
 

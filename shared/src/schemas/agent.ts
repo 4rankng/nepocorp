@@ -316,6 +316,13 @@ export type AgentConversation = z.infer<typeof agentConversationSchema>;
 // frontend parses each frame with `agentEventSchema` for type safety.
 export const agentEventSchema = z.discriminatedUnion('event', [
   z.object({
+    // Emitted instantly on agent:chat receipt, before any LLM/FAQ work. Gives
+    // the frontend a perceived-latency floor: "Đang xử lý…" replaces the static
+    // spinner the moment the server has the message, not after the first LLM
+    // call returns. Fire-and-forget; no client response expected.
+    event: z.literal('received'),
+  }),
+  z.object({
     event: z.literal('tool_start'),
     toolName: z.string(),
     /** Echo of the args the LLM chose (truncated/summarised for display). */
@@ -347,6 +354,9 @@ export const agentEventSchema = z.discriminatedUnion('event', [
     conversationId: z.string().optional(),
     /** Assistant message id, used by the browser to report true wait time. */
     messageId: z.number().int().positive().optional(),
+    /** True when the answer came from the FAQ fast lane (zero LLM calls). Lets
+     *  the frontend tag the bubble + the backend skip agent_turn_metrics. */
+    fastLane: z.boolean().optional(),
   }),
   z.object({
     event: z.literal('error'),

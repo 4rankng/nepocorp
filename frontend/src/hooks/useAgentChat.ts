@@ -33,6 +33,10 @@ export interface UseAgentChatOptions {
 export interface UseAgentChat {
   messages: AgentMessage[];
   isThinking: boolean;
+  /** True once the server has acknowledged receipt (the `received` event) but
+   *  hasn't finished — lets the thinking indicator show "Đang xử lý…" (server
+   *  has it) vs the initial "Đang suy nghĩ…" (still in flight). */
+  received: boolean;
   /** The tool currently running, for the thinking indicator. */
   activeTool: { name: string; label?: string } | null;
   error: string | null;
@@ -50,6 +54,7 @@ function uid(): string {
 export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [received, setReceived] = useState(false);
   const [activeTool, setActiveTool] = useState<UseAgentChat['activeTool']>(null);
   const [error, setError] = useState<string | null>(null);
   // Seed from localStorage so a page reload (Vite HMR / service-worker deploy /
@@ -96,6 +101,10 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
 
   const handleEvent = useCallback((event: AgentEvent) => {
     switch (event.event) {
+      case 'received':
+        // Server has the message — upgrade the thinking indicator's label.
+        setReceived(true);
+        break;
       case 'tool_start':
         setActiveTool({ name: event.toolName, label: undefined });
         break;
@@ -125,6 +134,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
       case 'done': {
         setActiveTool(null);
         setIsThinking(false);
+        setReceived(false);
         if (event.conversationId) setConversationId(event.conversationId);
         const response = event.response as AgentResponse;
         const reportClientWait = () => {
@@ -182,6 +192,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         pendingPageDirectiveRef.current = null;
         setActiveTool(null);
         setIsThinking(false);
+        setReceived(false);
         setError(event.message);
         break;
     }
@@ -192,6 +203,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
       turnStartedAtRef.current = performance.now();
       setError(null);
       setIsThinking(true);
+      setReceived(false);
       setMessages((prev) => [
         ...prev,
         { id: uid(), role: 'user', content: message, createdAt: new Date().toISOString() },
@@ -237,7 +249,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
     setConversationId(null);
   }, []);
 
-  return { messages, isThinking, activeTool, error, conversationId, send, reset };
+  return { messages, isThinking, received, activeTool, error, conversationId, send, reset };
 }
 
 function isPageChangingDirective(directive: AgentDirective): boolean {

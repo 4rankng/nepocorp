@@ -21,6 +21,7 @@ import * as schema from './db/schema';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
 import { runAgent } from './services/agent/orchestrator';
+import { tryFaqFastLane } from './services/agent/faq-fast-lane';
 import type { AgentContext } from './services/agent/tool.types';
 import type { MiniMaxMessage } from './services/llm/minimax.client';
 
@@ -206,6 +207,38 @@ function registerHandlers(agentNs: Namespace): void {
       };
 
       try {
+        // Immediate perceived-latency floor: tell the client we have the message
+        // before any LLM/FAQ work. The frontend swaps "Đang suy nghĩ…" → a
+        // richer "Đang xử lý…" state on receipt.
+        emit({ event: 'received' } satisfies AgentEvent);
+
+        // ── FAQ fast lane ──────────────────────────────────────────────────
+        // Zero-LLM path: seeded domain questions (penalty rules, fuel modes,
+        // road allowance, etc.) answered from faq_entries via a 4-stage cascade
+        // (exact → rule → pgvector cosine → score/margin gate). On a match,
+        // emit done directly and skip runAgent entirely. On abstain (null) or
+        // any error, fall through to the LLM agent — fail-open, never blocks.
+        const faq = await tryFaqFastLane(message);
+        if (faq && !ac.signal.aborted) {
+          // Only fold into session memory if the turn wasn't superseded — avoids
+          // polluting history for a turn the client never saw (e.g. navigated away
+          // during the FAQ lookup).
+          sessionHistory.push({ role: 'user', content: message });
+          sessionHistory.push({ role: 'assistant', content: faq.answer });
+          trimSessionHistory(sessionHistory);
+          const faqDone: AgentEvent = {
+            event: 'done',
+            response: { type: 'text', content: faq.answer },
+            fastLane: true,
+          };
+          socket.emit('agent:event', faqDone);
+          return;
+        } else if (faq) {
+          // We had a match but the turn was aborted mid-lookup — don't emit, but
+          // log so fast-lane hit-rate is observable (H2: minimal observability).
+          console.log('[agent-socket] FAQ fast-lane matched but turn aborted');
+        }
+
         const { response, conversationId: convId, assistantMessageId } = await runAgent({
           ctx,
           message,

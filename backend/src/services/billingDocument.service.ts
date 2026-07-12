@@ -297,7 +297,10 @@ async function buildCustomerDebitLines(customerId: number, from: string, to: str
     });
     lines.push({
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
-      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      // Trip code is NOT inlined here — it has its own "Số chứng từ" column
+      // (renderData.tripCode). Inlining it caused "Cước vận chuyển TRP--" when the
+      // route name was missing, which customers mistook for the description.
+      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}`,
       typeLabel: 'Doanh thu',
       unit,
       routeName: trip.routeName ?? null,
@@ -393,7 +396,7 @@ async function buildCustomerPaymentStatementLines(customerId: number, from: stri
 
     lines.push({
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
-      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${serviceFeeDescription ? `; ${serviceFeeDescription}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}${serviceFeeDescription ? `; ${serviceFeeDescription}` : ''}`,
       typeLabel: serviceFeeAmount > 0 ? 'Cước + chi hộ' : 'Doanh thu',
       unit: 'lô',
       routeName: trip.routeName ?? null,
@@ -437,7 +440,7 @@ async function buildCarrierPaymentLines(carrierId: number, from: string, to: str
     if (amt <= 0) continue;
     lines.push({
       sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
-      description: `Cước thuê ngoài${trip.routeName ? ` — ${trip.routeName}` : ''}${trip.tripCode ? ` (${trip.tripCode})` : ''}`,
+      description: `Cước thuê ngoài${trip.routeName ? ` — ${trip.routeName}` : ''}`,
       typeLabel: 'Doanh thu',
       unit: 'lần',
       routeName: trip.routeName ?? null,

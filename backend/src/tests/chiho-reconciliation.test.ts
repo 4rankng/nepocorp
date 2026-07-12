@@ -230,6 +230,17 @@ describe('US-007 chi hộ reconciliation: ledger AR == debit-note total', () => 
     // And the draft surfaces a SERVICE_FEE line per fee (not silently dropped).
     const t1FeeLines = draft1.lines.filter(l => l.lineType === 'SERVICE_FEE');
     assert.equal(t1FeeLines.length, 2, 'draft lists both phí chi hộ lines');
+
+    // Regression: freight description must show the route name, NOT the trip
+    // code. Previously the code inlined `(${tripCode})`, which rendered as
+    // "Cước vận chuyển RC-xxxx" when a route name was missing — customers read
+    // the trip code as the destination. The trip code lives in its own column.
+    const t1Freight = draft1.lines.find(l => l.lineType === 'FREIGHT');
+    assert.ok(t1Freight, 'draft has a freight line');
+    assert.match(t1Freight.description, /Cước vận chuyển/,
+      'freight description leads with "Cước vận chuyển"');
+    assert.doesNotMatch(t1Freight.description, /RC-/,
+      'freight description must NOT inline the trip code (RC-…) — it has its own chứng từ column');
   });
 
   test('CROSS-BOUNDARY: trip departureDate outside window → debit-note excludes it, ledger does not', async () => {

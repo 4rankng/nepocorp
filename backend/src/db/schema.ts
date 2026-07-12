@@ -1,8 +1,23 @@
 import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
   jsonb, numeric, date, pgEnum, uniqueIndex, index, check, doublePrecision,
+  customType,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+
+// pgvector `vector(N)` column type. Drizzle doesn't know pgvector, so we declare
+// a custom type whose SQL is `vector(dim)`. Runtime reads/writes of the vector
+// go through raw `db.execute(sql\`...\`)` with the `<=>` operator (see
+// services/agent/faq-fast-lane.ts); this def gives the table object + typing.
+// The JS representation is the pgvector string literal '[0.1,0.2,...]'.
+// Usage: `vectorColumn1536('embedding')` — returns a column. We export a
+// pre-configured column for the 1536-dim FAQ embeddings (the only vector column).
+const vector1536Builder = customType<{ data: string; driverData: string }>({
+  dataType() {
+    return 'vector(1536)';
+  },
+});
+export const vectorColumn1536 = vector1536Builder;
 
 // Enums
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
@@ -1164,3 +1179,26 @@ export const agentTurnMetrics = pgTable('agent_turn_metrics', {
   index('agent_turn_metrics_created_at_idx').on(table.createdAt),
   index('agent_turn_metrics_conversation_id_idx').on(table.conversationId),
 ]);
+
+// ─── FAQ knowledge base (chatbot pre-LLM fast lane) ─────────────────────────
+// Seeded domain Q&A answered with ZERO LLM calls via a 4-stage cascade matcher
+// (exact → rule → cosine similarity via pgvector → score/margin gate). The
+// `embedding` column is populated by db/backfill-faq-embeddings.ts (OpenRouter
+// text-embedding-3-small, 1536 dims). See drizzle/0104_faq_knowledge_base.sql
+// for the full table + seed, and services/agent/faq-fast-lane.ts for matching.
+export const faqEntries = pgTable('faq_entries', {
+  id: serial('id').primaryKey(),
+  question: text('question').notNull(),
+  answer: text('answer').notNull(),
+  questionVariants: text('question_variants').array().notNull().default([]),
+  requiredTerms: text('required_terms').array().notNull().default([]),
+  forbiddenTerms: text('forbidden_terms').array().notNull().default([]),
+  searchText: text('search_text').notNull().default(''),
+  // pgvector column — JS representation is the literal string '[0.1,0.2,...]'.
+  // NULL until the backfill script embeds the row. Vector ops go through raw SQL.
+  embedding: vectorColumn1536('embedding'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

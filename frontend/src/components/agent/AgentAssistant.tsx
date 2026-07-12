@@ -144,7 +144,9 @@ export function AgentAssistant() {
               {chat.activeTool ? (
                 <span className="agent-thinking__tool">{chat.activeTool.label ?? chat.activeTool.name}…</span>
               ) : (
-                <span className="agent-thinking__tool">Đang suy nghĩ…</span>
+                <span className="agent-thinking__tool">
+                  {chat.received ? 'Đang xử lý…' : 'Đang suy nghĩ…'}
+                </span>
               )}
             </div>
           )}
