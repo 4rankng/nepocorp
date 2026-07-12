@@ -50,6 +50,8 @@ __pycache__/
 .opencode/
 .omc/
 .omo/
+.zcode/
+.zcode
 
 # QA test scripts
 frontend/qa-*.js

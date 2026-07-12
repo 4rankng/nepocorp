@@ -24,7 +24,10 @@
  */
 import { z } from 'zod';
 
-/** Admin FAQ entry as returned by the API (no `embedding` column). */
+/** Admin FAQ entry as returned by the API (no `embedding` column).
+ *  `hasEmbedding` is a computed boolean (`embedding IS NOT NULL`) so the UI
+ *  can show an accurate embedded/not-embedded badge without the 1536-float
+ *  vector ever leaving the server. */
 export interface FaqEntry {
   id: number;
   question: string;
@@ -37,6 +40,7 @@ export interface FaqEntry {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  hasEmbedding: boolean;
 }
 
 /** POST /api/admin/faq-entries — create a new FAQ entry. */

@@ -27,6 +27,7 @@ import forwarderAdminRoutes from './routes/forwarder-admin';
 import adminGpsRoutes from './routes/admin-gps';
 import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import llmSettingsRoutes from './routes/llm-settings';
+import faqAdminRoutes from './routes/faq-admin';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
@@ -108,6 +109,11 @@ app.use('/api/admin/chatbot', authMiddleware, casbinAuthz('chatbot-metrics'), ad
 // ADMIN wildcard (`p, ADMIN, *, *`) matches; requireRoles(Role.ADMIN) is the
 // belt-and-suspenders gate. MUST mount before the catch-all /api.
 app.use('/api/admin/llm-settings', authMiddleware, casbinAuthz('llm-settings'), requireRoles(Role.ADMIN), llmSettingsRoutes);
+// Admin FAQ knowledge base management (create/update/delete + auto-embed).
+// ADMIN-only: same gate pattern as llm-settings — the `faq-admin` Casbin
+// resource has no policy row, so only the ADMIN wildcard matches; requireRoles
+// is belt-and-suspenders. MUST mount before the catch-all /api.
+app.use('/api/admin/faq-entries', authMiddleware, casbinAuthz('faq-admin'), requireRoles(Role.ADMIN), faqAdminRoutes);
 app.use('/api/maps', authMiddleware, casbinAuthz('maps'), mapsRoutes);
 app.use('/api/photos', assetAuthMiddleware, casbinAuthz('photos'), photosRouter);
 app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);

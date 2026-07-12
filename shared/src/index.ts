@@ -118,7 +118,7 @@ export type {
   AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentTutorialStep, AgentResponse,
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
   AckedDirectiveKind, AgentActionResult,
-  FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
+  FaqEntry, FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

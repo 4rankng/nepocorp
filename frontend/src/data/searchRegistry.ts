@@ -73,6 +73,7 @@ export const CONFIG_ITEMS: SearchItem[] = [
   { id: 'debit-note-templates',  type: 'config', label: 'Mẫu giấy báo nợ',             description: 'Tạo và chọn mẫu xuất Excel giấy báo nợ theo từng khách hàng — logo, tiêu đề, cột, màu, điều khoản.',     path: '/config/debit-note-templates',  iconName: 'document',    action: 'Sửa' },
   // ADMIN-only — filtered out for MANAGER/ACCOUNTANT in getSearchItems below.
   { id: 'llm-settings',          type: 'config', label: 'Nhà cung cấp AI',              description: 'Chọn nhà cung cấp LLM (MiniMax / OpenRouter) cho trợ lý ảo và cấu hình API key. Mã hóa AES-256 khi lưu.', path: '/config/llm-settings',          iconName: 'settings',    action: 'Sửa', adminOnly: true },
+  { id: 'faq-entries',           type: 'config', label: 'Câu hỏi thường gặp (FAQ)',      description: 'Quản lý cơ sở tri thức cho trợ lý ảo. Tự động tạo embedding khi lưu để trả lời câu hỏi nhanh.',         path: '/config/faq-entries',           iconName: 'document',    action: 'Sửa', adminOnly: true },
 ];
 
 const ACTION_ITEMS: SearchItem[] = [
