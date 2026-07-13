@@ -95,7 +95,7 @@ Feature B is COMPLETE end-to-end (API + admin UI + consumers).
       `pnpm lint`: 0 errors, 0 warnings.
 - [x] Two dead-click KPI cards: fixed (iter 2, `4ffe0f98`).
 - [x] Fake "Lưu nháp" disabled button + misleading autosave claim on TripCreate (iter 3, `598006c9`).
-- [ ] `shared/src/onboarding/tasks.ts:40` placeholder step 5 (fleet dashboard awareness) — confirm it's intended/complete or fill it.
+- [x] `shared/src/onboarding/tasks.ts:40` placeholder step 5 (fleet dashboard awareness) — **intentional deferral**, already documented in `1d95d538` (lines 41-42: "deferred until that dashboard ships; intentionally not in the array"). Justified design decision, not a gap.
 
 ### P3 — cleanup (only if time remains)
 - [ ] Extract shared `<Badge>` (`XeNgoaiBadge.tsx:10`, `CustomersPage.tsx:422`).
@@ -107,7 +107,17 @@ Feature B is COMPLETE end-to-end (API + admin UI + consumers).
 ## Completion criteria (project-wide)
 Track against the autonomous-mission completion criteria.
 
-Status after iter 5:
+Status after iter 6:
+- ✅ install / dev startup / production build all work (verified iter 0+5)
+- ✅ type checks pass (shared/backend/frontend)
+- ✅ **lint passes** (iter 5 — was failing: require() error + warnings; iter 6 kept it clean)
+- ✅ **relevant automated tests pass** (backend 653/654 0-fail, frontend 141/141, catalog 8/8)
+- ✅ primary tutorial journey (create-trip tour) works end-to-end, browser-verified (iter 4)
+- ✅ onboarding master-switch admin UI complete + browser-verified (iter 4)
+- ✅ **no dead controls / fake buttons / misleading copy** (iter 2,3 + iter 6 removed 5 "Sắp ra mắt" buttons)
+- ✅ **P&L financial data reconciles** (iter 5 — was a real accounting gap, not dev-noise)
+- ✅ all routes inspected: 0 "Sắp ra mắt"/"Chưa hỗ trợ" dead controls remain; 0 user-facing TODOs
+- ⬜ remaining P3 polish below (non-blocking internal cleanup only; no user-facing impact)
 - ✅ install / dev startup / production build all work (verified iter 0+5)
 - ✅ type checks pass (shared/backend/frontend, iter 5)
 - ✅ **lint passes** (iter 5 — was failing: require() error + warnings)
@@ -139,6 +149,7 @@ Status after iter 5:
   - **`pnl-invariant.test.ts` (a.div) was failing** — and iters 0-4's "dev-data staleness / recost-gross-profit" diagnosis was WRONG. Diagnosed empirically: OWN trips with NULL `truckId` (80 trips, 231,264,000 VND in June 2026) are counted in P&L totals but dropped from the per-truck breakdown (`if (!trip.truckId) continue`) → the truck table under-counts by exactly that amount. Fix: synthetic `Chưa gắn xe` bucket (id: -1), parallel to `Xe ngoài` (id: 0). Backend tests now 653/654 pass, 0 fail.
   - Visual verification of the P&L page then surfaced a **frontend** instance of the same class of bug: `finance-derived.ts` re-derived its own truckBreakdown from raw trips, rendering `Truck #null` and reading the stale denormalized `trips.grossProfit`. Fixed to use authoritative `report.trucks` (fallback re-derives with recompute + 'Chưa gắn xe' label). Puppeteer-verified: table shows Chưa gắn xe / 51C-12345 / Xe ngoài, Xe ngoài keeps italic/grey styling, 0 console errors, 0 failed reqs.
   - Final gate: shared tc ✓ / catalog 8/8 ✓ / backend tc ✓ / **backend tests 653/654 (0 fail)** / **lint 0/0** / frontend tc ✓ / frontend tests 141/141 ✓ / build ✓.
+- **iter 6 (P1 dead controls):** Marker scan after iter 5 surfaced 5 inert `disabled title="Sắp ra mắt"` buttons — textbook fake controls the mission forbids: DispatchPage orders toolbar (Lọc / Sắp xếp / Tự động đề xuất xe), FleetPage (Lọc nâng cao), driver-card (Lọc). None had handlers. Removed all 5 + their now-unused lucide imports; the Dispatch orders-toolbar wrapper was entirely dead chrome (removed wholesale). Working search/filter that exists (driver-card search input, DispatchFilters fleet-status chips) untouched. Puppeteer-verified /dispatch + /fleet + /drivers: 0 "Sắp ra mắt" controls remain, no layout gap where toolbar was, 0 console errors, 0 failed reqs. tc/lint(0/0)/tests(141/141) green. After this, a full re-scan confirms **0 user-facing TODOs/placeholders/dead controls remain** — only internal P3 code-comment TODOs (Badge extraction, chatbot p95Ms instrumentation).
 
 ## Commits this loop
 - `eb96ca6e` feat: onboarding admin master switch + create-trip tutorial usability improvements (in-flight work + P0 typecheck fix)
@@ -147,3 +158,4 @@ Status after iter 5:
 - `598006c9` fix(trip-form): remove fake 'Lưu nháp' button and misleading autosave claim
 - `545d041e` fix(pnl): account for unassigned-OWN trips in truck breakdown (iter 5)
 - `c5afe9a6` fix(lint): clear require() error and unused-symbol warnings (iter 5)
+- `aa0db021` fix(dispatch,fleet): remove dead 'Sắp ra mắt' disabled buttons (iter 6)
