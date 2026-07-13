@@ -97,17 +97,17 @@ Feature B is COMPLETE end-to-end (API + admin UI + consumers).
 - [x] Fake "Lưu nháp" disabled button + misleading autosave claim on TripCreate (iter 3, `598006c9`).
 - [x] `shared/src/onboarding/tasks.ts:40` placeholder step 5 (fleet dashboard awareness) — **intentional deferral**, already documented in `1d95d538` (lines 41-42: "deferred until that dashboard ships; intentionally not in the array"). Justified design decision, not a gap.
 
-### P3 — cleanup (only if time remains)
-- [ ] Extract shared `<Badge>` (`XeNgoaiBadge.tsx:10`, `CustomersPage.tsx:422`).
-- [ ] `audit.service.ts` 10 empty catches — add `logger.warn` for observability (best-effort enrichment).
-- [ ] `reporting-shared.ts:42`, `useCRUD.ts:11`, `useTripFormState.ts:48`, `useSalaryPeriod.ts:31` `@deprecated` cleanup.
-- [ ] `admin-chatbot-metrics.ts:235` TODO: per-call duration capture.
-- [ ] `tripClient.ts:105` — type the bootstrap blob to remove the lone `any` suppression.
+### P3 — cleanup
+- [ ] Extract shared `<Badge>` (`XeNgoaiBadge.tsx:10`, `CustomersPage.tsx:422`) — 2-site refactor, optional.
+- [x] **`audit.service.ts` 9 empty catches → now log** (iter 8, `97ee27ce`). Each `catch {}` in `enrichEntityKey` now `console.warn`s with branch context; fail-open behavior preserved. backend tests 653/654 intact.
+- [x] **`@deprecated` cleanup — partial** (iter 9, `6d0852ba`). Removed the dead `monthDateRange` alias (zero consumers). The other 3 (`useCRUD`, `useTripFormState.sealNumber`, `useSalaryPeriod` shim) are **load-bearing** — actively used across 4+ components — so removing them is a separate refactor, out of scope. Documented as intentional.
+- [ ] `admin-chatbot-metrics.ts:235` TODO: per-call duration capture — internal instrumentation, honest `p95Ms: null` with explanatory comment; not user-facing.
+- [x] **`tripClient.ts:105` `any` suppression removed** (iter 7, `290c54b3`). Canonical `CatalogData` interface moved to the API layer (tripClient.ts), `getBootstrap` typed against it, re-exported from useCatalogs; duplicate narrower type in useTripOptions deleted; missing `routes.defaultLegs` field added.
 
 ## Completion criteria (project-wide)
 Track against the autonomous-mission completion criteria.
 
-Status after iter 6:
+Status after iter 9:
 - ✅ install / dev startup / production build all work (verified iter 0+5)
 - ✅ type checks pass (shared/backend/frontend)
 - ✅ **lint passes** (iter 5 — was failing: require() error + warnings; iter 6 kept it clean)
@@ -150,6 +150,9 @@ Status after iter 6:
   - Visual verification of the P&L page then surfaced a **frontend** instance of the same class of bug: `finance-derived.ts` re-derived its own truckBreakdown from raw trips, rendering `Truck #null` and reading the stale denormalized `trips.grossProfit`. Fixed to use authoritative `report.trucks` (fallback re-derives with recompute + 'Chưa gắn xe' label). Puppeteer-verified: table shows Chưa gắn xe / 51C-12345 / Xe ngoài, Xe ngoài keeps italic/grey styling, 0 console errors, 0 failed reqs.
   - Final gate: shared tc ✓ / catalog 8/8 ✓ / backend tc ✓ / **backend tests 653/654 (0 fail)** / **lint 0/0** / frontend tc ✓ / frontend tests 141/141 ✓ / build ✓.
 - **iter 6 (P1 dead controls):** Marker scan after iter 5 surfaced 5 inert `disabled title="Sắp ra mắt"` buttons — textbook fake controls the mission forbids: DispatchPage orders toolbar (Lọc / Sắp xếp / Tự động đề xuất xe), FleetPage (Lọc nâng cao), driver-card (Lọc). None had handlers. Removed all 5 + their now-unused lucide imports; the Dispatch orders-toolbar wrapper was entirely dead chrome (removed wholesale). Working search/filter that exists (driver-card search input, DispatchFilters fleet-status chips) untouched. Puppeteer-verified /dispatch + /fleet + /drivers: 0 "Sắp ra mắt" controls remain, no layout gap where toolbar was, 0 console errors, 0 failed reqs. tc/lint(0/0)/tests(141/141) green. After this, a full re-scan confirms **0 user-facing TODOs/placeholders/dead controls remain** — only internal P3 code-comment TODOs (Badge extraction, chatbot p95Ms instrumentation).
+- **iter 7 (P3 type-safety):** Removed the lone `any` suppression in `tripClient.getBootstrap`. The canonical `CatalogData` interface was trapped in a hook file (`useCatalogs.ts`); moved it to the API layer (`tripClient.ts` — the natural home for response types), typed `getBootstrap` against it, re-exported from useCatalogs so existing imports keep working. Deleted the duplicate narrower `CatalogData` in `useTripOptions.ts`; added the missing `routes.defaultLegs` field to the canonical type to match the backend JSONB column. No `any` suppressions remain in tripClient. tc/lint(0/0)/tests(141)/build green.
+- **iter 8 (P3 silent failures):** `audit.service.ts` had 9 `catch {}` empty blocks in `enrichEntityKey` (best-effort DB enrichment). The mission forbids silent failures; each catch now `console.warn`s with branch context (expenses / trip-expenses / penalties / vendor-payment / customer-payment / adjustment / single-trip / multi-trip / basic-entity / enrichEntityKey). Fail-open behavior preserved (audit row writes regardless). Mirrors the existing top-level `console.error`. backend tests 653/654 intact.
+- **iter 9 (P3 deprecated cleanup):** Removed the dead `monthDateRange` deprecated alias (zero end-consumers — only re-exported). The other 3 `@deprecated` markers (`useCRUD`, `useTripFormState.sealNumber`, `useSalaryPeriod` shim) are load-bearing — actively used across 4+ components — so removing them is a separate refactor; documented as intentional, not pursued. tc/lint clean.
 
 ## Commits this loop
 - `eb96ca6e` feat: onboarding admin master switch + create-trip tutorial usability improvements (in-flight work + P0 typecheck fix)
@@ -159,3 +162,6 @@ Status after iter 6:
 - `545d041e` fix(pnl): account for unassigned-OWN trips in truck breakdown (iter 5)
 - `c5afe9a6` fix(lint): clear require() error and unused-symbol warnings (iter 5)
 - `aa0db021` fix(dispatch,fleet): remove dead 'Sắp ra mắt' disabled buttons (iter 6)
+- `290c54b3` refactor(types): type getBootstrap properly, remove lone 'any' suppression (iter 7)
+- `97ee27ce` fix(audit): log enrichment errors instead of 9 silent empty catches (iter 8)
+- `6d0852ba` refactor(reporting): remove dead deprecated monthDateRange alias (iter 9)
