@@ -162,6 +162,32 @@ export async function getPnlReport(month: number, year: number) {
       externalMargin?: number;
     }> = Array.from(byTruck.values());
 
+    // Add an "Chưa gắn xe" (unassigned) bucket for OWN trips that have no
+    // truckId. Such trips still contribute revenue/cost to the period totals
+    // above (totalRevenue/totalCosts iterate all `trips`), but the per-truck
+    // loop skips them (line 120 `if (!trip.truckId) continue`). Without this
+    // bucket the truck breakdown would silently under-count and fail to
+    // reconcile with adjustedGrossProfit. id: -1 keeps it distinct from the
+    // real-truck ids and the EXTERNAL id: 0 sentinel used downstream.
+    const unassignedTrips = trips.filter(t => t.truckId == null);
+    if (unassignedTrips.length > 0) {
+      const unRev = unassignedTrips.reduce((sum, t) => {
+        const rev = parseFloat(t.revenue || '0');
+        const vat = Number(t.vatRate || 0);
+        return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
+      }, 0);
+      const unCosts = unassignedTrips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
+      truckBreakdown.push({
+        id: -1,
+        plate: 'Chưa gắn xe',
+        trips: unassignedTrips.length,
+        revenue: unRev,
+        costs: unCosts,
+        profit: unRev - unCosts,
+        maintenanceExpenses: 0,
+      });
+    }
+
     // Add "Xe ngoài" bucket for external carrier trips
     if (extTrips.length > 0) {
       const extMgmtMargin = extTrips.reduce((sum, t) => {

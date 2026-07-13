@@ -111,26 +111,53 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
           maintenance: t.maintenanceExpenses ?? 0,
         }));
 
-      // Per-truck breakdown from all active trips (not gated on locked status)
-      const truckMap = new Map<number, { id: number; plate: string; trips: number; revenue: number; costs: number; profit: number }>();
-      for (const t of activeTrips) {
-        const isExternal = t.carrierType === 'EXTERNAL';
-        const key = isExternal ? 0 : t.truckId;
-        const plate = isExternal ? 'Xe ngoài' : (t.truck?.licensePlate ?? `Truck #${t.truckId}`);
-        const rev = parseFloat(t.revenue ?? '0') + parseFloat(t.revenueEmptyReturn ?? '0');
-        const cost = parseFloat(t.totalCost ?? '0');
-        const gp = parseFloat(t.grossProfit ?? '0');
-        const existing = truckMap.get(key);
-        if (existing) {
-          existing.trips++;
-          existing.revenue += rev;
-          existing.costs += cost;
-          existing.profit += gp;
-        } else {
-          truckMap.set(key, { id: key, plate, trips: 1, revenue: rev, costs: cost, profit: gp });
+      // Per-truck breakdown. Prefer the backend P&L `report.trucks` — it is the
+      // authoritative, reconciling breakdown (ex-VAT revenue, correct cost
+      // attribution incl. maintenance, and synthetic "Chưa gắn xe" / "Xe ngoài"
+      // buckets for unassigned-OWN and external trips). Re-deriving from raw
+      // trips here would (a) label null-truck trips "Truck #null", (b) read the
+      // stale denormalized `trips.grossProfit`, and (c) fail to reconcile with
+      // the P&L totals shown elsewhere on the page. Fall back to derivation only
+      // when the report is not yet loaded.
+      let truckBreakdown: Array<{ id: number; plate: string; trips: number; revenue: number; costs: number; profit: number }>;
+      if (report?.trucks?.length) {
+        truckBreakdown = report.trucks
+          .filter(t => t.id !== 0) // "Xe ngoài" rendered as its own row below; keep own+unassigned together
+          .map(t => ({
+            id: t.id,
+            plate: t.plate,
+            trips: t.trips,
+            revenue: t.revenue,
+            costs: t.costs,
+            profit: t.profit,
+          }));
+        // Re-append the external bucket last, if present, to preserve "own first" ordering.
+        const ext = report.trucks.find(t => t.id === 0);
+        if (ext) {
+          truckBreakdown.push({ id: ext.id, plate: ext.plate, trips: ext.trips, revenue: ext.revenue, costs: ext.costs, profit: ext.profit });
         }
+        truckBreakdown.sort((a, b) => b.profit - a.profit);
+      } else {
+        const truckMap = new Map<number, { id: number; plate: string; trips: number; revenue: number; costs: number; profit: number }>();
+        for (const t of activeTrips) {
+          const isExternal = t.carrierType === 'EXTERNAL';
+          const key = isExternal ? 0 : (t.truckId ?? -1);
+          const plate = isExternal ? 'Xe ngoài' : (t.truck?.licensePlate ?? 'Chưa gắn xe');
+          const rev = parseFloat(t.revenue ?? '0') + parseFloat(t.revenueEmptyReturn ?? '0');
+          const cost = parseFloat(t.totalCost ?? '0');
+          const gp = rev - cost; // recompute; avoid stale denormalized grossProfit
+          const existing = truckMap.get(key);
+          if (existing) {
+            existing.trips++;
+            existing.revenue += rev;
+            existing.costs += cost;
+            existing.profit += gp;
+          } else {
+            truckMap.set(key, { id: key, plate, trips: 1, revenue: rev, costs: cost, profit: gp });
+          }
+        }
+        truckBreakdown = [...truckMap.values()].sort((a, b) => b.profit - a.profit);
       }
-      const truckBreakdown = [...truckMap.values()].sort((a, b) => b.profit - a.profit);
 
       return {
         fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
