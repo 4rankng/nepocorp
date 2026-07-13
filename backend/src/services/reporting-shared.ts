@@ -39,9 +39,6 @@ export function calendarMonthDateRange(year: number, month?: number) {
   return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
 }
 
-/** @deprecated Use calendarMonthDateRange or salaryPeriodDateRange instead */
-export const monthDateRange = calendarMonthDateRange;
-
 /**
  * Resolve salary-period-aware date range for a given month/year.
  * Returns { start, end } where start is inclusive and end is exclusive (next day).
