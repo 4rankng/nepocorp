@@ -24,15 +24,14 @@
 - shared typecheck: PASS
 - shared catalog test: PASS (8/8)
 - backend typecheck: PASS
-- backend tests: 652/654 pass — **1 pre-existing failure** (A8 P&L invariant
-  `(a.div)`), confirmed failing on clean HEAD too. It's a dev-DB `trips.grossProfit`
-  staleness issue (denormalized col stale vs current revenue/cost inputs); diff
-  ~231M VND, far beyond rounding. Documented remediation: `backend/scripts/recost-gross-profit.ts`
-  (sign-off-gated `--apply`). NOT caused by in-flight work.
+- backend tests: 652/654 pass — **1 failure** (A8 P&L invariant `(a.div)`),
+  diff ~231M VND. **Initial diagnosis (dev-DB staleness / recost-gross-profit)
+  was WRONG — see iter 5:** the real cause is NULL-truckId OWN trips counted in
+  totals but dropped from the truck breakdown. FIXED in iter 5 → 653/654, 0 fail.
 - frontend tests: PASS (139/139)
 - frontend typecheck: **FAIL → P0 fixed** (`agentHighlight.ts` `as const` on `showButtons` made it readonly vs Driver.js `AllowedButtons[]`; fixed by importing `AllowedButtons` + explicit annotation)
 - frontend build: PASS
-- lint: not yet run this session
+- lint: **FAIL** (require() error + 7 warnings) → **fixed iter 5** → 0 errors, 0 warnings
 
 Branch: `feat/onboarding-orchestration`.
 
@@ -76,7 +75,24 @@ Feature B is COMPLETE end-to-end (API + admin UI + consumers).
 - [x] Onboarding master-switch admin UI: complete + browser-verified (iter 4).
 
 ### P2 — quality / coverage
-- [ ] `A8 P&L invariant (a.div)` dev-DB staleness — run `recost-gross-profit.ts --apply` (sign-off) or accept as dev-data noise. Pre-existing, unrelated to onboarding work.
+- [x] **`A8 P&L invariant (a.div)` — REAL BUG, fixed (iter 5, `545d041e`).** NOT dev-data
+      staleness as iter 0-4 assumed. Root cause: OWN trips with NULL `truckId`
+      contributed to P&L period totals (`totalRevenue`/`grossProfit` iterate ALL
+      OWN trips) but were silently dropped from the per-truck breakdown (the
+      `byTruck` loop does `if (!trip.truckId) continue`). Result: truck table
+      under-counted by exactly the NULL-truck contribution — 80 trips / 231,264,000
+      VND in June 2026, matching the assertion diff to the đồng. The prior
+      "recost-gross-profit" diagnosis was wrong: `pnl.service` recomputes from
+      `revenue`/`totalCost` and never reads the denormalized `grossProfit` column.
+      Fix: synthetic `Chưa gắn xe` bucket (id: -1) parallel to `Xe ngoài` (id: 0).
+      Frontend `finance-derived.ts` was ALSO re-deriving its own breakdown from
+      raw trips (showed `Truck #null` + read stale `trips.grossProfit`); now uses
+      authoritative `report.trucks`. pnl-invariant 6/6 pass; live API reconciles;
+      FinancePage visually verified.
+- [x] **Lint clean (iter 5, `c5afe9a6`).** `require()` error in `summary-lane.ts`
+      (false circular-dep guard; shared is a leaf) + 7 unused-symbol warnings
+      across intent-router/knowledge-retrieval/lookup-lane/failover/metric-registry.test.
+      `pnpm lint`: 0 errors, 0 warnings.
 - [x] Two dead-click KPI cards: fixed (iter 2, `4ffe0f98`).
 - [x] Fake "Lưu nháp" disabled button + misleading autosave claim on TripCreate (iter 3, `598006c9`).
 - [ ] `shared/src/onboarding/tasks.ts:40` placeholder step 5 (fleet dashboard awareness) — confirm it's intended/complete or fill it.
@@ -89,9 +105,18 @@ Feature B is COMPLETE end-to-end (API + admin UI + consumers).
 - [ ] `tripClient.ts:105` — type the bootstrap blob to remove the lone `any` suppression.
 
 ## Completion criteria (project-wide)
-Track against the autonomous-mission completion criteria. Currently the dominant
-remaining work is P1: verify + commit in-flight features, close the onboarding-
-switch UI gap, and browser-verify the create-trip tour.
+Track against the autonomous-mission completion criteria.
+
+Status after iter 5:
+- ✅ install / dev startup / production build all work (verified iter 0+5)
+- ✅ type checks pass (shared/backend/frontend, iter 5)
+- ✅ **lint passes** (iter 5 — was failing: require() error + warnings)
+- ✅ **relevant automated tests pass** (iter 5 — backend 653/654 0-fail, frontend 141/141, catalog 8/8)
+- ✅ primary tutorial journey (create-trip tour) works end-to-end, browser-verified (iter 4)
+- ✅ onboarding master-switch admin UI complete + browser-verified (iter 4)
+- ✅ no dead controls / fake buttons / misleading copy (iter 2-3)
+- ✅ **P&L financial data reconciles** (iter 5 — was a real accounting gap, not dev-noise)
+- ⬜ remaining P2/P3 polish below (non-blocking; none are user-facing TODOs/placeholders)
 
 ## Architectural decisions
 - Onboarding switch stored in existing `app_settings` (key/value text), default-on, cache mirrors `services/llm/settings.ts`.
@@ -109,9 +134,16 @@ switch UI gap, and browser-verify the create-trip tour.
   - create-trip: targets `customerId`/`routeId`/`trip-new-submit`/`trip-new-form` all present; `--trip-action-bar-height`=74px published; 0 console errors, 0 failed API reqs; desktop+mobile layouts clean.
   - onboarding switch: API round-trip default-on→off→on all correct; ADMIN-only RBAC by Casbin design (only `p, ADMIN, *, *` matches `onboarding-settings`) + `requireRoles(ADMIN)`; admin UI renders toggle (`role="switch"`, `aria-checked`) + Save; 0 console errors.
   - Final gate: shared tc PASS / catalog 8/8 / backend tc PASS / frontend tc PASS / frontend tests 141/141 / build PASS / lint clean on changed files.
+- **iter 5 (lint + P&L accounting bug):** Closed two real completion-criteria gaps:
+  - **Lint was failing** (1 error + 7 warnings). Root cause: `summary-lane.ts:62` used `require('@tingting/shared')` behind a false "circular-dep guard" comment (shared is a leaf package — no cycle possible). Fixed to normal ESM import; cleared the 7 unused-symbol warnings (genuine dead code in `failover.ts`'s `getInactiveProvider`, plus stale imports/params). `pnpm lint`: 0/0.
+  - **`pnl-invariant.test.ts` (a.div) was failing** — and iters 0-4's "dev-data staleness / recost-gross-profit" diagnosis was WRONG. Diagnosed empirically: OWN trips with NULL `truckId` (80 trips, 231,264,000 VND in June 2026) are counted in P&L totals but dropped from the per-truck breakdown (`if (!trip.truckId) continue`) → the truck table under-counts by exactly that amount. Fix: synthetic `Chưa gắn xe` bucket (id: -1), parallel to `Xe ngoài` (id: 0). Backend tests now 653/654 pass, 0 fail.
+  - Visual verification of the P&L page then surfaced a **frontend** instance of the same class of bug: `finance-derived.ts` re-derived its own truckBreakdown from raw trips, rendering `Truck #null` and reading the stale denormalized `trips.grossProfit`. Fixed to use authoritative `report.trucks` (fallback re-derives with recompute + 'Chưa gắn xe' label). Puppeteer-verified: table shows Chưa gắn xe / 51C-12345 / Xe ngoài, Xe ngoài keeps italic/grey styling, 0 console errors, 0 failed reqs.
+  - Final gate: shared tc ✓ / catalog 8/8 ✓ / backend tc ✓ / **backend tests 653/654 (0 fail)** / **lint 0/0** / frontend tc ✓ / frontend tests 141/141 ✓ / build ✓.
 
 ## Commits this loop
 - `eb96ca6e` feat: onboarding admin master switch + create-trip tutorial usability improvements (in-flight work + P0 typecheck fix)
 - `4fc202a2` test(onboarding): pin tour-launch master-switch guard
 - `4ffe0f98` fix(advances): make summary-only KPI cards non-interactive
 - `598006c9` fix(trip-form): remove fake 'Lưu nháp' button and misleading autosave claim
+- `545d041e` fix(pnl): account for unassigned-OWN trips in truck breakdown (iter 5)
+- `c5afe9a6` fix(lint): clear require() error and unused-symbol warnings (iter 5)
