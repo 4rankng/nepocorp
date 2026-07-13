@@ -49,7 +49,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const amt = Number(expense.amount).toLocaleString('vi-VN') + ' ₫';
         return `chi phí ${expense.categoryName} với số tiền ${amt} (Nhà cung cấp: ${expense.supplierName}${expense.truckPlate ? `, Xe: ${expense.truckPlate}` : ''})`;
       }
-    } catch {}
+    } catch (e) { console.warn('[audit] enrich expenses failed:', e); }
   }
 
   // Trip Expenses entity
@@ -72,7 +72,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const supplierPart = expense.supplierName ? ` (Nhà cung cấp: ${expense.supplierName})` : '';
         return `phí ${expense.typeName || 'hộ'} với số tiền chi ${buyAmt}${tripPart}${supplierPart}`;
       }
-    } catch {}
+    } catch (e) { console.warn('[audit] enrich trip/forwarder expenses failed:', e); }
   }
 
   // Penalties entity
@@ -95,7 +95,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const reason = penalty.reasonText || penalty.customReason || 'Không rõ lý do';
         return `lái xe ${penalty.driverName} với số tiền ${amt} (Lý do: ${reason}${penalty.tripCode ? `, Chuyến: ${penalty.tripCode}` : ''})`;
       }
-    } catch {}
+    } catch (e) { console.warn('[audit] enrich penalties failed:', e); }
   }
 
   // Payments entity (Customer or Vendor payment)
@@ -107,7 +107,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
           .from(s.suppliers).where(eq(s.suppliers.id, Number(body.supplierId))).limit(1);
         const amt = Number(body.amount).toLocaleString('vi-VN') + ' ₫';
         return `cho nhà cung cấp ${supplier?.name || `ID ${body.supplierId}`} với số tiền ${amt}${body.receiptId ? ` (Số hóa đơn: ${body.receiptId})` : ''}`;
-      } catch {}
+      } catch (e) { console.warn('[audit] enrich vendor payment failed:', e); }
     }
     // B. Customer payment (has customerId)
     if (body.customerId && Array.isArray(body.payments)) {
@@ -128,7 +128,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const totalAmt = payments.reduce((sum: number, p: Record<string, unknown>) => sum + Number(p?.amount || 0), 0);
         const amtStr = totalAmt > 0 ? ` số tiền ${totalAmt.toLocaleString('vi-VN')} ₫` : '';
         return `từ khách hàng ${customer?.name || `ID ${body.customerId}`}${amtStr}${tripDetail}${body.receiptId ? ` (Số hóa đơn: ${body.receiptId})` : ''}`;
-      } catch {}
+      } catch (e) { console.warn('[audit] enrich customer payment failed:', e); }
     }
   }
 
@@ -143,7 +143,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
           const amt = Number(body.amount).toLocaleString('vi-VN') + ' ₫';
           return `cho chuyến ${trip.tripCode} với số tiền điều chỉnh ${amt}${body.note ? ` (Ghi chú: ${body.note})` : ''}`;
         }
-      } catch {}
+      } catch (e) { console.warn('[audit] enrich adjustment failed:', e); }
     }
   }
 
@@ -157,7 +157,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
       const [trip] = await db.select({ tripCode: s.trips.tripCode })
         .from(s.trips).where(eq(s.trips.id, singleTripId)).limit(1);
       if (trip?.tripCode) return `cho chuyến ${trip.tripCode}`;
-    } catch {}
+    } catch (e) { console.warn('[audit] enrich single-trip fallback failed:', e); }
   }
 
   // 4. Multi-trip ref fallback
@@ -170,7 +170,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
           .from(s.trips).where(inArray(s.trips.id, ids));
         const codes = rows.map(r => r.tripCode).filter((c): c is string => Boolean(c));
         if (codes.length > 0) return `cho ${codes.length === 1 ? `chuyến ${codes[0]}` : `${codes.length} chuyến (${codes.join(', ')})`}`;
-      } catch {}
+      } catch (e) { console.warn('[audit] enrich multi-trip fallback failed:', e); }
     }
   }
 
@@ -202,7 +202,7 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
         const [row] = await db.select({ tripCode: s.trips.tripCode }).from(s.trips).where(eq(s.trips.id, payload.entityId)).limit(1);
         if (row?.tripCode) return row.tripCode;
       }
-    } catch {}
+    } catch (e) { console.warn(`[audit] enrich basic entity (${payload.entityType}) failed:`, e); }
   }
 
   return undefined;
@@ -213,7 +213,7 @@ export function initAuditService() {
     try {
       // Out-of-band metadata resolution for all entities
       if (!payload.entityKey) {
-        try { payload.entityKey = await enrichEntityKey(payload); } catch {}
+        try { payload.entityKey = await enrichEntityKey(payload); } catch (e) { console.warn('[audit] enrichEntityKey failed:', e); }
       }
       const message = renderAuditMessage(payload);
       await db.insert(auditLogs).values({
