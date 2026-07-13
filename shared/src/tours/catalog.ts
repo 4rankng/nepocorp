@@ -12,7 +12,7 @@ import type { Tour } from './schema';
 export const TOUR_CATALOG = {
   'create-trip': {
     id: 'create-trip',
-    version: 1,
+    version: 2,
     title: 'Tạo chuyến vận chuyển',
     summary: 'Tạo một lệnh vận chuyển mới: chọn khách + tuyến, nhập thông tin, rồi lưu.',
     description: 'Hướng dẫn tạo lệnh vận chuyển (chuyến đi) mới — chọn khách, tuyến, loại hàng rồi lưu.',
@@ -21,11 +21,10 @@ export const TOUR_CATALOG = {
     steps: [
       {
         title: 'Mở form tạo chuyến',
-        body: 'Vào trang Tạo lệnh vận chuyển. Đây là form nhập thông tin chuyến đi (khách, tuyến, hàng).',
+        body: 'Mở trang Tạo lệnh vận chuyển. Hãy bắt đầu với khách hàng và tuyến đường ở phần Thông tin chuyến đi.',
         directive: {
           kind: 'navigate',
           routeKey: 'tripNew',
-          highlight: { targetId: 'trip-new-form', durationMs: 3500 },
         },
       },
       {

@@ -53,6 +53,7 @@ const PenaltyReasonsConfigPage = lazy(() => import('./pages/config/PenaltyReason
 const FuelConfigPage = lazy(() => import('./pages/config/FuelConfigPage'));
 const LlmSettingsConfigPage = lazy(() => import('./pages/config/LlmSettingsConfigPage'));
 const FaqEntriesConfigPage = lazy(() => import('./pages/config/FaqEntriesConfigPage'));
+const OnboardingSettingsConfigPage = lazy(() => import('./pages/config/OnboardingSettingsConfigPage'));
 const CompanyInfoConfigPage = lazy(() => import('./pages/config/CompanyInfoConfigPage'));
 const CapTableConfigPage = lazy(() => import('./pages/config/CapTableConfigPage'));
 const CustomersConfigPage = lazy(() => import('./pages/config/CustomersConfigPage'));
@@ -167,6 +168,7 @@ function AppRoutes() {
           <Route path="/config/fuel" element={adminOnly(page(<FuelConfigPage />))} />
           <Route path="/config/llm-settings" element={strictAdminOnly(page(<LlmSettingsConfigPage />))} />
           <Route path="/config/faq-entries" element={strictAdminOnly(page(<FaqEntriesConfigPage />))} />
+          <Route path="/config/onboarding-settings" element={strictAdminOnly(page(<OnboardingSettingsConfigPage />))} />
           <Route path="/config/company-info" element={adminOnly(page(<CompanyInfoConfigPage />))} />
           <Route path="/config/trip-expense" element={adminOnly(page(<TripExpenseConfigPage />))} />
           <Route path="/config/cap-table" element={adminOnly(page(<CapTableConfigPage />))} />

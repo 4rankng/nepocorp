@@ -10,6 +10,7 @@ import { authMiddleware, getUser } from '../middleware/auth';
 import { casbinAuthz } from '../middleware/casbin';
 import { blacklistToken } from '../lib/redis';
 import * as userService from '../services/user.service';
+import { getOnboardingEnabled } from '../services/onboarding-settings.service';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -48,7 +49,8 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   );
 
   const capabilities = await userService.getCapabilities(user.role);
-  res.json({ token, user: { ...user, fullName: displayName, capabilities, botEnabled: config.botEnabled } });
+  const onboardingEnabled = await getOnboardingEnabled();
+  res.json({ token, user: { ...user, fullName: displayName, capabilities, botEnabled: config.botEnabled, onboardingEnabled } });
 }));
 
 // ─── Current user ────────────────────────────────────────────────────────────
@@ -59,7 +61,8 @@ router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Respons
     throw new ApiError(401, 'Vai trò đã thay đổi, vui lòng đăng nhập lại');
   }
   const capabilities = await userService.getCapabilities(profile.role);
-  res.json({ ...profile, capabilities, botEnabled: config.botEnabled });
+  const onboardingEnabled = await getOnboardingEnabled();
+  res.json({ ...profile, capabilities, botEnabled: config.botEnabled, onboardingEnabled });
 }));
 
 router.post('/logout', authMiddleware, asyncHandler(async (req: Request, res: Response) => {

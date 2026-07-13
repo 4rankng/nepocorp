@@ -276,6 +276,9 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
     (tourId: string, resumeStep?: number, source: TourTriggerSource = 'manual') => {
       const t = TOUR_CATALOG[tourId as TourId];
       if (!t || !roleOk(t)) return;
+      // Admin master switch: refuse to start a tour when the onboarding
+      // tutorial is disabled app-wide. Defaults to enabled while undefined.
+      if (user?.onboardingEnabled === false) return;
       // Replacing another active tour, or leaving a stale in_progress record
       // from a dismissed resume prompt: clear every OTHER tour's in_progress
       // record so the resume-on-refresh scan can't resurrect a tour we just

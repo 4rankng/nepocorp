@@ -15,17 +15,23 @@ import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
 import { useOnboardingChecklist } from '../../hooks/useOnboardingChecklist';
 import { useAuth } from '../../hooks/useAuth';
+import { useTourController } from '../../context/TourControllerContext';
 import './onboarding-checklist.css';
 
 const OFFICE_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT']);
 
 export function OnboardingChecklist() {
   const { user } = useAuth();
+  const { tour } = useTourController();
   const { tasks, total, completedCount, pct, loading, launchTour, dismiss } = useOnboardingChecklist();
   const [open, setOpen] = useState(false);
   const [sessionDismissed, setSessionDismissed] = useState(false);
 
   const isOffice = user && OFFICE_ROLES.has(user.role);
+  // Admin master switch: when the onboarding tutorial is disabled app-wide,
+  // hide the panel entirely (the admin "turned off the onboarding tutorial").
+  // Defaults to enabled when the flag is undefined (still loading / not set).
+  const onboardingEnabled = user?.onboardingEnabled !== false;
 
   // Auto-open on first session (no completed/dismissed task rows yet). Once the
   // server returns any rows, we treat the user as past first-run.
@@ -37,7 +43,7 @@ export function OnboardingChecklist() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  if (!isOffice || total === 0) return null;
+  if (!onboardingEnabled || !isOffice || total === 0 || tour) return null;
   // Hide entirely when 100% complete (onboarding done) or session-dismissed.
   if (pct === 100) return null;
   if (sessionDismissed && !open) {

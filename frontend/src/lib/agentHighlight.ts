@@ -1,7 +1,7 @@
 // agentHighlight — imperative scroll-to + Driver.js spotlight used by the agent
 // directive bridge (focus / scrollTo / navigate.highlight). Extracted from
 // useFocusDeepLink so the bridge can call it outside the URL `?focus=` flow.
-import { driver, type Driver } from 'driver.js';
+import { driver, type AllowedButtons, type Driver } from 'driver.js';
 import { resolveTourTarget } from './tourTarget';
 
 let activeDriver: Driver | null = null;
@@ -50,17 +50,23 @@ export function highlightElement(targetId: string, durationMs = 2000): boolean {
     },
   });
 
-  activeDriver.highlight({
-    element: el,
-    popover: {
-      title: 'Hướng dẫn',
-      description: 'Bấm vào vùng đang được tô sáng để tiếp tục.',
-      side: 'bottom',
-      align: 'center',
-      showButtons: ['close'],
-      doneBtnText: 'Đã hiểu',
-    },
-  });
+  const popover = tourActive
+    ? undefined
+    : {
+        title: 'Hướng dẫn',
+        description: 'Bấm vào vùng đang được tô sáng để tiếp tục.',
+        side: 'bottom' as const,
+        align: 'center' as const,
+        // Annotate so TS infers Driver.js's AllowedButtons[], not string[].
+        showButtons: ['close'] as AllowedButtons[],
+        doneBtnText: 'Đã hiểu',
+      };
+
+  // Curated tours already render their own persistent title, instructions,
+  // progress and controls. Keep Driver.js for the overlay/target emphasis, but
+  // do not render a second, contradictory popover that implies target clicks
+  // advance the tour.
+  activeDriver.highlight({ element: el, ...(popover ? { popover } : {}) });
 
   activeTimer = window.setTimeout(() => {
     clearActiveDriver();

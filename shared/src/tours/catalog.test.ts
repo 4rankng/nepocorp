@@ -102,8 +102,11 @@ describe('tour catalog integrity', () => {
     }
   });
 
-  test('create-trip tour targets the stamped TripNew elements', () => {
+  test('create-trip tour starts with navigation then targets the required TripNew controls', () => {
     const t = TOUR_CATALOG['create-trip'];
+    const first = t.steps[0].directive;
+    assert.ok(first && first.kind === 'navigate', 'create-trip must open the trip-create page first');
+    assert.strictEqual(first.highlight, undefined, 'create-trip must not spotlight the entire form');
     const ids: string[] = [];
     for (const s of t.steps) {
       const d = s.directive;
@@ -112,6 +115,8 @@ describe('tour catalog integrity', () => {
       else if (d.kind === 'navigate' && d.highlight) ids.push(d.highlight.targetId);
     }
     assert.ok(ids.includes('trip-new-submit'), 'create-trip tour must spotlight the submit button');
-    assert.ok(ids.includes('trip-new-form'), 'create-trip tour must spotlight the form');
+    assert.ok(ids.includes('customerId'), 'create-trip tour must spotlight the customer selector');
+    assert.ok(ids.includes('routeId'), 'create-trip tour must spotlight the route selector');
+    assert.ok(!ids.includes('trip-new-form'), 'create-trip tour must not spotlight the full form');
   });
 });

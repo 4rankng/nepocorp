@@ -178,3 +178,8 @@ export type { Tour, TourId } from './tours';
 // role checklists, lifecycle analytics) reacts to. See ./onboarding/events.ts.
 export { PRODUCT_EVENTS, ONBOARDING_EVENT_NAMES, ONBOARDING_TASKS, tasksForRole, getTask } from './onboarding';
 export type { ProductEventName, ProductEventPayloads, PayloadOf, OnboardingEventName, TriggerSource, OnboardingTask } from './onboarding';
+
+// ─── Onboarding admin settings (master on/off toggle) ──────────────────────
+// DB-backed admin switch for the onboarding tutorial. See ./schemas/onboarding-settings.ts.
+export { ONBOARDING_SETTINGS_PATHS } from './schemas/onboarding-settings';
+export type { OnboardingSettingsResponse, OnboardingSettingsUpdate } from './schemas/onboarding-settings';

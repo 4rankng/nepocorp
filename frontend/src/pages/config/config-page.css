@@ -700,3 +700,59 @@
   /* Table footer — compact */
   .routes-config-page .table-foot { padding: 8px 4px; font-size: var(--fs-xs); }
 } /* end 640px */
+
+/* ── Onboarding settings toggle (OnboardingSettingsConfigPage) ────────────── */
+.cfg-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.cfg-toggle {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.cfg-toggle.is-on {
+  background: #16a34a;
+}
+.cfg-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+.cfg-toggle.is-on .cfg-toggle-knob {
+  transform: translateX(20px);
+}
+.cfg-toggle-label {
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Shared config-page action/error rows (used by LlmSettings + Onboarding). */
+.cfg-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.cfg-error {
+  color: #b91c1c;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.cfg-panel-action-icon {
+  color: #94a3b8;
+}

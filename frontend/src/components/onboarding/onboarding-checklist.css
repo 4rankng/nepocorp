@@ -6,7 +6,7 @@
 .ob-checklist--badge {
   position: fixed;
   right: 20px;
-  bottom: 20px;
+  bottom: calc(var(--trip-action-bar-height, 0px) + 20px);
   z-index: 60; /* below the agent drawer (z-index 70) but above page content */
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -183,6 +183,6 @@
     right: 12px;
     left: 12px;
     width: auto;
-    bottom: 12px;
+    bottom: calc(var(--trip-action-bar-height, 0px) + 12px);
   }
 }
