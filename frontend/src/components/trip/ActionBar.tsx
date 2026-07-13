@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './ActionBar.css';
-import { AlertTriangle, Check, Save, ArrowRight, Loader2 } from 'lucide-react';
+import { AlertTriangle, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { isAnyUploading } from '../../hooks/useTripFormPhotos';
 
@@ -48,14 +48,11 @@ export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
             <div className="tc-action-bar__status-main">
               {allFilled ? 'Sẵn sàng tạo lệnh' : `Còn ${form.totalRequiredFields - form.requiredFieldsFilled} trường bắt buộc chưa điền`}
             </div>
-            <div className="tc-action-bar__status-sub">Bản nháp được lưu tự động</div>
+            <div className="tc-action-bar__status-sub">Điền đủ trường bắt buộc để bật nút "Tạo lệnh"</div>
           </div>
         </div>
         <div className="tc-action-bar__spacer" />
         <button className="btn btn--ghost" type="button" onClick={onCancel} disabled={form.submitting}>Hủy</button>
-        <button className="btn btn--secondary desktop-only" type="button" disabled title="Chưa hỗ trợ">
-          <Save size={16} /> Lưu nháp
-        </button>
         <button className="btn btn--primary" id="trip-new-submit" type="button" disabled={disabled || !allFilled} onClick={onSubmit}>
           {form.submitting ? <Loader2 size={16} className="spin" /> : <ArrowRight size={16} />}
           Tạo lệnh
