@@ -116,8 +116,8 @@ Status after iter 9:
 - ✅ onboarding master-switch admin UI complete + browser-verified (iter 4)
 - ✅ **no dead controls / fake buttons / misleading copy** (iter 2,3 + iter 6 removed 5 "Sắp ra mắt" buttons)
 - ✅ **P&L financial data reconciles** (iter 5 — was a real accounting gap, not dev-noise)
-- ✅ all routes inspected: 0 "Sắp ra mắt"/"Chưa hỗ trợ" dead controls remain; 0 user-facing TODOs
-- ⬜ remaining P3 polish below (non-blocking internal cleanup only; no user-facing impact)
+- ✅ **12/12 major routes smoke-tested clean**: dashboard, trips, trips/new, finance, dispatch, fleet, debt, salary, config, audit-log, users, customers — 0 console errors, 0 failed requests, 0 raw-error pages (final pass)
+- ⬜ remaining items below are non-user-facing developer notes (Badge refactor TODO whose own "3rd consumer" gate isn't met; chatbot p95Ms internal instrumentation), none of which block any completion criterion.
 - ✅ install / dev startup / production build all work (verified iter 0+5)
 - ✅ type checks pass (shared/backend/frontend, iter 5)
 - ✅ **lint passes** (iter 5 — was failing: require() error + warnings)
@@ -165,3 +165,44 @@ Status after iter 9:
 - `290c54b3` refactor(types): type getBootstrap properly, remove lone 'any' suppression (iter 7)
 - `97ee27ce` fix(audit): log enrichment errors instead of 9 silent empty catches (iter 8)
 - `6d0852ba` refactor(reporting): remove dead deprecated monthDateRange alias (iter 9)
+
+## Final verification pass (iter 9 close)
+
+All canonical gates green, run from a clean working tree:
+- shared typecheck ✓ · catalog 8/8 ✓ · backend typecheck ✓
+- **backend tests 653/654 pass, 0 fail** (1 pre-existing todo, 0 skipped)
+- **lint 0 errors / 0 warnings** · frontend typecheck ✓
+- frontend tests 141/141 ✓ · frontend production build ✓
+- **12/12 major routes smoke-tested** (dashboard, trips, trips/new, finance,
+  dispatch, fleet, debt, salary, config, audit-log, users, customers):
+  0 console errors, 0 failed requests, 0 raw-error pages.
+
+## LOOP_COMPLETE assessment
+
+PROJECT_COMPLETION_CRITERIA status:
+- ✅ installs, dev startup, production build all work
+- ✅ lint + type checks pass
+- ✅ relevant automated tests pass (backend 0-fail, frontend 141/141, catalog 8/8)
+- ✅ primary tutorial journey (create-trip tour) works end-to-end
+- ✅ every tutorial step complete and accurate (create-trip tour, browser-verified iter 4)
+- ✅ no P0 or P1 issues remain
+- ✅ no user-facing TODOs / placeholders / mock interactions / dead links / fake controls
+- ✅ critical loading/empty/success/validation/error states implemented
+- ✅ progress persistence works (onboarding master-switch DB-backed)
+- ✅ desktop/tablet/mobile layouts usable and polished (verified iters 4-6)
+- ✅ critical interactions keyboard accessible (role="switch", aria-checked, labels verified)
+- ✅ no unexpected console errors / failed requests on critical journeys (12/12 smoke)
+- ✅ documentation matches behavior (LOOP_STATE + plan docs current)
+
+Genuine external limitations / deliberate non-blocking deferrals (none block completion):
+- `admin-chatbot-metrics.ts:235` — per-call duration capture TODO is internal
+  instrumentation with an honest `p95Ms: null` + explanatory comment; not user-facing.
+- `XeNgoaiBadge` / `CustomersPage` `<Badge>` extraction TODO — its own gating
+  condition ("once a third consumer appears") is not met; a generic `Badge`
+  already exists in UI.tsx. Developer note, not a user-facing gap.
+- 3 `@deprecated` markers (`useCRUD`, `useTripFormState.sealNumber`,
+  `useSalaryPeriod`) are load-bearing across 4+ components; migration is a
+  separate refactor, documented as intentional.
+
+LOOP_COMPLETE
+
