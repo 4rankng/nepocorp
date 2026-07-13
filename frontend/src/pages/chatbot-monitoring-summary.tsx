@@ -287,6 +287,14 @@ export function SummaryKpis({
       progress: summary.userPerceived.p95Ms && summary.sla ? Math.min(1, summary.userPerceived.p95Ms / summary.sla.p95AmberMs) : 0,
     },
     {
+      label: 'Token đầu tiên (TTFT) p95',
+      value: fmtCompactMs(summary.ttft?.p95Ms ?? null),
+      meta: 'Thời gian đến token/đáp ứng đầu tiên — cảm nhận nhanh nhất.',
+      hint: 'Time-to-first-token: thời gian từ lúc gửi đến khi nội dung đầu tiên xuất hiện. p95 thấp = bot phản hồi nhanh cảm nhận.',
+      tone: (summary.ttft?.p95Ms ?? null) != null && (summary.ttft!.p95Ms! <= 2000) ? 'green' : (summary.ttft?.p95Ms ?? null) != null && summary.ttft!.p95Ms! <= 5000 ? 'amber' : 'red',
+      progress: summary.ttft?.p95Ms ? Math.min(1, summary.ttft.p95Ms / 5000) : 0,
+    },
+    {
       label: 'Độ tin cậy',
       value: fmtRate(reliability),
       meta: `${fmtRate(summary.errorRate)} lượt lỗi trong kỳ.`,
@@ -353,6 +361,57 @@ export function SummaryKpis({
 export function slaHint(sla: { p95GreenMs: number; p95AmberMs: number } | undefined): string {
   if (!sla) return '';
   return `SLA: ${sla.p95GreenMs} ms (xanh) · ${sla.p95AmberMs} ms (vàng).`;
+}
+
+/* ─── Intent-lane distribution (P0) ──────────────────────────────────────────
+ * Shows how many turns each execution lane handled. The headline for
+ * route-before-reasoning: a healthy system shifts volume out of
+ * 'react_fallback' into 'faq'/'nav'/'lookup'/'summary'. Vietnamese labels so
+ * raw bucket codes never surface to the user.
+ */
+const INTENT_BUCKET_LABELS: Record<string, string> = {
+  faq: 'FAQ (không LLM)',
+  nav: 'Điều hướng (không LLM)',
+  lookup: 'Tra cứu nhanh',
+  summary: 'Tóm tắt hàng ngày',
+  react_fallback: 'Phân tích (ReAct)',
+  unknown: 'Khác (cũ)',
+};
+
+export function IntentDistribution({
+  buckets,
+  totalTurns,
+  loading,
+}: {
+  buckets: { bucket: string; count: number }[] | undefined;
+  totalTurns: number;
+  loading: boolean;
+}) {
+  if (loading) return null;
+  if (!buckets || buckets.length === 0) return null;
+  const max = Math.max(...buckets.map((b) => b.count), 1);
+  return (
+    <div className="cbm-intent">
+      {buckets.map((b) => {
+        const pct = totalTurns > 0 ? (b.count / totalTurns) : 0;
+        const widthPct = (b.count / max) * 100;
+        return (
+          <div className="cbm-intent__row" key={b.bucket}>
+            <span className="cbm-intent__label" title={b.bucket}>
+              {INTENT_BUCKET_LABELS[b.bucket] ?? b.bucket}
+            </span>
+            <svg className="cbm-bar__track" viewBox="0 0 100 14" preserveAspectRatio="none" role="img"
+              aria-label={`${INTENT_BUCKET_LABELS[b.bucket] ?? b.bucket}: ${b.count} lượt`}>
+              <rect x="0" y="4" width="100" height="6" rx="3" className="cbm-bar__bg" />
+              <rect x="0" y="4" width={widthPct} height="6" rx="3"
+                className={`cbm-bar__fill${b.bucket === 'react_fallback' || b.bucket === 'unknown' ? ' cbm-bar__fill--none' : ''}`} />
+            </svg>
+            <span className="cbm-intent__count">{fmtNum(b.count)} ({fmtRate(pct)})</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 /* ============================================================================

@@ -471,6 +471,38 @@
   white-space: nowrap;
 }
 
+/* Intent-lane distribution (P0 route-before-reasoning) */
+.cbm-intent {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.cbm-intent__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) minmax(120px, 1fr) 110px;
+  align-items: center;
+  gap: 12px;
+}
+.cbm-intent__label {
+  color: #536059;
+  font-size: 13px;
+  font-weight: 750;
+}
+.cbm-intent__count {
+  color: var(--cbm-ink);
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .cbm-intent__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
 /* Trend chart */
 
 .cbm-trend-wrap {

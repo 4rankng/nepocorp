@@ -20,7 +20,7 @@ import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useChatbotMetricsSummary, useChatbotLatencyBreakdown, useChatbotTools, useChatbotTimeseries, useChatbotRecent } from '../hooks/useChatbotMetrics';
-import { BOT_OPS_ILLUSTRATION, BotHealthHero, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
+import { BOT_OPS_ILLUSTRATION, BotHealthHero, IntentDistribution, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
 import { LatencyBreakdownBars, LatencyTrendChart, ReactEfficiency, RecentTurnsTable, ToolsTable } from './chatbot-monitoring-details';
 import './ChatbotMonitoringPage.css';
 
@@ -64,6 +64,17 @@ export default function ChatbotMonitoringPage() {
       ) : (
         <>
           <OperationalInsights summary={summaryQ.data} breakdown={latencyQ.data} tools={toolsQ.data} />
+
+          {/* Section 0 — Intent distribution (P0 route-before-reasoning) */}
+          <section className="cbm-section">
+            <Panel className="cbm-panel" title="Phân bổ theo lane thực thi" subtitle="Bao nhiêu lượt được xử lý bằng lane nhanh (FAQ/điều hướng/tra cứu) vs. lane phân tích tốn kém. Mục tiêu: đẩy volume ra khỏi 'Phân tích (ReAct)'.">
+              <IntentDistribution
+                buckets={summaryQ.data?.intentBuckets}
+                totalTurns={turns}
+                loading={summaryQ.isLoading}
+              />
+            </Panel>
+          </section>
 
           {/* Section 1 — Health summary */}
           <section className="cbm-section">

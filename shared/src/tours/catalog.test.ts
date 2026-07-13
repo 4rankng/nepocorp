@@ -5,6 +5,7 @@ import assert from 'node:assert';
 import { TOUR_CATALOG, TOUR_IDS, toursForRole } from './catalog.ts';
 import { AGENT_ROUTE_KEYS } from '../schemas/agent.ts';
 import { Role } from '../constants/index.ts';
+import { PRODUCT_EVENTS } from '../onboarding/events.ts';
 
 const ROUTE_KEYS = new Set<string>(AGENT_ROUTE_KEYS);
 
@@ -37,6 +38,35 @@ describe('tour catalog integrity', () => {
         assert.ok(s.body.trim(), `tour "${id}" step "${s.title}" has an empty body`);
       }
     }
+  });
+
+  test('every tour has a positive-integer version (Phase 2 versioning)', () => {
+    for (const id of TOUR_IDS) {
+      const t = TOUR_CATALOG[id];
+      assert.ok(
+        Number.isInteger(t.version) && t.version >= 1,
+        `tour "${id}" has invalid version ${String(t.version)} (must be a positive integer)`,
+      );
+    }
+  });
+
+  test('every completionEvent is a known product event (Phase 3 interaction steps)', () => {
+    const known = new Set<string>(PRODUCT_EVENTS);
+    for (const id of TOUR_IDS) {
+      for (const s of TOUR_CATALOG[id].steps) {
+        if (s.completionEvent) {
+          assert.ok(
+            known.has(s.completionEvent),
+            `tour "${id}" step "${s.title}" has unknown completionEvent "${s.completionEvent}"`,
+          );
+        }
+      }
+    }
+  });
+
+  test('create-trip final step is the canonical interaction step (Phase 3)', () => {
+    const last = TOUR_CATALOG['create-trip'].steps[TOUR_CATALOG['create-trip'].steps.length - 1];
+    assert.strictEqual(last.completionEvent, 'trip.created', 'create-trip last step must complete on trip.created');
   });
 
   test('toursForRole is role-scoped', () => {

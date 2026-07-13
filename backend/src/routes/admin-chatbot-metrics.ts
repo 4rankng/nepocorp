@@ -93,6 +93,10 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     avgToolCalls: sql<number | null>`avg(${schema.agentTurnMetrics.toolCallCount})::double precision`,
     tokensIn: sql<number>`coalesce(sum(${schema.agentTurnMetrics.tokensIn}), 0)::bigint`,
     tokensOut: sql<number>`coalesce(sum(${schema.agentTurnMetrics.tokensOut}), 0)::bigint`,
+    // P0 — time-to-first-token percentiles. Null over an empty/all-null set.
+    ttftP50: sql<number | null>`percentile_cont(0.5)  within group (order by ${schema.agentTurnMetrics.latencyFirstTokenMs}::double precision)`,
+    ttftP95: sql<number | null>`percentile_cont(0.95) within group (order by ${schema.agentTurnMetrics.latencyFirstTokenMs}::double precision)`,
+    ttftP99: sql<number | null>`percentile_cont(0.99) within group (order by ${schema.agentTurnMetrics.latencyFirstTokenMs}::double precision)`,
   })
     .from(schema.agentTurnMetrics)
     .where(gte(schema.agentTurnMetrics.createdAt, since));
@@ -119,6 +123,8 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
       tokensIn: 0,
       tokensOut: 0,
       sla: { p95GreenMs: config.agentSlaP95GreenMs, p95AmberMs: config.agentSlaP95AmberMs },
+      ttft: { p50Ms: null, p95Ms: null, p99Ms: null },
+      intentBuckets: [],
     };
     res.json(empty);
     return;
@@ -138,6 +144,17 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
       sql`${schema.agentTurnMetrics.errorKind} ~ '^final_'`,
     ))
     .groupBy(schema.agentTurnMetrics.errorKind);
+
+  // P0 — intent-lane distribution: how many turns each lane handled. Coalesce
+  // NULL (pre-column rows) to 'unknown'. Sorted by count desc so the dominant
+  // lane reads first on the dashboard.
+  const intentRows = await db.select({
+    bucket: sql<string>`coalesce(${schema.agentTurnMetrics.intentBucket}, 'unknown')`,
+    count: sql<number>`count(*)::int`,
+  })
+    .from(schema.agentTurnMetrics)
+    .where(gte(schema.agentTurnMetrics.createdAt, since))
+    .groupBy(sql`coalesce(${schema.agentTurnMetrics.intentBucket}, 'unknown')`);
 
   const summary: ChatbotMetricSummary = {
     turns,
@@ -167,6 +184,14 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     tokensIn: Number(r.tokensIn),
     tokensOut: Number(r.tokensOut),
     sla: { p95GreenMs: config.agentSlaP95GreenMs, p95AmberMs: config.agentSlaP95AmberMs },
+    ttft: {
+      p50Ms: toNullableNum(r.ttftP50),
+      p95Ms: toNullableNum(r.ttftP95),
+      p99Ms: toNullableNum(r.ttftP99),
+    },
+    intentBuckets: intentRows
+      .map((ir) => ({ bucket: ir.bucket, count: Number(ir.count) }))
+      .sort((a, b) => b.count - a.count),
   };
   res.json(summary);
 }));
@@ -183,6 +208,7 @@ router.get('/metrics/latency', asyncHandler(async (req: Request, res: Response) 
     finalMs: sql<number | null>`avg(${schema.agentTurnMetrics.latencyFinalMs})::double precision`,
     ackMs: sql<number | null>`avg(${schema.agentTurnMetrics.latencyAckMs})::double precision`,
     persistMs: sql<number | null>`avg(${schema.agentTurnMetrics.latencyPersistMs})::double precision`,
+    firstTokenMs: sql<number | null>`avg(${schema.agentTurnMetrics.latencyFirstTokenMs})::double precision`,
   })
     .from(schema.agentTurnMetrics)
     .where(gte(schema.agentTurnMetrics.createdAt, since));
@@ -194,6 +220,7 @@ router.get('/metrics/latency', asyncHandler(async (req: Request, res: Response) 
     finalMs: toNullableNum(r.finalMs),
     ackMs: toNullableNum(r.ackMs),
     persistMs: toNullableNum(r.persistMs),
+    firstTokenMs: toNullableNum(r.firstTokenMs),
   };
   res.json(breakdown);
 }));

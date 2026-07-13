@@ -33,6 +33,7 @@ import {
   type AgentDirective,
   type AgentActionChip,
   type AgentActionResult,
+  type AgentCitation,
   PAGE_CATALOG,
 } from '@tingting/shared';
 import {
@@ -74,11 +75,19 @@ export interface MetricsAccumulator {
   latencyFinalMs: number;
   latencyAckMs: number;
   latencyPersistMs: number;
+  /** P0 — time-to-first-token (ms from turn start to first streamed delta or
+   *  first tool result). Stamped once; null when the turn streamed nothing and
+   *  ran no tools. Persisted to latency_first_token_ms. */
+  latencyFirstTokenMs: number | undefined;
   reactIterations: number;
   toolCallCount: number;
   fallbackUsed: boolean;
   aborted: boolean;
   errorKind: string | undefined;
+  /** P0 — which execution lane handled the turn. Today only 'react_fallback'
+   *  (this orchestrator) and 'faq' (set in agentSocket before calling runAgent
+   *  is skipped). P1 will add 'nav'/'lookup'. Persisted to intent_bucket. */
+  intentBucket: string | undefined;
   /** True iff a navigate/focus directive was emitted this turn (mid-loop tool,
    *  terminal answer, or guardrail-synthesized). Powers the dashboard's
    *  navigate-compliance KPI (A4) and gates the A3 guardrail. */
@@ -205,7 +214,11 @@ function normalizeForIntent(text: string): string {
  *       "đơn giá dầu ở đâu" stays a freeform answer and isn't hijacked into a
  *       6-step tour. Deterministic + unit-tested. */
 export function synthesizeStartTourFromResponse(response: AgentResponse, role: Role): AgentResponse {
-  if (response.type === 'start_tour') {
+  if (response.type === 'start_tour' || response.type === 'continue_tour' || response.type === 'cancel_tour') {
+    // Phase 7: validate ANY tour-control response against the catalog + the
+    // caller's role before emitting (safe registry). An unknown or role-denied
+    // id degrades to a Vietnamese text denial — the chatbot can SELECT a tour
+    // but never invent one, and never reaches a tour the role can't run.
     const tour = getTour(response.tourId);
     const visible = tour ? toursForRole(role).some((t) => t.id === tour.id) : false;
     if (!tour || !visible) {
@@ -213,6 +226,11 @@ export function synthesizeStartTourFromResponse(response: AgentResponse, role: R
         type: 'text',
         content: `Hướng dẫn "${response.tourId}" không khả dụng cho vai trò của bạn.`,
       };
+    }
+    // Stamp the authoritative catalog version so the frontend can detect a
+    // stale catalog vs server-progress mismatch on continue_tour.
+    if (response.type === 'continue_tour' || response.type === 'cancel_tour') {
+      return { ...response, tourVersion: tour.version };
     }
     return response;
   }
@@ -299,6 +317,9 @@ export async function runAgent(opts: {
   const tools = getToolsForRole(ctx.role);
   const miniMaxTools = toolsToMiniMax(tools);
   const toolTrace: unknown[] = [];
+  // P2 — citations collected from knowledge.search tool results, attached to
+  // the final AgentResponse for doc-RAG provenance.
+  const collectedCitations: AgentCitation[] = [];
 
   // ── Metrics accumulator ────────────────────────────────────────────────
   // Every persisted assistant turn writes exactly one metrics row. Latency
@@ -310,15 +331,23 @@ export async function runAgent(opts: {
     latencyFinalMs: 0,
     latencyAckMs: 0,
     latencyPersistMs: 0,
+    latencyFirstTokenMs: undefined,
     reactIterations: 0,
     toolCallCount: 0,
     fallbackUsed: false,
     aborted: false,
     errorKind: undefined,
+    intentBucket: 'react_fallback',
     navigateDirectiveEmitted: false,
     guardrailFired: false,
     finalAvoided: false,
   };
+
+  // P0 — turn start anchor for time-to-first-token. Captured once, before the
+  // ReAct loop begins. Both stamp sites (first streamed delta, first tool
+  // result) guard on `latencyFirstTokenMs === undefined` so only the EARLIEST
+  // signal wins. performance.now() matches the LATENCY CONTRACT (telemetry.ts).
+  const turnStart = performance.now();
 
   // Hoisted out of the root-span body so the metrics row can be written AFTER
   // the span resolves: rootDurationMs + traceId come from withRootSpan's RETURN,
@@ -439,6 +468,12 @@ export async function runAgent(opts: {
               textEmitted = true;
             }
             if (probeBuf) {
+              // P0 — first visible token to the client. Stamp once (the earliest
+              // signal wins; a tool result could have landed earlier in a prior
+              // iteration but this is the first *streamed* content).
+              if (metrics.latencyFirstTokenMs === undefined) {
+                metrics.latencyFirstTokenMs = performance.now() - turnStart;
+              }
               emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: streamMessageId, delta: probeBuf });
             }
             probeBuf = '';
@@ -532,6 +567,12 @@ export async function runAgent(opts: {
           status: 'pending' as const,
         }));
         // tool_start events fire in original order (the UI shows them sequentially).
+        // P0 — the first TOOL_CALL_START is the user's first sign of progress on a
+        // tool turn (these turns stream no prose). Stamp TTFT once; if an earlier
+        // iteration already streamed text, that stamp already won.
+        if (metrics.latencyFirstTokenMs === undefined && pendings.length > 0) {
+          metrics.latencyFirstTokenMs = performance.now() - turnStart;
+        }
         for (const p of pendings) emit({ type: 'TOOL_CALL_START', toolName: p.call.name, args: p.parsedArgs });
 
         // Execute ONE tool (withSpan → latencyToolsMs; errorKind on failure). No
@@ -637,6 +678,11 @@ export async function runAgent(opts: {
             continue;
           }
           emit({ type: 'TOOL_CALL_END', toolName: p.call.name, toolCallId: p.call.id, ok: true, label: p.result!.label });
+          // P2 — collect citations from knowledge.search results for the final
+          // response's citations[] field.
+          if (p.call.name === 'knowledge.search') {
+            collectKnowledgeCitations(p.result!.data, collectedCitations);
+          }
           // Feed a size-capped JSON view back to the model.
           const view = compactToolResult(p.result!.data);
           messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: view });
@@ -802,6 +848,14 @@ export async function runAgent(opts: {
         );
       }
 
+      // P2 — auto-attach citations from knowledge.search tool results. When the
+      // ReAct loop called knowledge.search, the tool returned chunks with source
+      // metadata. Extract the top sources and attach them as citations[] on the
+      // final response so the user sees provenance (doc-RAG grounding).
+      if (collectedCitations.length > 0 && (response.type === 'text' || response.type === 'insight_card' || response.type === 'tutorial')) {
+        response = { ...response, citations: collectedCitations };
+      }
+
       return persistResponse(response);
     },
   );
@@ -829,6 +883,9 @@ export async function runAgent(opts: {
         latencyFinalMs: Math.round(metrics.latencyFinalMs),
         latencyAckMs: Math.round(metrics.latencyAckMs),
         latencyPersistMs: Math.round(metrics.latencyPersistMs),
+        latencyFirstTokenMs: metrics.latencyFirstTokenMs !== undefined
+          ? Math.round(metrics.latencyFirstTokenMs)
+          : undefined,
         reactIterations: metrics.reactIterations,
         toolCallCount: metrics.toolCallCount,
         fallbackUsed: metrics.fallbackUsed,
@@ -836,6 +893,7 @@ export async function runAgent(opts: {
         navigateDirectiveEmitted: metrics.navigateDirectiveEmitted,
         guardrailFired: metrics.guardrailFired,
         errorKind: metrics.errorKind,
+        intentBucket: metrics.intentBucket,
         tokensIn: totalUsage.promptTokens,
         tokensOut: totalUsage.completionTokens,
       });
@@ -907,6 +965,10 @@ async function produceFinalAnswer(
       if (parsed) return { response: parsed, usage: card.usage, fallbackUsed: false };
       // Card came back but didn't validate (non-JSON or schema-invalid) → record
       // the schema failure as the fallback cause before degrading to prose.
+      // P0.5 diagnostic: log the raw card head so the exact validation gap is
+      // observable without a redeploy. Counts only — truncated, no PII beyond
+      // what the model already emitted.
+      console.log(`[agent] final_schema fail, raw card head: ${(card.content ?? '').slice(0, 500)}`);
       fallbackReason = 'final_schema';
     }
   } catch (e) {
@@ -1085,6 +1147,28 @@ function isInternalContractLeak(text: string): boolean {
   ].some((needle) => normalized.includes(needle));
 }
 
+/** P2 — extract citations from a knowledge.search tool result and push them
+ *  into the collectedCitations array (deduped by sourceId, max 5). */
+function collectKnowledgeCitations(data: unknown, out: AgentCitation[]): void {
+  if (!data || typeof data !== 'object') return;
+  const result = data as { chunks?: Array<{ source?: string; heading?: string }> };
+  if (!Array.isArray(result.chunks)) return;
+  const seen = new Set<string>();
+  for (const chunk of result.chunks) {
+    if (!chunk.source || !chunk.heading) continue;
+    const sourceId = `doc:${chunk.source}:${chunk.heading}`.slice(0, 100);
+    if (seen.has(sourceId)) continue;
+    seen.add(sourceId);
+    out.push({
+      sourceId,
+      label: chunk.heading,
+      kind: 'doc',
+      ...(chunk.source.startsWith('docs/') ? { url: chunk.source } : {}),
+    });
+    if (out.length >= 5) break;
+  }
+}
+
 function safeParseArgs(raw: string): unknown {
   try {
     return JSON.parse(raw);
@@ -1119,18 +1203,46 @@ const WIDGET_FORMATS = new Set(['vnd', 'percent', 'number', 'days']);
 const WIDGET_TYPE_ALIASES: Record<string, string> = {
   kpi: 'kpi_grid',
   kpiGrid: 'kpi_grid',
+  kpi_grid: 'kpi_grid',
+  metrics: 'kpi_grid',
+  metric: 'kpi_grid',
+  stats: 'kpi_grid',
   bar: 'bar_chart',
   barChart: 'bar_chart',
+  bar_chart: 'bar_chart',
+  chart: 'bar_chart',
+  column_chart: 'bar_chart',
+  pie: 'bar_chart',
+  pie_chart: 'bar_chart',
   line: 'line_chart',
   lineChart: 'line_chart',
+  line_chart: 'line_chart',
+  trend: 'line_chart',
+  trend_chart: 'line_chart',
   warning: 'callout',
   note: 'callout',
+  alert: 'callout',
+  info: 'callout',
+  highlight: 'callout',
+  table_view: 'table',
+  grid: 'table',
+  anomalies: 'anomaly_list',
+  anomaly: 'anomaly_list',
 };
 const RESPONSE_TYPE_ALIASES: Record<string, string> = {
   card: 'insight_card',
   insight: 'insight_card',
+  insightcard: 'insight_card',
+  analysis: 'insight_card',
+  report: 'insight_card',
   message: 'text',
   answer: 'text',
+  reply: 'text',
+  prose: 'text',
+  tour: 'start_tour',
+  starttour: 'start_tour',
+  navigate: 'directive',
+  action: 'directive',
 };
 
 /**
@@ -1141,7 +1253,21 @@ const RESPONSE_TYPE_ALIASES: Record<string, string> = {
  */
 export function sanitizeAgentJson(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object') return raw;
-  const obj = raw as Record<string, unknown>;
+  let obj = raw as Record<string, unknown>;
+  // P0.5: the model often wraps its response in a container object —
+  // {response: {...}}, {result: {...}}, {data: {...}}, {answer: {...}}.
+  // Unwrap to the inner object so the discriminated union sees the real `type`.
+  for (const wrapperKey of ['response', 'result', 'data', 'answer', 'output']) {
+    const inner = obj[wrapperKey];
+    if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+      const innerRec = inner as Record<string, unknown>;
+      // Only unwrap if the inner object looks like a response (has type/content/widgets/summary).
+      if (typeof innerRec.type === 'string' || typeof innerRec.content === 'string' || Array.isArray(innerRec.widgets) || typeof innerRec.summary === 'string' || typeof innerRec.directive === 'object') {
+        obj = innerRec;
+        break;
+      }
+    }
+  }
   if (typeof obj.kind === 'string' && obj.type === undefined) obj.type = obj.kind;
   if (typeof obj.type === 'string' && RESPONSE_TYPE_ALIASES[obj.type]) obj.type = RESPONSE_TYPE_ALIASES[obj.type];
   if (obj.type === undefined) {
@@ -1182,7 +1308,47 @@ export function sanitizeAgentJson(raw: unknown): unknown {
           delete w.kind;
         }
         if (typeof w.type === 'string' && WIDGET_TYPE_ALIASES[w.type]) w.type = WIDGET_TYPE_ALIASES[w.type];
+        // P0.5: unknown widget type (not in the alias map) → coerce to the most
+        // generic shape (table) if it has array-ish data, else drop the widget
+        // by returning null (filtered below). This prevents a single unknown
+        // widget type from failing the ENTIRE card validation.
+        const KNOWN_WIDGET_TYPES = new Set(['kpi_grid', 'bar_chart', 'line_chart', 'table', 'callout', 'anomaly_list']);
+        if (typeof w.type === 'string' && !KNOWN_WIDGET_TYPES.has(w.type)) {
+          // Try to reshape as a table from columns/rows or items/data.
+          if (Array.isArray(w.rows) || Array.isArray(w.columns)) {
+            w.type = 'table';
+            if (!Array.isArray(w.columns)) w.columns = [];
+            if (!Array.isArray(w.rows)) w.rows = [];
+          } else if (Array.isArray(w.items) && w.items.length > 0 && typeof w.items[0] === 'object') {
+            // A list of objects → table (build columns from first item's keys).
+            w.type = 'table';
+            const firstItem = w.items[0] as Record<string, unknown>;
+            w.columns = Object.keys(firstItem);
+            w.rows = (w.items as Record<string, unknown>[]).map((it) =>
+              (w.columns as string[]).map((c) => {
+                const v = it[c];
+                return typeof v === 'number' || typeof v === 'string' ? v : (v == null ? '' : JSON.stringify(v));
+              }),
+            );
+            delete w.items;
+          } else if (Array.isArray(w.data)) {
+            // A data array → bar_chart instead (more natural than table).
+            w.type = 'bar_chart';
+          } else if (typeof w.text === 'string' || typeof w.message === 'string') {
+            w.type = 'callout';
+            if (typeof w.variant !== 'string') w.variant = 'info';
+            if (typeof w.text !== 'string') w.text = w.message ?? '';
+          } else {
+            return null; // unrecoverable widget — drop it
+          }
+        }
         if (typeof w.format === 'string' && !WIDGET_FORMATS.has(w.format)) w.format = 'number';
+        // P0.5: kpi_grid with missing/empty items → the schema requires items.min(1).
+        // Drop the widget entirely so the card-level empty-widgets downgrade
+        // (below) converts the whole card to text rather than failing validation.
+        if (w.type === 'kpi_grid' && (!Array.isArray(w.items) || w.items.length === 0)) {
+          return null;
+        }
         if (Array.isArray(w.items)) {
           w.items = (w.items as Record<string, unknown>[]).map((it) => {
             if (it) {
@@ -1216,11 +1382,15 @@ export function sanitizeAgentJson(raw: unknown): unknown {
         if (w.type === 'anomaly_list' && Array.isArray(w.items)) {
           w.items = (w.items as Record<string, unknown>[]).map((item) => ({
             ...item,
+            // P0.5: detail is required by the schema; default missing to empty.
+            detail: typeof item.detail === 'string' ? item.detail : (typeof item.description === 'string' ? item.description : ''),
             severity: item.severity === 'medium' ? 'med' : item.severity,
           }));
         }
         return w;
-      });
+      })
+        // P0.5: drop widgets that couldn't be coerced to a known type (returned null).
+        .filter((w): w is Record<string, unknown> => w !== null && typeof w === 'object');
     }
     if (
       obj.type === 'insight_card' &&
@@ -1272,7 +1442,27 @@ function coerceNumeric(value: unknown): unknown {
 function normalizeTableWidget(w: Record<string, unknown>) {
   if (!Array.isArray(w.rows)) return;
   const rows = w.rows;
-  if (rows.every((r) => Array.isArray(r))) return;
+  // P0.5: even when rows are arrays, individual CELLS may be objects/arrays
+  // (the schema requires string|number per cell). Coerce any non-primitive
+  // cell to a string so the table validates.
+  if (rows.every((r) => Array.isArray(r))) {
+    w.rows = rows.map((r) =>
+      (r as unknown[]).map((cell) => {
+        if (typeof cell === 'number' || typeof cell === 'string') return cell;
+        if (cell == null) return '';
+        if (typeof cell === 'object') {
+          // Extract a display value from common keys, else stringify.
+          const o = cell as Record<string, unknown>;
+          for (const k of ['label', 'name', 'value', 'text', 'title']) {
+            if (typeof o[k] === 'string' || typeof o[k] === 'number') return o[k];
+          }
+          return JSON.stringify(cell);
+        }
+        return String(cell);
+      }),
+    );
+    return;
+  }
   const objectRows = rows.filter((r) => r && typeof r === 'object' && !Array.isArray(r)) as Record<string, unknown>[];
   if (objectRows.length !== rows.length) return;
   const columns = Array.isArray(w.columns) && w.columns.every((c) => typeof c === 'string')
@@ -1475,4 +1665,220 @@ async function persistTurn(opts: {
     .where(eq(schema.agentConversations.id, Number(conversationId)));
 
   return { conversationId, messageId: assistantRow?.id };
+}
+
+/**
+ * P0 instrumentation — persist a FAQ fast-lane turn so FAQ hits are visible on
+ * the dashboard. Before this, the FAQ lane returned early in agentSocket and
+ * wrote NO metrics row, so FAQ hit-rate was unmeasurable (every recorded turn
+ * had react_iterations >= 1 by construction). This reuses persistTurn for the
+ * conversation/message rows, then writes a metrics row tagged
+ * intentBucket='faq' with the measured lookup latency. Resilient: a failure
+ * logs and never breaks chat (the answer was already emitted to the client).
+ *
+ * Returns the conversationId (so agentSocket can fold it into the done event)
+ * and the messageId. Both undefined on failure.
+ */
+export async function recordFaqTurn(opts: {
+  ctx: AgentContext;
+  userMessage: string;
+  answer: string;
+  conversationId?: string;
+  lookupMs: number;
+}): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
+  try {
+    const response: AgentResponse = { type: 'text', content: opts.answer };
+    const { conversationId, messageId } = await persistTurn({
+      ctx: opts.ctx,
+      userMessage: opts.userMessage,
+      response,
+      toolTrace: [],
+      conversationId: opts.conversationId,
+      promptTokens: 0,
+      completionTokens: 0,
+    });
+    if (messageId !== undefined) {
+      await db.insert(schema.agentTurnMetrics).values({
+        messageId,
+        userId: opts.ctx.userId,
+        role: opts.ctx.role,
+        conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
+        model: 'faq-fast-lane',
+        // A FAQ turn has no LLM/tools/final/ack: the only latency is the lookup
+        // (embed + pgvector cosine). Record it as both the total and the
+        // first-token time so the dashboard sees FAQ turns as the fast floor.
+        latencyUserPerceivedMs: Math.round(opts.lookupMs),
+        latencyTotalMs: Math.round(opts.lookupMs),
+        latencyFirstTokenMs: Math.round(opts.lookupMs),
+        reactIterations: 0,
+        toolCallCount: 0,
+        fallbackUsed: false,
+        aborted: false,
+        navigateDirectiveEmitted: false,
+        guardrailFired: false,
+        intentBucket: 'faq',
+        tokensIn: 0,
+        tokensOut: 0,
+      });
+    }
+    return { conversationId, messageId };
+  } catch (err) {
+    // Never crash chat over telemetry. The answer was already sent to the client.
+    logger.warn({ err }, 'recordFaqTurn metrics insert failed');
+    return { conversationId: undefined, messageId: undefined };
+  }
+}
+
+/**
+ * P1 instrumentation — persist a Lane 0 navigation turn (deterministic, 0 LLM
+ * calls). Mirrors recordFaqTurn but tags intentBucket='nav' and stores the
+ * directive response. The ack wait (if any) is NOT included in lookupMs — the
+ * caller measures only the router + emit time, since the ack is user-paced.
+ */
+export async function recordNavTurn(opts: {
+  ctx: AgentContext;
+  userMessage: string;
+  directive: AgentDirective;
+  conversationId?: string;
+  lookupMs: number;
+  ackOk?: boolean;
+}): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
+  try {
+    const response: AgentResponse = { type: 'directive', directive: opts.directive };
+    const { conversationId, messageId } = await persistTurn({
+      ctx: opts.ctx,
+      userMessage: opts.userMessage,
+      response,
+      toolTrace: [],
+      conversationId: opts.conversationId,
+      promptTokens: 0,
+      completionTokens: 0,
+    });
+    if (messageId !== undefined) {
+      await db.insert(schema.agentTurnMetrics).values({
+        messageId,
+        userId: opts.ctx.userId,
+        role: opts.ctx.role,
+        conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
+        model: 'intent-router',
+        latencyUserPerceivedMs: Math.round(opts.lookupMs),
+        latencyTotalMs: Math.round(opts.lookupMs),
+        latencyFirstTokenMs: Math.round(opts.lookupMs),
+        reactIterations: 0,
+        toolCallCount: 0,
+        fallbackUsed: false,
+        aborted: false,
+        // A navigate directive was emitted — track it for the navigate KPI.
+        navigateDirectiveEmitted: true,
+        guardrailFired: false,
+        intentBucket: 'nav',
+        tokensIn: 0,
+        tokensOut: 0,
+      });
+    }
+    return { conversationId, messageId };
+  } catch (err) {
+    logger.warn({ err }, 'recordNavTurn metrics insert failed');
+    return { conversationId: undefined, messageId: undefined };
+  }
+}
+
+/**
+ * P3 instrumentation — persist a Lane 3 summary turn (daily-work assistant,
+ * 0 LLM calls). Mirrors recordNavTurn but tags intentBucket='summary' and
+ * stores the insight_card response from getDashboardStats().
+ */
+export async function recordSummaryTurn(opts: {
+  ctx: AgentContext;
+  userMessage: string;
+  response: AgentResponse;
+  conversationId?: string;
+  lookupMs: number;
+}): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
+  try {
+    const { conversationId, messageId } = await persistTurn({
+      ctx: opts.ctx,
+      userMessage: opts.userMessage,
+      response: opts.response,
+      toolTrace: [],
+      conversationId: opts.conversationId,
+      promptTokens: 0,
+      completionTokens: 0,
+    });
+    if (messageId !== undefined) {
+      await db.insert(schema.agentTurnMetrics).values({
+        messageId,
+        userId: opts.ctx.userId,
+        role: opts.ctx.role,
+        conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
+        model: 'summary-lane',
+        latencyUserPerceivedMs: Math.round(opts.lookupMs),
+        latencyTotalMs: Math.round(opts.lookupMs),
+        latencyFirstTokenMs: Math.round(opts.lookupMs),
+        reactIterations: 0,
+        toolCallCount: 0,
+        fallbackUsed: false,
+        aborted: false,
+        navigateDirectiveEmitted: false,
+        guardrailFired: false,
+        intentBucket: 'summary',
+        tokensIn: 0,
+        tokensOut: 0,
+      });
+    }
+    return { conversationId, messageId };
+  } catch (err) {
+    logger.warn({ err }, 'recordSummaryTurn metrics insert failed');
+    return { conversationId: undefined, messageId: undefined };
+  }
+}
+
+/**
+ * P1 Lane 2 instrumentation — persist a lookup turn (single-tool search, 0 LLM
+ * in v1). Tags intentBucket='lookup', toolCallCount=1.
+ */
+export async function recordLookupTurn(opts: {
+  ctx: AgentContext;
+  userMessage: string;
+  response: AgentResponse;
+  conversationId?: string;
+  lookupMs: number;
+  toolCallCount: number;
+}): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
+  try {
+    const { conversationId, messageId } = await persistTurn({
+      ctx: opts.ctx,
+      userMessage: opts.userMessage,
+      response: opts.response,
+      toolTrace: [{ toolName: 'data.search', ok: true, label: 'Lane 2 lookup' }],
+      conversationId: opts.conversationId,
+      promptTokens: 0,
+      completionTokens: 0,
+    });
+    if (messageId !== undefined) {
+      await db.insert(schema.agentTurnMetrics).values({
+        messageId,
+        userId: opts.ctx.userId,
+        role: opts.ctx.role,
+        conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
+        model: 'lookup-lane',
+        latencyUserPerceivedMs: Math.round(opts.lookupMs),
+        latencyTotalMs: Math.round(opts.lookupMs),
+        latencyFirstTokenMs: Math.round(opts.lookupMs),
+        reactIterations: 0,
+        toolCallCount: opts.toolCallCount,
+        fallbackUsed: false,
+        aborted: false,
+        navigateDirectiveEmitted: false,
+        guardrailFired: false,
+        intentBucket: 'lookup',
+        tokensIn: 0,
+        tokensOut: 0,
+      });
+    }
+    return { conversationId, messageId };
+  } catch (err) {
+    logger.warn({ err }, 'recordLookupTurn metrics insert failed');
+    return { conversationId: undefined, messageId: undefined };
+  }
 }

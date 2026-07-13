@@ -16,7 +16,7 @@ export function LatencyBreakdownBars({
   if (loading) {
     return (
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonLine key={i} width="100%" />
         ))}
       </div>
@@ -25,6 +25,7 @@ export function LatencyBreakdownBars({
   if (!breakdown) return null;
 
   const stages: { key: keyof ChatbotLatencyBreakdown; label: string }[] = [
+    { key: 'firstTokenMs', label: 'Token đầu (TTFT)' },
     { key: 'llmMs', label: 'LLM' },
     { key: 'toolsMs', label: 'Công cụ' },
     { key: 'finalMs', label: 'Trả lời cuối' },

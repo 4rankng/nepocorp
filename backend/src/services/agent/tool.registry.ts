@@ -25,6 +25,7 @@ import { dataTools } from './tools/data';
 import { reportTools } from './tools/reports';
 import { uiTools } from './tools/ui';
 import { toursTools } from './tools/tours';
+import { knowledgeTools } from './tools/knowledge';
 
 // Tools no longer advertised to the LLM because the semantic gateway (`data.*`)
 // or `report.run` now covers them with parity (same backing service fn, or an
@@ -56,6 +57,7 @@ const ALL_TOOLS: AgentToolDef[] = [
   ...reportTools,
   ...uiTools,
   ...toursTools,
+  ...knowledgeTools,
   ...tripTools,
   ...receivablesTools,
   ...payablesTools,

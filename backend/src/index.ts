@@ -28,6 +28,7 @@ import adminGpsRoutes from './routes/admin-gps';
 import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import llmSettingsRoutes from './routes/llm-settings';
 import faqAdminRoutes from './routes/faq-admin';
+import { onboardingRouter } from './routes/onboarding';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
@@ -124,6 +125,10 @@ app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
 // Command-and-insight assistant (bot). Acts as the caller; office roles only.
 // 503 while BOT_ENABLE is off. Mounts before the catch-all /api.
 app.use('/api/agent', authMiddleware, casbinAuthz('agent'), agentRoutes);
+// Onboarding (Phase 4): tour progress + checklist tasks. Office roles only —
+// mirrors the agent gate. The `onboarding` Casbin resource has explicit policy
+// rows for MANAGER/ACCOUNTANT; ADMIN matches via its wildcard.
+app.use('/api/onboarding', authMiddleware, casbinAuthz('onboarding'), requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), onboardingRouter);
 // Catalog bootstrap is used by both office pages and portal forms. The router
 // trims sensitive catalogs for DRIVER/FORWARDER before responding.
 app.use('/api', authMiddleware, catalogBootstrapRouter);

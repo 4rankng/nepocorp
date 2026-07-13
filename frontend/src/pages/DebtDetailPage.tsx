@@ -14,6 +14,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { qk } from '../api/keys';
+import { onboardingEvents } from '../lib/onboardingEvents';
 import './DebtDetailPage.css';
 import { groupDisplayRowsByRoute, groupLedgerRows, LedgerRouteCard, normalizeAging, money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
 
@@ -241,6 +242,12 @@ export default function DebtDetailPage() {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
         payments,
+      });
+      // Onboarding product event: a real receivable payment was recorded. The
+      // ACCOUNTANT checklist's "record first receipt" item waits on this.
+      onboardingEvents.emit('receivable.payment_recorded', {
+        customerId: Number(id),
+        amountVnd: capped,
       });
       await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(undefined) });
       await queryClient.invalidateQueries({ queryKey: qk.financial.debt });

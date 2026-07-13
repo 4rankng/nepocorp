@@ -58,6 +58,20 @@ export interface ChatbotMetricSummary {
   tokensIn: number;
   tokensOut: number;
   sla: ChatbotSlaThresholds;
+  /** P0 — time-to-first-token percentiles (ms from turn start to first streamed
+   *  delta or first tool result). The perceived-latency lever: a high TTFT p95
+   *  means users stare at a blank "Đang suy nghĩ…" bubble. Null when no turns
+   *  in range produced a first token. */
+  ttft: {
+    p50Ms: number | null;
+    p95Ms: number | null;
+    p99Ms: number | null;
+  };
+  /** P0 — intent-lane distribution: how many turns each execution lane
+   *  handled. The headline metric for route-before-reasoning: a healthy system
+   *  shifts volume from 'react_fallback' into 'faq'/'nav'/'lookup'/'summary'.
+   *  Buckets with zero turns are omitted. 'unknown' = legacy pre-router rows. */
+  intentBuckets: { bucket: string; count: number }[];
 }
 
 /** Average of each pipeline stage latency (latency_*_ms columns). */
@@ -67,6 +81,8 @@ export interface ChatbotLatencyBreakdown {
   finalMs: number | null;
   ackMs: number | null;
   persistMs: number | null;
+  /** P0 — average time-to-first-token. Null over an empty/all-null set. */
+  firstTokenMs: number | null;
 }
 
 /** One row in the timeseries chart (daily aggregation). */

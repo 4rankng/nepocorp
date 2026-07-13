@@ -44,6 +44,14 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'ADVANCE_SETTLEMENT_APPROVED',
 ]);
 export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY', 'PERSONAL_LEAVE', 'WEEKLY_OFF']);
+// ─── Onboarding (Phase 4) ───────────────────────────────────────────────────
+// Server-side source of truth for tour progress + checklist tasks. The frontend
+// `tourProgress.ts` localStorage layer becomes a read-through cache; these
+// tables enable cross-device resume, admin visibility, and analytics. The tour
+// catalog is TypeScript (not a DB table), so tour_id / current_step_id /
+// task_id are plain strings — see plans/2026-07-13-onboarding-orchestration-layer.
+export const onboardingStatusEnum = pgEnum('onboarding_status', ['in_progress', 'completed', 'skipped']);
+export const onboardingTaskStatusEnum = pgEnum('onboarding_task_status', ['pending', 'completed', 'dismissed']);
 // ─── Config tables ───────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
@@ -1160,6 +1168,11 @@ export const agentTurnMetrics = pgTable('agent_turn_metrics', {
   latencyFinalMs: integer('latency_final_ms'),
   latencyAckMs: integer('latency_ack_ms'),
   latencyPersistMs: integer('latency_persist_ms'),
+  // P0 instrumentation: time-to-first-token (ms from turn start to first
+  // streamed TEXT delta OR first tool result, whichever is earlier). Null when
+  // the turn produced neither (immediate error / FAQ fast lane). The lever for
+  // perceived-latency work — see docs/plans/2026-07-13-fast-response-chatbot-lanes.
+  latencyFirstTokenMs: integer('latency_first_token_ms'),
   reactIterations: integer('react_iterations'),
   toolCallCount: integer('tool_call_count').default(0),
   fallbackUsed: boolean('fallback_used').default(false),
@@ -1171,6 +1184,10 @@ export const agentTurnMetrics = pgTable('agent_turn_metrics', {
   navigateDirectiveEmitted: boolean('navigate_directive_emitted').default(false),
   guardrailFired: boolean('guardrail_fired').default(false),
   errorKind: text('error_kind'),
+  // P0 instrumentation: which execution lane handled the turn ('faq' | 'nav' |
+  // 'lookup' | 'summary' | 'react_fallback' | 'unknown'). Lets the dashboard
+  // show intent distribution and measure the route-before-reasoning collapse.
+  intentBucket: text('intent_bucket'),
   tokensIn: integer('tokens_in').default(0),
   tokensOut: integer('tokens_out').default(0),
   estimatedCostVnd: integer('estimated_cost_vnd'),
@@ -1202,3 +1219,112 @@ export const faqEntries = pgTable('faq_entries', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+// ─── Knowledge chunks (P2 doc-RAG over CONTEXT.md / ADRs / product docs) ────
+// Generalizes the FAQ fast-lane retrieval to arbitrary product documentation.
+// Each chunk is one semantic unit (heading/section/step) from a doc, embedded
+// with the same text-embedding-3-small model. Retrieved via pgvector cosine
+// similarity + metadata filtering. See services/agent/knowledge-retrieval.ts.
+export const knowledgeChunks = pgTable('knowledge_chunks', {
+  id: serial('id').primaryKey(),
+  // What kind of source: 'context' (CONTEXT.md), 'adr', 'doc', 'faq'.
+  sourceType: text('source_type').notNull(),
+  // Repo-relative path (e.g. 'CONTEXT.md', 'docs/adr/0001-...').
+  sourcePath: text('source_path').notNull(),
+  // Heading or section title within the source.
+  heading: text('heading').notNull(),
+  // The chunk content (one semantic unit, ≤500 chars).
+  content: text('content').notNull(),
+  // pgvector embedding (1536 dims, same model as FAQ). NULL until embedded.
+  embedding: vectorColumn1536('embedding'),
+  // Version watermark for stale-detection (hash of the source file at ingest).
+  docVersion: text('doc_version'),
+  // Vietnamese language code for the chunk.
+  lang: text('lang').notNull().default('vi'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('knowledge_chunks_source_idx').on(table.sourceType, table.sourcePath),
+]);
+
+// ─── Onboarding progress (Phase 4) ──────────────────────────────────────────
+// Per-user, per-tour-VERSION progress row. Unique (user_id, tour_id,
+// tour_version) so a bumped tour version starts a fresh row rather than
+// corrupting an in-flight one. `current_step_id` is a free string (the step's
+// index — the catalog is the source of truth for step identity); it is
+// informational, not an FK. localStorage becomes a cache; this is the source.
+export const userOnboardingProgress = pgTable(
+  'user_onboarding_progress',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    // Free strings (catalog is TS, not a DB table). Length-bounded for safety.
+    tourId: varchar('tour_id', { length: 120 }).notNull(),
+    tourVersion: integer('tour_version').notNull(),
+    currentStepId: varchar('current_step_id', { length: 120 }),
+    status: onboardingStatusEnum('status').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    skippedAt: timestamp('skipped_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('user_onboarding_progress_user_tour_version_idx')
+      .on(table.userId, table.tourId, table.tourVersion),
+    index('user_onboarding_progress_user_idx').on(table.userId),
+  ],
+);
+
+// ─── Onboarding checklist tasks (Phase 4 / Phase 6) ─────────────────────────
+// Per-user checklist-item completion. `task_id` is a free string from the
+// shared ONBOARDING_TASKS catalog (Phase 6). Composite PK (user_id, task_id)
+// so each user has at most one row per task. `metadata` carries optional
+// context (e.g. the tripId that completed "create first trip").
+export const userOnboardingTasks = pgTable(
+  'user_onboarding_tasks',
+  {
+    userId: integer('user_id').references(() => users.id).notNull(),
+    taskId: varchar('task_id', { length: 120 }).notNull(),
+    status: onboardingTaskStatusEnum('status').notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    metadata: jsonb('metadata'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    // Composite PRIMARY KEY: one row per (user, task). Expressed via a unique
+    // index (drizzle's primaryKey() in the table builder is awkward here; the
+    // unique index is functionally equivalent and the ORM query patterns below
+    // rely on it for upsert onConflict targets).
+    uniqueIndex('user_onboarding_tasks_user_task_idx')
+      .on(table.userId, table.taskId),
+  ],
+);
+
+// ─── Onboarding lifecycle analytics (Phase 5) ───────────────────────────────
+// Append-only event log for onboarding telemetry (tour started / step viewed /
+// target missing / action completed / step skipped / tour completed / tour
+// abandoned). Cheaper than per-event tables; queryable via Drizzle Studio or a
+// future dashboard. `event_name` is a plain VARCHAR (not a pgEnum) so adding an
+// event needs no migration, but the client only emits from the closed
+// `ONBOARDING_EVENT_NAMES` set in shared, and the server filters on it too.
+export const onboardingEvents = pgTable(
+  'onboarding_events',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    eventName: varchar('event_name', { length: 60 }).notNull(),
+    tourId: varchar('tour_id', { length: 120 }),
+    tourVersion: integer('tour_version'),
+    stepId: varchar('step_id', { length: 120 }),
+    role: varchar('role', { length: 20 }).notNull(),
+    routeKey: varchar('route_key', { length: 60 }),
+    durationMs: integer('duration_ms'),
+    triggerSource: varchar('trigger_source', { length: 20 }),
+    targetFound: boolean('target_found'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('onboarding_events_user_created_idx').on(table.userId, table.createdAt),
+    index('onboarding_events_name_created_idx').on(table.eventName, table.createdAt),
+  ],
+);

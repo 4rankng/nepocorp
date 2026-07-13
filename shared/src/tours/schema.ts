@@ -22,6 +22,15 @@ import type { Role } from '../constants';
 export interface Tour {
   /** Stable slug, e.g. 'create-trip'. Used in the `start_tour` response + localStorage. */
   id: string;
+  /**
+   * Author-bumped version. Bump when a tour's step sequence or step IDs change
+   * in a breaking way (Phase 2 / Phase 4). Cosmetic text edits do NOT require a
+   * bump. The progress table keys on `(user_id, tour_id, tour_version)` so a
+   * bumped version starts a fresh progress row rather than corrupting an
+   * in-flight one; the frontend surfaces a "nội dung đã đổi, bắt đầu lại?"
+   * prompt when a resumed tour's version differs from the catalog.
+   */
+  version: number;
   title: string;
   summary: string;
   /** Vietnamese description for `tours.search` + the on-demand list. */

@@ -48,6 +48,16 @@ export function isTourCompleted(tourId: string): boolean {
   return read(tourId)?.status === 'completed';
 }
 
+/**
+ * Last-updated timestamp (epoch ms) of the cached record, or 0 if none.
+ * Phase 4 reconcile compares this against the server's `updatedAt` to pick the
+ * freshest side on tour start (server wins on tie / clock skew, since the
+ * server timestamp is authoritative).
+ */
+export function getUpdatedAt(tourId: string): number {
+  return read(tourId)?.updatedAt ?? 0;
+}
+
 /** Step index of an in-progress tour, or null when none/already completed. */
 export function getInProgressStep(tourId: string): number | null {
   const rec = read(tourId);

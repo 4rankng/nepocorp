@@ -29,6 +29,10 @@ export interface UseAgentChatOptions {
   /** Called when the assistant's final answer launches a curated tour
    *  ({type:'start_tour'}). Auto-launches the TourController. */
   onStartTour?: (tourId: string) => void;
+  /** Phase 7: resume a tour from the server-persisted step. */
+  onContinueTour?: (tourId: string) => void;
+  /** Phase 7: cancel any active tour. */
+  onCancelTour?: (tourId: string) => void;
 }
 
 export interface UseAgentChat {
@@ -74,6 +78,10 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   directiveRef.current = opts.onDirective;
   const startTourRef = useRef(opts.onStartTour);
   startTourRef.current = opts.onStartTour;
+  const continueTourRef = useRef(opts.onContinueTour);
+  continueTourRef.current = opts.onContinueTour;
+  const cancelTourRef = useRef(opts.onCancelTour);
+  cancelTourRef.current = opts.onCancelTour;
   const abortRef = useRef<AbortController | null>(null);
   const pendingPageDirectiveRef = useRef<AgentDirective | null>(null);
   const turnStartedAtRef = useRef<number | null>(null);
@@ -200,6 +208,22 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
             requestAnimationFrame(() => {
               window.setTimeout(() => {
                 startTourRef.current?.(tourId);
+              }, 0);
+            });
+          } else if (response.type === 'continue_tour') {
+            // Phase 7: resume the tour (the controller fetches the server step).
+            const tourId = response.tourId;
+            requestAnimationFrame(() => {
+              window.setTimeout(() => {
+                continueTourRef.current?.(tourId);
+              }, 0);
+            });
+          } else if (response.type === 'cancel_tour') {
+            // Phase 7: stop any active tour.
+            const tourId = response.tourId;
+            requestAnimationFrame(() => {
+              window.setTimeout(() => {
+                cancelTourRef.current?.(tourId);
               }, 0);
             });
           } else {

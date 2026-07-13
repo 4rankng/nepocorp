@@ -694,6 +694,34 @@
       "when": 1783756800000,
       "tag": "0103_environment_schema_repairs",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1783939623803,
+      "tag": "0104_parallel_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1783940154390,
+      "tag": "0105_onboarding_progress_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1783940742717,
+      "tag": "0106_onboarding_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1783942103626,
+      "tag": "0107_fantastic_star_brand",
+      "breakpoints": true
     }
   ]
 }

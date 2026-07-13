@@ -288,6 +288,7 @@ describe('computeLatencies — dual-latency invariant', () => {
       latencyFinalMs: 0,
       latencyAckMs: 0,
       latencyPersistMs: 0,
+      latencyFirstTokenMs: undefined,
       reactIterations: 0,
       toolCallCount: 0,
       fallbackUsed: false,
@@ -296,6 +297,7 @@ describe('computeLatencies — dual-latency invariant', () => {
       guardrailFired: false,
       finalAvoided: false,
       errorKind: undefined,
+      intentBucket: undefined,
       ...over,
     };
   }
@@ -352,6 +354,7 @@ describe('computeLatencies — sampling independence', () => {
       latencyFinalMs: 50,
       latencyAckMs: 300,
       latencyPersistMs: 40,
+      latencyFirstTokenMs: undefined,
       reactIterations: 2,
       toolCallCount: 3,
       fallbackUsed: false,
@@ -360,6 +363,7 @@ describe('computeLatencies — sampling independence', () => {
       guardrailFired: false,
       finalAvoided: false,
       errorKind: undefined,
+      intentBucket: undefined,
     };
     return computeLatencies(acc, 695);
   }

@@ -12,6 +12,7 @@ import type { Tour } from './schema';
 export const TOUR_CATALOG = {
   'create-trip': {
     id: 'create-trip',
+    version: 1,
     title: 'Tạo chuyến vận chuyển',
     summary: 'Tạo một lệnh vận chuyển mới: chọn khách + tuyến, nhập thông tin, rồi lưu.',
     description: 'Hướng dẫn tạo lệnh vận chuyển (chuyến đi) mới — chọn khách, tuyến, loại hàng rồi lưu.',
@@ -42,12 +43,18 @@ export const TOUR_CATALOG = {
         title: 'Lưu chuyến',
         body: 'Kiểm tra lại thông tin rồi bấm "Tạo chuyến". Chuyến sẽ ở trạng thái CREATED, sẵn sàng để điều vận khởi hành.',
         directive: { kind: 'scrollTo', targetId: 'trip-new-submit', durationMs: 3500 },
+        // Phase 3 interaction step: this step auto-completes when the user
+        // actually creates the trip (the `trip.created` product event fires at
+        // the TripCreatePage success handler). The manual "Tôi đã làm xong"
+        // button stays available as a fallback.
+        completionEvent: 'trip.created',
       },
     ],
   },
 
   'lock-trip-and-payment': {
     id: 'lock-trip-and-payment',
+    version: 1,
     title: 'Chốt chuyến & ghi nhận thanh toán',
     summary: 'Khóa sổ một chuyến đã hoàn thành, rồi ghi nhận tiền khách thanh toán vào công nợ.',
     description: 'Luồng chốt chuyến (khóa sổ) rồi ghi nhận thanh toán công nợ phải thu — đi qua 2 trang.',
@@ -79,6 +86,7 @@ export const TOUR_CATALOG = {
   // Same 6 steps, same configFuel targetIds (already stamped on FuelConfigPage).
   'fuel-config': {
     id: 'fuel-config',
+    version: 1,
     title: 'Nhập định mức nhiên liệu',
     summary: 'Cập nhật định mức dầu dùng cho tính chi phí nhiên liệu theo chuyến.',
     description: 'Hướng dẫn nhập định mức nhiên liệu (có tải, xe không, đơn giá dầu) trên trang cấu hình.',

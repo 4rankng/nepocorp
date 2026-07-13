@@ -8,6 +8,7 @@ import { PageHeader, Panel } from '../../components/UI';
 import type { FuelPriceHistory } from '@tingting/shared';
 import './config-page.css';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
+import { onboardingEvents } from '../../lib/onboardingEvents';
 
 export default function FuelConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
@@ -54,6 +55,9 @@ export default function FuelConfigPage() {
         warningThreshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
         criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
+      // Onboarding product event: fuel config was saved. The fuel-config tour
+      // and any future checklist item keyed on this wait on it.
+      onboardingEvents.emit('config.fuel_saved');
       navigate('/config');
     } catch (e) { setError(e instanceof Error ? e.message : 'Lỗi lưu'); } finally { setSaving(false); }
   };

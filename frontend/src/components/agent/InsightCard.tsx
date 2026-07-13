@@ -42,6 +42,15 @@ function KpiGrid({ items }: Extract<AgentWidget, { type: 'kpi_grid' }>) {
               {it.delta < 0 ? '▼' : '▲'} {formatValue(Math.abs(it.delta), it.format)}
             </div>
           )}
+          {/* P4 — provenance chip: observed / calculated / forecast / assumption */}
+          {it.provenance && (
+            <span
+              className={`agent-prov agent-prov--${it.provenance.category}`}
+              title={it.provenance.formula || it.provenance.category}
+            >
+              {it.provenance.category === 'observed' ? '📏' : it.provenance.category === 'calculated' ? '🧮' : it.provenance.category === 'forecast' ? '🔮' : '💭'}
+            </span>
+          )}
         </div>
       ))}
     </div>

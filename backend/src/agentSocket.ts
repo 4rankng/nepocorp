@@ -13,6 +13,8 @@
 // only — same gate as the SSE handler and the frontend launcher.
 import type { Server as HttpServer } from 'http';
 import { Server, type Namespace, type Socket } from 'socket.io';
+import { performance } from 'node:perf_hooks';
+import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { and, eq } from 'drizzle-orm';
 import { config } from './config';
@@ -21,8 +23,12 @@ import { db } from './db';
 import * as schema from './db/schema';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
-import { runAgent } from './services/agent/orchestrator';
+import { runAgent, recordFaqTurn, recordNavTurn, recordSummaryTurn, recordLookupTurn } from './services/agent/orchestrator';
 import { tryFaqFastLane } from './services/agent/faq-fast-lane';
+import { routeIntent } from './services/agent/intent-router';
+import { runSummary } from './services/agent/summary-lane';
+import { runLookup } from './services/agent/lookup-lane';
+import { checkRateLimit } from './services/agent/rate-limiter';
 import type { AgentContext } from './services/agent/tool.types';
 import type { MiniMaxMessage } from './services/llm/minimax.client';
 
@@ -62,6 +68,9 @@ function renderResponseText(response: AgentResponse): string {
       return response.directive.kind === 'navigate' || response.directive.kind === 'focus'
         ? `(đã mở trang ${response.directive.routeKey})`
         : '(đã mở form)';
+    default:
+      // Exhaustiveness fallback — unreachable if the union is fully handled.
+      return '';
   }
 }
 
@@ -192,6 +201,15 @@ function registerHandlers(agentNs: Namespace): void {
         socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Thiếu nội dung tin nhắn' } satisfies AgentEvent);
         return;
       }
+      // P5 Governance — per-user rate limiting. Prevents abuse/cost runaway.
+      const allowed = await checkRateLimit(user.userId);
+      if (!allowed) {
+        socket.emit('agent:event', {
+          type: 'RUN_ERROR',
+          message: 'Bạn đang gửi tin nhắn quá nhanh. Vui lòng đợi một phút rồi thử lại.',
+        } satisfies AgentEvent);
+        return;
+      }
       current?.abort();
       const ac = new AbortController();
       current = ac;
@@ -219,8 +237,19 @@ function registerHandlers(agentNs: Namespace): void {
         // (exact → rule → pgvector cosine → score/margin gate). On a match,
         // emit done directly and skip runAgent entirely. On abstain (null) or
         // any error, fall through to the LLM agent — fail-open, never blocks.
+        const faqStart = performance.now();
         const faq = await tryFaqFastLane(message);
+        const faqLookupMs = performance.now() - faqStart;
         if (faq && !ac.signal.aborted) {
+          // P0 instrumentation: persist the FAQ turn so FAQ hit-rate is finally
+          // measurable (before this, FAQ hits wrote no metrics row at all).
+          const { conversationId: faqConvId, messageId: faqMsgId } = await recordFaqTurn({
+            ctx,
+            userMessage: message,
+            answer: faq.answer,
+            conversationId: input?.conversationId,
+            lookupMs: faqLookupMs,
+          });
           // Only fold into session memory if the turn wasn't superseded — avoids
           // polluting history for a turn the client never saw (e.g. navigated away
           // during the FAQ lookup).
@@ -231,6 +260,8 @@ function registerHandlers(agentNs: Namespace): void {
             type: 'RUN_FINISHED',
             response: { type: 'text', content: faq.answer },
             fastLane: true,
+            ...(faqConvId ? { conversationId: faqConvId } : {}),
+            ...(faqMsgId ? { messageId: faqMsgId } : {}),
           };
           socket.emit('agent:event', faqDone);
           return;
@@ -238,6 +269,92 @@ function registerHandlers(agentNs: Namespace): void {
           // We had a match but the turn was aborted mid-lookup — don't emit, but
           // log so fast-lane hit-rate is observable (H2: minimal observability).
           console.log('[agent-socket] FAQ fast-lane matched but turn aborted');
+        }
+
+        // ── P1+P3 Intent Router (Lane 0 nav + Lane 3 summary, 0 LLM) ────────
+        // When enabled, classify the message deterministically BEFORE the
+        // orchestrator. Navigation → directive (0 LLM); summary → dashboard
+        // insight_card (0 LLM); everything else → full ReAct loop. Fail-open.
+        if (config.agentIntentRouter && !ac.signal.aborted) {
+          const routerStart = performance.now();
+          const decision = routeIntent(message, ctx);
+
+          // Lane 0: Navigation
+          if (decision.lane === 'nav' && decision.directive && !ac.signal.aborted) {
+            const directive = decision.directive;
+            const actionId = randomUUID();
+            emit({ type: 'DIRECTIVE', directive, actionId, requiresAck: true });
+            let ackOk = true;
+            try {
+              const ack = await awaitAck(actionId);
+              ackOk = ack.status === 'ok';
+            } catch {
+              ackOk = false;
+            }
+            if (ac.signal.aborted) return;
+
+            const lookupMs = performance.now() - routerStart;
+            const { conversationId: navConvId, messageId: navMsgId } = await recordNavTurn({
+              ctx, userMessage: message, directive,
+              conversationId: input?.conversationId, lookupMs, ackOk,
+            });
+            sessionHistory.push({ role: 'user', content: message });
+            const routeKeyStr = directive.kind === 'navigate' ? directive.routeKey : 'trang đích';
+            const navText = ackOk ? `Đã mở trang ${routeKeyStr}.` : `Không mở được trang ${routeKeyStr}.`;
+            sessionHistory.push({ role: 'assistant', content: navText });
+            trimSessionHistory(sessionHistory);
+            socket.emit('agent:event', {
+              type: 'RUN_FINISHED',
+              response: { type: 'text', content: navText },
+              ...(navConvId ? { conversationId: navConvId } : {}),
+              ...(navMsgId ? { messageId: navMsgId } : {}),
+            } satisfies AgentEvent);
+            return;
+          }
+
+          // Lane 3: Summary
+          if (decision.lane === 'summary' && !ac.signal.aborted) {
+            const { response: summaryResponse, lookupMs: summaryMs } = await runSummary(ctx.role);
+            if (!ac.signal.aborted) {
+              const { conversationId: sumConvId, messageId: sumMsgId } = await recordSummaryTurn({
+                ctx, userMessage: message, response: summaryResponse,
+                conversationId: input?.conversationId, lookupMs: summaryMs,
+              });
+              sessionHistory.push({ role: 'user', content: message });
+              const summaryText = renderResponseText(summaryResponse);
+              if (summaryText) sessionHistory.push({ role: 'assistant', content: summaryText });
+              trimSessionHistory(sessionHistory);
+              socket.emit('agent:event', {
+                type: 'RUN_FINISHED',
+                response: summaryResponse,
+                ...(sumConvId ? { conversationId: sumConvId } : {}),
+                ...(sumMsgId ? { messageId: sumMsgId } : {}),
+              } satisfies AgentEvent);
+              return;
+            }
+          }
+
+          // Lane 2: Single-tool lookup
+          if (decision.lane === 'lookup' && decision.lookupQuery && !ac.signal.aborted) {
+            const { response: lookupResponse, lookupMs: lkMs, toolCallCount } = await runLookup(decision.lookupQuery, ctx.role);
+            if (!ac.signal.aborted) {
+              const { conversationId: lkConvId, messageId: lkMsgId } = await recordLookupTurn({
+                ctx, userMessage: message, response: lookupResponse,
+                conversationId: input?.conversationId, lookupMs: lkMs, toolCallCount,
+              });
+              sessionHistory.push({ role: 'user', content: message });
+              const lkText = renderResponseText(lookupResponse);
+              if (lkText) sessionHistory.push({ role: 'assistant', content: lkText });
+              trimSessionHistory(sessionHistory);
+              socket.emit('agent:event', {
+                type: 'RUN_FINISHED',
+                response: lookupResponse,
+                ...(lkConvId ? { conversationId: lkConvId } : {}),
+                ...(lkMsgId ? { messageId: lkMsgId } : {}),
+              } satisfies AgentEvent);
+              return;
+            }
+          }
         }
 
         const { response, conversationId: convId, assistantMessageId } = await runAgent({

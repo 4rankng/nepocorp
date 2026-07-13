@@ -13,6 +13,8 @@ import {
   semanticTimeline,
 } from '../semantic-data.service';
 import { defineReadTool, OFFICE_ROLES, ToolError } from '../tool.types';
+import { getMetricByEntityField } from '../../metrics/metric-registry';
+import { toProvenance } from '../../metrics/metric-types';
 
 const semanticEntitySchema = z.enum(SEMANTIC_ENTITIES);
 const semanticEntityInputSchema = z.preprocess(normalizeSemanticEntityInput, semanticEntitySchema);
@@ -157,7 +159,17 @@ export const dataTools = [
       dateTo: z.string().optional(),
       limit: z.coerce.number().int().positive().max(50).optional(),
     }),
-    run: (args) => semanticAggregate(args),
+    run: async (args) => {
+      const result = await semanticAggregate(args);
+      // P4 — attach provenance from the metric registry when the entity+metric
+      // matches a registered metric definition. This lets the orchestrator
+      // tag widget values with Observed/Calculated/Fored provenance.
+      const metricDef = getMetricByEntityField(args.entity, args.metric);
+      if (metricDef && result && typeof result === 'object' && !Array.isArray(result)) {
+        (result as Record<string, unknown>)._provenance = toProvenance(metricDef);
+      }
+      return result;
+    },
     label: (a) => `Tổng hợp ${a.entity}.${a.metric}`,
   }),
 

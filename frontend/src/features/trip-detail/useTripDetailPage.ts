@@ -12,6 +12,7 @@ import {
 import { useCatalogs } from '../../hooks/useCatalogs';
 import { TripStatus, Role } from '@tingting/shared';
 import { useConfirm } from '../../components/UI';
+import { onboardingEvents } from '../../lib/onboardingEvents';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
 
 /**
@@ -221,6 +222,9 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     setActionError('');
     try {
       await api.post(`/trips/${trip.id}/lock`, { confirmNoPhoto });
+      // Onboarding product event: a real trip was locked. The lock-trip tour
+      // and the ACCOUNTANT checklist's "lock first trip" item wait on this.
+      onboardingEvents.emit('trip.locked', { tripId: trip.id });
       await refetchTrip();
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
@@ -231,6 +235,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
           setActionLoading(true);
           try {
             await api.post(`/trips/${trip.id}/lock`, { confirmZeroRevenue: true, confirmNoPhoto });
+            onboardingEvents.emit('trip.locked', { tripId: trip.id });
             await refetchTrip();
           } catch (retryErr: unknown) {
             setActionError((retryErr as Error).message || 'Lỗi khi khóa chuyến đi.');

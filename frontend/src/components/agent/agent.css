@@ -385,6 +385,28 @@
   margin-top: 12px;
 }
 
+/* ── P2 Citation chips ─────────────────────────────────────────────────── */
+.agent-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.agent-citation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--ink-muted, #6b7280);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: default;
+  white-space: nowrap;
+}
+
 /* ── KPI grid ───────────────────────────────────────────────────────────── */
 .agent-kpi-grid {
   display: grid;

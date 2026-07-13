@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PAGE_CATALOG } from '../navigation/pageCatalog';
+import { PRODUCT_EVENTS } from '../onboarding/events';
 
 /**
  * Agent (command-and-insight assistant) wire contract.
@@ -179,6 +180,16 @@ export type AckedDirectiveKind = (typeof ACKED_DIRECTIVE_KINDS)[number];
 export const widgetFormatSchema = z.enum(['vnd', 'percent', 'number', 'days']);
 export type WidgetFormat = z.infer<typeof widgetFormatSchema>;
 
+/** P4 — provenance tag for a widget value. Tells the user HOW a number was
+ *  derived: observed (read from DB), calculated (formula), forecast (model),
+ *  assumption (user/model estimate). Rendered as a colored chip. */
+export const provenanceSchema = z.object({
+  metricId: z.string().optional(),
+  category: z.enum(['observed', 'calculated', 'forecast', 'assumption']),
+  formula: z.string().optional(),
+});
+export type Provenance = z.infer<typeof provenanceSchema>;
+
 export const agentWidgetSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('kpi_grid'),
@@ -191,6 +202,8 @@ export const agentWidgetSchema = z.discriminatedUnion('type', [
           format: widgetFormatSchema,
           /** Optional prior/compare value, same format — rendered as a delta. */
           delta: z.number().optional(),
+          /** P4 — provenance tag (observed/calculated/forecast/assumption). */
+          provenance: provenanceSchema.optional(),
         }),
       )
       .min(1),
@@ -243,7 +256,34 @@ export const agentActionChipSchema = z.object({
 });
 export type AgentActionChip = z.infer<typeof agentActionChipSchema>;
 
+// ─── Citations (P2 — provenance for grounded answers) ───────────────────────
+// Every grounded answer (from doc-RAG, FAQ, or tool data) should carry at least
+// one citation so users can verify the source. Rendered as small chips under
+// the answer in the frontend.
+export const agentCitationSchema = z.object({
+  /** Unique source identifier (e.g. "doc:CONTEXT.md:glossary", "faq:12"). */
+  sourceId: z.string(),
+  /** Human-readable label for the chip (e.g. "CONTEXT.md", "FAQ #12"). */
+  label: z.string(),
+  /** What kind of source this is. */
+  kind: z.enum(['faq', 'doc', 'tool']),
+  /** Optional URL or path for deep-linking (e.g. "/docs/adr/0001-..."). */
+  url: z.string().optional(),
+});
+export type AgentCitation = z.infer<typeof agentCitationSchema>;
+
 // ─── Tutorial steps (assistant-guided UI walkthroughs) ─────────────────────
+/**
+ * `completionEvent` / `completionTimeoutMs` are the Phase 3 event-driven-step
+ * extension (plan decision D1: extend, don't replace). They are OPTIONAL and
+ * used ONLY by curated tours in `TOUR_CATALOG` — the freeform LLM `tutorial`
+ * response path never sets them (the model is not told they exist). A step with
+ * `completionEvent` becomes an *interaction step*: the TourController waits on
+ * `onboardingEvents.waitFor(completionEvent)` and auto-advances when the user
+ * performs the real action, with a manual-fallback button as an escape.
+ * `completionTimeoutMs` of 0/undefined = wait indefinitely (Phase 3 default).
+ */
+const productEventSchema = z.enum([...PRODUCT_EVENTS] as [string, ...string[]]);
 export const agentTutorialStepSchema = z.object({
   title: z.string(),
   body: z.string(),
@@ -251,6 +291,11 @@ export const agentTutorialStepSchema = z.object({
   example: z.string().optional(),
   /** Optional UI action for this step, usually scrollTo/highlight or navigate. */
   directive: agentDirectiveSchema.optional(),
+  /** When set, this is an interaction step that waits for a real business event
+   *  (curated tours only). Must be a member of PRODUCT_EVENTS. */
+  completionEvent: productEventSchema.optional(),
+  /** Timeout for completionEvent. 0/undefined = wait forever (manual fallback). */
+  completionTimeoutMs: z.number().int().nonnegative().optional(),
 });
 export type AgentTutorialStep = z.infer<typeof agentTutorialStepSchema>;
 
@@ -261,6 +306,8 @@ export const agentResponseSchema = z.discriminatedUnion('type', [
     content: z.string(),
     /** Optional suggested next actions for prose answers (e.g. open the page named in text). */
     actions: z.array(agentActionChipSchema).optional(),
+    /** P2 — citations for grounded answers (doc-RAG, FAQ source). */
+    citations: z.array(agentCitationSchema).optional(),
   }),
   z.object({
     type: z.literal('insight_card'),
@@ -269,6 +316,7 @@ export const agentResponseSchema = z.discriminatedUnion('type', [
     summary: z.string(),
     widgets: z.array(agentWidgetSchema).min(1),
     actions: z.array(agentActionChipSchema).optional(),
+    citations: z.array(agentCitationSchema).optional(),
   }),
   z.object({
     type: z.literal('tutorial'),
@@ -276,12 +324,28 @@ export const agentResponseSchema = z.discriminatedUnion('type', [
     summary: z.string(),
     steps: z.array(agentTutorialStepSchema).min(1).max(8),
     actions: z.array(agentActionChipSchema).optional(),
+    citations: z.array(agentCitationSchema).optional(),
   }),
   // Launch a curated tour from shared/src/tours/catalog.ts. The agent emits this
   // as its final answer for workflow-shaped how-to requests (validated + caught
   // by the orchestrator's tour net when the model rambles a freeform tutorial).
   // The frontend MessageBubble arm calls TourController.start(tourId).
   z.object({ type: z.literal('start_tour'), tourId: z.string().min(1) }),
+  // Phase 7: typed tour-control responses mirroring start_tour. The chatbot can
+  // resume or stop a tour it started. `tourVersion` lets the frontend detect a
+  // stale catalog vs server-progress mismatch. The orchestrator validates the
+  // tourId against the catalog + the caller's role BEFORE emitting (safe
+  // registry); an unknown/role-denied id is downgraded to a text denial.
+  z.object({
+    type: z.literal('continue_tour'),
+    tourId: z.string().min(1),
+    tourVersion: z.number().int().positive().optional(),
+  }),
+  z.object({
+    type: z.literal('cancel_tour'),
+    tourId: z.string().min(1),
+    tourVersion: z.number().int().positive().optional(),
+  }),
   z.object({ type: z.literal('directive'), directive: agentDirectiveSchema }),
 ]);
 

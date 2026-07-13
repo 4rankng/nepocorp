@@ -40,6 +40,7 @@ import { PasswordModal } from './layout/PasswordModal';
 import type { NavItem } from './layout/types';
 import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 import { routes, titleForPath } from '../lib/routes';
+import { OnboardingChecklist } from './onboarding/OnboardingChecklist';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -371,6 +372,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="app-body" id="main-content">
           {children}
         </main>
+
+        {/* Phase 6: office-role activation checklist. Renders nothing for
+            DRIVER/FORWARDER (gated internally by role) and hides at 100%. */}
+        <OnboardingChecklist />
 
         {/* Bottom Navigation for Drivers on Mobile */}
         {isDriver && (

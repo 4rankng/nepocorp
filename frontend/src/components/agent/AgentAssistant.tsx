@@ -32,7 +32,7 @@ export function AgentAssistant() {
   const isPinnedToBottom = useRef(true);
   const location = useLocation();
   const { send: sendDirective } = useAgentDirectives();
-  const { start: startTour } = useTourController();
+  const { start: startTour, cancel: cancelTour } = useTourController();
 
   const handleDirective = useCallback(
     (directive: AgentDirective) => {
@@ -44,7 +44,22 @@ export function AgentAssistant() {
     [sendDirective],
   );
 
-  const chat = useAgentChat({ onDirective: handleDirective, onStartTour: startTour });
+  // Phase 7: continue_tour reuses start(tourId, undefined, 'chatbot') — the
+  // controller's reconcile fetches the server-persisted resume step. cancel_tour
+  // stops the active tour. The chatbot stays a safe SELECTOR: it can only
+  // launch/continue/cancel tours the orchestrator already role-validated.
+  const handleContinueTour = useCallback(
+    (tourId: string) => startTour(tourId, undefined, 'chatbot'),
+    [startTour],
+  );
+  const handleCancelTour = useCallback(() => cancelTour(), [cancelTour]);
+
+  const chat = useAgentChat({
+    onDirective: handleDirective,
+    onStartTour: startTour,
+    onContinueTour: handleContinueTour,
+    onCancelTour: handleCancelTour,
+  });
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
     bottomRef.current?.scrollIntoView({ block: 'end', behavior });
@@ -219,6 +234,18 @@ const RESPONSE_RENDERERS: Record<AgentResponse['type'], ResponseRenderer> = {
     const title = TOUR_CATALOG[response.tourId as TourId]?.title ?? response.tourId;
     return <AssistantTextBubble content={`Đã mở hướng dẫn **${title}** cho bạn.`} />;
   },
+  // Phase 7: tour-control responses. Auto-handled by useAgentChat; these arms
+  // cover the rehydrated-message render case (Vietnamese confirmation bubble).
+  continue_tour: (response) => {
+    if (response.type !== 'continue_tour') return null;
+    const title = TOUR_CATALOG[response.tourId as TourId]?.title ?? response.tourId;
+    return <AssistantTextBubble content={`Đã tiếp tục hướng dẫn **${title}**.`} />;
+  },
+  cancel_tour: (response) => {
+    if (response.type !== 'cancel_tour') return null;
+    const title = TOUR_CATALOG[response.tourId as TourId]?.title ?? response.tourId;
+    return <AssistantTextBubble content={`Đã dừng hướng dẫn **${title}**.`} />;
+  },
   directive: () => <AssistantTextBubble content="Đã mở trang cho bạn." />,
   text: (response, ctx) => {
     if (response.type !== 'text') return null;
@@ -239,10 +266,12 @@ function AssistantResponse({ message, onAction }: { message: AgentMessage; onAct
 function AssistantTextBubble({
   content,
   actions,
+  citations,
   onAction,
 }: {
   content: string | undefined;
   actions?: Extract<AgentResponse, { type: 'text' }>['actions'];
+  citations?: import('@tingting/shared').AgentCitation[];
   onAction?: (d: AgentDirective) => void;
 }) {
   return (
@@ -266,7 +295,21 @@ function AssistantTextBubble({
             ))}
           </div>
         )}
+        {citations && citations.length > 0 && <CitationChips citations={citations} />}
       </div>
+    </div>
+  );
+}
+
+/** P2 — citation chips rendered under grounded answers (doc-RAG provenance). */
+function CitationChips({ citations }: { citations: import('@tingting/shared').AgentCitation[] }) {
+  return (
+    <div className="agent-citations">
+      {citations.map((c, i) => (
+        <span className="agent-citation-chip" key={`${c.sourceId}-${i}`} title={c.sourceId}>
+          {c.url ? `📄 ${c.label}` : `📋 ${c.label}`}
+        </span>
+      ))}
     </div>
   );
 }

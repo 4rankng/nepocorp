@@ -81,6 +81,7 @@ export {
   debitNoteTemplateSchema, debitNoteColumnSchema, debitNoteColumnVariableSchema, defaultDebitNoteColumns, defaultPaymentStatementColumns,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
   agentDirectiveSchema, agentWidgetSchema, widgetFormatSchema, agentActionChipSchema,
+  agentCitationSchema, provenanceSchema,
   agentResponseSchema, agentMessageSchema, agentConversationSchema, agentEventSchema,
   agentRouteKeySchema, AGENT_ROUTE_KEYS,
   ACKED_DIRECTIVE_KINDS,
@@ -115,7 +116,7 @@ export type {
   GenerateBillingDocumentInput, SaveBillingDocumentInput, BillingDocumentLineInput,
   DebitNoteTemplateInput, DebitNoteColumnInput, DebitNoteColumnVariableInput,
   BachKhoaVehicle,
-  AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentTutorialStep, AgentResponse,
+  AgentDirective, AgentWidget, WidgetFormat, AgentActionChip, AgentCitation, Provenance, AgentTutorialStep, AgentResponse,
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
   AckedDirectiveKind, AgentActionResult,
   FaqEntry, FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
@@ -171,3 +172,9 @@ export type {
 // and TourController. See ./tours/catalog.ts.
 export { TOUR_CATALOG, TOUR_IDS, toursForRole, getTour } from './tours';
 export type { Tour, TourId } from './tours';
+
+// ─── Onboarding product-event catalog ───────────────────────────────────────
+// Closed set of business/UI events the onboarding layer (tour completion steps,
+// role checklists, lifecycle analytics) reacts to. See ./onboarding/events.ts.
+export { PRODUCT_EVENTS, ONBOARDING_EVENT_NAMES, ONBOARDING_TASKS, tasksForRole, getTask } from './onboarding';
+export type { ProductEventName, ProductEventPayloads, PayloadOf, OnboardingEventName, TriggerSource, OnboardingTask } from './onboarding';

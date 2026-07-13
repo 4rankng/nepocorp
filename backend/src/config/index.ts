@@ -110,6 +110,20 @@ const configSchema = z.object({
   // tutorial that matches one. Kill-switch — disable via env if it ever
   // false-positives (e.g. hijacks a narrow how-to question).
   agentTourGuardrail: z.boolean().default(true),
+  // P1 Intent Router: deterministic route-before-reasoning. When ON, the agent
+  // socket runs routeIntent() after the FAQ lane abstains and before the
+  // orchestrator. Navigation intents (Lane 0) resolve to a directive with 0
+  // LLM calls; single-entity lookups (Lane 2) get one tool call. Kill-switch —
+  // disable via env to force every turn through the full ReAct loop.
+  agentIntentRouter: z.boolean().default(true),
+  // P5 Governance: LLM provider failover. When ON, a failed primary provider
+  // call (timeout/http/429) retries on the alternate provider. Kill-switch.
+  agentFailover: z.boolean().default(true),
+  // P5 Governance: per-user chat rate limit (messages per minute). Prevents
+  // abuse/cost runaway. 0 = disabled.
+  agentRateLimitPerMin: z.number().int().nonnegative().default(20),
+  // P5 Governance: agent_messages retention in days. 0 = keep forever.
+  agentMessageRetentionDays: z.number().int().nonnegative().default(180),
 });
 
 const raw = {
@@ -142,6 +156,10 @@ const raw = {
   agentSlaP95AmberMs: process.env.AGENT_SLA_P95_AMBER_MS,
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
   agentTourGuardrail: parseFlag(process.env.AGENT_TOUR_GUARDRAIL, true),
+  agentIntentRouter: parseFlag(process.env.AGENT_INTENT_ROUTER, true),
+  agentFailover: parseFlag(process.env.AGENT_FAILOVER, true),
+  agentRateLimitPerMin: Number(process.env.AGENT_RATE_LIMIT_PER_MIN) || 20,
+  agentMessageRetentionDays: Number(process.env.AGENT_MESSAGE_RETENTION_DAYS) || 180,
 };
 
 // Provide dev-only defaults for values not marked as required in production
@@ -176,6 +194,10 @@ const withDefaults = {
   agentSlaP95AmberMs: raw.agentSlaP95AmberMs || 12000,
   agentNavigateGuardrail: raw.agentNavigateGuardrail,
   agentTourGuardrail: raw.agentTourGuardrail,
+  agentIntentRouter: raw.agentIntentRouter,
+  agentFailover: raw.agentFailover,
+  agentRateLimitPerMin: raw.agentRateLimitPerMin,
+  agentMessageRetentionDays: raw.agentMessageRetentionDays,
 };
 
 const result = configSchema.safeParse(withDefaults);
@@ -223,4 +245,8 @@ export const config = result.success ? result.data : configSchema.parse({
   agentSlaP95AmberMs: 12000,
   agentNavigateGuardrail: true,
   agentTourGuardrail: true,
+  agentIntentRouter: true,
+  agentFailover: true,
+  agentRateLimitPerMin: 20,
+  agentMessageRetentionDays: 180,
 });

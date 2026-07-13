@@ -48,4 +48,49 @@ describe('synthesizeStartTourFromResponse', () => {
   test('passes text/insight responses through unchanged', () => {
     assert.strictEqual(synthesizeStartTourFromResponse(text('hi'), Role.MANAGER).type, 'text');
   });
+
+  // ── Phase 7: continue_tour / cancel_tour (typed chatbot tour directives) ──
+
+  test('keeps a valid continue_tour for an allowed role and stamps tourVersion', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'continue_tour', tourId: 'create-trip' },
+      Role.MANAGER,
+    );
+    assert.strictEqual(r.type, 'continue_tour');
+    assert.ok(r.type === 'continue_tour' && r.tourId === 'create-trip');
+    assert.ok(r.type === 'continue_tour' && r.tourVersion === 1, 'catalog version stamped');
+  });
+
+  test('downgrades an unknown continue_tour tourId to a text denial', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'continue_tour', tourId: 'does-not-exist' },
+      Role.MANAGER,
+    );
+    assert.strictEqual(r.type, 'text');
+  });
+
+  test('downgrades a continue_tour the role cannot run to a text denial', () => {
+    // create-trip is MANAGER/ADMIN only.
+    const r = synthesizeStartTourFromResponse(
+      { type: 'continue_tour', tourId: 'create-trip' },
+      Role.ACCOUNTANT,
+    );
+    assert.strictEqual(r.type, 'text');
+  });
+
+  test('keeps a valid cancel_tour for an allowed role', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'cancel_tour', tourId: 'lock-trip-and-payment' },
+      Role.ACCOUNTANT,
+    );
+    assert.strictEqual(r.type, 'cancel_tour');
+  });
+
+  test('downgrades a cancel_tour for a role-denied tour', () => {
+    const r = synthesizeStartTourFromResponse(
+      { type: 'cancel_tour', tourId: 'create-trip' },
+      Role.ACCOUNTANT,
+    );
+    assert.strictEqual(r.type, 'text');
+  });
 });

@@ -2,6 +2,7 @@
 // directive bridge (focus / scrollTo / navigate.highlight). Extracted from
 // useFocusDeepLink so the bridge can call it outside the URL `?focus=` flow.
 import { driver, type Driver } from 'driver.js';
+import { resolveTourTarget } from './tourTarget';
 
 let activeDriver: Driver | null = null;
 let activeTimer: number | null = null;
@@ -17,8 +18,10 @@ function clearActiveDriver() {
 
 // Returns true when an element with `targetId` was found (and therefore
 // scrolled + spotlight-highlighted); false lets the caller report an honest ack.
+// Phase 2: resolves via `resolveTourTarget` (data-tour-id → id precedence) so
+// both legacy stable ids and new data-tour-id targets spotlight correctly.
 export function highlightElement(targetId: string, durationMs = 2000): boolean {
-  const el = document.getElementById(targetId);
+  const el = resolveTourTarget(targetId);
   if (!el) return false;
 
   clearActiveDriver();
