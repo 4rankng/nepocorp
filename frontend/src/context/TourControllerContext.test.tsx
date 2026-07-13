@@ -198,4 +198,31 @@ describe('TourControllerContext — interaction-step contract', () => {
       expect(result.current.status).toBe('showing');
     });
   });
+
+  it('refuses to start a tour when the admin master switch is off (onboardingEnabled === false)', async () => {
+    // Default mock user has no onboardingEnabled (undefined → enabled). Flip it
+    // off for this test only: the master switch must short-circuit start().
+    const mocked = vi.mocked(useAuth);
+    mocked.mockReturnValueOnce({ user: { userId: 1, role: 'MANAGER', onboardingEnabled: false } } as never);
+
+    const { result } = renderHook(() => useTourController(), { wrapper });
+    act(() => {
+      result.current.start('stub-tour');
+    });
+    // No tour mounts, no status transition. (Give the microtask queue a beat.)
+    await new Promise((r) => setTimeout(r, 20));
+    expect(result.current.tour).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('starts a tour normally when the master switch is explicitly on', async () => {
+    const mocked = vi.mocked(useAuth);
+    mocked.mockReturnValueOnce({ user: { userId: 1, role: 'MANAGER', onboardingEnabled: true } } as never);
+
+    const { result } = renderHook(() => useTourController(), { wrapper });
+    act(() => {
+      result.current.start('stub-tour');
+    });
+    await waitFor(() => expect(result.current.tour).not.toBeNull());
+  });
 });
