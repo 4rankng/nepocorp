@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Filter, ArrowUpDown, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { EmptyState } from '../design-system';
 import { useDispatchData } from '../hooks/useQueries';
 import { useLiveFleet } from '../hooks/useTripQueries';
@@ -116,14 +116,6 @@ export default function DispatchPage() {
 
       <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
       <div className="orders-card">
-        <div className="orders-toolbar">
-          <div className="o-tools desktop-only">
-            <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Filter size={13} /> Lọc</button>
-            <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><ArrowUpDown size={13} /> Sắp xếp: Ngày xuất phát</button>
-            <button type="button" className="pill-btn" disabled title="Sắp ra mắt"><Sparkles size={13} /> Tự động đề xuất xe</button>
-          </div>
-          <div className="o-tools desktop-only" />
-        </div>
         {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
           <EmptyState

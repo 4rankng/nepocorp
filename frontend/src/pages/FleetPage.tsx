@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { Truck, Container, UserCheck, Download, Filter, CheckCircle } from "lucide-react";
+import { Truck, Container, UserCheck, Download, CheckCircle } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
 import { PageHeader, Btn, KPI } from "../components/UI";
 import { useCRUD } from "../hooks/useCRUD";
@@ -90,12 +90,9 @@ export default function FleetPage() {
                 });
               }}
             >
-              Xuất Excel
-            </Btn>
-            <Btn variant="secondary" size="sm" icon={<Filter size={14} />} disabled title="Sắp ra mắt">
-              Lọc nâng cao
-            </Btn>
-          </div>
+                Xuất Excel
+              </Btn>
+            </div>
         }
       />
 

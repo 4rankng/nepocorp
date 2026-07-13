@@ -1,5 +1,5 @@
 import { useState, memo } from "react";
-import { UserCheck, Plus, Search, Filter, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { UserCheck, Plus, Search, Pencil, Trash2, X, Loader2 } from "lucide-react";
 import { Panel, StatusPill, Btn, Modal } from "../../components/UI";
 import { StatusStrip } from "../../components/shared/StatusStrip";
 import { useCRUD } from "../../hooks/useCRUD";
@@ -151,9 +151,6 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
             <Search size={14} />
             <input type="text" placeholder="Tìm tên hoặc SĐT…" value={driverSearch} onChange={(e) => setDriverSearch(e.target.value)} />
           </div>
-          <Btn variant="ghost" size="sm" icon={<Filter size={13} />} disabled title="Sắp ra mắt">
-            Lọc
-          </Btn>
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
             <Plus size={13} /> Thêm lái xe
           </button>
