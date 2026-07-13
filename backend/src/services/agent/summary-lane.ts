@@ -14,8 +14,8 @@
 // MANAGER sees dispatch/profit/fleet; ADMIN sees the superset.
 
 import type { AgentResponse, AgentWidget, AgentRouteKey } from '@tingting/shared';
-import type { Role } from '@tingting/shared';
 import type { DashboardStats, DashboardDecisionItem, DashboardDecisionKind } from '@tingting/shared';
+import { AGENT_ROUTE_KEYS, PAGE_CATALOG } from '@tingting/shared';
 import { getDashboardStats } from '../dashboard-stats.service.js';
 import { getMetric } from '../metrics/metric-registry.js';
 import { toProvenance } from '../metrics/metric-types.js';
@@ -58,9 +58,7 @@ function pathToRouteKey(path: string | undefined): AgentRouteKey | null {
   // The dashboard decision items use SPA paths like '/debt', '/trips', etc.
   // Match against the static portion of known route paths.
   const staticPart = '/' + path.split('/').filter(Boolean)[0];
-  // Import lazily to avoid a circular dependency at module load.
-  const { AGENT_ROUTE_KEYS, PAGE_CATALOG } = require('@tingting/shared') as typeof import('@tingting/shared');
-  for (const k of AGENT_ROUTE_KEYS as readonly AgentRouteKey[]) {
+  for (const k of AGENT_ROUTE_KEYS) {
     const entry = PAGE_CATALOG[k];
     const entryPath = typeof entry.path === 'string' ? entry.path : '';
     if (entryPath === staticPart || entryPath === path) return k;

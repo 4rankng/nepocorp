@@ -8,7 +8,6 @@
 // same Redis caching pattern, same cosine SQL. Fail-open: any error returns [].
 
 import { db } from '../../db';
-import * as schema from '../../db/schema';
 import { sql } from 'drizzle-orm';
 import { embedText, vecLiteral } from '../llm/embeddings';
 import { cacheGet } from '../../lib/redis';

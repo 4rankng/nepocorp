@@ -30,7 +30,7 @@ export interface LookupResult {
  * (P0.4), a synthesis pass can be added here. For now, the deterministic
  * formatting is correct and fast (0 LLM).
  */
-export async function runLookup(query: string, role: string): Promise<LookupResult> {
+export async function runLookup(query: string, _role: string): Promise<LookupResult> {
   const start = performance.now();
 
   // Execute ONE data.search call.

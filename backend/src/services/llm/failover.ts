@@ -13,9 +13,7 @@
 // silent breakage).
 
 import { config } from '../../config';
-import { getLlmSettings } from './settings';
-import { createMiniMaxProvider, MiniMaxError } from './minimax.client';
-import { createOpenRouterProvider } from './openrouter.client';
+import { MiniMaxError } from './minimax.client';
 import type { LlmProvider } from './provider';
 
 /** Error codes that should trigger failover (transient/infrastructure errors).
@@ -23,20 +21,10 @@ import type { LlmProvider } from './provider';
  *  outage; a parse error is the model's fault, not the provider's. */
 const FAILOVER_CODES = new Set(['timeout', 'http']);
 
-/** Get the INACTIVE provider (the one NOT currently active). Returns null if
- *  the inactive provider has no key configured. */
-async function getInactiveProvider(): Promise<LlmProvider | null> {
-  const settings = await getLlmSettings();
-  if (settings.provider === 'openrouter') {
-    // Active is OpenRouter → inactive is MiniMax.
-    if (!settings.minimaxKey) return null;
-    return createMiniMaxProvider(settings.minimaxKey);
-  } else {
-    // Active is MiniMax → inactive is OpenRouter.
-    if (!settings.openrouterKey) return null;
-    return createOpenRouterProvider(settings.openrouterKey);
-  }
-}
+// NOTE: the inactive provider is supplied by the CALLER of callWithFailover /
+// callStreamWithFailover (they receive it as a parameter). Resolving the
+// inactive provider here was a leftover from an earlier design and is not
+// needed — removing it keeps this module a pure wrapper.
 
 /** Wrap a complete (non-streaming) call with failover. Generic over the opts
  *  and result types so it works with any provider's complete() signature. */

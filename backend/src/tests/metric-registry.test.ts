@@ -14,7 +14,6 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { agentResponseSchema, provenanceSchema } from '@tingting/shared';
 import { getMetric, getAllMetrics, getMetricIds, getMetricByEntityField } from '../services/metrics/metric-registry.js';
-import type { MetricDef } from '../services/metrics/metric-types.js';
 
 // ─── Registry contract ──────────────────────────────────────────────────────
 

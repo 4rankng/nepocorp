@@ -361,7 +361,7 @@ function extractLookupQuery(normalized: string): string | null {
   // not a lookup, despite containing a plate number.
   if (/(tai sao|vi sao|lam sao|the nao|huong dan|day toi|day minh|bao nhieu|la bao nhieu|thang na[oy])/i.test(normalized)) return null;
 
-  for (const { regex, desc } of LOOKUP_PATTERNS) {
+  for (const { regex } of LOOKUP_PATTERNS) {
     const match = regex.exec(normalized);
     if (match && match[1]) {
       const ref = match[1].trim();
