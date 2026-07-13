@@ -14,6 +14,26 @@ import type {
   LiveFleetResponse,
 } from '@tingting/shared';
 
+/**
+ * Shape of the `/catalogs/bootstrap` blob. The canonical type lives here in the
+ * API layer (the natural home for response shapes) and is re-exported by
+ * `useCatalogs` so existing imports keep working. Drivers/forwarders receive a
+ * portal-filtered subset; the fields those roles never see are nullable-tolerant
+ * at the consumers, so this superset type is safe for both.
+ */
+export interface CatalogData {
+  customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean; linkedSupplierId: number | null }>;
+  trucks: Array<{ id: number; licensePlate: string; trailerPlateNumber: string | null; trailerType: '20FT' | '40FT' | null; currentTrailerId: number | null }>;
+  drivers: Array<{ id: number; name: string; assignedTruckId: number | null; baseSalary: string | null }>;
+  routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: string }> | null }>;
+  cargoTypes: Array<{ id: number; name: string; requiresPhotos: boolean }>;
+  trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
+  containerTypes: Array<{ id: number; code: string; name: string }>;
+  ports: Array<{ id: number; name: string; code: string | null; city: string | null }>;
+  forwarderExpenseTypes: Array<{ id: number; code: string; name: string; defaultMarkup?: boolean; billingLabel?: string | null; vatRate?: string | null }>;
+  suppliers: Array<{ id: number; name: string; status: string }>;
+}
+
 type ListTripsParams = {
   status?: string;
   limit?: number;
@@ -100,10 +120,8 @@ export const tripClient = {
       `${CATALOGS.PRICING}${toQuery({ customerId, routeId, date })}`,
     ),
 
-  // Bootstrap returns the full catalog blob; typed at the query layer via
-  // useCatalogs's CatalogData interface (cannot import here without a cycle).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getBootstrap: () => api.get<any>(CATALOGS.BOOTSTRAP),
+  // Bootstrap returns the full catalog blob consumed by useCatalogs.
+  getBootstrap: () => api.get<CatalogData>(CATALOGS.BOOTSTRAP),
 
   listTripExpenses: (tripId: number) =>
     api.get<{ items: TripExpense[] }>(TRIPS.EXPENSES(tripId)),
