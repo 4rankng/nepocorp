@@ -134,6 +134,7 @@ router.post('/bulk-figures', asyncHandler(async (req: Request, res: Response) =>
         ...parsedFigures.data,
         expectedVersion: parsedFigures.data.version,
         userId: user.userId,
+        userRole: user.role,
       });
       results.push({ tripId: update.tripId, ok: true, trip });
     } catch (err) {
@@ -177,6 +178,7 @@ router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response
     ...data,
     expectedVersion: data.version,
     userId: getUser(req).userId,
+    userRole: getUser(req).role,
   });
   await invalidateReportCaches();
   res.json(trip);
@@ -190,6 +192,7 @@ router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
     ...data,
     expectedVersion: data.version,
     userId: getUser(req).userId,
+    userRole: getUser(req).role,
   });
   await invalidateReportCaches();
   res.json(updated);

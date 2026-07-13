@@ -286,6 +286,7 @@ const handleSubmit = useCallback(
 
       if (isEditMode && existingTrip) {
         const payload = {
+          customerId: Number(s.customerId),
           routeId: s.routeId ? Number(s.routeId) : undefined,
           departureDate: s.departureDate || undefined,
           completedAt: s.completedAt || undefined,

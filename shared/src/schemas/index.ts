@@ -117,6 +117,7 @@ export const createTripSchema = z.object({
 
 export const updateTripFiguresSchema = z.object({
   legs: z.array(tripLegSchema).min(1),
+  customerId: z.coerce.number().int().positive().optional(),
   departureDate: z.string().optional(),
   completedAt: z.string().optional(),
   fuelMode: z.nativeEnum(FuelMode),

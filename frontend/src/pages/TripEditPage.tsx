@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
-import { TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
+import { Role, TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
 import { useConfirm } from '../components/UI';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
+import { useAuth } from '../hooks/useAuth';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useTripForm } from '../hooks/useTripForm';
 import { isAnyUploading } from '../hooks/useTripFormPhotos';
@@ -30,6 +31,7 @@ import './TripEditPage.css';
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: trip, isLoading: loading, refetch: refetchTrip } = useTripDetail(id);
   const { data: catalogData } = useCatalogs();
@@ -61,6 +63,7 @@ export default function TripEditPage() {
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
+  const canChangeCustomer = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
   const { error, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt } = form;
   const filledContainerTypeIds = form.containerRows
     .map(row => row.containerTypeId)
@@ -163,6 +166,27 @@ export default function TripEditPage() {
             <div className="tc-bento">
               <CardSection number={1} title="Tuyến đường & ngày" subtitle="Thời gian và tuyến vận chuyển">
                 <div className="tc-field-row tc-field-row--2">
+                  <div className="tc-field">
+                    <label className="tc-field-label" htmlFor="customerId">Khách hàng <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                    <select
+                      id="customerId"
+                      className="input"
+                      value={form.customerId}
+                      onChange={(e) => form.setCustomerId(e.target.value)}
+                      disabled={!catalogData || !canChangeCustomer}
+                      required
+                    >
+                      <option value="">{catalogData ? '-- Chọn khách hàng --' : 'Đang tải khách hàng…'}</option>
+                      {editOptions.customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>{customer.label}</option>
+                      ))}
+                    </select>
+                    <div className="tc-field-hint">
+                      {canChangeCustomer
+                        ? 'Đổi khách hàng không tự cập nhật giá cước.'
+                        : 'Chỉ Quản lý hoặc Quản trị viên được đổi khách hàng.'}
+                    </div>
+                  </div>
                   <div className="tc-field">
                     <label className="tc-field-label">Ngày khởi hành <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
                     <input

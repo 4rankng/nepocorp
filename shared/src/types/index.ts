@@ -867,6 +867,7 @@ export interface TripLegInput {
 
 export interface UpdateTripFiguresRequest {
   legs: TripLegInput[];
+  customerId?: number;
   departureDate?: string;
   completedAt?: string;
   fuelMode: FuelMode;

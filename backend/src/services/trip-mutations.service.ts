@@ -4,7 +4,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, desc, lte, ne } from 'drizzle-orm';
-import { TripStatus, FuelMode, Role } from '@tingting/shared';
+import { TripStatus, FuelMode, Role, TxnType } from '@tingting/shared';
 import type { TripLegInput } from '@tingting/shared';
 import { resolveTripDriverSalary, computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
@@ -315,6 +315,7 @@ export async function updateTripFigures(
   tripId: number,
   data: {
     legs: TripLegInput[];
+    customerId?: number;
     departureDate?: string;
     completedAt?: string;
     fuelMode: FuelMode;
@@ -339,6 +340,7 @@ export async function updateTripFigures(
     notes?: string;
     expectedVersion?: number;
     userId?: number;
+    userRole?: Role;
     routeId?: number;
     carrierType?: 'OWN' | 'EXTERNAL';
     externalCarrierId?: number | null;
@@ -369,6 +371,44 @@ export async function updateTripFigures(
     // 2. Optimistic concurrency check
     if (data.expectedVersion !== undefined && trip.version !== data.expectedVersion) {
       throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
+    }
+
+    const customerChanged = data.customerId !== undefined && data.customerId !== trip.customerId;
+    if (customerChanged && data.userRole !== Role.ADMIN && data.userRole !== Role.MANAGER) {
+      throw new ApiError(403, 'Chỉ Quản lý hoặc Quản trị viên mới có quyền đổi khách hàng của lệnh vận chuyển');
+    }
+
+    if (customerChanged) {
+      const [customer] = await tx.select({ id: s.customers.id })
+        .from(s.customers)
+        .where(and(
+          eq(s.customers.id, data.customerId!),
+          eq(s.customers.status, 'ACTIVE'),
+          isNull(s.customers.deletedAt),
+        ))
+        .limit(1);
+      if (!customer) throw new ApiError(400, 'Khách hàng không tồn tại hoặc đã ngừng hoạt động');
+
+      if (trip.status === TripStatus.COMPLETED) {
+        // Lock the old and new customer consistently before checking payment
+        // history or moving the receivable, avoiding opposite A→B/B→A locks.
+        for (const customerId of [trip.customerId, data.customerId!].sort((a, b) => a - b)) {
+          await LedgerService.lockEntity(tx, 'CUSTOMER', customerId);
+        }
+
+        const [payment] = await tx.select({ id: s.ledger.id })
+          .from(s.ledger)
+          .where(and(
+            eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+            eq(s.ledger.txnId, tripId),
+            eq(s.ledger.entityType, 'CUSTOMER'),
+            eq(s.ledger.entityId, trip.customerId),
+          ))
+          .limit(1);
+        if (payment) {
+          throw new ApiError(422, 'Chuyến đã phát sinh thanh toán; không thể đổi khách hàng');
+        }
+      }
     }
 
     let finalRouteId = trip.routeId;
@@ -620,6 +660,7 @@ export async function updateTripFigures(
     const nextVersion = trip.version + 1;
     const [updated] = await tx.update(s.trips).set({
       version: nextVersion,
+      customerId: data.customerId ?? trip.customerId,
       departureDate: data.departureDate ?? trip.departureDate,
       routeId: finalRouteId,
       fuelFixedAllowanceApplied: String(fuelFixedAllowanceApplied),

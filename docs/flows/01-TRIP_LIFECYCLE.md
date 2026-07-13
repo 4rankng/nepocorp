@@ -29,12 +29,13 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 |-----------|:-----:|:-------:|:----------:|:------:|
 | Xem tất cả chuyến | ✅ | ✅ | ✅ | ❌ (chỉ mình) |
 | Tạo chuyến | ✅ | ✅ | ❌ | ❌ |
-| Sửa thông tin cấu trúc (khách hàng, tuyến, xe, lái xe) trên CREATED | ✅ | ✅ | ❌ | ❌ |
+| Sửa thông tin cấu trúc (tuyến, xe, lái xe) trên CREATED | ✅ | ✅ | ❌ | ❌ |
+| Đổi khách hàng trên CREATED/IN_TRANSIT; COMPLETED chưa thanh toán | ✅ | ✅ | ❌ | ❌ |
 | Sửa số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương lái xe) trên IN_TRANSIT/COMPLETED | ✅ | ✅ | ✅ | ❌ |
 | Xóa (chỉ CREATED) | ✅ | ✅ | ❌ | ❌ |
 | Xem tài chính | ✅ | ✅ | ✅ | ❌ |
 
-> Phân biệt rõ "sửa thông tin cấu trúc" (chỉ manager/admin, chỉ trên CREATED) và "sửa số liệu tài chính" (manager/admin + kế toán, trên IN_TRANSIT/COMPLETED). Backend đã luôn cho phép kế toán ghi số liệu tài chính (RBAC `trips:write` + `updateTripFigures` chỉ chặn LOCKED/CANCELED) — chi tiết xem `CONTEXT.md` và use case test `T4.10` trong `backend/src/tests/integration.test.ts`.
+> Phân biệt rõ "sửa thông tin cấu trúc" (chỉ manager/admin, chỉ trên CREATED) và "sửa số liệu tài chính" (manager/admin + kế toán, trên IN_TRANSIT/COMPLETED). Đổi khách hàng là ngoại lệ nghiệp vụ: manager/admin được đổi ở CREATED/IN_TRANSIT, hoặc COMPLETED khi chưa thanh toán; hệ thống ghi bút toán hoàn tác và ghi lại công nợ cho khách mới. Backend đã luôn cho phép kế toán ghi số liệu tài chính (RBAC `trips:write` + `updateTripFigures` chỉ chặn LOCKED/CANCELED) — chi tiết xem `CONTEXT.md` và use case test `T4.10` trong `backend/src/tests/integration.test.ts`.
 
 ### 1.4 API Endpoints
 
@@ -74,8 +75,8 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 ### 2.2 Chỉnh sửa chuyến (PUT /api/trips/:id)
 
 **Trước khi xuất phát (CREATED):** Manager/Admin sửa được mọi trường. Kế toán không sửa (chỉ manager/admin tạo + chỉnh cấu trúc).
-**Đang chạy (IN_TRANSIT):** Manager/Admin + Kế toán sửa được số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương lái xe). Nút "Nhập số liệu" hiển thị cho cả hai role.
-**Hoàn thành (COMPLETED):** Manager/Admin + Kế toán sửa được số liệu tài chính. Manager/Admin thấy nút "Chỉnh sửa", kế toán thấy nút "Nhập số liệu" (cùng form, cùng endpoint `PUT /actuals`).
+**Đang chạy (IN_TRANSIT):** Manager/Admin có thể đổi khách hàng; Manager/Admin + Kế toán sửa được số liệu tài chính (nhiên liệu, tiền đi đường, vé, lương lái xe). Đổi khách hàng không tự cập nhật giá cước. Nút "Nhập số liệu" hiển thị cho cả hai role.
+**Hoàn thành (COMPLETED):** Manager/Admin có thể đổi khách hàng khi chuyến chưa phát sinh thanh toán; Manager/Admin + Kế toán sửa được số liệu tài chính. Khi đổi khách hàng, hệ thống hoàn tác công nợ của khách cũ và ghi nhận cho khách mới bằng các bút toán bổ sung, không sửa sổ cái và không tự cập nhật giá cước. Manager/Admin thấy nút "Chỉnh sửa", kế toán thấy nút "Nhập số liệu" (cùng form, cùng endpoint `PUT /actuals`).
 **Đã khóa (LOCKED):** KHÔNG sửa được — nút Sửa bị ẩn.
 
 **DRIVER chỉ sửa được:** status, actualArrival trên chuyến của mình.
@@ -204,6 +205,8 @@ computeTripTotals(trip):
 | COMPLETED | Hoàn thành | Xanh lá | ✅ (manager/admin) | ✅ | ❌ |
 | LOCKED | Đã khóa | Xám | ❌ | ❌ | ❌ |
 | CANCELLED | Đã hủy | Đỏ | ❌ | ❌ | ❌ |
+
+> Riêng trường khách hàng, ADMIN/MANAGER có thể đổi ở CREATED và IN_TRANSIT, hoặc ở COMPLETED khi chưa có thanh toán; LOCKED/CANCELED không thể sửa.
 
 ### 4.2 Chuyển trạng thái hợp lệ
 

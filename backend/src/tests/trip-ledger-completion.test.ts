@@ -188,6 +188,75 @@ describe('trip completion ledger posting', () => {
     assert.equal(customerRows.at(-1)?.balance, '1500000');
   });
 
+  test('changing a completed trip customer reverses the old receivable and posts it to the new customer', async () => {
+    const { trip, customer: oldCustomer } = await createInTransitTrip({ revenue: 800_000 });
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const [newCustomer] = await db.insert(s.customers).values({ name: `Replacement customer ${suffix}` }).returning();
+    createdCustomerIds.push(newCustomer.id);
+
+    const completed = await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
+    const updated = await updateTripFigures(trip.id, {
+      legs: [],
+      fuelMode: FuelMode.AUTO,
+      fuelSupplementLiters: 0,
+      tollsDiscount: 0,
+      tollsAddition: 0,
+      tollsStations: 0,
+      hasReturnCargo: false,
+      customerId: newCustomer.id,
+      expectedVersion: completed.version,
+      userId: 1,
+      userRole: Role.MANAGER,
+    });
+
+    assert.equal(updated.customerId, newCustomer.id);
+    const oldRows = await db.select({ balance: s.ledger.balance }).from(s.ledger)
+      .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, oldCustomer.id)))
+      .orderBy(s.ledger.id);
+    const newRows = await db.select({ balance: s.ledger.balance }).from(s.ledger)
+      .where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, newCustomer.id)))
+      .orderBy(s.ledger.id);
+    assert.equal(oldRows.at(-1)?.balance, '0');
+    assert.equal(newRows.at(-1)?.balance, '800000');
+  });
+
+  test('rejects changing a completed trip customer after payment has been recorded', async () => {
+    const { trip, customer } = await createInTransitTrip({ revenue: 800_000 });
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const [newCustomer] = await db.insert(s.customers).values({ name: `Paid replacement customer ${suffix}` }).returning();
+    createdCustomerIds.push(newCustomer.id);
+
+    const completed = await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
+    await db.insert(s.ledger).values({
+      txnType: TxnType.PAYMENT_RECEIVED,
+      txnId: trip.id,
+      receiptId: `RC-${suffix}`,
+      entityType: 'CUSTOMER',
+      entityId: customer.id,
+      debit: '0',
+      credit: '800000',
+      balance: '0',
+      note: 'Test payment',
+    });
+
+    await assert.rejects(
+      updateTripFigures(trip.id, {
+        legs: [],
+        fuelMode: FuelMode.AUTO,
+        fuelSupplementLiters: 0,
+        tollsDiscount: 0,
+        tollsAddition: 0,
+        tollsStations: 0,
+        hasReturnCargo: false,
+        customerId: newCustomer.id,
+        expectedVersion: completed.version,
+        userId: 1,
+        userRole: Role.MANAGER,
+      }),
+      /đã phát sinh thanh toán/,
+    );
+  });
+
   test('updating external carrier details on a trip persists in the database', async () => {
     const { trip, customer } = await createInTransitTrip({
       revenue: 800_000,
