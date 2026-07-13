@@ -37,7 +37,9 @@ export interface OnboardingTask {
  *   3. Create the first trip  ← launches the create-trip tour; completes on
  *      trip.created (the canonical interaction step from Phase 3)
  *   4. Lock a trip
- *   5. (placeholder for fleet awareness — a dashboard view)
+ *
+ * (A future "fleet awareness" step tied to a live fleet dashboard view is
+ * deferred until that dashboard ships; it is intentionally not in the array.)
  *
  * The dashboard/list "visit" tasks complete on the `*.dashboard_viewed` events.
  * Those events are wired by Phase 6's hook on first paint of the role pages;
