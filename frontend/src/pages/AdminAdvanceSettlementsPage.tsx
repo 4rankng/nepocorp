@@ -70,17 +70,19 @@ interface AsKPIProps {
   iconName: AssetIconName;
   active?: boolean;
   hasItems?: boolean;
-  onClick: () => void;
+  // Omit onClick for a summary-only stat (no filter to toggle). Renders as a
+  // non-interactive element instead of a dead role="button" in the tab order.
+  onClick?: () => void;
 }
 
 function AsKPI({ label, value, meta, variant, iconName, active = false, hasItems = false, onClick }: AsKPIProps) {
+  const interactive = typeof onClick === 'function';
   return (
     <div
-      className={`as-kpi as-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      className={`as-kpi as-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}${interactive ? '' : ' as-kpi--static'}`}
+      {...(interactive
+        ? { onClick, role: 'button', tabIndex: 0, onKeyDown: (e: import('react').KeyboardEvent) => e.key === 'Enter' && onClick() }
+        : {})}
     >
       <div className="as-kpi__label">{label}</div>
       <div className="as-kpi__value">{value}</div>
@@ -384,9 +386,7 @@ export default function AdminAdvanceSettlementsPage() {
           meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="warn"
           iconName="advances"
-          active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}
-          onClick={() => { /* summary only — no filter */ }}
         />
       </div>
 

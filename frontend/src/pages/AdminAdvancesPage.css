@@ -70,6 +70,15 @@
 .adv-page .adv-kpi:hover {
   background: var(--surface-2);
 }
+/* Summary-only stat (no filter): neutral cursor, no hover affordance, and
+   stays out of the tab order so it isn't mistaken for a clickable control. */
+.adv-page .adv-kpi.adv-kpi--static {
+  cursor: default;
+  user-select: text;
+}
+.adv-page .adv-kpi.adv-kpi--static:hover {
+  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
+}
 .adv-page .adv-kpi__label {
   font-family: var(--font-mono);
   font-size: var(--fs-2xs);

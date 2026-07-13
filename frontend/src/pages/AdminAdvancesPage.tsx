@@ -51,17 +51,19 @@ interface AdvKPIProps {
   iconName: AssetIconName;
   active?: boolean;
   hasItems?: boolean;
-  onClick: () => void;
+  // Omit onClick for a summary-only stat (no filter to toggle). Renders as a
+  // non-interactive element instead of a dead role="button" in the tab order.
+  onClick?: () => void;
 }
 
 function AdvKPI({ label, value, meta, variant, iconName, active = false, hasItems = false, onClick }: AdvKPIProps) {
+  const interactive = typeof onClick === 'function';
   return (
     <div
-      className={`adv-kpi adv-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      className={`adv-kpi adv-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}${interactive ? '' : ' adv-kpi--static'}`}
+      {...(interactive
+        ? { onClick, role: 'button', tabIndex: 0, onKeyDown: (e: import('react').KeyboardEvent) => e.key === 'Enter' && onClick() }
+        : { 'aria-hidden': false })}
     >
       <div className="adv-kpi__label">{label}</div>
       <div className="adv-kpi__value">{value}</div>
@@ -332,9 +334,7 @@ export default function AdminAdvancesPage() {
           meta={`${formatNumber(balancesData ? Number(balancesData.totalOutstanding) : 0)} ₫`}
           variant="success"
           iconName="cashflow"
-          active={false}
           hasItems={(balancesData?.items.length ?? 0) > 0}
-          onClick={() => { /* summary only — no filter */ }}
         />
       </div>
 
