@@ -1,10 +1,11 @@
 ---
 phase: 2
-title: "Instrument Guided Workflows"
-status: pending
+title: Instrument Guided Workflows
+status: completed
 priority: P1
 effort: L
-dependencies: [1]
+dependencies:
+  - 1
 ---
 
 # Phase 2: Instrument Guided Workflows

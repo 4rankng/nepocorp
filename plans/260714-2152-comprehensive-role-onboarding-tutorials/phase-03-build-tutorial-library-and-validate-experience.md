@@ -1,10 +1,12 @@
 ---
 phase: 3
-title: "Build Tutorial Library and Validate Experience"
-status: pending
+title: Build Tutorial Library and Validate Experience
+status: completed
 priority: P1
 effort: M
-dependencies: [1, 2]
+dependencies:
+  - 1
+  - 2
 ---
 
 # Phase 3: Build Tutorial Library and Validate Experience

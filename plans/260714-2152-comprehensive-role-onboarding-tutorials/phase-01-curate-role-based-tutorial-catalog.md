@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Curate Role-Based Tutorial Catalog
-status: in-progress
+status: completed
 priority: P1
 effort: M
 dependencies: []

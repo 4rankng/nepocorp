@@ -3,7 +3,7 @@ title: Comprehensive Role-Based Onboarding Tutorials
 description: >-
   Expand the four-item starter card into role-based guided curricula plus a
   persistent tutorial library, using the existing tour engine and progress APIs.
-status: in-progress
+status: completed
 priority: P2
 branch: feat/onboarding-orchestration
 tags:
@@ -62,9 +62,9 @@ tours, while the checklist shows only the role's activation outcomes.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Curate Role-Based Tutorial Catalog](./phase-01-curate-role-based-tutorial-catalog.md) | In Progress |
-| 2 | [Instrument Guided Workflows](./phase-02-instrument-guided-workflows.md) | Pending |
-| 3 | [Build Tutorial Library and Validate Experience](./phase-03-build-tutorial-library-and-validate-experience.md) | Pending |
+| 1 | [Curate Role-Based Tutorial Catalog](./phase-01-curate-role-based-tutorial-catalog.md) | Completed |
+| 2 | [Instrument Guided Workflows](./phase-02-instrument-guided-workflows.md) | Completed |
+| 3 | [Build Tutorial Library and Validate Experience](./phase-03-build-tutorial-library-and-validate-experience.md) | Completed |
 
 ## Dependencies
 
