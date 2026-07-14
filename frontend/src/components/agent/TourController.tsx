@@ -47,7 +47,7 @@ export function TourController() {
           <button
             type="button"
             className="agent-tour__btn agent-tour__btn--primary"
-            onClick={() => start(resumable.id, getInProgressStep(resumable.id) ?? 0)}
+            onClick={() => start(resumable.id, getInProgressStep(resumable.id, resumable.version) ?? 0)}
           >
             Tiếp tục
           </button>

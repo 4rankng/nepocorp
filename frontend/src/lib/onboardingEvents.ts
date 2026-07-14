@@ -87,6 +87,16 @@ class OnboardingEventBus {
     if (set.size === 0) this.handlers.delete(name);
   }
 
+  /** Subscribe once and return a cancellable handle for tour-step teardown. */
+  once(name: ProductEventName, handler: Handler): () => void {
+    let off: () => void;
+    off = this.on(name, (payload) => {
+      off();
+      handler(payload);
+    });
+    return off;
+  }
+
   /**
    * Resolve with the payload when the event fires, or `null` on timeout.
    * `timeoutMs <= 0` means wait forever (Phase 3 default — manual fallback

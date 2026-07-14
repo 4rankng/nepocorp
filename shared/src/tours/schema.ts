@@ -35,6 +35,12 @@ export interface Tour {
   summary: string;
   /** Vietnamese description for `tours.search` + the on-demand list. */
   description: string;
+  /** Library grouping; this is presentation metadata, not a permission rule. */
+  category: 'operations' | 'finance' | 'configuration' | 'administration';
+  /** Short, honest estimate displayed by the tutorial library. */
+  estimatedMinutes: number;
+  /** Optional prerequisite/recovery guidance shown before a tour starts. */
+  prerequisites?: readonly string[];
   /** Roles allowed to see/run this tour. */
   roles: readonly Role[];
   /** Extra keywords for `tours.search` recall (matched diacritic-insensitively). */

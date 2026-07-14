@@ -20,7 +20,7 @@ import './onboarding-checklist.css';
 
 const OFFICE_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT']);
 
-export function OnboardingChecklist() {
+export function OnboardingChecklist({ onOpenTutorialLibrary }: { onOpenTutorialLibrary?: () => void }) {
   const { user } = useAuth();
   const { tour } = useTourController();
   const { tasks, total, completedCount, pct, loading, launchTour, dismiss } = useOnboardingChecklist();
@@ -119,6 +119,7 @@ export function OnboardingChecklist() {
             ))}
           </ul>
           <div className="ob-checklist__foot">
+            {onOpenTutorialLibrary && <button type="button" className="ob-checklist__dismiss" onClick={onOpenTutorialLibrary}>Xem tất cả hướng dẫn</button>}
             <button
               type="button"
               className="ob-checklist__dismiss"

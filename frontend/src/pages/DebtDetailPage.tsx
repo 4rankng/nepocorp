@@ -311,6 +311,7 @@ export default function DebtDetailPage() {
           {hasDebt && (
             <button
               className="btn btn--primary"
+              data-tour-id="debt-record-payment"
               onClick={openPaymentModal}
             >
               <Plus size={14} />
@@ -491,6 +492,7 @@ export default function DebtDetailPage() {
                 </p>
                 <button
                   className="btn btn--primary"
+                  data-tour-id="debt-record-payment"
                   type="button"
                   onClick={openPaymentModal}
                   disabled={!hasDebt}
@@ -562,6 +564,7 @@ export default function DebtDetailPage() {
             </button>
             <button
               className="btn btn--primary btn--sm"
+              data-tour-id="debt-payment-submit"
               disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim()}
               onClick={submitPayment}
             >

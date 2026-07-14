@@ -29,7 +29,7 @@ describe('useOnboardingChecklist', () => {
     vi.clearAllMocks();
   });
 
-  it('completes only the checklist task for a finished curated guide', async () => {
+  it('does not complete an event-gated task merely by finishing its guide', async () => {
     const { result } = renderHook(() => useOnboardingChecklist());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -37,9 +37,14 @@ describe('useOnboardingChecklist', () => {
       onboardingEvents.emit('tour.completed', { tourId: 'create-trip' });
     });
 
+    expect(result.current.tasks.find((task) => task.id === 'manager-create-first-trip')?.taskStatus).toBe('pending');
+    expect(upsertTask).not.toHaveBeenCalled();
+
+    act(() => {
+      onboardingEvents.emit('trip.created', { tripId: 1 });
+    });
+
     await waitFor(() => expect(result.current.completedCount).toBe(1));
-    expect(result.current.tasks.find((task) => task.id === 'manager-create-first-trip')?.taskStatus).toBe('completed');
-    expect(result.current.tasks.find((task) => task.id === 'manager-lock-first-trip')?.taskStatus).toBe('pending');
     expect(upsertTask).toHaveBeenCalledWith({ taskId: 'manager-create-first-trip', status: 'completed' });
   });
 });

@@ -179,9 +179,9 @@ export function UserTable({
       </div>
 
       {/* ── Unified panel: toolbar + table + footer ─────────────────────── */}
-      <div className="users-table-panel">
+      <div className="users-table-panel" data-tour-id="users-table">
         {/* Filter toolbar */}
-        <div className="toolbar">
+        <div className="toolbar" data-tour-id="users-role-filters">
           {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
             const count = f === 'all' ? total : users.filter(u => u.role === f).length;
             const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];

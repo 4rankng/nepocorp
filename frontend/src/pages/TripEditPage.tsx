@@ -489,6 +489,7 @@ export default function TripEditPage() {
                 <button
                   type="submit"
                   form="trip-edit-form"
+                  data-tour-id="trip-edit-financial-submit"
                   className="btn btn--primary tc-rail-btn tc-rail-btn--primary"
                   disabled={submitting || isAnyUploading(uploading)}
                 >
@@ -525,6 +526,7 @@ export default function TripEditPage() {
           <button
             type="submit"
             form="trip-edit-form"
+            data-tour-id="trip-edit-financial-submit"
             className="btn btn--primary tc-mobile-btn tc-mobile-btn--primary"
             disabled={submitting || isAnyUploading(uploading)}
           >

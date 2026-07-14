@@ -60,7 +60,7 @@ export function TripHeader({
         </div>
       </div>
 
-      <div className="header-actions">
+      <div className="header-actions" data-tour-id="trip-detail-financials">
         {canEdit && (
           <button className="btn tdp-edit-btn" onClick={onEdit}>
             <Pencil size={15} />Chỉnh sửa
@@ -111,6 +111,7 @@ export function TripHeader({
         {canLock && (
           <button
             className="btn btn--primary"
+            data-tour-id="trip-detail-lock"
             disabled={actionLoading || needsPhotos}
             title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
             onClick={onLock}

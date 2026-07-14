@@ -47,6 +47,7 @@ export interface TopbarProps {
   sidebarOpen: boolean;
   pageTitle: string;
   onToggleSidebar: () => void;
+  onOpenTutorialLibrary?: () => void;
 }
 
 export interface ProfileModalProps {

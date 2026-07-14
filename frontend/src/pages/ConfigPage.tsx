@@ -174,7 +174,7 @@ export default function ConfigPage() {
           <p style={{ fontSize: 13 }}>Hãy thử tìm kiếm với từ khóa khác.</p>
         </div>
       ) : (
-        <div className="settings-grid asset-route-grid">
+        <div className="settings-grid asset-route-grid" data-tour-id="config-grid">
           {filteredCards.map(card => (
             <button key={card.path} className="setting-card" onClick={() => navigate(card.path)}>
               <div className="setting-card__icon">{card.icon}</div>

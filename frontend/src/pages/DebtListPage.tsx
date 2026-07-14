@@ -315,7 +315,7 @@ export default function DebtListPage() {
       {/* ══════════════════════════════════════════════════════════════════════
         *  ZONE 2 — Aging Distribution (4 equal glass cards)
         * ══════════════════════════════════════════════════════════════════════ */}
-      <div className="debt-aging-grid">
+      <div className="debt-aging-grid" data-tour-id="debt-aging">
         {AGING_BUCKETS.map((bucket) => {
           const amount = totals[bucket.amountKey];
           const count = totals[bucket.countKey];
@@ -367,7 +367,7 @@ export default function DebtListPage() {
       {/* ══════════════════════════════════════════════════════════════════════
         *  ZONE 3 — Data Section (full-width card with filters + table/cards)
         * ══════════════════════════════════════════════════════════════════════ */}
-      <div className="debt-data-card">
+      <div className="debt-data-card" data-tour-id="debt-customer-list">
         {/* Filter pill bar */}
         <div className="debt-filter-bar">
           <div className="debt-filter-pills">

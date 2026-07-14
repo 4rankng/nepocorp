@@ -72,14 +72,12 @@ describe('tour catalog integrity', () => {
   test('toursForRole is role-scoped', () => {
     assert.strictEqual(toursForRole(Role.DRIVER).length, 0, 'DRIVER sees no office tours');
     assert.strictEqual(toursForRole(Role.FORWARDER).length, 0, 'FORWARDER sees no office tours');
-    // ACCOUNTANT can access /trips, /debt, /config/fuel (all adminOnly) but not
-    // create trips (manager/dispatch) → sees the two finance-adjacent tours.
     const acct = toursForRole(Role.ACCOUNTANT)
       .map((t) => t.id)
       .sort();
-    assert.deepStrictEqual(acct, ['fuel-config', 'lock-trip-and-payment']);
-    assert.strictEqual(toursForRole(Role.MANAGER).length, 3, 'MANAGER sees all 3 tours');
-    assert.strictEqual(toursForRole(Role.ADMIN).length, 3, 'ADMIN sees all 3 tours');
+    assert.deepStrictEqual(acct, ['accounting-overview', 'fuel-config', 'record-receivable-payment', 'review-pnl', 'update-trip-figures']);
+    assert.strictEqual(toursForRole(Role.MANAGER).length, 8);
+    assert.strictEqual(toursForRole(Role.ADMIN).length, 12);
   });
 
   test('fuel-config tour preserves the original spotlight targetIds', () => {

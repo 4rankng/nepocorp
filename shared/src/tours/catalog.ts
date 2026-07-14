@@ -1,156 +1,29 @@
 import { Role } from '../constants';
 import type { Tour } from './schema';
 
-/**
- * The curated tour catalog — single source for both the backend `tours.search`
- * tool and the frontend on-demand list / `TourController`. Add a tour by adding
- * a record here (and a `data-`-free stable `id` referenced by any spotlighted
- * element). The `satisfies Record<string, Tour>` check + the closed
- * `AgentRouteKey` enum on `AgentTutorialStep.directive.routeKey` give compile-
- * time safety; `catalog.test.ts` double-checks role + routeKey membership.
- */
-export const TOUR_CATALOG = {
-  'create-trip': {
-    id: 'create-trip',
-    version: 2,
-    title: 'Tạo chuyến vận chuyển',
-    summary: 'Tạo một lệnh vận chuyển mới: chọn khách + tuyến, nhập thông tin, rồi lưu.',
-    description: 'Hướng dẫn tạo lệnh vận chuyển (chuyến đi) mới — chọn khách, tuyến, loại hàng rồi lưu.',
-    aliases: ['tạo chuyến', 'tạo lệnh', 'lệnh vận chuyển', 'new trip', 'thêm chuyến', 'them chuyen'],
-    roles: [Role.MANAGER, Role.ADMIN],
-    steps: [
-      {
-        title: 'Mở form tạo chuyến',
-        body: 'Mở trang Tạo lệnh vận chuyển. Hãy bắt đầu với khách hàng và tuyến đường ở phần Thông tin chuyến đi.',
-        directive: {
-          kind: 'navigate',
-          routeKey: 'tripNew',
-        },
-      },
-      {
-        title: 'Chọn khách hàng',
-        body: 'Chọn khách hàng (đơn vị) thuê chuyến. Khách phải có sẵn trong danh sách khách hàng.',
-        example: 'VD: Công ty ABC',
-        directive: { kind: 'scrollTo', targetId: 'customerId', durationMs: 3000 },
-      },
-      {
-        title: 'Chọn tuyến & loại hàng',
-        body: 'Chọn tuyến (lộ trình) và loại hàng. Hệ thống tự tính đơn giá theo bảng giá của tuyến.',
-        directive: { kind: 'scrollTo', targetId: 'routeId', durationMs: 3000 },
-      },
-      {
-        title: 'Lưu chuyến',
-        body: 'Kiểm tra lại thông tin rồi bấm "Tạo chuyến". Chuyến sẽ ở trạng thái CREATED, sẵn sàng để điều vận khởi hành.',
-        directive: { kind: 'scrollTo', targetId: 'trip-new-submit', durationMs: 3500 },
-        // Phase 3 interaction step: this step auto-completes when the user
-        // actually creates the trip (the `trip.created` product event fires at
-        // the TripCreatePage success handler). The manual "Tôi đã làm xong"
-        // button stays available as a fallback.
-        completionEvent: 'trip.created',
-      },
-    ],
-  },
-
-  'lock-trip-and-payment': {
-    id: 'lock-trip-and-payment',
-    version: 1,
-    title: 'Chốt chuyến & ghi nhận thanh toán',
-    summary: 'Khóa sổ một chuyến đã hoàn thành, rồi ghi nhận tiền khách thanh toán vào công nợ.',
-    description: 'Luồng chốt chuyến (khóa sổ) rồi ghi nhận thanh toán công nợ phải thu — đi qua 2 trang.',
-    aliases: ['chốt chuyến', 'thu tiền', 'ghi nhận thanh toán', 'công nợ', 'khóa sổ', 'chot chuyen'],
-    roles: [Role.MANAGER, Role.ADMIN, Role.ACCOUNTANT],
-    steps: [
-      {
-        title: 'Mở danh sách chuyến',
-        body: 'Vào trang Lệnh vận chuyển. Tìm một chuyến ở trạng thái COMPLETED (đã nhập số liệu thực tế) để chốt.',
-        directive: { kind: 'navigate', routeKey: 'trips' },
-      },
-      {
-        title: 'Chốt chuyến',
-        body: 'Mở chi tiết chuyến COMPLETED đó, kiểm tra doanh thu/chi phí, rồi bấm "Chốt chuyến" để khóa sổ. Sau khi chốt, số liệu chuyến không thay đổi nữa.',
-      },
-      {
-        title: 'Mở công nợ phải thu',
-        body: 'Vào trang Công nợ phải thu — nơi ghi nhận tiền khách hàng thanh toán.',
-        directive: { kind: 'navigate', routeKey: 'debt' },
-      },
-      {
-        title: 'Ghi nhận thanh toán',
-        body: 'Chọn khách hàng cần thu, bấm "Ghi nhận thanh toán", nhập số tiền và phân bổ vào các chuyến. Số tiền sẽ trừ vào công nợ còn nợ của khách.',
-      },
-    ],
-  },
-
-  // Migrated verbatim from the old buildScriptedTutorialResponse (orchestrator.ts).
-  // Same 6 steps, same configFuel targetIds (already stamped on FuelConfigPage).
-  'fuel-config': {
-    id: 'fuel-config',
-    version: 1,
-    title: 'Nhập định mức nhiên liệu',
-    summary: 'Cập nhật định mức dầu dùng cho tính chi phí nhiên liệu theo chuyến.',
-    description: 'Hướng dẫn nhập định mức nhiên liệu (có tải, xe không, đơn giá dầu) trên trang cấu hình.',
-    aliases: ['định mức dầu', 'định mức nhiên liệu', 'fuel config', 'nhiên liệu', 'dầu', 'dinh muc dau'],
-    roles: [Role.MANAGER, Role.ADMIN, Role.ACCOUNTANT],
-    steps: [
-      {
-        title: 'Mở đúng trang cấu hình',
-        body: 'Vào trang Định mức nhiên liệu trong nhóm Cấu hình. Đây là nơi lưu định mức có tải, xe không và đơn giá dầu hiện hành.',
-        directive: {
-          kind: 'navigate',
-          routeKey: 'configFuel',
-          highlight: { targetId: 'fuel-loaded-norm-field', durationMs: 3500 },
-        },
-      },
-      {
-        title: 'Nhập định mức có tải',
-        body: 'Điền số lít/100km khi xe chạy có hàng. Hệ thống dùng số này cho các chặng có tải.',
-        example: 'VD: 35',
-        directive: { kind: 'scrollTo', targetId: 'fuel-loaded-norm-field', durationMs: 3000 },
-      },
-      {
-        title: 'Nhập định mức xe không',
-        body: 'Điền số lít/100km khi xe chạy rỗng hoặc quay đầu không hàng.',
-        example: 'VD: 22',
-        directive: { kind: 'scrollTo', targetId: 'fuel-empty-norm-field', durationMs: 3000 },
-      },
-      {
-        title: 'Thêm mức bổ sung nếu cần',
-        body: 'Dùng cho phần dầu cộng thêm mặc định mỗi chuyến, ví dụ chạy nội cảng hoặc hao hụt cố định.',
-        example: 'VD: 3 lít',
-        directive: { kind: 'scrollTo', targetId: 'fuel-supplement-field', durationMs: 3000 },
-      },
-      {
-        title: 'Cập nhật đơn giá dầu',
-        body: 'Nhập đơn giá hiện hành theo đồng/lít. Giá này sẽ được chụp lại khi tính chi phí nhiên liệu cho chuyến.',
-        example: 'VD: 23000',
-        directive: { kind: 'scrollTo', targetId: 'fuel-unit-price-field', durationMs: 3000 },
-      },
-      {
-        title: 'Lưu cấu hình',
-        body: 'Kiểm tra các số đã nhập rồi bấm Lưu cấu hình. Sau khi lưu, định mức mới áp dụng cho các chuyến tính sau đó.',
-        directive: { kind: 'scrollTo', targetId: 'fuel-save-config-button', durationMs: 3500 },
-      },
-    ],
-  },
+const TOUR_CATALOG_DATA = {
+  'manager-dashboard-overview': { id: 'manager-dashboard-overview', version: 1, title: 'Tổng quan vận hành', summary: 'Đọc nhanh KPI và việc cần xử lý trong ngày.', description: 'Hướng dẫn tổng quan vận hành cho quản lý.', category: 'operations', estimatedMinutes: 3, aliases: ['tổng quan vận hành', 'dashboard'], roles: [Role.MANAGER, Role.ADMIN], steps: [{ title: 'Mở tổng quan', body: 'Trang này tóm tắt các chỉ số vận hành hiện tại.', directive: { kind: 'navigate', routeKey: 'dashboard', highlight: { targetId: 'dashboard-kpis', durationMs: 3000 } } }, { title: 'Đọc việc cần xử lý', body: 'Kiểm tra các cảnh báo trước khi điều phối chuyến.', directive: { kind: 'scrollTo', targetId: 'dashboard-attention', durationMs: 3000 } }] },
+  'create-trip': { id: 'create-trip', version: 3, title: 'Tạo chuyến vận chuyển', summary: 'Chọn khách, tuyến và lưu một lệnh vận chuyển.', description: 'Hướng dẫn tạo lệnh vận chuyển mới.', category: 'operations', estimatedMinutes: 4, prerequisites: ['Khách hàng và tuyến đường đã được khai báo.'], aliases: ['tạo chuyến', 'tạo lệnh', 'lệnh vận chuyển'], roles: [Role.MANAGER, Role.ADMIN], steps: [{ title: 'Mở form tạo chuyến', body: 'Bắt đầu một lệnh vận chuyển mới.', directive: { kind: 'navigate', routeKey: 'tripNew' } }, { title: 'Chọn khách hàng', body: 'Chọn đơn vị thuê chuyến.', directive: { kind: 'scrollTo', targetId: 'customerId', durationMs: 3000 } }, { title: 'Chọn tuyến', body: 'Chọn tuyến đường và loại hàng phù hợp.', directive: { kind: 'scrollTo', targetId: 'routeId', durationMs: 3000 } }, { title: 'Lưu chuyến', body: 'Kiểm tra lại rồi bấm Tạo chuyến.', directive: { kind: 'scrollTo', targetId: 'trip-new-submit', durationMs: 3000 }, completionEvent: 'trip.created' }] },
+  'dispatch-trip': { id: 'dispatch-trip', version: 1, title: 'Cho chuyến khởi hành', summary: 'Điều xe và chuyển chuyến sẵn sàng sang khởi hành.', description: 'Hướng dẫn điều vận một chuyến thực tế.', category: 'operations', estimatedMinutes: 3, prerequisites: ['Cần có chuyến ở trạng thái sẵn sàng điều vận.'], aliases: ['điều vận', 'khởi hành', 'phân xe'], roles: [Role.MANAGER, Role.ADMIN], steps: [{ title: 'Mở điều vận', body: 'Chọn một chuyến thực tế đang chờ điều vận.', directive: { kind: 'navigate', routeKey: 'dispatch', highlight: { targetId: 'dispatch-ready-list', durationMs: 3000 } } }, { title: 'Cho chuyến khởi hành', body: 'Thực hiện thao tác điều vận theo quy trình hiện có.', directive: { kind: 'scrollTo', targetId: 'dispatch-primary-action', durationMs: 3000 }, completionEvent: 'trip.dispatched' }] },
+  'lock-trip': { id: 'lock-trip', version: 1, title: 'Khóa chuyến hoàn thành', summary: 'Kiểm tra số liệu và khóa một chuyến đã hoàn thành.', description: 'Hướng dẫn khóa sổ chuyến hoàn thành.', category: 'operations', estimatedMinutes: 3, prerequisites: ['Cần có chuyến COMPLETED với số liệu đã kiểm tra.'], aliases: ['khóa chuyến', 'chốt chuyến', 'khóa sổ'], roles: [Role.MANAGER, Role.ADMIN], steps: [{ title: 'Mở danh sách chuyến', body: 'Tìm một chuyến đã hoàn thành.', directive: { kind: 'navigate', routeKey: 'trips' } }, { title: 'Kiểm tra số liệu', body: 'Mở chi tiết chuyến và kiểm tra phần tài chính.', directive: { kind: 'scrollTo', targetId: 'trip-detail-financials', durationMs: 3000 } }, { title: 'Khóa chuyến', body: 'Chỉ khóa khi số liệu đã đúng vì chuyến sẽ không còn chỉnh sửa được.', directive: { kind: 'scrollTo', targetId: 'trip-detail-lock', durationMs: 3000 }, completionEvent: 'trip.locked' }] },
+  'review-pnl': { id: 'review-pnl', version: 1, title: 'Đọc báo cáo lãi lỗ', summary: 'Chọn kỳ và đối chiếu các chỉ số P&L.', description: 'Hướng dẫn xem báo cáo lãi lỗ theo kỳ.', category: 'finance', estimatedMinutes: 3, aliases: ['lãi lỗ', 'p&l', 'báo cáo tài chính'], roles: [Role.MANAGER, Role.ACCOUNTANT, Role.ADMIN], steps: [{ title: 'Mở báo cáo', body: 'Chọn kỳ cần đối chiếu.', directive: { kind: 'navigate', routeKey: 'finance', highlight: { targetId: 'finance-period', durationMs: 3000 } } }, { title: 'Đọc chỉ số chính', body: 'Xem doanh thu, chi phí và lợi nhuận trước khi đi sâu theo xe.', directive: { kind: 'scrollTo', targetId: 'finance-kpis', durationMs: 3000 } }] },
+  'accounting-overview': { id: 'accounting-overview', version: 1, title: 'Tổng quan kế toán', summary: 'Xem công nợ và các khoản cần xử lý.', description: 'Hướng dẫn điểm bắt đầu cho kế toán.', category: 'finance', estimatedMinutes: 2, aliases: ['tổng quan kế toán', 'công nợ'], roles: [Role.ACCOUNTANT, Role.ADMIN], steps: [{ title: 'Mở công nợ phải thu', body: 'Đây là nơi theo dõi số tiền khách hàng còn phải thanh toán.', directive: { kind: 'navigate', routeKey: 'debt', highlight: { targetId: 'debt-aging', durationMs: 3000 } } }, { title: 'Chọn khách cần xử lý', body: 'Dùng danh sách công nợ để mở chi tiết khách hàng.', directive: { kind: 'scrollTo', targetId: 'debt-customer-list', durationMs: 3000 } }] },
+  'update-trip-figures': { id: 'update-trip-figures', version: 1, title: 'Hoàn thiện số liệu chuyến', summary: 'Cập nhật số liệu tài chính thực tế của một chuyến.', description: 'Hướng dẫn cập nhật số liệu tài chính chuyến.', category: 'finance', estimatedMinutes: 3, prerequisites: ['Chọn một chuyến mà bạn có quyền sửa.'], aliases: ['số liệu chuyến', 'cập nhật chi phí'], roles: [Role.ACCOUNTANT, Role.ADMIN], steps: [{ title: 'Mở danh sách chuyến', body: 'Chọn chuyến cần hoàn thiện số liệu.', directive: { kind: 'navigate', routeKey: 'trips' } }, { title: 'Lưu số liệu tài chính', body: 'Cập nhật số liệu thực tế rồi lưu phần tài chính.', directive: { kind: 'scrollTo', targetId: 'trip-edit-financial-submit', durationMs: 3000 }, completionEvent: 'trip.figures_saved' }] },
+  'record-receivable-payment': { id: 'record-receivable-payment', version: 1, title: 'Ghi nhận thanh toán khách hàng', summary: 'Ghi nhận một khoản thu vào công nợ phải thu.', description: 'Hướng dẫn ghi nhận thanh toán khách hàng.', category: 'finance', estimatedMinutes: 3, prerequisites: ['Cần có khách hàng còn công nợ.'], aliases: ['ghi nhận thanh toán', 'thu tiền', 'công nợ'], roles: [Role.MANAGER, Role.ACCOUNTANT, Role.ADMIN], steps: [{ title: 'Mở công nợ', body: 'Chọn khách hàng cần ghi nhận thanh toán.', directive: { kind: 'navigate', routeKey: 'debt', highlight: { targetId: 'debt-customer-list', durationMs: 3000 } } }, { title: 'Mở form thanh toán', body: 'Mở chi tiết khách hàng rồi chọn ghi nhận thanh toán.', directive: { kind: 'scrollTo', targetId: 'debt-record-payment', durationMs: 3000 } }, { title: 'Lưu thanh toán', body: 'Nhập số tiền thực tế và lưu.', directive: { kind: 'scrollTo', targetId: 'debt-payment-submit', durationMs: 3000 }, completionEvent: 'receivable.payment_recorded' }] },
+  'fuel-config': { id: 'fuel-config', version: 2, title: 'Nhập định mức nhiên liệu', summary: 'Cập nhật định mức dầu và đơn giá hiện hành.', description: 'Hướng dẫn cấu hình định mức nhiên liệu.', category: 'configuration', estimatedMinutes: 4, aliases: ['định mức dầu', 'nhiên liệu', 'dầu'], roles: [Role.MANAGER, Role.ACCOUNTANT, Role.ADMIN], steps: [{ title: 'Mở định mức nhiên liệu', body: 'Mở trang cấu hình nhiên liệu.', directive: { kind: 'navigate', routeKey: 'configFuel', highlight: { targetId: 'fuel-loaded-norm-field', durationMs: 3000 } } }, { title: 'Kiểm tra định mức xe không', body: 'Đối chiếu định mức cho xe chạy không hàng.', directive: { kind: 'scrollTo', targetId: 'fuel-empty-norm-field', durationMs: 3000 } }, { title: 'Kiểm tra mức bổ sung', body: 'Cập nhật mức bổ sung khi quy trình nội bộ yêu cầu.', directive: { kind: 'scrollTo', targetId: 'fuel-supplement-field', durationMs: 3000 } }, { title: 'Cập nhật đơn giá dầu', body: 'Đối chiếu đơn giá áp dụng trước khi lưu.', directive: { kind: 'scrollTo', targetId: 'fuel-unit-price-field', durationMs: 3000 } }, { title: 'Lưu cấu hình', body: 'Lưu sau khi đối chiếu đơn giá dầu.', directive: { kind: 'scrollTo', targetId: 'fuel-save-config-button', durationMs: 3000 }, completionEvent: 'config.fuel_saved' }] },
+  'system-readiness': { id: 'system-readiness', version: 1, title: 'Kiểm tra dữ liệu nền', summary: 'Kiểm tra các danh mục cần thiết trước khi vận hành.', description: 'Hướng dẫn kiểm tra cấu hình hệ thống.', category: 'administration', estimatedMinutes: 3, aliases: ['dữ liệu nền', 'sẵn sàng hệ thống'], roles: [Role.ADMIN], steps: [{ title: 'Mở cấu hình', body: 'Kiểm tra các danh mục nền mà hệ thống sử dụng.', directive: { kind: 'navigate', routeKey: 'config', highlight: { targetId: 'config-grid', durationMs: 3000 } } }, { title: 'Kiểm tra danh mục', body: 'Mở từng danh mục còn thiếu để bổ sung bằng dữ liệu thật.', directive: { kind: 'scrollTo', targetId: 'config-grid', durationMs: 3000 } }] },
+  'manage-users': { id: 'manage-users', version: 1, title: 'Kiểm tra tài khoản và phân quyền', summary: 'Rà soát danh sách tài khoản và vai trò.', description: 'Hướng dẫn quản lý người dùng.', category: 'administration', estimatedMinutes: 3, aliases: ['người dùng', 'phân quyền', 'tài khoản'], roles: [Role.ADMIN], steps: [{ title: 'Mở người dùng', body: 'Dùng bộ lọc vai trò để rà soát tài khoản.', directive: { kind: 'navigate', routeKey: 'users', highlight: { targetId: 'users-role-filters', durationMs: 3000 } } }, { title: 'Kiểm tra danh sách', body: 'Xem bảng tài khoản hoặc mở form thêm tài khoản khi cần.', directive: { kind: 'scrollTo', targetId: 'users-table', durationMs: 3000 } }] },
+  'review-audit-log': { id: 'review-audit-log', version: 1, title: 'Kiểm tra nhật ký người dùng', summary: 'Dùng bộ lọc để rà soát các thao tác gần đây.', description: 'Hướng dẫn xem nhật ký thao tác.', category: 'administration', estimatedMinutes: 2, aliases: ['nhật ký', 'audit log'], roles: [Role.MANAGER, Role.ADMIN], steps: [{ title: 'Mở nhật ký', body: 'Dùng bộ lọc để giới hạn khoảng thời gian hoặc người dùng.', directive: { kind: 'navigate', routeKey: 'auditLogs', highlight: { targetId: 'audit-filters', durationMs: 3000 } } }, { title: 'Đọc kết quả', body: 'Kiểm tra bảng nhật ký trước khi điều tra một thao tác cụ thể.', directive: { kind: 'scrollTo', targetId: 'audit-table', durationMs: 3000 } }] },
 } satisfies Record<string, Tour>;
 
+export const TOUR_CATALOG = TOUR_CATALOG_DATA;
 export type TourId = keyof typeof TOUR_CATALOG;
-
-/** Stable id tuple (for iteration / membership checks). `Object.keys` is typed
- *  `string[]` in TS, so the cast is the known escape hatch. */
 export const TOUR_IDS = Object.keys(TOUR_CATALOG) as TourId[];
 
-/** Tours visible to a given role (role-scoped for both tours.search + the list). */
 export function toursForRole(role: Role): readonly Tour[] {
-  return TOUR_IDS.map((id) => TOUR_CATALOG[id]).filter((t) => {
-    // `satisfies` preserves each tour's `roles` as a literal tuple of specific
-    // enum members, so widen to Role[] before .includes (mirrors ui.ts:21-22).
-    const roles: readonly Role[] = t.roles;
-    return roles.includes(role);
-  });
+  return TOUR_IDS.map((id) => TOUR_CATALOG[id]).filter((tour) => (tour.roles as readonly Role[]).includes(role));
 }
 
-/** Lookup by id (returns undefined for an unknown id — caller validates). */
 export function getTour(id: string): Tour | undefined {
   return TOUR_CATALOG[id as TourId];
 }

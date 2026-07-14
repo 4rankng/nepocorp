@@ -22,7 +22,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   tasksForRole,
   type OnboardingTask,
-  type ProductEventName,
 } from '@tingting/shared';
 import { useAuth } from './useAuth';
 import { onboardingClient, type OnboardingTaskItem } from '../api/onboardingClient';
@@ -106,15 +105,18 @@ export function useOnboardingChecklist(): UseOnboardingChecklist {
   const total = tasks.length;
   const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
-  // Subscribe to each incomplete task's completionEvent. When it fires, flip
+  // Subscribe to each incomplete event-gated task. When it fires, flip
   // the task to completed locally + persist. Re-subscribes when tasks/statuses
   // change. Per-role scoping prevents cross-role event crossfire.
   useEffect(() => {
     if (roleTasks.length === 0) return;
-    const incomplete = tasks.filter((t) => t.taskStatus !== 'completed');
+    const incomplete = tasks.filter(
+      (t): t is ChecklistTask & { completion: { type: 'event'; event: import('@tingting/shared').ProductEventName } } =>
+        t.taskStatus !== 'completed' && t.completion.type === 'event',
+    );
     const unsubs: Array<() => void> = [];
     for (const t of incomplete) {
-      const off = onboardingEvents.on(t.completionEvent as ProductEventName, () => {
+      const off = onboardingEvents.on(t.completion.event, () => {
         // Flip locally first (responsive), then persist.
         setStatuses((prev) => (prev[t.id] === 'completed' ? prev : { ...prev, [t.id]: 'completed' }));
         onboardingClient
@@ -140,7 +142,7 @@ export function useOnboardingChecklist(): UseOnboardingChecklist {
       const tourId = (payload as { tourId?: unknown }).tourId;
       if (typeof tourId !== 'string') return;
       for (const task of tasks) {
-        if (task.tourId !== tourId || task.taskStatus === 'completed') continue;
+        if (task.completion.type !== 'tour' || task.tourId !== tourId || task.taskStatus === 'completed') continue;
         setStatuses((prev) =>
           prev[task.id] === 'completed' ? prev : { ...prev, [task.id]: 'completed' },
         );

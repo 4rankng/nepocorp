@@ -83,8 +83,8 @@ describe('synthesizeStartTourFromResponse', () => {
 
   test('keeps a valid cancel_tour for an allowed role', () => {
     const r = synthesizeStartTourFromResponse(
-      { type: 'cancel_tour', tourId: 'lock-trip-and-payment' },
-      Role.ACCOUNTANT,
+      { type: 'cancel_tour', tourId: 'lock-trip' },
+      Role.MANAGER,
     );
     assert.strictEqual(r.type, 'cancel_tour');
   });

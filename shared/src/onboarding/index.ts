@@ -20,4 +20,4 @@ export type {
 } from './events';
 
 export { ONBOARDING_TASKS, tasksForRole, getTask } from './tasks';
-export type { OnboardingTask } from './tasks';
+export type { OnboardingTask, TaskCompletion } from './tasks';

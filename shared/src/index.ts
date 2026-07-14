@@ -180,7 +180,7 @@ export type { Tour, TourId } from './tours';
 // Closed set of business/UI events the onboarding layer (tour completion steps,
 // role checklists, lifecycle analytics) reacts to. See ./onboarding/events.ts.
 export { PRODUCT_EVENTS, ONBOARDING_EVENT_NAMES, ONBOARDING_TASKS, tasksForRole, getTask } from './onboarding';
-export type { ProductEventName, ProductEventPayloads, PayloadOf, OnboardingEventName, TriggerSource, OnboardingTask } from './onboarding';
+export type { ProductEventName, ProductEventPayloads, PayloadOf, OnboardingEventName, TriggerSource, OnboardingTask, TaskCompletion } from './onboarding';
 
 // ─── Onboarding admin settings (master on/off toggle) ──────────────────────
 // DB-backed admin switch for the onboarding tutorial. See ./schemas/onboarding-settings.ts.

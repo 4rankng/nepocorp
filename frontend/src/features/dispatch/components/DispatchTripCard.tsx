@@ -43,7 +43,7 @@ export function DispatchTripCard({
   const urgent = isUrgent(trip.departureDate);
 
   return (
-    <div className="order-row">
+    <div className="order-row" data-tour-id="dispatch-ready-list">
       <StatusStrip color={TRIP_STATUS_COLORS[trip.status as TripStatus]} />
       <div className={`o-date${urgent ? ' urgent' : ''}`}>
         <span className="day">{formatDayMonth(trip.departureDate)}</span>
@@ -105,6 +105,7 @@ export function DispatchTripCard({
         <button
           type="button"
           className="dispatch-btn"
+          data-tour-id="dispatch-primary-action"
           onClick={onDispatch}
           disabled={dispatching || actionLoadingId === trip.id || isEditing}
         >

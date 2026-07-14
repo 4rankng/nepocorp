@@ -42,6 +42,7 @@ import type { NavItem } from './layout/types';
 import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 import { routes, titleForPath } from '../lib/routes';
 import { OnboardingChecklist } from './onboarding/OnboardingChecklist';
+import { TutorialLibrary } from './onboarding/TutorialLibrary';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const bottomNavRef = useBottomNavAnimations({ ready: !!user && user.role === 'DRIVER' });
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [tutorialLibraryOpen, setTutorialLibraryOpen] = useState(false);
 
   // Profile modal state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -338,6 +340,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     sidebarOpen,
     pageTitle,
     onToggleSidebar: () => setSidebarOpen(v => !v),
+    onOpenTutorialLibrary: user && ['ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role) && user.onboardingEnabled !== false
+      ? () => setTutorialLibraryOpen(true)
+      : undefined,
   };
 
   return (
@@ -377,7 +382,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Phase 6: office-role activation checklist. Renders nothing for
             DRIVER/FORWARDER (gated internally by role) and hides at 100%. */}
-        <OnboardingChecklist />
+        <OnboardingChecklist onOpenTutorialLibrary={() => setTutorialLibraryOpen(true)} />
+        <TutorialLibrary open={tutorialLibraryOpen} onClose={() => setTutorialLibraryOpen(false)} />
 
         {/* Bottom Navigation for Drivers on Mobile */}
         {isDriver && (

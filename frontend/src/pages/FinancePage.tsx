@@ -61,7 +61,7 @@ export default function FinancePage() {
         description={`Báo cáo kết quả kinh doanh Tháng ${month} / ${year} · so sánh với Tháng ${month} / ${year - 1}`}
         action={
           <div className="page-actions">
-            <div className="date-chip" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+            <div className="date-chip" data-tour-id="finance-period" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-2)', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
               <CalendarDays size={14} style={{ color: 'var(--brand)' }} />
               <span>Tháng {month} · <strong>{year}</strong></span>
             </div>
@@ -93,7 +93,7 @@ export default function FinancePage() {
       />
 
       {/* ── KPI Hero Strip ──────────────────────────────────── */}
-      <div className="pnl-kpi-strip fade-up-2">
+      <div className="pnl-kpi-strip fade-up-2" data-tour-id="finance-kpis">
         <div className="pnl-kpi">
           <div className="pnl-kpi__label">Tổng doanh thu</div>
           <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.revenue = el; }}>{formatNumber(totalRevenue)}</span><span className="pnl-kpi__unit">₫</span></div>

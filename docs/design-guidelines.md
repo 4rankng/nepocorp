@@ -133,10 +133,11 @@ Two roles require mobile-first responsive design:
 ## Tour Engine
 
 - Curated walkthroughs scoped to user role (`toursForRole`).
-- Triggered by chatbot response (LLM emits `{type:'start_tour'}`).
+- Triggered by chatbot response, the starter checklist, or the persistent **Hướng dẫn sử dụng** library in the topbar.
 - Uses Driver.js for element spotlight and step-by-step guidance.
-- Progress stored in localStorage (schema-versioned, multi-device-unsafe by design).
-- On-demand only -- never auto-starts or nags.
+- Progress is written through to the onboarding API and cached locally by tour id + catalog version; outdated local steps never resume a changed tour.
+- Opening or viewing a guide never completes a checklist item. A work item completes only after its matching product-success event; an orientation/reference item completes only after its own guide is finished.
+- For enabled office-role onboarding, the library remains available from the topbar after the checklist is dismissed or completed.
 
 ## Accessibility
 

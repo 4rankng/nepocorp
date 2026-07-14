@@ -120,7 +120,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     for (const id of TOUR_IDS) {
       const t = TOUR_CATALOG[id];
-      if (getInProgressStep(id) !== null && (t.roles as readonly Role[]).includes(user.role)) {
+      if (getInProgressStep(id, t.version) !== null && (t.roles as readonly Role[]).includes(user.role)) {
         setResumable(t);
         break;
       }
@@ -136,7 +136,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
         if (nextStep < 0) return step;
         if (nextStep > tour.steps.length - 1) {
           // Past the last step → complete.
-          markTourCompleted(tour.id);
+          markTourCompleted(tour.id, tour.version);
           onboardingClient
             .upsertProgress({
               tourId: tour.id,
@@ -173,13 +173,14 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
   // step is an interaction step, subscribes to its completionEvent.
   useEffect(() => {
     if (!tour) return;
-    markTourStep(tour.id, currentStep);
+    markTourStep(tour.id, tour.version, currentStep);
     const step = tour.steps[currentStep];
     let cancelled = false;
     // Invalidate any prior waitFor subscription so a slow resolve from the
     // previous step can't advance this one.
     const myGen = ++waitGeneration.current;
 
+    let cancelEventWait: (() => void) | undefined;
     const drive = async () => {
       // Phase 5 analytics: a step was viewed (timed for duration-on-step).
       const viewedAt = Date.now();
@@ -189,6 +190,14 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
         tourVersion: tour.version,
         stepId: String(currentStep),
       });
+
+      // Subscribe first: an API action may resolve while route/highlight work is
+      // still in flight. Teardown prevents a stale step from advancing later.
+      const eventPromise = step?.completionEvent
+        ? new Promise<unknown>((resolve) => {
+          cancelEventWait = onboardingEvents.once(step.completionEvent as ProductEventName, resolve);
+        })
+        : undefined;
 
       // 1. Drive the directive (spotlight / navigate). Text-only steps skip this.
       if (step?.directive) {
@@ -204,6 +213,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
             stepId: String(currentStep),
             targetFound: false,
           });
+          cancelEventWait?.();
           return; // Recovery panel shown; no auto-advance until user acts.
         }
         setHighlightMissed(false);
@@ -218,10 +228,9 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
         // `completionEvent` is typed as a widened string (the Zod enum is cast
         // through a `[string, ...string[]]` head); the catalog test guarantees
         // it is a member of PRODUCT_EVENTS, so the cast to ProductEventName is safe.
-        const payload = await onboardingEvents.waitFor(
-          step.completionEvent as ProductEventName,
-          { timeoutMs },
-        );
+        const payload = timeoutMs > 0
+          ? await Promise.race([eventPromise!, new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs))])
+          : await eventPromise!;
         if (cancelled || myGen !== waitGeneration.current) return;
         if (payload !== null) {
           // Event fired → auto-advance to the next step + record it.
@@ -247,6 +256,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
     void drive();
     return () => {
       cancelled = true;
+      cancelEventWait?.();
     };
   }, [tour, currentStep, sendAndWait, retryNonce, advance]);
 
@@ -285,7 +295,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
       // record so the resume-on-refresh scan can't resurrect a tour we just
       // left. Only the tour we're starting may keep its progress.
       for (const id of TOUR_IDS) {
-        if (id !== t.id && getInProgressStep(id) !== null) clearTourProgress(id);
+        if (id !== t.id && getInProgressStep(id, TOUR_CATALOG[id].version) !== null) clearTourProgress(id, TOUR_CATALOG[id].version);
       }
       setResumable(null);
       setHighlightMissed(false);
@@ -316,7 +326,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
           );
           if (!serverRow) return; // server has no row → local wins, push later.
           const serverUpdated = Date.parse(serverRow.updatedAt) || 0;
-          const localUpdated = getUpdatedAt(t.id);
+          const localUpdated = getUpdatedAt(t.id, t.version);
           if (serverUpdated > localUpdated && serverRow.status === 'in_progress') {
             const serverStep = serverRow.currentStepId ? Number(serverRow.currentStepId) : 0;
             if (Number.isFinite(serverStep)) {
@@ -341,8 +351,8 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
   const end = useCallback(
     (completed: boolean) => {
       if (!tour) return;
-      if (completed) markTourCompleted(tour.id);
-      else clearTourProgress(tour.id);
+      if (completed) markTourCompleted(tour.id, tour.version);
+      else clearTourProgress(tour.id, tour.version);
       // Phase 4: push the terminal status to the server (fire-and-forget).
       // Skipped is recorded as 'skipped' so analytics/abandonment can read it.
       onboardingClient

@@ -10,6 +10,7 @@ import type { FormLeg } from './useTripFormLegs';
 import type { UseTripFormStateReturn, ContainerFormRow, SealFormRow } from './useTripFormState';
 import { resolveContainerCount } from './tripFormDispatchUtils';
 import { moneyInputToNumber } from '../lib/moneyInput';
+import { onboardingEvents } from '../lib/onboardingEvents';
 
 function moneyOrZero(value: string): number { return moneyInputToNumber(value) ?? 0; }
 function moneyOrUndefined(value: string): number | undefined { return moneyInputToNumber(value); }
@@ -354,6 +355,10 @@ const handleSubmit = useCallback(
         queryClient.setQueryData(qk.trips.detail(existingTrip.id), updatedTrip);
         queryClient.invalidateQueries({ queryKey: qk.trips.detail(existingTrip.id) });
         queryClient.invalidateQueries({ queryKey: qk.trips.adjustments(existingTrip.id) });
+
+        // The figures request has committed. Later best-effort work must not
+        // erase this narrower completed outcome.
+        onboardingEvents.emit('trip.figures_saved', { tripId: existingTrip.id });
 
         await saveContainers(existingTrip.id);
         // Manager-authored contact + guidance (N2 / B1.3) — persisted via the

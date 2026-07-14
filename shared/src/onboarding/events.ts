@@ -37,6 +37,8 @@ export const PRODUCT_EVENTS = [
   'trip.created',
   'trip.locked',
   'trip.completed',
+  'trip.dispatched',
+  'trip.figures_saved',
 
   // Accounts receivable
   'receivable.payment_recorded',
@@ -64,6 +66,8 @@ export interface ProductEventPayloads {
   'trip.created': { tripId: number };
   'trip.locked': { tripId: number };
   'trip.completed': { tripId: number };
+  'trip.dispatched': { tripId: number };
+  'trip.figures_saved': { tripId: number };
   'receivable.payment_recorded': { customerId: number; amountVnd: number };
   'tour.completed': { tourId: string };
 }

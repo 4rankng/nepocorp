@@ -304,7 +304,7 @@ export default function DashboardPage() {
       </header>
 
       {/* ── KPI row ── */}
-      <div className="wf-kpis">
+      <div className="wf-kpis" data-tour-id="dashboard-kpis">
         <div className="wf-kpi">
           <div className="row1">
             <span className="lbl">
@@ -526,7 +526,7 @@ export default function DashboardPage() {
         )}
 
         {/* Cần chú ý (4 cols × 2 rows) — right of approval queue */}
-        <div className="wf-card wf-att wf-bento-side">
+        <div className="wf-card wf-att wf-bento-side" data-tour-id="dashboard-attention">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cần chú ý</div>

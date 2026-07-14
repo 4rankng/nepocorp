@@ -37,6 +37,8 @@ const { STUB_TOUR, DIRECTIVE_TOUR } = vi.hoisted(() => {
     title: 'Stub',
     summary: 's',
     description: 'd',
+    category: 'operations' as const,
+    estimatedMinutes: 1,
     roles: ['MANAGER'] as const,
     aliases: [] as readonly string[],
     steps: [
@@ -52,6 +54,8 @@ const { STUB_TOUR, DIRECTIVE_TOUR } = vi.hoisted(() => {
     title: 'Directive',
     summary: 's',
     description: 'd',
+    category: 'operations' as const,
+    estimatedMinutes: 1,
     roles: ['MANAGER'] as const,
     aliases: [] as readonly string[],
     steps: [

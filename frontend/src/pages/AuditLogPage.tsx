@@ -389,7 +389,7 @@ fontSize: 13,
       </div>
 
       {/* ── Filter Bar ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div data-tour-id="audit-filters" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         {CATEGORIES.map(cat => {
           const Icon = cat.icon;
           const isActive = filter === cat.key;
@@ -429,7 +429,7 @@ fontSize: 13,
       <div className="audit-grid" style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}>
         {/* Left Column: Table List */}
         <Panel flush style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="table-scroll">
+          <div className="table-scroll" data-tour-id="audit-table">
             <table className="table-hover">
               <thead>
                 <tr>

@@ -156,7 +156,9 @@ A full AI assistant built with Socket.io, connecting to MiniMax-M3 (LLM) with to
 | GPS provider | `backend/src/services/agent/gps/` | Bach Khoa GPS live tracking integration |
 | LLM clients | `backend/src/services/agent/llm/` | MiniMax-M3 primary, prompt templates |
 | Frontend | `frontend/src/components/agent/` | Chat drawer, message list, directive handler |
-| Tours | `backend/src/services/agent/tours/` | Curated walkthrough engine with Driver.js spotlight |
+| Tours | `shared/src/tours/` + `frontend/src/context/TourControllerContext.tsx` | Role-scoped curated walkthrough catalog, progress and Driver.js spotlight |
+| Onboarding checklist | `shared/src/onboarding/tasks.ts` + `frontend/src/hooks/useOnboardingChecklist.ts` | Office-role activation tasks; work tasks complete on their matching success event, while orientation/reference tasks complete when their own guide finishes |
+| Tutorial library | `frontend/src/components/onboarding/TutorialLibrary.tsx` | Persistent office-role guide library available from the topbar/checklist |
 | Socket | `backend/src/agentSocket.ts` + `frontend/src/lib/agentSocket.ts` | Real-time bidirectional chat |
 | Perf metrics | `backend/src/routes/admin-chatbot-metrics.ts` | ADMIN-only dashboard (p95 latency, turn counts) |
 

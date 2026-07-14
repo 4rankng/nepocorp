@@ -220,8 +220,18 @@ Authorization: Bearer <token>
 | Breadcrumb | `NEPO > [Tên trang]` |
 | Thanh tìm kiếm | Tìm chuyến, khách hàng, xe... (phím tắt: `Cmd+K`) |
 | Chip ngày | Tháng + ngày hiện tại |
-| Nút trợ giúp | Hiển thị hướng dẫn |
+| Nút trợ giúp | Mở **Hướng dẫn sử dụng** cho ADMIN, MANAGER và ACCOUNTANT; thư viện vẫn có sau khi ẩn hoặc hoàn tất checklist khởi đầu |
 | Chuông thông báo | Badge "5" (tĩnh) |
+
+### 2.6 Hướng dẫn sử dụng và checklist khởi đầu
+
+Khi tính năng hướng dẫn đang được bật, ADMIN, MANAGER và ACCOUNTANT có thể mở **Hướng dẫn sử dụng** từ topbar. Thư viện chỉ hiển thị các luồng phù hợp với vai trò hiện tại; DRIVER và FORWARDER không thấy checklist hoặc thư viện này.
+
+- Mỗi mục trong checklist khởi đầu có nút **Hướng dẫn** dẫn đến một luồng cụ thể. Có thể mở lại bất cứ lúc nào từ thư viện.
+- Xem hoặc mở hướng dẫn không tự hoàn thành công việc. Những mục thao tác (ví dụ tạo chuyến, điều vận, lưu số liệu, ghi nhận thanh toán hoặc lưu định mức) chỉ hoàn thành khi thao tác thực tế thành công trong hệ thống.
+- Những mục làm quen/tham khảo chỉ được đánh dấu hoàn thành khi người dùng kết thúc đúng hướng dẫn tương ứng.
+- Sau khi chọn **Để sau** hoặc hoàn thành toàn bộ checklist, thẻ checklist có thể ẩn nhưng thư viện trong topbar vẫn còn để xem lại.
+- Tiến độ hướng dẫn được lưu trên hệ thống và có bản nhớ cục bộ theo phiên bản của từng hướng dẫn. Nếu nội dung hướng dẫn thay đổi phiên bản, hệ thống không tiếp tục từ bước cũ.
 
 ---
 

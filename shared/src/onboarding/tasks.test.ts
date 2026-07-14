@@ -11,23 +11,19 @@ const KNOWN_TOURS = new Set<string>(TOUR_IDS);
 const OFFICE_ROLES = new Set([Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT]);
 
 describe('onboarding task catalog integrity', () => {
-  test('every completionEvent is a known product event', () => {
+  test('every event-gated completion is a known product event', () => {
     for (const t of ONBOARDING_TASKS) {
+      if (t.completion.type !== 'event') continue;
       assert.ok(
-        KNOWN_EVENTS.has(t.completionEvent),
-        `task "${t.id}" has unknown completionEvent "${t.completionEvent}"`,
+        KNOWN_EVENTS.has(t.completion.event),
+        `task "${t.id}" has unknown completion event "${t.completion.event}"`,
       );
     }
   });
 
   test('every tourId is a known curated tour', () => {
     for (const t of ONBOARDING_TASKS) {
-      if (t.tourId) {
-        assert.ok(
-          KNOWN_TOURS.has(t.tourId),
-          `task "${t.id}" references unknown tour "${t.tourId}"`,
-        );
-      }
+      assert.ok(KNOWN_TOURS.has(t.tourId), `task "${t.id}" references unknown tour "${t.tourId}"`);
     }
   });
 
@@ -75,13 +71,13 @@ describe('onboarding task catalog integrity', () => {
     const t = ONBOARDING_TASKS.find((x) => x.id === 'manager-create-first-trip');
     assert.ok(t, 'manager-create-first-trip task exists');
     assert.strictEqual(t!.tourId, 'create-trip');
-    assert.strictEqual(t!.completionEvent, 'trip.created');
+    assert.deepStrictEqual(t!.completion, { type: 'event', event: 'trip.created' });
   });
 
-  test('manager orientation tasks use distinct page-view completion events', () => {
-    const dashboard = ONBOARDING_TASKS.find((x) => x.id === 'manager-visit-dashboard');
-    const tripList = ONBOARDING_TASKS.find((x) => x.id === 'manager-open-trip-list');
-    assert.strictEqual(dashboard?.completionEvent, 'fleet.dashboard_viewed');
-    assert.strictEqual(tripList?.completionEvent, 'trips.list_viewed');
+  test('the office curricula stay intentionally compact and role-safe', () => {
+    assert.strictEqual(tasksForRole(Role.MANAGER).length, 5);
+    assert.strictEqual(tasksForRole(Role.ACCOUNTANT).length, 5);
+    assert.strictEqual(tasksForRole(Role.ADMIN).length, 3);
+    assert.ok(!tasksForRole(Role.ACCOUNTANT).some((task) => task.tourId === 'lock-trip'));
   });
 });

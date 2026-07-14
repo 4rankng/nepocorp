@@ -14,6 +14,10 @@ import { Role } from '../constants';
 import type { ProductEventName } from './events';
 import type { TourId } from '../tours';
 
+export type TaskCompletion =
+  | { type: 'event'; event: ProductEventName }
+  | { type: 'tour' };
+
 export interface OnboardingTask {
   /** Stable slug, unique within a role. */
   id: string;
@@ -21,10 +25,10 @@ export interface OnboardingTask {
   title: string;
   /** The role this task belongs to (one task = one role). */
   role: Role.ADMIN | Role.MANAGER | Role.ACCOUNTANT;
-  /** The product event that completes this task (business-event-driven). */
-  completionEvent: ProductEventName;
-  /** Optional curated tour to launch when the user clicks the item. */
-  tourId?: TourId;
+  /** Every activation task has a focused curated tour. */
+  tourId: TourId;
+  /** Event-gated work cannot be completed merely by viewing a guide. */
+  completion: TaskCompletion;
   /** Display order within the role's checklist. */
   sortOrder: number;
 }
@@ -48,66 +52,112 @@ export interface OnboardingTask {
 export const ONBOARDING_TASKS: readonly OnboardingTask[] = [
   // ── MANAGER ────────────────────────────────────────────────────────────
   {
-    id: 'manager-visit-dashboard',
-    title: 'Xem tổng quan hệ thống',
+    id: 'manager-dashboard-overview',
+    title: 'Đọc tổng quan vận hành tháng này',
     role: Role.MANAGER,
-    completionEvent: 'fleet.dashboard_viewed',
+    tourId: 'manager-dashboard-overview',
+    completion: { type: 'tour' },
     sortOrder: 1,
   },
   {
-    id: 'manager-open-trip-list',
-    title: 'Mở danh sách chuyến xe',
+    id: 'manager-create-first-trip',
+    title: 'Tạo chuyến vận chuyển đầu tiên',
     role: Role.MANAGER,
-    completionEvent: 'trips.list_viewed',
+    tourId: 'create-trip',
+    completion: { type: 'event', event: 'trip.created' },
     sortOrder: 2,
   },
   {
-    id: 'manager-create-first-trip',
-    title: 'Tạo chuyến xe đầu tiên',
+    id: 'manager-dispatch-first-trip',
+    title: 'Cho chuyến đầu tiên khởi hành',
     role: Role.MANAGER,
-    completionEvent: 'trip.created',
-    tourId: 'create-trip',
+    tourId: 'dispatch-trip',
+    completion: { type: 'event', event: 'trip.dispatched' },
     sortOrder: 3,
   },
   {
     id: 'manager-lock-first-trip',
     title: 'Khóa chuyến đầu tiên',
     role: Role.MANAGER,
-    completionEvent: 'trip.locked',
-    tourId: 'lock-trip-and-payment',
+    tourId: 'lock-trip',
+    completion: { type: 'event', event: 'trip.locked' },
     sortOrder: 4,
+  },
+  {
+    id: 'manager-review-pnl',
+    title: 'Đọc báo cáo lãi lỗ theo kỳ',
+    role: Role.MANAGER,
+    tourId: 'review-pnl',
+    completion: { type: 'tour' },
+    sortOrder: 5,
   },
 
   // ── ACCOUNTANT ─────────────────────────────────────────────────────────
   {
-    id: 'accountant-visit-dashboard',
-    title: 'Xem tổng quan kế toán',
+    id: 'accountant-dashboard-overview',
+    title: 'Xem công nợ và việc cần xử lý',
     role: Role.ACCOUNTANT,
-    completionEvent: 'accounting.dashboard_viewed',
+    tourId: 'accounting-overview',
+    completion: { type: 'tour' },
     sortOrder: 1,
   },
   {
-    id: 'accountant-lock-first-trip',
-    title: 'Khóa chuyến đầu tiên',
+    id: 'accountant-save-trip-figures',
+    title: 'Hoàn thiện số liệu tài chính một chuyến',
     role: Role.ACCOUNTANT,
-    completionEvent: 'trip.locked',
-    tourId: 'lock-trip-and-payment',
+    tourId: 'update-trip-figures',
+    completion: { type: 'event', event: 'trip.figures_saved' },
     sortOrder: 2,
   },
   {
     id: 'accountant-record-first-receipt',
     title: 'Ghi nhận thanh toán đầu tiên',
     role: Role.ACCOUNTANT,
-    completionEvent: 'receivable.payment_recorded',
+    tourId: 'record-receivable-payment',
+    completion: { type: 'event', event: 'receivable.payment_recorded' },
     sortOrder: 3,
   },
   {
     id: 'accountant-fuel-config',
     title: 'Nhập định mức nhiên liệu',
     role: Role.ACCOUNTANT,
-    completionEvent: 'config.fuel_saved',
     tourId: 'fuel-config',
+    completion: { type: 'event', event: 'config.fuel_saved' },
+    sortOrder: 5,
+  },
+  {
+    id: 'accountant-review-pnl',
+    title: 'Đối chiếu báo cáo lãi lỗ theo kỳ',
+    role: Role.ACCOUNTANT,
+    tourId: 'review-pnl',
+    completion: { type: 'tour' },
     sortOrder: 4,
+  },
+
+  // ── ADMIN ─────────────────────────────────────────────────────────────
+  {
+    id: 'admin-system-readiness',
+    title: 'Kiểm tra dữ liệu nền sẵn sàng vận hành',
+    role: Role.ADMIN,
+    tourId: 'system-readiness',
+    completion: { type: 'tour' },
+    sortOrder: 1,
+  },
+  {
+    id: 'admin-manage-users',
+    title: 'Kiểm tra tài khoản và phân quyền',
+    role: Role.ADMIN,
+    tourId: 'manage-users',
+    completion: { type: 'tour' },
+    sortOrder: 2,
+  },
+  {
+    id: 'admin-review-audit-log',
+    title: 'Kiểm tra nhật ký người dùng',
+    role: Role.ADMIN,
+    tourId: 'review-audit-log',
+    completion: { type: 'tour' },
+    sortOrder: 3,
   },
 ];
 
