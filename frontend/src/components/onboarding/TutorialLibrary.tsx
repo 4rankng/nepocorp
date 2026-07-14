@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { BookOpen, Play, RotateCcw } from 'lucide-react';
 import { toursForRole } from '@tingting/shared';
 import { Drawer } from '../UI';
 import { useAuth } from '../../hooks/useAuth';
 import { useTourController } from '../../context/TourControllerContext';
 import { getInProgressStep, isTourCompleted } from '../../lib/tourProgress';
+import { qk } from '../../api/keys';
 import './tutorial-library.css';
 
 interface TutorialLibraryProps {
@@ -21,12 +23,17 @@ const CATEGORY_LABELS = {
 
 export function TutorialLibrary({ open, onClose }: TutorialLibraryProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { start, tour } = useTourController();
   const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (open) triggerRef.current = document.activeElement as HTMLElement | null;
   }, [open]);
+
+  useEffect(() => {
+    if (open) void queryClient.invalidateQueries({ queryKey: qk.auth.me });
+  }, [open, queryClient]);
 
   const close = () => {
     onClose();
