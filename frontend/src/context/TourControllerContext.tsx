@@ -155,6 +155,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
             stepId: String(step),
           });
           onboardingTracker.flush();
+          onboardingEvents.emit('tour.completed', { tourId: tour.id });
           setTourActive(false);
           setStatus('completed');
           setTour(null);
@@ -355,6 +356,7 @@ export function TourControllerProvider({ children }: { children: ReactNode }) {
           // Non-blocking: localStorage is the cache of record on failure.
         });
       setTourActive(false);
+      if (completed) onboardingEvents.emit('tour.completed', { tourId: tour.id });
       setTour(null);
       setStatus(completed ? 'completed' : 'skipped');
       setHighlightMissed(false);

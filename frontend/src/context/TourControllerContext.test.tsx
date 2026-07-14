@@ -161,6 +161,11 @@ describe('TourControllerContext — interaction-step contract', () => {
 
   it('manualAdvance escapes a waiting_for_action step', async () => {
     const { result } = renderHook(() => useTourController(), { wrapper });
+    const completedTours: string[] = [];
+    onboardingEvents.on('tour.completed', (payload) => {
+      const tourId = (payload as { tourId?: string }).tourId;
+      if (tourId) completedTours.push(tourId);
+    });
     act(() => result.current.start('stub-tour'));
     await waitFor(() => expect(result.current.status).toBe('showing'));
     act(() => result.current.next());
@@ -168,6 +173,7 @@ describe('TourControllerContext — interaction-step contract', () => {
     // Manual fallback → advance past last step → completed.
     act(() => result.current.manualAdvance());
     await waitFor(() => expect(result.current.status).toBe('completed'));
+    expect(completedTours).toEqual(['stub-tour']);
   });
 
   it('records the triggerSource passed to start()', async () => {

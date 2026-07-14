@@ -26,6 +26,7 @@
  *   - `trip.*`   = trip-lifecycle mutations (created / locked / completed)
  *   - `receivable.*` = accounts-receivable mutations
  *   - `config.*` = catalog/config mutations
+ *   - `tour.*`   = a curated guide reached its natural end
  *   - `<domain>.dashboard_viewed` = first paint of a role dashboard
  */
 export const PRODUCT_EVENTS = [
@@ -43,9 +44,13 @@ export const PRODUCT_EVENTS = [
   // Configuration
   'config.fuel_saved',
 
+  // Curated guides
+  'tour.completed',
+
   // Role-dashboard first paint (checklist "visit X" items)
   'accounting.dashboard_viewed',
   'fleet.dashboard_viewed',
+  'trips.list_viewed',
 ] as const;
 
 export type ProductEventName = (typeof PRODUCT_EVENTS)[number];
@@ -60,6 +65,7 @@ export interface ProductEventPayloads {
   'trip.locked': { tripId: number };
   'trip.completed': { tripId: number };
   'receivable.payment_recorded': { customerId: number; amountVnd: number };
+  'tour.completed': { tourId: string };
 }
 
 /** Resolve the payload type for a given event name (or `undefined`). */

@@ -28,11 +28,22 @@ import type {
 
 type Handler = (payload: unknown) => void;
 
+// Page-visit signals describe state that remains true for the current session.
+// Unlike one-off mutations such as `trip.created`, they must reach a checklist
+// subscriber that mounts just after the page itself.
+const REPLAYABLE_PAGE_VIEW_EVENTS = new Set<ProductEventName>([
+  'accounting.dashboard_viewed',
+  'fleet.dashboard_viewed',
+  'trips.list_viewed',
+]);
+
 class OnboardingEventBus {
   private readonly handlers = new Map<ProductEventName, Set<Handler>>();
+  private readonly seenPageViewEvents = new Set<ProductEventName>();
 
   /** Emit an event. Synchronous — handlers run before this returns. */
   emit<E extends ProductEventName>(name: E, ...payload: PayloadOf<E> extends undefined ? [] : [payload: PayloadOf<E>]): void {
+    if (REPLAYABLE_PAGE_VIEW_EVENTS.has(name)) this.seenPageViewEvents.add(name);
     const set = this.handlers.get(name);
     if (!set || set.size === 0) return;
     // Copy to a local array so a handler that calls off() mid-emit doesn't
@@ -59,6 +70,12 @@ class OnboardingEventBus {
       this.handlers.set(name, set);
     }
     set.add(handler);
+    // The route page can mount before the asynchronously loaded checklist has
+    // subscribed. Replay only durable page-view signals; business mutations
+    // must remain one-shot so a later tour cannot complete accidentally.
+    if (REPLAYABLE_PAGE_VIEW_EVENTS.has(name) && this.seenPageViewEvents.has(name)) {
+      handler(undefined);
+    }
     return () => this.off(name, handler);
   }
 
@@ -102,6 +119,7 @@ class OnboardingEventBus {
   /** Test-only: clear all handlers. Never call from production code. */
   clear(): void {
     this.handlers.clear();
+    this.seenPageViewEvents.clear();
   }
 }
 

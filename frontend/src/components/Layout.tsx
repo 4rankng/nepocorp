@@ -27,6 +27,7 @@ import {
   ClipboardCheck,
   Activity,
   Cpu,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
@@ -77,6 +78,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
           { key: 'users', label: 'Người dùng', path: routes.users, icon: Users, section: 'system' as const },
         ] : []),
         ...(role === 'ADMIN' ? [
+          { key: 'app-settings', label: 'Cài đặt ứng dụng', path: '/config/app-settings', icon: SlidersHorizontal, section: 'system' as const },
           { key: 'chatbot-monitoring', label: 'Giám sát Chatbot', path: routes.chatbotMonitoring, icon: Activity, section: 'system' as const },
           { key: 'llm-settings', label: 'Nhà cung cấp AI', path: '/config/llm-settings', icon: Cpu, section: 'system' as const },
         ] : []),

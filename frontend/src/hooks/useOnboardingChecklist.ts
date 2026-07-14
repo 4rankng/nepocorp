@@ -131,6 +131,29 @@ export function useOnboardingChecklist(): UseOnboardingChecklist {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks]);
 
+  // Completing a curated guide is also meaningful onboarding progress. The
+  // guide-specific payload ensures finishing (for example) the fuel guide
+  // cannot complete a different task that happens to have a tour.
+  useEffect(() => {
+    const off = onboardingEvents.on('tour.completed', (payload) => {
+      if (!payload || typeof payload !== 'object' || !('tourId' in payload)) return;
+      const tourId = (payload as { tourId?: unknown }).tourId;
+      if (typeof tourId !== 'string') return;
+      for (const task of tasks) {
+        if (task.tourId !== tourId || task.taskStatus === 'completed') continue;
+        setStatuses((prev) =>
+          prev[task.id] === 'completed' ? prev : { ...prev, [task.id]: 'completed' },
+        );
+        onboardingClient
+          .upsertTask({ taskId: task.id, status: 'completed' })
+          .catch(() => {
+            // Keep the completed state in this session; a later event can retry.
+          });
+      }
+    });
+    return off;
+  }, [tasks]);
+
   const launchTour = (taskId: string) => {
     const t = roleTasks.find((x) => x.id === taskId);
     if (!t?.tourId) return;

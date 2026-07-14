@@ -41,9 +41,9 @@ export interface OnboardingTask {
  * (A future "fleet awareness" step tied to a live fleet dashboard view is
  * deferred until that dashboard ships; it is intentionally not in the array.)
  *
- * The dashboard/list "visit" tasks complete on the `*.dashboard_viewed` events.
- * Those events are wired by Phase 6's hook on first paint of the role pages;
- * until then the items remain completable via the manual check (best-effort).
+ * The dashboard and trip-list tasks complete from their respective first-paint
+ * events. Each task has its own event so completing one never accidentally
+ * completes the other.
  */
 export const ONBOARDING_TASKS: readonly OnboardingTask[] = [
   // ── MANAGER ────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ export const ONBOARDING_TASKS: readonly OnboardingTask[] = [
     id: 'manager-open-trip-list',
     title: 'Mở danh sách chuyến xe',
     role: Role.MANAGER,
-    completionEvent: 'fleet.dashboard_viewed',
+    completionEvent: 'trips.list_viewed',
     sortOrder: 2,
   },
   {

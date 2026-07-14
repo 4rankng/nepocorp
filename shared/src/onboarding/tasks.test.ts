@@ -77,4 +77,11 @@ describe('onboarding task catalog integrity', () => {
     assert.strictEqual(t!.tourId, 'create-trip');
     assert.strictEqual(t!.completionEvent, 'trip.created');
   });
+
+  test('manager orientation tasks use distinct page-view completion events', () => {
+    const dashboard = ONBOARDING_TASKS.find((x) => x.id === 'manager-visit-dashboard');
+    const tripList = ONBOARDING_TASKS.find((x) => x.id === 'manager-open-trip-list');
+    assert.strictEqual(dashboard?.completionEvent, 'fleet.dashboard_viewed');
+    assert.strictEqual(tripList?.completionEvent, 'trips.list_viewed');
+  });
 });

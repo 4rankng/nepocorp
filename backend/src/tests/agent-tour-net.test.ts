@@ -5,7 +5,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { synthesizeStartTourFromResponse } from '../services/agent/orchestrator.js';
-import { Role, type AgentResponse } from '@tingting/shared';
+import { Role, getTour, type AgentResponse } from '@tingting/shared';
 
 function text(c: string): AgentResponse {
   return { type: 'text', content: c };
@@ -58,7 +58,10 @@ describe('synthesizeStartTourFromResponse', () => {
     );
     assert.strictEqual(r.type, 'continue_tour');
     assert.ok(r.type === 'continue_tour' && r.tourId === 'create-trip');
-    assert.ok(r.type === 'continue_tour' && r.tourVersion === 1, 'catalog version stamped');
+    assert.ok(
+      r.type === 'continue_tour' && r.tourVersion === getTour('create-trip')?.version,
+      'catalog version stamped',
+    );
   });
 
   test('downgrades an unknown continue_tour tourId to a text denial', () => {

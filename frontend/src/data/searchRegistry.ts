@@ -74,7 +74,7 @@ export const CONFIG_ITEMS: SearchItem[] = [
   // ADMIN-only — filtered out for MANAGER/ACCOUNTANT in getSearchItems below.
   { id: 'llm-settings',          type: 'config', label: 'Nhà cung cấp AI',              description: 'Chọn nhà cung cấp LLM (MiniMax / OpenRouter) cho trợ lý ảo và cấu hình API key. Mã hóa AES-256 khi lưu.', path: '/config/llm-settings',          iconName: 'settings',    action: 'Sửa', adminOnly: true },
   { id: 'faq-entries',           type: 'config', label: 'Câu hỏi thường gặp (FAQ)',      description: 'Quản lý cơ sở tri thức cho trợ lý ảo. Tự động tạo embedding khi lưu để trả lời câu hỏi nhanh.',         path: '/config/faq-entries',           iconName: 'document',    action: 'Sửa', adminOnly: true },
-  { id: 'onboarding-settings',   type: 'config', label: 'Hướng dẫn & Onboarding',        description: 'Bật/tắt hệ thống hướng dẫn (bảng checklist + các tour hướng dẫn) cho toàn bộ người dùng.',              path: '/config/onboarding-settings',   iconName: 'overview',    action: 'Sửa', adminOnly: true },
+  { id: 'app-settings',          type: 'config', label: 'Cài đặt ứng dụng',               description: 'Bật/tắt các tính năng áp dụng trên toàn hệ thống, gồm Trợ lý ảo và Hướng dẫn sử dụng.',                  path: '/config/app-settings',          iconName: 'settings',    action: 'Sửa', adminOnly: true },
 ];
 
 const ACTION_ITEMS: SearchItem[] = [

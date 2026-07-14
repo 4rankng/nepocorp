@@ -365,11 +365,6 @@ export const qk = {
     tasksAll: ['onboarding', 'tasks'] as const,
   },
 
-  /* ── Onboarding admin settings (master on/off toggle) ───────────────── */
-  onboardingSettings: {
-    all: ['onboardingSettings'] as const,
-    detail: ['onboardingSettings', 'detail'] as const,
-  },
 } as const;
 
 // ── Compile-time guard: allCatalogKeys must cover every qk.catalogs prefix ────

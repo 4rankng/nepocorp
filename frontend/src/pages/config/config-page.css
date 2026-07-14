@@ -701,13 +701,7 @@
   .routes-config-page .table-foot { padding: 8px 4px; font-size: var(--fs-xs); }
 } /* end 640px */
 
-/* ── Onboarding settings toggle (OnboardingSettingsConfigPage) ────────────── */
-.cfg-toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 6px;
-}
+/* ── Application settings feature switches ───────────────────────────────── */
 .cfg-toggle {
   position: relative;
   width: 46px;
@@ -736,22 +730,6 @@
 }
 .cfg-toggle.is-on .cfg-toggle-knob {
   transform: translateX(20px);
-}
-.cfg-toggle-label {
-  font-size: 13px;
-  color: #475569;
-}
-
-/* Shared config-page action/error rows (used by LlmSettings + Onboarding). */
-.cfg-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-}
-.cfg-error {
-  color: #b91c1c;
-  font-size: 13px;
-  margin-top: 10px;
 }
 .cfg-panel-action-icon {
   color: #94a3b8;

@@ -11,7 +11,7 @@
 //   - Dismiss writes 'dismissed' to the server and hides the panel for the
 //     session (re-openable from the badge).
 //   - Hidden entirely once the checklist reaches 100%.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
 import { useOnboardingChecklist } from '../../hooks/useOnboardingChecklist';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,6 +26,7 @@ export function OnboardingChecklist() {
   const { tasks, total, completedCount, pct, loading, launchTour, dismiss } = useOnboardingChecklist();
   const [open, setOpen] = useState(false);
   const [sessionDismissed, setSessionDismissed] = useState(false);
+  const restoredForUserId = useRef<number | null>(null);
 
   const isOffice = user && OFFICE_ROLES.has(user.role);
   // Admin master switch: when the onboarding tutorial is disabled app-wide,
@@ -36,12 +37,21 @@ export function OnboardingChecklist() {
   // Auto-open on first session (no completed/dismissed task rows yet). Once the
   // server returns any rows, we treat the user as past first-run.
   useEffect(() => {
-    if (!isOffice || loading || total === 0) return;
+    if (!user || !isOffice || loading || total === 0 || restoredForUserId.current === user.userId) return;
+    restoredForUserId.current = user.userId;
+    const hasDismissedTasks = tasks.some((t) => t.taskStatus === 'dismissed');
+    if (hasDismissedTasks) {
+      // A user who chose "Để sau" should return to the compact re-open badge,
+      // not be shown the full panel again after a refresh.
+      setSessionDismissed(true);
+      setOpen(false);
+      return;
+    }
     // If nothing has ever been recorded for this user, auto-open once.
     const hasAnyHistory = tasks.some((t) => t.taskStatus !== 'pending');
     if (!hasAnyHistory) setOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  }, [user, loading, isOffice, total, tasks]);
 
   if (!onboardingEnabled || !isOffice || total === 0 || tour) return null;
   // Hide entirely when 100% complete (onboarding done) or session-dismissed.

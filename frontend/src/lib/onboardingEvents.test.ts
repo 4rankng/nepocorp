@@ -51,6 +51,13 @@ describe('onboardingEvents', () => {
     expect(() => onboardingEvents.emit('config.fuel_saved')).not.toThrow();
   });
 
+  it('replays the latest page-view event to a listener that mounts later', () => {
+    const seen: unknown[] = [];
+    onboardingEvents.emit('fleet.dashboard_viewed');
+    onboardingEvents.on('fleet.dashboard_viewed', (payload) => seen.push(payload));
+    expect(seen).toEqual([undefined]);
+  });
+
   it('a handler that throws does not break the emitter or other handlers', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const ok: unknown[] = [];

@@ -1,6 +1,6 @@
 ---
 title: Create-trip tutorial usability repair
-status: in_progress
+status: completed
 created: '2026-07-13'
 ---
 
@@ -21,9 +21,9 @@ Repair only the **Tạo chuyến vận chuyển** walkthrough shown in the repor
 
 ## Phase
 
-1. [Repair implementation and tests](./phase-01-repair.md)
+1. [Repair implementation and tests](./phase-01-repair.md) — completed
+2. [Checklist progress and dismissal repair](./phase-02-checklist-progress.md) — completed
 
 ## Validation
 
 Run focused frontend/shared tests, then the affected package typecheck/build if available. Manually verify the tour at desktop and narrow mobile widths.
-

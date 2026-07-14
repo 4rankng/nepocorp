@@ -9,8 +9,9 @@
 //
 // Auth mirrors `middleware/auth.ts`: the JWT travels in the socket.io handshake
 // (`auth.token`) so the bot still impersonates the caller; the handshake is
-// rejected on an invalid/expired/blacklisted token. Office roles + BOT_ENABLE
-// only — same gate as the SSE handler and the frontend launcher.
+// rejected on an invalid/expired/blacklisted token. Office roles plus the
+// database-backed runtime bot switch only — same gate as the REST handler and
+// the frontend launcher.
 import type { Server as HttpServer } from 'http';
 import { Server, type Namespace, type Socket } from 'socket.io';
 import { performance } from 'node:perf_hooks';
@@ -18,6 +19,7 @@ import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { and, eq } from 'drizzle-orm';
 import { config } from './config';
+import { getAppSettings, onAppSettingsChanged } from './services/app-settings.service';
 import { Role, agentActionResultSchema, type AgentActionResult, type AgentEvent, type AgentResponse } from '@tingting/shared';
 import { db } from './db';
 import * as schema from './db/schema';
@@ -85,14 +87,10 @@ function trimSessionHistory(history: MiniMaxMessage[]): void {
 
 /**
  * Attach the assistant socket.io server. Returns the io instance (for graceful
- * shutdown) or null when the bot is disabled — nothing to serve, and the
- * launcher is hidden client-side too.
+ * shutdown. The server remains available while the bot is disabled so an
+ * administrator can enable it without a process restart.
  */
-export function initAgentSocket(server: HttpServer): Server | null {
-  if (!config.botEnabled) {
-    console.log('[agent-socket] skipped — BOT_ENABLE off');
-    return null;
-  }
+export function initAgentSocket(server: HttpServer): Server {
   const io = new Server(server, {
     path: '/socket.io',
     // Mirror the Express CORS policy (dev: the Vite origin; prod: CORS_ORIGIN).
@@ -131,11 +129,25 @@ function registerAuth(agentNs: Namespace): void {
 }
 
 function registerHandlers(agentNs: Namespace): void {
-  agentNs.on('connection', (socket: Socket) => {
+  // Settings changes are process-local and take effect without reconnecting or
+  // restarting. Closing the sockets also aborts any in-flight orchestration in
+  // their existing disconnect handler.
+  onAppSettingsChanged((settings) => {
+    if (settings.botEnabled) return;
+    for (const socket of agentNs.sockets.values()) {
+      socket.emit('agent:event', {
+        type: 'RUN_ERROR',
+        message: 'Trợ lý ảo hiện đang được tắt bởi quản trị viên.',
+      } satisfies AgentEvent);
+      socket.disconnect(true);
+    }
+  });
+
+  agentNs.on('connection', async (socket: Socket) => {
     const user = socket.data.user as AuthUser | undefined;
     // Defense in depth: auth passed, but re-check the office-role gate (mirrors
     // the Casbin `agent` policy + frontend launcher visibility).
-    if (!user || !OFFICE_ROLES.includes(user.role)) {
+    if (!user || !OFFICE_ROLES.includes(user.role) || !(await getAppSettings()).botEnabled) {
       socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Trợ lý chưa được bật' } satisfies AgentEvent);
       socket.disconnect();
       return;
@@ -196,6 +208,18 @@ function registerHandlers(agentNs: Namespace): void {
     });
 
     socket.on('agent:chat', async (input: ChatInput | null | undefined) => {
+      // Re-check on every message. A socket may have connected before an
+      // administrator disables the feature, so handshake-time validation alone
+      // would let an old connection continue using the assistant.
+      if (!(await getAppSettings()).botEnabled) {
+        current?.abort();
+        socket.emit('agent:event', {
+          type: 'RUN_ERROR',
+          message: 'Trợ lý ảo hiện đang được tắt bởi quản trị viên.',
+        } satisfies AgentEvent);
+        return;
+      }
+
       const message = input?.message;
       if (typeof message !== 'string' || !message.trim()) {
         socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Thiếu nội dung tin nhắn' } satisfies AgentEvent);

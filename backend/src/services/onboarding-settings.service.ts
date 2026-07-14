@@ -15,47 +15,19 @@
  * Default: enabled (true) when the row is absent, so existing deployments keep
  * onboarding on until an admin explicitly turns it off.
  */
-import { db } from '../db';
-import * as s from '../db/schema';
-import { eq } from 'drizzle-orm';
-
-const KEY = 'onboarding.tutorial_enabled';
-
-let cached: boolean | null = null;
-let loadPromise: Promise<boolean> | null = null;
-
-async function load(): Promise<boolean> {
-  const rows = await db
-    .select()
-    .from(s.appSettings)
-    .where(eq(s.appSettings.key, KEY));
-  const raw = rows[0]?.value;
-  // Only the literal "false" disables; anything else (absent, "true", garbage)
-  // defaults to enabled so a missing row never silently hides onboarding.
-  return raw !== 'false';
-}
+import { getAppSettings, setTutorialEnabled as saveTutorialEnabled } from './app-settings.service';
 
 /** True when the onboarding tutorial is enabled (cached after first load). */
 export async function getOnboardingEnabled(): Promise<boolean> {
-  if (cached !== null) return cached;
-  if (!loadPromise) loadPromise = load().then((v) => (cached = v));
-  return loadPromise;
+  return (await getAppSettings()).tutorialEnabled;
 }
 
 /** Drop the cache so the next read re-loads from the DB. Call after a write. */
 export function invalidateOnboardingSettings(): void {
-  cached = null;
-  loadPromise = null;
+  // Kept for the legacy endpoint. The unified service refreshes on every save.
 }
 
 /** Set the onboarding toggle. Persists + invalidates the cache. */
 export async function setOnboardingEnabled(enabled: boolean): Promise<void> {
-  await db
-    .insert(s.appSettings)
-    .values({ key: KEY, value: enabled ? 'true' : 'false' })
-    .onConflictDoUpdate({
-      target: s.appSettings.key,
-      set: { value: enabled ? 'true' : 'false', updatedAt: new Date() },
-    });
-  invalidateOnboardingSettings();
+  await saveTutorialEnabled(enabled);
 }

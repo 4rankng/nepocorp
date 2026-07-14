@@ -89,6 +89,9 @@ export {
   faqEntryCreateSchema, faqEntryUpdateSchema, FAQ_ADMIN_PATHS,
 } from './schemas';
 
+export { appSettingsSchema } from './schemas/app-settings';
+export type { AppSettings } from './schemas/app-settings';
+
 export {
   FUEL_PRICE_PER_LITER_FALLBACK,
   FUEL_LOADED_NORM_FALLBACK,

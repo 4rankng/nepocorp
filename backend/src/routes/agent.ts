@@ -14,15 +14,15 @@ import { Router, type Request, type Response } from 'express';
 import { desc, eq } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { config } from '../config';
+import { getAppSettings } from '../services/app-settings.service';
 import { getUser } from '../middleware/auth';
 import { agentResponseSchema, type AgentConversation } from '@tingting/shared';
 
 export const agentRoutes = Router();
 
 /** 503 when the feature flag is off — launcher is hidden client-side too. */
-function disabled(res: Response): boolean {
-  if (!config.botEnabled) {
+async function disabled(res: Response): Promise<boolean> {
+  if (!(await getAppSettings()).botEnabled) {
     res.status(503).json({ enabled: false, message: 'Trợ lý chưa được bật' });
     return true;
   }
@@ -30,7 +30,7 @@ function disabled(res: Response): boolean {
 }
 
 agentRoutes.get('/conversations', async (req: Request, res: Response) => {
-  if (disabled(res)) return;
+  if (await disabled(res)) return;
   try {
     const userId = getUser(req).userId;
     const rows = await db
@@ -52,7 +52,7 @@ agentRoutes.get('/conversations', async (req: Request, res: Response) => {
 });
 
 agentRoutes.get('/conversations/:id', async (req: Request, res: Response) => {
-  if (disabled(res)) return;
+  if (await disabled(res)) return;
   try {
     const userId = getUser(req).userId;
     const id = Number(req.params.id);

@@ -1,6 +1,9 @@
 # ── Build ─────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
+ARG NODE_OPTIONS=--max-old-space-size=768
+ENV NODE_OPTIONS=${NODE_OPTIONS}
+
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app

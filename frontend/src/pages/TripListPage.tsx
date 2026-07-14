@@ -27,6 +27,12 @@ export default function TripListPage() {
   const { data: fuelConfig } = useFuelConfig();
   const { data: salaryPeriod } = useSalaryPeriod(month, year);
 
+  // The onboarding checklist's "Mở danh sách chuyến xe" task completes when
+  // the user really reaches this page, independently of creating a new trip.
+  useEffect(() => {
+    onboardingEvents.emit('trips.list_viewed');
+  }, []);
+
   const warnThreshold = useMemo(
     () => (fuelConfig
       ? parseThreshold(fuelConfig.warningThreshold, DEFAULT_WARN_THRESHOLD)
