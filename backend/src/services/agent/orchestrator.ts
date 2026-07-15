@@ -1333,11 +1333,18 @@ export function sanitizeAgentJson(raw: unknown): unknown {
     if (Array.isArray(obj.widgets)) {
       obj.widgets = (obj.widgets as Record<string, unknown>[]).map((w) => {
         if (!w) return w;
-        // The model often emits `kind` (the directive discriminator) for widgets;
-        // the widget union discriminates on `type`. Normalize so the card parses.
-        if (!w.type && typeof w.kind === 'string') {
-          w.type = w.kind;
-          delete w.kind;
+        // The model often emits an alternate discriminator key for widgets
+        // (`kind`, `widget`) — the widget union discriminates on `type`.
+        // Normalize the FIRST present one so the card parses instead of failing
+        // at the discriminator with a widget that has no `type` at all (seen in
+        // production: `{"widget":"kpi_grid","data":[...]}` → final_schema fail).
+        if (!w.type) {
+          const alt = w.kind ?? w.widget;
+          if (typeof alt === 'string') {
+            w.type = alt;
+            delete w.kind;
+            delete w.widget;
+          }
         }
         if (typeof w.type === 'string' && WIDGET_TYPE_ALIASES[w.type]) w.type = WIDGET_TYPE_ALIASES[w.type];
         // P0.5: unknown widget type (not in the alias map) → coerce to the most
@@ -1375,6 +1382,13 @@ export function sanitizeAgentJson(raw: unknown): unknown {
           }
         }
         if (typeof w.format === 'string' && !WIDGET_FORMATS.has(w.format)) w.format = 'number';
+        // kpi_grid items sometimes arrive under `data` instead of `items` (the
+        // model reuses the bar_chart key). Reclaim them before the empty-items
+        // guard below drops the widget — the items.map normalizer then runs.
+        if (w.type === 'kpi_grid' && !Array.isArray(w.items) && Array.isArray(w.data)) {
+          w.items = w.data;
+          delete w.data;
+        }
         // P0.5: kpi_grid with missing/empty items → the schema requires items.min(1).
         // Drop the widget entirely so the card-level empty-widgets downgrade
         // (below) converts the whole card to text rather than failing validation.
@@ -1410,7 +1424,21 @@ export function sanitizeAgentJson(raw: unknown): unknown {
           }));
         }
         if (w.type === 'table') normalizeTableWidget(w);
-        if (w.type === 'callout' && typeof w.variant !== 'string') w.variant = 'info';
+        if (w.type === 'callout') {
+          // The wire contract names the callout body `text`, but the model
+          // often emits `content`/`message`/`title-as-body`. Without this map
+          // the callout fails validation, which fails the ENTIRE widgets
+          // array, which downgrades the whole insight_card to its prose
+          // summary (the "card becomes one line" bug). Reclaim the body text
+          // from any of these keys before the schema runs.
+          if (typeof w.text !== 'string') {
+            w.text = typeof w.content === 'string' ? w.content
+              : typeof w.message === 'string' ? w.message
+              : typeof w.body === 'string' ? w.body
+              : '';
+          }
+          if (typeof w.variant !== 'string') w.variant = 'info';
+        }
         if (w.type === 'anomaly_list' && Array.isArray(w.items)) {
           w.items = (w.items as Record<string, unknown>[]).map((item) => ({
             ...item,

@@ -36,6 +36,16 @@ export function currentVnPeriod(): { month: number; year: number } {
   return { month, year };
 }
 
+/**
+ * Current Vietnam {month, year, day}. Used when a report needs to annotate
+ * month-to-date scope (the current month is always partial until it ends) so a
+ * director doesn't read a mid-month P&L as a full-month result.
+ */
+export function currentVnDay(): { month: number; year: number; day: number } {
+  const { month, year, day } = vnParts();
+  return { month, year, day };
+}
+
 /** Today's date as YYYY-MM-DD in Vietnam — injected into the system prompt. */
 export function todayIsoVn(): string {
   const { year, month, day } = vnParts();

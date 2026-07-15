@@ -49,6 +49,55 @@
   `financial`, `report`, and `react_fallback` buckets against the historical
   M2.1 baseline; do not present deterministic-path estimates as measured gains.
 
+### Hardening — 2026-07-15 (post-`ck:predict` review)
+
+A five-persona predict review (Architect / Security / Performance / UX /
+Devil's Advocate) stress-tested the deterministic lanes against the current
+code and produced a **CAUTION** verdict. The lane's design is sound for a
+single-tenant system; the review surfaced concrete hardening items, now closed:
+
+- **Fail-open on lane error (R7).** `runFinancialOverview`/`runDeterministicReport`
+  reads are now wrapped in try/catch at the socket: a thrown read (any of the
+  parallel `Promise.all` legs, or a P&L/aging failure) falls through to the full
+  ReAct loop instead of surfacing a generic "Đã có lỗi khi xử lý" error. A
+  transient failure degrades to a slower-but-correct answer.
+- **Month-to-date framing (R4).** The financial-overview card title now
+  annotates "(tính đến DD/MM)" via `currentVnDay()`, so a director does not read
+  a partial current-month P&L as a full-month result. Falls back to the plain
+  period when the day is unavailable or out of range.
+- **Single source of truth for the current aging bucket (R5).** The `'0-30'`
+  magic string was duplicated across `aging.service.ts`, `dashboard-stats.service.ts`,
+  `deterministic-report-lane.ts`, and `financial-overview-lane.ts`. Extracted as
+  `CURRENT_AGING_RANGE`; all overdue-total filters now compare against it. A
+  future bucket-label change can no longer silently flip "overdue" to "all
+  outstanding".
+
+**Risks the review recorded but explicitly did NOT action as code** (process
+gates, not bugs):
+
+- **R1 (plan staleness):** the phases below describe the *original* 2026-06-28
+  task list. Much of Phase 1/2 has since shipped (streaming, intent router,
+  financial/report lanes, dynamic iteration caps). Treat Sections 3–4 as
+  historical rationale, not an active TODO list. The only remaining *gated*
+  work is Phase 0's post-deploy measurement gate (see R2) and the
+  contingency-only Phase 3/4 (model tiering / caching), which must NOT be
+  started until post-deploy metrics show a residual >20 s tail in the
+  `react_fallback` bucket.
+- **R2 (skipped Phase 0 gate):** before any further lane work, pull production
+  `agent_turn_metrics` for the `financial`/`report`/`react_fallback` buckets
+  and compare against the pre-lane M2.1 baseline. The `latency_first_token_ms`
+  column already exists (`schema.ts:1175`); the lane writes
+  `intent_bucket='financial'`. See the query runbook in this repo at
+  `docs/runbooks/agent-latency-postdeploy.md`.
+- **R6 (role/tenant scoping):** confirmed non-issue. The deterministic lanes
+  and the ReAct tool layer both return the same single-tenant company-wide
+  aggregates; the only gate is the `OFFICE_ROLES` check at `agentSocket.ts:151`,
+  mirroring the Casbin policy. No new scoping gap was introduced.
+
+**Resolved (no action):** the review's open question about whether the socket
+fail-opens on a lane throw is now confirmed — it does, via the try/catch added
+under R7 above.
+
 > **Review log**
 > - **Architect (ITERATE → accepted):** fixed model version (M2.1, not M2.7 — verified `models.ts:17`); reframed `MODEL_STRONG` (comment only, not an export — must be introduced + validated, not "wired"); pulled MiniMax streaming-shape (R1) spike into Phase 0; reframed Phase 1 as a shared-schema change to `agentEventSchema`; inverted §4.1 (2-call safe default, single-call = Phase 3 optimization); added Case-path instrumentation + per-phase correctness gates; acknowledged P2.2/P3.1 cannibalization; added streaming `<think>` token-delta risk.
 > - **Rejected Architect claim:** that the "6-iter / 78s / 145k tokens" citation is missing — it IS at `models.ts:26-28` (verified); kept.

@@ -1,6 +1,6 @@
 import type { AgentResponse, AgentWidget } from '@tingting/shared';
 import { getPnlReport } from '../pnl.service.js';
-import { getPayablesSummary, getReceivablesSummary } from '../aging.service.js';
+import { getPayablesSummary, getReceivablesSummary, CURRENT_AGING_RANGE } from '../aging.service.js';
 import type { SimpleReportRequest } from './intent-router.js';
 import { resolvePeriod } from './tools/period.js';
 
@@ -45,7 +45,7 @@ export async function runDeterministicReport(request: SimpleReportRequest): Prom
     label = 'Báo cáo lợi nhuận';
   } else if (request.report === 'receivables') {
     const report = await getReceivablesSummary();
-    const overdue = report.buckets.filter((bucket) => bucket.range !== '0-30').reduce((sum, bucket) => sum + bucket.amount, 0);
+    const overdue = report.buckets.filter((bucket) => bucket.range !== CURRENT_AGING_RANGE).reduce((sum, bucket) => sum + bucket.amount, 0);
     response = {
       type: 'insight_card',
       title: 'Công nợ phải thu hiện tại',

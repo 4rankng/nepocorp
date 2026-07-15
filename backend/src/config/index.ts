@@ -117,8 +117,11 @@ const configSchema = z.object({
   // disable via env to force every turn through the full ReAct loop.
   agentIntentRouter: z.boolean().default(true),
   // Live token streaming kill-switch. RUN_STARTED/tool progress remain active
-  // when disabled; only model text falls back to terminal delivery.
-  agentStreamingEnabled: z.boolean().default(true),
+  // when disabled; only model text falls back to terminal delivery. DISABLED
+  // by default: streaming the prose prefix can race the final RUN_FINISHED
+  // frame (a streamed bubble flashes then gets replaced by the authoritative
+  // message). Answers now arrive whole in RUN_FINISHED.
+  agentStreamingEnabled: z.boolean().default(false),
   // P5 Governance: LLM provider failover. When ON, a failed primary provider
   // call (timeout/http/429) retries on the alternate provider. Kill-switch.
   agentFailover: z.boolean().default(true),
@@ -160,7 +163,7 @@ const raw = {
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
   agentTourGuardrail: parseFlag(process.env.AGENT_TOUR_GUARDRAIL, true),
   agentIntentRouter: parseFlag(process.env.AGENT_INTENT_ROUTER, true),
-  agentStreamingEnabled: parseFlag(process.env.AGENT_STREAMING_ENABLED, true),
+  agentStreamingEnabled: parseFlag(process.env.AGENT_STREAMING_ENABLED, false),
   agentFailover: parseFlag(process.env.AGENT_FAILOVER, true),
   agentRateLimitPerMin: Number(process.env.AGENT_RATE_LIMIT_PER_MIN) || 20,
   agentMessageRetentionDays: Number(process.env.AGENT_MESSAGE_RETENTION_DAYS) || 180,

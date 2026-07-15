@@ -214,11 +214,22 @@ async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number
 
 // ─── Accounts Receivable (Customer aging) ────────────────────────────────────
 
+// ─── Accounts Receivable (Customer aging) ────────────────────────────────────
+
+/**
+ * The range label identifying the current (not-yet-overdue) receivables bucket.
+ * Single source of truth: `getReceivablesSummary` emits this label, and every
+ * consumer that derives an "overdue total" by filtering buckets MUST compare
+ * against THIS constant rather than a magic `'0-30'` string — otherwise a label
+ * change here silently flips the overdue calc to "all outstanding".
+ */
+export const CURRENT_AGING_RANGE = '0-30';
+
 export async function getReceivablesSummary(opts: { asOfDate?: string } = {}) {
   const results = await getEntityResultsCached({ entityType: 'CUSTOMER', invertSigns: false }, opts);
 
   const buckets = [
-    { range: '0-30', label: 'Trong hạn', count: 0, amount: 0 },
+    { range: CURRENT_AGING_RANGE, label: 'Trong hạn', count: 0, amount: 0 },
     { range: '31-60', label: '31-60 ngày', count: 0, amount: 0 },
     { range: '61-90', label: '61-90 ngày', count: 0, amount: 0 },
     { range: '90+', label: 'Trên 90 ngày', count: 0, amount: 0 },

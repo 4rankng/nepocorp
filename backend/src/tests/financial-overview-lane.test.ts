@@ -48,4 +48,24 @@ describe('financial overview card', () => {
     assert.ok(kpis && kpis.type === 'kpi_grid');
     assert.equal(kpis.items.find((item) => item.label === 'Biên lợi nhuận ròng')?.value, 0);
   });
+
+  test('annotates the title as month-to-date when asOfDay is set', () => {
+    const response = buildFinancialOverviewResponse({ ...base, asOfDay: 14 });
+    if (response.type !== 'insight_card') { assert.fail('expected insight_card'); return; }
+    // A mid-month P&L must not read as a full-month result.
+    assert.match(response.title, /tính đến 14\/7/);
+  });
+
+  test('omits the month-to-date suffix when asOfDay is absent (backward-compat)', () => {
+    const response = buildFinancialOverviewResponse(base);
+    if (response.type !== 'insight_card') { assert.fail('expected insight_card'); return; }
+    assert.doesNotMatch(response.title, /tính đến/);
+    assert.match(response.title, /tháng 7\/2026/);
+  });
+
+  test('ignores an out-of-range asOfDay (defensive)', () => {
+    const response = buildFinancialOverviewResponse({ ...base, asOfDay: 0 });
+    if (response.type !== 'insight_card') { assert.fail('expected insight_card'); return; }
+    assert.doesNotMatch(response.title, /tính đến/);
+  });
 });

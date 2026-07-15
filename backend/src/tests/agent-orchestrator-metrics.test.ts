@@ -349,6 +349,44 @@ describe('agent final-answer parsing — fallback reducers', () => {
     // AgentResponse, so the caller falls through to the prose-salvage path.
     assert.strictEqual(parseAgentResponseContent('chỉ là văn bản thường, không có json'), null);
   });
+
+  test('normalizes the `widget` discriminator and `data`-keyed KPI items (production final_schema fix)', () => {
+    // Regression for the 2026-07-15 production outage: the model emitted
+    // `{"widget":"kpi_grid","data":[...]}` instead of `{"type":"kpi_grid","items":[...]}`.
+    // The widget landed with no `type`, the discriminator failed, and every
+    // analytical turn degraded to a 30–40s final_schema → prose fallback that
+    // users perceived as a broken/disconnected assistant.
+    const parsed = parseAgentResponseContent('```json\n' + JSON.stringify({
+      type: 'insight_card',
+      title: 'Phân tích kinh doanh – Tháng 7/2026',
+      summary: 'Tháng 7 đạt lợi nhuận gộp 65.9M VND.',
+      widgets: [
+        {
+          widget: 'kpi_grid',
+          data: [
+            { label: 'Doanh thu', value: 256849093, format: 'vnd' },
+            { label: 'Chi phí', value: 190958203, format: 'vnd' },
+            { label: 'Biên lợi nhuận', value: '25,7%', format: 'percent' },
+          ],
+        },
+      ],
+    }, null, 2) + '\n```');
+
+    assert.ok(parsed);
+    assert.strictEqual(parsed.type, 'insight_card');
+    if (parsed.type !== 'insight_card') return;
+    const kpi = parsed.widgets[0];
+    assert.strictEqual(kpi.type, 'kpi_grid');
+    if (kpi.type !== 'kpi_grid') return;
+    assert.strictEqual(kpi.items.length, 3);
+    assert.strictEqual(kpi.items[0].value, 256849093);
+    assert.strictEqual(kpi.items[2].value, 25.7); // '25,7%' → 25.7
+
+    // Persistence stores the response as JSONB and history revalidates it with
+    // this exact shared schema. Lock the serialization boundary without a DB.
+    const rehydrated = agentResponseSchema.parse(JSON.parse(JSON.stringify(parsed)));
+    assert.strictEqual(rehydrated.type, 'insight_card');
+  });
 });
 
 describe('agent orchestrator metrics — static sampling-trap guard', () => {

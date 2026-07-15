@@ -5,11 +5,19 @@
 
 import type { AgentResponse, AgentWidget } from '@tingting/shared';
 import { getPnlReport } from '../pnl.service.js';
-import { getPayablesSummary, getReceivablesSummary } from '../aging.service.js';
-import { currentVnPeriod } from './tools/period.js';
+import { getPayablesSummary, getReceivablesSummary, CURRENT_AGING_RANGE } from '../aging.service.js';
+import { currentVnPeriod, currentVnDay } from './tools/period.js';
 
 export interface FinancialOverviewData {
   period: { month: number; year: number };
+  /**
+   * Day-of-month the P&L was computed for (1-31). The current-month P&L is
+   * always month-to-date, so the card annotates "(tính đến DD/MM)" to keep a
+   * director from reading a partial month as a full-month result. Omitted when
+   * the data source doesn't resolve a day (e.g. a test fixture) — the title
+   * then falls back to the plain period.
+   */
+  asOfDay?: number;
   revenue: number;
   totalCosts: number;
   grossProfit: number;
@@ -75,9 +83,14 @@ export function buildFinancialOverviewResponse(data: FinancialOverviewData): Age
   }
   widgets.push({ type: 'anomaly_list', items: anomalies });
 
+  // The P&L for the current month is month-to-date until the month closes.
+  // Annotate the title so a partial month isn't mistaken for a full one.
+  const periodSuffix = data.asOfDay && data.asOfDay >= 1 && data.asOfDay <= 31
+    ? ` (tính đến ${data.asOfDay}/${data.period.month})`
+    : '';
   return {
     type: 'insight_card',
-    title: `Sức khỏe tài chính tháng ${data.period.month}/${data.period.year}`,
+    title: `Sức khỏe tài chính tháng ${data.period.month}/${data.period.year}${periodSuffix}`,
     summary: `${verdict} Có ${data.tripCount} chuyến được ghi nhận; cần đọc cùng tình trạng công nợ bên dưới.`,
     widgets,
     actions: [
@@ -91,6 +104,7 @@ export function buildFinancialOverviewResponse(data: FinancialOverviewData): Age
 export async function runFinancialOverview(): Promise<FinancialOverviewResult> {
   const start = performance.now();
   const period = currentVnPeriod();
+  const { day } = currentVnDay();
   const [pnl, receivables, payables] = await Promise.all([
     getPnlReport(period.month, period.year),
     getReceivablesSummary(),
@@ -98,11 +112,12 @@ export async function runFinancialOverview(): Promise<FinancialOverviewResult> {
   ]);
 
   const overdueReceivables = receivables.buckets
-    .filter((bucket) => bucket.range !== '0-30')
+    .filter((bucket) => bucket.range !== CURRENT_AGING_RANGE)
     .reduce((sum, bucket) => sum + bucket.amount, 0);
 
   const response = buildFinancialOverviewResponse({
     period,
+    asOfDay: day,
     revenue: pnl.totalRevenue,
     totalCosts: pnl.totalCosts,
     grossProfit: pnl.grossProfit,

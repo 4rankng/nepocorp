@@ -8,7 +8,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, gte, desc } from 'drizzle-orm';
 import { TripStatus, parseThreshold, type DashboardDecisionItem } from '@tingting/shared';
-import { getReceivablesSummary, getTopOverdueCustomer } from './aging.service';
+import { getReceivablesSummary, getTopOverdueCustomer, CURRENT_AGING_RANGE } from './aging.service';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange, localDateStr, resolveCapTableSnapshot } from './reporting-shared';
 import { getPnlReport } from './pnl.service';
@@ -119,7 +119,7 @@ export async function getDashboardStats() {
       month,
       revenue,
       overdueAmount: receivablesSummary.buckets
-        .filter((bucket) => bucket.range !== '0-30')
+        .filter((bucket) => bucket.range !== CURRENT_AGING_RANGE)
         .reduce((sum, bucket) => sum + Number(bucket.amount || 0), 0),
       overdueCustomers: receivablesSummary.overdueCustomers,
       createdTrips: Number(createdTripsResult?.count || 0),

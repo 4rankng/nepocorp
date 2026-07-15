@@ -153,6 +153,55 @@ describe('P0.5 final_schema hotfix — numeric coercion', () => {
   });
 });
 
+describe('P1 callout field-name coercion (insight_card → summary regression)', () => {
+  // Regression: the wire contract names the callout body `text`, but the model
+  // often emits `content`/`message`. Without the map, ONE such callout failed
+  // the whole widgets array, which downgraded the ENTIRE insight_card to its
+  // prose summary — the "full card became one line" bug.
+  test('callout with `content` (not `text`) → kept as insight_card', () => {
+    const r = validate({
+      type: 'insight_card', title: 'T', summary: 'S',
+      widgets: [{ widget: 'callout', title: '⚠️ Cảnh báo', content: 'Xe ngoài đang lỗ 4.6M.' }],
+    });
+    assert.ok(r.success, `should parse: ${r.success ? '' : JSON.stringify(r.error.issues.slice(0, 2))}`);
+    assert.equal(r.data!.type, 'insight_card');
+  });
+
+  test('callout with `message` → text reclaimed', () => {
+    const r = validate({
+      type: 'insight_card', title: 'T', summary: 'S',
+      widgets: [{ type: 'callout', message: 'Lưu ý.' }],
+    });
+    assert.ok(r.success);
+    assert.equal(r.data!.type, 'insight_card');
+  });
+
+  // The exact reported payload: a rich card whose ONLY validation problem was
+  // the callout `content` field. The whole card must survive and render.
+  test('reported full card (callout.content) renders as insight_card', () => {
+    const r = validate({
+      type: 'insight_card',
+      title: 'Phân tích kinh doanh – Tháng 7/2026',
+      summary: 'Tháng 7 đạt lợi nhuận gộp 65.9M VND.',
+      widgets: [
+        { widget: 'kpi_grid', data: [
+          { label: 'Doanh thu', value: 256849093, format: 'vnd' },
+          { label: 'Chi phí', value: 190958203, format: 'vnd' },
+          { label: 'Lợi nhuận gộp', value: 65890890, format: 'vnd' },
+          { label: 'Biên lợi nhuận', value: 25.65, format: 'percent' },
+        ] },
+        { widget: 'bar_chart', title: 'Lợi nhuận theo xe', data: [
+          { label: '15C-139.82', value: 29978705 },
+          { label: 'Xe ngoài', value: -4656967 },
+        ] },
+        { widget: 'callout', title: '⚠️ Cảnh báo', content: 'Xe ngoài đang lỗ 4.6M.' },
+      ],
+    });
+    assert.ok(r.success, `full card should parse: ${r.success ? '' : JSON.stringify(r.error.issues.slice(0, 2))}`);
+    assert.equal(r.data!.type, 'insight_card');
+  });
+});
+
 describe('P0.5 final_schema hotfix — baseline (must not regress)', () => {
   test('valid insight_card with kpi_grid still passes', () => {
     const r = validate({
