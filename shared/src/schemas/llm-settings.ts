@@ -19,7 +19,7 @@ export type LlmProvider = (typeof LLM_PROVIDERS)[number];
 /** Hardcoded model name per provider (mirrors backend services/llm/models.ts).
  *  Shown read-only in the settings UI; not admin-configurable. */
 export const LLM_PROVIDER_MODELS: Record<LlmProvider, string> = {
-  minimax: 'MiniMax-M2.1-highspeed',
+  minimax: 'MiniMax-M2.7-highspeed',
   openrouter: 'deepseek/deepseek-v4-flash',
 };
 

@@ -40,7 +40,7 @@ describe('P3 Summary Lane — must NOT trigger for non-summary queries', () => {
   const nonSummaryCases: { msg: string; desc: string }[] = [
     { msg: 'lợi nhuận tháng này bao nhiêu', desc: 'specific data query' },
     { msg: 'tóm tắt lợi nhuận xe 15C-136.31', desc: 'specific entity summary (not daily)' },
-    { msg: 'tình hình tài chính thế nào', desc: 'analytical (not daily-work)' },
+    { msg: 'tình hình tài chính thế nào', desc: 'financial overview (not daily-work)' },
     { msg: 'mở trang công nợ', desc: 'navigation intent' },
     { msg: 'tháng này kiếm được bao tiền rồi', desc: 'data query' },
     { msg: 'tại sao lợi nhuận giảm', desc: 'analytical question' },
@@ -51,6 +51,34 @@ describe('P3 Summary Lane — must NOT trigger for non-summary queries', () => {
       const d = routeIntent(tc.msg);
       assert.notEqual(d.lane, 'summary',
         `"${tc.msg}" should NOT be lane='summary', got summary — THIS IS A MISROUTE`);
+    });
+  }
+});
+
+describe('Financial overview lane — broad health checks only', () => {
+  const financialCases = [
+    'tình hình tài chính thế nào, làm ăn được hay không',
+    'sức khỏe tài chính công ty',
+    'công ty làm ăn thế nào',
+    'financial health',
+  ];
+
+  for (const msg of financialCases) {
+    test(`financial: ${msg}`, () => {
+      assert.equal(routeIntent(msg).lane, 'financial');
+    });
+  }
+
+  const specificCases = [
+    'tại sao tình hình tài chính giảm',
+    'tình hình tài chính tháng 6/2026',
+    'tình hình tài chính xe 15C-136.31',
+    'tài chính khách hàng Vietsun',
+  ];
+
+  for (const msg of specificCases) {
+    test(`specific analysis stays ReAct: ${msg}`, () => {
+      assert.equal(routeIntent(msg).lane, 'react');
     });
   }
 });

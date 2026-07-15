@@ -70,7 +70,6 @@ describe('P1 Intent Router — Lane 4 ReAct (negative cases / must NOT nav)', ()
     { msg: 'what we have been talking about', desc: 'conversational' },
     { msg: 'cho xem giay bao no gan day', desc: 'data lookup (recent debit notes)' },
     { msg: 'doanh thu tung xe', desc: 'data query (revenue per truck)' },
-    { msg: 'tình hình tài chính thế nào', desc: 'analytical' },
     { msg: 'sửa tên công ty thành TNHH ABCOW', desc: 'write action (v1 read-only, but not nav)' },
   ];
 
@@ -83,6 +82,18 @@ describe('P1 Intent Router — Lane 4 ReAct (negative cases / must NOT nav)', ()
       assert.equal(decision.directive, undefined, 'react decision must not have a directive');
     });
   }
+});
+
+describe('P1 Intent Router — deterministic financial overview', () => {
+  test('broad company health question avoids ReAct', () => {
+    const d = routeIntent('tình hình tài chính thế nào, làm ăn được hay không');
+    assert.equal(d.lane, 'financial');
+  });
+
+  test('specific causal financial analysis still uses ReAct', () => {
+    const d = routeIntent('tại sao tình hình tài chính tháng 6/2026 giảm');
+    assert.equal(d.lane, 'react');
+  });
 });
 
 describe('P1 Intent Router — edge cases', () => {

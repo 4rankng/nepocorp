@@ -20,6 +20,9 @@ const EXPECTED_BUCKETS = new Set([
   'nav',            // P1 deterministic navigation lane — reserved
   'lookup',         // P1 single-tool lookup lane — reserved
   'summary',        // P3 daily-work summary lane — reserved
+  'financial',      // deterministic current-period financial overview (0 LLM)
+  'report',         // deterministic canonical single-report answer (0 LLM)
+  'aborted',        // cancelled/disconnected turn persisted for abort telemetry
   'react_fallback', // full ReAct reasoning loop — the orchestrator default
   'unknown',        // legacy pre-column rows (backfill value)
 ]);

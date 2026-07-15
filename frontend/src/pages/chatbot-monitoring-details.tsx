@@ -269,6 +269,10 @@ export function ReactEfficiency({
   const cards: { label: string; value: string }[] = [
     { label: 'Số vòng TB / lượt', value: fmtAvg(summary.avgIterations) },
     { label: 'Tỷ lệ fallback', value: fmtRate(summary.fallbackRate) },
+    {
+      label: 'Lượt ReAct không cần định dạng lại',
+      value: summary.finalAvoidanceRate === null ? '—' : fmtRate(summary.finalAvoidanceRate),
+    },
     { label: 'Lượt gọi công cụ / lượt', value: fmtAvg(summary.avgToolCallsPerTurn) },
     { label: 'Token / lượt', value: fmtAvg(tokensPerTurn) },
   ];

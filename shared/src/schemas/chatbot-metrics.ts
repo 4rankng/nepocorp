@@ -36,6 +36,9 @@ export interface ChatbotMetricSummary {
   errorRate: number;
   timeoutRate: number;
   fallbackRate: number;
+  /** Fraction of ReAct turns that did not need a separate final-format call.
+   * Null when the selected period contains no ReAct turns. */
+  finalAvoidanceRate: number | null;
   /** P0b — fraction of turns where the final structured answer degraded to a
    *  prose/apology fallback, captured via the errorKind column (final_* prefix).
    *  This is the headline perf target (50% → <10%); `fallbackRate` is the raw
@@ -69,9 +72,18 @@ export interface ChatbotMetricSummary {
   };
   /** P0 — intent-lane distribution: how many turns each execution lane
    *  handled. The headline metric for route-before-reasoning: a healthy system
-   *  shifts volume from 'react_fallback' into 'faq'/'nav'/'lookup'/'summary'.
-   *  Buckets with zero turns are omitted. 'unknown' = legacy pre-router rows. */
-  intentBuckets: { bucket: string; count: number }[];
+   *  shifts volume from 'react_fallback' into
+   *  'faq'/'nav'/'lookup'/'summary'/'financial'/'report'. Cancelled turns use
+   *  'aborted'; buckets with zero turns are omitted. 'unknown' = legacy rows. */
+  intentBuckets: {
+    bucket: string;
+    count: number;
+    p50Ms: number | null;
+    p95Ms: number | null;
+    avgTokens: number | null;
+    fallbackRate: number;
+    avgIterations: number | null;
+  }[];
 }
 
 /** Average of each pipeline stage latency (latency_*_ms columns). */

@@ -479,7 +479,7 @@
 }
 .cbm-intent__row {
   display: grid;
-  grid-template-columns: minmax(140px, 200px) minmax(120px, 1fr) 110px;
+  grid-template-columns: minmax(140px, 200px) minmax(120px, 1fr) minmax(0, auto);
   align-items: center;
   gap: 12px;
 }
@@ -494,7 +494,8 @@
   font-size: 12px;
   font-weight: 800;
   text-align: right;
-  white-space: nowrap;
+  line-height: 1.45;
+  white-space: normal;
 }
 @media (max-width: 640px) {
   .cbm-intent__row {

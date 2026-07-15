@@ -8,13 +8,12 @@
 // constant imported from here.
 //
 // A MODEL_STRONG tier is reserved for future task-complexity routing (P2) and is
-// intentionally unused today. MiniMax-M3 is a hybrid reasoning model that
-// prepends `<think>` blocks to every response (even in json_object mode) and
-// adds wall-clock + parsing cost we have not yet benchmarked, so the bot stays
-// on the fast `highspeed` line until a latency benchmark justifies routing.
+// intentionally unused today. Keep the default on MiniMax's high-speed line:
+// the agent makes several sequential calls on analytical turns, so per-call
+// output latency compounds quickly.
 
 /** Model used for every MiniMax call (ReAct loop + final structured answer). */
-export const MODEL_FAST = 'MiniMax-M2.1-highspeed';
+export const MODEL_FAST = 'MiniMax-M2.7-highspeed';
 
 /** OpenAI-compatible Chat Completions endpoint (international host). */
 export const MINIMAX_BASE_URL = 'https://api.minimax.io/v1';

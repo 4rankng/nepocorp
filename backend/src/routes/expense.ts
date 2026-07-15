@@ -21,6 +21,7 @@ import * as s from '../db/schema';
 import { storageService } from '../services/storage.service';
 import { sniffImageType } from '../lib/format';
 import { getUser } from '../middleware/auth';
+import { invalidateReportCaches } from '../lib/redis';
 
 registerAuditEvent('POST', '/api/expenses', AuditEvent.ENTITY_CREATED);
 registerAuditEvent('PUT', '/api/expenses/', AuditEvent.ENTITY_UPDATED);
@@ -75,6 +76,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const result = await db.transaction(async (tx) => {
     return createExpense(tx, { ...validatedData, amount: String(validatedData.amount) }, userId);
   });
+  await invalidateReportCaches();
   res.status(201).json(result);
 }));
 
@@ -89,6 +91,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const result = await db.transaction(async (tx) => {
     return updateExpense(tx, Number(req.params.id), serviceData, userId);
   });
+  await invalidateReportCaches();
   res.json(result);
 }));
 
@@ -97,6 +100,7 @@ router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   await db.transaction(async (tx) => {
     await deleteExpense(tx, Number(req.params.id), userId);
   });
+  await invalidateReportCaches();
   res.json({ ok: true });
 }));
 

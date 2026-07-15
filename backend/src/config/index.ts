@@ -116,6 +116,9 @@ const configSchema = z.object({
   // LLM calls; single-entity lookups (Lane 2) get one tool call. Kill-switch —
   // disable via env to force every turn through the full ReAct loop.
   agentIntentRouter: z.boolean().default(true),
+  // Live token streaming kill-switch. RUN_STARTED/tool progress remain active
+  // when disabled; only model text falls back to terminal delivery.
+  agentStreamingEnabled: z.boolean().default(true),
   // P5 Governance: LLM provider failover. When ON, a failed primary provider
   // call (timeout/http/429) retries on the alternate provider. Kill-switch.
   agentFailover: z.boolean().default(true),
@@ -157,6 +160,7 @@ const raw = {
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
   agentTourGuardrail: parseFlag(process.env.AGENT_TOUR_GUARDRAIL, true),
   agentIntentRouter: parseFlag(process.env.AGENT_INTENT_ROUTER, true),
+  agentStreamingEnabled: parseFlag(process.env.AGENT_STREAMING_ENABLED, true),
   agentFailover: parseFlag(process.env.AGENT_FAILOVER, true),
   agentRateLimitPerMin: Number(process.env.AGENT_RATE_LIMIT_PER_MIN) || 20,
   agentMessageRetentionDays: Number(process.env.AGENT_MESSAGE_RETENTION_DAYS) || 180,
@@ -195,6 +199,7 @@ const withDefaults = {
   agentNavigateGuardrail: raw.agentNavigateGuardrail,
   agentTourGuardrail: raw.agentTourGuardrail,
   agentIntentRouter: raw.agentIntentRouter,
+  agentStreamingEnabled: raw.agentStreamingEnabled,
   agentFailover: raw.agentFailover,
   agentRateLimitPerMin: raw.agentRateLimitPerMin,
   agentMessageRetentionDays: raw.agentMessageRetentionDays,

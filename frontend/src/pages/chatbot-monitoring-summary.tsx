@@ -374,6 +374,9 @@ const INTENT_BUCKET_LABELS: Record<string, string> = {
   nav: 'Điều hướng (không LLM)',
   lookup: 'Tra cứu nhanh',
   summary: 'Tóm tắt hàng ngày',
+  financial: 'Tổng quan tài chính',
+  report: 'Báo cáo nhanh',
+  aborted: 'Đã huỷ',
   react_fallback: 'Phân tích (ReAct)',
   unknown: 'Khác (cũ)',
 };
@@ -383,7 +386,7 @@ export function IntentDistribution({
   totalTurns,
   loading,
 }: {
-  buckets: { bucket: string; count: number }[] | undefined;
+  buckets: ChatbotMetricSummary['intentBuckets'] | undefined;
   totalTurns: number;
   loading: boolean;
 }) {
@@ -395,18 +398,21 @@ export function IntentDistribution({
       {buckets.map((b) => {
         const pct = totalTurns > 0 ? (b.count / totalTurns) : 0;
         const widthPct = (b.count / max) * 100;
+        const label = INTENT_BUCKET_LABELS[b.bucket] ?? 'Nhóm khác';
         return (
           <div className="cbm-intent__row" key={b.bucket}>
-            <span className="cbm-intent__label" title={b.bucket}>
-              {INTENT_BUCKET_LABELS[b.bucket] ?? b.bucket}
+            <span className="cbm-intent__label" title={label}>
+              {label}
             </span>
             <svg className="cbm-bar__track" viewBox="0 0 100 14" preserveAspectRatio="none" role="img"
-              aria-label={`${INTENT_BUCKET_LABELS[b.bucket] ?? b.bucket}: ${b.count} lượt`}>
+              aria-label={`${label}: ${b.count} lượt`}>
               <rect x="0" y="4" width="100" height="6" rx="3" className="cbm-bar__bg" />
               <rect x="0" y="4" width={widthPct} height="6" rx="3"
-                className={`cbm-bar__fill${b.bucket === 'react_fallback' || b.bucket === 'unknown' ? ' cbm-bar__fill--none' : ''}`} />
+                className={`cbm-bar__fill${b.bucket === 'react_fallback' || b.bucket === 'unknown' || b.bucket === 'aborted' ? ' cbm-bar__fill--none' : ''}`} />
             </svg>
-            <span className="cbm-intent__count">{fmtNum(b.count)} ({fmtRate(pct)})</span>
+            <span className="cbm-intent__count" title={`Fallback ${fmtRate(b.fallbackRate)} · ${fmtAvg(b.avgIterations)} vòng`}>
+              {fmtNum(b.count)} ({fmtRate(pct)}) · p95 {fmtCompactMs(b.p95Ms)} · TB {fmtAvg(b.avgTokens)} token/lượt
+            </span>
           </div>
         );
       })}

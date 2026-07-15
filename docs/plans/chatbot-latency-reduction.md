@@ -1,9 +1,53 @@
 # Plan — Reduce ReAct Chatbot Latency (perceived + actual)
 
-**Status:** `pending approval` (ralplan consensus reached — Planner v3 after Architect ITERATE + Critic ACCEPT-WITH-RESERVATIONS; all reservations applied; awaiting user approval to execute)
+**Status:** `implemented; awaiting post-deploy production validation`
 **Date:** 2026-06-28
+**Last updated:** 2026-07-15
 **Owner:** backend agent subsystem
-**Target:** p50 ≤ 6 s, p95 ≤ 12 s, eliminate the >20 s tail (today: p95 ≈ 17 s, tail > 20 s)
+**Target:** p50 ≤ 6 s, p95 ≤ 12 s, eliminate the >20 s tail (original M2.1 baseline: p95 ≈ 17 s, tail > 20 s)
+
+### Implementation update — 2026-07-15
+
+- Default MiniMax model upgraded from `MiniMax-M2.1-highspeed` to
+  `MiniMax-M2.7-highspeed` in the runtime and admin settings contract.
+- Broad company financial-health questions now use a deterministic `financial`
+  lane: current-period P&L, receivables, and payables run in parallel and
+  produce a typed insight card without an LLM call.
+- Canonical simple reports now use a deterministic `report` lane: current or
+  explicit-month profit/revenue, current receivables, and current payables call
+  the corresponding business service and build the typed response without
+  ReAct or a final-format call. Unsupported periods and analytical/entity-
+  specific questions fail open to ReAct.
+- Analytical financial questions (vehicle/customer scope, comparisons, causes,
+  unsupported quarter or year-only periods) continue to use ReAct; established
+  customer receivable lookups continue to use the lookup lane.
+- ReAct turns now advertise intent-specific tool schemas, use dynamic iteration
+  caps (1 with no tools, 2 for tutorial intents, 3 for simple financial/report
+  intents, and 4 for causal/comparative/specific analysis), and receive a concise prompt whose data,
+  tour, UI, and structured-response rules are included only when relevant.
+- Exact duplicate read-only tool calls within one turn share the same promise;
+  failures are evicted and cache hits are recorded in the tool trace. This is
+  additive to the existing Redis report caches (`reports:pnl:*`, aging/entity
+  results, dashboard and fuel variance) and their mutation invalidation paths;
+  it does not claim a new cross-turn cache for every tool.
+- Live answer-token streaming is enabled by default. The new
+  `AGENT_STREAMING_ENABLED=false` kill switch returns model text through the
+  terminal path while retaining run/tool progress events. Incremental filtering
+  removes split `<think>` and internal tool markup before deltas reach the UI.
+- Cancelled/disconnected turns are persisted as an `aborted` monitoring lane,
+  parallel tool latency is recorded once per wall-clock batch, and expense
+  create/update/delete now invalidate cached P&L reports.
+- Monitoring now reports per-lane p50/p95, average tokens, fallback rate and
+  average iterations, plus the share of ReAct turns that avoided a separate
+  final-format call. The avoidance value is `null` when a period has no ReAct
+  turns, avoiding a misleading 0% KPI.
+- Verification on 2026-07-15: `pnpm --dir backend test` completed with 688
+  tests (687 pass, 0 fail, 1 todo); `pnpm build` completed for shared, backend,
+  and frontend. Vite still reports its existing warning for chunks over 500 kB.
+- Production p50/p95 and >20 s-tail targets remain **unverified** until the
+  changes are deployed and receive representative traffic. Compare new
+  `financial`, `report`, and `react_fallback` buckets against the historical
+  M2.1 baseline; do not present deterministic-path estimates as measured gains.
 
 > **Review log**
 > - **Architect (ITERATE → accepted):** fixed model version (M2.1, not M2.7 — verified `models.ts:17`); reframed `MODEL_STRONG` (comment only, not an export — must be introduced + validated, not "wired"); pulled MiniMax streaming-shape (R1) spike into Phase 0; reframed Phase 1 as a shared-schema change to `agentEventSchema`; inverted §4.1 (2-call safe default, single-call = Phase 3 optimization); added Case-path instrumentation + per-phase correctness gates; acknowledged P2.2/P3.1 cannibalization; added streaming `<think>` token-delta risk.
@@ -12,9 +56,14 @@
 
 ---
 
-## 1. Problem (evidence-backed, code-verified)
+## 1. Original problem and baseline (2026-06-28)
 
-A bot turn is a **sequential chain of LLM calls** to a reasoning model (`MiniMax-M2.1-highspeed`, `models.ts:17`), plus tool/DB work between them. Wall-clock ≈ `(iterations + final calls) × per-call reasoning latency`.
+This section preserves the evidence and rationale used to approve the plan. It
+describes the **original M2.1 implementation**, not the 2026-07-15 runtime.
+
+At that baseline, a bot turn was a **sequential chain of LLM calls** to
+`MiniMax-M2.1-highspeed`, plus tool/DB work between them. Wall-clock ≈
+`(iterations + final calls) × per-call reasoning latency`.
 
 - ReAct loop: up to `AGENT_MAX_ITERATIONS = 4` — `orchestrator.ts:386`; cap rationale + the recorded prod datapoint ("a 6-iter turn hit 78 s / 145 k prompt tokens") at `models.ts:26-30`.
 - Final answer is already branched into **3 cases** the Planner must thread any streaming redesign through (`orchestrator.ts:610-635`):
@@ -26,6 +75,13 @@ A bot turn is a **sequential chain of LLM calls** to a reasoning model (`MiniMax
 - Non-streaming: `callMiniMax` does `await res.json()`; one terminal `done` frame per turn — `minimax.client.ts:187`, `agentSocket.ts:218-230`.
 - The shared event contract `agentEventSchema` (`shared/src/schemas/agent.ts:316-356`) is a **closed discriminatedUnion of exactly 5 variants** (`tool_start`, `tool_result`, `directive`, `done`, `error`). There is **no `thinking` and no token-stream event** — adding either is a coordinated shared→backend→frontend schema change, parsed on both sides (`useAgentChat.ts:97-188` exhaustive switch; `AgentAssistant.tsx` dispatches on `response.type`).
 - `MODEL_STRONG` is **only a comment** (`models.ts:10-14`), not an exported constant — tiering means *introducing + validating* a new model, not wiring an existing one.
+
+**Current implementation note (2026-07-15):** `MODEL_FAST` is now
+`MiniMax-M2.7-highspeed`; deterministic financial/report lanes bypass the chain
+for supported intents; ReAct uses selected tool schemas, conditional prompt
+sections, dynamic iteration caps, in-turn duplicate-read memoization, and
+default-on streaming with a kill switch. `MODEL_STRONG` remains unimplemented;
+there is no claim that model tiering shipped.
 
 **Root cause:** the >20 s tail is multi-iteration Case-3 analytical turns where sequential reasoning calls + context growth + occasional card-schema fallback stack. Already mitigated (do NOT redo): cap 6→4, Case-1 direct-parse gating, `reasoning_split`, `jsonrepair`, `compactToolResult`, `salvageText`, concurrent read-only tools (P1.3), `trimToolHistory`, token-attribution logging.
 
@@ -58,39 +114,96 @@ A bot turn is a **sequential chain of LLM calls** to a reasoning model (`MiniMax
 
 ## 3. The plan (staged)
 
-### Phase 0 — Measure + spike (gate; blocks Phase 1 streaming & Phase 3 tiering)
-- **P0.1 Live metrics pull** from prod `agent_turn_metrics`: p50/p95/p99, turns >20 s, mean `latency_llm_ms` vs `latency_tools_ms` vs `latency_ack_ms`. **Pin the baseline column:** the "p95≈17 s" figure is `latency_user_perceived_ms` (the user-facing end-to-end), reported separately from `latency_total_ms` (LLM+tools+final, excludes ack/persist) — fix this now so post-Phase-1 perceived-vs-total splits aren't apples-to-oranges.
-- **P0.2 Case-path instrumentation.** Record which of the 3 final-answer paths (`orchestrator.ts:610-635`) fired per turn + add a `latency_first_token_ms` metric. **Without this, the Phase 0 decision gate cannot answer its own question.**
-- **P0.3 MiniMax streaming-shape spike (R1 — pulled forward from Phase 3).** Confirm `stream: true` yields OpenAI-shaped SSE `data:` chunks on `api.minimax.io`; critically, determine whether streamed chunks carry `<think>` content mid-stream — `stripThink` (`minimax.client.ts:94`) only cleans **complete** strings, not token deltas, so raw deltas could render reasoning to the user. This **blocks P1.3 design**.
-- **P0.4 Model-tier spike (for Phase 3).** Benchmark a fast non-reasoning MiniMax line vs M2.1-highspeed at equal prompt size: tool-call reliability (≥20 representative intents incl. multi-tool `data.search`+`data.detail`), `insight_card` schema-conformance, wall-clock, and `<think>` behavior in streaming mode.
+Status markers below describe the repository state on 2026-07-15. Acceptance
+targets that require production traffic remain pending even when their code is
+implemented.
+
+### Phase 0 — Measure + spike (`instrumentation implemented; production comparison pending`)
+- **P0.1 — PARTIAL.** The original M2.1 `latency_user_perceived_ms`
+  baseline is preserved and monitoring separates user-perceived from pipeline
+  latency. A post-deploy M2.7/per-lane production pull is still required for
+  p50/p95/p99 and >20 s-tail validation.
+- **P0.2 — PARTIAL.** Metrics capture TTFT and intent buckets. The dashboard now
+  adds per-lane p50/p95, average tokens, fallback rate and average iterations,
+  and derives final-call avoidance for ReAct turns from
+  `latency_final_ms = 0`. An explicit three-case final-path field was not added;
+  the avoidance KPI is a useful proxy, not a complete Case-1/2/3 breakdown.
+- **P0.3 — IMPLEMENTED LOCALLY; LIVE SHAPE CHECK PENDING.** The
+  OpenAI-compatible SSE parser, final accumulated-content cleaning, streaming
+  event contract, and frontend streaming bubble are present and covered by
+  backend tests. The callback intentionally receives raw deltas, so live M2.7
+  an incremental sanitizer now removes split reasoning/internal-tool markup
+  before UI emission; production traffic still validates provider behavior.
+- **P0.4 — NOT SHIPPED AS TIERING.** The default high-speed model moved from
+  M2.1 to M2.7. `MODEL_STRONG` and task-based model tiering remain future work;
+  the model upgrade must not be described as tiering.
 - **Decision gate:**
   - If Case-1/Case-2 (simple/nav/prose) dominate **volume** → Phase 2 intent fast-path is highest ROI.
   - If Case-3 analytical turns dominate the **>20 s tail** → Phase 3 tiering is highest ROI (and P2.2/P3.1 cannibalization — see §4.5 — decides whether tiering still pays after iteration reduction).
 
-### Phase 1 — Perceived latency (do first; biggest UX win)
+### Phase 1 — Perceived latency (`implemented; production TTFT gate pending`)
 **Reframe (Architect):** this is a **shared-schema change**, not backend-only. Sub-tasks:
-- **P1.0 Extend `agentEventSchema`** (`shared/src/schemas/agent.ts:316`) with `thinking` and `answer_chunk` variants; update the `useAgentChat.ts:97-188` exhaustive switch; add a streaming-text-bubble render state in `AgentAssistant.tsx`. Cross-package (shared→backend→frontend). **This change is additive and non-breaking:** the switch has no `default`, so a new backend emitting `thinking`/`answer_chunk` to an older frontend silently drops them (no crash), and an old backend never emits them. **Deploy order:** `@tingting/shared` must be rebuilt (`dist/`) and shipped **before** the backend (which imports shared from `dist/`) — a backend-only deploy without the shared rebuild would silently fail to validate the new events.
-- **P1.1 Acknowledge instantly.** Emit `thinking` on socket receive, before any LLM call. Kills the blank pause. (`agentSocket.ts`)
-- **P1.2 Surface tool-step progress.** `tool_start` events already fire — render them as a live checklist ("Đang tìm dữ liệu…", "Đang tính toán…"). Low effort, high perceived win.
-- **P1.3 Stream the final answer — staged per Case (Architect Step-A/Step-B synthesis):** streaming = new `emit({event:'answer_chunk',...})` calls inside the orchestrator, surfaced via the existing `emit` sink → `agentSocket.ts:204-230` (`socket.emit`); the terminal `done` still carries the final structured `response`.
+- **P1.0 — IMPLEMENTED EARLIER.** The shared AG-UI contract uses
+  `RUN_STARTED`, `TOOL_CALL_*`, `TEXT_MESSAGE_START/CONTENT/END`,
+  `RUN_FINISHED`, and `RUN_ERROR`; the frontend consumes the streaming text
+  events. These names supersede the original draft's `thinking` and
+  `answer_chunk` labels while preserving the intended behavior.
+- **P1.1 — IMPLEMENTED EARLIER.** Run-start progress is emitted before model
+  completion.
+- **P1.2 — IMPLEMENTED EARLIER.** Tool-start/tool-end progress events are
+  surfaced through the existing event path.
+- **P1.3 — IMPLEMENTED EARLIER.** Model prose is streamed through
+  `TEXT_MESSAGE_*`, with the terminal structured response still delivered by
+  `RUN_FINISHED`. Split and self-closing `<think>`, `tool_call`, and MiniMax
+  internal tags are filtered before any token delta reaches the frontend.
+  **Original staged rationale (preserved):**
   - **Step A (ship first, zero call-count cost, no schema-streaming problem):** Case-2 turns make **exactly one** prose-producing LLM call — switch THAT call to `stream: true` and emit its tokens live as `answer_chunk`. This is a real **TTFT-vs-completion** win (user sees the first token when the model starts generating, not after the whole response finishes) at **zero extra calls**. *(Clarifies the prior ambiguity: we stream the single Case-2 call's deltas as they arrive — we do NOT stream an already-finished message, which would give only a typewriter effect.)* The "TTFT ≤ 2 s" acceptance below is scoped to the P1.1/P1.2 instant-ack + tool-progress rendering; first-prose-token for Case-2 is bounded by that one call's own TTFT (a reasoning model may exceed 2 s to first token — still far better than waiting for full completion).
   - **Step B (Case 3 analytical):** settle single-call-vs-2-call via the P0.3/P0.4 spike, then ship. **Default = 2-call** (streamed brief prose, then structured `done.response`); single-call "prose + delimited JSON" is an optimization to prove, not assume (see §4.1).
-- **P1.4 Ship behind a kill-switch.** All streaming changes (P1.1–P1.3) gate on a new `AGENT_STREAMING_ENABLED` flag (precedent: `agentNavigateGuardrail` at `config/index.ts:91`, plus `BOT_ENABLE`). If streaming destabilizes the bot (this codebase has a history of bot-breaking regressions — see `[[agent-bot-think-parse-bug]]`), flip the flag to fall back to the current non-streaming terminal-`done` path without a redeploy.
+- **P1.4 — IMPLEMENTED.** `AGENT_STREAMING_ENABLED` defaults to `true` and
+  gates live model text in both the ReAct loop and prose-finalization path.
+  Setting it to `false` retains run/tool progress and uses non-streaming model
+  calls. Because this is an environment setting, changing it still requires
+  the deployment/runtime's normal configuration restart; it is not a remote
+  hot toggle.
 - **Acceptance (Phase 1):** TTFT ≤ 2 s on 95% of turns (blocked-on-P0.2 TTFT metric; scoped to P1.1/P1.2 ack+progress per Step A); `tool_start`/`thinking` rendered within 1 s; **correctness gate: no increase in `fallbackUsed` rate and no decrease in navigate-compliance (`navigateDirectiveEmitted`/`guardrailFired`) vs Phase-0 baseline.**
 
-### Phase 2 — Collapse call count (actual latency)
-- **P2.1 Intent fast-path.** Before the reasoning loop, a cheap classifier (deterministic keyword/route match first — extend `synthesizeNavigateFromProse` / `matchRoute`; fall back to one non-tool, low-max-tokens call) routes pure-navigation → directive (0 loop calls), "start tour" → `tours.search`+`start_tour` (0 loop calls), simple factual → single `data.search/detail` + 1 streamed answer. Misroute falls through to the full loop (correctness preserved). **Classifier gate:** ≤ 10% misroute rate on a 50-intent labeled set (misroute = a fast-path answer that contradicts what the full loop would have returned); the "≥50% of turns in ≤1 call" acceptance is measured only on correctly-routed turns so it can't be gamed by over-routing.
-- **P2.2 Dynamic iteration budget.** `AGENT_MAX_ITERATIONS` becomes intent-dependent: 1–2 for detected-simple, 4 for analytical. Prevents simple-case over-iteration.
+### Phase 2 — Collapse call count (`implemented for supported intents; production gate pending`)
+- **P2.1 — IMPLEMENTED/EXPANDED.** Existing FAQ, navigation, lookup, and daily
+  summary fast paths are joined by:
+  - `financial`: broad current-company health, using P&L plus receivables and
+    payables service reads in parallel, 0 LLM calls.
+  - `report`: canonical profit/revenue, receivables, or payables totals, using
+    one business-service read, 0 LLM calls.
+  - Causal, comparative, entity-specific, unsupported-quarter, and unsupported
+    year-only requests fall through to ReAct. The planned 50-intent production
+    misroute gate is not claimed complete by the focused routing tests.
+- **P2.2 — IMPLEMENTED.** The ReAct loop uses an intent-specific cap: 1 with no
+  selected tools, 2 for tutorial intents, 3 for simple financial/report
+  prompts, and 4 for causal/comparative/specific analysis or other complex
+  work. `AGENT_MAX_ITERATIONS = 4` remains the upper safety bound.
 - **Acceptance (Phase 2):** ≥50% of turns (simple/nav bucket) complete in ≤ 1 LLM call; p50 ≤ 6 s; **correctness gate as above.**
 
-### Phase 3 — Per-call cost (actual latency, the >20 s tail)
-- **P3.1 Model tiering.** Use a fast non-reasoning MiniMax line for tool-selection iterations + simple answers; reserve the reasoning model for final analytical synthesis. **Introduces a `MODEL_STRONG` constant** (currently only a comment, `models.ts:10-14`) and validates the new line against the existing tool-calling + `json_object` surface — gated on P0.4. **Priority is contingent on Phase 0:** see §4.5 cannibalization — if P2.2 reduces simple-case iterations to 1–2, P3.1's per-iteration win is confined to Case-3 analytical turns; if those are a small share of the >20 s tail, P3.1 drops below P4.
-- **P3.2 Context diet.** Act on token-attribution: lazy-load only intent-relevant tool schemas (`toolsToMiniMax`), trim the system prompt (move examples to conditional few-shot). Attacks the per-call floor that streaming cannot (Architect's long-session steelman).
+### Phase 3 — Per-call cost (`context diet implemented; model tiering pending`)
+- **P3.1 — NOT IMPLEMENTED.** The runtime now uses
+  `MiniMax-M2.7-highspeed`, but all MiniMax calls still share `MODEL_FAST`.
+  `MODEL_STRONG` and task-complexity model routing remain pending.
+- **P3.2 — IMPLEMENTED.** `selectToolsForMessage` advertises only conservative,
+  intent-relevant schemas for recognized domains and preserves the full
+  role-filtered surface for unknown intents. `buildSystemPrompt` now includes
+  data, tours, UI-detail, and structured-response guidance conditionally; a
+  no-tool conversation requests concise prose without JSON overhead.
 - **Acceptance (Phase 3):** mean per-call `latency_llm_ms` ↓ ≥ 30% at equal prompt size; p95 ≤ 12 s; >20 s tail <1% of turns; **correctness gate: schema-conformance rate holds vs baseline.**
 
-### Phase 4 — Tail / conversations (lower priority)
-- **P4.1 Tool-result caching.** Short-TTL memo on read-only `data.*` within a session; cache directive resolution. Invalidate on trip/financial mutations — must never show stale P&L/debt.
-- **P4.2 Async job pattern (optional).** Formalize acknowledge→background→notify with a job queue only if Phase 1–3 don't clear the threshold.
+### Phase 4 — Tail / conversations (`partially implemented`)
+- **P4.1 — PARTIAL.** Exact duplicate calls to any tool marked `readonly` share
+  one promise within a single ReAct turn; rejected calls are removed and hits
+  are included in the trace. Existing cross-turn Redis report caches remain in
+  place with mutation invalidation for trip and financial writes. Session-wide
+  `data.*` TTL memoization and directive-resolution caching from the original
+  plan were not added.
+- **P4.2 — NOT IMPLEMENTED (optional).** Formalize
+  acknowledge→background→notify with a job queue only if the deployed Phase
+  1–3 changes do not clear the threshold.
 
 ---
 
@@ -98,17 +211,40 @@ A bot turn is a **sequential chain of LLM calls** to a reasoning model (`MiniMax
 
 1. **"Brief first, detailed later" vs "cut sequential calls" (Principle 1 vs 2) — INVERTED.** The structured `insight_card` is JSON and cannot be partially rendered; to stream a brief FIRST you either (a) stream the single structured call's tokens (JSON can't render mid-flight; model emits summary-then-widgets in non-guaranteed order) or (b) make a SEPARATE brief-prose call (+1, violates Principle 2). **Resolution:** 2-call is the **safe default** (correct-by-construction; prose streams first so perceived latency still wins); single-call "prose + `<<CARD>>`-delimited JSON" is a **Phase 3 optimization** to prove via spike — `parseAgentResponseContent` (`orchestrator.ts:893-909`, already does stripThink→extractFirstJsonObject→jsonrepair→Zod) is parsing-ready, but model reliability of emitting the delimiter mid-stream is unverified.
 2. **Streaming JSON is fragile** → that's why Step A streams Case-2 prose (text) and Case-3 emits the card as a completion event, not a token stream.
-3. **Streaming `<think>` token-delta risk (Architect).** If P0.3 shows MiniMax streams `<think>` chunks, raw token deltas could render reasoning to the user; `stripThink` cannot clean deltas. Mitigation: buffer + clean on sentence boundaries, or stream only after the model's CoT completes — to be settled in P0.3 before P1.3 Step B ships.
+3. **Streaming `<think>` token-delta risk (Architect) — RESOLVED IN CODE.** Raw deltas pass through a chunk-boundary-safe filter that suppresses closed, truncated, split, and self-closing reasoning/internal-tool markup before UI emission; the completed content still passes through `stripThink` as a second guard.
 4. **Model-tiering fallback risk.** A cheaper non-reasoning model may mis-select tools / fail the strict card schema → higher fallback rate could *increase* total calls (card→salvage→prose), regressing actual latency. Mitigation: keep the reasoning model for final synthesis; gate on fallback-rate (P0.4).
 5. **P2.2 / P3.1 cannibalization (Architect).** If P2.2 cuts simple-case iterations to 1–2, P3.1's per-iteration-call win shrinks to Case-3 analytical turns only. P3.1 priority is therefore **contingent on Phase 0's analytical-turn volume**.
-6. **Abort semantics under streaming.** Mid-stream client disconnect must stop reading the MiniMax body, clean up the half-rendered bubble, and decide on the metrics row — acceptance must cover this (not just latency).
+6. **Abort semantics under streaming — IMPLEMENTED.** Abort signals stop provider reads, the frontend stream is retired, cancelled turns receive an `aborted` metrics row, and per-socket finalization is serialized so replacement messages cannot reorder cancellation history.
 
 ---
 
 ## 5. Verification
-- Every phase ships with before/after `agent_turn_metrics` (p50/p95/p99 + TTFT + Case-path).
-- **Per-phase correctness gates** (every phase): no increase in `fallbackUsed`; no decrease in navigate-compliance; schema-conformance rate holds; streaming abort semantics tested.
-- Tests: SSE chunk parsing in `callMiniMax`; `<think>`-delta cleaning; intent fast-path misroute→full-loop (incl. the ≤10% misroute-rate gate on the labeled set); `agentEventSchema` new-variant round-trip (shared, incl. old-client backward-compat); streaming-bubble render + promote-to-structured (frontend); the streamed final-answer protocol golden contract; **abort-semantics test** (mid-`answer_chunk` client disconnect stops reading the MiniMax body, drops the half-rendered bubble, and writes a metrics row with `aborted=true`).
+
+### Completed locally — 2026-07-15
+
+- Backend suite: `pnpm --dir backend test` — 688 tests, 687 pass, 0
+  fail, 1 todo.
+- Monorepo production build: `pnpm build` — shared TypeScript, backend
+  TypeScript, and frontend Vite build pass. Vite reports the pre-existing
+  warning for chunks over 500 kB; it does not fail the build.
+- Focused coverage includes financial/report routing boundaries, financial
+  card schema/sign handling, intent-scoped tool selection, dynamic budgets,
+  stable duplicate-read cache keys, metric bucket taxonomy, SSE parsing, and
+  streaming event schemas.
+
+### Required after deployment
+
+- Collect representative M2.7 traffic before declaring the latency target met.
+  Report p50/p95/p99 and >20 s share from `latency_user_perceived_ms`, with
+  `latency_total_ms` and TTFT shown separately.
+- Compare `financial`, `report`, and `react_fallback` lanes separately, including
+  per-lane p95, average tokens, fallback rate, and average iterations. The
+  original 7-day M2.1 baseline must remain labeled as historical.
+- Validate final-call avoidance only across ReAct turns; periods with no ReAct
+  turns are not 0% and render as unavailable.
+- Re-run the correctness gates on production traffic: fallback rate,
+  navigate-compliance, schema conformance, streaming abort behavior, and the
+  labeled misroute set. Local passing tests do not establish p50/p95 gains.
 
 ## 6. ADR
 - **Decision:** Stage C — perceived-latency first (Phase 1 streaming + progress, Step-A Case-2 prose first), then collapse calls (Phase 2 fast-path), then per-call cost (Phase 3 tiering + diet, contingent on Phase 0).

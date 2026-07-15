@@ -86,6 +86,8 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     finalFallbacks: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} ~ '^final_')::int`,
     timeouts: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.errorKind} = 'timeout')::int`,
     fallbacks: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.fallbackUsed})::int`,
+    reactTurns: sql<number>`count(*) filter (where coalesce(${schema.agentTurnMetrics.reactIterations}, 0) > 0)::int`,
+    finalAvoided: sql<number>`count(*) filter (where coalesce(${schema.agentTurnMetrics.reactIterations}, 0) > 0 and coalesce(${schema.agentTurnMetrics.latencyFinalMs}, 0) = 0)::int`,
     aborts: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.aborted})::int`,
     navigateDirectives: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.navigateDirectiveEmitted})::int`,
     guardrailFires: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.guardrailFired})::int`,
@@ -113,6 +115,7 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
       errorRate: 0,
       timeoutRate: 0,
       fallbackRate: 0,
+      finalAvoidanceRate: null,
       finalFallbackRate: 0,
       fallbackReasons: [],
       abortRate: 0,
@@ -151,6 +154,13 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
   const intentRows = await db.select({
     bucket: sql<string>`coalesce(${schema.agentTurnMetrics.intentBucket}, 'unknown')`,
     count: sql<number>`count(*)::int`,
+    p50Ms: sql<number | null>`percentile_cont(0.5) within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
+    p95Ms: sql<number | null>`percentile_cont(0.95) within group (order by coalesce(${schema.agentTurnMetrics.latencyClientWaitMs}, ${schema.agentTurnMetrics.latencyUserPerceivedMs})::double precision)`,
+    // Null means unknown work (for example a client-aborted in-flight turn),
+    // so exclude it from the average instead of fabricating a zero-token turn.
+    avgTokens: sql<number | null>`avg(${schema.agentTurnMetrics.tokensIn} + ${schema.agentTurnMetrics.tokensOut})::double precision`,
+    fallbacks: sql<number>`count(*) filter (where ${schema.agentTurnMetrics.fallbackUsed})::int`,
+    avgIterations: sql<number | null>`avg(${schema.agentTurnMetrics.reactIterations})::double precision`,
   })
     .from(schema.agentTurnMetrics)
     .where(gte(schema.agentTurnMetrics.createdAt, since))
@@ -172,6 +182,9 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
     errorRate: computeRate(Number(r.errors), turns),
     timeoutRate: computeRate(Number(r.timeouts), turns),
     fallbackRate: computeRate(Number(r.fallbacks), turns),
+    finalAvoidanceRate: Number(r.reactTurns) > 0
+      ? computeRate(Number(r.finalAvoided), Number(r.reactTurns))
+      : null,
     finalFallbackRate: computeRate(Number(r.finalFallbacks), turns),
     fallbackReasons: reasonRows
       .map((rr) => ({ reason: rr.reason ?? '', count: Number(rr.count) }))
@@ -190,7 +203,15 @@ router.get('/metrics', asyncHandler(async (req: Request, res: Response) => {
       p99Ms: toNullableNum(r.ttftP99),
     },
     intentBuckets: intentRows
-      .map((ir) => ({ bucket: ir.bucket, count: Number(ir.count) }))
+      .map((ir) => ({
+        bucket: ir.bucket,
+        count: Number(ir.count),
+        p50Ms: toNullableNum(ir.p50Ms),
+        p95Ms: toNullableNum(ir.p95Ms),
+        avgTokens: toNullableNum(ir.avgTokens),
+        fallbackRate: computeRate(Number(ir.fallbacks), Number(ir.count)),
+        avgIterations: toNullableNum(ir.avgIterations),
+      }))
       .sort((a, b) => b.count - a.count),
   };
   res.json(summary);

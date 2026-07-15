@@ -31,17 +31,26 @@ import type { AgentContext } from './tool.types.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type IntentLane = 'nav' | 'summary' | 'lookup' | 'react';
+export type IntentLane = 'nav' | 'summary' | 'financial' | 'report' | 'lookup' | 'react';
+
+export interface SimpleReportRequest {
+  report: 'profit' | 'receivables' | 'payables';
+  month?: number;
+  year?: number;
+}
 
 export interface RouteDecision {
   /** Which lane the router chose. 'nav' = Lane 0 (0 LLM); 'summary' = Lane 3
-   *  (0 LLM, dashboard aggregation); 'lookup' = Lane 2 (1 tool call + synthesis);
-   *  'react' = Lane 4 (full ReAct). */
+   *  (0 LLM, dashboard aggregation); 'financial' = canonical company financial
+   *  overview (3 parallel service reads, 0 LLM); 'lookup' = Lane 2 (1 tool
+   *  call + synthesis); 'react' = Lane 4 (full ReAct). */
   lane: IntentLane;
   /** For lane='nav': the navigate directive to emit directly. */
   directive?: AgentDirective;
   /** For lane='lookup': the search query to pass to data.search. */
   lookupQuery?: string;
+  /** For lane='report': canonical deterministic report to execute. */
+  reportRequest?: SimpleReportRequest;
   /** Human-readable reason for observability/debugging. */
   reason: string;
 }
@@ -269,6 +278,26 @@ export function routeIntent(message: string, _ctx?: AgentContext): RouteDecision
     return { lane: 'summary', reason: 'summary/daily-work intent detected' };
   }
 
+  // ── Lane 3b: Company financial overview ────────────────────────────────
+  // Broad health-check questions have a fixed data contract: current-period
+  // P&L + AR + AP. Sending these through ReAct previously cost 3 model rounds,
+  // ~33k tokens, and often a second final-schema call. Keep the matcher narrow:
+  // explicit periods, vehicles/customers, comparisons, and causal questions
+  // still need the analytical agent.
+  if (isFinancialOverviewIntent(normalized)) {
+    return { lane: 'financial', reason: 'broad company financial overview detected' };
+  }
+  const reportRequest = extractSimpleReportIntent(normalized);
+  if (reportRequest) {
+    return { lane: 'report', reportRequest, reason: `simple ${reportRequest.report} report detected` };
+  }
+  // A specific financial question must not fall through into the generic
+  // entity lookup below merely because it contains a month number, plate, or
+  // customer name. Preserve the full analytical path for those cases.
+  if (isSpecificFinancialAnalysis(normalized)) {
+    return { lane: 'react', reason: 'specific financial analysis requires ReAct' };
+  }
+
   // ── Lane 2: Single-tool lookup ──────────────────────────────────────────
   // Detect single-entity lookup queries: "Số lốp 136.31", "khách hàng vietsun",
   // "chuyến X206". These route to ONE data.search call + one synthesis pass
@@ -316,6 +345,59 @@ function isSummaryIntent(normalized: string): boolean {
     return true;
   }
   return false;
+}
+
+const FINANCIAL_OVERVIEW_PHRASES = [
+  'tinh hinh tai chinh',
+  'suc khoe tai chinh',
+  'tai chinh cong ty',
+  'cong ty lam an',
+  'lam an duoc khong',
+  'lam an the nao',
+  'business health',
+  'financial health',
+];
+
+const FINANCIAL_OVERVIEW_SPECIFIC = /(tai sao|vi sao|so voi|tung xe|(?:^|\s)xe\s+[0-9]|khach hang|nha cung cap|thang\s+[0-9]|quy\s+[0-9]|nam\s+20\d{2}|\d{1,2}[\/-]20\d{2})/i;
+
+/** Broad current-company health only; specific analysis fails open to ReAct. */
+function isFinancialOverviewIntent(normalized: string): boolean {
+  if (normalized.length > 120 || FINANCIAL_OVERVIEW_SPECIFIC.test(normalized)) return false;
+  return FINANCIAL_OVERVIEW_PHRASES.some((phrase) => normalized.includes(phrase));
+}
+
+function isSpecificFinancialAnalysis(normalized: string): boolean {
+  // Do not include "công nợ" here: a short customer receivable phrase is an
+  // established Lane-2 entity lookup (for example "công nợ khách hàng Vietsun").
+  return /(tai chinh|loi nhuan|doanh thu|chi phi)/i.test(normalized)
+    && FINANCIAL_OVERVIEW_SPECIFIC.test(normalized);
+}
+
+function extractSimpleReportIntent(normalized: string): SimpleReportRequest | null {
+  // Causal/comparative/entity-scoped questions need the analytical agent.
+  if (/(tai sao|vi sao|so voi|tung xe|(?:^|\s)xe\s+[0-9]|khach hang\s+\S|nha cung cap\s+\S)/i.test(normalized)) return null;
+  // The deterministic lane currently supports current totals and calendar
+  // months only. Fail open for quarters and year-only requests so we never
+  // answer a historical question with the current month's figures.
+  if (/quy\s*[1-4]/i.test(normalized)) return null;
+  const asksForValue = /(bao nhieu|tong|thang nay|ky nay|hien tai|tinh hinh)/i.test(normalized);
+  if (!asksForValue) return null;
+
+  const period = /thang\s*([1-9]|1[0-2])(?:\s*(?:[\/-]|nam\s+)\s*(20\d{2}))?/i.exec(normalized);
+  const month = period?.[1] ? Number(period[1]) : undefined;
+  const year = period?.[2] ? Number(period[2]) : undefined;
+  if (/nam\s+20\d{2}/i.test(normalized) && !year) return null;
+
+  // Aging services expose current balances only. Historical AR/AP must remain
+  // in ReAct until an as-of-date query is available.
+  if (/(cong no phai thu|tong phai thu)/i.test(normalized)) {
+    return month || year ? null : { report: 'receivables' };
+  }
+  if (/(cong no phai tra|tong phai tra)/i.test(normalized)) {
+    return month || year ? null : { report: 'payables' };
+  }
+  if (/(loi nhuan|doanh thu|lai lo)/i.test(normalized)) return { report: 'profit', month, year };
+  return null;
 }
 
 // ─── Lookup intent detection (Lane 2) ───────────────────────────────────────

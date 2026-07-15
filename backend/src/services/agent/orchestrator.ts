@@ -50,7 +50,9 @@ import {
 import { todayIsoVn } from './tools/period';
 import { compactToolResult, cutAtSafeBoundary } from './tool-result-compact';
 import { estimateTokensByComponent, formatAttribution } from './token-attribution';
-import { getToolsForRole, findTool } from './tool.registry';
+import { getToolsForRole } from './tool.registry';
+import { iterationBudgetFor, readonlyToolCacheKey, selectToolsForMessage } from './tool-selector.js';
+import { createSafeTextDeltaFilter } from './stream-sanitizer.js';
 import {
   matchRoute,
   sameRoute,
@@ -124,46 +126,32 @@ export function computeLatencies(
   };
 }
 
-const RESPONSE_SHAPE_HINT = `Trả lời cuối cùng PHẢI là JSON theo đúng một trong 5 dạng:
-- {"type":"text","content":"...","actions":[{"label":"...","directive":{...}}]}  (giải thích ngắn / trợ giúp trang / câu trả lời đơn giản; actions tùy chọn khi có bước tiếp theo rõ ràng)
-- {"type":"insight_card","title":"...","summary":"nguyên nhân/tóm tắt 1-2 câu","widgets":[...],"actions":[{"label":"...","directive":{...}}]}  (câu hỏi phân tích: lợi nhuận, công nợ, chi phí, dầu...)
-- {"type":"tutorial","title":"...","summary":"...","steps":[{"title":"...","body":"...","example":"...","directive":{"kind":"scrollTo","targetId":"...","durationMs":3000}}],"actions":[{"label":"...","directive":{...}}]}  (khi người dùng hỏi cách thao tác/hướng dẫn từng bước trên UI)
-- {"type":"start_tour","tourId":"..."}  (mở hướng dẫn từng bước CÓ SẴN — gọi tours.search để tìm tourId hợp lệ theo vai trò trước khi trả lời)
-- {"type":"directive","directive":{"kind":"navigate|focus|open|prefill|toast|scrollTo",...}}  (chỉ điều hướng)
-widget có thể là: kpi_grid {items:[{label,value(number),format:"vnd|percent|number|days",delta?}]}, bar_chart {data:[{name,value}],format?}, line_chart {series:[{name,points:[{x,y}]}]}, table {columns,rows}, callout {variant:"info|warning|danger",text}, anomaly_list {items:[{label,detail,severity:"low|med|high"}]}.
-LƯU Ý:(1) value LUÔN là số nguyên VND đầy đủ (VD 120000000, KHÔNG phải 120 hay "120 triệu"); (2) format CHỈ một trong vnd|percent|number|days — KHÔNG tự đặt đơn vị như vnd_million; (3) mỗi action PHẢI là {"label":...,"directive":{"kind":...}} — nếu không có directive hợp lệ thì bỏ hẳn actions; (4) khi câu trả lời text/tutorial/insight_card nhắc người dùng mở trang hoặc bấm nút tiếp theo, PHẢI thêm actions bằng directive thật, KHÔNG chỉ viết tên trang/path trong content; (5) nếu cần bảng, ưu tiên insight_card widget type="table"; nếu bắt buộc trả text thì dùng Markdown table chuẩn, có dòng trống trước bảng.`;
+const STRUCTURED_RESPONSE_HINT = `Kết quả cuối phải là một JSON hợp lệ:
+- text: {"type":"text","content":"...","actions":[{"label":"...","directive":{...}}]} (actions is optional)
+- insight_card: {"type":"insight_card","title":"...","summary":"...","widgets":[...]}
+- tutorial: {"type":"tutorial","title":"...","summary":"...","steps":[...]}
+- start_tour: {"type":"start_tour","tourId":"..."}
+- directive: {"type":"directive","directive":{...}}
+Widget: kpi_grid, bar_chart, line_chart, table, callout hoặc anomaly_list. KPI value phải là số VND đầy đủ; format chỉ vnd|percent|number|days. Không có directive hợp lệ thì bỏ actions.`;
 
-function buildSystemPrompt(ctx: AgentContext): string {
+function buildSystemPrompt(ctx: AgentContext, tools: AgentToolDef[], message: string): string {
+  const names = new Set(tools.map((tool) => tool.name));
+  const hasData = [...names].some((name) => name.startsWith('data.') || name === 'report.run');
+  const hasTours = names.has('tours.search');
+  const needsUiDetail = /(mo|vao|them|sua|xoa|nut|form|trang|huong dan|cach lam)/i.test(normalizeForIntent(message));
+
   return [
-    'Bạn là trợ lý TingTing — nền tảng vận tải/logistics cho công ty xe tải Việt Nam.',
-    `Bạn đang hỗ trợ người dùng vai trò "${ctx.role}". v1 CHỈ ĐỌC: không tạo/sửa/xóa dữ liệu (chỉ mở form điền sẵn — người dùng tự lưu).`,
-    // Date awareness: without this the LLM invented "2025" for "tháng này" and
-    // every report dutifully returned zeros for a non-existent period.
-    `Hôm nay: ${todayIsoVn()} (YYYY-MM-DD). Khi người dùng nói "tháng này/quý này/nay", mặc định tháng/năm HIỆN TẠI — KHÔNG dùng năm khác.`,
-    'Quy tắc:',
-    '- LUÔN dùng công cụ để lấy số liệu; KHÔNG bịa số trong insight_card — chỉ dùng số công cụ trả về.',
-    '- Với câu hỏi factual về dữ liệu trong hệ thống (VD số lốp, biển xe, khách, nhà cung cấp, mẫu giấy báo nợ, chi phí, ledger, audit): dùng data.search/data.list/data.detail/data.aggregate/data.timeline trước khi trả lời. ui.navigate chỉ mở trang cho người dùng, KHÔNG đọc dữ liệu trên trang.',
-    '- Nếu người dùng đưa một định danh mơ hồ (VD "Số lốp 136.31", biển xe, mã chuyến), gọi data.search trước; nếu tìm thấy bản ghi phù hợp thì dùng data.detail khi cần field đầy đủ.',
-    '- Với tổng tiền/báo cáo tài chính (doanh thu, lợi nhuận, công nợ, lương, dầu, aging): dùng report.run hoặc analyzer/report tool chuyên dụng. KHÔNG dùng data.aggregate để tự cộng các số tiền tài chính phức tạp.',
-    '- Với câu hỏi phân tích (lợi nhuận/công nợ/chi phí/dầu): dùng analyzer/report tool rồi trả insight_card có widgets phù hợp + tóm tắt nguyên nhân. Khi nói "tháng này", bỏ qua month/year (server tự lấy tháng hiện tại).',
-    '- Với yêu cầu "hướng dẫn/cách làm/tutorial/từng bước": trả type="tutorial" với 3-6 bước ngắn. Nếu biết đúng phần tử UI, gắn directive scrollTo/focus để người dùng bấm "Tô sáng".',
-    '- Với yêu cầu hướng dẫn theo LUỒNG CÔNG VIỆC: gọi tours.search để tìm tourId hợp lệ theo vai trò rồi trả {"type":"start_tour","tourId":"..."}. Với câu hỏi HẸP (VD "đơn giá dầu điền ở đâu") → vẫn trả type="tutorial" freeform ngắn.',
-    '- Với trang Định mức nhiên liệu (/config/fuel), các targetId hợp lệ: fuel-loaded-norm-field, fuel-empty-norm-field, fuel-supplement-field, fuel-unit-price-field, fuel-warning-threshold-field, fuel-critical-threshold-field, fuel-save-config-button.',
-    '- Với yêu cầu mở trang/tìm/xem: LUÔN gọi ui.navigate (hoặc trả {"type":"directive",...}). KHÔNG mô tả đường dẫn bằng text.',
-    '- ĐẶC QUYỀN (tạo/sửa/xóa) mà bot KHÔNG được phép (v1 chỉ đọc): KHÔNG từ chối bằng text đường dẫn. LUÔN gọi ui.navigate để ĐƯA người dùng đến đúng trang + nút cần bấm — kèm highlight.targetId trỏ vào nút/phần tử đó (VD trên trang lốp dùng "ttp-add-trigger"). Người dùng tự lưu; bot chỉ dẫn chỗ.',
-    '- ui.navigate nhận thêm highlight:{targetId,durationMs} để cuộn + tô sáng nút/phần tử cụ thể trên trang đích — dùng khi người dùng cần biết chính xác chỗ nào để bấm/nhập.',
-    '- Nếu không cần điều hướng ngay nhưng câu trả lời có bước tiếp theo là mở trang/bấm nút, trả text/insight_card/tutorial kèm actions[{label,directive}] với routeKey/params thật. KHÔNG chỉ viết "vào trang Quản lý lốp" hoặc một đường dẫn trong content.',
-    '- open/prefill: CHỈ dùng với componentId đã đăng ký. Hiện có "debt.record-payment" (trang công nợ /debt/:id — mở form ghi nhận thanh toán; có thể kèm prefill.amount = số VND nếu người dùng nêu số tiền). Các component khác CHƯA đăng ký → dùng navigate/focus để dẫn người dùng tới nút.',
-    'VÍ DỤ — người dùng: "thêm lốp xe cho đầu kéo 1". Bot không được thêm (chỉ đọc) → gọi ui.navigate({routeKey:"fleetTires", params:{truckId:1}, highlight:{targetId:"ttp-add-trigger", durationMs:4000}}) rồi trả {"type":"directive","directive":{...}}. KHÔNG viết đường dẫn /fleet/1/tires trong text.',
-    'VÍ DỤ — nếu trả lời factual "xe chưa có lốp, có thể thêm ở trang lốp" thì trả {"type":"text","content":"Xe hiện chưa có lốp nào được gắn.","actions":[{"label":"Mở trang lốp","directive":{"kind":"navigate","routeKey":"fleetTires","params":{"truckId":1},"highlight":{"targetId":"ttp-add-trigger","durationMs":4000}}}]}',
-    'VÍ DỤ — người dùng: "mở trang tổng quan" → gọi ui.navigate({routeKey:"dashboard"}).',
-    '- Với câu hỏi phụ thuộc trang hiện tại (giải thích trang, lỗi): trả text ngắn.',
-    '- Trả lời bằng tiếng Việt.',
-    ctx.currentRouteKey ? `Người dùng đang ở trang: ${ctx.currentRouteKey}.` : '',
-    RESPONSE_SHAPE_HINT,
-  ]
-    .filter(Boolean)
-    .join('\n');
+    `Bạn là trợ lý TingTing cho công ty vận tải Việt Nam. Vai trò người dùng: ${ctx.role}. Bot chỉ đọc; người dùng tự lưu mọi thay đổi.`,
+    `Hôm nay: ${todayIsoVn()}. "Tháng này/nay" luôn là kỳ hiện tại. Trả lời tiếng Việt, ngắn và trực tiếp.`,
+    hasData ? '- Mọi số liệu phải lấy từ công cụ. Tổng tiền tài chính dùng report.run; không tự cộng bằng data.aggregate.' : '',
+    hasData ? '- Định danh mơ hồ: data.search trước, data.detail chỉ khi cần thêm trường.' : '',
+    hasTours ? '- Luồng hướng dẫn có sẵn: gọi tours.search rồi dùng start_tour. Câu hỏi thao tác hẹp dùng tutorial ngắn.' : '',
+    needsUiDetail ? '- Cần mở/thao tác: dùng directive thật; không viết đường dẫn. Bot không sửa dữ liệu, chỉ dẫn tới đúng trang/nút.' : '',
+    needsUiDetail ? '- open/prefill chỉ hỗ trợ componentId debt.record-payment; trường hợp khác dùng navigate/focus/highlight.' : '',
+    ctx.currentRouteKey ? `Trang hiện tại: ${ctx.currentRouteKey}.` : '',
+    // No-tool conversation is streamed as prose and needs no JSON burden.
+    tools.length === 0 ? 'Trả lời trực tiếp bằng văn bản, không JSON.' : STRUCTURED_RESPONSE_HINT,
+  ].filter(Boolean).join('\n');
 }
 
 function toolsToMiniMax(tools: AgentToolDef[]): MiniMaxTool[] {
@@ -314,8 +302,13 @@ export async function runAgent(opts: {
   awaitAck?: (actionId: string) => Promise<AgentActionResult>;
 }): Promise<RunAgentResult> {
   const { ctx, emit, signal } = opts;
-  const tools = getToolsForRole(ctx.role);
+  const tools = selectToolsForMessage(getToolsForRole(ctx.role), opts.message);
+  const selectedToolsByName = new Map(tools.map((tool) => [tool.name, tool]));
   const miniMaxTools = toolsToMiniMax(tools);
+  const iterationBudget = Math.min(AGENT_MAX_ITERATIONS, iterationBudgetFor(opts.message, tools.length));
+  // Exact duplicate read calls in one turn share the same promise. Service-level
+  // report caches continue to provide cross-turn caching + mutation invalidation.
+  const readonlyToolCache = new Map<string, Promise<ToolResult>>();
   const toolTrace: unknown[] = [];
   // P2 — citations collected from knowledge.search tool results, attached to
   // the final AgentResponse for doc-RAG provenance.
@@ -370,7 +363,7 @@ export async function runAgent(opts: {
     rootAttrs,
     async () => {
       const messages: MiniMaxMessage[] = [
-        { role: 'system', content: buildSystemPrompt(ctx) },
+        { role: 'system', content: buildSystemPrompt(ctx, tools, opts.message) },
         ...(opts.priorMessages ?? []),
         { role: 'user', content: opts.message },
       ];
@@ -421,7 +414,7 @@ export async function runAgent(opts: {
         return { response, conversationId, toolTrace };
       };
 
-      for (let i = 0; i < AGENT_MAX_ITERATIONS; i++) {
+      for (let i = 0; i < iterationBudget; i++) {
         metrics.reactIterations = i + 1;
         // Stop spending tokens the moment the client disconnects. PRE-PERSIST
         // abort → no row (1:1 invariant: no messageId exists).
@@ -449,7 +442,7 @@ export async function runAgent(opts: {
         let probing = true;
         let textEmitted = false;
         let suppressedByJson = false;
-        const onText = (delta: string): void => {
+        const onSafeText = (delta: string): void => {
           if (suppressedByJson) return;
           if (probing) {
             probeBuf += delta;
@@ -481,15 +474,18 @@ export async function runAgent(opts: {
           }
           emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: streamMessageId, delta });
         };
+        const safeText = createSafeTextDeltaFilter(onSafeText);
         try {
           const wrapped = await withSpan(
             'agent.llm.react_call',
             { 'gen_ai.request.model': MODEL_FAST },
             async () =>
-              callMiniMaxStream(
-                { messages: trimToolHistory(messages), tools: miniMaxTools, signal },
-                onText,
-              ),
+              config.agentStreamingEnabled
+                ? callMiniMaxStream(
+                    { messages: trimToolHistory(messages), tools: miniMaxTools, signal },
+                    safeText.push,
+                  )
+                : callMiniMax({ messages: trimToolHistory(messages), tools: miniMaxTools, signal }),
           );
           metrics.latencyLlmMs += wrapped.durationMs;
           result = wrapped.result;
@@ -501,6 +497,7 @@ export async function runAgent(opts: {
           throw e;
         }
         addUsage(result.usage);
+        safeText.finish();
         // Edge: a short answer (≤PROBE chars) resolved while still probing and
         // confirmed prose — flush it now as a complete stream.
         if (probing && !suppressedByJson && probeBuf.trim()) {
@@ -559,10 +556,12 @@ export async function runAgent(opts: {
           result?: ToolResult;
           errorMsg?: string;
           errorLabel?: string;
+          cacheHit?: boolean;
         };
         const pendings: ToolPending[] = result.toolCalls.map((call) => ({
           call,
-          tool: findTool(call.name),
+          // A hallucinated or non-advertised tool is unavailable for this turn.
+          tool: selectedToolsByName.get(call.name),
           parsedArgs: safeParseArgs(call.arguments),
           status: 'pending' as const,
         }));
@@ -575,23 +574,35 @@ export async function runAgent(opts: {
         }
         for (const p of pendings) emit({ type: 'TOOL_CALL_START', toolName: p.call.name, args: p.parsedArgs });
 
-        // Execute ONE tool (withSpan → latencyToolsMs; errorKind on failure). No
-        // ack handling here — that is serial + ordered for side-effecting ui.*.
-        // The local timer records latencyToolsMs even when withSpan rethrows
-        // (its durationMs is unobtainable on the error path).
+        // Execute ONE tool. Spans retain per-call tracing; wall-clock metrics
+        // are recorded around the concurrent batch / serial call below.
         const runExecute = async (p: ToolPending): Promise<void> => {
-          const toolStart = performance.now();
           try {
-            const toolSpan = await withSpan(
-              'agent.tool.execute',
-              { 'gen_ai.tool.name': p.call.name },
-              async () => p.tool!.execute(p.parsedArgs, ctx),
-            );
-            metrics.latencyToolsMs += toolSpan.durationMs;
-            p.result = toolSpan.result;
+            const cacheKey = p.tool?.readonly === true
+              ? readonlyToolCacheKey(p.call.name, p.parsedArgs)
+              : undefined;
+            const cached = cacheKey ? readonlyToolCache.get(cacheKey) : undefined;
+            if (cached) {
+              p.result = await cached;
+              p.cacheHit = true;
+            } else {
+              const execution = withSpan(
+                'agent.tool.execute',
+                { 'gen_ai.tool.name': p.call.name },
+                async () => p.tool!.execute(p.parsedArgs, ctx),
+              );
+              if (cacheKey) {
+                readonlyToolCache.set(cacheKey, execution.then((span) => span.result));
+              }
+              const toolSpan = await execution;
+              p.result = toolSpan.result;
+            }
             p.status = 'ok';
           } catch (e) {
-            metrics.latencyToolsMs += performance.now() - toolStart;
+            const cacheKey = p.tool?.readonly === true
+              ? readonlyToolCacheKey(p.call.name, p.parsedArgs)
+              : undefined;
+            if (cacheKey) readonlyToolCache.delete(cacheKey);
             metrics.errorKind = 'tool';
             p.errorMsg = formatToolError(e);
             p.errorLabel = formatToolErrorLabel(e, p.call.name);
@@ -601,18 +612,23 @@ export async function runAgent(opts: {
 
         let terminalDirectiveResponse: AgentResponse | undefined;
 
-        // 1) READ-ONLY tools → concurrent. JS is single-threaded, so the
-        // latencyToolsMs/errorKind mutations inside runExecute never interleave.
-        await Promise.all(
-          pendings.filter((p) => p.tool?.readonly === true).map((p) => runExecute(p)),
-        );
+        // 1) READ-ONLY tools → concurrent. Count batch wall-clock once; summing
+        // overlapping tool spans would inflate the user-facing pipeline time.
+        const readonlyPendings = pendings.filter((p) => p.tool?.readonly === true);
+        if (readonlyPendings.length > 0) {
+          const batchStart = performance.now();
+          await Promise.all(readonlyPendings.map((p) => runExecute(p)));
+          metrics.latencyToolsMs += performance.now() - batchStart;
+        }
 
         // 2) Side-effecting tools (ui.* + un-flagged) → serial, in original
         // order, so each directive's ack settles before the next one fires.
         for (const p of pendings) {
           if (p.tool?.readonly === true) continue; // already ran concurrently
           if (!p.tool) { p.status = 'missing'; continue; }
+          const toolStart = performance.now();
           await runExecute(p);
+          metrics.latencyToolsMs += performance.now() - toolStart;
           if (p.status !== 'ok' || !p.result) continue;
           // ui.* tools produce a directive — move the UI immediately. For
           // navigate/focus we request an ack so the LLM learns whether the page
@@ -686,7 +702,7 @@ export async function runAgent(opts: {
           // Feed a size-capped JSON view back to the model.
           const view = compactToolResult(p.result!.data);
           messages.push({ role: 'tool', tool_call_id: p.call.id, name: p.call.name, content: view });
-          toolTrace.push({ toolName: p.call.name, ok: true, args: p.parsedArgs, label: p.result!.label });
+          toolTrace.push({ toolName: p.call.name, ok: true, args: p.parsedArgs, label: p.result!.label, cacheHit: p.cacheHit === true });
         }
 
         if (
@@ -994,17 +1010,17 @@ async function produceFinalAnswer(
   // This is the highest-value streaming target: it is a DEDICATED prose call
   // (guaranteed non-JSON), and it only fires on the degraded fallback path
   // where the user has waited longest. Stream tokens live via TEXT_MESSAGE_*.
-  const proseStreamId = emit ? randomUUID() : undefined;
+  const proseStreamId = emit && config.agentStreamingEnabled ? randomUUID() : undefined;
   try {
     const onProseText = (delta: string): void => {
       if (!emit || !proseStreamId) return;
       emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: proseStreamId, delta });
     };
+    const safeProseText = createSafeTextDeltaFilter(onProseText);
     if (emit && proseStreamId) {
       emit({ type: 'TEXT_MESSAGE_START', messageId: proseStreamId });
     }
-    const prose = await callMiniMaxStream(
-      {
+    const proseOptions: Parameters<typeof callMiniMax>[0] = {
         messages: [
           ...messages,
           {
@@ -1017,9 +1033,11 @@ async function produceFinalAnswer(
           },
         ],
         signal,
-      },
-      onProseText,
-    );
+      };
+    const prose = config.agentStreamingEnabled
+      ? await callMiniMaxStream(proseOptions, safeProseText.push)
+      : await callMiniMax(proseOptions);
+    safeProseText.finish();
     if (emit && proseStreamId) {
       emit({ type: 'TEXT_MESSAGE_END', messageId: proseStreamId });
     }
@@ -1794,13 +1812,18 @@ export async function recordSummaryTurn(opts: {
   response: AgentResponse;
   conversationId?: string;
   lookupMs: number;
+  /** Deterministic summary variants can identify their own lane in metrics. */
+  model?: string;
+  intentBucket?: string;
+  toolCallCount?: number;
+  toolTrace?: unknown[];
 }): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
   try {
     const { conversationId, messageId } = await persistTurn({
       ctx: opts.ctx,
       userMessage: opts.userMessage,
       response: opts.response,
-      toolTrace: [],
+      toolTrace: opts.toolTrace ?? [],
       conversationId: opts.conversationId,
       promptTokens: 0,
       completionTokens: 0,
@@ -1811,17 +1834,17 @@ export async function recordSummaryTurn(opts: {
         userId: opts.ctx.userId,
         role: opts.ctx.role,
         conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
-        model: 'summary-lane',
+        model: opts.model ?? 'summary-lane',
         latencyUserPerceivedMs: Math.round(opts.lookupMs),
         latencyTotalMs: Math.round(opts.lookupMs),
         latencyFirstTokenMs: Math.round(opts.lookupMs),
         reactIterations: 0,
-        toolCallCount: 0,
+        toolCallCount: opts.toolCallCount ?? 0,
         fallbackUsed: false,
         aborted: false,
         navigateDirectiveEmitted: false,
         guardrailFired: false,
-        intentBucket: 'summary',
+        intentBucket: opts.intentBucket ?? 'summary',
         tokensIn: 0,
         tokensOut: 0,
       });
@@ -1879,6 +1902,49 @@ export async function recordLookupTurn(opts: {
     return { conversationId, messageId };
   } catch (err) {
     logger.warn({ err }, 'recordLookupTurn metrics insert failed');
+    return { conversationId: undefined, messageId: undefined };
+  }
+}
+
+/** Persist a cancelled turn so abort-rate telemetry is not silently lost. */
+export async function recordAbortedTurn(opts: {
+  ctx: AgentContext;
+  userMessage: string;
+  conversationId?: string;
+  elapsedMs: number;
+}): Promise<{ conversationId: string | undefined; messageId: number | undefined }> {
+  try {
+    const response: AgentResponse = { type: 'text', content: 'Yêu cầu đã được huỷ trước khi hoàn tất.' };
+    const { conversationId, messageId } = await persistTurn({
+      ctx: opts.ctx,
+      userMessage: opts.userMessage,
+      response,
+      toolTrace: [],
+      conversationId: opts.conversationId,
+      promptTokens: 0,
+      completionTokens: 0,
+    });
+    if (messageId !== undefined) {
+      await db.insert(schema.agentTurnMetrics).values({
+        messageId,
+        userId: opts.ctx.userId,
+        role: opts.ctx.role,
+        conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
+        model: 'cancelled-turn',
+        latencyUserPerceivedMs: Math.round(opts.elapsedMs),
+        toolCallCount: null,
+        fallbackUsed: false,
+        aborted: true,
+        navigateDirectiveEmitted: false,
+        guardrailFired: false,
+        intentBucket: 'aborted',
+        tokensIn: null,
+        tokensOut: null,
+      });
+    }
+    return { conversationId, messageId };
+  } catch (err) {
+    logger.warn({ err }, 'recordAbortedTurn metrics insert failed');
     return { conversationId: undefined, messageId: undefined };
   }
 }

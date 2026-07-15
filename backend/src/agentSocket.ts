@@ -25,10 +25,12 @@ import { db } from './db';
 import * as schema from './db/schema';
 import type { AuthUser } from './middleware/auth';
 import { isTokenBlacklisted } from './lib/redis';
-import { runAgent, recordFaqTurn, recordNavTurn, recordSummaryTurn, recordLookupTurn } from './services/agent/orchestrator';
+import { runAgent, recordAbortedTurn, recordFaqTurn, recordNavTurn, recordSummaryTurn, recordLookupTurn } from './services/agent/orchestrator';
 import { tryFaqFastLane } from './services/agent/faq-fast-lane';
 import { routeIntent } from './services/agent/intent-router';
 import { runSummary } from './services/agent/summary-lane';
+import { runFinancialOverview } from './services/agent/financial-overview-lane';
+import { runDeterministicReport } from './services/agent/deterministic-report-lane';
 import { runLookup } from './services/agent/lookup-lane';
 import { checkRateLimit } from './services/agent/rate-limiter';
 import type { AgentContext } from './services/agent/tool.types';
@@ -159,6 +161,9 @@ function registerHandlers(agentNs: Namespace): void {
     // At most one in-flight turn per socket — a new message (or cancel, or
     // disconnect) aborts the previous, mirroring the SSE `req.on('close')`.
     let current: AbortController | null = null;
+    // Serialize turn finalization so a replacement message cannot persist
+    // before the cancellation record for the turn it superseded.
+    let currentCompletion: Promise<void> = Promise.resolve();
     // Per-session conversation memory (see renderResponseText/trimSessionHistory).
     const sessionHistory: MiniMaxMessage[] = [];
 
@@ -235,8 +240,13 @@ function registerHandlers(agentNs: Namespace): void {
         return;
       }
       current?.abort();
+      const previousCompletion = currentCompletion;
+      let settleTurn!: () => void;
+      currentCompletion = new Promise<void>((resolve) => { settleTurn = resolve; });
       const ac = new AbortController();
       current = ac;
+      const turnStartedAt = performance.now();
+      let turnRecorded = false;
 
       const ctx: AgentContext = {
         userId: user.userId,
@@ -250,6 +260,8 @@ function registerHandlers(agentNs: Namespace): void {
       };
 
       try {
+        await previousCompletion;
+        if (ac.signal.aborted) return;
         // Immediate perceived-latency floor: tell the client we have the message
         // before any LLM/FAQ work. The frontend swaps "Đang suy nghĩ…" → a
         // richer "Đang xử lý…" state on receipt.
@@ -267,6 +279,7 @@ function registerHandlers(agentNs: Namespace): void {
         if (faq && !ac.signal.aborted) {
           // P0 instrumentation: persist the FAQ turn so FAQ hit-rate is finally
           // measurable (before this, FAQ hits wrote no metrics row at all).
+          turnRecorded = true;
           const { conversationId: faqConvId, messageId: faqMsgId } = await recordFaqTurn({
             ctx,
             userMessage: message,
@@ -274,6 +287,7 @@ function registerHandlers(agentNs: Namespace): void {
             conversationId: input?.conversationId,
             lookupMs: faqLookupMs,
           });
+          if (ac.signal.aborted) return;
           // Only fold into session memory if the turn wasn't superseded — avoids
           // polluting history for a turn the client never saw (e.g. navigated away
           // during the FAQ lookup).
@@ -318,10 +332,12 @@ function registerHandlers(agentNs: Namespace): void {
             if (ac.signal.aborted) return;
 
             const lookupMs = performance.now() - routerStart;
+            turnRecorded = true;
             const { conversationId: navConvId, messageId: navMsgId } = await recordNavTurn({
               ctx, userMessage: message, directive,
               conversationId: input?.conversationId, lookupMs, ackOk,
             });
+            if (ac.signal.aborted) return;
             sessionHistory.push({ role: 'user', content: message });
             const routeKeyStr = directive.kind === 'navigate' ? directive.routeKey : 'trang đích';
             const navText = ackOk ? `Đã mở trang ${routeKeyStr}.` : `Không mở được trang ${routeKeyStr}.`;
@@ -340,10 +356,12 @@ function registerHandlers(agentNs: Namespace): void {
           if (decision.lane === 'summary' && !ac.signal.aborted) {
             const { response: summaryResponse, lookupMs: summaryMs } = await runSummary(ctx.role);
             if (!ac.signal.aborted) {
+              turnRecorded = true;
               const { conversationId: sumConvId, messageId: sumMsgId } = await recordSummaryTurn({
                 ctx, userMessage: message, response: summaryResponse,
                 conversationId: input?.conversationId, lookupMs: summaryMs,
               });
+              if (ac.signal.aborted) return;
               sessionHistory.push({ role: 'user', content: message });
               const summaryText = renderResponseText(summaryResponse);
               if (summaryText) sessionHistory.push({ role: 'assistant', content: summaryText });
@@ -358,14 +376,92 @@ function registerHandlers(agentNs: Namespace): void {
             }
           }
 
+          // Broad company financial health: three canonical report reads in
+          // parallel, deterministic insight card, zero LLM/schema fallback. A
+          // throw here (any read fails — Promise.all is fail-fast) fails OPEN to
+          // the full ReAct loop below rather than surfacing a generic error, so a
+          // transient DB/P&L failure degrades to a slower-but-correct answer
+          // instead of a hard error. Matches the fail-open posture of the other
+          // deterministic lanes.
+          if (decision.lane === 'financial' && !ac.signal.aborted) {
+            try {
+              const financial = await runFinancialOverview();
+              if (!ac.signal.aborted) {
+                turnRecorded = true;
+                const { conversationId: finConvId, messageId: finMsgId } = await recordSummaryTurn({
+                  ctx,
+                  userMessage: message,
+                  response: financial.response,
+                  conversationId: input?.conversationId,
+                  lookupMs: financial.lookupMs,
+                  model: 'financial-overview-lane',
+                  intentBucket: 'financial',
+                  toolCallCount: financial.toolCallCount,
+                  toolTrace: financial.toolTrace,
+                });
+                if (ac.signal.aborted) return;
+                sessionHistory.push({ role: 'user', content: message });
+                const financialText = renderResponseText(financial.response);
+                if (financialText) sessionHistory.push({ role: 'assistant', content: financialText });
+                trimSessionHistory(sessionHistory);
+                socket.emit('agent:event', {
+                  type: 'RUN_FINISHED',
+                  response: financial.response,
+                  ...(finConvId ? { conversationId: finConvId } : {}),
+                  ...(finMsgId ? { messageId: finMsgId } : {}),
+                } satisfies AgentEvent);
+                return;
+              }
+            } catch (e) {
+              // Fail open to ReAct — do NOT surface a generic error. Log so the
+              // fallback rate is observable alongside the lane's success metrics.
+              console.error('[agent-socket] financial lane failed, falling back to ReAct', e);
+            }
+          }
+
+          // Canonical one-report questions do not need tool selection or
+          // model-authored JSON. The backing business service produces a typed
+          // card directly, eliminating both ReAct and final_schema latency.
+          if (decision.lane === 'report' && decision.reportRequest && !ac.signal.aborted) {
+            const report = await runDeterministicReport(decision.reportRequest);
+            if (!ac.signal.aborted) {
+              turnRecorded = true;
+              const { conversationId: reportConvId, messageId: reportMsgId } = await recordSummaryTurn({
+                ctx,
+                userMessage: message,
+                response: report.response,
+                conversationId: input?.conversationId,
+                lookupMs: report.lookupMs,
+                model: 'deterministic-report-lane',
+                intentBucket: 'report',
+                toolCallCount: report.toolCallCount,
+                toolTrace: report.toolTrace,
+              });
+              if (ac.signal.aborted) return;
+              sessionHistory.push({ role: 'user', content: message });
+              const reportText = renderResponseText(report.response);
+              if (reportText) sessionHistory.push({ role: 'assistant', content: reportText });
+              trimSessionHistory(sessionHistory);
+              socket.emit('agent:event', {
+                type: 'RUN_FINISHED',
+                response: report.response,
+                ...(reportConvId ? { conversationId: reportConvId } : {}),
+                ...(reportMsgId ? { messageId: reportMsgId } : {}),
+              } satisfies AgentEvent);
+              return;
+            }
+          }
+
           // Lane 2: Single-tool lookup
           if (decision.lane === 'lookup' && decision.lookupQuery && !ac.signal.aborted) {
             const { response: lookupResponse, lookupMs: lkMs, toolCallCount } = await runLookup(decision.lookupQuery, ctx.role);
             if (!ac.signal.aborted) {
+              turnRecorded = true;
               const { conversationId: lkConvId, messageId: lkMsgId } = await recordLookupTurn({
                 ctx, userMessage: message, response: lookupResponse,
                 conversationId: input?.conversationId, lookupMs: lkMs, toolCallCount,
               });
+              if (ac.signal.aborted) return;
               sessionHistory.push({ role: 'user', content: message });
               const lkText = renderResponseText(lookupResponse);
               if (lkText) sessionHistory.push({ role: 'assistant', content: lkText });
@@ -390,6 +486,7 @@ function registerHandlers(agentNs: Namespace): void {
           signal: ac.signal,
           awaitAck,
         });
+        turnRecorded = assistantMessageId !== undefined;
         if (!ac.signal.aborted) {
           // Fold this completed turn into session memory for the next question.
           sessionHistory.push({ role: 'user', content: message });
@@ -405,12 +502,24 @@ function registerHandlers(agentNs: Namespace): void {
           socket.emit('agent:event', doneEvent);
         }
       } catch (e) {
-        console.error('[agent-socket] chat failed', e);
+        if (!ac.signal.aborted) console.error('[agent-socket] chat failed', e);
         // Generic message only — never relay raw error text over the wire.
         if (!ac.signal.aborted) {
           socket.emit('agent:event', { type: 'RUN_ERROR', message: 'Đã có lỗi khi xử lý. Vui lòng thử lại.' } satisfies AgentEvent);
         }
       } finally {
+        try {
+          if (ac.signal.aborted && !turnRecorded) {
+            await recordAbortedTurn({
+              ctx,
+              userMessage: message,
+              conversationId: input?.conversationId,
+              elapsedMs: performance.now() - turnStartedAt,
+            });
+          }
+        } finally {
+          settleTurn();
+        }
         if (current === ac) current = null;
       }
     });
