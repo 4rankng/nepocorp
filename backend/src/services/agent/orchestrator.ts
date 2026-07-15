@@ -1082,7 +1082,8 @@ export function parseAgentResponseContent(content: string | null): AgentResponse
   // Strip them, then fall back to the first balanced object if prose/tags remain.
   const stripped = stripThink(content) ?? '';
   const candidate = stripped || content;
-  const jsonObj = extractFirstJsonObject(candidate) ?? candidate;
+  const extracted = extractFirstJsonObjectWithRemainder(candidate);
+  const jsonObj = extracted?.json ?? candidate;
   // JSON.parse with a jsonrepair fallback (Layer 1 healing): the model often
   // emits structurally-near-valid JSON — trailing commas, single quotes, missing
   // closing quotes, unbalanced brackets — that JSON.parse rejects but jsonrepair
@@ -1091,7 +1092,20 @@ export function parseAgentResponseContent(content: string | null): AgentResponse
   // so any text reaching here is a COMPLETE payload that is safe to repair.
   const raw = tryParseJson(jsonObj);
   if (raw === undefined) return null;
-  return validateSanitized(sanitizeAgentJson(raw));
+  const response = validateSanitized(sanitizeAgentJson(raw));
+  if (response?.type !== 'insight_card' || !extracted) return response;
+
+  // Some providers obey the JSON shape but append a useful Vietnamese analysis
+  // after the closing brace. Preserve that prose as part of the same response;
+  // otherwise schema fallback reduces the whole rich card to its short summary.
+  const details = extracted.trailing
+    .replace(/^\s*```(?:json)?\s*/i, '')
+    .trim();
+  if (details.length < 5 || isInternalContractLeak(details)) return response;
+  const existingDetails = response.details?.trim();
+  if (!existingDetails) return { ...response, details };
+  if (existingDetails === details) return response;
+  return { ...response, details: `${existingDetails}\n\n${details}` };
 }
 
 /** JSON.parse with a deterministic jsonrepair fallback. Returns undefined when
@@ -1450,7 +1464,10 @@ function coerceNumeric(value: unknown): unknown {
   if (typeof value !== 'string') return value;
   const s = value.trim();
   if (!s) return value;
-  const compact = s.replace(/\s/g, '').replace(/₫|đ|vnd|vnđ/gi, '');
+  // Models frequently pre-format KPI values even though the wire contract asks
+  // for raw numbers. Strip display-only currency and percent suffixes here;
+  // the widget `format` field adds them back consistently in the frontend.
+  const compact = s.replace(/\s/g, '').replace(/₫|đ|vnd|vnđ|%/gi, '');
   if (/^-?\d+([.,]\d{3})+$/.test(compact)) return Number(compact.replace(/[.,]/g, ''));
   if (/^-?\d+(,\d+)?$/.test(compact)) return Number(compact.replace(',', '.'));
   if (/^-?\d+(\.\d+)?$/.test(compact)) return Number(compact);
@@ -1500,7 +1517,7 @@ function normalizeTableWidget(w: Record<string, unknown>) {
  * locates the real object without trusting the string to start with `{`.
  * Returns null if no balanced object is present.
  */
-function extractFirstJsonObject(s: string): string | null {
+function extractFirstJsonObjectWithRemainder(s: string): { json: string; trailing: string } | null {
   const start = s.indexOf('{');
   if (start === -1) return null;
   let depth = 0;
@@ -1516,10 +1533,16 @@ function extractFirstJsonObject(s: string): string | null {
     else if (c === '{') depth++;
     else if (c === '}') {
       depth--;
-      if (depth === 0) return s.slice(start, i + 1);
+      if (depth === 0) {
+        return { json: s.slice(start, i + 1), trailing: s.slice(i + 1) };
+      }
     }
   }
   return null;
+}
+
+function extractFirstJsonObject(s: string): string | null {
+  return extractFirstJsonObjectWithRemainder(s)?.json ?? null;
 }
 
 // Per-tool-result view compaction lives in ./tool-result-compact.ts

@@ -32,6 +32,7 @@ import {
   type MetricsAccumulator,
 } from '../services/agent/orchestrator.js';
 import type { MiniMaxMessage } from '../services/llm/minimax.client.js';
+import { agentResponseSchema } from '@tingting/shared';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ORCHESTRATOR_SRC = readFileSync(
@@ -190,6 +191,99 @@ describe('agent final-answer parsing — fallback reducers', () => {
     assert.strictEqual(widget.items[0].value, 120000000);
     assert.strictEqual(widget.items[0].format, 'number');
     assert.strictEqual(parsed.actions?.[0]?.directive.kind, 'navigate');
+  });
+
+  test('keeps a mixed insight card and its trailing analysis instead of replacing it with the summary', () => {
+    const parsed = parseAgentResponseContent(`{
+      "type": "insight_card",
+      "title": "Phân tích kinh doanh tháng 7/2026",
+      "summary": "Doanh thu 256,8 triệu, lợi nhuận gộp 65,9 triệu.",
+      "widgets": [
+        {
+          "type": "kpi_grid",
+          "items": [
+            {"label": "Doanh thu", "value": "256.849.093 ₫", "format": "vnd"},
+            {"label": "Biên lợi nhuận", "value": "25,7%", "format": "percent"},
+            {"label": "Tổng chuyến", "value": "41", "format": "number"}
+          ]
+        },
+        {
+          "type": "bar_chart",
+          "title": "Lợi nhuận theo xe",
+          "data": [
+            {"label": "15C-139.82", "value": 30078705},
+            {"label": "Xe ngoài", "value": -4656967}
+          ]
+        },
+        {
+          "type": "bar_chart",
+          "title": "Chi phí bảo dưỡng theo xe",
+          "data": [{"label": "15C-136.31", "value": 13536000}]
+        },
+        {
+          "type": "table",
+          "title": "Công nợ phải thu",
+          "columns": ["Khoảng", "Số khách", "Số tiền"],
+          "rows": [
+            ["Trong hạn", "12", "1.201.159.039 ₫"],
+            ["31-60 ngày quá hạn", "2", "53.168.000 ₫"]
+          ]
+        },
+        {
+          "type": "table",
+          "title": "Chi phí bảo dưỡng chi tiết",
+          "columns": ["Hạng mục", "Số tiền"],
+          "rows": [["Điều hòa", "13.660.000 ₫"]]
+        }
+      ]
+    }
+    Điểm nổi bật cần lưu ý:
+    **⚠️ Xe ngoài lỗ 4,6 triệu** – cần xem lại đơn giá.
+    **✅ Xe 15C-139.82 hiệu quả nhất** – lợi nhuận 30 triệu.`);
+
+    assert.ok(parsed);
+    assert.strictEqual(parsed.type, 'insight_card');
+    if (parsed.type !== 'insight_card') return;
+    const kpis = parsed.widgets[0];
+    assert.strictEqual(kpis.type, 'kpi_grid');
+    if (kpis.type !== 'kpi_grid') return;
+    assert.strictEqual(kpis.items[0].value, 256849093);
+    assert.strictEqual(kpis.items[1].value, 25.7);
+    assert.strictEqual(kpis.items[2].value, 41);
+    assert.strictEqual(parsed.widgets.length, 5);
+    const profitChart = parsed.widgets[1];
+    assert.strictEqual(profitChart.type, 'bar_chart');
+    if (profitChart.type !== 'bar_chart') return;
+    assert.deepStrictEqual(profitChart.data[1], { name: 'Xe ngoài', value: -4656967 });
+    assert.strictEqual(parsed.widgets[3].type, 'table');
+    assert.match(parsed.details ?? '', /Xe ngoài lỗ 4,6 triệu/);
+    assert.match(parsed.details ?? '', /15C-139\.82 hiệu quả nhất/);
+
+    // Persistence stores the response as JSONB and history revalidates it with
+    // this exact shared schema. Lock the serialization boundary without a DB.
+    const persisted = JSON.parse(JSON.stringify(parsed));
+    const rehydrated = agentResponseSchema.parse(persisted);
+    assert.deepStrictEqual(rehydrated, persisted);
+  });
+
+  test('appends trailing analysis to existing card details instead of overwriting it', () => {
+    const parsed = parseAgentResponseContent(`{
+      "type": "insight_card",
+      "title": "Phân tích",
+      "summary": "Tóm tắt.",
+      "details": "Nhận xét đã có trong thẻ.",
+      "widgets": [{
+        "type": "kpi_grid",
+        "items": [{"label": "Doanh thu", "value": 100, "format": "vnd"}]
+      }]
+    }
+    Nhận xét bổ sung sau thẻ.`);
+
+    assert.ok(parsed);
+    assert.strictEqual(parsed.type, 'insight_card');
+    if (parsed.type !== 'insight_card') return;
+    assert.match(parsed.details ?? '', /Nhận xét đã có trong thẻ/);
+    assert.match(parsed.details ?? '', /Nhận xét bổ sung sau thẻ/);
   });
 
   test('downgrades widget-less cards to text so useful summaries still validate', () => {

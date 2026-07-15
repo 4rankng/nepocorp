@@ -5,6 +5,7 @@
 // is not a dependency in this repo and "Simplicity First" says keep it that
 // way — these widgets cover every card the LLM emits.)
 import type { ReactNode } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { formatCurrency } from '../../lib/format';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import type {
@@ -179,6 +180,12 @@ function renderWidget(w: AgentWidget): ReactNode {
   return renderer ? renderer(w) : null;
 }
 
+function widgetTitle(widget: AgentWidget): string | undefined {
+  return 'title' in widget && typeof widget.title === 'string' && widget.title.trim()
+    ? widget.title
+    : undefined;
+}
+
 export interface InsightCardProps {
   card: Extract<AgentResponse, { type: 'insight_card' }>;
   onAction?: (d: AgentDirective) => void;
@@ -192,12 +199,20 @@ export function InsightCard({ card, onAction }: InsightCardProps) {
       <div className="agent-card__widgets">
         {card.widgets.map((w, i) => (
           <div className="agent-card__widget" key={i}>
+            {widgetTitle(w) && (
+              <div className="agent-card__widget-title">{widgetTitle(w)}</div>
+            )}
             <ErrorBoundary fallback={<WidgetFallback />}>
               {renderWidget(w)}
             </ErrorBoundary>
           </div>
         ))}
       </div>
+      {card.details && (
+        <div className="agent-card__details agent-markdown">
+          <ReactMarkdown>{card.details}</ReactMarkdown>
+        </div>
+      )}
       {card.actions && card.actions.length > 0 && (
         <div className="agent-card__actions">
           {card.actions.map((a: AgentActionChip, i) => (

@@ -349,6 +349,13 @@
 .agent-card__widget {
   min-width: 0;
 }
+.agent-card__widget-title {
+  color: var(--ink, #101513);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
 .agent-widget-fallback {
   border: 1px dashed rgba(203, 211, 206, 0.95);
   border-radius: 10px;

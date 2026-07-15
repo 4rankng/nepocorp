@@ -314,6 +314,9 @@ export const agentResponseSchema = z.discriminatedUnion('type', [
     title: z.string(),
     /** One- or two-sentence cause/answer the LLM composes from tool numbers. */
     summary: z.string(),
+    /** Optional analysis emitted after the structured card. Kept separately so
+     *  a useful narrative augments the widgets instead of replacing them. */
+    details: z.string().optional(),
     widgets: z.array(agentWidgetSchema).min(1),
     actions: z.array(agentActionChipSchema).optional(),
     citations: z.array(agentCitationSchema).optional(),

@@ -163,11 +163,16 @@ Orchestrator (services/agent/orchestrator.ts)
     v
 Response Synthesis
     |
+    v
+Response Normalization + Shared Zod Validation
+    |
     v  (socket.io emit)
-Frontend renders response + executes directives (navigate, highlight, start_tour)
+Frontend renders text/structured cards + executes directives (navigate, highlight, start_tour)
 ```
 
 Semantic data gateway: `services/agent/semantic-data.service.ts` (11 entity lookups, 6 tool definitions).
+
+Structured `insight_card` responses use the shared contract in `shared/src/schemas/agent.ts`. Before validation, the orchestrator normalizes common model formatting (for example VND/percent strings and chart `label` fields). A card may also carry optional Markdown `details`; analysis appended after the JSON card is preserved there and rendered after the titled widgets, so it augments rather than replaces the structured result.
 
 ## Redis Usage
 
