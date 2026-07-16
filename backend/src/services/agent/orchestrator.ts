@@ -787,6 +787,13 @@ export async function runAgent(opts: {
       if (!metrics.errorKind && fallbackUsed && fallbackReason) metrics.errorKind = fallbackReason;
       addUsage(finalUsage);
 
+      // A streamed terminal answer is user-visible before the structured pass
+      // completes. If that pass degrades a detailed answer to a short text
+      // summary (for example because every generated widget was invalid), keep
+      // the richer terminal answer as the final, persisted response. A valid
+      // insight card still wins because it preserves the structured data.
+      response = preserveDetailedTerminalText(response, terminalAssistant?.content);
+
       // A3 — prose-with-path guardrail. MiniMax-M3 sometimes ignores the
       // "call ui.navigate, don't write paths in text" rule and emits a plain
       // prose answer naming a destination (e.g. "...tại /fleet/1/tires"). When
@@ -1131,6 +1138,32 @@ function validateSanitized(sanitized: unknown): AgentResponse | null {
   if (parsed.data.type === 'text' && !parsed.data.content.trim()) return null;
   if (parsed.data.type === 'text' && isInternalContractLeak(parsed.data.content)) return null;
   return parsed.data;
+}
+
+/**
+ * Never replace a substantial streamed answer with a degraded final summary.
+ * The threshold avoids preferring a short speculative prose prefix over a
+ * properly finalized response, while preserving the detailed answer the user
+ * has already read when the card-normalization fallback loses its widgets.
+ */
+export function preserveDetailedTerminalText(
+  response: AgentResponse,
+  terminalContent: string | null | undefined,
+): AgentResponse {
+  if (response.type !== 'text') return response;
+  const terminal = stripThink(terminalContent)?.trim();
+  if (!terminal || isInternalContractLeak(terminal)) return response;
+  if (!isSubstantiallyMoreDetailed(terminal, response.content)) return response;
+  return { ...response, content: terminal };
+}
+
+function isSubstantiallyMoreDetailed(candidate: string, summary: string): boolean {
+  const normalizedCandidate = candidate.replace(/\s+/g, ' ').trim();
+  const normalizedSummary = summary.replace(/\s+/g, ' ').trim();
+  if (!normalizedCandidate || normalizedCandidate === normalizedSummary) return false;
+  return normalizedCandidate.length >= 200
+    && normalizedCandidate.length >= normalizedSummary.length + 120
+    && normalizedCandidate.length >= normalizedSummary.length * 1.5;
 }
 
 /** Salvage a human-readable answer from a structured-card response that failed

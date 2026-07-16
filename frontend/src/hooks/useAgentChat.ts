@@ -46,8 +46,9 @@ export interface UseAgentChat {
   activeTool: { name: string; label?: string } | null;
   /** A pending assistant bubble being streamed token-by-token
    *  (TEXT_MESSAGE_START/CONTENT/END). Renders live while `isThinking`; the
-   *  authoritative final message arrives in RUN_FINISHED and replaces it. Null
-   *  when no stream is active (structured card answers never stream). */
+   *  final message arrives in RUN_FINISHED. A detailed stream is preserved if
+   *  the final response has degraded to a short summary. Null when no stream
+   *  is active (structured card answers never stream). */
   streamingMessage: { id: string; content: string } | null;
   error: string | null;
   conversationId: string | null;
@@ -85,6 +86,10 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
   const abortRef = useRef<AbortController | null>(null);
   const pendingPageDirectiveRef = useRef<AgentDirective | null>(null);
   const turnStartedAtRef = useRef<number | null>(null);
+  // State updates are asynchronous, so retain the complete stream in a ref for
+  // the terminal event. This lets us prevent a degraded summary from erasing
+  // the detailed answer the user has already seen.
+  const streamedContentRef = useRef<{ id: string; content: string } | null>(null);
 
   // Persist the active conversationId so the thread can be resumed after a
   // reload. Cleared on logout (see useAuth → clearAgentConversation).
@@ -129,10 +134,17 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         break;
       case 'TEXT_MESSAGE_START':
         // Begin accumulating a streaming text bubble. Cleared by RUN_FINISHED.
+        streamedContentRef.current = { id: event.messageId, content: '' };
         setStreamingMessage({ id: event.messageId, content: '' });
         break;
       case 'TEXT_MESSAGE_CONTENT':
         // Append a token delta to the in-flight streaming bubble.
+        if (streamedContentRef.current?.id === event.messageId) {
+          streamedContentRef.current = {
+            ...streamedContentRef.current,
+            content: streamedContentRef.current.content + event.delta,
+          };
+        }
         setStreamingMessage((prev) =>
           prev && prev.id === event.messageId
             ? { ...prev, content: prev.content + event.delta }
@@ -140,9 +152,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         );
         break;
       case 'TEXT_MESSAGE_END':
-        // The stream is over, but RUN_FINISHED carries the authoritative text
-        // (it may differ if stripThink trimmed leading markup). Leave the bubble
-        // in place; RUN_FINISHED finalizes/replaces it.
+        // Leave the completed bubble in place until RUN_FINISHED finalizes it.
         break;
       case 'DIRECTIVE': {
         const shouldDefer = isPageChangingDirective(event.directive);
@@ -167,13 +177,14 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         setActiveTool(null);
         setIsThinking(false);
         setReceived(false);
-        // The authoritative final message (added below) replaces the streaming
-        // bubble. For a streamed text answer its content equals the accumulated
-        // deltas (stripThink only trims leading markup); for a structured card
-        // the streamed text was suppressed, so there was nothing to replace.
+        // The final response normally replaces the streaming bubble. Keep a
+        // substantially richer stream when a server fallback has collapsed the
+        // final response to a short summary.
+        const streamedContent = streamedContentRef.current?.content;
+        streamedContentRef.current = null;
         setStreamingMessage(null);
         if (event.conversationId) setConversationId(event.conversationId);
-        const response = event.response as AgentResponse;
+        const response = preserveDetailedStream(event.response as AgentResponse, streamedContent);
         const reportClientWait = () => {
           const startedAt = turnStartedAtRef.current;
           turnStartedAtRef.current = null;
@@ -246,6 +257,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
         setActiveTool(null);
         setIsThinking(false);
         setReceived(false);
+        streamedContentRef.current = null;
         setStreamingMessage(null);
         setError(event.message);
         break;
@@ -261,6 +273,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
       // Clear any streaming bubble left dangling by an aborted previous turn
       // (abort resolves agentClient without a RUN_FINISHED/ERROR frame, so the
       // RUN_FINISHED/ERROR clear paths don't fire — clear explicitly here).
+      streamedContentRef.current = null;
       setStreamingMessage(null);
       setMessages((prev) => [
         ...prev,
@@ -300,6 +313,7 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
     abortRef.current?.abort();
     turnStartedAtRef.current = null;
     pendingPageDirectiveRef.current = null;
+    streamedContentRef.current = null;
     setMessages([]);
     setError(null);
     setActiveTool(null);
@@ -313,4 +327,24 @@ export function useAgentChat(opts: UseAgentChatOptions = {}): UseAgentChat {
 
 function isPageChangingDirective(directive: AgentDirective): boolean {
   return directive.kind === 'navigate' || directive.kind === 'focus';
+}
+
+function preserveDetailedStream(
+  response: AgentResponse,
+  streamedContent: string | undefined,
+): AgentResponse {
+  if (response.type !== 'text') return response;
+  const detailed = streamedContent?.trim();
+  if (!detailed || /<(?:think|analysis|tool_call)\b/i.test(detailed)) return response;
+  if (!isSubstantiallyMoreDetailed(detailed, response.content)) return response;
+  return { ...response, content: detailed };
+}
+
+function isSubstantiallyMoreDetailed(candidate: string, summary: string): boolean {
+  const normalizedCandidate = candidate.replace(/\s+/g, ' ').trim();
+  const normalizedSummary = summary.replace(/\s+/g, ' ').trim();
+  if (!normalizedCandidate || normalizedCandidate === normalizedSummary) return false;
+  return normalizedCandidate.length >= 200
+    && normalizedCandidate.length >= normalizedSummary.length + 120
+    && normalizedCandidate.length >= normalizedSummary.length * 1.5;
 }

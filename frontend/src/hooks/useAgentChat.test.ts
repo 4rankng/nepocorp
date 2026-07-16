@@ -64,4 +64,37 @@ describe('useAgentChat message preservation', () => {
       content: 'Tóm tắt bổ sung.',
     });
   });
+
+  it('keeps a detailed streamed answer when the terminal response is only a summary', async () => {
+    const detailedAnswer = [
+      'Doanh thu tháng 6 đạt 689,3 triệu đồng và lợi nhuận gộp là 171,5 triệu đồng, tương ứng biên 24,9%.',
+      'Kết quả đến từ 85 chuyến xe, trong đó nhóm tuyến có doanh thu ổn định giữ được biên lợi nhuận tốt.',
+      'Cần kiểm tra xe 15C-136.31 vì chi phí bảo dưỡng bất thường lên 25,4 triệu đồng; đây là khoản làm giảm đáng kể lợi nhuận trong kỳ.',
+    ].join(' ');
+    const events: AgentEvent[] = [
+      { type: 'TEXT_MESSAGE_START', messageId: 'stream-1' },
+      { type: 'TEXT_MESSAGE_CONTENT', messageId: 'stream-1', delta: detailedAnswer },
+      { type: 'TEXT_MESSAGE_END', messageId: 'stream-1' },
+      {
+        type: 'RUN_FINISHED',
+        conversationId: '42',
+        response: {
+          type: 'text',
+          content: 'Doanh thu 689,3 triệu, lợi nhuận gộp 171,5 triệu. Cần kiểm tra xe 15C-136.31.',
+        },
+      },
+    ];
+    mocks.streamAgentChat.mockImplementation(async (_input, onEvent: (event: AgentEvent) => void) => {
+      events.forEach(onEvent);
+    });
+
+    const { result } = renderHook(() => useAgentChat());
+
+    await act(async () => {
+      await result.current.send('phân tích tình hình kinh doanh tháng 6');
+    });
+
+    expect(result.current.messages).toHaveLength(2);
+    expect(result.current.messages[1].response).toEqual({ type: 'text', content: detailedAnswer });
+  });
 });
