@@ -934,8 +934,23 @@ export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;
 export type TripContainerInput = z.infer<typeof tripContainerSchema>;
 export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
 
-/** Partial update schema for trip expense — used by PUT /trips/:id/expenses/:eid */
-export const tripExpensePatchSchema = baseTripExpenseSchema.omit({ tripId: true }).partial();
+/**
+ * Partial update schema for trip expenses.
+ * Nullable database fields accept an explicit null so PATCH/PUT callers can
+ * clear an existing value; undefined continues to mean "leave unchanged".
+ */
+export const tripExpensePatchSchema = baseTripExpenseSchema
+  .omit({ tripId: true })
+  .partial()
+  .extend({
+    supplierId: z.number().int().positive().nullable().optional(),
+    invoiceNumber: z.string().max(50).nullable().optional(),
+    invoiceDate: z.string().nullable().optional(),
+    declarationNumber: z.string().max(50).nullable().optional(),
+    containerNumber: z.string().max(20).nullable().optional(),
+    tripContainerId: z.number().int().positive().nullable().optional(),
+    note: z.string().nullable().optional(),
+  });
 
 export const tripExpenseCompletionSchema = z.object({
   tripContainerId: z.number().int().positive().nullable(),

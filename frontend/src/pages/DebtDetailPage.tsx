@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
+import type { LedgerEntry } from '@tingting/shared';
 import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { api } from '../lib/api';
@@ -16,7 +17,7 @@ import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { qk } from '../api/keys';
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DebtDetailPage.css';
-import { groupDisplayRowsByRoute, groupLedgerRows, LedgerRouteCard, normalizeAging, money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
+import { normalizeAging, money, rowTypeLabel, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
 
 // ── Aging constants ────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ export default function DebtDetailPage() {
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() =>
-    isCreatingBillingDocument ? 'debit-note' : 'statement',
+    isCreatingBillingDocument ? 'debit-note' : 'ledger',
   );
 
   useEffect(() => {
@@ -140,9 +141,6 @@ export default function DebtDetailPage() {
     return statement.ledgerRows.filter(r => r.txnType === ledgerFilter);
   }, [statement, ledgerFilter]);
 
-  const displayRows = useMemo(() => groupLedgerRows(filteredRows), [filteredRows]);
-  const ledgerRouteGroups = useMemo(() => groupDisplayRowsByRoute(displayRows), [displayRows]);
-
   const activeAgingIdx = useMemo(() => {
     let max = -1, idx = 0;
     agingAmounts.forEach((a, i) => { if (a > max) { max = a; idx = i; } });
@@ -194,10 +192,10 @@ export default function DebtDetailPage() {
   const activeAgingRange = activeAgingIdx >= 0 ? AGING_RANGES[activeAgingIdx] : null;
   const activeAgingAmount = activeAgingIdx >= 0 ? agingAmounts[activeAgingIdx] : 0;
   const workspaceTabs: Array<{ key: WorkspaceTab; label: string; meta: string }> = [
-    { key: 'statement', label: 'Bảng kê', meta: 'Lập bảng kê thanh toán' },
-    { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
+    { key: 'ledger', label: 'Chi tiết công nợ', meta: `${ledgerRows.length} khoản phát sinh` },
     { key: 'payments', label: 'Thanh toán', meta: hasDebt ? `${unpaidTrips.length} chuyến chưa thu` : 'Không còn nợ' },
-    { key: 'ledger', label: 'Lịch sử', meta: `${ledgerRows.length} giao dịch` },
+    { key: 'statement', label: 'Bảng kê', meta: 'Lập chứng từ thanh toán' },
+    { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
   ];
 
   // FIFO-distribute the entered amount across the oldest unpaid trips,
@@ -437,7 +435,7 @@ export default function DebtDetailPage() {
         <div className="dd-workspace-head">
           <div>
             <span className="dd-panel-eyebrow">Hồ sơ khách hàng</span>
-            <h2>Công cụ công nợ</h2>
+            <h2>Chi tiết & chứng từ công nợ</h2>
           </div>
           <div className="dd-workspace-tabs" role="tablist" aria-label="Chọn nghiệp vụ công nợ">
             {workspaceTabs.map((tab) => (
@@ -523,7 +521,12 @@ export default function DebtDetailPage() {
 
           {workspaceTab === 'ledger' && (
             <section className="dd-ledger">
-              <div className="dd-ledger-toolbar">
+              <div className="dd-ledger-head dd-ledger-head--workspace">
+                <div className="dd-ledger-heading">
+                  <h2>Chi tiết công nợ phải thu</h2>
+                  <p>Toàn bộ cước, phí chi hộ, khoản đã thu và điều chỉnh của khách hàng.</p>
+                </div>
+                <span className="dd-cnt">{filteredRows.length} giao dịch</span>
                 <div className="dd-filters">
                   {FILTER_OPTIONS.map(f => (
                     <button
@@ -536,15 +539,30 @@ export default function DebtDetailPage() {
                   ))}
                 </div>
               </div>
-              <div className="dd-ledger-groups">
-                {ledgerRouteGroups.map(routeGroup => (
-                  <LedgerRouteCard key={routeGroup.key} routeGroup={routeGroup} />
-                ))}
-                {ledgerRouteGroups.length === 0 && (
-                  <div className="dd-ledger-empty">
-                    Không có giao dịch
-                  </div>
-                )}
+              <div className="table-scroll">
+                <table className="dd-table dd-detail-table">
+                  <thead>
+                    <tr>
+                      <th>NGÀY</th>
+                      <th>CHUYẾN / ĐỐI CHIẾU</th>
+                      <th>NỘI DUNG</th>
+                      <th>LOẠI</th>
+                      <th className="dd-r">PHÁT SINH PHẢI THU</th>
+                      <th className="dd-r">ĐÃ THU</th>
+                      <th className="dd-r">SỐ DƯ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map(row => (
+                      <ReceivableLedgerRow key={row.id} row={row} />
+                    ))}
+                    {filteredRows.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="dd-table-empty">Không có giao dịch</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </section>
           )}
@@ -627,3 +645,52 @@ export default function DebtDetailPage() {
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
+
+function receivablePill(txnType: TxnType): string {
+  if (txnType === TxnType.PAYMENT_RECEIVED) return 'dd-txn-pill dd-txn-pill--pay';
+  if (txnType === TxnType.TRIP_REVENUE) return 'dd-txn-pill dd-txn-pill--rev';
+  if (txnType === TxnType.SERVICE_FEE) return 'dd-txn-pill dd-txn-pill--fee';
+  if (txnType === TxnType.ADJUSTMENT || txnType === TxnType.UNLOCK_REVERSAL) {
+    return 'dd-txn-pill dd-txn-pill--adj';
+  }
+  return 'dd-txn-pill dd-txn-pill--other';
+}
+
+function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
+  const debit = parseFloat(row.debit) || 0;
+  const credit = parseFloat(row.credit) || 0;
+  const balance = parseFloat(row.balance) || 0;
+  const tripId = row.tripId ?? (
+    row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
+      ? row.txnId
+      : null
+  );
+  const containers = row.containerNumbers?.filter(Boolean) ?? [];
+  const primaryContent = row.routeName || row.serviceFeeLabel || row.note || 'Không có ghi chú';
+  const secondaryContent = row.routeName && row.note && row.note !== row.routeName ? row.note : null;
+
+  return (
+    <tr>
+      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
+      <td className="dd-reference">
+        <strong>{tripId ? `Chuyến #${tripId}` : row.receiptId || `GD #${row.id}`}</strong>
+        {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
+        {row.receiptId && tripId && <small>{row.receiptId}</small>}
+      </td>
+      <td className="dd-detail-content">
+        <strong>{primaryContent}</strong>
+        {secondaryContent && <small>{secondaryContent}</small>}
+      </td>
+      <td><span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span></td>
+      <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
+        {debit > 0 ? money(debit) : '–'}
+      </td>
+      <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
+        {credit > 0 ? money(credit) : '–'}
+      </td>
+      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
+        {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
+      </td>
+    </tr>
+  );
+}

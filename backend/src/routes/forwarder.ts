@@ -174,8 +174,9 @@ router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
   const status = req.query.status as string | undefined;
+  const excludeLinkedToActiveSettlement = req.query.eligibleForSettlement === 'true';
   const [items, counts] = await Promise.all([
-    listAdvanceRequests({ requesterId: forwarder.id, status }),
+    listAdvanceRequests({ requesterId: forwarder.id, status, excludeLinkedToActiveSettlement }),
     getAdvanceRequestCounts(forwarder.id),
   ]);
   res.json({ items, counts });

@@ -1228,6 +1228,16 @@ export interface PnlTruck {
   externalMargin?: number;
 }
 
+export interface PnlMaintenanceItem {
+  id: number;
+  expenseDate: string;
+  categoryName: string;
+  supplierName: string;
+  vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+  amount: number;
+  note: string | null;
+}
+
 export interface PnlReport {
   period: { month: number; year: number };
   totalRevenue: number;
@@ -1241,6 +1251,7 @@ export interface PnlReport {
   maintenanceExpensesTotal: number;
   maintenanceExpensesByTruck: Record<number, string>;
   maintenanceByComponent: Record<number, { truck: number; trailer: number }>;
+  maintenanceItemsByTruck?: Record<number, PnlMaintenanceItem[]>;
   companyExpenses: number;
   categoryBreakdown: Array<{ categoryName: string; total: string }>;
   serviceMarginTotal?: number;

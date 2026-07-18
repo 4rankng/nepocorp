@@ -569,11 +569,69 @@
   flex-shrink: 0;
   line-height: 1.35;
 }
+.dd-ledger-heading {
+  min-width: 0;
+}
+.dd-ledger-heading h2 {
+  margin: 0;
+}
+.dd-ledger-heading p {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.45;
+}
+.dd-ledger-head--workspace {
+  margin-bottom: 12px;
+  padding: 0 0 12px;
+}
 .dd-ledger-head .dd-cnt {
   font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 600;
   font-family: var(--font-mono);
+}
+
+.dd-ledger--standalone,
+.dd-documents-section {
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--sh-sm);
+}
+
+.dd-documents-section {
+  padding: 18px 20px;
+}
+
+.dd-documents-section__head {
+  margin-bottom: 14px;
+}
+
+.dd-documents-section__head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dd-documents-section__head p {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.dd-documents-section .billing-panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .dd-ledger-toolbar {
@@ -1208,6 +1266,40 @@
 .dd-table tbody tr:last-child td { border-bottom: none; }
 .dd-table tbody tr { transition: background .12s; }
 .dd-table tbody tr:hover { background: var(--surface-2); }
+.dd-detail-table {
+  min-width: 1040px;
+}
+.dd-reference,
+.dd-detail-content {
+  min-width: 150px;
+}
+.dd-reference strong,
+.dd-detail-content strong {
+  display: block;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  line-height: 1.4;
+}
+.dd-reference small,
+.dd-detail-content small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.dd-detail-content {
+  min-width: 220px;
+  max-width: 380px;
+}
+.dd-table-empty {
+  padding: 32px !important;
+  color: var(--ink-3);
+  text-align: center;
+}
 .dd-ledger-group-row {
   background: #F8FFFB;
 }

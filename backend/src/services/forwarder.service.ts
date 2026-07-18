@@ -28,6 +28,18 @@ export {
  */
 type DbOrTx = typeof db | Tx;
 
+type TripExpenseRequiredFieldState = {
+  expenseType: string;
+  declarationNumber: string | null;
+};
+
+export function getTripExpenseRequiredFieldError(state: TripExpenseRequiredFieldState): string | null {
+  if (state.expenseType === 'CUSTOMS' && !state.declarationNumber?.trim()) {
+    return 'Số tờ khai là bắt buộc cho phí hải quan';
+  }
+  return null;
+}
+
 async function resetExpenseScope(
   txOrDb: DbOrTx,
   tripId: number,
@@ -254,6 +266,8 @@ export async function updateTripExpense(
       forwarderId: s.tripExpenses.forwarderId,
       tripId: s.tripExpenses.tripId,
       tripContainerId: s.tripExpenses.tripContainerId,
+      expenseType: s.tripExpenses.expenseType,
+      declarationNumber: s.tripExpenses.declarationNumber,
     })
     .from(s.tripExpenses)
     .where(eq(s.tripExpenses.id, id))
@@ -284,6 +298,14 @@ export async function updateTripExpense(
   if (trip?.status === 'LOCKED') {
     throw new ApiError(409, 'Không thể sửa chi phí của chuyến đã chốt');
   }
+
+  const requiredFieldError = getTripExpenseRequiredFieldError({
+    expenseType: patch.expenseType ?? existing.expenseType,
+    declarationNumber: patch.declarationNumber === undefined
+      ? existing.declarationNumber
+      : patch.declarationNumber,
+  });
+  if (requiredFieldError) throw new ApiError(400, requiredFieldError);
 
   const setPatch: Record<string, unknown> = { ...patch, updatedAt: new Date() };
 

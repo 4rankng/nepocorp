@@ -50,6 +50,11 @@ interface PnlReport {
   companyExpenses: number;
   netProfit: number;
   serviceMarginTotal: number;
+  maintenanceByComponent: Record<number, { truck: number; trailer: number }>;
+  maintenanceItemsByTruck: Record<number, Array<{
+    vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+    amount: number;
+  }>>;
   trucks: Array<{
     id: number;
     plate: string;
@@ -130,6 +135,23 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
       diff <= tolerance(),
       `Σ own-truck costs (${sumOwnCosts}) must equal report.totalCosts (${report.totalCosts}); diff=${diff} (maintenance double/under-counted?)`,
     );
+  });
+
+  test('(a.component) maintenance component totals equal their visible expense items', () => {
+    if (!report) { assert.ok(true, 'no report'); return; }
+    for (const [truckIdText, items] of Object.entries(report.maintenanceItemsByTruck ?? {})) {
+      const truckId = Number(truckIdText);
+      const expected = items.reduce((sum, item) => {
+        if (item.vehicleComponent === 'TRAILER') sum.trailer += item.amount;
+        else sum.truck += item.amount;
+        return sum;
+      }, { truck: 0, trailer: 0 });
+      assert.deepEqual(
+        report.maintenanceByComponent[truckId],
+        expected,
+        `truck ${truckId} component totals must sum every visible maintenance item`,
+      );
+    }
   });
 
   test('(a.div) Σ OWN-truck profit == adjustedGrossProfit (fresh recompute, no stale grossProfit)', () => {

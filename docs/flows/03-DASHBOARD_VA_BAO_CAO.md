@@ -82,7 +82,7 @@
 | III. Lợi nhuận gộp | **Doanh thu ex-VAT** − **Tổng chi phí incl. VAT** |
 | Biên lợi nhuận | LN / Doanh thu ex-VAT × 100% |
 
-**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bảng con phân tách chi phí bảo dưỡng theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, sẽ được nhóm dưới mục "Xe ngoài" (hoặc tên đối tác).
+**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bấm vào từng xe để mở danh sách từng lệnh trong kỳ, gồm doanh thu, nhiên liệu/thuê xe, tiền đi đường, phí trạm/vé công ty trả, lương và phụ cấp, tổng chi phí và lợi nhuận. Mỗi lệnh liên kết tới trang chi tiết để đối chiếu hoặc sửa dữ liệu khi còn được phép. Nhãn **Khớp** chỉ xác nhận phép cộng các khoản bằng tổng chi phí đã lưu; không thay thế việc kiểm tra chứng từ và số liệu thực tế. Chi phí bảo dưỡng ngoài lệnh được phân tách theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, dữ liệu được nhóm dưới mục "Xe ngoài".
 
 ---
 
@@ -130,7 +130,8 @@
     │   └─ Group by vehicle cho per-truck breakdown
     │       └─ Phân tách chi phí bảo dưỡng: vehicle_component=TRUCK vs TRAILER
     │
-    └─ Render: Bar chart + Pie chart + Income statement + Per-truck table (với sub-row đầu kéo/rơ-mooc)
+    └─ Render: Bar chart + Pie chart + Income statement + Per-truck table
+        └─ Bấm xe → chi tiết từng lệnh + đối chiếu phép cộng chi phí + liên kết tới lệnh
 ```
 
 ---

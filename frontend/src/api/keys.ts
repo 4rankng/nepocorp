@@ -178,6 +178,7 @@ export const qk = {
     suppliers: ['forwarder-suppliers'],
     advanceRequests: (status?: string) =>
       ['forwarder-advance-requests', status] as const,
+    eligibleAdvanceRequests: ['forwarder-advance-requests', 'eligible-for-settlement'] as const,
     /** Broad prefix — matches all forwarder-advance-requests queries. */
     forwarderAdvanceRequestsAll: ['forwarder-advance-requests'] as const,
     settlements: ['forwarder-settlements'] as const,

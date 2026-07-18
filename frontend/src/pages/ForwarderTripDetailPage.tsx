@@ -68,6 +68,7 @@ export default function ForwarderTripDetailPage() {
     note: '',
   });
   const [expenseErrors, setExpenseErrors] = useState<{ buyAmount?: string; declarationNumber?: string; supplierId?: string }>({});
+  const [expenseSubmitError, setExpenseSubmitError] = useState<string | null>(null);
 
   // Expense photo state: maps expenseId → photo URLs
   const [expensePhotos, setExpensePhotos] = useState<Record<number, string[]>>({});
@@ -145,6 +146,7 @@ export default function ForwarderTripDetailPage() {
   };
 
   const handleAddExpense = () => {
+    setExpenseSubmitError(null);
     const buyAmount = parseFloat(expenseForm.buyAmount);
     const errors: { buyAmount?: string; declarationNumber?: string; supplierId?: string } = {};
     if (!buyAmount || buyAmount <= 0) errors.buyAmount = 'Giá mua vào phải lớn hơn 0';
@@ -172,7 +174,16 @@ export default function ForwarderTripDetailPage() {
         note: expenseForm.note.trim() || undefined,
       };
     const mutation = editingExpenseId
-      ? updateExpenseMut.mutate.bind(updateExpenseMut, { ...payload, id: editingExpenseId, supplierId: supplierIdNum ?? null, tripContainerId: expenseForm.tripContainerId ? parseInt(expenseForm.tripContainerId, 10) : null })
+      ? updateExpenseMut.mutate.bind(updateExpenseMut, {
+          ...payload,
+          id: editingExpenseId,
+          supplierId: supplierIdNum ?? null,
+          invoiceNumber: expenseForm.invoiceNumber.trim() || null,
+          invoiceDate: expenseForm.invoiceDate || null,
+          declarationNumber: expenseForm.declarationNumber.trim() || null,
+          tripContainerId: expenseForm.tripContainerId ? parseInt(expenseForm.tripContainerId, 10) : null,
+          note: expenseForm.note.trim() || null,
+        })
       : createExpenseMut.mutate.bind(createExpenseMut, payload);
     mutation(
       {
@@ -192,6 +203,9 @@ export default function ForwarderTripDetailPage() {
           setExpenseErrors({});
           setEditingExpenseId(null);
           setShowExpenseForm(false);
+        },
+        onError: (error) => {
+          setExpenseSubmitError(error instanceof Error ? error.message : 'Không thể lưu điều chỉnh chi phí');
         },
       },
     );
@@ -233,6 +247,7 @@ export default function ForwarderTripDetailPage() {
       note: exp.note ?? '',
     });
     setExpenseErrors({});
+    setExpenseSubmitError(null);
     setShowExpenseForm(true);
   };
   const generalExpenses = expenses.filter(exp => !exp.tripContainerId);
@@ -537,10 +552,20 @@ export default function ForwarderTripDetailPage() {
               </FormGroup>
             </div>
 
+            {expenseSubmitError && (
+              <div
+                className="animate-shake"
+                role="alert"
+                style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 6, background: 'var(--danger-soft)', color: 'var(--danger-text)', fontSize: 13 }}
+              >
+                {expenseSubmitError}
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button
                 className="btn btn--ghost btn--sm"
-                onClick={() => { setShowExpenseForm(false); setEditingExpenseId(null); setExpenseErrors({}); }}
+                onClick={() => { setShowExpenseForm(false); setEditingExpenseId(null); setExpenseErrors({}); setExpenseSubmitError(null); }}
                 disabled={createExpenseMut.isPending || updateExpenseMut.isPending}
               >
                 Hủy

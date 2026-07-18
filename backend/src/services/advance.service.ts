@@ -6,6 +6,7 @@ import { LedgerService } from './ledger.service';
 import { emitNotification } from './notification.service';
 import { AdvanceError, validateSettlementInputs } from './settlement-validation';
 import type { Tx } from './trip-shared';
+import { getTripExpenseRequiredFieldError } from './forwarder.service';
 
 type ExpenseSnapshotSource = Pick<typeof s.tripExpenses.$inferSelect,
   'expenseType' | 'buyAmount' | 'sellAmount' | 'containerNumber' |
@@ -166,10 +167,21 @@ export async function createAdvanceRequest(
   return enriched;
 }
 
-export async function listAdvanceRequests(filters?: { requesterId?: number; status?: string }) {
+export async function listAdvanceRequests(filters?: {
+  requesterId?: number;
+  status?: string;
+  excludeLinkedToActiveSettlement?: boolean;
+}) {
   const conditions = [];
   if (filters?.requesterId) conditions.push(eq(s.advanceRequests.requesterId, filters.requesterId));
   if (filters?.status) conditions.push(eq(s.advanceRequests.status, filters.status as ('PENDING' | 'APPROVED' | 'REJECTED')));
+  if (filters?.excludeLinkedToActiveSettlement) {
+    const claimedRequestIds = db.select({ id: s.advanceSettlementRequests.advanceRequestId })
+      .from(s.advanceSettlementRequests)
+      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.advanceSettlementRequests.settlementId))
+      .where(notInArray(s.advanceSettlements.status, ['REJECTED']));
+    conditions.push(notInArray(s.advanceRequests.id, claimedRequestIds));
+  }
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const rows = await db.select()
@@ -804,6 +816,7 @@ export async function adjustSettlementExpense(
       linkId: s.settlementExpenses.id,
       tripId: s.tripExpenses.tripId,
       expenseType: s.tripExpenses.expenseType,
+      declarationNumber: s.tripExpenses.declarationNumber,
     }).from(s.settlementExpenses)
       .innerJoin(s.tripExpenses, eq(s.tripExpenses.id, s.settlementExpenses.tripExpenseId))
       .where(and(
@@ -817,6 +830,14 @@ export async function adjustSettlementExpense(
     if (trip?.status === 'LOCKED' || trip?.status === 'CANCELED') {
       throw new AdvanceError(409, 'Không thể sửa chi phí của chuyến đã khóa hoặc đã hủy');
     }
+
+    const requiredFieldError = getTripExpenseRequiredFieldError({
+      expenseType: patch.expenseType ?? linked.expenseType,
+      declarationNumber: patch.declarationNumber === undefined
+        ? linked.declarationNumber
+        : patch.declarationNumber,
+    });
+    if (requiredFieldError) throw new AdvanceError(400, requiredFieldError);
 
     const { adjustmentReason, ...expensePatch } = patch;
     const values: Record<string, unknown> = { ...expensePatch, updatedAt: new Date() };

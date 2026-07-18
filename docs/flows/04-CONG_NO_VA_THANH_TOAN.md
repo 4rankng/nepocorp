@@ -61,7 +61,9 @@ Module Công nợ & Thanh toán cho phép theo dõi công nợ khách hàng, ghi
 
 **4 Aging KPIs:** Phân bổ nợ theo 4 bucket.
 
-**Bảng Ledger (Sao kê):** Ngày, Loại GD (badge màu), Nợ (Debit), Có (Credit), Số dư (Balance), Ghi chú.
+**Chi tiết công nợ (mở mặc định):** Hiển thị trực tiếp các khoản cước, phí chi hộ, thanh toán và điều chỉnh theo tuyến/container. Người dùng không cần tạo hoặc tải Bảng kê/Giấy báo nợ mới xem được phát sinh công nợ. Bảng kê và Giấy báo nợ vẫn nằm ở các tab chứng từ riêng.
+
+**Bảng chi tiết:** Ngày, Chuyến/đối chiếu, Tuyến/container/nội dung, Loại giao dịch, Phát sinh phải thu, Đã thu, Số dư.
 
 **Hành động:** 
 - Ghi thanh toán (modal)

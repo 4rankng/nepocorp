@@ -263,17 +263,6 @@ export default function PayableDetailPage() {
         </div>
       </div>
 
-      {/* Payment-statement builder (AP snapshot documents) */}
-      {id && (
-        <BillingDocumentsPanel
-          type="PAYMENT_STATEMENT"
-          entityType="VENDOR"
-          entityId={Number(id)}
-          entityName={typedStatement?.supplier.name ?? ''}
-          buttonLabel="Tạo bảng kê"
-        />
-      )}
-
       {/* Summary Card */}
       <section className="dd-summary">
         <div className="dd-sum-top">
@@ -343,9 +332,12 @@ export default function PayableDetailPage() {
       </section>
 
       {/* Ledger Card */}
-      <section className="dd-ledger">
+      <section className="dd-ledger dd-ledger--standalone">
         <div className="dd-ledger-head">
-          <h2>Sổ kế toán</h2>
+          <div className="dd-ledger-heading">
+            <h2>Chi tiết công nợ phải trả</h2>
+            <p>Toàn bộ chi phí, khoản đã thanh toán và điều chỉnh với nhà cung cấp.</p>
+          </div>
           <span className="dd-cnt">{filteredRows.length} giao dịch</span>
           <div className="dd-filters">
             {FILTER_OPTIONS.map(f => (
@@ -360,13 +352,14 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="table-scroll">
-          <table className="dd-table">
+          <table className="dd-table dd-detail-table">
             <thead>
               <tr>
                 <th>NGÀY</th>
+                <th>ĐỐI CHIẾU</th>
                 <th>LOẠI GIAO DỊCH</th>
-                <th className="dd-r">NỢ</th>
-                <th className="dd-r">CÓ</th>
+                <th className="dd-r">PHÁT SINH PHẢI TRẢ</th>
+                <th className="dd-r">ĐÃ THANH TOÁN</th>
                 <th className="dd-r">SỐ DƯ</th>
                 <th>GHI CHÚ</th>
               </tr>
@@ -377,7 +370,7 @@ export default function PayableDetailPage() {
               ))}
               {filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                  <td colSpan={7} className="dd-table-empty">
                     Không có giao dịch
                   </td>
                 </tr>
@@ -386,6 +379,24 @@ export default function PayableDetailPage() {
           </table>
         </div>
       </section>
+
+      {/* Payment-statement builder (AP snapshot documents) */}
+      {id && (
+        <section className="dd-documents-section" aria-label="Chứng từ công nợ phải trả">
+          <div className="dd-documents-section__head">
+            <span className="dd-panel-eyebrow">Chứng từ công nợ</span>
+            <h2>Bảng kê thanh toán</h2>
+            <p>Tạo hoặc mở lại bảng kê khi cần gửi nhà cung cấp.</p>
+          </div>
+          <BillingDocumentsPanel
+            type="PAYMENT_STATEMENT"
+            entityType="VENDOR"
+            entityId={Number(id)}
+            entityName={typedStatement?.supplier.name ?? ''}
+            buttonLabel="Tạo bảng kê"
+          />
+        </section>
+      )}
 
       {/* Payment Modal */}
       <Modal
@@ -455,16 +466,20 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
   const meta = TXN_META[row.txnType] ?? DEFAULT_META;
+  const reference = row.receiptId
+    || (row.txnType === TxnType.FUEL_EXPENSE && row.txnId ? `Chuyến #${row.txnId}` : null)
+    || (row.txnId ? `Phiếu #${row.txnId}` : `GD #${row.id}`);
 
   return (
     <tr>
       <td className="dd-td-date">{formatDate(row.timestamp)}</td>
+      <td className="dd-reference"><strong>{reference}</strong></td>
       <td><span className={meta.pill}>{meta.label}</span></td>
-      <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}
-      </td>
-      <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
+      <td className={`dd-num ${credit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
         {credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}
+      </td>
+      <td className={`dd-num ${debit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
+        {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}
       </td>
       <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
         {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance)).replace(' ₫', '')}đ

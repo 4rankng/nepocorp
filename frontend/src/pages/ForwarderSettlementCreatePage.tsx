@@ -8,7 +8,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader, useConfirm } from '../components/UI';
-import { useForwarderAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
+import { useForwarderEligibleAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { ExpenseEntryStatus, type AdvanceRequestWithRefs } from '@tingting/shared';
 import './ForwarderSettlementsPage.css';
@@ -71,7 +71,7 @@ export default function ForwarderSettlementCreatePage() {
     confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
   });
 
-  const { data: requestsData } = useForwarderAdvanceRequests();
+  const { data: requestsData } = useForwarderEligibleAdvanceRequests();
   const { data: unlinkedData } = useUnlinkedExpenses();
   const { data: catalogs } = useCatalogs();
   const createSettlement = useCreateAdvanceSettlement();
@@ -241,12 +241,12 @@ export default function ForwarderSettlementCreatePage() {
       <form onSubmit={handleSubmit} className="fset-create-form fade-up">
         {/* ── Step 1: Select advance requests ── */}
         <div className="fset-step-panel">
-          <StepHeader step={1} title="Chọn tạm ứng đã duyệt" icon={Wallet} />
+          <StepHeader step={1} title="Chọn tạm ứng chưa quyết toán" icon={Wallet} />
           <div className="fset-step-body">
             {approvedRequests.length === 0 ? (
               <div className="fset-empty-inline">
                 <EmptyIllustration name="empty-matching" className="fset-empty-inline__asset" />
-                <span>Không có tạm ứng nào đã duyệt</span>
+                <span>Không có tạm ứng đã duyệt nào chưa quyết toán</span>
               </div>
             ) : (
               <div className="fset-check-list">

@@ -105,7 +105,7 @@ export function useMonthlyTrips(year: number, month: number) {
     queryKey: qk.trips.monthly(year, month, salaryPeriodQuery.data?.start),
     enabled: !!salaryPeriodQuery.data,
     queryFn: async () => {
-      const res = await tripClient.listTrips({
+      const res = await tripClient.fetchAllTrips({
         limit: 100,
         dateFrom: salaryPeriodQuery.data!.start,
         dateTo: salaryPeriodQuery.data!.end,

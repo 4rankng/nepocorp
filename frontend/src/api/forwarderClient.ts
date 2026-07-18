@@ -86,6 +86,11 @@ export const forwarderClient = {
   getAdvanceRequests: async (status?: string) => {
     return api.get<{ items: AdvanceRequestWithRefs[]; counts: Record<string, number> }>(`${FORWARDER.ADVANCE_REQUESTS}${toQuery({ status })}`);
   },
+  getEligibleAdvanceRequests: async () => {
+    return api.get<{ items: AdvanceRequestWithRefs[]; counts: Record<string, number> }>(
+      `${FORWARDER.ADVANCE_REQUESTS}${toQuery({ status: 'APPROVED', eligibleForSettlement: true })}`,
+    );
+  },
   createAdvanceRequest: async (data: { amount: number; reason: string }) => {
     return api.post(FORWARDER.ADVANCE_REQUESTS, data);
   },

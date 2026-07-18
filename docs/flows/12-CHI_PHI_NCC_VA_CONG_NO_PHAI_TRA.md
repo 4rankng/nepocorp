@@ -87,7 +87,7 @@ Form nhập:
 ### 2.4 Công nợ phải trả (/payables, /payables/:id)
 
 - `/payables`: danh sách NCC kèm số dư nợ + tuổi nợ (4 bucket: 0–30 / 31–60 / 61–90 / 90+), giống màn Công nợ phải thu.
-- `/payables/:id`: sao kê NCC (các phiếu ghi nợ + thanh toán + số dư chạy) + nút **Ghi thanh toán** (một ô số tiền — không khớp từng phiếu).
+- `/payables/:id`: mở trực tiếp bảng chi tiết NCC với các cột Phát sinh phải trả, Đã thanh toán và Số dư chạy + nút **Ghi thanh toán** (một ô số tiền — không khớp từng phiếu). Công cụ tạo Bảng kê nằm phía dưới bảng chi tiết để không che khuất dữ liệu đối chiếu.
 - **Đối trừ công nợ (Debt Netting):** Tương tự như phải thu, nếu NCC có liên kết khách hàng, có thể đối trừ nợ (giảm cả AP và AR).
 
 ### 2.5 Nhắc gia hạn (Dashboard)

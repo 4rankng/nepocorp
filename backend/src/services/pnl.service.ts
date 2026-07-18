@@ -72,26 +72,52 @@ export async function getPnlReport(month: number, year: number) {
     // per-truck total and the truck/trailer split.
     const maintenanceExpensesByTruck = new Map<number, number>();
     const maintenanceByComponent = new Map<number, { truck: number; trailer: number }>();
+    const maintenanceItemsByTruck = new Map<number, Array<{
+      id: number;
+      expenseDate: string;
+      categoryName: string;
+      supplierName: string;
+      vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+      amount: number;
+      note: string | null;
+    }>>();
     if (truckIds.length > 0) {
       const componentRows = await db.select({
+        id: s.expenses.id,
         truckId: s.expenses.truckId,
+        expenseDate: s.expenses.expenseDate,
+        categoryName: s.expenseCategories.name,
+        supplierName: s.suppliers.name,
         vehicleComponent: s.expenses.vehicleComponent,
-        total: sql<string>`coalesce(sum(${s.expenses.amount}::numeric), 0)`,
-      }).from(s.expenses).where(
-        and(isNull(s.expenses.deletedAt), inArray(s.expenses.truckId, truckIds), expenseDateFilter)
-      ).groupBy(s.expenses.truckId, s.expenses.vehicleComponent);
+        amount: s.expenses.amount,
+        note: s.expenses.note,
+      }).from(s.expenses)
+        .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
+        .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
+        .where(and(isNull(s.expenses.deletedAt), inArray(s.expenses.truckId, truckIds), expenseDateFilter));
 
       for (const row of componentRows) {
         if (!row.truckId) continue;
-        const amount = parseFloat(row.total);
+        const amount = parseFloat(row.amount);
         const comp = maintenanceByComponent.get(row.truckId) ?? { truck: 0, trailer: 0 };
         if (row.vehicleComponent === 'TRAILER') {
-          comp.trailer = amount;
+          comp.trailer += amount;
         } else {
-          comp.truck = amount;
+          comp.truck += amount;
         }
         maintenanceByComponent.set(row.truckId, comp);
         maintenanceExpensesByTruck.set(row.truckId, (maintenanceExpensesByTruck.get(row.truckId) ?? 0) + amount);
+        const items = maintenanceItemsByTruck.get(row.truckId) ?? [];
+        items.push({
+          id: row.id,
+          expenseDate: row.expenseDate,
+          categoryName: row.categoryName ?? 'Chưa phân loại',
+          supplierName: row.supplierName ?? 'Chưa có nhà cung cấp',
+          vehicleComponent: row.vehicleComponent,
+          amount,
+          note: row.note,
+        });
+        maintenanceItemsByTruck.set(row.truckId, items);
       }
     }
 
@@ -234,6 +260,7 @@ export async function getPnlReport(month: number, year: number) {
       maintenanceExpensesTotal: totalMaintenanceExpenses,
       maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
       maintenanceByComponent: Object.fromEntries(maintenanceByComponent),
+      maintenanceItemsByTruck: Object.fromEntries(maintenanceItemsByTruck),
       categoryBreakdown,
       trucks: truckBreakdown,
       serviceMarginTotal,

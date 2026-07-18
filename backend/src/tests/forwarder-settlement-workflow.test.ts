@@ -9,6 +9,7 @@ import {
   approveAdvanceSettlement,
   createAdvanceSettlement,
   getAdvanceSettlement,
+  listAdvanceRequests,
   updateAdvanceSettlement,
 } from '../services/advance.service';
 import { validateSettlementInputs } from '../services/settlement-validation';
@@ -234,6 +235,43 @@ describe('forwarder settlement streamlined workflow', () => {
     assert.equal(frozen?.linkedExpenses?.[0]?.buyAmount, expense.buyAmount);
   });
 
+  test('settlement form only lists approved advances that are not already claimed', async () => {
+    const availableRequestId = await insertApprovedRequest(310_000);
+    const activeRequestId = await insertApprovedRequest(320_000);
+    const rejectedRequestId = await insertApprovedRequest(330_000);
+
+    const [activeSettlement, rejectedSettlement] = await db.insert(s.advanceSettlements).values([
+      {
+        code: `ACT-${Date.now()}`.slice(0, 20),
+        forwarderId,
+        totalExpenseAmount: '320000',
+        status: 'APPROVED',
+      },
+      {
+        code: `REJ-${Date.now()}`.slice(0, 20),
+        forwarderId,
+        totalExpenseAmount: '330000',
+        status: 'REJECTED',
+      },
+    ]).returning();
+    ids.settlements.push(activeSettlement.id, rejectedSettlement.id);
+    await db.insert(s.advanceSettlementRequests).values([
+      { settlementId: activeSettlement.id, advanceRequestId: activeRequestId },
+      { settlementId: rejectedSettlement.id, advanceRequestId: rejectedRequestId },
+    ]);
+
+    const eligible = await listAdvanceRequests({
+      requesterId: forwarderId,
+      status: 'APPROVED',
+      excludeLinkedToActiveSettlement: true,
+    });
+    const eligibleIds = new Set(eligible.map(request => request.id));
+
+    assert.equal(eligibleIds.has(availableRequestId), true);
+    assert.equal(eligibleIds.has(activeRequestId), false);
+    assert.equal(eligibleIds.has(rejectedRequestId), true);
+  });
+
   test('concurrent settlement creation claims each expense and advance only once', async () => {
     const expense = await insertExpense({ buyAmount: 140_000, sellAmount: 140_000 });
     await markCompleted(null);
@@ -406,6 +444,40 @@ describe('forwarder settlement streamlined workflow', () => {
     await assert.rejects(
       () => updateForwarderTripExpense(expense.id, forwarderId, { note: 'Đã gửi KT' }),
       /Chi phí đã gửi kế toán, không thể sửa/,
+    );
+  });
+
+  test('forwarder edit clears nullable fields but preserves required-field invariants', async () => {
+    const expense = await insertExpense();
+    await db.update(s.tripExpenses).set({
+      invoiceNumber: '1664',
+      note: 'Thông tin cũ',
+    }).where(eq(s.tripExpenses.id, expense.id));
+
+    const amountOnly = await updateForwarderTripExpense(expense.id, forwarderId, {
+      buyAmount: '1700000',
+    });
+    assert.equal(amountOnly?.invoiceNumber, '1664');
+    assert.equal(amountOnly?.note, 'Thông tin cũ');
+
+    const updated = await updateForwarderTripExpense(expense.id, forwarderId, {
+      buyAmount: '1782000',
+      supplierId: null,
+      invoiceNumber: null,
+      note: null,
+    });
+    assert.equal(updated?.buyAmount, '1782000');
+    assert.equal(updated?.supplierId, null);
+    assert.equal(updated?.invoiceNumber, null);
+    assert.equal(updated?.note, null);
+
+    await db.update(s.tripExpenses).set({
+      expenseType: 'CUSTOMS',
+      declarationNumber: 'TK-3509',
+    }).where(eq(s.tripExpenses.id, expense.id));
+    await assert.rejects(
+      () => updateForwarderTripExpense(expense.id, forwarderId, { declarationNumber: null }),
+      /Số tờ khai là bắt buộc cho phí hải quan/,
     );
   });
 });

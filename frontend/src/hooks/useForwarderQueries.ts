@@ -105,6 +105,13 @@ export function useForwarderAdvanceRequests(status?: string) {
   });
 }
 
+export function useForwarderEligibleAdvanceRequests() {
+  return useQuery({
+    queryKey: qk.forwarder.eligibleAdvanceRequests,
+    queryFn: () => forwarderClient.getEligibleAdvanceRequests(),
+  });
+}
+
 export function useForwarderAdvanceBalance() {
   return useQuery({
     queryKey: qk.forwarder.advanceBalance,

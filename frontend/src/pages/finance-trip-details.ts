@@ -1,0 +1,64 @@
+import type { TripDetail } from '@tingting/shared';
+
+export interface FinanceTripDetail {
+  id: number;
+  tripCode: string;
+  departureDate: string;
+  routeName: string;
+  revenue: number;
+  fuelOrHireCost: number;
+  roadAllowance: number;
+  tollAndCompanyTickets: number;
+  driverAndAllowances: number;
+  totalCost: number;
+  profit: number;
+  costDifference: number;
+  costMatches: boolean;
+  isExternal: boolean;
+}
+
+const amount = (value: string | number | null | undefined): number => Number(value ?? 0) || 0;
+
+export function financeVehicleBucketId(trip: TripDetail): number {
+  if (trip.carrierType === 'EXTERNAL') return 0;
+  return trip.truckId ?? -1;
+}
+
+/**
+ * Rebuild the visible trip-level cost equation from the stored inputs. This is
+ * intentionally an arithmetic check only: a matching total does not prove the
+ * accountant entered the underlying business figures correctly.
+ */
+export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
+  const isExternal = trip.carrierType === 'EXTERNAL';
+  const vatRate = amount(trip.vatRate);
+  const grossRevenue = amount(trip.revenue);
+  const revenue = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  const fuelOrHireCost = isExternal ? amount(trip.externalFreightCost) : amount(trip.totalFuelCost);
+  const roadAllowance = isExternal ? 0 : amount(trip.totalRoadAllowance);
+  const tollAndCompanyTickets = isExternal ? 0 : amount(trip.tollCost) + amount(trip.tollsDiscount);
+  const driverAndAllowances = isExternal
+    ? 0
+    : amount(trip.driverSalary) + amount(trip.twoPointDeliveryBonus) + amount(trip.vehicleShiftAllowance);
+  const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
+  const totalCost = amount(trip.totalCost);
+  const costDifference = totalCost - reconstructedCost;
+
+  return {
+    id: trip.id,
+    tripCode: trip.tripCode || `Lệnh #${trip.id}`,
+    departureDate: trip.departureDate,
+    routeName: trip.route?.name || 'Chưa có tuyến',
+    revenue,
+    fuelOrHireCost,
+    roadAllowance,
+    tollAndCompanyTickets,
+    driverAndAllowances,
+    totalCost,
+    profit: revenue - totalCost,
+    costDifference,
+    costMatches: Math.abs(costDifference) <= 1,
+    isExternal,
+  };
+}
+

@@ -149,7 +149,7 @@ Mỗi card chuyến có **badge nhỏ** ở góc trên phải hiển thị màu 
 ### 2.5 Sửa hoặc xóa chi phí
 
 1. Tìm chi phí cần điều chỉnh trong đúng nhóm container.
-2. Click icon **bút chì**, sửa thông tin và lưu; hoặc click **thùng rác** để xóa.
+2. Click icon **bút chì**, sửa thông tin và lưu; hoặc click **thùng rác** để xóa. Khi sửa, có thể xóa trống các trường tùy chọn; giao diện gửi `null` để xóa giá trị cũ. Riêng phí hải quan vẫn bắt buộc có số tờ khai.
 3. Nhóm chuyển về **Đang kê**; Ops kiểm tra lại và bấm **Đã kê xong**.
 4. Chi phí đã gửi kế toán bị khóa. Chi phí của người khác trả về 403; chi phí thuộc phiếu đang xử lý trả về 409.
 
@@ -273,6 +273,8 @@ MANAGER chỉ GET/xem, không có quyền điều chỉnh, duyệt hoặc từ c
 ```
 
 `PUT /api/advance-settlements/:id` nhận toàn bộ thành phần phiếu (`advanceRequestIds`, `tripExpenseIds`, `refundAmount`, `note`). Hệ thống chỉ chấp nhận tạm ứng đã duyệt và chi phí thuộc phạm vi **Đã kê xong**, cùng giao nhận, chưa nằm trong phiếu khác chưa bị từ chối; đồng thời kiểm tra `tạm ứng = chi phí + hoàn lại` trong cùng transaction. Chi tiết phiếu trả thêm `eligibleAdvanceRequests` và `eligibleExpenses` để kế toán thay đổi thành phần an toàn.
+
+Trên màn hình **Tạo phiếu thanh toán**, danh sách chọn tạm ứng chỉ hiển thị các khoản đã duyệt nhưng chưa liên kết với phiếu thanh toán nào còn hiệu lực. Khoản đã nằm trong phiếu chờ duyệt hoặc đã duyệt chỉ còn xuất hiện trong lịch sử; khoản thuộc phiếu bị từ chối được phép chọn lại.
 
 ### 3.8 Admin xem chi phí forwarder
 
@@ -406,6 +408,8 @@ ADMIN/MANAGER/ACCOUNTANT gọi GET /api/forwarder-expenses
 | `declarationNumber`| string | — | |
 | `supplierId` | number | — | |
 | `note` | string | — | Tuỳ chọn, nullable |
+
+> Với PATCH `/api/forwarder/me/expenses/:id` và `PATCH /api/advance-settlements/:id/expenses/:expenseId`, các trường nullable có thể gửi `null` để xóa giá trị cũ: `supplierId`, `invoiceNumber`, `invoiceDate`, `declarationNumber`, `containerNumber`, `tripContainerId`, `note`. Sau khi gộp với dữ liệu hiện có, phí hải quan vẫn phải có `declarationNumber`.
 
 ### 4.7 Error Responses
 
