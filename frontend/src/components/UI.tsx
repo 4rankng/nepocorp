@@ -1,11 +1,12 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, ArrowDownRight, ArrowUpRight, X } from 'lucide-react';
 import { animate, utils, spring } from 'animejs';
 import { AssetIcon, type AssetIconName } from './AssetIcon';
 import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
 import { usePressAnimation } from '../hooks/animations/usePressAnimation';
 import { Tooltip } from './shared/Tooltip';
+import { Sparkline } from '../design-system/Sparkline';
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
 
@@ -103,6 +104,15 @@ export function useConfirmShortcuts(opts: {
 
 /* ─── KPI Metric Card ───────────────────────────────────────────────────── */
 
+export interface KPITrend {
+  /** Numeric series for the sparkline. Empty array = no sparkline drawn. */
+  data: number[];
+  /** Signed percentage change vs previous period, e.g. 17 or -3.2. */
+  pct: number;
+  /** Accessible label passed through to the sparkline, e.g. "Doanh thu 7 ngày". */
+  ariaLabel: string;
+}
+
 interface KPIProps {
   label: string;
   value: string | number;
@@ -113,26 +123,50 @@ interface KPIProps {
   variant?: 'success' | 'warn' | 'danger' | 'accent' | 'info' | 'default';
   compact?: boolean;
   onClick?: () => void;
+  /**
+   * Optional trend — when present, renders a percentage badge + inline
+   * sparkline in the meta slot. The watermark icon is hidden to make room.
+   * T2 adoption (Tailkit a-c-statistics-11 pattern, hand-rolled SVG).
+   */
+  trend?: KPITrend;
 }
 
-export function KPI({ label, value, unit, icon: Icon, assetIconName, meta, variant = 'default', compact, onClick }: KPIProps) {
+export function KPI({ label, value, unit, icon: Icon, assetIconName, meta, variant = 'default', compact, onClick, trend }: KPIProps) {
   const variantClass = variant === 'default' ? '' : `kpi--${variant}`;
+  const showTrend = trend && trend.data.length > 1;
+  const trendDirection: 'up' | 'down' | 'neutral' = !trend ? 'neutral' : trend.pct > 0 ? 'up' : trend.pct < 0 ? 'down' : 'neutral';
+  const TrendArrow = trendDirection === 'up' ? ArrowUpRight : trendDirection === 'down' ? ArrowDownRight : null;
   return (
     <div
-      className={`kpi ${variantClass} ${onClick ? 'kpi--clickable' : ''} ${compact ? 'kpi--compact' : ''}`}
+      className={`kpi ${variantClass} ${onClick ? 'kpi--clickable' : ''} ${compact ? 'kpi--compact' : ''} ${showTrend ? 'kpi--with-trend' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
       <div className="kpi__top">
         <span className="kpi__label">{label}</span>
+        {showTrend && (
+          <span className={`kpi__trend-badge kpi__trend-badge--${trendDirection}`} aria-hidden="true">
+            {TrendArrow && <TrendArrow size={12} />}
+            <span>{Math.abs(trend!.pct)}%</span>
+          </span>
+        )}
       </div>
       <div className="kpi__value">
         {value}
         {unit && <span className="kpi__value-unit">{unit}</span>}
       </div>
       {meta && <div className="kpi__meta">{meta}</div>}
-      {(assetIconName || Icon) && (
+      {showTrend ? (
+        <div className="kpi__sparkline">
+          <Sparkline
+            data={trend!.data}
+            variant={trendDirection}
+            ariaLabel={trend!.ariaLabel}
+            width={96}
+          />
+        </div>
+      ) : (assetIconName || Icon) && (
         <div className="kpi__watermark" aria-hidden="true">
           {assetIconName ? (
             <AssetIcon name={assetIconName} size={72} className="kpi__watermark-asset" />

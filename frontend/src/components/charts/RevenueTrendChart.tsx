@@ -189,7 +189,9 @@ export function RevenueTrendChart({
             boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
             padding: '10px 14px',
             pointerEvents: 'none',
-            minWidth: '160px',
+            // The two Vietnamese label/value pairs need more than 160px once
+            // their markers and horizontal padding are accounted for.
+            minWidth: '192px',
             zIndex: 10,
           }}
         >
@@ -197,21 +199,21 @@ export function RevenueTrendChart({
             {months[activeIdx]}
           </div>
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
               Doanh thu
             </div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D' }}>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
               {fmtTip(revenue[activeIdx] || 0)}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
               LN gộp
             </div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#2563EB' }}>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap' }}>
               {fmtTip(gross[activeIdx] || 0)}
             </div>
           </div>

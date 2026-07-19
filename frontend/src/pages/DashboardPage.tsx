@@ -1,11 +1,13 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, ChevronRight, Download, Truck } from 'lucide-react';
+import { Activity, AlertTriangle, ChevronRight, Download, Truck } from 'lucide-react';
 import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
+import { Banner } from '../components/shared/Banner';
+import { EmptyState as DsEmptyState } from '../design-system/EmptyState';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { AssetIcon } from '../components/AssetIcon';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
@@ -319,8 +321,46 @@ export default function DashboardPage() {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────
+  // Critical-receivables banner — surfaces ONLY customers in the worst aging
+  // bucket (>90 days overdue). Lesser overdue tiers (31–60, 61–90) are
+  // routine and don't warrant a page-top banner. dismissKey ties dismissal to
+  // the active period so a new month re-surfaces the banner.
+  // Backend bucket ranges: '0-30' | '31-60' | '61-90' | '90+' (see
+  // backend/src/services/aging.service.ts).
+  const over90Bucket = receivablesSummary?.buckets?.find(b => b.range === '90+');
+  const over90Count = over90Bucket?.count ?? 0;
+  const criticalBannerKey = `over90-${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+
   return (
     <div className="dash-wf" ref={rootRef}>
+      {over90Count > 0 && (
+        <Banner
+          variant="danger"
+          icon={AlertTriangle}
+          dismissKey={criticalBannerKey}
+          action={
+            <button
+              type="button"
+              onClick={() => navigate('/debt?filter=over90')}
+              style={{
+                background: 'transparent',
+                border: '1px solid currentColor',
+                color: 'inherit',
+                padding: '4px 10px',
+                borderRadius: 'var(--r-sm)',
+                fontSize: 'var(--fs-xs)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Xem công nợ
+            </button>
+          }
+        >
+          <strong>{over90Count}</strong> khách hàng đang quá hạn trên 90 ngày. Cần xử lý sớm để giảm rủi ro nợ xấu.
+        </Banner>
+      )}
       {/* ── page head ── */}
       <header className="wf-head">
         <div className="wf-head__copy">
@@ -443,8 +483,13 @@ export default function DashboardPage() {
               {(() => {
                 if (chartRevenue.length === 0) {
                   return (
-                    <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, flex: 1 }}>
-                      Đang tải dữ liệu...
+                    <div style={{ padding: '24px 16px', flex: 1 }}>
+                      <DsEmptyState
+                        title="Đang tải dữ liệu"
+                        description="Đang thu thập số liệu doanh thu và lợi nhuận…"
+                        preview="rows"
+                        previewCount={3}
+                      />
                     </div>
                   );
                 }
@@ -452,8 +497,13 @@ export default function DashboardPage() {
                 const totalGp = chartGross.reduce((a, b) => a + b, 0);
                 if (totalRev === 0 && totalGp === 0) {
                   return (
-                    <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 13, flex: 1 }}>
-                      Chưa đủ dữ liệu lịch sử để vẽ biểu đồ.
+                    <div style={{ padding: '24px 16px', flex: 1 }}>
+                      <DsEmptyState
+                        title="Chưa đủ dữ liệu lịch sử"
+                        description="Biểu đồ doanh thu & lợi nhuận gộp sẽ xuất hiện tại đây sau khi có chuyến đầu tiên trong kỳ."
+                        preview="rows"
+                        previewCount={4}
+                      />
                     </div>
                   );
                 }

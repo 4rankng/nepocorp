@@ -570,9 +570,28 @@
 .dash-wf .wf-card-h .ttl { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0; color: var(--wf-ink); }
 .dash-wf .wf-card-h .sub { font-size: var(--fs-2xs); color: var(--wf-ink-3); margin-top: 2px; }
 
-.dash-wf .wf-legend { display: flex; gap: 16px; padding: 10px 12px 0; }
-.dash-wf .wf-legend .li { display: flex; align-items: center; gap: 7px; font-size: var(--fs-xs); color: var(--wf-ink-2); font-weight: 500; }
-.dash-wf .wf-legend .sw { width: 14px; height: 3px; border-radius: 2px; }
+.dash-wf .wf-legend {
+  display: flex;
+  gap: 20px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--wf-line, #EEF1EF);
+  background: var(--wf-bg, #F8FAF9);
+  border-radius: 8px 8px 0 0;
+}
+.dash-wf .wf-legend .li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--wf-ink);
+  font-weight: 600;
+}
+.dash-wf .wf-legend .sw {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
 
 .dash-wf .wf-chart { display: flex; flex-direction: column; }
 .dash-wf .wf-chart .body { padding: 8px 8px 6px; flex: 1; min-height: 0; display: flex; flex-direction: column; }

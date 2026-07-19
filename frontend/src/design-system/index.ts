@@ -19,7 +19,13 @@ export type { PaginationProps } from './Pagination';
 export { DataTable } from './DataTable';
 export type { DataTableProps, DataTableColumn } from './DataTable';
 export { EmptyState } from './EmptyState';
-export type { EmptyStateProps } from './EmptyState';
+export type { EmptyStateProps, EmptyStatePreview } from './EmptyState';
+// T2 (Tailkit a-c-statistics-11 pattern, hand-rolled SVG, no chart dep).
+export { Sparkline } from './Sparkline';
+export type { SparklineProps, SparklineVariant } from './Sparkline';
+// T5 (daisyUI-native, DRYs inline `role="tab"` markup across 5 pages).
+export { Tabs } from './Tabs';
+export type { TabsProps, TabsVariant, TabItem } from './Tabs';
 
 export { TextField } from './forms/TextField';
 export type { TextFieldProps, BaseFieldProps } from './forms/TextField';

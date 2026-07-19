@@ -261,3 +261,46 @@
 .metric-strip__sub strong { color: var(--ink); font-weight: 600; }
 .metric-strip__sub .ms-pos { color: var(--accent); font-weight: 600; }
 .metric-strip__sub .ms-neg { color: var(--danger); font-weight: 600; }
+
+/* ─── Trend variant (T2 — KPI sparkline, a-c-statistics-11 pattern) ──────
+ * When `trend` is provided, the watermark icon is replaced by a sparkline
+ * and a percentage badge appears in the top row. Tokens-only. */
+.kpi--with-trend { padding-bottom: 8px; }
+
+.kpi__trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  line-height: 1;
+}
+.kpi__trend-badge--up {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+.kpi__trend-badge--down {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+.kpi__trend-badge--neutral {
+  color: var(--ink-3);
+  background: var(--surface-3);
+}
+
+.kpi__sparkline {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  width: 96px;
+  height: 32px;
+  opacity: 0.95;
+}
+@media (max-width: 420px) {
+  /* On narrow phones, the sparkline crowds the value. Hide rather than shrink. */
+  .kpi__sparkline { display: none; }
+  .kpi--with-trend { padding-bottom: 12px; }
+}

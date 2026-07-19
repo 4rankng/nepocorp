@@ -5,7 +5,6 @@ import { api } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
 import {
   Search,
-  AlertTriangle,
   Users,
   Clock,
   CalendarCheck2,
@@ -62,14 +61,22 @@ interface AgingBucket {
   countKey: 'currentCusts' | 'd30Custs' | 'd60Custs' | 'over90Custs';
   dotClass: string;
   color: string;
-  filterMode: 'all' | 'overdue' | 'high-risk' | 'current';
+  /** Each bucket owns its own filter — never grouped. */
+  filterMode: BucketFilterMode;
 }
+
+/**
+ * One filter mode per bucket. The four aging buckets must filter independently
+ * so clicking "31–60 ngày" shows only customers in that bucket, etc.
+ * `'all'` is the unfiltered default.
+ */
+type BucketFilterMode = 'all' | 'current' | 'd30' | 'd60' | 'over90';
 
 const AGING_BUCKETS: AgingBucket[] = [
   { key: 'current', label: '0–30 NGÀY', amountKey: 'current', countKey: 'currentCusts', dotClass: 'debt-aging__dot--ok', color: '#00B14F', filterMode: 'current' },
-  { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: '#F5A623', filterMode: 'overdue' },
-  { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'overdue' },
-  { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'high-risk' },
+  { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: '#F5A623', filterMode: 'd30' },
+  { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'd60' },
+  { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'over90' },
 ];
 
 /* Map bucket → lucide icon (semantic progression: on-time → critical) */
@@ -111,8 +118,12 @@ export default function DebtListPage() {
   const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
   const totalCustomers = data?.total ?? rawCustomers.length;
   const error = queryError ? (queryError as Error).message : null;
-  const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high-risk' | 'current'>(
-    searchParams.get('filter') === 'overdue' ? 'overdue' : searchParams.get('filter') === 'high-risk' ? 'high-risk' : 'all',
+  const [filterMode, setFilterMode] = useState<BucketFilterMode>(
+    searchParams.get('filter') === 'current' ? 'current'
+      : searchParams.get('filter') === 'd30' ? 'd30'
+      : searchParams.get('filter') === 'd60' ? 'd60'
+      : searchParams.get('filter') === 'over90' ? 'over90'
+      : 'all',
   );
 
   /* ── Animation hooks ── */
@@ -194,11 +205,17 @@ export default function DebtListPage() {
   const filteredDebts = useMemo(() => {
     let result = customerDebts;
     if (filterMode === 'current') {
+      // 0–30 ngày — on-time/current balance (no overdue amount, but has outstanding).
       result = result.filter(d => d.aging.current > 0 && d.totalOutstanding > 0);
-    } else if (filterMode === 'overdue') {
-      result = result.filter(d => d.maxOverdueDays > 30 && d.totalOutstanding > 0);
-    } else if (filterMode === 'high-risk') {
-      result = result.filter(d => d.riskClass === 'high' && d.totalOutstanding > 0);
+    } else if (filterMode === 'd30') {
+      // 31–60 ngày — has balance in the d30 aging bucket specifically.
+      result = result.filter(d => d.aging.d30 > 0 && d.totalOutstanding > 0);
+    } else if (filterMode === 'd60') {
+      // 61–90 ngày — has balance in the d60 aging bucket specifically.
+      result = result.filter(d => d.aging.d60 > 0 && d.totalOutstanding > 0);
+    } else if (filterMode === 'over90') {
+      // Trên 90 ngày — has balance in the over90 aging bucket specifically.
+      result = result.filter(d => d.aging.over90 > 0 && d.totalOutstanding > 0);
     }
     return result;
   }, [customerDebts, filterMode]);
@@ -331,10 +348,7 @@ export default function DebtListPage() {
           const amount = totals[bucket.amountKey];
           const count = totals[bucket.countKey];
           const money = moneyParts(amount, compact);
-          const isActive =
-            (bucket.filterMode === 'current' && filterMode === 'current') ||
-            (bucket.filterMode === 'overdue' && filterMode === 'overdue' && (bucket.amountKey === 'd30' || bucket.amountKey === 'd60')) ||
-            (bucket.filterMode === 'high-risk' && filterMode === 'high-risk');
+          const isActive = filterMode === bucket.filterMode;
           const BucketIcon = BUCKET_ICONS[bucket.key];
 
           return (
@@ -391,24 +405,10 @@ export default function DebtListPage() {
               <span>Tất cả</span>
               <span className="filter-pill__count">{customerDebts.length}</span>
             </button>
-            <button
-              type="button"
-              className={`filter-pill${filterMode === 'overdue' ? ' is-active' : ''}`}
-              onClick={() => setFilterMode('overdue')}
-            >
-              <Clock size={14} />
-              <span>Quá hạn</span>
-              <span className="filter-pill__count">{totals.overdueCount}</span>
-            </button>
-            <button
-              type="button"
-              className={`filter-pill${filterMode === 'high-risk' ? ' is-active' : ''}`}
-              onClick={() => setFilterMode('high-risk')}
-            >
-              <AlertTriangle size={14} />
-              <span>Rủi ro cao</span>
-              <span className="filter-pill__count">{totals.highRiskCount}</span>
-            </button>
+            {/* Cross-bucket "Quá hạn" / "Rủi ro cao" pills removed — per-bucket
+                filtering now lives on the 4 aging cards above, and mixing the
+                two models caused the bug where 'overdue' grouped d30+d60 and
+                'high-risk' used an amount-based criterion unrelated to aging. */}
           </div>
           <div className="debt-filter-spacer" />
           <div className="debt-filter-search">

@@ -133,6 +133,7 @@ tingting/
 - **Dev server**: Port 7173, proxies `/api` → `http://localhost:3090`.
 - **No state management library** — React context (auth) + custom hooks (`useCRUD`, `useQueries`, `useCatalogs`, etc.).
 - **Role-based routing**: `App.tsx` mounts all routes; `Layout.tsx` conditionally shows nav items by role.
+- **Tailkit MCP is a reference catalog, not a dependency.** Search it for inspiration via `mcp__tailkit__*` tools, copy snippets with `get_component_code`, retokenize against `var(--*)` NEPO tokens, and land in `design-system/` or `components/shared/`. Never install as an npm package. Adopted snippets must drop all `dark:*` variants (NEPO is light-only) and swap Heroicons → `lucide-react`. See `docs/frontend/tailkit-usage-guide.md` and ADR 0043.
 
 ### Shared
 

@@ -14,3 +14,9 @@ export { Alert } from './Alert';
 export type { AlertVariant, AlertStyle } from './Alert';
 export { Breadcrumbs } from './Breadcrumbs';
 export type { Crumb } from './Breadcrumbs';
+// T3 (Tailkit a-c-banners-01 retokenized — persistent page-top banner).
+export { Banner } from './Banner';
+export type { BannerProps, BannerVariant } from './Banner';
+// T4 (Tailkit a-c-command-palettes-07 retokenized — Cmd/Ctrl+K palette).
+export { CommandPalette, useCommandHotkey } from './CommandPalette';
+export type { CommandPaletteProps, CommandItem } from './CommandPalette';
