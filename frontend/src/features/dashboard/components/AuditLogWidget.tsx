@@ -41,13 +41,13 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
   );
 
   return (
-    <div className="wf-card wf-audit">
+    <div className="d-card d-card-border bg-base-100 wf-card wf-audit">
       <div className="wf-card-h">
         <div>
           <div className="ttl">Hoạt động gần đây</div>
           <div className="sub">Nhật ký vận hành thời gian thực</div>
         </div>
-        <button className="wf-link" onClick={() => navigate('/audit-log')}>
+        <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/audit-log')}>
           Xem tất cả
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M13 6l6 6-6 6" />

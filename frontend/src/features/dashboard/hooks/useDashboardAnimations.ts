@@ -168,13 +168,10 @@ export function useDashboardAnimations(ready: boolean) {
       }
 
       // ── Phase 6: Fleet utilization bar grows ──
-      const utilBar = root.querySelector('.wf-util .track i');
+      const utilBar = root.querySelector('.wf-util progress.track');
       if (utilBar) {
-        const el = utilBar as HTMLElement;
-        const targetWidth = el.style.width;
-        el.style.width = '0%';
-        animate(el, {
-          width: [0, targetWidth],
+        animate(utilBar, {
+          scaleX: [0, 1],
           duration: 800,
           delay: 800,
           ease: 'out(3)',
@@ -182,13 +179,10 @@ export function useDashboardAnimations(ready: boolean) {
       }
 
       // ── Phase 7: Truck margin bars grow ──
-      const truckBars = root.querySelectorAll('.wf-vrow .bar i');
+      const truckBars = root.querySelectorAll('.wf-vrow progress.bar');
       truckBars.forEach((bar, i) => {
-        const el = bar as HTMLElement;
-        const tw = el.style.width;
-        el.style.width = '0%';
-        animate(el, {
-          width: [0, tw],
+        animate(bar, {
+          scaleX: [0, 1],
           duration: 600,
           delay: 900 + i * 80,
           ease: 'out(3)',

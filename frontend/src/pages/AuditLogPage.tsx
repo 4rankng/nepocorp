@@ -3,9 +3,9 @@ import { downloadCSV } from '../lib/csv';
 import {
   Search, Activity, Users, Clock, TrendingUp, Download, FileText,
   Truck, Settings, DollarSign, LogIn,
-  Globe, Terminal, Copy, Check, Info, ShieldAlert,
+  Globe, Terminal, Copy, Check, Info, Eye, X,
 } from 'lucide-react';
-import { Panel, KPI, Drawer } from '../components/UI';
+import { Panel, KPI } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
@@ -94,6 +94,7 @@ export default function AuditLogPage() {
   const [search, setSearch] = useState('');
   const [selectedEntry, setSelectedEntry] = useState<NormalizedEntry | null>(null);
   const [copied, setCopied] = useState(false);
+  const detailDialogRef = useRef<HTMLDialogElement>(null);
 
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
@@ -115,6 +116,14 @@ export default function AuditLogPage() {
   useEffect(() => {
     setSelectedEntry(null);
   }, [filter, search]);
+
+  useEffect(() => {
+    const dialog = detailDialogRef.current;
+    if (!dialog) return;
+
+    if (selectedEntry && !dialog.open) dialog.showModal();
+    if (!selectedEntry && dialog.open) dialog.close();
+  }, [selectedEntry]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastElementRef = useCallback((node: HTMLTableRowElement | null) => {
@@ -157,48 +166,7 @@ export default function AuditLogPage() {
   };
 
   const renderDetailContent = (entry: NormalizedEntry | null) => {
-    if (!entry) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 380, color: 'var(--ink-3)', padding: 20, textAlign: 'center' }}>
-          <ShieldAlert size={36} style={{ color: 'var(--info)', opacity: 0.6, marginBottom: 12 }} />
-          <h4 style={{ margin: '0 0 6px 0', fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-            Thanh tra Hoạt động
-          </h4>
-          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, maxWidth: 220 }}>
-            Chọn một dòng bất kỳ bên bảng để xem phân tích dữ liệu chi tiết của yêu cầu.
-          </p>
-          <div style={{ width: '100%', borderTop: '1px solid var(--line)', marginTop: 24, paddingTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
-              <span>Phân bổ hoạt động nhóm</span>
-            </div>
-            <div className="audit-bar">
-              <div className="audit-bar__seg audit-bar__seg--trip" style={{ width: `${filter === 'trip' || filter === 'all' ? 40 : 0}%` }} title="Chuyến đi" />
-              <div className="audit-bar__seg audit-bar__seg--config" style={{ width: `${filter === 'config' || filter === 'all' ? 25 : 0}%` }} title="Cấu hình" />
-              <div className="audit-bar__seg audit-bar__seg--finance" style={{ width: `${filter === 'finance' || filter === 'all' ? 20 : 0}%` }} title="Tài chính" />
-              <div className="audit-bar__seg audit-bar__seg--penalty" style={{ width: `${filter === 'penalty' || filter === 'all' ? 10 : 0}%` }} title="Kỷ luật" />
-              <div className="audit-bar__seg audit-bar__seg--auth" style={{ width: `${filter === 'auth' || filter === 'all' ? 5 : 0}%` }} title="Xác thực" />
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px', marginTop: 12, fontSize: 12, lineHeight: 1.35 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} /> Chuyến đi
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--info)' }} /> Cấu hình
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)' }} /> Tài chính
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} /> Kỷ luật
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)' }} /> Xác thực
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    if (!entry) return null;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }} className="fade-up">
@@ -247,7 +215,7 @@ export default function AuditLogPage() {
               <span className={`audit-method audit-method--${entry.method}`}>
                 {entry.method}
               </span>
-              <span style={{ fontSize: 12, lineHeight: 1.35, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+              <span style={{ fontSize: 12, lineHeight: 1.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflowWrap: 'anywhere' }}>
                 {entry.path}
               </span>
             </div>
@@ -433,10 +401,15 @@ fontSize: 13,
         </div>
       </div>
 
-      {/* ── Two-Column Overhaul Layout ── */}
-      <div className="audit-grid" style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}>
-        {/* Left Column: Table List */}
-        <Panel flush style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* ── Full-width activity list ── */}
+      <Panel flush className="audit-list-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="audit-list-panel__intro">
+          <div>
+            <h2>Danh sách hoạt động</h2>
+            <p>Chọn một bản ghi để xem đầy đủ thông tin và dữ liệu kỹ thuật.</p>
+          </div>
+          <span className="audit-list-panel__count">{total.toLocaleString('vi-VN')} bản ghi</span>
+        </div>
           <div className="table-scroll" data-tour-id="audit-table">
             <table className="table-hover">
               <thead>
@@ -471,11 +444,15 @@ fontSize: 13,
                         key={`${entry.id}-${idx}`}
                         ref={idx === entries.length - 1 ? lastElementRef : null}
                         onClick={() => setSelectedEntry(entry)}
-                        style={{
-                          cursor: 'pointer',
-                          background: isSelected ? 'var(--accent-soft)' : undefined,
-                          transition: 'background 0.2s',
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedEntry(entry);
+                          }
                         }}
+                        className={isSelected ? 'is-selected' : undefined}
+                        tabIndex={0}
+                        aria-label={`Xem chi tiết hoạt động của ${entry.userName}: ${entry.message}`}
                       >
                         <td className="num">{idx + 1}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
@@ -492,23 +469,29 @@ fontSize: 13,
                               <Users size={13} aria-hidden="true" />
                             </div>
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflowWrap: 'anywhere' }}>
                                 {entry.userName}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td style={{ minWidth: 0 }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                            <div className="audit-event-tag">
-                              <span className={`audit-dot ${categoryDotClass(entry.category)}`} />
-                              {categoryIcon(entry.category)}
-                              <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)' }}>
-                                {ACTION_LABELS[entry.action] || entry.action}
-                              </span>
+                          <div className="audit-row-content">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                              <div className="audit-event-tag">
+                                <span className={`audit-dot ${categoryDotClass(entry.category)}`} />
+                                {categoryIcon(entry.category)}
+                                <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)' }}>
+                                  {ACTION_LABELS[entry.action] || entry.action}
+                                </span>
+                              </div>
+                              <div className="audit-log__msg">
+                                {entry.message}
+                              </div>
                             </div>
-                            <div className="audit-log__msg" title={entry.message}>
-                              {entry.message}
+                            <div className="audit-row-content__preview" aria-hidden="true">
+                              <Eye size={15} />
+                              <span>Xem chi tiết</span>
                             </div>
                           </div>
                         </td>
@@ -544,28 +527,35 @@ fontSize: 13,
               <span>Hiển thị {entries.length} trong tổng số {total} bản ghi</span>
             </div>
           )}
-        </Panel>
+      </Panel>
 
-        {/* Right Column: Interactive Details Pane — ADMIN only (desktop) */}
-        {isAdmin && <div className="desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Panel style={{ flex: 1, minHeight: 460, position: 'relative' }}>
+      <dialog
+        ref={detailDialogRef}
+        className="d-modal d-modal-end audit-detail-modal"
+        aria-labelledby="audit-detail-title"
+        onClose={() => setSelectedEntry(null)}
+      >
+        <div className="d-modal-box audit-detail-modal__box">
+          <header className="audit-detail-modal__header">
+            <div>
+              <span className="audit-detail-modal__eyebrow">Bản ghi kiểm toán</span>
+              <h2 id="audit-detail-title">Chi tiết hoạt động</h2>
+              <p>{selectedEntry ? formatExactTime(selectedEntry.timestamp) : ''}</p>
+            </div>
+            <form method="dialog">
+              <button className="d-btn d-btn-ghost d-btn-circle" aria-label="Đóng chi tiết hoạt động">
+                <X size={20} />
+              </button>
+            </form>
+          </header>
+          <div className="audit-detail-modal__body">
             {renderDetailContent(selectedEntry)}
-          </Panel>
-        </div>}
-
-        {isAdmin && (
-          <div className="mobile-only">
-            <Drawer
-              isOpen={!!selectedEntry}
-              onClose={() => setSelectedEntry(null)}
-              title="Chi tiết hoạt động"
-              subtitle={selectedEntry ? `${selectedEntry.userName} — ${formatExactTime(selectedEntry.timestamp)}` : ''}
-            >
-              {renderDetailContent(selectedEntry)}
-            </Drawer>
           </div>
-        )}
-      </div>
+        </div>
+        <form method="dialog" className="d-modal-backdrop">
+          <button aria-label="Đóng chi tiết hoạt động">Đóng</button>
+        </form>
+      </dialog>
 
       {/* ── Pagination removed for Infinite Scroll ── */}
     </div>

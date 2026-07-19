@@ -16,12 +16,13 @@ export const runningSum = (values: number[]): number[] => {
 };
 
 export function DeltaPill({ mom, suffix = '', flatLabel = '0%' }: { mom: string | null; suffix?: string; flatLabel?: string }) {
-  if (!mom) return <span className="delta flat">{flatLabel}</span>;
+  if (!mom) return <span className="d-badge d-badge-ghost d-badge-sm delta flat">{flatLabel}</span>;
   const isUp = mom.startsWith('+');
   const isDown = mom.startsWith('-');
   const className = isUp ? 'delta up' : isDown ? 'delta down' : 'delta flat';
+  const badgeClass = isUp ? 'd-badge-success' : isDown ? 'd-badge-error' : 'd-badge-ghost';
   const symbol = isUp ? '▲' : isDown ? '▼' : '·';
-  return <span className={className}>{symbol} {mom.replace(/^[+-]/, '')}{suffix}</span>;
+  return <span className={`d-badge d-badge-soft d-badge-sm ${badgeClass} ${className}`}>{symbol} {mom.replace(/^[+-]/, '')}{suffix}</span>;
 }
 
 const DECISION_ICONS: Record<DashboardDecisionKind, AssetIconName> = {

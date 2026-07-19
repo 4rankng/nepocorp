@@ -6,6 +6,7 @@ import { forwarderClient } from '../../../api/forwarderClient';
 import type { ApprovalItemType, ApprovalQueueItem, ApprovalQueueResponse } from '../hooks/useApprovalQueue';
 import { qk } from '../../../api/keys';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
+import { StatusStrip } from '../../../components/shared/StatusStrip';
 
 const TYPE_LABEL: Partial<Record<ApprovalItemType, string>> = {
   ancillaryFees: 'Phí phụ trợ',
@@ -84,7 +85,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
   const handleNextPage = () => setPage(value => Math.min(pageCount - 1, value + 1));
 
   return (
-    <div className="wf-card approval-queue">
+    <div className="d-card d-card-border bg-base-100 wf-card approval-queue">
       <div className="wf-card-h">
         <div>
           <div className="ttl">Cần duyệt</div>
@@ -98,7 +99,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
               <div className="approval-queue__pager" aria-label="Phân trang cần duyệt">
                 <button
                   type="button"
-                  className="approval-queue__page-btn"
+                  className="d-btn d-btn-square d-btn-sm approval-queue__page-btn"
                   onClick={handlePrevPage}
                   disabled={currentPage === 0}
                   aria-label="Trang trước"
@@ -111,7 +112,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
                 </span>
                 <button
                   type="button"
-                  className="approval-queue__page-btn"
+                  className="d-btn d-btn-square d-btn-sm approval-queue__page-btn"
                   onClick={handleNextPage}
                   disabled={currentPage >= pageCount - 1}
                   aria-label="Trang sau"
@@ -121,7 +122,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
                 </button>
               </div>
             )}
-            <span className="approval-queue__count">{total}</span>
+            <span className="d-badge d-badge-success d-badge-soft approval-queue__count">{total}</span>
           </div>
         )}
       </div>
@@ -227,6 +228,7 @@ function Row({
       onKeyDown={handleRowKey}
       aria-label={item.title}
     >
+      {item.severity === 'urgent' ? <StatusStrip color="var(--wf-red)" /> : null}
       <span className={`approval-queue__ic ${TYPE_ICON_CLASS[item.type]}`}>
         {TYPE_ICON[item.type]}
       </span>
@@ -241,7 +243,7 @@ function Row({
       {item.type === 'advances' && (
         <button
           type="button"
-          className="approval-queue__quick"
+          className="d-btn d-btn-square d-btn-sm approval-queue__quick"
           onClick={handleQuickApprove}
           disabled={approving}
           title={error ? `Lỗi: ${error}` : QUICK_ACTION_LABEL[item.type]}

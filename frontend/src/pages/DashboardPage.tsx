@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { Activity, ChevronRight, Download, Truck } from 'lucide-react';
 import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { AssetIcon } from '../components/AssetIcon';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
@@ -18,6 +19,54 @@ import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboard
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DashboardPage.css';
 import { CostDonut, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type DonutSlice } from '../features/dashboard/components/dashboard-presenters';
+
+type DashboardStatTone = 'revenue' | 'cost' | 'gross' | 'net' | 'debt';
+
+const DASHBOARD_STAT_STRIP_COLORS: Record<DashboardStatTone, string> = {
+  revenue: 'var(--wf-green)',
+  cost: 'var(--wf-amber)',
+  gross: 'var(--wf-blue)',
+  net: 'var(--wf-green-500)',
+  debt: 'var(--wf-red)',
+};
+
+const DECISION_STRIP_COLORS: Record<DashboardDecisionItem['severity'], string> = {
+  critical: 'var(--wf-red)',
+  warning: 'var(--wf-amber)',
+  info: 'var(--wf-blue)',
+  success: 'var(--wf-green-500)',
+};
+
+interface DashboardStatProps {
+  tone: DashboardStatTone;
+  icon: React.ReactNode;
+  label: string;
+  delta?: React.ReactNode;
+  value: string;
+  valueRef?: (element: HTMLSpanElement | null) => void;
+  description: React.ReactNode;
+}
+
+function DashboardStat({ tone, icon, label, delta, value, valueRef, description }: DashboardStatProps) {
+  return (
+    <div className={`d-stats d-card d-card-border bg-base-100 wf-kpi wf-kpi--${tone}`}>
+      <StatusStrip color={DASHBOARD_STAT_STRIP_COLORS[tone]} />
+      <div className="d-stat">
+        <div className="d-stat-title row1">
+          <span className="lbl">
+            <span className="wf-kpi__icon" aria-hidden="true">{icon}</span>
+            {label}
+          </span>
+          {delta}
+        </div>
+        <div className="d-stat-value val">
+          <span ref={valueRef}>{value}</span> <i>đ</i>
+        </div>
+        <div className="d-stat-desc foot">{description}</div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -274,7 +323,13 @@ export default function DashboardPage() {
     <div className="dash-wf" ref={rootRef}>
       {/* ── page head ── */}
       <header className="wf-head">
-        <div>
+        <div className="wf-head__copy">
+          <div className="wf-eyebrow">
+            <span className="d-badge d-badge-success d-badge-soft d-badge-sm">
+              <Activity size={12} aria-hidden="true" /> Đang hoạt động
+            </span>
+            <span>Trung tâm điều hành · {String(currentMonth).padStart(2, '0')}/{currentYear}</span>
+          </div>
           <h1>
             {greeting()},{' '}
             <span style={{ fontWeight: 800 }}>
@@ -292,12 +347,12 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="wf-acts">
-          <button className="wf-btn" onClick={() => navigate('/finance')}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+          <button className="d-btn d-btn-sm wf-btn" onClick={() => navigate('/finance')}>
+            <Download size={16} aria-hidden="true" />
             Báo cáo lãi lỗ
           </button>
-          <button className="wf-btn wf-btn--primary" onClick={() => navigate('/dispatch')}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 3h15v13H1z" /><path d="M16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
+          <button className="d-btn d-btn-primary d-btn-sm wf-btn wf-btn--primary" onClick={() => navigate('/dispatch')}>
+            <Truck size={16} aria-hidden="true" />
             Phân xe{createdTripsCount > 0 ? ` · ${createdTripsCount} chờ` : ''}
           </button>
         </div>
@@ -305,57 +360,49 @@ export default function DashboardPage() {
 
       {/* ── KPI row ── */}
       <div className="wf-kpis" data-tour-id="dashboard-kpis">
-        <div className="wf-kpi">
-          <div className="row1">
-            <span className="lbl">
-              <AssetIcon name="analytics" size={14} /> Doanh thu · {String(currentMonth).padStart(2, '0')}/{currentYear}
-            </span>
-            <DeltaPill mom={revenueMoM} />
-          </div>
-          <div className="val"><span ref={el => { kpiRefs.current.revenue = el; }}>{fmtVN(revenue)}</span> <i>đ</i></div>
-          <div className="foot">Tháng trước · {formatNumber(prevRevenue)} đ</div>
-        </div>
-        <div className="wf-kpi">
-          <div className="row1">
-            <span className="lbl">
-              <AssetIcon name="expense" size={14} /> Tổng chi phí
-            </span>
-            <DeltaPill mom={costsMoM} />
-          </div>
-          <div className="val"><span ref={el => { kpiRefs.current.costs = el; }}>{fmtVN(costs)}</span> <i>đ</i></div>
-          <div className="foot">{costRatio.toFixed(1)}% doanh thu</div>
-        </div>
-        <div className="wf-kpi">
-          <div className="row1">
-            <span className="lbl">
-              <AssetIcon name="truck" size={14} /> Lợi nhuận gộp
-            </span>
-            <DeltaPill mom={grossMoM} />
-          </div>
-          <div className="val"><span ref={el => { kpiRefs.current.gross = el; }}>{fmtVN(grossProfit)}</span> <i>đ</i></div>
-          <div className="foot">Biên gộp · {grossMargin.toFixed(1)}%</div>
-        </div>
-        <div className="wf-kpi">
-          <div className="row1">
-            <span className="lbl">
-              <AssetIcon name="payroll" size={14} /> Lợi nhuận ròng
-            </span>
-            <DeltaPill mom={netMoM} />
-          </div>
-          <div className="val"><span ref={el => { kpiRefs.current.net = el; }}>{fmtVN(netProfit)}</span> <i>đ</i></div>
-          <div className="foot">
-            Sau phí quản lý · <button className="wf-link" onClick={() => navigate('/profit')}>Phân chia →</button>
-          </div>
-        </div>
-        <div className="wf-kpi">
-          <div className="row1">
-            <span className="lbl">
-              <AssetIcon name="receivables" size={14} /> Công nợ phải thu
-            </span>
-          </div>
-          <div className="val"><span>{fmtVN(receivablesSummary?.totalOutstanding ?? 0)}</span> <i>đ</i></div>
-          <div className="foot">{receivablesSummary?.overdueCustomers ?? 0} khách quá hạn</div>
-        </div>
+        <DashboardStat
+          tone="revenue"
+          icon={<AssetIcon name="analytics" size={15} />}
+          label={`Doanh thu · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
+          delta={<DeltaPill mom={revenueMoM} />}
+          value={fmtVN(revenue)}
+          valueRef={element => { kpiRefs.current.revenue = element; }}
+          description={<>Tháng trước · {formatNumber(prevRevenue)} đ</>}
+        />
+        <DashboardStat
+          tone="cost"
+          icon={<AssetIcon name="expense" size={15} />}
+          label="Tổng chi phí"
+          delta={<DeltaPill mom={costsMoM} />}
+          value={fmtVN(costs)}
+          valueRef={element => { kpiRefs.current.costs = element; }}
+          description={<>{costRatio.toFixed(1)}% doanh thu</>}
+        />
+        <DashboardStat
+          tone="gross"
+          icon={<AssetIcon name="truck" size={15} />}
+          label="Lợi nhuận gộp"
+          delta={<DeltaPill mom={grossMoM} />}
+          value={fmtVN(grossProfit)}
+          valueRef={element => { kpiRefs.current.gross = element; }}
+          description={<>Biên gộp · {grossMargin.toFixed(1)}%</>}
+        />
+        <DashboardStat
+          tone="net"
+          icon={<AssetIcon name="payroll" size={15} />}
+          label="Lợi nhuận ròng"
+          delta={<DeltaPill mom={netMoM} />}
+          value={fmtVN(netProfit)}
+          valueRef={element => { kpiRefs.current.net = element; }}
+          description={<>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => navigate('/profit')}>Phân chia →</button></>}
+        />
+        <DashboardStat
+          tone="debt"
+          icon={<AssetIcon name="receivables" size={15} />}
+          label="Công nợ phải thu"
+          value={fmtVN(receivablesSummary?.totalOutstanding ?? 0)}
+          description={<>{receivablesSummary?.overdueCustomers ?? 0} khách quá hạn</>}
+        />
       </div>
 
       {/* ── Bento grid (12-col, 2 hero tiles) ──
@@ -366,7 +413,7 @@ export default function DashboardPage() {
       <div className="wf-bento">
 
         {/* Hero 1 — Chart (8 cols × 2 rows) */}
-        <div className="wf-card wf-chart wf-bento-hero">
+        <div className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Doanh thu & Lợi nhuận gộp</div>
@@ -378,12 +425,12 @@ export default function DashboardPage() {
                     : 'Chưa có dữ liệu'}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="wf-chart-actions">
                 <div className="wf-chart-toggle">
-                  <button className={`wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')}>Ngày</button>
-                  <button className={`wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')}>Tháng</button>
+                  <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')} aria-pressed={chartView === 'day'}>Ngày</button>
+                  <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')} aria-pressed={chartView === 'month'}>Tháng</button>
                 </div>
-                <button className="wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
+                <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </button>
               </div>
@@ -416,13 +463,13 @@ export default function DashboardPage() {
           </div>
 
         {/* Fleet (4 cols × 1 row) — right of chart, row 1 */}
-        <div className="wf-card wf-fleet wf-bento-third">
+        <div className="d-card d-card-border bg-base-100 wf-card wf-fleet wf-bento-third">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Tình trạng đội xe</div>
                 <div className="sub">{fleet.total} đầu kéo · {fleet.drivers} lái xe</div>
               </div>
-              <button className="wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
+              <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
             </div>
             <div className="body">
               <div className="wf-fstats">
@@ -434,7 +481,7 @@ export default function DashboardPage() {
               {fleet.utilization != null && (
                 <div className="wf-util">
                   <span className="cap">Tỷ lệ sử dụng</span>
-                  <span className="track"><i style={{ width: `${Math.min(100, fleet.utilization)}%` }} /></span>
+                  <progress className="d-progress d-progress-success track" value={Math.min(100, fleet.utilization)} max="100" aria-label="Tỷ lệ sử dụng đội xe" />
                   <span className="pct">{Math.round(fleet.utilization)}%</span>
                 </div>
               )}
@@ -442,7 +489,7 @@ export default function DashboardPage() {
           </div>
 
         {/* Cost donut (4 cols × 1 row) — right of chart, row 2 */}
-        <div className="wf-card wf-cost wf-bento-third">
+        <div className="d-card d-card-border bg-base-100 wf-card wf-cost wf-bento-third">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cơ cấu chi phí</div>
@@ -470,7 +517,7 @@ export default function DashboardPage() {
           </div>
 
         {/* Lợi nhuận theo xe (6 cols × 1 row) — below chart */}
-        <div className="wf-card wf-bento-half">
+        <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
               <div className="wf-card-h">
                 <div>
                   <div className="ttl">Lợi nhuận theo xe</div>
@@ -483,7 +530,7 @@ export default function DashboardPage() {
                 ) : topTrucks.map((t, i) => (
                   <div key={i} className="wf-vrow">
                     <span className="plate" title={t.plate}>{t.plate}</span>
-                    <span className="bar"><i style={{ width: `${t.widthPct}%` }} /></span>
+                    <progress className="d-progress d-progress-success bar" value={t.widthPct} max="100" aria-label={`Biên lợi nhuận xe ${t.plate}`} />
                     <span className="pct">{t.pct}%</span>
                   </div>
                 ))}
@@ -491,13 +538,13 @@ export default function DashboardPage() {
             </div>
 
         {/* Top tuyến sinh lời (6 cols × 1 row) — below chart, right half */}
-        <div className="wf-card wf-bento-half">
+        <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
               <div className="wf-card-h">
                 <div>
                   <div className="ttl">Top tuyến sinh lời</div>
                   <div className="sub">Theo lợi nhuận gộp · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
                 </div>
-                <button className="wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
+                <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
               </div>
               <div className="wf-rlist">
                 {topRoutes.length === 0 ? (
@@ -512,11 +559,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-        {/* Hero 2 — Cần duyệt (8 cols × 2 rows) — only for roles allowed by
-            casbin. The wrapper div carries the bento span; the card itself
-            stays untouched inside. */}
+        {/* Cần duyệt — full-width so its height does not inherit the much
+            taller decision list beside it. */}
         {showApprovalQueue && (
-          <div className="wf-bento-hero">
+          <div className="wf-bento-full">
             <ApprovalQueueCard
               data={approvalQueue}
               loading={approvalQueueLoading}
@@ -525,8 +571,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Cần chú ý (4 cols × 2 rows) — right of approval queue */}
-        <div className="wf-card wf-att wf-bento-side" data-tour-id="dashboard-attention">
+        {/* Cần chú ý — wide decision board; rows become two columns on desktop. */}
+        <div className="d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-full" data-tour-id="dashboard-attention">
             <div className="wf-card-h">
               <div>
                 <div className="ttl">Cần chú ý</div>
@@ -540,13 +586,14 @@ export default function DashboardPage() {
                 <React.Fragment key={i}>
                   {i > 0 && <div className="wf-divider" />}
                   <div className={`wf-arow wf-arow--${item.severity}`}>
+                    <StatusStrip color={DECISION_STRIP_COLORS[item.severity]} />
                     <div className={`ic wf-ic-${item.severity}`}>
                       <AssetIcon name={iconName} size={18} />
                     </div>
                     <div className="tx">
                       <div className="t">
                         {item.title}
-                        <span className={`wf-severity wf-severity--${item.severity}`}>
+                        <span className={`d-badge d-badge-soft d-badge-sm wf-severity wf-severity--${item.severity}`}>
                           {severityLabel(item.severity)}
                         </span>
                       </div>
@@ -555,7 +602,7 @@ export default function DashboardPage() {
                     {item.route && item.actionLabel && (
                       <div className="go">
                         <button
-                          className={`wf-minibtn${item.severity === 'success' ? ' green' : ''}`}
+                          className={`d-btn d-btn-sm wf-minibtn${item.severity === 'success' ? ' d-btn-success green' : ''}`}
                           onClick={() => navigate(item.route!)}
                         >
                           <span>{item.actionLabel}</span>

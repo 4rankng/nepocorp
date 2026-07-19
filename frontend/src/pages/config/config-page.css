@@ -568,7 +568,7 @@
    ("Tuyến đường") doesn't over-expand to 600+px (it has unbreakable
    city names like "Hải Phòng - Tân Vũ - Thượng Bằng La, Lào Cai")
    and leave 300px+ of whitespace on the right of the card. */
-.routes-table { table-layout: fixed; width: 100%; }
+.routes-table { min-width: 980px; table-layout: fixed; width: 100%; }
 .routes-table thead th:nth-child(1) { width: 38%; }   /* Tuyến đường */
 .routes-table thead th:nth-child(2) { width: 7%;  }   /* KM */
 .routes-table thead th:nth-child(3) { width: 11%; }   /* Loại */
@@ -577,9 +577,24 @@
 .routes-table thead th:nth-child(6) { width: 9%;  }   /* Chuẩn 20ft */
 .routes-table thead th:nth-child(7) { width: 9%;  }   /* Chuẩn 40ft */
 .routes-table thead th:nth-child(8) { width: 7%;  }   /* Sử dụng 06/26 */
-/* Match widths in body cells too so columns stay aligned */
-.routes-table tbody td:nth-child(1) { word-break: break-word; }
-.routes-table tbody td:nth-child(n+2) { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+/* Keep content inside its assigned column. The previous `overflow: visible`
+   let long route names draw on top of the type badge and numeric columns. */
+.routes-table tbody td { overflow: hidden; }
+.routes-table tbody td:nth-child(1) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.routes-table tbody td:nth-child(1) .row-strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.routes-table tbody td:nth-child(n+2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 820px) {
