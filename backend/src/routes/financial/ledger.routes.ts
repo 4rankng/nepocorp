@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { LedgerService } from '../../services/ledger.service';
 import * as financialService from '../../services/financial.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml, attachmentDisposition } from '../../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, attachmentDisposition, normalizeDateParam } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
 
 const router = Router();
@@ -33,8 +33,8 @@ router.get('/ledger/balances', asyncHandler(async (req: Request, res: Response) 
 
 router.get('/ledger/customers/:id/statement', asyncHandler(async (req: Request, res: Response) => {
   const customerId = parseInt(req.params.id as string, 10);
-  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
-  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const dateFrom = normalizeDateParam((req.query.dateFrom || req.query.date_from) as string | undefined);
+  const dateTo = normalizeDateParam((req.query.dateTo || req.query.date_to) as string | undefined);
   const data = await getStatementData(customerId, dateFrom, dateTo);
   if (!data) return res.status(404).json({ error: 'Không tìm thấy khách hàng' });
   res.json(data);

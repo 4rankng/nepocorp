@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { useLiveFleet } from '../hooks/useTripQueries';
 import { LiveTrackingCard } from '../features/trip-detail/components/LiveTrackingCard';
 import { Modal, Drawer } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { Spinner } from '../components/shared/Spinner';
 import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
@@ -64,6 +65,17 @@ export default function TripDetailPage() {
   /* ── Main render ───────────────────────────────────────────────────── */
   return (
     <div ref={rootRef}>
+      <Breadcrumbs
+        className="trip-detail__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Sổ chuyến đi', to: '/trips' },
+          { label: trip.tripCode || 'Chuyến chưa có mã' },
+        ]}
+        renderLink={(to, children) => (
+          <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
+        )}
+      />
       <TripHeader
         trip={trip}
         permissions={permissions}

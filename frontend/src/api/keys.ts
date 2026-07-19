@@ -235,7 +235,9 @@ export const qk = {
       id: string | number | undefined,
       range: { dateFrom?: string; dateTo?: string } = {},
     ) =>
-      ['customer-statement', id, range.dateFrom ?? null, range.dateTo ?? null] as const,
+      // Normalize empty strings to null so range mode with one cleared input
+      // doesn't fragment the cache ('' !== null !== undefined for deep-equal).
+      ['customer-statement', id, range.dateFrom || null, range.dateTo || null] as const,
     /** Broad prefix — matches every customer-statement query regardless of range. */
     customerStatementAll: ['customer-statement'] as const,
     customerLedgerEntries: ['customer-ledger-entries'],
@@ -247,7 +249,7 @@ export const qk = {
       supplierId: number | undefined,
       range: { dateFrom?: string; dateTo?: string } = {},
     ) =>
-      ['supplier-statement', supplierId, range.dateFrom ?? null, range.dateTo ?? null] as const,
+      ['supplier-statement', supplierId, range.dateFrom || null, range.dateTo || null] as const,
     /** Broad prefix — matches every supplier-statement query regardless of range. */
     supplierStatementAll: ['supplier-statement'] as const,
     expenses: (filters: unknown) => ['expenses', filters] as const,

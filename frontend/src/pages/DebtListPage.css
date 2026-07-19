@@ -3,6 +3,14 @@
  * TingTing AR Receivables · Vantai design system
  * ========================================================================== */
 
+/* Breadcrumb trail — consistent with TripListPage / detail pages. */
+.debt-list-page__crumbs {
+  margin: 2px 0 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.debt-list-page__crumbs ul { gap: 4px; }
+
 /* ════════════════════════════════════════════════════════════════════════════
  *  ZONE 1 — Hero KPI Row (page-specific overrides on shared HeroKpiRow.css)
  * ════════════════════════════════════════════════════════════════════════════ */

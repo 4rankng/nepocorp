@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialClient, type CustomerAging, type CustomerAgingResponse } from '../api/financialClient';
 import { qk } from '../api/keys';
 import type { LedgerEntry, CustomerStatement, PayablesCategory, SupplierStatement } from '@tingting/shared';
@@ -21,6 +21,7 @@ export function useCustomerStatement(
     queryKey: qk.financial.customerStatement(id, range),
     enabled: !!id,
     queryFn: () => financialClient.getCustomerStatement(Number(id), range),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -95,6 +96,7 @@ export function useSupplierStatement(
     queryKey: qk.financial.supplierStatement(supplierId, range),
     queryFn: () => financialClient.getSupplierStatement(supplierId!, range),
     enabled: !!supplierId,
+    placeholderData: keepPreviousData,
   });
 }
 

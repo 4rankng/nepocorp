@@ -6,6 +6,20 @@
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .section-gap { margin-bottom: 16px; }
 
+/* ─── Shared breadcrumb trail ─────────────────────────────────────────────
+ * Any page that mounts <Breadcrumbs className="<page>__crumbs"> picks up
+ * this consistent "you are here" spacing without needing its own CSS rule.
+ * Page-specific overrides (e.g. trip-detail, dispatch) live in their own CSS
+ * and win by specificity since they're imported after utilities.css.
+ * -------------------------------------------------------------------------- */
+[class$="__crumbs"] {
+  margin: 2px 0 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+[class$="__crumbs"] ul { gap: 4px; }
+
+
 .fade-up { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .fade-up-1 { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both; }
 .fade-up-2 { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }

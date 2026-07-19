@@ -24,7 +24,7 @@ export interface PeriodSummaryCardsProps {
 export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSummaryCardsProps) {
   if (isLoading || !summary) {
     return (
-      <div className="d-stats d-stats-horizontal period-summary period-summary--loading" aria-busy="true">
+      <div className="d-stats d-stats-vertical sm:d-stats-horizontal w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary period-summary--loading" aria-busy="true">
         <SkeletonStat label="Số dư đầu kỳ" />
         <SkeletonStat label="Phát sinh trong kỳ" />
         <SkeletonStat label="Số dư cuối kỳ" />
@@ -43,17 +43,16 @@ export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSum
       : '';
   const activitySign = periodActivity > 0 ? '+' : periodActivity < 0 ? '−' : '';
 
-  // Sub-line labels depend on sign convention: for AR (CUSTOMER) "Tăng" = tăng
-  // nợ (debit), for AP (VENDOR) "Tăng" = tăng nợ (credit). The numbers stay
-  // the same; only the wording differs to match how the user reads the ledger.
-  const increaseLabel = entityType === 'CUSTOMER' ? 'Tăng nợ' : 'Tăng nợ';
-  const decreaseLabel = entityType === 'CUSTOMER' ? 'Giảm nợ' : 'Giảm nợ';
+  // Sub-line "Tăng/Giảm nợ" wording matches the sign convention computed in
+  // the backend's `computePeriodSummary`: for AR (CUSTOMER) debits grow the
+  // balance; for AP (VENDOR) credits grow the balance. We surface those as
+  // "Tăng nợ" / "Giảm nợ" with the entity-appropriate totals.
   const increaseAmount = entityType === 'CUSTOMER' ? debitTotal : creditTotal;
   const decreaseAmount = entityType === 'CUSTOMER' ? creditTotal : debitTotal;
 
   return (
-    <div className="d-stats d-stats-horizontal period-summary">
-      <div className="d-stat">
+    <div className="d-stats d-stats-vertical sm:d-stats-horizontal w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary">
+      <div className="d-stat min-w-0">
         <div className="d-stat-title">Số dư đầu kỳ</div>
         <div className="d-stat-value">{formatCurrency(openingBalance)}</div>
         <div className="d-stat-desc">
@@ -61,17 +60,17 @@ export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSum
         </div>
       </div>
 
-      <div className="d-stat">
+      <div className="d-stat min-w-0">
         <div className="d-stat-title">Phát sinh trong kỳ</div>
         <div className={`d-stat-value ${activityClass}`}>
           {activitySign}{formatCurrency(Math.abs(periodActivity))}
         </div>
         <div className="d-stat-desc">
-          {increaseLabel} {formatCurrency(increaseAmount)} · {decreaseLabel} {formatCurrency(decreaseAmount)}
+          Tăng nợ {formatCurrency(increaseAmount)} · Giảm nợ {formatCurrency(decreaseAmount)}
         </div>
       </div>
 
-      <div className="d-stat">
+      <div className="d-stat min-w-0">
         <div className="d-stat-title">Số dư cuối kỳ</div>
         <div className="d-stat-value">{formatCurrency(closingBalance)}</div>
         <div className="d-stat-desc">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 /* ─── Breadcrumbs ──────────────────────────────────────────────────────────
  * Hierarchical "you are here" trail for detail pages. Wraps daisyUI's
@@ -7,7 +8,7 @@ import React from 'react';
  * loses the parent-context cue.
  *
  * The last crumb is rendered as plain text (current page); earlier crumbs
- * are links. Each crumb may carry an optional leading icon.
+ * are links via react-router's <Link> (no per-page wiring needed).
  * -------------------------------------------------------------------------- */
 
 export interface Crumb {
@@ -19,8 +20,7 @@ export interface Crumb {
 
 interface BreadcrumbsProps {
   items: Crumb[];
-  /** Render function for links, so callers can use react-router's <Link>.
-   *  Defaults to a plain <a href>. */
+  /** Override the default <Link> renderer (e.g. for non-router contexts). */
   renderLink?: (to: string, children: React.ReactNode) => React.ReactNode;
   className?: string;
 }
@@ -46,7 +46,7 @@ export function Breadcrumbs({ items, renderLink, className = '' }: BreadcrumbsPr
               ) : renderLink ? (
                 renderLink(item.to, inner)
               ) : (
-                <a href={item.to}>{inner}</a>
+                <Link to={item.to}>{inner}</Link>
               )}
             </li>
           );

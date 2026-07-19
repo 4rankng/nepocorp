@@ -6,6 +6,8 @@ import { configClient } from '../api/configClient';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { Alert } from '../components/shared/Alert';
 import { AssetIcon } from '../components/AssetIcon';
 import { EmptyState } from '../design-system';
 import { ClickableCard } from '../components/shared/ClickableCard';
@@ -156,6 +158,13 @@ export default function ExpenseListPage() {
     <div ref={rootRef} className="expense-list-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
+      <Breadcrumbs
+        className="expense-list-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Chi phí phát sinh' },
+        ]}
+      />
       <PageHeader
         title="Chi phí phát sinh"
         iconName="expense"
@@ -274,11 +283,15 @@ export default function ExpenseListPage() {
       </div>
 
       {error && (
-        <div className="panel" style={{ padding: 16, color: 'var(--danger)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--danger-soft)', border: '1px solid rgba(227,36,52,0.2)', borderRadius: 12 }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-          <span style={{ flex: 1 }}>{error}</span>
-          <button className="btn btn--secondary btn--sm" onClick={() => refetch()}>Thử lại</button>
-        </div>
+        <Alert
+          variant="error"
+          style="soft"
+          icon={<AlertTriangle size={16} />}
+          className="mb-5"
+          action={<button className="btn btn--secondary btn--sm" onClick={() => refetch()}>Thử lại</button>}
+        >
+          {error}
+        </Alert>
       )}
 
       {/* Mobile card view */}

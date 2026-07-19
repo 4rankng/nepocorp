@@ -72,7 +72,7 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
 
   return {
     id: trip.id,
-    tripCode: trip.tripCode || `Lệnh #${trip.id}`,
+    tripCode: trip.tripCode || 'Lệnh chưa có mã',
     departureDate: trip.departureDate,
     routeName: trip.route?.name || 'Chưa có tuyến',
     revenue,

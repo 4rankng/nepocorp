@@ -7,6 +7,7 @@ import {
   AdvanceRequestStatus,
 } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import {
   useAdminAdvanceRequests,
@@ -292,6 +293,13 @@ export default function AdminAdvancesPage() {
   /* ── Render ──────────────────────────────────────────────────────────── */
   return (
     <div ref={rootRef} className="adv-page">
+      <Breadcrumbs
+        className="adv-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Tạm ứng' },
+        ]}
+      />
       <PageHeader
         title="Quản lý tạm ứng"
         iconName="advances"

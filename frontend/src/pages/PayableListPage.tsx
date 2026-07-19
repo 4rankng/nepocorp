@@ -4,6 +4,7 @@ import { downloadCSV } from '../lib/csv';
 import type { PayableSummary, PayablesCategory } from '@tingting/shared';
 import { Search, ChevronRight, Gift } from 'lucide-react';
 import { PageHeader, Modal } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { AssetIcon } from '../components/AssetIcon';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
@@ -323,6 +324,13 @@ export default function PayableListPage() {
 
   return (
     <div ref={rootRef} className="payables-page">
+      <Breadcrumbs
+        className="payables-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Công nợ phải trả' },
+        ]}
+      />
       <PageHeader
         title="Công nợ phải trả"
         iconName="payables"

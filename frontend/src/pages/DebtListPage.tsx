@@ -16,6 +16,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { PageHeader } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
@@ -229,6 +230,16 @@ export default function DebtListPage() {
 
   return (
     <div ref={rootRef} className="debt-list-page">
+      <Breadcrumbs
+        className="debt-list-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Công nợ phải thu' },
+        ]}
+        renderLink={(to, children) => (
+          <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
+        )}
+      />
       <PageHeader
         title="Công nợ phải thu"
         description={`${totalCustomers} khách hàng · cập nhật vừa xong`}

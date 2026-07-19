@@ -15,6 +15,7 @@ type EnrichedLedgerRow = LedgerRow & {
   routeName?: string | null;
   containerNumbers?: string[];
   tripId?: number | null;
+  tripCode?: string | null;
   serviceFeeLabel?: string | null;
 };
 
@@ -65,6 +66,21 @@ export function attachmentDisposition(filename: string): string {
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }
 
+/** Parse a `YYYY-MM-DD` query param. Returns `undefined` for missing/invalid
+ * values so malformed inputs degrade to "no filter" instead of producing
+ * NaN-based comparisons that silently yield wrong totals. */
+function parseIsoDateParam(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  // Strict YYYY-MM-DD check (the format the frontend date inputs emit).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const t = new Date(raw + 'T00:00:00').getTime();
+  return Number.isFinite(t) ? raw : undefined;
+}
+
+export function normalizeDateParam(raw: string | undefined): string | undefined {
+  return parseIsoDateParam(raw);
+}
+
 /**
  * Computes the AR/AP period summary (số dư đầu kỳ / phát sinh trong kỳ / số dư
  * cuối kỳ) for the period filter on the detail pages.
@@ -75,14 +91,18 @@ export function attachmentDisposition(filename: string): string {
  *   - VENDOR (AP): outstanding grows with credit, shrinks with debit.
  *     `periodActivity = creditTotal − debitTotal`.
  *
- * Opening balance is read from the stored `balance` column of the last ledger
- * row strictly before `dateFrom` (0 when none). Closing = opening + activity.
+ * Opening balance is read from the stored `balance` column of the ledger row
+ * with the largest `id` strictly before `dateFrom` (0 when none). The running-
+ * balance invariant is keyed to insert order (`id`), NOT wall-clock time, so
+ * we sort by `id` ascending and walk the sequence once. (Two entries posted
+ * in the same transaction can share a timestamp; `id` is the only stable tie-
+ * breaker that matches how `LedgerService.postEntry` computes `balance`.)
  *
- * Returns `null` when neither bound is supplied (all-time view — frontend
- * shows totalOutstanding instead).
+ * Returns `null` when neither bound is supplied — the caller then omits the
+ * field entirely and the frontend renders a loading skeleton.
  */
 export function computePeriodSummary(
-  rows: Array<{ timestamp: Date | string; debit: string | null; credit: string | null; balance: string }>,
+  rows: Array<{ id: number; timestamp: Date | string; debit: string | null; credit: string | null; balance: string }>,
   dateFrom: string | undefined,
   dateTo: string | undefined,
   entityType: 'CUSTOMER' | 'VENDOR',
@@ -92,19 +112,24 @@ export function computePeriodSummary(
   const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
   const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
 
+  // Sort ascending by id so "the last row before dateFrom" is unambiguous:
+  // `getEntriesByEntity` returns rows newest-first (id DESC), and iterating
+  // that order would otherwise leave openingBalance pinned to the OLDEST
+  // pre-period row instead of the most-recent one.
+  const ordered = [...rows].sort((a, b) => a.id - b.id);
+
   let openingBalance = 0;
   let debitTotal = 0;
   let creditTotal = 0;
 
-  for (const r of rows) {
+  for (const r of ordered) {
     const t = new Date(r.timestamp).getTime();
     const debit = Number(r.debit ?? 0) || 0;
     const credit = Number(r.credit ?? 0) || 0;
 
     if (fromTs !== null && t < fromTs) {
-      // Track the running balance up to (but not including) dateFrom. Because
-      // ledger rows are append-ordered and the stored `balance` is the running
-      // total, the last such row's balance is the opening balance.
+      // Walking ascending, the last assignment is the most-recent pre-period
+      // row — its stored `balance` is the opening balance.
       openingBalance = Number(r.balance) || 0;
     } else if ((fromTs === null || t >= fromTs) && (toTs === null || t <= toTs)) {
       debitTotal += debit;
@@ -279,10 +304,11 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     }
   }
 
-  const tripDetailsMap = new Map<number, { routeName: string | null; containerNumbers: string[] }>();
+  const tripDetailsMap = new Map<number, { tripCode: string | null; routeName: string | null; containerNumbers: string[] }>();
   if (tripIds.length > 0) {
     const tripRows = await db.select({
       tripId: s.trips.id,
+      tripCode: s.trips.tripCode,
       routeName: s.routes.name,
     }).from(s.trips)
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
@@ -305,6 +331,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
     for (const t of tripRows) {
       tripDetailsMap.set(t.tripId, {
+        tripCode: t.tripCode,
         routeName: t.routeName,
         containerNumbers: containersByTrip.get(t.tripId) ?? [],
       });
@@ -336,6 +363,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
         ? [feeContainerNumber]
         : details?.containerNumbers ?? [],
       tripId,
+      tripCode: details?.tripCode ?? null,
       serviceFeeLabel: feeDetails?.label ?? legacyFeeDetails?.label ?? null,
     };
   });
@@ -443,7 +471,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
 
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
-  let ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  let ledgerRows: EnrichedLedgerRow[] = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
   const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'VENDOR');
   if (dateFrom || dateTo) {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
@@ -454,6 +482,26 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       if (toTs !== null && t > toTs) return false;
       return true;
     });
+  }
+
+  // Fuel expenses point at a trip internally. Resolve its public trip code
+  // before returning the statement so the UI never has to expose `txnId`.
+  const fuelTripIds = Array.from(new Set(
+    ledgerRows
+      .filter((row) => row.txnType === TxnType.FUEL_EXPENSE && row.txnId)
+      .map((row) => row.txnId as number),
+  ));
+  if (fuelTripIds.length > 0) {
+    const tripRows = await db.select({ id: s.trips.id, tripCode: s.trips.tripCode })
+      .from(s.trips)
+      .where(inArray(s.trips.id, fuelTripIds));
+    const tripCodeById = new Map(tripRows.map((trip) => [trip.id, trip.tripCode]));
+    ledgerRows = ledgerRows.map((row) => ({
+      ...row,
+      tripCode: row.txnType === TxnType.FUEL_EXPENSE && row.txnId
+        ? tripCodeById.get(row.txnId) ?? null
+        : null,
+    }));
   }
 
   const now = new Date();

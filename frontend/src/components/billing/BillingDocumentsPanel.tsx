@@ -49,7 +49,7 @@ export default function BillingDocumentsPanel({
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey });
-      if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
+    if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
       // Use the broad prefix so the AR detail page's period-scoped statement
       // queries also refresh (the keyed variant only matches the default range).
       void queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });

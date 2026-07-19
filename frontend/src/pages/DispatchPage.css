@@ -4,6 +4,15 @@
  * (.hero, .metric, .vcard, .order-row, etc.) never collide with other pages.
  * ========================================================================== */
 
+/* Breadcrumb trail — sits above the charcoal hero. Muted color so it reads
+   as a "you are here" cue without competing with the hero metrics. */
+.dispatch-page .dispatch-page__crumbs {
+  margin: 2px 0 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.dispatch-page .dispatch-page__crumbs ul { gap: 4px; }
+
 /* Local design tokens (charcoal hero gradient + amber/red pill backgrounds
  * that are not part of the global palette) */
 .dispatch-page {

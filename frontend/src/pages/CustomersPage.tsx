@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { labelStyle } from '../utils/formStyles';
 import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { EmptyState } from '../design-system';
 import { formatCurrency, formatNumber } from '../lib/format';
 import type { Customer, Supplier } from '@tingting/shared';
@@ -296,6 +297,13 @@ export default function CustomersPage() {
     <div className="customers-page" ref={rootRef}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
+      <Breadcrumbs
+        className="customers-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Khách hàng' },
+        ]}
+      />
       <PageHeader
         title="Khách hàng"
         iconName="customer"

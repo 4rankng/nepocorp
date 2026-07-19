@@ -8,6 +8,8 @@ import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2,
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { api } from '../lib/api';
 import { Modal } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { Tooltip } from '../components/shared/Tooltip';
 import AssetIcon from '../components/AssetIcon';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
@@ -18,7 +20,7 @@ import { qk } from '../api/keys';
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DebtDetailPage.css';
 import { normalizeAging, money, rowTypeLabel, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
-import { PeriodFilter, resolvePeriodRange, initialPeriodState } from '../components/debt/PeriodFilter';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 
 // ── Aging constants ────────────────────────────────────────────────────────
@@ -37,6 +39,10 @@ export default function DebtDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const backPath = location.pathname.startsWith('/customers/') ? '/customers' : '/debt';
+  const isCustomerRoute = location.pathname.startsWith('/customers/');
+  const parentCrumb = isCustomerRoute
+    ? { label: 'Khách hàng', to: '/customers' }
+    : { label: 'Công nợ phải thu', to: '/debt' };
   const detailPath = location.pathname.startsWith('/customers/') ? `/customers/${id}` : `/debt/${id}`;
   const billingCreatePath = `${detailPath}/billing/new`;
   const isCreatingBillingDocument = location.pathname === billingCreatePath;
@@ -45,12 +51,19 @@ export default function DebtDetailPage() {
   // Declared before useCustomerStatement because the resolved range feeds the
   // statement query. Defaults to current month.
   const [period, setPeriod] = useState(() => initialPeriodState());
-  const periodRange = useMemo(
-    () => resolvePeriodRange(period),
-    [period],
+  const [appliedPeriod, setAppliedPeriod] = useState(period);
+  const appliedPeriodRange = useMemo(
+    () => resolvePeriodRange(appliedPeriod),
+    [appliedPeriod],
   );
 
-  const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id, periodRange);
+  const {
+    data: statement,
+    isLoading: loading,
+    isFetching: isStatementFetching,
+    error: queryError,
+    refetch,
+  } = useCustomerStatement(id, appliedPeriodRange);
   const error = queryError ? (queryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
 
@@ -61,6 +74,11 @@ export default function DebtDetailPage() {
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() =>
     isCreatingBillingDocument ? 'debit-note' : 'ledger',
   );
+  const isPeriodDirty = period.mode !== appliedPeriod.mode
+    || period.month !== appliedPeriod.month
+    || period.year !== appliedPeriod.year
+    || period.dateFrom !== appliedPeriod.dateFrom
+    || period.dateTo !== appliedPeriod.dateTo;
 
   useEffect(() => {
     if (isCreatingBillingDocument) setWorkspaceTab('debit-note');
@@ -170,7 +188,7 @@ export default function DebtDetailPage() {
 
   // ── Loading / Error ─────────────────────────────────────────────────────
 
-  if (loading) {
+  if (loading && !statement) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
         Đang tải dữ liệu...
@@ -178,7 +196,7 @@ export default function DebtDetailPage() {
     );
   }
 
-  if (error || !statement) {
+  if (!statement) {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
@@ -280,11 +298,24 @@ export default function DebtDetailPage() {
 
   return (
     <div ref={rootRef} className="debt-detail-page">
+      <Breadcrumbs
+        className="debt-detail__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: parentCrumb.label, to: parentCrumb.to },
+          { label: customer.name },
+        ]}
+        renderLink={(to, children) => (
+          <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
+        )}
+      />
       {/* ── Customer Header ─────────────────────────────────────────────── */}
       <div className="dd-header">
-        <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
-          <ArrowLeft size={20} />
-        </button>
+        <Tooltip label="Quay lại" side="right">
+          <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
+            <ArrowLeft size={20} />
+          </button>
+        </Tooltip>
         <div className="dd-avatar">
           <AssetIcon
             name="customer"
@@ -558,17 +589,20 @@ export default function DebtDetailPage() {
               {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
               <PeriodFilter
                 mode={period.mode}
-                onModeChange={(m) => setPeriod(p => ({ ...p, mode: m }))}
+                onModeChange={(m) => setPeriod(p => applyModeSwitch(p, m))}
                 month={period.month}
                 year={period.year}
                 onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
                 dateFrom={period.dateFrom}
                 dateTo={period.dateTo}
                 onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+                onApply={() => setAppliedPeriod(period)}
+                isApplying={isStatementFetching}
+                isApplyDisabled={!isPeriodDirty || isStatementFetching}
               />
               <PeriodSummaryCards
                 summary={statement.periodSummary}
-                isLoading={loading}
+                isLoading={isStatementFetching}
                 entityType="CUSTOMER"
               />
 
@@ -706,7 +740,7 @@ function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
     <tr>
       <td className="dd-td-date">{formatDate(row.timestamp)}</td>
       <td className="dd-reference">
-        <strong>{tripId ? `Chuyến #${tripId}` : row.receiptId || `GD #${row.id}`}</strong>
+        <strong>{row.tripCode || (tripId ? 'Chuyến chưa có mã' : row.receiptId || row.note || 'Giao dịch')}</strong>
         {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
         {row.receiptId && tripId && <small>{row.receiptId}</small>}
       </td>

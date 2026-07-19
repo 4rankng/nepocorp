@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 import { EmptyState } from '../../design-system';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { PageHeader, Panel, Modal, useConfirm } from '../UI';
+import { Alert } from '../shared/Alert';
 import { useCRUD } from '../../hooks/useCRUD';
 import type { PaginatedResponse } from '@tingting/shared';
 import { qk } from '../../api/keys';
@@ -165,7 +166,11 @@ export function CrudTable<T extends { id: number }>({
           </table>
         </div>
       </Panel>
-      {crud.error && <div style={{ textAlign: 'center', color: 'var(--danger)', marginTop: 12 }}>{crud.error}</div>}
+      {crud.error && (
+        <Alert variant="error" style="soft" icon={<AlertCircle size={16} />} className="mt-3">
+          {crud.error}
+        </Alert>
+      )}
 
       {/* Modal for adding a new item */}
       <Modal

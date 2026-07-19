@@ -3,6 +3,19 @@
  * Scoped with dd- prefix to avoid global collisions.
  * ========================================================================== */
 
+/* Breadcrumb trail — sits above the customer header. Mirrors TripDetailPage. */
+.debt-detail__crumbs {
+  margin: 0 auto 4px;
+  padding: 12px 24px 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  max-width: 1600px;
+}
+.debt-detail__crumbs ul { gap: 4px; }
+@media (max-width: 640px) {
+  .debt-detail__crumbs { padding: 8px 16px 0; }
+}
+
 /* ─── Customer Header ─────────────────────────────────────────────────────── */
 
 .dd-header {

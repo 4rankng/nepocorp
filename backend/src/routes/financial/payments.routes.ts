@@ -6,7 +6,7 @@ import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { emitNotification } from '../../services/notification.service';
 import * as financialService from '../../services/financial.service';
-import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, attachmentDisposition } from '../../services/statement.service';
+import { getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, attachmentDisposition, normalizeDateParam } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
 import { invalidateReportCaches } from '../../lib/redis';
 import { getPayablesSummary } from '../../services/payables.service';
@@ -58,15 +58,15 @@ router.post('/payments/vendor', asyncHandler(async (req: Request, res: Response)
 
 router.get('/ledger/suppliers/:id/statement', asyncHandler(async (req: Request, res: Response) => {
   const supplierId = Number(req.params.id);
-  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
-  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const dateFrom = normalizeDateParam((req.query.dateFrom || req.query.date_from) as string | undefined);
+  const dateTo = normalizeDateParam((req.query.dateTo || req.query.date_to) as string | undefined);
   res.json(await getSupplierStatement(supplierId, dateFrom, dateTo));
 }));
 
 router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const supplierId = parseInt(req.params.id as string, 10);
-  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
-  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const dateFrom = normalizeDateParam((req.query.dateFrom || req.query.date_from) as string | undefined);
+  const dateTo = normalizeDateParam((req.query.dateTo || req.query.date_to) as string | undefined);
   const format = (req.query.format as string) || 'xlsx';
   const data = await getSupplierStatement(supplierId, dateFrom, dateTo);
 

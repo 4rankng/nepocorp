@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Loader2, Search, Info, CheckCircle2, Lock, U
 import { formatCurrency, removeDiacritics } from '../lib/format';
 import { Money } from '../components/shared/Money';
 import { Panel, ConfirmDialog } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary } from '../hooks/useSalaryQueries';
@@ -158,6 +159,13 @@ export default function SalaryAttendancePage() {
 
   return (
     <div ref={rootRef} className="salary-page">
+      <Breadcrumbs
+        className="salary-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Lương & Chấm công' },
+        ]}
+      />
       {/* ── Hero section with bento metrics ── */}
       <section className="hero">
         <div className="hero-top fade-up-2">

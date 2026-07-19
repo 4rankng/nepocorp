@@ -5,6 +5,8 @@ import { downloadCSV } from '../lib/csv';
 import { AlertTriangle, CalendarDays, CheckCircle2, ChevronDown, ExternalLink } from 'lucide-react';
 import { EmptyIllustration } from '../components/shared';
 import { PageHeader, Panel } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { Alert } from '../components/shared/Alert';
 import { AssetIcon } from '../components/AssetIcon';
 import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
@@ -71,6 +73,13 @@ export default function FinancePage() {
 
   return (
     <div ref={rootRef} style={{ paddingBottom: 40 }}>
+      <Breadcrumbs
+        className="finance-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Báo cáo lãi lỗ' },
+        ]}
+      />
       <PageHeader
         title="Báo cáo lãi lỗ"
         iconName="profit"
@@ -150,9 +159,9 @@ export default function FinancePage() {
       </div>
 
       {error && (
-        <div style={{ padding: '12px 20px', background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 8, color: 'var(--danger)', marginBottom: 20 }}>
+        <Alert variant="error" style="soft" icon={<AlertTriangle size={16} />} className="mb-5">
           {error}
-        </div>
+        </Alert>
       )}
 
       {/* ── Charts ──────────────────────────────────────────────────── */}

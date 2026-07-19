@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Truck, Container, UserCheck, Download, CheckCircle } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
 import { PageHeader, Btn, KPI } from "../components/UI";
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { useCRUD } from "../hooks/useCRUD";
 import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { usePageAnimations } from "../hooks/animations";
@@ -69,6 +70,13 @@ export default function FleetPage() {
 
   return (
     <div className="fleet-page" ref={rootRef}>
+      <Breadcrumbs
+        className="fleet-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Đội xe' },
+        ]}
+      />
       <PageHeader
         title="Đội xe"
         iconName="truck"

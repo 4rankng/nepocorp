@@ -3,11 +3,14 @@ import {
   TrendingUp,
   Users,
   CheckSquare,
-  Eye
+  Eye,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
 import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { Alert } from '../components/shared/Alert';
 import { formatCurrency as formatVND } from '../lib/format';
 import { getProfitPreviewEmptyMessage } from '../lib/profit-preview';
 import { Money } from '../components/shared/Money';
@@ -172,6 +175,13 @@ export default function ProfitPage() {
 
   return (
     <div ref={rootRef} style={{ paddingBottom: 40 }}>
+      <Breadcrumbs
+        className="profit-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Phân chia lợi nhuận' },
+        ]}
+      />
       {/* Header */}
       <PageHeader
         title="Phân chia lợi nhuận"
@@ -180,9 +190,9 @@ export default function ProfitPage() {
       />
 
       {error && (
-        <div style={{ padding: 16, background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, marginBottom: 20 }}>
+        <Alert variant="error" style="soft" icon={<AlertCircle size={16} />} className="mb-5">
           {error}
-        </div>
+        </Alert>
       )}
 
       {loading ? (

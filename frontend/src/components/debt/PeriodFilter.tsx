@@ -29,6 +29,9 @@ export interface PeriodFilterProps {
   dateFrom: string;     // ISO yyyy-mm-dd
   dateTo: string;       // ISO yyyy-mm-dd
   onRangeChange: (next: Partial<PeriodRange>) => void;
+  onApply?: () => void;
+  isApplying?: boolean;
+  isApplyDisabled?: boolean;
 }
 
 const MONTH_LABELS = [
@@ -47,7 +50,19 @@ function useYearOptions(): number[] {
 }
 
 export function PeriodFilter(props: PeriodFilterProps) {
-  const { mode, onModeChange, month, year, onMonthYearChange, dateFrom, dateTo, onRangeChange } = props;
+  const {
+    mode,
+    onModeChange,
+    month,
+    year,
+    onMonthYearChange,
+    dateFrom,
+    dateTo,
+    onRangeChange,
+    onApply = () => {},
+    isApplying = false,
+    isApplyDisabled = false,
+  } = props;
   const yearOptions = useYearOptions();
 
   const handleMonth = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -59,76 +74,94 @@ export function PeriodFilter(props: PeriodFilterProps) {
   }, [month, onMonthYearChange]);
 
   return (
-    <div className="period-filter" role="group" aria-label="Bộ lọc thời gian">
-      {/* Mode switch — two segmented buttons inside a join */}
-      <div className="d-join" role="tablist" aria-label="Chế độ lọc">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'month'}
-          className={`d-btn d-btn-sm ${mode === 'month' ? 'd-btn-primary' : 'd-btn-outline'}`}
-          onClick={() => onModeChange('month')}
-        >
-          Theo tháng
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'range'}
-          className={`d-btn d-btn-sm ${mode === 'range' ? 'd-btn-primary' : 'd-btn-outline'}`}
-          onClick={() => onModeChange('range')}
-        >
-          Theo khoảng
-        </button>
-      </div>
+    <div
+      className="period-filter rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+      role="group"
+      aria-label="Bộ lọc thời gian"
+    >
+      <fieldset className="d-fieldset">
+        <legend className="d-fieldset-legend text-xs">Kỳ xem sổ</legend>
+        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
+          {/* Mode switch — two segmented buttons inside a join */}
+          <div className="d-join d-join-vertical w-full lg:w-auto lg:d-join-horizontal" role="tablist" aria-label="Chế độ lọc">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'month'}
+              className={`d-btn d-btn-sm d-join-item w-full lg:w-auto ${mode === 'month' ? 'd-btn-primary' : 'd-btn-outline'}`}
+              onClick={() => onModeChange('month')}
+            >
+              Theo tháng
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'range'}
+              className={`d-btn d-btn-sm d-join-item w-full lg:w-auto ${mode === 'range' ? 'd-btn-primary' : 'd-btn-outline'}`}
+              onClick={() => onModeChange('range')}
+            >
+              Theo khoảng
+            </button>
+          </div>
 
-      {mode === 'month' ? (
-        <div className="d-join">
-          <select
-            className="d-select d-select-sm d-join-item"
-            value={month}
-            onChange={handleMonth}
-            aria-label="Chọn tháng"
+          {mode === 'month' ? (
+            <div className="d-join d-join-vertical w-full lg:w-auto lg:d-join-horizontal">
+              <select
+                className="d-select d-select-sm d-join-item w-full lg:w-auto"
+                value={month}
+                onChange={handleMonth}
+                aria-label="Chọn tháng"
+              >
+                {MONTH_LABELS.map((label, i) => (
+                  <option key={i + 1} value={i + 1}>{label}</option>
+                ))}
+              </select>
+              <select
+                className="d-select d-select-sm d-join-item w-full lg:w-auto"
+                value={year}
+                onChange={handleYear}
+                aria-label="Chọn năm"
+              >
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="grid w-full gap-3 sm:grid-cols-2">
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium">
+                <span className="text-base-content">Từ ngày</span>
+                <input
+                  type="date"
+                  className="d-input d-input-sm w-full"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={e => onRangeChange({ dateFrom: e.target.value })}
+                />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-sm font-medium">
+                <span className="text-base-content">Đến ngày</span>
+                <input
+                  type="date"
+                  className="d-input d-input-sm w-full"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={e => onRangeChange({ dateTo: e.target.value })}
+                />
+              </label>
+            </div>
+          )}
+          <button
+            type="button"
+            className="d-btn d-btn-primary d-btn-sm w-full lg:w-auto"
+            onClick={onApply}
+            disabled={isApplyDisabled}
           >
-            {MONTH_LABELS.map((label, i) => (
-              <option key={i + 1} value={i + 1}>{label}</option>
-            ))}
-          </select>
-          <select
-            className="d-select d-select-sm d-join-item"
-            value={year}
-            onChange={handleYear}
-            aria-label="Chọn năm"
-          >
-            {yearOptions.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+            {isApplying && <span className="d-loading d-loading-spinner d-loading-xs" aria-hidden="true" />}
+            {isApplying ? 'Đang lọc…' : 'Lọc dữ liệu'}
+          </button>
         </div>
-      ) : (
-        <div className="period-filter__range">
-          <label className="period-filter__field">
-            <span>Từ ngày</span>
-            <input
-              type="date"
-              className="d-input d-input-sm"
-              value={dateFrom}
-              max={dateTo || undefined}
-              onChange={e => onRangeChange({ dateFrom: e.target.value })}
-            />
-          </label>
-          <label className="period-filter__field">
-            <span>Đến ngày</span>
-            <input
-              type="date"
-              className="d-input d-input-sm"
-              value={dateTo}
-              min={dateFrom || undefined}
-              onChange={e => onRangeChange({ dateTo: e.target.value })}
-            />
-          </label>
-        </div>
-      )}
+      </fieldset>
     </div>
   );
 }
@@ -148,11 +181,34 @@ export function resolvePeriodRange(opts: {
   if (opts.mode === 'range') {
     return { dateFrom: opts.dateFrom, dateTo: opts.dateTo };
   }
-  // Month mode → [first day, last day] of the picked month.
-  const firstDay = new Date(opts.year, opts.month - 1, 1);
-  const lastDay = new Date(opts.year, opts.month, 0); // day 0 of next month = last day
+  return monthToRange(opts.year, opts.month);
+}
+
+/** [first day, last day] of the given (year, month 1–12), as ISO yyyy-mm-dd. */
+export function monthToRange(year: number, month: number): PeriodRange {
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0); // day 0 of next month = last day
   const toIso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   return { dateFrom: toIso(firstDay), dateTo: toIso(lastDay) };
+}
+
+/**
+ * Handle a mode switch so the two modes stay in sync:
+ *   - Switching TO range: seed the date inputs from the current month/year so
+ *     the user starts from a sensible range rather than whatever stale custom
+ *     range was last entered.
+ *   - Switching TO month: nothing to re-derive (month mode reads month/year).
+ */
+export function applyModeSwitch(
+  prev: { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string },
+  nextMode: PeriodMode,
+): { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string } {
+  if (nextMode === prev.mode) return prev;
+  if (nextMode === 'range') {
+    const seeded = monthToRange(prev.year, prev.month);
+    return { ...prev, mode: 'range', dateFrom: seeded.dateFrom, dateTo: seeded.dateTo };
+  }
+  return { ...prev, mode: 'month' };
 }
 
 /** Default initial state for a detail page's period filter (current month). */

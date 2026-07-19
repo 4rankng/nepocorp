@@ -14,7 +14,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { PeriodFilter, resolvePeriodRange, initialPeriodState } from '../components/debt/PeriodFilter';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import './DebtDetailPage.css';
 
@@ -63,12 +63,18 @@ export default function PayableDetailPage() {
   // Declared before useSupplierStatement because the resolved range feeds the
   // statement query. Defaults to current month.
   const [period, setPeriod] = useState(() => initialPeriodState());
-  const periodRange = useMemo(
-    () => resolvePeriodRange(period),
-    [period],
+  const [appliedPeriod, setAppliedPeriod] = useState(period);
+  const appliedPeriodRange = useMemo(
+    () => resolvePeriodRange(appliedPeriod),
+    [appliedPeriod],
   );
 
-  const { data: statement, isLoading: loading, error: queryError } = useSupplierStatement(id ? Number(id) : undefined, periodRange);
+  const {
+    data: statement,
+    isLoading: loading,
+    isFetching: isStatementFetching,
+    error: queryError,
+  } = useSupplierStatement(id ? Number(id) : undefined, appliedPeriodRange);
   const typedStatement = statement as SupplierStatementType | undefined;
   const error = queryError ? (queryError as Error).message : null;
   const { toast: showToast } = useToast();
@@ -79,6 +85,11 @@ export default function PayableDetailPage() {
   useBackShortcut(handleBack);
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
+  const isPeriodDirty = period.mode !== appliedPeriod.mode
+    || period.month !== appliedPeriod.month
+    || period.year !== appliedPeriod.year
+    || period.dateFrom !== appliedPeriod.dateFrom
+    || period.dateTo !== appliedPeriod.dateTo;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -172,7 +183,7 @@ export default function PayableDetailPage() {
     }
   }
 
-  if (loading) {
+  if (loading && !typedStatement) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
         Đang tải dữ liệu...
@@ -180,7 +191,7 @@ export default function PayableDetailPage() {
     );
   }
 
-  if (error || !typedStatement) {
+  if (!typedStatement) {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
@@ -370,17 +381,20 @@ export default function PayableDetailPage() {
         {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
         <PeriodFilter
           mode={period.mode}
-          onModeChange={(m) => setPeriod(p => ({ ...p, mode: m }))}
+          onModeChange={(m) => setPeriod(p => applyModeSwitch(p, m))}
           month={period.month}
           year={period.year}
           onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
           dateFrom={period.dateFrom}
           dateTo={period.dateTo}
           onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+          onApply={() => setAppliedPeriod(period)}
+          isApplying={isStatementFetching}
+          isApplyDisabled={!isPeriodDirty || isStatementFetching}
         />
         <PeriodSummaryCards
           summary={typedStatement.periodSummary}
-          isLoading={loading}
+          isLoading={isStatementFetching}
           entityType="VENDOR"
         />
 
@@ -500,8 +514,9 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
   const balance = parseFloat(row.balance) || 0;
   const meta = TXN_META[row.txnType] ?? DEFAULT_META;
   const reference = row.receiptId
-    || (row.txnType === TxnType.FUEL_EXPENSE && row.txnId ? `Chuyến #${row.txnId}` : null)
-    || (row.txnId ? `Phiếu #${row.txnId}` : `GD #${row.id}`);
+    || (row.txnType === TxnType.FUEL_EXPENSE ? row.tripCode || 'Chuyến chưa có mã' : null)
+    || row.note
+    || meta.label;
 
   return (
     <tr>

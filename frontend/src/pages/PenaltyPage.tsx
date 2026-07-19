@@ -3,6 +3,7 @@ import { usePenalties, usePenaltyCatalogs } from '../hooks/usePenalties';
 import { useAuth } from '../hooks/useAuth';
 import { useCreatePenalty, useCancelPenalty } from '../features/penalties/hooks/usePenaltyMutations';
 import { PenaltyTable } from '../features/penalties/components/PenaltyTable';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { PenaltyFormDrawer } from '../features/penalties/components/PenaltyFormDrawer';
 import { CancelPenaltyDialog } from '../features/penalties/components/CancelPenaltyDialog';
 import type { PenaltyRow } from '../hooks/usePenalties';
@@ -45,6 +46,13 @@ export default function PenaltyPage() {
 
   return (
     <div ref={rootRef} className="penalty-page">
+      <Breadcrumbs
+        className="penalty-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Kỷ luật' },
+        ]}
+      />
       <PenaltyTable
         penalties={penalties}
         drivers={drivers}

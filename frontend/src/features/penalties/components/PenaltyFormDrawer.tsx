@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, AlertCircle } from 'lucide-react';
 import { Drawer, Btn, FormGroup } from '../../../components/UI';
+import { Alert } from '../../../components/shared/Alert';
 import { formatCurrency } from '../../../lib/format';
 import type { Driver, PenaltyReason } from '@tingting/shared';
 import type { CreatePenaltyRequest } from '@tingting/shared';
@@ -95,9 +96,9 @@ export function PenaltyFormDrawer({
       }
     >
       {submitError && (
-        <div style={{ padding: '10px 14px', marginBottom: 16, background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 12.5 }}>
+        <Alert variant="error" style="soft" icon={<AlertCircle size={16} />} className="mb-4">
           {submitError}
-        </div>
+        </Alert>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <FormGroup label="Lái xe vi phạm *">

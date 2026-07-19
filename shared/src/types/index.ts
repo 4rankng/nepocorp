@@ -368,6 +368,8 @@ export interface LedgerEntry {
   routeName?: string | null;
   containerNumbers?: string[];
   tripId?: number | null;
+  /** Public trip reference for display. Internal database ids must not be shown to users. */
+  tripCode?: string | null;
   serviceFeeLabel?: string | null;
 }
 
@@ -1021,10 +1023,15 @@ export interface AgingBucket {
  *   - VENDOR  (AP): outstanding balance grows with credits, shrinks with debits.
  *     `periodActivity = creditTotal − debitTotal`.
  *
- * `openingBalance` is read from the stored `balance` column of the last ledger
- * row strictly before `dateFrom` (0 if none). `closingBalance = openingBalance
- * + periodActivity`. When `dateFrom`/`dateTo` are absent, all values are null
- * and the frontend renders the all-time totals instead.
+ * `openingBalance` is read from the stored `balance` column of the ledger row
+ * with the largest `id` strictly before `dateFrom` (0 if none). `closingBalance
+ * = openingBalance + periodActivity`.
+ *
+ * On the wire this field is OMITTED from `CustomerStatement` /
+ * `SupplierStatement` when no period filter is active (the backend returns
+ * `null` and the caller omits it). Frontend consumers should treat `undefined`
+ * as "no period filter — render the all-time total / loading state" and never
+ * expect a present-but-null-valued object.
  */
 export interface PeriodSummary {
   openingBalance: number;

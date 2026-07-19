@@ -4,6 +4,7 @@ import {
   Building2, Loader2,
 } from 'lucide-react';
 import { TRIP_STATUS_LABELS, TripStatus, type TripDetail } from '@tingting/shared';
+import { Tooltip } from '../../../components/shared/Tooltip';
 import type { TripPermissions } from '../types';
 
 interface TripHeaderProps {
@@ -40,9 +41,11 @@ export function TripHeader({
   return (
     <header className="tc-page-head td-page-head anim d1">
       <div className="header-left">
-        <button className="tc-back-btn" onClick={onBack} aria-label="Quay lại">
-          <ArrowLeft size={18} />
-        </button>
+        <Tooltip label="Quay lại" side="right">
+          <button className="tc-back-btn" onClick={onBack} aria-label="Quay lại">
+            <ArrowLeft size={18} />
+          </button>
+        </Tooltip>
         <div className="tc-title-wrap">
           <h1 className="tc-page-title">
             {trip.tripCode || 'Lệnh vận chuyển'}

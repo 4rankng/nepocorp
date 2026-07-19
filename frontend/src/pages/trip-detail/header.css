@@ -13,6 +13,21 @@
  * plain text. Keep this block in sync with TripEditPage.css.
  * ========================================================================== */
 
+/* Breadcrumb trail — sits above the trip header. Mirrors the pattern used on
+   TripListPage so list → detail navigation reads as one hierarchy. Muted so
+   it doesn't fight the trip code title below it. */
+.trip-detail__crumbs {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 12px 28px 0;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.trip-detail__crumbs ul { gap: 4px; }
+@media (max-width: 640px) {
+  .trip-detail__crumbs { padding: 8px 16px 0; }
+}
+
 .td-page-head {
   position: relative;
   display: flex;

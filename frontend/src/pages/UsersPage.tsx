@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Role } from '@tingting/shared';
 import type { Truck } from '@tingting/shared';
 import { useAuth } from '../hooks/useAuth';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { useUsers } from '../hooks/useCatalogQueries';
 import { configClient } from '../api/configClient';
 import { useUserMutations } from '../features/users/hooks/useUserMutations';
@@ -137,6 +138,13 @@ export default function UsersPage() {
 
   return (
     <div className="users-admin-page" style={{ paddingBottom: 40 }} ref={rootRef}>
+      <Breadcrumbs
+        className="users-admin-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Người dùng' },
+        ]}
+      />
       <UserTable
         users={users}
         filtered={filtered}

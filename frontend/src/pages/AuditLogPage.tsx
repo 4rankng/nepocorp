@@ -6,6 +6,7 @@ import {
   Globe, Terminal, Copy, Check, Info, ShieldAlert,
 } from 'lucide-react';
 import { Panel, KPI, Drawer } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
@@ -301,6 +302,13 @@ fontSize: 13,
 
   return (
     <div className="audit-log-page" style={{ paddingBottom: 40 }} ref={rootRef}>
+      <Breadcrumbs
+        className="audit-log-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Nhật ký người dùng' },
+        ]}
+      />
       {/* ── Page Header ── */}
       <header className="page-header">
         <div className="page-header-main">

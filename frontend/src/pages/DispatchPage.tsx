@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Breadcrumbs, Alert } from '../components/shared';
 import { EmptyState } from '../design-system';
 import { useDispatchData } from '../hooks/useQueries';
 import { useLiveFleet } from '../hooks/useTripQueries';
@@ -62,7 +63,26 @@ export default function DispatchPage() {
         <div style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {toasts.map(t => (<div key={t.id} role="status" style={{ minWidth: 280, maxWidth: 480, padding: '12px 16px', borderRadius: 8, background: t.kind === 'success' ? 'var(--accent)' : 'var(--danger)', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}><span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} /><span style={{ flex: 1 }}>{t.text}</span></div>))}
         </div>, document.body)}
-      {error && <div style={{ padding: 16, background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, marginBottom: 20 }}>{error}</div>}
+      <Breadcrumbs
+        className="dispatch-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Điều vận' },
+        ]}
+        renderLink={(to, children) => (
+          <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
+        )}
+      />
+      {error && (
+        <Alert
+          variant="error"
+          style="soft"
+          icon={<AlertTriangle size={16} />}
+          className="mb-5"
+        >
+          {error}
+        </Alert>
+      )}
 
       <section className="hero">
         <div className="hero-top fade-up-2">

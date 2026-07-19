@@ -9,6 +9,7 @@ import { api } from '../lib/api';
 import { labelStyle } from '../utils/formStyles';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { EmptyState } from '../design-system';
 import type { Supplier, Customer } from '@tingting/shared';
 import { CONFIG } from '@tingting/shared';
@@ -245,6 +246,13 @@ export default function SupplierListPage() {
     <div ref={rootRef} className="suppliers-page">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.8s linear infinite; }`}</style>
 
+      <Breadcrumbs
+        className="suppliers-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Nhà cung cấp' },
+        ]}
+      />
       <PageHeader
         title="Nhà cung cấp"
         iconName="supplier"
