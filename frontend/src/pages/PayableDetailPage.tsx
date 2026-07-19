@@ -14,6 +14,8 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState } from '../components/debt/PeriodFilter';
+import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import './DebtDetailPage.css';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
@@ -56,7 +58,17 @@ export default function PayableDetailPage() {
   const location = useLocation();
   const backPath = location.pathname.startsWith('/suppliers/') ? '/suppliers' : '/payables';
   const queryClient = useQueryClient();
-  const { data: statement, isLoading: loading, error: queryError } = useSupplierStatement(id ? Number(id) : undefined);
+
+  // ── Period filter (ledger section) ───────────────────────────────────────
+  // Declared before useSupplierStatement because the resolved range feeds the
+  // statement query. Defaults to current month.
+  const [period, setPeriod] = useState(() => initialPeriodState());
+  const periodRange = useMemo(
+    () => resolvePeriodRange(period),
+    [period],
+  );
+
+  const { data: statement, isLoading: loading, error: queryError } = useSupplierStatement(id ? Number(id) : undefined, periodRange);
   const typedStatement = statement as SupplierStatementType | undefined;
   const error = queryError ? (queryError as Error).message : null;
   const { toast: showToast } = useToast();
@@ -136,7 +148,10 @@ export default function PayableDetailPage() {
       setShowPaymentModal(false);
       setPaymentAmount('');
       setPaymentReceiptId('');
-      queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatement(id ? Number(id) : undefined) });
+      // Broad prefix — invalidates every supplier-statement query regardless
+      // of period range, so the AP detail page's month/range-scoped statement
+      // refetches alongside any other cached variant.
+      queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatementAll });
       queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
@@ -351,6 +366,24 @@ export default function PayableDetailPage() {
             ))}
           </div>
         </div>
+
+        {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
+        <PeriodFilter
+          mode={period.mode}
+          onModeChange={(m) => setPeriod(p => ({ ...p, mode: m }))}
+          month={period.month}
+          year={period.year}
+          onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
+          dateFrom={period.dateFrom}
+          dateTo={period.dateTo}
+          onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+        />
+        <PeriodSummaryCards
+          summary={typedStatement.periodSummary}
+          isLoading={loading}
+          entityType="VENDOR"
+        />
+
         <div className="table-scroll">
           <table className="dd-table dd-detail-table">
             <thead>

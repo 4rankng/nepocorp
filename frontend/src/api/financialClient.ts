@@ -52,11 +52,15 @@ export const financialClient = {
       params?.entityType ? { entityType: params.entityType } : undefined,
     ),
 
-  getCustomerStatement: (id: number) =>
-    api.get<CustomerStatement>(FINANCIAL.CUSTOMER_STATEMENT(id)),
+  getCustomerStatement: (id: number, range?: { dateFrom?: string; dateTo?: string }) =>
+    api.get<CustomerStatement>(
+      `${FINANCIAL.CUSTOMER_STATEMENT(id)}${toQuery(range)}`,
+    ),
 
-  getSupplierStatement: (id: number) =>
-    api.get<SupplierStatement>(FINANCIAL.SUPPLIER_STATEMENT(id)),
+  getSupplierStatement: (id: number, range?: { dateFrom?: string; dateTo?: string }) =>
+    api.get<SupplierStatement>(
+      `${FINANCIAL.SUPPLIER_STATEMENT(id)}${toQuery(range)}`,
+    ),
 
   getPenalties: (params?: Record<string, string>) =>
     api.get<PaginatedResponse<Penalty>>(

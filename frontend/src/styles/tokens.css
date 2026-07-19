@@ -1,5 +1,64 @@
 @import "tailwindcss";
 
+/* daisyUI 5 — added for polish primitives (Tooltip, Alert, Breadcrumbs).
+   `prefix: "d-"` renames every daisyUI component class (.btn → .d-btn, etc.)
+   so it CANNOT collide with this project's existing .btn/.badge/.modal/.input
+   custom classes. Semantic color utilities (bg-primary, text-error, …) remain
+   unprefixed and inherit the `nepo` theme below. */
+@plugin "daisyui" {
+  prefix: "d-";
+  themes: nepo --default;
+  root: ":root";
+  logs: false;
+}
+
+/* NEPO brand theme — tokens mirror the hand-crafted design system in :root
+   below, so daisyUI components and the existing custom CSS share the same
+   forest-green primary, signal-green accent, and soft neutral surfaces. */
+@plugin "daisyui/theme" {
+  name: "nepo";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #FFFFFF;
+  --color-base-200: #F8FAF9;
+  --color-base-300: #EEF3F0;
+  --color-base-content: #101513;
+
+  --color-primary: #005A2D;
+  --color-primary-content: #FFFFFF;
+
+  --color-secondary: #4D5852;
+  --color-secondary-content: #FFFFFF;
+
+  --color-accent: #00B14F;
+  --color-accent-content: #FFFFFF;
+
+  --color-neutral: #101513;
+  --color-neutral-content: #F8FAF9;
+
+  --color-info: #1E5BB8;
+  --color-info-content: #FFFFFF;
+  --color-success: #00B14F;
+  --color-success-content: #FFFFFF;
+  --color-warning: #F5A623;
+  --color-warning-content: #2A1B04;
+  --color-error: #E32434;
+  --color-error-content: #FFFFFF;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
 /* ============================================================================
  * TingTing -- Wireframe Design System
  * Be Vietnam Pro (Vietnamese-aware text/UI) + JetBrains Mono (numerics).

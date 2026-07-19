@@ -1,16 +1,8 @@
 import React from 'react';
 import { Modal, FormGroup } from '../UI';
-import { User, Mail, Phone, UserCheck } from 'lucide-react';
+import { Alert } from '../shared/Alert';
+import { User, Mail, Phone, UserCheck, AlertCircle } from 'lucide-react';
 import type { ProfileModalProps } from './types';
-
-const errorBoxStyle: React.CSSProperties = {
-  padding: '10px 14px',
-  background: '#FEF2F2',
-  borderRadius: 8,
-  color: 'var(--danger)',
-  fontSize: 13,
-  marginBottom: 16,
-};
 
 function ProfileModal({
   isOpen,
@@ -37,9 +29,14 @@ function ProfileModal({
       }
     >
       {error && (
-        <div style={errorBoxStyle}>
+        <Alert
+          variant="error"
+          style="soft"
+          icon={<AlertCircle size={16} />}
+          className="mb-4"
+        >
           {error}
-        </div>
+        </Alert>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <FormGroup label="Tên đăng nhập">

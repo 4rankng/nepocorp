@@ -40,6 +40,19 @@
 }
 
 /* ── Hero (same pattern as dispatch) ──────────────────────────────────── */
+/* Breadcrumb trail — sits above the hero so users get a "you are here"
+   cue. Muted color so it doesn't compete with the hero metrics below. */
+.trip-list-page .trip-list-page__crumbs {
+  margin: 2px 0 10px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.trip-list-page .trip-list-page__crumbs ul {
+  /* daisyUI ships breadcrumbs with default list styles; tighten the gap so
+     it reads as one line on the dense list page. */
+  gap: 4px;
+}
+
 .trip-list-page .hero {
   background:
     linear-gradient(135deg, rgba(0, 90, 45, 0.07), rgba(255, 255, 255, 0) 42%),

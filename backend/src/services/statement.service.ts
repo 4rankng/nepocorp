@@ -2,6 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
+import type { PeriodSummary } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -23,6 +24,7 @@ export interface CustomerStatementData {
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
   agingBuckets: Array<{ range: string; amount: number }>;
+  periodSummary?: PeriodSummary;
 }
 
 export interface SupplierStatementData {
@@ -30,6 +32,7 @@ export interface SupplierStatementData {
   ledgerRows: LedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
+  periodSummary?: PeriodSummary;
 }
 
 interface StatementExportConfig {
@@ -60,6 +63,69 @@ export function attachmentDisposition(filename: string): string {
     .replace(/['()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
     .replace(/\*/g, '%2A');
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
+}
+
+/**
+ * Computes the AR/AP period summary (số dư đầu kỳ / phát sinh trong kỳ / số dư
+ * cuối kỳ) for the period filter on the detail pages.
+ *
+ * Sign convention matches `LedgerService.postEntry`:
+ *   - CUSTOMER (AR): outstanding grows with debit, shrinks with credit.
+ *     `periodActivity = debitTotal − creditTotal`.
+ *   - VENDOR (AP): outstanding grows with credit, shrinks with debit.
+ *     `periodActivity = creditTotal − debitTotal`.
+ *
+ * Opening balance is read from the stored `balance` column of the last ledger
+ * row strictly before `dateFrom` (0 when none). Closing = opening + activity.
+ *
+ * Returns `null` when neither bound is supplied (all-time view — frontend
+ * shows totalOutstanding instead).
+ */
+export function computePeriodSummary(
+  rows: Array<{ timestamp: Date | string; debit: string | null; credit: string | null; balance: string }>,
+  dateFrom: string | undefined,
+  dateTo: string | undefined,
+  entityType: 'CUSTOMER' | 'VENDOR',
+): PeriodSummary | null {
+  if (!dateFrom && !dateTo) return null;
+
+  const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+  const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
+
+  let openingBalance = 0;
+  let debitTotal = 0;
+  let creditTotal = 0;
+
+  for (const r of rows) {
+    const t = new Date(r.timestamp).getTime();
+    const debit = Number(r.debit ?? 0) || 0;
+    const credit = Number(r.credit ?? 0) || 0;
+
+    if (fromTs !== null && t < fromTs) {
+      // Track the running balance up to (but not including) dateFrom. Because
+      // ledger rows are append-ordered and the stored `balance` is the running
+      // total, the last such row's balance is the opening balance.
+      openingBalance = Number(r.balance) || 0;
+    } else if ((fromTs === null || t >= fromTs) && (toTs === null || t <= toTs)) {
+      debitTotal += debit;
+      creditTotal += credit;
+    }
+  }
+
+  const periodActivity = entityType === 'CUSTOMER'
+    ? debitTotal - creditTotal
+    : creditTotal - debitTotal;
+  const closingBalance = openingBalance + periodActivity;
+
+  return {
+    openingBalance,
+    closingBalance,
+    periodActivity,
+    debitTotal,
+    creditTotal,
+    dateFrom: dateFrom ?? null,
+    dateTo: dateTo ?? null,
+  };
 }
 
 const TXN_LABELS: Record<string, string> = {
@@ -115,6 +181,10 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   if (!customer) return null;
 
   let ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
+
+  // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed BEFORE the
+  // date filter so we can read the stored `balance` of the last pre-period row.
+  const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'CUSTOMER');
 
   // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
   // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
@@ -332,6 +402,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
       { range: '61-90 ngày', amount: aging.d60 },
       { range: 'Trên 90 ngày', amount: aging.over90 },
     ],
+    ...(periodSummary ? { periodSummary } : null),
   };
 }
 
@@ -373,6 +444,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
   let ledgerRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'VENDOR');
   if (dateFrom || dateTo) {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
     const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
@@ -406,6 +478,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       { range: '61-90 ngày', amount: aging.d60 },
       { range: 'Trên 90 ngày', amount: aging.over90 },
     ],
+    ...(periodSummary ? { periodSummary } : null),
   };
 }
 

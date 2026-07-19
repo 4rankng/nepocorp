@@ -13,11 +13,14 @@ export function useCustomerAging(search?: string) {
   });
 }
 
-export function useCustomerStatement(id: string | undefined) {
+export function useCustomerStatement(
+  id: string | undefined,
+  range?: { dateFrom?: string; dateTo?: string },
+) {
   return useQuery<CustomerStatement>({
-    queryKey: qk.financial.customerStatement(id),
+    queryKey: qk.financial.customerStatement(id, range),
     enabled: !!id,
-    queryFn: () => financialClient.getCustomerStatement(Number(id)),
+    queryFn: () => financialClient.getCustomerStatement(Number(id), range),
   });
 }
 
@@ -84,10 +87,13 @@ export function usePostDriverPayout() {
   });
 }
 
-export function useSupplierStatement(supplierId: number | undefined) {
+export function useSupplierStatement(
+  supplierId: number | undefined,
+  range?: { dateFrom?: string; dateTo?: string },
+) {
   return useQuery<SupplierStatement>({
-    queryKey: qk.financial.supplierStatement(supplierId),
-    queryFn: () => financialClient.getSupplierStatement(supplierId!),
+    queryKey: qk.financial.supplierStatement(supplierId, range),
+    queryFn: () => financialClient.getSupplierStatement(supplierId!, range),
     enabled: !!supplierId,
   });
 }

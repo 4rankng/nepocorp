@@ -18,6 +18,8 @@ import { qk } from '../api/keys';
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DebtDetailPage.css';
 import { normalizeAging, money, rowTypeLabel, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState } from '../components/debt/PeriodFilter';
+import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 
 // ── Aging constants ────────────────────────────────────────────────────────
 
@@ -38,7 +40,17 @@ export default function DebtDetailPage() {
   const detailPath = location.pathname.startsWith('/customers/') ? `/customers/${id}` : `/debt/${id}`;
   const billingCreatePath = `${detailPath}/billing/new`;
   const isCreatingBillingDocument = location.pathname === billingCreatePath;
-  const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id);
+
+  // ── Period filter (ledger tab only) ──────────────────────────────────────
+  // Declared before useCustomerStatement because the resolved range feeds the
+  // statement query. Defaults to current month.
+  const [period, setPeriod] = useState(() => initialPeriodState());
+  const periodRange = useMemo(
+    () => resolvePeriodRange(period),
+    [period],
+  );
+
+  const { data: statement, isLoading: loading, error: queryError, refetch } = useCustomerStatement(id, periodRange);
   const error = queryError ? (queryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
 
@@ -247,7 +259,10 @@ export default function DebtDetailPage() {
         customerId: Number(id),
         amountVnd: capped,
       });
-      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatement(undefined) });
+      // Broad prefix — invalidates every customer-statement query regardless
+      // of period range, so the AR detail page's month/range-scoped statement
+      // refetches alongside any other cached variant.
+      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
       await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
       // V1: a payment also changes AR aging + the Dashboard overdue KPI, which
       // live under separate query keys — without these the DebtListPage hero
@@ -539,6 +554,24 @@ export default function DebtDetailPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
+              <PeriodFilter
+                mode={period.mode}
+                onModeChange={(m) => setPeriod(p => ({ ...p, mode: m }))}
+                month={period.month}
+                year={period.year}
+                onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
+                dateFrom={period.dateFrom}
+                dateTo={period.dateTo}
+                onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+              />
+              <PeriodSummaryCards
+                summary={statement.periodSummary}
+                isLoading={loading}
+                entityType="CUSTOMER"
+              />
+
               <div className="table-scroll">
                 <table className="dd-table dd-detail-table">
                   <thead>

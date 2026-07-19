@@ -225,14 +225,31 @@ export const qk = {
       ['customer-aging', search ?? ''] as const,
     /** Broad prefix — matches all customerAging queries regardless of args. */
     customerAgingAll: ['customer-aging'] as const,
-    customerStatement: (id: string | number | undefined) =>
-      ['customer-statement', id] as const,
+    /**
+     * Customer statement — keyed by entity id + period range so the AR detail
+     * page's month/range filter triggers a fresh fetch. `range` defaults to
+     * `{ dateFrom: undefined, dateTo: undefined }`; existing invalidations
+     * passing that sentinel shape (or no range at all) still match.
+     */
+    customerStatement: (
+      id: string | number | undefined,
+      range: { dateFrom?: string; dateTo?: string } = {},
+    ) =>
+      ['customer-statement', id, range.dateFrom ?? null, range.dateTo ?? null] as const,
+    /** Broad prefix — matches every customer-statement query regardless of range. */
+    customerStatementAll: ['customer-statement'] as const,
     customerLedgerEntries: ['customer-ledger-entries'],
     payablesSummary: (category: string | undefined) => ['payables-summary', category ?? 'all'] as const,
     /** Broad prefix — matches all payablesSummary queries regardless of category. */
     payablesSummaryAll: ['payables-summary'] as const,
-    supplierStatement: (supplierId: number | undefined) =>
-      ['supplier-statement', supplierId] as const,
+    /** See `customerStatement` — AP mirror, keyed by supplier id + range. */
+    supplierStatement: (
+      supplierId: number | undefined,
+      range: { dateFrom?: string; dateTo?: string } = {},
+    ) =>
+      ['supplier-statement', supplierId, range.dateFrom ?? null, range.dateTo ?? null] as const,
+    /** Broad prefix — matches every supplier-statement query regardless of range. */
+    supplierStatementAll: ['supplier-statement'] as const,
     expenses: (filters: unknown) => ['expenses', filters] as const,
     debtOffsets: (customerId: number | string) =>
       ['debt-offsets', customerId] as const,

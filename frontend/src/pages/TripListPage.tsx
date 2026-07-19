@@ -10,6 +10,7 @@ import { parseThreshold, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from 
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
 import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
 import { columnClass, copyPlanPayloadFromTrip, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
@@ -386,6 +387,14 @@ export default function TripListPage() {
 
   return (
     <div ref={rootRef} className={`trip-list-page${quickEdit ? ' quick-edit-mode' : ''}`} style={{ paddingBottom: 40 }}>
+      <Breadcrumbs
+        className="trip-list-page__crumbs"
+        items={[
+          { label: 'Tổng quan', to: '/dashboard' },
+          { label: 'Sổ chuyến đi' },
+        ]}
+        renderLink={(to, children) => <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>}
+      />
       <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => { onboardingEvents.emit('ui.trip_create_clicked'); navigate('/trips/new'); }} breakdownPct={breakdownPct} warnThreshold={warnThreshold} month={month} />
 
       <TripFiltersBar
@@ -464,7 +473,20 @@ export default function TripListPage() {
             {table.isLoading ? (
               <div className="table-empty">Đang tải danh sách chuyến đi…</div>
             ) : table.rows.length === 0 ? (
-              <EmptyState illustration="/assets/illustrations/empty-trips.svg" title="Không tìm thấy chuyến đi nào." />
+              <>
+                {(searching || statusFilter || truckFilter || customerFilter) && (
+                  <div style={{ margin: '12px 16px 0' }}>
+                    <Alert
+                      variant="warning"
+                      style="soft"
+                      icon={<MousePointerClick size={16} />}
+                    >
+                      Không có chuyến đi khớp với bộ lọc hiện tại. Thử bỏ lọc trạng thái/tuyến/xe hoặc xóa từ khóa tìm kiếm.
+                    </Alert>
+                  </div>
+                )}
+                <EmptyState illustration="/assets/illustrations/empty-trips.svg" title="Không tìm thấy chuyến đi nào." />
+              </>
             ) : (
               tableInstance.getRowModel().rows.map((row) => (
                 <ClickableCard

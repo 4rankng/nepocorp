@@ -5,6 +5,7 @@ import { animate, utils, spring } from 'animejs';
 import { AssetIcon, type AssetIconName } from './AssetIcon';
 import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
 import { usePressAnimation } from '../hooks/animations/usePressAnimation';
+import { Tooltip } from './shared/Tooltip';
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
 
@@ -456,13 +457,15 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
         >
           <div className="modal__head">
             <h3 className="modal__title">{title}</h3>
-            <button
-              className="btn btn--ghost btn--icon btn--sm modal__close"
-              onClick={handleClose}
-              aria-label="Đóng"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+            <Tooltip label="Đóng (Esc)">
+              <button
+                className="btn btn--ghost btn--icon btn--sm modal__close"
+                onClick={handleClose}
+                aria-label="Đóng"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </Tooltip>
           </div>
           <div className="modal__body">
             {children}
@@ -556,14 +559,16 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
                 {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
               </div>
             </div>
-            <button
-              className="drawer__close"
-              onClick={handleClose}
-              aria-label="Đóng"
-              type="button"
-            >
-              <X size={18} />
-            </button>
+            <Tooltip label="Đóng (Esc)">
+              <button
+                className="drawer__close"
+                onClick={handleClose}
+                aria-label="Đóng"
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </Tooltip>
           </header>
           <div className="drawer__body">{children}</div>
           {footer && <div className="drawer__foot">{footer}</div>}

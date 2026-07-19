@@ -550,6 +550,8 @@ export interface SupplierStatement {
   ledgerRows: LedgerEntry[];
   totalOutstanding: number;
   agingBuckets: AgingBucket[];
+  /** Only present when the request was scoped to a date range. */
+  periodSummary?: PeriodSummary;
 }
 
 export interface RenewalReminder {
@@ -1010,6 +1012,30 @@ export interface AgingBucket {
   amount: number;
 }
 
+/**
+ * Period summary for the AR/AP detail pages' period filter.
+ *
+ * Sign convention (mirrors LedgerService.postEntry):
+ *   - CUSTOMER (AR): outstanding balance grows with debits, shrinks with credits.
+ *     `periodActivity = debitTotal − creditTotal`.
+ *   - VENDOR  (AP): outstanding balance grows with credits, shrinks with debits.
+ *     `periodActivity = creditTotal − debitTotal`.
+ *
+ * `openingBalance` is read from the stored `balance` column of the last ledger
+ * row strictly before `dateFrom` (0 if none). `closingBalance = openingBalance
+ * + periodActivity`. When `dateFrom`/`dateTo` are absent, all values are null
+ * and the frontend renders the all-time totals instead.
+ */
+export interface PeriodSummary {
+  openingBalance: number;
+  closingBalance: number;
+  periodActivity: number;
+  debitTotal: number;
+  creditTotal: number;
+  dateFrom: string | null;
+  dateTo: string | null;
+}
+
 export interface UnpaidTrip {
   tripId: number;
   date: string;
@@ -1023,6 +1049,8 @@ export interface CustomerStatement {
   agingBuckets: AgingBucket[];
   totalOutstanding: number;
   unpaidTrips: UnpaidTrip[];
+  /** Only present when the request was scoped to a date range. */
+  periodSummary?: PeriodSummary;
 }
 
 export interface DebtOffset {
