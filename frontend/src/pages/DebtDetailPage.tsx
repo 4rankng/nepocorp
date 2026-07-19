@@ -57,15 +57,20 @@ export default function DebtDetailPage() {
     [appliedPeriod],
   );
 
+  // The customer profile is a current-state view. Keep it independent from
+  // the period-scoped statement used by the ledger below.
+  const {
+    data: profileStatement,
+    isLoading: isProfileLoading,
+    error: profileQueryError,
+  } = useCustomerStatement(id);
   const {
     data: statement,
-    isLoading: loading,
     isFetching: isStatementFetching,
-    error: queryError,
     refetch,
   } = useCustomerStatement(id, appliedPeriodRange);
-  const error = queryError ? (queryError as Error).message : null;
-  const { rootRef } = usePageAnimations({ ready: !loading && !!statement });
+  const error = profileQueryError ? (profileQueryError as Error).message : null;
+  const { rootRef } = usePageAnimations({ ready: !isProfileLoading && !!profileStatement });
 
   const handleBack = () => navigate(backPath);
   useBackShortcut(handleBack);
@@ -117,7 +122,7 @@ export default function DebtDetailPage() {
       } else {
         const a = document.createElement('a');
         a.href = url;
-        a.download = `sao-ke-${statement?.customer.name}-${new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }).replace(/\//g, '-')}.xlsx`;
+        a.download = `sao-ke-${profileStatement?.customer.name}-${new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }).replace(/\//g, '-')}.xlsx`;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -150,13 +155,13 @@ export default function DebtDetailPage() {
   // Fetch supplier statement only when this customer has a linked supplier
   const { data: supplierStatement } = useSupplierStatement(linkedSupplierId ?? undefined);
   const apBalance = supplierStatement?.totalOutstanding ?? dualEntity?.apBalance ?? 0;
-  const arBalance = statement?.totalOutstanding ?? 0;
+  const arBalance = profileStatement?.totalOutstanding ?? 0;
 
   // ── Derived data ────────────────────────────────────────────────────────
 
   const agingAmounts = useMemo(() =>
-    normalizeAging(statement?.agingBuckets ?? []),
-    [statement?.agingBuckets]
+    normalizeAging(profileStatement?.agingBuckets ?? []),
+    [profileStatement?.agingBuckets]
   );
 
   const filteredRows = useMemo(() => {
@@ -178,17 +183,17 @@ export default function DebtDetailPage() {
   }, [agingAmounts]);
 
   const lastPayment = useMemo(() => {
-    if (!statement) return null;
-    return [...statement.ledgerRows]
+    if (!profileStatement) return null;
+    return [...profileStatement.ledgerRows]
       .filter((row) => row.txnType === TxnType.PAYMENT_RECEIVED)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0] ?? null;
-  }, [statement]);
+  }, [profileStatement]);
 
-  const totalOutstanding = statement?.totalOutstanding ?? 0;
+  const totalOutstanding = profileStatement?.totalOutstanding ?? 0;
 
   // ── Loading / Error ─────────────────────────────────────────────────────
 
-  if (loading && !statement) {
+  if (isProfileLoading && !profileStatement) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
         Đang tải dữ liệu...
@@ -196,7 +201,7 @@ export default function DebtDetailPage() {
     );
   }
 
-  if (!statement) {
+  if (!profileStatement) {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
@@ -214,15 +219,15 @@ export default function DebtDetailPage() {
     );
   }
 
-  const { customer, ledgerRows } = statement;
+  const { customer, ledgerRows } = profileStatement;
   const hasDebt = totalOutstanding > 0;
   const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
-  const unpaidTrips = statement.unpaidTrips ?? [];
+  const unpaidTrips = profileStatement.unpaidTrips ?? [];
   const oldestUnpaidTrip = unpaidTrips[0] ?? null;
   const activeAgingRange = activeAgingIdx >= 0 ? AGING_RANGES[activeAgingIdx] : null;
   const activeAgingAmount = activeAgingIdx >= 0 ? agingAmounts[activeAgingIdx] : 0;
   const workspaceTabs: Array<{ key: WorkspaceTab; label: string; meta: string }> = [
-    { key: 'ledger', label: 'Chi tiết công nợ', meta: `${ledgerRows.length} khoản phát sinh` },
+    { key: 'ledger', label: 'Chi tiết công nợ', meta: `${statement?.ledgerRows.length ?? 0} khoản phát sinh` },
     { key: 'payments', label: 'Thanh toán', meta: hasDebt ? `${unpaidTrips.length} chuyến chưa thu` : 'Không còn nợ' },
     { key: 'statement', label: 'Bảng kê', meta: 'Lập chứng từ thanh toán' },
     { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
@@ -506,7 +511,7 @@ export default function DebtDetailPage() {
               type="PAYMENT_STATEMENT"
               entityType="CUSTOMER"
               entityId={Number(id)}
-              entityName={statement?.customer.name ?? ''}
+              entityName={profileStatement.customer.name}
               buttonLabel="Tạo bảng kê"
             />
           )}
@@ -516,7 +521,7 @@ export default function DebtDetailPage() {
               type="DEBIT_NOTE"
               entityType="CUSTOMER"
               entityId={Number(id)}
-              entityName={statement?.customer.name ?? ''}
+              entityName={profileStatement.customer.name}
               buttonLabel="Tạo giấy báo nợ"
               createBuilderOpen={isCreatingBillingDocument}
               onOpenCreate={() => navigate(billingCreatePath)}
@@ -601,7 +606,7 @@ export default function DebtDetailPage() {
                 isApplyDisabled={!isPeriodDirty || isStatementFetching}
               />
               <PeriodSummaryCards
-                summary={statement.periodSummary}
+                summary={statement?.periodSummary}
                 isLoading={isStatementFetching}
                 entityType="CUSTOMER"
               />

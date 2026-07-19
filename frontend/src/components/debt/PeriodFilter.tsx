@@ -81,9 +81,9 @@ export function PeriodFilter(props: PeriodFilterProps) {
     >
       <fieldset className="d-fieldset">
         <legend className="d-fieldset-legend text-xs">Kỳ xem sổ</legend>
-        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           {/* Mode switch — two segmented buttons inside a join */}
-          <div className="d-join d-join-vertical w-full lg:w-auto lg:d-join-horizontal" role="tablist" aria-label="Chế độ lọc">
+          <div className="d-join d-join-vertical w-full shrink-0 lg:w-auto lg:d-join-horizontal" role="tablist" aria-label="Chế độ lọc">
             <button
               type="button"
               role="tab"
@@ -105,7 +105,7 @@ export function PeriodFilter(props: PeriodFilterProps) {
           </div>
 
           {mode === 'month' ? (
-            <div className="d-join d-join-vertical w-full lg:w-auto lg:d-join-horizontal">
+            <div className="d-join d-join-vertical w-full shrink-0 lg:w-auto lg:d-join-horizontal">
               <select
                 className="d-select d-select-sm d-join-item w-full lg:w-auto"
                 value={month}
@@ -128,7 +128,7 @@ export function PeriodFilter(props: PeriodFilterProps) {
               </select>
             </div>
           ) : (
-            <div className="grid w-full gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
               <label className="flex min-w-0 flex-col gap-1 text-sm font-medium">
                 <span className="text-base-content">Từ ngày</span>
                 <input
@@ -153,7 +153,7 @@ export function PeriodFilter(props: PeriodFilterProps) {
           )}
           <button
             type="button"
-            className="d-btn d-btn-primary d-btn-sm w-full lg:w-auto"
+            className="d-btn d-btn-primary d-btn-sm w-full shrink-0 lg:w-auto"
             onClick={onApply}
             disabled={isApplyDisabled}
           >
