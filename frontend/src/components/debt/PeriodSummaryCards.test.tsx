@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { PeriodSummaryCards } from './PeriodSummaryCards';
 
 describe('PeriodSummaryCards', () => {
-  it('keeps the stats stack vertical on mobile and horizontal at sm+', () => {
+  it('uses the vertical base layout controlled by the 1100px CSS breakpoint', () => {
     const { container } = render(
       <PeriodSummaryCards
         isLoading={false}
@@ -23,6 +23,6 @@ describe('PeriodSummaryCards', () => {
     const root = container.firstElementChild as HTMLElement | null;
     expect(root).not.toBeNull();
     expect(root?.className).toContain('d-stats-vertical');
-    expect(root?.className).toContain('sm:d-stats-horizontal');
+    expect(root?.className).not.toContain('d-stats-horizontal');
   });
 });

@@ -1282,6 +1282,154 @@
 .dd-detail-table {
   min-width: 1040px;
 }
+
+.dd-ledger-mobile {
+  display: none;
+}
+
+.period-summary.d-stats {
+  grid-auto-flow: row;
+}
+
+@media (min-width: 1100px) {
+  .period-summary.d-stats {
+    grid-auto-flow: column;
+  }
+
+  .period-summary .d-stat-value {
+    font-size: clamp(1.35rem, 2.2vw, 2rem);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1023px) {
+  .debt-detail-page .dd-ledger > .table-scroll {
+    display: none;
+  }
+
+  .debt-detail-page .dd-ledger-mobile {
+    display: grid;
+    gap: 10px;
+  }
+
+  .debt-detail-page .dd-ledger-mobile-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    min-width: 0;
+    padding: 14px;
+    border-color: var(--line);
+    border-radius: 12px;
+    box-shadow: var(--sh-sm);
+  }
+
+  .dd-ledger-mobile-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .dd-ledger-mobile-card__head time {
+    flex-shrink: 0;
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+  }
+
+  .dd-ledger-mobile-card__head .dd-txn-pill {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dd-ledger-mobile-card__body {
+    min-width: 0;
+  }
+
+  .dd-ledger-mobile-card__body strong,
+  .dd-ledger-mobile-card__body p,
+  .dd-ledger-mobile-card__body small {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .dd-ledger-mobile-card__body strong {
+    color: var(--ink);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+  }
+
+  .dd-ledger-mobile-card__body p {
+    margin: 3px 0 0;
+    color: var(--ink-2);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+  }
+
+  .dd-ledger-mobile-card__body small {
+    margin-top: 3px;
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-2xs);
+    line-height: 1.4;
+  }
+
+  .dd-ledger-mobile-card__amounts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-2);
+  }
+
+  .dd-ledger-mobile-card__amounts > div {
+    min-width: 0;
+    padding: 9px 10px;
+    border-right: 1px solid var(--line);
+  }
+
+  .dd-ledger-mobile-card__amounts > div:last-child {
+    border-right: 0;
+  }
+
+  .dd-ledger-mobile-card__amounts dt {
+    color: var(--ink-3);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .dd-ledger-mobile-card__amounts dd {
+    margin: 4px 0 0;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 2.8vw, 13px);
+    font-weight: 750;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .dd-ledger-mobile-card__balance {
+    background: var(--surface);
+  }
+
+  .dd-ledger-mobile-card__balance dd {
+    font-weight: 850;
+  }
+
+  .dd-ledger-mobile-empty {
+    padding: 28px 16px;
+    color: var(--ink-3);
+    text-align: center;
+  }
+}
 .dd-reference,
 .dd-detail-content {
   min-width: 150px;

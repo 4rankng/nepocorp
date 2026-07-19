@@ -16,6 +16,7 @@ import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
@@ -55,6 +56,7 @@ function normalizeAging(buckets: AgingBucket[]): number[] {
 export default function PayableDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isCompactLedger = useMediaQuery('(max-width: 1023px)');
   const location = useLocation();
   const backPath = location.pathname.startsWith('/suppliers/') ? '/suppliers' : '/payables';
   const queryClient = useQueryClient();
@@ -398,33 +400,44 @@ export default function PayableDetailPage() {
           entityType="VENDOR"
         />
 
-        <div className="table-scroll">
-          <table className="dd-table dd-detail-table">
-            <thead>
-              <tr>
-                <th>NGÀY</th>
-                <th>ĐỐI CHIẾU</th>
-                <th>LOẠI GIAO DỊCH</th>
-                <th className="dd-r">PHÁT SINH PHẢI TRẢ</th>
-                <th className="dd-r">ĐÃ THANH TOÁN</th>
-                <th className="dd-r">SỐ DƯ</th>
-                <th>GHI CHÚ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row: LedgerEntry) => (
-                <LedgerRow key={row.id} row={row} />
-              ))}
-              {filteredRows.length === 0 && (
+        {isCompactLedger ? (
+          <ul className="dd-ledger-mobile d-list" aria-label="Danh sách giao dịch công nợ phải trả">
+            {filteredRows.map((row: LedgerEntry) => (
+              <PayableLedgerCard key={row.id} row={row} />
+            ))}
+            {filteredRows.length === 0 && (
+              <li className="dd-ledger-mobile-empty">Không có giao dịch</li>
+            )}
+          </ul>
+        ) : (
+          <div className="table-scroll">
+            <table className="dd-table dd-detail-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="dd-table-empty">
-                    Không có giao dịch
-                  </td>
+                  <th>NGÀY</th>
+                  <th>ĐỐI CHIẾU</th>
+                  <th>LOẠI GIAO DỊCH</th>
+                  <th className="dd-r">PHÁT SINH PHẢI TRẢ</th>
+                  <th className="dd-r">ĐÃ THANH TOÁN</th>
+                  <th className="dd-r">SỐ DƯ</th>
+                  <th>GHI CHÚ</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredRows.map((row: LedgerEntry) => (
+                  <LedgerRow key={row.id} row={row} />
+                ))}
+                {filteredRows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="dd-table-empty">
+                      Không có giao dịch
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Payment-statement builder (AP snapshot documents) */}
@@ -534,5 +547,45 @@ function LedgerRow({ row }: { row: LedgerEntry }) {
       </td>
       <td className="dd-td-note">{row.note || ''}</td>
     </tr>
+  );
+}
+
+export function PayableLedgerCard({ row }: { row: LedgerEntry }) {
+  const debit = parseFloat(row.debit) || 0;
+  const credit = parseFloat(row.credit) || 0;
+  const balance = parseFloat(row.balance) || 0;
+  const meta = TXN_META[row.txnType] ?? DEFAULT_META;
+  const reference = row.receiptId
+    || (row.txnType === TxnType.FUEL_EXPENSE ? row.tripCode || 'Chuyến chưa có mã' : null)
+    || row.note
+    || meta.label;
+
+  return (
+    <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
+      <div className="dd-ledger-mobile-card__head">
+        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
+        <span className={meta.pill}>{meta.label}</span>
+      </div>
+      <div className="dd-ledger-mobile-card__body">
+        <strong>{reference}</strong>
+        {row.note && row.note !== reference && <p>{row.note}</p>}
+      </div>
+      <dl className="dd-ledger-mobile-card__amounts">
+        <div>
+          <dt>Phải trả</dt>
+          <dd>{credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}</dd>
+        </div>
+        <div>
+          <dt>Đã trả</dt>
+          <dd className={debit > 0 ? 'text-success' : ''}>{debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}</dd>
+        </div>
+        <div className="dd-ledger-mobile-card__balance">
+          <dt>Số dư</dt>
+          <dd className={balance > 0 ? 'text-error' : balance < 0 ? 'text-success' : ''}>
+            {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance)).replace(' ₫', '')}đ
+          </dd>
+        </div>
+      </dl>
+    </li>
   );
 }

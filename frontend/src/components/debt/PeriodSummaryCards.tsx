@@ -5,8 +5,9 @@ import { formatCurrency } from '../../lib/format';
  * Three-card summary row (Số dư đầu kỳ / Phát sinh trong kỳ / Số dư cuối kỳ)
  * shown above the AR/AP ledger table when a period filter is active.
  *
- * daisyUI `d-stats` is used (prefixed per tokens.css) — three horizontal
- * stat items, with the "Phát sinh" cell color-coded by sign:
+ * daisyUI `d-stats` is used (prefixed per tokens.css) — stacked through the
+ * app's phone/tablet shell, then horizontal on desktop. The "Phát sinh" cell
+ * is color-coded by sign:
  *   - positive (net increase in debt) → text-error (more to collect / pay)
  *   - negative (net decrease)         → text-success
  *
@@ -24,7 +25,7 @@ export interface PeriodSummaryCardsProps {
 export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSummaryCardsProps) {
   if (isLoading || !summary) {
     return (
-      <div className="d-stats d-stats-vertical sm:d-stats-horizontal w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary period-summary--loading" aria-busy="true">
+      <div className="d-stats d-stats-vertical w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary period-summary--loading" aria-busy="true">
         <SkeletonStat label="Số dư đầu kỳ" />
         <SkeletonStat label="Phát sinh trong kỳ" />
         <SkeletonStat label="Số dư cuối kỳ" />
@@ -51,7 +52,7 @@ export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSum
   const decreaseAmount = entityType === 'CUSTOMER' ? creditTotal : debitTotal;
 
   return (
-    <div className="d-stats d-stats-vertical sm:d-stats-horizontal w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary">
+    <div className="d-stats d-stats-vertical w-full overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm period-summary">
       <div className="d-stat min-w-0">
         <div className="d-stat-title">Số dư đầu kỳ</div>
         <div className="d-stat-value">{formatCurrency(openingBalance)}</div>

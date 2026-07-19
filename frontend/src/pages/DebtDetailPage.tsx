@@ -16,6 +16,7 @@ import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useAgentOpenable } from '../hooks/useAgentOpenable';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { qk } from '../api/keys';
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DebtDetailPage.css';
@@ -38,6 +39,7 @@ export default function DebtDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const isCompactLedger = useMediaQuery('(max-width: 1023px)');
   const backPath = location.pathname.startsWith('/customers/') ? '/customers' : '/debt';
   const isCustomerRoute = location.pathname.startsWith('/customers/');
   const parentCrumb = isCustomerRoute
@@ -611,31 +613,42 @@ export default function DebtDetailPage() {
                 entityType="CUSTOMER"
               />
 
-              <div className="table-scroll">
-                <table className="dd-table dd-detail-table">
-                  <thead>
-                    <tr>
-                      <th>NGÀY</th>
-                      <th>CHUYẾN / ĐỐI CHIẾU</th>
-                      <th>NỘI DUNG</th>
-                      <th>LOẠI</th>
-                      <th className="dd-r">PHÁT SINH PHẢI THU</th>
-                      <th className="dd-r">ĐÃ THU</th>
-                      <th className="dd-r">SỐ DƯ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRows.map(row => (
-                      <ReceivableLedgerRow key={row.id} row={row} />
-                    ))}
-                    {filteredRows.length === 0 && (
+              {isCompactLedger ? (
+                <ul className="dd-ledger-mobile d-list" aria-label="Danh sách giao dịch công nợ phải thu">
+                  {filteredRows.map(row => (
+                    <ReceivableLedgerCard key={row.id} row={row} />
+                  ))}
+                  {filteredRows.length === 0 && (
+                    <li className="dd-ledger-mobile-empty">Không có giao dịch</li>
+                  )}
+                </ul>
+              ) : (
+                <div className="table-scroll">
+                  <table className="dd-table dd-detail-table">
+                    <thead>
                       <tr>
-                        <td colSpan={7} className="dd-table-empty">Không có giao dịch</td>
+                        <th>NGÀY</th>
+                        <th>CHUYẾN / ĐỐI CHIẾU</th>
+                        <th>NỘI DUNG</th>
+                        <th>LOẠI</th>
+                        <th className="dd-r">PHÁT SINH PHẢI THU</th>
+                        <th className="dd-r">ĐÃ THU</th>
+                        <th className="dd-r">SỐ DƯ</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredRows.map(row => (
+                        <ReceivableLedgerRow key={row.id} row={row} />
+                      ))}
+                      {filteredRows.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="dd-table-empty">Không có giao dịch</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -764,5 +777,52 @@ function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
         {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
       </td>
     </tr>
+  );
+}
+
+export function ReceivableLedgerCard({ row }: { row: LedgerEntry }) {
+  const debit = parseFloat(row.debit) || 0;
+  const credit = parseFloat(row.credit) || 0;
+  const balance = parseFloat(row.balance) || 0;
+  const tripId = row.tripId ?? (
+    row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
+      ? row.txnId
+      : null
+  );
+  const containers = row.containerNumbers?.filter(Boolean) ?? [];
+  const reference = row.tripCode || (tripId ? 'Chuyến chưa có mã' : row.receiptId || row.note || 'Giao dịch');
+  const detail = row.routeName || row.serviceFeeLabel || row.note || 'Không có ghi chú';
+  const secondaryDetail = row.routeName && row.note && row.note !== row.routeName ? row.note : null;
+
+  return (
+    <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
+      <div className="dd-ledger-mobile-card__head">
+        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
+        <span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span>
+      </div>
+      <div className="dd-ledger-mobile-card__body">
+        <strong>{reference}</strong>
+        <p>{detail}</p>
+        {secondaryDetail && <p>{secondaryDetail}</p>}
+        {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
+        {row.receiptId && tripId && <small>{row.receiptId}</small>}
+      </div>
+      <dl className="dd-ledger-mobile-card__amounts">
+        <div>
+          <dt>Phải thu</dt>
+          <dd>{debit > 0 ? money(debit) : '–'}</dd>
+        </div>
+        <div>
+          <dt>Đã thu</dt>
+          <dd className={credit > 0 ? 'text-success' : ''}>{credit > 0 ? money(credit) : '–'}</dd>
+        </div>
+        <div className="dd-ledger-mobile-card__balance">
+          <dt>Số dư</dt>
+          <dd className={balance > 0 ? 'text-error' : balance < 0 ? 'text-success' : ''}>
+            {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
+          </dd>
+        </div>
+      </dl>
+    </li>
   );
 }
