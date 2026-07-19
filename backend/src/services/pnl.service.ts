@@ -64,6 +64,49 @@ export async function getPnlReport(month: number, year: number) {
       : [];
     const plateById = new Map(truckRows.map(t => [t.id, t.licensePlate]));
 
+    const routeIds = [...new Set(monthTrips.map(t => t.routeId).filter((id): id is number => id != null))];
+    const routeRows = routeIds.length > 0
+      ? await db.select({ id: s.routes.id, name: s.routes.name }).from(s.routes).where(inArray(s.routes.id, routeIds))
+      : [];
+    const routeNameById = new Map(routeRows.map(route => [route.id, route.name]));
+
+    // Keep the expandable rows in the same cached response as the aggregates.
+    // Fetching trips separately can produce a newer snapshot than this report
+    // and makes the visible detail fail to reconcile with its summary row.
+    const tripDetails = monthTrips.map(trip => {
+      const isExternal = trip.carrierType === 'EXTERNAL';
+      const vatRate = Number(trip.vatRate ?? 0);
+      const grossRevenue = Number(trip.revenue ?? 0);
+      const revenue = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+      const fuelOrHireCost = isExternal ? Number(trip.externalFreightCost ?? 0) : Number(trip.totalFuelCost ?? 0);
+      const roadAllowance = isExternal ? 0 : Number(trip.totalRoadAllowance ?? 0);
+      const tollAndCompanyTickets = isExternal ? 0 : Number(trip.tollCost ?? 0) + Number(trip.tollsDiscount ?? 0);
+      const driverAndAllowances = isExternal
+        ? 0
+        : Number(trip.driverSalary ?? 0) + Number(trip.twoPointDeliveryBonus ?? 0) + Number(trip.vehicleShiftAllowance ?? 0);
+      const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
+      const totalCost = isExternal ? Number(trip.externalFreightCost ?? 0) : Number(trip.totalCost ?? 0);
+      const costDifference = totalCost - reconstructedCost;
+
+      return {
+        id: trip.id,
+        tripCode: trip.tripCode || `Lệnh #${trip.id}`,
+        departureDate: trip.departureDate,
+        routeName: trip.routeId ? routeNameById.get(trip.routeId) ?? 'Chưa có tuyến' : 'Chưa có tuyến',
+        revenue,
+        fuelOrHireCost,
+        roadAllowance,
+        tollAndCompanyTickets,
+        driverAndAllowances,
+        totalCost,
+        profit: revenue - totalCost,
+        costDifference,
+        costMatches: Math.abs(costDifference) <= 1,
+        isExternal,
+        vehicleBucketId: isExternal ? 0 : (trip.truckId ?? -1),
+      };
+    });
+
     // Truck-associated operating expenses (repairs, insurance, registration, parts, etc.).
     // These are separate from trip-level costs (fuel, road allowance, driver salary) and
     // do not overlap — expense categories cover vehicle overhead not captured per-trip.
@@ -261,6 +304,7 @@ export async function getPnlReport(month: number, year: number) {
       maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
       maintenanceByComponent: Object.fromEntries(maintenanceByComponent),
       maintenanceItemsByTruck: Object.fromEntries(maintenanceItemsByTruck),
+      tripDetails,
       categoryBreakdown,
       trucks: truckBreakdown,
       serviceMarginTotal,

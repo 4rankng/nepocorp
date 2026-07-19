@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TripDetail } from '@tingting/shared';
-import { financeVehicleBucketId, toFinanceTripDetail } from './finance-trip-details';
+import { financeVehicleBucketId, groupFinanceTripDetails, toFinanceTripDetail } from './finance-trip-details';
 
 const trip = (overrides: Partial<TripDetail> = {}): TripDetail => ({
   id: 12,
@@ -58,3 +58,29 @@ describe('finance trip detail', () => {
   });
 });
 
+describe('groupFinanceTripDetails', () => {
+  it('uses the report snapshot so expanded rows reconcile with the summary', () => {
+    const authoritative = {
+      id: 1,
+      tripCode: 'TRP-1',
+      departureDate: '2026-07-01',
+      routeName: 'Hải Phòng — Hà Nội',
+      revenue: 9_000_000,
+      fuelOrHireCost: 2_000_000,
+      roadAllowance: 1_000_000,
+      tollAndCompanyTickets: 0,
+      driverAndAllowances: 1_000_000,
+      totalCost: 4_000_000,
+      profit: 5_000_000,
+      costDifference: 0,
+      costMatches: true,
+      isExternal: false,
+      vehicleBucketId: 15,
+    };
+    const staleRawTrip = trip({ id: 2, truckId: 15, revenue: '123000000' });
+
+    const grouped = groupFinanceTripDetails([staleRawTrip], [authoritative]);
+
+    expect(grouped.get(15)).toEqual([authoritative]);
+  });
+});

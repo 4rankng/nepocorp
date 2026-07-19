@@ -55,6 +55,13 @@ interface PnlReport {
     vehicleComponent: 'TRUCK' | 'TRAILER' | null;
     amount: number;
   }>>;
+  tripDetails: Array<{
+    vehicleBucketId: number;
+    revenue: number;
+    totalCost: number;
+    profit: number;
+    isExternal: boolean;
+  }>;
   trucks: Array<{
     id: number;
     plate: string;
@@ -168,6 +175,18 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
       diff <= tolerance(),
       `adjustedGrossProfit (${report.grossProfit}) must equal Σ own-truck profit (${sumOwnProfit}); diff=${diff}`,
     );
+  });
+
+  test('(a.detail) expandable trip rows reconcile with each vehicle summary', () => {
+    if (!report) { assert.ok(true, 'no report'); return; }
+    for (const truck of report.trucks) {
+      const details = report.tripDetails.filter(detail => detail.vehicleBucketId === truck.id);
+      assert.equal(details.length, truck.trips, `${truck.plate} detail count must match its summary`);
+      assert.equal(details.reduce((sum, detail) => sum + detail.revenue, 0), truck.revenue);
+      const tripCosts = details.reduce((sum, detail) => sum + detail.totalCost, 0);
+      assert.equal(tripCosts + truck.maintenanceExpenses, truck.costs);
+      assert.equal(details.reduce((sum, detail) => sum + detail.profit, 0) - truck.maintenanceExpenses, truck.profit);
+    }
   });
 
   test('(b) penalty/otherIncome enters netProfit exactly once (no truck double-count)', () => {

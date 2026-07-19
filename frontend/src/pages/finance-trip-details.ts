@@ -1,4 +1,4 @@
-import type { TripDetail } from '@tingting/shared';
+import type { PnlTripDetail, TripDetail } from '@tingting/shared';
 
 export interface FinanceTripDetail {
   id: number;
@@ -15,6 +15,32 @@ export interface FinanceTripDetail {
   costDifference: number;
   costMatches: boolean;
   isExternal: boolean;
+}
+
+export function groupFinanceTripDetails(
+  trips: TripDetail[],
+  reportDetails?: PnlTripDetail[],
+): Map<number, FinanceTripDetail[]> {
+  const grouped = new Map<number, FinanceTripDetail[]>();
+  if (reportDetails) {
+    for (const detail of reportDetails) {
+      const details = grouped.get(detail.vehicleBucketId) ?? [];
+      details.push(detail);
+      grouped.set(detail.vehicleBucketId, details);
+    }
+  } else {
+    for (const trip of trips) {
+      if (trip.status === 'CANCELED') continue;
+      const truckId = financeVehicleBucketId(trip);
+      const details = grouped.get(truckId) ?? [];
+      details.push(toFinanceTripDetail(trip));
+      grouped.set(truckId, details);
+    }
+  }
+  for (const details of grouped.values()) {
+    details.sort((a, b) => b.departureDate.localeCompare(a.departureDate));
+  }
+  return grouped;
 }
 
 const amount = (value: string | number | null | undefined): number => Number(value ?? 0) || 0;
@@ -61,4 +87,3 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
     isExternal,
   };
 }
-

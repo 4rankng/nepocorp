@@ -1,4 +1,4 @@
-import type { BillingDocumentType, BillingDocumentLine } from '@tingting/shared';
+import { canonicalFreightDescription, type BillingDocumentType, type BillingDocumentLine } from '@tingting/shared';
 
 export interface BillingRouteGroup {
   key: string;
@@ -32,19 +32,9 @@ export const SERVICE_FEE_LABELS: Record<string, string> = {
   OTHER: 'Phí chi hộ khác',
 };
 
-export function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 export function normalizeFreightDescription(line: BillingDocumentLine): BillingDocumentLine {
-  if (line.lineType !== 'FREIGHT') return line;
-  const routeName = line.routeName?.trim();
-  if (!routeName) return line;
-  const description = line.description
-    .replace(new RegExp(`\\s+[—-]\\s+${escapeRegExp(routeName)}`, 'i'), '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return description && description !== line.description ? { ...line, description } : line;
+  const description = canonicalFreightDescription(line);
+  return description !== line.description ? { ...line, description } : line;
 }
 
 export function normalizeLine(line: BillingDocumentLine): BillingDocumentLine {

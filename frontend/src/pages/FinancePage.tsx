@@ -12,7 +12,7 @@ import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
 import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyPct } from './finance-derived';
-import { financeVehicleBucketId, toFinanceTripDetail } from './finance-trip-details';
+import { groupFinanceTripDetails } from './finance-trip-details';
 import type { PnlMaintenanceItem } from '@tingting/shared';
 import './FinancePage.css';
 
@@ -42,19 +42,8 @@ export default function FinancePage() {
   } = useFinanceDerived({ allTrips, report, prevReport, capTableRaw, yearlyData, month, chartView });
 
   const tripDetailsByTruck = useMemo(() => {
-    const grouped = new Map<number, ReturnType<typeof toFinanceTripDetail>[]>();
-    for (const trip of allTrips) {
-      if (trip.status === 'CANCELED') continue;
-      const truckId = financeVehicleBucketId(trip);
-      const details = grouped.get(truckId) ?? [];
-      details.push(toFinanceTripDetail(trip));
-      grouped.set(truckId, details);
-    }
-    for (const details of grouped.values()) {
-      details.sort((a, b) => b.departureDate.localeCompare(a.departureDate));
-    }
-    return grouped;
-  }, [allTrips]);
+    return groupFinanceTripDetails(allTrips, report?.tripDetails);
+  }, [allTrips, report?.tripDetails]);
 
   const toggleTruck = (truckId: number) => {
     setExpandedTruckIds((current) => {

@@ -29,7 +29,7 @@ export type {
   BulkUpdateTripFiguresRequest, BulkUpdateTripFiguresResponse,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
   LoginResponse, PaginatedResponse, DashboardStats, DashboardDecisionItem, DashboardDecisionKind, DashboardDecisionSeverity, CustomerStatement, AgingBucket, UnpaidTrip,
-  SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlMaintenanceItem, PnlReport,
+  SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlMaintenanceItem, PnlTripDetail, PnlReport,
   Supplier, ExpenseCategory, Expense, ExpenseWithRefs, PayableSummary, PayablesCategory, SupplierStatement, RenewalReminder, VendorPaymentRequest,
   TripContainer, TripExpense, TripExpenseWithRefs, ForwarderTripDetail, TripExpenseWithSupplier,
   AdvanceRequest, AdvanceRequestWithRefs, AdvanceSettlement, AdvanceSettlementWithRefs,
@@ -47,6 +47,8 @@ export type {
 } from './types';
 
 export { parseThreshold } from './types';
+
+export { canonicalFreightDescription } from './calculations/billingDocument';
 
 // ─── Navigation catalog (single source for SPA paths/titles + agent search) ──
 export { PAGE_CATALOG } from './navigation/pageCatalog';

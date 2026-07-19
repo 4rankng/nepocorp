@@ -1238,6 +1238,24 @@ export interface PnlMaintenanceItem {
   note: string | null;
 }
 
+export interface PnlTripDetail {
+  id: number;
+  tripCode: string;
+  departureDate: string;
+  routeName: string;
+  revenue: number;
+  fuelOrHireCost: number;
+  roadAllowance: number;
+  tollAndCompanyTickets: number;
+  driverAndAllowances: number;
+  totalCost: number;
+  profit: number;
+  costDifference: number;
+  costMatches: boolean;
+  isExternal: boolean;
+  vehicleBucketId: number;
+}
+
 export interface PnlReport {
   period: { month: number; year: number };
   totalRevenue: number;
@@ -1252,6 +1270,7 @@ export interface PnlReport {
   maintenanceExpensesByTruck: Record<number, string>;
   maintenanceByComponent: Record<number, { truck: number; trailer: number }>;
   maintenanceItemsByTruck?: Record<number, PnlMaintenanceItem[]>;
+  tripDetails?: PnlTripDetail[];
   companyExpenses: number;
   categoryBreakdown: Array<{ categoryName: string; total: string }>;
   serviceMarginTotal?: number;

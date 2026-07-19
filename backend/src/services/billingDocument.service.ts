@@ -5,6 +5,7 @@ import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
 import { LedgerService } from './ledger.service';
 import {
+  canonicalFreightDescription,
   BILLABLE_TRIP_STATUSES,
   LoadingType,
   TxnType,
@@ -837,16 +838,19 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
     debitNoteTemplateId: doc.debitNoteTemplateId ?? null,
     debitNoteTemplateSnapshot: (doc.debitNoteTemplateSnapshot as DebitNoteTemplateSnapshot | null) ?? null,
     createdAt: doc.createdAt.toISOString(), updatedAt: doc.updatedAt.toISOString(),
-    lines: lines.map((l) => ({
-      id: l.id, documentId: l.documentId, sourceType: l.sourceType as BillingDocumentLine['sourceType'],
-      sourceId: l.sourceId ?? null, lineType: l.lineType as BillingDocumentLine['lineType'],
-      typeLabel: l.typeLabel, unit: l.unit,
-      description: l.description, routeName: l.routeName,
-      containerNumbers: splitContainers(l.containerNumbers),
-      renderData: (l.renderData as BillingLineRenderData | null) ?? null,
-      baseAmount: Number(l.baseAmount), amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
-      excluded: l.excluded, sortOrder: l.sortOrder,
-    })),
+    lines: lines.map((l) => {
+      const line: BillingDocumentLine = {
+        id: l.id, documentId: l.documentId, sourceType: l.sourceType as BillingDocumentLine['sourceType'],
+        sourceId: l.sourceId ?? null, lineType: l.lineType as BillingDocumentLine['lineType'],
+        typeLabel: l.typeLabel, unit: l.unit,
+        description: l.description, routeName: l.routeName,
+        containerNumbers: splitContainers(l.containerNumbers),
+        renderData: (l.renderData as BillingLineRenderData | null) ?? null,
+        baseAmount: Number(l.baseAmount), amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
+        excluded: l.excluded, sortOrder: l.sortOrder,
+      };
+      return { ...line, description: canonicalFreightDescription(line) };
+    }),
   };
 }
 
@@ -1291,11 +1295,15 @@ function splitRouteName(routeName: string): { origin: string; destination: strin
 }
 
 async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Promise<BillingDocumentLine[]> {
-  const directTripIds = lines
+  const normalizedLines = lines.map((line) => ({
+    ...line,
+    description: canonicalFreightDescription(line),
+  }));
+  const directTripIds = normalizedLines
     .filter((line) => line.sourceType === 'TRIP' && line.sourceId && !line.renderData)
     .map((line) => Number(line.sourceId))
     .filter((id) => Number.isFinite(id) && id > 0);
-  const expenseIds = Array.from(new Set(lines
+  const expenseIds = Array.from(new Set(normalizedLines
     .filter((line) => line.sourceType === 'EXPENSE' && line.sourceId)
     .map((line) => Number(line.sourceId))
     .filter((id) => Number.isFinite(id) && id > 0)));
@@ -1315,7 +1323,7 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
     ...directTripIds,
     ...expenseTripRows.map((row) => row.tripId),
   ]));
-  if (tripIds.length === 0 && expenseById.size === 0) return lines;
+  if (tripIds.length === 0 && expenseById.size === 0) return normalizedLines;
 
   const trips = await db.select({
     id: s.trips.id,
@@ -1333,7 +1341,7 @@ async function enrichLinesForDebitNoteRender(lines: BillingDocumentLine[]): Prom
   const containersByTrip = await loadContainersByTrip(tripIds);
   const legsByTrip = await loadLegRenderDataByTrip(tripIds);
 
-  return lines.map((line) => {
+  return normalizedLines.map((line) => {
     const expenseInfo = line.sourceType === 'EXPENSE' && line.sourceId
       ? expenseById.get(Number(line.sourceId))
       : undefined;
