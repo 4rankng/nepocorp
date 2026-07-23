@@ -45,6 +45,8 @@ img { display: block; }
 #root .app *::after {
   box-shadow: none;
   text-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 #root .app img {

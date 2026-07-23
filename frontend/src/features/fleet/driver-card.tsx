@@ -149,7 +149,14 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
         <div className="fleet-card-tools">
           <div className="fleet-mini-search">
             <Search size={14} />
-            <input type="text" placeholder="Tìm tên hoặc SĐT…" value={driverSearch} onChange={(e) => setDriverSearch(e.target.value)} />
+            <input
+              type="text"
+              name="driverSearch"
+              aria-label="Tìm lái xe theo tên hoặc số điện thoại"
+              placeholder="Tìm tên hoặc SĐT…"
+              value={driverSearch}
+              onChange={(e) => setDriverSearch(e.target.value)}
+            />
           </div>
           <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
             <Plus size={13} /> Thêm lái xe

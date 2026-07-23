@@ -278,7 +278,7 @@ export default function BillingDocumentBuilder({
           </div>
           <div>
             <p className="billing-builder__eyebrow">{isEdit ? 'Chỉnh sửa tài liệu' : 'Tạo tài liệu mới'}</p>
-            <h1 id="billing-builder-title">{TITLE[type]}</h1>
+            <h2 id="billing-builder-title">{TITLE[type]}</h2>
             <div className="billing-builder__meta">
               <span>{entityName}</span>
               <span>{displayDate(rangeFrom)} - {displayDate(rangeTo)}</span>

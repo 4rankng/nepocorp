@@ -484,6 +484,8 @@ export default function PayableListPage() {
             <Search size={14} style={{ color: 'var(--ink-3)' }} />
             <input
               type="text"
+              name="supplierPayableSearch"
+              aria-label="Tìm công nợ theo nhà cung cấp"
               placeholder="Tìm nhà cung cấp..."
               value={search}
               onChange={e => setSearch(e.target.value)}

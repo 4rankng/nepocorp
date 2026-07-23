@@ -228,7 +228,15 @@ export default function SalaryAttendancePage() {
         <div className="driver-select-row__search">
           <div className="input-icon" style={{ width: '100%', maxWidth: 340 }}>
             <Search size={14} />
-            <input type="text" className="input" placeholder="Tìm lái xe..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <input
+              type="text"
+              name="salaryDriverSearch"
+              className="input"
+              aria-label="Tìm lái xe trong bảng lương"
+              placeholder="Tìm lái xe..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
         {listLoading ? (

@@ -48,6 +48,7 @@ export function TemplatePreview({
                 className={`debit-editor-preview__title debit-editor-canvas-input ${selectedTarget.type === 'general' && selectedTarget.field === 'titleText' ? 'is-selected' : ''}`}
                 value={form.titleText || ''}
                 placeholder="GIẤY BÁO NỢ"
+                aria-label="Tiêu đề mẫu giấy báo nợ"
                 rows={1}
                 onFocus={() => onSelect({ type: 'general', field: 'titleText' })}
                 onChange={event => onSet('titleText', event.target.value)}
@@ -67,6 +68,7 @@ export function TemplatePreview({
                 <span className="debit-editor-preview__inline-field">
                   <input
                     className="debit-editor-canvas-input debit-editor-canvas-input--issuer"
+                    aria-label="Tên công ty phát hành"
                     value={form.issuerName ?? ''}
                     placeholder="Tên công ty"
                     onFocus={() => onSelect({ type: 'company', field: 'issuerName' })}
@@ -80,6 +82,7 @@ export function TemplatePreview({
                 <span className="debit-editor-preview__inline-field">
                   <input
                     className="debit-editor-canvas-input"
+                    aria-label="Địa chỉ công ty phát hành"
                     value={form.issuerAddress ?? ''}
                     placeholder="Địa chỉ"
                     onFocus={() => onSelect({ type: 'company', field: 'issuerAddress' })}
@@ -93,6 +96,7 @@ export function TemplatePreview({
                 <span className="debit-editor-preview__inline-field">
                   <input
                     className="debit-editor-canvas-input"
+                    aria-label="Mã số thuế công ty phát hành"
                     value={form.issuerTaxCode ?? ''}
                     placeholder="MST"
                     onFocus={() => onSelect({ type: 'company', field: 'issuerTaxCode' })}

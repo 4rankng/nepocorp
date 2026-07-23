@@ -59,28 +59,28 @@ export function AddTireForm({
   return (
     <div className="ttp-add">
       <div className="ttp-field ttp-field--serial">
-        <label>Serial lốp *</label>
-        <input className="input" value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="VD: 12345678" />
+        <label htmlFor="tire-serial">Serial lốp *</label>
+        <input id="tire-serial" name="serial" className="input" value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="VD: 12345678" />
       </div>
       <div className="ttp-field">
-        <label>Vị trí</label>
+        <span className="ttp-field__label">Vị trí</span>
         <PositionPicker value={positionText} labels={positionLabels} onChange={setPositionText} onManage={onManagePositions} />
       </div>
       <div className="ttp-field">
-        <label>Kích cỡ</label>
-        <input className="input" value={size} onChange={(e) => setSize(e.target.value)} placeholder="VD: 11R22.5" />
+        <label htmlFor="tire-size">Kích cỡ</label>
+        <input id="tire-size" name="size" className="input" value={size} onChange={(e) => setSize(e.target.value)} placeholder="VD: 11R22.5" />
       </div>
       <div className="ttp-field">
-        <label>Nhà cung cấp</label>
+        <span className="ttp-field__label">Nhà cung cấp</span>
         <SupplierPicker value={supplierText} suppliers={suppliers} onChange={setSupplierText} />
       </div>
       <div className="ttp-field">
-        <label>Giá (VND)</label>
-        <input className="input" type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
+        <label htmlFor="tire-cost">Giá (VND)</label>
+        <input id="tire-cost" name="cost" className="input" type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
       </div>
       <div className="ttp-field">
-        <label>Ngày mua</label>
-        <input className="input" type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} />
+        <label htmlFor="tire-purchased-at">Ngày mua</label>
+        <input id="tire-purchased-at" name="purchasedAt" className="input" type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} />
       </div>
       <button className="btn btn--primary ttp-add-submit" disabled={saving || !serial.trim()} onClick={submit}>
         {saving ? "Đang lưu…" : "Thêm lốp"}
@@ -170,7 +170,7 @@ export function PositionPicker({ value, labels, onChange, onManage }: { value: s
 
   return (
     <div ref={rootRef} className="ttp-position-picker">
-      <button type="button" className={`input ttp-position-select-trigger ${open ? "is-open" : ""}`} onClick={() => setOpen((current) => !current)} aria-haspopup="listbox" aria-expanded={open}>
+      <button type="button" className={`input ttp-position-select-trigger ${open ? "is-open" : ""}`} onClick={() => setOpen((current) => !current)} aria-label="Chọn vị trí lốp" aria-haspopup="listbox" aria-expanded={open}>
         <span className={selectedLabel ? "" : "ttp-position-select-placeholder"}>{selectedLabel || "Chọn vị trí lắp"}</span>
         <ChevronDown size={16} className="ttp-position-select-chevron" />
       </button>
@@ -224,6 +224,8 @@ export function SupplierPicker({ value, suppliers, onChange }: { value: string; 
     <div ref={rootRef} className="ttp-position-picker ttp-supplier-picker">
       <input
         className="input"
+        name="supplierSearch"
+        aria-label="Tìm nhà cung cấp lốp"
         value={value}
         onFocus={() => setOpen(true)}
         onChange={(e) => {

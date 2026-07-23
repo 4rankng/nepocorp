@@ -279,6 +279,9 @@ export default function DebitNoteTemplateEditorPage() {
   return (
     <div className="cfg-page debit-editor-page">
       <header className="debit-editor-topbar">
+        <h1 className="sr-only">
+          {viewOnly ? 'Xem mẫu giấy báo nợ' : isNew ? 'Tạo mẫu giấy báo nợ' : 'Chỉnh sửa mẫu giấy báo nợ'}
+        </h1>
         <div className="debit-editor-title">
           <button type="button" className="billing-builder__close" onClick={backToList} aria-label="Quay lại" disabled={busy}>
             <ArrowLeft size={21} />

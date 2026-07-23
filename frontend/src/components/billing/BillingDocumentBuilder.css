@@ -48,7 +48,7 @@
   color: var(--ink-3);
 }
 
-.billing-builder__title-block h1 {
+.billing-builder__title-block h2 {
   margin: 0;
   font-size: 22px;
   line-height: 1.35;
@@ -585,7 +585,7 @@
     letter-spacing: 0.1em;
   }
 
-  .billing-builder__title-block h1 {
+  .billing-builder__title-block h2 {
     font-size: 18px;
     line-height: 1.35;
     font-weight: 800;

@@ -415,6 +415,8 @@ export default function DebtListPage() {
             <Search size={14} />
             <input
               type="text"
+              name="customerDebtSearch"
+              aria-label="Tìm công nợ theo khách hàng"
               placeholder="Tìm khách hàng..."
               value={search}
               onChange={e => setSearch(e.target.value)}
