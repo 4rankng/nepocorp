@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "size-check": "node scripts/check-size.mjs",
+    "check:ui": "node scripts/check-ui-contract.mjs",
     "lint": "eslint ."
   },
   "dependencies": {

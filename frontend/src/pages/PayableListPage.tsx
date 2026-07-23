@@ -10,8 +10,10 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useAuth } from '../hooks/useAuth';
-import { usePageAnimations } from '../hooks/animations';
-import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
+import {
+  usePageAnimations,
+  useCounterAnimation,
+} from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';

@@ -16,5 +16,8 @@ export type { UsePageAnimationsOptions } from './usePageAnimations';
 export { useListAnimations } from './useListAnimations';
 export type { UseListAnimationsOptions } from './useListAnimations';
 
+export { useCounterAnimation } from './useCounterAnimation';
+export type { CounterTarget, CounterOptions } from './useCounterAnimation';
+
 export { useMotionPath } from './useMotionPath';
 export type { UseMotionPathOptions, UseMotionPathReturn } from './useMotionPath';

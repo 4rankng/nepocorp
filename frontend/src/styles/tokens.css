@@ -130,6 +130,8 @@
 
   /* --- Sidebar (forest green) --- */
   --sb-bg: #005A2D;
+  --sb-gradient-start: #005A2D;
+  --sb-gradient-end: #00361B;
   --sb-surface: rgba(255, 255, 255, 0.08);
   --sb-line: rgba(255, 255, 255, 0.12);
   --sb-text: rgba(255, 255, 255, 0.85);
@@ -197,6 +199,14 @@
   --sidebar-w: 248px;
   --topbar-h: 48px;
   --control-h: 44px;
+
+  /* --- Canonical status strip (Vantai invariant) ---
+   * Per docs/design-guidelines.md: every status marker is a centered 3x20px
+   * strip, NEVER a full-height colored left border or a legacy 4x32 rail.
+   * Consumed by StatusStrip.tsx and .status-strip rules across the app. */
+  --status-strip-width: 3px;
+  --status-strip-height: 20px;
+  --status-strip-radius: 0 999px 999px 0;
 
   /* --- Motion --- */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);

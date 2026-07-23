@@ -15,6 +15,8 @@ export function getStatusColor(status: string): string {
 /**
  * Absolute-positioned short status marker on the left edge of a table cell or card.
  * Parent must have `position: 'relative'`. This is intentionally NOT full-height.
+ * Uses the canonical centered 3x20px Vantai status strip (see
+ * docs/design-guidelines.md and `--status-strip-*` tokens).
  * Pass `color` for custom status palettes; omit to use ACTIVE/INACTIVE defaults.
  */
 export function StatusStrip({ status, color }: { status?: string; color?: string }) {
@@ -25,9 +27,9 @@ export function StatusStrip({ status, color }: { status?: string; color?: string
       left: 0,
       top: '50%',
       transform: 'translateY(-50%)',
-      width: 4,
-      height: 32,
-      borderRadius: '0 999px 999px 0',
+      width: 'var(--status-strip-width, 3px)',
+      height: 'var(--status-strip-height, 20px)',
+      borderRadius: 'var(--status-strip-radius, 0 999px 999px 0)',
       background: bg,
       pointerEvents: 'none',
     }} />
@@ -62,9 +64,9 @@ export function StatusSwatch({ status, color }: { status?: string; color?: strin
   const bg = color || (status ? getStatusColor(status) : '#999');
   return (
     <span style={{
-      width: 4,
-      height: 20,
-      borderRadius: '0 4px 4px 0',
+      width: 'var(--status-strip-width, 3px)',
+      height: 'var(--status-strip-height, 20px)',
+      borderRadius: 'var(--status-strip-radius, 0 4px 4px 0)',
       background: bg,
       display: 'inline-block',
     }} />

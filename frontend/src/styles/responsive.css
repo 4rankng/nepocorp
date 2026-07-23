@@ -174,6 +174,19 @@
  * ========================================================================== */
 @media (max-width: 640px) {
 
+  /* ── Universal touch-target floor (Vantai invariant) ──
+   * Every interactive control on phones must clear the 44px Apple/Material
+   * tap-target minimum. Applies to all native and link-styled controls under
+   * the app root. Form controls additionally get 16px text to stop iOS
+   * zoom-on-focus. */
+  #root button,
+  #root [role="button"],
+  #root a[href],
+  #root input:not([type="checkbox"]):not([type="radio"]),
+  #root select {
+    min-height: 44px;
+  }
+
   /* ── App shell ── */
   .app-body, .content { padding: 6px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
 
@@ -268,13 +281,13 @@
   .kpi__meta > strong { font-weight: 600; }
 
   /* ── Dashboard widget touch targets ── */
-  .wf-link { min-height: 32px; padding: 6px 0; }
-  .wf-minibtn { min-height: 36px; padding: 4px 10px; }
-  .wf-btn { min-height: 42px; }
+  .wf-link { min-height: 44px; padding: 6px 0; }
+  .wf-minibtn { min-height: 44px; padding: 4px 10px; }
+  .wf-btn { min-height: 44px; }
   .approval-queue__quick { min-width: 36px; min-height: 36px; padding: 6px; }
 
   /* ── Status pills & pagination ── */
-  .stab-pill { min-height: 38px; padding: 6px 14px; }
+  .stab-pill { min-height: 44px; padding: 6px 14px; }
   .page-btn { min-width: 36px; min-height: 36px; }
 
   /* ── Panels ── */

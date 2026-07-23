@@ -19,8 +19,11 @@ import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations } from '../hooks/animations';
-import { useCounterAnimation } from '../hooks/animations/useCounterAnimation';
+import {
+  usePageAnimations,
+  useListAnimations,
+  useCounterAnimation,
+} from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { AssetIcon } from '../components/AssetIcon';
 import './DebtListPage.css';
