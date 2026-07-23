@@ -1,5 +1,5 @@
 import { useState, memo } from "react";
-import { UserCheck, Plus, Search, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import { UserRoundCheck, Plus, Search, Pencil, Trash2, X, Loader2 } from "lucide-react";
 import { Panel, StatusPill, Btn, Modal } from "../../components/UI";
 import { StatusStrip } from "../../components/shared/StatusStrip";
 import { useCRUD } from "../../hooks/useCRUD";
@@ -15,7 +15,7 @@ import "../../pages/FleetPage.css";
 const DriverAvatarIcon = memo(function DriverAvatarIcon() {
   return (
     <span className="fleet-avatar" aria-hidden="true">
-      <UserCheck size={14} />
+      <UserRoundCheck size={16} strokeWidth={1.9} />
     </span>
   );
 });
@@ -137,7 +137,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
       <div className="fleet-card-head">
         <div className="fleet-card-lead">
           <div className="fleet-card-icon">
-            <UserCheck size={18} />
+            <UserRoundCheck size={18} />
           </div>
           <div>
             <div className="fleet-card-title">
@@ -251,19 +251,29 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
           {filteredDrivers.map((d) => {
             const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
             return (
-              <div key={d.id} className="m-card" onClick={() => setViewingId(d.id)}>
+              <div
+                key={d.id}
+                className="m-card fleet-driver-card"
+                onClick={() => setViewingId(d.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setViewingId(d.id);
+                  }
+                }}
+              >
                 <StatusStrip color={fleetStatusColor(d.status)} />
-                <div className="m-card__top">
-                  <span className="m-card__title">
-                    <DriverAvatarIcon />
-                    <span style={{ marginLeft: 6 }}>{d.name}</span>
-                  </span>
-                </div>
-                {d.phone && (
-                  <div className="m-card__meta">
-                    <span>{d.phone}</span>
+                <div className="fleet-driver-card__identity">
+                  <DriverAvatarIcon />
+                  <div className="fleet-driver-card__identity-copy">
+                    <div className="fleet-driver-card__name">{d.name}</div>
+                    {d.phone && (
+                      <div className="fleet-driver-card__phone">{d.phone}</div>
+                    )}
                   </div>
-                )}
+                </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Xe phân công</span>
                   <span className="m-card__row-value">{truck ? truck.licensePlate : "— Chưa phân —"}</span>
@@ -274,17 +284,6 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
                     <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString("vi-VN")} đ</span>
                   </div>
                 ) : null}
-                <div className="fleet-card-actions">
-                  <button
-                    className="btn btn--ghost btn--sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setViewingId(d.id);
-                    }}
-                  >
-                    Xem
-                  </button>
-                </div>
               </div>
             );
           })}

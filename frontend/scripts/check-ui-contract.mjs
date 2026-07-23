@@ -121,6 +121,23 @@ if (!/select\.penalty-month-select\s*\{[^}]*min-height:\s*44px/i
   failures.push('pages/DriverPenaltyPage.css: mobile month select must remain at least 44px');
 }
 
+const advanceSettlementLedgerSource = await readFile(
+  new URL('../src/pages/AdminAdvanceSettlementsPage.tsx', import.meta.url),
+  'utf8',
+);
+const forbiddenAdvanceSettlementLedgerDetails = [
+  'useAdminSettlementOpsCompletion',
+  'OpsCompletionSummary',
+  'opsCompletion',
+];
+for (const forbiddenDetail of forbiddenAdvanceSettlementLedgerDetails) {
+  if (advanceSettlementLedgerSource.includes(forbiddenDetail)) {
+    failures.push(
+      `pages/AdminAdvanceSettlementsPage.tsx: ledger must not render inline Ops detail (${forbiddenDetail})`,
+    );
+  }
+}
+
 for (const file of sharedColorFiles) {
   const css = await readFile(new URL(`../src/${file}`, import.meta.url), 'utf8');
   if (/#[0-9a-f]{3,8}\b/i.test(css)) {

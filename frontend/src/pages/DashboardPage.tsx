@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, ChevronRight, ChevronUp, Download, Truck } from 'lucide-react';
-import { formatCompact, formatNumber } from '../lib/format';
+import { formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
 import { ROLE_LABELS } from '@tingting/shared';
@@ -20,7 +20,7 @@ import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hoo
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DashboardPage.css';
-import { CostDonut, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type DonutSlice } from '../features/dashboard/components/dashboard-presenters';
+import { CostBreakdown, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
 
 type DashboardStatTone = 'revenue' | 'cost' | 'gross' | 'net' | 'debt';
 
@@ -213,20 +213,20 @@ export default function DashboardPage() {
     }));
   }, [d]);
 
-  // ── Cost breakdown for donut ────────────────────────────────────────────
-  // Only build slices from cost lines that are actually non-zero. Without this
-  // guard, a totalPie>0 with all sub-line=0 (rounding) produced a fake
-  // "Chi phí khác 100%" gray donut.
-  const costSlices = useMemo<DonutSlice[]>(() => {
+  // Keep the full P&L breakdown so the presented categories reconcile to the
+  // card total. Sorting by value makes comparisons immediate without requiring
+  // users to estimate angles or match a detached legend to a chart.
+  const costBreakdown = useMemo<CostBreakdownItem[]>(() => {
     if (!d) return [];
-    const realTotal = (d.fuelCost || 0) + (d.driverCost || 0) + (d.roadCost || 0);
-    if (realTotal <= 0) return [];
-    const slices: DonutSlice[] = [
-      { name: 'Nhiên liệu', pct: Math.round(((d.fuelCost || 0) / realTotal) * 100), color: '#005A2D' },
-      { name: 'Lương lái xe', pct: Math.round(((d.driverCost || 0) / realTotal) * 100), color: '#16A34A' },
-      { name: 'Phí cầu đường', pct: Math.round(((d.roadCost || 0) / realTotal) * 100), color: '#2563EB' },
-    ].filter(s => s.pct > 0);
-    return slices;
+    return d.slicesWithPct
+      .map(slice => ({
+        name: slice.label,
+        value: slice.value,
+        pct: slice.pct,
+        color: slice.color,
+      }))
+      .filter(item => item.value > 0 && item.pct > 0)
+      .sort((a, b) => b.value - a.value);
   }, [d]);
 
   // ── Fleet stats ─────────────────────────────────────────────────────────
@@ -612,30 +612,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-        {/* Cost donut (4 cols × 1 row) — right of chart, row 2 */}
+        {/* Cost composition (4 cols × 1 row) — right of chart, row 2 */}
         <div className="d-card d-card-border bg-base-100 wf-card wf-cost wf-bento-third">
             <div className="wf-card-h">
               <div>
                 <h2 className="ttl">Cơ cấu chi phí</h2>
-                <div className="sub">{String(currentMonth).padStart(2, '0')}/{currentYear} · tổng {formatNumber(costs)} đ</div>
+                <div className="sub">Tháng {String(currentMonth).padStart(2, '0')}/{currentYear} · xếp theo giá trị</div>
               </div>
             </div>
             <div className="body">
-              {costSlices.length === 0 ? (
+              {costBreakdown.length === 0 ? (
                 <div style={{ padding: 16, fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có chi phí ghi nhận trong tháng.</div>
               ) : (
-                <>
-                  <CostDonut slices={costSlices} totalCompact={formatCompact(costs)} />
-                  <div className="wf-clegend">
-                    {costSlices.map((s, i) => (
-                      <div key={i} className="wf-crow">
-                        <span className="sw" style={{ background: s.color }} />
-                        <span className="nm">{s.name}</span>
-                        <span className="pc">{s.pct}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <CostBreakdown items={costBreakdown} total={d?.totalPie ?? costs} />
               )}
             </div>
           </div>

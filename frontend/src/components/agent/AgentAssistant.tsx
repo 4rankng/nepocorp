@@ -4,7 +4,7 @@
 // (capabilities.botEnabled). The drawer renders user bubbles + assistant
 // answers (text or <InsightCard>), a streaming "thinking" indicator, and an
 // input that sends each turn with the current route as context.
-import { memo, useCallback, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SendHorizontal } from 'lucide-react';
 import ReactMarkdown, { type Components } from 'react-markdown';
@@ -29,6 +29,7 @@ export function AgentAssistant() {
   const [input, setInput] = useState('');
   const threadRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const latestInsightCardRef = useRef<HTMLDivElement | null>(null);
   const isPinnedToBottom = useRef(true);
   const location = useLocation();
   const { send: sendDirective } = useAgentDirectives();
@@ -65,6 +66,20 @@ export function AgentAssistant() {
     bottomRef.current?.scrollIntoView({ block: 'end', behavior });
   }, []);
 
+  const latestMessage = chat.messages.at(-1);
+  const shouldRevealLatestFromTop = latestMessage?.role === 'assistant'
+    && latestMessage.response?.type === 'insight_card';
+
+  const revealLatest = useCallback((behavior: ScrollBehavior = 'auto') => {
+    if (shouldRevealLatestFromTop && latestInsightCardRef.current) {
+      isPinnedToBottom.current = false;
+      latestInsightCardRef.current.scrollIntoView({ block: 'start', behavior });
+      return;
+    }
+    isPinnedToBottom.current = true;
+    scrollToLatest(behavior);
+  }, [scrollToLatest, shouldRevealLatestFromTop]);
+
   const handleThreadScroll = useCallback(() => {
     const el = threadRef.current;
     if (!el) return;
@@ -74,17 +89,17 @@ export function AgentAssistant() {
 
   useLayoutEffect(() => {
     if (!open) return;
-    isPinnedToBottom.current = true;
-    const frame = requestAnimationFrame(() => scrollToLatest('auto'));
+    isPinnedToBottom.current = !shouldRevealLatestFromTop;
+    const frame = requestAnimationFrame(() => revealLatest('auto'));
     const timers = [
-      window.setTimeout(() => scrollToLatest('auto'), 80),
-      window.setTimeout(() => scrollToLatest('auto'), 220),
+      window.setTimeout(() => revealLatest('auto'), 80),
+      window.setTimeout(() => revealLatest('auto'), 220),
     ];
     return () => {
       cancelAnimationFrame(frame);
       timers.forEach(window.clearTimeout);
     };
-  }, [open, scrollToLatest]);
+  }, [open, revealLatest, shouldRevealLatestFromTop]);
 
   useLayoutEffect(() => {
     if (!open || !isPinnedToBottom.current) return;
@@ -147,7 +162,16 @@ export function AgentAssistant() {
           )}
 
           {chat.messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onAction={handleDirective} />
+            <MessageBubble
+              key={m.id}
+              message={m}
+              onAction={handleDirective}
+              messageRef={
+                shouldRevealLatestFromTop && m.id === latestMessage?.id
+                  ? latestInsightCardRef
+                  : undefined
+              }
+            />
           ))}
 
           {/* Live streaming bubble: tokens accumulate here before RUN_FINISHED
@@ -192,8 +216,13 @@ export function AgentAssistant() {
             onChange={(e) => setInput(e.target.value)}
             autoFocus
           />
-          <button type="submit" className="agent-composer__send" disabled={chat.isThinking || !input.trim()}>
-            <span>Gửi</span>
+          <button
+            type="submit"
+            className="agent-composer__send"
+            disabled={chat.isThinking || !input.trim()}
+            aria-label="Gửi tin nhắn"
+            title="Gửi tin nhắn"
+          >
             <SendHorizontal size={16} aria-hidden="true" />
           </button>
         </form>
@@ -202,13 +231,21 @@ export function AgentAssistant() {
   );
 }
 
-function MessageBubble({ message, onAction }: { message: AgentMessage; onAction: (d: AgentDirective) => void }) {
+function MessageBubble({
+  message,
+  onAction,
+  messageRef,
+}: {
+  message: AgentMessage;
+  onAction: (d: AgentDirective) => void;
+  messageRef?: Ref<HTMLDivElement>;
+}) {
   if (message.role === 'user') {
     return <div className="agent-bubble agent-bubble--user">{message.content}</div>;
   }
   return (
     <ErrorBoundary fallback={<AssistantRenderFallback />}>
-      <AssistantResponse message={message} onAction={onAction} />
+      <AssistantResponse message={message} onAction={onAction} messageRef={messageRef} />
     </ErrorBoundary>
   );
 }
@@ -216,13 +253,16 @@ function MessageBubble({ message, onAction }: { message: AgentMessage; onAction:
 interface AgentRenderContext {
   message: AgentMessage;
   onAction: (d: AgentDirective) => void;
+  messageRef?: Ref<HTMLDivElement>;
 }
 
 type ResponseRenderer = (response: AgentResponse, ctx: AgentRenderContext) => ReactNode;
 
 const RESPONSE_RENDERERS: Record<AgentResponse['type'], ResponseRenderer> = {
   insight_card: (response, ctx) => (
-    response.type === 'insight_card' ? <InsightCard card={response} onAction={ctx.onAction} /> : null
+    response.type === 'insight_card'
+      ? <InsightCard card={response} onAction={ctx.onAction} rootRef={ctx.messageRef} />
+      : null
   ),
   tutorial: (response, ctx) => (
     response.type === 'tutorial' ? <TutorialCard tutorial={response} onAction={ctx.onAction} /> : null
@@ -253,11 +293,19 @@ const RESPONSE_RENDERERS: Record<AgentResponse['type'], ResponseRenderer> = {
   },
 };
 
-function AssistantResponse({ message, onAction }: { message: AgentMessage; onAction: (d: AgentDirective) => void }) {
+function AssistantResponse({
+  message,
+  onAction,
+  messageRef,
+}: {
+  message: AgentMessage;
+  onAction: (d: AgentDirective) => void;
+  messageRef?: Ref<HTMLDivElement>;
+}) {
   const response = message.response;
   if (response) {
     const renderer = RESPONSE_RENDERERS[response.type];
-    const rendered = renderer?.(response, { message, onAction });
+    const rendered = renderer?.(response, { message, onAction, messageRef });
     if (rendered) return rendered;
   }
   return <AssistantTextBubble content={message.content} />;

@@ -6,6 +6,16 @@
   margin-bottom: 18px;
 }
 
+.users-admin-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.users-admin-page .users-kpi-grid {
+  margin-bottom: 24px;
+}
+
 .users-admin-page .page-title {
   font-size: var(--fs-2xl);
   line-height: 1.35;
@@ -180,6 +190,32 @@
   border-bottom: 1px solid var(--line);
   padding: 12px 14px;
   background: var(--surface-2);
+}
+
+.users-list-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  color: var(--ink-3);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.users-table-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.users-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
 }
 
 /* Override .tt-table for users — no row cursor (non-clickable rows) */
@@ -477,13 +513,65 @@
   }
 
   .users-admin-page .page-title {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1.35;
     letter-spacing: 0;
   }
 
   .users-admin-page .page-subtitle {
     font-size: 13px;
+  }
+
+  .users-admin-page .page-header-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .users-table-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .users-table-panel .users-role-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    padding: 10px;
+  }
+
+  .users-role-toolbar .filter-pill {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 8px;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .users-role-toolbar .toolbar__spacer {
+    display: none;
+  }
+
+  .users-role-toolbar .toolbar__search {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .users-list-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+    padding: 10px 12px;
+  }
+
+  .users-list-legend > span:first-child {
+    grid-column: 1 / -1;
   }
 
   .drawer:has(.users-form-cards) .drawer__head {
@@ -582,7 +670,10 @@
   }
 
   .users-mobile-card {
-    padding: 14px 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 14px 12px;
     border-bottom: 1px solid var(--line);
   }
 
@@ -591,7 +682,8 @@
   }
 
   .users-mobile-card__header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
     margin-bottom: 10px;
@@ -607,8 +699,8 @@
     font-size: 15px;
     color: var(--ink);
     overflow: visible;
-  overflow-wrap: anywhere;
-  white-space: normal;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .users-mobile-card__handle {
@@ -616,10 +708,28 @@
     font-size: 12px;
     color: var(--ink-3);
     margin-top: 1px;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .users-mobile-card__identity-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    min-width: 0;
+    margin-top: 3px;
   }
 
   .users-mobile-card__role {
+    max-width: 100%;
     flex-shrink: 0;
+  }
+
+  .users-mobile-card__menu {
+    position: relative;
+    align-self: center;
   }
 
   .users-mobile-card__details {
@@ -627,6 +737,16 @@
     flex-wrap: wrap;
     gap: 6px 16px;
     padding-left: 52px;
+    min-width: 0;
+  }
+
+  .users-mobile-card__detail-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 12px;
+    width: 100%;
+    min-width: 0;
   }
 
   .users-mobile-card__detail {
@@ -635,6 +755,9 @@
     gap: 5px;
     font-size: 12px;
     color: var(--ink-3);
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .users-mobile-card__detail svg {
@@ -683,6 +806,27 @@
     background: var(--danger-soft);
     color: var(--danger);
     border-color: var(--danger-soft);
+  }
+
+  .users-table-foot {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .users-table-foot__summary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .users-pagination {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .users-pagination__page:not(.is-active) {
+    display: none;
   }
 }
 
@@ -798,14 +942,17 @@
 @media (max-width: 640px) {
   .users-admin-page .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(132px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 14px;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .users-admin-page .kpi-grid .kpi {
+    min-width: 0;
     min-height: 92px;
     padding: 10px 12px;
   }
@@ -946,3 +1093,23 @@
   .users-admin-page .kpi__value { font-size: var(--fs-2xl); line-height: 1.35; }
   .users-admin-page .kpi__meta { font-size: var(--fs-xs); line-height: 1.35; margin-top: 6px; }
 } /* end 640px */
+
+@media (max-width: 360px) {
+  .users-admin-page .page-title {
+    font-size: 22px;
+  }
+
+  .users-admin-page .kpi-grid .kpi {
+    min-height: 86px;
+    padding: 9px 10px;
+  }
+
+  .users-admin-page .kpi-grid .kpi .kpi__label {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .users-mobile-card__details {
+    padding-left: 0;
+  }
+}

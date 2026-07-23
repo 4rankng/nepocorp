@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import { formatDate } from '../../../lib/format';
 import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
-import { UserStatusBadge } from './UserStatusBadge';
 import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 import { PageHeader } from '../../../components/UI';
@@ -118,7 +117,7 @@ export function UserTable({
       />
 
       {/* ── KPI grid ────────────────────────────────────────────────────── */}
-      <div className="kpi-grid" style={{ marginBottom: 24 }}>
+      <div className="kpi-grid users-kpi-grid">
         <div className="kpi">
           <div className="kpi__top">
             <span className="kpi__label">Tổng tài khoản</span>
@@ -182,7 +181,12 @@ export function UserTable({
       {/* ── Unified panel: toolbar + table + footer ─────────────────────── */}
       <div className="users-table-panel" data-tour-id="users-table">
         {/* Filter toolbar */}
-        <div className="toolbar" data-tour-id="users-role-filters">
+        <div
+          className="toolbar users-role-toolbar"
+          data-tour-id="users-role-filters"
+          role="group"
+          aria-label="Lọc tài khoản theo vai trò"
+        >
           {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
             const count = f === 'all' ? total : users.filter(u => u.role === f).length;
             const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
@@ -224,11 +228,7 @@ export function UserTable({
 
         {/* Legend */}
         {(canManage || canEditDriversOnly) && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
-            padding: '10px 18px', fontSize: 12, color: 'var(--ink-3)',
-            borderBottom: '1px solid var(--line-2)',
-          }}>
+          <div className="users-list-legend">
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Pencil size={12} style={{ opacity: 0.5 }} />
               Nhấp vào hàng để chỉnh sửa
@@ -279,14 +279,14 @@ export function UserTable({
           const startIdx = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
           const endIdx = Math.min(filtered.length, currentPage * pageSize);
           return (
-            <div className="table-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <span>
+            <div className="table-foot users-table-foot">
+              <span className="users-table-foot__summary">
                 Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{startIdx}-{endIdx}</strong> trong số <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> tài khoản
               </span>
               {totalPages > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div className="users-pagination" aria-label="Phân trang tài khoản">
                   <button
-                    className="btn-page"
+                    className="btn-page users-pagination__nav"
                     disabled={currentPage === 1}
                     onClick={() => onPageChange(currentPage - 1)}
                     style={{
@@ -303,7 +303,7 @@ export function UserTable({
                     return (
                       <button
                         key={page}
-                        className={`btn-page${currentPage === page ? ' is-active' : ''}`}
+                        className={`btn-page users-pagination__page${currentPage === page ? ' is-active' : ''}`}
                         onClick={() => onPageChange(page)}
                         style={{
                           minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -319,7 +319,7 @@ export function UserTable({
                     );
                   })}
                   <button
-                    className="btn-page"
+                    className="btn-page users-pagination__nav"
                     disabled={currentPage === totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
                     style={{
@@ -548,50 +548,47 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                     {u.fullName || u.username || <span style={{ color: 'var(--ink-3)', fontStyle: 'italic' }}>—</span>}
                     {isMe && <span className="user-name__you">(bạn)</span>}
                   </div>
-                  {u.username && <div className="users-mobile-card__handle">@{u.username}</div>}
+                  <div className="users-mobile-card__identity-meta">
+                    {u.username && <span className="users-mobile-card__handle">@{u.username}</span>}
+                    <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className={`users-mobile-card__role ${pill.cls}`}><span className="dot" />{pill.label}</span>
-                  {editable && canManage && canDelete && (
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        className="kebab-btn"
-                        aria-label={`Mở thao tác cho ${u.fullName || u.username || 'tài khoản'}`}
-                        aria-haspopup="menu"
-                        aria-expanded={activeMenuId === u.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(activeMenuId === u.id ? null : u.id);
-                        }}
-                        style={{
-                          padding: 0
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {activeMenuId === u.id && (
-                        <div className="users-mobile-card__dropdown" role="menu" style={{
-                          position: 'absolute', right: 0, top: '100%', zIndex: 100,
-                          background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
-                          overflow: 'hidden', minWidth: 120,
-                        }} onClick={(e) => e.stopPropagation()}>
-                          {canManage && canDelete && (
-                            <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
-                              disabled={!!deleting || isMe}
-                              onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
-                              {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {editable && canManage && canDelete && (
+                  <div className="users-mobile-card__menu">
+                    <button
+                      className="kebab-btn"
+                      aria-label={`Mở thao tác cho ${u.fullName || u.username || 'tài khoản'}`}
+                      aria-haspopup="menu"
+                      aria-expanded={activeMenuId === u.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === u.id ? null : u.id);
+                      }}
+                      style={{ padding: 0 }}
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                    {activeMenuId === u.id && (
+                      <div className="users-mobile-card__dropdown" role="menu" style={{
+                        position: 'absolute', right: 0, top: '100%', zIndex: 100,
+                        background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
+                        overflow: 'hidden', minWidth: 120,
+                      }} onClick={(e) => e.stopPropagation()}>
+                        {canManage && canDelete && (
+                          <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
+                            disabled={!!deleting || isMe}
+                            onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
+                            {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="users-mobile-card__details">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px 12px', flexWrap: 'wrap' }}>
-                  <UserStatusBadge status={u.status} isMe={isMe} userId={u.id} />
+                <div className="users-mobile-card__detail-list">
                   {plate && (
                     <span className="user-truck-plate">{plate}</span>
                   )}

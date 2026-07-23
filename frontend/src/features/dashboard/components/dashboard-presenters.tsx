@@ -1,5 +1,6 @@
 import type { DashboardDecisionKind, DashboardDecisionSeverity } from '@tingting/shared';
 import type { AssetIconName } from '../../../components/AssetIcon';
+import { Money } from '../../../components/shared/Money';
 
 export const greeting = () => {
   const hour = new Date().getHours();
@@ -41,25 +42,62 @@ export function severityLabel(severity: DashboardDecisionSeverity): string {
   return 'Theo dõi';
 }
 
-export interface DonutSlice { name: string; pct: number; color: string }
+export interface CostBreakdownItem {
+  name: string;
+  value: number;
+  pct: number;
+  color: string;
+}
 
-export function CostDonut({ slices, totalCompact }: { slices: DonutSlice[]; totalCompact: string }) {
-  let offset = 0;
-  const segments = slices.map((slice) => {
-    const segment = { color: slice.color, dasharray: `${slice.pct} ${100 - slice.pct}`, offset: -offset };
-    offset += slice.pct;
-    return segment;
-  });
-  const spaceIndex = totalCompact.indexOf(' ');
-  const number = spaceIndex > -1 ? totalCompact.slice(0, spaceIndex) : totalCompact;
-  const unit = spaceIndex > -1 ? totalCompact.slice(spaceIndex + 1) : '';
+export function CostBreakdown({ items, total }: { items: CostBreakdownItem[]; total: number }) {
+  const summary = items
+    .map(item => `${item.name} ${item.pct}%`)
+    .join(', ');
+
   return (
-    <div className="wf-donut">
-      <svg viewBox="0 0 42 42" style={{ width: 118, height: 118, transform: 'rotate(-90deg)' }}>
-        <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eef1ef" strokeWidth="7" />
-        {segments.map((segment, index) => <circle key={index} cx="21" cy="21" r="15.9" fill="none" stroke={segment.color} strokeWidth="7" strokeDasharray={segment.dasharray} strokeDashoffset={segment.offset} />)}
-      </svg>
-      <div className="ctr"><span className="big">{number}</span><span className="sm">{unit ? `${unit} ₫` : '₫'}</span></div>
+    <div className="wf-cost-breakdown">
+      <div className="wf-cost-summary">
+        <span className="wf-cost-summary__label">Tổng chi phí đã ghi nhận</span>
+        <strong className="wf-cost-summary__value"><Money value={total} /></strong>
+        <span className="wf-cost-summary__meta">{items.length} nhóm chi phí · 100%</span>
+      </div>
+
+      <div
+        className="wf-cost-stack"
+        role="img"
+        aria-label={`Cơ cấu chi phí: ${summary}`}
+      >
+        {items.map(item => (
+          <span
+            key={item.name}
+            className="wf-cost-stack__segment"
+            style={{ background: item.color, flexGrow: item.pct }}
+          />
+        ))}
+      </div>
+
+      <div className="wf-cost-list" role="list">
+        {items.map(item => (
+          <div
+            key={item.name}
+            className="wf-cost-row"
+            role="listitem"
+            aria-label={`${item.name}: ${item.value.toLocaleString('vi-VN')} đồng, ${item.pct}%`}
+          >
+            <div className="wf-cost-row__heading">
+              <span className="wf-cost-row__name">
+                <span className="wf-cost-row__swatch" style={{ background: item.color }} />
+                {item.name}
+              </span>
+              <span className="wf-cost-row__amount"><Money value={item.value} /></span>
+              <span className="wf-cost-row__pct">{item.pct}%</span>
+            </div>
+            <div className="wf-cost-row__track" aria-hidden="true">
+              <span style={{ background: item.color, width: `${item.pct}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

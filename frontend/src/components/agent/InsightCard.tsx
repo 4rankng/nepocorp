@@ -4,7 +4,7 @@
 // tiny inline SVG; tables/callouts/anomaly lists are plain markup. (Recharts
 // is not a dependency in this repo and "Simplicity First" says keep it that
 // way — these widgets cover every card the LLM emits.)
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { formatCurrency } from '../../lib/format';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
@@ -189,11 +189,12 @@ function widgetTitle(widget: AgentWidget): string | undefined {
 export interface InsightCardProps {
   card: Extract<AgentResponse, { type: 'insight_card' }>;
   onAction?: (d: AgentDirective) => void;
+  rootRef?: Ref<HTMLDivElement>;
 }
 
-export function InsightCard({ card, onAction }: InsightCardProps) {
+export function InsightCard({ card, onAction, rootRef }: InsightCardProps) {
   return (
-    <div className="agent-card">
+    <div className="agent-card" ref={rootRef}>
       <div className="agent-card__title">{card.title}</div>
       <div className="agent-card__summary">{card.summary}</div>
       <div className="agent-card__widgets">
