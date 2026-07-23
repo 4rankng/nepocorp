@@ -720,6 +720,24 @@ export interface AdvanceSettlementWithRefs extends AdvanceSettlement {
   forwarderName?: string | null;
   checkerName?: string | null;
   approverName?: string | null;
+  opsCompletion?: {
+    tripCount: number;
+    completedGroupCount: number;
+    totalGroupCount: number;
+    trips: Array<{
+      tripId: number;
+      tripCode?: string | null;
+      departureDate?: string | null;
+      completedGroupCount: number;
+      totalGroupCount: number;
+      groups: Array<{
+        tripContainerId: number | null;
+        containerNumber?: string | null;
+        expenseCount: number;
+        status: ExpenseEntryStatus;
+      }>;
+    }>;
+  };
   linkedRequests?: AdvanceRequest[];
   linkedExpenses?: Array<TripExpense & {
     tripCode?: string | null;
@@ -1279,6 +1297,7 @@ export interface PnlTripDetail {
   departureDate: string;
   routeName: string;
   revenue: number;
+  customerCommission: number;
   fuelOrHireCost: number;
   roadAllowance: number;
   tollAndCompanyTickets: number;

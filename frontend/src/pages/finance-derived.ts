@@ -65,16 +65,22 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
       const maintenanceCost = report?.maintenanceExpensesTotal ?? 0;
       const companyExpenses = report?.companyExpenses ?? 0;
 
-      const totalRevenue = report?.totalRevenue ?? 0;
+      const operatingRevenue = report?.totalRevenue ?? 0;
       const otherRevenue = report?.otherIncome ?? 0;
-      const transRevenue = Math.max(0, totalRevenue - otherRevenue);
+      const externalMargin = report?.externalMarginTotal ?? 0;
+      const serviceMargin = report?.serviceMarginTotal ?? 0;
+      const transRevenue = operatingRevenue - externalMargin - serviceMargin;
+      const totalRevenue = operatingRevenue + otherRevenue;
       // totalCosts is already defined above
       const grossProfit = report?.grossProfit ?? (totalRevenue - totalCosts);
       const netProfit = report?.netProfit ?? (grossProfit - companyExpenses + otherRevenue);
 
-      const totalRevenueLY = prevReport?.totalRevenue ?? 0;
+      const operatingRevenueLY = prevReport?.totalRevenue ?? 0;
       const otherRevenueLY = prevReport?.otherIncome ?? 0;
-      const transRevenueLY = Math.max(0, totalRevenueLY - otherRevenueLY);
+      const transRevenueLY = operatingRevenueLY
+        - (prevReport?.externalMarginTotal ?? 0)
+        - (prevReport?.serviceMarginTotal ?? 0);
+      const totalRevenueLY = operatingRevenueLY + otherRevenueLY;
       const totalCostsLY = prevReport?.totalCosts ?? 0;
       const grossProfitLY = prevReport?.grossProfit ?? (totalRevenueLY - totalCostsLY);
       const companyExpensesLY = prevReport?.companyExpenses ?? 0;

@@ -47,6 +47,9 @@ if (!tokenCss.includes('--status-strip-width: 3px;')
   || !tokenCss.includes('--status-strip-height: 20px;')) {
   failures.push('styles/tokens.css: canonical status strip must remain 3x20px');
 }
+if (!tokenCss.includes('--fs-status-pill: 11px;')) {
+  failures.push('styles/tokens.css: compact status pill text must remain 11px');
+}
 if (!tokenCss.includes('--sb-gradient-start:')
   || !tokenCss.includes('--sb-gradient-end:')) {
   failures.push('styles/tokens.css: sidebar gradient must remain tokenized');
@@ -70,6 +73,14 @@ const inputCss = await readFile(new URL('../src/components/Input.css', import.me
 if (!/\.input:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i
   .test(inputCss)) {
   failures.push('components/Input.css: inputs must retain the high-contrast focus outline');
+}
+
+const pillCss = await readFile(new URL('../src/components/Pill.css', import.meta.url), 'utf8');
+if (!/\.pill\s*\{[^}]*font-size:\s*var\(--fs-status-pill\)/i.test(pillCss)) {
+  failures.push('components/Pill.css: default status pills must use the compact typography token');
+}
+if (!/\.pill--md\s*\{[^}]*font-size:\s*var\(--fs-xs\)/i.test(pillCss)) {
+  failures.push('components/Pill.css: medium status pills must remain larger than the compact default');
 }
 
 const responsiveCss = await readFile(

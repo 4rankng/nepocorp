@@ -8,6 +8,22 @@ import { TripStatus, FuelMode, Role, TxnType } from '@tingting/shared';
 import type { TripLegInput } from '@tingting/shared';
 import { resolveTripDriverSalary, computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
+
+export function assertCustomerCommissionWithinRevenue(
+  revenueInclVat: number,
+  vatRate: number,
+  customerCommission: number,
+): void {
+  const freightExVat = vatRate > 0
+    ? Math.round(revenueInclVat / (1 + vatRate))
+    : revenueInclVat;
+  if (customerCommission > freightExVat) {
+    throw new ApiError(
+      400,
+      'Hoa hồng khách hàng không được lớn hơn doanh thu chưa VAT',
+    );
+  }
+}
 import { resolveTrailer } from './trip-shared';
 import { LedgerService } from './ledger.service';
 
@@ -570,6 +586,8 @@ export async function updateTripFigures(
     const twoPointDeliveryBonus = data.twoPointDeliveryBonus !== undefined ? data.twoPointDeliveryBonus : Number(trip.twoPointDeliveryBonus || 0);
     const vehicleShiftAllowance = data.vehicleShiftAllowance !== undefined ? data.vehicleShiftAllowance : Number(trip.vehicleShiftAllowance || 0);
     const customerCommission = data.customerCommission !== undefined ? data.customerCommission : Number(trip.customerCommission || 0);
+    const tripVatRate = Number(trip.vatRate || 0);
+    assertCustomerCommissionWithinRevenue(revenue, tripVatRate, customerCommission);
 
     // 4. Compute Totals using pure shared function. Ancillary service/ocean-fee
     //    amounts are receivables/debit-note data only; computeTripTotals keeps
@@ -614,7 +632,7 @@ export async function updateTripFigures(
       twoPointDeliveryBonus,
       vehicleShiftAllowance,
       roadAllowanceOverride: data.roadAllowanceOverride ?? null,
-      vatRate: Number(trip.vatRate || 0),
+      vatRate: tripVatRate,
       carrierType: (data.carrierType !== undefined ? data.carrierType : trip.carrierType) as 'OWN' | 'EXTERNAL',
       externalFreightCost: Number(data.externalFreightCost !== undefined ? (data.externalFreightCost ?? 0) : (trip.externalFreightCost ?? 0)),
       ancillaryFees: tripFees.map(f => ({

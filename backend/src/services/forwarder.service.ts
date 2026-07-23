@@ -33,6 +33,29 @@ type TripExpenseRequiredFieldState = {
   declarationNumber: string | null;
 };
 
+type SettlementOpsCompletionGroup = {
+  tripContainerId: number | null;
+  containerNumber: string | null;
+  expenseCount: number;
+  status: 'IN_PROGRESS' | 'COMPLETED';
+};
+
+type SettlementOpsCompletionTrip = {
+  tripId: number;
+  tripCode: string | null;
+  departureDate: string | null;
+  completedGroupCount: number;
+  totalGroupCount: number;
+  groups: SettlementOpsCompletionGroup[];
+};
+
+type SettlementOpsCompletionSummary = {
+  tripCount: number;
+  completedGroupCount: number;
+  totalGroupCount: number;
+  trips: SettlementOpsCompletionTrip[];
+};
+
 export function getTripExpenseRequiredFieldError(state: TripExpenseRequiredFieldState): string | null {
   if (state.expenseType === 'CUSTOMS' && !state.declarationNumber?.trim()) {
     return 'Số tờ khai là bắt buộc cho phí hải quan';
@@ -556,6 +579,208 @@ export async function listTripExpenses(filters?: { tripId?: number; forwarderId?
     .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
     .where(where)
     .orderBy(desc(s.tripExpenses.createdAt));
+}
+
+export async function listSettlementOpsCompletionSummaries(settlementIds: number[]) {
+  const ids = [...new Set(
+    settlementIds
+      .filter((value) => Number.isInteger(value) && value > 0),
+  )];
+  if (ids.length === 0) return [];
+
+  const settlements = await db
+    .select({
+      settlementId: s.advanceSettlements.id,
+      forwarderId: s.advanceSettlements.forwarderId,
+    })
+    .from(s.advanceSettlements)
+    .where(inArray(s.advanceSettlements.id, ids));
+  if (settlements.length === 0) return [];
+
+  const linkedTrips = await db
+    .select({
+      settlementId: s.settlementExpenses.settlementId,
+      forwarderId: s.advanceSettlements.forwarderId,
+      tripId: s.tripExpenses.tripId,
+    })
+    .from(s.settlementExpenses)
+    .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
+    .innerJoin(s.tripExpenses, eq(s.tripExpenses.id, s.settlementExpenses.tripExpenseId))
+    .where(inArray(s.settlementExpenses.settlementId, ids));
+
+  const settlementTripKeys = new Map<number, Set<string>>();
+  for (const row of linkedTrips) {
+    const key = `${row.forwarderId}:${row.tripId}`;
+    const current = settlementTripKeys.get(row.settlementId);
+    if (current) current.add(key);
+    else settlementTripKeys.set(row.settlementId, new Set([key]));
+  }
+
+  const tripIds = [...new Set(linkedTrips.map((row) => row.tripId))];
+  if (tripIds.length === 0) {
+    return settlements.map((settlement) => ({
+      settlementId: settlement.settlementId,
+      opsCompletion: {
+        tripCount: 0,
+        completedGroupCount: 0,
+        totalGroupCount: 0,
+        trips: [],
+      } satisfies SettlementOpsCompletionSummary,
+    }));
+  }
+
+  const [scopeRows, expenseRows, containerRows] = await Promise.all([
+    db.select({
+      tripId: s.tripExpenseCompletionScopes.tripId,
+      tripContainerId: s.tripExpenseCompletionScopes.tripContainerId,
+      status: s.tripExpenseCompletionScopes.status,
+    })
+      .from(s.tripExpenseCompletionScopes)
+      .where(inArray(s.tripExpenseCompletionScopes.tripId, tripIds)),
+    db.select({
+      forwarderId: s.tripExpenses.forwarderId,
+      tripId: s.tripExpenses.tripId,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      tripContainerId: s.tripExpenses.tripContainerId,
+      containerNumber: sql<string | null>`COALESCE(${s.tripContainers.containerNumber}, ${s.tripExpenses.containerNumber})`.as('resolved_container_number'),
+    })
+      .from(s.tripExpenses)
+      .leftJoin(s.trips, eq(s.trips.id, s.tripExpenses.tripId))
+      .leftJoin(s.tripContainers, eq(s.tripContainers.id, s.tripExpenses.tripContainerId))
+      .where(inArray(s.tripExpenses.tripId, tripIds)),
+    db.select({
+      tripId: s.tripContainers.tripId,
+      tripContainerId: s.tripContainers.id,
+      containerNumber: s.tripContainers.containerNumber,
+    })
+      .from(s.tripContainers)
+      .where(inArray(s.tripContainers.tripId, tripIds)),
+  ]);
+
+  const relevantTripKeys = new Set<string>(linkedTrips.map((row) => `${row.forwarderId}:${row.tripId}`));
+  const scopeByGroup = new Map<string, 'IN_PROGRESS' | 'COMPLETED'>(
+    scopeRows.map((row) => [
+      `${row.tripId}:${row.tripContainerId ?? 'general'}`,
+      row.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS',
+    ] as const),
+  );
+
+  const tripSummaryByKey = new Map<string, {
+    tripId: number;
+    tripCode: string | null;
+    departureDate: string | null;
+    groups: Map<string, SettlementOpsCompletionGroup>;
+  }>();
+
+  for (const expense of expenseRows) {
+    if (expense.forwarderId == null) continue;
+    const tripKey = `${expense.forwarderId}:${expense.tripId}`;
+    if (!relevantTripKeys.has(tripKey)) continue;
+
+    let tripSummary = tripSummaryByKey.get(tripKey);
+    if (!tripSummary) {
+      tripSummary = {
+        tripId: expense.tripId,
+        tripCode: expense.tripCode ?? null,
+        departureDate: expense.departureDate ?? null,
+        groups: new Map(),
+      };
+      tripSummaryByKey.set(tripKey, tripSummary);
+    }
+
+    const groupKey = `${expense.tripId}:${expense.tripContainerId ?? 'general'}`;
+    const normalizedContainerNumber = expense.containerNumber?.trim() || null;
+    const existingGroup = tripSummary.groups.get(groupKey);
+    if (existingGroup) {
+      existingGroup.expenseCount += 1;
+      if (!existingGroup.containerNumber && normalizedContainerNumber) {
+        existingGroup.containerNumber = normalizedContainerNumber;
+      }
+      continue;
+    }
+
+    tripSummary.groups.set(groupKey, {
+      tripContainerId: expense.tripContainerId,
+      containerNumber: normalizedContainerNumber,
+      expenseCount: 1,
+      status: scopeByGroup.get(groupKey) ?? 'IN_PROGRESS',
+    });
+  }
+
+  // A zero-expense container is still a real Ops scope. Surface every
+  // container plus the general scope so Accounting can see what is still being
+  // entered instead of learning about a scope only after its first expense.
+  for (const tripKey of relevantTripKeys) {
+    const tripSummary = tripSummaryByKey.get(tripKey);
+    if (!tripSummary) continue;
+
+    for (const container of containerRows) {
+      if (container.tripId !== tripSummary.tripId) continue;
+      const groupKey = `${container.tripId}:${container.tripContainerId}`;
+      if (tripSummary.groups.has(groupKey)) continue;
+      tripSummary.groups.set(groupKey, {
+        tripContainerId: container.tripContainerId,
+        containerNumber: container.containerNumber?.trim() || null,
+        expenseCount: 0,
+        status: scopeByGroup.get(groupKey) ?? 'IN_PROGRESS',
+      });
+    }
+
+    const generalKey = `${tripSummary.tripId}:general`;
+    if (!tripSummary.groups.has(generalKey)) {
+      tripSummary.groups.set(generalKey, {
+        tripContainerId: null,
+        containerNumber: null,
+        expenseCount: 0,
+        status: scopeByGroup.get(generalKey) ?? 'IN_PROGRESS',
+      });
+    }
+  }
+
+  return settlements.map((settlement) => {
+    const tripKeys = [...(settlementTripKeys.get(settlement.settlementId) ?? new Set<string>())];
+    const trips = tripKeys
+      .map((key) => tripSummaryByKey.get(key))
+      .filter((trip): trip is NonNullable<typeof trip> => Boolean(trip))
+      .map((trip) => {
+        const groups = [...trip.groups.values()].sort((left, right) => {
+          if (left.tripContainerId == null && right.tripContainerId != null) return 1;
+          if (left.tripContainerId != null && right.tripContainerId == null) return -1;
+          const leftLabel = left.containerNumber ?? '';
+          const rightLabel = right.containerNumber ?? '';
+          return leftLabel.localeCompare(rightLabel, 'vi');
+        });
+        const completedGroupCount = groups.filter((group) => group.status === 'COMPLETED').length;
+        return {
+          tripId: trip.tripId,
+          tripCode: trip.tripCode,
+          departureDate: trip.departureDate,
+          completedGroupCount,
+          totalGroupCount: groups.length,
+          groups,
+        } satisfies SettlementOpsCompletionTrip;
+      })
+      .sort((left, right) => {
+        const leftDate = left.departureDate ?? '';
+        const rightDate = right.departureDate ?? '';
+        if (leftDate !== rightDate) return leftDate.localeCompare(rightDate);
+        return (left.tripCode ?? '').localeCompare(right.tripCode ?? '', 'vi');
+      });
+
+    const completedGroupCount = trips.reduce((sum, trip) => sum + trip.completedGroupCount, 0);
+    const totalGroupCount = trips.reduce((sum, trip) => sum + trip.totalGroupCount, 0);
+
+    return {
+      settlementId: settlement.settlementId,
+      opsCompletion: {
+        tripCount: trips.length,
+        completedGroupCount,
+        totalGroupCount,
+        trips,
+      } satisfies SettlementOpsCompletionSummary,
+    };
+  });
 }
 
 // ─── Trip Expense Photos ──────────────────────────────────────────────────────

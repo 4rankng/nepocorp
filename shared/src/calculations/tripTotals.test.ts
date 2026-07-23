@@ -422,8 +422,7 @@ test('commission reduces grossProfit for OWN trips', () => {
   assert.strictEqual(withCommission.grossProfit, noCommission.grossProfit - 500000);
 });
 
-test('commission does not affect EXTERNAL trip grossProfit (margin-based)', () => {
-  // EXTERNAL trips use externalMargin (freightExVat - externalFreightCost incl-VAT per §4.7), not recordedRevenue
+test('commission reduces EXTERNAL trip grossProfit and management margin', () => {
   const r = computeTripTotals({
     ...BASE_A4,
     vatRate: 0.08,
@@ -431,8 +430,7 @@ test('commission does not affect EXTERNAL trip grossProfit (margin-based)', () =
     externalFreightCost: 5400000,
     customerCommission: 500000,
   });
-  assert.strictEqual(r.recordedRevenue, 9500000);    // still computed (commission reduces it) but unused for EXTERNAL
-  // externalMargin is based on freightExVat − externalFreightCost(incl-VAT), NOT recordedRevenue — so commission is irrelevant
-  assert.strictEqual(r.externalMargin, 4600000);     // 10000000 ex-VAT − 5400000 incl-VAT (§4.7)
-  assert.strictEqual(r.grossProfit, 4600000);         // external carrier margin only; commission had no effect
+  assert.strictEqual(r.recordedRevenue, 9500000);
+  assert.strictEqual(r.externalMargin, 4100000);     // recorded revenue 9.5M − hire cost 5.4M
+  assert.strictEqual(r.grossProfit, 4100000);
 });

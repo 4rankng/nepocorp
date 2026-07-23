@@ -201,6 +201,9 @@ export const qk = {
     settlementsAll: ['admin-settlements'] as const,
     settlementDetail: (id: number) =>
       ['admin-settlement-detail', id] as const,
+    settlementOpsCompletion: (settlementIds: number[]) =>
+      ['admin-settlement-ops-completion', settlementIds] as const,
+    settlementOpsCompletionAll: ['admin-settlement-ops-completion'] as const,
     advanceBalances: ['admin-advance-balances'] as const,
   },
 

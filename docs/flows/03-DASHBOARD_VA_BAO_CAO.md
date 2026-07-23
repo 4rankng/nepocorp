@@ -68,8 +68,8 @@
 
 | Mục | Nguồn |
 |-----|-------|
-| I. Doanh thu vận tải | Σ customer_price / (1 + vatRate) — **ex-VAT** |
-| Doanh thu điều xe ngoài (lãi quản lý) | Σ externalMargin (doanh thu ex-VAT − chi phí thuê ngoài incl. VAT) |
+| I. Doanh thu vận tải | Σ (customer_price / (1 + vatRate) − customerCommission) — doanh thu ghi nhận **ex-VAT sau hoa hồng KH** |
+| Doanh thu điều xe ngoài (lãi quản lý) | Σ externalMargin (doanh thu ghi nhận ex-VAT sau hoa hồng KH − chi phí thuê ngoài incl. VAT) |
 | Lãi dịch vụ đi kèm | Σ serviceMargin (giá bán ex-VAT − giá mua incl. VAT) |
 | II. Chi phí nhiên liệu | Σ fuel_cost **incl. VAT** (dùng `fuelActualUnitPrice` khi có, ngược lại `fuelPriceApplied`) |
 | Chi phí cầu đường | Σ toll_cost **incl. VAT** |
@@ -82,7 +82,7 @@
 | III. Lợi nhuận gộp | **Doanh thu ex-VAT** − **Tổng chi phí incl. VAT** |
 | Biên lợi nhuận | LN / Doanh thu ex-VAT × 100% |
 
-**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Bấm vào từng xe để mở danh sách từng lệnh trong kỳ, gồm doanh thu, nhiên liệu/thuê xe, tiền đi đường, phí trạm/vé công ty trả, lương và phụ cấp, tổng chi phí và lợi nhuận. Mỗi lệnh liên kết tới trang chi tiết để đối chiếu hoặc sửa dữ liệu khi còn được phép. Nhãn **Khớp** chỉ xác nhận phép cộng các khoản bằng tổng chi phí đã lưu; không thay thế việc kiểm tra chứng từ và số liệu thực tế. Chi phí bảo dưỡng ngoài lệnh được phân tách theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, dữ liệu được nhóm dưới mục "Xe ngoài".
+**Phân bổ theo xe (Per-truck Breakdown):** Biển số, Doanh thu, Chi phí, Lợi nhuận thuần. Chỉ chuyến **COMPLETED/LOCKED** được đưa vào P&L; CREATED/IN_TRANSIT/CANCELED không phải số liệu báo cáo. Bấm vào từng xe để mở danh sách từng lệnh trong kỳ, gồm doanh thu ghi nhận sau hoa hồng KH, hoa hồng KH, nhiên liệu/thuê xe, tiền đi đường, phí trạm/vé công ty trả, lương và phụ cấp, tổng chi phí và lợi nhuận. Mỗi lệnh liên kết tới trang chi tiết để đối chiếu hoặc sửa dữ liệu khi còn được phép. Nhãn **Khớp** chỉ xác nhận phép cộng các khoản bằng tổng chi phí đã lưu; không thay thế việc kiểm tra chứng từ và số liệu thực tế. Chi phí bảo dưỡng ngoài lệnh được phân tách theo **đầu kéo** vs **rơ-mooc** (dựa trên `vehicle_component` của phiếu chi phí). Với chuyến đi bằng Xe ngoài, dữ liệu được nhóm dưới mục "Xe ngoài".
 
 ---
 

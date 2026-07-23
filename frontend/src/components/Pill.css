@@ -8,7 +8,7 @@
   gap: 5px;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-status-pill);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;

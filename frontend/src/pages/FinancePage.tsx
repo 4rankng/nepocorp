@@ -95,6 +95,7 @@ export default function FinancePage() {
               const headers = ['Khoản mục', `Tháng ${String(month).padStart(2,'0')}/${year}`, `Tháng ${String(month).padStart(2,'0')}/${year - 1}`];
               const rows = [
                 ['Doanh thu vận tải', transRevenue, transRevenueLY],
+                ['Doanh thu điều xe ngoài', report.externalMarginTotal ?? 0, prevReport?.externalMarginTotal ?? 0],
                 ['Thu nhập khác', otherRevenue, otherRevenueLY],
                 ['Tổng doanh thu', totalRevenue, totalRevenueLY],
                 ['Nhiên liệu', fuelCost, ''],
@@ -353,7 +354,7 @@ export default function FinancePage() {
               <div className={`pnl-row__pct ${prevReport ? yoyClass(transRevenue, transRevenueLY) : ''}`}>{prevReport ? yoyPct(transRevenue, transRevenueLY) : '—'}</div>
             </div>
 
-            {(report?.externalMarginTotal ?? 0) > 0 && (
+            {(report?.externalMarginTotal ?? 0) !== 0 && (
             <div className="pnl-row">
               <div className="pnl-row__label">
                 Doanh thu điều xe ngoài
@@ -582,7 +583,8 @@ export default function FinancePage() {
                                   <CostCheck matches={detail.costMatches} difference={detail.costDifference} />
                                 </div>
                                 <div className="truck-trip-card__grid">
-                                  <TripAmount label="Doanh thu" value={detail.revenue} />
+                                  <TripAmount label="Doanh thu ghi nhận" value={detail.revenue} />
+                                  <TripAmount label="Hoa hồng KH" value={detail.customerCommission} />
                                   <TripAmount label={detail.isExternal ? 'Thuê xe' : 'Nhiên liệu'} value={detail.fuelOrHireCost} />
                                   <TripAmount label="Đi đường" value={detail.roadAllowance} />
                                   <TripAmount label="Phí trạm/vé CT" value={detail.tollAndCompanyTickets} />
@@ -671,7 +673,8 @@ export default function FinancePage() {
                                         <thead>
                                           <tr>
                                             <th>Lệnh / tuyến</th>
-                                            <th className="num">Doanh thu</th>
+                                            <th className="num">Doanh thu ghi nhận</th>
+                                            <th className="num">Hoa hồng KH</th>
                                             <th className="num">Nhiên liệu / thuê xe</th>
                                             <th className="num">Đi đường</th>
                                             <th className="num">Phí trạm / vé CT</th>
@@ -691,6 +694,7 @@ export default function FinancePage() {
                                                 <div className="truck-trip-route">{detail.routeName} · {new Date(detail.departureDate).toLocaleDateString('vi-VN')}</div>
                                               </td>
                                               <td className="num">{formatNumber(detail.revenue)}</td>
+                                              <td className="num">{detail.customerCommission ? formatNumber(detail.customerCommission) : '—'}</td>
                                               <td className="num">{formatNumber(detail.fuelOrHireCost)}</td>
                                               <td className="num">{detail.roadAllowance ? formatNumber(detail.roadAllowance) : '—'}</td>
                                               <td className="num">{detail.tollAndCompanyTickets ? formatNumber(detail.tollAndCompanyTickets) : '—'}</td>

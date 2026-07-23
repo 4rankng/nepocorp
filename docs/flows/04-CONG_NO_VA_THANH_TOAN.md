@@ -75,7 +75,7 @@ Module Công nợ & Thanh toán cho phép theo dõi công nợ khách hàng, ghi
 
 ### 2.3 Đối trừ công nợ (Debt Netting)
 Dành cho thực thể vừa là khách hàng (phải thu) vừa là đối tác (phải trả).
-1. Tại trang Chi tiết Công nợ, nếu có liên kết, hiển thị thêm thẻ "Công nợ phải trả" và nút "Đối trừ".
+1. Tại trang Chi tiết Công nợ, nếu có liên kết, hiển thị trực tiếp bảng phát sinh phải trả của nhà cung cấp liên kết (ngày, đối chiếu, loại giao dịch, phải trả, đã trả, số dư, ghi chú) bên cạnh chi tiết phải thu; người dùng không cần tải chứng từ để đối chiếu.
 2. Nhấn "Đối trừ", hệ thống tự động tính số tiền = `min(Nợ phải thu, Nợ phải trả)`. (Không cho phép nhập số khác).
 3. Nhập Ngày đối trừ và Ghi chú.
 4. Gửi yêu cầu (trạng thái PENDING). Quản lý/Giám đốc duyệt để chính thức tạo 2 dòng ADJUSTMENT giảm cả 2 đầu nợ.

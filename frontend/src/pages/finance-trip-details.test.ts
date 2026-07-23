@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TripDetail } from '@tingting/shared';
+import { TripStatus, type TripDetail } from '@tingting/shared';
 import { financeVehicleBucketId, groupFinanceTripDetails, toFinanceTripDetail } from './finance-trip-details';
 
 const trip = (overrides: Partial<TripDetail> = {}): TripDetail => ({
@@ -7,9 +7,11 @@ const trip = (overrides: Partial<TripDetail> = {}): TripDetail => ({
   tripCode: 'LC-0012',
   departureDate: '2026-07-10',
   carrierType: 'OWN',
+  status: TripStatus.COMPLETED,
   truckId: 7,
   vatRate: '0.08',
   revenue: '10800000',
+  customerCommission: '1000000',
   totalFuelCost: '3000000',
   totalRoadAllowance: '1200000',
   tollCost: '220000',
@@ -26,11 +28,12 @@ describe('finance trip detail', () => {
   it('reconstructs own-truck cost inputs and ex-VAT revenue', () => {
     const detail = toFinanceTripDetail(trip());
 
-    expect(detail.revenue).toBe(10_000_000);
+    expect(detail.revenue).toBe(9_000_000);
+    expect(detail.customerCommission).toBe(1_000_000);
     expect(detail.tollAndCompanyTickets).toBe(300_000);
     expect(detail.driverAndAllowances).toBe(800_000);
     expect(detail.totalCost).toBe(5_300_000);
-    expect(detail.profit).toBe(4_700_000);
+    expect(detail.profit).toBe(3_700_000);
     expect(detail.costMatches).toBe(true);
     expect(detail.costDifference).toBe(0);
   });
@@ -59,6 +62,17 @@ describe('finance trip detail', () => {
 });
 
 describe('groupFinanceTripDetails', () => {
+  it('excludes draft and in-transit trips from the fallback report view', () => {
+    const grouped = groupFinanceTripDetails([
+      trip({ id: 1, status: TripStatus.CREATED }),
+      trip({ id: 2, status: TripStatus.IN_TRANSIT }),
+      trip({ id: 3, status: TripStatus.COMPLETED }),
+      trip({ id: 4, status: TripStatus.LOCKED }),
+    ]);
+
+    expect(grouped.get(7)?.map(detail => detail.id)).toEqual([3, 4]);
+  });
+
   it('uses the report snapshot so expanded rows reconcile with the summary', () => {
     const authoritative = {
       id: 1,
@@ -66,6 +80,7 @@ describe('groupFinanceTripDetails', () => {
       departureDate: '2026-07-01',
       routeName: 'Hải Phòng — Hà Nội',
       revenue: 9_000_000,
+      customerCommission: 1_000_000,
       fuelOrHireCost: 2_000_000,
       roadAllowance: 1_000_000,
       tollAndCompanyTickets: 0,

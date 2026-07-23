@@ -212,6 +212,14 @@ export function useAdminSettlements(filters?: { status?: string }) {
   });
 }
 
+export function useAdminSettlementOpsCompletion(settlementIds: number[]) {
+  return useQuery({
+    queryKey: qk.adminForwarder.settlementOpsCompletion(settlementIds),
+    queryFn: () => forwarderClient.getSettlementOpsCompletion(settlementIds),
+    enabled: settlementIds.length > 0,
+  });
+}
+
 export function useCheckSettlement() {
   const qc = useQueryClient();
   return useMutation({

@@ -5,13 +5,9 @@
  * (cache bypassed so assertions hit fresh values, not a stale cache) and
  * pins three load-bearing financial invariants on the returned structure:
  *
- *   (a) Σ own-truck profit == adjustedGrossProfit.
- *       Scoped to OWN trucks only (`truck.id !== 0`). The "Xe ngoài" external
- *       bucket folds external carrier margin INTO its `profit` while
- *       adjustedGrossProfit counts OWN trips only
- *       (pnl.service.ts:36) — so the literal "Σ all trucks" form is FALSE when
- *       external trips exist. This is the own/external asymmetry flagged by the
- *       Critic; scoping to own trucks makes the invariant true and meaningful.
+ *   (a) Σ all vehicle-bucket profit == adjustedGrossProfit.
+ *       The "Xe ngoài" bucket contributes its external-carrier management
+ *       margin exactly once, alongside own-truck profit.
  *
  *   (b) Penalty income enters the books exactly once — in `otherIncome`, which
  *       flows into `netProfit` via the single documented formula
@@ -36,7 +32,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import { db, client } from '../db';
 import * as s from '../db/schema';
-import { and, isNull, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { TripStatus } from '@tingting/shared';
 import { getPnlReport } from '../services/pnl.service';
 import { cacheInvalidate, disconnectRedis } from '../lib/redis';
@@ -58,6 +54,7 @@ interface PnlReport {
   tripDetails: Array<{
     vehicleBucketId: number;
     revenue: number;
+    customerCommission: number;
     totalCost: number;
     profit: number;
     isExternal: boolean;
@@ -88,7 +85,7 @@ before(async () => {
     .from(s.trips)
     .where(and(
       isNull(s.trips.deletedAt),
-      ne(s.trips.status, TripStatus.CANCELED),
+      inArray(s.trips.status, [TripStatus.COMPLETED, TripStatus.LOCKED]),
       sql`coalesce(${s.trips.carrierType}, 'OWN') = 'OWN'`,
       sql`${s.trips.truckId} IS NOT NULL`,
       sql`coalesce(${s.trips.revenue}, '0')::numeric > 0`,
@@ -161,19 +158,18 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
     }
   });
 
-  test('(a.div) Σ OWN-truck profit == adjustedGrossProfit (fresh recompute, no stale grossProfit)', () => {
+  test('(a.div) Σ all vehicle-bucket profit == adjustedGrossProfit', () => {
     if (!report || ownTripCount === 0) { assert.ok(true, 'no own trucks'); return; }
     // Per-truck profit must be recomputed from current revenue/cost/service
     // fee inputs, not the denormalized trips.grossProfit column. This catches
     // revenue edits that would otherwise leave the truck breakdown stale.
     // Remediation path: backend/scripts/recost-gross-profit.ts (dry-run recost
     // analyzer; sign-off-gated --apply).
-    const ownTrucks = report.trucks.filter(t => t.id !== 0);
-    const sumOwnProfit = ownTrucks.reduce((a, t) => a + t.profit, 0);
-    const diff = Math.abs(report.grossProfit - sumOwnProfit);
+    const sumBucketProfit = report.trucks.reduce((sum, truck) => sum + truck.profit, 0);
+    const diff = Math.abs(report.grossProfit - sumBucketProfit);
     assert.ok(
       diff <= tolerance(),
-      `adjustedGrossProfit (${report.grossProfit}) must equal Σ own-truck profit (${sumOwnProfit}); diff=${diff}`,
+      `adjustedGrossProfit (${report.grossProfit}) must equal Σ bucket profit (${sumBucketProfit}); diff=${diff}`,
     );
   });
 
@@ -226,5 +222,122 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
       Math.abs(ext.profit - extProfitReconstructed) <= tolerance(),
       `external "Xe ngoài" profit (${ext.profit}) must equal externalMargin (${extProfitReconstructed})`,
     );
+  });
+
+  test('commission-bearing report uses recorded revenue and excludes pre-reportable trips', async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const testYear = 2098;
+    const testMonth = 7;
+    const createdTripIds: number[] = [];
+    let customerId: number | null = null;
+    let routeId: number | null = null;
+    let cargoTypeId: number | null = null;
+
+    try {
+      const [customer] = await db.insert(s.customers).values({ name: `P&L customer ${suffix}` }).returning();
+      const [route] = await db.insert(s.routes).values({ name: `P&L route ${suffix}` }).returning();
+      const [cargoType] = await db.insert(s.cargoTypes).values({ name: `P&L cargo ${suffix}` }).returning();
+      customerId = customer.id;
+      routeId = route.id;
+      cargoTypeId = cargoType.id;
+
+      const inserted = await db.insert(s.trips).values([
+        {
+          tripCode: `PNL-OWN-${suffix}`.slice(0, 50),
+          customerId,
+          routeId,
+          cargoTypeId,
+          status: TripStatus.COMPLETED,
+          departureDate: '2098-07-10',
+          vatRate: '0.080',
+          revenue: '10800000',
+          customerCommission: '1000000',
+          totalCost: '2000000',
+          totalFuelCost: '2000000',
+          carrierType: 'OWN',
+        },
+        {
+          tripCode: `PNL-EXT-${suffix}`.slice(0, 50),
+          customerId,
+          routeId,
+          cargoTypeId,
+          status: TripStatus.LOCKED,
+          departureDate: '2098-07-11',
+          vatRate: '0.080',
+          revenue: '8640000',
+          customerCommission: '500000',
+          totalCost: '5000000',
+          externalFreightCost: '5000000',
+          carrierType: 'EXTERNAL',
+        },
+        {
+          tripCode: `PNL-DRAFT-${suffix}`.slice(0, 50),
+          customerId,
+          routeId,
+          cargoTypeId,
+          status: TripStatus.CREATED,
+          departureDate: '2098-07-12',
+          revenue: '99000000',
+          customerCommission: '9000000',
+          totalCost: '1',
+          carrierType: 'OWN',
+        },
+        {
+          tripCode: `PNL-TRANSIT-${suffix}`.slice(0, 50),
+          customerId,
+          routeId,
+          cargoTypeId,
+          status: TripStatus.IN_TRANSIT,
+          departureDate: '2098-07-13',
+          revenue: '88000000',
+          customerCommission: '8000000',
+          totalCost: '1',
+          carrierType: 'OWN',
+        },
+      ]).returning({ id: s.trips.id });
+      createdTripIds.push(...inserted.map(trip => trip.id));
+
+      await cacheInvalidate(`reports:pnl:${testMonth}:${testYear}`);
+      const fixtureReport = await getPnlReport(testMonth, testYear) as PnlReport & { tripCount: number };
+
+      assert.equal(fixtureReport.tripCount, 2, 'only COMPLETED and LOCKED trips belong in P&L');
+      assert.equal(fixtureReport.totalRevenue, 11_500_000, 'period revenue includes own revenue plus external margin');
+      assert.equal(fixtureReport.grossProfit, 9_500_000, 'period gross profit includes external margin exactly once');
+      assert.equal(
+        fixtureReport.trucks.reduce((sum, truck) => sum + truck.profit, 0),
+        fixtureReport.grossProfit,
+      );
+
+      const own = fixtureReport.trucks.find(truck => truck.id === -1);
+      assert.ok(own, 'unassigned OWN bucket is present');
+      assert.equal(own.revenue, 9_000_000);
+      assert.equal(own.profit, 7_000_000);
+
+      const external = fixtureReport.trucks.find(truck => truck.id === 0);
+      assert.ok(external, 'external bucket is present');
+      assert.equal(external.revenue, 7_500_000);
+      assert.equal(external.profit, 2_500_000);
+
+      const details = fixtureReport.tripDetails.sort((a, b) => a.revenue - b.revenue);
+      assert.deepEqual(
+        details.map(detail => ({
+          revenue: detail.revenue,
+          customerCommission: detail.customerCommission,
+          profit: detail.profit,
+        })),
+        [
+          { revenue: 7_500_000, customerCommission: 500_000, profit: 2_500_000 },
+          { revenue: 9_000_000, customerCommission: 1_000_000, profit: 7_000_000 },
+        ],
+      );
+    } finally {
+      await cacheInvalidate(`reports:pnl:${testMonth}:${testYear}`);
+      if (createdTripIds.length > 0) {
+        await db.delete(s.trips).where(inArray(s.trips.id, createdTripIds));
+      }
+      if (cargoTypeId != null) await db.delete(s.cargoTypes).where(eq(s.cargoTypes.id, cargoTypeId));
+      if (routeId != null) await db.delete(s.routes).where(eq(s.routes.id, routeId));
+      if (customerId != null) await db.delete(s.customers).where(eq(s.customers.id, customerId));
+    }
   });
 });

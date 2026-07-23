@@ -1,4 +1,4 @@
-import type { PnlTripDetail, TripDetail } from '@tingting/shared';
+import { TripStatus, type PnlTripDetail, type TripDetail } from '@tingting/shared';
 
 export interface FinanceTripDetail {
   id: number;
@@ -6,6 +6,7 @@ export interface FinanceTripDetail {
   departureDate: string;
   routeName: string;
   revenue: number;
+  customerCommission: number;
   fuelOrHireCost: number;
   roadAllowance: number;
   tollAndCompanyTickets: number;
@@ -30,7 +31,7 @@ export function groupFinanceTripDetails(
     }
   } else {
     for (const trip of trips) {
-      if (trip.status === 'CANCELED') continue;
+      if (trip.status !== TripStatus.COMPLETED && trip.status !== TripStatus.LOCKED) continue;
       const truckId = financeVehicleBucketId(trip);
       const details = grouped.get(truckId) ?? [];
       details.push(toFinanceTripDetail(trip));
@@ -59,7 +60,9 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
   const isExternal = trip.carrierType === 'EXTERNAL';
   const vatRate = amount(trip.vatRate);
   const grossRevenue = amount(trip.revenue);
-  const revenue = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  const freightExVat = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  const customerCommission = amount(trip.customerCommission);
+  const revenue = freightExVat - customerCommission;
   const fuelOrHireCost = isExternal ? amount(trip.externalFreightCost) : amount(trip.totalFuelCost);
   const roadAllowance = isExternal ? 0 : amount(trip.totalRoadAllowance);
   const tollAndCompanyTickets = isExternal ? 0 : amount(trip.tollCost) + amount(trip.tollsDiscount);
@@ -76,6 +79,7 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
     departureDate: trip.departureDate,
     routeName: trip.route?.name || 'Chưa có tuyến',
     revenue,
+    customerCommission,
     fuelOrHireCost,
     roadAllowance,
     tollAndCompanyTickets,

@@ -12,6 +12,17 @@ import { TripStatus } from '@tingting/shared';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange } from './reporting-shared';
 
+function recordedTripRevenue(trip: {
+  revenue: string | null;
+  vatRate: string | null;
+  customerCommission: string | null;
+}): number {
+  const grossRevenue = Number(trip.revenue ?? 0);
+  const vatRate = Number(trip.vatRate ?? 0);
+  const freightExVat = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  return freightExVat - Number(trip.customerCommission ?? 0);
+}
+
 /**
  * P&L report for a given period, with per-truck breakdown.
  */
@@ -22,24 +33,30 @@ export async function getPnlReport(month: number, year: number) {
       ? and(gte(s.trips.departureDate, tripStart), sql`${s.trips.departureDate} < ${tripEnd}`)
       : gte(s.trips.departureDate, tripStart);
 
-    // Include all non-canceled trips — dashboard shows operational data
-    // as soon as trips have revenue/costs, regardless of lock status.
+    // P&L includes only trips whose revenue has posted to the ledger. Draft,
+    // in-transit, and canceled trips are not yet reportable.
     const monthTrips = await db.select().from(s.trips).where(
-      and(ne(s.trips.status, TripStatus.CANCELED), isNull(s.trips.deletedAt), dateFilter)
+      and(
+        inArray(s.trips.status, [TripStatus.COMPLETED, TripStatus.LOCKED]),
+        isNull(s.trips.deletedAt),
+        dateFilter,
+      ),
     );
 
     // Separate OWN vs EXTERNAL carrier trips
     const ownTrips = monthTrips.filter(t => (t.carrierType ?? 'OWN') === 'OWN');
     const extTrips = monthTrips.filter(t => t.carrierType === 'EXTERNAL');
 
-    // For P&L totals, only OWN trips contribute to freight revenue/costs
+    // OWN trips contribute freight revenue and direct costs. External trips
+    // contribute their net management margin as a revenue line (their hire
+    // cost is already netted inside that margin).
     const trips = ownTrips;
 
-    const totalRevenue = trips.reduce((sum, t) => {
-      const rev = parseFloat(t.revenue || '0');
-      const vat = Number(t.vatRate || 0);
-      return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
-    }, 0);
+    const ownRevenue = trips.reduce((sum, trip) => sum + recordedTripRevenue(trip), 0);
+    const externalMarginTotal = extTrips.reduce((sum, trip) => (
+      sum + recordedTripRevenue(trip) - Number(trip.externalFreightCost ?? 0)
+    ), 0);
+    const totalRevenue = ownRevenue + externalMarginTotal;
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
     const grossProfit = totalRevenue - totalCosts;
 
@@ -75,9 +92,8 @@ export async function getPnlReport(month: number, year: number) {
     // and makes the visible detail fail to reconcile with its summary row.
     const tripDetails = monthTrips.map(trip => {
       const isExternal = trip.carrierType === 'EXTERNAL';
-      const vatRate = Number(trip.vatRate ?? 0);
-      const grossRevenue = Number(trip.revenue ?? 0);
-      const revenue = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+      const customerCommission = Number(trip.customerCommission ?? 0);
+      const revenue = recordedTripRevenue(trip);
       const fuelOrHireCost = isExternal ? Number(trip.externalFreightCost ?? 0) : Number(trip.totalFuelCost ?? 0);
       const roadAllowance = isExternal ? 0 : Number(trip.totalRoadAllowance ?? 0);
       const tollAndCompanyTickets = isExternal ? 0 : Number(trip.tollCost ?? 0) + Number(trip.tollsDiscount ?? 0);
@@ -94,6 +110,7 @@ export async function getPnlReport(month: number, year: number) {
         departureDate: trip.departureDate,
         routeName: trip.routeId ? routeNameById.get(trip.routeId) ?? 'Chưa có tuyến' : 'Chưa có tuyến',
         revenue,
+        customerCommission,
         fuelOrHireCost,
         roadAllowance,
         tollAndCompanyTickets,
@@ -188,14 +205,12 @@ export async function getPnlReport(month: number, year: number) {
     for (const trip of trips) {
       if (!trip.truckId) continue; // EXTERNAL trips have no truck
       const existing = byTruck.get(trip.truckId) || { id: trip.truckId, plate: plateById.get(trip.truckId) || '', revenue: 0, costs: 0, profit: 0, trips: 0, maintenanceExpenses: 0, serviceMargin: 0 };
-      // Revenue ex-VAT for consistent P&L reporting
-      const tripRev = parseFloat(trip.revenue || '0');
-      const tripVat = Number(trip.vatRate || 0);
-      const tripRevenueExVat = tripVat > 0 ? Math.round(tripRev / (1 + tripVat)) : tripRev;
+      // Recorded revenue is freight ex-VAT after customer commission.
+      const tripRevenue = recordedTripRevenue(trip);
       const tripCosts = parseFloat(trip.totalCost || '0');
-      existing.revenue += tripRevenueExVat;
+      existing.revenue += tripRevenue;
       existing.costs += tripCosts;
-      existing.profit += tripRevenueExVat - tripCosts;
+      existing.profit += tripRevenue - tripCosts;
       existing.trips++;
       byTruck.set(trip.truckId, existing);
     }
@@ -240,11 +255,7 @@ export async function getPnlReport(month: number, year: number) {
     // real-truck ids and the EXTERNAL id: 0 sentinel used downstream.
     const unassignedTrips = trips.filter(t => t.truckId == null);
     if (unassignedTrips.length > 0) {
-      const unRev = unassignedTrips.reduce((sum, t) => {
-        const rev = parseFloat(t.revenue || '0');
-        const vat = Number(t.vatRate || 0);
-        return sum + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
-      }, 0);
+      const unRev = unassignedTrips.reduce((sum, trip) => sum + recordedTripRevenue(trip), 0);
       const unCosts = unassignedTrips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
       truckBreakdown.push({
         id: -1,
@@ -259,19 +270,9 @@ export async function getPnlReport(month: number, year: number) {
 
     // Add "Xe ngoài" bucket for external carrier trips
     if (extTrips.length > 0) {
-      const extMgmtMargin = extTrips.reduce((sum, t) => {
-        const vat = Number(t.vatRate ?? 0);
-        const rev = Number(t.revenue ?? 0);
-        const cost = Number(t.externalFreightCost ?? 0);  // incl-VAT per §4.7
-        const revExVat = vat > 0 ? Math.round(rev / (1 + vat)) : rev;
-        return sum + (revExVat - cost);  // §4.7: revenue ex-VAT − cost incl-VAT
-      }, 0);
+      const extMgmtMargin = externalMarginTotal;
 
-      const extRevenue = extTrips.reduce((s, t) => {
-        const rev = Number(t.revenue ?? 0);
-        const vat = Number(t.vatRate ?? 0);
-        return s + (vat > 0 ? Math.round(rev / (1 + vat)) : rev);
-      }, 0);
+      const extRevenue = extTrips.reduce((sum, trip) => sum + recordedTripRevenue(trip), 0);
       const extCosts = extTrips.reduce((s, t) => s + Number(t.externalFreightCost ?? 0), 0);
 
       truckBreakdown.push({
@@ -288,7 +289,7 @@ export async function getPnlReport(month: number, year: number) {
     }
 
     const serviceMarginTotal = truckBreakdown.reduce((s, t) => s + (t.serviceMargin ?? 0), 0);
-    const externalMarginTotal = truckBreakdown.reduce((s, t) => s + (t.externalMargin ?? 0), 0);
+    const breakdownExternalMarginTotal = truckBreakdown.reduce((s, t) => s + (t.externalMargin ?? 0), 0);
 
     return {
       period: { month, year },
@@ -308,7 +309,7 @@ export async function getPnlReport(month: number, year: number) {
       categoryBreakdown,
       trucks: truckBreakdown,
       serviceMarginTotal,
-      externalMarginTotal,
+      externalMarginTotal: breakdownExternalMarginTotal,
       externalTripsCount: extTrips.length,
     };
   });

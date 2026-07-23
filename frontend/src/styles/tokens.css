@@ -230,6 +230,7 @@
   /* --- Type scale --- */
   --fs-2xs: 12px;
   --fs-xs:  12px;
+  --fs-status-pill: 11px;
   --fs-sm:  14px;
   --fs-md:  16px;
   --fs-lg:  18px;

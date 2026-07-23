@@ -16,16 +16,19 @@ import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import {
   useAdminSettlements,
+  useAdminSettlementOpsCompletion,
   useAdminAdvanceBalances,
   useRejectSettlement,
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
+import { summarizeSettlementExpenses } from './admin-advance-settlement-summary';
 import './AdminAdvanceSettlementsPage.css';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
 type Settlement = AdvanceSettlementWithRefs;
+type OpsCompletion = NonNullable<AdvanceSettlementWithRefs['opsCompletion']>;
 
 type StatusFilter = '' | AdvanceSettlementStatus;
 
@@ -49,15 +52,39 @@ function settlementStatusLabel(status: AdvanceSettlementStatus): string {
     : ADVANCE_SETTLEMENT_STATUS_LABELS[status];
 }
 
-function settlementScopeSummary(settlement: Settlement): { label: string; ready: boolean } {
-  const expenses = settlement.linkedExpenses ?? [];
-  if (expenses.length === 0) return { label: 'Chưa chọn chi phí', ready: false };
-  const groups = new Set(expenses.map(expense => `${expense.tripCode || 'Chuyến'} · ${expense.containerNumber || 'Chi phí chung'}`));
-  const ready = expenses.every(expense => {
-    const completionStatus = 'completionStatus' in expense ? expense.completionStatus : undefined;
-    return !completionStatus || completionStatus === 'COMPLETED';
-  });
-  return { label: [...groups].join(', '), ready };
+export function OpsCompletionSummary({
+  summary,
+  loading,
+  failed,
+}: {
+  summary?: OpsCompletion;
+  loading: boolean;
+  failed: boolean;
+}) {
+  if (loading) return <span className="as-ops-state">Đang tải tiến độ Ops…</span>;
+  if (failed) return <span className="as-ops-state as-ops-state--error">Không tải được tiến độ Ops</span>;
+  if (!summary || summary.tripCount === 0) return <span className="as-ops-state">Chưa có phạm vi Ops liên kết</span>;
+  return (
+    <div className="as-ops">
+      <strong>{summary.completedGroupCount}/{summary.totalGroupCount} nhóm đã kê xong</strong>
+      {summary.trips.map((trip) => (
+        <div className="as-ops__trip" key={trip.tripId}>
+          <span className="as-ops__trip-label">{trip.tripCode || `Chuyến ${trip.tripId}`} · {trip.completedGroupCount}/{trip.totalGroupCount}</span>
+          <div className="as-ops__groups">
+            {trip.groups.map((group) => (
+              <span
+                key={group.tripContainerId ?? 'general'}
+                className={`as-ops__group as-ops__group--${group.status === 'COMPLETED' ? 'done' : 'pending'}`}
+                title={`${group.expenseCount} khoản chi`}
+              >
+                {group.containerNumber || 'Chi phí chung'} · {group.status === 'COMPLETED' ? 'Đã kê xong' : 'Đang kê'}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /* ── Compact KPI card — mirrors AdminAdvancesPage .adv-kpi proportions ── */
@@ -99,35 +126,42 @@ function SettlementGridRow({
   rejectMutation,
   focusId,
   canApproveReject,
+  opsLoading,
+  opsFailed,
 }: {
   s: Settlement;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
   canApproveReject: boolean;
+  opsLoading: boolean;
+  opsFailed: boolean;
 }) {
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
-  const scope = settlementScopeSummary(s);
+  const scope = summarizeSettlementExpenses(s.linkedExpenses);
 
   return (
     <div className="as-grid-row" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
       <StatusStrip color={STATUS_COLORS[s.status]} />
-      {/* Settlement code → links to print page */}
-      <div className="as-code">
+      {/* Settlement identity */}
+      <div className="as-record">
         <Link to={`/settlements/${s.id}`} className="as-code-link">{s.code}</Link>
+        <span className="as-record__forwarder">
+          {s.forwarderName || 'Chưa có tên giao nhận'}
+        </span>
       </div>
 
-      {/* Forwarder */}
-      <div className="as-forwarder">
-        <div className="as-avatar">
-          <FileText size={16} />
-        </div>
-        <span className="as-forwarder-name">
-          {s.forwarderName || `Đối tác ${s.forwarderId}`}
+      {/* Linked payment scope */}
+      <div className="as-scope">
+        <span className="as-scope__primary">
+          {scope.expenseCount} khoản chi liên kết
         </span>
-        <span className="as-scope">
-          {scope.label} · <strong>{scope.ready ? 'Ops đã kê xong' : 'Đang kê'}</strong>
+        <span className="as-scope__secondary">
+          {scope.expenseCount === 0
+            ? 'Chưa có chuyến / container'
+            : `${scope.tripCount} chuyến · ${scope.containerCount} container`}
         </span>
+        <OpsCompletionSummary summary={s.opsCompletion} loading={opsLoading} failed={opsFailed} />
       </div>
 
       {/* Expense */}
@@ -153,36 +187,41 @@ function SettlementGridRow({
       </div>
 
       {/* Actions / Approver */}
-      <div className="as-actions">
+      <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
         {canAct ? (
           <>
-            {canApproveReject && (
-              <Link
-                className="btn btn--ghost btn--icon btn--sm"
-                to={`/settlements/${s.id}`}
-                title="Sửa và hoàn tất"
-                style={{ color: 'var(--success)' }}
-              >
-                <Pencil size={16} />
-              </Link>
-            )}
+            <Link
+              className="as-row-action"
+              to={`/settlements/${s.id}`}
+              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+            >
+              {canApproveReject && <Pencil size={15} aria-hidden="true" />}
+              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+            </Link>
             {canApproveReject && (
               <button
-                className="btn btn--ghost btn--icon btn--sm"
+                className="as-reject-action"
                 onClick={() => rejectMutation.mutate(s.id)}
                 disabled={isRejecting}
                 title="Từ chối hoàn ứng"
-                style={{ color: 'var(--danger)' }}
+                aria-label={`Từ chối hoàn ứng ${s.code}`}
               >
                 {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
               </button>
             )}
           </>
-        ) : s.approverName || s.checkerName ? (
-          <div className="as-approver">
-            {s.approverName ? <>bởi <strong>{s.approverName}</strong></> : <>KT: <strong>{s.checkerName}</strong></>}
-          </div>
-        ) : null}
+        ) : (
+          <>
+            <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
+              Xem phiếu
+            </Link>
+            {(s.approverName || s.checkerName) && (
+              <div className="as-approver">
+                {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -195,15 +234,19 @@ function SettlementMobileCard({
   rejectMutation,
   focusId,
   canApproveReject,
+  opsLoading,
+  opsFailed,
 }: {
   s: Settlement;
   rejectMutation: ReturnType<typeof useRejectSettlement>;
   focusId?: string;
   canApproveReject: boolean;
+  opsLoading: boolean;
+  opsFailed: boolean;
 }) {
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
-  const scope = settlementScopeSummary(s);
+  const scope = summarizeSettlementExpenses(s.linkedExpenses);
 
   return (
     <div className="as-mcard" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
@@ -217,7 +260,7 @@ function SettlementMobileCard({
           <div className="as-mcard__head">
             <Link to={`/settlements/${s.id}`} className="as-mcard__code">{s.code}</Link>
             <span className="as-mcard__name">
-              {s.forwarderName || `Đối tác ${s.forwarderId}`}
+              {s.forwarderName || 'Chưa có tên giao nhận'}
             </span>
           </div>
         </div>
@@ -244,14 +287,14 @@ function SettlementMobileCard({
       <div className="as-mcard__meta">
         <div className="as-mcard__meta-row">
           <span className="as-mcard__meta-label">Phạm vi</span>
-          <span className="as-mcard__meta-value">{scope.label} · {scope.ready ? 'Ops đã kê xong' : 'Đang kê'}</span>
+          <span className="as-mcard__meta-value">{scope.label}</span>
         </div>
         <div className="as-mcard__meta-row">
           <span className="as-mcard__meta-label">Ngày lập</span>
           <span className="as-mcard__meta-value">{formatDate(s.createdAt)}</span>
         </div>
       </div>
-
+      <OpsCompletionSummary summary={s.opsCompletion} loading={opsLoading} failed={opsFailed} />
       {/* Actions */}
       {canAct ? (
         <div className="as-mcard__actions">
@@ -300,7 +343,24 @@ export default function AdminAdvanceSettlementsPage() {
     () => (data?.items ?? []) as Settlement[],
     [data],
   );
-
+  const settlementIds = useMemo(
+    () => allSettlements.map((settlement) => settlement.id).sort((left, right) => left - right),
+    [allSettlements],
+  );
+  const {
+    data: opsCompletionData,
+    isLoading: opsCompletionLoading,
+    isError: opsCompletionFailed,
+  } = useAdminSettlementOpsCompletion(settlementIds);
+  const settlementsWithOps = useMemo(() => {
+    const bySettlementId = new Map(
+      (opsCompletionData?.items ?? []).map((item) => [item.settlementId, item.opsCompletion]),
+    );
+    return allSettlements.map((settlement) => ({
+      ...settlement,
+      opsCompletion: bySettlementId.get(settlement.id),
+    }));
+  }, [allSettlements, opsCompletionData]);
   /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
   // Called for its side effect (scrolling to the focused item); return value unused.
   useFocusDeepLink('as');
@@ -331,15 +391,15 @@ export default function AdminAdvanceSettlementsPage() {
   }, [allSettlements]);
 
   const filtered = useMemo(() => {
-    if (!statusFilter) return allSettlements;
+    if (!statusFilter) return settlementsWithOps;
     if (statusFilter === AdvanceSettlementStatus.PENDING) {
-      return allSettlements.filter((s) =>
+      return settlementsWithOps.filter((s) =>
         s.status === AdvanceSettlementStatus.PENDING ||
         s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT,
       );
     }
-    return allSettlements.filter((s) => s.status === statusFilter);
-  }, [allSettlements, statusFilter]);
+    return settlementsWithOps.filter((s) => s.status === statusFilter);
+  }, [settlementsWithOps, statusFilter]);
 
   /* ── Tab counts ──────────────────────────────────────────────────────── */
   const tabCounts = useMemo(() => ({
@@ -418,27 +478,38 @@ export default function AdminAdvanceSettlementsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop: grid header + rows */}
-            <div className="as-grid-head">
-              <div>Phiếu</div>
-              <div>Giao nhận</div>
-              <div className="col-right">Chi phí</div>
-              <div className="col-right">Hoàn lại</div>
-              <div className="col-center">Ngày lập</div>
-              <div>Trạng thái</div>
-              <div />
-            </div>
+            {/* Desktop: one scroll region keeps every column reachable. */}
+            <div
+              className="as-ledger-scroll"
+              role="region"
+              aria-label="Danh sách phiếu hoàn ứng"
+              tabIndex={0}
+            >
+              <div className="as-ledger">
+                <div className="as-grid-head">
+                  <div>Phiếu / Giao nhận</div>
+                  <div>Phạm vi liên kết</div>
+                  <div className="col-right">Chi phí</div>
+                  <div className="col-right">Hoàn lại</div>
+                  <div className="col-center">Ngày lập</div>
+                  <div>Trạng thái</div>
+                  <div className="col-right">Thao tác</div>
+                </div>
 
-            <div>
-              {filtered.map((s) => (
-                <SettlementGridRow
-                  key={s.id}
-                  s={s}
-                  rejectMutation={rejectMutation}
-                  focusId={`as-${s.id}`}
-                  canApproveReject={canApproveReject}
-                />
-              ))}
+                <div>
+                  {filtered.map((s) => (
+                    <SettlementGridRow
+                      key={s.id}
+                      s={s}
+                      rejectMutation={rejectMutation}
+                      focusId={`as-${s.id}`}
+                      canApproveReject={canApproveReject}
+                      opsLoading={opsCompletionLoading}
+                      opsFailed={opsCompletionFailed}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Mobile: stacked cards */}
@@ -450,6 +521,8 @@ export default function AdminAdvanceSettlementsPage() {
                   rejectMutation={rejectMutation}
                   focusId={`as-${s.id}`}
                   canApproveReject={canApproveReject}
+                  opsLoading={opsCompletionLoading}
+                  opsFailed={opsCompletionFailed}
                 />
               ))}
             </div>

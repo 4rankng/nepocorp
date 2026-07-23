@@ -170,8 +170,10 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
   if (carrierType === 'EXTERNAL') {
     const extCost = input.externalFreightCost ?? 0;  // incl-VAT, stored as-paid
     externalFreightExVat = vatRate > 0 ? Math.round(extCost / (1 + vatRate)) : extCost;  // informational ex-VAT (display only)
-    // §4.7: costs recorded INCL VAT — margin = revenue ex-VAT − hire cost incl-VAT (no input-VAT deduction)
-    externalMargin = freightExVat - extCost;
+    // Costs are recorded INCL VAT (no input-VAT deduction). Customer commission
+    // reduces recorded revenue for external trips just as it does for own-truck
+    // trips, so the management margin must use recordedRevenue.
+    externalMargin = recordedRevenue - extCost;
     // For external trips: cost = external freight only (no fuel/allowance/salary)
     totalCost = extCost;
     grossProfit = externalMargin;

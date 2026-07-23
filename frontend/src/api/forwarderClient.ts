@@ -134,6 +134,19 @@ export const forwarderClient = {
   listAllAdvanceSettlements: async (filters?: { status?: string }) => {
     return api.get<{ items: AdvanceSettlementWithRefs[] }>(`${FINANCIAL.ADVANCE_SETTLEMENTS}${toQuery(filters)}`);
   },
+  getSettlementOpsCompletion: async (settlementIds: number[]) => {
+    if (settlementIds.length === 0) return { items: [] as Array<{ settlementId: number; opsCompletion: NonNullable<AdvanceSettlementWithRefs['opsCompletion']> }> };
+    const chunks: number[][] = [];
+    for (let index = 0; index < settlementIds.length; index += 100) {
+      chunks.push(settlementIds.slice(index, index + 100));
+    }
+    const responses = await Promise.all(chunks.map((chunk) =>
+      api.get<{ items: Array<{ settlementId: number; opsCompletion: NonNullable<AdvanceSettlementWithRefs['opsCompletion']> }> }>(
+        `${FORWARDER.FORWARDER_EXPENSES}/settlement-ops-completion${toQuery({ settlementIds: chunk.join(',') })}`,
+      ),
+    ));
+    return { items: responses.flatMap((response) => response.items) };
+  },
   checkAdvanceSettlement: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_SETTLEMENT_CHECK(id), {});
   },
