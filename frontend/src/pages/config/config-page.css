@@ -106,8 +106,8 @@
 .cfg-page .tt-table tbody tr:nth-child(5) { animation-delay: 90ms; }
 .cfg-page .tt-table tbody tr:nth-child(n+6) { animation-delay: 100ms; }
 @keyframes cfgRowFade {
-  from { opacity: 0; transform: translateY(2px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cfg-page .tt-table tbody tr { animation: none; }
@@ -263,19 +263,17 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
-  box-shadow: var(--sh-sm);
   overflow: hidden;
 }
 
 .debit-template-card--clickable {
   cursor: pointer;
-  transition: border-color 160ms var(--ease, ease), box-shadow 160ms var(--ease, ease), transform 160ms var(--ease, ease);
+  transition: background 160ms var(--ease, ease), border-color 160ms var(--ease, ease);
 }
 
 .debit-template-card--clickable:hover {
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
-  box-shadow: 0 14px 32px -24px rgba(0, 61, 34, 0.34), var(--sh-sm);
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
 .debit-template-card--clickable:focus-visible {
@@ -360,10 +358,7 @@
   color: var(--ink);
   border: 1px dashed color-mix(in srgb, var(--accent) 26%, var(--line-2));
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(255, 255, 255, 0.72)),
-    color-mix(in srgb, var(--accent-soft) 30%, transparent);
-  box-shadow: 0 14px 30px -26px rgba(0, 61, 34, 0.34);
+  background: color-mix(in srgb, var(--accent-soft) 30%, transparent);
 }
 
 .debit-template-list-empty--loading {
@@ -375,7 +370,6 @@
   aspect-ratio: 1;
   object-fit: contain;
   margin-bottom: 2px;
-  filter: drop-shadow(0 16px 24px rgba(0, 61, 34, 0.10));
 }
 
 .debit-template-list-empty__copy {
@@ -462,7 +456,6 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     overflow: hidden;
   }
   .cfg-page:not(.routes-config-page) .tt-table tbody tr:not(.cfg-empty-row) td {
@@ -532,7 +525,6 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     overflow: hidden;
   }
   .cfg-page--customers .cfg-customer-table tbody tr:not(.cfg-empty-row) td {
@@ -624,8 +616,7 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     padding: 14px 16px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: border-color 160ms var(--ease, ease), box-shadow 160ms var(--ease, ease);
+    transition: background 160ms var(--ease, ease), border-color 160ms var(--ease, ease);
   }
   .routes-table tbody tr:hover {
     border-color: var(--brand, var(--primary));
@@ -724,7 +715,7 @@
   border: none;
   border-radius: 999px;
   background: #cbd5e1;
-  cursor: pointer;
+  cursor: inherit;
   padding: 0;
   transition: background 0.2s ease;
   flex-shrink: 0;
@@ -740,7 +731,7 @@
   height: 20px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(16, 24, 20, 0.18);
   transition: transform 0.2s ease;
 }
 .cfg-toggle.is-on .cfg-toggle-knob {
@@ -748,4 +739,89 @@
 }
 .cfg-panel-action-icon {
   color: #94a3b8;
+}
+
+.cfg-feature {
+  margin-top: 0;
+  padding: 0;
+}
+
+.cfg-feature + .cfg-feature {
+  margin-top: 0;
+}
+
+.cfg-feature__button {
+  width: 100%;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cfg-feature__button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.cfg-feature__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.cfg-feature__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 8px;
+  color: var(--accent-2);
+  background: var(--accent-soft);
+}
+
+.cfg-feature__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.cfg-feature__label {
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.cfg-feature__description {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+}
+
+.cfg-feature__state {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .cfg-feature__button {
+    grid-template-columns: 36px minmax(0, 1fr) 46px;
+    gap: 10px;
+    min-height: 88px;
+    padding: 14px 0;
+  }
+
+  .cfg-feature__icon {
+    width: 36px;
+    height: 36px;
+  }
 }

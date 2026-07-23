@@ -64,8 +64,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control-h);
+  height: var(--control-h);
   border: 0;
   background: transparent;
   color: inherit;
@@ -125,7 +125,7 @@
     gap: 8px;
   }
   .nepo-banner__close {
-    width: 24px;
-    height: 24px;
+    width: var(--control-h);
+    height: var(--control-h);
   }
 }

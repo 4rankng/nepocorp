@@ -4,10 +4,9 @@
 
 .ds-table-scroll {
   overflow-x: auto;
-  border-radius: 14px;
+  border-radius: var(--r);
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.92));
-  box-shadow: var(--sh-sm);
+  background: var(--surface);
   scrollbar-color: rgba(0, 90, 45, 0.25) transparent;
   scrollbar-width: thin;
 }
@@ -35,9 +34,7 @@
   letter-spacing: 0.06em;
   color: var(--ink-2);
   padding: 11px 12px;
-  background:
-    linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 46%),
-    linear-gradient(180deg, var(--surface-2), var(--surface-3));
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line-2);
   white-space: nowrap;
 }
@@ -111,21 +108,19 @@
 .ds-mobile-card {
   background: var(--surface, #fff);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r);
   padding: 12px 14px;
   color: var(--ink, var(--fg));
-  box-shadow: var(--sh-sm);
 }
 
 .ds-mobile-card.is-clickable {
   cursor: pointer;
-  transition: border-color 120ms var(--ease), transform 120ms var(--ease), box-shadow 120ms var(--ease);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
 }
 
 .ds-mobile-card.is-clickable:hover {
   border-color: var(--line-strong);
-  box-shadow: var(--sh);
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
 .ds-table-wrap--mobile {

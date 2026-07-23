@@ -93,8 +93,8 @@
      on phones we keep the buttons at their natural size and let them
      flow into multiple rows if the viewport is narrow. */
   .td-page-head .header-actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
     width: 100%;
     gap: 8px;
     padding-top: 8px;
@@ -102,13 +102,25 @@
   }
 
   .td-page-head .header-actions .btn {
-    width: 100%;
+    width: auto;
     min-width: 0;
     justify-content: center;
     min-height: 44px;
     padding: 8px 14px;
     font-size: var(--fs-xs);
     line-height: 1.35;
+  }
+
+  .td-page-head .header-actions .header-overflow {
+    grid-column: 2;
+    grid-row: 1;
+    margin-left: 0;
+  }
+
+  .td-page-head .header-actions .header-overflow > summary.btn {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
   }
 
   /* "Hủy chuyến" (btn--danger) is a rare / destructive action — on mobile
@@ -122,7 +134,7 @@
   }
 
   .td-page-head .header-actions .btn--primary {
-    flex: 1 1 100%;
+    grid-column: 1 / -1;
   }
 
   /* Tighter title on phones */
@@ -152,22 +164,22 @@
     z-index: auto;
   }
 
-  /* Mobile source order (financial summary leads so it stays in view):
-       1  KpiStrip (rail)
-       2  FinancialCard (rail)
-       3  JourneyCard (main)
-       4  ServiceCostsCard (main)
-       5  BasicInfoCard (main)
+  /* Mobile source order follows the operational job before analysis:
+       1  BasicInfoCard (main)
+       2  JourneyCard (main)
+       3  KpiStrip (rail)
+       4  FinancialCard (rail)
+       5  ServiceCostsCard (main)
        6  ContainersCard (main)
        7  FuelCard (rail)
        8  ExternalCarrierCard (rail, optional)
        9  PhotosCard (main, optional)
       10  Notes (main, optional) */
-  .tdp-r1 { order: 1; }
-  .tdp-r2 { order: 2; }
-  .tdp-m1 { order: 3; }
-  .tdp-m2 { order: 4; }
-  .tdp-m3 { order: 5; }
+  .tdp-m3 { order: 1; }
+  .tdp-m1 { order: 2; }
+  .tdp-r1 { order: 3; }
+  .tdp-r2 { order: 4; }
+  .tdp-m2 { order: 5; }
   .tdp-m4 { order: 6; }
   .tdp-r3 { order: 7; }
   .tdp-r4 { order: 8; }
@@ -247,7 +259,6 @@
     background: var(--surface);
     color: var(--ink);
     border-color: var(--line-2);
-    box-shadow: var(--sh-sm);
     /* Force centered content in case .btn--ghost's `padding: 9px 10px`
        rule from the base CSS file wins the cascade over the mobile
        `justify-content: center` rule (it doesn't normally, but be explicit

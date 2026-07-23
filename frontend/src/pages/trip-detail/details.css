@@ -35,7 +35,6 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-lg, 18px);
-  box-shadow: var(--sh-sm);
   padding: 20px;
 }
 .tdp-notes-title {

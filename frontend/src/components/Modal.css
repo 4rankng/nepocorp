@@ -9,8 +9,6 @@
   inset: 0;
   z-index: var(--z-modal);
   background: rgba(10, 10, 10, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,8 +19,7 @@
 .modal__content {
   background: var(--surface, #fff);
   border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  border-radius: var(--r);
   width: 100%;
   max-width: var(--modal-max-w, 540px);
   display: flex;
@@ -41,7 +38,7 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  background: linear-gradient(to bottom, rgba(247, 248, 250, 0.6), transparent);
+  background: var(--surface-2);
 }
 .modal__title {
   margin: 0;
@@ -54,13 +51,12 @@
 }
 .modal__close {
   color: var(--ink-3);
-  transition: background 150ms var(--ease), color 150ms var(--ease), transform 150ms var(--ease);
+  transition: background 150ms var(--ease), color 150ms var(--ease);
   border-radius: 8px;
 }
 .modal__close:hover {
   background: var(--surface-3);
   color: var(--ink);
-  transform: scale(1.05);
 }
 .modal__body {
   padding: 20px 24px;
@@ -72,7 +68,7 @@
 .modal__foot {
   padding: 16px 24px;
   border-top: 1px solid var(--line);
-  background: linear-gradient(to top, rgba(247, 248, 250, 0.5), transparent);
+  background: var(--surface-2);
   display: flex;
   justify-content: flex-end;
   gap: 10px;

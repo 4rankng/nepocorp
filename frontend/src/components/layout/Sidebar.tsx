@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronRight,
@@ -29,6 +29,7 @@ function Sidebar({
   navItems,
   activeKey,
   sidebarOpen,
+  isMobileViewport,
   userMenuOpen,
   collapsed,
   onNavigate,
@@ -43,6 +44,45 @@ function Sidebar({
   toggleSection,
 }: SidebarProps) {
   const animRef = useSidebarAnimations();
+  const asideRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!isMobileViewport || !sidebarOpen) return;
+    const sidebar = asideRef.current;
+    if (!sidebar) return;
+
+    const focusableSelector = [
+      'button:not(:disabled)',
+      'a[href]',
+      'input:not(:disabled)',
+      'select:not(:disabled)',
+      'textarea:not(:disabled)',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const focusable = Array.from(sidebar.querySelectorAll<HTMLElement>(focusableSelector));
+    focusable[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onToggleSidebar();
+        return;
+      }
+      if (event.key !== 'Tab' || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileViewport, onToggleSidebar, sidebarOpen]);
 
   // Icon-only (collapsed) rail: show an instant styled tooltip on hover/focus.
   // The native `title` attribute is slow (~1s) and unstyled, and the item labels
@@ -151,8 +191,18 @@ function Sidebar({
 
   return (
     <>
-      <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => onToggleSidebar()} />
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+        onClick={() => onToggleSidebar()}
+        aria-hidden="true"
+      />
+      <aside
+        ref={asideRef}
+        id="sidebar-navigation"
+        className={`sidebar ${sidebarOpen ? 'open' : ''}`}
+        aria-hidden={isMobileViewport && !sidebarOpen ? true : undefined}
+        inert={isMobileViewport && !sidebarOpen}
+      >
         <div className="sidebar-brand">
           <div className="sidebar-brand-logo">
             <img src="/assets/logo.avif" alt="TingTing" />

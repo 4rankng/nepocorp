@@ -233,6 +233,7 @@ export default function TripDetailPage() {
           <button
             type="button"
             onClick={() => page.setReassignCarrierType('OWN')}
+            aria-pressed={ui.reassignCarrierType === 'OWN'}
             style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'OWN' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'OWN' ? 'var(--brand-dark)' : 'var(--text-2)' }}
           >
             Xe nhà
@@ -240,6 +241,7 @@ export default function TripDetailPage() {
           <button
             type="button"
             onClick={() => page.setReassignCarrierType('EXTERNAL')}
+            aria-pressed={ui.reassignCarrierType === 'EXTERNAL'}
             style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-dark)' : 'var(--text-2)' }}
           >
             Xe ngoài
@@ -249,15 +251,15 @@ export default function TripDetailPage() {
         {ui.reassignCarrierType === 'OWN' ? (
           <>
             <div className="field">
-              <label>Xe đầu kéo</label>
-              <select className="input" value={ui.reassignTruckId} onChange={e => page.setReassignTruckId(e.target.value)}>
+              <label htmlFor="reassignTruckId">Xe đầu kéo</label>
+              <select id="reassignTruckId" name="reassignTruckId" className="input" value={ui.reassignTruckId} onChange={e => page.setReassignTruckId(e.target.value)}>
                 <option value="">-- Chọn xe --</option>
                 {page.reassignTrucks.map(t => <option key={t.id} value={t.id}>{t.licensePlate}</option>)}
               </select>
             </div>
             <div className="field">
-              <label>Lái xe</label>
-              <select className="input" value={ui.reassignDriverId} onChange={e => page.setReassignDriverId(e.target.value)}>
+              <label htmlFor="reassignDriverId">Lái xe</label>
+              <select id="reassignDriverId" name="reassignDriverId" className="input" value={ui.reassignDriverId} onChange={e => page.setReassignDriverId(e.target.value)}>
                 <option value="">-- Chọn lái xe --</option>
                 {page.reassignDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
@@ -266,23 +268,23 @@ export default function TripDetailPage() {
         ) : (
           <>
             <div className="field">
-              <label>Đối tác xe ngoài</label>
-              <select className="input" value={ui.reassignExternalCarrierId} onChange={e => page.setReassignExternalCarrierId(e.target.value)}>
+              <label htmlFor="reassignExternalCarrierId">Đối tác xe ngoài</label>
+              <select id="reassignExternalCarrierId" name="reassignExternalCarrierId" className="input" value={ui.reassignExternalCarrierId} onChange={e => page.setReassignExternalCarrierId(e.target.value)}>
                 <option value="">-- Chọn đối tác --</option>
                 {page.carrierCustomers.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
             </div>
             <div className="field">
-              <label>Biển số xe</label>
-              <input type="text" className="input" placeholder="VD: 15C-12345" value={ui.reassignExternalPlateNumber} onChange={e => page.setReassignExternalPlateNumber(e.target.value)} />
+              <label htmlFor="reassignExternalPlateNumber">Biển số xe</label>
+              <input id="reassignExternalPlateNumber" name="reassignExternalPlateNumber" type="text" className="input" placeholder="VD: 15C-12345" value={ui.reassignExternalPlateNumber} onChange={e => page.setReassignExternalPlateNumber(e.target.value)} />
             </div>
             <div className="field">
-              <label>Tên lái xe</label>
-              <input type="text" className="input" placeholder="Tên lái xe ngoài" value={ui.reassignExternalDriverName} onChange={e => page.setReassignExternalDriverName(e.target.value)} />
+              <label htmlFor="reassignExternalDriverName">Tên lái xe</label>
+              <input id="reassignExternalDriverName" name="reassignExternalDriverName" type="text" className="input" placeholder="Tên lái xe ngoài" value={ui.reassignExternalDriverName} onChange={e => page.setReassignExternalDriverName(e.target.value)} />
             </div>
             <div className="field">
-              <label>SĐT lái xe</label>
-              <input type="text" className="input" placeholder="SĐT lái xe" value={ui.reassignExternalDriverPhone} onChange={e => page.setReassignExternalDriverPhone(e.target.value)} />
+              <label htmlFor="reassignExternalDriverPhone">SĐT lái xe</label>
+              <input id="reassignExternalDriverPhone" name="reassignExternalDriverPhone" type="tel" autoComplete="tel" className="input" placeholder="SĐT lái xe" value={ui.reassignExternalDriverPhone} onChange={e => page.setReassignExternalDriverPhone(e.target.value)} />
             </div>
           </>
         )}
@@ -299,18 +301,18 @@ export default function TripDetailPage() {
           </div>
         )}
         <div className="field">
-          <label>Số tiền điều chỉnh (đ) *</label>
-          <input className="input" type="number" placeholder="VD: -500000 hoặc 300000"
+          <label htmlFor="adjustAmount">Số tiền điều chỉnh (đ) *</label>
+          <input id="adjustAmount" name="adjustAmount" className="input" type="number" placeholder="VD: -500000 hoặc 300000"
             value={ui.adjustAmount} onChange={e => page.setAdjustAmount(e.target.value)} />
         </div>
         <div className="field">
-          <label>Lý do điều chỉnh *</label>
-          <textarea className="input tdp-drawer-textarea" rows={3} placeholder="Mô tả lý do…"
+          <label htmlFor="adjustNote">Lý do điều chỉnh *</label>
+          <textarea id="adjustNote" name="adjustNote" className="input tdp-drawer-textarea" rows={3} placeholder="Mô tả lý do…"
             value={ui.adjustNote} onChange={e => page.setAdjustNote(e.target.value)} />
         </div>
         <div className="field">
-          <label>Mã biên bản thỏa thuận *</label>
-          <input className="input" placeholder="VD: BB-2026-001"
+          <label htmlFor="adjustRef">Mã biên bản thỏa thuận *</label>
+          <input id="adjustRef" name="adjustRef" className="input" placeholder="VD: BB-2026-001"
             value={ui.adjustRef} onChange={e => page.setAdjustRef(e.target.value)} />
         </div>
         <button

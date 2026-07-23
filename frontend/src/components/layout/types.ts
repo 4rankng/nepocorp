@@ -23,6 +23,7 @@ export interface SidebarProps {
   navItems: NavItem[];
   activeKey: string;
   sidebarOpen: boolean;
+  isMobileViewport: boolean;
   userMenuOpen: boolean;
   collapsed: Set<string>;
   onNavigate: (path: string) => void;
@@ -45,6 +46,7 @@ export interface TopbarProps {
   };
   isDriver: boolean;
   sidebarOpen: boolean;
+  menuButtonRef: React.RefObject<HTMLButtonElement | null>;
   pageTitle: string;
   onToggleSidebar: () => void;
   onOpenTutorialLibrary?: () => void;

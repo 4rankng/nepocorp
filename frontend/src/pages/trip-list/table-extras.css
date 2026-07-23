@@ -99,7 +99,7 @@
   right: 0;
   background: var(--surface);
   z-index: 2;
-  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
+  border-left: 1px solid var(--line);
   transition: background 150ms ease;
 }
 .trip-list-page .table-row:hover .col-status {
@@ -110,7 +110,7 @@
   right: 0;
   background: var(--surface-2);
   z-index: 11;
-  box-shadow: -6px 0 10px -6px rgba(0, 0, 0, 0.06);
+  border-left: 1px solid var(--line);
 }
 
 /* ── Infinite scroll sentinel ─────────────────────────────────────────── */

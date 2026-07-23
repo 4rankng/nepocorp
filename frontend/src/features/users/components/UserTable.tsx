@@ -123,7 +123,7 @@ export function UserTable({
             <span className="kpi__label">Tổng tài khoản</span>
           </div>
           <div className="kpi__value">{total}</div>
-          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <div className="kpi__meta">
             <span className="kpi__meta-pill kpi__meta--up">
               +0 mới
             </span>
@@ -136,7 +136,7 @@ export function UserTable({
             <span className="kpi__label">Nhân sự văn phòng</span>
           </div>
           <div className="kpi__value">{staffCount}</div>
-          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <div className="kpi__meta">
             <span className="kpi__meta-pill kpi__meta-pill--warn">
               Văn phòng
             </span>
@@ -149,7 +149,7 @@ export function UserTable({
             <span className="kpi__label">Lái xe</span>
           </div>
           <div className="kpi__value">{driverCount}</div>
-          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <div className="kpi__meta">
             <span className="kpi__meta-pill kpi__meta-pill--success">
               Hiện trường
             </span>
@@ -162,7 +162,7 @@ export function UserTable({
             <span className="kpi__label">Bị khoá / Ngưng</span>
           </div>
           <div className="kpi__value">{inactiveCount}</div>
-          <div className="kpi__meta" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <div className="kpi__meta">
             {inactiveCount > 0 ? (
               <span className="kpi__meta-pill kpi__meta-pill--danger">
                 Cần kiểm tra
@@ -190,6 +190,7 @@ export function UserTable({
                 key={f}
                 className={`filter-pill${filter === f ? ' is-active' : ''} ${ROLE_FILTER_CLS[f] || ''}`}
                 onClick={() => onFilterChange(f)}
+                aria-pressed={filter === f}
               >
                 <span>{label}</span>
                 {filter === f && <span className="filter-pill__count">{count}</span>}
@@ -201,6 +202,7 @@ export function UserTable({
             <Search size={14} />
             <input
               type="text"
+              aria-label="Tìm tài khoản"
               placeholder="Tìm theo username, email, SĐT..."
               value={search}
               onChange={e => onSearchChange(e.target.value)}
@@ -211,6 +213,7 @@ export function UserTable({
                 className="search-clear-btn"
                 onClick={() => onSearchChange('')}
                 title="Xóa tìm kiếm"
+                aria-label="Xóa nội dung tìm kiếm"
               >
                 <X size={12} />
               </button>
@@ -380,25 +383,25 @@ function DesktopTable({
         <table className="tt-table" style={{ minWidth: 880 }}>
           <thead>
             <tr>
-              <th onClick={() => onSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <th aria-sort={sortBy === 'name' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                <button type="button" className="users-sort-button" onClick={() => onSort('name')}>
                   Tài khoản
                   {sortBy === 'name' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
-                </div>
+                </button>
               </th>
               <th>Liên hệ</th>
-              <th onClick={() => onSort('role')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <th aria-sort={sortBy === 'role' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                <button type="button" className="users-sort-button" onClick={() => onSort('role')}>
                   Vai trò
                   {sortBy === 'role' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
-                </div>
+                </button>
               </th>
               <th>Xe</th>
-              <th onClick={() => onSort('date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <th aria-sort={sortBy === 'date' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                <button type="button" className="users-sort-button" onClick={() => onSort('date')}>
                   Ngày tạo
                   {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
-                </div>
+                </button>
               </th>
             </tr>
           </thead>
@@ -424,6 +427,14 @@ function DesktopTable({
                   key={u.id}
                   className={editable ? 'is-clickable' : undefined}
                   onClick={editable ? () => onEdit(u) : undefined}
+                  onKeyDown={editable ? (event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onEdit(u);
+                    }
+                  } : undefined}
+                  tabIndex={editable ? 0 : undefined}
                   style={{ cursor: editable ? 'pointer' : 'default' }}
                 >
                   <td style={{ position: 'relative' }}>
@@ -518,6 +529,15 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                   className={`m-card users-mobile-card${editable ? ' is-clickable' : ''}`}
                   style={{ cursor: editable ? 'pointer' : 'default', position: 'relative' }}
                   onClick={editable ? () => onEdit(u) : undefined}
+                  onKeyDown={editable ? (event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onEdit(u);
+                    }
+                  } : undefined}
+                  role={editable ? 'button' : undefined}
+                  tabIndex={editable ? 0 : undefined}
                 >
               <StatusStrip status={u.status} />
               <div className="users-mobile-card__header">
@@ -536,6 +556,9 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                     <div style={{ position: 'relative' }}>
                       <button
                         className="kebab-btn"
+                        aria-label={`Mở thao tác cho ${u.fullName || u.username || 'tài khoản'}`}
+                        aria-haspopup="menu"
+                        aria-expanded={activeMenuId === u.id}
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenuId(activeMenuId === u.id ? null : u.id);
@@ -547,13 +570,13 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                         <MoreVertical size={16} />
                       </button>
                       {activeMenuId === u.id && (
-                        <div className="users-mobile-card__dropdown" style={{
+                        <div className="users-mobile-card__dropdown" role="menu" style={{
                           position: 'absolute', right: 0, top: '100%', zIndex: 100,
                           background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
-                          boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 120,
+                          overflow: 'hidden', minWidth: 120,
                         }} onClick={(e) => e.stopPropagation()}>
                           {canManage && canDelete && (
-                            <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
+                            <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                               disabled={!!deleting || isMe}
                               onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
                               {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá

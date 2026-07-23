@@ -59,12 +59,12 @@
 
 .trip-legs__dot--origin {
   background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft), 0 2px 6px rgba(0, 177, 79, 0.25);
+  border: 3px solid var(--accent-soft);
 }
 
 .trip-legs__dot--dest {
   background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft), 0 2px 6px rgba(0, 177, 79, 0.25);
+  border: 3px solid var(--accent-soft);
 }
 
 .trip-legs__dot--mid {
@@ -80,12 +80,7 @@
   width: 2.5px;
   flex: 1;
   min-height: 28px;
-  background: linear-gradient(
-    to bottom,
-    var(--line-2) 0%,
-    color-mix(in srgb, var(--accent) 30%, var(--line-2)) 50%,
-    var(--line-2) 100%
-  );
+  background: var(--line-2);
   border-radius: 2px;
   margin: 2px 0;
 }

@@ -7,8 +7,6 @@
   position: fixed;
   inset: 0;
   background: rgba(10, 10, 10, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   /* anime.js handles opacity animation */
   opacity: 1;
   z-index: var(--z-overlay);
@@ -21,7 +19,6 @@
   width: 100%;
   max-width: 580px;
   background: var(--surface, #fff);
-  box-shadow: -24px 0 64px rgba(0, 0, 0, 0.16), -4px 0 16px rgba(0, 0, 0, 0.06);
   /* anime.js handles translateX animation */
   transform: none;
   z-index: var(--z-modal);
@@ -38,7 +35,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  background: linear-gradient(to bottom, rgba(247, 248, 250, 0.6), transparent);
+  background: var(--surface-2);
 }
 .drawer__heading {
   min-width: 0;
@@ -73,12 +70,11 @@
   border-radius: 10px;
   display: grid;
   place-items: center;
-  transition: background 150ms var(--ease), color 150ms var(--ease), transform 150ms var(--ease);
+  transition: background 150ms var(--ease), color 150ms var(--ease);
 }
 .drawer__close:hover {
   background: var(--surface-3);
   color: var(--ink);
-  transform: scale(1.05);
 }
 .drawer__body {
   flex: 1;
@@ -89,7 +85,7 @@
 .drawer__foot {
   padding: 16px 28px;
   border-top: 1px solid var(--line);
-  background: linear-gradient(to top, rgba(247, 248, 250, 0.5), transparent);
+  background: var(--surface-2);
   flex-shrink: 0;
   display: flex;
   gap: 10px;

@@ -83,6 +83,7 @@ export function TripFiltersBar(props: TripFiltersBarProps) {
           <Search size={18} />
           <input
             type="text"
+            aria-label="Tìm chuyến đi"
             placeholder="Tìm theo mã chuyến, KH, biển số, số cont"
             value={searchQuery}
             onChange={(e) => onSearch(e.target.value)}

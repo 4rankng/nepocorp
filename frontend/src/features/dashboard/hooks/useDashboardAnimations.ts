@@ -4,7 +4,6 @@ import {
   stagger,
   createScope,
   utils,
-  svg,
 } from 'animejs';
 import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 
@@ -12,10 +11,9 @@ import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion'
  * Orchestrates dashboard entrance animations via anime.js v4.
  *
  * Flat, opacity-led entrance sequence with bounded delays. Data-reveal
- * animations remain for charts and progress bars, without simulated depth.
- *
- * Uses svg.createDrawable for chart line draws where possible,
- * with manual strokeDashoffset fallback.
+ * animations remain for progress bars, without simulated depth. Chart series
+ * stay visible throughout; hiding financial data behind a delayed stroke-draw
+ * animation makes the chart look broken while it is interactive.
  *
  * Respects prefers-reduced-motion.
  */
@@ -109,34 +107,6 @@ export function useDashboardAnimations(ready: boolean) {
         }
       };
       setTimeout(animateLateBento, 2500);
-
-      // ── Phase 4: Chart line draw via svg.createDrawable ──
-      const chartPaths = root.querySelectorAll('.wf-chart path');
-      chartPaths.forEach((path) => {
-        const svgPath = path as SVGPathElement;
-        try {
-          const drawable = svg.createDrawable(svgPath);
-          animate(drawable, {
-            draw: ['0 0', '0 1'],
-            duration: 1200,
-            delay: 700,
-            ease: 'out(3)',
-          });
-        } catch {
-          // Fallback: manual strokeDashoffset
-          const length = svgPath.getTotalLength?.();
-          if (length && length > 10) {
-            svgPath.style.strokeDasharray = String(length);
-            svgPath.style.strokeDashoffset = String(length);
-            animate(svgPath, {
-              strokeDashoffset: [length, 0],
-              duration: 1200,
-              delay: 700,
-              ease: 'out(3)',
-            });
-          }
-        }
-      });
 
       // ── Phase 5: Donut segment reveal ──
       const donutCircles = root.querySelectorAll(

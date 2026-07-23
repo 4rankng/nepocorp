@@ -91,7 +91,7 @@ export function LeafletMap({
       const startIcon = opts.startNumber != null
         ? L.divIcon({
             className: 'custom-map-marker',
-            html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${opts.startNumber}</div>`,
+            html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;outline:1px solid rgba(16,24,20,0.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${opts.startNumber}</div>`,
             iconSize: [28, 28],
             iconAnchor: [14, 14],
           })
@@ -103,7 +103,7 @@ export function LeafletMap({
               background: #10B981;
               border: 2px solid #FFFFFF;
               border-radius: 50%;
-              box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+              outline: 2px solid rgba(16, 185, 129, 0.28);
             "></div>`,
             iconSize: [20, 20],
             iconAnchor: [10, 10],
@@ -124,7 +124,7 @@ export function LeafletMap({
             background: #EF4444;
             border: 2px solid #FFFFFF;
             border-radius: 50%;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+            outline: 2px solid rgba(239, 68, 68, 0.28);
           "></div>`,
           iconSize: [20, 20],
           iconAnchor: [10, 10],
@@ -154,7 +154,7 @@ export function LeafletMap({
         const color = colors[index % colors.length];
         const icon = L.divIcon({
           className: 'custom-map-marker',
-          html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${index + 1}</div>`,
+          html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;outline:1px solid rgba(16,24,20,0.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${index + 1}</div>`,
           iconSize: [28, 28],
           iconAnchor: [14, 14],
         });
@@ -169,7 +169,7 @@ export function LeafletMap({
       if (lastLeg?.destinationCoord) {
         boundsLayers.push(
           L.marker(lastLeg.destinationCoord, {
-            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:20px;height:20px;background:#EF4444;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(239,68,68,0.6);"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
+            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:20px;height:20px;background:#EF4444;border:2px solid #fff;border-radius:50%;outline:2px solid rgba(239,68,68,0.28);"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
           })
             .addTo(layerGroup)
             .bindPopup(`<strong>Đích đến:</strong> ${lastLeg.destination}`),
@@ -194,7 +194,7 @@ export function LeafletMap({
         } else if (leg.originCoord) {
           const icon = L.divIcon({
             className: 'custom-map-marker',
-            html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${index + 1}</div>`,
+            html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;border:2px solid #fff;outline:1px solid rgba(16,24,20,0.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1.35;">${index + 1}</div>`,
             iconSize: [28, 28],
             iconAnchor: [14, 14],
           });
@@ -210,7 +210,7 @@ export function LeafletMap({
       if (lastLeg?.destinationCoord) {
         boundsLayers.push(
           L.marker(lastLeg.destinationCoord, {
-            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:20px;height:20px;background:#EF4444;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(239,68,68,0.6);"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
+            icon: L.divIcon({ className: 'custom-map-marker', html: '<div style="width:20px;height:20px;background:#EF4444;border:2px solid #fff;border-radius:50%;outline:2px solid rgba(239,68,68,0.28);"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
           })
             .addTo(layerGroup)
             .bindPopup(`<strong>Đích đến:</strong> ${lastLeg.destination}`),

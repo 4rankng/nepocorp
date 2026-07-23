@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Bot, GraduationCap, Loader2, Save, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, Panel } from '../../components/UI';
@@ -17,43 +17,31 @@ type FeatureSwitchProps = {
 };
 
 function FeatureSwitch({ icon, label, description, enabled, onChange, disabled }: FeatureSwitchProps) {
+  const descriptionId = useId();
+
   return (
-    <div className="cfg-section">
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div
-          aria-hidden="true"
-          style={{
-            display: 'grid',
-            placeItems: 'center',
-            width: 36,
-            height: 36,
-            flex: '0 0 auto',
-            borderRadius: 9,
-            background: 'var(--accent-soft, rgba(0, 177, 79, 0.1))',
-            color: 'var(--accent, #008a3d)',
-          }}
-        >
+    <div className="cfg-section cfg-feature">
+      <button
+        type="button"
+        className="cfg-feature__button"
+        role="switch"
+        aria-checked={enabled}
+        aria-describedby={descriptionId}
+        disabled={disabled}
+        onClick={onChange}
+      >
+        <span className="cfg-feature__icon" aria-hidden="true">
           {icon}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 className="cfg-section__heading" style={{ marginBottom: 4 }}>{label}</h4>
-          <p className="cfg-field-hint" style={{ margin: 0 }}>{description}</p>
-        </div>
-        <button
-          type="button"
-          className={`cfg-toggle ${enabled ? 'is-on' : ''}`}
-          role="switch"
-          aria-checked={enabled}
-          aria-label={`${enabled ? 'Tắt' : 'Bật'} ${label}`}
-          disabled={disabled}
-          onClick={onChange}
-        >
+        </span>
+        <span className="cfg-feature__copy">
+          <span className="cfg-feature__label">{label}</span>
+          <span id={descriptionId} className="cfg-feature__description">{description}</span>
+          <span className="cfg-feature__state">{enabled ? 'Đang bật' : 'Đang tắt'}</span>
+        </span>
+        <span className={`cfg-toggle ${enabled ? 'is-on' : ''}`} aria-hidden="true">
           <span className="cfg-toggle-knob" />
-        </button>
-      </div>
-      <p className="cfg-field-hint" style={{ margin: '10px 0 0 48px' }}>
-        {enabled ? 'Đang bật' : 'Đang tắt'}
-      </p>
+        </span>
+      </button>
     </div>
   );
 }

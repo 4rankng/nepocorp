@@ -5,7 +5,7 @@ export function UserStatusBadge({ status, isMe, userId }: { status: UserRow['sta
     if (isMe) {
       return (
         <span className="pill pill--success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <span className="dot" style={{ animation: 'pulse-green 1.8s infinite ease-in-out' }} />
+          <span className="dot" />
           Đang online
         </span>
       );

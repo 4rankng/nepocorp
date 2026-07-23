@@ -632,6 +632,10 @@
    Mirrors the .wf-att attention list visually but is denser and
    link-styled. Each row shows: dot, action label (with category icon),
    relative time, full audit message. Hover highlights the row. */
+.dash-wf .wf-audit .wf-card-h {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--wf-border);
+}
 .dash-wf .wf-audit .body { padding: 4px 4px 6px; }
 .dash-wf .wf-aurow {
   display: flex;
@@ -674,6 +678,28 @@
   overflow: visible;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Keep the activity stream compact on wide dashboards while preserving a
+   single chronological reading order on smaller screens. */
+@container (min-width: 980px) {
+  .dash-wf .wf-audit .body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+    padding: 4px 16px 12px;
+  }
+
+  .dash-wf .wf-audit .body > .wf-divider {
+    display: none;
+  }
+
+  .dash-wf .wf-audit .body > .wf-aurow {
+    min-height: 68px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--wf-border);
+    border-radius: 0;
+  }
 }
 
 /* Audit log feed — .audit-event-tag + .audit-dot are also defined in

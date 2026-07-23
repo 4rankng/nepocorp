@@ -117,6 +117,7 @@ export function CrudTable<T extends { id: number }>({
         </div>
         <div className="table-scroll">
           <table className="tt-table">
+            <caption className="sr-only">{title}</caption>
             <thead>
               <tr>
                 <th style={{ width: 40 }}>#</th>
@@ -151,6 +152,15 @@ export function CrudTable<T extends { id: number }>({
                     key={item.id}
                     style={{ cursor: 'pointer', ...rowStyle?.(item, isActive) }}
                     onClick={() => crud.setEditingId(item.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        crud.setEditingId(item.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Chỉnh sửa ${title.toLowerCase()} thứ ${i + 1}`}
                     title="Nhấp để chỉnh sửa hoặc xóa"
                   >
                     <td className="num">{i + 1}</td>

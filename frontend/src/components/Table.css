@@ -3,11 +3,10 @@
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
 .table-wrap {
-  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.92));
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: var(--sh-sm);
 }
 .table-wrap--standalone {
   border-radius: 12px;
@@ -35,9 +34,7 @@
 .ancillary-fees__table { min-width: 720px; table-layout: fixed; width: 100%; }
 .ancillary-fees__table thead th { padding: 8px 6px; font-size: var(--fs-xs); }
 .ancillary-fees__table thead th {
-  background:
-    linear-gradient(90deg, rgba(0, 177, 79, 0.045), rgba(255, 255, 255, 0) 46%),
-    linear-gradient(180deg, var(--surface-2), var(--surface-3));
+  background: var(--surface-2);
   color: var(--ink-2);
   border-bottom: 1px solid var(--line-2);
   font-weight: 700;
@@ -134,7 +131,6 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: var(--sh-lg);
   z-index: 60;
   min-width: 120px;
   overflow: hidden;
@@ -239,10 +235,11 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px;
-  transition: box-shadow 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .ancillary-fee-card:active {
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .ancillary-fee-card__head {

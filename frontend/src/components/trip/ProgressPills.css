@@ -21,7 +21,7 @@
 .tc-pill-dot--done { background: var(--accent); }
 .tc-pill-dot--active {
   background: var(--accent-2);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border: 2px solid var(--accent-soft);
 }
 
 @media (max-width: 640px) {

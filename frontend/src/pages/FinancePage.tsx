@@ -201,6 +201,7 @@ export default function FinancePage() {
                 </div>
               ) : (
                 <RevenueTrendChart
+                  title={`Xu hướng doanh thu và lợi nhuận gộp ${chartView === 'day' ? `tháng ${month}/${year}` : `năm ${year}`}`}
                   months={activeChartData.months}
                   revenue={activeChartData.revenue}
                   gross={activeChartData.gross}
@@ -241,9 +242,9 @@ export default function FinancePage() {
                   return (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <svg aria-hidden="true" viewBox="0 0 200 200" width={140} height={140} style={{ flexShrink: 0 }} role="img" aria-label="Cơ cấu chi phí">
+                        <svg viewBox="0 0 200 200" width={140} height={140} style={{ flexShrink: 0 }} role="img" aria-label={`Cơ cấu chi phí tháng ${month}/${year}`}>
                           {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} stroke="#FFFFFF" strokeWidth={2.5} />)}
-                          <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="var(--ink-3)" fontFamily="var(--font-sans)">Tổng chi phí</text>
+                          <text x={cx} y={cy - 7} textAnchor="middle" fontSize="12" fill="var(--ink-2)" fontFamily="var(--font-sans)">Tổng chi phí</text>
                           <text x={cx} y={cy + 11} textAnchor="middle" fontSize="14" fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">{compactNum(total)}</text>
                         </svg>
                       </div>
@@ -295,7 +296,7 @@ export default function FinancePage() {
                 const barTrackW = 280 - plateW - valW - 10;
                 const zeroX = minProfit < 0 ? (plateW + 5) + (Math.abs(minProfit) / totalRange) * barTrackW : (plateW + 5);
                 return (
-                  <svg aria-hidden="true" width="100%" height={svgH} viewBox={`0 0 280 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Top xe theo lợi nhuận">
+                  <svg width="100%" height={svgH} viewBox={`0 0 280 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Top xe theo lợi nhuận tháng ${month}/${year}`}>
                     {topTrucks.map((t, i) => {
                       const val = t['LN gộp'];
                       const isNegative = val < 0;
@@ -304,12 +305,12 @@ export default function FinancePage() {
                       const fill = isNegative ? 'var(--danger)' : '#059669';
                       return (
                         <g key={i} transform={`translate(0, ${i * 32})`}>
-                          <text x={0} y={15} fontSize="10" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)" textAnchor="start">{t.name}</text>
+                          <text x={0} y={15} fontSize="12" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)" textAnchor="start">{t.name}</text>
                           <rect x={barX} y={4} width={w} height={14} fill={fill} rx={3} opacity={0.85} />
                           {minProfit < 0 && (
                             <line x1={zeroX} y1={0} x2={zeroX} y2={24} stroke="var(--line-2)" strokeWidth={1} strokeDasharray="2,2" />
                           )}
-                          <text x={280} y={15} fontSize="9.5" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500} textAnchor="end">{formatNumber(val)}₫</text>
+                          <text x={280} y={15} fontSize="11" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500} textAnchor="end">{formatNumber(val)}₫</text>
                         </g>
                       );
                     })}
@@ -444,7 +445,7 @@ export default function FinancePage() {
               <div className={`pnl-row__pct ${prevReport ? yoyClass(totalCosts, totalCostsLY) : ''}`}>{prevReport ? yoyPct(totalCosts, totalCostsLY) : '—'}</div>
             </div>
 
-            <div className="pnl-row pnl-row--subtotal" style={{ background: 'linear-gradient(180deg, rgba(16,185,129,0.06), var(--surface))' }}>
+            <div className="pnl-row pnl-row--subtotal" style={{ background: 'var(--success-soft)' }}>
               <div className="pnl-row__label" style={{ color: 'var(--success)', fontWeight: 700 }}>
                 Lợi nhuận gộp · Biên {marginPct(grossProfit, totalRevenue)}%
               </div>

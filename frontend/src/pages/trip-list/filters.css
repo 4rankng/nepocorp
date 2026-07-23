@@ -4,15 +4,12 @@
   --fc-green-soft: #E8F1EC;
   --fc-field: #F7F8F8;
   --fc-line-2: #EFF1F0;
-  --fc-shadow-card: 0 1px 2px rgba(16,26,20,.04), 0 8px 24px rgba(16,26,20,.06);
-  --fc-shadow-pill: 0 1px 1px rgba(16,26,20,.04);
-  --fc-radius-card: 20px;
-  --fc-radius-pill: 12px;
+  --fc-radius-card: var(--r);
+  --fc-radius-pill: var(--r-sm);
 
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--fc-radius-card);
-  box-shadow: var(--fc-shadow-card);
   padding: 18px;
   margin-bottom: 22px;
   max-width: 100%;
@@ -55,8 +52,7 @@
   font-size: var(--fs-sm);
   font-weight: 600;
   font-family: var(--font-body);
-  transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
-  box-shadow: var(--fc-shadow-pill);
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
 }
 .trip-list-page .stab-pill:hover { border-color: #D8DEDB; background: #FCFDFD; }
 .trip-list-page .stab-pill .stab-dot {
@@ -83,7 +79,6 @@
   background: var(--fc-green);
   border-color: var(--fc-green);
   color: var(--fg-on-brand);
-  box-shadow: 0 1px 2px rgba(0,90,45,.18), 0 6px 16px rgba(0,90,45,.22);
 }
 .trip-list-page .stab-pill.active .stab-dot { background: rgba(255,255,255,.85); opacity: 1; }
 .trip-list-page .stab-pill.active .stab-count { background: rgba(255,255,255,.20); color: var(--fg-on-brand); }
@@ -113,14 +108,14 @@
   font-size: var(--fs-sm); font-weight: 500;
   line-height: 1.35;
   color: var(--ink);
-  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+  transition: background .16s ease, border-color .16s ease;
 }
 .trip-list-page .filters-search input::placeholder { color: var(--ink-3); font-weight: 500; }
 .trip-list-page .filters-search input:focus {
-  outline: none;
+  outline: 2px solid color-mix(in srgb, var(--fc-green) 30%, transparent);
+  outline-offset: 2px;
   background: var(--surface);
   border-color: var(--fc-green);
-  box-shadow: 0 0 0 3px rgba(0,90,45,.10);
 }
 .trip-list-page .filters-search-hint {
   display: inline-flex;
@@ -172,13 +167,14 @@
   white-space: nowrap;
   width: 100%;
   min-width: 0;
-  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+  transition: background .16s ease, border-color .16s ease;
 }
 .trip-list-page .filter-pill:hover { background: #FCFDFD; border-color: #D8DEDB; }
 .trip-list-page .filter-pill:focus-within {
   background: var(--surface);
   border-color: var(--fc-green);
-  box-shadow: 0 0 0 3px rgba(0,90,45,.10);
+  outline: 2px solid color-mix(in srgb, var(--fc-green) 30%, transparent);
+  outline-offset: 2px;
 }
 .trip-list-page .filter-pill .filter-lbl-wrap {
   display: flex; flex-direction: column;

@@ -183,8 +183,8 @@ select.input.ci-input-sm {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 26px;
-  height: 26px;
+  width: 44px;
+  height: 44px;
   border: 1px solid rgba(220, 38, 38, 0.42);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
@@ -194,7 +194,6 @@ select.input.ci-input-sm {
   justify-content: center;
   padding: 0;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
 }
 
 .ci-photo-slot__remove:hover {

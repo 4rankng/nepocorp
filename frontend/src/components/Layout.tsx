@@ -121,6 +121,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const bottomNavRef = useBottomNavAnimations({ ready: !!user && user.role === 'DRIVER' });
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 1023px)').matches);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [tutorialLibraryOpen, setTutorialLibraryOpen] = useState(false);
 
@@ -137,6 +139,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      requestAnimationFrame(() => menuButtonRef.current?.focus());
+    }
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px)');
+    const handleViewportChange = (event: MediaQueryListEvent) => {
+      setIsMobileViewport(event.matches);
+      setSidebarOpen(!event.matches);
+    };
+    media.addEventListener('change', handleViewportChange);
+    return () => media.removeEventListener('change', handleViewportChange);
+  }, []);
 
   const openProfileModal = () => {
     if (!user) return;
@@ -320,10 +338,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     navItems,
     activeKey,
     sidebarOpen,
+    isMobileViewport,
     userMenuOpen,
     collapsed,
     onNavigate: handleNavigate,
-    onToggleSidebar: () => setSidebarOpen(false),
+    onToggleSidebar: closeSidebar,
     onToggleUserMenu: toggleUserMenu,
     onCloseUserMenu: closeUserMenu,
     onOpenProfileModal: openProfileModal,
@@ -338,6 +357,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     user,
     isDriver,
     sidebarOpen,
+    menuButtonRef,
     pageTitle,
     onToggleSidebar: () => setSidebarOpen(v => !v),
     onOpenTutorialLibrary: user && ['ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role) && user.onboardingEnabled !== false

@@ -8,9 +8,7 @@ body {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   color: var(--ink);
-  background:
-    radial-gradient(circle at 12px 12px, rgba(0, 90, 45, 0.035) 1px, transparent 1.5px) 0 0 / 24px 24px,
-    linear-gradient(135deg, #F9FBFA 0%, var(--bg) 42%, #EDF2EF 100%);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */

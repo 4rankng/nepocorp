@@ -79,7 +79,7 @@
   }
 
   .app.sidebar-closed .sidebar-item {
-    min-height: 40px;
+    min-height: var(--control-h);
     padding: 10px 0;
     justify-content: center;
     gap: 0;
@@ -154,12 +154,7 @@
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(0, 90, 45, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(0, 90, 45, 0.03) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, transparent 28%),
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-2-wire) 100%);
-  background-size: 28px 28px, 28px 28px, auto, auto;
+  background: var(--bg);
 }
 .app-body,
 .content {

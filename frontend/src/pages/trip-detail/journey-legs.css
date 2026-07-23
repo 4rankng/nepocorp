@@ -36,7 +36,6 @@
   border-radius: var(--r-md, 14px);
   overflow: hidden;
   border: 1px solid var(--line-2, #EFF2F0);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .map-wrap .leaflet-container {
@@ -54,12 +53,11 @@
   border: 1px solid var(--line);
   border-radius: 9px;
   overflow: hidden;
-  box-shadow: var(--sh-sm);
 }
 
 .map-zoom button {
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: var(--surface);
   cursor: pointer;
@@ -82,15 +80,13 @@
   position: absolute;
   top: 14px;
   right: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(4px);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 6px 11px;
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-2);
-  box-shadow: var(--sh-sm);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -116,7 +112,6 @@
 
 .leg:hover {
   border-color: #D4DAD7;
-  box-shadow: var(--sh-sm);
 }
 
 .leg-no {

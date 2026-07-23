@@ -12,10 +12,10 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  transition: box-shadow 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 .filter-bar:focus-within {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  border-color: var(--line-2);
 }
 
 /* Generic filter tabs — clean, pill-like toggle buttons. Some pages render
@@ -35,7 +35,7 @@
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   line-height: 1.35;
 }
 .filter-tab:hover,
@@ -49,7 +49,6 @@
   background: var(--ink);
   color: var(--fg-on-brand);
   border-color: var(--ink);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 /* Spacer pushes subsequent items to the right */
@@ -66,12 +65,13 @@
   border-radius: 10px;
   min-width: 180px;
   max-width: 260px;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 .filter-bar__search:focus-within {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
 }
 .filter-bar__search svg {
   position: absolute;
@@ -101,23 +101,20 @@
   gap: 6px;
   min-height: 44px;
   padding: 9px 13px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12));
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 10px;
   font-size: var(--fs-xs);
   color: var(--ink-2);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease), transform 120ms var(--ease);
+  transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
 }
 .filter-pill:hover {
   border-color: var(--line-2);
-  background: rgba(255,255,255,0.2);
+  background: var(--surface-2);
   color: var(--ink);
-  transform: translateY(-1px) scale(1.02);
 }
 .filter-pill.is-active {
   background: var(--ink);

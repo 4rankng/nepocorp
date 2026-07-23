@@ -7,7 +7,7 @@
   padding: 14px;
   margin-bottom: 10px;
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease;
   position: relative;
 }
 .trip-list-page .trip-mcard::before {
@@ -21,7 +21,10 @@
   border-radius: 0 4px 4px 0;
   background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
-.trip-list-page .trip-mcard:hover { border-color: var(--ink-2); }
+.trip-list-page .trip-mcard:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-2);
+}
 .trip-list-page .trip-mcard__main-link {
   color: inherit;
   display: block;
@@ -124,7 +127,8 @@
 }
 .trip-list-page .trip-mcard--quick.selected {
   border-color: color-mix(in srgb, var(--tbl-green-600) 42%, var(--line));
-  box-shadow: 0 0 0 2px var(--tbl-green-100);
+  outline: 2px solid var(--tbl-green-100);
+  outline-offset: 2px;
 }
 .trip-list-page .trip-mcard--quick.locked {
   opacity: 0.72;

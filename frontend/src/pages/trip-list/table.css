@@ -53,11 +53,10 @@
 .trip-list-page .table-card {
   background: var(--surface);
   border: 1px solid rgba(203, 211, 206, 0.9);
-  border-radius: 16px;
+  border-radius: var(--r);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-card);
 }
 /* Scroll wrapper — holds buttons + scrollable body. */
 .trip-list-page .table-scroll-wrapper {
@@ -81,9 +80,7 @@
   grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
   padding: 14px 16px;
   gap: 10px;
-  background:
-    linear-gradient(90deg, rgba(0, 90, 45, 0.05), rgba(255, 255, 255, 0) 44%),
-    var(--surface-2);
+  background: var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   width: 100%;
   min-width: 1460px;
@@ -111,7 +108,7 @@
   gap: 10px;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  transition: background 150ms ease;
   cursor: pointer;
   width: 100%;
   min-width: 1460px;
@@ -136,11 +133,7 @@
   background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .table-row:hover {
-  background:
-    linear-gradient(90deg, rgba(0, 90, 45, 0.05), rgba(255, 255, 255, 0) 52%),
-    var(--tbl-green-050);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 10px 22px -22px rgba(0, 90, 45, 0.55);
-  transform: translateY(-1px);
+  background: var(--tbl-green-050);
 }
 /* Hover chevron — sits inside the sticky status cell so it stays visible
    regardless of horizontal scroll. Hidden at rest; fades in + slides on
@@ -160,9 +153,9 @@
 }
 /* Keyboard focus ring */
 .trip-list-page .table-row:focus-visible {
-  outline: none;
+  outline: 2px solid var(--tbl-green-600);
+  outline-offset: -2px;
   background: var(--tbl-green-050);
-  box-shadow: inset 4px 0 0 var(--tbl-green-600), 0 0 0 2px var(--tbl-green-100), 0 10px 22px -22px rgba(0, 90, 45, 0.55);
 }
 .trip-list-page .table-row:last-of-type { border-bottom: none; }
 .trip-list-page .table-row > div {
@@ -302,19 +295,6 @@
   flex-shrink: 0;
 }
 
-/* Keyframe animation for pulsing dot on active (In Transit) status */
-@keyframes pulse-blue {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); opacity: 0.8; }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); opacity: 1; }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); opacity: 0.8; }
-}
-
-@keyframes pulse-green {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); opacity: 0.8; }
-  70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); opacity: 1; }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); opacity: 0.8; }
-}
-
 /* License plate — styled block like actual vehicle plates */
 .trip-list-page .plate {
   font-family: var(--font-mono);
@@ -328,7 +308,6 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
   font-feature-settings: "tnum";
   white-space: nowrap;
   max-width: 100%;
@@ -340,7 +319,6 @@
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 4px var(--accent);
 }
 .trip-list-page .plate.idle {
   color: var(--ink-3);
@@ -516,15 +494,18 @@
 .trip-list-page .status-pill {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: var(--fs-xs); font-weight: 600;
-  letter-spacing: 0.03em;
-  padding: 4px 10px;
-  border-radius: 8px;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  padding: 0;
+  border-radius: 0;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
-.trip-list-page .status-pill .sd { width: 6px; height: 6px; border-radius: 50%; }
+.trip-list-page .status-pill .sd {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  flex: 0 0 3px;
+}
 
 .trip-list-page .quick-edit-toolbar {
   display: flex;
@@ -536,7 +517,6 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: var(--shadow-card);
 }
 .trip-list-page .quick-edit-toolbar__main {
   display: flex;
@@ -569,9 +549,7 @@
   border-color: color-mix(in srgb, var(--danger) 25%, transparent);
 }
 .trip-list-page .quick-edit-row.selected {
-  background:
-    linear-gradient(90deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 52%),
-    var(--tbl-green-050);
+  background: var(--tbl-green-050);
 }
 .trip-list-page .quick-edit-row.locked {
   cursor: not-allowed;
@@ -592,7 +570,7 @@
 .trip-list-page .quick-money-input {
   width: 100%;
   min-width: 0;
-  height: 34px;
+  height: 44px;
   padding: 0 8px;
   border: 1px solid var(--line-2);
   border-radius: 8px;
@@ -604,9 +582,9 @@
   text-align: right;
 }
 .trip-list-page .quick-money-input:focus {
-  outline: none;
+  outline: 2px solid color-mix(in srgb, var(--tbl-green-600) 30%, transparent);
+  outline-offset: 2px;
   border-color: var(--tbl-green-600);
-  box-shadow: 0 0 0 2px var(--tbl-green-100);
 }
 .trip-list-page .quick-money-input:disabled {
   background: var(--surface-3);
@@ -633,41 +611,34 @@
 }
 
 .trip-list-page .pill-moi {
-  background: #F3F4F6;
   color: #4B5563;
-  border: 1px solid rgba(107, 114, 128, 0.2);
+  border: 0;
 }
 .trip-list-page .pill-moi .sd { background: #6B7280; }
 
 .trip-list-page .pill-dang {
-  background: #EFF6FF;
   color: #1E40AF;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 0;
 }
 .trip-list-page .pill-dang .sd {
   background: #3B82F6;
-  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
-  animation: pulse-blue 1.8s infinite ease-in-out;
 }
 
 .trip-list-page .pill-htth {
-  background: #ECFDF5;
   color: #047857;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 0;
 }
 .trip-list-page .pill-htth .sd { background: #10B981; }
 
 .trip-list-page .pill-chot {
-  background: #F1F5F9;
   color: #0F172A;
-  border: 1px solid rgba(30, 41, 59, 0.2);
+  border: 0;
 }
 .trip-list-page .pill-chot .sd { background: #1E293B; }
 
 .trip-list-page .pill-huy {
-  background: #FEF2F2;
   color: #991B1B;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 0;
 }
 .trip-list-page .pill-huy .sd { background: #EF4444; }
 
@@ -676,7 +647,7 @@
   justify-content: center;
 }
 .trip-list-page .action-btn {
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
   display: grid; place-items: center;
   border-radius: 8px;
   background: var(--surface);

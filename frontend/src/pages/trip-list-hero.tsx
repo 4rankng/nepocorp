@@ -24,15 +24,15 @@ export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, tog
               </div>
             </div>
             <div className="hero-actions">
-              <button type="button" className={`btn ${quickEdit ? 'btn--primary' : 'btn--secondary'}`} onClick={toggleQuickEdit}>
+              <button type="button" className={`btn hero-action--quick ${quickEdit ? 'btn--primary' : 'btn--secondary'}`} onClick={toggleQuickEdit} aria-label={quickEdit ? 'Thoát chế độ sửa nhanh' : 'Bật chế độ sửa nhanh'}>
                 {quickEdit ? <X size={15} /> : <Pencil size={15} />}
-                {quickEdit ? 'Thoát sửa nhanh' : 'Sửa nhanh'}
+                <span className="hero-action-label">{quickEdit ? 'Thoát sửa nhanh' : 'Sửa nhanh'}</span>
               </button>
-              <button type="button" className="btn btn--secondary" onClick={handleExport}>
+              <button type="button" className="btn btn--secondary hero-action--export" onClick={handleExport} aria-label="Xuất danh sách chuyến ra Excel">
                 <Download size={15} />
-                Xuất Excel
+                <span className="hero-action-label">Xuất Excel</span>
               </button>
-            <button type="button" className="btn btn--primary" onClick={onAdd}>
+            <button type="button" className="btn btn--primary hero-action--add" onClick={onAdd}>
                 <Plus size={15} strokeWidth={2.4} />
                 Thêm chuyến
               </button>

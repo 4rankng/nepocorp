@@ -15,9 +15,7 @@
 
 .tc-summary-card {
   --stat-rail: var(--accent);
-  background:
-    linear-gradient(135deg, rgba(0, 90, 45, 0.06), rgba(255, 255, 255, 0) 48%),
-    var(--surface);
+  background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -38,15 +36,7 @@
   pointer-events: none;
 }
 .tc-summary-card::before {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 160px;
-  height: 160px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 70%);
-  opacity: 1;
-  pointer-events: none;
+  content: none;
 }
 .tc-summary-card__label {
   margin: 0 0 4px;
@@ -118,12 +108,10 @@
  * ========================================================================== */
 
 .tc-totals {
-  background:
-    linear-gradient(135deg, rgba(0, 90, 45, 0.06), rgba(255, 255, 255, 0) 48%),
-    var(--surface);
+  background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--r);
   padding: 22px 22px 18px;
   position: relative;
   overflow: hidden;
@@ -132,16 +120,7 @@
   gap: 18px;
 }
 .tc-totals::before {
-  content: '';
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.10) 0%, transparent 70%);
-  opacity: 1;
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
 .tc-totals > * { position: relative; z-index: 1; }
 

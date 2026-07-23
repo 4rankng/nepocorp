@@ -66,18 +66,12 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(0, 177, 79, 0.10), rgba(0, 177, 79, 0.04));
+  background: var(--accent-soft);
   border: 1px solid rgba(0, 177, 79, 0.18);
   display: grid;
   place-items: center;
   flex-shrink: 0;
   margin-top: 2px;
-  box-shadow: 0 4px 10px -6px rgba(0, 90, 45, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  transition: transform 200ms var(--ease), box-shadow 200ms var(--ease);
-}
-.page-header:hover .page-header-icon {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px -6px rgba(0, 90, 45, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .page-header-icon img {
   display: block;

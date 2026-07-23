@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import './Tabs.css';
 
 /**
@@ -45,6 +45,26 @@ export interface TabsProps {
 export function Tabs({ tabs, value, onChange, variant = 'boxed', ariaLabel, className }: TabsProps) {
   const variantClass = variant === 'boxed' ? 'd-tabs-boxed' : variant === 'bordered' ? 'd-tabs-border' : '';
   const cls = ['ds-tabs', `ds-tabs--${variant}`, variantClass, className].filter(Boolean).join(' ');
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+
+    const tablist = event.currentTarget.parentElement;
+    if (!tablist) return;
+    const enabledTabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'));
+    const currentIndex = enabledTabs.indexOf(event.currentTarget);
+    if (currentIndex < 0 || enabledTabs.length === 0) return;
+
+    event.preventDefault();
+    let nextIndex = currentIndex;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = enabledTabs.length - 1;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % enabledTabs.length;
+
+    const nextTab = enabledTabs[nextIndex];
+    nextTab.focus();
+    nextTab.click();
+  };
 
   return (
     <div className={cls} role="tablist" aria-label={ariaLabel}>
@@ -61,6 +81,7 @@ export function Tabs({ tabs, value, onChange, variant = 'boxed', ariaLabel, clas
             disabled={t.disabled}
             className={`ds-tabs__btn d-tab${isActive ? ' ds-tabs__btn--active' : ''}`}
             onClick={() => !t.disabled && onChange(t.id)}
+            onKeyDown={handleKeyDown}
           >
             <span className="ds-tabs__label">{t.label}</span>
             {t.count !== undefined && (

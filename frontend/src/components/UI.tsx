@@ -13,17 +13,16 @@ import { Sparkline } from '../design-system/Sparkline';
 const overlayEntrance: EntranceFn = (overlay, content, prefersReduced) => {
   if (prefersReduced) {
     utils.set(overlay, { opacity: 1 });
-    utils.set(content, { opacity: 1, scale: 1 });
+    utils.set(content, { opacity: 1 });
     return;
   }
   utils.set(overlay, { opacity: 0 });
   animate(overlay, { opacity: [0, 1], duration: 180, ease: 'out(2)' });
-  utils.set(content, { opacity: 0, scale: 0.92, willChange: 'opacity, transform' });
+  utils.set(content, { opacity: 0, willChange: 'opacity' });
   animate(content, {
     opacity: [0, 1],
-    scale: [0.92, 1],
-    duration: 350,
-    ease: spring({ stiffness: 320, damping: 22 }),
+    duration: 180,
+    ease: 'out(2)',
   });
 };
 
@@ -31,8 +30,7 @@ const overlayExit: ExitFn = (overlay, content, onDone) => {
   animate(overlay, { opacity: [1, 0], duration: 160, ease: 'in(2)' });
   animate(content, {
     opacity: [1, 0],
-    scale: [1, 0.92],
-    duration: 200,
+    duration: 160,
     ease: 'in(3)',
     onComplete: onDone,
   });
@@ -140,6 +138,12 @@ export function KPI({ label, value, unit, icon: Icon, assetIconName, meta, varia
     <div
       className={`kpi ${variantClass} ${onClick ? 'kpi--clickable' : ''} ${compact ? 'kpi--compact' : ''} ${showTrend ? 'kpi--with-trend' : ''}`}
       onClick={onClick}
+      onKeyDown={onClick ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      } : undefined}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >

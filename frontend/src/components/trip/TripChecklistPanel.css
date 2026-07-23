@@ -44,7 +44,6 @@
 }
 .tc-check-item--active .tc-check-item__dot {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .tc-check-item__name {
   min-width: 0;

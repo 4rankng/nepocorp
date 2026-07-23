@@ -140,7 +140,9 @@ export { MonthNavigator };
 function Topbar({
   user,
   isDriver,
+  sidebarOpen,
   pageTitle,
+  menuButtonRef,
   onToggleSidebar,
   onOpenTutorialLibrary,
 }: TopbarProps) {
@@ -189,8 +191,11 @@ function Topbar({
     <header ref={topbarRef as React.RefObject<HTMLElement>} className={`topbar ${isDriver ? 'topbar--driver' : ''}`}>
       {!isDriver && (
         <button
+          ref={menuButtonRef}
           className="topbar__toggle"
-          aria-label="Ẩn / hiện menu"
+          aria-label={sidebarOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+          aria-expanded={sidebarOpen}
+          aria-controls="sidebar-navigation"
           title="Ẩn / hiện menu (⌘B)"
           onClick={onToggleSidebar}
         >
@@ -211,6 +216,7 @@ function Topbar({
           <input
             ref={searchInputRef}
             type="text"
+            aria-label="Tìm trang, cấu hình hoặc thao tác"
             placeholder="Tìm trang, cấu hình, thao tác…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}

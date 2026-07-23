@@ -33,7 +33,7 @@
   --color-secondary-content: #FFFFFF;
 
   --color-accent: #00B14F;
-  --color-accent-content: #FFFFFF;
+  --color-accent-content: #00381A;
 
   --color-neutral: #101513;
   --color-neutral-content: #F8FAF9;
@@ -41,7 +41,7 @@
   --color-info: #1E5BB8;
   --color-info-content: #FFFFFF;
   --color-success: #00B14F;
-  --color-success-content: #FFFFFF;
+  --color-success-content: #00381A;
   --color-warning: #F5A623;
   --color-warning-content: #2A1B04;
   --color-error: #E32434;
@@ -55,7 +55,7 @@
   --size-field: 0.25rem;
 
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -99,13 +99,14 @@
   --brand-hover: #006F32;
   --brand-soft: #E6F7EE;
   --brand-2: #00B14F;
-  --brand-grad: linear-gradient(135deg, #00B14F 0%, #008B3E 100%);
-  --brand-glow: 0 0 16px rgba(0, 177, 79, 0.18);
+  --brand-grad: var(--accent-2);
+  --brand-glow: none;
 
   --fg-1: #0A0A0A;
   --fg-2: #535963;
   --fg-3: #5F6872;
   --fg-on-brand: #FFFFFF;
+  --fg-on-accent: #00381A;
   --fg-inverse: #FFFFFF;
 
   --border-1: #EAECEF;
@@ -118,7 +119,7 @@
   --success-text: #004D22;
   --warning: #F5A623;
   --warning-soft: #FFF4E0;
-  --warning-text: #7A4308;
+  --warning-text: #4B2800;
   --warning-deep: #DD5A1F;
   --danger: #E32434;
   --danger-soft: #FFEAEC;
@@ -132,14 +133,14 @@
   --sb-surface: rgba(255, 255, 255, 0.08);
   --sb-line: rgba(255, 255, 255, 0.12);
   --sb-text: rgba(255, 255, 255, 0.85);
-  --sb-text-muted: rgba(255, 255, 255, 0.55);
+  --sb-text-muted: rgba(255, 255, 255, 0.65);
   --sb-active: #FFFFFF;
   --sb-active-bg: rgba(255, 255, 255, 0.15);
   /* aliases */
   --sidebar: #005A2D;
   --sidebar-border: rgba(255, 255, 255, 0.12);
   --sidebar-text: rgba(255, 255, 255, 0.85);
-  --sidebar-text-muted: rgba(255, 255, 255, 0.55);
+  --sidebar-text-muted: rgba(255, 255, 255, 0.65);
   --sidebar-active: rgba(255, 255, 255, 0.15);
   --sidebar-active-text: #FFFFFF;
   --sidebar-hover: rgba(255, 255, 255, 0.10);
@@ -149,16 +150,16 @@
   --header-border: #E2E7E4;
 
   /* --- Shadows --- */
-  --sh-sm: 0 1px 2px rgba(16, 24, 20, 0.05), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
-  --sh: 0 10px 28px rgba(16, 24, 20, 0.08), 0 2px 7px rgba(16, 24, 20, 0.04);
-  --sh-lg: 0 24px 56px rgba(16, 24, 20, 0.14), 0 9px 20px rgba(16, 24, 20, 0.06);
-  --sh-drawer: -20px 0 60px rgba(0, 0, 0, 0.15);
+  --sh-sm: none;
+  --sh: none;
+  --sh-lg: none;
+  --sh-drawer: none;
   /* aliases */
   --shadow-sm: var(--sh-sm);
   --shadow-card: var(--sh);
   --shadow-md: var(--sh);
   --shadow-elevated: var(--sh-lg);
-  --shadow-brand: 0 12px 24px -6px rgba(0, 177, 79, 0.35), 0 0 0 1px rgba(0, 177, 79, 0.15);
+  --shadow-brand: none;
 
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.4);
@@ -195,6 +196,7 @@
 
   --sidebar-w: 248px;
   --topbar-h: 48px;
+  --control-h: 44px;
 
   /* --- Motion --- */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);

@@ -186,6 +186,9 @@
     grid-column: 1 / -1;
     grid-row: auto;
   }
+  .trip-list-page .metric:not(.featured) {
+    display: none;
+  }
   .trip-list-page .metric.featured .metric-value {
     display: inline-block;
     margin-right: 10px;
@@ -195,11 +198,11 @@
   .trip-list-page .stats-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
   .trip-list-page .section-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
 
-  /* Status tabs wrap on phones so all states are visible without swiping. */
+  /* Keep status choices on one scannable row; touch users can swipe for more. */
   .trip-list-page .status-tabs {
-    overflow: visible;
-    flex-wrap: wrap;
-    padding-bottom: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
     position: relative;
   }
   .trip-list-page .status-tabs::-webkit-scrollbar { display: none; }
@@ -221,6 +224,35 @@
   .trip-list-page .filters-row-top::after {
     content: none;
   }
+  .trip-list-page .hero-actions {
+    display: grid;
+    grid-template-columns: 44px 44px minmax(0, 1fr);
+  }
+  .trip-list-page .hero-actions .btn {
+    min-width: 0;
+    width: 100%;
+    padding-inline: 0;
+  }
+  .trip-list-page .hero-actions .hero-action--add {
+    padding-inline: 14px;
+  }
+  .trip-list-page .hero-action--quick .hero-action-label,
+  .trip-list-page .hero-action--export .hero-action-label {
+    display: none;
+  }
+  .trip-list-page .filters-card {
+    padding: 12px;
+  }
+  .trip-list-page .filters-divider {
+    margin: 10px 0;
+  }
+  .trip-list-page .filters-row-bottom {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .trip-list-page .filters-row-bottom .filters-search,
+  .trip-list-page .filters-search-hint {
+    grid-column: 1 / -1;
+  }
 } /* end 640px */
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */
@@ -228,7 +260,7 @@
   /* ── TripListPage: larger filter pill tap targets, breakdown bar fix ── */
   .trip-list-page .filter-pill {
     height: auto;
-    min-height: 54px;
+    min-height: 48px;
     padding: 8px 12px;
     font-size: var(--fs-xs);
     align-items: center;

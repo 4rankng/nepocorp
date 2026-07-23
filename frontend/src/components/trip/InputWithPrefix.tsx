@@ -60,6 +60,7 @@ export function InputWithPrefix({ id, value, onChange, placeholder, prefix, mono
     <div className="tc-input-prefix" style={style}>
       <input
         id={id}
+        name={id}
         ref={isMoney ? inputRef : undefined}
         className={`input${mono ? ' mono' : ''}`}
         type={isMoney ? 'text' : (type ?? 'text')}

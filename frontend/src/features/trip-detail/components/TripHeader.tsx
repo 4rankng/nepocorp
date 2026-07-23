@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   ArrowLeft, Play, Pencil, Check, Lock, LockOpen, XCircle, Shuffle, FilePen,
-  Building2, Loader2,
+  Building2, Loader2, MoreHorizontal,
 } from 'lucide-react';
 import { TRIP_STATUS_LABELS, TripStatus, type TripDetail } from '@tingting/shared';
 import { Tooltip } from '../../../components/shared/Tooltip';
@@ -37,6 +37,7 @@ export function TripHeader({
           ? 'canceled'
           : 'draft';
   const statusLabel = TRIP_STATUS_LABELS[trip.status] ?? trip.status;
+  const hasOverflowActions = canReassign || canCancel || canUnlock || canAdjust;
 
   return (
     <header className="tc-page-head td-page-head anim d1">
@@ -69,16 +70,6 @@ export function TripHeader({
             <Pencil size={15} />Chỉnh sửa
           </button>
         )}
-        {canReassign && (
-          <button className="btn btn--ghost" onClick={onReassign}>
-            <Shuffle size={15} />Phân xe lại
-          </button>
-        )}
-        {canCancel && (
-          <button className="btn btn--danger" onClick={onCancel}>
-            <XCircle size={15} />Hủy chuyến
-          </button>
-        )}
         {canDispatch && (
           <button className="btn btn--primary" onClick={onDispatch} disabled={actionLoading}>
             {actionLoading ? <Loader2 size={14} className="spin" /> : <Play size={14} />}
@@ -105,12 +96,6 @@ export function TripHeader({
             <Pencil size={14} />Nhập số liệu
           </button>
         )}
-        {canUnlock && (
-          <button className="btn btn--ghost" onClick={onUnlock} disabled={actionLoading}>
-            {actionLoading ? <Loader2 size={14} className="spin" /> : <LockOpen size={15} />}
-            Mở khóa
-          </button>
-        )}
         {canLock && (
           <button
             className="btn btn--primary"
@@ -123,10 +108,35 @@ export function TripHeader({
             Khóa chuyến
           </button>
         )}
-        {canAdjust && (
-          <button className="btn btn--ghost" onClick={onAdjust}>
-            <FilePen size={15} />Điều chỉnh
-          </button>
+        {hasOverflowActions && (
+          <details className="header-overflow">
+            <summary className="btn btn--ghost" aria-label="Mở các thao tác khác">
+              <MoreHorizontal size={18} />
+            </summary>
+            <div className="header-overflow__menu" role="menu">
+              {canReassign && (
+                <button type="button" role="menuitem" onClick={onReassign}>
+                  <Shuffle size={15} />Phân xe lại
+                </button>
+              )}
+              {canUnlock && (
+                <button type="button" role="menuitem" onClick={onUnlock} disabled={actionLoading}>
+                  {actionLoading ? <Loader2 size={14} className="spin" /> : <LockOpen size={15} />}
+                  Mở khóa
+                </button>
+              )}
+              {canAdjust && (
+                <button type="button" role="menuitem" onClick={onAdjust}>
+                  <FilePen size={15} />Điều chỉnh
+                </button>
+              )}
+              {canCancel && (
+                <button type="button" role="menuitem" className="is-danger" onClick={onCancel}>
+                  <XCircle size={15} />Hủy chuyến
+                </button>
+              )}
+            </div>
+          </details>
         )}
       </div>
     </header>

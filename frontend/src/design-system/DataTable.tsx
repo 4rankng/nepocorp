@@ -108,6 +108,14 @@ export function DataTable<T extends { id?: number | string }>({
                     key={k}
                     className={cls}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    onKeyDown={onRowClick ? (event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onRowClick(row);
+                      }
+                    } : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
                     style={cssVars(rowStyle?.(row))}
                   >
                     {columns.map((c) => (
@@ -141,6 +149,13 @@ export function DataTable<T extends { id?: number | string }>({
                   key={k}
                   className={cls}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onKeyDown={onRowClick ? (event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onRowClick(row);
+                    }
+                  } : undefined}
                   style={cssVars(rowStyle?.(row))}
                   role={onRowClick ? 'button' : undefined}
                   tabIndex={onRowClick ? 0 : undefined}

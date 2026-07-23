@@ -3,44 +3,33 @@
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
 .panel {
-  background:
-    linear-gradient(90deg, rgba(0, 177, 79, 0.032) 0, rgba(255, 255, 255, 0) 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 250, 249, 0.96) 100%);
-  backdrop-filter: blur(14px) saturate(125%);
-  -webkit-backdrop-filter: blur(14px) saturate(125%);
-  border: 1px solid rgba(203, 211, 206, 0.82);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
   overflow: hidden;
-  box-shadow: var(--sh-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 150ms var(--ease), background 150ms var(--ease);
 }
 .panel--solid {
-  background: var(--surface) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 1px solid var(--line) !important;
+  background: var(--surface);
+  border-color: var(--line);
 }
 .panel[role="button"]:hover,
 .panel--clickable:hover {
-  box-shadow: var(--sh);
   border-color: var(--line-strong);
+  background: var(--surface-2);
 }
 .panel[role="button"]:focus-visible,
 .panel--clickable:focus-visible {
-  outline: none;
-  box-shadow:
-    var(--sh),
-    0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 2px;
 }
 .panel__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 22px 14px;
-  border-bottom: 1px solid rgba(203, 211, 206, 0.68);
-  background:
-    linear-gradient(90deg, rgba(0, 90, 45, 0.055), rgba(255, 255, 255, 0) 48%),
-    linear-gradient(180deg, rgba(248, 250, 249, 0.94) 0%, rgba(255, 255, 255, 0) 100%);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
   gap: 12px;
 }
 .panel__title {
@@ -64,13 +53,10 @@
 
 /* Legacy card-shell — match panel styling for visual consistency */
 .card-shell {
-  background:
-    linear-gradient(90deg, rgba(0, 177, 79, 0.032) 0, rgba(255, 255, 255, 0) 36%),
-    linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.92));
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--r);
   overflow: hidden;
-  box-shadow: var(--sh-sm);
 }
 .card-header {
   display: flex;
@@ -100,11 +86,11 @@
 }
 .subsection-card--accent {
   border-left: 3px solid var(--accent);
-  background: linear-gradient(to right, var(--accent-soft), var(--surface-2) 40%);
+  background: var(--accent-soft);
 }
-.subsection-card--info   { border-left-color: var(--info);   background: linear-gradient(to right, var(--info-soft), var(--surface-2) 40%); }
-.subsection-card--warn   { border-left-color: var(--warning); background: linear-gradient(to right, var(--warning-soft), var(--surface-2) 40%); }
-.subsection-card--danger { border-left-color: var(--danger);  background: linear-gradient(to right, var(--danger-soft), var(--surface-2) 40%); }
+.subsection-card--info   { border-left-color: var(--info); background: var(--info-soft); }
+.subsection-card--warn   { border-left-color: var(--warning); background: var(--warning-soft); }
+.subsection-card--danger { border-left-color: var(--danger); background: var(--danger-soft); }
 .subsection-card__title {
   font-size: var(--fs-2xs);
   font-weight: 600;

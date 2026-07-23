@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 
 /**
  * Shared revenue + gross-profit trend chart.
@@ -35,6 +35,7 @@ export function RevenueTrendChart({
   formatY,
   formatTooltip,
   currentIdx,
+  title,
   width: initialW = 760,
   height: initialH = 280,
 }: RevenueTrendChartProps) {
@@ -61,6 +62,8 @@ export function RevenueTrendChart({
 
   const W = dimensions.width;
   const H = dimensions.height;
+  const chartTitleId = useId();
+  const chartDescriptionId = useId();
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const activeIdx = hoverIdx;
 
@@ -94,6 +97,11 @@ export function RevenueTrendChart({
     return `${Math.round(v)}`;
   });
   const fmtTip = formatTooltip ?? ((v: number) => `${v.toFixed(1).replace('.', ',')} Tr`);
+  const chartTitle = title ?? 'Xu hướng doanh thu và lợi nhuận gộp';
+  const lastIndex = Math.max(0, Math.min(months.length, revenue.length, gross.length) - 1);
+  const chartDescription = months.length > 0
+    ? `${months.length} kỳ. Kỳ gần nhất ${months[lastIndex]}: doanh thu ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
+    : 'Chưa có dữ liệu xu hướng.';
 
   return (
     <div
@@ -102,25 +110,23 @@ export function RevenueTrendChart({
       onMouseLeave={() => setHoverIdx(null)}
     >
       <svg
+        role="img"
+        aria-labelledby={`${chartTitleId} ${chartDescriptionId}`}
         viewBox={`0 0 ${W} ${H}`}
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', flex: 1 }}
       >
-        <defs>
-          <linearGradient id="gRevTrend" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#005A2D" stopOpacity={0.16} />
-            <stop offset="100%" stopColor="#005A2D" stopOpacity={0} />
-          </linearGradient>
-        </defs>
+        <title id={chartTitleId}>{chartTitle}</title>
+        <desc id={chartDescriptionId}>{chartDescription}</desc>
 
         {/* Y-axis grid lines + labels */}
         {gridValues.map((v, i) => (
           <g key={i}>
             <line x1={mL} y1={Y(v)} x2={W - mR} y2={Y(v)} stroke="#EEF1EF" strokeWidth="1" />
-            <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fontFamily="JetBrains Mono, monospace" fill="#A4B1A9">
+            <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fontFamily="JetBrains Mono, monospace" fill="#56655C">
               {v === 0
-                ? <tspan fontSize="10">0</tspan>
-                : <><tspan fontSize="10">{fmtY(v)}</tspan><tspan fontSize="8">tr₫</tspan></>
+                ? <tspan fontSize="11">0</tspan>
+                : <><tspan fontSize="11">{fmtY(v)}</tspan><tspan fontSize="9">tr₫</tspan></>
               }
             </text>
           </g>
@@ -128,7 +134,7 @@ export function RevenueTrendChart({
 
         {/* X-axis month labels */}
         {months.map((m, i) => (
-          <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10"
+          <text key={i} x={X(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="11"
                 fill={i === activeIdx ? '#005A2D' : i === currentIdx ? '#005A2D' : '#8A988F'}
                 fontWeight={i === activeIdx || i === currentIdx ? '700' : '400'}>
             {m}
@@ -136,7 +142,7 @@ export function RevenueTrendChart({
         ))}
 
         {/* Revenue area fill */}
-        <path d={areaPath(revenue)} fill="url(#gRevTrend)" />
+        <path d={areaPath(revenue)} fill="#005A2D" opacity={0.08} />
 
         {/* Gross profit line */}
         <path d={path(gross)} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -173,7 +179,7 @@ export function RevenueTrendChart({
         })}
       </svg>
       {/* Traveler dot — targeted by useDashboardAnimations via DOM query */}
-      <div className="wf-chart-traveler" style={{ position: 'absolute', width: 7, height: 7, background: '#005A2D', borderRadius: '50%', left: -3.5, top: -3.5, opacity: 0, boxShadow: '0 0 4px rgba(0,90,45,0.5)', pointerEvents: 'none', zIndex: 5 }} />
+      <div className="wf-chart-traveler" style={{ position: 'absolute', width: 7, height: 7, background: '#005A2D', borderRadius: '50%', left: -3.5, top: -3.5, opacity: 0, pointerEvents: 'none', zIndex: 5 }} />
 
       {/* HTML tooltip overlay */}
       {activeIdx !== null && (
@@ -186,7 +192,6 @@ export function RevenueTrendChart({
             background: '#fff',
             borderRadius: '8px',
             border: '1px solid #E2E8E5',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
             padding: '10px 14px',
             pointerEvents: 'none',
             // The two Vietnamese label/value pairs need more than 160px once
@@ -195,12 +200,12 @@ export function RevenueTrendChart({
             zIndex: 10,
           }}
         >
-          <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', fontWeight: 600, color: '#6B7B73', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontWeight: 600, color: '#56655C', marginBottom: '8px' }}>
             {months[activeIdx]}
           </div>
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
               Doanh thu
             </div>
@@ -209,7 +214,7 @@ export function RevenueTrendChart({
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: '#6B7B73', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
               LN gộp
             </div>

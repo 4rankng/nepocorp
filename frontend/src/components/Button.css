@@ -21,69 +21,46 @@
   white-space: nowrap;
   box-shadow: none;
   transition: background 140ms var(--ease), border-color 140ms var(--ease),
-              box-shadow 140ms var(--ease), color 140ms var(--ease),
-              transform 80ms var(--ease);
+              color 140ms var(--ease);
 }
 .btn:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--surface),
-    0 0 0 4px color-mix(in srgb, var(--accent) 60%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  outline-offset: 2px;
 }
-.btn:active { transform: translateY(0.5px); }
 
 /* wireframe variants */
 .btn--primary {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  background: var(--accent-2);
   color: var(--fg-on-brand);
-  border-color: transparent;
-  box-shadow: var(--shadow-brand);
-  position: relative;
-  overflow: hidden;
+  border-color: var(--accent-2);
 }
-.btn--primary::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%; width: 50%; height: 100%;
-  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
-}
-.btn--primary:hover::after { left: 200%; }
 .btn--primary:hover {
-  box-shadow: var(--shadow-brand);
-  transform: translateY(-1px);
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
 }
 .btn--secondary {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), var(--surface-2));
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--line-2);
-  box-shadow: var(--sh-sm);
 }
 .btn--secondary:hover {
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line-strong));
-  box-shadow: var(--sh-sm);
-  background: var(--surface);
+  background: var(--surface-2);
 }
 .btn--ghost {
   background: transparent;
   color: var(--ink-2);
   padding: 10px 11px;
 }
-.btn--ghost:hover { background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft)); color: var(--ink); box-shadow: var(--sh-sm); }
+.btn--ghost:hover { background: var(--surface-2); color: var(--ink); }
 .btn--danger {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, var(--danger) 0%, color-mix(in srgb, var(--danger) 80%, black) 100%);
+  background: var(--danger);
   color: var(--fg-on-brand);
-  border-color: transparent;
-  box-shadow: 0 2px 5px rgba(227, 36, 52, 0.25);
+  border-color: var(--danger);
 }
 .btn--danger:hover {
-  box-shadow: 0 4px 8px rgba(227, 36, 52, 0.35);
-  transform: translateY(-1px);
+  background: var(--danger-text);
+  border-color: var(--danger-text);
 }
 .btn--sm { min-height: 45px; padding: 9px 12px; font-size: var(--fs-xs); line-height: 1.35; }
 .btn--lg { padding: 12px 22px; font-size: 15px; border-radius: 12px; min-height: 46px; }

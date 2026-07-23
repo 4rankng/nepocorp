@@ -5,11 +5,12 @@
   border: 1px solid var(--border-2);
   border-radius: var(--radius-md);
   padding: 12px 14px;
-  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  transition: border-color var(--t-fast), background var(--t-fast);
 }
 .leg-card:focus-within {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-soft);
+  outline: 2px solid var(--brand-soft);
+  outline-offset: 2px;
 }
 .leg-card__head {
   display: flex;

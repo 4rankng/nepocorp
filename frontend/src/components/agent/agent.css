@@ -919,6 +919,43 @@
   }
 }
 
+/* Flat finish shared across every page. The assistant remains distinct through
+   borders, spacing, and solid color rather than simulated elevation. */
+.agent-launcher,
+.agent-launcher:hover {
+  background: var(--surface, #fff);
+  border-color: var(--line, #cbd3ce);
+  box-shadow: none;
+  transform: none;
+}
+
+.agent-launcher__icon,
+.agent-drawer *,
+.agent-driver-popover {
+  box-shadow: none;
+  filter: none;
+}
+
+.drawer.agent-drawer,
+.agent-drawer .drawer__head,
+.agent-drawer .agent-thread,
+.agent-drawer * {
+  background-image: none;
+}
+
+.drawer.agent-drawer {
+  background-color: var(--surface, #fff);
+}
+
+.agent-drawer .agent-bubble--user,
+.agent-drawer .agent-send:not(:disabled) {
+  background-color: var(--accent, #00b14f);
+}
+
+.agent-drawer [class*='agent-']:hover {
+  transform: none;
+}
+
 /* ─── TourController (persistent tour chrome; app-root, fixed) ─────────────── */
 .agent-tour {
   position: fixed;
@@ -1069,4 +1106,18 @@
     width: auto;
     max-height: calc(100dvh - var(--trip-action-bar-height, 0px) - 24px - env(safe-area-inset-bottom, 0px));
   }
+}
+
+.agent-tour,
+.agent-tour *,
+.agent-tour__btn--primary,
+.agent-tour__btn--primary:hover {
+  box-shadow: none;
+  filter: none;
+  background-image: none;
+  transform: none;
+}
+
+.agent-tour__btn--primary {
+  background-color: var(--accent, #00b14f);
 }

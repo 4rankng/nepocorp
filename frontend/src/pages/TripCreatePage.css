@@ -14,13 +14,10 @@
 
 /* ── Hero band ── light operational summary, matches app-wide hero treatment */
 .tc-create-hero {
-  background:
-    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
-    var(--surface);
+  background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -22px rgba(0, 90, 45, 0.45);
+  border-radius: var(--r);
   padding: 24px 28px;
   margin-bottom: 22px;
   display: flex;
@@ -29,20 +26,10 @@
   overflow: hidden;
 }
 .tc-create-hero::before {
-  content: '';
-  position: absolute;
-  right: -120px; top: -80px;
-  width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(0, 177, 79, 0.10), transparent 65%);
-  pointer-events: none;
+  content: none;
 }
 .tc-create-hero::after {
-  content: '';
-  position: absolute;
-  left: 40%; bottom: -60px;
-  width: 200px; height: 120px;
-  background: radial-gradient(ellipse, rgba(0, 177, 79, 0.08), transparent 70%);
-  pointer-events: none;
+  content: none;
 }
 .tc-hero-content {
   display: flex;
@@ -61,12 +48,11 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--ink);
-  transition: all 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease;
 }
 .tc-create-hero .tc-back-btn:hover {
   background: var(--surface);
   border-color: var(--ink-2);
-  transform: translateX(-2px);
 }
 .tc-create-hero .tc-hero-eyebrow {
   display: inline-flex;
@@ -85,13 +71,6 @@
   height: 6px;
   background: var(--accent);
   border-radius: 50%;
-  box-shadow: 0 0 0 4px rgba(0, 177, 79, 0.18);
-  animation: d-pulse 2s ease-in-out infinite;
-}
-
-@keyframes d-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(0, 177, 79, 0.18); }
-  50% { box-shadow: 0 0 0 7px rgba(0, 177, 79, 0.08); }
 }
 
 .tc-create-hero .tc-hero-h1 {
@@ -114,10 +93,9 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   color: var(--ink-2);
-  backdrop-filter: blur(8px);
 }
 .tc-create-hero .tc-progress-pills strong {
-  color: var(--ink) !important;
+  color: var(--ink);
 }
 .tc-create-hero .tc-pill-dot {
   background: var(--ink-4, #BABDC3);
@@ -127,7 +105,6 @@
 }
 .tc-create-hero .tc-pill-dot--active {
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.25);
 }
 
 /* ── Hero widgets container ── side-by-side estimate + checklist */
@@ -144,13 +121,11 @@
 }
 .tc-hero-widgets .tc-summary-card,
 .tc-hero-widgets .tc-checklist {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 12px;
-  backdrop-filter: blur(8px);
   padding: 16px 20px;
   margin-bottom: 0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 /* Override summary card styles inside the light hero */
@@ -188,7 +163,7 @@
   color: var(--accent);
 }
 .tc-hero-widgets .tc-summary-row--total .tc-summary-row__lbl {
-  color: var(--ink) !important;
+  color: var(--ink);
 }
 
 /* Override checklist styles inside the light hero */
@@ -213,7 +188,6 @@
 }
 .tc-hero-widgets .tc-check-item--active .tc-check-item__dot {
   border-color: #5EE99B;
-  box-shadow: 0 0 0 3px rgba(94, 233, 155, 0.18);
 }
 .tc-hero-widgets .tc-check-item__name {
   color: var(--ink);
@@ -223,7 +197,7 @@
 }
 .tc-hero-widgets .tc-check-item__badge--pending {
   color: var(--ink-2);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--surface);
 }
 
 /* ── Unified panel ── 12-col; all card sections span 12 for full row width */
@@ -233,10 +207,9 @@
   gap: 24px;
   align-items: start;
   padding: 28px;
-  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--sh-sm);
+  border-radius: var(--r);
   margin-bottom: 120px; /* ActionBar clearance */
 }
 .tc-create-bento > * { min-width: 0; grid-column: span 12; }
@@ -260,14 +233,7 @@
   .tc-hero-top { gap: 12px; flex-wrap: wrap; }
   .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.35; }
   .tc-hero-widgets {
-    grid-template-columns: 1fr;
-    gap: 1px;
-    border-radius: 10px;
-    margin-top: 18px;
-  }
-  .tc-hero-widgets .tc-summary-card,
-  .tc-hero-widgets .tc-checklist {
-    padding: 12px 14px;
+    display: none;
   }
   .tc-create-bento { padding: 16px; margin-bottom: 100px; gap: 16px; }
 }

@@ -36,7 +36,6 @@
   align-items: center;
   justify-content: center;
   border: 2.5px solid transparent;
-  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 /* Role-colored ring variants */
@@ -165,28 +164,22 @@
 /* ── Users table panel (unified wrapper) ────────────────────────────────── */
 
 .users-table-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.3s ease;
 }
 
 .users-table-panel:hover {
-  box-shadow: var(--sh);
-  border-color: rgba(255, 255, 255, 0.9);
+  border-color: var(--line-2);
 }
 
 /* Toolbar inside the panel — flush with top, no bottom border */
 .users-table-panel .toolbar {
   border-bottom: 1px solid var(--line);
   padding: 12px 14px;
-  background: rgba(247, 248, 250, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--surface-2);
 }
 
 /* Override .tt-table for users — no row cursor (non-clickable rows) */
@@ -208,6 +201,27 @@
   font-weight: 800;
   letter-spacing: 0.09em;
   line-height: 1.35;
+}
+
+.users-sort-button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.users-sort-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .users-table-panel .tt-table tbody td {
@@ -307,14 +321,16 @@
   align-items: center;
   border: 1.5px solid var(--line-2);
   border-radius: 9px;
-  height: 36px;
+  min-height: 44px;
+  height: 44px;
   background: var(--surface);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .icon-input:focus-within {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.12);
+  outline: 2px solid var(--brand-soft);
+  outline-offset: 2px;
 }
 
 .icon-input__icon {
@@ -359,7 +375,6 @@
 
 .icon-input--valid:focus-within {
   border-color: var(--success);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
 /* Error state — red border */
@@ -369,7 +384,6 @@
 
 .icon-input--error:focus-within {
   border-color: var(--danger);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 
 /* ── Form Inner Cards ──────────────────────────────────────────────────────── */
@@ -535,7 +549,7 @@
     height: 44px;
     padding-top: 8px;
     padding-bottom: 8px;
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .icon-input {
@@ -553,7 +567,7 @@
 
   .drawer:has(.users-form-cards) .input,
   .drawer:has(.users-form-cards) .icon-input__field {
-    font-size: 12.5px;
+    font-size: 16px;
   }
 
   .drawer:has(.users-form-cards) select.input {
@@ -643,6 +657,7 @@
     align-items: center;
     gap: 5px;
     padding: 6px 12px;
+    min-height: 44px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
@@ -672,13 +687,6 @@
 }
 
 /* ─── Premium Enhancements & Dynamic Interactions ─── */
-
-/* Pulse green animation for the active online user badge */
-@keyframes pulse-green {
-  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 177, 79, 0.6); opacity: 0.8; }
-  70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(0, 177, 79, 0); opacity: 1; }
-  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 177, 79, 0); opacity: 0.8; }
-}
 
 /* Kebab button & dropdown styling */
 .kebab-btn {
@@ -710,7 +718,6 @@
   background: var(--surface);
   border: 1px solid var(--line-2);
   border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   min-width: 130px;
   padding: 4px;
@@ -753,7 +760,9 @@
   color: var(--ink-3);
   background: none;
   border: none;
-  padding: 4px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   cursor: pointer;
   border-radius: 4px;
   display: flex;
@@ -778,14 +787,33 @@
 .users-admin-page .kpi-grid .kpi {
   background: var(--surface);
   border: 1px solid var(--line-2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
+  transition: background 0.22s var(--ease), border-color 0.22s var(--ease);
 }
 
 .users-admin-page .kpi-grid .kpi:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
   border-color: var(--line);
+}
+
+@media (max-width: 640px) {
+  .users-admin-page .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(132px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .users-admin-page .kpi-grid .kpi {
+    min-height: 92px;
+    padding: 10px 12px;
+  }
+
+  .users-admin-page .kpi-grid .kpi__meta,
+  .users-admin-page .kpi-grid .kpi__watermark {
+    display: none;
+  }
 }
 
 .users-admin-page .kpi-grid .kpi .kpi__value {

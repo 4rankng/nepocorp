@@ -38,9 +38,10 @@
 .pill--md .dot { width: 6px; height: 6px; }
 .pill--solid { color: var(--fg-on-brand); text-transform: none; letter-spacing: 0.01em; font-weight: 600; }
 .pill--solid.pill--success { background: var(--accent); }
-.pill--solid.pill--success .dot { background: rgba(255, 255, 255, 0.85); }
-.pill--solid.pill--warn { background: var(--warning); }
-.pill--solid.pill--warn .dot { background: rgba(255, 255, 255, 0.85); }
+.pill--solid.pill--success { color: var(--fg-on-accent); }
+.pill--solid.pill--success .dot { background: var(--accent-ink); }
+.pill--solid.pill--warn { background: var(--warning); color: var(--warning-text); }
+.pill--solid.pill--warn .dot { background: var(--warning-text); }
 .pill--solid.pill--danger { background: var(--danger); }
 .pill--solid.pill--danger .dot { background: rgba(255, 255, 255, 0.85); }
 .pill--solid.pill--info { background: var(--info); }
@@ -59,14 +60,13 @@
   white-space: nowrap;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 .badge-success { background: var(--accent-soft); color: var(--accent-ink); border-color: rgba(0, 177, 79, 0.2); }
 .badge-warning { background: var(--warning-soft); color: var(--warning-text); border-color: rgba(245, 166, 35, 0.2); }
 .badge-danger  { background: var(--danger-soft); color: var(--danger-text); border-color: rgba(227, 36, 52, 0.2); }
 .badge-info    { background: var(--info-soft); color: var(--info-text); border-color: rgba(30, 91, 184, 0.2); }
 .badge-neutral { background: var(--surface-3); color: var(--ink-2); border-color: var(--line-2); }
-.badge-brand   { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); color: var(--fg-on-brand); box-shadow: 0 4px 10px -3px rgba(0, 177, 79, 0.3); }
+.badge-brand   { background: var(--accent-2); color: var(--fg-on-brand); }
 .badge-outline { border-color: var(--line); color: var(--ink-2); background: var(--surface); }
 
 /* Plate tag */
