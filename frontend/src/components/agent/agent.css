@@ -974,8 +974,14 @@
 }
 
 .agent-drawer .agent-bubble--user,
-.agent-drawer .agent-send:not(:disabled) {
+.agent-drawer .agent-composer__send:not(:disabled) {
   background-color: var(--accent, #00b14f);
+}
+
+.agent-drawer .agent-composer__send:disabled {
+  color: var(--ink-3, #6b746f);
+  background-color: var(--surface-3, #edf1ef);
+  opacity: 1;
 }
 
 .agent-drawer [class*='agent-']:hover {
