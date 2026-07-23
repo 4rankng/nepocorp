@@ -19,6 +19,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import { EmptyIllustration } from '../components/shared';
+import './CustomersPage.css';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -404,7 +405,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* ── Mobile card list (≤640px) ──────────────────────────────────── */}
+      {/* ── Mobile card list (≤820px) ──────────────────────────────────── */}
       <div className="mobile-only mobile-table-wrap">
         <div className="m-card-list">
           {loading ? (

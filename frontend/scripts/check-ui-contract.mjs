@@ -112,6 +112,24 @@ for (const selector of ['.wf-link', '.wf-btn', '.stab-pill']) {
   }
 }
 
+const customerPageCss = await readFile(
+  new URL('../src/pages/CustomersPage.css', import.meta.url),
+  'utf8',
+);
+const customerMobileCss = customerPageCss.match(
+  /@media\s*\(max-width:\s*820px\)\s*\{([\s\S]*)\}\s*$/i,
+)?.[1] ?? '';
+const customerToolbarRule = customerMobileCss.match(
+  /\.customers-page\s*>\s*\.toolbar\s*\{[^}]*\}/i,
+)?.[0] ?? '';
+if (!/background:\s*transparent/i.test(customerToolbarRule)
+  || !/border-bottom:\s*0\b/i.test(customerToolbarRule)
+  || !/margin-bottom:\s*8px\b/i.test(customerToolbarRule)) {
+  failures.push(
+    'pages/CustomersPage.css: customer filters must share the mobile page background and stay separated from the card list through 820px',
+  );
+}
+
 const driverPenaltyCss = await readFile(
   new URL('../src/pages/DriverPenaltyPage.css', import.meta.url),
   'utf8',
