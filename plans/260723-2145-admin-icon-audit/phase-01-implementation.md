@@ -16,7 +16,7 @@ The asset registry already contains distinct artwork for most domains. The remai
 
 ## Files
 
-- `frontend/public/assets/icons/46-*.png` through `52-*.png`
+- `frontend/public/assets/icons/46-*.png` through `55-*.png`
 - `frontend/src/components/AssetIcon.tsx`
 - `frontend/src/data/searchRegistry.ts`
 - `frontend/src/data/searchRegistry.test.ts`

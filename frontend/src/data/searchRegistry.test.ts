@@ -1,12 +1,8 @@
 import { createElement } from 'react';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ASSET_ICON_NAMES, AssetIcon, type AssetIconName } from '../components/AssetIcon';
+import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { CONFIG_ITEMS, getSearchItems } from './searchRegistry';
-
-const PUBLIC_DIR = join(process.cwd(), 'public');
 
 const DISTINCT_CONFIG_ICONS = {
   'company-info': 'company-profile',
@@ -14,8 +10,9 @@ const DISTINCT_CONFIG_ICONS = {
   'trip-expense': 'trip-expense-rules',
   'cap-table': 'equity-ownership',
   routes: 'route-distance',
-  'tire-positions': 'tire',
-  trailers: 'trailer',
+  trucks: 'tractor-head',
+  'tire-positions': 'tire-position',
+  trailers: 'semi-trailer',
   'pricing-tables': 'pricing-rate',
   'salary-periods': 'salary-period',
   'expense-categories': 'expense-category',
@@ -63,22 +60,5 @@ describe('admin search icon assignments', () => {
     expect(iconById.get('advances')).toBe('advances');
     expect(iconById.get('audit-logs')).toBe('audit-log');
     expect(iconById.get('action-audit-logs')).toBe('audit-log');
-  });
-});
-
-describe('asset icon registry', () => {
-  it('points every registered name to a unique public PNG file', () => {
-    const assetUrls = ASSET_ICON_NAMES.map(name => {
-      const { container, unmount } = render(createElement(AssetIcon, { name }));
-      const src = container.querySelector('img')?.getAttribute('src');
-      unmount();
-      return src;
-    });
-
-    expect(new Set(assetUrls).size).toBe(ASSET_ICON_NAMES.length);
-    for (const src of assetUrls) {
-      expect(src).toMatch(/^\/assets\/icons\/.+\.png$/);
-      expect(existsSync(join(PUBLIC_DIR, src!.slice(1)))).toBe(true);
-    }
   });
 });

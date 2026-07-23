@@ -69,7 +69,10 @@ export type AssetIconName =
   | 'tire'
   | 'trailer'
   | 'audit-log'
-  | 'active-customer';
+  | 'active-customer'
+  | 'tractor-head'
+  | 'tire-position'
+  | 'semi-trailer';
 
 export interface AssetIconEntry {
   /** Short semantic name used in <AssetIcon name=...>. */
@@ -135,6 +138,9 @@ const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   trailer:       { name: 'trailer', slug: '50-trailer-ro-mooc',                                       label: 'Rơ-moóc',               group: 'fleet' },
   'audit-log':   { name: 'audit-log', slug: '51-audit-log-nhat-ky-hoat-dong',                          label: 'Nhật ký hoạt động',     group: 'system' },
   'active-customer': { name: 'active-customer', slug: '52-active-customer-khach-hang-hoat-dong',      label: 'Khách hàng hoạt động', group: 'people' },
+  'tractor-head': { name: 'tractor-head', slug: '53-tractor-head-xe-dau-keo',                          label: 'Xe đầu kéo',            group: 'fleet' },
+  'tire-position': { name: 'tire-position', slug: '54-tire-position-vi-tri-lop',                       label: 'Vị trí lốp',            group: 'fleet' },
+  'semi-trailer': { name: 'semi-trailer', slug: '55-semi-trailer-ro-mooc',                             label: 'Rơ-moóc',               group: 'fleet' },
 };
 
 /** Every icon name, exported for iteration / verification. */

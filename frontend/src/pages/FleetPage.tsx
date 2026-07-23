@@ -79,7 +79,7 @@ export default function FleetPage() {
       />
       <PageHeader
         title="Đội xe"
-        iconName="truck"
+        iconName="tractor-head"
         description="Quản lý xe đầu kéo, rơ-moóc và lái xe trong một trang"
         action={
           <div style={styles.actionRow}>
@@ -111,7 +111,7 @@ export default function FleetPage() {
           value={trucks.length}
           unit="xe"
           icon={Truck}
-          assetIconName="truck"
+          assetIconName="tractor-head"
           variant="success"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
@@ -134,7 +134,7 @@ export default function FleetPage() {
           value={ft40 + ft20}
           unit="moóc"
           icon={Container}
-          assetIconName="trailer"
+          assetIconName="semi-trailer"
           variant="info"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>
