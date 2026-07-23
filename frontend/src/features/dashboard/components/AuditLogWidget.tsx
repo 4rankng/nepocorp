@@ -44,7 +44,7 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
     <div className="d-card d-card-border bg-base-100 wf-card wf-audit">
       <div className="wf-card-h">
         <div>
-          <div className="ttl">Hoạt động gần đây</div>
+          <h2 className="ttl">Hoạt động gần đây</h2>
           <div className="sub">Nhật ký vận hành thời gian thực</div>
         </div>
         <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/audit-log')}>

@@ -4,7 +4,6 @@ import {
   stagger,
   createScope,
   utils,
-  spring,
   svg,
 } from 'animejs';
 import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
@@ -12,9 +11,8 @@ import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion'
 /**
  * Orchestrates dashboard entrance animations via anime.js v4.
  *
- * 9-phase entrance sequence with absolute delays for reliable timing,
- * plus ambient animations (fleet pulse, badge pop), enhanced hover
- * spring physics, and button micro-squeeze feedback.
+ * Flat, opacity-led entrance sequence with bounded delays. Data-reveal
+ * animations remain for charts and progress bars, without simulated depth.
  *
  * Uses svg.createDrawable for chart line draws where possible,
  * with manual strokeDashoffset fallback.
@@ -41,56 +39,52 @@ export function useDashboardAnimations(ready: boolean) {
 
     const scope = createScope({ root }).add(() => {
       const entranceElements = root.querySelectorAll(
-        '.wf-head, .wf-kpi, .wf-bento > *, .wf-arow',
+        '.wf-head, .wf-kpi, .wf-bento > *',
       );
 
       if (prefersReduced) {
         utils.set(
-          root.querySelectorAll('.wf-head, .wf-kpi, .wf-bento > *, .wf-arow, .wf-aurow'),
-          { opacity: 1, translateY: 0, translateX: 0 },
+          root.querySelectorAll('.wf-head, .wf-kpi, .wf-bento > *, .wf-aurow'),
+          { opacity: 1 },
         );
         return;
       }
 
       utils.set(entranceElements, {
         opacity: 0,
-        translateY: 0,
-        translateX: 0,
       });
 
+      // Flat dashboard motion is limited to opacity; no lift, scale, or
+      // simulated-depth effects.
       // ── Phase 1: Header entrance ──
       const header = root.querySelector('.wf-head');
       if (header) {
         animate(header, {
           opacity: [0, 1],
-          translateY: [16, 0],
-          duration: 500,
+          duration: 260,
           ease: 'out(3)',
         });
       }
 
-      // ── Phase 2: KPI cards stagger with spring physics ──
+      // ── Phase 2: KPI cards fade in sequence ──
       const kpis = root.querySelectorAll('.wf-kpi');
       if (kpis.length > 0) {
         animate(kpis, {
           opacity: [0, 1],
-          translateY: [20, 0],
-          scale: [0.96, 1],
-          delay: stagger(80, { start: 150 }),
-          duration: 600,
-          ease: spring({ stiffness: 170, damping: 18 }),
+          delay: stagger(45, { start: 80 }),
+          duration: 260,
+          ease: 'out(3)',
         });
       }
 
-      // ── Phase 3: Bento cards stagger ──
+      // ── Phase 3: Content panels fade in sequence ──
       const bentoChildren = root.querySelectorAll('.wf-bento > *');
       if (bentoChildren.length > 0) {
         animate(bentoChildren, {
           opacity: [0, 1],
-          translateY: [24, 0],
-          delay: stagger(100, { start: 500 }),
-          duration: 650,
-          ease: 'out(4)',
+          delay: stagger(55, { start: 180 }),
+          duration: 320,
+          ease: 'out(3)',
         });
       }
 
@@ -108,9 +102,8 @@ export function useDashboardAnimations(ready: boolean) {
         if (stillHidden.length > 0) {
           animate(stillHidden, {
             opacity: [0, 1],
-            translateY: [24, 0],
-            delay: stagger(80),
-            duration: 500,
+            delay: stagger(45),
+            duration: 260,
             ease: 'out(3)',
           });
         }
@@ -145,16 +138,7 @@ export function useDashboardAnimations(ready: boolean) {
         }
       });
 
-      // ── Phase 5: Donut rotation + segment reveal ──
-      const donutSvg = root.querySelector('.wf-donut svg');
-      if (donutSvg) {
-        animate(donutSvg as SVGElement, {
-          rotate: [-90, 0],
-          duration: 800,
-          delay: 800,
-          ease: 'out(4)',
-        });
-      }
+      // ── Phase 5: Donut segment reveal ──
       const donutCircles = root.querySelectorAll(
         '.wf-donut circle[stroke]:not([stroke="#eef1ef"])',
       );
@@ -189,19 +173,7 @@ export function useDashboardAnimations(ready: boolean) {
         });
       });
 
-      // ── Phase 8: Attention items stagger ──
-      const attRows = root.querySelectorAll('.wf-arow');
-      if (attRows.length > 0) {
-        animate(attRows, {
-          opacity: [0, 1],
-          translateX: [-12, 0],
-          delay: stagger(60, { start: 1100 }),
-          duration: 400,
-          ease: 'out(3)',
-        });
-      }
-
-      // ── Phase 9: Audit log rows stagger ──
+      // ── Phase 8: Audit log rows stagger ──
       // Audit rows may render late (role-gated, separate query).
       // Set initial opacity via JS only when present at animation time.
       const animateAuditRows = () => {
@@ -210,7 +182,6 @@ export function useDashboardAnimations(ready: boolean) {
         utils.set(rows, { opacity: 0 });
         animate(rows, {
           opacity: [0, 1],
-          translateX: [-8, 0],
           delay: stagger(40, { start: 200 }),
           duration: 350,
           ease: 'out(3)',
@@ -221,100 +192,23 @@ export function useDashboardAnimations(ready: boolean) {
       // Safety net: try again after data likely loaded
       setTimeout(animateAuditRows, 2000);
 
-      // ── Ambient animations (post-entrance, looping) ─────────────
-
-      // Fleet "in transit" pip pulse
-      const inTransitPip = root.querySelector(
-        '.wf-fstat:nth-child(2) .pip',
-      ) as HTMLElement | null;
-      if (inTransitPip) {
-        animate(inTransitPip, {
-          scale: [1, 1.3, 1],
-          opacity: [1, 0.6, 1],
-          duration: 2000,
-          loop: true,
-          ease: 'inOut(2)',
-        });
-      }
-
-      // Approval queue count badge pop
+      // Approval queue count follows the same flat fade language.
       const countBadge = root.querySelector(
         '.approval-queue__count',
       ) as HTMLElement | null;
       if (countBadge) {
         animate(countBadge, {
-          scale: [0, 1.2, 1],
-          duration: 500,
-          delay: 1000,
-          ease: spring({ stiffness: 300, damping: 12 }),
+          opacity: [0, 1],
+          duration: 240,
+          delay: 400,
+          ease: 'out(3)',
         });
       }
-
-      // ── Enhanced hover micro-interactions ────────────────────────
-
-      // Bento card hover with spring on leave
-      root.querySelectorAll('.wf-card').forEach((el) => {
-        const card = el as HTMLElement;
-        card.addEventListener('mouseenter', () => {
-          animate(card, {
-            translateY: -2,
-            duration: 200,
-            ease: 'out(3)',
-          });
-        });
-        card.addEventListener('mouseleave', () => {
-          animate(card, {
-            translateY: 0,
-            duration: 400,
-            ease: spring({ stiffness: 200, damping: 15 }),
-          });
-        });
-      });
-
-      // Button press micro-squeeze
-      root.querySelectorAll('.wf-btn, .wf-minibtn').forEach((el) => {
-        const btn = el as HTMLElement;
-        btn.addEventListener('mousedown', () => {
-          animate(btn, { scaleX: 0.97, duration: 80, ease: 'out(3)' });
-        });
-        btn.addEventListener('mouseup', () => {
-          animate(btn, {
-            scaleX: 1,
-            duration: 200,
-            ease: spring({ stiffness: 400, damping: 15 }),
-          });
-        });
-      });
     });
 
     scopeRef.current = scope;
 
-    // ── Phase 4b: Revenue line traveling dot (outside scope) ──
-    // createMotionPath needs unscoped animate() — it doesn't work inside
-    // createScope().add(). Delayed to start after Phase 4 line draw completes.
-    let travelerAnim: ReturnType<typeof animate> | null = null;
-    const motionTimer = setTimeout(() => {
-      const root = rootRef.current;
-      if (!root || prefersReduced) return;
-      const revPath = root.querySelector('.wf-rev-line');
-      const traveler = root.querySelector('.wf-chart-traveler');
-      if (!revPath || !traveler) return;
-      try {
-        const mp = svg.createMotionPath(revPath as SVGPathElement);
-        travelerAnim = animate(traveler as HTMLElement, {
-          ...mp,
-          opacity: [0, 1, 1, 0],
-          duration: 2000,
-          ease: 'linear',
-        });
-      } catch {
-        // createMotionPath not supported or path not ready — skip silently
-      }
-    }, 1900);
-
     return () => {
-      clearTimeout(motionTimer);
-      travelerAnim?.cancel();
       scope.revert();
       scopeRef.current = null;
     };

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, AlertTriangle, ChevronRight, Download, Truck } from 'lucide-react';
+import { Activity, AlertTriangle, ChevronRight, ChevronUp, Download, Truck } from 'lucide-react';
 import { formatCompact, formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
@@ -92,6 +92,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { month: currentMonth, year: currentYear } = useMonth();
   const [chartView, setChartView] = useState<'day' | 'month'>('day');
+  const [showAllAttention, setShowAllAttention] = useState(false);
   const countersAnimated = useRef(false);
 
   // KPI refs for counter animation — point to <span> wrapping just the number
@@ -290,6 +291,11 @@ export default function DashboardPage() {
           priority: 0,
         }];
   }, [stats?.decisionItems, createdTripsCount, revenue, currentMonth, currentYear]);
+  const orderedAttention = useMemo(
+    () => [...attention].sort((a, b) => b.priority - a.priority),
+    [attention],
+  );
+  const visibleAttention = showAllAttention ? orderedAttention : orderedAttention.slice(0, 4);
 
   // ── Trigger KPI counter animations once data loads ──
   useEffect(() => {
@@ -445,18 +451,86 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ── Bento grid (12-col, 2 hero tiles) ──
+      {/* ── Operations grid ──
            Tiles auto-flow into rows based on their grid-column/row spans.
-           Source order matters — heroes first, then secondary tiles cluster
-           around them. On mobile (≤1180px) every tile drops to full width
-           via the .wf-bento override in DashboardPage.css. */}
+           The decision board is deliberately first so the user's next work is
+           visible before historical analysis. On mobile every tile drops to
+           full width via the .wf-bento override in DashboardPage.css. */}
       <div className="wf-bento">
 
-        {/* Hero 1 — Chart (8 cols × 2 rows) */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero">
+        {/* Action-first priority board — the most important operational
+            decisions stay in the first scan path on every breakpoint. */}
+        <section
+          className={`d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-full wf-priority-board${showAllAttention ? ' is-expanded' : ''}`}
+          data-tour-id="dashboard-attention"
+          aria-labelledby="dashboard-priority-title"
+        >
             <div className="wf-card-h">
               <div>
-                <div className="ttl">Doanh thu & Lợi nhuận gộp</div>
+                <h2 className="ttl" id="dashboard-priority-title">Việc cần xử lý</h2>
+                <div className="sub">Ưu tiên theo mức độ ảnh hưởng · {orderedAttention.length} mục</div>
+              </div>
+            </div>
+            <div className="body" id="dashboard-priority-list">
+              {visibleAttention.map((item, i) => {
+                const iconName = decisionIcon(item.kind);
+                return (
+                <React.Fragment key={item.id}>
+                  {i > 0 && <div className="wf-divider" />}
+                  <div className={`wf-arow wf-arow--${item.severity}`}>
+                    <StatusStrip color={DECISION_STRIP_COLORS[item.severity]} />
+                    <div className={`ic wf-ic-${item.severity}`}>
+                      <AssetIcon name={iconName} size={18} />
+                    </div>
+                    <div className="tx">
+                      <div className="t">
+                        {item.title}
+                        <span className={`d-badge d-badge-soft d-badge-sm wf-severity wf-severity--${item.severity}`}>
+                          {severityLabel(item.severity)}
+                        </span>
+                      </div>
+                      <div className="s">{item.subtitle}</div>
+                    </div>
+                    {item.route && item.actionLabel && (
+                      <div className="go">
+                        <button
+                          className={`d-btn d-btn-sm wf-minibtn${item.severity === 'success' ? ' d-btn-success green' : ''}`}
+                          onClick={() => navigate(item.route!)}
+                        >
+                          <span>{item.actionLabel}</span>
+                          <ChevronRight className="wf-minibtn__icon" aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </React.Fragment>
+                );
+              })}
+              {orderedAttention.length > 4 && (
+                <div className="wf-priority-more">
+                  <button
+                    type="button"
+                    className="d-btn d-btn-link d-btn-sm wf-link"
+                    aria-expanded={showAllAttention}
+                    aria-controls="dashboard-priority-list"
+                    onClick={() => setShowAllAttention(value => !value)}
+                  >
+                    {showAllAttention ? (
+                      <>Thu gọn <ChevronUp aria-hidden="true" /></>
+                    ) : (
+                      <>Xem tất cả {orderedAttention.length} mục <ChevronRight aria-hidden="true" /></>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+
+        {/* Hero 1 — Chart (8 cols × 2 rows) */}
+        <section className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero" aria-labelledby="dashboard-revenue-title">
+            <div className="wf-card-h">
+              <div>
+                <h2 className="ttl" id="dashboard-revenue-title">Doanh thu & Lợi nhuận gộp</h2>
                 <div className="sub">
                   {chartMonths.length > 0
                     ? chartView === 'day'
@@ -510,13 +584,13 @@ export default function DashboardPage() {
                 return <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
               })()}
             </div>
-          </div>
+          </section>
 
         {/* Fleet (4 cols × 1 row) — right of chart, row 1 */}
         <div className="d-card d-card-border bg-base-100 wf-card wf-fleet wf-bento-third">
             <div className="wf-card-h">
               <div>
-                <div className="ttl">Tình trạng đội xe</div>
+                <h2 className="ttl">Tình trạng đội xe</h2>
                 <div className="sub">{fleet.total} đầu kéo · {fleet.drivers} lái xe</div>
               </div>
               <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
@@ -542,7 +616,7 @@ export default function DashboardPage() {
         <div className="d-card d-card-border bg-base-100 wf-card wf-cost wf-bento-third">
             <div className="wf-card-h">
               <div>
-                <div className="ttl">Cơ cấu chi phí</div>
+                <h2 className="ttl">Cơ cấu chi phí</h2>
                 <div className="sub">{String(currentMonth).padStart(2, '0')}/{currentYear} · tổng {formatNumber(costs)} đ</div>
               </div>
             </div>
@@ -570,7 +644,7 @@ export default function DashboardPage() {
         <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
               <div className="wf-card-h">
                 <div>
-                  <div className="ttl">Lợi nhuận theo xe</div>
+                  <h2 className="ttl">Lợi nhuận theo xe</h2>
                   <div className="sub">Biên gộp từng đầu kéo · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
                 </div>
               </div>
@@ -591,7 +665,7 @@ export default function DashboardPage() {
         <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
               <div className="wf-card-h">
                 <div>
-                  <div className="ttl">Top tuyến sinh lời</div>
+                  <h2 className="ttl">Top tuyến sinh lời</h2>
                   <div className="sub">Theo lợi nhuận gộp · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
                 </div>
                 <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
@@ -620,52 +694,6 @@ export default function DashboardPage() {
             />
           </div>
         )}
-
-        {/* Cần chú ý — wide decision board; rows become two columns on desktop. */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-full" data-tour-id="dashboard-attention">
-            <div className="wf-card-h">
-              <div>
-                <div className="ttl">Cần chú ý</div>
-                <div className="sub">Vấn đề cần quyết định</div>
-              </div>
-            </div>
-            <div className="body">
-              {attention.map((item, i) => {
-                const iconName = decisionIcon(item.kind);
-                return (
-                <React.Fragment key={i}>
-                  {i > 0 && <div className="wf-divider" />}
-                  <div className={`wf-arow wf-arow--${item.severity}`}>
-                    <StatusStrip color={DECISION_STRIP_COLORS[item.severity]} />
-                    <div className={`ic wf-ic-${item.severity}`}>
-                      <AssetIcon name={iconName} size={18} />
-                    </div>
-                    <div className="tx">
-                      <div className="t">
-                        {item.title}
-                        <span className={`d-badge d-badge-soft d-badge-sm wf-severity wf-severity--${item.severity}`}>
-                          {severityLabel(item.severity)}
-                        </span>
-                      </div>
-                      <div className="s">{item.subtitle}</div>
-                    </div>
-                    {item.route && item.actionLabel && (
-                      <div className="go">
-                        <button
-                          className={`d-btn d-btn-sm wf-minibtn${item.severity === 'success' ? ' d-btn-success green' : ''}`}
-                          onClick={() => navigate(item.route!)}
-                        >
-                          <span>{item.actionLabel}</span>
-                          <ChevronRight className="wf-minibtn__icon" aria-hidden="true" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </React.Fragment>
-              );
-              })}
-            </div>
-          </div>
 
         {/* Hoạt động gần đây (12 cols × 1 row) — full-width band, only for
             roles allowed by casbin. recentAudit is empty for DRIVER so this

@@ -88,7 +88,7 @@ export function ApprovalQueueCard({ data, loading, navigate }: Props) {
     <div className="d-card d-card-border bg-base-100 wf-card approval-queue">
       <div className="wf-card-h">
         <div>
-          <div className="ttl">Cần duyệt</div>
+          <h2 className="ttl">Cần duyệt</h2>
           <div className="sub">
             {loading ? 'Đang tải…' : total > 0 ? `${total} mục đang chờ` : 'Đã xử lý hết'}
           </div>
