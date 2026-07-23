@@ -287,7 +287,7 @@ export default function DebitNoteTemplateEditorPage() {
             <ArrowLeft size={21} />
           </button>
           <div className="billing-builder__icon">
-            <AssetIcon name="document" size={34} />
+            <AssetIcon name="debit-note-template" size={34} />
           </div>
           <div>
             <p className="billing-builder__eyebrow">{viewOnly ? 'Xem mẫu' : isNew ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}</p>

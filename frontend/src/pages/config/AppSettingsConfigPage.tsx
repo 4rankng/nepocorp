@@ -69,7 +69,7 @@ export default function AppSettingsConfigPage() {
         title="Cài đặt ứng dụng"
         description="Quản lý các tính năng dùng chung trên toàn hệ thống · chỉ Quản trị viên"
         onBack={() => navigate('/config')}
-        iconName="settings"
+        iconName="app-settings"
       />
       <Panel
         title="Tính năng ứng dụng"

@@ -51,7 +51,7 @@ export default function DebitNoteTemplatesConfigPage() {
         title="Mẫu giấy báo nợ"
         description={<><strong>{templates.length}</strong> mẫu Excel</>}
         onBack={handleBack}
-        iconName="document"
+        iconName="debit-note-template"
         action={(
           <button type="button" className="btn btn--primary" onClick={() => navigate('/config/debit-note-templates/new')}>
             <Plus size={16} /> Thêm mẫu
@@ -103,7 +103,7 @@ export default function DebitNoteTemplatesConfigPage() {
                 >
                   <div className="debit-template-card__stripe" style={{ background: template.accentColor }} />
                   <div className="debit-template-card__icon" aria-hidden="true">
-                    <AssetIcon name="document" size={24} />
+                    <AssetIcon name="debit-note-template" size={24} />
                   </div>
                   <div className="debit-template-card__main">
                     <div className="debit-template-card__title">

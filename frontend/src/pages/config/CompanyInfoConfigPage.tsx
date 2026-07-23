@@ -151,7 +151,7 @@ export default function CompanyInfoConfigPage() {
         title="Thông tin công ty"
         description="Hồ sơ pháp lý, liên hệ và tài khoản ngân hàng — hiển thị trên các chứng từ xuất ra"
         onBack={() => navigate('/config')}
-        iconName="document"
+        iconName="company-profile"
       />
 
       <Panel

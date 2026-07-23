@@ -426,7 +426,7 @@ export default function DashboardPage() {
         />
         <DashboardStat
           tone="gross"
-          icon={<AssetIcon name="truck" size={15} />}
+          icon={<AssetIcon name="gross-margin" size={15} />}
           label="Lợi nhuận gộp"
           delta={<DeltaPill mom={grossMoM} />}
           value={fmtVN(grossProfit)}
@@ -435,7 +435,7 @@ export default function DashboardPage() {
         />
         <DashboardStat
           tone="net"
-          icon={<AssetIcon name="payroll" size={15} />}
+          icon={<AssetIcon name="profit" size={15} />}
           label="Lợi nhuận ròng"
           delta={<DeltaPill mom={netMoM} />}
           value={fmtVN(netProfit)}

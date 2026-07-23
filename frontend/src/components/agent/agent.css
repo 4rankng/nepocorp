@@ -598,24 +598,36 @@
 
 /* ── Callout ────────────────────────────────────────────────────────────── */
 .agent-callout {
+  position: relative;
   border-radius: var(--r, 12px);
   padding: 10px 12px;
   font-size: 13px;
-  border-left: 3px solid;
+}
+.agent-callout::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip, transparent);
+  pointer-events: none;
 }
 .agent-callout--info {
   background: var(--info-soft, #eef2ff);
-  border-color: var(--info, #3b82f6);
+  --strip: var(--info, #3b82f6);
   color: var(--info-text, #1e40af);
 }
 .agent-callout--warning {
   background: var(--warning-soft, #fffbeb);
-  border-color: var(--warning, #f59e0b);
+  --strip: var(--warning, #f59e0b);
   color: var(--warning-text, #92400e);
 }
 .agent-callout--danger {
   background: var(--danger-soft, #fef2f2);
-  border-color: var(--danger, #dc2626);
+  --strip: var(--danger, #dc2626);
   color: var(--danger-text, #991b1b);
 }
 
@@ -629,15 +641,27 @@
   gap: 8px;
 }
 .agent-anomaly {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: 8px 10px;
   border-radius: var(--r-sm, 8px);
   background: var(--bg, #f5f7f6);
-  border-left: 3px solid var(--ink-muted, #9ca3af);
 }
-.agent-anomaly--med { border-left-color: var(--warning, #f59e0b); }
-.agent-anomaly--high { border-left-color: var(--danger, #dc2626); }
+.agent-anomaly::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip, var(--ink-muted, #9ca3af));
+  pointer-events: none;
+}
+.agent-anomaly--med { --strip: var(--warning, #f59e0b); }
+.agent-anomaly--high { --strip: var(--danger, #dc2626); }
 .agent-anomaly__label { font-weight: 600; font-size: 13px; }
 .agent-anomaly__detail { font-size: 12px; color: var(--ink-muted, #6b7280); }
 

@@ -409,7 +409,7 @@ export default function FaqEntriesConfigPage() {
         title="Câu hỏi thường gặp (FAQ)"
         description="Quản lý cơ sở tri thức cho trợ lý ảo. Mỗi lần lưu, hệ thống tự động tạo lại embedding để trợ lý trả lời câu hỏi ngay lập tức."
         onBack={handleBack}
-        iconName="document"
+        iconName="faq"
         action={
           <button className="btn btn--primary" onClick={() => setShowAddForm(true)}>
             <Plus size={16} /> Thêm câu hỏi

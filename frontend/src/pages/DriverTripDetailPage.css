@@ -119,12 +119,26 @@
   padding: 8px 16px 14px;
 }
 
-/* Status accent — 3px left border on the card */
-.dt-section--CREATED { border-left: 3px solid #3B82F6; }
-.dt-section--IN_TRANSIT { border-left: 3px solid #22C55E; }
-.dt-section--COMPLETED { border-left: 3px solid #F59E0B; }
-.dt-section--LOCKED { border-left: 3px solid #00B14F; }
-.dt-section--CANCELED { border-left: 3px solid #EF4444; }
+/* Status accent — canonical 3×20px strip via ::before (base .dt-section is
+   position:relative + overflow:hidden). Only variants that set --strip show it. */
+.dt-section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+.dt-section--CREATED { --strip: var(--info); }
+.dt-section--IN_TRANSIT { --strip: var(--accent); }
+.dt-section--COMPLETED { --strip: var(--warning); }
+.dt-section--LOCKED { --strip: var(--accent); }
+.dt-section--CANCELED { --strip: var(--danger); }
 
 /* DriverContainerCard — flat section, NO card wrapper. The bento grid (and
    the entry form) are the visual containers; the section only carries a
@@ -736,7 +750,7 @@
 
 /* ─── Contact & guidance (N2 / B1.3) — read-only instructions section ─── */
 .driver-trip-detail-page .dt-section--instructions {
-  border-left: 3px solid var(--accent, #c79a3a);
+  --strip: var(--accent);
 }
 
 .driver-trip-detail-page .dt-tel-link {

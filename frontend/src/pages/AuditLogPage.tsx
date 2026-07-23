@@ -6,6 +6,7 @@ import {
   Globe, Terminal, Copy, Check, Info, Eye, X,
 } from 'lucide-react';
 import { Panel, KPI } from '../components/UI';
+import { AssetIcon } from '../components/AssetIcon';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { useAuditLogs, type AuditEntry, type Category } from '../hooks/useAuditLogs';
 import { useAuth } from '../hooks/useAuth';
@@ -232,7 +233,7 @@ export default function AuditLogPage() {
                 </div>
                 <button
                   className="btn btn--secondary btn--sm"
-                  style={{ padding: '6px 10px', fontSize: 12, lineHeight: 1.35, minHeight: 32 }}
+                  style={{ padding: '6px 10px', fontSize: 12, lineHeight: 1.35 }}
                   onClick={() => handleCopyPayload(entry.payload)}
                 >
                   {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -281,7 +282,7 @@ fontSize: 13,
       <header className="page-header">
         <div className="page-header-main">
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/assets/icons/20-document-tai-lieu.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
+            <AssetIcon name="audit-log" size={32} />
             Nhật ký người dùng
           </h1>
           <p className="page-subtitle">
@@ -349,7 +350,7 @@ fontSize: 13,
           value={topCategory.count}
           unit={topCategory.label}
           icon={TrendingUp}
-          assetIconName="profit"
+          assetIconName="audit-log"
           variant="accent"
           meta="Chiếm ưu thế trong trang hiện tại"
         />

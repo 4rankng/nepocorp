@@ -11,6 +11,7 @@ import { UserStatusBadge } from './UserStatusBadge';
 import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 import { PageHeader } from '../../../components/UI';
+import { AssetIcon } from '../../../components/AssetIcon';
 
 interface UserTableProps {
   users: UserRow[];
@@ -155,7 +156,7 @@ export function UserTable({
             </span>
             <span className="kpi__meta-note">Có quyền app lái xe</span>
           </div>
-          <div className="kpi__watermark" aria-hidden="true"><ShieldCheck size={72} /></div>
+          <div className="kpi__watermark" aria-hidden="true"><AssetIcon name="driver" size={72} /></div>
         </div>
         <div className="kpi kpi--danger">
           <div className="kpi__top">

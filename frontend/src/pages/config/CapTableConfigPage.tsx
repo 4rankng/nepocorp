@@ -68,7 +68,7 @@ export default function CapTableConfigPage() {
       endpoint="/cap-table" colSpan={5}
       showDelete={false}
       pageSlug="cap-table"
-      iconName="analytics"
+      iconName="equity-ownership"
       emptyIllustration="empty-pie.svg"
       emptyTitle="Chưa có cổ đông"
       emptyHint="Thêm thông tin vốn góp để hệ thống tự động tính tỷ lệ cổ phần."

@@ -199,9 +199,9 @@
   position: absolute;
   left: 0;
   top: 50%;
-  width: 4px;
-  height: 32px;
-  border-radius: 0 4px 4px 0;
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
   background: var(--stat-rail);
   transform: translateY(-50%);
   pointer-events: none;
@@ -235,14 +235,26 @@
 
 /* ─── Note ─── */
 .settlement-detail__note {
+  position: relative;
   padding: 12px 16px;
   background: #fffbeb;
-  border-left: 3px solid #d97706;
   border-radius: 4px;
   font-size: var(--fs-sm);
   color: #92400e;
   margin-bottom: 16px;
   line-height: 1.6;
+}
+.settlement-detail__note::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: #d97706;
+  pointer-events: none;
 }
 
 /* ─── Signatures (print only on screen) ─── */

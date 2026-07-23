@@ -62,7 +62,7 @@ export default function PricingTablesConfigPage() {
       title="Bảng giá cước" description="Đơn giá thỏa thuận theo Khách hàng × Tuyến đường — dùng khi tạo chuyến mới"
       endpoint="/pricing-tables" colSpan={5}
       pageSlug="pricing-tables"
-      iconName="document"
+      iconName="pricing-rate"
       emptyIllustration="empty-pricing.svg"
       emptyTitle="Chưa có bảng giá"
       emptyHint="Thêm đơn giá đầu tiên (Khách hàng × Tuyến) để hệ thống áp dụng tự động."

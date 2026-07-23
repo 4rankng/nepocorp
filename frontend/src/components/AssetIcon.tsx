@@ -3,9 +3,8 @@
  * icon set shipped in /public/assets/icons.
  *
  * Every icon lives at `/assets/icons/<slug>.png` (served from
- * `frontend/public/assets/icons/`). All 24 icons in that folder are catalogued
- * here so we can render them anywhere in the UI without having to remember
- * file names.
+ * `frontend/public/assets/icons/`). The folder is catalogued here so we can
+ * render icons anywhere in the UI without having to remember file names.
  *
  * Each entry also carries:
  *   - `label`  : Vietnamese human-readable label
@@ -53,7 +52,24 @@ export type AssetIconName =
   | 'settlement'
   | 'gross-margin'
   | 'active-supplier'
-  | 'assistant';
+  | 'assistant'
+  | 'road-allowance'
+  | 'route-distance'
+  | 'pricing-rate'
+  | 'salary-period'
+  | 'expense-category'
+  | 'forwarder-expense'
+  | 'debit-note-template'
+  | 'ai-provider'
+  | 'faq'
+  | 'app-settings'
+  | 'company-profile'
+  | 'trip-expense-rules'
+  | 'equity-ownership'
+  | 'tire'
+  | 'trailer'
+  | 'audit-log'
+  | 'active-customer';
 
 export interface AssetIconEntry {
   /** Short semantic name used in <AssetIcon name=...>. */
@@ -102,6 +118,23 @@ const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   'gross-margin': { name: 'gross-margin', slug: '33-gross-margin-bien-loi-nhuan',                     label: 'Biên lợi nhuận gộp',   group: 'reporting' },
   'active-supplier': { name: 'active-supplier', slug: '34-active-supplier-nha-cung-cap-hoat-dong',    label: 'Nhà cung cấp hoạt động', group: 'people' },
   assistant:    { name: 'assistant',    slug: '35-assistant-tro-ly-tingting',                          label: 'Trợ lý TingTing',      group: 'system' },
+  'road-allowance': { name: 'road-allowance', slug: '36-road-allowance-toll-phi-duong-bo',            label: 'Tiền đi đường',        group: 'money' },
+  'route-distance': { name: 'route-distance', slug: '37-route-distance-tuyen-duong-cu-ly',            label: 'Tuyến đường và cự ly', group: 'place' },
+  'pricing-rate': { name: 'pricing-rate', slug: '38-pricing-rate-bang-gia-cuoc',                       label: 'Bảng giá cước',         group: 'money' },
+  'salary-period': { name: 'salary-period', slug: '39-salary-period-ky-luong',                         label: 'Kỳ lương',              group: 'money' },
+  'expense-category': { name: 'expense-category', slug: '40-expense-category-hang-muc-chi-phi',       label: 'Hạng mục chi phí',      group: 'money' },
+  'forwarder-expense': { name: 'forwarder-expense', slug: '41-forwarder-expense-chi-phi-giao-nhan',   label: 'Chi phí giao nhận',     group: 'money' },
+  'debit-note-template': { name: 'debit-note-template', slug: '42-debit-note-template-mau-giay-bao-no', label: 'Mẫu giấy báo nợ',     group: 'money' },
+  'ai-provider': { name: 'ai-provider', slug: '43-ai-provider-nha-cung-cap-ai',                         label: 'Nhà cung cấp AI',       group: 'system' },
+  faq:           { name: 'faq', slug: '44-faq-cau-hoi-thuong-gap',                                    label: 'Câu hỏi thường gặp',    group: 'system' },
+  'app-settings': { name: 'app-settings', slug: '45-app-settings-cai-dat-ung-dung',                    label: 'Cài đặt ứng dụng',      group: 'system' },
+  'company-profile': { name: 'company-profile', slug: '46-company-profile-thong-tin-cong-ty',         label: 'Thông tin công ty',     group: 'system' },
+  'trip-expense-rules': { name: 'trip-expense-rules', slug: '47-trip-expense-rules-chi-phi-chuyen-di', label: 'Chi phí chuyến đi',    group: 'money' },
+  'equity-ownership': { name: 'equity-ownership', slug: '48-equity-ownership-co-phan-so-huu',          label: 'Cổ phần và sở hữu',     group: 'money' },
+  tire:          { name: 'tire', slug: '49-tire-lop-xe-vi-tri',                                       label: 'Lốp xe và vị trí lốp',  group: 'fleet' },
+  trailer:       { name: 'trailer', slug: '50-trailer-ro-mooc',                                       label: 'Rơ-moóc',               group: 'fleet' },
+  'audit-log':   { name: 'audit-log', slug: '51-audit-log-nhat-ky-hoat-dong',                          label: 'Nhật ký hoạt động',     group: 'system' },
+  'active-customer': { name: 'active-customer', slug: '52-active-customer-khach-hang-hoat-dong',      label: 'Khách hàng hoạt động', group: 'people' },
 };
 
 /** Every icon name, exported for iteration / verification. */

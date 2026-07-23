@@ -166,7 +166,9 @@
   word-break: break-word;
 }
 .trip-list-page .delta-up { color: var(--accent-ink); }
-.trip-list-page .delta-down { color: var(--danger-soft); }
+/* Use the foreground --danger token, not the --danger-soft background tint
+   (which rendered negative deltas near-invisible). Mirrors DispatchPage. */
+.trip-list-page .delta-down { color: var(--danger); }
 .trip-list-page .delta-flat { color: var(--ink-3); }
 .trip-list-page .delta-warn { color: var(--warning-text); }
 

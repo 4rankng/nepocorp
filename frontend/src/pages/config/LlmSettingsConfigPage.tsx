@@ -68,7 +68,7 @@ export default function LlmSettingsConfigPage() {
         title="Nhà cung cấp AI"
         description="Chọn nhà cung cấp LLM cho trợ lý ảo và cấu hình API key · chỉ Quản trị viên"
         onBack={() => navigate('/config')}
-        iconName="settings"
+        iconName="ai-provider"
       />
       <Panel
         title="Cấu hình nhà cung cấp LLM"

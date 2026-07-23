@@ -201,7 +201,7 @@ export default function ForwarderSettlementCreatePage() {
         </button>
         <PageHeader
           title="Tạo phiếu thanh toán"
-          iconName="document"
+          iconName="settlement"
           description="Thanh toán tạm ứng"
           onBack={handleBack}
         />
@@ -235,6 +235,7 @@ export default function ForwarderSettlementCreatePage() {
       </button>
       <PageHeader
         title="Tạo phiếu thanh toán"
+        iconName="settlement"
         description="Chọn tạm ứng đã duyệt và chi phí phát sinh để tạo phiếu quyết toán"
       />
 

@@ -324,7 +324,7 @@ export default function DebtListPage() {
               <span className="hero-kpi-mini__label">quá hạn</span>
             </div>
             <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
-              <AssetIcon name="alert" size={38} />
+              <AssetIcon name="overdue" size={38} />
             </div>
           </div>
           <div className="hero-kpi-mini debt-kpi-mini--warning">
@@ -337,7 +337,7 @@ export default function DebtListPage() {
               <span className="hero-kpi-mini__label">rủi ro cao</span>
             </div>
             <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
-              <AssetIcon name="analytics" size={38} />
+              <AssetIcon name="alert" size={38} />
             </div>
           </div>
         </div>

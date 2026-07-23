@@ -134,7 +134,7 @@ export default function FleetPage() {
           value={ft40 + ft20}
           unit="moóc"
           icon={Container}
-          assetIconName="cargo"
+          assetIconName="trailer"
           variant="info"
           meta={
             <span className="fleet-kpi-meta" style={styles.metaRow}>

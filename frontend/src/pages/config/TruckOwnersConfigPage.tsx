@@ -176,7 +176,7 @@ export default function TruckOwnersConfigPage() {
     <div ref={pageRef}>
       <PageHeader
         title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
-        iconName="truck"
+        iconName="equity-ownership"
         description="Danh sách đối tác sở hữu xe và tỷ lệ chia lợi nhuận của xe này."
       />
 
@@ -246,8 +246,8 @@ export default function TruckOwnersConfigPage() {
                   </td>
                   <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                    <button className="btn btn--secondary" style={{ minHeight: 36, padding: '0 12px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
-                    <button className="btn btn--danger" style={{ minHeight: 36, padding: '0 12px' }} onClick={() => doDelete(r.id)}>Xóa</button>
+                    <button className="btn btn--secondary" style={{ padding: '0 12px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
+                    <button className="btn btn--danger" style={{ padding: '0 12px' }} onClick={() => doDelete(r.id)}>Xóa</button>
                   </td>
                 </tr>
               );

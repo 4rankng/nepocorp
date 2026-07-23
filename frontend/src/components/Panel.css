@@ -78,19 +78,34 @@
 /* subsection-card — a soft-bordered block used INSIDE a panel for grouping
    related fields. Has a left accent bar + eyebrow title. */
 .subsection-card {
+  position: relative;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface-2);
   padding: 14px 16px;
   margin-top: 8px;
 }
-.subsection-card--accent {
-  border-left: 3px solid var(--accent);
-  background: var(--accent-soft);
+/* Callout accents use the canonical 3×20px status strip (::before), never a
+   full-height colored left border. Each variant sets its --strip + soft fill. */
+.subsection-card--accent { background: var(--accent-soft);  --strip: var(--accent); }
+.subsection-card--info   { background: var(--info-soft);    --strip: var(--info); }
+.subsection-card--warn   { background: var(--warning-soft); --strip: var(--warning); }
+.subsection-card--danger { background: var(--danger-soft);  --strip: var(--danger); }
+.subsection-card--accent::before,
+.subsection-card--info::before,
+.subsection-card--warn::before,
+.subsection-card--danger::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip);
+  pointer-events: none;
 }
-.subsection-card--info   { border-left-color: var(--info); background: var(--info-soft); }
-.subsection-card--warn   { border-left-color: var(--warning); background: var(--warning-soft); }
-.subsection-card--danger { border-left-color: var(--danger); background: var(--danger-soft); }
 .subsection-card__title {
   font-size: var(--fs-2xs);
   font-weight: 600;
@@ -125,6 +140,7 @@
 }
 
 .m-group__card {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -183,9 +199,21 @@
   padding: 10px 16px 14px;
 }
 
-/* Status accent variants — 3px left border */
-.m-group__card--accent-blue   { border-left: 3px solid #3B82F6; }
-.m-group__card--accent-green  { border-left: 3px solid #22C55E; }
-.m-group__card--accent-amber  { border-left: 3px solid #F59E0B; }
-.m-group__card--accent-accent { border-left: 3px solid var(--accent); }
-.m-group__card--accent-red    { border-left: 3px solid #EF4444; }
+/* Categorical accent variants — canonical 3×20px status strip, semantic tokens. */
+.m-group__card--accent-blue   { --strip: var(--info); }
+.m-group__card--accent-green  { --strip: var(--accent); }
+.m-group__card--accent-amber  { --strip: var(--warning); }
+.m-group__card--accent-accent { --strip: var(--accent); }
+.m-group__card--accent-red    { --strip: var(--danger); }
+.m-group__card[class~="m-group__card"][class*="m-group__card--accent-"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip, var(--accent));
+  pointer-events: none;
+}

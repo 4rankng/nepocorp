@@ -422,7 +422,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         <div className="ci-seal-row">
           <input className="input ci-input-sm" style={{ width: 180 }} placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
           <input className="input ci-input-sm" style={{ width: 180, flex: 1, minWidth: 120 }} placeholder="Ghi chú seal (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
-          <button type="button" className="btn btn--ghost btn--icon btn--sm" style={{ minWidth: 40, minHeight: 40, visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
+          <button type="button" className="btn btn--ghost btn--icon btn--sm" style={{ minWidth: 40, visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
             <X size={13} />
           </button>
         </div>

@@ -138,7 +138,7 @@ export default function RoutesConfigPage() {
         </button>
         <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <div className="page-header-icon" aria-hidden="true">
-            <AssetIcon name="route" size={28} />
+            <AssetIcon name="route-distance" size={28} />
           </div>
           <div style={{ minWidth: 0 }}>
             <h1 className="page-title">Tuyến đường & Cự ly</h1>

@@ -82,7 +82,7 @@
   letter-spacing: 0.02em;
 }
 .plate.external {
-  background: var(--surface-3, #E5E7EB);
-  color: var(--info, #1E5BB8);
-  border: 1px solid var(--line-2, #D1D5DB);
+  background: var(--surface-3);
+  color: var(--info);
+  border: 1px solid var(--line-2);
 }

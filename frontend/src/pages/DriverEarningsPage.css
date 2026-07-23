@@ -454,6 +454,7 @@
   gap: 8px;
 }
 .driver-earnings-page .vehicle-alerts-strip__item {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
@@ -463,11 +464,22 @@
   background: #fff;
   font-size: 13px;
 }
-.driver-earnings-page .vehicle-alerts-strip__item--overdue {
-  border-left: 3px solid var(--danger);
-}
-.driver-earnings-page .vehicle-alerts-strip__item--due {
-  border-left: 3px solid var(--warning);
+/* Severity uses the canonical 3×20px status strip (::before), not a
+   full-height colored left border. */
+.driver-earnings-page .vehicle-alerts-strip__item--overdue { --strip: var(--danger); }
+.driver-earnings-page .vehicle-alerts-strip__item--due { --strip: var(--warning); }
+.driver-earnings-page .vehicle-alerts-strip__item--overdue::before,
+.driver-earnings-page .vehicle-alerts-strip__item--due::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--strip);
+  pointer-events: none;
 }
 .driver-earnings-page .vehicle-alerts-strip__label {
   font-weight: 600;

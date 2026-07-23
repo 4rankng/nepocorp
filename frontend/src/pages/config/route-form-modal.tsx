@@ -257,7 +257,7 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                 Khai báo sẵn các chặng để tự động điền khi tạo lệnh.
               </p>
             </div>
-            <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg} style={{ minHeight: 36, padding: '0 12px' }}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg} style={{ padding: '0 12px' }}>
               <Plus size={14} /> Thêm chặng
             </button>
           </div>
@@ -290,7 +290,7 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                     className="btn btn--ghost btn--icon btn--sm"
                     aria-label={`Xóa chặng ${leg.origin || leg.destination || ''}`.trim()}
                     onClick={() => removeLeg(leg.id)}
-                    style={{ color: 'var(--danger)', minWidth: 36, minHeight: 36 }}
+                    style={{ color: 'var(--danger)', minWidth: 36 }}
                   >
                     <Trash2 size={14} />
                   </button>

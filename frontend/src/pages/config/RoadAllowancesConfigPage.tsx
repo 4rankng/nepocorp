@@ -60,7 +60,7 @@ export default function RoadAllowancesConfigPage() {
       title="Tiền đi đường" description="Định mức tiền chuẩn theo Tuyến × Loại rơ-moóc — quy tắc: − vé QL5, + chuyến về có hàng, − phí trạm"
       endpoint="/road-allowances" colSpan={5}
       pageSlug="road-allowances"
-      iconName="route"
+      iconName="road-allowance"
       emptyIllustration="empty-routes.svg"
       emptyTitle="Chưa có định mức"
       emptyHint="Thêm tiền đi đường cho từng tuyến để hệ thống tính lương lái xe."

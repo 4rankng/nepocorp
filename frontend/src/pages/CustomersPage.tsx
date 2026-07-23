@@ -350,7 +350,7 @@ export default function CustomersPage() {
           unit={`/ ${total}`}
           variant="success"
           icon={UserCheck}
-          assetIconName="active-supplier"
+          assetIconName="active-customer"
           meta={total > 0 ? `${Math.round((activeCount / total) * 100)}% hoạt động đều` : ''}
         />
         <KPI

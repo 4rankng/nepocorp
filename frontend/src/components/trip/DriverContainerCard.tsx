@@ -427,7 +427,7 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
                       <button
                         type="button"
                         className="btn btn--ghost btn--sm"
-                        style={{ minHeight: 26, padding: '0 10px', fontSize: 12 }}
+                        style={{ padding: '0 10px', fontSize: 12 }}
                         onClick={() => setDraft(prev => ({ ...prev, containerNumber: check.suggestion! }))}
                       >
                         Đổi thành {check.suggestion}

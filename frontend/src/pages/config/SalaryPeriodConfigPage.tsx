@@ -72,7 +72,7 @@ export default function SalaryPeriodConfigPage() {
         title="Kỳ lương" 
         description="Thiết lập quy tắc mặc định cho chu kỳ chấm công và tính lương." 
         onBack={() => navigate('/config')} 
-        iconName="payroll" 
+        iconName="salary-period"
       />
 
       {/* ── Global Default Rule ── */}

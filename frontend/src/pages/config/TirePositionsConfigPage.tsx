@@ -45,7 +45,7 @@ export default function TirePositionsConfigPage() {
         title="Vị trí lốp"
         description="Quản lý danh sách vị trí lốp hiển thị trong form thêm/sửa lốp."
         endpoint="/tire-positions"
-        iconName="truck"
+        iconName="tire"
         colSpan={2}
         pageSlug="tire-positions"
         emptyTitle="Chưa có vị trí lốp"

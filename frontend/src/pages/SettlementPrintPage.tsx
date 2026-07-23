@@ -270,7 +270,7 @@ export default function SettlementPrintPage() {
       <div className="no-print">
         <PageHeader
           title={`Phiếu thanh toán ${s.code}`}
-          iconName="document"
+          iconName="settlement"
           description={s.forwarderName || ''}
           action={
             <div className="settlement-detail__header-actions">

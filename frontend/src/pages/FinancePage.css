@@ -374,13 +374,25 @@
 .cost-check--ok { color: var(--success); background: var(--success-soft); }
 .cost-check--warning { color: var(--warning, #b45309); background: var(--warning-soft, #fef3c7); }
 .truck-maintenance-note {
+  position: relative;
   margin-top: 10px;
   padding: 9px 11px;
-  border-left: 3px solid var(--brand);
   border-radius: 5px;
   background: var(--surface-2);
   color: var(--fg-2);
   font-size: var(--fs-xs);
+}
+.truck-maintenance-note::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
+  background: var(--brand);
+  pointer-events: none;
 }
 .truck-maintenance-list {
   display: grid;

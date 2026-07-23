@@ -940,9 +940,9 @@
   position: absolute;
   left: 0;
   top: 50%;
-  width: 4px;
-  height: 32px;
-  border-radius: 0 4px 4px 0;
+  width: var(--status-strip-width);
+  height: var(--status-strip-height);
+  border-radius: var(--status-strip-radius);
   background: transparent;
   transform: translateY(-50%);
 }

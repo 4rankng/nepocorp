@@ -58,7 +58,7 @@ export default function TripExpenseConfigPage() {
 
   return (
     <div ref={pageRef} className="cfg-page cfg-page--trip-expense" style={{ maxWidth: 720, margin: '0 auto' }}>
-      <PageHeader title="Chi phí chuyến đi" description="Tiền kết hợp · trả hàng 2 điểm · lưu ca xe · trạm BOT · thưởng chuyến về có hàng" onBack={() => navigate('/config')} iconName="expense" />
+      <PageHeader title="Chi phí chuyến đi" description="Tiền kết hợp · trả hàng 2 điểm · lưu ca xe · trạm BOT · thưởng chuyến về có hàng" onBack={() => navigate('/config')} iconName="trip-expense-rules" />
       <Panel title="Mặc định toàn công ty" subtitle="Áp dụng khi tuyến hoặc lái xe chưa có cấu hình riêng">
         <div className="cfg-form-grid">
           <div className="field">
