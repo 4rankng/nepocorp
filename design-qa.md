@@ -18,10 +18,10 @@ No actionable P0, P1, or P2 findings remain for the reported bug.
 
 - Fonts and typography: the existing TingTing font families, weights, hierarchy, and wrapping were preserved. The fixed capture shows the report title and summary fully readable at the top of the thread.
 - Spacing and layout rhythm: the drawer header remains 101.875 px high; the report card starts at 102.172 px while the thread starts at 101.875 px. The 0.297 px difference is subpixel rendering, so the card is aligned to the thread start without overlap or an unintended gap.
-- Colors and visual tokens: no color, border, radius, shadow, or semantic-state token changed.
+- Colors and visual tokens: the existing accent remains the enabled send state and existing neutral surface/ink tokens now keep the disabled icon visible. No new palette values were introduced.
 - Image quality and asset fidelity: the supplied assistant asset remains sharp and correctly sized. No image or icon asset was replaced.
 - Copy and content: no application copy changed. The browser check used a live deterministic financial report to exercise the same tall-card layout class shown in the source.
-- Persistent controls: the composer remains fixed and visible at the bottom while the card body scrolls independently.
+- Persistent controls: the composer remains fixed and spans the available drawer width while the card body scrolls independently. Its input takes the remaining row width and the send control is a visible 44 × 44 px icon button on the right.
 
 ## Full-view comparison evidence
 
@@ -43,6 +43,7 @@ The combined comparison focuses on the app-owned header, thread, and composer. I
 1. Initial P1 finding: repeated bottom-sentinel alignment opened a tall insight card at its end. The source screenshot shows the leading report content clipped above the viewport.
 2. Fix: newest finalized `insight_card` responses now align their root element to the thread start; ordinary text and streaming replies retain bottom pinning. The pinned state is updated synchronously to prevent a competing smooth bottom-scroll during the same layout cycle.
 3. Post-fix evidence: the live 393 × 852 render shows the full report title and summary below the header. Closing/reopening the assistant preserved the same top alignment. Browser console errors: none.
+4. Composer refinement: the input row was widened to the drawer margins and the text-based send control was replaced with an icon-only button. The final browser geometry is 364 px for the composer, 292 px for the input, and 44 × 44 px for the send button at a 393 px viewport. The disabled button remains visible using neutral semantic tokens.
 
 ## Primary interactions tested
 
@@ -51,6 +52,7 @@ The combined comparison focuses on the app-owned header, thread, and composer. I
 - Confirmed the report title and leading KPIs are visible.
 - Reopened the persisted report and confirmed the same alignment.
 - Confirmed the composer remains visible and the thread remains independently scrollable.
+- Confirmed the full-width composer exposes an accessible `Gửi tin nhắn` icon button.
 
 ## Residual test gaps
 

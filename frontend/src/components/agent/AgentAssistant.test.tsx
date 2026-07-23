@@ -6,6 +6,8 @@ import { AgentAssistant } from './AgentAssistant';
 
 const chatState = vi.hoisted(() => ({
   messages: [] as AgentMessage[],
+  isThinking: false,
+  streamingMessage: null as { id: string; content: string } | null,
 }));
 
 vi.mock('../../hooks/useAuth', () => ({
@@ -17,10 +19,10 @@ vi.mock('../../hooks/useAuth', () => ({
 vi.mock('../../hooks/useAgentChat', () => ({
   useAgentChat: () => ({
     messages: chatState.messages,
-    isThinking: false,
+    isThinking: chatState.isThinking,
     received: false,
     activeTool: null,
-    streamingMessage: null,
+    streamingMessage: chatState.streamingMessage,
     error: null,
     conversationId: 'conversation-1',
     send: vi.fn(),
@@ -66,6 +68,8 @@ describe('AgentAssistant scrolling', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     chatState.messages = [];
+    chatState.isThinking = false;
+    chatState.streamingMessage = null;
     scrollIntoView.mockReset();
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
       configurable: true,
@@ -149,5 +153,37 @@ describe('AgentAssistant scrolling', () => {
     const sendButton = screen.getByRole('button', { name: 'Gửi tin nhắn' });
     expect(sendButton.textContent).toBe('');
     expect(sendButton.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('follows a growing text stream only while the reader remains pinned', () => {
+    const renderAssistant = () => (
+      <MemoryRouter>
+        <AgentAssistant />
+      </MemoryRouter>
+    );
+    const { container, rerender } = render(renderAssistant());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở trợ lý' }));
+    act(() => vi.runAllTimers());
+    scrollIntoView.mockReset();
+
+    chatState.isThinking = true;
+    chatState.streamingMessage = { id: 'stream-1', content: 'Đang tổng hợp' };
+    rerender(renderAssistant());
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end', behavior: 'auto' });
+
+    const thread = container.querySelector('.agent-thread');
+    expect(thread).not.toBeNull();
+    Object.defineProperties(thread!, {
+      scrollHeight: { configurable: true, value: 1_000 },
+      clientHeight: { configurable: true, value: 500 },
+      scrollTop: { configurable: true, value: 100, writable: true },
+    });
+    fireEvent.scroll(thread!);
+    scrollIntoView.mockReset();
+
+    chatState.streamingMessage = { id: 'stream-1', content: 'Đang tổng hợp báo cáo' };
+    rerender(renderAssistant());
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

@@ -91,10 +91,12 @@ export function AgentAssistant() {
     if (!open) return;
     isPinnedToBottom.current = !shouldRevealLatestFromTop;
     const frame = requestAnimationFrame(() => revealLatest('auto'));
-    const timers = [
-      window.setTimeout(() => revealLatest('auto'), 80),
-      window.setTimeout(() => revealLatest('auto'), 220),
-    ];
+    const timers = shouldRevealLatestFromTop
+      ? []
+      : [
+          window.setTimeout(() => revealLatest('auto'), 80),
+          window.setTimeout(() => revealLatest('auto'), 220),
+        ];
     return () => {
       cancelAnimationFrame(frame);
       timers.forEach(window.clearTimeout);
@@ -107,14 +109,12 @@ export function AgentAssistant() {
   }, [open, chat.messages.length, chat.isThinking, scrollToLatest]);
 
   useLayoutEffect(() => {
-    const el = threadRef.current;
-    if (!open || !el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
+    if (!open || !chat.streamingMessage?.content || !isPinnedToBottom.current) return;
+    const frame = requestAnimationFrame(() => {
       if (isPinnedToBottom.current) scrollToLatest('auto');
     });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [open, scrollToLatest]);
+    return () => cancelAnimationFrame(frame);
+  }, [open, chat.streamingMessage?.content, scrollToLatest]);
 
   // Hide entirely unless this is an office-staff user on a bot-enabled deploy.
   if (!user || !OFFICE_ROLES.includes(user.role) || !user.botEnabled) return null;
