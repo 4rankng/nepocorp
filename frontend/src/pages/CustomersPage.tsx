@@ -394,6 +394,8 @@ export default function CustomersPage() {
           <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
           <input
             type="text"
+            name="customerSearch"
+            aria-label="Tìm khách hàng theo tên hoặc mã số thuế"
             placeholder="Tìm theo tên, MST…"
             value={search}
             onChange={e => setSearch(e.target.value)}

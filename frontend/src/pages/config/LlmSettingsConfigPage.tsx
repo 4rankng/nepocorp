@@ -186,18 +186,20 @@ function KeyField({
 }) {
   return (
     <div className="cfg-section">
-      <h4 className="cfg-section__heading">
+      <h3 className="cfg-section__heading">
         {label}
         {keySet && (
           <span className="cfg-section__heading-pill" style={{ background: 'var(--success-bg, #dcfce7)', color: 'var(--success, #16a34a)' }}>
             Đã lưu
           </span>
         )}
-      </h4>
+      </h3>
       <div className="field" id={id}>
-        <label>{label}</label>
+        <label htmlFor={`${id}-input`}>{label}</label>
         <div style={{ position: 'relative' }}>
           <input
+            id={`${id}-input`}
+            name={id}
             className="input"
             type={show ? 'text' : 'password'}
             value={value}

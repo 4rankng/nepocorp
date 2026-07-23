@@ -7,7 +7,7 @@ interface BasicFieldsProps { form: FormState; errors: Record<string, string>; is
 export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set }: BasicFieldsProps) {
   return <>
                   <div className="expense-group">
-                    <label className="expense-label">Ngày phát sinh chi phí <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label htmlFor="expenseDate" className="expense-label">Ngày phát sinh chi phí <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                       type="date"
                       name="expenseDate"
@@ -23,7 +23,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                       user-editable "Ngày phát sinh chi phí" above. Auto-recorded on save,
                       so it is unknown (placeholder) until the row exists. */}
                   <div className="expense-group">
-                    <label className="expense-label">Ngày nhập dữ liệu</label>
+                    <span className="expense-label">Ngày nhập dữ liệu</span>
                     <div
                       className="expense-input"
                       style={{ color: 'var(--ink-3)', background: 'rgba(0,0,0,0.03)', cursor: 'default', display: 'flex', alignItems: 'center' }}
@@ -36,7 +36,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                   </div>
 
                   <div className="expense-group">
-                    <label className="expense-label">Trạng thái thanh toán <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label htmlFor="paymentStatus" className="expense-label">Trạng thái thanh toán <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <select
                       name="paymentStatus"
                       id="paymentStatus"
@@ -69,10 +69,9 @@ export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handl
                               <img src={p.url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               <button
                                 type="button"
+                                aria-label={`Xóa ảnh hóa đơn ${idx + 1}`}
                                 onClick={() => removePhoto(idx)}
                                 className="expense-photo-remove"
-                                onMouseOver={e => { e.currentTarget.style.background = 'rgba(227,36,52,0.9)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
                               >
                                 <X size={16} />
                               </button>

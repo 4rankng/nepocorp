@@ -37,6 +37,24 @@ img { display: block; }
   outline-offset: 2px;
 }
 
+/* Product-wide flat-surface contract.
+   Page and vendor styles may still define shadows internally, but the app
+   deliberately renders hierarchy with borders, spacing, and solid color. */
+#root .app *,
+#root .app *::before,
+#root .app *::after {
+  box-shadow: none;
+  text-shadow: none;
+}
+
+#root .app img {
+  filter: none;
+}
+
+#root .app :where(button, a, [role='button']):hover {
+  transform: none;
+}
+
 /* ============================================================================
  * Leaflet overrides
  * ========================================================================== */

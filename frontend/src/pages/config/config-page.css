@@ -456,6 +456,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
+    min-height: 44px;
     overflow: hidden;
   }
   .cfg-page:not(.routes-config-page) .tt-table tbody tr:not(.cfg-empty-row) td {

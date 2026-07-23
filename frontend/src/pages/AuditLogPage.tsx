@@ -392,6 +392,8 @@ fontSize: 13,
           <Search size={14} />
           <input
             type="text"
+            name="auditSearch"
+            aria-label="Tìm trong nhật ký người dùng"
             placeholder="Tìm tên, nội dung, hành động…"
             value={search}
             onChange={e => {

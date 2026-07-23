@@ -399,7 +399,7 @@ export default function ExpenseEntryPage() {
 
               <div className="expense-group" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label htmlFor={showNewSupplier ? 'newSupplierName' : 'supplierId'} className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewSupplier && (
                     <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
@@ -420,10 +420,10 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
+                    <button type="button" aria-label="Lưu nhà cung cấp mới" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
                       {creatingSupplier ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
-                    <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
+                    <button type="button" aria-label="Hủy thêm nhà cung cấp" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
                       <X size={16} />
                     </button>
                   </div>
@@ -449,7 +449,7 @@ export default function ExpenseEntryPage() {
 
               <div className="expense-group" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label htmlFor={showNewCategory ? 'newCategoryName' : 'categoryId'} className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewCategory && (
                     <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
@@ -470,10 +470,10 @@ export default function ExpenseEntryPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
                       autoFocus
                     />
-                    <button type="button" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
+                    <button type="button" aria-label="Lưu hạng mục mới" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
                       {creatingCategory ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
                     </button>
-                    <button type="button" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
+                    <button type="button" aria-label="Hủy thêm hạng mục" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
                       <X size={16} />
                     </button>
                   </div>
@@ -498,8 +498,10 @@ export default function ExpenseEntryPage() {
               </div>
 
               <div className="expense-group">
-                <label className="expense-label">Loại chi phí</label>
+                <label htmlFor="expenseType" className="expense-label">Loại chi phí</label>
                 <select
+                  id="expenseType"
+                  name="expenseType"
                   className="expense-input"
                   value={expenseType}
                   onChange={e => {
@@ -521,7 +523,7 @@ export default function ExpenseEntryPage() {
 
               {expenseType === 'TRUCK' && (
                 <div className="expense-group">
-                  <label className="expense-label">Biển số xe <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label htmlFor="truckId" className="expense-label">Biển số xe <span style={{ color: 'var(--danger)' }}>*</span></label>
                   <select
                     name="truckId"
                     id="truckId"
@@ -540,7 +542,7 @@ export default function ExpenseEntryPage() {
 
               {expenseType === 'TRAILER' && (
                 <div className="expense-group">
-                  <label className="expense-label">Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <label htmlFor="truckId" className="expense-label">Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span></label>
                   <select
                     name="truckId"
                     id="truckId"
@@ -559,7 +561,7 @@ export default function ExpenseEntryPage() {
               )}
 
               <div className="expense-group">
-                <label className="expense-label">Số tiền (đ) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label htmlFor="amount" className="expense-label">Số tiền (đ) <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -582,7 +584,7 @@ export default function ExpenseEntryPage() {
               {showValidityFields && (
                 <>
                   <div className="expense-group">
-                    <label className="expense-label">Hiệu lực từ <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label htmlFor="validFrom" className="expense-label">Hiệu lực từ <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                       type="date"
                       name="validFrom"
@@ -594,7 +596,7 @@ export default function ExpenseEntryPage() {
                     {errors.validFrom && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.validFrom}</p>}
                   </div>
                   <div className="expense-group">
-                    <label className="expense-label">Hiệu lực đến <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <label htmlFor="validTo" className="expense-label">Hiệu lực đến <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input
                       type="date"
                       name="validTo"
@@ -609,7 +611,7 @@ export default function ExpenseEntryPage() {
               )}
 
               <div className="expense-group">
-                <label className="expense-label">Mã biên lai</label>
+                <label htmlFor="receiptId" className="expense-label">Mã biên lai</label>
                 <input
                   type="text"
                   name="receiptId"
@@ -622,7 +624,7 @@ export default function ExpenseEntryPage() {
               </div>
 
               <div className="expense-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="expense-label">Ghi chú</label>
+                <label htmlFor="note" className="expense-label">Ghi chú</label>
                 <input
                   type="text"
                   name="note"

@@ -262,6 +262,8 @@ export default function ExpenseListPage() {
 
         <input
           type="date"
+          name="expenseDateFrom"
+          aria-label="Từ ngày"
           className="expense-filter-bar__date"
           value={dateFrom}
           onChange={e => { setDateFrom(e.target.value); setPage(1); }}
@@ -269,6 +271,8 @@ export default function ExpenseListPage() {
         />
         <input
           type="date"
+          name="expenseDateTo"
+          aria-label="Đến ngày"
           className="expense-filter-bar__date"
           value={dateTo}
           onChange={e => { setDateTo(e.target.value); setPage(1); }}

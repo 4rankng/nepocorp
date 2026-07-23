@@ -319,6 +319,8 @@ export default function SupplierListPage() {
           <Search size={14} />
           <input
             type="text"
+            name="supplierSearch"
+            aria-label="Tìm nhà cung cấp theo tên"
             placeholder="Tìm theo tên…"
             value={search}
             onChange={e => setSearch(e.target.value)}
