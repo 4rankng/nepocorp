@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { LedgerEntry } from '@tingting/shared';
+import { TxnType, type LedgerEntry } from '@tingting/shared';
 import { buildCustomerDebtMap } from './CustomersPage';
 
 function entry(overrides: Partial<LedgerEntry>): LedgerEntry {
   return {
     id: 1,
     timestamp: '2026-07-24T00:00:00.000Z',
-    txnType: 'TRIP_REVENUE',
+    txnType: TxnType.TRIP_REVENUE,
     txnId: null,
     receiptId: null,
     entityType: 'CUSTOMER',
@@ -26,21 +26,21 @@ describe('buildCustomerDebtMap', () => {
       entry({ id: 1, debit: '2500000', balance: '2500000' }),
       entry({
         id: 2,
-        txnType: 'EXTERNAL_CARRIER_COST',
+        txnType: TxnType.EXTERNAL_CARRIER_COST,
         debit: '0',
         credit: '1000000',
         balance: '1500000',
       }),
       entry({
         id: 3,
-        txnType: 'VENDOR_PAYMENT',
+        txnType: TxnType.VENDOR_PAYMENT,
         debit: '400000',
         credit: '0',
         balance: '1900000',
       }),
       entry({
         id: 4,
-        txnType: 'PAYMENT_RECEIVED',
+        txnType: TxnType.PAYMENT_RECEIVED,
         debit: '0',
         credit: '500000',
         balance: '1400000',
