@@ -7,7 +7,7 @@ Built with **Express v5**, **React 18**, **Drizzle ORM**, and **PostgreSQL**. Vi
 ## Quick Start
 
 ```bash
-# Prerequisites: pnpm 10.x, Docker (for Postgres + Redis)
+# Prerequisites: pnpm 10.x, Docker (for Postgres + Redis), ImageMagick 7
 pnpm install
 make setup        # Infra + generate migrations + migrate + seed
 make dev          # Backend :3090 + Frontend :7173 (auto-migrates)

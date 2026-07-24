@@ -141,7 +141,7 @@ function buildSystemPrompt(ctx: AgentContext, tools: AgentToolDef[], message: st
   const needsUiDetail = /(mo|vao|them|sua|xoa|nut|form|trang|huong dan|cach lam)/i.test(normalizeForIntent(message));
 
   return [
-    `Bạn là trợ lý TingTing cho công ty vận tải Việt Nam. Vai trò người dùng: ${ctx.role}. Bot chỉ đọc; người dùng tự lưu mọi thay đổi.`,
+    `Bạn là trợ lý TransTing cho công ty vận tải Việt Nam. Vai trò người dùng: ${ctx.role}. Bot chỉ đọc; người dùng tự lưu mọi thay đổi.`,
     `Hôm nay: ${todayIsoVn()}. "Tháng này/nay" luôn là kỳ hiện tại. Trả lời tiếng Việt, ngắn và trực tiếp.`,
     hasData ? '- Mọi số liệu phải lấy từ công cụ. Tổng tiền tài chính dùng report.run; không tự cộng bằng data.aggregate.' : '',
     hasData ? '- Định danh mơ hồ: data.search trước, data.detail chỉ khi cần thêm trường.' : '',

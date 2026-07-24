@@ -25,6 +25,7 @@ export function assertCustomerCommissionWithinRevenue(
   }
 }
 import { resolveTrailer } from './trip-shared';
+import type { Tx } from './trip-shared';
 import { LedgerService } from './ledger.service';
 
 // ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
@@ -153,6 +154,83 @@ export function shouldMarkRevenueOverride(data: RevenueUpdateInput, stored: Stor
 
 // ─── createTrip ─────────────────────────────────────────────────────────────
 
+type TripRow = typeof s.trips.$inferSelect;
+type TripInsert = typeof s.trips.$inferInsert;
+type TripLegRow = typeof s.tripLegs.$inferSelect;
+
+const COPY_EXCLUDED_TRIP_FIELDS = new Set<keyof TripRow>([
+  'id',
+  'tripCode',
+  'version',
+  'status',
+  'completedAt',
+  'createdBy',
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+  'revenueOverriddenBy',
+  'revenueOverriddenAt',
+]);
+
+/**
+ * Copy persisted plan and financial values, while resetting identity,
+ * lifecycle, deletion, and audit metadata for a genuinely new trip.
+ */
+export function buildCopiedTripValues(
+  source: TripRow,
+  tripCode: string,
+  createdBy: number,
+): TripInsert {
+  const copiedFields = Object.fromEntries(
+    Object.entries(source).filter(([key]) => !COPY_EXCLUDED_TRIP_FIELDS.has(key as keyof TripRow)),
+  ) as Omit<TripInsert, 'tripCode'>;
+
+  return {
+    ...copiedFields,
+    tripCode,
+    version: 1,
+    status: TripStatus.CREATED,
+    completedAt: null,
+    createdBy,
+    deletedAt: null,
+    // The copied current revenue is the new trip's baseline. Carrying the
+    // source's pre-override baseline would create audit history that never
+    // happened on this new trip.
+    revenueOriginal: source.revenue,
+    revenueOverriddenBy: null,
+    revenueOverriddenAt: null,
+  };
+}
+
+export function buildCopiedTripLegValues(source: TripLegRow, tripId: number) {
+  return {
+    tripId,
+    sequence: source.sequence,
+    origin: source.origin,
+    destination: source.destination,
+    km: source.km,
+    loadingType: source.loadingType,
+    calculatedLiters: source.calculatedLiters,
+  };
+}
+
+async function generateTripCode(tx: Tx, departureDateValue: string): Promise<string> {
+  const departureDate = new Date(departureDateValue);
+  const year = departureDate.getFullYear();
+  const month = String(departureDate.getMonth() + 1).padStart(2, '0');
+  const yearMonth = `${year}${month}`;
+
+  const [counterRow] = await tx.insert(s.tripCodeCounters)
+    .values({ yearMonth, counter: 1 })
+    .onConflictDoUpdate({
+      target: s.tripCodeCounters.yearMonth,
+      set: { counter: sql`${s.tripCodeCounters.counter} + 1` },
+    })
+    .returning();
+
+  return `TRP-${yearMonth}-${String(counterRow.counter).padStart(4, '0')}`;
+}
+
 export async function createTrip(data: {
   customerId: number;
   routeId: number;
@@ -242,21 +320,7 @@ export async function createTrip(data: {
     const returnCargoBonusApplied = roadCfg ? Number(roadCfg.returnCargoBonus) : 0;
 
     // 3. Atomic tripCode generation
-    const departureDate = new Date(data.departureDate);
-    const year = departureDate.getFullYear();
-    const month = String(departureDate.getMonth() + 1).padStart(2, '0');
-    const yearMonth = `${year}${month}`;
-
-    const [counterRow] = await tx.insert(s.tripCodeCounters)
-      .values({ yearMonth, counter: 1 })
-      .onConflictDoUpdate({
-        target: s.tripCodeCounters.yearMonth,
-        set: { counter: sql`${s.tripCodeCounters.counter} + 1` }
-      })
-      .returning();
-
-    const paddedCounter = String(counterRow.counter).padStart(4, '0');
-    const tripCode = `TRP-${yearMonth}-${paddedCounter}`;
+    const tripCode = await generateTripCode(tx, data.departureDate);
 
     // 4. Create trip with snapshotted rates
     const [trip] = await tx.insert(s.trips).values({
@@ -323,6 +387,66 @@ export async function createTrip(data: {
 
     return trip;
   });
+}
+
+// ─── copyTrip ────────────────────────────────────────────────────────────────
+
+export async function copyTrip(sourceTripId: number, createdBy: number) {
+  return db.transaction(async (tx) => {
+    const [source] = await tx.select()
+      .from(s.trips)
+      .where(and(eq(s.trips.id, sourceTripId), isNull(s.trips.deletedAt)))
+      .limit(1);
+    if (!source) throw new ApiError(404, 'Không tìm thấy chuyến cần copy');
+
+    const tripCode = await generateTripCode(tx, source.departureDate);
+    const [trip] = await tx.insert(s.trips)
+      .values(buildCopiedTripValues(source, tripCode, createdBy))
+      .returning();
+
+    const sourceLegs = await tx.select()
+      .from(s.tripLegs)
+      .where(eq(s.tripLegs.tripId, sourceTripId))
+      .orderBy(s.tripLegs.sequence);
+    if (sourceLegs.length > 0) {
+      await tx.insert(s.tripLegs).values(
+        sourceLegs.map((leg) => buildCopiedTripLegValues(leg, trip.id)),
+      );
+    }
+
+    const sourceContainers = await tx.select()
+      .from(s.tripContainers)
+      .where(eq(s.tripContainers.tripId, sourceTripId))
+      .orderBy(s.tripContainers.id);
+    if (sourceContainers.length > 0) {
+      await tx.insert(s.tripContainers).values(sourceContainers.map((container) => ({
+        tripId: trip.id,
+        containerTypeId: container.containerTypeId,
+        cargoWeightKg: container.cargoWeightKg,
+        notes: container.notes,
+        createdBy,
+        // Container/seal numbers identify physical execution and must be new.
+        containerNumber: null,
+        sealNumber: null,
+      })));
+    }
+
+    const [instructions] = await tx.select()
+      .from(s.tripInstructions)
+      .where(eq(s.tripInstructions.tripId, sourceTripId))
+      .limit(1);
+    if (instructions) {
+      await tx.insert(s.tripInstructions).values({
+        tripId: trip.id,
+        contactName: instructions.contactName,
+        contactPhone: instructions.contactPhone,
+        notes: instructions.notes,
+        updatedBy: createdBy,
+      });
+    }
+
+    return trip;
+  }, { isolationLevel: 'repeatable read' });
 }
 
 // ─── updateTripFigures ──────────────────────────────────────────────────────

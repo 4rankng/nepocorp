@@ -90,6 +90,8 @@ export const tripClient = {
 
   createTrip: (data: CreateTripRequest) => api.post<Trip>(TRIPS.CREATE, data),
 
+  copyTrip: (id: number) => api.post<Trip>(TRIPS.COPY(id), {}),
+
   updateTripPreDeparture: (
     id: number,
     data: UpdateTripFiguresRequest,

@@ -143,6 +143,15 @@
   margin-bottom: 16px;
   font-weight: 500;
 }
+.login-session-notice {
+  padding: 10px 14px;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  border-radius: 8px;
+  font-size: var(--fs-xs);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
 .login-submit {
   width: 100%;
   margin-top: 4px;

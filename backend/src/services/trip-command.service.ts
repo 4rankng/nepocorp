@@ -13,6 +13,7 @@ export interface TripCommandActor {
 
 export interface TripCommandDeps {
   createTrip: typeof tripService.createTrip;
+  copyTrip: typeof tripService.copyTrip;
   transitionTripStatus: typeof tripService.transitionTripStatus;
   syncAttendanceAfterStatusChange: typeof tripService.syncAttendanceAfterStatusChange;
   invalidateReports: (invalidatePnl?: boolean) => Promise<void>;
@@ -30,11 +31,26 @@ async function invalidateReportCaches(invalidatePnl?: boolean) {
 
 const defaultDeps: TripCommandDeps = {
   createTrip: tripService.createTrip,
+  copyTrip: tripService.copyTrip,
   transitionTripStatus: tripService.transitionTripStatus,
   syncAttendanceAfterStatusChange: tripService.syncAttendanceAfterStatusChange,
   invalidateReports: invalidateReportCaches,
   emitNotification,
 };
+
+function emitTripCreatedNotification(
+  trip: TripRecord,
+  emit: (payload: NotificationPayload) => void,
+) {
+  emit({
+    type: NotificationType.TRIP_CREATED,
+    title: 'Chuyến mới được tạo',
+    message: `Chuyến ${trip.tripCode} đã được tạo`,
+    relatedEntityType: 'trips',
+    relatedEntityId: trip.id,
+    targetDriverId: trip.driverId ?? undefined,
+  });
+}
 
 export async function createTripCommand(
   data: CreateTripInput,
@@ -46,14 +62,18 @@ export async function createTripCommand(
     createdBy: actor.userId,
   });
   await deps.invalidateReports();
-  deps.emitNotification({
-    type: NotificationType.TRIP_CREATED,
-    title: 'Chuyến mới được tạo',
-    message: `Chuyến ${trip.tripCode} đã được tạo`,
-    relatedEntityType: 'trips',
-    relatedEntityId: trip.id,
-    targetDriverId: trip.driverId ?? undefined,
-  });
+  emitTripCreatedNotification(trip, deps.emitNotification);
+  return trip;
+}
+
+export async function copyTripCommand(
+  sourceTripId: number,
+  actor: TripCommandActor,
+  deps: TripCommandDeps = defaultDeps,
+): Promise<TripRecord> {
+  const trip = await deps.copyTrip(sourceTripId, actor.userId);
+  await deps.invalidateReports();
+  emitTripCreatedNotification(trip, deps.emitNotification);
   return trip;
 }
 

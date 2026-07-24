@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import { Role } from '@tingting/shared';
 import { qk } from '../api/keys';
 import { getToken } from '../design-system/hooks/useToken';
 import { disposeAgentSocket, clearAgentConversation } from '../api/agentClient';
+import { onSessionExpired } from '../lib/api/session';
 
 export interface AuthUser {
   userId: number;
@@ -27,6 +28,7 @@ interface AuthContextType {
   updateUser: (updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => void;
   isAuthenticated: boolean;
   loading: boolean;
+  sessionExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>(null!);
@@ -59,6 +61,7 @@ async function fetchAuthUser(): Promise<AuthUser | null> {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Cached at the TanStack level: login/logout invalidates the key, not the
   // entire app. The previous useEffect+fetch approach bypassed the cache
@@ -78,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       });
       api.setToken(res.token);
+      setSessionExpired(false);
       queryClient.setQueryData(qk.auth.me, res.user);
     },
     [queryClient],
@@ -94,6 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.clearToken();
     queryClient.setQueryData(qk.auth.me, null);
   }, [queryClient]);
+
+  useEffect(
+    () => onSessionExpired(() => {
+      setSessionExpired(true);
+      logout();
+    }),
+    [logout],
+  );
 
   const updateUser = useCallback(
     (updates: Pick<AuthUser, 'email' | 'phone' | 'username' | 'fullName'>) => {
@@ -113,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateUser,
         isAuthenticated: !!user,
         loading: isLoading,
+        sessionExpired,
       }}
     >
       {children}

@@ -178,4 +178,21 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+
+  // Standalone QA probes run in Node but execute callbacks in the browser via
+  // Puppeteer, so both sets of globals are intentional.
+  {
+    files: ['qa/scripts/*.cjs'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
 ]);

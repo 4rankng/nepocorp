@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { NotificationType, Role, TripStatus } from '@tingting/shared';
-import { createTripCommand, dispatchTripCommand, type TripCommandDeps } from '../services/trip-command.service';
+import { copyTripCommand, createTripCommand, dispatchTripCommand, type TripCommandDeps } from '../services/trip-command.service';
 
 describe('trip command service', () => {
   it('creates a trip, invalidates dashboard reports, emits creation notification, and returns the trip', async () => {
@@ -42,6 +42,38 @@ describe('trip command service', () => {
       message: 'Chuyến TRP-202606-0042 đã được tạo',
       relatedEntityType: 'trips',
       relatedEntityId: 42,
+      targetDriverId: 7,
+    });
+  });
+
+  it('copies a trip, invalidates reports, and emits the standard creation notification', async () => {
+    const calls: string[] = [];
+    const notifications: unknown[] = [];
+    const trip = { id: 43, tripCode: 'TRP-202606-0043', driverId: 7, departureDate: '2026-06-20' };
+    const deps = {
+      copyTrip: async (sourceTripId: number, createdBy: number) => {
+        calls.push(`copy:${sourceTripId}:${createdBy}`);
+        return trip;
+      },
+      invalidateReports: async () => {
+        calls.push('invalidate');
+      },
+      emitNotification: (payload: unknown) => {
+        calls.push('notify');
+        notifications.push(payload);
+      },
+    } as unknown as TripCommandDeps;
+
+    const result = await copyTripCommand(42, { userId: 99, role: Role.MANAGER }, deps);
+
+    assert.equal(result, trip);
+    assert.deepEqual(calls, ['copy:42:99', 'invalidate', 'notify']);
+    assert.deepEqual(notifications[0], {
+      type: NotificationType.TRIP_CREATED,
+      title: 'Chuyến mới được tạo',
+      message: 'Chuyến TRP-202606-0043 đã được tạo',
+      relatedEntityType: 'trips',
+      relatedEntityId: 43,
       targetDriverId: 7,
     });
   });

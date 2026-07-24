@@ -56,8 +56,8 @@ self.addEventListener('push', (event) => {
         : 'Mở';
   const options = {
     body,
-    icon: data.icon || '/assets/transting-logo-192.png',
-    badge: '/assets/transting-logo-192.png',
+    icon: data.icon || '/assets/transting-logo-192.png?v=4',
+    badge: '/assets/transting-sidebar-mark-192.png?v=4',
     tag: data.tag || 'tingting-notification',
     timestamp: Date.now(),
     data: { url },

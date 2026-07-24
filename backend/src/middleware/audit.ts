@@ -149,7 +149,10 @@ export function auditLogMiddleware(req: Request, res: Response, next: NextFuncti
   res.on('finish', () => {
     const event = resolveAuditEvent(req.method, fullPath);
     const entityType = extractEntityType(fullPath);
-    const entityId = extractEntityId(fullPath, req.body as Record<string, unknown>);
+    const localEntityId = res.locals.auditEntityId;
+    const entityId = typeof localEntityId === 'number'
+      ? localEntityId
+      : extractEntityId(fullPath, req.body as Record<string, unknown>);
     const entityKey = res.locals.auditEntityKey || extractEntityKey(entityType, capturedBody, req.body as Record<string, unknown>);
 
     if (res.statusCode < 400 && req.user) {

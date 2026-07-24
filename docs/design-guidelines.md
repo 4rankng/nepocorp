@@ -15,15 +15,23 @@ Do not add new fonts. Do not reference Google Fonts CDN.
 
 ## Color System
 
-The TransTing brand palette centers on an emerald shell and primary actions, with transport blue in the brand mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
+The TransTing brand palette centers on an emerald shell and primary actions, with a unified emerald-and-white route-T mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
 
 | Token | Color | Use |
 |-------|-------|-----|
 | `--sidebar` / `--sb-bg` | `#005A2D` | Deep emerald sidebar and shell surfaces |
 | `--color-primary` / `--brand` / `--accent-2` | `#005A2D` | Deep emerald primary CTA and selected states |
-| Sidebar/app mark | `#1267D8` | Transport-blue detail within the TransTing mark |
+| App mark | `#005A2D` / `#FFFFFF` | Emerald tile with a single white route-T silhouette |
 | `--brand-2` / `--accent` | `#10B956` | Signal green secondary brand color |
 | `--success`, `--warning`, `--danger`, `--info` | Semantic palette | Status and validation feedback only |
+
+The checked-in ImageGen master at `frontend/assets-source/transting-logo-master.png`
+is the visual source for all raster sizes. Regenerate the app, PWA, favicon, and
+transparent sidebar assets with `pnpm --dir frontend run generate:brand`; the
+brand contract verifies dimensions, palette boundaries, transparency, and the
+route stem at small sizes. ImageMagick 7 (`magick`) is required for generation
+and the brand/UI contract checks. PWA maskable variants use additional padding
+to keep the route-T inside the platform safe zone.
 
 - Status colors follow the `statusStrip` convention (see below).
 - CTA buttons stay subtle and flat; avoid heavy or glossy treatment.
@@ -102,7 +110,7 @@ All empty-state illustrations route through `frontend/src/lib/emptyIllustrations
 
 - **Edit page:** 6-card bento layout with single-column form.
 - **Finance card:** Stacked vertically within the bento.
-- **Color scheme:** deep emerald shell and primary CTAs, with transport blue in the mark and signal green accents.
+- **Color scheme:** deep emerald shell and primary CTAs, with a white route-T mark and signal green accents.
 
 ### Buttons
 

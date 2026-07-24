@@ -31,6 +31,8 @@ export { TextField } from './forms/TextField';
 export type { TextFieldProps, BaseFieldProps } from './forms/TextField';
 export { SelectField } from './forms/SelectField';
 export type { SelectFieldProps } from './forms/SelectField';
+export { SearchableSelect } from './forms/SearchableSelect';
+export type { SearchableSelectOption, SearchableSelectProps } from './forms/SearchableSelect';
 export { NumberField } from './forms/NumberField';
 export type { NumberFieldProps } from './forms/NumberField';
 export { CrudFormModal } from './forms/CrudFormModal';

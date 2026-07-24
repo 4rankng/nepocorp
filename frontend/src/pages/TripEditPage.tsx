@@ -25,6 +25,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import type { TripOptions } from '../hooks/useTripOptions';
+import { SearchableSelect } from '../design-system';
 import './TripForm.css';
 import './TripEditPage.css';
 
@@ -63,6 +64,14 @@ export default function TripEditPage() {
   }), [catalogData]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
+  const searchableRoutes = useMemo(
+    () => editOptions.routes.map((route) => ({
+      value: String(route.id),
+      label: route.label,
+      searchText: route.name,
+    })),
+    [editOptions.routes],
+  );
   const canChangeCustomer = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
   const { error, submitting, uploading, handleSubmit, routeId, setRouteId, notes, setNotes, departureDate, setDepartureDate, completedAt, setCompletedAt } = form;
   const filledContainerTypeIds = form.containerRows
@@ -199,19 +208,18 @@ export default function TripEditPage() {
                     />
                   </div>
                   <div className="tc-field">
-                    <label className="tc-field-label">Tuyến đường <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
-                    <select
+                    <label className="tc-field-label" htmlFor="routeId">Tuyến đường <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                    <SearchableSelect
                       id="routeId"
-                      className="input"
                       value={routeId}
-                      onChange={(e) => setRouteId(e.target.value)}
+                      onChange={setRouteId}
+                      options={searchableRoutes}
+                      placeholder="Chọn tuyến đường"
+                      searchPlaceholder="Tìm tuyến đường…"
+                      emptyMessage="Không tìm thấy tuyến đường phù hợp."
+                      disabled={!catalogData}
                       required
-                    >
-                      <option value="">-- Chọn tuyến đường --</option>
-                      {catalogData?.routes.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   {(trip.status === TripStatus.IN_TRANSIT || trip.status === TripStatus.COMPLETED) && (
                     <div className="tc-field">

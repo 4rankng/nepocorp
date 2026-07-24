@@ -5,7 +5,7 @@ import { BRAND } from '../brand';
 import './LoginPage.css';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -42,6 +42,12 @@ export default function LoginPage() {
 
           <h2>Đăng nhập</h2>
           <p className="sub">Nhập thông tin tài khoản của bạn</p>
+
+          {sessionExpired && (
+            <div className="login-session-notice" role="status">
+              Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.
+            </div>
+          )}
 
           <div className="field">
             <label htmlFor="username-input">Tên đăng nhập / Số điện thoại</label>

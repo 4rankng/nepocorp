@@ -22,7 +22,6 @@
  */
 import type {
   ProductEventName,
-  ProductEventPayloads,
   PayloadOf,
 } from '@tingting/shared';
 
@@ -56,7 +55,6 @@ class OnboardingEventBus {
       } catch (err) {
         // A bad handler must never break the emitter (or other handlers).
         // Logged via console so it surfaces in dev without crashing a tour.
-        // eslint-disable-next-line no-console
         console.error('[onboardingEvents] handler threw for', name, err);
       }
     }
@@ -89,7 +87,9 @@ class OnboardingEventBus {
 
   /** Subscribe once and return a cancellable handle for tour-step teardown. */
   once(name: ProductEventName, handler: Handler): () => void {
-    let off: () => void;
+    // `on` may synchronously replay a durable page-view event, so this cannot
+    // be a const initialized from `on(...)` without creating a TDZ.
+    let off: () => void = () => {};
     off = this.on(name, (payload) => {
       off();
       handler(payload);

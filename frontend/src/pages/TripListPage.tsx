@@ -6,14 +6,15 @@ import { MousePointerClick, Save, X } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
-import { parseThreshold, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
+import { parseThreshold, Role, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
 import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
+import { useAuth } from '../hooks/useAuth';
 import { useMonth } from '../hooks/useMonth';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
 import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
-import { columnClass, copyPlanPayloadFromTrip, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
+import { columnClass, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
@@ -24,9 +25,11 @@ export default function TripListPage() {
   const rootRef = useTripListAnimations();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { month, year } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
   const { data: salaryPeriod } = useSalaryPeriod(month, year);
+  const canCopyPlan = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
 
   // The onboarding checklist's "Mở danh sách chuyến xe" task completes when
   // the user really reaches this page, independently of creating a new trip.
@@ -246,18 +249,12 @@ export default function TripListPage() {
 
   const handleCopyPlan = useCallback(async (tripId: number) => {
     if (copyingPlanId) return;
-    const sourceTrip = table.rows.find((trip) => trip.id === tripId);
-    if (!sourceTrip) {
-      setCopyPlanError(true);
-      setCopyPlanMessage('Không tìm thấy dòng cần copy. Vui lòng tải lại danh sách.');
-      return;
-    }
 
     setCopyingPlanId(tripId);
     setCopyPlanMessage('');
     setCopyPlanError(false);
     try {
-      const created = await tripClient.createTrip(copyPlanPayloadFromTrip(sourceTrip));
+      const created = await tripClient.copyTrip(tripId);
       await Promise.all([
         table.query.refetch(),
         queryClient.invalidateQueries({ queryKey: qk.trips.summary(dateFrom, dateTo) }),
@@ -270,7 +267,7 @@ export default function TripListPage() {
     } finally {
       setCopyingPlanId(null);
     }
-  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query, table.rows]);
+  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query]);
 
   // ── Export ──
   const handleExport = useCallback(async () => {
@@ -354,8 +351,8 @@ export default function TripListPage() {
     onDraftChange: handleDraftChange,
   }, {
     copyingPlanId,
-    onCopyPlan: handleCopyPlan,
-  }), [copyingPlanId, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
+    onCopyPlan: canCopyPlan ? handleCopyPlan : undefined,
+  }), [canCopyPlan, copyingPlanId, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
   const tableInstance = useReactTable({
     data: table.rows,
     columns,
@@ -415,7 +412,8 @@ export default function TripListPage() {
       <div className="table-hint">
         <MousePointerClick size={13} strokeWidth={2.2} />
         <span>
-          <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến, bấm Copy để tạo dòng kế hoạch tương tự
+          <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến
+          {canCopyPlan && ', bấm Copy để tạo dòng kế hoạch tương tự'}
           &nbsp;·&nbsp; dùng ← → để cuộn ngang
         </span>
         <span className="table-legend">
@@ -527,7 +525,7 @@ export default function TripListPage() {
                     warnThreshold={warnThreshold}
                     style={tripRowStyle(trip) as CSSProperties}
                     copyingPlan={copyingPlanId === trip.id}
-                    onCopyPlan={handleCopyPlan}
+                    onCopyPlan={canCopyPlan ? handleCopyPlan : undefined}
                   />
                 );
               }

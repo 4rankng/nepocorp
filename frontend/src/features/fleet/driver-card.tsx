@@ -1,6 +1,6 @@
 import { useState, memo } from "react";
 import { UserRoundCheck, Plus, Search, Pencil, Trash2, X, Loader2 } from "lucide-react";
-import { Panel, StatusPill, Btn, Modal } from "../../components/UI";
+import { Panel, StatusPill, Modal } from "../../components/UI";
 import { StatusStrip } from "../../components/shared/StatusStrip";
 import { useCRUD } from "../../hooks/useCRUD";
 import type { Truck as TruckType, Driver } from "@tingting/shared";

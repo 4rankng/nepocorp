@@ -5,6 +5,7 @@ import { RouteChips } from './RouteChips';
 import type { SelectOption, RouteOption, TrailerTypeOption } from '../../hooks/useTripOptions';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { formatCurrency } from '../../lib/format';
+import { SearchableSelect } from '../../design-system';
 import { selectStyle } from '../../utils/formStyles';
 import './TripInfoCard.css';
 
@@ -54,6 +55,14 @@ export function TripInfoCard(props: TripInfoCardProps) {
       ? filledContainerTypeIds[0]
       : '';
   const plannedContainerTypeId = form.plannedContainerTypeId || commonContainerTypeId;
+  const searchableRoutes = React.useMemo(
+    () => props.routes.map((route) => ({
+      value: String(route.id),
+      label: route.label,
+      searchText: route.name,
+    })),
+    [props.routes],
+  );
 
   const setPlannedContainerTypeId = (value: string) => {
     form.setPlannedContainerTypeId(value);
@@ -89,7 +98,18 @@ export function TripInfoCard(props: TripInfoCardProps) {
             {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId', true)}
           </Field>
           <Field label="Tuyến đường" required controlId="routeId">
-            {sel(form.routeId, form.setRouteId, props.routes, 'Chọn tuyến đường', 'routeId', true)}
+            <SearchableSelect
+              id="routeId"
+              name="routeId"
+              value={form.routeId}
+              onChange={form.setRouteId}
+              options={searchableRoutes}
+              placeholder={props.loading ? 'Đang tải…' : 'Chọn tuyến đường'}
+              searchPlaceholder="Tìm tuyến đường…"
+              emptyMessage="Không tìm thấy tuyến đường phù hợp."
+              disabled={props.loading}
+              required
+            />
             <RouteChips routes={props.routes} onSelect={(id) => form.setRouteId(String(id))} />
           </Field>
           <Field label="Loại hàng" required controlId="cargoTypeId">

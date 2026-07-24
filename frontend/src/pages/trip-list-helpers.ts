@@ -16,8 +16,8 @@
  * This refactor is **behavior-preserving**: same data, same columns,
  * same mobile layout, same filter pills, same export.
  */
-import { FuelMode, TripStatus, type CreateTripRequest, type TripDetail, type UpdateTripFiguresRequest } from '@tingting/shared';
-import type { TripListRow, TripQuickEditDraft } from '../features/trips';
+import { FuelMode, TripStatus, type TripDetail, type UpdateTripFiguresRequest } from '@tingting/shared';
+import type { TripQuickEditDraft } from '../features/trips';
 
 export function draftNumber(value: unknown): string {
   if (value === null || value === undefined || value === '') return '';
@@ -40,52 +40,6 @@ export function quickDraftFromTrip(trip: TripDetail): TripQuickEditDraft {
     driverSalary: draftNumber(trip.driverSalary),
     revenue: draftNumber(trip.revenue),
   };
-}
-
-export function copyPlanPayloadFromTrip(trip: TripListRow): CreateTripRequest {
-  if (!trip.customerId || !trip.routeId || !trip.cargoTypeId || !trip.departureDate) {
-    throw new Error('Dòng này thiếu thông tin bắt buộc nên chưa thể copy kế hoạch.');
-  }
-  const containerTypeId = trip.containers?.find(c => c.containerTypeId)?.containerTypeId;
-  if (!containerTypeId) {
-    throw new Error('Chuyến này chưa có loại container nên chưa thể copy kế hoạch.');
-  }
-
-  const payload: CreateTripRequest = {
-    customerId: trip.customerId,
-    routeId: trip.routeId,
-    cargoTypeId: trip.cargoTypeId,
-    departureDate: trip.departureDate,
-    containerCount: trip.containerCount ?? 1,
-    containerTypeId,
-    fuelMode: trip.fuelMode,
-    fuelSupplierId: trip.fuelSupplierId ?? null,
-    vatRate: trip.vatRate != null ? Number(trip.vatRate) : 0,
-    carrierType: trip.carrierType ?? 'OWN',
-  };
-
-  if (trip.customerReference?.trim()) {
-    payload.customerReference = trip.customerReference.trim();
-  }
-
-  if (trip.carrierType === 'EXTERNAL') {
-    payload.truckId = null;
-    payload.driverId = null;
-    payload.externalCarrierId = trip.externalCarrierId ?? null;
-    payload.externalFreightCost = trip.externalFreightCost != null ? Number(trip.externalFreightCost) : null;
-    payload.externalPlateNumber = trip.externalPlateNumber ?? null;
-    payload.externalDriverName = trip.externalDriverName ?? null;
-    payload.externalDriverPhone = trip.externalDriverPhone ?? null;
-    return payload;
-  }
-
-  if (!trip.truckId || !trip.driverId) {
-    throw new Error('Chuyến nội bộ cần có xe và lái xe trước khi copy kế hoạch.');
-  }
-
-  payload.truckId = trip.truckId;
-  payload.driverId = trip.driverId;
-  return payload;
 }
 
 export function isEditableInQuickMode(trip: TripDetail): boolean {

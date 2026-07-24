@@ -1,4 +1,5 @@
 import { ApiError } from './errors';
+import { notifySessionExpired } from './session';
 import { getToken, setToken as storeToken, clearToken as storeClearToken, invalidateTokenCache } from '../../design-system/hooks/useToken';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
@@ -39,9 +40,10 @@ class ApiClient {
     options?: RequestInitWithSkip,
     skipContentType = false,
   ): Promise<T> {
+    const token = getToken();
     const headers: Record<string, string> = {
       ...(skipContentType ? {} : { 'Content-Type': 'application/json' }),
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...((options?.headers as Record<string, string> | undefined) || {}),
     };
     if (options?.expectedUpdatedAt) {
@@ -49,8 +51,24 @@ class ApiClient {
     }
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    this.handleSessionExpiry(res, token);
     if (!res.ok) throw await ApiError.fromResponse(res);
     return (await res.json()) as T;
+  }
+
+  /**
+   * A rejected token is an application-state transition, not a form error.
+   * Clear it immediately and let AuthProvider swap the current route to the
+   * login screen. Keep unauthenticated 401s (such as bad login credentials)
+   * as ordinary request errors.
+   */
+  private handleSessionExpiry(res: Response, requestToken: string | null): void {
+    if (res.status !== 401 || !requestToken) return;
+    // Ignore a late 401 from an older request after the user has already
+    // established a newer session.
+    if (getToken() !== requestToken) return;
+    storeClearToken();
+    notifySessionExpired();
   }
 
   get<T>(path: string) {
@@ -79,10 +97,12 @@ class ApiClient {
 
   /** Fetch a text response (e.g. HTML) with auth headers via GET. */
   async getForText(url: string): Promise<string> {
+    const token = getToken();
     const headers: Record<string, string> = {
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
+    this.handleSessionExpiry(res, token);
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
@@ -92,10 +112,12 @@ class ApiClient {
 
   /** Fetch a binary blob (PDF, XLSX, etc.) with auth headers. */
   async getBlob(url: string): Promise<Blob> {
+    const token = getToken();
     const headers: Record<string, string> = {
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
+    this.handleSessionExpiry(res, token);
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
@@ -105,15 +127,17 @@ class ApiClient {
 
   /** POST JSON body and receive a binary blob response. */
   async postForBlob(url: string, body: unknown): Promise<Blob> {
+    const token = getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
     });
+    this.handleSessionExpiry(res, token);
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
@@ -123,15 +147,17 @@ class ApiClient {
 
   /** POST JSON body and receive a text response (e.g. HTML). */
   async postForText(url: string, body: unknown): Promise<string> {
+    const token = getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
     });
+    this.handleSessionExpiry(res, token);
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);

@@ -20,10 +20,11 @@ import { parsePagination } from './utils/pagination';
 import { throwValidation } from '../lib/validation';
 import { emitNotification } from '../services/notification.service';
 import { getFuelVoucherHtml, getFuelVoucherXlsx } from '../services/fuel-voucher.service';
-import { createTripCommand, dispatchTripCommand } from '../services/trip-command.service';
+import { copyTripCommand, createTripCommand, dispatchTripCommand } from '../services/trip-command.service';
 
 // Audit event registrations — declared once at module load, matched by middleware
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
+registerAuditEvent('POST', '/api/trips/', '/copy', AuditEvent.TRIP_CREATED);
 registerAuditEvent('PUT', '/api/trips/', '/pre-departure', AuditEvent.TRIP_UPDATED_PRE_DEPARTURE);
 registerAuditEvent('PUT', '/api/trips/', '/actuals', AuditEvent.TRIP_UPDATED_ACTUALS);
 registerAuditEvent('POST', '/api/trips/bulk-figures', AuditEvent.ENTITY_UPDATED);
@@ -74,6 +75,18 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 router.post('/', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const data = createTripSchema.parse(req.body);
   const trip = await createTripCommand(data, getUser(req));
+  res.status(201).json(trip);
+}));
+
+// Copy every editable planning/financial field atomically. Execution evidence,
+// expenses, lifecycle state, and container/seal identifiers start clean.
+router.post('/:id/copy', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const tripId = Number(req.params.id);
+  if (!Number.isInteger(tripId) || tripId <= 0) {
+    return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  }
+  const trip = await copyTripCommand(tripId, getUser(req));
+  res.locals.auditEntityId = trip.id;
   res.status(201).json(trip);
 }));
 

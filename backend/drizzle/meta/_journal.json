@@ -722,6 +722,13 @@
       "when": 1783942103626,
       "tag": "0107_fantastic_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1784851200000,
+      "tag": "0108_transting_product_identity",
+      "breakpoints": true
     }
   ]
 }

@@ -16,6 +16,7 @@ export const TRIPS = {
   LIST: '/trips',
   DETAIL: (id: number) => `/trips/${id}`,
   CREATE: '/trips',
+  COPY: (id: number) => `/trips/${id}/copy`,
   BULK_FIGURES: '/trips/bulk-figures',
   PRE_DEPARTURE: (id: number) => `/trips/${id}/pre-departure`,
   ACTUALS: (id: number) => `/trips/${id}/actuals`,

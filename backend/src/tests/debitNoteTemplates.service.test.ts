@@ -17,7 +17,7 @@ import type {
 
 const line = (over: Partial<BillingDocumentLine>): BillingDocumentLine => ({
   sourceType: 'TRIP', sourceId: 1, lineType: 'FREIGHT', typeLabel: 'Doanh thu', unit: 'lần',
-  description: 'Cước vận chuyển — HCM - Bình Dương (TRIP-1)', routeName: 'HCM - Bình Dương',
+  description: 'Cước vận chuyển — HCM - Bình Dương', routeName: 'HCM - Bình Dương',
   containerNumbers: ['ABCD1234567'], baseAmount: 5_000_000, amountOverride: null,
   excluded: false, sortOrder: 0, ...over,
 });
@@ -139,7 +139,7 @@ test('renderTemplatedXlsx DEBIT_NOTE adds a shipment header row before charge ro
   const wb = await loadWorkbook(buf);
   const ws = wb.worksheets[0];
   assert.equal(ws.getCell(16, 4).value, "01x20' ABCD1234567");
-  assert.equal(ws.getCell(17, 4).value, 'Cước vận chuyển — HCM - Bình Dương (TRIP-1)');
+  assert.equal(ws.getCell(17, 4).value, 'Cước vận chuyển — HCM - Bình Dương');
   assert.deepEqual(ws.getCell(61, 8).value, { formula: 'SUM(H16:H60)', result: 5_000_000 });
 });
 
