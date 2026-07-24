@@ -457,10 +457,10 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
   let providerVehicles: NormalizedGpsVehicle[] | null = null;
   let providerError: string | null = null;
   const provider = getGpsProvider();
-  if (!(await provider.isConfigured())) {
-    providerError = 'GPS provider not configured';
-  } else {
-    try {
+  try {
+    if (!(await provider.isConfigured())) {
+      providerError = 'GPS provider not configured';
+    } else {
       providerVehicles = await cacheGet<NormalizedGpsVehicle[]>(
         GPS_CACHE_KEY,
         GPS_CACHE_TTL_SECONDS,
@@ -470,10 +470,10 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
       // `lastSeenAt: Date` to an ISO string on a cache hit. Revive it back to a
       // Date (idempotent for a real Date from the live fetch).
       for (const v of providerVehicles) v.lastSeenAt = reviveDate(v.lastSeenAt);
-    } catch (e) {
-      providerError = e instanceof Error ? e.message : 'GPS provider error';
-      providerVehicles = null;
     }
+  } catch (e) {
+    providerError = e instanceof Error ? e.message : 'GPS provider error';
+    providerVehicles = null;
   }
 
   // Last-known positions for every active truck (fallback source).

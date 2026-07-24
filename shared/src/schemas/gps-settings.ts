@@ -8,7 +8,9 @@ import { z } from 'zod';
  */
 export const gpsSettingsUpdateSchema = z.object({
   username: z.string().trim().min(1, 'Vui lòng nhập tên đăng nhập Bách Khoa'),
-  password: z.string().trim().min(1).optional(),
+  password: z.string()
+    .refine((value) => value.trim().length > 0, 'Mật khẩu không được để trống')
+    .optional(),
 });
 
 export type GpsSettingsUpdate = z.infer<typeof gpsSettingsUpdateSchema>;

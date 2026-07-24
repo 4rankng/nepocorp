@@ -71,6 +71,7 @@ type SecretFieldProps = {
   saved: boolean;
   maskedPreview: string;
   placeholder: string;
+  disabled?: boolean;
 };
 
 function SecretField({
@@ -81,6 +82,7 @@ function SecretField({
   saved,
   maskedPreview,
   placeholder,
+  disabled = false,
 }: SecretFieldProps) {
   const [visible, setVisible] = useState(false);
   return (
@@ -99,12 +101,14 @@ function SecretField({
           placeholder={saved ? `Đã lưu (${maskedPreview}) — nhập để thay đổi` : placeholder}
           autoComplete="new-password"
           spellCheck={false}
+          disabled={disabled}
         />
         <button
           type="button"
           className="cfg-secret-input__toggle"
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? `Ẩn ${label}` : `Hiện ${label}`}
+          disabled={disabled}
         >
           {visible ? <EyeOff size={17} /> : <Eye size={17} />}
         </button>
@@ -175,7 +179,7 @@ export default function AppSettingsConfigPage() {
     try {
       await saveGpsSettings.mutateAsync({
         username: gpsUsername.trim(),
-        ...(gpsPassword.trim() ? { password: gpsPassword.trim() } : {}),
+        ...(gpsPassword.trim() ? { password: gpsPassword } : {}),
       });
       setGpsPassword('');
       setGpsMessage('Đã lưu tài khoản định vị Bách Khoa.');
@@ -214,7 +218,7 @@ export default function AppSettingsConfigPage() {
             description="Cho phép người dùng văn phòng mở và sử dụng trợ lý ảo trong ứng dụng."
             enabled={features.botEnabled}
             onChange={() => updateFeature('botEnabled')}
-            disabled={appSettings.isLoading || saveAppSettings.isPending}
+            disabled={appSettings.isLoading || appSettings.isError || saveAppSettings.isPending}
           />
           <FeatureSwitch
             icon={<GraduationCap size={19} />}
@@ -222,12 +226,12 @@ export default function AppSettingsConfigPage() {
             description="Hiển thị bảng checklist và các tour hướng dẫn cho người dùng mới."
             enabled={features.tutorialEnabled}
             onChange={() => updateFeature('tutorialEnabled')}
-            disabled={appSettings.isLoading || saveAppSettings.isPending}
+            disabled={appSettings.isLoading || appSettings.isError || saveAppSettings.isPending}
           />
           <div className="cfg-form-actions">
             <button
               className="btn btn--primary"
-              disabled={appSettings.isLoading || saveAppSettings.isPending}
+              disabled={!appSettings.data || appSettings.isError || saveAppSettings.isPending}
               onClick={() => saveAppSettings.mutate(features)}
             >
               {saveAppSettings.isPending ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
@@ -236,6 +240,11 @@ export default function AppSettingsConfigPage() {
             {saveAppSettings.error && (
               <span role="alert" className="cfg-form-error">
                 {saveAppSettings.error instanceof Error ? saveAppSettings.error.message : 'Không thể lưu cài đặt.'}
+              </span>
+            )}
+            {appSettings.error && (
+              <span role="alert" className="cfg-form-error">
+                {appSettings.error instanceof Error ? appSettings.error.message : 'Không thể tải cài đặt.'}
               </span>
             )}
           </div>
@@ -260,6 +269,7 @@ export default function AppSettingsConfigPage() {
                     name="llm-provider"
                     checked={provider === item}
                     onChange={() => setProvider(item)}
+                    disabled={llmSettings.isLoading || llmSettings.isError || saveLlmSettings.isPending}
                   />
                   <span>
                     <strong>{LLM_PROVIDER_LABELS[item]}</strong>
@@ -278,6 +288,7 @@ export default function AppSettingsConfigPage() {
               saved={minimaxKeySet}
               maskedPreview={llmSettings.data?.minimaxKeyMasked ?? ''}
               placeholder="Nhập MiniMax API key"
+              disabled={llmSettings.isLoading || llmSettings.isError || saveLlmSettings.isPending}
             />
             <SecretField
               id="llm-openrouter-key"
@@ -287,12 +298,13 @@ export default function AppSettingsConfigPage() {
               saved={openrouterKeySet}
               maskedPreview={llmSettings.data?.openrouterKeyMasked ?? ''}
               placeholder="Nhập OpenRouter API key"
+              disabled={llmSettings.isLoading || llmSettings.isError || saveLlmSettings.isPending}
             />
           </div>
           <div className="cfg-form-actions">
             <button
               className="btn btn--primary"
-              disabled={llmSettings.isLoading || saveLlmSettings.isPending || !chosenKeyReady}
+              disabled={!llmSettings.data || llmSettings.isError || saveLlmSettings.isPending || !chosenKeyReady}
               onClick={saveAi}
             >
               {saveLlmSettings.isPending ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
@@ -302,6 +314,11 @@ export default function AppSettingsConfigPage() {
             {saveLlmSettings.error && (
               <span className="cfg-form-error" role="alert">
                 {saveLlmSettings.error instanceof Error ? saveLlmSettings.error.message : 'Không thể lưu cấu hình AI.'}
+              </span>
+            )}
+            {llmSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {llmSettings.error instanceof Error ? llmSettings.error.message : 'Không thể tải cấu hình AI.'}
               </span>
             )}
           </div>
@@ -327,6 +344,7 @@ export default function AppSettingsConfigPage() {
                 placeholder="Nhập tên đăng nhập"
                 autoComplete="username"
                 spellCheck={false}
+                disabled={gpsSettings.isLoading || gpsSettings.isError || saveGpsSettings.isPending}
               />
             </div>
             <SecretField
@@ -337,12 +355,13 @@ export default function AppSettingsConfigPage() {
               saved={!!gpsSettings.data?.passwordSet}
               maskedPreview={gpsSettings.data?.passwordMasked ?? ''}
               placeholder="Nhập mật khẩu"
+              disabled={gpsSettings.isLoading || gpsSettings.isError || saveGpsSettings.isPending}
             />
           </div>
           <div className="cfg-form-actions">
             <button
               className="btn btn--primary"
-              disabled={gpsSettings.isLoading || saveGpsSettings.isPending || !gpsReady}
+              disabled={!gpsSettings.data || gpsSettings.isError || saveGpsSettings.isPending || !gpsReady}
               onClick={saveGps}
             >
               {saveGpsSettings.isPending ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
@@ -352,6 +371,11 @@ export default function AppSettingsConfigPage() {
             {saveGpsSettings.error && (
               <span className="cfg-form-error" role="alert">
                 {saveGpsSettings.error instanceof Error ? saveGpsSettings.error.message : 'Không thể lưu tài khoản định vị.'}
+              </span>
+            )}
+            {gpsSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {gpsSettings.error instanceof Error ? gpsSettings.error.message : 'Không thể tải tài khoản định vị.'}
               </span>
             )}
           </div>

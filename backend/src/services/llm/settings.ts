@@ -34,6 +34,7 @@ const KEY_OPENROUTER = 'llm.openrouter_api_key';
 
 let cached: LlmSettings | null = null;
 let loadPromise: Promise<LlmSettings> | null = null;
+let cacheGeneration = 0;
 
 function resolveProviderDefault(minimaxKey: string, openrouterKey: string): LlmProvider {
   // Pre-feature behaviour: MiniMax was the only agent provider, gated by env
@@ -74,13 +75,26 @@ async function loadSettings(): Promise<LlmSettings> {
 export async function getLlmSettings(): Promise<LlmSettings> {
   if (cached) return cached;
   // Coalesce concurrent first loads (e.g. parallel agent turns at boot).
-  if (!loadPromise) loadPromise = loadSettings().then((s) => (cached = s));
-  return loadPromise;
+  if (!loadPromise) {
+    const generation = cacheGeneration;
+    loadPromise = loadSettings().then((settings) => {
+      if (generation === cacheGeneration) cached = settings;
+      return settings;
+    });
+  }
+  const pending = loadPromise;
+  try {
+    return await pending;
+  } catch (error) {
+    if (loadPromise === pending) loadPromise = null;
+    throw error;
+  }
 }
 
 /** Drop the in-memory cache. Called by the PUT /admin/llm-settings route after
  *  a successful save so the next getLlmSettings() reflects the new values. */
 export function invalidateLlmSettings(): void {
+  cacheGeneration += 1;
   cached = null;
   loadPromise = null;
 }

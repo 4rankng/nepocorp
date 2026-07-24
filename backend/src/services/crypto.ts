@@ -56,17 +56,11 @@ function masterKey(): Buffer {
 
 /** Accept base64 or hex of any byte length; reject otherwise (caller checks length). */
 function decodeKeyMaterial(raw: string): Buffer {
-  // Try base64 first (most common for secret material).
-  try {
-    return Buffer.from(raw, 'base64');
-  } catch {
-    // fall through
-  }
-  // Then hex.
-  if (/^[0-9a-fA-F]+$/.test(raw)) {
+  // A 32-byte hex key is also syntactically valid base64, so detect hex first.
+  if (/^[0-9a-fA-F]{64}$/.test(raw)) {
     return Buffer.from(raw, 'hex');
   }
-  return Buffer.from(raw); // last-ditch (will fail the length check upstream)
+  return Buffer.from(raw, 'base64');
 }
 
 /** Encrypt a plaintext secret into the `enc:v1:` transport format. */

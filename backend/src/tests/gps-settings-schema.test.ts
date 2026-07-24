@@ -6,7 +6,7 @@ describe('gpsSettingsUpdateSchema', () => {
   test('accepts a username with an optional replacement password', () => {
     assert.deepEqual(
       gpsSettingsUpdateSchema.parse({ username: '  nepo-gps  ', password: '  secret  ' }),
-      { username: 'nepo-gps', password: 'secret' },
+      { username: 'nepo-gps', password: '  secret  ' },
     );
   });
 

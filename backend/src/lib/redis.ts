@@ -4,6 +4,7 @@ import { config } from '../config';
 let redis: Redis | null = null;
 
 const inflightCacheRequests = new Map<string, Promise<unknown>>();
+const cacheVersions = new Map<string, number>();
 
 export function getRedis(): Redis {
   if (!redis) {
@@ -45,23 +46,32 @@ export async function cacheGet<T>(
   const inflight = inflightCacheRequests.get(key);
   if (inflight) return inflight as Promise<T>;
 
-  const fetchPromise = fetchFn().then(async (result) => {
-    try {
-      const resolvedTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-      await client.set(key, JSON.stringify(result), 'EX', resolvedTtl);
-    } catch {
-      // Redis write failure — non-critical, serve from DB
-    }
-    return result;
-  }).finally(() => {
-    inflightCacheRequests.delete(key);
-  });
+  const version = cacheVersions.get(key) ?? 0;
+  const fetchPromise = fetchFn()
+    .then(async (result) => {
+      if ((cacheVersions.get(key) ?? 0) === version) {
+        try {
+          const resolvedTtl = typeof ttl === 'function' ? ttl(result) : ttl;
+          await client.set(key, JSON.stringify(result), 'EX', resolvedTtl);
+        } catch {
+          // Redis write failure — non-critical, serve from DB
+        }
+      }
+      return result;
+    })
+    .finally(() => {
+      if (inflightCacheRequests.get(key) === fetchPromise) {
+        inflightCacheRequests.delete(key);
+      }
+    });
 
   inflightCacheRequests.set(key, fetchPromise);
   return fetchPromise;
 }
 
 export async function cacheInvalidate(key: string): Promise<void> {
+  cacheVersions.set(key, (cacheVersions.get(key) ?? 0) + 1);
+  inflightCacheRequests.delete(key);
   const client = getRedis();
   try {
     await client.del(key);

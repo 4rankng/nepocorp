@@ -16,6 +16,7 @@ export const GPS_SETTING_KEYS = {
 
 let cached: GpsSettings | null = null;
 let loadPromise: Promise<GpsSettings> | null = null;
+let cacheGeneration = 0;
 
 async function loadSettings(): Promise<GpsSettings> {
   const rows = await db
@@ -41,15 +42,23 @@ async function loadSettings(): Promise<GpsSettings> {
 export async function getGpsSettings(): Promise<GpsSettings> {
   if (cached) return cached;
   if (!loadPromise) {
+    const generation = cacheGeneration;
     loadPromise = loadSettings().then((settings) => {
-      cached = settings;
+      if (generation === cacheGeneration) cached = settings;
       return settings;
     });
   }
-  return loadPromise;
+  const pending = loadPromise;
+  try {
+    return await pending;
+  } catch (error) {
+    if (loadPromise === pending) loadPromise = null;
+    throw error;
+  }
 }
 
 export function invalidateGpsSettings(): void {
+  cacheGeneration += 1;
   cached = null;
   loadPromise = null;
 }

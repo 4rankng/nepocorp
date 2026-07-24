@@ -19,6 +19,8 @@ export interface PortalSession {
 }
 
 let session: PortalSession | null = null;
+let sessionVersion = 0;
+let sessionAttempt: { version: number; promise: Promise<PortalSession> } | null = null;
 
 export function portalOrigin(): string {
   return new URL(config.bachKhoaApiUrl).origin;
@@ -85,13 +87,26 @@ async function login(): Promise<PortalSession> {
 }
 
 export async function ensurePortalSession(): Promise<PortalSession> {
-  if (session) return session;
-  session = await login();
+  while (!session) {
+    const version = sessionVersion;
+    if (!sessionAttempt || sessionAttempt.version !== version) {
+      sessionAttempt = { version, promise: login() };
+    }
+    const attempt = sessionAttempt;
+    try {
+      const result = await attempt.promise;
+      if (attempt.version === sessionVersion) session = result;
+    } finally {
+      if (sessionAttempt === attempt) sessionAttempt = null;
+    }
+  }
   return session;
 }
 
 export function invalidatePortalSession(): void {
+  sessionVersion += 1;
   session = null;
+  sessionAttempt = null;
 }
 
 export interface PortalPostOptions {

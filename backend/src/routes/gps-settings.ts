@@ -36,20 +36,22 @@ router.get('/', asyncHandler(async (_req: Request, res: Response) => {
 /** PUT /api/admin/gps-settings — omitted password preserves the current one. */
 router.put('/', asyncHandler(async (req: Request, res: Response) => {
   const data = gpsSettingsUpdateSchema.parse(req.body);
-  const current = await getGpsSettings();
-  const password = data.password ?? current.password;
 
-  if (!password) {
+  if (data.password === undefined && !(await getGpsSettings()).password) {
     res.status(400).json({ error: 'Vui lòng nhập mật khẩu Bách Khoa' });
     return;
   }
 
+  const values = [
+    { key: GPS_SETTING_KEYS.username, value: encryptSecret(data.username) },
+    ...(data.password === undefined
+      ? []
+      : [{ key: GPS_SETTING_KEYS.password, value: encryptSecret(data.password) }]),
+  ];
+
   await db
     .insert(schema.appSettings)
-    .values([
-      { key: GPS_SETTING_KEYS.username, value: encryptSecret(data.username) },
-      { key: GPS_SETTING_KEYS.password, value: encryptSecret(password) },
-    ])
+    .values(values)
     .onConflictDoUpdate({
       target: schema.appSettings.key,
       set: { value: sql`excluded.setting_value`, updatedAt: new Date() },
