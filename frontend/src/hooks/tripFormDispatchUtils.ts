@@ -1,8 +1,24 @@
 import { LoadingType } from '@tingting/shared';
 import type { FormLeg } from './useTripFormLegs';
 
+export interface PlannedContainer {
+  containerTypeId?: number | null;
+}
+
 export function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
+}
+
+export function resolveCommonContainerTypeId(
+  containers: PlannedContainer[] | undefined,
+): string {
+  if (!containers?.length) return '';
+  const typeIds = containers.map((container) => container.containerTypeId);
+
+  if (typeIds.some((typeId) => typeId == null)) return '';
+  return typeIds.every((typeId) => typeId === typeIds[0])
+    ? String(typeIds[0])
+    : '';
 }
 
 export function createFallbackLegsFromRouteName(

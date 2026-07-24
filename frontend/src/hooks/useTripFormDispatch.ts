@@ -21,7 +21,11 @@ import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
-import { createFallbackLegsFromRouteName, resolveContainerCount } from './tripFormDispatchUtils';
+import {
+  createFallbackLegsFromRouteName,
+  resolveContainerCount,
+} from './tripFormDispatchUtils';
+import { usePersistedContainerType } from './usePersistedContainerType';
 import { moneyInputToNumber } from '../lib/moneyInput';
 import { useTripFormSubmit } from './use-trip-form-submit';
 
@@ -84,6 +88,14 @@ export interface UseTripFormDispatchReturn {
 export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripFormDispatchReturn {
   const { state: s, options, isEditMode, existingTrip } = params;
   const lastPopulatedTripId = useRef<number | undefined>(undefined);
+
+  usePersistedContainerType({
+    tripId: existingTrip?.id,
+    enabled: isEditMode,
+    plannedContainerTypeId: s.plannedContainerTypeId,
+    setPlannedContainerTypeId: s.setPlannedContainerTypeId,
+    refreshNonce: s.resetToggle,
+  });
 
   // Broadcast OCR results to container-aware components via context.
   const [ocrResult, setOcrResult] = useState<OcrSignal | null>(null);

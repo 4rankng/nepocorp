@@ -11,6 +11,80 @@ export interface FormLeg {
   loadingType: LoadingType;
 }
 
+function getOppositeLoadingType(type: LoadingType): LoadingType {
+  return type === LoadingType.HANG ? LoadingType.VO : LoadingType.HANG;
+}
+
+interface ApplyLegUpdateOptions {
+  isEditMode?: boolean;
+  hasDeletedReturnLeg: boolean;
+  idFactory?: () => string;
+}
+
+export function applyLegUpdate(
+  previous: FormLeg[],
+  idx: number,
+  field: keyof FormLeg,
+  value: string,
+  {
+    isEditMode,
+    hasDeletedReturnLeg,
+    idFactory = () => Math.random().toString(),
+  }: ApplyLegUpdateOptions,
+): FormLeg[] {
+  const next = previous.map((leg, i) => (
+    i === idx ? { ...leg, [field]: value } as FormLeg : leg
+  ));
+
+  if (idx !== 0) return next;
+
+  const first = next[0];
+  if (
+    next.length === 1 &&
+    !isEditMode &&
+    !hasDeletedReturnLeg &&
+    (first.origin || first.destination || first.km)
+  ) {
+    next.push({
+      id: idFactory(),
+      sequence: 2,
+      origin: first.destination,
+      destination: first.origin,
+      km: first.km,
+      loadingType: getOppositeLoadingType(first.loadingType),
+    });
+    return next;
+  }
+
+  if (next.length !== 2) return next;
+
+  const previousFirst = previous[0];
+  const previousReturn = previous[1];
+  const linkedReturn = { ...next[1] };
+
+  // Keep the generated return leg convenient while each field still mirrors
+  // leg 1. Once a user customizes a return/unloading field, that field becomes
+  // authoritative and later edits must not replace it with the route default.
+  if (field === 'origin' && previousReturn.destination === previousFirst.origin) {
+    linkedReturn.destination = first.origin;
+  }
+  if (field === 'destination' && previousReturn.origin === previousFirst.destination) {
+    linkedReturn.origin = first.destination;
+  }
+  if (field === 'km' && previousReturn.km === previousFirst.km) {
+    linkedReturn.km = first.km;
+  }
+  if (
+    field === 'loadingType' &&
+    previousReturn.loadingType === getOppositeLoadingType(previousFirst.loadingType)
+  ) {
+    linkedReturn.loadingType = getOppositeLoadingType(first.loadingType);
+  }
+
+  next[1] = linkedReturn;
+  return next;
+}
+
 export function useTripFormLegs(routes: RouteOption[], routeId: string, isEditMode?: boolean) {
   const [legs, setLegs] = useState<FormLeg[]>([]);
   const [hasDeletedReturnLeg, setHasDeletedReturnLeg] = useState(false);
@@ -23,10 +97,6 @@ export function useTripFormLegs(routes: RouteOption[], routeId: string, isEditMo
   useEffect(() => {
     setHasDeletedReturnLeg(false);
   }, [routeId]);
-
-  const getOppositeLoadingType = (type: LoadingType): LoadingType => {
-    return type === LoadingType.HANG ? LoadingType.VO : LoadingType.HANG;
-  };
 
   useEffect(() => {
     if (isEditMode) return;
@@ -119,40 +189,10 @@ export function useTripFormLegs(routes: RouteOption[], routeId: string, isEditMo
 
   const updateLeg = useCallback(
     (idx: number, field: keyof FormLeg, value: string) => {
-      setLegs((prev) => {
-        const next = prev.map((leg, i) => (i === idx ? { ...leg, [field]: value } : leg));
-
-        if (idx === 0) {
-          const leg1 = next[0];
-
-          if (
-            next.length === 1 &&
-            !isEditMode &&
-            !hasDeletedReturnLeg &&
-            (leg1.origin || leg1.destination || leg1.km)
-          ) {
-            next.push({
-              id: Math.random().toString(),
-              sequence: 2,
-              origin: leg1.destination,
-              destination: leg1.origin,
-              km: leg1.km,
-              loadingType: getOppositeLoadingType(leg1.loadingType),
-            });
-          } else if (next.length === 2) {
-            next[1] = {
-              ...next[1],
-              origin: leg1.destination,
-              destination: leg1.origin,
-              km: leg1.km,
-              loadingType:
-                field === 'loadingType' ? getOppositeLoadingType(leg1.loadingType) : next[1].loadingType,
-            };
-          }
-        }
-
-        return next;
-      });
+      setLegs((prev) => applyLegUpdate(prev, idx, field, value, {
+        isEditMode,
+        hasDeletedReturnLeg,
+      }));
     },
     [isEditMode, hasDeletedReturnLeg],
   );
