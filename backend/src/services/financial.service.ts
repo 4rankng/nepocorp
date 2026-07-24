@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, sql, desc, isNull } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, isNull } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -348,6 +348,81 @@ export async function recordVendorPayment(input: VendorPaymentInput) {
       ...posted,
       ...(wouldOverpay ? {
         warning: `Thanh toán ${paymentAmount.toLocaleString('vi-VN')}₫ vượt công nợ hiện tại ${currentBalance.toLocaleString('vi-VN')}₫. Số dư sẽ âm.`,
+        overpayment: paymentAmount - currentBalance,
+      } : {}),
+    };
+  });
+}
+
+/**
+ * Record an outbound payment to an external carrier.
+ *
+ * Carriers live in the customer catalog, but their transport costs form a
+ * separate payable projection. Only carrier costs and prior carrier payments
+ * participate in the overpayment guard; customer receivables are deliberately
+ * excluded.
+ */
+export async function recordCarrierPayment(input: VendorPaymentInput) {
+  return db.transaction(async (tx) => {
+    const [carrier] = await tx.select({ id: s.customers.id })
+      .from(s.customers)
+      .where(and(
+        eq(s.customers.id, input.supplierId),
+        eq(s.customers.isCarrier, true),
+        eq(s.customers.status, 'ACTIVE'),
+        isNull(s.customers.deletedAt),
+      ))
+      .limit(1);
+    if (!carrier) {
+      throw new ApiError(404, 'Không tìm thấy nhà vận chuyển');
+    }
+
+    await LedgerService.lockEntity(tx, 'CARRIER', input.supplierId);
+
+    const [balanceRow] = await tx.select({
+      balance: sql<string>`coalesce(sum(
+        case
+          when ${s.ledger.txnType} = ${TxnType.EXTERNAL_CARRIER_COST}
+            then ${s.ledger.credit} - ${s.ledger.debit}
+          when ${s.ledger.txnType} = ${TxnType.VENDOR_PAYMENT}
+            then ${s.ledger.credit} - ${s.ledger.debit}
+          when ${s.ledger.txnType} = ${TxnType.UNLOCK_REVERSAL}
+            and ${s.ledger.note} like 'Cước thuê ngoài%'
+            then ${s.ledger.credit} - ${s.ledger.debit}
+          else 0
+        end
+      ), 0)`,
+    }).from(s.ledger).where(and(
+      inArray(s.ledger.entityType, ['CUSTOMER', 'CARRIER']),
+      eq(s.ledger.entityId, input.supplierId),
+    ));
+
+    const currentBalance = Number(balanceRow?.balance ?? 0);
+    const paymentAmount = parseFloat(input.amount);
+    const wouldOverpay = paymentAmount > currentBalance;
+
+    if (wouldOverpay && !input.confirmOverpay) {
+      throw new ApiError(
+        422,
+        `Thanh toán ${paymentAmount.toLocaleString('vi-VN')}₫ vượt công nợ thuê ngoài hiện tại ${currentBalance.toLocaleString('vi-VN')}₫. Bạn có chắc chắn muốn tiếp tục?`,
+      );
+    }
+
+    const posted = await LedgerService.postEntry(tx, {
+      txnType: TxnType.VENDOR_PAYMENT,
+      entityType: 'CARRIER',
+      entityId: input.supplierId,
+      debit: paymentAmount,
+      credit: 0,
+      receiptId: input.receiptId,
+      note: input.note || 'Thanh toán cước vận chuyển thuê ngoài',
+      timestamp: new Date(`${input.date}T00:00:00+07:00`),
+    });
+
+    return {
+      ...posted,
+      ...(wouldOverpay ? {
+        warning: `Thanh toán vượt công nợ thuê ngoài ${currentBalance.toLocaleString('vi-VN')}₫.`,
         overpayment: paymentAmount - currentBalance,
       } : {}),
     };

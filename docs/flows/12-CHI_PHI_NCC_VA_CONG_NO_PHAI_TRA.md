@@ -38,7 +38,9 @@ Module bổ sung phần chi phí vận hành mà quy trình Excel cũ vẫn theo
 | `DELETE` | `/api/expenses/:id` | JWT + financial:write | Soft-delete (ADJUSTMENT bù trừ nếu đã ghi nợ) |
 | `GET` | `/api/reports/payables-summary` | JWT + financial:read | Tổng hợp công nợ phải trả + tuổi nợ |
 | `GET` | `/api/ledger/suppliers/:id/statement` | JWT + financial:read | Sao kê chi tiết NCC |
+| `GET` | `/api/ledger/carriers/:id/statement` | JWT + financial:read | Sổ phải trả cước thuê ngoài, tách khỏi phải thu khách hàng |
 | `POST` | `/api/payments/vendor` | JWT + financial:write | Ghi nhận thanh toán cho NCC |
+| `POST` | `/api/payments/carrier` | JWT + financial:write | Ghi nhận thanh toán cước cho nhà vận chuyển thuê ngoài |
 | `GET` | `/api/reports/renewals` | JWT + financial:read | Danh sách hạng mục định kỳ sắp/đã tới hạn |
 
 ---
@@ -59,6 +61,9 @@ CRUD đơn giản (theo mẫu Khách hàng): Tên, Người liên hệ, SĐT, M�
 | `OTHER_VENDOR` | NCC một lần (sửa chữa, phụ tùng, vật tư, bảo hiểm, đăng kiểm, phí đường bộ) | Khi phiếu UNPAID |
 
 Báo cáo công nợ phải trả (`/payables`) cung cấp **filter chip** theo các loại trên.
+Chip **Tất cả** cộng cả công nợ Nhà cung cấp (`VENDOR`) và cước vận chuyển
+thuê ngoài (`EXTERNAL_CARRIER_COST`); chip **Vận chuyển thuê ngoài** chỉ hiển
+thị phần cước của đối tác vận tải.
 
 ### 2.2 Hạng mục chi phí (trong /config)
 
@@ -88,6 +93,10 @@ Form nhập:
 
 - `/payables`: danh sách NCC kèm số dư nợ + tuổi nợ (4 bucket: 0–30 / 31–60 / 61–90 / 90+), giống màn Công nợ phải thu.
 - `/payables/:id`: mở trực tiếp bảng chi tiết NCC với các cột Phát sinh phải trả, Đã thanh toán và Số dư chạy + nút **Ghi thanh toán** (một ô số tiền — không khớp từng phiếu). Công cụ tạo Bảng kê nằm phía dưới bảng chi tiết để không che khuất dữ liệu đối chiếu.
+- `/payables/:id?kind=carrier`: sổ phải trả riêng cho nhà vận chuyển thuê ngoài. Chỉ cước thuê ngoài và các khoản chi trả tương ứng được tính; không được chuyển sang hoặc trộn với sổ phải thu của khách hàng dù đối tác dùng chung danh mục khách hàng.
+- Bút toán cước và thanh toán mới dùng `entity_type = CARRIER`. Khi đọc sổ phải trả, hệ thống vẫn chiếu các bút toán cước lịch sử từng lưu dưới `CUSTOMER`; các dòng này bị loại khỏi mọi phép tính và sao kê phải thu.
+- Khi chọn **Chi phí nhiên liệu**, bảng chi tiết dùng dữ liệu snapshot của chuyến đã chốt để hiển thị: ngày vận chuyển, biển số xe, tuyến vận chuyển, số lít dầu, đơn giá thực tế (hoặc đơn giá áp dụng nếu chưa có giá thực tế), thành tiền, số dư và mã chuyến đối chiếu.
+- Khi chọn **Ghi nhận chi phí**, các khoản sửa chữa/bảo dưỡng gắn đầu kéo hoặc rơ-moóc phải hiển thị biển số tương ứng. Bút toán mới lưu `expense.id` trong `txn_id`; dữ liệu cũ chỉ được nối lại khi khớp duy nhất, tránh gán nhầm xe.
 - **Đối trừ công nợ (Debt Netting):** Tương tự như phải thu, nếu NCC có liên kết khách hàng, có thể đối trừ nợ (giảm cả AP và AR).
 
 ### 2.5 Nhắc gia hạn (Dashboard)

@@ -21,7 +21,10 @@ import {
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
-import { summarizeSettlementExpenses } from './admin-advance-settlement-summary';
+import {
+  groupSettlementExpensesByTrip,
+  summarizeSettlementExpenses,
+} from './admin-advance-settlement-summary';
 import './AdminAdvanceSettlementsPage.css';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
@@ -97,91 +100,117 @@ export function SettlementGridRow({
 }) {
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
-  const scope = summarizeSettlementExpenses(s.linkedExpenses);
+  const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
+  const rows = plans.length > 0 ? plans : [null];
 
   return (
-    <div className="as-grid-row" id={focusId} style={{ position: 'relative', overflow: 'hidden' }}>
-      <StatusStrip color={STATUS_COLORS[s.status]} />
-      {/* Settlement identity */}
-      <div className="as-record">
-        <Link to={`/settlements/${s.id}`} className="as-code-link">{s.code}</Link>
-        <span className="as-record__forwarder">
-          {s.forwarderName || 'Chưa có tên giao nhận'}
-        </span>
+    <>
+      <div className="as-settlement-summary">
+        <div>
+          <span>Phiếu quyết toán</span>
+          <Link to={`/settlements/${s.id}`}>{s.code}</Link>
+        </div>
+        <div>
+          <span>Tạm ứng quyết toán</span>
+          <strong><Money value={Number(s.totalExpenseAmount) + Number(s.refundAmount)} /></strong>
+        </div>
+        <div>
+          <span>Tổng chi phí</span>
+          <strong><Money value={Number(s.totalExpenseAmount)} /></strong>
+        </div>
+        <div>
+          <span>Hoàn lại</span>
+          <strong><Money value={Number(s.refundAmount)} /></strong>
+        </div>
       </div>
+      {rows.map((plan, index) => (
+        <div
+          className="as-grid-row"
+          id={index === 0 ? focusId : undefined}
+          key={plan?.tripId ?? `empty-${s.id}`}
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          <StatusStrip color={STATUS_COLORS[s.status]} />
 
-      {/* Linked payment scope */}
-      <div className="as-scope">
-        <span className="as-scope__primary">
-          {scope.expenseCount} khoản chi liên kết
-        </span>
-        <span className="as-scope__secondary">
-          {scope.expenseCount === 0
-            ? 'Chưa có chuyến / container'
-            : `${scope.tripCount} chuyến · ${scope.containerCount} container`}
-        </span>
-      </div>
+          <div className="as-date-customer">
+            <span className="as-date">{plan?.departureDate ? formatDate(plan.departureDate) : formatDate(s.createdAt)}</span>
+            <strong>{plan?.customerName || 'Chưa có khách hàng'}</strong>
+          </div>
 
-      {/* Expense */}
-      <div className="as-amount">
-        <Money value={Number(s.totalExpenseAmount)} />
-      </div>
-
-      {/* Refund */}
-      <div className="as-refund">
-        {Number(s.refundAmount) > 0 ? <Money value={Number(s.refundAmount)} /> : '—'}
-      </div>
-
-      {/* Date */}
-      <div className="as-date">
-        {formatDate(s.createdAt)}
-      </div>
-
-      {/* Status */}
-      <div>
-        <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-          {settlementStatusLabel(s.status)}
-        </StatusPill>
-      </div>
-
-      {/* Actions / Approver */}
-      <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
-        {canAct ? (
-          <>
-            <Link
-              className="as-row-action"
-              to={`/settlements/${s.id}`}
-              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
-            >
-              {canApproveReject && <Pencil size={15} aria-hidden="true" />}
-              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
-            </Link>
-            {canApproveReject && (
-              <button
-                className="as-reject-action"
-                onClick={() => rejectMutation.mutate(s.id)}
-                disabled={isRejecting}
-                title="Từ chối hoàn ứng"
-                aria-label={`Từ chối hoàn ứng ${s.code}`}
-              >
-                {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-              </button>
+          <div className="as-record">
+            {plan ? (
+              <Link to={`/trips/${plan.tripId}`} className="as-code-link">
+                {plan.tripCode || `Chuyến #${plan.tripId}`}
+              </Link>
+            ) : (
+              <Link to={`/settlements/${s.id}`} className="as-code-link">{s.code}</Link>
             )}
-          </>
-        ) : (
-          <>
-            <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
-              Xem phiếu
-            </Link>
-            {(s.approverName || s.checkerName) && (
-              <div className="as-approver">
-                {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
-              </div>
+            <span className="as-record__forwarder">
+              {s.code} · {s.forwarderName || 'Chưa có tên giao nhận'}
+            </span>
+          </div>
+
+          <div className="as-container-count">{plan?.containerCount ?? 0}</div>
+          <div className="as-route">{plan?.routeName || 'Chưa có tuyến đường'}</div>
+
+          <div className="as-expense-breakdown">
+            {plan && plan.expenseBreakdown.length > 0 ? plan.expenseBreakdown.map(item => (
+              <span className="as-expense-chip" key={item.code}>
+                <span>{item.label}</span>
+                <strong><Money value={item.amount} /></strong>
+              </span>
+            )) : <span className="as-expense-empty">Chưa có khoản chi liên kết</span>}
+          </div>
+
+          <div className="as-amount">
+            <Money value={plan?.totalExpense ?? Number(s.totalExpenseAmount)} />
+          </div>
+
+          <div>
+            <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
+              {settlementStatusLabel(s.status)}
+            </StatusPill>
+          </div>
+
+          <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
+            {canAct ? (
+              <>
+                <Link
+                  className="as-row-action"
+                  to={`/settlements/${s.id}`}
+                  aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+                >
+                  {canApproveReject && <Pencil size={15} aria-hidden="true" />}
+                  {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+                </Link>
+                {canApproveReject && (
+                  <button
+                    className="as-reject-action"
+                    onClick={() => rejectMutation.mutate(s.id)}
+                    disabled={isRejecting}
+                    title="Từ chối hoàn ứng"
+                    aria-label={`Từ chối hoàn ứng ${s.code}`}
+                  >
+                    {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
+                  Xem phiếu
+                </Link>
+                {(s.approverName || s.checkerName) && (
+                  <div className="as-approver">
+                    {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -201,6 +230,7 @@ export function SettlementMobileCard({
   const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
   const scope = summarizeSettlementExpenses(s.linkedExpenses);
+  const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
 
   return (
     <article className="as-mcard" id={focusId}>
@@ -258,6 +288,32 @@ export function SettlementMobileCard({
           </div>
         </div>
       </div>
+
+      {plans.length > 0 && (
+        <div className="as-mcard__plans">
+          <span className="as-mcard__plans-title">Kế hoạch vận chuyển</span>
+          {plans.map(plan => (
+            <div className="as-mcard__plan" key={plan.tripId}>
+              <div className="as-mcard__plan-head">
+                <Link to={`/trips/${plan.tripId}`}>{plan.tripCode || `Chuyến #${plan.tripId}`}</Link>
+                <strong>{plan.containerCount} cont</strong>
+              </div>
+              <div className="as-mcard__plan-meta">
+                {plan.departureDate ? formatDate(plan.departureDate) : 'Chưa có ngày'}
+                {' · '}
+                {plan.customerName || 'Chưa có khách hàng'}
+                {' · '}
+                {plan.routeName || 'Chưa có tuyến'}
+              </div>
+              <div className="as-mcard__plan-costs">
+                {plan.expenseBreakdown.map(item => (
+                  <span key={item.code}>{item.label}: <Money value={item.amount} /></span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       {canAct ? (
@@ -432,11 +488,12 @@ export default function AdminAdvanceSettlementsPage() {
             >
               <div className="as-ledger">
                 <div className="as-grid-head">
-                  <div>Phiếu / Giao nhận</div>
-                  <div>Phạm vi liên kết</div>
-                  <div className="col-right">Chi phí</div>
-                  <div className="col-right">Hoàn lại</div>
-                  <div className="col-center">Ngày lập</div>
+                  <div>Ngày / Khách hàng</div>
+                  <div>Kế hoạch / Phiếu</div>
+                  <div className="col-center">Số cont</div>
+                  <div>Tuyến đường</div>
+                  <div>Chi phí theo hạng mục</div>
+                  <div className="col-right">Tổng chi</div>
                   <div>Trạng thái</div>
                   <div className="col-right">Thao tác</div>
                 </div>

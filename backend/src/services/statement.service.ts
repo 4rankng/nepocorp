@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import type { PeriodSummary } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
@@ -9,15 +9,52 @@ import { escapeHtml } from '../lib/format';
 import { CustomerAgingListItem } from './aging.service';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
-// Ledger rows enriched with the related trip's route/container for display.
-// Customer statements populate these; supplier statements leave them undefined.
-type EnrichedLedgerRow = LedgerRow & {
+// Ledger rows enriched with related trip context for customer and supplier displays.
+export type EnrichedLedgerRow = LedgerRow & {
   routeName?: string | null;
   containerNumbers?: string[];
   tripId?: number | null;
   tripCode?: string | null;
   serviceFeeLabel?: string | null;
+  fuelDetails?: {
+    departureDate: string;
+    truckPlate: string | null;
+    routeName: string | null;
+    liters: string | null;
+    unitPrice: string | null;
+    amount: string;
+  } | null;
+  expenseDetails?: {
+    expenseDate: string;
+    vehiclePlate: string | null;
+    vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+    categoryName: string;
+    amount: string;
+  } | null;
 };
+
+export interface FuelTripStatementRow {
+  id: number;
+  tripCode: string | null;
+  departureDate: string;
+  truckPlate: string | null;
+  routeName: string | null;
+  fuelLiters: string | null;
+  fuelActualUnitPrice: string | null;
+  fuelPriceApplied: string | null;
+  totalFuelCost: string | null;
+}
+
+export interface SupplierExpenseStatementRow {
+  id: number;
+  supplierId: number;
+  expenseDate: string;
+  vehiclePlate: string | null;
+  vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+  categoryName: string;
+  amount: string;
+  createdAt: Date | string;
+}
 
 export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
@@ -30,10 +67,110 @@ export interface CustomerStatementData {
 
 export interface SupplierStatementData {
   supplier: { id: number; name: string; phone: string | null; contactPerson: string | null };
-  ledgerRows: LedgerRow[];
+  ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
   periodSummary?: PeriodSummary;
+}
+
+export function withPayableProjectionBalances(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
+  let balance = 0;
+  return [...rows]
+    .sort((a, b) => a.id - b.id)
+    .map(row => {
+      balance += Number(row.credit ?? 0) - Number(row.debit ?? 0);
+      return { ...row, balance: String(balance) };
+    })
+    .reverse();
+}
+
+export function withReceivableProjectionBalances(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
+  let balance = 0;
+  return [...rows]
+    .sort((a, b) => a.id - b.id)
+    .map(row => {
+      balance += Number(row.debit ?? 0) - Number(row.credit ?? 0);
+      return { ...row, balance: String(balance) };
+    })
+    .reverse();
+}
+
+export function attachFuelDetailsToLedgerRows(
+  ledgerRows: EnrichedLedgerRow[],
+  trips: FuelTripStatementRow[],
+): EnrichedLedgerRow[] {
+  const tripById = new Map(trips.map(trip => [trip.id, trip]));
+  return ledgerRows.map(row => {
+    if (row.txnType !== TxnType.FUEL_EXPENSE || !row.txnId) return row;
+    const trip = tripById.get(row.txnId);
+    if (!trip) return { ...row, tripCode: null, fuelDetails: null };
+    return {
+      ...row,
+      tripCode: trip.tripCode,
+      fuelDetails: {
+        departureDate: trip.departureDate,
+        truckPlate: trip.truckPlate,
+        routeName: trip.routeName,
+        liters: trip.fuelLiters,
+        unitPrice: trip.fuelActualUnitPrice ?? trip.fuelPriceApplied,
+        amount: trip.totalFuelCost ?? row.credit ?? '0',
+      },
+    };
+  });
+}
+
+/**
+ * Resolves payable expense rows to their operational vehicle context.
+ *
+ * New ledger rows carry the expense id in txnId. Legacy rows predate that
+ * linkage, so they are resolved only when the match is deterministic: the
+ * same supplier and amount plus an identical creation timestamp, or a single
+ * unique supplier/amount candidate. Ambiguous rows intentionally stay blank.
+ */
+export function attachSupplierExpenseDetailsToLedgerRows(
+  ledgerRows: EnrichedLedgerRow[],
+  expenses: SupplierExpenseStatementRow[],
+): EnrichedLedgerRow[] {
+  const expenseById = new Map(expenses.map(expense => [expense.id, expense]));
+  const expensesBySupplierAmount = new Map<string, SupplierExpenseStatementRow[]>();
+  for (const expense of expenses) {
+    const key = `${expense.supplierId}|${Number(expense.amount)}`;
+    const candidates = expensesBySupplierAmount.get(key) ?? [];
+    candidates.push(expense);
+    expensesBySupplierAmount.set(key, candidates);
+  }
+
+  return ledgerRows.map(row => {
+    if (row.txnType !== TxnType.VENDOR_EXPENSE) return row;
+
+    let expense = row.txnId ? expenseById.get(row.txnId) : undefined;
+    if (!expense) {
+      const candidates = expensesBySupplierAmount.get(
+        `${row.entityId}|${Number(row.credit ?? 0)}`,
+      ) ?? [];
+      const rowTimestamp = new Date(row.timestamp).getTime();
+      const timestampMatches = candidates.filter(candidate =>
+        Math.abs(new Date(candidate.createdAt).getTime() - rowTimestamp) < 1_000,
+      );
+      expense = timestampMatches.length === 1
+        ? timestampMatches[0]
+        : candidates.length === 1
+          ? candidates[0]
+          : undefined;
+    }
+
+    if (!expense) return { ...row, expenseDetails: null };
+    return {
+      ...row,
+      expenseDetails: {
+        expenseDate: expense.expenseDate,
+        vehiclePlate: expense.vehiclePlate,
+        vehicleComponent: expense.vehicleComponent,
+        categoryName: expense.categoryName,
+        amount: expense.amount,
+      },
+    };
+  });
 }
 
 interface StatementExportConfig {
@@ -91,12 +228,10 @@ export function normalizeDateParam(raw: string | undefined): string | undefined 
  *   - VENDOR (AP): outstanding grows with credit, shrinks with debit.
  *     `periodActivity = creditTotal − debitTotal`.
  *
- * Opening balance is read from the stored `balance` column of the ledger row
- * with the largest `id` strictly before `dateFrom` (0 when none). The running-
- * balance invariant is keyed to insert order (`id`), NOT wall-clock time, so
- * we sort by `id` ascending and walk the sequence once. (Two entries posted
- * in the same transaction can share a timestamp; `id` is the only stable tie-
- * breaker that matches how `LedgerService.postEntry` computes `balance`.)
+ * Opening balance is derived from every debit/credit strictly before
+ * `dateFrom`. It deliberately does not trust the stored running balance:
+ * backdated payments have a business timestamp earlier than rows inserted
+ * before them, while the stored balance necessarily follows insertion order.
  *
  * Returns `null` when neither bound is supplied — the caller then omits the
  * field entirely and the frontend renders a loading skeleton.
@@ -112,25 +247,19 @@ export function computePeriodSummary(
   const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
   const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
 
-  // Sort ascending by id so "the last row before dateFrom" is unambiguous:
-  // `getEntriesByEntity` returns rows newest-first (id DESC), and iterating
-  // that order would otherwise leave openingBalance pinned to the OLDEST
-  // pre-period row instead of the most-recent one.
-  const ordered = [...rows].sort((a, b) => a.id - b.id);
-
   let openingBalance = 0;
   let debitTotal = 0;
   let creditTotal = 0;
 
-  for (const r of ordered) {
+  for (const r of rows) {
     const t = new Date(r.timestamp).getTime();
     const debit = Number(r.debit ?? 0) || 0;
     const credit = Number(r.credit ?? 0) || 0;
 
     if (fromTs !== null && t < fromTs) {
-      // Walking ascending, the last assignment is the most-recent pre-period
-      // row — its stored `balance` is the opening balance.
-      openingBalance = Number(r.balance) || 0;
+      openingBalance += entityType === 'CUSTOMER'
+        ? debit - credit
+        : credit - debit;
     } else if ((fromTs === null || t >= fromTs) && (toTs === null || t <= toTs)) {
       debitTotal += debit;
       creditTotal += credit;
@@ -205,7 +334,17 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
   if (!customer) return null;
 
-  let ledgerRows = await LedgerService.getEntriesByEntity('CUSTOMER', customerId);
+  let ledgerRows = withReceivableProjectionBalances(
+    (await LedgerService.getEntriesByEntity('CUSTOMER', customerId))
+      .filter(row =>
+        row.txnType !== TxnType.EXTERNAL_CARRIER_COST
+        && row.txnType !== TxnType.VENDOR_PAYMENT
+        && !(
+          row.txnType === TxnType.UNLOCK_REVERSAL
+          && row.note?.startsWith('Cước thuê ngoài')
+        )
+      ),
+  );
 
   // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed BEFORE the
   // date filter so we can read the stored `balance` of the last pre-period row.
@@ -484,24 +623,79 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     });
   }
 
-  // Fuel expenses point at a trip internally. Resolve its public trip code
-  // before returning the statement so the UI never has to expose `txnId`.
+  // Fuel expenses point at a trip internally. Resolve the immutable trip fuel
+  // snapshot and vehicle context so the statement can be audited operationally
+  // without exposing the internal txnId.
   const fuelTripIds = Array.from(new Set(
     ledgerRows
       .filter((row) => row.txnType === TxnType.FUEL_EXPENSE && row.txnId)
       .map((row) => row.txnId as number),
   ));
   if (fuelTripIds.length > 0) {
-    const tripRows = await db.select({ id: s.trips.id, tripCode: s.trips.tripCode })
+    const tripRows = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      truckPlate: s.trucks.licensePlate,
+      routeName: s.routes.name,
+      fuelLiters: s.trips.fuelLiters,
+      fuelActualUnitPrice: s.trips.fuelActualUnitPrice,
+      fuelPriceApplied: s.trips.fuelPriceApplied,
+      totalFuelCost: s.trips.totalFuelCost,
+    })
       .from(s.trips)
+      .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
       .where(inArray(s.trips.id, fuelTripIds));
-    const tripCodeById = new Map(tripRows.map((trip) => [trip.id, trip.tripCode]));
-    ledgerRows = ledgerRows.map((row) => ({
-      ...row,
-      tripCode: row.txnType === TxnType.FUEL_EXPENSE && row.txnId
-        ? tripCodeById.get(row.txnId) ?? null
-        : null,
-    }));
+    ledgerRows = attachFuelDetailsToLedgerRows(ledgerRows, tripRows);
+  }
+
+  if (ledgerRows.some(row => row.txnType === TxnType.VENDOR_EXPENSE)) {
+    const expenseLedgerRows = ledgerRows.filter(row => row.txnType === TxnType.VENDOR_EXPENSE);
+    const linkedExpenseIds = Array.from(new Set(
+      expenseLedgerRows.flatMap(row => row.txnId ? [row.txnId] : []),
+    ));
+    const legacyTimestamps = expenseLedgerRows
+      .filter(row => !row.txnId)
+      .map(row => new Date(row.timestamp).getTime())
+      .filter(Number.isFinite);
+    const candidateScopes = [];
+    if (linkedExpenseIds.length > 0) {
+      candidateScopes.push(inArray(s.expenses.id, linkedExpenseIds));
+    }
+    if (legacyTimestamps.length > 0) {
+      const minTimestamp = new Date(Math.min(...legacyTimestamps) - 999);
+      const maxTimestamp = new Date(Math.max(...legacyTimestamps) + 999);
+      candidateScopes.push(and(
+        gte(s.expenses.createdAt, minTimestamp),
+        lte(s.expenses.createdAt, maxTimestamp),
+      ));
+    }
+    const expenseRows = await db.select({
+      id: s.expenses.id,
+      supplierId: s.expenses.supplierId,
+      expenseDate: s.expenses.expenseDate,
+      vehiclePlate: sql<string | null>`coalesce(${s.trucks.licensePlate}, ${s.trailers.licensePlate})`,
+      vehicleComponent: s.expenses.vehicleComponent,
+      categoryName: s.expenseCategories.name,
+      amount: s.expenses.amount,
+      createdAt: s.expenses.createdAt,
+    })
+      .from(s.expenses)
+      .innerJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
+      .leftJoin(
+        s.trucks,
+        and(eq(s.expenses.truckId, s.trucks.id), eq(s.expenses.vehicleComponent, 'TRUCK')),
+      )
+      .leftJoin(
+        s.trailers,
+        and(eq(s.expenses.truckId, s.trailers.id), eq(s.expenses.vehicleComponent, 'TRAILER')),
+      )
+      .where(and(
+        eq(s.expenses.supplierId, supplierId),
+        or(...candidateScopes),
+      ));
+    ledgerRows = attachSupplierExpenseDetailsToLedgerRows(ledgerRows, expenseRows);
   }
 
   const now = new Date();
@@ -518,6 +712,94 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
 
   return {
     supplier,
+    ledgerRows,
+    totalOutstanding,
+    agingBuckets: [
+      { range: '0-30 ngày', amount: aging.current },
+      { range: '31-60 ngày', amount: aging.d30 },
+      { range: '61-90 ngày', amount: aging.d60 },
+      { range: 'Trên 90 ngày', amount: aging.over90 },
+    ],
+    ...(periodSummary ? { periodSummary } : null),
+  };
+}
+
+export async function getCarrierPayableStatement(
+  carrierId: number,
+  dateFrom?: string,
+  dateTo?: string,
+): Promise<SupplierStatementData> {
+  const [carrier] = await db.select({
+    id: s.customers.id,
+    name: s.customers.name,
+    phone: s.customers.phone,
+    contactPerson: s.customers.contactInfo,
+  }).from(s.customers).where(eq(s.customers.id, carrierId)).limit(1);
+
+  if (!carrier) throw new ApiError(404, 'Không tìm thấy nhà vận chuyển');
+
+  const historicalRows = await LedgerService.getEntriesByEntity('CUSTOMER', carrierId);
+  const currentRows = await LedgerService.getEntriesByEntity('CARRIER', carrierId);
+  let ledgerRows: EnrichedLedgerRow[] = [...historicalRows, ...currentRows]
+    .filter(row =>
+      row.txnType === TxnType.EXTERNAL_CARRIER_COST
+      || row.txnType === TxnType.VENDOR_PAYMENT
+      || (
+        row.txnType === TxnType.UNLOCK_REVERSAL
+        && row.note?.startsWith('Cước thuê ngoài')
+      )
+    );
+
+  const tripIds = Array.from(new Set(
+    ledgerRows
+      .filter(row => row.txnType === TxnType.EXTERNAL_CARRIER_COST && row.txnId)
+      .map(row => row.txnId as number),
+  ));
+  const tripById = new Map<number, { tripCode: string | null; routeName: string | null }>();
+  if (tripIds.length > 0) {
+    const tripRows = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      routeName: s.routes.name,
+    }).from(s.trips)
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .where(inArray(s.trips.id, tripIds));
+    for (const trip of tripRows) tripById.set(trip.id, trip);
+  }
+
+  ledgerRows = withPayableProjectionBalances(ledgerRows).map(row => {
+    const trip = row.txnId ? tripById.get(row.txnId) : undefined;
+    return {
+      ...row,
+      tripId: trip ? row.txnId : null,
+      tripCode: trip?.tripCode ?? null,
+      routeName: trip?.routeName ?? null,
+    };
+  });
+
+  const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'VENDOR');
+  const allRows = ledgerRows;
+  if (dateFrom || dateTo) {
+    const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+    const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
+    ledgerRows = ledgerRows.filter(row => {
+      const timestamp = new Date(row.timestamp).getTime();
+      return (fromTs === null || timestamp >= fromTs) && (toTs === null || timestamp <= toTs);
+    });
+  }
+
+  const { aging } = computeFifoAging(
+    allRows.map(row => ({
+      timestamp: row.timestamp.toISOString(),
+      debit: row.credit ?? '0',
+      credit: row.debit ?? '0',
+    })),
+    new Date(),
+  );
+  const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
+
+  return {
+    supplier: carrier,
     ledgerRows,
     totalOutstanding,
     agingBuckets: [

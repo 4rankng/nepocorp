@@ -92,6 +92,19 @@ test('AUTO mountain mode allowance calculation', () => {
   assert.strictEqual(result.totalFuelCost, 240 * 20000);
 });
 
+test('AUTO uses a configured fixed route allowance even when the route is classified as plain', () => {
+  const result = computeTripTotals({
+    ...defaultBaseInput,
+    isMountainRoute: false,
+    mountainFixedAllowance: 180,
+  });
+
+  assert.strictEqual(result.totalFuelLiters, 180);
+  assert.strictEqual(result.legCalculations[0].calculatedLiters, 0);
+  assert.strictEqual(result.legCalculations[1].calculatedLiters, 0);
+  assert.strictEqual(result.totalFuelCost, 180 * 20000);
+});
+
 test('AUTO mountain fallback calculation when allowance is null', () => {
   const input = {
     ...defaultBaseInput,

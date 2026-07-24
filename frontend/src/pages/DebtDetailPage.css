@@ -1282,6 +1282,28 @@
 .dd-detail-table {
   min-width: 1040px;
 }
+.dd-fuel-row .dd-fuel-vehicle,
+.dd-expense-row .dd-expense-vehicle {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 750;
+  white-space: nowrap;
+}
+.dd-fuel-row .dd-fuel-route,
+.dd-expense-row .dd-expense-category {
+  min-width: 170px;
+  color: var(--ink-2);
+  font-weight: 650;
+  line-height: 1.4;
+}
+.dd-fuel-row .dd-reference small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+}
 
 .dd-ledger-mobile {
   display: none;
@@ -1422,6 +1444,14 @@
 
   .dd-ledger-mobile-card__balance dd {
     font-weight: 850;
+  }
+
+  .dd-fuel-card__amounts dd {
+    white-space: nowrap;
+  }
+
+  .dd-expense-card__amounts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dd-ledger-mobile-empty {

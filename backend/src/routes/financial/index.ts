@@ -16,6 +16,7 @@ registerAuditEvent('POST', '/api/adjustments', AuditEvent.ADJUSTMENT_CREATED);
 registerAuditEvent('POST', '/api/penalties', AuditEvent.PENALTY_CREATED);
 registerAuditEvent('POST', '/api/penalties/', '/cancel', AuditEvent.PENALTY_CANCELED);
 registerAuditEvent('POST', '/api/payments/vendor', AuditEvent.PAYMENT_RECEIVED);
+registerAuditEvent('POST', '/api/payments/carrier', AuditEvent.PAYMENT_RECEIVED);
 registerAuditEvent('POST', '/api/reports/distribute-profit', AuditEvent.PROFIT_DISTRIBUTED);
 registerAuditEvent('POST', '/api/advance-requests/', '/approve', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/advance-requests/', '/reject', AuditEvent.ENTITY_UPDATED);

@@ -7,9 +7,8 @@ import { computePeriodSummary, normalizeDateParam } from '../services/statement.
  *
  * The helper backs the "Số dư đầu kỳ / Phát sinh trong kỳ / Số dư cuối kỳ"
  * cards on the debt/payable detail pages. It is accounting-adjacent logic, so
- * the regression case for "2+ rows before dateFrom" is checked explicitly
- * (the original bug: rows come back newest-first from the DB, and walking
- * that order left openingBalance pinned to the OLDEST pre-period row).
+ * opening balances are derived from dated activity rather than stored running
+ * balances, so backdated entries remain in the correct accounting period.
  */
 
 type Row = { id: number; timestamp: Date; debit: string | null; credit: string | null; balance: string };
@@ -40,16 +39,15 @@ describe('computePeriodSummary', () => {
     assert.equal(summary!.closingBalance, 100);
   });
 
-  test('REGRESSION: opening balance = most-recent pre-period row, NOT oldest', () => {
+  test('opening balance is the net activity of all pre-period rows', () => {
     // 5 rows (Jan→May), dateFrom = 2025-03-01. Pre-period rows: Jan (id 1),
     // Feb (id 2). The latest pre-period balance is Feb's (250), not Jan's (100).
-    // The DB returns these newest-first (id DESC); the helper must sort ascending
-    // by id so the loop ends with the most-recent pre-period row's balance.
+    // The DB may return these newest-first; order must not affect the result.
     const rows = [
       row(5, '2025-05-20', 0, 50, 350),
       row(4, '2025-04-20', 100, 0, 400),
       row(3, '2025-03-15', 100, 0, 300),
-      row(2, '2025-02-20', 100, 0, 250),  // most-recent pre-period
+      row(2, '2025-02-20', 150, 0, 250),
       row(1, '2025-01-20', 100, 0, 100),
     ];
     const summary = computePeriodSummary(rows, '2025-03-01', '2025-05-31', 'CUSTOMER');
@@ -59,6 +57,18 @@ describe('computePeriodSummary', () => {
     assert.equal(summary!.creditTotal, 50); // May credit
     assert.equal(summary!.periodActivity, 150); // AR: 200 - 50
     assert.equal(summary!.closingBalance, 400); // 250 + 150
+  });
+
+  test('backdated AP payment contributes to opening by business date, not insertion balance', () => {
+    const rows = [
+      row(1, '2025-07-25T00:00:00.000Z', 0, 100, 100),
+      row(2, '2025-07-24T00:00:00.000Z', 40, 0, 60),
+    ];
+    const summary = computePeriodSummary(rows, '2025-07-25', '2025-07-25', 'VENDOR');
+    assert.ok(summary);
+    assert.equal(summary!.openingBalance, -40);
+    assert.equal(summary!.periodActivity, 100);
+    assert.equal(summary!.closingBalance, 60);
   });
 
   test('AR sign convention: periodActivity = debitTotal − creditTotal', () => {

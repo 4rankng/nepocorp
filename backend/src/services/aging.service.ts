@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { cacheGet } from '../lib/redis';
-import { eq, and, sql, inArray, like } from 'drizzle-orm';
+import { eq, and, or, sql, inArray, like } from 'drizzle-orm';
 import { computeFifoAging, TxnType } from '@tingting/shared';
 import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/shared';
 
@@ -10,7 +10,7 @@ import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/share
 type LedgerEntry = { debit: string | null; credit: string | null; timestamp: Date | null };
 
 interface AgingConfig {
-  entityType: 'CUSTOMER' | 'VENDOR';
+  entityType: 'CUSTOMER' | 'VENDOR' | 'CARRIER';
   /** Whether to invert debit/credit before FIFO computation (true for VENDOR) */
   invertSigns: boolean;
 }
@@ -24,6 +24,12 @@ interface FetchOptions {
   entityIds?: number[];
   /** Restrict to a subset of transaction types (e.g. fuel-only payables). */
   txnTypes?: TxnType[];
+  /** Carrier AP projection, including only carrier-cost reversals. */
+  carrierPayables?: boolean;
+  /** Read historical CUSTOMER carrier rows together with current CARRIER rows. */
+  entityTypes?: Array<'CUSTOMER' | 'VENDOR' | 'CARRIER'>;
+  /** Keep carrier AP activity out of customer AR reports. */
+  excludeCarrierPayables?: boolean;
 }
 
 interface EntityAgingResult {
@@ -67,12 +73,34 @@ async function fetchLedgerGrouped(
 ): Promise<Map<number, LedgerEntry[]>> {
   if (opts.entityIds && opts.entityIds.length === 0) return new Map();
 
-  const conditions = [eq(s.ledger.entityType, config.entityType)];
+  const conditions = [
+    opts.entityTypes?.length
+      ? inArray(s.ledger.entityType, opts.entityTypes)
+      : eq(s.ledger.entityType, config.entityType),
+  ];
   if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
   if (opts.entityIds && opts.entityIds.length > 0) conditions.push(inArray(s.ledger.entityId, opts.entityIds));
   if (opts.asOfDate) conditions.push(sql`${s.ledger.timestamp} <= ${opts.asOfDate}::timestamptz`);
-  if (opts.txnTypes && opts.txnTypes.length > 0) {
+  if (opts.carrierPayables) {
+    conditions.push(or(
+      inArray(s.ledger.txnType, [TxnType.EXTERNAL_CARRIER_COST, TxnType.VENDOR_PAYMENT]),
+      and(
+        eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
+        like(s.ledger.note, 'Cước thuê ngoài%'),
+      ),
+    )!);
+  } else if (opts.txnTypes && opts.txnTypes.length > 0) {
     conditions.push(inArray(s.ledger.txnType, opts.txnTypes));
+  }
+  if (opts.excludeCarrierPayables) {
+    conditions.push(sql`not (
+      ${s.ledger.txnType} = ${TxnType.EXTERNAL_CARRIER_COST}
+      or ${s.ledger.txnType} = ${TxnType.VENDOR_PAYMENT}
+      or (
+        ${s.ledger.txnType} = ${TxnType.UNLOCK_REVERSAL}
+        and ${s.ledger.note} like 'Cước thuê ngoài%'
+      )
+    )`);
   }
 
   const ledgerRows = await db.select({
@@ -132,7 +160,13 @@ function computeEntityResults(
 
 async function getEntityResultsCached(
   config: AgingConfig,
-  opts: { asOfDate?: string; txnTypes?: TxnType[] } = {},
+  opts: {
+    asOfDate?: string;
+    txnTypes?: TxnType[];
+    carrierPayables?: boolean;
+    entityTypes?: Array<'CUSTOMER' | 'VENDOR' | 'CARRIER'>;
+    excludeCarrierPayables?: boolean;
+  } = {},
 ): Promise<EntityAgingResult[]> {
   // Cache the expensive "pull all ledger rows for an entity type + run FIFO
   // aging" step. Keyed by (entityType, invertSigns, asOfDate|today, txnTypes) —
@@ -143,12 +177,24 @@ async function getEntityResultsCached(
   // safety net. JSON round-trip is lossless here — EntityAgingResult carries no
   // Date objects (timestamps are ISO strings).
   const asOfKey = opts.asOfDate ?? new Date().toISOString().slice(0, 10);
-  const txnKey = opts.txnTypes && opts.txnTypes.length > 0 ? opts.txnTypes.join(',') : 'all';
+  const txnKey = opts.carrierPayables
+    ? 'carrier-payables'
+    : opts.txnTypes && opts.txnTypes.length > 0
+      ? opts.txnTypes.join(',')
+      : 'all';
+  const entityKey = opts.entityTypes?.join(',') ?? config.entityType;
+  const projectionKey = opts.excludeCarrierPayables ? 'no-carrier-ap' : 'all-projections';
   return cacheGet<EntityAgingResult[]>(
-    `reports:entity-results:${config.entityType}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}`,
+    `reports:entity-results:${entityKey}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}:${projectionKey}`,
     300,
     async () => {
-      const grouped = await fetchLedgerGrouped(config, { asOfDate: opts.asOfDate, txnTypes: opts.txnTypes });
+      const grouped = await fetchLedgerGrouped(config, {
+        asOfDate: opts.asOfDate,
+        txnTypes: opts.txnTypes,
+        carrierPayables: opts.carrierPayables,
+        entityTypes: opts.entityTypes,
+        excludeCarrierPayables: opts.excludeCarrierPayables,
+      });
       return computeEntityResults(grouped, config);
     },
   );
@@ -226,7 +272,10 @@ async function findCustomerIdsForAgingSearch(search: string): Promise<Set<number
 export const CURRENT_AGING_RANGE = '0-30';
 
 export async function getReceivablesSummary(opts: { asOfDate?: string } = {}) {
-  const results = await getEntityResultsCached({ entityType: 'CUSTOMER', invertSigns: false }, opts);
+  const results = await getEntityResultsCached(
+    { entityType: 'CUSTOMER', invertSigns: false },
+    { ...opts, excludeCarrierPayables: true },
+  );
 
   const buckets = [
     { range: CURRENT_AGING_RANGE, label: 'Trong hạn', count: 0, amount: 0 },
@@ -257,56 +306,23 @@ export async function getReceivablesSummary(opts: { asOfDate?: string } = {}) {
 }
 
 export async function getTopOverdueCustomer(): Promise<{ name: string; balance: number; days: number } | null> {
-  const balanceRows = await db.execute(sql`
-    SELECT DISTINCT ON (entity_id) entity_id as "entityId", balance, timestamp
-    FROM ledger
-    WHERE entity_type = 'CUSTOMER'
-    ORDER BY entity_id, id DESC
-  `) as unknown as Array<{ entityId: number; balance: string; timestamp: string | null }>;
-
-  const activeDebtors = balanceRows
-    .map(r => ({ entityId: r.entityId, balance: parseFloat(r.balance || '0') }))
-    .filter(r => r.balance > 0);
-
-  if (activeDebtors.length === 0) return null;
-
-  const debtorIds = activeDebtors.map(d => d.entityId);
-
-  const oldestDebitRows = await db.execute(sql`
-    SELECT DISTINCT ON (entity_id) entity_id as "entityId", timestamp
-    FROM ledger
-    WHERE entity_type = 'CUSTOMER'
-      AND debit::numeric > 0
-      AND entity_id IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})
-    ORDER BY entity_id, id ASC
-  `) as unknown as Array<{ entityId: number; timestamp: string | null }>;
-
-  const oldestDebitsMap = new Map(
-    oldestDebitRows.map(r => [r.entityId, r.timestamp ? new Date(r.timestamp) : null])
+  const results = await getEntityResultsCached(
+    { entityType: 'CUSTOMER', invertSigns: false },
+    { excludeCarrierPayables: true },
   );
+  const top = results.sort((a, b) => b.totalOutstanding - a.totalOutstanding)[0];
+  if (!top) return null;
 
-  const customers = await db.select({ id: s.customers.id, name: s.customers.name })
+  const [customer] = await db.select({ name: s.customers.name })
     .from(s.customers)
-    .where(sql`${s.customers.id} IN (${sql.join(debtorIds.map(id => sql`${id}`), sql`, `)})`);
+    .where(eq(s.customers.id, top.entityId))
+    .limit(1);
 
-  const nameById = new Map(customers.map(c => [c.id, c.name]));
-
-  let topOverdue: { name: string; balance: number; days: number } | null = null;
-  const now = Date.now();
-
-  for (const debtor of activeDebtors) {
-    if (!topOverdue || debtor.balance > topOverdue.balance) {
-      const oldestDate = oldestDebitsMap.get(debtor.entityId);
-      const days = oldestDate ? Math.max(0, Math.floor((now - oldestDate.getTime()) / 86400000)) : 0;
-      topOverdue = {
-        name: nameById.get(debtor.entityId) || 'Khách hàng không xác định',
-        balance: debtor.balance,
-        days,
-      };
-    }
-  }
-
-  return topOverdue;
+  return {
+    name: customer?.name || 'Khách hàng không xác định',
+    balance: top.totalOutstanding,
+    days: top.maxOverdueDays,
+  };
 }
 
 export async function getCustomerAgingList(opts: { search?: string; asOfDate?: string; page?: number; limit?: number } = {}): Promise<CustomerAgingListResult> {
@@ -320,7 +336,7 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
   // intentionally omits entityIds so a search reuses the browse result.
   const allResults = await getEntityResultsCached(
     { entityType: 'CUSTOMER', invertSigns: false },
-    { asOfDate: opts.asOfDate },
+    { asOfDate: opts.asOfDate, excludeCarrierPayables: true },
   );
   const results = searchedCustomerIds
     ? allResults.filter(r => searchedCustomerIds.has(r.entityId))
@@ -380,31 +396,34 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
 
 // ─── Accounts Payable (Vendor aging) ─────────────────────────────────────────
 
-export async function getPayablesSummary(opts: { asOfDate?: string; category?: PayablesCategory } = {}) {
-  // Category → ledger scoping. `undefined` preserves the legacy behavior of
-  // aggregating every VENDOR row regardless of txnType.
-  type Scope = { entityType: 'CUSTOMER' | 'VENDOR'; txnTypes?: TxnType[]; invertSigns: boolean; kind: 'vendor' | 'carrier' };
-  const scope: Scope = (() => {
-    switch (opts.category) {
-      case 'fuel':
-        return { entityType: 'VENDOR', txnTypes: [TxnType.FUEL_EXPENSE], invertSigns: true, kind: 'vendor' as const };
-      case 'ancillary':
-        return { entityType: 'VENDOR', txnTypes: [TxnType.VENDOR_EXPENSE], invertSigns: true, kind: 'vendor' as const };
-      case 'commission':
-        return { entityType: 'VENDOR', txnTypes: [TxnType.COMMISSION], invertSigns: true, kind: 'vendor' as const };
-      case 'carrier':
-        // Carriers live in the `customers` catalog (D-F). They are credited
-        // cước via EXTERNAL_CARRIER_COST on their CUSTOMER ledger; invertSigns
-        // mirrors the vendor (credit-positive) convention so aging math lines up.
-        return { entityType: 'CUSTOMER', txnTypes: [TxnType.EXTERNAL_CARRIER_COST], invertSigns: true, kind: 'carrier' as const };
-      default:
-        return { entityType: 'VENDOR', invertSigns: true, kind: 'vendor' as const };
-    }
-  })();
+type PayablesScope = {
+  entityType: 'CUSTOMER' | 'VENDOR' | 'CARRIER';
+  entityTypes?: Array<'CUSTOMER' | 'VENDOR' | 'CARRIER'>;
+  txnTypes?: TxnType[];
+  invertSigns: boolean;
+  kind: 'vendor' | 'carrier';
+  carrierPayables?: boolean;
+};
 
+type PayablesSummaryResult = {
+  items: PayableSummary[];
+  totalOutstanding: number;
+  totalSuppliers: number;
+  overdueSuppliers: number;
+};
+
+async function getPayablesForScope(
+  scope: PayablesScope,
+  asOfDate?: string,
+): Promise<PayablesSummaryResult> {
   const results = await getEntityResultsCached(
     { entityType: scope.entityType, invertSigns: scope.invertSigns },
-    { asOfDate: opts.asOfDate, txnTypes: scope.txnTypes },
+    {
+      asOfDate,
+      txnTypes: scope.txnTypes,
+      carrierPayables: scope.carrierPayables,
+      entityTypes: scope.entityTypes,
+    },
   );
 
   let totalOutstanding = 0;
@@ -415,11 +434,9 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
   if (scope.kind === 'carrier') {
     // Carrier branch: resolve names/phone from `customers` (NOT suppliers).
     //
-    // Carrier settlements are NOT auto-recorded against EXTERNAL_CARRIER_COST —
-    // trip-lock only posts the credit side. So `outstanding` here reflects
-    // trip-lock credits until an ADJUSTMENT (or vendor-payment-style entry)
-    // offsets them. Honest by design: this is what we currently owe carriers
-    // based on locked trips.
+    // Carrier costs and their outbound payments share a payable-only projection
+    // of the CUSTOMER ledger. This avoids mixing the carrier's AP activity with
+    // any receivable entries the same catalog entity may also have.
     const carrierIds = results.map(r => r.entityId);
     const carriers = carrierIds.length > 0
       ? await db.select({
@@ -484,4 +501,57 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
   }
 
   return { items, totalOutstanding, totalSuppliers: items.length, overdueSuppliers };
+}
+
+export function mergePayablesSummaries(
+  summaries: readonly PayablesSummaryResult[],
+): PayablesSummaryResult {
+  const items = summaries.flatMap(summary => summary.items)
+    .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+  return {
+    items,
+    totalOutstanding: summaries.reduce((sum, summary) => sum + summary.totalOutstanding, 0),
+    totalSuppliers: items.length,
+    overdueSuppliers: summaries.reduce((sum, summary) => sum + summary.overdueSuppliers, 0),
+  };
+}
+
+export async function getPayablesSummary(opts: { asOfDate?: string; category?: PayablesCategory } = {}) {
+  const vendorScope: PayablesScope = {
+    entityType: 'VENDOR',
+    invertSigns: true,
+    kind: 'vendor',
+  };
+  const carrierScope: PayablesScope = {
+    // External carriers are customers in the catalog, but their locked-trip
+    // cost is a payable credit and must be present in the all-category view.
+    entityType: 'CARRIER',
+    entityTypes: ['CUSTOMER', 'CARRIER'],
+    carrierPayables: true,
+    invertSigns: true,
+    kind: 'carrier',
+  };
+
+  if (!opts.category) {
+    const summaries = await Promise.all([
+      getPayablesForScope(vendorScope, opts.asOfDate),
+      getPayablesForScope(carrierScope, opts.asOfDate),
+    ]);
+    return mergePayablesSummaries(summaries);
+  }
+
+  const scope: PayablesScope = (() => {
+    switch (opts.category) {
+      case 'fuel':
+        return { ...vendorScope, txnTypes: [TxnType.FUEL_EXPENSE] };
+      case 'ancillary':
+        return { ...vendorScope, txnTypes: [TxnType.VENDOR_EXPENSE] };
+      case 'commission':
+        return { ...vendorScope, txnTypes: [TxnType.COMMISSION] };
+      case 'carrier':
+        return carrierScope;
+    }
+  })();
+
+  return getPayablesForScope(scope, opts.asOfDate);
 }

@@ -253,6 +253,11 @@ export const qk = {
       range: { dateFrom?: string; dateTo?: string } = {},
     ) =>
       ['supplier-statement', supplierId, range.dateFrom || null, range.dateTo || null] as const,
+    carrierPayableStatement: (
+      carrierId: number | undefined,
+      range: { dateFrom?: string; dateTo?: string } = {},
+    ) =>
+      ['carrier-payable-statement', carrierId, range.dateFrom || null, range.dateTo || null] as const,
     /** Broad prefix — matches every supplier-statement query regardless of range. */
     supplierStatementAll: ['supplier-statement'] as const,
     expenses: (filters: unknown) => ['expenses', filters] as const,

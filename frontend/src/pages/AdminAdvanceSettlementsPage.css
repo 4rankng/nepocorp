@@ -1,8 +1,8 @@
 /* ============================================================================
  * AdminAdvanceSettlementsPage (.as-page)
  * Mirrors AdminAdvancesPage (.adv-page) BEM pattern: desktop CSS-grid table +
- * mobile stacked cards. 7-column grid: code, forwarder, expense, refund,
- * date, status, actions. Design tokens from styles/tokens.css.
+ * mobile stacked cards. Desktop rows are transport-plan scoped so approvers
+ * can compare the trip context and expense categories without opening a form.
  * ========================================================================== */
 
 .as-page .as-panel {
@@ -158,20 +158,21 @@
   outline-offset: -2px;
 }
 .as-page .as-ledger {
-  min-width: 956px;
+  min-width: 1096px;
 }
 .as-page .as-grid-head,
 .as-page .as-grid-row {
   display: grid;
   grid-template-columns:
-    170px
-    175px
-    110px
-    85px
-    75px
-    110px
-    127px;
-  gap: 12px;
+    135px
+    150px
+    50px
+    130px
+    minmax(230px, 1fr)
+    90px
+    100px
+    100px;
+  gap: 8px;
 }
 .as-page .as-grid-head {
   padding: 11px 16px;
@@ -205,6 +206,37 @@
 .as-page .as-grid-row > div {
   line-height: var(--lh-normal);
   min-width: 0;
+}
+.as-page .as-settlement-summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto));
+  gap: 20px;
+  align-items: center;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--brand) 5%, var(--surface));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.as-page .as-settlement-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.as-page .as-settlement-summary span {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+.as-page .as-settlement-summary a,
+.as-page .as-settlement-summary strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 /* ── Row cells ────────────────────────────────────────────────────────── */
@@ -243,6 +275,66 @@
   font-weight: var(--fw-semibold);
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+.as-page .as-date-customer {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.as-page .as-date-customer .as-date {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  text-align: left;
+}
+.as-page .as-date-customer strong,
+.as-page .as-route {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.as-page .as-container-count {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+.as-page .as-expense-breakdown {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.as-page .as-expense-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--fs-2xs);
+  line-height: 1.35;
+}
+.as-page .as-expense-chip span {
+  overflow-wrap: anywhere;
+}
+.as-page .as-expense-chip strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+.as-page .as-expense-empty {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
 }
 .as-page .as-scope {
   display: flex;
@@ -562,6 +654,57 @@
   color: var(--ink-3);
   font-size: var(--fs-2xs);
   font-weight: var(--fw-medium);
+}
+.as-page .as-mcard__plans {
+  display: grid;
+  gap: 8px;
+  padding: 0 0 16px;
+}
+.as-page .as-mcard__plans-title {
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+.as-page .as-mcard__plan {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.as-page .as-mcard__plan-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.as-page .as-mcard__plan-head a {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+}
+.as-page .as-mcard__plan-head strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.as-page .as-mcard__plan-meta {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: var(--fs-2xs);
+  line-height: 1.45;
+}
+.as-page .as-mcard__plan-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 7px;
+  color: var(--ink-2);
+  font-size: var(--fs-2xs);
 }
 /* Mobile action buttons */
 .as-page .as-mcard__actions {

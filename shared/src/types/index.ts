@@ -371,6 +371,21 @@ export interface LedgerEntry {
   /** Public trip reference for display. Internal database ids must not be shown to users. */
   tripCode?: string | null;
   serviceFeeLabel?: string | null;
+  fuelDetails?: {
+    departureDate: string;
+    truckPlate: string | null;
+    routeName: string | null;
+    liters: string | null;
+    unitPrice: string | null;
+    amount: string;
+  } | null;
+  expenseDetails?: {
+    expenseDate: string;
+    vehiclePlate: string | null;
+    vehicleComponent: 'TRUCK' | 'TRAILER' | null;
+    categoryName: string;
+    amount: string;
+  } | null;
 }
 
 export interface Penalty {
@@ -537,8 +552,9 @@ export interface PayableSummary {
    * Origin of the payable row.
    * - 'vendor': a normal supplier (VENDOR ledger) — click-through goes to the
    *   supplier statement page.
-   * - 'carrier': an external carrier (CUSTOMER ledger, EXTERNAL_CARRIER_COST) —
-   *   click-through goes to the customer debt page.
+   * - 'carrier': an external carrier (CARRIER ledger, with historical CUSTOMER
+   *   rows projected for compatibility) — click-through goes to its payable
+   *   statement, never the customer receivable workflow.
    * Undefined for legacy responses that did not distinguish the two.
    */
   kind?: 'vendor' | 'carrier';
@@ -743,6 +759,9 @@ export interface AdvanceSettlementWithRefs extends AdvanceSettlement {
     tripCode?: string | null;
     departureDate?: string | null;
     customerName?: string | null;
+    routeName?: string | null;
+    tripContainerCount?: number | null;
+    expenseTypeName?: string | null;
     submittedBuyAmount?: string | null;
     submittedSellAmount?: string | null;
     adjustmentReason?: string | null;

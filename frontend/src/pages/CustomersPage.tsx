@@ -11,7 +11,7 @@ import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { EmptyState } from '../design-system';
 import { formatCurrency, formatNumber } from '../lib/format';
-import type { Customer, Supplier } from '@tingting/shared';
+import type { Customer, LedgerEntry, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
 import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
@@ -34,6 +34,28 @@ function riskDot(debt: number | null, limit: number | null) {
   if (ratio > 0.8) return 'high';
   if (ratio >= 0.5) return 'med';
   return 'low';
+}
+
+export function buildCustomerDebtMap(entries: LedgerEntry[]): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const entry of entries) {
+    if (entry.entityType !== 'CUSTOMER') continue;
+    const isCarrierPayable =
+      entry.txnType === 'EXTERNAL_CARRIER_COST'
+      || entry.txnType === 'VENDOR_PAYMENT'
+      || (
+        entry.txnType === 'UNLOCK_REVERSAL'
+        && entry.note?.startsWith('Cước thuê ngoài')
+      );
+    if (isCarrierPayable) continue;
+
+    const current = map.get(entry.entityId) ?? 0;
+    map.set(
+      entry.entityId,
+      current + (Number(entry.debit ?? 0) || 0) - (Number(entry.credit ?? 0) || 0),
+    );
+  }
+  return map;
 }
 
 // ─── Modal-based Form ────────────────────────────────────────────────────────
@@ -202,18 +224,7 @@ export default function CustomersPage() {
   const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
 
   const debtMap = useMemo(() => {
-    const map = new Map<number, number>();
-    if (!ledgerEntries) return map;
-    const byCustomer = new Map<number, { balance: string }>();
-    for (const entry of ledgerEntries) {
-      if (entry.entityType === 'CUSTOMER' && !byCustomer.has(entry.entityId)) {
-        byCustomer.set(entry.entityId, entry);
-      }
-    }
-    for (const [id, entry] of byCustomer) {
-      map.set(id, parseFloat(entry.balance));
-    }
-    return map;
+    return buildCustomerDebtMap(ledgerEntries ?? []);
   }, [ledgerEntries]);
 
   const revenueMap = useMemo(() => {

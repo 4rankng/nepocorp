@@ -28,6 +28,12 @@ interface PayablesResponse {
   overdueSuppliers: number;
 }
 
+export function payableDetailHref(payable: Pick<PayableSummary, 'kind' | 'supplier'>): string {
+  return payable.kind === 'carrier'
+    ? `/payables/${payable.supplier.id}?kind=carrier`
+    : `/payables/${payable.supplier.id}`;
+}
+
 /* ─── Category chips ──────────────────────────────────────────────────────── */
 
 const CATEGORY_CHIPS: Array<{ value: PayablesCategory | undefined; label: string }> = [
@@ -35,7 +41,7 @@ const CATEGORY_CHIPS: Array<{ value: PayablesCategory | undefined; label: string
   { value: 'fuel', label: 'Xăng dầu' },
   { value: 'ancillary', label: 'Phí dịch vụ' },
   { value: 'commission', label: 'Hoa hồng' },
-  { value: 'carrier', label: 'Chuyên xe' },
+  { value: 'carrier', label: 'Vận chuyển thuê ngoài' },
 ];
 
 /* ─── Commission modal ────────────────────────────────────────────────────── */
@@ -270,9 +276,9 @@ export default function PayableListPage() {
   }, [payables, search]);
 
   /* ── Row click-through destination ── */
-  // Vendor rows → supplier statement page; carrier rows → customer debt page.
-  const rowHref = (d: PayableSummary) =>
-    d.kind === 'carrier' ? `/debt/${d.supplier.id}` : `/payables/${d.supplier.id}`;
+  // Keep carrier payables inside the outbound-payment workflow. A carrier may
+  // also be a customer, but its receivable ledger is a different account.
+  const rowHref = (d: PayableSummary) => payableDetailHref(d);
 
   /* ── Kick counter animations when data settles ── */
   useEffect(() => {
@@ -523,7 +529,7 @@ export default function PayableListPage() {
                     const pct60 = totalAging > 0 ? (d.aging.d60 / totalAging) * 100 : 0;
                     const pct90 = totalAging > 0 ? (d.aging.over90 / totalAging) * 100 : 0;
                     return (
-                      <ClickableCard key={d.supplier.id} to={rowHref(d)} className="m-card">
+                      <ClickableCard key={`${d.kind ?? 'vendor'}-${d.supplier.id}`} to={rowHref(d)} className="m-card">
                         <div className="m-card__top">
                           <span className="m-card__title">{d.supplier.name}</span>
                           <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 13.5 }}>
@@ -577,7 +583,7 @@ export default function PayableListPage() {
                     {filteredPayables.map(d => (
                       <ClickableCard
                         as="tr"
-                        key={d.supplier.id}
+                        key={`${d.kind ?? 'vendor'}-${d.supplier.id}`}
                         to={rowHref(d)}
                         style={{ cursor: 'pointer' }}
                       >

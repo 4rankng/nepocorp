@@ -335,12 +335,16 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       const liters = Number(s.fuelLitersOverride) || 0;
       return liters * FUEL_PRICE_PER_LITER;
     }
+    const fixedRouteAllowance = Number(selectedRouteData?.fixedFuelAllowance || 0);
+    if (fixedRouteAllowance > 0) {
+      return fixedRouteAllowance * FUEL_PRICE_PER_LITER;
+    }
     return legs.reduce((acc, leg) => {
       const km = Number(leg.km) || 0;
       const rate = leg.loadingType === LoadingType.HANG ? LOADED_RATE : EMPTY_RATE;
       return acc + (km / 100) * rate * FUEL_PRICE_PER_LITER;
     }, 0);
-  }, [s.fuelMode, s.fuelLitersOverride, legs]);
+  }, [s.fuelMode, s.fuelLitersOverride, selectedRouteData, legs]);
 
   const estimatedTollCost = useMemo(() => {
     const base = isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : 0;

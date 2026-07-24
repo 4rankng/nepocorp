@@ -91,10 +91,15 @@ export function usePostDriverPayout() {
 export function useSupplierStatement(
   supplierId: number | undefined,
   range?: { dateFrom?: string; dateTo?: string },
+  kind: 'vendor' | 'carrier' = 'vendor',
 ) {
   return useQuery<SupplierStatement>({
-    queryKey: qk.financial.supplierStatement(supplierId, range),
-    queryFn: () => financialClient.getSupplierStatement(supplierId!, range),
+    queryKey: kind === 'carrier'
+      ? qk.financial.carrierPayableStatement(supplierId, range)
+      : qk.financial.supplierStatement(supplierId, range),
+    queryFn: () => kind === 'carrier'
+      ? financialClient.getCarrierPayableStatement(supplierId!, range)
+      : financialClient.getSupplierStatement(supplierId!, range),
     enabled: !!supplierId,
     placeholderData: keepPreviousData,
   });

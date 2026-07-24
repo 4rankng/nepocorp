@@ -33,11 +33,9 @@ const goldenCases: GoldenCase[] = JSON.parse(readFileSync(goldenPath, 'utf-8'));
 
 describe('P5 Eval — golden Q/A routing (deterministic layer)', () => {
   let passCount = 0;
-  let totalCount = 0;
 
   for (const tc of goldenCases) {
     test(`${tc.id}: ${tc.desc}`, () => {
-      totalCount++;
       const decision = routeIntent(tc.message);
       assert.equal(
         decision.lane,
@@ -57,8 +55,9 @@ describe('P5 Eval — golden Q/A routing (deterministic layer)', () => {
   }
 
   // Aggregate gate: ≥90% of golden cases must route correctly.
-  test('golden Q/A routing rate ≥ 90%', { todo: totalCount > 0 ? false : true }, () => {
-    const rate = passCount / Math.max(totalCount, 1);
+  test('golden Q/A routing rate ≥ 90%', () => {
+    assert.ok(goldenCases.length > 0, 'golden Q/A dataset must not be empty');
+    const rate = passCount / goldenCases.length;
     assert.ok(
       rate >= 0.9,
       `golden Q/A routing rate ${(rate * 100).toFixed(1)}% is below the 90% gate`,

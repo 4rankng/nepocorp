@@ -18,11 +18,33 @@ describe('admin advance settlement ledger density', () => {
     forwarderName: 'Nguyễn Sĩ Quân',
     status: AdvanceSettlementStatus.PENDING,
     totalExpenseAmount: 49_952_400,
-    refundAmount: 0,
+    refundAmount: 1_000_000,
     createdAt: '2026-07-21T00:00:00.000Z',
     linkedExpenses: [
-      { tripId: 42, tripCode: 'TRP-202607-0042', containerNumber: 'MSKU-001' },
-      { tripId: 42, tripCode: 'TRP-202607-0042', containerNumber: 'MSKU-002' },
+      {
+        tripId: 42,
+        tripCode: 'TRP-202607-0042',
+        departureDate: '2026-07-23',
+        customerName: 'Công ty Biển Bạc',
+        routeName: 'Hải Phòng – Hà Nội',
+        tripContainerCount: 2,
+        containerNumber: 'MSKU-001',
+        expenseType: 'LIFTING',
+        expenseTypeName: 'Phí nâng container',
+        buyAmount: '1200000',
+      },
+      {
+        tripId: 42,
+        tripCode: 'TRP-202607-0042',
+        departureDate: '2026-07-23',
+        customerName: 'Công ty Biển Bạc',
+        routeName: 'Hải Phòng – Hà Nội',
+        tripContainerCount: 2,
+        containerNumber: 'MSKU-002',
+        expenseType: 'CUSTOMS',
+        expenseTypeName: 'Phí hải quan',
+        buyAmount: '800000',
+      },
     ],
     opsCompletion: {
       tripCount: 1,
@@ -79,7 +101,7 @@ describe('admin advance settlement ledger density', () => {
         />
       ),
     },
-  ])('keeps the $layout aggregate-only', ({ layout, component }) => {
+  ])('shows one transport-plan row with decision context in the $layout', ({ layout, component }) => {
     render(
       <MemoryRouter>
         {component}
@@ -91,11 +113,15 @@ describe('admin advance settlement ledger density', () => {
       expect(screen.getByText('Chuyến').previousElementSibling?.textContent).toBe('1');
       expect(screen.getByText('Container').previousElementSibling?.textContent).toBe('2');
     } else {
-      expect(screen.getByText(/2 khoản chi/)).toBeTruthy();
-      expect(screen.getByText(/1 chuyến · 2 container/)).toBeTruthy();
+      expect(screen.getByText('Tạm ứng quyết toán')).toBeTruthy();
+      expect(screen.getByText('Tổng chi phí')).toBeTruthy();
+      expect(screen.getByText('Hoàn lại')).toBeTruthy();
     }
-    expect(screen.queryByText(/nhóm đã kê xong/i)).toBeNull();
-    expect(screen.queryByText(/TRP-202607-0042/)).toBeNull();
+    expect(screen.getByText(/TRP-202607-0042/)).toBeTruthy();
+    expect(screen.getByText(/Công ty Biển Bạc/)).toBeTruthy();
+    expect(screen.getByText(/Hải Phòng – Hà Nội/)).toBeTruthy();
+    expect(screen.getByText(/Phí nâng container/)).toBeTruthy();
+    expect(screen.getByText(/Phí hải quan/)).toBeTruthy();
     expect(screen.queryByText(/MSKU-001/)).toBeNull();
     expect(screen.queryByText(/MSKU-002/)).toBeNull();
   });

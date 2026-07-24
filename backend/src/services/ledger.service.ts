@@ -32,11 +32,12 @@ export interface LedgerPostRequest {
   txnType: TxnType;
   txnId?: number;
   receiptId?: string;
-  entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER';
+  entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER' | 'CARRIER';
   entityId: number;
   debit: number;
   credit: number;
   note?: string;
+  timestamp?: Date;
 }
 
 export class LedgerService {
@@ -48,7 +49,8 @@ export class LedgerService {
     if (type === 'DRIVER') return 2;
     if (type === 'VENDOR') return 3;
     if (type === 'FORWARDER') return 4;
-    return 5;
+    if (type === 'CARRIER') return 5;
+    return 6;
   }
 
   /**
@@ -62,7 +64,7 @@ export class LedgerService {
   /**
    * Acquire sorted locks for multiple entities to prevent deadlocks
    */
-  static async lockEntities(tx: Tx, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }[]) {
+  static async lockEntities(tx: Tx, entities: { entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER' | 'CARRIER'; entityId: number }[]) {
     // Sort entities globally to prevent deadlocks
     const sorted = [...entities].sort((a, b) => {
       const aKey = this.getEntityTypeKey(a.entityType);
@@ -82,14 +84,14 @@ export class LedgerService {
    */
   private static collectTripEntities(
     trip: TripLedgerParams
-  ): Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> {
+  ): Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER' | 'CARRIER'; entityId: number }> {
     const carrierType = trip.carrierType ?? 'OWN';
-    const entities: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER'; entityId: number }> = [];
+    const entities: Array<{ entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER' | 'CARRIER'; entityId: number }> = [];
 
     entities.push({ entityType: 'CUSTOMER', entityId: trip.customerId });
 
-    if (carrierType === 'EXTERNAL' && trip.externalCarrierId && trip.externalCarrierId !== trip.customerId) {
-      entities.push({ entityType: 'CUSTOMER', entityId: trip.externalCarrierId });
+    if (carrierType === 'EXTERNAL' && trip.externalCarrierId) {
+      entities.push({ entityType: 'CARRIER', entityId: trip.externalCarrierId });
     }
 
     if (carrierType === 'OWN' && trip.driverId) {
@@ -127,7 +129,7 @@ export class LedgerService {
     let newBalance = prevBalance;
     if (request.entityType === 'CUSTOMER') {
       newBalance = prevBalance + request.debit - request.credit;
-    } else if (request.entityType === 'DRIVER' || request.entityType === 'VENDOR' || request.entityType === 'FORWARDER') {
+    } else if (request.entityType === 'DRIVER' || request.entityType === 'VENDOR' || request.entityType === 'FORWARDER' || request.entityType === 'CARRIER') {
       newBalance = prevBalance + request.credit - request.debit;
     }
 
@@ -141,6 +143,7 @@ export class LedgerService {
       credit: String(request.credit),
       balance: String(newBalance),
       note: request.note ?? null,
+      timestamp: request.timestamp,
     }).returning();
 
     return inserted;
@@ -233,12 +236,12 @@ export class LedgerService {
       });
     }
 
-    // ── 4. EXTERNAL: carrier payable on their CUSTOMER ledger (D-F) ──
+    // ── 4. EXTERNAL: carrier payable on its isolated CARRIER ledger ──
     if (carrierType === 'EXTERNAL' && trip.externalCarrierId && Number(trip.externalFreightCost || 0) > 0) {
       await this.postEntry(tx, {
         txnType: TxnType.EXTERNAL_CARRIER_COST,
         txnId: trip.id,
-        entityType: 'CUSTOMER',   // D-F: carrier is in customers catalog
+        entityType: 'CARRIER',
         entityId: trip.externalCarrierId,
         debit: 0,
         credit: Number(trip.externalFreightCost),  // credit → negative balance = we owe them
@@ -343,7 +346,7 @@ export class LedgerService {
       await this.postEntry(tx, {
         txnType: TxnType.UNLOCK_REVERSAL,
         txnId: trip.id,
-        entityType: 'CUSTOMER',
+        entityType: 'CARRIER',
         entityId: trip.externalCarrierId,
         debit: Number(trip.externalFreightCost),
         credit: 0,

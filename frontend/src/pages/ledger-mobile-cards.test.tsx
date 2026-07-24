@@ -3,7 +3,13 @@ import { render, screen } from '@testing-library/react';
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry } from '@tingting/shared';
 import { ReceivableLedgerCard } from './DebtDetailPage';
-import { PayableLedgerCard } from './PayableDetailPage';
+import {
+  ExpenseLedgerCard,
+  ExpenseLedgerRow,
+  FuelLedgerCard,
+  FuelLedgerRow,
+  PayableLedgerCard,
+} from './PayableDetailPage';
 
 function ledgerRow(overrides: Partial<LedgerEntry>): LedgerEntry {
   return {
@@ -64,5 +70,106 @@ describe('mobile ledger cards', () => {
     expect(screen.getByText('Số dư')).toBeTruthy();
     expect(screen.getByText('PC-20260719-01')).toBeTruthy();
     expect(screen.getByText('Thanh toán một phần')).toBeTruthy();
+  });
+
+  it.each([
+    {
+      layout: 'desktop',
+      component: (
+        <table><tbody><FuelLedgerRow row={ledgerRow({
+          txnType: TxnType.FUEL_EXPENSE,
+          entityType: 'VENDOR',
+          tripCode: 'TRP-202607-0061',
+          credit: '4276160',
+          balance: '390045086',
+          fuelDetails: {
+            departureDate: '2026-07-24',
+            truckPlate: '15C-136.31',
+            routeName: 'Hải Phòng – Hà Nội',
+            liters: '160',
+            unitPrice: '26726',
+            amount: '4276160',
+          },
+        })} /></tbody></table>
+      ),
+    },
+    {
+      layout: 'mobile',
+      component: (
+        <ul><FuelLedgerCard row={ledgerRow({
+          txnType: TxnType.FUEL_EXPENSE,
+          entityType: 'VENDOR',
+          tripCode: 'TRP-202607-0061',
+          credit: '4276160',
+          balance: '390045086',
+          fuelDetails: {
+            departureDate: '2026-07-24',
+            truckPlate: '15C-136.31',
+            routeName: 'Hải Phòng – Hà Nội',
+            liters: '160',
+            unitPrice: '26726',
+            amount: '4276160',
+          },
+        })} /></ul>
+      ),
+    },
+  ])('shows the complete fuel purchase detail on $layout', ({ component }) => {
+    render(component);
+
+    expect(screen.getByText('24/7/2026')).toBeTruthy();
+    expect(screen.getByText('15C-136.31')).toBeTruthy();
+    expect(screen.getByText('Hải Phòng – Hà Nội')).toBeTruthy();
+    expect(screen.getByText('160 lít')).toBeTruthy();
+    expect(screen.getByText(/26\.726/)).toBeTruthy();
+    expect(screen.getByText(/4\.276\.160/)).toBeTruthy();
+    expect(screen.getByText('TRP-202607-0061')).toBeTruthy();
+  });
+
+  it.each([
+    {
+      layout: 'desktop',
+      component: (
+        <table><tbody><ExpenseLedgerRow row={ledgerRow({
+          txnType: TxnType.VENDOR_EXPENSE,
+          entityType: 'VENDOR',
+          credit: '8586000',
+          balance: '8586000',
+          note: 'Chi phí Sửa chữa nhỏ',
+          expenseDetails: {
+            expenseDate: '2026-07-06',
+            vehiclePlate: '15C-136.31',
+            vehicleComponent: 'TRUCK',
+            categoryName: 'Sửa chữa nhỏ',
+            amount: '8586000',
+          },
+        })} /></tbody></table>
+      ),
+    },
+    {
+      layout: 'mobile',
+      component: (
+        <ul><ExpenseLedgerCard row={ledgerRow({
+          txnType: TxnType.VENDOR_EXPENSE,
+          entityType: 'VENDOR',
+          credit: '8586000',
+          balance: '8586000',
+          note: 'Chi phí Sửa chữa nhỏ',
+          expenseDetails: {
+            expenseDate: '2026-07-06',
+            vehiclePlate: '15C-136.31',
+            vehicleComponent: 'TRUCK',
+            categoryName: 'Sửa chữa nhỏ',
+            amount: '8586000',
+          },
+        })} /></ul>
+      ),
+    },
+  ])('shows the repair vehicle plate on $layout', ({ component }) => {
+    render(component);
+
+    expect(screen.getByText('6/7/2026')).toBeTruthy();
+    expect(screen.getByText('15C-136.31')).toBeTruthy();
+    expect(screen.getByText('Sửa chữa nhỏ')).toBeTruthy();
+    expect(screen.getAllByText(/8\.586\.000/).length).toBeGreaterThan(0);
   });
 });

@@ -62,6 +62,11 @@ export const financialClient = {
       `${FINANCIAL.SUPPLIER_STATEMENT(id)}${toQuery(range)}`,
     ),
 
+  getCarrierPayableStatement: (id: number, range?: { dateFrom?: string; dateTo?: string }) =>
+    api.get<SupplierStatement>(
+      `${FINANCIAL.CARRIER_PAYABLE_STATEMENT(id)}${toQuery(range)}`,
+    ),
+
   getPenalties: (params?: Record<string, string>) =>
     api.get<PaginatedResponse<Penalty>>(
       `${FINANCIAL.PENALTIES}${toQuery(params as Record<string, string | number | undefined>)}`,

@@ -95,6 +95,7 @@ export async function createExpense(tx: Tx, data: ExpenseCreateInput, userId?: n
   if (data.paymentStatus === 'UNPAID') {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_EXPENSE,
+      txnId: expense.id,
       entityType: 'VENDOR',
       entityId: data.supplierId,
       debit: 0,
@@ -130,6 +131,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
   if (financialFieldsChanged) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
+      txnId: id,
       entityType: 'VENDOR',
       entityId: existing.supplierId,
       debit: originalAmount,
@@ -158,6 +160,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
   if (financialFieldsChanged && newPaymentStatus === 'UNPAID') {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_EXPENSE,
+      txnId: id,
       entityType: 'VENDOR',
       entityId: newSupplierId,
       debit: 0,
@@ -207,6 +210,7 @@ export async function deleteExpense(tx: Tx, id: number, _userId?: number) {
   if (existing.paymentStatus === 'UNPAID') {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
+      txnId: id,
       entityType: 'VENDOR',
       entityId: existing.supplierId,
       debit: Number(existing.amount),

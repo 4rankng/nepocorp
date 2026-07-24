@@ -11,7 +11,9 @@ export interface ComputeTripTotalsInput {
   fuelPerTripSupplement: number;
   fuelUnitPrice: number;
   fuelActualUnitPrice?: number | null;
+  /** Retained for API compatibility; fixed route allowances are not mountain-only. */
   isMountainRoute: boolean;
+  /** Configured fixed allowance for the selected route (legacy field name). */
   mountainFixedAllowance: number | null;
   roadAllowanceBase: number;
   tollsDiscount: number;
@@ -88,14 +90,16 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalFuelLiters = baseLiters + fuelSupplement;
     legCalculations = input.legs.map((leg) => ({ sequence: leg.sequence, calculatedLiters: 0 }));
   } else {
-    // AUTO Mode
-    if (input.isMountainRoute && input.mountainFixedAllowance !== null) {
-      // AUTO Mountain with allowance
+    // AUTO Mode. A fixed allowance belongs to the route configuration and
+    // takes precedence for both plain and mountain routes. Historically this
+    // field was named "mountainFixedAllowance", but the route editor permits
+    // (and operations use) a fixed allowance on either route classification.
+    if (input.mountainFixedAllowance !== null) {
       const baseLiters = roundInt(input.mountainFixedAllowance);
       totalFuelLiters = baseLiters + fuelSupplement;
       legCalculations = input.legs.map((leg) => ({ sequence: leg.sequence, calculatedLiters: 0 }));
     } else {
-      // AUTO Standard, or Mountain fallback to per-leg
+      // No fixed route allowance: fall back to per-leg norms.
       const legsLitersTotal = input.legs.reduce((sum, leg) => {
         const norm = leg.loadingType === 'HANG' ? input.fuelLoadedNorm : input.fuelEmptyNorm;
         // Floor each leg so the per-leg breakdown (and the sum of legs)

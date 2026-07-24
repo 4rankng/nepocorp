@@ -15,6 +15,26 @@ import { useConfirm } from '../../components/UI';
 import { onboardingEvents } from '../../lib/onboardingEvents';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
 
+export function resolveExpectedFuelLiters(trip: {
+  fuelMode?: string | null;
+  fuelLitersOverride?: string | number | null;
+  fuelSupplementLiters?: string | number | null;
+  fuelFixedAllowanceApplied?: string | number | null;
+  fuelSupplementNormApplied?: string | number | null;
+  legs?: Array<{ calculatedLiters?: string | number | null }> | null;
+}): number {
+  const manualSupplement = Number(trip.fuelSupplementLiters || 0);
+  if (trip.fuelMode === 'FLAT_RATE') {
+    return Number(trip.fuelLitersOverride || 0) + manualSupplement;
+  }
+  const fixedAllowance = Number(trip.fuelFixedAllowanceApplied || 0);
+  if (fixedAllowance > 0) return fixedAllowance + manualSupplement;
+  const configuredSupplement = Number(trip.fuelSupplementNormApplied || 0);
+  return (trip.legs?.reduce((sum, leg) => sum + Number(leg.calculatedLiters || 0), 0) ?? 0)
+    + configuredSupplement
+    + manualSupplement;
+}
+
 /**
  * useTripDetailPage — all business logic for the Trip Detail page.
  * Returns typed data, permissions, derived values, and action handlers.
@@ -131,18 +151,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     const vehicleShiftAllowance = Number(trip.vehicleShiftAllowance || 0);
     const totalKm = trip.legs?.reduce((s, l) => s + Number(l.km), 0) ?? 0;
     const fuelLiters = Number(trip.fuelLiters) || 0;
-    const computedLiters = (() => {
-      if (trip.fuelMode === 'FLAT_RATE') {
-        return Number(trip.fuelLitersOverride || 0);
-      }
-      const fixedAllowance = Number(trip.fuelFixedAllowanceApplied || 0);
-      if (trip.route?.isMountain && fixedAllowance > 0) {
-        return fixedAllowance;
-      }
-      const legsLitersTotal = trip.legs?.reduce((s, l) => s + Number(l.calculatedLiters || 0), 0) ?? 0;
-      const tripSupplement = Number(trip.fuelSupplementNormApplied || 0);
-      return legsLitersTotal + tripSupplement;
-    })();
+    const computedLiters = resolveExpectedFuelLiters(trip);
     const ttbq = totalKm > 0 && fuelLiters > 0 ? (fuelLiters / totalKm) * 100 : 0;
     const fuelVarianceLiters = fuelLiters - computedLiters;
     const fuelVarianceOver = fuelVarianceLiters > 0;

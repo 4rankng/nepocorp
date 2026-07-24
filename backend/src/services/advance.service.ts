@@ -409,9 +409,8 @@ export async function listAdvanceSettlements(filters?: { forwarderId?: number; s
       }
     }
 
-    // Attach linked trip expenses (with resolved container number) so the list
-    // card can group the breakdown by container (feedback202606 C3). Mirrors the
-    // per-settlement detail serializer; batched across all settlements (2 queries).
+    // Attach linked trip expenses plus transport-plan context so the approval
+    // list can render one decision row per trip. Batched across all settlements.
     const expenseLinks = await db.select()
       .from(s.settlementExpenses)
       .where(inArray(s.settlementExpenses.settlementId, settlementIds));
@@ -427,11 +426,18 @@ export async function listAdvanceSettlements(filters?: { forwarderId?: number; s
         createdAt: s.tripExpenses.createdAt,
         tripCode: s.trips.tripCode,
         departureDate: s.trips.departureDate,
+        customerName: s.customers.name,
+        routeName: s.routes.name,
+        tripContainerCount: s.trips.containerCount,
+        expenseTypeName: s.forwarderExpenseTypes.name,
         truckPlate: s.trucks.licensePlate,
       }).from(s.tripExpenses)
         .leftJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id))
+        .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+        .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
         .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
         .leftJoin(s.tripContainers, eq(s.tripExpenses.tripContainerId, s.tripContainers.id))
+        .leftJoin(s.forwarderExpenseTypes, eq(s.tripExpenses.expenseType, s.forwarderExpenseTypes.code))
         .where(inArray(s.tripExpenses.id, expenseIds));
       const expenseById = new Map(expenses.map(e => [e.id, e]));
       const bySettlement = new Map<number, typeof expenses>();
