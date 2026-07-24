@@ -16,11 +16,16 @@ import type { GpsProvider, NormalizedGpsVehicle } from './types';
 const API_NEGATIVE_BACKOFF_MS = 5 * 60 * 1000;
 let apiNegativeUntil = 0;
 
+/** Reset provider backoff after an admin changes credentials. */
+export function invalidateGpsProvider(): void {
+  apiNegativeUntil = 0;
+}
+
 const autoProvider: GpsProvider = {
   name: 'auto',
-  isConfigured: () => apiProvider.isConfigured() || portalProvider.isConfigured(),
+  isConfigured: async () => (await apiProvider.isConfigured()) || (await portalProvider.isConfigured()),
   async fetchVehicles(): Promise<NormalizedGpsVehicle[]> {
-    if (apiProvider.isConfigured() && Date.now() >= apiNegativeUntil) {
+    if ((await apiProvider.isConfigured()) && Date.now() >= apiNegativeUntil) {
       const apiVehicles = await apiProvider.fetchVehicles();
       if (apiVehicles.length > 0) {
         apiNegativeUntil = 0;
@@ -29,7 +34,7 @@ const autoProvider: GpsProvider = {
       // API yielded nothing — back off so we don't repeat the dead call each poll.
       apiNegativeUntil = Date.now() + API_NEGATIVE_BACKOFF_MS;
     }
-    if (portalProvider.isConfigured()) {
+    if (await portalProvider.isConfigured()) {
       return portalProvider.fetchVehicles();
     }
     return [];

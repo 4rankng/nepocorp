@@ -92,7 +92,7 @@ export const portalProvider: GpsProvider = {
   name: 'portal',
   isConfigured: () => isPortalConfigured(),
   async fetchVehicles(): Promise<NormalizedGpsVehicle[]> {
-    if (!isPortalConfigured()) return [];
+    if (!(await isPortalConfigured())) return [];
     let userId: string;
     try {
       userId = (await ensurePortalSession()).userId;

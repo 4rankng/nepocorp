@@ -172,6 +172,10 @@ export type {
   LlmSettingsUpdate,
 } from './schemas/llm-settings';
 
+// ─── Admin Bách Khoa GPS credentials ────────────────────────────────────────
+export { GPS_SETTINGS_PATHS, gpsSettingsUpdateSchema } from './schemas/gps-settings';
+export type { GpsSettingsResponse, GpsSettingsUpdate } from './schemas/gps-settings';
+
 // ─── Curated tour catalog (agent-guided walkthroughs) ───────────────────────
 // Single source for the backend tours.search tool + the frontend on-demand list
 // and TourController. See ./tours/catalog.ts.

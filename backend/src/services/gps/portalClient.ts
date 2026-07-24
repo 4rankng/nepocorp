@@ -1,4 +1,5 @@
 import { config } from '../../config';
+import { getGpsSettings } from './settings';
 
 /**
  * Shared Bách Khoa web-portal client: one authenticated session reused by both
@@ -23,8 +24,9 @@ export function portalOrigin(): string {
   return new URL(config.bachKhoaApiUrl).origin;
 }
 
-export function isPortalConfigured(): boolean {
-  return !!(config.bachKhoaUsername && config.bachKhoaPassword);
+export async function isPortalConfigured(): Promise<boolean> {
+  const settings = await getGpsSettings();
+  return !!(settings.username && settings.password);
 }
 
 function withTimeout<T>(ms: number, fn: (signal: AbortSignal) => Promise<T>): Promise<T> {
@@ -53,9 +55,10 @@ function parseSession(setCookies: string[]): { cookieHeader: string; userId: str
 }
 
 async function login(): Promise<PortalSession> {
+  const settings = await getGpsSettings();
   const body = new URLSearchParams({
-    txtLoginName: config.bachKhoaUsername,
-    txtPass: config.bachKhoaPassword,
+    txtLoginName: settings.username,
+    txtPass: settings.password,
     txtPassLayer2: '',
     SaveLogin: '1',
   });

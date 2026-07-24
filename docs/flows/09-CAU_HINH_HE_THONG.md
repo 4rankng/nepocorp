@@ -35,6 +35,7 @@ Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ l
 > - **Cảnh báo đội xe** (`vehicle_alerts`) — cấu hình `lead_days` cho từng loại cảnh báo (thay dầu, đăng kiểm, bảo hiểm, phí đường bộ). Xem `07-DOI_XE_VA_FLEET.md §2.3` và `PRODUCT-SPECS §4.17`.
 > - **Hướng dẫn cho lái xe** (`trip_instructions`) — quản lý nhập từ chi tiết chuyến, không phải sub-page riêng. Xem `11-LAI_XE_MOBILE.md §2.5`.
 > - **Phân chia lợi nhuận theo xe** (`truck_profit_distribution`) — cấu hình `share_pct` cho từng xe. Xem `05-PHAN_BO_LOI_NHUAN.md §2.4` và `PRODUCT-SPECS §4.8.1`.
+> - **Cài đặt ứng dụng** (`/config/app-settings`, ADMIN) — bật/tắt tính năng dùng chung, chọn nhà cung cấp AI và cấu hình tài khoản định vị Bách Khoa.
 
 ### 1.3 Phân quyền
 
@@ -64,6 +65,9 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | GET/POST/PUT/DELETE | `/drivers[/:id]` | CRUD lái xe |
 | GET/PUT | `/config/cap-table` | Xem/cập nhật cổ phần |
 | GET | `/catalog/fuel-price-history` | Lịch sử giá nhiên liệu (append-only, sắp xếp giảm theo ngày) |
+| GET/PUT | `/admin/app-settings` | Bật/tắt Trợ lý ảo và Hướng dẫn sử dụng |
+| GET/PUT | `/admin/llm-settings` | Chọn MiniMax/OpenRouter và cập nhật API key |
+| GET/PUT | `/admin/gps-settings` | Cập nhật tên đăng nhập/mật khẩu định vị Bách Khoa |
 
 ---
 
@@ -163,6 +167,16 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 **Sử dụng:** Khi nhập chặng (trip legs), trường origin/destination hiển thị **combobox** — dropdown chọn từ danh mục Cảng/Bãi, đồng thời cho phép nhập text tự do nếu điểm chưa có trong danh mục. Mục mới nhập sẽ được gợi ý thêm vào danh mục.
 
 **Ràng buộc:** Không xóa cảng/bãi đang dùng trong chặng chuyến.
+
+### 2.15 Cài đặt ứng dụng `/config/app-settings`
+
+Trang này chỉ dành cho ADMIN và gồm ba nhóm:
+
+1. **Tính năng ứng dụng** — bật/tắt Trợ lý ảo và Hướng dẫn sử dụng.
+2. **Nhà cung cấp AI** — chọn MiniMax hoặc OpenRouter và cập nhật API key. Route cũ `/config/llm-settings` tự chuyển về trang này.
+3. **Định vị Bách Khoa** — cập nhật tên đăng nhập và mật khẩu dùng cho dữ liệu vị trí xe/lộ trình GPS.
+
+API key và thông tin đăng nhập Bách Khoa được mã hóa AES-256-GCM trong `app_settings`. Mật khẩu/API key đầy đủ không được trả lại trình duyệt; để trống trường secret khi lưu sẽ giữ nguyên giá trị hiện tại. Cấu hình mới làm mất hiệu lực cache/session GPS để có hiệu lực mà không cần khởi động lại backend.
 
 ---
 

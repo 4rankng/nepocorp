@@ -25,6 +25,7 @@ import driverRoutes from './routes/driver';
 import forwarderRoutes from './routes/forwarder';
 import forwarderAdminRoutes from './routes/forwarder-admin';
 import adminGpsRoutes from './routes/admin-gps';
+import gpsSettingsRoutes from './routes/gps-settings';
 import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import llmSettingsRoutes from './routes/llm-settings';
 import { appSettingsRouter } from './routes/app-settings';
@@ -102,6 +103,7 @@ app.use('/api/forwarder/me', authMiddleware, casbinAuthz('forwarder_portal'), fo
 app.use('/api/forwarder-expenses', authMiddleware, casbinAuthz('financial'), forwarderAdminRoutes);
 // GPS route-DB admin (backfill + recapture) — MANAGER/ADMIN only (gps-admin action).
 app.use('/api/admin/gps', authMiddleware, casbinAuthz('gps-admin'), adminGpsRoutes);
+app.use('/api/admin/gps-settings', authMiddleware, requireRoles(Role.ADMIN), gpsSettingsRoutes);
 // Chatbot (agent) performance monitoring — ADMIN-only aggregation API. The
 // `chatbot-metrics` action needs no Casbin policy row: the ADMIN wildcard
 // (`p, ADMIN, *, *`) grants ADMIN and every other role gets 403. MUST mount

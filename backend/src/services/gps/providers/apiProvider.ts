@@ -2,6 +2,7 @@ import { config } from '../../../config';
 import { parseBachKhoaResponse } from '@tingting/shared';
 import type { BachKhoaVehicle } from '@tingting/shared';
 import { parseBachKhoaDate } from '../parse';
+import { getGpsSettings } from '../settings';
 import type { GpsProvider, NormalizedGpsVehicle } from './types';
 
 /**
@@ -30,16 +31,20 @@ function mapApiVehicle(v: BachKhoaVehicle): NormalizedGpsVehicle {
 
 export const apiProvider: GpsProvider = {
   name: 'api',
-  isConfigured: () => !!(config.bachKhoaUsername && config.bachKhoaPassword),
+  isConfigured: async () => {
+    const settings = await getGpsSettings();
+    return !!(settings.username && settings.password);
+  },
   async fetchVehicles(): Promise<NormalizedGpsVehicle[]> {
-    if (!config.bachKhoaUsername || !config.bachKhoaPassword) return [];
+    const settings = await getGpsSettings();
+    if (!settings.username || !settings.password) return [];
 
     const base = config.bachKhoaApiUrl.endsWith('/')
       ? config.bachKhoaApiUrl
       : `${config.bachKhoaApiUrl}/`;
     const url = new URL('GetInfoCar', base);
-    url.searchParams.set('username', config.bachKhoaUsername);
-    url.searchParams.set('password', config.bachKhoaPassword);
+    url.searchParams.set('username', settings.username);
+    url.searchParams.set('password', settings.password);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), config.bachKhoaTimeoutMs);

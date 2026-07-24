@@ -123,7 +123,7 @@ function headerOk(rows: string[][], re: RegExp): boolean {
  * Returns null if not configured / not found.
  */
 export async function resolveCarId(plate: string): Promise<number | null> {
-  if (!isPortalConfigured()) return null;
+  if (!(await isPortalConfigured())) return null;
   const vehicles = await portalProvider.fetchVehicles();
   const norm = normalizePlate(plate);
   const v = vehicles.find((x) => normalizePlate(x.numberPlate) === norm);

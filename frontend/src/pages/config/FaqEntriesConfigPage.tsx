@@ -363,7 +363,7 @@ export default function FaqEntriesConfigPage() {
       await invalidate();
       setShowAddForm(false);
       if (resp.embeddingStatus === 'failed') {
-        setEmbedWarning('Đã lưu câu hỏi nhưng tạo embedding thất bại — kiểm tra API key OpenRouter ở mục "Nhà cung cấp AI".');
+        setEmbedWarning('Đã lưu câu hỏi nhưng tạo embedding thất bại — kiểm tra API key OpenRouter ở mục "Cài đặt ứng dụng".');
       } else {
         setEmbedWarning(null);
       }
@@ -376,7 +376,7 @@ export default function FaqEntriesConfigPage() {
       await invalidate();
       setEditingId(null);
       if (resp.embeddingStatus === 'failed') {
-        setEmbedWarning('Đã lưu nhưng tạo embedding thất bại — kiểm tra API key OpenRouter ở mục "Nhà cung cấp AI".');
+        setEmbedWarning('Đã lưu nhưng tạo embedding thất bại — kiểm tra API key OpenRouter ở mục "Cài đặt ứng dụng".');
       } else {
         setEmbedWarning(null);
       }

@@ -826,3 +826,147 @@
     height: 36px;
   }
 }
+
+.cfg-app-settings-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.cfg-security-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  line-height: 1.5;
+}
+
+.cfg-security-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--success);
+}
+
+.cfg-provider-fieldset {
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-bottom: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.cfg-provider-grid,
+.cfg-credentials-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cfg-provider-option {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 140ms var(--ease), background 140ms var(--ease);
+}
+
+.cfg-provider-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.cfg-provider-option.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cfg-provider-option input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.cfg-provider-option span {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.cfg-provider-option strong {
+  color: var(--ink);
+  font-size: var(--fs-sm);
+}
+
+.cfg-provider-option small {
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  overflow-wrap: anywhere;
+}
+
+.cfg-credentials-grid {
+  margin-top: 18px;
+}
+
+.cfg-secret-field > label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfg-secret-input {
+  position: relative;
+}
+
+.cfg-secret-input .input {
+  padding-right: 42px;
+}
+
+.cfg-secret-input__toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--ink-3);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.cfg-secret-input__toggle:hover {
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.cfg-secret-input__toggle:focus-visible,
+.cfg-provider-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cfg-form-success,
+.cfg-form-error {
+  font-size: var(--fs-2xs);
+}
+
+.cfg-form-success { color: var(--success); }
+.cfg-form-error { color: var(--danger); }
+
+@media (max-width: 720px) {
+  .cfg-provider-grid,
+  .cfg-credentials-grid {
+    grid-template-columns: 1fr;
+  }
+}

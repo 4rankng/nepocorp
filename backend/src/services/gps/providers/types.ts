@@ -31,6 +31,6 @@ export interface NormalizedGpsVehicle {
  */
 export interface GpsProvider {
   readonly name: string;
-  isConfigured(): boolean;
+  isConfigured(): Promise<boolean>;
   fetchVehicles(): Promise<NormalizedGpsVehicle[]>;
 }

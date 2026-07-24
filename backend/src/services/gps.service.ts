@@ -457,7 +457,7 @@ export async function getLiveFleet(): Promise<LiveFleetResponse> {
   let providerVehicles: NormalizedGpsVehicle[] | null = null;
   let providerError: string | null = null;
   const provider = getGpsProvider();
-  if (!provider.isConfigured()) {
+  if (!(await provider.isConfigured())) {
     providerError = 'GPS provider not configured';
   } else {
     try {

@@ -332,6 +332,10 @@ export const qk = {
     detail: ['llmSettings', 'detail'] as const,
   },
 
+  gpsSettings: {
+    detail: ['gps-settings'] as const,
+  },
+
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */
 
   tripForm: {
