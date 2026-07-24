@@ -14,6 +14,7 @@ import { ROLE_LABELS } from '@tingting/shared';
 import type { Role } from '@tingting/shared';
 import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
+import { BRAND } from '../../brand';
 
 function getRoleLabel(role: Role): string {
   return ROLE_LABELS[role] || role;
@@ -205,11 +206,11 @@ function Sidebar({
       >
         <div className="sidebar-brand">
           <div className="sidebar-brand-logo">
-            <img src="/assets/logo.avif" alt="TingTing" />
+            <img src={BRAND.sidebarLogoPath} alt="" aria-hidden="true" />
           </div>
           <div className="sidebar-brand-meta">
-            <strong>TingTing</strong>
-            <span>Hệ thống Quản lý Vận tải</span>
+            <strong>{BRAND.name}</strong>
+            <span>{BRAND.shellDescriptor}</span>
           </div>
           <button
             type="button"

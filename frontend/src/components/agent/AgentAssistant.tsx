@@ -19,6 +19,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { InsightCard } from './InsightCard';
 import { TutorialCard } from './TutorialCard';
 import type { AgentDirective, AgentMessage, AgentResponse, TourId } from '@tingting/shared';
+import { BRAND } from '../../brand';
 import './agent.css';
 
 const OFFICE_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
@@ -132,7 +133,7 @@ export function AgentAssistant() {
       <button
         type="button"
         className="topbar__icon-btn agent-launcher"
-        title="Trợ lý TingTing"
+        title={`Trợ lý ${BRAND.name}`}
         aria-label="Mở trợ lý"
         onClick={() => setOpen(true)}
       >
@@ -142,7 +143,7 @@ export function AgentAssistant() {
       <Drawer
         isOpen={open}
         onClose={() => setOpen(false)}
-        title="Trợ lý TingTing"
+        title={`Trợ lý ${BRAND.name}`}
         subtitle="Hỏi dữ liệu, phân tích, hoặc điều hướng"
         className="agent-drawer"
         headerGraphic={

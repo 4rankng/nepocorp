@@ -15,10 +15,24 @@ Do not add new fonts. Do not reference Google Fonts CDN.
 
 ## Color System
 
-The primary palette centers on **Forest Sage** (green tones) with **Deep-Luxe** accents (brass/amber for highlights and call-to-action elements).
+The TransTing brand palette centers on an emerald shell and primary actions, with transport blue in the brand mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
+
+| Token | Color | Use |
+|-------|-------|-----|
+| `--sidebar` / `--sb-bg` | `#005A2D` | Deep emerald sidebar and shell surfaces |
+| `--color-primary` / `--brand` / `--accent-2` | `#005A2D` | Deep emerald primary CTA and selected states |
+| Sidebar/app mark | `#1267D8` | Transport-blue detail within the TransTing mark |
+| `--brand-2` / `--accent` | `#10B956` | Signal green secondary brand color |
+| `--success`, `--warning`, `--danger`, `--info` | Semantic palette | Status and validation feedback only |
 
 - Status colors follow the `statusStrip` convention (see below).
-- CTA buttons are **subtle**, never heavy -- "sore in the eye" principle (bright/weighty buttons are intentionally avoided).
+- CTA buttons stay subtle and flat; avoid heavy or glossy treatment.
+
+## Brand Copy
+
+Use the approved Vietnamese positioning copy on external-facing brand surfaces:
+
+- Tagline: `Vận tải thông minh. Doanh nghiệp vững mạnh.`
 
 ## statusStrip Component
 
@@ -88,7 +102,7 @@ All empty-state illustrations route through `frontend/src/lib/emptyIllustrations
 
 - **Edit page:** 6-card bento layout with single-column form.
 - **Finance card:** Stacked vertically within the bento.
-- **Color scheme:** Forest Sage base + Deep-Luxe brass/amber accents on interactive elements.
+- **Color scheme:** deep emerald shell and primary CTAs, with transport blue in the mark and signal green accents.
 
 ### Buttons
 

@@ -42,6 +42,7 @@ import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 import { routes, titleForPath } from '../lib/routes';
 import { OnboardingChecklist } from './onboarding/OnboardingChecklist';
 import { TutorialLibrary } from './onboarding/TutorialLibrary';
+import { BRAND } from '../brand';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Update browser tab title on route change
   useEffect(() => {
-    document.title = `${pageTitle} · TingTing`;
+    document.title = `${pageTitle} · ${BRAND.name}`;
   }, [pageTitle]);
 
   // Screen reader live region
@@ -513,7 +514,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="mobile-user-sheet-footer">
-              <span className="app-version">TingTing Logistics v1.2.0</span>
+              <span className="app-version">{BRAND.productName} v1.2.0</span>
             </div>
           </div>
         </div>

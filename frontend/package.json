@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "size-check": "node scripts/check-size.mjs",
-    "check:ui": "node scripts/check-ui-contract.mjs",
+    "check:ui": "node scripts/check-ui-contract.mjs && node scripts/check-brand-contract.mjs",
+    "check:brand": "node scripts/check-brand-contract.mjs",
     "lint": "eslint ."
   },
   "dependencies": {

@@ -333,8 +333,9 @@
   border-color: var(--accent);
 }
 .ancillary-fee-card__btn--approve:hover {
-  background: var(--accent);
+  background: var(--brand);
   color: var(--fg-on-brand);
+  border-color: var(--brand);
 }
 .ancillary-fee-card__btn--reject {
   color: var(--ink-3);

@@ -20,6 +20,7 @@
  * separate from the live page set.
  */
 import { PAGE_CATALOG } from '@tingting/shared';
+import { BRAND } from '../brand';
 
 export const routes = {
   /* ── Top-level admin / manager pages ────────────────────────────────── */
@@ -158,7 +159,7 @@ const titleRules: TitleRule[] = [
 
 export function titleForPath(pathname: string): string {
   const match = titleRules.find(rule => rule.test(pathname));
-  if (!match) return 'NEPO';
+  if (!match) return BRAND.name;
   return typeof match.title === 'function' ? match.title(pathname) : match.title;
 }
 

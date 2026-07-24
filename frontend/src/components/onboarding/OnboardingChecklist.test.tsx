@@ -51,12 +51,12 @@ describe('OnboardingChecklist dismissal recovery', () => {
 
     const reopen = await screen.findByRole('button', { name: 'Mở hướng dẫn bắt đầu' });
     fireEvent.click(reopen);
-    expect(screen.getByRole('dialog', { name: 'Bắt đầu sử dụng NEPO Logistics' })).not.toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Bắt đầu sử dụng TransTing Logistics' })).not.toBeNull();
 
     state.checklist = baseChecklist(['dismissed', 'completed']);
     view.rerender(<OnboardingChecklist />);
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: 'Bắt đầu sử dụng NEPO Logistics' })).not.toBeNull();
+      expect(screen.getByRole('dialog', { name: 'Bắt đầu sử dụng TransTing Logistics' })).not.toBeNull();
     });
   });
 });

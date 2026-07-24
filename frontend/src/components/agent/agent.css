@@ -1100,11 +1100,11 @@
 }
 .agent-tour__btn--primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent, #00b14f), var(--accent-2, #008b3e));
-  box-shadow: 0 6px 16px rgba(0, 177, 79, 0.28);
+  background: var(--brand, #005a2d);
+  box-shadow: none;
 }
-.agent-tour__btn--primary:hover {
-  filter: brightness(1.05);
+.agent-tour__btn--primary:hover:not(:disabled) {
+  background: var(--brand-hover, #00361b);
 }
 .agent-tour--resume {
   padding: 14px 16px;
@@ -1151,5 +1151,5 @@
 }
 
 .agent-tour__btn--primary {
-  background-color: var(--accent, #00b14f);
+  background-color: var(--brand, #005a2d);
 }

@@ -1,29 +1,29 @@
 {
-  "name": "TingTing - Quản lý vận tải",
-  "short_name": "TingTing",
-  "description": "Hệ thống quản lý vận tải container Hải Phòng",
+  "name": "TransTing",
+  "short_name": "TransTing",
+  "description": "Vận tải thông minh. Doanh nghiệp vững mạnh.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#F6F8FA",
-  "theme_color": "#00B14F",
+  "theme_color": "#06264A",
   "lang": "vi",
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/assets/logo-180.png",
+      "src": "/assets/transting-logo-180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/assets/logo-192.png",
+      "src": "/assets/transting-logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/logo-512.png",
+      "src": "/assets/transting-logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

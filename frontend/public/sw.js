@@ -1,4 +1,4 @@
-// TingTing service worker — powers Android installability + an offline app shell.
+// TransTing service worker — powers Android installability + an offline app shell.
 //
 // Strategy (keeps live data live, ships fresh UI fast):
 //   • HTML navigations        → network-first   (every deploy = newest shell; offline fallback)
@@ -43,7 +43,7 @@ self.addEventListener('push', (event) => {
   try { data = event.data.json(); }
   catch { data = { body: event.data.text() }; }
 
-  const title = data.title || 'TingTing';
+  const title = data.title || 'TransTing';
   const url = data.url || '/';
   const body = stripHtml(data.body);
   const type = data.type || 'SYSTEM_ANNOUNCEMENT';
@@ -56,8 +56,8 @@ self.addEventListener('push', (event) => {
         : 'Mở';
   const options = {
     body,
-    icon: data.icon || '/assets/logo-192.png',
-    badge: '/assets/logo-192.png',
+    icon: data.icon || '/assets/transting-logo-192.png',
+    badge: '/assets/transting-logo-192.png',
     tag: data.tag || 'tingting-notification',
     timestamp: Date.now(),
     data: { url },

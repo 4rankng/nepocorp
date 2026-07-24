@@ -1,5 +1,5 @@
 /* ============================================================================
- * Button — TingTing
+ * Button — TransTing
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
 .btn {
@@ -37,6 +37,10 @@
 .btn--primary:hover {
   background: var(--accent-ink);
   border-color: var(--accent-ink);
+}
+.d-btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-hover);
+  border-color: var(--brand-hover);
 }
 .btn--secondary {
   background: var(--surface);

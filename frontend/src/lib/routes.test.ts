@@ -54,8 +54,8 @@ describe('titleForPath (catalog-sourced, parity with pre-refactor behavior)', ()
     '/advances': 'Quản lý tạm ứng',
     '/admin/advance-settlements': 'Duyệt hoàn ứng',
     '/salary': 'Lương & Chấm công',
-    '/': 'NEPO', // no match → app default
-    '/totally-unknown': 'NEPO',
+    '/': 'TransTing', // no match → app default
+    '/totally-unknown': 'TransTing',
   };
 
   it.each(Object.entries(cases))('%s → %s', (path, expected) => {

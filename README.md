@@ -1,6 +1,6 @@
-# TingTing
+# TransTing
 
-Fleet management platform for Cong ty TNHH NEPO -- a Vietnamese container-trucking company. Replaces 7+ Excel files and 300+ sheets with a unified web app managing trips, drivers, customers, fleet, and financials (ledger, P&L, debt tracking, profit distribution).
+TransTing is the fleet management platform operated by Cong ty TNHH NEPO, a Vietnamese container-trucking company. It replaces 7+ Excel files and 300+ sheets with a unified web app managing trips, drivers, customers, fleet, and financials (ledger, P&L, debt tracking, profit distribution).
 
 Built with **Express v5**, **React 18**, **Drizzle ORM**, and **PostgreSQL**. Vietnamese-language UI and audit logs; VND currency throughout.
 

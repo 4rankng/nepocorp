@@ -120,7 +120,7 @@ const ASSET_ICONS: Record<AssetIconName, AssetIconEntry> = {
   settlement:   { name: 'settlement',   slug: '32-settlement-hoan-ung',                               label: 'Hoàn ứng',             group: 'money' },
   'gross-margin': { name: 'gross-margin', slug: '33-gross-margin-bien-loi-nhuan',                     label: 'Biên lợi nhuận gộp',   group: 'reporting' },
   'active-supplier': { name: 'active-supplier', slug: '34-active-supplier-nha-cung-cap-hoat-dong',    label: 'Nhà cung cấp hoạt động', group: 'people' },
-  assistant:    { name: 'assistant',    slug: '35-assistant-tro-ly-tingting',                          label: 'Trợ lý TingTing',      group: 'system' },
+  assistant:    { name: 'assistant',    slug: '35-assistant-tro-ly-tingting',                          label: 'Trợ lý TransTing',      group: 'system' },
   'road-allowance': { name: 'road-allowance', slug: '36-road-allowance-toll-phi-duong-bo',            label: 'Tiền đi đường',        group: 'money' },
   'route-distance': { name: 'route-distance', slug: '37-route-distance-tuyen-duong-cu-ly',            label: 'Tuyến đường và cự ly', group: 'place' },
   'pricing-rate': { name: 'pricing-rate', slug: '38-pricing-rate-bang-gia-cuoc',                       label: 'Bảng giá cước',         group: 'money' },

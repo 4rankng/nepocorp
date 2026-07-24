@@ -145,14 +145,15 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #1d4ed8;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
   border-radius: 6px;
   cursor: pointer;
 }
 .ob-checklist__tour-btn:hover {
-  background: #dbeafe;
+  background: var(--brand-soft);
+  border-color: var(--brand);
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */

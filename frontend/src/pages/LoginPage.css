@@ -78,9 +78,9 @@
 .login-brand p {
   margin: 8px 0 0;
   font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  color: #7b8580;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-2);
   letter-spacing: 0;
 }
 .login-divider {

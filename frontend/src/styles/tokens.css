@@ -12,9 +12,9 @@
   logs: false;
 }
 
-/* NEPO brand theme — tokens mirror the hand-crafted design system in :root
+/* TransTing brand theme — tokens mirror the hand-crafted design system in :root
    below, so daisyUI components and the existing custom CSS share the same
-   forest-green primary, signal-green accent, and soft neutral surfaces. */
+   deep-emerald primary, signal-green accent, and soft neutral surfaces. */
 @plugin "daisyui/theme" {
   name: "nepo";
   default: true;
@@ -32,8 +32,8 @@
   --color-secondary: #4D5852;
   --color-secondary-content: #FFFFFF;
 
-  --color-accent: #00B14F;
-  --color-accent-content: #00381A;
+  --color-accent: #10B956;
+  --color-accent-content: #06264A;
 
   --color-neutral: #101513;
   --color-neutral-content: #F8FAF9;
@@ -60,9 +60,9 @@
 }
 
 /* ============================================================================
- * TingTing -- Wireframe Design System
+ * TransTing -- Wireframe Design System
  * Be Vietnam Pro (Vietnamese-aware text/UI) + JetBrains Mono (numerics).
- * Forest green sidebar, signal-green accent, soft neutral surfaces.
+ * Deep emerald shell and primary actions, signal-green accent.
  * ========================================================================== */
 
 :root {
@@ -84,10 +84,10 @@
   --line-3: #AEB8B2;
   --line-strong: #BAC5BE;
 
-  --accent: #00B14F;
-  --accent-2: #006F32;
-  --accent-soft: #E6F7EE;
-  --accent-ink: #004D22;
+  --accent: #10B956;
+  --accent-2: #005A2D;
+  --accent-soft: #E8F8EE;
+  --accent-ink: #00361B;
 
   /* --- Backward-compat aliases (existing code uses these var names) --- */
   --bg-1: #F5F7F6;
@@ -95,11 +95,11 @@
   --bg-3: #EEF3F0;
   --bg-glass: rgba(255, 255, 255, 0.82);
 
-  --brand: #00B14F;
-  --brand-hover: #006F32;
+  --brand: #005A2D;
+  --brand-hover: #00361B;
   --brand-soft: #E6F7EE;
-  --brand-2: #00B14F;
-  --brand-grad: var(--accent-2);
+  --brand-2: #10B956;
+  --brand-grad: #005A2D;
   --brand-glow: none;
 
   --fg-1: #0A0A0A;

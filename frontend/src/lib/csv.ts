@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { BRAND as APP_BRAND } from '../brand';
 
 export type ColumnType = 'text' | 'number' | 'km' | 'liters' | 'currency' | 'date' | 'decimal';
 
@@ -132,13 +133,13 @@ export async function downloadCSV(
 
   /* ─── Workbook + sheet ──────────────────────────────────────────────── */
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'NEPO Logistics';
+  workbook.creator = APP_BRAND.productName;
   workbook.created = today;
   const worksheet = workbook.addWorksheet('Báo cáo', {
     views: [{ showGridLines: false, state: 'frozen', ySplit: 4 }],
     pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
     headerFooter: {
-      oddFooter: '&L&"Segoe UI,Italic"&8NEPO Logistics · Xuất ngày ' + dateStr +
+      oddFooter: `&L&"Segoe UI,Italic"&8${APP_BRAND.productName} · Xuất ngày ` + dateStr +
         '&C&"Segoe UI,Italic"&8Trang &P / &N' +
         '&R&"Segoe UI,Italic"&8Tài liệu nội bộ',
     },

@@ -16,6 +16,7 @@ import { Check, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
 import { useOnboardingChecklist } from '../../hooks/useOnboardingChecklist';
 import { useAuth } from '../../hooks/useAuth';
 import { useTourController } from '../../context/TourControllerContext';
+import { BRAND } from '../../brand';
 import './onboarding-checklist.css';
 
 const OFFICE_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT']);
@@ -74,7 +75,7 @@ export function OnboardingChecklist({ onOpenTutorialLibrary }: { onOpenTutorialL
   }
 
   return (
-    <div className="ob-checklist" role="dialog" aria-label="Bắt đầu sử dụng NEPO Logistics">
+    <div className="ob-checklist" role="dialog" aria-label={`Bắt đầu sử dụng ${BRAND.productName}`}>
       <button
         type="button"
         className="ob-checklist__head"

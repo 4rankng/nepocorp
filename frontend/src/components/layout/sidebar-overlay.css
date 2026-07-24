@@ -35,11 +35,10 @@
     height: 44px;
     border-radius: 12px;
   }
-  /* Drawer width is 248px — the close button shaves ~40px of brand-meta room.
-   * Constrain the brand-meta so it can shrink, and keep the subtitle on one line. */
-  .sidebar-brand-meta { min-width: 0; flex: 1 1 auto; }
-  .sidebar-brand-meta strong,
-  .sidebar-brand-meta span { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+  /* Drawer width is 248px — keep the title stable and let the descriptor wrap
+   * naturally in the remaining space beside the close button. */
+  .sidebar-brand-meta strong { white-space: nowrap; }
+  .sidebar-brand-meta span { white-space: normal; overflow-wrap: normal; }
 }
 
 /* ─── Notification drawer items ─────────────────────────────────────────── */

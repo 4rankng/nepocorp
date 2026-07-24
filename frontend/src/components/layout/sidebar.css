@@ -55,21 +55,23 @@
 .sidebar-brand-logo {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.14);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: visible;
   flex-shrink: 0;
-  transition: background 200ms var(--ease);
 }
-.sidebar-brand-logo:hover {
-  background: rgba(255, 255, 255, 0.18);
+.sidebar-brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+.sidebar-brand-meta {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.35;
+  overflow: hidden;
 }
-.sidebar-brand-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 9px; }
-.sidebar-brand-meta { line-height: 1.35; display: flex; flex-direction: column; gap: 3px; }
 .sidebar-brand-meta strong {
   display: block;
   color: var(--fg-on-brand);
@@ -78,6 +80,7 @@
   font-weight: 800;
   line-height: 1.35;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 .sidebar-brand-meta span {
   font-family: var(--font-body);
@@ -86,7 +89,9 @@
   color: var(--sb-text-muted);
   letter-spacing: 0;
   font-weight: 600;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* nav container */

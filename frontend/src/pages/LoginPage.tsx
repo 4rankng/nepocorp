@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { BRAND } from '../brand';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -31,10 +32,10 @@ export default function LoginPage() {
         <form className="login-form" onSubmit={submit}>
           <div className="login-brand">
             <div className="brand-logo">
-              <img src="/assets/logo.avif" alt="TingTing Logo" />
+              <img src={BRAND.logoPath} alt={`Biểu trưng ${BRAND.name}`} />
             </div>
-            <h1>TingTing</h1>
-            <p>Hệ thống Quản lý Vận tải</p>
+            <h1>{BRAND.name}</h1>
+            <p>{BRAND.tagline}</p>
           </div>
 
           <div className="login-divider" />
@@ -106,7 +107,7 @@ export default function LoginPage() {
       <img src="/assets/illustrations/bg-transport-world.svg" alt="" className="login-bg-svg" />
 
       <p className="login-footer">
-        &copy; {new Date().getFullYear()} TingTing &middot; Hải Phòng
+        &copy; {new Date().getFullYear()} {BRAND.name} &middot; Hải Phòng
       </p>
     </main>
   );
