@@ -38,10 +38,10 @@ export default function LoginPage() {
             <p>{BRAND.tagline}</p>
           </div>
 
-          <div className="login-divider" />
-
-          <h2>Đăng nhập</h2>
-          <p className="sub">Nhập thông tin tài khoản của bạn</p>
+          <div className="login-intro">
+            <h2>Chào mừng trở lại</h2>
+            <p className="sub">Đăng nhập để tiếp tục quản lý vận tải và logistics.</p>
+          </div>
 
           {sessionExpired && (
             <div className="login-session-notice" role="status">
@@ -50,7 +50,7 @@ export default function LoginPage() {
           )}
 
           <div className="field">
-            <label htmlFor="username-input">Tên đăng nhập / Số điện thoại</label>
+            <label htmlFor="username-input">Tài khoản</label>
             <div className="input-icon">
               <User size={16} />
               <input
@@ -59,7 +59,7 @@ export default function LoginPage() {
                 className="input"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="Tên đăng nhập hoặc SĐT"
+                placeholder="Tên đăng nhập hoặc số điện thoại"
                 autoComplete="username"
                 autoCapitalize="none"
               />
@@ -93,7 +93,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="login-error" role="alert">
+            <div id="login-error" className="login-error" role="alert">
               {error}
             </div>
           )}
@@ -105,8 +105,6 @@ export default function LoginPage() {
           >
             {submitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>
-
-
         </form>
       </div>
 

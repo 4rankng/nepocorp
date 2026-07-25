@@ -1,7 +1,6 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
         deploy deploy-backend deploy-frontend \
-        demo demo-backend demo-frontend \
         prod-migrate prod-migrate-file \
         backup restore adminer
 
@@ -124,20 +123,6 @@ deploy-backend: push-backend
 ## deploy-frontend: Pull & restart frontend on droplet
 deploy-frontend: push-frontend
 	$(MAKE) -C frontend deploy
-
-# ─── Demo deploy (vantai.tingting.vip) ────────────────────────────────────────
-# Same Docker Hub images as production; deploys to the demo server at /opt/vantai.
-
-## demo: Build, push images, and deploy backend+frontend to vantai (demo) server
-demo: demo-backend demo-frontend
-
-## demo-backend: Push & deploy backend to vantai (+ run migrations)
-demo-backend: push-backend
-	$(MAKE) -C deploy/vantai deploy-backend
-
-## demo-frontend: Push & deploy frontend to vantai
-demo-frontend: push-frontend
-	$(MAKE) -C deploy/vantai deploy-frontend
 
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB
 prod-migrate:
