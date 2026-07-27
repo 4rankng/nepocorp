@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import './TripSummaryCard.css';
-import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin, Truck } from "lucide-react";
 import { computeTripTotals } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
@@ -26,8 +26,10 @@ export function TotalsPanel() {
     revenueEmptyReturn, revenueCombine,
     selectedRouteData, roadAllowanceBaseApplied, fuelActualUnitPrice,
     roadAllowanceOverride, tollPerStationApplied, returnCargoBonusApplied,
+    carrierType, externalFreightCost, vatRate,
   } = form;
   const [showRoadBreakdown, setShowRoadBreakdown] = useState(true);
+  const isExternal = carrierType === 'EXTERNAL';
 
   const isMountainRoute = selectedRouteData?.isMountain ?? false;
   const mountainFixedAllowance = selectedRouteData?.fixedFuelAllowance ? Number(selectedRouteData.fixedFuelAllowance) : null;
@@ -59,6 +61,9 @@ export function TotalsPanel() {
       hasReturnCargo,
       returnCargoBonus: returnCargoBonusApplied ?? 0,
       revenue: revenue ? Number(revenue) : 0,
+      vatRate: Number(vatRate) || 0,
+      carrierType,
+      externalFreightCost: externalFreightCost ? Number(externalFreightCost) : 0,
       driverSalary: driverSalary ? Number(driverSalary) : 0,
       twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus) || 0,
       vehicleShiftAllowance: Number(form.vehicleShiftAllowance) || 0,
@@ -70,6 +75,7 @@ export function TotalsPanel() {
     tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
     hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
     form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission,
+    carrierType, externalFreightCost, vatRate,
   ]);
 
   // Road-allowance breakdown — what makes up "Tiền đi đường thực nhận"
@@ -133,152 +139,167 @@ export function TotalsPanel() {
       </section>
 
       {/* 3. Allocation bar */}
-      <section className="tc-totals__alloc">
-        <div className="tc-totals__alloc-head">
-          <span>Phân bổ chi phí</span>
-          <Money value={totalCost} />
-        </div>
-        <div className="tc-totals__alloc-bar" role="img" aria-label="Phân bổ chi phí">
-          <span
-            className="tc-totals__alloc-seg tc-totals__alloc-seg--fuel"
-            style={{ width: `${fuelPct}%` }}
-            title={`Dầu: ${Math.round(fuelPct)}%`}
-          />
-          <span
-            className="tc-totals__alloc-seg tc-totals__alloc-seg--road"
-            style={{ width: `${roadPct}%` }}
-            title={`Đường bộ: ${Math.round(roadPct)}%`}
-          />
-          <span
-            className="tc-totals__alloc-seg tc-totals__alloc-seg--salary"
-            style={{ width: `${salaryPct}%` }}
-            title={`Lương tài: ${Math.round(salaryPct)}%`}
-          />
-          {otherPct > 0 && (
+      {!isExternal && (
+        <section className="tc-totals__alloc">
+          <div className="tc-totals__alloc-head">
+            <span>Phân bổ chi phí</span>
+            <Money value={totalCost} />
+          </div>
+          <div className="tc-totals__alloc-bar" role="img" aria-label="Phân bổ chi phí">
             <span
-              className="tc-totals__alloc-seg tc-totals__alloc-seg--other"
-              style={{ width: `${otherPct}%` }}
-              title={`Khác: ${Math.round(otherPct)}%`}
+              className="tc-totals__alloc-seg tc-totals__alloc-seg--fuel"
+              style={{ width: `${fuelPct}%` }}
+              title={`Dầu: ${Math.round(fuelPct)}%`}
             />
-          )}
-        </div>
-        <ul className="tc-totals__alloc-legend">
-          <li>
-            <i className="tc-totals__legend-dot--fuel" />
-            Dầu ({Math.round(totals.totalFuelLiters)}L) · <strong>{Math.round(fuelPct)}%</strong>
-          </li>
-          <li>
-            <i className="tc-totals__legend-dot--road" />
-            Đường · <strong>{Math.round(roadPct)}%</strong>
-          </li>
-          <li>
-            <i className="tc-totals__legend-dot--salary" />
-            Lương tài · <strong>{Math.round(salaryPct)}%</strong>
-          </li>
-          {otherPct > 0 && (
+            <span
+              className="tc-totals__alloc-seg tc-totals__alloc-seg--road"
+              style={{ width: `${roadPct}%` }}
+              title={`Đường bộ: ${Math.round(roadPct)}%`}
+            />
+            <span
+              className="tc-totals__alloc-seg tc-totals__alloc-seg--salary"
+              style={{ width: `${salaryPct}%` }}
+              title={`Lương tài: ${Math.round(salaryPct)}%`}
+            />
+            {otherPct > 0 && (
+              <span
+                className="tc-totals__alloc-seg tc-totals__alloc-seg--other"
+                style={{ width: `${otherPct}%` }}
+                title={`Khác: ${Math.round(otherPct)}%`}
+              />
+            )}
+          </div>
+          <ul className="tc-totals__alloc-legend">
             <li>
-              <i className="tc-totals__legend-dot--other" />
-              Khác · <strong>{Math.round(otherPct)}%</strong>
+              <i className="tc-totals__legend-dot--fuel" />
+              Dầu ({Math.round(totals.totalFuelLiters)}L) · <strong>{Math.round(fuelPct)}%</strong>
             </li>
-          )}
-        </ul>
-      </section>
+            <li>
+              <i className="tc-totals__legend-dot--road" />
+              Đường · <strong>{Math.round(roadPct)}%</strong>
+            </li>
+            <li>
+              <i className="tc-totals__legend-dot--salary" />
+              Lương tài · <strong>{Math.round(salaryPct)}%</strong>
+            </li>
+            {otherPct > 0 && (
+              <li>
+                <i className="tc-totals__legend-dot--other" />
+                Khác · <strong>{Math.round(otherPct)}%</strong>
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
 
       {/* 4. Cost rows + profit */}
       <section className="tc-totals__rows">
-        <div className="tc-totals-row">
-          <span className="tc-totals-row__lbl">
-            <Clock size={13} /> Chi phí nhiên liệu
-          </span>
-          <span className="tc-totals-row__val">
-            <Money value={Math.abs(totals.totalFuelCost)} sign="−" />
-          </span>
-        </div>
-
-        <div
-          className="tc-totals-row tc-totals-row--clickable"
-          onClick={() => setShowRoadBreakdown(v => !v)}
-          role="button"
-          aria-expanded={showRoadBreakdown}
-          title="Bấm để xem chi tiết"
-        >
-          <span className="tc-totals-row__lbl">
-            <span aria-hidden style={{ display: 'inline-flex' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" />
-                <path d="M5 21V8l4-3 4 3v13" />
-                <path d="M13 21V12l4-2 4 2v9" />
-              </svg>
-            </span>
-            Chi phí đường bộ
-            {showRoadBreakdown ? <ChevronUp size={12} className="tc-totals-row__chev" /> : <ChevronDown size={12} className="tc-totals-row__chev" />}
-            {roadBreakdown.overridden && (
-              <span className="tc-totals-row__adjusted-pill">Đã điều chỉnh</span>
-            )}
-          </span>
-          <span className="tc-totals-row__val">
-            <Money value={Math.abs(fullRoadCost)} sign="−" />
-          </span>
-        </div>
-
-        {showRoadBreakdown && (
-          <div className="tc-totals-breakdown">
-            {roadBreakdown.returnBonus > 0 && (
-              <div className="tc-totals-breakdown__row">
-                <span>Chuyến về có hàng</span>
-                <Money value={Math.abs(roadBreakdown.returnBonus)} sign="−" />
-              </div>
-            )}
-            {roadBreakdown.discount > 0 && (
-              <div className="tc-totals-breakdown__row">
-                <span>Tiền vé (công ty) đã thanh toán</span>
-                <Money value={Math.abs(roadBreakdown.discount)} sign="−" />
-              </div>
-            )}
-            {roadBreakdown.stations > 0 && (
-              <div className="tc-totals-breakdown__row">
-                <span>Trạm BOT ({roadBreakdown.stations} × {Math.round(roadBreakdown.perStation).toLocaleString('vi-VN')})</span>
-                <Money value={Math.abs(roadBreakdown.stationCost)} sign="−" />
-              </div>
-            )}
-            {roadBreakdown.overridden && (
-              <div className="tc-totals-breakdown__row tc-totals-breakdown__row--override">
-                <span>Đã điều chỉnh tay tổng chi phí</span>
-                <Money value={Math.abs(roadBreakdown.overrideRaw!)} />
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="tc-totals-row">
-          <span className="tc-totals-row__lbl">
-            <Users size={13} /> Tiền lương lái xe
-          </span>
-          <span className="tc-totals-row__val">
-            <Money value={Math.abs(Number(driverSalary) || 0)} sign="−" />
-          </span>
-        </div>
-
-        {twoPointAmount > 0 && (
+        {isExternal ? (
           <div className="tc-totals-row">
             <span className="tc-totals-row__lbl">
-              <MapPin size={13} /> Trả hàng 2 điểm
+              <Truck size={13} /> Cước thuê ngoài
             </span>
             <span className="tc-totals-row__val">
-              <Money value={Math.abs(twoPointAmount)} sign="−" />
+              <Money value={Math.abs(totalCost)} sign="−" />
             </span>
           </div>
-        )}
+        ) : (
+          <>
+            <div className="tc-totals-row">
+              <span className="tc-totals-row__lbl">
+                <Clock size={13} /> Chi phí nhiên liệu
+              </span>
+              <span className="tc-totals-row__val">
+                <Money value={Math.abs(totals.totalFuelCost)} sign="−" />
+              </span>
+            </div>
 
-        {vehicleShiftAmount > 0 && (
-          <div className="tc-totals-row">
-            <span className="tc-totals-row__lbl">
-              <Clock size={13} /> Lưu ca xe
-            </span>
-            <span className="tc-totals-row__val">
-              <Money value={Math.abs(vehicleShiftAmount)} sign="−" />
-            </span>
-          </div>
+            <div
+              className="tc-totals-row tc-totals-row--clickable"
+              onClick={() => setShowRoadBreakdown(v => !v)}
+              role="button"
+              aria-expanded={showRoadBreakdown}
+              title="Bấm để xem chi tiết"
+            >
+              <span className="tc-totals-row__lbl">
+                <span aria-hidden style={{ display: 'inline-flex' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V8l4-3 4 3v13" />
+                    <path d="M13 21V12l4-2 4 2v9" />
+                  </svg>
+                </span>
+                Chi phí đường bộ
+                {showRoadBreakdown ? <ChevronUp size={12} className="tc-totals-row__chev" /> : <ChevronDown size={12} className="tc-totals-row__chev" />}
+                {roadBreakdown.overridden && (
+                  <span className="tc-totals-row__adjusted-pill">Đã điều chỉnh</span>
+                )}
+              </span>
+              <span className="tc-totals-row__val">
+                <Money value={Math.abs(fullRoadCost)} sign="−" />
+              </span>
+            </div>
+
+            {showRoadBreakdown && (
+              <div className="tc-totals-breakdown">
+                {roadBreakdown.returnBonus > 0 && (
+                  <div className="tc-totals-breakdown__row">
+                    <span>Chuyến về có hàng</span>
+                    <Money value={Math.abs(roadBreakdown.returnBonus)} sign="−" />
+                  </div>
+                )}
+                {roadBreakdown.discount > 0 && (
+                  <div className="tc-totals-breakdown__row">
+                    <span>Tiền vé (công ty) đã thanh toán</span>
+                    <Money value={Math.abs(roadBreakdown.discount)} sign="−" />
+                  </div>
+                )}
+                {roadBreakdown.stations > 0 && (
+                  <div className="tc-totals-breakdown__row">
+                    <span>Trạm BOT ({roadBreakdown.stations} × {Math.round(roadBreakdown.perStation).toLocaleString('vi-VN')})</span>
+                    <Money value={Math.abs(roadBreakdown.stationCost)} sign="−" />
+                  </div>
+                )}
+                {roadBreakdown.overridden && (
+                  <div className="tc-totals-breakdown__row tc-totals-breakdown__row--override">
+                    <span>Đã điều chỉnh tay tổng chi phí</span>
+                    <Money value={Math.abs(roadBreakdown.overrideRaw!)} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="tc-totals-row">
+              <span className="tc-totals-row__lbl">
+                <Users size={13} /> Tiền lương lái xe
+              </span>
+              <span className="tc-totals-row__val">
+                <Money value={Math.abs(Number(driverSalary) || 0)} sign="−" />
+              </span>
+            </div>
+
+            {twoPointAmount > 0 && (
+              <div className="tc-totals-row">
+                <span className="tc-totals-row__lbl">
+                  <MapPin size={13} /> Trả hàng 2 điểm
+                </span>
+                <span className="tc-totals-row__val">
+                  <Money value={Math.abs(twoPointAmount)} sign="−" />
+                </span>
+              </div>
+            )}
+
+            {vehicleShiftAmount > 0 && (
+              <div className="tc-totals-row">
+                <span className="tc-totals-row__lbl">
+                  <Clock size={13} /> Lưu ca xe
+                </span>
+                <span className="tc-totals-row__val">
+                  <Money value={Math.abs(vehicleShiftAmount)} sign="−" />
+                </span>
+              </div>
+            )}
+          </>
         )}
 
         <div className="tc-totals__profit">

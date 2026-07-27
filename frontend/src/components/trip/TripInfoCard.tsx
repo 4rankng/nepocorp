@@ -7,6 +7,7 @@ import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { formatCurrency } from '../../lib/format';
 import { SearchableSelect } from '../../design-system';
 import { selectStyle } from '../../utils/formStyles';
+import { getExternalTripPreviewGrossProfit } from '../../features/trips/tripHelpers';
 import './TripInfoCard.css';
 
 interface TripInfoCardProps {
@@ -86,9 +87,13 @@ export function TripInfoCard(props: TripInfoCardProps) {
     </select>
   );
 
-  const marginPreview = form.carrierType === 'EXTERNAL' && form.externalFreightCost && form.revenue
-    ? Math.round(Number(form.revenue) / (1 + form.vatRate)) - Math.round(Number(form.externalFreightCost) / (1 + form.vatRate))
-    : null;
+  const marginPreview = getExternalTripPreviewGrossProfit({
+    carrierType: form.carrierType,
+    revenue: form.revenue,
+    externalFreightCost: form.externalFreightCost,
+    vatRate: form.vatRate,
+    customerCommission: form.customerCommission,
+  });
 
   return (
     <CardSection number={1} title="Thông tin chuyến đi" subtitle="Khách hàng, tuyến, hàng hóa và phương tiện" badge="required">

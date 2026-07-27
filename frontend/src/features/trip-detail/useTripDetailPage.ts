@@ -14,6 +14,7 @@ import { TripStatus, Role } from '@tingting/shared';
 import { useConfirm } from '../../components/UI';
 import { onboardingEvents } from '../../lib/onboardingEvents';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
+import { getTripDisplayGrossProfit } from '../trips/tripHelpers';
 
 export function resolveExpectedFuelLiters(trip: {
   fuelMode?: string | null;
@@ -124,23 +125,15 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     }
 
     const isExternal = trip.carrierType === 'EXTERNAL';
-    const vatRate = Number(trip.vatRate ?? 0.08);
     const revenueRaw = Number(trip.revenue || 0);
-    const externalFreightInclVat = Number(trip.externalFreightCost || 0);
-
-    // For EXTERNAL trips, Pete B3 + the test guide require ex-VAT profit math:
-    //   profit = round(revenue / (1+vat)) − round(externalFreightCost / (1+vat))
-    // The persisted trip.totalCost / trip.grossProfit are 0 for these trips
-    // (no fleet operating costs apply), which previously made the KPI strip
-    // render "Lợi nhuận gộp = doanh thu" (100% margin). Override here so the
-    // single-trip KPI matches the /finance "Doanh thu điều xe ngoài" line.
-    const externalMargin = isExternal && revenueRaw && externalFreightInclVat
-      ? Math.round(revenueRaw / (1 + vatRate)) - Math.round(externalFreightInclVat / (1 + vatRate))
-      : null;
     const revenue = revenueRaw;
-    const totalCost = isExternal ? externalFreightInclVat : Number(trip.totalCost || 0);
-    const grossProfit = isExternal && externalMargin != null ? externalMargin : Number(trip.grossProfit || 0);
-    const marginPct = revenue > 0 ? ((grossProfit / (isExternal ? Math.round(revenue / (1 + vatRate)) : revenue)) * 100).toFixed(1) : null;
+    const totalCost = Number(trip.totalCost || 0);
+    const grossProfit = getTripDisplayGrossProfit(trip);
+    const vatRate = Number(trip.vatRate ?? 0.08);
+    const marginRevenue = isExternal && vatRate > 0
+      ? Math.round(revenue / (1 + vatRate))
+      : revenue;
+    const marginPct = marginRevenue > 0 ? ((grossProfit / marginRevenue) * 100).toFixed(1) : null;
     const fuelCost = Number(trip.totalFuelCost || 0);
     const roadAllowance = Number(trip.totalRoadAllowance || 0);
     const tollCost = Number(trip.tollCost || 0);
@@ -166,7 +159,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       twoPointDeliveryBonus, vehicleShiftAllowance,
       totalKm, fuelLiters, computedLiters, ttbq,
       fuelVarianceLiters, fuelVarianceOver,
-      externalCarrierName, externalMargin,
+      externalCarrierName, externalMargin: isExternal ? grossProfit : null,
     };
   }, [trip, catalogData]);
 

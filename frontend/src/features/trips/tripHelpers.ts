@@ -1,5 +1,5 @@
 import { Banknote, Fuel, type LucideIcon } from 'lucide-react';
-import { TripStatus, type TripDetail } from '@tingting/shared';
+import { computeTripTotals, TripStatus, type TripDetail } from '@tingting/shared';
 
 export interface TripListContainer {
   containerNumber: string;
@@ -58,19 +58,57 @@ export function calcConsumption(trip: TripDetail): ConsumptionInfo | null {
   return { liters: fuel, per100: (fuel / distance) * 100 };
 }
 
-export function getTripDisplayGrossProfit(trip: TripDetail): number {
+interface ExternalTripPreviewInput {
+  carrierType?: string | null;
+  revenue?: string | number | null;
+  externalFreightCost?: string | number | null;
+  vatRate?: string | number | null;
+  customerCommission?: string | number | null;
+}
+
+export function getExternalTripPreviewGrossProfit(trip: ExternalTripPreviewInput): number | null {
   if (trip.carrierType !== 'EXTERNAL') {
-    return Number(trip.grossProfit ?? 0);
+    return null;
   }
 
   const revenue = Number(trip.revenue ?? 0);
   const externalFreightCost = Number(trip.externalFreightCost ?? 0);
   if (!revenue || !externalFreightCost) {
-    return Number(trip.grossProfit ?? 0);
+    return null;
   }
 
-  const vatRate = Number(trip.vatRate ?? 0.08);
-  return Math.round(revenue / (1 + vatRate)) - Math.round(externalFreightCost / (1 + vatRate));
+  return computeTripTotals({
+    legs: [],
+    fuelMode: 'AUTO',
+    fuelLitersOverride: null,
+    fuelSupplementLiters: 0,
+    fuelLoadedNorm: 0,
+    fuelEmptyNorm: 0,
+    fuelPerTripSupplement: 0,
+    fuelUnitPrice: 0,
+    fuelActualUnitPrice: null,
+    isMountainRoute: false,
+    mountainFixedAllowance: null,
+    roadAllowanceBase: 0,
+    tollsDiscount: 0,
+    tollsAddition: 0,
+    tollsStations: 0,
+    tollPerStation: 0,
+    hasReturnCargo: false,
+    returnCargoBonus: 0,
+    revenue,
+    vatRate: Number(trip.vatRate ?? 0.08),
+    customerCommission: Number(trip.customerCommission ?? 0),
+    carrierType: 'EXTERNAL',
+    externalFreightCost,
+    driverSalary: 0,
+    twoPointDeliveryBonus: 0,
+    vehicleShiftAllowance: 0,
+  }).grossProfit;
+}
+
+export function getTripDisplayGrossProfit(trip: TripDetail): number {
+  return Number(trip.grossProfit ?? 0);
 }
 
 export interface MissingIndicator {
