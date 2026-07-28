@@ -44,6 +44,29 @@ export function formatFullDate(d: Date): string {
   return `${VN_WEEKDAYS[d.getDay()]} · ${d.getDate()} ${VN_MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
 }
 
+const BUSINESS_DATE_FORMATTER = new Intl.DateTimeFormat('en', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function businessDateKey(date: Date): string {
+  const parts = Object.fromEntries(
+    BUSINESS_DATE_FORMATTER.formatToParts(date).map(({ type, value }) => [type, value]),
+  );
+  const { year, month, day } = parts;
+  return `${year}-${month}-${day}`;
+}
+
+export function isToday(iso: string, now: Date = new Date()): boolean {
+  const businessDate = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(iso)?.[1];
+  if (businessDate) return businessDate === businessDateKey(now);
+
+  const parsed = new Date(iso);
+  return !Number.isNaN(parsed.getTime()) && businessDateKey(parsed) === businessDateKey(now);
+}
+
 export function isUrgent(iso: string, now: Date = new Date()): boolean {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;

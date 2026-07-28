@@ -406,8 +406,26 @@
 }
 .dispatch-page .order-row:hover { background: var(--surface-2); }
 .dispatch-page .order-row:last-of-type { border-bottom: none; }
+.dispatch-page .order-row.is-today {
+  background: var(--d-green-50);
+  box-shadow: inset 0 0 0 2px #86D6A5;
+}
+.dispatch-page .order-row.is-today:hover { background: var(--d-green-50); }
 
 .dispatch-page .o-date { display: flex; flex-direction: column; gap: 2px; }
+.dispatch-page .o-date .today-badge {
+  align-self: flex-start;
+  margin-bottom: 2px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--d-green-700);
+  color: var(--fg-on-brand);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
 .dispatch-page .o-date .day {
   font-family: var(--font-mono);
   font-size: var(--fs-sm); font-weight: 700;
@@ -419,6 +437,8 @@
 }
 .dispatch-page .o-date.urgent .day { color: var(--d-amber); }
 .dispatch-page .o-date.urgent .lbl { color: var(--d-amber); }
+.dispatch-page .o-date.today .day,
+.dispatch-page .o-date.today .lbl { color: var(--d-green-800); }
 
 .dispatch-page .o-route {
   display: flex; align-items: center; gap: 8px;
@@ -623,6 +643,7 @@
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto auto;
     gap: 8px;
+    padding: 14px 16px;
   }
   .dispatch-page .order-row .o-date { grid-column: 1; }
   .dispatch-page .order-row .o-route { grid-column: 1 / -1; flex-direction: column; align-items: flex-start; gap: 2px; }

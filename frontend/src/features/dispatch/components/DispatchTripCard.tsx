@@ -1,7 +1,7 @@
 import { Play, RefreshCw, Building2, ArrowRight } from 'lucide-react';
 import { formatDayMonth } from '../../../lib/date';
 import { splitRoute } from '../../../lib/route';
-import { isUrgent } from '../utils';
+import { isToday, isUrgent } from '../utils';
 import { ReassignDialog } from './ReassignDialog';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
@@ -40,12 +40,17 @@ export function DispatchTripCard({
   actionLoadingId,
 }: DispatchTripCardProps) {
   const route = splitRoute(trip.routeName);
-  const urgent = isUrgent(trip.departureDate);
+  const today = isToday(trip.departureDate);
+  const urgent = !today && isUrgent(trip.departureDate);
 
   return (
-    <div className="order-row" data-tour-id="dispatch-ready-list">
+    <div
+      className={`order-row${today ? ' is-today' : ''}`}
+      data-tour-id="dispatch-ready-list"
+    >
       <StatusStrip color={TRIP_STATUS_COLORS[trip.status as TripStatus]} />
-      <div className={`o-date${urgent ? ' urgent' : ''}`}>
+      <div className={`o-date${today ? ' today' : urgent ? ' urgent' : ''}`}>
+        {today && <span className="today-badge">Hôm nay</span>}
         <span className="day">{formatDayMonth(trip.departureDate)}</span>
         <span className="lbl">Khởi hành</span>
       </div>
