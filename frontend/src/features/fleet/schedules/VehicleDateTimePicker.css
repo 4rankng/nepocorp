@@ -1,0 +1,244 @@
+.vehicle-date-time-picker__trigger {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.vehicle-date-time-picker__trigger > svg {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+
+.vehicle-date-time-picker__trigger[data-empty="true"] {
+  color: var(--ink-3);
+}
+
+.vehicle-date-time-picker__value {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.vehicle-date-time-picker__time {
+  color: var(--ink-3);
+}
+
+.vehicle-date-time-picker__popover {
+  z-index: var(--z-popover);
+  width: min(344px, calc(100vw - 24px));
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-lg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+.vehicle-date-time-picker__popover[data-state="open"] {
+  animation: vehicleDateTimePickerIn 140ms var(--ease);
+}
+
+.vehicle-date-time-picker__calendar {
+  --rdp-accent-color: var(--accent);
+  --rdp-accent-background-color: var(--accent-soft);
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 9px;
+  --rdp-selected-border: 0;
+  --rdp-today-color: var(--accent);
+  width: 100%;
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.vehicle-date-time-picker__calendar .rdp-months,
+.vehicle-date-time-picker__calendar .rdp-month,
+.vehicle-date-time-picker__calendar .rdp-month_grid {
+  width: 100%;
+  max-width: none;
+}
+
+.vehicle-date-time-picker__calendar table {
+  min-width: 0;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+.vehicle-date-time-picker__calendar thead th {
+  position: static;
+  z-index: auto;
+  padding: var(--rdp-weekday-padding);
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: none;
+}
+
+.vehicle-date-time-picker__calendar tbody tr {
+  background: transparent;
+}
+
+.vehicle-date-time-picker__calendar tbody td {
+  width: var(--rdp-day-width);
+  height: var(--rdp-day-height);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  white-space: normal;
+}
+
+.vehicle-date-time-picker__calendar tbody tr:hover td {
+  background: transparent;
+}
+
+.vehicle-date-time-picker__calendar .rdp-month_caption {
+  font-weight: var(--fw-bold);
+  text-transform: capitalize;
+}
+
+.vehicle-date-time-picker__calendar .rdp-weekday {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.vehicle-date-time-picker__calendar .rdp-day_button {
+  color: var(--ink-2);
+  font: inherit;
+}
+
+.vehicle-date-time-picker__calendar .rdp-day_button:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.vehicle-date-time-picker__calendar .rdp-selected .rdp-day_button {
+  border: 0;
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  font-weight: var(--fw-bold);
+}
+
+.vehicle-date-time-picker__calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: var(--fw-bold);
+}
+
+.vehicle-date-time-picker__calendar .rdp-outside .rdp-day_button {
+  color: var(--ink-3);
+  opacity: 0.55;
+}
+
+.vehicle-date-time-picker__calendar .rdp-button_previous,
+.vehicle-date-time-picker__calendar .rdp-button_next {
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+}
+
+.vehicle-date-time-picker__calendar .rdp-button_previous:hover,
+.vehicle-date-time-picker__calendar .rdp-button_next:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.vehicle-date-time-picker__calendar button:focus-visible,
+.vehicle-date-time-picker__time-field input:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.vehicle-date-time-picker__time-field {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr);
+  align-items: center;
+  gap: 7px 12px;
+  padding: 12px 6px;
+  border-top: 1px solid var(--line);
+}
+
+.vehicle-date-time-picker__time-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.vehicle-date-time-picker__time-field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--fw-regular) var(--fs-sm)/1 var(--font-body);
+}
+
+.vehicle-date-time-picker__time-field > span {
+  grid-column: 2;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-date-time-picker__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 10px 4px 2px;
+  border-top: 1px solid var(--line);
+}
+
+.vehicle-date-time-picker__today {
+  margin-right: auto;
+}
+
+@keyframes vehicleDateTimePickerIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .vehicle-date-time-picker__popover {
+    width: calc(100vw - 24px);
+  }
+
+  .vehicle-date-time-picker__time-field input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .vehicle-date-time-picker__actions .btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vehicle-date-time-picker__popover[data-state="open"] {
+    animation: none;
+  }
+}

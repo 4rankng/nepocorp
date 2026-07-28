@@ -98,4 +98,26 @@ describe('VehicleScheduleManager', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Thêm lịch nhắc việc' }));
     expect(screen.getByTestId('vehicle-schedule-form')).not.toBeNull();
   });
+
+  it('opens directly in creation mode when invoked from a Thêm lịch trigger', async () => {
+    render(
+      <VehicleScheduleManager
+        isOpen
+        initialMode="create"
+        vehicleComponent={VehicleComponent.TRUCK}
+        vehicleId={7}
+        vehiclePlate="15C-136.31"
+        items={[]}
+        onClose={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
+        onComplete={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Xe đầu kéo 15C-136.31')).not.toBeNull();
+    expect(screen.getByTestId('vehicle-schedule-form')).not.toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Trạng thái lịch' })).toBeNull();
+  });
 });

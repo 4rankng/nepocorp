@@ -8,9 +8,11 @@ import { Ban, CalendarPlus, Check, Clock3, Pencil } from 'lucide-react';
 import { Drawer } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { VehicleScheduleForm, type VehicleScheduleDraft } from './VehicleScheduleForm';
+import type { VehicleScheduleOpenMode } from './VehicleScheduleTrigger';
 
 interface VehicleScheduleManagerProps {
   isOpen: boolean;
+  initialMode?: VehicleScheduleOpenMode;
   vehicleComponent: VehicleComponent;
   vehicleId: number;
   vehiclePlate: string;
@@ -46,6 +48,7 @@ function scheduleToDraft(item: VehicleSchedule): VehicleScheduleDraft {
 
 export function VehicleScheduleManager({
   isOpen,
+  initialMode = 'overview',
   vehicleComponent,
   vehicleId,
   vehiclePlate,
@@ -59,18 +62,16 @@ export function VehicleScheduleManager({
   onCancel,
 }: VehicleScheduleManagerProps) {
   const [tab, setTab] = useState<'active' | 'history'>('active');
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(initialMode === 'create');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
-      setTab('active');
-      setCreating(false);
-      setEditingId(null);
-      setActionError('');
-    }
-  }, [isOpen]);
+    setTab('active');
+    setCreating(isOpen && initialMode === 'create');
+    setEditingId(null);
+    setActionError('');
+  }, [initialMode, isOpen, vehicleComponent, vehicleId]);
 
   const { activeItems, historyItems } = useMemo(() => ({
     activeItems: items.filter(item => item.status === VehicleScheduleStatus.ACTIVE),

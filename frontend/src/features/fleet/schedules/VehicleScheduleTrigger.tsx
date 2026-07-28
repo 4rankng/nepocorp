@@ -1,11 +1,13 @@
 import { AlertTriangle, CalendarPlus, Clock3 } from 'lucide-react';
 import type { VehicleScheduleBannerItem } from './VehicleScheduleBanner';
 
+export type VehicleScheduleOpenMode = 'overview' | 'create';
+
 interface VehicleScheduleTriggerProps {
   vehicleComponent: 'TRUCK' | 'TRAILER';
   vehicleId: number;
   items: VehicleScheduleBannerItem[];
-  onOpen: () => void;
+  onOpen: (mode: VehicleScheduleOpenMode) => void;
 }
 
 export function VehicleScheduleTrigger({
@@ -28,7 +30,7 @@ export function VehicleScheduleTrigger({
       aria-label={ariaLabel}
       onClick={event => {
         event.stopPropagation();
-        onOpen();
+        onOpen(items.length === 0 ? 'create' : 'overview');
       }}
     >
       {items.length === 0

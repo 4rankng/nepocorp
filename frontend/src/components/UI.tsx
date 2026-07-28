@@ -597,7 +597,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
                 {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
               </div>
             </div>
-            <Tooltip label="Đóng (Esc)">
+            <Tooltip label="Đóng (Esc)" side="bottom">
               <button
                 className="drawer__close"
                 onClick={handleClose}

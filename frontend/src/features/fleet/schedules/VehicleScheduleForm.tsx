@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { VehicleScheduleKind } from '@tingting/shared';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/Select';
+import { TextAreaField, TextField } from '../../../design-system';
 import { fromVietnamIso, toVietnamIso } from './date-time';
+import { VehicleDateTimePicker } from './VehicleDateTimePicker';
 
 export interface VehicleScheduleDraft {
   kind: VehicleScheduleKind;
@@ -44,7 +54,7 @@ export function VehicleScheduleForm({
   } : EMPTY_FORM);
   const [error, setError] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
-  const remindRef = useRef<HTMLInputElement>(null);
+  const remindRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setForm(initialValue ? {
@@ -102,88 +112,91 @@ export function VehicleScheduleForm({
     <form className="vehicle-schedule-form" data-testid="vehicle-schedule-form" onSubmit={handleSubmit} noValidate>
       {error && <div className="vehicle-schedule-form__error" role="alert">{error}</div>}
       <div className="vehicle-schedule-form__grid">
-        <label className="vehicle-schedule-form__field">
-          <span>Loại lịch</span>
-          <select
+        <div className="vehicle-schedule-form__field">
+          <span id="vehicle-schedule-kind-label">Loại lịch</span>
+          <Select
             name="scheduleType"
-            className="input"
             value={form.kind}
-            onChange={event => set('kind', event.target.value as VehicleScheduleKind)}
-            autoComplete="off"
+            onValueChange={value => set('kind', value as VehicleScheduleKind)}
           >
-            <option value="MAINTENANCE">Bảo trì</option>
-            <option value="INSPECTION">Đăng kiểm</option>
-            <option value="INSURANCE">Bảo hiểm</option>
-            <option value="ROAD_FEE">Phí đường bộ</option>
-            <option value="DOCUMENT">Giấy tờ khác</option>
-            <option value="OTHER">Khác</option>
-          </select>
-        </label>
+            <SelectTrigger
+              className="vehicle-schedule-form__select-trigger"
+              aria-labelledby="vehicle-schedule-kind-label"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              className="vehicle-schedule-form__select-content"
+              position="popper"
+              sideOffset={6}
+              collisionPadding={12}
+            >
+              <SelectGroup>
+                <SelectItem value={VehicleScheduleKind.MAINTENANCE}>Bảo trì</SelectItem>
+                <SelectItem value={VehicleScheduleKind.INSPECTION}>Đăng kiểm</SelectItem>
+                <SelectItem value={VehicleScheduleKind.INSURANCE}>Bảo hiểm</SelectItem>
+                <SelectItem value={VehicleScheduleKind.ROAD_FEE}>Phí đường bộ</SelectItem>
+                <SelectItem value={VehicleScheduleKind.DOCUMENT}>Giấy tờ khác</SelectItem>
+                <SelectItem value={VehicleScheduleKind.OTHER}>Khác</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <label className="vehicle-schedule-form__field vehicle-schedule-form__field--wide">
-          <span>Nội dung nhắc</span>
-          <input
-            ref={titleRef}
-            name="title"
-            className="input"
-            value={form.title}
-            onChange={event => set('title', event.target.value)}
-            placeholder="Ví dụ: Đăng kiểm định kỳ…"
-            autoComplete="off"
-            required
-          />
-        </label>
+        <TextField
+          ref={titleRef}
+          className="vehicle-schedule-form__field--wide"
+          label="Nội dung nhắc"
+          name="title"
+          value={form.title}
+          onChange={event => set('title', event.target.value)}
+          placeholder="Ví dụ: Đăng kiểm định kỳ…"
+          autoComplete="off"
+          required
+          aria-invalid={error === 'Vui lòng nhập nội dung nhắc.'}
+        />
 
-        <label className="vehicle-schedule-form__field">
-          <span>Thời điểm nhắc</span>
-          <input
+        <div className="vehicle-schedule-form__field">
+          <span id="vehicle-schedule-remind-at-label">Thời điểm nhắc</span>
+          <VehicleDateTimePicker
             ref={remindRef}
-            name="remindAt"
-            className="input"
-            type="datetime-local"
+            id="vehicle-schedule-remind-at"
+            ariaLabel="Chọn thời điểm nhắc"
             value={form.remindAt}
-            onChange={event => set('remindAt', event.target.value)}
-            autoComplete="off"
+            onChange={value => set('remindAt', value)}
             required
           />
-        </label>
+        </div>
 
-        <label className="vehicle-schedule-form__field">
-          <span>Hạn hoàn thành</span>
-          <input
-            name="dueAt"
-            className="input"
-            type="datetime-local"
+        <div className="vehicle-schedule-form__field">
+          <span id="vehicle-schedule-due-at-label">Hạn hoàn thành</span>
+          <VehicleDateTimePicker
+            id="vehicle-schedule-due-at"
+            ariaLabel="Chọn hạn hoàn thành"
             value={form.dueAt}
-            onChange={event => set('dueAt', event.target.value)}
-            autoComplete="off"
+            onChange={value => set('dueAt', value)}
             required
           />
-        </label>
+        </div>
         <p className="vehicle-schedule-form__timezone">Theo giờ Việt Nam (Asia/Ho_Chi_Minh).</p>
 
-        <label className="vehicle-schedule-form__field">
-          <span>Số giấy tờ <small>(không bắt buộc)</small></span>
-          <input
-            name="documentNumber"
-            className="input"
-            value={form.documentNumber}
-            onChange={event => set('documentNumber', event.target.value)}
-            autoComplete="off"
-          />
-        </label>
+        <TextField
+          label="Số giấy tờ (không bắt buộc)"
+          name="documentNumber"
+          value={form.documentNumber}
+          onChange={event => set('documentNumber', event.target.value)}
+          autoComplete="off"
+        />
 
-        <label className="vehicle-schedule-form__field vehicle-schedule-form__field--wide">
-          <span>Ghi chú <small>(không bắt buộc)</small></span>
-          <textarea
-            name="notes"
-            className="input"
-            value={form.notes}
-            onChange={event => set('notes', event.target.value)}
-            autoComplete="off"
-            rows={3}
-          />
-        </label>
+        <TextAreaField
+          className="vehicle-schedule-form__field--wide"
+          label="Ghi chú (không bắt buộc)"
+          name="notes"
+          value={form.notes}
+          onChange={event => set('notes', event.target.value)}
+          autoComplete="off"
+          rows={5}
+        />
       </div>
 
       <div className="vehicle-schedule-form__footer">

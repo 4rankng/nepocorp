@@ -5,16 +5,21 @@ import { VehicleScheduleTrigger } from './VehicleScheduleTrigger';
 
 describe('VehicleScheduleTrigger', () => {
   it('offers schedule creation when the vehicle has no active reminder', () => {
+    const onOpen = vi.fn();
     render(
       <VehicleScheduleTrigger
         vehicleComponent="TRAILER"
         vehicleId={7}
         items={[]}
-        onOpen={vi.fn()}
+        onOpen={onOpen}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Thêm lịch cho rơ-moóc' }).textContent).toContain('Thêm lịch');
+    const trigger = screen.getByRole('button', { name: 'Thêm lịch cho rơ-moóc' });
+    fireEvent.click(trigger);
+
+    expect(trigger.textContent).toContain('Thêm lịch');
+    expect(onOpen).toHaveBeenCalledWith('create');
   });
 
   it('shows an explicit overdue state and does not bubble into the vehicle card', () => {
@@ -50,7 +55,7 @@ describe('VehicleScheduleTrigger', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở 1 lịch của xe đầu kéo, có lịch quá hạn' }));
     expect(screen.getByText('Quá hạn')).not.toBeNull();
-    expect(onOpen).toHaveBeenCalledOnce();
+    expect(onOpen).toHaveBeenCalledWith('overview');
     expect(parentClick).not.toHaveBeenCalled();
   });
 });

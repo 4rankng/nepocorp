@@ -29,6 +29,8 @@ export type { TabsProps, TabsVariant, TabItem } from './Tabs';
 
 export { TextField } from './forms/TextField';
 export type { TextFieldProps, BaseFieldProps } from './forms/TextField';
+export { TextAreaField } from './forms/TextAreaField';
+export type { TextAreaFieldProps } from './forms/TextAreaField';
 export { SelectField } from './forms/SelectField';
 export type { SelectFieldProps } from './forms/SelectField';
 export { SearchableSelect } from './forms/SearchableSelect';

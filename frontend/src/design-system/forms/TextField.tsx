@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react';
 import './TextField.css';
 
 export interface BaseFieldProps {
@@ -15,7 +15,7 @@ export interface TextFieldProps extends BaseFieldProps, Omit<InputHTMLAttributes
   className?: string;
 }
 
-export function TextField({
+export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField({
   label,
   required,
   error,
@@ -24,7 +24,7 @@ export function TextField({
   suffix,
   className,
   ...input
-}: TextFieldProps) {
+}, ref) {
   const id = useId();
   const cls = ['ds-field', error ? 'ds-field--error' : '', className].filter(Boolean).join(' ');
 
@@ -37,11 +37,11 @@ export function TextField({
       {prefix || suffix ? (
         <div className="ds-field__input-group">
           {prefix && <span className="ds-field__affix">{prefix}</span>}
-          <input id={id} className="ds-field__input" {...input} />
+          <input ref={ref} id={id} className="ds-field__input" required={required} {...input} />
           {suffix && <span className="ds-field__affix">{suffix}</span>}
         </div>
       ) : (
-        <input id={id} className="ds-field__input" {...input} />
+        <input ref={ref} id={id} className="ds-field__input" required={required} {...input} />
       )}
       {error ? (
         <span className="ds-field__msg ds-field__msg--error">{error}</span>
@@ -50,4 +50,4 @@ export function TextField({
       ) : null}
     </div>
   );
-}
+});

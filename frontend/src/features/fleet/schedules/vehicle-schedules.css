@@ -149,9 +149,13 @@
   display: grid;
   min-width: 0;
   gap: 6px;
+}
+
+.vehicle-schedule-form__field > span {
   color: var(--ink-2);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
 }
 
 .vehicle-schedule-form__field--wide,
@@ -168,7 +172,37 @@
 .vehicle-schedule-form__field .input {
   min-width: 0;
   width: 100%;
-  font-size: 16px;
+  font-weight: var(--fw-regular);
+}
+
+.vehicle-schedule-form .ds-field__input {
+  background: var(--surface);
+  box-shadow: none;
+  font-weight: var(--fw-regular);
+}
+
+.vehicle-schedule-form .ds-field textarea.ds-field__input {
+  background: var(--surface);
+  box-shadow: none;
+  resize: vertical;
+}
+
+.vehicle-schedule-form__select-trigger {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  border-color: var(--line-2);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+}
+
+.vehicle-schedule-form__select-content {
+  font-family: var(--font-body);
+}
+
+.vehicle-schedule-form__select-content [role='option'] {
+  min-height: 40px;
 }
 
 .vehicle-schedule-form__field textarea {
@@ -483,6 +517,10 @@
 
   .vehicle-schedule-form__grid {
     grid-template-columns: 1fr;
+  }
+
+  .vehicle-schedule-form__select-content [role='option'] {
+    min-height: 44px;
   }
 
   .vehicle-schedule-form__footer {

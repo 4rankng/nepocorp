@@ -22,6 +22,7 @@ import { TruckCard } from '../features/fleet/truck-card';
 import { DriverCard } from '../features/fleet/driver-card';
 import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
 import { VehicleScheduleManager } from '../features/fleet/schedules/VehicleScheduleManager';
+import type { VehicleScheduleOpenMode } from '../features/fleet/schedules/VehicleScheduleTrigger';
 import {
   useActiveVehicleSchedules,
   useAllActiveVehicleSchedules,
@@ -34,6 +35,7 @@ export default function FleetPage() {
     vehicleComponent: VehicleComponent;
     vehicleId: number;
     vehiclePlate: string;
+    mode: VehicleScheduleOpenMode;
   } | null>(null);
   const queryClient = useQueryClient();
   const { rootRef } = usePageAnimations({ ready: true });
@@ -268,10 +270,11 @@ export default function FleetPage() {
         trailers={trailers}
         crud={truckCrud}
         schedulesByVehicle={schedulesByVehicle}
-        onOpenSchedules={(vehicleId, vehiclePlate) => setSelectedScheduleVehicle({
+        onOpenSchedules={(vehicleId, vehiclePlate, mode) => setSelectedScheduleVehicle({
           vehicleComponent: VehicleComponent.TRUCK,
           vehicleId,
           vehiclePlate,
+          mode,
         })}
       />
 
@@ -283,10 +286,11 @@ export default function FleetPage() {
         trucks={trucks}
         crud={trailerCrud}
         schedulesByVehicle={schedulesByVehicle}
-        onOpenSchedules={(vehicleId, vehiclePlate) => setSelectedScheduleVehicle({
+        onOpenSchedules={(vehicleId, vehiclePlate, mode) => setSelectedScheduleVehicle({
           vehicleComponent: VehicleComponent.TRAILER,
           vehicleId,
           vehiclePlate,
+          mode,
         })}
       />
 
@@ -296,6 +300,7 @@ export default function FleetPage() {
       {selectedScheduleVehicle && (
         <VehicleScheduleManager
           isOpen
+          initialMode={selectedScheduleVehicle.mode}
           vehicleComponent={selectedScheduleVehicle.vehicleComponent}
           vehicleId={selectedScheduleVehicle.vehicleId}
           vehiclePlate={selectedScheduleVehicle.vehiclePlate}

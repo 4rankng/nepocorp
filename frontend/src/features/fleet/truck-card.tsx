@@ -11,7 +11,10 @@ import { TrailerType, TRAILER_TYPE_LABELS, TIRE_STATUS_LABELS } from "@tingting/
 import type { Tire, Truck as TruckType, Driver, VehicleSchedule } from "@tingting/shared";
 import { routes } from "../../lib/routes";
 import { formatDate } from "../../lib/format";
-import { VehicleScheduleTrigger } from "./schedules/VehicleScheduleTrigger";
+import {
+  VehicleScheduleTrigger,
+  type VehicleScheduleOpenMode,
+} from "./schedules/VehicleScheduleTrigger";
 
 // Extracted form modals + shared fleet constants
 import { TruckFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
@@ -199,7 +202,11 @@ export function TruckCard({
   trailers: Array<{ id: number; licensePlate: string; type: string }>;
   crud: ReturnType<typeof useCRUD>;
   schedulesByVehicle: Map<string, VehicleSchedule[]>;
-  onOpenSchedules: (vehicleId: number, vehiclePlate: string) => void;
+  onOpenSchedules: (
+    vehicleId: number,
+    vehiclePlate: string,
+    mode: VehicleScheduleOpenMode,
+  ) => void;
 }) {
   const [viewingId, setViewingId] = useState<number | null>(null);
   const { data: tires = [] } = useTires();
@@ -312,7 +319,7 @@ export function TruckCard({
                       vehicleComponent="TRUCK"
                       vehicleId={t.id}
                       items={schedulesByVehicle.get(`TRUCK:${t.id}`) ?? []}
-                      onOpen={() => onOpenSchedules(t.id, t.licensePlate)}
+                      onOpen={mode => onOpenSchedules(t.id, t.licensePlate, mode)}
                     />
                   </td>
                 </tr>
@@ -369,7 +376,7 @@ export function TruckCard({
                     vehicleComponent="TRUCK"
                     vehicleId={t.id}
                     items={schedulesByVehicle.get(`TRUCK:${t.id}`) ?? []}
-                    onOpen={() => onOpenSchedules(t.id, t.licensePlate)}
+                    onOpen={mode => onOpenSchedules(t.id, t.licensePlate, mode)}
                   />
                 </div>
                 <div className="fleet-card-actions">
@@ -460,9 +467,9 @@ export function TruckCard({
                   vehicleComponent="TRUCK"
                   vehicleId={t.id}
                   items={schedulesByVehicle.get(`TRUCK:${t.id}`) ?? []}
-                  onOpen={() => {
+                  onOpen={mode => {
                     setViewingId(null);
-                    onOpenSchedules(t.id, t.licensePlate);
+                    onOpenSchedules(t.id, t.licensePlate, mode);
                   }}
                 />
               ),
