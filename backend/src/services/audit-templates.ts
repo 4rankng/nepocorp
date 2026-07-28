@@ -38,6 +38,7 @@ const ENTITY_LABELS: Record<string, string> = {
   'expense-photos': 'hình ảnh chi phí hộ',
   'trip-expenses': 'chi phí hộ',
   'forwarder-expenses': 'chi phí hộ',
+  'vehicle-schedules': 'lịch nhắc việc xe',
   'container-instances': 'thông tin container',
   notifications: 'thông báo',
   forwarder: 'nhân viên điều phối',
@@ -127,6 +128,10 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.TRIP_CANCELED]: (c) => `${subj(c)} đã hủy bỏ lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.TRIP_UNLOCKED]: (c) => `${subj(c)} đã mở khóa lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''} (cho phép chỉnh sửa lại số liệu)`,
   [AuditEvent.TRIP_DEPARTURE_DATE_CHANGED]: (c) => `${subj(c)} đã thay đổi ngày khởi hành của lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  [AuditEvent.VEHICLE_SCHEDULE_CREATED]: (c) => `${subj(c)} đã tạo lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.VEHICLE_SCHEDULE_UPDATED]: (c) => `${subj(c)} đã cập nhật lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.VEHICLE_SCHEDULE_COMPLETED]: (c) => `${subj(c)} đã hoàn thành lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
+  [AuditEvent.VEHICLE_SCHEDULE_CANCELLED]: (c) => `${subj(c)} đã hủy lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
 
   [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} đã ghi nhận thanh toán${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} đã tạo bút toán điều chỉnh công nợ${c.entityKey ? ` ${c.entityKey}` : ''}`,

@@ -24,6 +24,7 @@
 Module **Đội xe & Điều vận** gồm hai trang:
 - **Điều vận** (`/dispatch`) — Trung tâm chỉ huy điều vận chuyến đi, xem trạng thái đội xe, xuất phát chuyến, phân xe lại.
 - **Đội xe** (`/fleet`) — Quản lý CRUD xe đầu kéo (kèm thông tin rơ-mooc ghép cặp) và lái xe. Không có bảng rơ-mooc riêng — biển số và loại rơ-mooc lưu trên bản ghi xe đầu kéo.
+- **Lịch phương tiện** — Lịch nhắc việc canonical cho cả xe đầu kéo và rơ-mooc, hiển thị banner không thể ẩn trên Dashboard và Đội xe, đồng thời cho phép quản lý theo từng xe trong drawer chi tiết.
 
 ### 1.2 Vai trò truy cập
 
@@ -127,27 +128,58 @@ Module **Đội xe & Điều vận** gồm hai trang:
 | Trạng thái | Active/Inactive |
 | Thao tác | Nút Sửa (KHÔNG có nút Xóa) |
 
-### 2.3 Cảnh báo phương tiện (Vehicle alerts) (A12)
+### 2.3 Lịch phương tiện (canonical) (A12)
 
-Hệ thống nhắc trước khi tới hạn các mốc vận hành của xe, hiển thị trên **Dashboard quản lý**, trang **Đội xe**, và trang **cá nhân lái xe** (chỉ phương tiện đang vận hành).
+Lịch phương tiện là nguồn nhắc việc vận hành canonical cho từng **TRUCK** và **TRAILER**. Lịch lưu đúng hai mốc thời gian:
+- `remindAt` — thời điểm bắt đầu đưa lịch lên banner.
+- `dueAt` — hạn hoàn thành cần xử lý.
 
-**4 loại cảnh báo + lead_days mặc định:**
+**Phân quyền**
 
-| Loại | Mã | Lead-days mặc định |
-|------|-----|---------------------|
-| Thay dầu | `OIL_CHANGE` | **7 ngày** |
-| Đăng kiểm | `INSPECTION` | **30 ngày** |
-| Bảo hiểm TNDS | `INSURANCE` | **30 ngày** |
-| Phí đường bộ | `ROAD_FEE` | **15 ngày** |
+| Vai trò | Dashboard | Đội xe | API |
+|---------|-----------|--------|-----|
+| ADMIN | ✅ | ✅ | ✅ |
+| MANAGER | ✅ | ✅ | ✅ |
+| ACCOUNTANT | ✅ | ✅ | ✅ |
+| DRIVER | ❌ | ❌ | ❌ |
 
-Mỗi loại có `lead_days` cấu hình được (override mặc định).
+**API**
 
-**Điều kiện kích hoạt:** `hôm nay >= hạn_cuối − lead_days` HOẶC đã quá hạn. Hệ thống dùng `hạn_cuối` mới nhất theo từng (xe × loại cảnh báo) — tức là khi nhập phiếu gia hạn mới với `valid_to` xa hơn, cảnh báo tự động cập nhật theo dòng mới.
+| Method | Path | Auth | Mô tả |
+|--------|------|------|-------|
+| `GET` | `/api/vehicle-schedules` | JWT + config:* | Danh sách lịch ACTIVE; banner dùng phần ACTIVE đến hạn / quá hạn, history dùng `history=true` |
+| `POST` | `/api/vehicle-schedules` | JWT + config:* | Tạo lịch mới cho TRUCK hoặc TRAILER |
+| `PUT` | `/api/vehicle-schedules/:id` | JWT + config:* | Cập nhật lịch ACTIVE |
+| `POST` | `/api/vehicle-schedules/:id/complete` | JWT + config:* | Đánh dấu hoàn thành |
+| `POST` | `/api/vehicle-schedules/:id/cancel` | JWT + config:* | Hủy lịch |
 
-**Hiển thị:**
-- Dashboard: card tổng số cảnh báo + danh sách xe sắp/đã quá hạn.
-- Trang Đội xe: cột "Cảnh báo" trong bảng xe — biểu tượng 🔔 + số ngày còn lại (âm nếu quá hạn).
-- Lái xe: card "Cảnh báo phương tiện" trên cổng lái xe — chỉ hiện cho xe đang vận hành (`assigned_truck_id` của lái xe).
+**Trạng thái**
+
+| Trạng thái | Ý nghĩa | Hiển thị |
+|-----------|---------|----------|
+| ACTIVE | Đang theo dõi | Có thể sửa, hoàn thành, hủy |
+| COMPLETED | Đã xử lý xong | Chỉ còn trong lịch sử |
+| CANCELLED | Đã hủy | Chỉ còn trong lịch sử |
+
+**Hiển thị**
+
+- **Dashboard quản lý**: banner non-dismissible cho các lịch ACTIVE đã đến hạn nhắc hoặc quá hạn.
+- **Đội xe**: banner non-dismissible ở đầu trang, rồi đến các card xe đầu kéo và rơ-mooc; mỗi xe có thể mở drawer lịch riêng.
+- **Không có scope khác**: không đẩy push notification, không tự chạy scheduler riêng trong UI, không hiển thị ở topbar hay cổng lái xe.
+
+**Quy tắc dữ liệu**
+
+- Lịch gắn vào đúng một `vehicleComponent` và `vehicleId`.
+- Banner chỉ lấy lịch ACTIVE; history tab của drawer hiển thị COMPLETED/CANCELLED.
+- Danh sách ACTIVE được ưu tiên theo quá hạn trước, sau đó theo `dueAt`, rồi theo `id`.
+- Lịch nào đã hoàn thành hoặc hủy sẽ biến mất khỏi banner nhưng vẫn còn trong lịch sử của xe.
+- Legacy projection cho xe đầu kéo và báo cáo gia hạn định kỳ vẫn có thể dùng làm bằng chứng / báo cáo, nhưng không phải nguồn authority để vận hành lịch phương tiện canonical.
+
+**Luồng sử dụng**
+
+1. Vào **Dashboard** hoặc **Đội xe** để thấy banner.
+2. Trong **Đội xe**, mở một xe đầu kéo hoặc rơ-mooc để xem lịch theo xe.
+3. Tạo / sửa lịch trong drawer, rồi đánh dấu hoàn thành hoặc hủy khi xử lý xong.
 
 ---
 

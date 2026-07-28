@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Truck, Container, UserCheck, Download, CheckCircle } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
@@ -9,8 +9,8 @@ import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { usePageAnimations } from "../hooks/animations";
 import { configClient } from "../api/configClient";
 import { qk } from "../api/keys";
-import { TrailerType } from "@tingting/shared";
-import type { Truck as TruckType, Driver } from "@tingting/shared";
+import { TrailerType, VehicleComponent } from "@tingting/shared";
+import type { Truck as TruckType, Driver, VehicleSchedule } from "@tingting/shared";
 
 // Extracted form modals + shared fleet constants
 import { TRUCK_STATUS, fleetStyles as styles } from "../features/fleet";
@@ -20,8 +20,21 @@ import "./FleetPage.css";
 import { TrailerCard } from '../features/fleet/trailer-card';
 import { TruckCard } from '../features/fleet/truck-card';
 import { DriverCard } from '../features/fleet/driver-card';
+import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
+import { VehicleScheduleManager } from '../features/fleet/schedules/VehicleScheduleManager';
+import {
+  useActiveVehicleSchedules,
+  useAllActiveVehicleSchedules,
+  useVehicleScheduleHistory,
+  useVehicleScheduleMutations,
+} from '../hooks/useVehicleSchedules';
 
 export default function FleetPage() {
+  const [selectedScheduleVehicle, setSelectedScheduleVehicle] = useState<{
+    vehicleComponent: VehicleComponent;
+    vehicleId: number;
+    vehiclePlate: string;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { rootRef } = usePageAnimations({ ready: true });
   const { data: fleetData } = useTrucksAndDrivers();
@@ -32,6 +45,25 @@ export default function FleetPage() {
   });
   const trucks = useMemo(() => fleetData?.trucks ?? [], [fleetData?.trucks]);
   const drivers = useMemo(() => fleetData?.drivers ?? [], [fleetData?.drivers]);
+  const {
+    data: activeSchedules = [],
+    isError: scheduleLoadFailed,
+    refetch: retrySchedules,
+  } = useActiveVehicleSchedules();
+  const {
+    data: allActiveSchedules = [],
+    isError: allActiveSchedulesFailed,
+    refetch: retryAllActiveSchedules,
+  } = useAllActiveVehicleSchedules();
+  const {
+    data: selectedVehicleSchedules = [],
+    isLoading: scheduleHistoryLoading,
+  } = useVehicleScheduleHistory(
+    selectedScheduleVehicle?.vehicleComponent,
+    selectedScheduleVehicle?.vehicleId,
+    selectedScheduleVehicle !== null,
+  );
+  const scheduleMutations = useVehicleScheduleMutations();
 
   const invalidateFleet = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: qk.catalogs.trucksDrivers });
@@ -67,6 +99,16 @@ export default function FleetPage() {
 
   const ft40 = trailers.filter((t) => t.type === TrailerType.FT40).length;
   const ft20 = trailers.filter((t) => t.type === TrailerType.FT20).length;
+  const schedulesByVehicle = useMemo(() => {
+    const grouped = new Map<string, VehicleSchedule[]>();
+    allActiveSchedules.forEach(schedule => {
+      const key = `${schedule.vehicleComponent}:${schedule.vehicleId}`;
+      grouped.set(key, [...(grouped.get(key) ?? []), schedule]);
+    });
+    return grouped;
+  }, [allActiveSchedules]);
+  const scheduleMutationPending = Object.values(scheduleMutations)
+    .some(mutation => mutation.isPending);
 
   return (
     <div className="fleet-page" ref={rootRef}>
@@ -201,16 +243,76 @@ export default function FleetPage() {
         />
       </div>
 
+      {scheduleLoadFailed || allActiveSchedulesFailed ? (
+        <div className="fleet-schedule-load-error" role="status">
+          <span>Không tải được lịch phương tiện.</span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => void Promise.all([retrySchedules(), retryAllActiveSchedules()])}
+          >
+            Thử lại
+          </button>
+        </div>
+      ) : (
+        <VehicleScheduleBanner
+          items={activeSchedules}
+          testId="vehicle-schedule-banner-fleet"
+        />
+      )}
+
       {/* Trucks (đầu kéo) */}
-      <TruckCard trucks={trucks} driverByTruck={driverByTruck} trailers={trailers} crud={truckCrud} />
+      <TruckCard
+        trucks={trucks}
+        driverByTruck={driverByTruck}
+        trailers={trailers}
+        crud={truckCrud}
+        schedulesByVehicle={schedulesByVehicle}
+        onOpenSchedules={(vehicleId, vehiclePlate) => setSelectedScheduleVehicle({
+          vehicleComponent: VehicleComponent.TRUCK,
+          vehicleId,
+          vehiclePlate,
+        })}
+      />
 
       {/* Trailers (rơ-moóc) — separate catalog so a rơ-moóc can be coupled
           to different đầu kéo over time, and so repair / đăng kiểm / thay
           lốp expenses can be split between truck and trailer. */}
-      <TrailerCard trailers={trailers} trucks={trucks} crud={trailerCrud} />
+      <TrailerCard
+        trailers={trailers}
+        trucks={trucks}
+        crud={trailerCrud}
+        schedulesByVehicle={schedulesByVehicle}
+        onOpenSchedules={(vehicleId, vehiclePlate) => setSelectedScheduleVehicle({
+          vehicleComponent: VehicleComponent.TRAILER,
+          vehicleId,
+          vehiclePlate,
+        })}
+      />
 
       {/* Drivers */}
       <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />
+
+      {selectedScheduleVehicle && (
+        <VehicleScheduleManager
+          isOpen
+          vehicleComponent={selectedScheduleVehicle.vehicleComponent}
+          vehicleId={selectedScheduleVehicle.vehicleId}
+          vehiclePlate={selectedScheduleVehicle.vehiclePlate}
+          items={selectedVehicleSchedules}
+          loading={scheduleHistoryLoading}
+          saving={scheduleMutationPending}
+          onClose={() => setSelectedScheduleVehicle(null)}
+          onCreate={draft => scheduleMutations.create.mutateAsync({
+            ...draft,
+            vehicleComponent: selectedScheduleVehicle.vehicleComponent,
+            vehicleId: selectedScheduleVehicle.vehicleId,
+          })}
+          onUpdate={(id, draft) => scheduleMutations.update.mutateAsync({ id, input: draft })}
+          onComplete={id => scheduleMutations.complete.mutateAsync(id)}
+          onCancel={id => scheduleMutations.cancel.mutateAsync(id)}
+        />
+      )}
     </div>
   );
 }

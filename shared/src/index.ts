@@ -2,6 +2,8 @@ export {
   TripStatus, BILLABLE_TRIP_STATUSES, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TrailerStatus, TruckStatus, DriverStatus, CustomerStatus,
   PenaltyStatus, PENALTY_STATUS_LABELS, TRAILER_STATUS_LABELS, TRAILER_TYPE_LABELS,
+  VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
+  VEHICLE_COMPONENT_LABELS, VEHICLE_SCHEDULE_KIND_LABELS, VEHICLE_SCHEDULE_STATUS_LABELS,
   TIRE_STATUSES, TIRE_STATUS_LABELS, TIRE_DISPOSAL_REASONS,
   TRIP_STATUS_LABELS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS,
   TRIP_STATUS_COLORS, DATA_COMPLETENESS_COLORS,
@@ -15,7 +17,7 @@ export {
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
   TRUCK_CAP_ROLE_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
-  TIRES,
+  TIRES, VEHICLE_SCHEDULES,
 } from './constants';
 
 export type { PushAudience, TireStatus } from './constants';
@@ -38,6 +40,7 @@ export type {
   DebtOffset,
   ApprovalItemType,
   VehicleAlertField, VehicleAlertStatus, VehicleAlert,
+  VehicleSchedule,
   Tire, TirePosition,
   BillingDocument, BillingDocumentLine, BillingDocumentType, BillingDocumentEntityType,
   BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
@@ -72,6 +75,7 @@ export {
   managementFeeSchema, capTableSchema, truckCapSchema,
   salaryPeriodSchema, salaryPeriodDefaultSchema,
   supplierSchema, expenseCategorySchema, expenseSchema, vendorPaymentSchema,
+  createVehicleScheduleSchema, updateVehicleScheduleSchema, vehicleScheduleListQuerySchema, postgresSerialIdSchema,
   tripContainerSchema, tripContainerBatchSchema, tripContainerPatchSchema, tripContainerSealSchema, tripContainerSealBatchSchema, tripExpenseSchema, baseTripExpenseSchema, tripExpensePatchSchema, tripExpenseCompletionSchema, accountantSettlementExpensePatchSchema, forwarderExpenseTypeSchema,
   createAdvanceRequestSchema, createAdvanceSettlementSchema, updateAdvanceSettlementSchema,
   upsertTripInstructionsSchema,
@@ -111,6 +115,7 @@ export type {
   ManagementFeeInput, CapTableInput, TruckCapInput,
   SalaryPeriodInput, SalaryPeriodDefaultInput,
   SupplierInput, ExpenseCategoryInput, ExpenseInput, VendorPaymentInput,
+  CreateVehicleScheduleInput, UpdateVehicleScheduleInput, VehicleScheduleListQuery,
   CreateUserInput, UpdateUserInput,
   TripContainerInput, TripExpenseInput,
   CreateAdvanceRequestInput, CreateAdvanceSettlementInput, UpdateAdvanceSettlementInput,

@@ -101,9 +101,11 @@ Form nhập:
 - Khi chọn **Ghi nhận chi phí**, các khoản sửa chữa/bảo dưỡng gắn đầu kéo hoặc rơ-moóc phải hiển thị biển số tương ứng. Bút toán mới lưu `expense.id` trong `txn_id`; dữ liệu cũ chỉ được nối lại khi khớp duy nhất, tránh gán nhầm xe.
 - **Đối trừ công nợ (Debt Netting):** Tương tự như phải thu, nếu NCC có liên kết khách hàng, có thể đối trừ nợ (giảm cả AP và AR).
 
-### 2.5 Nhắc gia hạn (Dashboard)
+### 2.5 Nhắc gia hạn định kỳ (Báo cáo)
 
-Widget liệt kê xe có bảo hiểm/đăng kiểm/phí đường bộ **sắp tới hạn** (trong `reminder_lead_days`) hoặc **đã quá hạn**, dựa trên `valid_to` mới nhất theo (xe × hạng mục).
+Widget / báo cáo này chỉ là projection từ các hạng mục chi phí định kỳ (`is_renewable`) và `valid_to` mới nhất theo (xe × hạng mục). Nó phục vụ đối soát chứng từ và nhắc gia hạn chi phí vận hành, **không** phải nguồn authority cho lịch phương tiện canonical ở module Đội xe.
+
+Mốc hiển thị vẫn dựa trên `reminder_lead_days`: nếu `hôm nay >= valid_to - reminder_lead_days` thì item xuất hiện; nếu đã qua `valid_to` thì hiển thị là quá hạn.
 
 ### 2.6 Công nợ phải trả trên trang chi tiết NCC (A14)
 
@@ -222,8 +224,8 @@ getPnlReport(month, year)
 
 | Trường | Ý nghĩa |
 |--------|---------|
-| `is_renewable` | `false` = một lần (sửa chữa, phụ tùng, vật tư). `true` = định kỳ (bảo hiểm, đăng kiểm, phí đường bộ) → phiếu cần `valid_from/to`, có nhắc gia hạn |
-| `reminder_lead_days` | Số ngày nhắc trước `valid_to` (mặc định 30) |
+| `is_renewable` | `false` = một lần (sửa chữa, phụ tùng, vật tư). `true` = định kỳ (bảo hiểm, đăng kiểm, phí đường bộ) → phiếu cần `valid_from/to`, có nhắc gia hạn và tạo dữ liệu báo cáo |
+| `reminder_lead_days` | Số ngày nhắc trước `valid_to` (mặc định 30); chỉ dùng cho báo cáo/nhắc gia hạn, không tạo lịch phương tiện |
 
 ### 4.4 Quy về P&L theo loại gắn xe
 
@@ -297,8 +299,8 @@ getPnlReport(month, year)
 | TC-CP-061 | Chi phí rơ-mooc vào lãi gộp đầu kéo cặp | Phiếu gắn xe X, vehicle_component=TRAILER | Trừ vào lãi gộp của xe X; không trừ ở chi phí chung; báo cáo phân tách hiện "Rơ-mooc" | High |
 | TC-CP-062 | Chi phí chung vào lãi ròng | Phiếu không gắn xe | Trừ ở dòng chi phí chung | Medium |
 | TC-CP-063 | Lát cắt cơ cấu chi phí | Có nhiều hạng mục | Pie chart hiện lát sửa chữa/phụ tùng/bảo hiểm/đăng kiểm/phí đường bộ | Medium |
-| TC-CP-064 | Nhắc gia hạn sắp tới hạn | Bảo hiểm valid_to trong 30 ngày | Dashboard hiện cảnh báo | High |
-| TC-CP-065 | Nhắc gia hạn quá hạn | đăng kiểm valid_to đã qua | Dashboard hiện "quá hạn" | High |
+| TC-CP-064 | Nhắc gia hạn sắp tới hạn | Bảo hiểm valid_to trong 30 ngày | Báo cáo gia hạn hiện cảnh báo | High |
+| TC-CP-065 | Nhắc gia hạn quá hạn | đăng kiểm valid_to đã qua | Báo cáo gia hạn hiện "quá hạn" | High |
 | TC-CP-066 | Gia hạn xóa nhắc | Nhập phiếu mới valid_to xa hơn | Cảnh báo biến mất (dùng valid_to mới nhất) | Medium |
 
 ### 5.7 Responsive
@@ -315,7 +317,7 @@ getPnlReport(month, year)
 - **Tổng chi phí bao gồm TẤT CẢ chi phí** ở tầng P&L (chuyến + bảo dưỡng). Thẻ từng chuyến vẫn chỉ là dầu + tiền đi đường + lương — `computeTripTotals` không đổi.
 - **Chi phí nhiên liệu & Công nợ Nhà cung cấp nhiên liệu:** Khi kế toán nhập liệu chuyến đi (OWN carrier), hệ thống cho phép lựa chọn Nhà cung cấp nhiên liệu tương ứng (trong số các VENDOR được đánh dấu cờ "Là nhà cung cấp nhiên liệu (xăng, dầu)" - `isFuelSupplier: true`). Khi chuyến đi được Chốt khóa (`LOCKED`), hệ thống tự động ghi nhận một bút toán ghi Có (`credit`) trị giá bằng `totalFuelCost` (Tổng tiền dầu chuyến đi) vào sổ cái của Nhà cung cấp đó (với loại giao dịch `FUEL_EXPENSE`), ghi nhận công nợ phải trả. Bút toán này sẽ được hoàn tác ghi Nợ (`debit` loại `UNLOCK_REVERSAL`) nếu chuyến đi được Mở khóa (`COMPLETED`). Lái xe cũng có thể xem số dầu được cấp và nhà cung cấp tương ứng qua Driver Portal.
 - **Phiếu cấp nhiên liệu (Fuel Voucher):** Sau khi kế toán phê duyệt dữ liệu dầu trên chuyến đi, hệ thống hỗ trợ xuất Phiếu cấp nhiên liệu (HTML/PDF hoặc Excel) bao gồm: Biển số xe, Khối lượng/Số lít dầu, Đơn giá, Thành tiền, Tên + Địa chỉ nhà cung cấp, Mã chuyến, Tuyến đường, Ngày, Tên lái xe, Khối chữ ký (Kế toán / Giám đốc / Người nhận). Thông tin NCC tối giản — chỉ cần tên + địa chỉ, **không cần** MST, số tài khoản ngân hàng hay người liên hệ. Phiếu được in ra để ký tay hoặc trích xuất dưới dạng file ảnh/file điện tử gửi cho đối tác. *(Pete xác nhận 11/6)*
-- **Phí đường bộ** (phí bảo trì đường bộ năm, theo xe) **khác** **Tiền đi đường** (vé cầu đường mỗi chuyến). Không nhầm.
+- **Phí đường bộ** (phí bảo trì đường bộ năm, theo xe) **khác** **Tiền đi đường** (vé cầu đường mỗi chuyến). Không nhầm. Nhắc gia hạn trong mục này chỉ là projection của chi phí định kỳ, không thay thế lịch phương tiện canonical.
 - **Chi phí rơ-mooc tính vào lãi gộp đầu kéo ghép cặp** — mỗi đầu kéo và rơ-mooc ghép thành cặp cố định; hệ thống tự tra cặp khi tổng hợp P&L. Chỉ chi phí để trống (không gắn xe) mới là chi phí chung công ty. Phân loại `vehicle_component` (TRUCK/TRAILER) dùng cho báo cáo phân tách, không ảnh hưởng tính lãi gộp.
 - **Không phân bổ (no amortization):** chi phí định kỳ ghi toàn bộ vào tháng thanh toán; chỉ nhắc gia hạn, không trải đều.
 - Sổ cái VENDOR dùng chung bảng `ledger`, `entity_type='VENDOR'`, append-only.

@@ -1,0 +1,426 @@
+.vehicle-schedule-banner {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.vehicle-schedule-banner__head,
+.vehicle-schedule-banner__heading,
+.vehicle-schedule-alert__state,
+.vehicle-schedule-alert__identity,
+.vehicle-schedule-banner__action {
+  display: flex;
+  align-items: center;
+}
+
+.vehicle-schedule-banner__head {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.vehicle-schedule-banner__heading {
+  min-width: 0;
+  gap: 8px;
+}
+
+.vehicle-schedule-banner__heading h2 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.vehicle-schedule-banner__count {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.vehicle-schedule-banner__action {
+  min-height: 44px;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font: 600 var(--fs-sm)/1.3 var(--font-body);
+  cursor: pointer;
+}
+
+.vehicle-schedule-banner__action:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.vehicle-schedule-banner__list {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+}
+
+.vehicle-schedule-alert {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(110px, auto) minmax(130px, 0.8fr) minmax(180px, 1.5fr);
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 14px 11px 18px;
+  background: var(--surface);
+}
+
+.vehicle-schedule-alert__strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--warning);
+}
+
+.vehicle-schedule-alert--overdue .vehicle-schedule-alert__strip {
+  background: var(--danger);
+}
+
+.vehicle-schedule-alert__state {
+  gap: 6px;
+  color: var(--warning-text);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-alert--overdue .vehicle-schedule-alert__state {
+  color: var(--danger-text);
+}
+
+.vehicle-schedule-alert__identity {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-alert__identity b,
+.vehicle-schedule-alert__meta span {
+  font-variant-numeric: tabular-nums;
+}
+
+.vehicle-schedule-alert__identity b {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.vehicle-schedule-alert__meta {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-alert__meta strong {
+  overflow-wrap: anywhere;
+}
+
+.vehicle-schedule-alert__meta span,
+.vehicle-schedule-banner__remaining {
+  color: var(--ink-3);
+}
+
+.vehicle-schedule-form {
+  display: grid;
+  gap: 14px;
+}
+
+.vehicle-schedule-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vehicle-schedule-form__field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.vehicle-schedule-form__field--wide,
+.vehicle-schedule-form__timezone,
+.vehicle-schedule-form__error {
+  grid-column: 1 / -1;
+}
+
+.vehicle-schedule-form__field small {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.vehicle-schedule-form__field .input {
+  min-width: 0;
+  width: 100%;
+  font-size: 16px;
+}
+
+.vehicle-schedule-form__field textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.vehicle-schedule-form__timezone {
+  margin: -6px 0 0;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-form__error {
+  padding: 9px 11px;
+  border-left: 4px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+}
+
+.vehicle-schedule-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.vehicle-schedule-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--warning-text);
+  font: 600 var(--fs-xs)/1.3 var(--font-body);
+  white-space: normal;
+  cursor: pointer;
+}
+
+.vehicle-schedule-trigger--overdue {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.vehicle-schedule-trigger strong {
+  font-size: inherit;
+}
+
+.vehicle-schedule-trigger:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.vehicle-schedule-manager {
+  width: min(560px, 100vw);
+}
+
+.vehicle-schedule-manager__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.vehicle-schedule-manager__tabs {
+  display: inline-flex;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.vehicle-schedule-manager__tabs button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: calc(var(--r-sm) - 2px);
+  background: transparent;
+  color: var(--ink-3);
+  font: 600 var(--fs-xs)/1.3 var(--font-body);
+  cursor: pointer;
+}
+
+.vehicle-schedule-manager__tabs button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.vehicle-schedule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.vehicle-schedule-row {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.vehicle-schedule-row--overdue {
+  border-left-color: var(--danger);
+}
+
+.vehicle-schedule-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vehicle-schedule-row__head strong,
+.vehicle-schedule-row p {
+  overflow-wrap: anywhere;
+}
+
+.vehicle-schedule-row__head span {
+  flex: 0 0 auto;
+  color: var(--warning-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.vehicle-schedule-row--overdue .vehicle-schedule-row__head span {
+  color: var(--danger-text);
+}
+
+.vehicle-schedule-row__meta,
+.vehicle-schedule-row p,
+.vehicle-schedule-manager__empty,
+.vehicle-schedule-manager__loading {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-row__meta {
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vehicle-schedule-row p {
+  margin: 8px 0 0;
+}
+
+.vehicle-schedule-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vehicle-schedule-row__actions .btn {
+  min-height: 40px;
+}
+
+.vehicle-schedule-row__cancel {
+  color: var(--danger);
+}
+
+.vehicle-schedule-manager__empty,
+.vehicle-schedule-manager__loading {
+  padding: 32px 16px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+
+.vehicle-schedule-banner__remaining {
+  padding: 9px 14px;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .vehicle-schedule-banner__head {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  .vehicle-schedule-banner__action {
+    justify-content: center;
+    width: 100%;
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-sm);
+  }
+
+  .vehicle-schedule-alert {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px 12px 12px 17px;
+  }
+
+  .vehicle-schedule-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-schedule-form__footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-schedule-form__footer .btn {
+    min-height: 44px;
+  }
+
+  .vehicle-schedule-manager__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vehicle-schedule-manager__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vehicle-schedule-manager__add {
+    min-height: 44px;
+  }
+
+  .vehicle-schedule-row__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vehicle-schedule-row__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-schedule-row__actions .btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vehicle-schedule-banner__action {
+    transition: background 150ms ease, color 150ms ease;
+  }
+
+  .vehicle-schedule-banner__action:hover {
+    background: var(--surface-2);
+  }
+}

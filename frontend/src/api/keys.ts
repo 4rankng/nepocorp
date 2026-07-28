@@ -153,6 +153,14 @@ export const qk = {
     all: ['live-fleet'],
   },
 
+  vehicleSchedules: {
+    all: ['vehicle-schedules'] as const,
+    active: ['vehicle-schedules', 'active'] as const,
+    allActive: ['vehicle-schedules', 'all-active'] as const,
+    history: (vehicleComponent: string | undefined, vehicleId: number | undefined) =>
+      ['vehicle-schedules', 'history', vehicleComponent, vehicleId] as const,
+  },
+
   /* ── Driver portal ──────────────────────────────────────────────────── */
 
   driver: {

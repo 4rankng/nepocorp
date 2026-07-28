@@ -2,7 +2,7 @@ import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
-  TireStatus, TruckCapRole,
+  TireStatus, TruckCapRole, VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -117,6 +117,29 @@ export interface Trailer {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+export interface VehicleSchedule {
+  id: number;
+  vehicleComponent: VehicleComponent;
+  vehicleId: number;
+  vehiclePlate: string;
+  kind: VehicleScheduleKind;
+  title: string;
+  documentNumber: string | null;
+  notes: string | null;
+  dueAt: string;
+  remindAt: string;
+  status: VehicleScheduleStatus;
+  isOverdue: boolean;
+  completedAt: string | null;
+  completedBy: number | null;
+  cancelledAt: string | null;
+  cancelledBy: number | null;
+  createdAt: string;
+  createdBy: number;
+  updatedAt: string;
+  updatedBy: number;
 }
 
 // ─── N1 — Tires ───────────────────────────────────────────────────────────

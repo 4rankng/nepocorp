@@ -32,6 +32,8 @@ export const customerStatusEnum = pgEnum('customer_status', ['ACTIVE', 'LOCKED']
 export const tripPhotoTypeEnum = pgEnum('trip_photo_type', ['CONTAINER', 'SEAL', 'OTHER']);
 export const penaltyStatusEnum = pgEnum('penalty_status', ['ACTIVE', 'CANCELED']);
 export const vehicleComponentEnum = pgEnum('vehicle_component', ['TRUCK', 'TRAILER']);
+export const vehicleScheduleKindEnum = pgEnum('vehicle_schedule_kind', ['MAINTENANCE', 'INSPECTION', 'INSURANCE', 'ROAD_FEE', 'DOCUMENT', 'OTHER']);
+export const vehicleScheduleStatusEnum = pgEnum('vehicle_schedule_status', ['ACTIVE', 'COMPLETED', 'CANCELLED']);
 export const trailerStatusEnum = pgEnum('trailer_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
 // NOTE: forwarder_expense_type pgEnum removed — replaced by forwarder_expense_types config table.
 // trip_expenses.expense_type is now varchar(50) referencing config codes.
@@ -709,6 +711,33 @@ export const expensePhotos = pgTable('expense_photos', {
   // Receipt-photo serving (/api/photos) resolves ownership by exact storage_key
   // lookup; this index makes that O(log n) instead of a seq scan. See ADR 0042.
   index('expense_photos_storage_key_idx').on(table.storageKey),
+]);
+
+export const vehicleSchedules = pgTable('vehicle_schedules', {
+  id: serial('id').primaryKey(),
+  vehicleComponent: vehicleComponentEnum('vehicle_component').notNull(),
+  vehicleId: integer('vehicle_id').notNull(),
+  kind: vehicleScheduleKindEnum('kind').notNull(),
+  sourceKey: varchar('source_key', { length: 255 }),
+  title: varchar('title', { length: 255 }).notNull(),
+  documentNumber: varchar('document_number', { length: 120 }),
+  notes: text('notes'),
+  dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+  remindAt: timestamp('remind_at', { withTimezone: true }).notNull(),
+  status: vehicleScheduleStatusEnum('status').notNull().default('ACTIVE'),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  completedBy: integer('completed_by').references(() => users.id),
+  cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  cancelledBy: integer('cancelled_by').references(() => users.id),
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+  updatedBy: integer('updated_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('vehicle_schedules_vehicle_idx').on(table.vehicleComponent, table.vehicleId),
+  index('vehicle_schedules_status_remind_due_idx').on(table.status, table.remindAt, table.dueAt, table.id),
+  uniqueIndex('vehicle_schedules_source_key_idx').on(table.sourceKey),
+  check('vehicle_schedules_remind_before_due_chk', sql`${table.remindAt} <= ${table.dueAt}`),
 ]);
 
 // ─── Forwarder catalogs ──────────────────────────────────────────────────────────

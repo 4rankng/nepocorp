@@ -37,6 +37,7 @@ import ocrRoutes from './routes/ocr';
 import mapsRoutes from './routes/maps';
 import notificationRoutes from './routes/notifications';
 import salaryRoutes from './routes/salary';
+import vehicleSchedulesRoutes from './routes/vehicle-schedules';
 
 await initAuditService();
 await initNotificationService();
@@ -146,6 +147,7 @@ app.use('/api', authMiddleware, catalogBootstrapRouter);
 app.use('/api', authMiddleware, casbinAuthz('config'), configRoutes);
 app.use('/api', authMiddleware, casbinAuthz('financial'), financialRoutes);
 app.use('/api/expenses', authMiddleware, casbinAuthz('financial'), expenseRoutes);
+app.use('/api/vehicle-schedules', authMiddleware, casbinAuthz('config'), vehicleSchedulesRoutes);
 app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRouter);
 // N1 — tire lifecycle (install/remove). CRUD lives under the config catch-all
 // at /api/fleet/tires; these dedicated endpoints need the same auth + config

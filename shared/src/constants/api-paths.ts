@@ -107,6 +107,15 @@ export const TIRES = {
   TRANSFER: (id: number) => `/fleet/tires/${id}/transfer`,
 } as const;
 
+export const VEHICLE_SCHEDULES = {
+  LIST: '/vehicle-schedules',
+  DETAIL: (id: number) => `/vehicle-schedules/${id}`,
+  CREATE: '/vehicle-schedules',
+  UPDATE: (id: number) => `/vehicle-schedules/${id}`,
+  COMPLETE: (id: number) => `/vehicle-schedules/${id}/complete`,
+  CANCEL: (id: number) => `/vehicle-schedules/${id}/cancel`,
+} as const;
+
 // ─── Financial ──────────────────────────────────────────────────────────────────
 export const FINANCIAL = {
   LEDGER: '/ledger',

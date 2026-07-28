@@ -110,6 +110,26 @@ export enum TrailerStatus {
   INACTIVE = 'INACTIVE',
 }
 
+export enum VehicleComponent {
+  TRUCK = 'TRUCK',
+  TRAILER = 'TRAILER',
+}
+
+export enum VehicleScheduleKind {
+  MAINTENANCE = 'MAINTENANCE',
+  INSPECTION = 'INSPECTION',
+  INSURANCE = 'INSURANCE',
+  ROAD_FEE = 'ROAD_FEE',
+  DOCUMENT = 'DOCUMENT',
+  OTHER = 'OTHER',
+}
+
+export enum VehicleScheduleStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
 export enum DriverStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -247,6 +267,26 @@ export const TRAILER_STATUS_LABELS: Record<TrailerStatus, string> = {
 export const TRAILER_TYPE_LABELS: Record<TrailerType, string> = {
   [TrailerType.FT20]: '20FT',
   [TrailerType.FT40]: '40FT',
+};
+
+export const VEHICLE_COMPONENT_LABELS: Record<VehicleComponent, string> = {
+  [VehicleComponent.TRUCK]: 'Xe đầu kéo',
+  [VehicleComponent.TRAILER]: 'Rơ moóc',
+};
+
+export const VEHICLE_SCHEDULE_KIND_LABELS: Record<VehicleScheduleKind, string> = {
+  [VehicleScheduleKind.MAINTENANCE]: 'Bảo dưỡng',
+  [VehicleScheduleKind.INSPECTION]: 'Đăng kiểm',
+  [VehicleScheduleKind.INSURANCE]: 'Bảo hiểm',
+  [VehicleScheduleKind.ROAD_FEE]: 'Phí đường bộ',
+  [VehicleScheduleKind.DOCUMENT]: 'Hồ sơ',
+  [VehicleScheduleKind.OTHER]: 'Khác',
+};
+
+export const VEHICLE_SCHEDULE_STATUS_LABELS: Record<VehicleScheduleStatus, string> = {
+  [VehicleScheduleStatus.ACTIVE]: 'Đang nhắc',
+  [VehicleScheduleStatus.COMPLETED]: 'Đã hoàn thành',
+  [VehicleScheduleStatus.CANCELLED]: 'Đã hủy',
 };
 
 export const TIRE_STATUSES = ['IN_STOCK', 'IN_USE', 'DISPOSED'] as const;

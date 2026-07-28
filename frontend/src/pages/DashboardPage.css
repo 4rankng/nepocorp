@@ -434,6 +434,31 @@
 .dash-wf .wf-bento > .wf-bento-third { grid-column: span 4; }
 .dash-wf .wf-bento > .wf-bento-full  { grid-column: span 12; }
 
+.dash-wf .dashboard-schedule-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 640px) {
+  .dash-wf .dashboard-schedule-load-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dash-wf .dashboard-schedule-load-error .d-btn {
+    min-height: 44px;
+  }
+}
+
 .dash-wf .wf-chart { display: flex; flex-direction: column; }
 .dash-wf .wf-chart .body { padding: 8px 8px 6px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .dash-wf .wf-legend {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   FuelMode, LoadingType, Role,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
+  VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
   TIRE_STATUSES,
 } from '../constants';
 
@@ -809,6 +810,23 @@ export const expenseCategorySchema = z.object({
 // blank optional dates without forcing the client to strip them.
 const optionalDate = z.string().optional().nullable().transform((v) => (v === '' ? null : v));
 
+const optionalText = z.string().max(2000).optional().nullable().transform((v) => {
+  if (v == null) return null;
+  const trimmed = v.trim();
+  return trimmed === '' ? null : trimmed;
+});
+const optionalDocumentNumber = z.string().max(120).optional().nullable().transform((v) => {
+  if (v == null) return null;
+  const trimmed = v.trim();
+  return trimmed === '' ? null : trimmed;
+});
+
+const offsetDateTime = z.string().datetime({ offset: true, message: 'Thời gian phải có múi giờ rõ ràng' });
+
+const booleanish = z.union([z.boolean(), z.enum(['true', 'false'])]).transform((value) => (
+  value === true || value === 'true'
+));
+
 export const expenseSchema = z.object({
   expenseDate: z.string().min(1),
   supplierId: z.coerce.number().int().positive(),
@@ -821,6 +839,57 @@ export const expenseSchema = z.object({
   validTo: optionalDate,
   receiptId: z.string().optional(),
   note: z.string().optional(),
+});
+
+export const postgresSerialIdSchema = z.coerce.number()
+  .int()
+  .positive()
+  .max(2_147_483_647, 'ID vượt quá giới hạn cho phép');
+
+const vehicleScheduleMutationSchema = z.object({
+  vehicleComponent: z.nativeEnum(VehicleComponent),
+  vehicleId: postgresSerialIdSchema,
+  kind: z.nativeEnum(VehicleScheduleKind),
+  title: z.string().trim().min(1, 'Tiêu đề không được để trống').max(255),
+  documentNumber: optionalDocumentNumber,
+  notes: optionalText,
+  dueAt: offsetDateTime,
+  remindAt: offsetDateTime,
+});
+
+export const createVehicleScheduleSchema = vehicleScheduleMutationSchema.superRefine((data, ctx) => {
+  if (new Date(data.remindAt).getTime() > new Date(data.dueAt).getTime()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['remindAt'],
+      message: 'Thời gian nhắc không được sau hạn xử lý',
+    });
+  }
+});
+
+export const updateVehicleScheduleSchema = vehicleScheduleMutationSchema.partial().superRefine((data, ctx) => {
+  if (data.remindAt && data.dueAt && new Date(data.remindAt).getTime() > new Date(data.dueAt).getTime()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['remindAt'],
+      message: 'Thời gian nhắc không được sau hạn xử lý',
+    });
+  }
+});
+
+export const vehicleScheduleListQuerySchema = z.object({
+  vehicleComponent: z.nativeEnum(VehicleComponent).optional(),
+  vehicleId: postgresSerialIdSchema.optional(),
+  history: booleanish.optional().default(false),
+  status: z.nativeEnum(VehicleScheduleStatus).optional(),
+}).superRefine((data, ctx) => {
+  if (data.status && !data.history) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['status'],
+      message: 'Chỉ được lọc trạng thái khi đang xem lịch sử',
+    });
+  }
 });
 
 export const vendorPaymentSchema = z.object({
@@ -1055,6 +1124,9 @@ export type SalaryPeriodDefaultInput = z.infer<typeof salaryPeriodDefaultSchema>
 export type SupplierInput = z.infer<typeof supplierSchema>;
 export type ExpenseCategoryInput = z.infer<typeof expenseCategorySchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
+export type CreateVehicleScheduleInput = z.infer<typeof createVehicleScheduleSchema>;
+export type UpdateVehicleScheduleInput = z.infer<typeof updateVehicleScheduleSchema>;
+export type VehicleScheduleListQuery = z.infer<typeof vehicleScheduleListQuerySchema>;
 export type VendorPaymentInput = z.infer<typeof vendorPaymentSchema>;
 export type TripContainerInput = z.infer<typeof tripContainerSchema>;
 export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;

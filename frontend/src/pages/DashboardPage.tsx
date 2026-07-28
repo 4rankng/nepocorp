@@ -4,7 +4,7 @@ import { Activity, AlertTriangle, ChevronRight, ChevronUp, Download, Truck } fro
 import { formatNumber } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
-import { ROLE_LABELS } from '@tingting/shared';
+import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { Banner } from '../components/shared/Banner';
 import { EmptyState as DsEmptyState } from '../design-system/EmptyState';
@@ -21,6 +21,8 @@ import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboard
 import { onboardingEvents } from '../lib/onboardingEvents';
 import './DashboardPage.css';
 import { CostBreakdown, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
+import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
+import { useActiveVehicleSchedules } from '../hooks/useVehicleSchedules';
 
 type DashboardStatTone = 'revenue' | 'cost' | 'gross' | 'net' | 'debt';
 
@@ -90,6 +92,12 @@ function DashboardStat({ tone, icon, label, delta, value, valueRef, description 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const canSeeVehicleSchedules = isFinancialRole(user?.role);
+  const {
+    data: activeVehicleSchedules = [],
+    isError: vehicleSchedulesFailed,
+    refetch: retryVehicleSchedules,
+  } = useActiveVehicleSchedules(canSeeVehicleSchedules);
   const { month: currentMonth, year: currentYear } = useMonth();
   const [chartView, setChartView] = useState<'day' | 'month'>('day');
   const [showAllAttention, setShowAllAttention] = useState(false);
@@ -457,6 +465,25 @@ export default function DashboardPage() {
            visible before historical analysis. On mobile every tile drops to
            full width via the .wf-bento override in DashboardPage.css. */}
       <div className="wf-bento">
+
+        {canSeeVehicleSchedules && (
+          vehicleSchedulesFailed ? (
+            <div className="wf-bento-full dashboard-schedule-load-error" role="status">
+              <span>Không tải được lịch phương tiện.</span>
+              <button type="button" className="d-btn d-btn-sm" onClick={() => void retryVehicleSchedules()}>
+                Thử lại
+              </button>
+            </div>
+          ) : (
+            <div className="wf-bento-full">
+              <VehicleScheduleBanner
+                items={activeVehicleSchedules}
+                onOpenFleet={() => navigate('/fleet')}
+                testId="vehicle-schedule-banner-dashboard"
+              />
+            </div>
+          )
+        )}
 
         {/* Action-first priority board — the most important operational
             decisions stay in the first scan path on every breakpoint. */}

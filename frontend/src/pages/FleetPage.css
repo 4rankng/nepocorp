@@ -6,6 +6,21 @@
   gap: 18px;
 }
 
+.fleet-schedule-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+}
+
 .fleet-page .kpi {
   min-height: 112px;
   padding: 16px 18px;
@@ -882,6 +897,15 @@
 @media (max-width: 640px) {
   .fleet-page {
     gap: 14px;
+  }
+
+  .fleet-schedule-load-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fleet-schedule-load-error .btn {
+    min-height: 44px;
   }
 
   .fleet-page .kpi-grid {

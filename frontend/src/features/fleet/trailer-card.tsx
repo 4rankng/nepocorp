@@ -7,8 +7,9 @@ import { StatusStrip } from "../../components/shared/StatusStrip";
 import { useCRUD } from "../../hooks/useCRUD";
 import { useTires } from "../../hooks/useTireQueries";
 import { TrailerType, TRAILER_TYPE_LABELS } from "@tingting/shared";
-import type { Tire, Truck as TruckType } from "@tingting/shared";
+import type { Tire, Truck as TruckType, VehicleSchedule } from "@tingting/shared";
 import { routes } from "../../lib/routes";
+import { VehicleScheduleTrigger } from "./schedules/VehicleScheduleTrigger";
 
 // Extracted form modals + shared fleet constants
 import { TrailerFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
@@ -136,7 +137,19 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
 
 // ─── TrailerCard ────────────────────────────────────────────────────────────
 
-export function TrailerCard({ trailers, trucks, crud }: { trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>; trucks: TruckType[]; crud: ReturnType<typeof useCRUD> }) {
+export function TrailerCard({
+  trailers,
+  trucks,
+  crud,
+  schedulesByVehicle,
+  onOpenSchedules,
+}: {
+  trailers: Array<{ id: number; licensePlate: string; type: string; status: string }>;
+  trucks: TruckType[];
+  crud: ReturnType<typeof useCRUD>;
+  schedulesByVehicle: Map<string, VehicleSchedule[]>;
+  onOpenSchedules: (vehicleId: number, vehiclePlate: string) => void;
+}) {
   const [viewingId, setViewingId] = useState<number | null>(null);
   const { data: tires = [] } = useTires();
   // Build reverse lookup: trailerId → truck plate, so we can show which đầu
@@ -192,12 +205,13 @@ export function TrailerCard({ trailers, trucks, crud }: { trailers: Array<{ id: 
                 <th>Loại</th>
                 <th>Đầu kéo đang ghép</th>
                 <th>Lốp</th>
+                <th>Lịch nhắc việc</th>
               </tr>
             </thead>
             <tbody>
               {trailers.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={styles.emptyRow}>
+                  <td colSpan={6} style={styles.emptyRow}>
                     <EmptyIllustration name="empty-trucks" width={140} height={116} style={{ margin: "0 auto 8px", display: "block" }} />
                     <div>Chưa có rơ-moóc nào. Bấm "Thêm rơ-moóc" để tạo mới.</div>
                   </td>
@@ -240,6 +254,14 @@ export function TrailerCard({ trailers, trucks, crud }: { trailers: Array<{ id: 
                     </td>
                     <td>
                       <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} />
+                    </td>
+                    <td>
+                      <VehicleScheduleTrigger
+                        vehicleComponent="TRAILER"
+                        vehicleId={t.id}
+                        items={schedulesByVehicle.get(`TRAILER:${t.id}`) ?? []}
+                        onOpen={() => onOpenSchedules(t.id, t.licensePlate)}
+                      />
                     </td>
                   </tr>
                 );
@@ -298,6 +320,15 @@ export function TrailerCard({ trailers, trucks, crud }: { trailers: Array<{ id: 
                 <div className="m-card__row">
                   <span className="m-card__row-label">Lốp</span>
                   <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} />
+                </div>
+                <div className="m-card__row">
+                  <span className="m-card__row-label">Lịch nhắc việc</span>
+                  <VehicleScheduleTrigger
+                    vehicleComponent="TRAILER"
+                    vehicleId={t.id}
+                    items={schedulesByVehicle.get(`TRAILER:${t.id}`) ?? []}
+                    onOpen={() => onOpenSchedules(t.id, t.licensePlate)}
+                  />
                 </div>
                 <div className="fleet-card-actions">
                   <button
@@ -367,6 +398,20 @@ export function TrailerCard({ trailers, trucks, crud }: { trailers: Array<{ id: 
             { label: "Loại", value: <TypeChip type={t.type} /> },
             { label: "Đầu kéo đang ghép", value: coupledTruck ? <Plate plate={coupledTruck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa ghép —</span> },
             { label: "Lốp", value: <TireQuickLink to={routes.fleetTrailerTires(t.id)} count={tireCountByTrailer.get(t.id) ?? 0} /> },
+            {
+              label: "Lịch nhắc việc",
+              value: (
+                <VehicleScheduleTrigger
+                  vehicleComponent="TRAILER"
+                  vehicleId={t.id}
+                  items={schedulesByVehicle.get(`TRAILER:${t.id}`) ?? []}
+                  onOpen={() => {
+                    setViewingId(null);
+                    onOpenSchedules(t.id, t.licensePlate);
+                  }}
+                />
+              ),
+            },
             { label: "Trạng thái", value: <StatusDot status={t.status} /> },
           ];
         })()}

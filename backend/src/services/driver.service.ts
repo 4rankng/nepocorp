@@ -9,6 +9,7 @@ import { LedgerService } from './ledger.service';
 import { listTripContainers, listTripPhotoKeys } from './forwarder.service';
 import { getTripInstructions } from './trip-instructions.service';
 import { storageService } from './storage.service';
+import { getTruckVehicleAlertInputFromSchedules } from './vehicle-schedule.service';
 
 /**
  * Ledger txn types that count as cash the company has actually paid out / advanced
@@ -297,11 +298,27 @@ export async function getDriverVehicleAlerts(driverId: number): Promise<VehicleA
 
   if (!truck) return null;
 
-  return computeVehicleAlerts({
+  const legacyFallback = {
     nextInspectionDate: truck.nextInspectionDate,
     insuranceExpiryDate: truck.insuranceExpiryDate,
     lastOilServiceDate: truck.lastOilServiceDate,
-  });
+  };
+
+  try {
+    const projected = await getTruckVehicleAlertInputFromSchedules(db, truckId, new Date());
+    return computeVehicleAlerts({
+      ...legacyFallback,
+      ...projected,
+    });
+  } catch (error) {
+    const code = typeof error === 'object' && error && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : '';
+    if (code === '42P01' || code === '42703') {
+      return computeVehicleAlerts(legacyFallback);
+    }
+    throw error;
+  }
 }
 
 /**
