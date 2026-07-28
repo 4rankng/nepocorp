@@ -71,9 +71,11 @@ describe('VehicleScheduleManager', () => {
     expect(screen.getByText('Bảo dưỡng định kỳ')).not.toBeNull();
     expect(screen.queryByText('Đăng kiểm quý trước')).toBeNull();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Đã xử lý' }));
+    expect(screen.getByRole('tab', { name: /Đang theo dõi\s*1/ }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: /Đã xử lý\s*1/ }));
     expect(screen.getByText('Đăng kiểm quý trước')).not.toBeNull();
     expect(screen.queryByText('Bảo dưỡng định kỳ')).toBeNull();
+    expect(screen.getByRole('tab', { name: /Đã xử lý\s*1/ }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('opens the creation form without changing vehicle identity', async () => {
@@ -93,7 +95,7 @@ describe('VehicleScheduleManager', () => {
     );
 
     expect(await screen.findByText('Rơ-moóc 15R-067.95')).not.toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Thêm lịch' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm lịch nhắc việc' }));
     expect(screen.getByTestId('vehicle-schedule-form')).not.toBeNull();
   });
 });
