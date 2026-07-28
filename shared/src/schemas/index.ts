@@ -332,27 +332,62 @@ export const billingDocumentLineSchema = z.object({
   sortOrder: z.coerce.number().int(),
 });
 
+function validateBillingDocumentScope(
+  value: {
+    type: 'DEBIT_NOTE' | 'PAYMENT_STATEMENT';
+    entityType: 'CUSTOMER' | 'CARRIER' | 'VENDOR';
+    rangeFrom: string;
+    rangeTo: string;
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (value.type === 'DEBIT_NOTE' && value.entityType !== 'CUSTOMER') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['entityType'],
+      message: 'Giấy báo nợ chỉ áp dụng cho khách hàng',
+    });
+  }
+  if (value.rangeFrom > value.rangeTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['rangeTo'],
+      message: 'Đến ngày phải bằng hoặc sau từ ngày',
+    });
+  }
+}
+
+const billingDocumentDateSchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có định dạng YYYY-MM-DD')
+  .refine((value) => {
+    const [year, month, day] = value.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year
+      && parsed.getUTCMonth() === month - 1
+      && parsed.getUTCDate() === day;
+  }, 'Ngày không hợp lệ');
+
 export const generateBillingDocumentSchema = z.object({
   type: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']),
-  entityType: z.enum(['CUSTOMER', 'VENDOR']),
+  entityType: z.enum(['CUSTOMER', 'CARRIER', 'VENDOR']),
   entityId: z.coerce.number().int().positive(),
-  rangeFrom: z.string().min(1),
-  rangeTo: z.string().min(1),
-});
+  rangeFrom: billingDocumentDateSchema,
+  rangeTo: billingDocumentDateSchema,
+}).superRefine(validateBillingDocumentScope);
 
 export const saveBillingDocumentSchema = z.object({
   type: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']),
-  entityType: z.enum(['CUSTOMER', 'VENDOR']),
+  entityType: z.enum(['CUSTOMER', 'CARRIER', 'VENDOR']),
   entityId: z.coerce.number().int().positive(),
   entityName: z.string().optional(),
-  rangeFrom: z.string().min(1),
-  rangeTo: z.string().min(1),
+  rangeFrom: billingDocumentDateSchema,
+  rangeTo: billingDocumentDateSchema,
   note: z.string().nullable().optional(),
   lines: z.array(billingDocumentLineSchema).min(1),
   // Resolved at save time so the chosen template is snapshotted onto the doc
   // (re-exports stay stable). Null/undefined = use resolution (customer/default).
   debitNoteTemplateId: z.coerce.number().int().positive().nullable().optional(),
-});
+}).superRefine(validateBillingDocumentScope);
 
 // ─── Billing document Excel templates ────────────────────────────────────────
 // Excel-style templates built around user-defined columns. Each column binds to

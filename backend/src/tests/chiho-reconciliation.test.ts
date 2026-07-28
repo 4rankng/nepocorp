@@ -5,7 +5,7 @@ import { TripStatus, Role, TxnType, FuelMode, LoadingType } from '@tingting/shar
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { transitionTripStatus } from '../services/trip-status-machine.service';
-import { generateDraft } from '../services/billingDocument.service';
+import { generateDraft, saveDocument } from '../services/billingDocument.service';
 import { getTopOverdueCustomer, getCustomerAgingList } from '../services/aging.service';
 import {
   exportStatementXlsx,
@@ -602,6 +602,113 @@ describe('US-005b billable status: COMPLETED trips appear on the debt notice', (
 });
 
 describe('US-005b carrier payment statement bills COMPLETED external-carrier trips', () => {
+  test('historical soft-deleted carrier trips still establish the CARRIER role', async () => {
+    const carrierCtx = await mkBillableSeedCtx({ feesHaveSupplier: false });
+    const hiringCtx = await mkBillableSeedCtx({ feesHaveSupplier: false });
+    const { trip } = await createBillableTrip(hiringCtx, {
+      revenue: 6_000_000,
+      departureDate: '2026-06-11',
+      lock: false,
+      fees: [],
+      carrierType: 'EXTERNAL',
+      externalCarrierId: carrierCtx.customerId,
+      externalFreightCost: 3_500_000,
+    });
+    await db.update(s.trips)
+      .set({ deletedAt: new Date() })
+      .where(eq(s.trips.id, trip.id));
+
+    const draft = await generateDraft({
+      type: 'PAYMENT_STATEMENT',
+      entityType: 'CARRIER',
+      entityId: carrierCtx.customerId,
+      rangeFrom: '2026-06-01',
+      rangeTo: '2026-06-30',
+    });
+
+    assert.equal(draft.lines.length, 0, 'deleted trips stay out of the new draft');
+    assert.equal(draft.entityType, 'CARRIER', 'historical trip still proves the accounting role');
+  });
+
+  test('CARRIER scope rejects a customer that is not configured as a carrier', async () => {
+    const ctx = await mkBillableSeedCtx({ feesHaveSupplier: false });
+
+    await assert.rejects(
+      generateDraft({
+        type: 'PAYMENT_STATEMENT',
+        entityType: 'CARRIER',
+        entityId: ctx.customerId,
+        rangeFrom: '2026-06-01',
+        rangeTo: '2026-06-30',
+      }),
+      (error: unknown) => error instanceof ApiError
+        && error.statusCode === 400
+        && error.message === 'Đối tác chưa được cấu hình là nhà vận chuyển',
+    );
+
+    await assert.rejects(
+      saveDocument({
+        type: 'PAYMENT_STATEMENT',
+        entityType: 'CARRIER',
+        entityId: ctx.customerId,
+        entityName: 'Khách hàng không phải nhà vận chuyển',
+        rangeFrom: '2026-06-01',
+        rangeTo: '2026-06-30',
+        lines: [{
+          sourceType: 'ADHOC',
+          sourceId: null,
+          lineType: 'ADHOC',
+          typeLabel: 'Khác',
+          unit: 'lần',
+          description: 'Dòng thủ công',
+          baseAmount: 0,
+          amountOverride: 100_000,
+          excluded: false,
+          sortOrder: 0,
+        }],
+      }, null),
+      (error: unknown) => error instanceof ApiError
+        && error.statusCode === 400
+        && error.message === 'Đối tác chưa được cấu hình là nhà vận chuyển',
+    );
+  });
+
+  test('CUSTOMER payment statement keeps receivable trips when the customer is also a carrier', async () => {
+    const customerCtx = await mkBillableSeedCtx({ feesHaveSupplier: false });
+    await db.update(s.customers)
+      .set({ isCarrier: true })
+      .where(eq(s.customers.id, customerCtx.customerId));
+    await createBillableTrip(customerCtx, {
+      revenue: 6_000_000,
+      departureDate: '2026-06-12',
+      lock: false,
+      fees: [],
+    });
+
+    const hiringCtx = await mkBillableSeedCtx({ feesHaveSupplier: false });
+    await createBillableTrip(hiringCtx, {
+      revenue: 8_000_000,
+      departureDate: '2026-06-13',
+      lock: false,
+      fees: [],
+      carrierType: 'EXTERNAL',
+      externalCarrierId: customerCtx.customerId,
+      externalFreightCost: 3_500_000,
+    });
+
+    const draft = await generateDraft({
+      type: 'PAYMENT_STATEMENT',
+      entityType: 'CUSTOMER',
+      entityId: customerCtx.customerId,
+      rangeFrom: '2026-06-01',
+      rangeTo: '2026-06-30',
+    });
+
+    assert.equal(draft.lines.length, 1, 'customer statement contains only the trip sold to that customer');
+    assert.equal(draft.totalInclVat, 6_000_000);
+    assert.match(draft.lines[0].description, /^Cước vận chuyển/);
+  });
+
   test('PAYMENT_STATEMENT for a carrier surfaces freight for their COMPLETED trip', async () => {
     const ctx = await mkBillableSeedCtx({ feesHaveSupplier: false });
     const [carrier] = await db.insert(s.customers)
@@ -612,7 +719,7 @@ describe('US-005b carrier payment statement bills COMPLETED external-carrier tri
       carrierType: 'EXTERNAL', externalCarrierId: carrier.id, externalFreightCost: 3_500_000,
     });
     const draft = await generateDraft({
-      type: 'PAYMENT_STATEMENT', entityType: 'CUSTOMER', entityId: carrier.id,
+      type: 'PAYMENT_STATEMENT', entityType: 'CARRIER', entityId: carrier.id,
       rangeFrom: '2026-06-01', rangeTo: '2026-06-30',
     });
     assert.equal(draft.lines.length, 1, 'carrier payment surfaces the external-freight line');

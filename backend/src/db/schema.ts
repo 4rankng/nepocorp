@@ -483,7 +483,7 @@ export const debitNoteTemplates = pgTable('debit_note_templates', {
 export const billingDocuments = pgTable('billing_documents', {
   id: serial('id').primaryKey(),
   type: varchar('type', { length: 20 }).notNull(),               // DEBIT_NOTE | PAYMENT_STATEMENT
-  entityType: varchar('entity_type', { length: 20 }).notNull(),  // CUSTOMER | VENDOR
+  entityType: varchar('entity_type', { length: 20 }).notNull(),  // CUSTOMER | CARRIER | VENDOR
   entityId: integer('entity_id').notNull(),
   entityName: varchar('entity_name', { length: 255 }),
   rangeFrom: date('range_from').notNull(),

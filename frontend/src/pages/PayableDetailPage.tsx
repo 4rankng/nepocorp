@@ -3,7 +3,12 @@ import { useParams, useNavigate, useLocation, useSearchParams } from 'react-rout
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, formatDate, formatNumber } from '../lib/format';
 import { TxnType, FINANCIAL } from '@tingting/shared';
-import type { SupplierStatement as SupplierStatementType, LedgerEntry, AgingBucket, VendorPaymentRequest } from '@tingting/shared';
+import type {
+  SupplierStatement as SupplierStatementType,
+  LedgerEntry,
+  AgingBucket,
+  VendorPaymentRequest,
+} from '@tingting/shared';
 import { AlertTriangle, Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
@@ -18,6 +23,7 @@ import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch }
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
+import { payableBillingDocumentEntityType } from './payable-billing-document';
 
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -101,6 +107,7 @@ export default function PayableDetailPage() {
     || period.dateFrom !== appliedPeriod.dateFrom
     || period.dateTo !== appliedPeriod.dateTo;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showBillingDocumentBuilder, setShowBillingDocumentBuilder] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   useClickOutside(exportMenuRef, () => setShowExportMenu(false), { escapeKey: true, enabled: showExportMenu });
@@ -267,6 +274,15 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="dd-actions">
+          {isCarrierPayable && (
+            <button
+              className="btn btn--secondary"
+              onClick={() => setShowBillingDocumentBuilder(true)}
+            >
+              <FileSpreadsheet size={14} />
+              Tạo bảng kê
+            </button>
+          )}
           {!isCarrierPayable && (
             <div ref={exportMenuRef} style={{ position: 'relative' }}>
               <button
@@ -489,19 +505,26 @@ export default function PayableDetailPage() {
       </section>
 
       {/* Payment-statement builder (AP snapshot documents) */}
-      {id && !isCarrierPayable && (
+      {id && (
         <section className="dd-documents-section" aria-label="Chứng từ công nợ phải trả">
           <div className="dd-documents-section__head">
             <span className="dd-panel-eyebrow">Chứng từ công nợ</span>
             <h2>Bảng kê thanh toán</h2>
-            <p>Tạo hoặc mở lại bảng kê khi cần gửi nhà cung cấp.</p>
+            <p>
+              {isCarrierPayable
+                ? 'Tạo hoặc mở lại bảng kê cước theo kỳ để gửi nhà vận chuyển.'
+                : 'Tạo hoặc mở lại bảng kê khi cần gửi nhà cung cấp.'}
+            </p>
           </div>
           <BillingDocumentsPanel
             type="PAYMENT_STATEMENT"
-            entityType="VENDOR"
+            entityType={payableBillingDocumentEntityType(isCarrierPayable)}
             entityId={Number(id)}
             entityName={typedStatement?.supplier.name ?? ''}
             buttonLabel="Tạo bảng kê"
+            createBuilderOpen={showBillingDocumentBuilder}
+            onOpenCreate={() => setShowBillingDocumentBuilder(true)}
+            onBuilderClose={() => setShowBillingDocumentBuilder(false)}
           />
         </section>
       )}

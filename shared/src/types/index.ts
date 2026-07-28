@@ -1135,12 +1135,13 @@ export interface DebtOffset {
 // ─── Billing Documents (debit notes + payment statements) ─────────────────────
 // Saved SNAPSHOT documents composed by kế toán / quản lý.
 // Saving never mutates the append-only ledger — these are presentation artifacts.
-// entityType CUSTOMER = AR customer (debit note) OR AP external carrier (payment
-// statement, since carriers live in the customers catalog per decision D-E/F);
-// entityType VENDOR = AP supplier (fuel / ancillary).
+// entityType CUSTOMER = AR customer documents.
+// entityType CARRIER = AP external-carrier payment statements (the catalog row
+// still lives in customers, but the accounting role must stay explicit).
+// entityType VENDOR = AP supplier documents (fuel / ancillary).
 
 export type BillingDocumentType = 'DEBIT_NOTE' | 'PAYMENT_STATEMENT';
-export type BillingDocumentEntityType = 'CUSTOMER' | 'VENDOR';
+export type BillingDocumentEntityType = 'CUSTOMER' | 'CARRIER' | 'VENDOR';
 export type BillingLineSourceType = 'TRIP' | 'EXPENSE' | 'ADHOC';
 export type BillingLineType = 'FREIGHT' | 'SERVICE_FEE' | 'ADHOC';
 export type DebitNoteColumnVariable =

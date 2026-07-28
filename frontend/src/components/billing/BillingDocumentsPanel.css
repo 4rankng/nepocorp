@@ -180,4 +180,11 @@
   .billing-panel__actions {
     justify-content: flex-end;
   }
+
+  .billing-panel__actions .btn-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

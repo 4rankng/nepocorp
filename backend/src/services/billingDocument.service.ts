@@ -617,23 +617,21 @@ async function loadApprovedFeesByTrip(tripIds: number[]): Promise<Map<number, Ap
 
 export async function generateDraft(input: GenerateBillingDocumentInput): Promise<BillingDocumentDraft> {
   const { type, entityType, entityId, rangeFrom: from, rangeTo: to } = input;
+  assertBillingDocumentScope(type, entityType);
+  await assertCarrierEligibility(entityType, entityId);
 
   let result: { lines: BillingDraftLine[]; entityName: string };
 
   if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
     result = await buildCustomerDebitLines(entityId, from, to);
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'CUSTOMER') {
-    const [customer] = await db.select({ isCarrier: s.customers.isCarrier })
-      .from(s.customers)
-      .where(and(eq(s.customers.id, entityId), isNull(s.customers.deletedAt)))
-      .limit(1);
-    result = customer?.isCarrier
-      ? await buildCarrierPaymentLines(entityId, from, to)
-      : await buildCustomerPaymentStatementLines(entityId, from, to);
+    result = await buildCustomerPaymentStatementLines(entityId, from, to);
+  } else if (type === 'PAYMENT_STATEMENT' && entityType === 'CARRIER') {
+    result = await buildCarrierPaymentLines(entityId, from, to);
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'VENDOR') {
     result = await buildSupplierPaymentLines(entityId, from, to);
   } else {
-    // DEBIT_NOTE + VENDOR is not meaningful (debit notes are customer-facing AR only).
+    // Debit notes are customer-facing AR only.
     throw new ApiError(400, 'Loại tài liệu không hợp lệ cho đối tượng này');
   }
 
@@ -662,6 +660,8 @@ async function postDebitNoteDelta(
 }
 
 export async function saveDocument(input: SaveBillingDocumentInput, userId: number | null): Promise<BillingDocument> {
+  assertBillingDocumentScope(input.type, input.entityType);
+  await assertCarrierEligibility(input.entityType, input.entityId);
   const total = docTotal(input.lines as BillingDocumentLine[]);
   const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
     ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
@@ -734,6 +734,8 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
 }
 
 export async function updateDocument(id: number, input: SaveBillingDocumentInput): Promise<BillingDocument> {
+  assertBillingDocumentScope(input.type, input.entityType);
+  await assertCarrierEligibility(input.entityType, input.entityId);
   const total = docTotal(input.lines as BillingDocumentLine[]);
   const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
     ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
@@ -803,9 +805,8 @@ async function persistLines(tx: Tx, documentId: number, lines: BillingDocumentLi
 }
 
 export async function listDocuments(entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType): Promise<BillingDocument[]> {
-  // Filter by `type` when provided so a customer who is also an external
-  // carrier doesn't see their payment-statements mixed into the debit-note
-  // list (both share entityType=CUSTOMER).
+  // Keep document history isolated by explicit accounting role. A catalog
+  // party may be both CUSTOMER and CARRIER without sharing saved documents.
   const conds: SQL<unknown>[] = [
     eq(s.billingDocuments.entityType, entityType),
     eq(s.billingDocuments.entityId, entityId),
@@ -989,8 +990,46 @@ type BillingPartyInfo = {
   phone: string;
 };
 
+export function counterpartyCatalogForEntityType(
+  entityType: BillingDocumentEntityType,
+): 'CUSTOMER' | 'SUPPLIER' {
+  return entityType === 'VENDOR' ? 'SUPPLIER' : 'CUSTOMER';
+}
+
+function assertBillingDocumentScope(
+  type: BillingDocumentType,
+  entityType: BillingDocumentEntityType,
+): void {
+  if (type === 'DEBIT_NOTE' && entityType !== 'CUSTOMER') {
+    throw new ApiError(400, 'Giấy báo nợ chỉ áp dụng cho khách hàng');
+  }
+}
+
+async function assertCarrierEligibility(
+  entityType: BillingDocumentEntityType,
+  entityId: number,
+): Promise<void> {
+  if (entityType !== 'CARRIER') return;
+  const [carrier] = await db.select({
+    id: s.customers.id,
+    isCarrier: s.customers.isCarrier,
+  }).from(s.customers).where(and(
+    eq(s.customers.id, entityId),
+    isNull(s.customers.deletedAt),
+  )).limit(1);
+  if (!carrier) throw new ApiError(404, 'Không tìm thấy đối tác vận chuyển');
+  if (carrier.isCarrier) return;
+  const [historicalTrip] = await db.select({ id: s.trips.id })
+    .from(s.trips)
+    .where(eq(s.trips.externalCarrierId, entityId))
+    .limit(1);
+  if (!historicalTrip) {
+    throw new ApiError(400, 'Đối tác chưa được cấu hình là nhà vận chuyển');
+  }
+}
+
 async function loadCounterpartyInfo(doc: BillingDocument): Promise<BillingPartyInfo> {
-  if (doc.entityType === 'CUSTOMER') {
+  if (counterpartyCatalogForEntityType(doc.entityType) === 'CUSTOMER') {
     const [customer] = await db.select({
       name: s.customers.name,
       taxCode: s.customers.taxCode,
@@ -1022,6 +1061,32 @@ async function loadCounterpartyInfo(doc: BillingDocument): Promise<BillingPartyI
     representative: supplier?.contactPerson ?? '',
     representativeTitle: 'Giám Đốc',
     phone: supplier?.phone ?? '',
+  };
+}
+
+export function paymentStatementRenderingPolicy(
+  entityType: BillingDocumentEntityType,
+  amountSubtotal: number,
+): {
+  vatAmount: number;
+  grandTotal: number;
+  hirer: 'COMPANY' | 'COUNTERPARTY';
+  provider: 'COMPANY' | 'COUNTERPARTY';
+} {
+  if (entityType === 'CARRIER') {
+    return {
+      vatAmount: 0,
+      grandTotal: amountSubtotal,
+      hirer: 'COMPANY',
+      provider: 'COUNTERPARTY',
+    };
+  }
+  const vatAmount = Math.round(amountSubtotal * 0.08);
+  return {
+    vatAmount,
+    grandTotal: amountSubtotal + vatAmount,
+    hirer: 'COUNTERPARTY',
+    provider: 'COMPANY',
   };
 }
 
@@ -1853,26 +1918,40 @@ export async function renderTemplatedXlsx(
     ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 150, height: 40 } });
   }
   const amountSubtotal = dataLines.reduce((sum, line) => sum + effectiveAmount(line), 0);
-  const vatAmount = Math.round(amountSubtotal * 0.08);
-  const grandTotal = amountSubtotal + vatAmount;
-  const customerName = partner.name || doc.entityName || '';
-  const issuerName = company.name;
+  const renderingPolicy = paymentStatementRenderingPolicy(doc.entityType, amountSubtotal);
+  const { vatAmount, grandTotal } = renderingPolicy;
+  const counterparty = {
+    name: partner.name || doc.entityName || '',
+    address: partner.address,
+    taxCode: partner.taxCode,
+    representative: partner.representative,
+    representativeTitle: partner.representativeTitle,
+  };
+  const companyParty = {
+    name: company.name,
+    address: company.address,
+    taxCode: company.taxCode,
+    representative: company.representative,
+    representativeTitle: company.representativeTitle,
+  };
+  const hirer = renderingPolicy.hirer === 'COMPANY' ? companyParty : counterparty;
+  const provider = renderingPolicy.provider === 'COMPANY' ? companyParty : counterparty;
   const templateVariables: Record<string, string | number> = {
     rangeFrom: formatVietnameseDate(doc.rangeFrom),
     rangeTo: formatVietnameseDate(doc.rangeTo),
     rangeMonth: formatMonthYear(doc.rangeTo),
     invoiceNo: doc.note?.trim() || '........',
     invoiceDate: formatVietnameseDate(doc.rangeTo),
-    customerName,
-    customerAddress: partner.address,
-    customerTaxCode: partner.taxCode,
-    customerRepresentative: partner.representative,
-    customerPosition: partner.representativeTitle,
-    issuerName,
-    issuerAddress: company.address,
-    issuerTaxCode: company.taxCode,
-    issuerRepresentative: company.representative,
-    issuerPosition: company.representativeTitle,
+    customerName: hirer.name,
+    customerAddress: hirer.address,
+    customerTaxCode: hirer.taxCode,
+    customerRepresentative: hirer.representative,
+    customerPosition: hirer.representativeTitle,
+    issuerName: provider.name,
+    issuerAddress: provider.address,
+    issuerTaxCode: provider.taxCode,
+    issuerRepresentative: provider.representative,
+    issuerPosition: provider.representativeTitle,
     subtotal: amountSubtotal.toLocaleString('en-US'),
     vatAmount: vatAmount.toLocaleString('en-US'),
     grandTotal: grandTotal.toLocaleString('en-US'),
@@ -1918,10 +1997,10 @@ export async function renderTemplatedXlsx(
   ws.getCell(3, 1).font = { name: 'Times New Roman', size: 12, bold: true };
   ws.getCell(3, 1).alignment = { horizontal: 'center', vertical: 'middle' };
 
-  const termsLines = renderTemplateText(
-    snap.termsText ?? `- Số TK ${company.bankAccount}\n- Tại ngân hàng ${company.bankName}`,
-    templateVariables,
-  ).split('\n');
+  const termsText = doc.entityType === 'CARRIER'
+    ? '- Đơn giá đã bao gồm thuế GTGT'
+    : (snap.termsText ?? `- Số TK ${company.bankAccount}\n- Tại ngân hàng ${company.bankName}`);
+  const termsLines = renderTemplateText(termsText, templateVariables).split('\n');
   const introRows: Array<{ row: number; value: string; bold?: boolean }> = [
     { row: 4, value: 'BÊN A (BÊN THUÊ DỊCH VỤ): {customerName}', bold: true },
     { row: 5, value: 'Địa chỉ: {customerAddress}' },
@@ -1954,7 +2033,9 @@ export async function renderTemplatedXlsx(
 
   for (let c = 1; c <= nCols; c++) {
     const col = cols[c - 1];
-    const label = renderDebitNoteColumnLabel(col);
+    const label = doc.entityType === 'CARRIER' && col.variable === 'amount'
+      ? 'Giá VC\n(Đã gồm VAT)'
+      : renderDebitNoteColumnLabel(col);
     const isQuantityChild = col.variable === 'container20Count' || col.variable === 'container40Count';
     const topCell = ws.getCell(headerTop, c);
     const bottomCell = ws.getCell(headerBottom, c);
@@ -2015,7 +2096,9 @@ export async function renderTemplatedXlsx(
     ws.mergeCells(grandRow, 1, grandRow, Math.min(6, nCols));
   }
   ws.getCell(subtotalRow, 1).value = 'CỘNG';
-  ws.getCell(vatRow, 1).value = 'THUẾ GTGT 8%';
+  ws.getCell(vatRow, 1).value = doc.entityType === 'CARRIER'
+    ? 'THUẾ GTGT (ĐÃ GỒM TRONG ĐƠN GIÁ)'
+    : 'THUẾ GTGT 8%';
   ws.getCell(grandRow, 1).value = 'TỔNG THANH TOÁN';
   for (const { col, idx } of totalColumns) {
     const totalCell = ws.getCell(subtotalRow, idx);
@@ -2031,8 +2114,15 @@ export async function renderTemplatedXlsx(
     if (col.variable === 'amount') totalCell.numFmt = moneyFmt;
   }
   if (amountIdx > 0) {
-    ws.getCell(vatRow, amountIdx).value = { formula: `${colLetter(amountIdx)}${subtotalRow}*0.08` };
-    ws.getCell(grandRow, amountIdx).value = { formula: `${colLetter(amountIdx)}${subtotalRow}+${colLetter(amountIdx)}${vatRow}` };
+    ws.getCell(vatRow, amountIdx).value = doc.entityType === 'CARRIER'
+      ? 0
+      : { formula: `${colLetter(amountIdx)}${subtotalRow}*0.08`, result: vatAmount };
+    ws.getCell(grandRow, amountIdx).value = doc.entityType === 'CARRIER'
+      ? { formula: `${colLetter(amountIdx)}${subtotalRow}`, result: grandTotal }
+      : {
+          formula: `${colLetter(amountIdx)}${subtotalRow}+${colLetter(amountIdx)}${vatRow}`,
+          result: grandTotal,
+        };
     ws.getCell(vatRow, amountIdx).numFmt = moneyFmt;
     ws.getCell(grandRow, amountIdx).numFmt = moneyFmt;
     widthSamples[amountIdx - 1]?.push(vatAmount, grandTotal);
@@ -2062,12 +2152,20 @@ export async function renderTemplatedXlsx(
     if (leftEnd > 1) ws.mergeCells(r, 1, r, leftEnd);
     if (rightStart < rightEnd) ws.mergeCells(r, rightStart, r, rightEnd);
   }
-  ws.getCell(signatureLabelRow, 1).value = snap.signatureLeftLabel?.trim() || '';
-  ws.getCell(signatureLabelRow, rightStart).value = snap.signatureRightLabel?.trim() || '';
+  ws.getCell(signatureLabelRow, 1).value = doc.entityType === 'CARRIER'
+    ? 'ĐẠI DIỆN BÊN THUÊ'
+    : (snap.signatureLeftLabel?.trim() || '');
+  ws.getCell(signatureLabelRow, rightStart).value = doc.entityType === 'CARRIER'
+    ? 'ĐẠI DIỆN BÊN CUNG CẤP'
+    : (snap.signatureRightLabel?.trim() || '');
   ws.getCell(signatureHintRow, 1).value = '(Ký, họ tên)';
   ws.getCell(signatureHintRow, rightStart).value = '(Ký, họ tên, đóng dấu)';
-  ws.getCell(signatureNameRow, 1).value = snap.signatureLeftName?.trim() || '';
-  ws.getCell(signatureNameRow, rightStart).value = snap.signatureRightName?.trim() || '';
+  ws.getCell(signatureNameRow, 1).value = doc.entityType === 'CARRIER'
+    ? hirer.representative
+    : (snap.signatureLeftName?.trim() || '');
+  ws.getCell(signatureNameRow, rightStart).value = doc.entityType === 'CARRIER'
+    ? provider.representative
+    : (snap.signatureRightName?.trim() || '');
   for (const cell of [ws.getCell(signatureLabelRow, 1), ws.getCell(signatureLabelRow, rightStart)]) {
     cell.font = boldFont;
     cell.alignment = { horizontal: 'center', vertical: 'middle' };

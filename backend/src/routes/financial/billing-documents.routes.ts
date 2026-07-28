@@ -32,7 +32,11 @@ router.post('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(a
 router.get('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
   const entityType = String(req.query.entityType ?? '');
   const entityId = Number(req.query.entityId);
-  if ((entityType !== 'CUSTOMER' && entityType !== 'VENDOR') || !Number.isFinite(entityId) || entityId <= 0) {
+  if (
+    (entityType !== 'CUSTOMER' && entityType !== 'CARRIER' && entityType !== 'VENDOR')
+    || !Number.isFinite(entityId)
+    || entityId <= 0
+  ) {
     return res.status(400).json({ error: 'Thiếu hoặc sai entityType / entityId' });
   }
   const rawType = req.query.type;
