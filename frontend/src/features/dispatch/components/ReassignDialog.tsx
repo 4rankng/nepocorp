@@ -90,9 +90,12 @@ export function ReassignDialog({
             <input 
               type="text" 
               placeholder="Biển số xe" 
+              aria-label="Biển số xe"
               value={reassignState.externalPlateNumber} 
               onChange={(e) => setReassignState(s => ({ ...s, externalPlateNumber: e.target.value }))}
               disabled={reassignState.loading}
+              maxLength={20}
+              required
               style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 4, fontSize: 13 }}
             />
           </div>

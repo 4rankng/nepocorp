@@ -49,6 +49,7 @@
   - **AUTO**: Enter km per leg + loading type → system auto-calculates total liters from norms.
   - **FLAT_RATE (Khoán)**: Accountant manually enters total liters, overriding all calculations.
   - **Supplement (Bổ sung)**: Additional liters for breakdowns/repairs — additive on top of either mode.
+- **Fuel Allocation by Station**: A trip's total fuel can be split across multiple fill rows. Each row records one fuel Vendor and liters on credit, or the virtual **Cây dầu ngoài (tiền mặt)** option. Allocation liters must equal the trip's total fuel. Credit rows create separate `FUEL_EXPENSE` payables for their own liters; cash rows remain part of trip/P&L fuel cost but never enter Vendor debt.
 - **Fuel Price Adjustment (Điều chỉnh giá nhiên liệu)**: Two-tier mechanism to handle real-world fuel price fluctuations:
   - **Fuel Price History (`fuel_price_history`)**: Append-only audit trail of every unit price change with effective date and who changed it. Each time the accountant updates the configured fuel unit price, the system automatically inserts a new row. The current configured price always matches the latest history row.
   - **Actual Price per Trip (`fuelActualUnitPrice`)**: Accountant enters the real purchase price (pump price) for each trip. When provided, `totalFuelCost = fuelLiters × fuelActualUnitPrice` (instead of `fuelLiters × fuelPriceApplied`). The variance (`fuelPriceVariance = actual cost − config cost`) is tracked for reporting.

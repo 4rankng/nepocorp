@@ -275,8 +275,8 @@ export default function TripDetailPage() {
               </select>
             </div>
             <div className="field">
-              <label htmlFor="reassignExternalPlateNumber">Biển số xe</label>
-              <input id="reassignExternalPlateNumber" name="reassignExternalPlateNumber" type="text" className="input" placeholder="VD: 15C-12345" value={ui.reassignExternalPlateNumber} onChange={e => page.setReassignExternalPlateNumber(e.target.value)} />
+              <label htmlFor="reassignExternalPlateNumber">Biển số xe <span aria-hidden="true" style={{ color: 'var(--danger)' }}>*</span></label>
+              <input id="reassignExternalPlateNumber" name="reassignExternalPlateNumber" type="text" className="input" placeholder="VD: 15C-12345" value={ui.reassignExternalPlateNumber} onChange={e => page.setReassignExternalPlateNumber(e.target.value)} maxLength={20} required />
             </div>
             <div className="field">
               <label htmlFor="reassignExternalDriverName">Tên lái xe</label>

@@ -64,6 +64,51 @@ const fullNameField = z.string().max(255).or(z.literal('')).optional();
 
 // ─── Trip ────────────────────────────────────────────────────────────────────
 
+export const tripFuelAllocationSchema = z.object({
+  supplierId: z.coerce.number().int().positive().nullable(),
+  liters: positiveNumeric,
+  paymentMethod: z.enum(['CREDIT', 'CASH']),
+}).superRefine((allocation, ctx) => {
+  if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['liters'],
+      message: 'Số lít chỉ được có tối đa 2 chữ số thập phân',
+    });
+  }
+  if (allocation.paymentMethod === 'CREDIT' && allocation.supplierId == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['supplierId'],
+      message: 'Nhà cung cấp nhiên liệu là bắt buộc khi ghi công nợ',
+    });
+  }
+  if (allocation.paymentMethod === 'CASH' && allocation.supplierId != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['supplierId'],
+      message: 'Điểm đổ dầu tiền mặt không gắn với công nợ nhà cung cấp',
+    });
+  }
+});
+
+const tripFuelAllocationsSchema = z.array(tripFuelAllocationSchema).max(10).superRefine((allocations, ctx) => {
+  const seen = new Set<string>();
+  allocations.forEach((allocation, index) => {
+    const key = allocation.paymentMethod === 'CASH'
+      ? 'CASH'
+      : `CREDIT:${allocation.supplierId}`;
+    if (seen.has(key)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, 'supplierId'],
+        message: 'Mỗi nhà cung cấp chỉ nên có một dòng phân bổ dầu',
+      });
+    }
+    seen.add(key);
+  });
+});
+
 export const tripLegSchema = z.object({
   sequence: z.number().int().positive(),
   origin: z.string().min(1),
@@ -106,12 +151,35 @@ export const createTripSchema = z.object({
       ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho chuyến xe nội bộ' });
     }
   } else {
-    // EXTERNAL trips only require the carrier partner (who). The freight cost,
-    // plate, driver name and phone are trip details that may be filled in later
-    // after the trip is created — they are NOT required at creation time.
+    // The carrier and vehicle identity must be known when an EXTERNAL trip is
+    // created. Driver contact details may be filled in later.
     if (!data.externalCarrierId) {
       ctx.addIssue({ code: 'custom', path: ['externalCarrierId'], message: 'Nhà xe ngoài là bắt buộc cho chuyến xe ngoài' });
     }
+    if (!data.externalPlateNumber?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe là bắt buộc cho chuyến xe ngoài' });
+    }
+  }
+});
+
+export const reassignTripSchema = z.object({
+  carrierType: z.enum(['OWN', 'EXTERNAL']),
+  truckId: z.coerce.number().int().positive().nullable().optional(),
+  driverId: z.coerce.number().int().positive().nullable().optional(),
+  externalCarrierId: z.coerce.number().int().positive().nullable().optional(),
+  externalPlateNumber: z.string().max(20).nullable().optional(),
+  externalDriverName: z.string().max(100).nullable().optional(),
+  externalDriverPhone: z.string().max(20).nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (data.carrierType === 'OWN') {
+    if (!data.truckId) {
+      ctx.addIssue({ code: 'custom', path: ['truckId'], message: 'Xe đầu kéo là bắt buộc cho xe nhà' });
+    }
+    if (!data.driverId) {
+      ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho xe nhà' });
+    }
+  } else if (!data.externalPlateNumber?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe là bắt buộc cho chuyến xe ngoài' });
   }
 });
 
@@ -126,6 +194,7 @@ export const updateTripFiguresSchema = z.object({
   fuelSupplementReason: z.string().optional(),
   fuelActualUnitPrice: positiveNumeric.nullable().optional(),
   fuelSupplierId: z.coerce.number().int().positive().nullable().optional(),
+  fuelAllocations: tripFuelAllocationsSchema.optional(),
   tollsDiscount: nonNegNumeric.optional(),
   tollsAddition: nonNegNumeric.optional(),
   tollsStations: z.coerce.number().int().nonnegative().optional(),
@@ -173,6 +242,27 @@ export const updateTripFiguresSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
       path: ['revenue'],
+    });
+  }
+  if (data.carrierType === 'EXTERNAL' && !data.externalPlateNumber?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Biển số xe là bắt buộc cho chuyến xe ngoài',
+      path: ['externalPlateNumber'],
+    });
+  }
+  if (data.carrierType === 'EXTERNAL' && data.fuelSupplierId != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Chuyến xe ngoài không ghi công nợ nhiên liệu của công ty',
+      path: ['fuelSupplierId'],
+    });
+  }
+  if (data.carrierType === 'EXTERNAL' && (data.fuelAllocations?.length ?? 0) > 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Chuyến xe ngoài không có phân bổ nhiên liệu của công ty',
+      path: ['fuelAllocations'],
     });
   }
 });

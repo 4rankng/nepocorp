@@ -1,12 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { LoadingType } from '@tingting/shared';
 import {
+  countRequiredTripFields,
   createFallbackLegsFromRouteName,
   resolveCommonContainerTypeId,
   resolveContainerCount,
 } from './tripFormDispatchUtils';
 
 describe('tripFormDispatchUtils', () => {
+  it('counts plate and carrier, but not external driver contact, as required fields', () => {
+    const fields = {
+      customerId: '1',
+      routeId: '2',
+      carrierType: 'EXTERNAL' as const,
+      externalCarrierId: 3,
+      externalFreightCost: '7128000',
+      externalPlateNumber: '15C-12345',
+      truckId: '',
+      trailerType: '',
+      driverId: '',
+      cargoTypeId: '4',
+      plannedContainerTypeId: '5',
+      containerRows: [],
+      departureDate: '2026-07-28',
+    };
+
+    expect(countRequiredTripFields(fields)).toBe(8);
+    expect(countRequiredTripFields({ ...fields, externalPlateNumber: '   ' })).toBe(7);
+  });
+
   it('clamps container count to the supported trip-form range', () => {
     expect(resolveContainerCount('')).toBe(1);
     expect(resolveContainerCount('0')).toBe(1);

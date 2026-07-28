@@ -1,17 +1,15 @@
 import React from "react";
 import { FuelMode } from "@tingting/shared";
-import type { Supplier } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
-import { useCatalogs } from "../../hooks/useCatalogs";
 import { InputWithPrefix } from "./InputWithPrefix";
+import { FuelAllocationEditor } from './FuelAllocationEditor';
 import './FuelSection.css';
 import { selectStyleFullWidth, labelStyle } from '../../utils/formStyles';
 
 export function FuelSection() {
   const form = useTripFormContext();
   const { data: fuelConfig } = useFuelConfig();
-  const { data: catalogData } = useCatalogs();
   const {
     fuelMode, setFuelMode,
     fuelLitersOverride, setFuelLitersOverride,
@@ -19,7 +17,6 @@ export function FuelSection() {
     fuelSupplementLiters, setFuelSupplementLiters,
     fuelSupplementReason, setFuelSupplementReason,
     carrierType,
-    fuelSupplierId, setFuelSupplierId,
   } = form;
 
   const isSupplementActive = Number(fuelSupplementLiters) > 0;
@@ -29,26 +26,6 @@ export function FuelSection() {
   const configPrice = (
     fuelConfig && fuelConfig.unitPrice != null ? Number(fuelConfig.unitPrice) : 0
   ).toLocaleString('vi-VN');
-
-  const supplierSelect = (
-    <div className="field">
-      <label style={labelStyle}>Nhà cung cấp nhiên liệu</label>
-      <select
-        className="input"
-        value={fuelSupplierId || ''}
-        onChange={(e) => setFuelSupplierId(e.target.value ? Number(e.target.value) : null)}
-        style={selectStyleFullWidth}
-      >
-        <option value="">-- Chọn nhà cung cấp nhiên liệu --</option>
-        {catalogData?.suppliers?.filter(s => (s as Supplier).isFuelSupplier).map((s) => (
-          <option key={s.id} value={s.id}>{s.name}</option>
-        ))}
-      </select>
-      <p className="tc-field-hint">
-        Lựa chọn nhà cung cấp nhiên liệu cho chuyến này để ghi nhận công nợ.
-      </p>
-    </div>
-  );
 
   const unitPriceField = (
     <div className="field">
@@ -109,17 +86,11 @@ export function FuelSection() {
       {fuelMode === FuelMode.FLAT_RATE && (
         <div className="fs-row">
           {unitPriceField}
-          {carrierType === 'OWN' ? supplierSelect : <div />}
-        </div>
-      )}
-
-      {/* Row 2 (auto mode): Nhà cung cấp only — span half */}
-      {fuelMode === FuelMode.AUTO && carrierType === 'OWN' && (
-        <div className="fs-row">
-          {supplierSelect}
           <div />
         </div>
       )}
+
+      {carrierType === 'OWN' && <FuelAllocationEditor />}
 
       {/* Row last: Bổ sung dầu */}
       <div className="fs-row" style={{ marginBottom: 0 }}>

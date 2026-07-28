@@ -56,10 +56,12 @@ describe('TotalsPanel', () => {
     expect(screen.queryByText('Chi phí đường bộ')).toBeNull();
     expect(screen.queryByText('Tiền lương lái xe')).toBeNull();
     expect(screen.getByText('Lợi nhuận dự kiến')).toBeTruthy();
-    expect(screen.getByText('7.128.000')).toBeTruthy();
-    expect(screen.getByText('328.000')).toBeTruthy();
+    expect(screen.getByText('Doanh thu ghi nhận (chưa VAT)')).toBeTruthy();
+    expect(screen.getByText('6.800.000')).toBeTruthy();
+    expect(screen.getByText('6.600.000')).toBeTruthy();
+    expect(screen.getByText('200.000')).toBeTruthy();
     const profitRow = screen.getByText('Lợi nhuận dự kiến').closest('.tc-totals__profit');
-    expect(profitRow?.querySelector('.money__sign')?.textContent).toBe('−');
+    expect(profitRow?.querySelector('.money__sign')?.textContent).toBe('+');
   });
 
   it('keeps own-truck cost allocation and operating rows', () => {

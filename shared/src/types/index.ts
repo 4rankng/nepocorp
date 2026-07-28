@@ -324,10 +324,30 @@ export interface Trip {
   externalDriverName: string | null;
   externalDriverPhone: string | null;
   fuelSupplier?: { id: number; name: string } | null;
+  fuelAllocations?: TripFuelAllocation[];
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+export type FuelPaymentMethod = 'CREDIT' | 'CASH';
+
+export interface TripFuelAllocation {
+  id: number;
+  tripId: number;
+  supplierId: number | null;
+  supplierName: string;
+  liters: string;
+  paymentMethod: FuelPaymentMethod;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TripFuelAllocationInput {
+  supplierId: number | null;
+  liters: number;
+  paymentMethod: FuelPaymentMethod;
 }
 
 export interface TripLeg {
@@ -917,6 +937,7 @@ export interface UpdateTripFiguresRequest {
   fuelSupplementReason?: string;
   fuelActualUnitPrice?: number | null;
   fuelSupplierId?: number | null;
+  fuelAllocations?: TripFuelAllocationInput[];
   tollsDiscount?: number;
   tollsAddition?: number;
   tollsStations?: number;

@@ -19,6 +19,18 @@ const fmtLiters = (v: number) => roundInt(v).toString();
 
 export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const { fuelLiters, computedLiters, ttbq, fuelVarianceLiters, fuelVarianceOver } = derived;
+  const fuelAllocations = trip.fuelAllocations ?? [];
+  const creditAllocations = fuelAllocations.filter(
+    allocation => allocation.paymentMethod === 'CREDIT' && allocation.supplierId,
+  );
+  const voucherTargets = creditAllocations.length > 0
+    ? creditAllocations.map(allocation => ({
+        supplierId: allocation.supplierId,
+        supplierName: allocation.supplierName,
+      }))
+    : trip.fuelSupplier
+      ? [{ supplierId: undefined, supplierName: trip.fuelSupplier.name }]
+      : [];
 
   // Effective price applied to this trip: the per-trip pump price when one was
   // recorded, else the trip's frozen config snapshot (fuelPriceApplied), else
@@ -33,11 +45,12 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
     ? actualPrice
     : (snapshotPrice != null ? snapshotPrice : fuelPriceConfig);
 
-  const handlePrintVoucher = async () => {
+  const handlePrintVoucher = async (supplierId?: number | null) => {
     // Open window synchronously before await to avoid popup blocker
     const win = window.open('', '_blank');
     try {
-      const html = await api.getForText(`/trips/${trip.id}/fuel-voucher/html`);
+      const query = supplierId ? `?supplierId=${supplierId}` : '';
+      const html = await api.getForText(`/trips/${trip.id}/fuel-voucher/html${query}`);
       if (win) {
         win.document.write(html);
         win.document.close();
@@ -47,13 +60,14 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
     }
   };
 
-  const handleExportXlsx = async () => {
+  const handleExportXlsx = async (supplierId?: number | null) => {
     try {
-      const blob = await api.getBlob(`/trips/${trip.id}/fuel-voucher/xlsx`);
+      const query = supplierId ? `?supplierId=${supplierId}` : '';
+      const blob = await api.getBlob(`/trips/${trip.id}/fuel-voucher/xlsx${query}`);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `phieu-cap-nhien-lieu-${trip.tripCode ?? trip.id}.xlsx`;
+      a.download = `phieu-cap-nhien-lieu-${trip.tripCode ?? trip.id}${supplierId ? `-${supplierId}` : ''}.xlsx`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch { /* download failed */ }
@@ -82,32 +96,42 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             <span className="k">Tiêu thụ bình quân</span>
             <span className="v">{ttbq > 0 ? `${ttbq.toFixed(1)} L/100km` : '—'}</span>
           </div>
-          {trip.fuelSupplier && (
-            <div className="pl-row">
-              <span className="k">Nhà cung cấp</span>
-              <span className="v fuel-supplier-name">{trip.fuelSupplier.name}</span>
-            </div>
-          )}
+          {fuelAllocations.length > 0
+            ? fuelAllocations.map(allocation => (
+                <div className="pl-row" key={allocation.id}>
+                  <span className="k">{allocation.supplierName}</span>
+                  <span className="v fuel-supplier-name">
+                    {Number(allocation.liters).toLocaleString('vi-VN')} L
+                    {allocation.paymentMethod === 'CASH' ? ' · Tiền mặt' : ' · Công nợ'}
+                  </span>
+                </div>
+              ))
+            : trip.fuelSupplier && (
+                <div className="pl-row">
+                  <span className="k">Nhà cung cấp</span>
+                  <span className="v fuel-supplier-name">{trip.fuelSupplier.name}</span>
+                </div>
+              )}
         </div>
 
-        {trip.fuelSupplier && (
-          <div className="fuel-actions">
+        {voucherTargets.map(target => (
+          <div className="fuel-actions" key={target.supplierId ?? 'legacy'}>
             <button
               className="btn btn--secondary btn--sm"
-              onClick={handlePrintVoucher}
-              title="In phiếu cấp dầu"
+              onClick={() => handlePrintVoucher(target.supplierId)}
+              title={`In phiếu cấp dầu — ${target.supplierName}`}
             >
-              <Printer size={14} /> In phiếu cấp dầu
+              <Printer size={14} /> In phiếu {voucherTargets.length > 1 ? target.supplierName : 'cấp dầu'}
             </button>
             <button
               className="btn btn--secondary btn--sm"
-              onClick={handleExportXlsx}
-              title="Xuất Excel"
+              onClick={() => handleExportXlsx(target.supplierId)}
+              title={`Xuất Excel — ${target.supplierName}`}
             >
               <FileSpreadsheet size={14} /> Xuất Excel
             </button>
           </div>
-        )}
+        ))}
 
         {fuelLiters > 0 && (
           <div className="fuel-compare">

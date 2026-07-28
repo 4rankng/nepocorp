@@ -5,7 +5,7 @@ import type { TripOptions } from './useTripOptions';
 import type { RouteOption } from './useTripOptions';
 import type { FormLeg } from './useTripFormLegs';
 import type { CompletionStatus } from './useTripFormState';
-import type { ContainerFormRow } from './useTripFormState';
+import type { ContainerFormRow, FuelAllocationFormRow } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
 import type { OcrSignal } from './useTripFormDispatch';
@@ -93,6 +93,10 @@ export interface UseTripFormReturn {
   setFuelActualUnitPrice: (v: string) => void;
   fuelSupplierId: number | null;
   setFuelSupplierId: (v: number | null) => void;
+  fuelAllocations: FuelAllocationFormRow[];
+  setFuelAllocations: (
+    value: FuelAllocationFormRow[] | ((previous: FuelAllocationFormRow[]) => FuelAllocationFormRow[])
+  ) => void;
   customerCommission: string;
   setCustomerCommission: (v: string) => void;
   tripWageDays: string;
@@ -200,6 +204,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     roadAllowanceOverride: s.roadAllowanceOverride, setRoadAllowanceOverride: s.setRoadAllowanceOverride,
     fuelActualUnitPrice: s.fuelActualUnitPrice, setFuelActualUnitPrice: s.setFuelActualUnitPrice,
     fuelSupplierId: s.fuelSupplierId, setFuelSupplierId: s.setFuelSupplierId,
+    fuelAllocations: s.fuelAllocations, setFuelAllocations: s.setFuelAllocations,
     customerCommission: s.customerCommission, setCustomerCommission: s.setCustomerCommission,
     tripWageDays: s.tripWageDays, setTripWageDays: s.setTripWageDays,
     revenue: s.revenue, setRevenue: s.setRevenue,

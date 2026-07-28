@@ -49,6 +49,7 @@ test('createTripSchema accepts a per-trip actual pump price', () => {
     departureDate: '2026-01-01',
     carrierType: 'EXTERNAL',
     externalCarrierId: 2,
+    externalPlateNumber: '15C-12345',
     fuelActualUnitPrice: 23530,
   });
   assert.strictEqual(r.success, true);

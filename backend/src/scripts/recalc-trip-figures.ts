@@ -8,9 +8,9 @@
  *   3. Ancillary service/ocean fees are receivables-only and excluded from
  *      transport profit.
  *
- * For OWN trips:  grossProfit = freightExVat - totalCost
+ * For OWN trips:  grossProfit = freightExVat - customerCommission - totalCost
  * For EXTERNAL:   totalCost = externalFreightCost
- *                 grossProfit = freightExVat - externalFreightExVat
+ *                 grossProfit = freightExVat - customerCommission - externalFreightExVat
  *
  * Usage:
  *   cd backend && npx tsx src/scripts/recalc-trip-figures.ts [--dry-run]
@@ -19,12 +19,9 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, ne } from 'drizzle-orm';
+import { computeExVatAmount } from '@tingting/shared';
 
 const DRY_RUN = process.argv.includes('--dry-run');
-
-function stripVat(amount: number, vatRate: number): number {
-  return vatRate > 0 ? Math.round(amount / (1 + vatRate)) : amount;
-}
 
 async function main() {
   console.log(`\n=== Trip Figures Recalculation (VAT fix) ===`);
@@ -50,21 +47,22 @@ async function main() {
       const vatRate = Number(trip.vatRate || 0);
       const carrierType = trip.carrierType ?? 'OWN';
       const revenue = Number(trip.revenue || 0);
+      const customerCommission = Number(trip.customerCommission || 0);
 
-      const freightExVat = stripVat(revenue, vatRate);
+      const recordedRevenue = computeExVatAmount(revenue, vatRate) - customerCommission;
 
       let newTotalCost: number;
       let newGrossProfit: number;
 
       if (carrierType === 'EXTERNAL') {
         const extCost = Number(trip.externalFreightCost || 0);
-        const extCostExVat = stripVat(extCost, vatRate);
+        const extCostExVat = computeExVatAmount(extCost, vatRate);
         newTotalCost = extCost;
-        newGrossProfit = freightExVat - extCostExVat;
+        newGrossProfit = recordedRevenue - extCostExVat;
       } else {
         // OWN trip: keep stored totalCost (fuel/road/salary already correct)
         newTotalCost = Number(trip.totalCost || 0);
-        newGrossProfit = freightExVat - newTotalCost;
+        newGrossProfit = recordedRevenue - newTotalCost;
       }
 
       const oldGrossProfit = Number(trip.grossProfit || 0);

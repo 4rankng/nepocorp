@@ -121,61 +121,134 @@
   font-size: var(--fs-sm);
 }
 
-/* ─── Expense Grid (replaces table) ─── */
-.expense-grid {
+/* ─── Expense plans: one horizontal row per trip ─── */
+.settlement-plan-table {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.settlement-plan-table__header,
+.settlement-plan-table__row {
   display: grid;
-  grid-template-columns: 70px 100px 1fr 130px 120px 100px;
-  gap: 0;
-  font-size: var(--fs-sm);
+  grid-template-columns:
+    minmax(145px, .8fr)
+    minmax(145px, .75fr)
+    minmax(280px, 1.8fr)
+    120px;
+  gap: 14px;
 }
 
-.expense-grid__header {
-  display: contents;
-  font-weight: 600;
-  font-size: var(--fs-2xs);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--ink-3);
-}
-
-.expense-grid__header > span {
-  padding: 8px 6px;
-  border-bottom: 1px solid var(--line-2);
-}
-
-.expense-grid__row {
-  display: contents;
-}
-
-.expense-grid__row > span {
-  padding: 10px 6px;
+.settlement-plan-table__header {
+  padding: 9px 12px;
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-  color: var(--ink);
-  line-height: 1.5;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
 }
 
-.expense-grid__row:hover > span {
+.settlement-plan-table__header > :last-child {
+  text-align: right;
+}
+
+.settlement-plan-table__row {
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settlement-plan-table__row:hover {
   background: var(--surface-2);
 }
 
-.expense-grid__total {
-  display: contents;
+.settlement-plan-table__party,
+.settlement-plan-table__trip {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
 }
 
-.expense-grid__total > span {
-  padding: 12px 6px 0;
-  border-top: 2px solid var(--line-2);
-  border-bottom: none;
+.settlement-plan-table__party span,
+.settlement-plan-table__containers {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.settlement-plan-table__party strong,
+.settlement-plan-table__trip strong {
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.settlement-plan-table__trip strong {
+  font-family: var(--font-mono);
+}
+
+.settlement-plan-table__containers {
+  overflow-wrap: anywhere;
+}
+
+.settlement-plan-table__costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settlement-plan-cost {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 2px 7px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+}
+
+.settlement-plan-cost strong,
+.settlement-plan-table__amount,
+.settlement-plan-table__total strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.settlement-plan-cost small {
+  grid-column: 1 / -1;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  overflow-wrap: anywhere;
+}
+
+.settlement-plan-table__amount {
+  text-align: right;
   font-size: var(--fs-sm);
 }
 
-/* Utility classes */
-.expense-grid .u-right { text-align: right; }
-.expense-grid .u-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.expense-grid .u-mono { font-family: var(--font-mono, monospace); font-size: var(--fs-xs); white-space: nowrap; }
-.expense-grid .u-muted { color: var(--ink-2); white-space: nowrap; }
-.expense-grid .u-wrap { word-break: break-word; overflow-wrap: break-word; }
-.expense-grid .u-bold { font-weight: 700; }
+.settlement-plan-table__total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  padding: 12px;
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+}
+
+.settlement-plan-table__empty {
+  padding: 20px 12px;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
 
 /* ─── Summary ─── */
 .settlement-detail__summary {
@@ -445,14 +518,40 @@
     grid-template-columns: 1fr;
   }
 
-  .expense-grid {
-    grid-template-columns: 50px 80px 1fr 100px 100px 80px;
-    font-size: var(--fs-2xs);
+  .settlement-detail__section {
+    padding: 16px 14px;
   }
 
-  .expense-grid__header > span,
-  .expense-grid__row > span {
-    padding: 6px 4px;
+  .settlement-plan-table__header {
+    display: none;
+  }
+
+  .settlement-plan-table__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px 12px;
+  }
+
+  .settlement-plan-table__party {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .settlement-plan-table__amount {
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .settlement-plan-table__amount::before {
+    content: "Tổng chuyến";
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+
+  .settlement-plan-table__total {
+    justify-content: space-between;
   }
 }
 .settlement-expense-editor {
@@ -477,7 +576,11 @@
 .settlement-link-list { display: grid; gap: 8px; }
 .settlement-link-option { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .settlement-link-option strong { font-family: var(--font-mono); font-size: var(--fs-sm); }
-.settlement-expense-actions { display: grid; }
+.settlement-expense-actions { display: grid; gap: 10px; }
+.settlement-expense-plan { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.settlement-expense-plan__header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 9px 12px; background: var(--surface-2); font-size: var(--fs-xs); }
+.settlement-expense-plan__header span { color: var(--ink-3); }
+.settlement-expense-plan__items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
 .settlement-expense-option { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .settlement-expense-option > label { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .settlement-expense-option label span { display: grid; gap: 2px; }
@@ -486,4 +589,4 @@
 .settlement-finalize__fields { display: grid; grid-template-columns: minmax(160px, .35fr) minmax(240px, 1fr); gap: 14px; margin-bottom: 14px; }
 .settlement-finalize__fields label { display: grid; gap: 6px; color: var(--ink-2); font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
 .settlement-finalize__error { color: var(--danger); margin: 0 0 10px; font-size: var(--fs-sm); }
-@media (max-width: 720px) { .settlement-finalize__fields { grid-template-columns: 1fr; } .settlement-expense-option { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 720px) { .settlement-finalize__fields { grid-template-columns: 1fr; } .settlement-expense-plan__header { align-items: flex-start; flex-direction: column; } .settlement-expense-plan__items { grid-template-columns: 1fr; } .settlement-expense-option { align-items: flex-start; flex-direction: column; } }

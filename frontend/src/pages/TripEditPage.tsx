@@ -369,10 +369,12 @@ export default function TripEditPage() {
                           placeholder="VD: 29A-12345"
                           value={form.externalPlateNumber}
                           onChange={(e) => form.setExternalPlateNumber(e.target.value)}
+                          maxLength={20}
+                          required
                         />
                       </div>
                       <div className="tc-field">
-                        <label className="tc-field-label">Tên lái xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <label className="tc-field-label">Tên lái xe</label>
                         <input
                           id="externalDriverName"
                           className="input"
@@ -383,7 +385,7 @@ export default function TripEditPage() {
                         />
                       </div>
                       <div className="tc-field">
-                        <label className="tc-field-label">SĐT lái xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <label className="tc-field-label">SĐT lái xe</label>
                         <input
                           id="externalDriverPhone"
                           className="input mono"

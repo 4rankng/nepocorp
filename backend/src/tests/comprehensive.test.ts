@@ -332,6 +332,7 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
     method: 'PATCH',
     token: adminToken,
     body: JSON.stringify({
+      carrierType: 'OWN',
       truckId: altTruck.id,
       driverId: altDriver.id
     })

@@ -14,6 +14,7 @@ export interface SettlementPlanExpense extends SettlementExpenseSummaryItem {
   expenseType: string;
   expenseTypeName?: string | null;
   buyAmount: string | number;
+  invoiceNumber?: string | null;
 }
 
 export interface SettlementPlanRow {
@@ -23,11 +24,13 @@ export interface SettlementPlanRow {
   customerName: string | null;
   routeName: string | null;
   containerCount: number;
+  containerNumbers: string[];
   totalExpense: number;
   expenseBreakdown: Array<{
     code: string;
     label: string;
     amount: number;
+    invoiceNumbers: string[];
   }>;
 }
 
@@ -70,7 +73,11 @@ export function groupSettlementExpensesByTrip(
 ): SettlementPlanRow[] {
   const byTrip = new Map<number, SettlementPlanRow & {
     containers: Set<string>;
-    categories: Map<string, { label: string; amount: number }>;
+    categories: Map<string, {
+      label: string;
+      amount: number;
+      invoiceNumbers: Set<string>;
+    }>;
   }>();
 
   for (const expense of expenses ?? []) {
@@ -83,6 +90,7 @@ export function groupSettlementExpensesByTrip(
         customerName: expense.customerName ?? null,
         routeName: expense.routeName ?? null,
         containerCount: 0,
+        containerNumbers: [],
         totalExpense: 0,
         expenseBreakdown: [],
         containers: new Set(),
@@ -96,13 +104,21 @@ export function groupSettlementExpensesByTrip(
 
     const amount = Number(expense.buyAmount) || 0;
     row.totalExpense += amount;
-    const current = row.categories.get(expense.expenseType);
-    row.categories.set(expense.expenseType, {
-      label: expense.expenseTypeName?.trim()
+    let category = row.categories.get(expense.expenseType);
+    if (!category) {
+      category = {
+        label: expense.expenseTypeName?.trim()
         || FORWARDER_EXPENSE_TYPE_DEFAULTS[expense.expenseType]?.name
         || expense.expenseType,
-      amount: (current?.amount ?? 0) + amount,
-    });
+        amount: 0,
+        invoiceNumbers: new Set(),
+      };
+      row.categories.set(expense.expenseType, category);
+    }
+    category.amount += amount;
+
+    const invoiceNumber = expense.invoiceNumber?.trim();
+    if (invoiceNumber) category.invoiceNumbers.add(invoiceNumber);
 
     row.containerCount = Math.max(
       row.containerCount,
@@ -112,10 +128,16 @@ export function groupSettlementExpensesByTrip(
   }
 
   return [...byTrip.values()]
-    .map(({ containers: _containers, categories, ...row }) => ({
+    .map(({ containers, categories, ...row }) => ({
       ...row,
+      containerNumbers: [...containers].sort((a, b) => a.localeCompare(b, 'vi')),
       expenseBreakdown: [...categories.entries()]
-        .map(([code, value]) => ({ code, ...value }))
+        .map(([code, value]) => ({
+          code,
+          label: value.label,
+          amount: value.amount,
+          invoiceNumbers: [...value.invoiceNumbers].sort((a, b) => a.localeCompare(b, 'vi')),
+        }))
         .sort((a, b) => a.label.localeCompare(b.label, 'vi')),
     }))
     .sort((a, b) => {

@@ -301,8 +301,8 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
       const fixtureReport = await getPnlReport(testMonth, testYear) as PnlReport & { tripCount: number };
 
       assert.equal(fixtureReport.tripCount, 2, 'only COMPLETED and LOCKED trips belong in P&L');
-      assert.equal(fixtureReport.totalRevenue, 11_500_000, 'period revenue includes own revenue plus external margin');
-      assert.equal(fixtureReport.grossProfit, 9_500_000, 'period gross profit includes external margin exactly once');
+      assert.equal(fixtureReport.totalRevenue, 11_870_370, 'period revenue includes own revenue plus ex-VAT external margin');
+      assert.equal(fixtureReport.grossProfit, 9_870_370, 'period gross profit includes external margin exactly once');
       assert.equal(
         fixtureReport.trucks.reduce((sum, truck) => sum + truck.profit, 0),
         fixtureReport.grossProfit,
@@ -316,7 +316,8 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
       const external = fixtureReport.trucks.find(truck => truck.id === 0);
       assert.ok(external, 'external bucket is present');
       assert.equal(external.revenue, 7_500_000);
-      assert.equal(external.profit, 2_500_000);
+      assert.equal(external.costs, 4_629_630);
+      assert.equal(external.profit, 2_870_370);
 
       const details = fixtureReport.tripDetails.sort((a, b) => a.revenue - b.revenue);
       assert.deepEqual(
@@ -326,7 +327,7 @@ describe('A8 — P&L invariants (integration, dev DB)', () => {
           profit: detail.profit,
         })),
         [
-          { revenue: 7_500_000, customerCommission: 500_000, profit: 2_500_000 },
+          { revenue: 7_500_000, customerCommission: 500_000, profit: 2_870_370 },
           { revenue: 9_000_000, customerCommission: 1_000_000, profit: 7_000_000 },
         ],
       );

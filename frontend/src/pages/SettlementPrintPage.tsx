@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
+import { groupSettlementExpensesByTrip } from './admin-advance-settlement-summary';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -53,6 +54,9 @@ interface LinkedExpense {
   tripCode: string | null;
   departureDate: string | null;
   customerName: string | null;
+  routeName?: string | null;
+  tripContainerCount?: number | null;
+  expenseTypeName?: string | null;
 }
 
 interface LinkedRequest {
@@ -77,57 +81,6 @@ interface SettlementData {
   linkedExpenses?: LinkedExpense[];
   eligibleAdvanceRequests?: LinkedRequest[];
   eligibleExpenses?: LinkedExpense[];
-}
-
-// ─── Build table rows grouped by date → container ───
-function buildPrintRows(expenses: LinkedExpense[]) {
-  const grouped = new Map<string, Map<string, LinkedExpense[]>>();
-
-  for (const exp of expenses) {
-    const dateKey = exp.departureDate || 'unknown';
-    const containerKey = exp.containerNumber || '-';
-    if (!grouped.has(dateKey)) grouped.set(dateKey, new Map());
-    const containerMap = grouped.get(dateKey)!;
-    if (!containerMap.has(containerKey)) containerMap.set(containerKey, []);
-    containerMap.get(containerKey)!.push(exp);
-  }
-
-  const rows: Array<{
-    date: string;
-    container: string;
-    customer: string;
-    expenseType: string;
-    amount: string;
-    invoice: string;
-    tripCode: string;
-  }> = [];
-
-  // Date keys (ISO 'YYYY-MM-DD') sort chronologically as strings; push the
-  // 'unknown' bucket last so rows are ordered by transport date ascending (B6).
-  const sortedDateKeys = [...grouped.keys()].sort((a, b) => {
-    if (a === 'unknown') return 1;
-    if (b === 'unknown') return -1;
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
-  for (const dateKey of sortedDateKeys) {
-    const containerMap = grouped.get(dateKey)!;
-    for (const [containerKey, exps] of containerMap) {
-      const sorted = [...exps].sort((a, b) => a.expenseType.localeCompare(b.expenseType));
-      for (const exp of sorted) {
-        rows.push({
-          date: dateKey !== 'unknown' ? formatDate(dateKey) : '—',
-          container: containerKey !== '-' ? containerKey : '—',
-          customer: exp.customerName || '—',
-          expenseType: EXPENSE_TYPE_LABELS[exp.expenseType] || exp.expenseType,
-          amount: exp.buyAmount,
-          invoice: exp.invoiceNumber || '',
-          tripCode: exp.tripCode || '',
-        });
-      }
-    }
-  }
-
-  return rows;
 }
 
 // ─── Component ───
@@ -215,14 +168,15 @@ export default function SettlementPrintPage() {
   const refund = Number(s.refundAmount || 0);
   const balance = totalAdvance - totalExpense - refund;
 
-  const rows = buildPrintRows(expenses);
-  const totalFromRows = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const plans = groupSettlementExpensesByTrip(expenses);
+  const totalFromPlans = plans.reduce((sum, plan) => sum + plan.totalExpense, 0);
   const canEditExpenses = !isPortal && (user?.role === 'ACCOUNTANT' || user?.role === 'ADMIN') && (s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT');
 
   const requestCandidates = [...requests, ...(s.eligibleAdvanceRequests ?? [])]
     .filter((request, index, items) => items.findIndex(item => item.id === request.id) === index);
   const expenseCandidates = [...expenses, ...(s.eligibleExpenses ?? [])]
     .filter((expense, index, items) => items.findIndex(item => item.id === expense.id) === index);
+  const expenseCandidatePlans = groupSettlementExpensesByTrip(expenseCandidates);
 
   const toggleSelection = (setter: React.Dispatch<React.SetStateAction<Set<number>>>, id: number) => {
     setter(previous => {
@@ -383,47 +337,80 @@ export default function SettlementPrintPage() {
               </div>
             </div>
           )}
-          <div className="expense-grid">
-            <div className="expense-grid__header">
-              <span>Ngày</span>
-              <span>Nội dung</span>
-              <span>Khách hàng</span>
-              <span>Số cont</span>
-              <span className="u-right">Thành tiền</span>
-              <span>Hóa đơn</span>
+          <div className="settlement-plan-table">
+            <div className="settlement-plan-table__header" aria-hidden="true">
+              <span>Ngày / Khách hàng</span>
+              <span>Chuyến / Container</span>
+              <span>Hạng mục chi phí</span>
+              <span>Tổng cộng</span>
             </div>
-            {rows.map((row, idx) => (
-              <div key={idx} className="expense-grid__row">
-                <span className="u-muted">{row.date}</span>
-                <span>{row.expenseType}</span>
-                <span className="u-wrap">{row.customer}</span>
-                <span className="u-mono">{row.container}</span>
-                <span className="u-right u-num">{formatCurrency(Number(row.amount))}</span>
-                <span>{row.invoice}</span>
+            {plans.length === 0 ? (
+              <div className="settlement-plan-table__empty">Chưa có chi phí liên kết.</div>
+            ) : plans.map(plan => (
+              <div key={plan.tripId} className="settlement-plan-table__row">
+                <div className="settlement-plan-table__party">
+                  <span>{plan.departureDate ? formatDate(plan.departureDate) : 'Chưa có ngày'}</span>
+                  <strong>{plan.customerName || 'Chưa có khách hàng'}</strong>
+                </div>
+                <div className="settlement-plan-table__trip">
+                  <strong>{plan.tripCode || `Chuyến #${plan.tripId}`}</strong>
+                  <span className="settlement-plan-table__containers">
+                    {plan.containerNumbers.length > 0
+                      ? plan.containerNumbers.join(' · ')
+                      : plan.containerCount > 0
+                        ? `${plan.containerCount} container`
+                        : 'Chi phí chung'}
+                  </span>
+                </div>
+                <div className="settlement-plan-table__costs">
+                  {plan.expenseBreakdown.map(item => (
+                    <span className="settlement-plan-cost" key={item.code}>
+                      <span>{item.label}</span>
+                      <strong>{formatCurrency(item.amount)}</strong>
+                      {item.invoiceNumbers.length > 0 && (
+                        <small>HĐ {item.invoiceNumbers.join(', ')}</small>
+                      )}
+                    </span>
+                  ))}
+                </div>
+                <strong className="settlement-plan-table__amount">
+                  {formatCurrency(plan.totalExpense)}
+                </strong>
               </div>
             ))}
-            <div className="expense-grid__total">
-              <span className="u-bold" style={{ gridColumn: '1 / 5' }}>Tổng cộng</span>
-              <span className="u-right u-num u-bold">{formatCurrency(totalFromRows)}</span>
-              <span></span>
+            <div className="settlement-plan-table__total">
+              <span>Tổng cộng</span>
+              <strong>{formatCurrency(totalFromPlans)}</strong>
             </div>
           </div>
           {canEditExpenses && (
             <div className="settlement-expense-actions no-print">
-              {expenseCandidates.map(expense => (
-                <div key={expense.id} className="settlement-expense-option">
-                  <label>
-                    <input type="checkbox" checked={selectedExpenseIds.has(expense.id)} onChange={() => toggleSelection(setSelectedExpenseIds, expense.id)} />
-                    <span>
-                      <strong>{expense.tripCode || 'Chuyến chưa có mã'} · {expense.containerNumber || 'Chi phí chung'}</strong>
-                      <small>{EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType} · {formatCurrency(Number(expense.buyAmount))}</small>
-                    </span>
-                  </label>
-                  {expenses.some(item => item.id === expense.id) && (
-                    <button className="btn btn--secondary btn--sm" onClick={() => startEditingExpense(expense)}>
-                      <Pencil size={14} /> Sửa số tiền
-                    </button>
-                  )}
+              {expenseCandidatePlans.map(plan => (
+                <div className="settlement-expense-plan" key={plan.tripId}>
+                  <div className="settlement-expense-plan__header">
+                    <strong>{plan.tripCode || `Chuyến #${plan.tripId}`}</strong>
+                    <span>{plan.containerCount} container · {formatCurrency(plan.totalExpense)}</span>
+                  </div>
+                  <div className="settlement-expense-plan__items">
+                    {expenseCandidates
+                      .filter(expense => expense.tripId === plan.tripId)
+                      .map(expense => (
+                        <div key={expense.id} className="settlement-expense-option">
+                          <label>
+                            <input type="checkbox" checked={selectedExpenseIds.has(expense.id)} onChange={() => toggleSelection(setSelectedExpenseIds, expense.id)} />
+                            <span>
+                              <strong>{EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}</strong>
+                              <small>{expense.containerNumber || 'Chi phí chung'} · {formatCurrency(Number(expense.buyAmount))}</small>
+                            </span>
+                          </label>
+                          {expenses.some(item => item.id === expense.id) && (
+                            <button className="btn btn--secondary btn--sm" onClick={() => startEditingExpense(expense)}>
+                              <Pencil size={14} /> Sửa
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                  </div>
                 </div>
               ))}
             </div>

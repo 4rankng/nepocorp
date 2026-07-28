@@ -58,6 +58,13 @@ export interface ContainerFormRow {
   photoKeys: { cont: string[]; seal: string[] };
 }
 
+export interface FuelAllocationFormRow {
+  _key: string;
+  supplierId: number | null;
+  paymentMethod: 'CREDIT' | 'CASH';
+  liters: string;
+}
+
 export interface TripFormStateParams {
   isEditMode: boolean;
   existingTrip: TripDetail | undefined;
@@ -133,6 +140,10 @@ export interface UseTripFormStateReturn {
   setFuelActualUnitPrice: (v: string) => void;
   fuelSupplierId: number | null;
   setFuelSupplierId: (v: number | null) => void;
+  fuelAllocations: FuelAllocationFormRow[];
+  setFuelAllocations: (
+    value: FuelAllocationFormRow[] | ((previous: FuelAllocationFormRow[]) => FuelAllocationFormRow[])
+  ) => void;
   customerCommission: string;
   setCustomerCommission: (v: string) => void;
   tripWageDays: string;
@@ -227,6 +238,25 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
   const [fuelSupplierId, setFuelSupplierId] = useState<number | null>(
     isEditMode && existingTrip ? existingTrip.fuelSupplierId : null
   );
+  const [fuelAllocations, setFuelAllocations] = useState<FuelAllocationFormRow[]>(() => {
+    if (!isEditMode || !existingTrip) return [];
+    if (existingTrip.fuelAllocations?.length) {
+      return existingTrip.fuelAllocations.map(allocation => ({
+        _key: String(allocation.id),
+        supplierId: allocation.supplierId,
+        paymentMethod: allocation.paymentMethod,
+        liters: String(allocation.liters),
+      }));
+    }
+    return existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
+      ? [{
+          _key: `legacy-${existingTrip.id}`,
+          supplierId: existingTrip.fuelSupplierId,
+          paymentMethod: 'CREDIT',
+          liters: String(existingTrip.fuelLiters),
+        }]
+      : [];
+  });
   const [fuelMode, setFuelMode] = useState<FuelMode>(isEditMode && existingTrip ? existingTrip.fuelMode : FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState(isEditMode && existingTrip?.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : "");
   const [fuelSupplementLiters, setFuelSupplementLiters] = useState(isEditMode && existingTrip?.fuelSupplementLiters ? String(existingTrip.fuelSupplementLiters) : "");
@@ -336,6 +366,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     roadAllowanceOverride, setRoadAllowanceOverride,
     fuelActualUnitPrice, setFuelActualUnitPrice,
     fuelSupplierId, setFuelSupplierId,
+    fuelAllocations, setFuelAllocations,
     customerCommission, setCustomerCommission,
     tripWageDays, setTripWageDays,
     revenue, setRevenue,

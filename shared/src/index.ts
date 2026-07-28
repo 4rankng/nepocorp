@@ -23,7 +23,8 @@ export type { PushAudience, TireStatus } from './constants';
 export type {
   User, UserPublic, Driver, Customer, Truck, Trailer, Route, CargoType,
   PricingTable, RoadAllowance, FuelConfig, FuelPriceHistory, PenaltyReason, RoadConfig, AppSetting, CompanyInfo,
-  Trip, TripLeg, TripDetail, TripInstruction, LedgerEntry, Penalty,
+  Trip, TripLeg, TripDetail, TripInstruction, TripFuelAllocation,
+  TripFuelAllocationInput, FuelPaymentMethod, LedgerEntry, Penalty,
   CapTableHistory, TruckCapEntry, Distribution, ManagementFee, AuditLog, Notification, PushSubscriptionPayload,
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   BulkUpdateTripFiguresRequest, BulkUpdateTripFiguresResponse,
@@ -62,7 +63,7 @@ export type {
 } from './navigation/pageCatalog';
 
 export {
-  tripLegSchema, createTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema,
+  tripLegSchema, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema,
   createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
@@ -137,7 +138,7 @@ export {
   validateContainerNumber,
   suggestCorrections,
 } from './calculations/iso6346';
-export { computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
+export { computeExVatAmount, computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';

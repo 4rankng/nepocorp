@@ -97,7 +97,10 @@ export function TotalsPanel() {
   // Revenue split — used by accountant when reviewing combined trips.
   const revenueEmpty = Number(revenueEmptyReturn) || 0;
   const revenueComb = Number(revenueCombine) || 0;
-  const revenueNum = Number(revenue) || (revenueEmpty + revenueComb);
+  const revenueNum = isExternal
+    ? totals.recordedRevenue
+    : Number(revenue) || (revenueEmpty + revenueComb);
+  const displayTotalCost = isExternal ? totals.externalFreightExVat : totals.totalCost;
   const isProfitPositive = totals.grossProfit >= 0;
 
   const twoPointAmount = Number(form.twoPointDeliveryBonus) || 0;
@@ -118,7 +121,9 @@ export function TotalsPanel() {
 
       {/* 2. Revenue hero (inset) */}
       <section className="tc-totals__revenue">
-        <p className="tc-totals__revenue-label">Doanh thu</p>
+        <p className="tc-totals__revenue-label">
+          {isExternal ? 'Doanh thu ghi nhận (chưa VAT)' : 'Doanh thu'}
+        </p>
         <p className="tc-totals__revenue-value">
           <Money value={revenueNum} />
         </p>
@@ -200,7 +205,7 @@ export function TotalsPanel() {
               <Truck size={13} /> Cước thuê ngoài
             </span>
             <span className="tc-totals-row__val">
-              <Money value={Math.abs(totalCost)} sign="−" />
+              <Money value={Math.abs(displayTotalCost)} sign="−" />
             </span>
           </div>
         ) : (

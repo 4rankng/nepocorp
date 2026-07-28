@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "trip_fuel_allocations_supplier_once_idx" ON "trip_fuel_allocations" USING btree ("trip_id","supplier_id") WHERE "trip_fuel_allocations"."supplier_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "trip_fuel_allocations_cash_once_idx" ON "trip_fuel_allocations" USING btree ("trip_id") WHERE "trip_fuel_allocations"."payment_method" = 'CASH';

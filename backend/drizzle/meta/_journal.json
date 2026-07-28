@@ -729,6 +729,20 @@
       "when": 1784851200000,
       "tag": "0108_transting_product_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1785213823787,
+      "tag": "0109_small_wiccan",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1785214497586,
+      "tag": "0110_first_vengeance",
+      "breakpoints": true
     }
   ]
 }

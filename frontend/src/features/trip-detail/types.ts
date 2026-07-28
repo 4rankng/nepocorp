@@ -4,6 +4,7 @@ import type { TripDetail } from '@tingting/shared';
 /** Derived financial & operational data computed from a TripDetail. */
 export interface TripDerivedData {
   revenue: number;
+  freightRevenue: number;
   totalCost: number;
   grossProfit: number;
   marginPct: string | null;
@@ -23,6 +24,7 @@ export interface TripDerivedData {
   fuelVarianceOver: boolean;
   externalCarrierName: string;
   externalMargin: number | null;
+  externalHireCost: number | null;
 }
 
 /** Role-based permission flags for trip actions. */

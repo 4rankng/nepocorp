@@ -428,7 +428,7 @@ export async function getTripById(id: number) {
 
   if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
 
-  const [legs, photos, instructions, gpsTrackRow] = await Promise.all([
+  const [legs, photos, instructions, gpsTrackRow, fuelAllocations] = await Promise.all([
     db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
     // Only general (`OTHER`) photos belong in the trip-level `photoUrls`.
     // CONTAINER/SEAL photos are surfaced separately by the "Container & Seal"
@@ -448,6 +448,19 @@ export async function getTripById(id: number) {
       pointCount: s.tripGpsTracks.pointCount,
       stops: s.tripGpsTracks.stops,
     }).from(s.tripGpsTracks).where(eq(s.tripGpsTracks.tripId, id)).limit(1),
+    db.select({
+      id: s.tripFuelAllocations.id,
+      tripId: s.tripFuelAllocations.tripId,
+      supplierId: s.tripFuelAllocations.supplierId,
+      supplierName: sql<string>`coalesce(${s.suppliers.name}, 'Cây dầu ngoài (tiền mặt)')`,
+      liters: s.tripFuelAllocations.liters,
+      paymentMethod: s.tripFuelAllocations.paymentMethod,
+      createdAt: s.tripFuelAllocations.createdAt,
+      updatedAt: s.tripFuelAllocations.updatedAt,
+    }).from(s.tripFuelAllocations)
+      .leftJoin(s.suppliers, eq(s.tripFuelAllocations.supplierId, s.suppliers.id))
+      .where(eq(s.tripFuelAllocations.tripId, id))
+      .orderBy(s.tripFuelAllocations.id),
   ]);
 
   // Routes (bidirectional: A→B also covers B→A reversed) for each leg.
@@ -472,5 +485,10 @@ export async function getTripById(id: number) {
   const gpsTrail = gpsRow
     ? { encodedPolyline: gpsRow.encodedPolyline, distanceKm: Number(gpsRow.distanceKm), pointCount: gpsRow.pointCount, stops: gpsRow.stops ?? [] }
     : null;
-  return { ...shapeTripRelations(trip, { legs: legsWithCoords, photoUrls }), instructions, gpsTrail };
+  return {
+    ...shapeTripRelations(trip, { legs: legsWithCoords, photoUrls }),
+    instructions,
+    gpsTrail,
+    fuelAllocations,
+  };
 }

@@ -53,8 +53,12 @@ export interface ComputeTripTotalsOutput {
   serviceMargin: number;       // service/ocean-fee profit tracking is intentionally out of scope
   totalServiceBuy: number;     // retained for compatibility; not used in trip P&L
   totalServiceSell: number;    // sum sellAmount ex-VAT for billing/AR reference only
-  externalMargin: number;      // freightExVat - externalFreightCost(incl-VAT) per §4.7; 0 for OWN trips
-  externalFreightExVat: number; // informational: externalFreightCost/(1+vatRate); 0 for OWN trips (display only — margin uses incl-VAT cost)
+  externalMargin: number;      // recordedRevenue - externalFreightExVat; 0 for OWN trips
+  externalFreightExVat: number; // externalFreightCost/(1+vatRate); 0 for OWN trips
+}
+
+export function computeExVatAmount(amountInclVat: number, vatRate: number): number {
+  return vatRate > 0 ? Math.round(amountInclVat / (1 + vatRate)) : amountInclVat;
 }
 
 export function computeRoadAllowance(params: {
@@ -141,9 +145,7 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
   const carrierType = input.carrierType ?? 'OWN';
 
   // Freight ex-VAT (for P&L; AR uses incl-VAT)
-  const freightExVat = vatRate > 0
-    ? Math.round(input.revenue / (1 + vatRate))
-    : input.revenue;
+  const freightExVat = computeExVatAmount(input.revenue, vatRate);
 
   // Ancillary services/ocean-fee amounts are entered only for debit notes and
   // customer receivables. The transport P&L deliberately excludes their buy
@@ -173,12 +175,12 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
 
   if (carrierType === 'EXTERNAL') {
     const extCost = input.externalFreightCost ?? 0;  // incl-VAT, stored as-paid
-    externalFreightExVat = vatRate > 0 ? Math.round(extCost / (1 + vatRate)) : extCost;  // informational ex-VAT (display only)
-    // Costs are recorded INCL VAT (no input-VAT deduction). Customer commission
-    // reduces recorded revenue for external trips just as it does for own-truck
-    // trips, so the management margin must use recordedRevenue.
-    externalMargin = recordedRevenue - extCost;
-    // For external trips: cost = external freight only (no fuel/allowance/salary)
+    externalFreightExVat = computeExVatAmount(extCost, vatRate);
+    // External-carrier management margin compares like with like: both the
+    // customer freight and the hired-carrier freight are stripped of VAT.
+    // Customer commission still reduces the revenue earned by the company.
+    externalMargin = recordedRevenue - externalFreightExVat;
+    // Keep the stored/AP cost incl-VAT; reporting uses externalFreightExVat.
     totalCost = extCost;
     grossProfit = externalMargin;
   } else {

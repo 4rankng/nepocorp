@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as gpsService from '../services/gps.service';
 import { captureTripGpsTrack, deriveRoutesForStoredTrip } from '../services/gps/capture.service';
@@ -307,13 +307,7 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
 // Reassign truck/driver (only for CREATED trips)
 router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
-  const data = req.body;
-  if (data.carrierType === 'OWN' && (!data.truckId || !data.driverId)) {
-    return res.status(400).json({ error: 'truckId và driverId là bắt buộc cho xe nhà' });
-  }
-  if (data.carrierType === 'EXTERNAL' && (!data.externalCarrierId && !data.externalPlateNumber)) {
-    return res.status(400).json({ error: 'Vui lòng chọn đối tác xe ngoài hoặc nhập biển số' });
-  }
+  const data = reassignTripSchema.parse(req.body);
   const trip = await tripService.reassignTrip(id, data);
   await invalidateReportCaches();
   res.json(trip);
@@ -566,7 +560,10 @@ router.get('/:id/fuel-voucher/html',
   requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT),
   asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
-  const html = await getFuelVoucherHtml(id);
+  const supplierId = req.query.supplierId
+    ? parseInt(String(req.query.supplierId), 10)
+    : undefined;
+  const html = await getFuelVoucherHtml(id, supplierId);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
 }));
@@ -576,9 +573,12 @@ router.get('/:id/fuel-voucher/xlsx',
   requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT),
   asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
+  const supplierId = req.query.supplierId
+    ? parseInt(String(req.query.supplierId), 10)
+    : undefined;
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename=phieu-cap-nhien-lieu-${id}.xlsx`);
-  await getFuelVoucherXlsx(id, res);
+  await getFuelVoucherXlsx(id, res, supplierId);
 }));
 
 export default router;

@@ -7,6 +7,7 @@ import { eq, and, isNull, sql } from 'drizzle-orm';
 import { TripStatus, Role } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import { lockTripMutation } from './trip-shared';
 
 export async function transitionTripStatus(
   tripId: number,
@@ -20,6 +21,7 @@ export async function transitionTripStatus(
   // on the corresponding endpoint (POST /dispatch, /lock, /cancel) with full
   // Subject + Verb + Natural Key sentences.
   return await db.transaction(async (tx) => {
+    await lockTripMutation(tx, tripId);
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
 
@@ -174,6 +176,9 @@ export async function transitionTripStatus(
       const ancillaryFees = currentStatus === TripStatus.COMPLETED
         ? await tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, trip.id))
         : [];
+      const fuelAllocations = currentStatus === TripStatus.COMPLETED
+        ? await tx.select().from(s.tripFuelAllocations).where(eq(s.tripFuelAllocations.tripId, trip.id))
+        : [];
 
       // Canceled: zero all financials
       const [updated] = await tx.update(s.trips).set({
@@ -200,7 +205,10 @@ export async function transitionTripStatus(
           externalCarrierId: trip.externalCarrierId ?? null,
           externalFreightCost: trip.externalFreightCost ?? null,
           fuelSupplierId: trip.fuelSupplierId ?? null,
+          fuelPriceApplied: trip.fuelPriceApplied,
+          fuelActualUnitPrice: trip.fuelActualUnitPrice,
           totalFuelCost: trip.totalFuelCost,
+          fuelAllocations,
           ancillaryFees: ancillaryFees.map(fee => ({
             id: fee.id,
             buyAmount: fee.buyAmount,
@@ -231,6 +239,8 @@ export async function transitionTripStatus(
     if (targetStatus === TripStatus.COMPLETED && currentStatus === TripStatus.IN_TRANSIT) {
       const ancillaryFees = await tx.select().from(s.tripExpenses)
         .where(eq(s.tripExpenses.tripId, trip.id));
+      const fuelAllocations = await tx.select().from(s.tripFuelAllocations)
+        .where(eq(s.tripFuelAllocations.tripId, trip.id));
 
       await LedgerService.postTripLock(tx, {
         id: updated.id,
@@ -243,7 +253,10 @@ export async function transitionTripStatus(
         externalCarrierId: updated.externalCarrierId ?? null,
         externalFreightCost: updated.externalFreightCost ?? null,
         fuelSupplierId: updated.fuelSupplierId ?? null,
+        fuelPriceApplied: updated.fuelPriceApplied,
+        fuelActualUnitPrice: updated.fuelActualUnitPrice,
         totalFuelCost: updated.totalFuelCost,
+        fuelAllocations,
         ancillaryFees: ancillaryFees.map(fee => ({
           id: fee.id,
           buyAmount: fee.buyAmount,

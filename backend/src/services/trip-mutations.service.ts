@@ -3,9 +3,9 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, desc, lte, ne } from 'drizzle-orm';
+import { eq, and, isNull, sql, desc, lte, ne, inArray } from 'drizzle-orm';
 import { TripStatus, FuelMode, Role, TxnType } from '@tingting/shared';
-import type { TripLegInput } from '@tingting/shared';
+import type { TripFuelAllocationInput, TripLegInput } from '@tingting/shared';
 import { resolveTripDriverSalary, computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
 import { ApiError } from '../errors';
 
@@ -24,7 +24,7 @@ export function assertCustomerCommissionWithinRevenue(
     );
   }
 }
-import { resolveTrailer } from './trip-shared';
+import { lockTripMutation, resolveTrailer } from './trip-shared';
 import type { Tx } from './trip-shared';
 import { LedgerService } from './ledger.service';
 
@@ -181,6 +181,8 @@ export function buildCopiedTripValues(
   tripCode: string,
   createdBy: number,
 ): TripInsert {
+  requireExternalPlate(source.carrierType, source.externalPlateNumber);
+
   const copiedFields = Object.fromEntries(
     Object.entries(source).filter(([key]) => !COPY_EXCLUDED_TRIP_FIELDS.has(key as keyof TripRow)),
   ) as Omit<TripInsert, 'tripCode'>;
@@ -231,6 +233,65 @@ async function generateTripCode(tx: Tx, departureDateValue: string): Promise<str
   return `TRP-${yearMonth}-${String(counterRow.counter).padStart(4, '0')}`;
 }
 
+function requireExternalPlate(
+  carrierType: string | undefined,
+  externalPlateNumber: string | null | undefined,
+) {
+  if (carrierType === 'EXTERNAL' && !externalPlateNumber?.trim()) {
+    throw new ApiError(400, 'Biển số xe là bắt buộc cho chuyến xe ngoài');
+  }
+}
+
+async function validateFuelAllocationSuppliers(
+  tx: Tx,
+  allocations: TripFuelAllocationInput[],
+): Promise<void> {
+  const supplierIds = Array.from(new Set(
+    allocations.flatMap(allocation =>
+      allocation.paymentMethod === 'CREDIT' && allocation.supplierId
+        ? [allocation.supplierId]
+        : [],
+    ),
+  ));
+  if (supplierIds.length === 0) return;
+
+  const suppliers = await tx.select({ id: s.suppliers.id })
+    .from(s.suppliers)
+    .where(and(
+      inArray(s.suppliers.id, supplierIds),
+      eq(s.suppliers.status, 'ACTIVE'),
+      eq(s.suppliers.isFuelSupplier, true),
+      isNull(s.suppliers.deletedAt),
+    ));
+  if (suppliers.length !== supplierIds.length) {
+    throw new ApiError(400, 'Nhà cung cấp nhiên liệu không tồn tại hoặc đã ngừng hoạt động');
+  }
+}
+
+function assertFuelAllocationTotal(
+  allocations: TripFuelAllocationInput[],
+  totalFuelLiters: number,
+): void {
+  if (allocations.length === 0) return;
+  for (const allocation of allocations) {
+    if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
+      throw new ApiError(400, 'Số lít tại mỗi điểm đổ chỉ được có tối đa 2 chữ số thập phân');
+    }
+  }
+  const allocatedHundredths = allocations.reduce(
+    (sum, allocation) => sum + Math.round(allocation.liters * 100),
+    0,
+  );
+  const tripHundredths = Math.round(totalFuelLiters * 100);
+  if (allocatedHundredths !== tripHundredths) {
+    const allocatedLiters = allocatedHundredths / 100;
+    throw new ApiError(
+      400,
+      `Tổng phân bổ dầu (${allocatedLiters.toLocaleString('vi-VN')} lít) phải bằng tổng dầu chuyến (${(tripHundredths / 100).toLocaleString('vi-VN')} lít)`,
+    );
+  }
+}
+
 export async function createTrip(data: {
   customerId: number;
   routeId: number;
@@ -253,6 +314,8 @@ export async function createTrip(data: {
   fuelSupplierId?: number | null;
   fuelActualUnitPrice?: number | null;
 }) {
+  requireExternalPlate(data.carrierType, data.externalPlateNumber);
+
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
 
@@ -464,6 +527,7 @@ export async function updateTripFigures(
     fuelSupplementReason?: string;
     fuelActualUnitPrice?: number | null;
     fuelSupplierId?: number | null;
+    fuelAllocations?: TripFuelAllocationInput[];
     tollsDiscount?: number;
     tollsAddition?: number;
     tollsStations?: number;
@@ -501,12 +565,28 @@ export async function updateTripFigures(
 
   return await db.transaction(async (tx) => {
     // 1. Fetch trip and check lock status
+    await lockTripMutation(tx, tripId);
     const [trip] = await tx.select().from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
     if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
       throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
     }
+    const existingFuelAllocations = await tx.select()
+      .from(s.tripFuelAllocations)
+      .where(eq(s.tripFuelAllocations.tripId, tripId))
+      .orderBy(s.tripFuelAllocations.id);
 
+    const resolvedCarrierType = data.carrierType ?? trip.carrierType;
+    const resolvedExternalPlateNumber = data.externalPlateNumber !== undefined
+      ? data.externalPlateNumber
+      : trip.externalPlateNumber;
+    requireExternalPlate(resolvedCarrierType, resolvedExternalPlateNumber);
+    if (
+      resolvedCarrierType === 'EXTERNAL'
+      && (data.fuelSupplierId != null || (data.fuelAllocations?.length ?? 0) > 0)
+    ) {
+      throw new ApiError(422, 'Chuyến xe ngoài không được ghi nhận phân bổ hoặc công nợ nhiên liệu của công ty');
+    }
 
     // 2. Optimistic concurrency check
     if (data.expectedVersion !== undefined && trip.version !== data.expectedVersion) {
@@ -791,6 +871,58 @@ export async function updateTripFigures(
     totals.grossProfit = frozenFuel.grossProfit;
     totals.totalFuelLiters = frozenFuel.totalFuelLiters;
 
+    let fuelAllocations: TripFuelAllocationInput[];
+    if (resolvedCarrierType === 'EXTERNAL') {
+      // External-carrier freight is the complete transport cost. Remove any
+      // legacy company-fuel allocation when an OWN trip is converted so it
+      // cannot create a vendor payable outside the external-trip P&L.
+      fuelAllocations = [];
+    } else if (data.fuelAllocations !== undefined) {
+      fuelAllocations = data.fuelAllocations;
+    } else if (data.fuelSupplierId !== undefined) {
+      fuelAllocations = data.fuelSupplierId && totals.totalFuelLiters > 0
+        ? [{
+            supplierId: data.fuelSupplierId,
+            liters: totals.totalFuelLiters,
+            paymentMethod: 'CREDIT',
+          }]
+        : [];
+    } else if (existingFuelAllocations.length > 0) {
+      fuelAllocations = existingFuelAllocations.map(allocation => ({
+        supplierId: allocation.supplierId,
+        liters: Number(allocation.liters),
+        paymentMethod: allocation.paymentMethod as 'CREDIT' | 'CASH',
+      }));
+    } else {
+      fuelAllocations = trip.fuelSupplierId && totals.totalFuelLiters > 0
+        ? [{
+            supplierId: trip.fuelSupplierId,
+            liters: totals.totalFuelLiters,
+            paymentMethod: 'CREDIT',
+          }]
+        : [];
+    }
+    const historicalSupplierIds = new Set(
+      existingFuelAllocations.length > 0
+        ? existingFuelAllocations.flatMap(allocation =>
+            allocation.paymentMethod === 'CREDIT' && allocation.supplierId
+              ? [allocation.supplierId]
+              : [],
+          )
+        : (trip.fuelSupplierId ? [trip.fuelSupplierId] : []),
+    );
+    const newlySelectedAllocations = fuelAllocations.filter(
+      allocation =>
+        allocation.paymentMethod === 'CREDIT'
+        && allocation.supplierId != null
+        && !historicalSupplierIds.has(allocation.supplierId),
+    );
+    await validateFuelAllocationSuppliers(tx, newlySelectedAllocations);
+    assertFuelAllocationTotal(fuelAllocations, totals.totalFuelLiters);
+    const primaryFuelSupplierId = fuelAllocations.find(
+      allocation => allocation.paymentMethod === 'CREDIT',
+    )?.supplierId ?? null;
+
     // B2: completion is no longer auto-triggered from actuals entry. Saving
     // figures keeps the trip in its current lifecycle status; the user marks
     // the trip "Hoàn thành" explicitly via POST /trips/:id/complete (permissive
@@ -812,7 +944,7 @@ export async function updateTripFigures(
       fuelSupplementLiters: String(data.fuelSupplementLiters || 0),
       fuelSupplementReason: data.fuelSupplementReason ?? null,
       fuelActualUnitPrice: data.fuelActualUnitPrice != null ? String(data.fuelActualUnitPrice) : null,
-      fuelSupplierId: data.fuelSupplierId !== undefined ? data.fuelSupplierId : trip.fuelSupplierId,
+      fuelSupplierId: primaryFuelSupplierId,
       tollsDiscount: String(data.tollsDiscount || 0),
       tollsAddition: String(data.tollsAddition || 0),
       tollsStations: data.tollsStations || 0,
@@ -853,6 +985,16 @@ export async function updateTripFigures(
       throw new ApiError(409, 'Dữ liệu đã bị thay đổi bởi người khác. Vui lòng tải lại trang.');
     }
 
+    await tx.delete(s.tripFuelAllocations).where(eq(s.tripFuelAllocations.tripId, tripId));
+    if (fuelAllocations.length > 0) {
+      await tx.insert(s.tripFuelAllocations).values(fuelAllocations.map(allocation => ({
+        tripId,
+        supplierId: allocation.supplierId,
+        liters: String(allocation.liters),
+        paymentMethod: allocation.paymentMethod,
+      })));
+    }
+
     if (tripStatus === TripStatus.COMPLETED) {
       const mappedLedgerFees = ledgerFees.map(fee => ({
         id: fee.id,
@@ -875,7 +1017,10 @@ export async function updateTripFigures(
         externalCarrierId: trip.externalCarrierId ?? null,
         externalFreightCost: trip.externalFreightCost ?? null,
         fuelSupplierId: trip.fuelSupplierId ?? null,
+        fuelPriceApplied: trip.fuelPriceApplied,
+        fuelActualUnitPrice: trip.fuelActualUnitPrice,
         totalFuelCost: trip.totalFuelCost,
+        fuelAllocations: existingFuelAllocations,
         ancillaryFees: mappedLedgerFees,
       }, { strict: false });
 
@@ -890,7 +1035,14 @@ export async function updateTripFigures(
         externalCarrierId: updated.externalCarrierId ?? null,
         externalFreightCost: updated.externalFreightCost ?? null,
         fuelSupplierId: updated.fuelSupplierId ?? null,
+        fuelPriceApplied: updated.fuelPriceApplied,
+        fuelActualUnitPrice: updated.fuelActualUnitPrice,
         totalFuelCost: updated.totalFuelCost,
+        fuelAllocations: fuelAllocations.map(allocation => ({
+          supplierId: allocation.supplierId,
+          liters: String(allocation.liters),
+          paymentMethod: allocation.paymentMethod,
+        })),
         ancillaryFees: mappedLedgerFees,
       }, { strict: false });
     }
@@ -965,6 +1117,7 @@ export async function reassignTrip(tripId: number, data: { carrierType?: 'OWN' |
     if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi lái xe/xe cho chuyến chưa xuất phát');
 
     const carrierType = data.carrierType || 'OWN';
+    requireExternalPlate(carrierType, data.externalPlateNumber);
     let trailerId = trip.trailerId;
     let trailerType = trip.trailerType;
 

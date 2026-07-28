@@ -66,16 +66,16 @@ interface ExternalTripPreviewInput {
   customerCommission?: string | number | null;
 }
 
-export function getExternalTripPreviewGrossProfit(trip: ExternalTripPreviewInput): number | null {
-  if (trip.carrierType !== 'EXTERNAL') {
-    return null;
-  }
+export interface ExternalTripFinancials {
+  freightRevenue: number;
+  recordedRevenue: number;
+  externalFreightCost: number;
+  grossProfit: number;
+}
 
+function computeExternalTripFinancials(trip: ExternalTripPreviewInput) {
   const revenue = Number(trip.revenue ?? 0);
   const externalFreightCost = Number(trip.externalFreightCost ?? 0);
-  if (!revenue || !externalFreightCost) {
-    return null;
-  }
 
   return computeTripTotals({
     legs: [],
@@ -97,17 +97,40 @@ export function getExternalTripPreviewGrossProfit(trip: ExternalTripPreviewInput
     hasReturnCargo: false,
     returnCargoBonus: 0,
     revenue,
-    vatRate: Number(trip.vatRate ?? 0.08),
+    vatRate: Number(trip.vatRate ?? 0),
     customerCommission: Number(trip.customerCommission ?? 0),
     carrierType: 'EXTERNAL',
     externalFreightCost,
     driverSalary: 0,
     twoPointDeliveryBonus: 0,
     vehicleShiftAllowance: 0,
-  }).grossProfit;
+  });
+}
+
+export function getExternalTripFinancials(trip: ExternalTripPreviewInput): ExternalTripFinancials | null {
+  if (trip.carrierType !== 'EXTERNAL') {
+    return null;
+  }
+
+  const totals = computeExternalTripFinancials(trip);
+  return {
+    freightRevenue: totals.freightExVat,
+    recordedRevenue: totals.recordedRevenue,
+    externalFreightCost: totals.externalFreightExVat,
+    grossProfit: totals.grossProfit,
+  };
+}
+
+export function getExternalTripPreviewGrossProfit(trip: ExternalTripPreviewInput): number | null {
+  if (!Number(trip.revenue ?? 0) || !Number(trip.externalFreightCost ?? 0)) {
+    return null;
+  }
+  return getExternalTripFinancials(trip)?.grossProfit ?? null;
 }
 
 export function getTripDisplayGrossProfit(trip: TripDetail): number {
+  const externalFinancials = getExternalTripFinancials(trip);
+  if (externalFinancials) return externalFinancials.grossProfit;
   return Number(trip.grossProfit ?? 0);
 }
 

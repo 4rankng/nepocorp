@@ -21,11 +21,12 @@ function NegMoney({ value }: { value: number }) {
 
 export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
   const {
-    revenue, fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
+    revenue, freightRevenue, fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
     twoPointDeliveryBonus, vehicleShiftAllowance,
-    totalCost, grossProfit,
+    totalCost, grossProfit, externalHireCost,
   } = derived;
 
+  const isExternal = externalHireCost !== null;
   const showCommission = customerCommission > 0;
   const showTwoPointBonus = twoPointDeliveryBonus > 0;
   const showShiftAllowance = vehicleShiftAllowance > 0;
@@ -39,7 +40,7 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
         <div className="pl">
           <div className="pl-row">
             <span className="k">Doanh thu</span>
-            <span className="v"><Money value={revenue} /></span>
+            <span className="v"><Money value={isExternal ? freightRevenue : revenue} /></span>
           </div>
           {showCommission && (
             <div className="pl-row">
@@ -48,39 +49,48 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
             </div>
           )}
           <div className="pl-divider dashed" />
-          <div className="pl-row">
-            <span className="k"><span className="swatch swatch--fuel" />Chi phí nhiên liệu</span>
-            <span className="v neg"><NegMoney value={fuelCost} /></span>
-          </div>
-          <div className="pl-row">
-            <span className="k"><span className="swatch swatch--road" />Tiền đi đường</span>
-            <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}><NegMoney value={roadAllowance} /></span>
-          </div>
-          {tollsDiscount > 0 && (
+          {isExternal ? (
             <div className="pl-row">
-              <span className="k"><span className="swatch swatch--road" />Tiền vé (công ty thanh toán)</span>
-              <span className="v neg"><NegMoney value={tollsDiscount} /></span>
+              <span className="k"><span className="swatch swatch--fuel" />Cước thuê xe ngoài</span>
+              <span className="v neg"><NegMoney value={externalHireCost} /></span>
             </div>
-          )}
-          <div className="pl-row">
-            <span className="k"><span className="swatch swatch--road" />Tiền vé (trạm thu phí)</span>
-            <span className={`v ${tollCost === 0 ? 'zero' : ''}`}><NegMoney value={tollCost} /></span>
-          </div>
-          <div className="pl-row">
-            <span className="k"><span className="swatch swatch--road" />Tiền lương lái xe</span>
-            <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}><NegMoney value={driverSalary} /></span>
-          </div>
-          {showTwoPointBonus && (
-            <div className="pl-row">
-              <span className="k"><span className="swatch swatch--road" />Thưởng giao 2 điểm</span>
-              <span className="v neg"><NegMoney value={twoPointDeliveryBonus} /></span>
-            </div>
-          )}
-          {showShiftAllowance && (
-            <div className="pl-row">
-              <span className="k"><span className="swatch swatch--road" />Lưu ca xe</span>
-              <span className="v neg"><NegMoney value={vehicleShiftAllowance} /></span>
-            </div>
+          ) : (
+            <>
+              <div className="pl-row">
+                <span className="k"><span className="swatch swatch--fuel" />Chi phí nhiên liệu</span>
+                <span className="v neg"><NegMoney value={fuelCost} /></span>
+              </div>
+              <div className="pl-row">
+                <span className="k"><span className="swatch swatch--road" />Tiền đi đường</span>
+                <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}><NegMoney value={roadAllowance} /></span>
+              </div>
+              {tollsDiscount > 0 && (
+                <div className="pl-row">
+                  <span className="k"><span className="swatch swatch--road" />Tiền vé (công ty thanh toán)</span>
+                  <span className="v neg"><NegMoney value={tollsDiscount} /></span>
+                </div>
+              )}
+              <div className="pl-row">
+                <span className="k"><span className="swatch swatch--road" />Tiền vé (trạm thu phí)</span>
+                <span className={`v ${tollCost === 0 ? 'zero' : ''}`}><NegMoney value={tollCost} /></span>
+              </div>
+              <div className="pl-row">
+                <span className="k"><span className="swatch swatch--road" />Tiền lương lái xe</span>
+                <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}><NegMoney value={driverSalary} /></span>
+              </div>
+              {showTwoPointBonus && (
+                <div className="pl-row">
+                  <span className="k"><span className="swatch swatch--road" />Thưởng giao 2 điểm</span>
+                  <span className="v neg"><NegMoney value={twoPointDeliveryBonus} /></span>
+                </div>
+              )}
+              {showShiftAllowance && (
+                <div className="pl-row">
+                  <span className="k"><span className="swatch swatch--road" />Lưu ca xe</span>
+                  <span className="v neg"><NegMoney value={vehicleShiftAllowance} /></span>
+                </div>
+              )}
+            </>
           )}
           <div className="pl-divider" />
           <div className="pl-row subtotal">

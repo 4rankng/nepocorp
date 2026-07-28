@@ -22,6 +22,7 @@ import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
 import {
+  countRequiredTripFields,
   createFallbackLegsFromRouteName,
   resolveContainerCount,
 } from './tripFormDispatchUtils';
@@ -187,6 +188,23 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.setInstructionsNotes(inst?.notes ?? '');
     s.setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     s.setFuelSupplierId(existingTrip.fuelSupplierId ?? null);
+    s.setFuelAllocations(
+      existingTrip.fuelAllocations?.length
+        ? existingTrip.fuelAllocations.map(allocation => ({
+            _key: String(allocation.id),
+            supplierId: allocation.supplierId,
+            paymentMethod: allocation.paymentMethod,
+            liters: String(allocation.liters),
+          }))
+        : existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
+          ? [{
+              _key: `legacy-${existingTrip.id}`,
+              supplierId: existingTrip.fuelSupplierId,
+              paymentMethod: 'CREDIT' as const,
+              liters: String(existingTrip.fuelLiters),
+            }]
+          : [],
+    );
     s.setPhotoUrls(existingTrip.photoUrls || []);
 
     s.setCarrierType(existingTrip.carrierType ?? 'OWN');
@@ -393,26 +411,27 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   );
 
   const requiredFieldsFilled = useMemo(() => {
-    let count = 0;
-    if (s.customerId) count++;
-    if (s.routeId) count++;
-    if (s.carrierType === 'EXTERNAL') {
-      if (s.externalFreightCost && s.externalFreightCost.trim()) count++;
-      if (s.externalDriverName && s.externalDriverName.trim()) count++;
-      if (s.externalDriverPhone && s.externalDriverPhone.trim()) count++;
-    } else {
-      if (s.truckId) count++;
-      if (s.trailerType) count++;
-      if (s.driverId) count++;
-    }
-    if (s.cargoTypeId) count++;
-    if (s.plannedContainerTypeId || s.containerRows.some(r => r.containerTypeId)) count++;
-    if (s.departureDate) count++;
-    return count;
+    return countRequiredTripFields({
+      customerId: s.customerId,
+      routeId: s.routeId,
+      carrierType: s.carrierType,
+      externalCarrierId: s.externalCarrierId,
+      externalFreightCost: s.externalFreightCost,
+      externalPlateNumber: s.externalPlateNumber,
+      truckId: s.truckId,
+      trailerType: s.trailerType,
+      driverId: s.driverId,
+      cargoTypeId: s.cargoTypeId,
+      plannedContainerTypeId: s.plannedContainerTypeId,
+      containerRows: s.containerRows.map(row => ({
+        containerTypeId: row.containerTypeId === '' ? null : row.containerTypeId,
+      })),
+      departureDate: s.departureDate,
+    });
   }, [
     s.customerId, s.routeId, s.carrierType, s.truckId, s.trailerType, s.driverId,
     s.cargoTypeId, s.plannedContainerTypeId, s.containerRows, s.departureDate,
-    s.externalFreightCost, s.externalDriverName, s.externalDriverPhone
+    s.externalCarrierId, s.externalFreightCost, s.externalPlateNumber,
   ]);
 
   const completionStatus = useMemo((): CompletionStatus => {
@@ -420,6 +439,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (s.fuelMode) fuelRevenue++;
     if (s.fuelSupplementLiters) fuelRevenue++;
     if (s.fuelSupplementReason) fuelRevenue++;
+    if (s.fuelAllocations.some(allocation => allocation.liters.trim())) fuelRevenue++;
     if (s.tollsAddition) fuelRevenue++;
     if (s.tollsDiscount) fuelRevenue++;
     if (s.tollsStations) fuelRevenue++;
@@ -443,6 +463,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.fuelMode,
     s.fuelSupplementLiters,
     s.fuelSupplementReason,
+    s.fuelAllocations,
     s.tollsAddition,
     s.tollsDiscount,
     s.tollsStations,
@@ -469,6 +490,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       (s.fuelMode === FuelMode.FLAT_RATE && s.fuelLitersOverride.trim() !== "") ||
       s.fuelSupplementLiters.trim() !== "" ||
       s.fuelSupplementReason.trim() !== "" ||
+      s.fuelAllocations.some(allocation => allocation.liters.trim() !== "") ||
       s.tollsDiscount.trim() !== "" ||
       s.tollsAddition.trim() !== "" ||
       s.tollsStations.trim() !== "" ||
@@ -480,7 +502,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     [
       legs, s.fuelMode, s.fuelLitersOverride, s.fuelSupplementLiters,
       s.fuelSupplementReason, s.tollsDiscount, s.tollsAddition, s.tollsStations,
-      s.hasReturnCargo, s.driverSalary, s.revenue, s.notes, photoUrls,
+      s.fuelAllocations, s.hasReturnCargo, s.driverSalary, s.revenue, s.notes, photoUrls,
     ],
   );
 

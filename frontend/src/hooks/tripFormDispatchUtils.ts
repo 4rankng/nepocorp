@@ -5,6 +5,41 @@ export interface PlannedContainer {
   containerTypeId?: number | null;
 }
 
+export interface RequiredTripFields {
+  customerId: string;
+  routeId: string;
+  carrierType: 'OWN' | 'EXTERNAL';
+  externalCarrierId: number | null;
+  externalFreightCost: string;
+  externalPlateNumber: string;
+  truckId: string;
+  trailerType: string;
+  driverId: string;
+  cargoTypeId: string;
+  plannedContainerTypeId: string;
+  containerRows: PlannedContainer[];
+  departureDate: string;
+}
+
+export function countRequiredTripFields(fields: RequiredTripFields): number {
+  let count = 0;
+  if (fields.customerId) count++;
+  if (fields.routeId) count++;
+  if (fields.carrierType === 'EXTERNAL') {
+    if (fields.externalCarrierId) count++;
+    if (fields.externalFreightCost.trim()) count++;
+    if (fields.externalPlateNumber.trim()) count++;
+  } else {
+    if (fields.truckId) count++;
+    if (fields.trailerType) count++;
+    if (fields.driverId) count++;
+  }
+  if (fields.cargoTypeId) count++;
+  if (fields.plannedContainerTypeId || fields.containerRows.some(row => row.containerTypeId)) count++;
+  if (fields.departureDate) count++;
+  return count;
+}
+
 export function resolveContainerCount(raw: string): number {
   return Math.min(10, Math.max(1, Number(raw) || 1));
 }

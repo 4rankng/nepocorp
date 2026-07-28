@@ -8,7 +8,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, isNull, sql, gte, inArray, ne } from 'drizzle-orm';
-import { TripStatus } from '@tingting/shared';
+import { computeExVatAmount, TripStatus } from '@tingting/shared';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange } from './reporting-shared';
 
@@ -19,8 +19,18 @@ function recordedTripRevenue(trip: {
 }): number {
   const grossRevenue = Number(trip.revenue ?? 0);
   const vatRate = Number(trip.vatRate ?? 0);
-  const freightExVat = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  const freightExVat = computeExVatAmount(grossRevenue, vatRate);
   return freightExVat - Number(trip.customerCommission ?? 0);
+}
+
+function externalTripCost(trip: {
+  externalFreightCost: string | null;
+  vatRate: string | null;
+}): number {
+  return computeExVatAmount(
+    Number(trip.externalFreightCost ?? 0),
+    Number(trip.vatRate ?? 0),
+  );
 }
 
 /**
@@ -54,7 +64,7 @@ export async function getPnlReport(month: number, year: number) {
 
     const ownRevenue = trips.reduce((sum, trip) => sum + recordedTripRevenue(trip), 0);
     const externalMarginTotal = extTrips.reduce((sum, trip) => (
-      sum + recordedTripRevenue(trip) - Number(trip.externalFreightCost ?? 0)
+      sum + recordedTripRevenue(trip) - externalTripCost(trip)
     ), 0);
     const totalRevenue = ownRevenue + externalMarginTotal;
     const totalCosts = trips.reduce((sum, t) => sum + parseFloat(t.totalCost || '0'), 0);
@@ -94,14 +104,14 @@ export async function getPnlReport(month: number, year: number) {
       const isExternal = trip.carrierType === 'EXTERNAL';
       const customerCommission = Number(trip.customerCommission ?? 0);
       const revenue = recordedTripRevenue(trip);
-      const fuelOrHireCost = isExternal ? Number(trip.externalFreightCost ?? 0) : Number(trip.totalFuelCost ?? 0);
+      const fuelOrHireCost = isExternal ? externalTripCost(trip) : Number(trip.totalFuelCost ?? 0);
       const roadAllowance = isExternal ? 0 : Number(trip.totalRoadAllowance ?? 0);
       const tollAndCompanyTickets = isExternal ? 0 : Number(trip.tollCost ?? 0) + Number(trip.tollsDiscount ?? 0);
       const driverAndAllowances = isExternal
         ? 0
         : Number(trip.driverSalary ?? 0) + Number(trip.twoPointDeliveryBonus ?? 0) + Number(trip.vehicleShiftAllowance ?? 0);
       const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
-      const totalCost = isExternal ? Number(trip.externalFreightCost ?? 0) : Number(trip.totalCost ?? 0);
+      const totalCost = isExternal ? externalTripCost(trip) : Number(trip.totalCost ?? 0);
       const costDifference = totalCost - reconstructedCost;
 
       return {
@@ -273,7 +283,7 @@ export async function getPnlReport(month: number, year: number) {
       const extMgmtMargin = externalMarginTotal;
 
       const extRevenue = extTrips.reduce((sum, trip) => sum + recordedTripRevenue(trip), 0);
-      const extCosts = extTrips.reduce((s, t) => s + Number(t.externalFreightCost ?? 0), 0);
+      const extCosts = extTrips.reduce((sum, trip) => sum + externalTripCost(trip), 0);
 
       truckBreakdown.push({
         id: 0,

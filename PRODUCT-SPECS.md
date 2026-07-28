@@ -62,7 +62,7 @@ Sản phẩm bao gồm các module nghiệp vụ: Ghi nhận chuyến đi; Quả
     * Nhập **Đối tác vận chuyển** (Nhà cung cấp).
     * Nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe ngoài**, **Tên lái xe ngoài**, **SĐT lái xe ngoài**.
     * Chi phí chuyến đi = Giá cước thuê ngoài (không có dầu, vé, lương).
-    * **Lãi điều xe ngoài (Management Margin)** = Doanh thu chưa VAT − Giá cước thuê ngoài **gồm VAT** (nguyên tắc §4.7: chi phí ghi nhận incl-VAT). Lãi này cộng vào P&L của công ty.
+    * **Lãi điều xe ngoài (Management Margin)** = (Doanh thu chưa VAT − Hoa hồng chi KH) − Giá cước thuê ngoài **chưa VAT**. Giá thuê gồm VAT vẫn được lưu nguyên giá để theo dõi công nợ phải trả; riêng phép tính lãi phải so sánh giá bán và giá mua trên cùng cơ sở chưa VAT. *(Pete phản hồi 28/7.)*
 
 ### 4.2 Doanh thu & Bảng giá
 
@@ -102,11 +102,14 @@ Sản phẩm bao gồm các module nghiệp vụ: Ghi nhận chuyến đi; Quả
 
 ### 4.3.2 Lựa chọn Nhà cung cấp nhiên liệu & Ghi nhận công nợ
 
-* **Lựa chọn Nhà cung cấp:** Đối với các chuyến xe nhà (`OWN` carrier), kế toán có thể lựa chọn nhà cung cấp nhiên liệu tương ứng. Danh sách nhà cung cấp này được chọn lọc từ danh sách nhà cung cấp (`suppliers`) dựa trên việc đánh dấu cờ "Là nhà cung cấp nhiên liệu (xăng, dầu)" (`isFuelSupplier`). Điều này giúp phân biệt rõ ràng nhà cung cấp xăng dầu với các nhà cung cấp dịch vụ khác (ví dụ: sửa xe, đăng kiểm).
+* **Phân bổ nhiều nơi đổ:** Đối với chuyến xe nhà (`OWN` carrier), kế toán có thể tách tổng số lít dầu thành nhiều dòng (ví dụ: 200L tại Petrolimex + 50L tại Long Hưng). Tổng số lít của các dòng phân bổ phải bằng tổng số lít nhiên liệu của chuyến.
+* **Lựa chọn Nhà cung cấp:** Mỗi dòng công nợ chọn một nhà cung cấp được đánh dấu "Là nhà cung cấp nhiên liệu (xăng, dầu)" (`isFuelSupplier`). Một nhà cung cấp chỉ xuất hiện một lần trong cùng chuyến.
+* **Cây dầu ngoài (tiền mặt):** Đây là lựa chọn hệ thống dành cho trường hợp lái xe đổ ngoài và thanh toán ngay. Dòng này vẫn tính vào tổng chi phí dầu/P&L của chuyến nhưng không gắn `supplier_id` và không tạo công nợ.
 * **Xuất phiếu cấp nhiên liệu (Phiếu cấp dầu):** Kế toán có thể xuất phiếu cấp nhiên liệu (HTML/PDF hoặc Excel) theo từng chuyến sau khi phê duyệt trên phần mềm. Phiếu bao gồm: Biển số xe, Khối lượng/Số lít dầu được cấp, Tên + Địa chỉ nhà cung cấp nhiên liệu, Mã chuyến, Tuyến đường, Ngày, Tên lái xe, Khối chữ ký (Kế toán / Giám đốc / Người nhận). Thông tin NCC tối giản — chỉ cần tên + địa chỉ, **không cần** MST, số tài khoản ngân hàng hay người liên hệ. Phiếu được in ra để ký tay hoặc trích xuất dưới dạng file ảnh/file điện tử gửi cho đối tác. *(Pete xác nhận 11/6)*
 * **Ghi nhận công nợ tự động:**
-    - Khi chuyến đi được Chốt khóa (`LOCKED`), hệ thống tự động ghi nhận một bút toán Có (`credit`) bằng `totalFuelCost` (Tổng chi phí nhiên liệu thực tế của chuyến) vào sổ cái của nhà cung cấp nhiên liệu tương ứng (`entity_type='VENDOR'`, loại giao dịch `FUEL_EXPENSE`).
-    - Khi chuyến đi được Mở khóa (`COMPLETED`), hệ thống ghi nhận một bút toán đối ứng Nợ (`debit` loại `UNLOCK_REVERSAL`) để hoàn tác công nợ.
+    - Khi chuyến chuyển sang **Hoàn thành** (`COMPLETED`), mỗi dòng công nợ tạo riêng một bút toán Có (`credit`) bằng `số lít dòng × đơn giá áp dụng` vào sổ cái của nhà cung cấp tương ứng (`entity_type='VENDOR'`, loại `FUEL_EXPENSE`).
+    - Dòng **Cây dầu ngoài (tiền mặt)** không tạo bút toán sổ cái nhà cung cấp.
+    - Khi hủy hoặc sửa số liệu của chuyến đã Hoàn thành, hệ thống ghi bút toán đối ứng `UNLOCK_REVERSAL` rồi ghi lại đúng các dòng phân bổ mới; ledger luôn append-only.
 * **Tra cứu đối với lái xe:** Lái xe thông qua Driver Portal có thể tra cứu chi tiết từng chuyến để biết số dầu mình được cấp và nhà cung cấp nhiên liệu chỉ định.
 
 
@@ -245,7 +248,7 @@ net_salary = base_salary + adjustment − penalties
 
 ### 4.7 Lợi nhuận
 
-* **Nguyên tắc VAT (bất đối xứng):** Doanh thu ghi nhận **chưa VAT** (ex-VAT), chi phí ghi nhận **gồm VAT** (incl. VAT). Đây là phương pháp tính của công ty: cước bán ra cho KH gồm VAT, nhưng nội bộ chỉ tính phần doanh thu thực (không VAT) trừ đi toàn bộ chi phí thực chi (đã có VAT). Khoản VAT đầu ra không phải thu nhập công ty; VAT đầu vào trên chi phí là chi phí thực tế không được khấu trừ trong bức tranh nội bộ.
+* **Nguyên tắc VAT:** Doanh thu ghi nhận **chưa VAT** (ex-VAT). Chi phí xe nhà và chi phí vận hành ghi nhận **gồm VAT** (incl. VAT). Riêng **lãi điều xe ngoài** so sánh cước bán và cước thuê ngoài đều ở mức **chưa VAT**; giá thuê gồm VAT vẫn là giá trị công nợ phải trả.
 * **Lợi nhuận gộp (Gross Profit):** = Doanh thu vận tải **chưa VAT** − Tổng chi phí **gồm VAT**, tính theo từng **xe đầu kéo** (hoặc gộp riêng thành mục Xe ngoài), theo tháng. **Tổng chi phí xe** = Σ chi phí các chuyến của xe (gồm VAT) + Σ chi phí bảo dưỡng gắn chính xe đầu kéo đó **hoặc rơ-mooc ghép cặp với xe đó** trong tháng (sửa chữa đầu kéo/rơ-mooc, bảo hiểm/đăng kiểm/phí đường bộ của cả cặp). Mỗi đầu kéo và rơ-mooc **ghép thành cặp cố định** — chi phí rơ-mooc tính chung vào chi phí của đầu kéo ghép cặp. Mỗi phiếu chi phí gắn xe đánh dấu thuộc **đầu kéo** hay **rơ-mooc** (`vehicle_component: 'TRUCK' | 'TRAILER'`), cho phép báo cáo phân tách chi phí sửa chữa/đăng kiểm/thay lốp theo thành phần xe *(Pete xác nhận 1/6)*.
 * **Lợi nhuận ròng (Net Profit):** = Tổng LN gộp tất cả xe − Phí quản lý − **Chi phí không gắn xe (chi phí chung, gồm VAT)** + Thu nhập khác.
 * **Phí quản lý:** Khoản cố định hàng tháng cho toàn công ty. Kế toán nhập thủ công. *(Mức cụ thể do Giám đốc ấn định — tạm thời placeholder 24.000.000 VNĐ/tháng; sẽ xác nhận chính thức sau.)*
@@ -551,5 +554,5 @@ Bảng `trip_instructions` (id, trip_id, contact_name, contact_phone, notes, man
 | Doanh thu thực tế ghi nhận | (Doanh thu đóng/ trả hàng + Doanh thu kết hợp) / (1 + VAT) − **Hoa hồng chi KH** = `recordedRevenue` |
 | Hoa hồng chi KH | Kế toán nhập tay, trừ vào doanh thu thực tế |
 | Lợi nhuận dịch vụ | Lãi từ dịch vụ đi kèm (Bán ra - Mua vào) — giá bán ra ex-VAT, giá mua vào incl. VAT |
-| Lợi nhuận xe ngoài | Doanh thu ex-VAT − Chi phí xe ngoài (incl. VAT) |
+| Lợi nhuận xe ngoài | (Doanh thu ex-VAT − Hoa hồng chi KH) − Chi phí xe ngoài ex-VAT |
 | Lợi nhuận gộp | **Doanh thu thực tế ghi nhận** (`recordedRevenue` = freightExVat − commission) − **Tổng chi phí (incl. VAT)** + LN dịch vụ + LN xe ngoài |

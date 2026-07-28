@@ -96,4 +96,16 @@ describe('trip copy field contract', () => {
       calculatedLiters: '103.20',
     });
   });
+
+  it('rejects copying a legacy external trip without a plate number', () => {
+    const source = {
+      carrierType: 'EXTERNAL',
+      externalPlateNumber: null,
+    } as TripRow;
+
+    assert.throws(
+      () => buildCopiedTripValues(source, 'TRP-202607-0099', 99),
+      /Biển số xe là bắt buộc/,
+    );
+  });
 });

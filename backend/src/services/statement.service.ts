@@ -113,7 +113,7 @@ export function attachFuelDetailsToLedgerRows(
         routeName: trip.routeName,
         liters: trip.fuelLiters,
         unitPrice: trip.fuelActualUnitPrice ?? trip.fuelPriceApplied,
-        amount: trip.totalFuelCost ?? row.credit ?? '0',
+        amount: row.credit ?? trip.totalFuelCost ?? '0',
       },
     };
   });
@@ -638,7 +638,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       departureDate: s.trips.departureDate,
       truckPlate: s.trucks.licensePlate,
       routeName: s.routes.name,
-      fuelLiters: s.trips.fuelLiters,
+      fuelLiters: sql<string | null>`coalesce(${s.tripFuelAllocations.liters}, ${s.trips.fuelLiters})`,
       fuelActualUnitPrice: s.trips.fuelActualUnitPrice,
       fuelPriceApplied: s.trips.fuelPriceApplied,
       totalFuelCost: s.trips.totalFuelCost,
@@ -646,6 +646,13 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       .from(s.trips)
       .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .leftJoin(
+        s.tripFuelAllocations,
+        and(
+          eq(s.tripFuelAllocations.tripId, s.trips.id),
+          eq(s.tripFuelAllocations.supplierId, supplierId),
+        ),
+      )
       .where(inArray(s.trips.id, fuelTripIds));
     ledgerRows = attachFuelDetailsToLedgerRows(ledgerRows, tripRows);
   }

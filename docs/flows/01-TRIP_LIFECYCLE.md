@@ -61,7 +61,7 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
    - **VAT Rate** (tỷ lệ thuế, mặc định 8% hoặc 10%)
    - **Chế độ điều xe**: Chọn **Xe nhà** (OWN) hoặc **Xe ngoài** (EXTERNAL)
      - *Nếu Xe nhà*: Chọn **Xe đầu kéo** (ACTIVE) và **Lái xe**.
-     - *Nếu Xe ngoài*: Chọn **Đối tác vận chuyển** (NCC), nhập **Giá cước thuê ngoài (gồm VAT)**, **Biển số xe**, **Tên lái xe**, **SĐT lái xe**.
+     - *Nếu Xe ngoài*: Chọn **Đối tác vận chuyển** (NCC), nhập **Giá cước thuê ngoài (gồm VAT)** và **Biển số xe** (bắt buộc). **Tên lái xe** và **SĐT lái xe** là thông tin không bắt buộc.
    - **Ngày xuất phát** (date picker)
    - **Ngày dự kiến đến** (date picker)
    - **Loại hàng** (tùy chọn)

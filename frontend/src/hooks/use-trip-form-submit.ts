@@ -18,6 +18,21 @@ function moneyOrNull(value: string): number | null { return moneyInputToNumber(v
 type ServerContainerAfterSave = { id: number; containerTypeId?: number | null; containerNumber?: string | null; sealNumber?: string | null; cargoWeightKg?: string | number | null; notes?: string | null; seals?: Array<{ id: number; sealNumber: string; sealType?: string | null; notes?: string | null }>; photos?: Array<{ id: number; type: 'CONTAINER' | 'SEAL'; storageKey: string; uploadedAt: string }> };
 
 interface Params { state: UseTripFormStateReturn; isEditMode: boolean; existingTrip: TripDetail | undefined; legs: FormLeg[]; requiredFieldsFilled: number; hasOptionalData: boolean; photoUrls: string[]; flushPendingPhotos: (tripId: number) => Promise<string[]>; flushPendingContainerPhotos: (tripId: number, rowKeyToContainerId: Map<string, number>) => Promise<Map<string, string>>; }
+
+export async function saveTripFiguresOnce<T>(
+  save: () => Promise<T>,
+  refreshAfterConflict: () => Promise<unknown>,
+): Promise<T> {
+  try {
+    return await save();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      await refreshAfterConflict();
+    }
+    throw error;
+  }
+}
+
 export function useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos }: Params): (e?: React.FormEvent) => Promise<number | undefined> {
 const queryClient = useQueryClient();
 const { toast: showToast } = useToast();
@@ -93,9 +108,13 @@ const handleSubmit = useCallback(
         return;
       }
     }
-    // EXTERNAL carrier trips: freight cost, plate, driver name and phone are
-    // optional at creation — the user may fill them in later. Only the carrier
-    // partner identity is required, and that is enforced by the backend schema.
+    if (s.carrierType === 'EXTERNAL' && !s.externalPlateNumber.trim()) {
+      const msg = "Biển số xe là bắt buộc cho chuyến xe ngoài.";
+      s.setError(msg);
+      showToast({ kind: 'error', message: msg });
+      focusAndScroll("externalPlateNumber");
+      return;
+    }
 
     if (isEditMode) {
       if (legs.length === 0) {
@@ -128,6 +147,41 @@ const handleSubmit = useCallback(
         return;
       }
     }
+
+    const allocationRows = s.fuelAllocations.filter(allocation =>
+      allocation.liters.trim() !== '' ||
+      allocation.supplierId !== null ||
+      allocation.paymentMethod === 'CASH',
+    );
+    for (const allocation of allocationRows) {
+      const liters = Number(allocation.liters);
+      if (!Number.isFinite(liters) || liters <= 0) {
+        const msg = 'Số lít tại mỗi điểm đổ phải lớn hơn 0.';
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        return;
+      }
+      if (Math.abs(liters * 100 - Math.round(liters * 100)) > 1e-8) {
+        const msg = 'Số lít tại mỗi điểm đổ chỉ được có tối đa 2 chữ số thập phân.';
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        return;
+      }
+      if (allocation.paymentMethod === 'CREDIT' && allocation.supplierId === null) {
+        const msg = 'Vui lòng chọn nhà cung cấp cho dòng ghi công nợ.';
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        return;
+      }
+    }
+    const fuelAllocations = allocationRows.map(allocation => ({
+      supplierId: allocation.paymentMethod === 'CASH' ? null : allocation.supplierId,
+      liters: Number(allocation.liters),
+      paymentMethod: allocation.paymentMethod,
+    }));
+    const primaryFuelSupplierId = fuelAllocations.find(
+      allocation => allocation.paymentMethod === 'CREDIT',
+    )?.supplierId ?? null;
 
     s.setSubmitting(true);
     try {
@@ -320,7 +374,8 @@ const handleSubmit = useCallback(
           notes: s.notes.trim() || undefined,
           roadAllowanceOverride: moneyOrNull(s.roadAllowanceOverride),
           fuelActualUnitPrice: moneyOrNull(s.fuelActualUnitPrice),
-          fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
+          fuelSupplierId: primaryFuelSupplierId,
+          fuelAllocations,
           customerCommission: moneyOrZero(s.customerCommission),
           tripWageDays: s.tripWageDays ? Number(s.tripWageDays) : undefined,
           carrierType: s.carrierType,
@@ -335,22 +390,10 @@ const handleSubmit = useCallback(
         };
 
         const endpoint = existingTrip.status === TripStatus.CREATED ? `/trips/${existingTrip.id}/pre-departure` : `/trips/${existingTrip.id}/actuals`;
-        const putFigures = (version: number) =>
-          api.put<Record<string, unknown>>(endpoint, { ...payload, version });
-        let updatedTrip: Record<string, unknown>;
-        try {
-          updatedTrip = await putFigures(existingTrip.version);
-        } catch (err) {
-          // Stale client version (e.g. the figures were saved in another
-          // tab/session and this tab's cache still holds an older version).
-          // Refetch the latest trip and retry once with the fresh version
-          // before surfacing a real "changed by someone else" conflict.
-          if (!(err instanceof ApiError && err.status === 409)) throw err;
-          await queryClient.refetchQueries({ queryKey: qk.trips.detail(existingTrip.id) });
-          const fresh = queryClient.getQueryData<TripDetail>(qk.trips.detail(existingTrip.id));
-          if (!fresh) throw err;
-          updatedTrip = await putFigures(fresh.version);
-        }
+        const updatedTrip = await saveTripFiguresOnce(
+          () => api.put<Record<string, unknown>>(endpoint, payload),
+          () => queryClient.refetchQueries({ queryKey: qk.trips.detail(existingTrip.id) }),
+        );
         queryClient.invalidateQueries({ queryKey: qk.trips.all });
         queryClient.setQueryData(qk.trips.detail(existingTrip.id), updatedTrip);
         queryClient.invalidateQueries({ queryKey: qk.trips.detail(existingTrip.id) });
@@ -395,7 +438,7 @@ const handleSubmit = useCallback(
         fuelMode: s.fuelMode,
         carrierType: s.carrierType,
         vatRate: s.vatRate,
-        fuelSupplierId: s.carrierType === 'OWN' ? (s.fuelSupplierId ?? null) : null,
+        fuelSupplierId: null,
         // Per-trip actual pump price — only OWN trips consume fuel. Blank
         // (null) falls back to the config snapshot server-side.
         fuelActualUnitPrice: s.carrierType === 'OWN' ? moneyOrNull(s.fuelActualUnitPrice) : null,
@@ -454,10 +497,6 @@ const handleSubmit = useCallback(
           throw new Error("Please enter a reason for fuel supplement.");
         }
 
-        if (legsToSubmit.length === 0) {
-          return trip.id;
-        }
-
         const preDeparturePayload = {
           legs: legsToSubmit.map((l) => ({
             sequence: l.sequence,
@@ -494,7 +533,8 @@ const handleSubmit = useCallback(
           notes: s.notes.trim() || undefined,
           photoUrls: finalPhotoUrls,
           fuelActualUnitPrice: moneyOrNull(s.fuelActualUnitPrice),
-          fuelSupplierId: s.fuelSupplierId !== null ? s.fuelSupplierId : null,
+          fuelSupplierId: primaryFuelSupplierId,
+          fuelAllocations,
           customerCommission: moneyOrZero(s.customerCommission),
           tripWageDays: s.tripWageDays ? Number(s.tripWageDays) : undefined,
         };
@@ -542,6 +582,7 @@ const handleSubmit = useCallback(
     s.roadAllowanceOverride,
     s.fuelActualUnitPrice,
     s.fuelSupplierId,
+    s.fuelAllocations,
     s.customerCommission, s.tripWageDays,
     s.twoPointDeliveryBonus, s.vehicleShiftAllowance,
     s.revenue, s.revenueEmptyReturn, s.revenueCombine, s.notes, photoUrls,

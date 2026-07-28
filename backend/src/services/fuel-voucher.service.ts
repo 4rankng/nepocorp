@@ -28,7 +28,10 @@ export interface FuelVoucherData {
 
 // ── Data loading ──
 
-export async function buildFuelVoucherData(tripId: number): Promise<FuelVoucherData> {
+export async function buildFuelVoucherData(
+  tripId: number,
+  supplierId?: number,
+): Promise<FuelVoucherData> {
   const [row] = await db.select({
     tripCode: s.trips.tripCode,
     departureDate: s.trips.departureDate,
@@ -52,7 +55,43 @@ export async function buildFuelVoucherData(tripId: number): Promise<FuelVoucherD
     .limit(1);
 
   if (!row) throw new ApiError(404, 'Không tìm thấy chuyến đi');
-  if (!row.fuelSupplierId) throw new ApiError(400, 'Chuyến đi chưa gán nhà cung cấp nhiên liệu');
+
+  const fuelAllocations = await db.select({
+    supplierId: s.tripFuelAllocations.supplierId,
+    liters: s.tripFuelAllocations.liters,
+    paymentMethod: s.tripFuelAllocations.paymentMethod,
+    supplierName: s.suppliers.name,
+    supplierNote: s.suppliers.note,
+  }).from(s.tripFuelAllocations)
+    .leftJoin(s.suppliers, eq(s.tripFuelAllocations.supplierId, s.suppliers.id))
+    .where(eq(s.tripFuelAllocations.tripId, tripId));
+  const payableAllocations = fuelAllocations.filter(
+    item => item.paymentMethod === 'CREDIT' && item.supplierId,
+  );
+  const allocation = supplierId !== undefined
+    ? payableAllocations.find(item => item.supplierId === supplierId)
+    : (payableAllocations.length === 1 ? payableAllocations[0] : undefined);
+  if (supplierId !== undefined && !allocation) {
+    throw new ApiError(404, 'Không tìm thấy phân bổ dầu của nhà cung cấp này');
+  }
+  if (supplierId === undefined && payableAllocations.length > 1) {
+    throw new ApiError(400, 'Chuyến có nhiều nhà cung cấp dầu; vui lòng chọn nhà cung cấp cần xuất phiếu');
+  }
+  if (!allocation && !row.fuelSupplierId) {
+    throw new ApiError(400, 'Chuyến đi chưa có dòng dầu ghi công nợ');
+  }
+
+  const snapshottedFuelPrice = Number(row.fuelActualUnitPrice) > 0
+    ? Number(row.fuelActualUnitPrice)
+    : Number(row.fuelPriceApplied ?? 0);
+  const allocatedLiters = fuelAllocations.reduce(
+    (total, item) => total + Number(item.liters || 0),
+    0,
+  );
+  const effectiveFuelPrice = snapshottedFuelPrice > 0
+    ? snapshottedFuelPrice
+    : (allocatedLiters > 0 ? Number(row.totalFuelCost || 0) / allocatedLiters : 0);
+  const fuelLiters = allocation ? Number(allocation.liters) : Number(row.fuelLiters ?? 0);
 
   return {
     tripCode: row.tripCode,
@@ -60,15 +99,17 @@ export async function buildFuelVoucherData(tripId: number): Promise<FuelVoucherD
     routeName: row.routeName,
     truckPlate: row.truckPlate,
     driverName: row.driverName,
-    fuelLiters: Number(row.fuelLiters ?? 0),
+    fuelLiters,
     fuelActualUnitPrice: Number(row.fuelActualUnitPrice ?? 0),
-    totalFuelCost: Number(row.totalFuelCost ?? 0),
+    totalFuelCost: allocation
+      ? (fuelAllocations.length === 1
+          ? Number(row.totalFuelCost ?? 0)
+          : Math.round(fuelLiters * effectiveFuelPrice))
+      : Number(row.totalFuelCost ?? 0),
     fuelPriceApplied: Number(row.fuelPriceApplied ?? 0),
-    effectiveFuelPrice: Number(row.fuelActualUnitPrice) > 0
-      ? Number(row.fuelActualUnitPrice)
-      : Number(row.fuelPriceApplied ?? 0),
-    supplierName: row.supplierName,
-    supplierNote: row.supplierNote,
+    effectiveFuelPrice,
+    supplierName: allocation?.supplierName ?? row.supplierName,
+    supplierNote: allocation?.supplierNote ?? row.supplierNote,
   };
 }
 
@@ -564,12 +605,16 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
 
 // ── Convenience wrappers ──
 
-export async function getFuelVoucherHtml(tripId: number): Promise<string> {
-  const data = await buildFuelVoucherData(tripId);
+export async function getFuelVoucherHtml(tripId: number, supplierId?: number): Promise<string> {
+  const data = await buildFuelVoucherData(tripId, supplierId);
   return renderFuelVoucherHtml(data);
 }
 
-export async function getFuelVoucherXlsx(tripId: number, writable: import('stream').Writable): Promise<boolean> {
-  const data = await buildFuelVoucherData(tripId);
+export async function getFuelVoucherXlsx(
+  tripId: number,
+  writable: import('stream').Writable,
+  supplierId?: number,
+): Promise<boolean> {
+  const data = await buildFuelVoucherData(tripId, supplierId);
   return renderFuelVoucherXlsx(data, writable);
 }

@@ -16,7 +16,14 @@ interface TripLedgerParams {
   externalCarrierId?: number | null;
   externalFreightCost?: string | null;
   fuelSupplierId?: number | null;
+  fuelPriceApplied?: string | null;
+  fuelActualUnitPrice?: string | null;
   totalFuelCost?: string | null;
+  fuelAllocations?: Array<{
+    supplierId: number | null;
+    liters: string;
+    paymentMethod: string;
+  }>;
   ancillaryFees?: Array<{
     id: number;
     buyAmount: string;
@@ -98,9 +105,14 @@ export class LedgerService {
       entities.push({ entityType: 'DRIVER', entityId: trip.driverId });
     }
 
-    if (trip.fuelSupplierId) {
-      if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === trip.fuelSupplierId)) {
-        entities.push({ entityType: 'VENDOR', entityId: trip.fuelSupplierId });
+    const fuelSupplierIds = trip.fuelAllocations?.length
+      ? trip.fuelAllocations
+          .filter(allocation => allocation.paymentMethod === 'CREDIT' && allocation.supplierId)
+          .map(allocation => allocation.supplierId as number)
+      : (trip.fuelSupplierId ? [trip.fuelSupplierId] : []);
+    for (const supplierId of fuelSupplierIds) {
+      if (!entities.find(e => e.entityType === 'VENDOR' && e.entityId === supplierId)) {
+        entities.push({ entityType: 'VENDOR', entityId: supplierId });
       }
     }
 
@@ -164,6 +176,45 @@ export class LedgerService {
     return [];
   }
 
+  private static resolveFuelUnitPrice(trip: TripLedgerParams): number {
+    const snapshottedPrice = Number(trip.fuelActualUnitPrice || trip.fuelPriceApplied || 0);
+    if (snapshottedPrice > 0) return snapshottedPrice;
+
+    const allocatedLiters = trip.fuelAllocations?.reduce(
+      (total, allocation) => total + Number(allocation.liters || 0),
+      0,
+    ) ?? 0;
+    return allocatedLiters > 0
+      ? Number(trip.totalFuelCost || 0) / allocatedLiters
+      : 0;
+  }
+
+  private static resolveFuelAllocationCosts(
+    trip: TripLedgerParams,
+  ): Array<{ allocation: NonNullable<TripLedgerParams['fuelAllocations']>[number]; fuelCost: number }> {
+    const creditAllocations = trip.fuelAllocations?.filter(
+      allocation => allocation.paymentMethod === 'CREDIT' && allocation.supplierId,
+    ) ?? [];
+    if (creditAllocations.length === 0) return [];
+
+    const effectiveFuelPrice = this.resolveFuelUnitPrice(trip);
+    const allAllocationsAreCredit = creditAllocations.length === trip.fuelAllocations?.length;
+    const targetCost = allAllocationsAreCredit
+      ? Math.round(Number(trip.totalFuelCost || 0))
+      : Math.round(creditAllocations.reduce(
+          (sum, allocation) => sum + Number(allocation.liters) * effectiveFuelPrice,
+          0,
+        ));
+    let allocatedCost = 0;
+    return creditAllocations.map((allocation, index) => {
+      const fuelCost = index === creditAllocations.length - 1
+        ? targetCost - allocatedCost
+        : Math.round(Number(allocation.liters) * effectiveFuelPrice);
+      allocatedCost += fuelCost;
+      return { allocation, fuelCost };
+    });
+  }
+
   /**
    * Seam to handle financial ledger posting when a trip is locked.
    * Isolates financial calculations and notes from the trip lifecycle machine.
@@ -223,17 +274,36 @@ export class LedgerService {
     }
 
     // ── OWN/EXTERNAL: fuel supplier payable ──
-    const fuelCost = Number(trip.totalFuelCost || 0);
-    if (trip.fuelSupplierId && fuelCost > 0) {
-      await this.postEntry(tx, {
-        txnType: TxnType.FUEL_EXPENSE,
-        txnId: trip.id,
-        entityType: 'VENDOR',
-        entityId: trip.fuelSupplierId,
-        debit: 0,
-        credit: fuelCost,
-        note: label ? `Chi phí dầu chuyến ${label}` : 'Chi phí dầu chuyến',
-      });
+    const fuelAllocationCosts = this.resolveFuelAllocationCosts(trip);
+    if (fuelAllocationCosts.length > 0) {
+      for (const { allocation, fuelCost } of fuelAllocationCosts) {
+        const liters = Number(allocation.liters);
+        if (fuelCost <= 0) continue;
+        await this.postEntry(tx, {
+          txnType: TxnType.FUEL_EXPENSE,
+          txnId: trip.id,
+          entityType: 'VENDOR',
+          entityId: allocation.supplierId as number,
+          debit: 0,
+          credit: fuelCost,
+          note: label
+            ? `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu chuyến ${label}`
+            : `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu`,
+        });
+      }
+    } else {
+      const fuelCost = Number(trip.totalFuelCost || 0);
+      if (trip.fuelSupplierId && fuelCost > 0) {
+        await this.postEntry(tx, {
+          txnType: TxnType.FUEL_EXPENSE,
+          txnId: trip.id,
+          entityType: 'VENDOR',
+          entityId: trip.fuelSupplierId,
+          debit: 0,
+          credit: fuelCost,
+          note: label ? `Chi phí dầu chuyến ${label}` : 'Chi phí dầu chuyến',
+        });
+      }
     }
 
     // ── 4. EXTERNAL: carrier payable on its isolated CARRIER ledger ──
@@ -328,17 +398,36 @@ export class LedgerService {
     }
 
     // ── Reverse OWN/EXTERNAL: fuel supplier payable ──
-    const fuelCost = Number(trip.totalFuelCost || 0);
-    if (trip.fuelSupplierId && fuelCost > 0) {
-      await this.postEntry(tx, {
-        txnType: TxnType.UNLOCK_REVERSAL,
-        txnId: trip.id,
-        entityType: 'VENDOR',
-        entityId: trip.fuelSupplierId,
-        debit: fuelCost,
-        credit: 0,
-        note: label ? `Chi phí dầu chuyến ${label} (Hoàn tác)` : 'Chi phí dầu (Hoàn tác)',
-      });
+    const fuelAllocationCosts = this.resolveFuelAllocationCosts(trip);
+    if (fuelAllocationCosts.length > 0) {
+      for (const { allocation, fuelCost } of fuelAllocationCosts) {
+        const liters = Number(allocation.liters);
+        if (fuelCost <= 0) continue;
+        await this.postEntry(tx, {
+          txnType: TxnType.UNLOCK_REVERSAL,
+          txnId: trip.id,
+          entityType: 'VENDOR',
+          entityId: allocation.supplierId as number,
+          debit: fuelCost,
+          credit: 0,
+          note: label
+            ? `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu chuyến ${label} (Hoàn tác)`
+            : `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu (Hoàn tác)`,
+        });
+      }
+    } else {
+      const fuelCost = Number(trip.totalFuelCost || 0);
+      if (trip.fuelSupplierId && fuelCost > 0) {
+        await this.postEntry(tx, {
+          txnType: TxnType.UNLOCK_REVERSAL,
+          txnId: trip.id,
+          entityType: 'VENDOR',
+          entityId: trip.fuelSupplierId,
+          debit: fuelCost,
+          credit: 0,
+          note: label ? `Chi phí dầu chuyến ${label} (Hoàn tác)` : 'Chi phí dầu (Hoàn tác)',
+        });
+      }
     }
 
     // ── 4. Reverse EXTERNAL: carrier payable ──

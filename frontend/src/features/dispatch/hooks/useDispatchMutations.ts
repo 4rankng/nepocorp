@@ -86,8 +86,8 @@ export function useReassignMutations() {
         return;
       }
     } else {
-      if (!reassignState.externalCarrierId && !reassignState.externalPlateNumber) {
-        setReassignState((s) => ({ ...s, error: 'Vui lòng chọn đối tác hoặc nhập biển số' }));
+      if (!reassignState.externalPlateNumber.trim()) {
+        setReassignState((s) => ({ ...s, error: 'Biển số xe là bắt buộc cho chuyến xe ngoài' }));
         return;
       }
     }

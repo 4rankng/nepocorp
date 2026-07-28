@@ -14,7 +14,7 @@ import { TripStatus, Role } from '@tingting/shared';
 import { useConfirm } from '../../components/UI';
 import { onboardingEvents } from '../../lib/onboardingEvents';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
-import { getTripDisplayGrossProfit } from '../trips/tripHelpers';
+import { getExternalTripFinancials, getTripDisplayGrossProfit } from '../trips/tripHelpers';
 
 export function resolveExpectedFuelLiters(trip: {
   fuelMode?: string | null;
@@ -115,25 +115,23 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const derived: TripDerivedData = useMemo(() => {
     if (!trip) {
       return {
-        revenue: 0, totalCost: 0, grossProfit: 0, marginPct: null,
+        revenue: 0, freightRevenue: 0, totalCost: 0, grossProfit: 0, marginPct: null,
         fuelCost: 0, roadAllowance: 0, tollCost: 0, tollsDiscount: 0, driverSalary: 0, serviceCost: 0,
         twoPointDeliveryBonus: 0, vehicleShiftAllowance: 0,
         totalKm: 0, fuelLiters: 0, computedLiters: 0, ttbq: 0,
         fuelVarianceLiters: 0, fuelVarianceOver: false,
-        externalCarrierName: '—', externalMargin: null,
+        externalCarrierName: '—', externalMargin: null, externalHireCost: null,
       };
     }
 
     const isExternal = trip.carrierType === 'EXTERNAL';
     const revenueRaw = Number(trip.revenue || 0);
-    const revenue = revenueRaw;
-    const totalCost = Number(trip.totalCost || 0);
+    const externalFinancials = getExternalTripFinancials(trip);
+    const revenue = externalFinancials?.recordedRevenue ?? revenueRaw;
+    const freightRevenue = externalFinancials?.freightRevenue ?? revenueRaw;
+    const totalCost = externalFinancials?.externalFreightCost ?? Number(trip.totalCost || 0);
     const grossProfit = getTripDisplayGrossProfit(trip);
-    const vatRate = Number(trip.vatRate ?? 0.08);
-    const marginRevenue = isExternal && vatRate > 0
-      ? Math.round(revenue / (1 + vatRate))
-      : revenue;
-    const marginPct = marginRevenue > 0 ? ((grossProfit / marginRevenue) * 100).toFixed(1) : null;
+    const marginPct = revenue > 0 ? ((grossProfit / revenue) * 100).toFixed(1) : null;
     const fuelCost = Number(trip.totalFuelCost || 0);
     const roadAllowance = Number(trip.totalRoadAllowance || 0);
     const tollCost = Number(trip.tollCost || 0);
@@ -154,12 +152,14 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       : '—';
 
     return {
-      revenue, totalCost, grossProfit, marginPct,
+      revenue, freightRevenue, totalCost, grossProfit, marginPct,
       fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary, serviceCost,
       twoPointDeliveryBonus, vehicleShiftAllowance,
       totalKm, fuelLiters, computedLiters, ttbq,
       fuelVarianceLiters, fuelVarianceOver,
-      externalCarrierName, externalMargin: isExternal ? grossProfit : null,
+      externalCarrierName,
+      externalMargin: isExternal ? grossProfit : null,
+      externalHireCost: externalFinancials?.externalFreightCost ?? null,
     };
   }, [trip, catalogData]);
 
@@ -308,7 +308,10 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     if (reassignCarrierType === 'OWN') {
       if (!reassignTruckId || !reassignDriverId) return;
     } else {
-      if (!reassignExternalCarrierId && !reassignExternalPlateNumber) return;
+      if (!reassignExternalPlateNumber.trim()) {
+        setReassignError('Biển số xe là bắt buộc cho chuyến xe ngoài');
+        return;
+      }
     }
     setReassignLoading(true);
     setReassignError('');

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { round2dp, roundInt } from './round';
-import { computeTripTotals, ComputeTripTotalsInput } from './tripTotals';
+import { computeExVatAmount, computeTripTotals, ComputeTripTotalsInput } from './tripTotals';
 
 const defaultBaseInput: ComputeTripTotalsInput = {
   legs: [
@@ -29,6 +29,12 @@ const defaultBaseInput: ComputeTripTotalsInput = {
   twoPointDeliveryBonus: 0,
   vehicleShiftAllowance: 0,
 };
+
+test('computeExVatAmount strips the configured VAT rate with VND rounding', () => {
+  assert.strictEqual(computeExVatAmount(7128000, 0.08), 6600000);
+  assert.strictEqual(computeExVatAmount(770000, 0.10), 700000);
+  assert.strictEqual(computeExVatAmount(700000, 0), 700000);
+});
 
 test('round2dp boundary correctness', () => {
   // Test banker's rounding representation issues
@@ -329,7 +335,7 @@ test('OWN trip with ancillary fees: service amounts do not affect transport gros
   assert.strictEqual(r.grossProfit, base.grossProfit);
 });
 
-test('EXTERNAL trip: totalCost = externalFreightCost, margin uses incl-VAT cost (§4.7)', () => {
+test('EXTERNAL trip: margin compares revenue and hire cost on the same ex-VAT basis', () => {
   const r = computeTripTotals({
     ...BASE_A4,
     vatRate: 0.08,
@@ -337,10 +343,10 @@ test('EXTERNAL trip: totalCost = externalFreightCost, margin uses incl-VAT cost 
     externalFreightCost: 5400000,  // incl-VAT (ex-VAT would be 5000000)
     revenue: 10800000,             // 10000000 ex-VAT
   });
-  assert.strictEqual(r.externalFreightExVat, 5000000);  // informational ex-VAT field (display only)
-  assert.strictEqual(r.externalMargin, 4600000);   // 10000000 ex-VAT − 5400000 incl-VAT (§4.7)
+  assert.strictEqual(r.externalFreightExVat, 5000000);
+  assert.strictEqual(r.externalMargin, 5000000);   // 10000000 ex-VAT − 5000000 ex-VAT
   assert.strictEqual(r.totalCost, 5400000);        // incl-VAT stored for AP
-  assert.strictEqual(r.grossProfit, 4600000);      // external carrier margin only
+  assert.strictEqual(r.grossProfit, 5000000);      // external carrier margin only
   assert.strictEqual(r.totalFuelCost, 920000);     // still computed but not in totalCost
 });
 
@@ -355,7 +361,7 @@ test('EXTERNAL trip with service fees: service amounts do not affect transport g
   assert.strictEqual(r.serviceMargin, 0);
   assert.strictEqual(r.totalServiceBuy, 0);
   assert.strictEqual(r.totalServiceSell, 1000000);
-  assert.strictEqual(r.grossProfit, 4600000);
+  assert.strictEqual(r.grossProfit, 5000000);
 });
 
 test('auto-calculated road allowance when tollsAddition is 0', () => {
@@ -444,6 +450,6 @@ test('commission reduces EXTERNAL trip grossProfit and management margin', () =>
     customerCommission: 500000,
   });
   assert.strictEqual(r.recordedRevenue, 9500000);
-  assert.strictEqual(r.externalMargin, 4100000);     // recorded revenue 9.5M − hire cost 5.4M
-  assert.strictEqual(r.grossProfit, 4100000);
+  assert.strictEqual(r.externalMargin, 4500000);     // recorded revenue 9.5M − hire cost 5M ex-VAT
+  assert.strictEqual(r.grossProfit, 4500000);
 });
