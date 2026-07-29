@@ -157,7 +157,7 @@
   gap: 8px;
 }
 
-/* Plate tag prefix (VN / RM) */
+/* Vehicle plate display */
 .fleet-page .fleet-plate {
   display: inline-flex;
   align-items: center;
@@ -165,16 +165,6 @@
   font-weight: 700;
   font-size: var(--fs-sm);
   color: var(--ink);
-}
-
-.fleet-page .fleet-plate-tag {
-  background: var(--ink);
-  color: var(--fg-on-brand);
-  padding: 3px 6px;
-  border-radius: 4px;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.5px;
-  margin-right: 6px;
 }
 
 /* Driver avatar icon */
@@ -626,17 +616,6 @@
   font-family: var(--font-mono);
   font-size: inherit;
   font-weight: 750;
-}
-
-.fleet-detail .fleet-plate-tag {
-  margin-right: 7px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  background: var(--ink);
-  color: var(--fg-on-brand);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.5px;
-  line-height: 1.25;
 }
 
 .fleet-detail .fleet-pair,

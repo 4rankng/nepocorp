@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { Truck, Container, UserCheck, Download, CheckCircle } from "lucide-react";
+import { Truck, Container, UserCheck, Download, CheckCircle, CalendarPlus } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
 import { PageHeader, Btn, KPI } from "../components/UI";
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
@@ -9,7 +9,12 @@ import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { usePageAnimations } from "../hooks/animations";
 import { configClient } from "../api/configClient";
 import { qk } from "../api/keys";
-import { TrailerType, VehicleComponent } from "@tingting/shared";
+import {
+  TRAILER_STATUS_LABELS,
+  TRAILER_TYPE_LABELS,
+  TrailerType,
+  VehicleComponent,
+} from "@tingting/shared";
 import type { Truck as TruckType, Driver, VehicleSchedule } from "@tingting/shared";
 
 // Extracted form modals + shared fleet constants
@@ -22,6 +27,10 @@ import { TruckCard } from '../features/fleet/truck-card';
 import { DriverCard } from '../features/fleet/driver-card';
 import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
 import { VehicleScheduleManager } from '../features/fleet/schedules/VehicleScheduleManager';
+import {
+  VehicleScheduleVehiclePicker,
+  type VehicleSchedulePickerOption,
+} from '../features/fleet/schedules/VehicleScheduleVehiclePicker';
 import type { VehicleScheduleOpenMode } from '../features/fleet/schedules/VehicleScheduleTrigger';
 import {
   useActiveVehicleSchedules,
@@ -31,6 +40,7 @@ import {
 } from '../hooks/useVehicleSchedules';
 
 export default function FleetPage() {
+  const [isScheduleVehiclePickerOpen, setIsScheduleVehiclePickerOpen] = useState(false);
   const [selectedScheduleVehicle, setSelectedScheduleVehicle] = useState<{
     vehicleComponent: VehicleComponent;
     vehicleId: number;
@@ -111,6 +121,16 @@ export default function FleetPage() {
   }, [allActiveSchedules]);
   const scheduleMutationPending = Object.values(scheduleMutations)
     .some(mutation => mutation.isPending);
+  const scheduleTruckOptions = useMemo<VehicleSchedulePickerOption[]>(() => trucks.map(truck => ({
+    id: truck.id,
+    plate: truck.licensePlate,
+    meta: TRUCK_STATUS[truck.status] || truck.status,
+  })), [trucks]);
+  const scheduleTrailerOptions = useMemo<VehicleSchedulePickerOption[]>(() => trailers.map(trailer => ({
+    id: trailer.id,
+    plate: trailer.licensePlate,
+    meta: `${TRAILER_TYPE_LABELS[trailer.type]} · ${TRAILER_STATUS_LABELS[trailer.status]}`,
+  })), [trailers]);
 
   return (
     <div className="fleet-page" ref={rootRef}>
@@ -127,6 +147,14 @@ export default function FleetPage() {
         description="Quản lý xe đầu kéo, rơ-moóc và lái xe trong một trang"
         action={
           <div style={styles.actionRow}>
+            <Btn
+              variant="primary"
+              size="sm"
+              icon={<CalendarPlus size={15} />}
+              onClick={() => setIsScheduleVehiclePickerOpen(true)}
+            >
+              Thêm lịch
+            </Btn>
             <Btn
               variant="secondary"
               size="sm"
@@ -296,6 +324,24 @@ export default function FleetPage() {
 
       {/* Drivers */}
       <DriverCard drivers={drivers} truckMap={truckMap} crud={driverCrud} />
+
+      <VehicleScheduleVehiclePicker
+        isOpen={isScheduleVehiclePickerOpen}
+        trucks={scheduleTruckOptions}
+        trailers={scheduleTrailerOptions}
+        onClose={() => setIsScheduleVehiclePickerOpen(false)}
+        onSelect={(vehicleComponent, vehicle) => {
+          setIsScheduleVehiclePickerOpen(false);
+          setSelectedScheduleVehicle({
+            vehicleComponent: vehicleComponent === 'TRUCK'
+              ? VehicleComponent.TRUCK
+              : VehicleComponent.TRAILER,
+            vehicleId: vehicle.id,
+            vehiclePlate: vehicle.plate,
+            mode: 'create',
+          });
+        }}
+      />
 
       {selectedScheduleVehicle && (
         <VehicleScheduleManager

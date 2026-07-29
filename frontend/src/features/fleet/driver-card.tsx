@@ -20,13 +20,8 @@ const DriverAvatarIcon = memo(function DriverAvatarIcon() {
   );
 });
 
-const Plate = memo(function Plate({ plate, tag }: { plate: string; tag: string }) {
-  return (
-    <span className="fleet-plate">
-      <span className="fleet-plate-tag">{tag}</span>
-      {plate}
-    </span>
-  );
+const Plate = memo(function Plate({ plate }: { plate: string }) {
+  return <span className="fleet-plate">{plate}</span>;
 });
 
 const StatusDot = memo(function StatusDot({ status }: { status: string }) {
@@ -334,7 +329,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
               ),
             },
             { label: "Số điện thoại", value: d.phone || "—" },
-            { label: "Xe phân công", value: truck ? <Plate plate={truck.licensePlate} tag="VN" /> : <span className="fleet-unassigned">— Chưa phân —</span> },
+            { label: "Xe phân công", value: truck ? <Plate plate={truck.licensePlate} /> : <span className="fleet-unassigned">— Chưa phân —</span> },
             {
               label: "Lương cơ bản",
               value: d.baseSalary ? (

@@ -31,13 +31,8 @@ const DriverAvatarIcon = memo(function DriverAvatarIcon() {
   );
 });
 
-const Plate = memo(function Plate({ plate, tag }: { plate: string; tag: string }) {
-  return (
-    <span className="fleet-plate">
-      <span className="fleet-plate-tag">{tag}</span>
-      {plate}
-    </span>
-  );
+const Plate = memo(function Plate({ plate }: { plate: string }) {
+  return <span className="fleet-plate">{plate}</span>;
 });
 
 const TypeChip = memo(function TypeChip({ type }: { type: string }) {
@@ -283,18 +278,18 @@ export function TruckCard({
                     {i + 1}
                   </td>
                   <td>
-                    <Plate plate={t.licensePlate} tag="VN" />
+                    <Plate plate={t.licensePlate} />
                   </td>
                   <td>
                     {(() => {
                       const tr = t.currentTrailerId ? trailers.find((x) => x.id === t.currentTrailerId) : null;
                       return tr ? (
                         <span className="fleet-pair">
-                          <Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} />
+                          <Plate plate={tr.licensePlate} /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} />
                         </span>
                       ) : t.trailerPlateNumber ? (
                         <span className="fleet-pair">
-                          <Plate plate={t.trailerPlateNumber} tag="RM" /> <TypeChip type={t.trailerType ?? TrailerType.FT40} />
+                          <Plate plate={t.trailerPlateNumber} /> <TypeChip type={t.trailerType ?? TrailerType.FT40} />
                         </span>
                       ) : (
                         <span className="fleet-unassigned">—</span>
@@ -351,12 +346,7 @@ export function TruckCard({
               <div key={t.id} className="m-card" onClick={() => setViewingId(t.id)}>
                 <StatusStrip color={fleetStatusColor(t.status)} />
                 <div className="m-card__top">
-                  <span className="m-card__title">
-                    <span className="fleet-plate-tag" style={{ marginRight: 6, background: "var(--ink)", color: "#fff", padding: "3px 6px", borderRadius: 4, fontSize: 12, lineHeight: 1.35, letterSpacing: "0.5px" }}>
-                      VN
-                    </span>
-                    {t.licensePlate}
-                  </span>
+                  <span className="m-card__title">{t.licensePlate}</span>
                 </div>
                 <div className="m-card__row">
                   <span className="m-card__row-label">Rơ-moóc</span>
@@ -436,12 +426,12 @@ export function TruckCard({
           const tr = t.currentTrailerId ? trailers.find((x) => x.id === t.currentTrailerId) : null;
           const driver = driverByTruck.get(t.id);
           return [
-            { label: "Biển số xe đầu", value: <Plate plate={t.licensePlate} tag="VN" /> },
+            { label: "Biển số xe đầu", value: <Plate plate={t.licensePlate} /> },
             {
               label: "Rơ-moóc",
               value: tr ? (
                 <span className="fleet-pair">
-                  <Plate plate={tr.licensePlate} tag="RM" /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} />
+                  <Plate plate={tr.licensePlate} /> <TypeChip type={(tr.type as TrailerType) ?? TrailerType.FT40} />
                 </span>
               ) : (
                 <span className="fleet-unassigned">—</span>

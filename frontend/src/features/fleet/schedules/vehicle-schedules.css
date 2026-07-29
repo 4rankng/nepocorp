@@ -7,6 +7,193 @@
   overflow: hidden;
 }
 
+.vehicle-schedule-picker {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.vehicle-schedule-picker__hint {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-relaxed);
+}
+
+.vehicle-schedule-picker__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.vehicle-schedule-picker__tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--r-sm) - 2px);
+  background: transparent;
+  color: var(--ink-3);
+  font: 600 var(--fs-sm)/1.3 var(--font-body);
+  cursor: pointer;
+}
+
+.vehicle-schedule-picker__tabs button.is-active {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.vehicle-schedule-picker__tabs button:focus-visible,
+.vehicle-schedule-picker__option:focus-visible,
+.vehicle-schedule-picker__search:focus-within {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.vehicle-schedule-picker__count {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+.vehicle-schedule-picker__tabs button.is-active .vehicle-schedule-picker__count {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.vehicle-schedule-picker__search {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink-3);
+}
+
+.vehicle-schedule-picker__search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 var(--fs-sm)/1.4 var(--font-body);
+}
+
+.vehicle-schedule-picker__search input::placeholder {
+  color: var(--ink-3);
+}
+
+.vehicle-schedule-picker__list {
+  display: grid;
+  max-height: min(420px, 48vh);
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.vehicle-schedule-picker__option {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  min-height: 64px;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vehicle-schedule-picker__option:hover {
+  border-color: color-mix(in srgb, var(--accent-2) 45%, var(--line));
+  background: var(--accent-soft);
+}
+
+.vehicle-schedule-picker__option-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--brand);
+}
+
+.vehicle-schedule-picker__option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.vehicle-schedule-picker__option-copy strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.vehicle-schedule-picker__option-copy span {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.vehicle-schedule-picker__select-label {
+  color: var(--brand);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.vehicle-schedule-picker__empty {
+  padding: 28px 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .vehicle-schedule-picker__hint {
+    font-size: var(--fs-xs);
+  }
+
+  .vehicle-schedule-picker__tabs button {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .vehicle-schedule-picker__option {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .vehicle-schedule-picker__option-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .vehicle-schedule-picker__select-label {
+    display: none;
+  }
+}
+
 .vehicle-schedule-banner__head,
 .vehicle-schedule-banner__heading,
 .vehicle-schedule-alert__state,
