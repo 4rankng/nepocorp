@@ -105,15 +105,15 @@ export const forwarderClient = {
   getAdvanceSettlementDetail: async (id: number) => {
     return api.get<AdvanceSettlementWithRefs>(FORWARDER.ADVANCE_SETTLEMENT_DETAIL(id));
   },
-  createAdvanceSettlement: async (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
+  createAdvanceSettlement: async (data: { totalExpenseAmount?: number; refundAmount?: number; reimbursementAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
     return api.post(FORWARDER.ADVANCE_SETTLEMENTS, data);
   },
 
-  previewSettlementHtml: async (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
+  previewSettlementHtml: async (data: { totalExpenseAmount?: number; refundAmount?: number; reimbursementAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
     return api.postForText(`${FORWARDER.ADVANCE_SETTLEMENT_PREVIEW}?format=html`, data);
   },
 
-  previewSettlementXlsx: async (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
+  previewSettlementXlsx: async (data: { totalExpenseAmount?: number; refundAmount?: number; reimbursementAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) => {
     return api.postForBlob(`${FORWARDER.ADVANCE_SETTLEMENT_PREVIEW}?format=xlsx`, data);
   },
 
@@ -157,6 +157,7 @@ export const forwarderClient = {
     advanceRequestIds: number[];
     tripExpenseIds: number[];
     refundAmount: number;
+    reimbursementAmount: number;
     note?: string | null;
   }) => api.put<AdvanceSettlementWithRefs>(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}`, data),
   updateSettlementExpense: async (settlementId: number, expenseId: number, data: {

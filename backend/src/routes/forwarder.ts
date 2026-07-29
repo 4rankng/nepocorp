@@ -240,10 +240,17 @@ router.post('/advance-settlements/preview', asyncHandler(async (req: Request, re
   const forwarder = req.forwarder!;
   const parsed = createAdvanceSettlementSchema.safeParse(req.body);
   if (!parsed.success) throwValidation(parsed.error);
-  const { advanceRequestIds, tripExpenseIds, refundAmount, note } = parsed.data;
+  const { advanceRequestIds, tripExpenseIds, refundAmount, reimbursementAmount, note } = parsed.data;
 
   const format = (req.query.format as string) || 'html';
-  const input = { forwarderId: forwarder.id, advanceRequestIds, tripExpenseIds, refundAmount, note: note ?? undefined };
+  const input = {
+    forwarderId: forwarder.id,
+    advanceRequestIds,
+    tripExpenseIds,
+    refundAmount,
+    reimbursementAmount,
+    note: note ?? undefined,
+  };
 
   if (format === 'xlsx') {
     const dateStr = formatLocalDate();

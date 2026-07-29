@@ -6,6 +6,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { eq, and, inArray, notInArray, isNull, ne, sql } from 'drizzle-orm';
+import { round2dp } from '@tingting/shared';
 
 /** Minimal type that accepts both `db` and `tx` (transaction). */
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -24,6 +25,33 @@ export class AdvanceError extends Error {
 export interface ValidatedSettlementInputs {
   advanceRequests: typeof s.advanceRequests.$inferSelect[];
   tripExpenses: typeof s.tripExpenses.$inferSelect[];
+}
+
+export function assertSettlementBalanced(input: {
+  advanceRequests: Array<{ amount: string }>;
+  tripExpenses: Array<{ buyAmount: string }>;
+  refundAmount: number;
+  reimbursementAmount: number;
+}) {
+  const advanceTotal = round2dp(
+    input.advanceRequests.reduce((sum, item) => sum + Number(item.amount), 0),
+  );
+  const expenseTotal = round2dp(
+    input.tripExpenses.reduce((sum, item) => sum + Number(item.buyAmount), 0),
+  );
+  if (input.refundAmount > 0 && input.reimbursementAmount > 0) {
+    throw new AdvanceError(400, 'Phiếu không thể vừa hoàn lại vừa được công ty hoàn thêm');
+  }
+  const difference = round2dp(
+    advanceTotal + input.reimbursementAmount - expenseTotal - input.refundAmount,
+  );
+  if (Math.abs(difference) > 1) {
+    throw new AdvanceError(
+      400,
+      `Phiếu chưa cân đối: tạm ứng ${advanceTotal}, chi phí ${expenseTotal}, hoàn lại ${input.refundAmount}, công ty hoàn thêm ${input.reimbursementAmount}`,
+    );
+  }
+  return { advanceTotal, expenseTotal };
 }
 
 /**

@@ -766,6 +766,7 @@ export interface AdvanceSettlement {
   forwarderId: number;
   totalExpenseAmount: string;
   refundAmount: string;
+  reimbursementAmount: string;
   status: AdvanceSettlementStatus;
   checkedBy: number | null;
   checkedAt: string | null;

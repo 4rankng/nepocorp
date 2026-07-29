@@ -150,7 +150,7 @@ export function useForwarderSettlementDetail(id: number) {
 export function useCreateAdvanceSettlement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) =>
+    mutationFn: (data: { totalExpenseAmount?: number; refundAmount?: number; reimbursementAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) =>
       forwarderClient.createAdvanceSettlement(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.forwarder.settlements });
@@ -248,6 +248,7 @@ export function useUpdateAdvanceSettlement() {
       advanceRequestIds: number[];
       tripExpenseIds: number[];
       refundAmount: number;
+      reimbursementAmount: number;
       note?: string | null;
     }) => forwarderClient.updateAdvanceSettlement(settlementId, data),
     onSuccess: (_data, variables) => {

@@ -922,6 +922,7 @@ export const advanceSettlements = pgTable('advance_settlements', {
   forwarderId: integer('forwarder_id').references(() => users.id).notNull(),
   totalExpenseAmount: numeric('total_expense_amount', { precision: 15, scale: 0 }).notNull(),
   refundAmount: numeric('refund_amount', { precision: 15, scale: 0 }).default('0').notNull(),
+  reimbursementAmount: numeric('reimbursement_amount', { precision: 15, scale: 0 }).default('0').notNull(),
   status: advanceSettlementStatusEnum('status').default('PENDING').notNull(),
   checkedBy: integer('checked_by').references(() => users.id),
   checkedAt: timestamp('checked_at'),

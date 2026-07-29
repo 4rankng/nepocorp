@@ -55,6 +55,7 @@ interface Settlement {
   forwarderId: number;
   totalExpenseAmount: string;
   refundAmount: string;
+  reimbursementAmount: string;
   status: AdvanceSettlementStatus;
   checkedBy: number | null;
   checkedAt: string | null;
@@ -256,6 +257,11 @@ export default function ForwarderSettlementsPage() {
                       {Number(s.refundAmount) > 0 && (
                         <span className="fset-card__meta-item">
                           Hoàn lại: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
+                        </span>
+                      )}
+                      {Number(s.reimbursementAmount || 0) > 0 && (
+                        <span className="fset-card__meta-item">
+                          Công ty hoàn thêm: <strong>{formatCurrency(Number(s.reimbursementAmount || 0))}</strong>
                         </span>
                       )}
                     </div>

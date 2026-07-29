@@ -112,16 +112,31 @@ export function SettlementGridRow({
         </div>
         <div>
           <span>Tạm ứng quyết toán</span>
-          <strong><Money value={Number(s.totalExpenseAmount) + Number(s.refundAmount)} /></strong>
+          <strong>
+            <Money
+              value={
+                Number(s.totalExpenseAmount)
+                + Number(s.refundAmount)
+                - Number(s.reimbursementAmount || 0)
+              }
+            />
+          </strong>
         </div>
         <div>
           <span>Tổng chi phí</span>
           <strong><Money value={Number(s.totalExpenseAmount)} /></strong>
         </div>
-        <div>
-          <span>Hoàn lại</span>
-          <strong><Money value={Number(s.refundAmount)} /></strong>
-        </div>
+        {Number(s.reimbursementAmount || 0) > 0 ? (
+          <div>
+            <span>Công ty hoàn thêm</span>
+            <strong><Money value={Number(s.reimbursementAmount || 0)} /></strong>
+          </div>
+        ) : (
+          <div>
+            <span>Hoàn lại</span>
+            <strong><Money value={Number(s.refundAmount)} /></strong>
+          </div>
+        )}
       </div>
       {rows.map((plan, index) => (
         <div
@@ -263,6 +278,12 @@ export function SettlementMobileCard({
           <div className="as-mcard__refund">
             <span>Hoàn lại</span>
             <strong><Money value={Number(s.refundAmount)} /></strong>
+          </div>
+        )}
+        {Number(s.reimbursementAmount || 0) > 0 && (
+          <div className="as-mcard__refund">
+            <span>Công ty hoàn thêm</span>
+            <strong><Money value={Number(s.reimbursementAmount || 0)} /></strong>
           </div>
         )}
       </div>

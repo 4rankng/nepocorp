@@ -58,14 +58,13 @@ export default function ForwarderSettlementCreatePage() {
   const { rootRef } = usePageAnimations({ ready: true });
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
-  const [refundAmount, setRefundAmount] = useState('0');
   const [note, setNote] = useState('');
   const [created, setCreated] = useState<CreatedSettlement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { confirm, dialog } = useConfirm();
   const handleBack = () => navigate('/my-settlements');
-  const isDirty = () => !created && (selectedRequestIds.size > 0 || selectedExpenseIds.size > 0 || note.trim() !== '' || refundAmount !== '0');
+  const isDirty = () => !created && (selectedRequestIds.size > 0 || selectedExpenseIds.size > 0 || note.trim() !== '');
   useBackShortcut(handleBack, {
     isDirty,
     confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
@@ -98,8 +97,9 @@ export default function ForwarderSettlementCreatePage() {
       .reduce((sum, e) => sum + Number(e.buyAmount), 0);
   }, [unlinkedExpenses, selectedExpenseIds]);
 
-  const totalRefund = Number(refundAmount) || 0;
-  const balance = totalAdvance - totalExpense - totalRefund;
+  const difference = totalAdvance - totalExpense;
+  const totalRefund = Math.max(difference, 0);
+  const totalReimbursement = Math.max(-difference, 0);
 
   const expenseBreakdown = useMemo(() => {
     const selected = unlinkedExpenses.filter(e => selectedExpenseIds.has(e.id));
@@ -183,6 +183,7 @@ export default function ForwarderSettlementCreatePage() {
     const result = await createSettlement.mutateAsync({
       totalExpenseAmount: totalExpense,
       refundAmount: totalRefund,
+      reimbursementAmount: totalReimbursement,
       note: note || undefined,
       advanceRequestIds: Array.from(selectedRequestIds),
       tripExpenseIds: selectedExpenseIds.size > 0 ? Array.from(selectedExpenseIds) : undefined,
@@ -416,16 +417,22 @@ export default function ForwarderSettlementCreatePage() {
               <span className="fset-summary__label">Tổng chi phí</span>
               <span className="fset-summary__value fset-summary__value--expense"><Money value={totalExpense} sign="−" /></span>
             </div>
-            <div className="fset-summary__row">
-              <span className="fset-summary__label">Tiền hoàn lại</span>
-              <span className="fset-summary__value fset-summary__value--refund"><Money value={totalRefund} sign="−" /></span>
-            </div>
+            {totalRefund > 0 && (
+              <div className="fset-summary__row">
+                <span className="fset-summary__label">Giao nhận hoàn lại</span>
+                <span className="fset-summary__value fset-summary__value--refund"><Money value={totalRefund} sign="−" /></span>
+              </div>
+            )}
+            {totalReimbursement > 0 && (
+              <div className="fset-summary__row">
+                <span className="fset-summary__label">Công ty hoàn thêm</span>
+                <span className="fset-summary__value fset-summary__value--refund"><Money value={totalReimbursement} sign="+" /></span>
+              </div>
+            )}
             <div className="fset-summary__divider" />
             <div className="fset-summary__row fset-summary__row--total">
-              <span>Chênh lệch</span>
-              <span className={`fset-summary__total ${balance > 0 ? 'fset-summary__total--positive' : balance < 0 ? 'fset-summary__total--negative' : ''}`}>
-                <Money value={Math.abs(balance)} />
-              </span>
+              <span>Sau cân đối</span>
+              <span className="fset-summary__total"><Money value={0} /></span>
             </div>
           </div>
           {expenseBreakdown.size > 0 && (
@@ -441,24 +448,17 @@ export default function ForwarderSettlementCreatePage() {
         </div>
 
         <div className="fset-details-card">
-          <div className="fset-input-group">
-            <label className="fset-input-label">Tiền hoàn lại</label>
-            <input
-              type="number"
-              className="fset-input"
-              value={refundAmount}
-              onChange={e => setRefundAmount(e.target.value)}
-              placeholder="0"
-              min={0}
-            />
-          </div>
-
-          {totalAdvance > 0 && balance !== 0 && (
+          {totalAdvance > 0 && difference !== 0 && (
             <div className="fset-warn-banner">
               <div className="fset-warn-banner__icon">
                 <Info size={15} />
               </div>
-              <span>Chênh lệch: {formatCurrency(balance)} (tạm ứng − chi phí − hoàn lại)</span>
+              <span>
+                {difference > 0
+                  ? `Giao nhận hoàn lại ${formatCurrency(totalRefund)}`
+                  : `Công ty hoàn thêm ${formatCurrency(totalReimbursement)}`}
+                {' '}để phiếu cân đối.
+              </span>
             </div>
           )}
 

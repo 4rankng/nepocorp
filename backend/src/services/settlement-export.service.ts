@@ -1,5 +1,8 @@
 import { getAdvanceSettlement } from './advance.service';
-import { validateSettlementInputs } from './settlement-validation';
+import {
+  assertSettlementBalanced,
+  validateSettlementInputs,
+} from './settlement-validation';
 import { getCompanyInfo } from './company-info.service';
 import { db } from '../db';
 import * as s from '../db/schema';
@@ -96,6 +99,7 @@ export interface SettlementExportData {
   createdAt: string;
   forwarderName: string | null;
   refundAmount: string | number;
+  reimbursementAmount: string | number;
   note: string | null;
   linkedRequests: LinkedRequest[];
   linkedExpenses: LinkedExpense[];
@@ -142,7 +146,13 @@ export function renderSettlementHtml(data: SettlementExportData): string {
   const totalAdvance = requests.reduce((sum: number, r) => sum + Number(r.amount), 0);
   const totalExpense = expenses.reduce((sum: number, e) => sum + Number(e.amount), 0);
   const refund = Number(data.refundAmount || 0);
-  const balance = totalAdvance - totalExpense - refund;
+  const reimbursement = Number(data.reimbursementAmount || 0);
+  const balance = totalAdvance + reimbursement - totalExpense - refund;
+  const balanceLabel = balance > 0
+    ? 'Còn dư (phải hoàn):'
+    : balance < 0
+      ? 'Thiếu (phải bổ sung):'
+      : 'Đã cân đối:';
   const rows = buildPrintRows(expenses);
   const docCode = data.code || `PT-${String(data.id).padStart(4, '0')}`;
 
@@ -201,9 +211,10 @@ ${requests.length > 0 ? `
 <div class="summary">
   <div class="summary-row"><span>Tổng tạm ứng:</span><strong>${formatVND(totalAdvance, true)}</strong></div>
   <div class="summary-row"><span>Tổng chi phí:</span><strong>${formatVND(totalExpense, true)}</strong></div>
-  ${refund > 0 ? `<div class="summary-row"><span>Tiền hoàn lại:</span><strong>${formatVND(refund, true)}</strong></div>` : ''}
+  ${refund > 0 ? `<div class="summary-row"><span>Giao nhận hoàn lại:</span><strong>${formatVND(refund, true)}</strong></div>` : ''}
+  ${reimbursement > 0 ? `<div class="summary-row"><span>Công ty hoàn thêm:</span><strong>${formatVND(reimbursement, true)}</strong></div>` : ''}
   <div class="summary-row summary-row--balance">
-    <span>${balance >= 0 ? 'Còn dư (phải hoàn):' : 'Thiếu (phải bổ sung):'}</span>
+    <span>${balanceLabel}</span>
     <strong style="color: ${balance >= 0 ? '#16a34a' : '#dc2626'}">${formatVND(Math.abs(balance), true)}</strong>
   </div>
 </div>
@@ -226,7 +237,8 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
   const totalAdvance = requests.reduce((sum: number, r) => sum + Number(r.amount), 0);
   const totalExpense = expenses.reduce((sum: number, e) => sum + Number(e.amount), 0);
   const refund = Number(data.refundAmount || 0);
-  const balance = totalAdvance - totalExpense - refund;
+  const reimbursement = Number(data.reimbursementAmount || 0);
+  const balance = totalAdvance + reimbursement - totalExpense - refund;
   const rows = buildPrintRows(expenses);
   const code = data.code || `PT-${String(data.id).padStart(4, '0')}`;
 
@@ -458,7 +470,8 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
       ['Tổng tạm ứng đã nhận', totalAdvance],
       ['Tổng chi phí phát sinh', totalExpense],
     ];
-    if (refund > 0) summaryItems.push(['Tiền hoàn lại', refund]);
+    if (refund > 0) summaryItems.push(['Giao nhận hoàn lại', refund]);
+    if (reimbursement > 0) summaryItems.push(['Công ty hoàn thêm', reimbursement]);
 
     for (const [label, value] of summaryItems) {
       sheet.mergeCells(`A${row}:D${row}`);
@@ -479,7 +492,11 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
     }
 
     // Balance row
-    const balLabel = balance >= 0 ? 'Còn dư (phải hoàn lại)' : 'Thiếu (phải bổ sung)';
+    const balLabel = balance > 0
+      ? 'Còn dư (phải hoàn lại)'
+      : balance < 0
+        ? 'Thiếu (phải bổ sung)'
+        : 'Đã cân đối';
     const balClr = balance >= 0 ? CLR.green : CLR.red;
 
     sheet.mergeCells(`A${row}:D${row}`);
@@ -572,14 +589,21 @@ async function buildPreviewSettlementData(input: {
   advanceRequestIds: number[];
   tripExpenseIds?: number[];
   refundAmount?: number;
+  reimbursementAmount?: number;
   note?: string;
 }): Promise<SettlementExportData> {
-  const { forwarderId, advanceRequestIds, tripExpenseIds, refundAmount, note } = input;
+  const {
+    forwarderId,
+    advanceRequestIds,
+    tripExpenseIds,
+    refundAmount,
+    reimbursementAmount,
+    note,
+  } = input;
 
-  // Shared validation: existence, ownership, and status checks.
-  // Note: tripExpenses from validation is intentionally unused here — the
-  // print renderer enriches expenses independently via its own join below.
-  const { advanceRequests: requests } =
+  // Shared validation: existence, ownership, status, and the same financial
+  // invariant enforced by create, update, and approval.
+  const { advanceRequests: requests, tripExpenses } =
     await validateSettlementInputs({
       dbOrTx: db,
       forwarderId,
@@ -587,6 +611,12 @@ async function buildPreviewSettlementData(input: {
       tripExpenseIds,
       checkAlreadyLinked: false,
     });
+  assertSettlementBalanced({
+    advanceRequests: requests,
+    tripExpenses,
+    refundAmount: refundAmount ?? 0,
+    reimbursementAmount: reimbursementAmount ?? 0,
+  });
 
   // Enrich expenses with trip/customer join for print display
   let linkedExpenses: LinkedExpense[] = [];
@@ -629,6 +659,7 @@ async function buildPreviewSettlementData(input: {
     createdAt: new Date().toISOString(),
     forwarderName,
     refundAmount: String(refundAmount ?? 0),
+    reimbursementAmount: String(reimbursementAmount ?? 0),
     note: note ?? null,
     linkedRequests: requests,
     linkedExpenses,
@@ -640,6 +671,7 @@ export async function previewSettlementHtml(input: {
   advanceRequestIds: number[];
   tripExpenseIds?: number[];
   refundAmount?: number;
+  reimbursementAmount?: number;
   note?: string;
 }): Promise<string> {
   const data = await buildPreviewSettlementData(input);
@@ -652,6 +684,7 @@ export async function previewSettlementXlsx(
     advanceRequestIds: number[];
     tripExpenseIds?: number[];
     refundAmount?: number;
+    reimbursementAmount?: number;
     note?: string;
   },
   writable: import('stream').Writable,

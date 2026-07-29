@@ -4,7 +4,11 @@ import { eq, and, desc, inArray, notInArray, ne, sql, count } from 'drizzle-orm'
 import { NotificationType, TxnType, round2dp } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { emitNotification } from './notification.service';
-import { AdvanceError, validateSettlementInputs } from './settlement-validation';
+import {
+  AdvanceError,
+  assertSettlementBalanced,
+  validateSettlementInputs,
+} from './settlement-validation';
 import type { Tx } from './trip-shared';
 import { getTripExpenseRequiredFieldError } from './forwarder.service';
 
@@ -284,7 +288,14 @@ export async function rejectAdvanceRequest(id: number, rejectedBy: number) {
 
 export async function createAdvanceSettlement(
   forwarderId: number,
-  data: { totalExpenseAmount?: number; refundAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] },
+  data: {
+    totalExpenseAmount?: number;
+    refundAmount?: number;
+    reimbursementAmount?: number;
+    note?: string;
+    advanceRequestIds: number[];
+    tripExpenseIds?: number[];
+  },
 ) {
   if (!data.advanceRequestIds || data.advanceRequestIds.length === 0) {
     throw new AdvanceError(400, 'At least one advance request ID is required');
@@ -311,7 +322,7 @@ export async function createAdvanceSettlement(
       }
     }
     // Shared validation: existence, ownership, status, and already-linked checks
-    const { tripExpenses: tripExpenseRows } =
+    const { advanceRequests: advanceRequestRows, tripExpenses: tripExpenseRows } =
       await validateSettlementInputs({
         dbOrTx: tx,
         forwarderId,
@@ -320,11 +331,19 @@ export async function createAdvanceSettlement(
         checkAlreadyLinked: true,
       });
 
-    // Auto-calculate total from selected expenses
-    let totalExpenseAmount = data.totalExpenseAmount ?? 0;
-    if (tripExpenseRows.length > 0) {
-      totalExpenseAmount = tripExpenseRows.reduce((sum, exp: typeof s.tripExpenses.$inferSelect) => sum + Number(exp.buyAmount), 0);
-    }
+    // Compatibility input `totalExpenseAmount` is never authoritative. Persist
+    // only the total derived from validated linked expenses, including zero
+    // when no expenses are linked.
+    const totalExpenseAmount = tripExpenseRows.reduce(
+      (sum, exp: typeof s.tripExpenses.$inferSelect) => sum + Number(exp.buyAmount),
+      0,
+    );
+    assertSettlementBalanced({
+      advanceRequests: advanceRequestRows,
+      tripExpenses: tripExpenseRows,
+      refundAmount: data.refundAmount ?? 0,
+      reimbursementAmount: data.reimbursementAmount ?? 0,
+    });
 
     const code = await generateSettlementCode(tx);
 
@@ -333,6 +352,7 @@ export async function createAdvanceSettlement(
       forwarderId,
       totalExpenseAmount: String(totalExpenseAmount),
       refundAmount: String(data.refundAmount ?? 0),
+      reimbursementAmount: String(data.reimbursementAmount ?? 0),
       status: 'PENDING',
       note: data.note ?? null,
     }).returning();
@@ -527,23 +547,15 @@ export async function getAdvanceSettlement(id: number) {
   };
 }
 
-function assertSettlementBalanced(input: {
-  advanceRequests: Array<{ amount: string }>;
-  tripExpenses: Array<{ buyAmount: string }>;
-  refundAmount: number;
-}) {
-  const advanceTotal = round2dp(input.advanceRequests.reduce((sum, item) => sum + Number(item.amount), 0));
-  const expenseTotal = round2dp(input.tripExpenses.reduce((sum, item) => sum + Number(item.buyAmount), 0));
-  const difference = round2dp(advanceTotal - expenseTotal - input.refundAmount);
-  if (Math.abs(difference) > 1) {
-    throw new AdvanceError(400, `Phiếu chưa cân đối: tạm ứng ${advanceTotal}, chi phí ${expenseTotal}, hoàn lại ${input.refundAmount}`);
-  }
-  return { advanceTotal, expenseTotal };
-}
-
 export async function updateAdvanceSettlement(
   settlementId: number,
-  data: { advanceRequestIds: number[]; tripExpenseIds: number[]; refundAmount: number; note?: string | null },
+  data: {
+    advanceRequestIds: number[];
+    tripExpenseIds: number[];
+    refundAmount: number;
+    reimbursementAmount: number;
+    note?: string | null;
+  },
 ) {
   await db.transaction(async (tx) => {
     const [settlement] = await tx.select().from(s.advanceSettlements)
@@ -579,6 +591,7 @@ export async function updateAdvanceSettlement(
       advanceRequests: validated.advanceRequests,
       tripExpenses: validated.tripExpenses,
       refundAmount: data.refundAmount,
+      reimbursementAmount: data.reimbursementAmount,
     });
 
     const existingExpenseLinks = await tx.select().from(s.settlementExpenses)
@@ -610,6 +623,7 @@ export async function updateAdvanceSettlement(
     await tx.update(s.advanceSettlements).set({
       totalExpenseAmount: String(expenseTotal),
       refundAmount: String(data.refundAmount),
+      reimbursementAmount: String(data.reimbursementAmount),
       note: data.note ?? null,
       updatedAt: new Date(),
     }).where(eq(s.advanceSettlements.id, settlementId));
@@ -694,10 +708,11 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       checkAlreadyLinked: true,
       excludeSettlementId: id,
     });
-    assertSettlementBalanced({
+    const { advanceTotal } = assertSettlementBalanced({
       advanceRequests: validated.advanceRequests,
       tripExpenses: validated.tripExpenses,
       refundAmount: Number(settlement.refundAmount),
+      reimbursementAmount: Number(settlement.reimbursementAmount),
     });
 
     const links = await tx.select({
@@ -761,13 +776,12 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       });
     }
 
-    const totalAmount = totalExpenseAmount + Number(settlement.refundAmount);
     await LedgerService.postEntry(tx, {
       txnType: TxnType.FORWARDER_SETTLEMENT,
       txnId: settlement.id,
       entityType: 'FORWARDER',
       entityId: settlement.forwarderId,
-      debit: totalAmount,
+      debit: advanceTotal,
       credit: 0,
       note: `Thanh toán tạm ứng #${settlement.id}`,
     });
@@ -781,7 +795,10 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
   emitNotification({
     type: NotificationType.ADVANCE_SETTLEMENT_APPROVED,
     title: 'Phiếu hoàn ứng đã duyệt',
-    message: `Phiếu ${approved.updated.code} được duyệt ${Number(approved.updated.totalExpenseAmount).toLocaleString('vi-VN')} ₫${approved.adjustmentCount > 0 ? `, có ${approved.adjustmentCount} khoản kế toán điều chỉnh` : ''}.`,
+    message: settlementApprovalNotificationMessage(
+      approved.updated,
+      approved.adjustmentCount,
+    ),
     relatedEntityType: 'advance_settlements',
     relatedEntityId: approved.updated.id,
     targetUserId: approved.updated.forwarderId,
@@ -790,6 +807,26 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
 
   const [enriched] = await enrichWithNames([approved.updated]);
   return enrichSettlementWithRequests(enriched);
+}
+
+export function settlementApprovalNotificationMessage(
+  settlement: Pick<
+    typeof s.advanceSettlements.$inferSelect,
+    'code' | 'totalExpenseAmount' | 'refundAmount' | 'reimbursementAmount'
+  >,
+  adjustmentCount: number,
+): string {
+  const reimbursement = Number(settlement.reimbursementAmount);
+  const refund = Number(settlement.refundAmount);
+  const direction = reimbursement > 0
+    ? `Công ty hoàn thêm ${reimbursement.toLocaleString('vi-VN')} ₫`
+    : refund > 0
+      ? `Giao nhận hoàn lại ${refund.toLocaleString('vi-VN')} ₫`
+      : 'Đã cân đối';
+  const adjustment = adjustmentCount > 0
+    ? `, có ${adjustmentCount} khoản kế toán điều chỉnh`
+    : '';
+  return `Phiếu ${settlement.code} được duyệt. ${direction} (tổng chi phí ${Number(settlement.totalExpenseAmount).toLocaleString('vi-VN')} ₫)${adjustment}.`;
 }
 
 export async function adjustSettlementExpense(
@@ -883,8 +920,21 @@ export async function adjustSettlementExpense(
       .innerJoin(s.tripExpenses, eq(s.tripExpenses.id, s.settlementExpenses.tripExpenseId))
       .where(eq(s.settlementExpenses.settlementId, settlementId));
     const totalExpenseAmount = round2dp(totals.reduce((sum, row) => sum + Number(row.buyAmount), 0));
+    const linkedAdvances = await tx.select({ amount: s.advanceRequests.amount })
+      .from(s.advanceSettlementRequests)
+      .innerJoin(
+        s.advanceRequests,
+        eq(s.advanceSettlementRequests.advanceRequestId, s.advanceRequests.id),
+      )
+      .where(eq(s.advanceSettlementRequests.settlementId, settlementId));
+    const totalAdvanceAmount = round2dp(
+      linkedAdvances.reduce((sum, row) => sum + Number(row.amount), 0),
+    );
+    const transferDifference = round2dp(totalAdvanceAmount - totalExpenseAmount);
     await tx.update(s.advanceSettlements).set({
       totalExpenseAmount: String(totalExpenseAmount),
+      refundAmount: String(Math.max(transferDifference, 0)),
+      reimbursementAmount: String(Math.max(-transferDifference, 0)),
       updatedAt: now,
     }).where(eq(s.advanceSettlements.id, settlementId));
     return {

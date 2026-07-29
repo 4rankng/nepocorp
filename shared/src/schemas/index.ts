@@ -1066,6 +1066,7 @@ const uniquePositiveIdsMinOne = positiveIds
 export const createAdvanceSettlementSchema = z.object({
   totalExpenseAmount: nonNegNumeric.optional(),
   refundAmount: nonNegNumeric.optional().default(0),
+  reimbursementAmount: nonNegNumeric.optional().default(0),
   note: z.string().optional().nullable(),
   tripExpenseIds: uniquePositiveIds.optional(),
   advanceRequestIds: uniquePositiveIdsMinOne,
@@ -1073,6 +1074,7 @@ export const createAdvanceSettlementSchema = z.object({
 
 export const updateAdvanceSettlementSchema = z.object({
   refundAmount: nonNegNumeric,
+  reimbursementAmount: nonNegNumeric.optional().default(0),
   note: z.string().trim().max(2000).optional().nullable(),
   tripExpenseIds: uniquePositiveIds,
   advanceRequestIds: uniquePositiveIdsMinOne,

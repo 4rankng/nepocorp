@@ -113,6 +113,7 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
           id: s.advanceSettlements.id,
           totalExpenseAmount: s.advanceSettlements.totalExpenseAmount,
           refundAmount: s.advanceSettlements.refundAmount,
+          reimbursementAmount: s.advanceSettlements.reimbursementAmount,
           createdAt: s.advanceSettlements.createdAt,
           requesterName: s.users.fullName,
         })
@@ -127,7 +128,9 @@ export async function getApprovalQueue(userId: number, role: string): Promise<Ap
         .orderBy(asc(s.advanceSettlements.createdAt))
         .limit(50)
         .then(rows => rows.map(r => {
-          const amt = Number(r.totalExpenseAmount) + Number(r.refundAmount);
+          const amt = Number(r.totalExpenseAmount)
+            + Number(r.refundAmount)
+            - Number(r.reimbursementAmount);
           return {
             id: `advanceSettlementsApprove:${r.id}`,
             type: 'advanceSettlementsApprove' as const,

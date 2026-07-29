@@ -10,6 +10,7 @@ import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupSettlementExpensesByTrip } from './admin-advance-settlement-summary';
+import { settlementExportEndpoint } from './settlement-export-endpoint';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -74,6 +75,7 @@ interface SettlementData {
   forwarderName?: string;
   totalExpenseAmount: string;
   refundAmount: string;
+  reimbursementAmount: string;
   status: AdvanceSettlementStatus;
   note: string | null;
   createdAt: string;
@@ -104,7 +106,6 @@ export default function SettlementPrintPage() {
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<number>>(new Set());
   const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
-  const [refundAmount, setRefundAmount] = useState('0');
   const [settlementNote, setSettlementNote] = useState('');
   const [selectionReady, setSelectionReady] = useState(false);
   const updateExpense = useUpdateSettlementExpense();
@@ -116,10 +117,8 @@ export default function SettlementPrintPage() {
   useBackShortcut(handleBack);
 
   const handlePrint = async () => {
-    const endpoint = isPortal 
-      ? `/forwarder/me/advance-settlements/${id}/export?format=html`
-      : `/finance/advance-settlements/${id}/export?format=html`;
-    const html = await api.postForText(endpoint, {});
+    const endpoint = settlementExportEndpoint(isPortal, Number(id), 'html');
+    const html = await api.getForText(endpoint);
     setPreviewHtml(html);
     setShowPreview(true);
   };
@@ -133,7 +132,6 @@ export default function SettlementPrintPage() {
     if (!loadedSettlement || selectionReady) return;
     setSelectedRequestIds(new Set((loadedSettlement.linkedRequests ?? []).map(request => request.id)));
     setSelectedExpenseIds(new Set((loadedSettlement.linkedExpenses ?? []).map(expense => expense.id)));
-    setRefundAmount(String(Number(loadedSettlement.refundAmount || 0)));
     setSettlementNote(loadedSettlement.note ?? '');
     setSelectionReady(true);
   }, [loadedSettlement, selectionReady]);
@@ -166,7 +164,16 @@ export default function SettlementPrintPage() {
   const totalAdvance = requests.reduce((sum, r) => sum + Number(r.amount), 0);
   const totalExpense = expenses.reduce((sum, e) => sum + Number(e.buyAmount), 0);
   const refund = Number(s.refundAmount || 0);
-  const balance = totalAdvance - totalExpense - refund;
+  const reimbursement = Number(s.reimbursementAmount || 0);
+  const balance = totalAdvance + reimbursement - totalExpense - refund;
+  const directionLabel = balance !== 0
+    ? balance > 0 ? 'Còn dư (phải hoàn)' : 'Thiếu (phải bổ sung)'
+    : reimbursement > 0 ? 'Công ty hoàn thêm'
+      : refund > 0 ? 'Giao nhận hoàn lại'
+        : 'Đã cân đối';
+  const directionAmount = balance !== 0
+    ? Math.abs(balance)
+    : reimbursement || refund;
 
   const plans = groupSettlementExpensesByTrip(expenses);
   const totalFromPlans = plans.reduce((sum, plan) => sum + plan.totalExpense, 0);
@@ -177,6 +184,15 @@ export default function SettlementPrintPage() {
   const expenseCandidates = [...expenses, ...(s.eligibleExpenses ?? [])]
     .filter((expense, index, items) => items.findIndex(item => item.id === expense.id) === index);
   const expenseCandidatePlans = groupSettlementExpensesByTrip(expenseCandidates);
+  const selectedAdvanceTotal = requestCandidates
+    .filter(request => selectedRequestIds.has(request.id))
+    .reduce((sum, request) => sum + Number(request.amount), 0);
+  const selectedExpenseTotal = expenseCandidates
+    .filter(expense => selectedExpenseIds.has(expense.id))
+    .reduce((sum, expense) => sum + Number(expense.buyAmount), 0);
+  const selectedDifference = selectedAdvanceTotal - selectedExpenseTotal;
+  const selectedRefundAmount = Math.max(selectedDifference, 0);
+  const selectedReimbursementAmount = Math.max(-selectedDifference, 0);
 
   const toggleSelection = (setter: React.Dispatch<React.SetStateAction<Set<number>>>, id: number) => {
     setter(previous => {
@@ -193,7 +209,8 @@ export default function SettlementPrintPage() {
       settlementId: s.id,
       advanceRequestIds: [...selectedRequestIds],
       tripExpenseIds: [...selectedExpenseIds],
-      refundAmount: Number(refundAmount) || 0,
+      refundAmount: selectedRefundAmount,
+      reimbursementAmount: selectedReimbursementAmount,
       note: settlementNote.trim() || null,
     });
     await approveSettlement.mutateAsync(s.id);
@@ -240,7 +257,7 @@ export default function SettlementPrintPage() {
               <button
                 className="btn btn--secondary btn--sm"
                 onClick={() => {
-                  api.getBlob(`/forwarder/me/advance-settlements/${s.id}/export`)
+                  api.getBlob(settlementExportEndpoint(isPortal, s.id, 'xlsx'))
                     .then(blob => {
                       const a = document.createElement('a');
                       a.href = URL.createObjectURL(blob);
@@ -428,11 +445,9 @@ export default function SettlementPrintPage() {
             <div className="settlement-detail__summary-value">{formatCurrency(totalExpense)}</div>
           </div>
           <div className="settlement-detail__summary-card settlement-detail__summary-card--balance">
-            <div className="settlement-detail__summary-label">
-              {balance >= 0 ? 'Còn dư (phải hoàn)' : 'Thiếu (phải bổ sung)'}
-            </div>
-            <div className={`settlement-detail__summary-value ${balance >= 0 ? 'settlement-detail__summary-value--positive' : 'settlement-detail__summary-value--negative'}`}>
-              {formatCurrency(Math.abs(balance))}
+            <div className="settlement-detail__summary-label">{directionLabel}</div>
+            <div className={`settlement-detail__summary-value ${balance >= 0 && reimbursement === 0 ? 'settlement-detail__summary-value--positive' : 'settlement-detail__summary-value--negative'}`}>
+              {formatCurrency(directionAmount)}
             </div>
           </div>
         </div>
@@ -447,8 +462,18 @@ export default function SettlementPrintPage() {
         {canEditExpenses && (
           <div className="settlement-finalize no-print">
             <div className="settlement-finalize__fields">
-              <label>Tiền hoàn lại
-                <input className="input" type="number" min="0" value={refundAmount} onChange={event => setRefundAmount(event.target.value)} />
+              <label>
+                {selectedDifference > 0
+                  ? 'Giao nhận hoàn lại'
+                  : selectedDifference < 0
+                    ? 'Công ty hoàn thêm'
+                    : 'Đã cân đối'}
+                <input
+                  className="input"
+                  type="text"
+                  readOnly
+                  value={formatCurrency(Math.abs(selectedDifference))}
+                />
               </label>
               <label>Ghi chú
                 <textarea className="input" rows={2} value={settlementNote} onChange={event => setSettlementNote(event.target.value)} />

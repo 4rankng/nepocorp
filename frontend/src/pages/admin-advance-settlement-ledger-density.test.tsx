@@ -125,4 +125,25 @@ describe('admin advance settlement ledger density', () => {
     expect(screen.queryByText(/MSKU-001/)).toBeNull();
     expect(screen.queryByText(/MSKU-002/)).toBeNull();
   });
+
+  it('shows company reimbursement as the opposite cash direction from a forwarder refund', () => {
+    const reimbursementSettlement = {
+      ...settlement,
+      refundAmount: 0,
+      reimbursementAmount: 5_513_200,
+    } as unknown as AdvanceSettlementWithRefs;
+
+    render(
+      <MemoryRouter>
+        <SettlementMobileCard
+          s={reimbursementSettlement}
+          rejectMutation={rejectMutation}
+          canApproveReject
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Công ty hoàn thêm')).toBeTruthy();
+    expect(screen.queryByText('Hoàn lại')).toBeNull();
+  });
 });

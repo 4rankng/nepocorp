@@ -18,6 +18,7 @@ import {
   setTripExpenseCompletion,
   updateForwarderTripExpense,
 } from '../services/forwarder.service';
+import { previewSettlementHtml } from '../services/settlement-export.service';
 
 describe('forwarder settlement streamlined workflow', () => {
   const ids = {
@@ -49,6 +50,30 @@ describe('forwarder settlement streamlined workflow', () => {
       tripExpenseIds: [2, 2],
       refundAmount: 0,
     }).success, false);
+
+    const reimbursementPayload = updateAdvanceSettlementSchema.safeParse({
+      advanceRequestIds: [1],
+      tripExpenseIds: [2],
+      refundAmount: 0,
+      reimbursementAmount: 5_513_200,
+    });
+    assert.equal(reimbursementPayload.success, true);
+    if (reimbursementPayload.success) {
+      assert.equal(
+        (reimbursementPayload.data as Record<string, unknown>).reimbursementAmount,
+        5_513_200,
+      );
+    }
+
+    const legacyBalancedPayload = updateAdvanceSettlementSchema.safeParse({
+      advanceRequestIds: [1],
+      tripExpenseIds: [2],
+      refundAmount: 0,
+    });
+    assert.equal(legacyBalancedPayload.success, true);
+    if (legacyBalancedPayload.success) {
+      assert.equal(legacyBalancedPayload.data.reimbursementAmount, 0);
+    }
   });
 
   async function insertExpense(options: {
@@ -320,6 +345,69 @@ describe('forwarder settlement streamlined workflow', () => {
     );
   });
 
+  test('accountant can reimburse expenses above the advance without overstating the settlement ledger debit', async () => {
+    const expense = await insertExpense({ buyAmount: 55_513_200, sellAmount: 55_513_200 });
+    await markCompleted(null);
+    const reimbursementRequestId = await insertApprovedRequest(50_000_000);
+    const settlement = await createAdvanceSettlement(forwarderId, {
+      advanceRequestIds: [reimbursementRequestId],
+      tripExpenseIds: [expense.id],
+      reimbursementAmount: 5_513_200,
+    });
+    ids.settlements.push(settlement.id);
+    await db.update(s.advanceSettlements)
+      .set({ reimbursementAmount: '0' })
+      .where(eq(s.advanceSettlements.id, settlement.id));
+
+    const updated = await updateAdvanceSettlement(settlement.id, {
+      advanceRequestIds: [reimbursementRequestId],
+      tripExpenseIds: [expense.id],
+      refundAmount: 0,
+      reimbursementAmount: 5_513_200,
+    } as Parameters<typeof updateAdvanceSettlement>[1]);
+    assert.equal(
+      (updated as unknown as { reimbursementAmount: string }).reimbursementAmount,
+      '5513200',
+    );
+
+    await approveAdvanceSettlement(settlement.id, accountantId);
+    const ledgerRows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT),
+      eq(s.ledger.txnId, settlement.id),
+    ));
+    assert.equal(ledgerRows.length, 1);
+    assert.equal(ledgerRows[0].debit, '50000000');
+    assert.equal(ledgerRows[0].credit, '0');
+  });
+
+  test('settlement preview rejects an unbalanced reimbursement', async () => {
+    const expense = await insertExpense({ buyAmount: 100_000, sellAmount: 100_000 });
+    await markCompleted(null);
+    const previewRequestId = await insertApprovedRequest(100_000);
+
+    await assert.rejects(
+      () => previewSettlementHtml({
+        forwarderId,
+        advanceRequestIds: [previewRequestId],
+        tripExpenseIds: [expense.id],
+        reimbursementAmount: 2,
+      }),
+      /Phiếu chưa cân đối/,
+    );
+  });
+
+  test('settlement create ignores a caller-supplied expense total when no expenses are linked', async () => {
+    const requestWithoutExpensesId = await insertApprovedRequest(50_000);
+    const settlement = await createAdvanceSettlement(forwarderId, {
+      advanceRequestIds: [requestWithoutExpensesId],
+      totalExpenseAmount: 55_000,
+      refundAmount: 50_000,
+    });
+    ids.settlements.push(settlement.id);
+
+    assert.equal(settlement.totalExpenseAmount, '0');
+  });
+
   test('office delete respects settlement links', async () => {
     const activeExpense = await insertExpense({ buyAmount: 110_000, sellAmount: 110_000 });
     await markCompleted(null);
@@ -348,6 +436,7 @@ describe('forwarder settlement streamlined workflow', () => {
       advanceRequestIds: [replacementRequestId],
       tripExpenseIds: [replacementExpense.id],
       refundAmount: 0,
+      reimbursementAmount: 0,
       note: 'Kế toán thay bộ chứng từ',
     });
     assert.deepEqual(updated.linkedRequests.map(item => item.id), [replacementRequestId]);
@@ -360,6 +449,7 @@ describe('forwarder settlement streamlined workflow', () => {
         advanceRequestIds: [replacementRequestId],
         tripExpenseIds: [originalExpense.id],
         refundAmount: 0,
+        reimbursementAmount: 0,
       }),
       /Phiếu chưa cân đối/,
     );
@@ -404,6 +494,7 @@ describe('forwarder settlement streamlined workflow', () => {
     const adjustmentRequestId = await insertApprovedRequest(275_000);
     const settlement = await createAdvanceSettlement(forwarderId, {
       advanceRequestIds: [adjustmentRequestId], tripExpenseIds: [expense.id],
+      reimbursementAmount: 25_000,
     });
     ids.settlements.push(settlement.id);
 
@@ -421,6 +512,10 @@ describe('forwarder settlement streamlined workflow', () => {
     ));
     assert.equal(link.adjustmentReason, 'Đối chiếu lại hóa đơn');
     assert.equal(link.adjustedBy, accountantId);
+    const [rebalancedSettlement] = await db.select().from(s.advanceSettlements)
+      .where(eq(s.advanceSettlements.id, settlement.id));
+    assert.equal(rebalancedSettlement.refundAmount, '0');
+    assert.equal(rebalancedSettlement.reimbursementAmount, '0');
 
     await approveAdvanceSettlement(settlement.id, accountantId);
     await assert.rejects(
@@ -438,7 +533,9 @@ describe('forwarder settlement streamlined workflow', () => {
     );
     const editGuardRequestId = await insertApprovedRequest();
     const settlement = await createAdvanceSettlement(forwarderId, {
-      advanceRequestIds: [editGuardRequestId], tripExpenseIds: [expense.id],
+      advanceRequestIds: [editGuardRequestId],
+      tripExpenseIds: [expense.id],
+      refundAmount: 900_000,
     });
     ids.settlements.push(settlement.id);
     await assert.rejects(
