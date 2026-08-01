@@ -13,6 +13,7 @@ import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
+import { TopTruckProfitChart } from '../components/charts/TopTruckProfitChart';
 import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyPct } from './finance-derived';
 import { groupFinanceTripDetails } from './finance-trip-details';
 import type { PnlMaintenanceItem } from '@tingting/shared';
@@ -72,7 +73,7 @@ export default function FinancePage() {
   }, [report, loading, totalRevenue, grossProfit, netProfit, prefersReduced, animateCounters]);
 
   return (
-    <div ref={rootRef} style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className="finance-page" style={{ paddingBottom: 40 }}>
       <Breadcrumbs
         className="finance-page__crumbs"
         items={[
@@ -287,37 +288,13 @@ export default function FinancePage() {
                 Chưa có xe nào có chuyến đã khóa trong tháng này
               </div>
             ) : (
-              (() => {
-                const maxProfit = Math.max(...topTrucks.map(t => t['LN gộp']), 1);
-                const minProfit = Math.min(...topTrucks.map(t => t['LN gộp']), 0);
-                const totalRange = maxProfit - minProfit;
-                const svgH = topTrucks.length * 32;
-                const plateW = 65;
-                const valW = 75;
-                const barTrackW = 280 - plateW - valW - 10;
-                const zeroX = minProfit < 0 ? (plateW + 5) + (Math.abs(minProfit) / totalRange) * barTrackW : (plateW + 5);
-                return (
-                  <svg width="100%" height={svgH} viewBox={`0 0 280 ${svgH}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`Top xe theo lợi nhuận tháng ${month}/${year}`}>
-                    {topTrucks.map((t, i) => {
-                      const val = t['LN gộp'];
-                      const isNegative = val < 0;
-                      const w = Math.max(2, (Math.abs(val) / totalRange) * barTrackW);
-                      const barX = isNegative ? zeroX - w : zeroX;
-                      const fill = isNegative ? 'var(--danger)' : '#059669';
-                      return (
-                        <g key={i} transform={`translate(0, ${i * 32})`}>
-                          <text x={0} y={15} fontSize="12" fontFamily="var(--font-mono)" fontWeight={600} fill="var(--ink-2)" textAnchor="start">{t.name}</text>
-                          <rect x={barX} y={4} width={w} height={14} fill={fill} rx={3} opacity={0.85} />
-                          {minProfit < 0 && (
-                            <line x1={zeroX} y1={0} x2={zeroX} y2={24} stroke="var(--line-2)" strokeWidth={1} strokeDasharray="2,2" />
-                          )}
-                          <text x={280} y={15} fontSize="11" fill={isNegative ? 'var(--danger)' : 'var(--ink-2)'} fontWeight={isNegative ? 600 : 500} textAnchor="end">{formatNumber(val)}₫</text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                );
-              })()
+              <TopTruckProfitChart
+                items={topTrucks.map(truck => ({
+                  name: truck.name,
+                  profit: truck['LN gộp'],
+                }))}
+                ariaLabel={`Top xe theo lợi nhuận tháng ${month}/${year}`}
+              />
             )}
           </div>
         </div>

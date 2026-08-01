@@ -41,9 +41,30 @@
   gap: 6px;
   letter-spacing: 0;
 }
+.cfg-page__summary-wrap {
+  flex: 1;
+  min-width: 0;
+}
 .cfg-page__summary strong {
   color: var(--ink);
   font-weight: 600;
+}
+
+.cfg-query-state {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.cfg-query-state--error {
+  flex-direction: column;
+  color: var(--danger);
 }
 .cfg-page__summary-sep {
   color: var(--line-2);

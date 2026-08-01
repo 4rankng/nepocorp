@@ -332,6 +332,7 @@ test('getDriverVehicleAlerts prefers active canonical schedules and falls back t
 });
 
 test('canonical completed or future schedules suppress stale legacy alerts for the mapped field', async () => {
+  const now = new Date();
   const tombstoneTruckId = await insertTruck({
     nextInspectionDate: '2026-07-29',
     insuranceExpiryDate: '2026-07-29',
@@ -362,8 +363,8 @@ test('canonical completed or future schedules suppress stale legacy alerts for t
     title: 'Đăng kiểm',
     documentNumber: null,
     notes: null,
-    dueAt: new Date('2026-08-10T00:00:00.000Z'),
-    remindAt: new Date('2026-08-01T00:00:00.000Z'),
+    dueAt: addDays(now, 60),
+    remindAt: addDays(now, 30),
     status: VehicleScheduleStatus.ACTIVE,
   });
   await insertVehicleSchedule({

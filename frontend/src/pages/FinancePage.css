@@ -499,13 +499,69 @@
   opacity: 1;
 }
 
-/* Top truck bar hover */
-.finance-top-trucks svg rect {
+/* Top-truck rows keep the label, bar and full VND value in separate cells. */
+.finance-top-trucks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.finance-top-trucks__row {
+  display: grid;
+  grid-template-columns: minmax(82px, max-content) minmax(48px, 1fr) max-content;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.finance-top-trucks__plate {
+  min-width: 0;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.finance-top-trucks__track {
+  position: relative;
+  display: block;
+  height: 14px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--surface-2);
+}
+.finance-top-trucks__bar {
+  position: absolute;
+  inset-block: 0;
+  min-width: 2px;
+  border-radius: 3px;
+  background: var(--success);
+  opacity: 0.85;
   transition: opacity 0.15s ease;
 }
-.finance-top-trucks svg rect:hover {
-  opacity: 1;
-  filter: brightness(1.1);
+.finance-top-trucks__bar--negative { background: var(--danger); }
+.finance-top-trucks__row:hover .finance-top-trucks__bar { opacity: 1; }
+.finance-top-trucks__zero {
+  position: absolute;
+  inset-block: 0;
+  border-left: 1px dashed var(--line-2);
+}
+.finance-top-trucks__value {
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.finance-top-trucks__value--negative {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .finance-top-trucks__row {
+    grid-template-columns: minmax(78px, max-content) minmax(40px, 1fr) max-content;
+    gap: 8px;
+  }
 }
 
 /* Chart panel header */

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useId } from 'react';
+import { formatCurrency } from '../../lib/format';
 
 /**
  * Shared revenue + gross-profit trend chart.
@@ -15,9 +16,9 @@ export interface RevenueTrendChartProps {
   revenue: number[];
   /** Gross profit values — one per month */
   gross: number[];
-  /** Compact formatter for y-axis labels */
+  /** Formatter for y-axis labels; receives values in millions */
   formatY?: (v: number) => string;
-  /** Compact formatter for tooltip values (in "Tr" units, millions) */
+  /** Formatter for tooltip values; receives values in millions */
   formatTooltip?: (v: number) => string;
   /** Optional: which month index is "current" — highlights that label bold */
   currentIdx?: number;
@@ -67,7 +68,8 @@ export function RevenueTrendChart({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const activeIdx = hoverIdx;
 
-  const mL = 46, mR = 18, mT = 14, mB = 30;
+  const mL = W < 420 ? Math.min(116, Math.max(104, W * 0.34)) : 116;
+  const mR = 18, mT = 14, mB = 30;
   const pW = W - mL - mR, pH = H - mT - mB;
 
   // Auto-scale y-axis: pick a nice step size that fits the data
@@ -91,17 +93,19 @@ export function RevenueTrendChart({
   const ay = activeIdx !== null ? Y(revenue[activeIdx] || 0) : 0;
   const ayGp = activeIdx !== null ? Y(gross[activeIdx] || 0) : 0;
 
-  // Default formatters (in millions)
-  const fmtY = formatY ?? ((v: number) => {
-    if (v === 0) return '0';
-    return `${Math.round(v)}`;
-  });
-  const fmtTip = formatTooltip ?? ((v: number) => `${v.toFixed(1).replace('.', ',')} Tr`);
+  // Series are plotted in millions, but all visible money uses full VND digits.
+  const fmtY = formatY ?? ((v: number) => formatCurrency(Math.round(v * 1_000_000)));
+  const fmtTip = formatTooltip ?? ((v: number) => formatCurrency(Math.round(v * 1_000_000)));
   const chartTitle = title ?? 'Xu hướng doanh thu và lợi nhuận gộp';
   const lastIndex = Math.max(0, Math.min(months.length, revenue.length, gross.length) - 1);
   const chartDescription = months.length > 0
     ? `${months.length} kỳ. Kỳ gần nhất ${months[lastIndex]}: doanh thu ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
     : 'Chưa có dữ liệu xu hướng.';
+  const tooltipWidth = Math.min(250, Math.max(0, W - 16));
+  const tooltipLeft = Math.min(
+    Math.max(ax, tooltipWidth / 2 + 8),
+    W - tooltipWidth / 2 - 8,
+  );
 
   return (
     <div
@@ -124,10 +128,7 @@ export function RevenueTrendChart({
           <g key={i}>
             <line x1={mL} y1={Y(v)} x2={W - mR} y2={Y(v)} stroke="#EEF1EF" strokeWidth="1" />
             <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fontFamily="JetBrains Mono, monospace" fill="#56655C">
-              {v === 0
-                ? <tspan fontSize="11">0</tspan>
-                : <><tspan fontSize="11">{fmtY(v)}</tspan><tspan fontSize="9">tr₫</tspan></>
-              }
+              <tspan fontSize={W < 420 ? '9' : '10'}>{fmtY(v)}</tspan>
             </text>
           </g>
         ))}
@@ -174,6 +175,18 @@ export function RevenueTrendChart({
               fill="transparent"
               style={{ cursor: 'crosshair' }}
               onMouseEnter={() => setHoverIdx(i)}
+              onPointerDown={() => setHoverIdx(i)}
+              onFocus={() => setHoverIdx(i)}
+              onBlur={() => setHoverIdx(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setHoverIdx(i);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`${months[i]}: doanh thu ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}`}
             />
           );
         })}
@@ -184,19 +197,21 @@ export function RevenueTrendChart({
       {/* HTML tooltip overlay */}
       {activeIdx !== null && (
         <div
+          data-testid="revenue-trend-tooltip"
           style={{
             position: 'absolute',
-            left: `${(ax / W) * 100}%`,
+            left: `${tooltipLeft}px`,
             top: `${(Math.min(ay, ayGp) / H) * 100}%`,
-            transform: `translate(${activeIdx === 0 ? '0' : activeIdx === months.length - 1 ? '-100%' : '-50%'}, calc(-100% - 12px))`,
+            transform: 'translate(-50%, calc(-100% - 12px))',
             background: '#fff',
             borderRadius: '8px',
             border: '1px solid #E2E8E5',
             padding: '10px 14px',
             pointerEvents: 'none',
-            // The two Vietnamese label/value pairs need more than 160px once
-            // their markers and horizontal padding are accounted for.
-            minWidth: '192px',
+            // Full VND values need enough room to remain on one readable line.
+            width: `${tooltipWidth}px`,
+            maxWidth: 'calc(100% - 16px)',
+            boxSizing: 'border-box',
             zIndex: 10,
           }}
         >

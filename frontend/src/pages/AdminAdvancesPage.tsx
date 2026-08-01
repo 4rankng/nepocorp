@@ -76,7 +76,7 @@ function AdvKPI({ label, value, meta, variant, iconName, active = false, hasItem
 
 /* ── Desktop grid row ──────────────────────────────────────────────────── */
 
-function AdvanceGridRow({
+export function AdvanceGridRow({
   req,
   approveMutation,
   rejectMutation,
@@ -128,22 +128,24 @@ function AdvanceGridRow({
         {isPending ? (
           <>
             <button
-              className="btn btn--ghost btn--icon btn--sm"
+              type="button"
+              className="adv-decision-btn adv-decision-btn--approve"
               onClick={() => approveMutation.mutate(req.id)}
               disabled={isApproving || isRejecting}
               title="Duyệt yêu cầu"
-              style={{ color: 'var(--success)' }}
+              aria-label={`Duyệt yêu cầu của ${req.requesterName || `Đối tác ${req.requesterId}`}`}
             >
-              {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+              {isApproving ? <Loader2 size={18} className="spin" /> : <CheckCircle2 size={20} strokeWidth={2.2} />}
             </button>
             <button
-              className="btn btn--ghost btn--icon btn--sm"
+              type="button"
+              className="adv-decision-btn adv-decision-btn--reject"
               onClick={() => rejectMutation.mutate(req.id)}
               disabled={isApproving || isRejecting}
               title="Từ chối yêu cầu"
-              style={{ color: 'var(--danger)' }}
+              aria-label={`Từ chối yêu cầu của ${req.requesterName || `Đối tác ${req.requesterId}`}`}
             >
-              {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
+              {isRejecting ? <Loader2 size={18} className="spin" /> : <XCircle size={20} strokeWidth={2.2} />}
             </button>
           </>
         ) : req.approverName ? (

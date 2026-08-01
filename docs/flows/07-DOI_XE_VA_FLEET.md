@@ -131,7 +131,7 @@ Module **Đội xe & Điều vận** gồm hai trang:
 ### 2.3 Lịch phương tiện (canonical) (A12)
 
 Lịch phương tiện là nguồn nhắc việc vận hành canonical cho từng **TRUCK** và **TRAILER**. Lịch lưu đúng hai mốc thời gian:
-- `remindAt` — thời điểm bắt đầu đưa lịch lên banner.
+- `remindAt` — thời điểm lịch chuyển từ **Sắp tới** sang **Đến hạn nhắc**.
 - `dueAt` — hạn hoàn thành cần xử lý.
 
 **Phân quyền**
@@ -147,7 +147,7 @@ Lịch phương tiện là nguồn nhắc việc vận hành canonical cho từn
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
-| `GET` | `/api/vehicle-schedules` | JWT + config:* | Danh sách lịch ACTIVE; banner dùng phần ACTIVE đến hạn / quá hạn, history dùng `history=true` |
+| `GET` | `/api/vehicle-schedules` | JWT + config:* | Danh sách lịch ACTIVE; Dashboard dùng phần đến hạn / quá hạn, còn Đội xe dùng `history=true&status=ACTIVE` để gồm cả lịch sắp tới |
 | `POST` | `/api/vehicle-schedules` | JWT + config:* | Tạo lịch mới cho TRUCK hoặc TRAILER |
 | `PUT` | `/api/vehicle-schedules/:id` | JWT + config:* | Cập nhật lịch ACTIVE |
 | `POST` | `/api/vehicle-schedules/:id/complete` | JWT + config:* | Đánh dấu hoàn thành |
@@ -164,7 +164,7 @@ Lịch phương tiện là nguồn nhắc việc vận hành canonical cho từn
 **Hiển thị**
 
 - **Dashboard quản lý**: banner non-dismissible cho các lịch ACTIVE đã đến hạn nhắc hoặc quá hạn.
-- **Đội xe**: banner non-dismissible ở đầu trang, rồi đến các card xe đầu kéo và rơ-mooc; mỗi xe có thể mở drawer lịch riêng.
+- **Đội xe**: banner non-dismissible ở đầu trang hiển thị cả lịch **Sắp tới**, **Đến hạn nhắc** và **Quá hạn**. Lịch sắp tới hiển thị đồng thời mốc `Nhắc ...` và `Hạn ...`; chỉ lịch của xe đầu kéo hoặc rơ-mooc còn có trong đội xe hiện tại được hiển thị. Mỗi xe có thể mở drawer lịch riêng.
 - **Không có scope khác**: không đẩy push notification, không tự chạy scheduler riêng trong UI, không hiển thị ở topbar hay cổng lái xe.
 
 **Quy tắc dữ liệu**

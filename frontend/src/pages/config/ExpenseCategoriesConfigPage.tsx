@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { usePageAnimations } from '../../hooks/animations';
 import { InlineForm } from '../../components/config/InlineForm';
 import { FormActions } from '../../components/config/FormActions';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
 import type { ExpenseCategory } from '@tingting/shared';
+import './expense-categories.css';
 
 function ExpenseCategoryForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: ExpenseCategory; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
@@ -66,64 +68,35 @@ export default function ExpenseCategoriesConfigPage() {
     <div ref={pageRef}>
     <CrudTable<ExpenseCategory>
       title="Hạng mục chi phí"
-      description="Phân loại chi phí vận hành — bật định kỳ để theo dõi gia hạn bảo hiểm, đăng kiểm, bảo dưỡng"
+      description="Phân loại chi phí và thiết lập lịch nhắc gia hạn"
       endpoint="/expense-categories"
-      colSpan={5}
       pageSlug="expense-categories"
       iconName="expense-category"
+      createActionPlacement="header"
       emptyIllustration="empty-expenses.svg"
       emptyTitle="Chưa có hạng mục"
       emptyHint="Thêm hạng mục để phân loại chi phí khi ghi nhận."
-      columns={[
-        {
-          header: 'Tên',
-          render: (cat) => <span style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{cat.name}</span>,
-        },
-        {
-          header: 'Định kỳ',
-          className: 'center',
-          render: (cat) => (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              minHeight: 26,
-              padding: '4px 10px',
-              borderRadius: 10,
-              fontSize: 12,
-              lineHeight: 1.3,
-              fontWeight: 600,
-              background: cat.isRenewable ? 'var(--success-soft, #ecfdf5)' : 'var(--bg-2)',
-              color: cat.isRenewable ? 'var(--success-text)' : 'var(--fg-2)',
-            }}>
-              {cat.isRenewable ? 'Có' : 'Không'}
+      compactItemAriaLabel={(cat) => (
+        `Chỉnh sửa ${cat.name}, ${cat.isRenewable ? `định kỳ, nhắc trước ${cat.reminderLeadDays} ngày` : 'một lần'}, ${cat.status === 'ACTIVE' ? 'hoạt động' : 'ngừng'}`
+      )}
+      renderCompactItem={(cat) => (
+        <>
+          <span className={`expense-category-row__strip${cat.status === 'ACTIVE' ? '' : ' is-inactive'}`} aria-hidden="true" />
+          <div className="expense-category-row__details">
+            <strong className="expense-category-row__name">{cat.name}</strong>
+            <span className="expense-category-row__meta">
+              {cat.isRenewable
+                ? <>Định kỳ <span aria-hidden="true">·</span> Nhắc trước {cat.reminderLeadDays} ngày</>
+                : <>Một lần <span aria-hidden="true">·</span> Không nhắc</>}
             </span>
-          ),
-        },
-        {
-          header: 'Nhắc trước',
-          className: 'num',
-          render: (cat) => cat.isRenewable ? `${cat.reminderLeadDays} ngày` : '—',
-        },
-        {
-          header: 'Trạng thái',
-          render: (cat) => (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              minHeight: 26,
-              padding: '4px 10px',
-              borderRadius: 10,
-              fontSize: 12,
-              lineHeight: 1.3,
-              fontWeight: 600,
-              background: cat.status === 'ACTIVE' ? 'var(--success-soft, #ecfdf5)' : 'var(--bg-2)',
-              color: cat.status === 'ACTIVE' ? 'var(--success-text)' : 'var(--fg-2)',
-            }}>
-              {cat.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng'}
-            </span>
-          ),
-        },
-      ]}
+          </div>
+          <span className={`expense-category-row__state${cat.status === 'ACTIVE' ? '' : ' is-inactive'}`}>
+            <span className="expense-category-row__state-dot" aria-hidden="true" />
+            <span>{cat.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng'}</span>
+            <ChevronRight size={16} aria-hidden="true" />
+          </span>
+        </>
+      )}
       renderForm={(p) => (
         <ExpenseCategoryForm
           saving={p.saving}

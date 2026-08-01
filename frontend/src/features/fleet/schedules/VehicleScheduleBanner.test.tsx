@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus } from '@tingting/shared';
 import { VehicleScheduleBanner } from './VehicleScheduleBanner';
@@ -65,5 +65,42 @@ describe('VehicleScheduleBanner', () => {
     expect(screen.getByText('Quá hạn')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Xem lịch đội xe' }));
     expect(onOpenFleet).toHaveBeenCalledOnce();
+  });
+
+  it('shows future active schedules as upcoming with both reminder and due times', () => {
+    render(<VehicleScheduleBanner items={[{
+      ...reminders[1],
+      id: 13,
+      title: 'Đăng kiểm sắp tới',
+      remindAt: '2099-08-10T01:00:00.000Z',
+      dueAt: '2099-08-20T01:00:00.000Z',
+    }]} />);
+
+    expect(screen.getByText('Sắp tới')).not.toBeNull();
+    expect(screen.getByText(/Nhắc .*10\/08\/2099/)).not.toBeNull();
+    expect(screen.getByText(/Hạn .*20\/08\/2099/)).not.toBeNull();
+  });
+
+  it('changes an upcoming reminder to due when remindAt arrives without navigation', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T01:00:00.000Z'));
+
+    try {
+      render(<VehicleScheduleBanner items={[{
+        ...reminders[1],
+        id: 14,
+        remindAt: '2026-08-02T01:01:00.000Z',
+        dueAt: '2026-08-03T01:00:00.000Z',
+      }]} />);
+
+      expect(screen.getByText('Sắp tới')).not.toBeNull();
+
+      act(() => vi.advanceTimersByTime(60_100));
+
+      expect(screen.getByText('Đến hạn nhắc')).not.toBeNull();
+      expect(screen.queryByText('Sắp tới')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

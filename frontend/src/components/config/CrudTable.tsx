@@ -18,11 +18,10 @@ interface CrudColumn<T> {
   render: (item: T, index: number, isActive: boolean, allItems: T[]) => React.ReactNode;
 }
 
-interface CrudTableProps<T extends { id: number }> {
+interface CrudTableCommonProps<T extends { id: number }> {
   title: string;
   description: string;
   endpoint: string;
-  columns: CrudColumn<T>[];
   renderForm: (props: {
     item?: T;
     items: T[];
@@ -32,7 +31,7 @@ interface CrudTableProps<T extends { id: number }> {
     onDelete?: () => Promise<void>;
     deleting?: boolean;
   }) => React.ReactNode;
-  colSpan: number;
+  colSpan?: number;
   showDelete?: boolean;
   onDelete?: (id: number) => void;
   sortFn?: (a: T, b: T) => number;
@@ -45,10 +44,24 @@ interface CrudTableProps<T extends { id: number }> {
   emptyHint?: string;
   pageSlug?: string;
   iconName?: import('../../components/AssetIcon').AssetIconName;
+  createActionPlacement?: 'header' | 'toolbar';
 }
 
+type CrudTableProps<T extends { id: number }> = CrudTableCommonProps<T> & (
+  | {
+      columns: CrudColumn<T>[];
+      renderCompactItem?: never;
+      compactItemAriaLabel?: never;
+    }
+  | {
+      columns?: never;
+      renderCompactItem: (item: T, index: number, isActive: boolean, allItems: T[]) => React.ReactNode;
+      compactItemAriaLabel?: (item: T, index: number) => string;
+    }
+);
+
 export function CrudTable<T extends { id: number }>({
-  title, description, endpoint, columns, renderForm, colSpan,
+  title, description, endpoint, columns, renderCompactItem, compactItemAriaLabel, renderForm, colSpan,
   showDelete = true, onDelete, sortFn, computeActiveIds, rowStyle,
   toolbarLeft, backTo = '/config',
   emptyIllustration = 'empty-config.svg',
@@ -56,6 +69,7 @@ export function CrudTable<T extends { id: number }>({
   emptyHint,
   pageSlug,
   iconName,
+  createActionPlacement = 'toolbar',
 }: CrudTableProps<T>) {
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
@@ -63,7 +77,7 @@ export function CrudTable<T extends { id: number }>({
   // NOTE: fetches with no page/limit params — backend defaults to limit=50.
   // Config tables are small (< 50 rows) so this is fine for now.
   // If any table grows beyond 50 items, add pagination controls here.
-  const { data, refetch } = useQuery({
+  const { data, refetch, isPending, isError } = useQuery({
     queryKey: qk.crud.entity(endpoint),
     queryFn: async () => {
       const r = await api.get<PaginatedResponse<T>>(endpoint);
@@ -75,6 +89,7 @@ export function CrudTable<T extends { id: number }>({
   const crud = useCRUD(endpoint, refresh);
 
   const rawItems = data ?? [];
+  const tableColumns = columns ?? [];
   const activeIds = computeActiveIds ? computeActiveIds(rawItems) : new Set<number>();
 
   const items = (() => {
@@ -96,85 +111,148 @@ export function CrudTable<T extends { id: number }>({
   const handleDelete = onDelete ?? ((id: number) => crud.doDelete(id));
 
   const wrapperClass = ['fade-up', 'cfg-page', pageSlug ? `cfg-page--${pageSlug}` : ''].filter(Boolean).join(' ');
+  const showToolbar = items.length > 0 || createActionPlacement === 'toolbar' || Boolean(toolbarLeft);
+  const createButton = (
+    <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+      <Plus size={14} /> Thêm mới
+    </button>
+  );
 
   return (
     <div className={wrapperClass}>
-      <PageHeader title={title} description={description} onBack={() => navigate(backTo)} iconName={iconName} />
+      <PageHeader
+        title={title}
+        description={description}
+        onBack={() => navigate(backTo)}
+        iconName={iconName}
+        action={createActionPlacement === 'header' ? createButton : undefined}
+      />
       <Panel flush>
-        <div className="toolbar">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {toolbarLeft
-              ? toolbarLeft({ totalItems: items.length, activeCount: activeIds.size })
-              : items.length > 0 && (
-                  <span className="cfg-page__summary">
-                    <strong>{items.length}</strong> mục
-                  </span>
-                )}
+        {showToolbar && (
+          <div className="toolbar">
+            <div
+              className={createActionPlacement === 'header' ? 'cfg-page__summary-wrap' : undefined}
+              style={createActionPlacement === 'toolbar' ? { flex: 1, minWidth: 0 } : undefined}
+            >
+              {toolbarLeft
+                ? toolbarLeft({ totalItems: items.length, activeCount: activeIds.size })
+                : items.length > 0 && (
+                    <span className="cfg-page__summary">
+                      <strong>{items.length}</strong> mục
+                    </span>
+                  )}
+            </div>
+            {createActionPlacement === 'toolbar' && createButton}
           </div>
-          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
-            <Plus size={14} /> Thêm mới
-          </button>
-        </div>
-        <div className="table-scroll">
-          <table className="tt-table">
-            <caption className="sr-only">{title}</caption>
-            <thead>
-              <tr>
-                <th style={{ width: 40 }}>#</th>
-                {columns.map(col => (
-                  <th key={col.header} style={col.width ? { width: col.width } : undefined} className={col.className}>
-                    {col.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 && !crud.showAddForm && (
-                <tr className="cfg-empty-row">
-                  <td colSpan={colSpan + 1} style={{ textAlign: 'center' }}>
-                    <EmptyState
-                      illustration={`/assets/illustrations/${emptyIllustration}`}
-                      title={emptyTitle}
-                      description={emptyHint}
-                      action={
-                        <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
-                          <Plus size={14} /> Thêm mới
-                        </button>
-                      }
-                    />
-                  </td>
-                </tr>
-              )}
+        )}
+        {isPending ? (
+          <div className="cfg-query-state" role="status" aria-live="polite">
+            Đang tải dữ liệu…
+          </div>
+        ) : isError ? (
+          <div className="cfg-query-state cfg-query-state--error" role="alert">
+            <span>Không thể tải dữ liệu.</span>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => void refetch()}>
+              Thử lại
+            </button>
+          </div>
+        ) : renderCompactItem ? (
+          items.length === 0 && !crud.showAddForm ? (
+            <div className="cfg-compact-list__empty">
+              <EmptyState
+                illustration={`/assets/illustrations/${emptyIllustration}`}
+                title={emptyTitle}
+                description={emptyHint}
+                action={
+                  <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+                    <Plus size={14} /> Thêm mới
+                  </button>
+                }
+              />
+            </div>
+          ) : (
+            <ul className="cfg-compact-list" aria-label={title}>
               {items.map((item, i) => {
                 const isActive = activeIds.has(item.id);
                 return (
-                  <tr
-                    key={item.id}
-                    style={{ cursor: 'pointer', ...rowStyle?.(item, isActive) }}
-                    onClick={() => crud.setEditingId(item.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        crud.setEditingId(item.id);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Chỉnh sửa ${title.toLowerCase()} thứ ${i + 1}`}
-                    title="Nhấp để chỉnh sửa hoặc xóa"
-                  >
-                    <td className="num">{i + 1}</td>
-                    {columns.map(col => (
-                      <td key={col.header} className={col.className} data-label={col.header}>
-                        {col.render(item, i, isActive, items)}
-                      </td>
-                    ))}
-                  </tr>
+                  <li key={item.id} className="cfg-compact-list__entry">
+                    <button
+                      type="button"
+                      className="cfg-compact-list__item"
+                      style={rowStyle?.(item, isActive)}
+                      onClick={() => crud.setEditingId(item.id)}
+                      aria-label={compactItemAriaLabel?.(item, i) ?? `Chỉnh sửa ${title.toLowerCase()} thứ ${i + 1}`}
+                      title="Nhấp để chỉnh sửa hoặc xóa"
+                    >
+                      {renderCompactItem(item, i, isActive, items)}
+                    </button>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          )
+        ) : (
+          <div className="table-scroll">
+            <table className="tt-table">
+              <caption className="sr-only">{title}</caption>
+              <thead>
+                <tr>
+                  <th style={{ width: 40 }}>#</th>
+                  {tableColumns.map(col => (
+                    <th key={col.header} style={col.width ? { width: col.width } : undefined} className={col.className}>
+                      {col.header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 && !crud.showAddForm && (
+                  <tr className="cfg-empty-row">
+                    <td colSpan={(colSpan ?? tableColumns.length) + 1} style={{ textAlign: 'center' }}>
+                      <EmptyState
+                        illustration={`/assets/illustrations/${emptyIllustration}`}
+                        title={emptyTitle}
+                        description={emptyHint}
+                        action={
+                          <button className="btn btn--primary btn--sm" onClick={() => crud.setShowAddForm(true)}>
+                            <Plus size={14} /> Thêm mới
+                          </button>
+                        }
+                      />
+                    </td>
+                  </tr>
+                )}
+                {items.map((item, i) => {
+                  const isActive = activeIds.has(item.id);
+                  return (
+                    <tr
+                      key={item.id}
+                      style={{ cursor: 'pointer', ...rowStyle?.(item, isActive) }}
+                      onClick={() => crud.setEditingId(item.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          crud.setEditingId(item.id);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Chỉnh sửa ${title.toLowerCase()} thứ ${i + 1}`}
+                      title="Nhấp để chỉnh sửa hoặc xóa"
+                    >
+                      <td className="num">{i + 1}</td>
+                      {tableColumns.map(col => (
+                        <td key={col.header} className={col.className} data-label={col.header}>
+                          {col.render(item, i, isActive, items)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Panel>
       {crud.error && (
         <Alert variant="error" style="soft" icon={<AlertCircle size={16} />} className="mt-3">

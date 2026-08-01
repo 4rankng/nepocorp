@@ -276,6 +276,10 @@
   background: var(--danger);
 }
 
+.vehicle-schedule-alert--upcoming .vehicle-schedule-alert__strip {
+  background: var(--info);
+}
+
 .vehicle-schedule-alert__state {
   gap: 6px;
   color: var(--warning-text);
@@ -284,6 +288,10 @@
 
 .vehicle-schedule-alert--overdue .vehicle-schedule-alert__state {
   color: var(--danger-text);
+}
+
+.vehicle-schedule-alert--upcoming .vehicle-schedule-alert__state {
+  color: var(--info-text);
 }
 
 .vehicle-schedule-alert__identity {

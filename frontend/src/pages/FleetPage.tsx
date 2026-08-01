@@ -33,7 +33,6 @@ import {
 } from '../features/fleet/schedules/VehicleScheduleVehiclePicker';
 import type { VehicleScheduleOpenMode } from '../features/fleet/schedules/VehicleScheduleTrigger';
 import {
-  useActiveVehicleSchedules,
   useAllActiveVehicleSchedules,
   useVehicleScheduleHistory,
   useVehicleScheduleMutations,
@@ -58,13 +57,8 @@ export default function FleetPage() {
   const trucks = useMemo(() => fleetData?.trucks ?? [], [fleetData?.trucks]);
   const drivers = useMemo(() => fleetData?.drivers ?? [], [fleetData?.drivers]);
   const {
-    data: activeSchedules = [],
-    isError: scheduleLoadFailed,
-    refetch: retrySchedules,
-  } = useActiveVehicleSchedules();
-  const {
     data: allActiveSchedules = [],
-    isError: allActiveSchedulesFailed,
+    isError: scheduleLoadFailed,
     refetch: retryAllActiveSchedules,
   } = useAllActiveVehicleSchedules();
   const {
@@ -111,14 +105,23 @@ export default function FleetPage() {
 
   const ft40 = trailers.filter((t) => t.type === TrailerType.FT40).length;
   const ft20 = trailers.filter((t) => t.type === TrailerType.FT20).length;
+  const fleetActiveSchedules = useMemo(() => {
+    const vehicleKeys = new Set([
+      ...trucks.map(truck => `${VehicleComponent.TRUCK}:${truck.id}`),
+      ...trailers.map(trailer => `${VehicleComponent.TRAILER}:${trailer.id}`),
+    ]);
+    return allActiveSchedules.filter(schedule => (
+      vehicleKeys.has(`${schedule.vehicleComponent}:${schedule.vehicleId}`)
+    ));
+  }, [allActiveSchedules, trailers, trucks]);
   const schedulesByVehicle = useMemo(() => {
     const grouped = new Map<string, VehicleSchedule[]>();
-    allActiveSchedules.forEach(schedule => {
+    fleetActiveSchedules.forEach(schedule => {
       const key = `${schedule.vehicleComponent}:${schedule.vehicleId}`;
       grouped.set(key, [...(grouped.get(key) ?? []), schedule]);
     });
     return grouped;
-  }, [allActiveSchedules]);
+  }, [fleetActiveSchedules]);
   const scheduleMutationPending = Object.values(scheduleMutations)
     .some(mutation => mutation.isPending);
   const scheduleTruckOptions = useMemo<VehicleSchedulePickerOption[]>(() => trucks.map(truck => ({
@@ -273,20 +276,20 @@ export default function FleetPage() {
         />
       </div>
 
-      {scheduleLoadFailed || allActiveSchedulesFailed ? (
+      {scheduleLoadFailed ? (
         <div className="fleet-schedule-load-error" role="status">
           <span>Không tải được lịch phương tiện.</span>
           <button
             type="button"
             className="btn btn--ghost btn--sm"
-            onClick={() => void Promise.all([retrySchedules(), retryAllActiveSchedules()])}
+            onClick={() => void retryAllActiveSchedules()}
           >
             Thử lại
           </button>
         </div>
       ) : (
         <VehicleScheduleBanner
-          items={activeSchedules}
+          items={fleetActiveSchedules}
           testId="vehicle-schedule-banner-fleet"
         />
       )}

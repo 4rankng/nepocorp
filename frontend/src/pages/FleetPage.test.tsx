@@ -10,7 +10,12 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('../hooks/useCatalogQueries', () => ({
-  useTrucksAndDrivers: () => ({ data: { trucks: [], drivers: [] } }),
+  useTrucksAndDrivers: () => ({
+    data: {
+      trucks: [{ id: 11, licensePlate: '15C-136.31', status: 'ACTIVE' }],
+      drivers: [],
+    },
+  }),
 }));
 
 vi.mock('../hooks/useCRUD', () => ({
@@ -22,13 +27,11 @@ vi.mock('../hooks/animations', () => ({
 }));
 
 vi.mock('../hooks/useVehicleSchedules', () => ({
-  useActiveVehicleSchedules: () => ({
-    data: [],
-    isError: false,
-    refetch: vi.fn(),
-  }),
   useAllActiveVehicleSchedules: () => ({
-    data: [],
+    data: [
+      { id: 41, title: 'Đăng kiểm tháng tới', vehicleComponent: 'TRUCK', vehicleId: 11 },
+      { id: 42, title: 'Lịch của xe đã xóa', vehicleComponent: 'TRUCK', vehicleId: 999 },
+    ],
     isError: false,
     refetch: vi.fn(),
   }),
@@ -79,7 +82,9 @@ vi.mock('../features/fleet/driver-card', () => ({
 }));
 
 vi.mock('../features/fleet/schedules/VehicleScheduleBanner', () => ({
-  VehicleScheduleBanner: () => null,
+  VehicleScheduleBanner: ({ items }: { items: Array<{ title: string }> }) => (
+    <div data-testid="fleet-schedule-banner">{items.map(item => item.title).join(',')}</div>
+  ),
 }));
 
 vi.mock('../features/fleet/schedules/VehicleScheduleVehiclePicker', () => ({
@@ -123,6 +128,16 @@ vi.mock('../features/fleet/schedules/VehicleScheduleManager', () => ({
 }));
 
 describe('FleetPage scheduling action', () => {
+  it('passes future reminders for operational vehicles to the banner and excludes removed vehicles', () => {
+    render(
+      <MemoryRouter>
+        <FleetPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('fleet-schedule-banner').textContent).toBe('Đăng kiểm tháng tới');
+  });
+
   it('uses the exact Thêm lịch label and opens creation for the selected vehicle', () => {
     render(
       <MemoryRouter>

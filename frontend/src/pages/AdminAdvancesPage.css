@@ -212,7 +212,55 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+.adv-page .adv-decision-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: var(--surface);
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease),
+              color 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+.adv-page .adv-decision-btn--approve {
+  color: var(--success-text);
+  border-color: color-mix(in srgb, var(--success) 28%, var(--line));
+}
+.adv-page .adv-decision-btn--reject {
+  color: var(--danger-text);
+  border-color: color-mix(in srgb, var(--danger) 25%, var(--line));
+}
+.adv-page .adv-decision-btn--approve:hover:not(:disabled) {
+  color: var(--fg-on-accent);
+  background: var(--success);
+  border-color: var(--success);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--success) 22%, transparent);
+}
+.adv-page .adv-decision-btn--reject:hover:not(:disabled) {
+  color: var(--fg-on-brand);
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--danger) 18%, transparent);
+}
+.adv-page .adv-decision-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.adv-page .adv-decision-btn:active:not(:disabled) {
+  box-shadow: none;
+}
+.adv-page .adv-decision-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .adv-page .adv-approver {
   font-size: var(--fs-2xs);
