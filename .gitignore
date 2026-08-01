@@ -52,6 +52,9 @@ __pycache__/
 .omo/
 .zcode/
 .zcode
+# Understand Anything knowledge graph (local agent KB; rebuilt per machine)
+.ua/
+.understand-anything/
 
 # QA test scripts
 frontend/qa-*.js

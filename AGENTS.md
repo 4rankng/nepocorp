@@ -163,6 +163,21 @@ This is a Vietnamese logistics domain with specific business rules. Read `CONTEX
 - **Tests**: Backend has `cd backend && pnpm test` → `npx tsx --test src/tests/integration.test.ts`.
 - **Linting**: None configured.
 
+## Knowledge Base (Understand Anything)
+
+This project maintains a local codebase knowledge graph in `.ua/` (gitignored — rebuilt per machine) via the [Understand Anything](https://github.com/Egonex-AI/Understand-Anything) plugin. The graph powers the `/understand`, `/understand-dashboard`, `/understand-explain`, and `/understand-diff` skills for fast architectural lookups and onboarding.
+
+**Setup (one-time per machine):** the plugin is installed globally (`~/.understand-anything/repo`, skills symlinked into `~/.agents/skills/understand*`, plugin root at `~/.understand-anything-plugin`). If `.ua/knowledge-graph.json` is missing on a fresh checkout, run `/understand` to build it.
+
+**Agent maintenance contract — keep the KB fresh:**
+
+- **After finishing any task that changed source code** (`.ts`/`.tsx`/`.js`/`.jsx` in `shared/`, `backend/`, `frontend/`), run `/understand` so the knowledge graph picks up the structural changes. It is incremental by default — unchanged files cost zero tokens. Only new/changed files are re-analyzed.
+- Auto-update is enabled (`.ua/config.json` → `autoUpdate: true`), so a commit will normally trigger an incremental refresh automatically. If a task changed code without a commit (e.g. edits left in the working tree), invoke `/understand` explicitly before reporting done.
+- Rebuilds are structural (tree-sitter fingerprints) — cosmetic changes (formatting, comments, internal logic) do **not** trigger a re-analysis, so running it is cheap and safe.
+- The graph is local only (gitignored). Do not commit `.ua/` — each developer/agent maintains their own.
+
+**Exclusions:** the analysis already skips `node_modules/`, `dist/`, build artifacts, and migrations. If a generated/vendored path is noisy, add it to `.ua/.understandignore`.
+
 <skills_system priority="1">
 
 ## Available Skills
