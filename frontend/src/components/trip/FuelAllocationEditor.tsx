@@ -5,33 +5,6 @@ import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { createDefaultFuelAllocations, type FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import './FuelAllocationEditor.css';
 
-const POINT_COPY = {
-  PETRO: { label: 'Petro', paymentMethod: 'CREDIT' },
-  LONG_HUNG: { label: 'Long Hưng', paymentMethod: 'CREDIT' },
-  OUTSIDE: { label: 'Cây ngoài', paymentMethod: 'CASH' },
-} as const;
-
-function normalizeSupplierName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-}
-
-function findSupplierForPoint(point: FuelAllocationFormRow['point'], suppliers: Supplier[]): Supplier | undefined {
-  const match = point === 'PETRO'
-    ? ['petro', 'petrolimex']
-    : point === 'LONG_HUNG'
-      ? ['longhung']
-      : [];
-  return suppliers.find((supplier) => {
-    const normalizedName = normalizeSupplierName(supplier.name);
-    return match.some((keyword) => normalizedName.includes(keyword));
-  });
-}
-
 function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[]): boolean {
   return left.length === right.length && left.every((row, index) => {
     const candidate = right[index];
@@ -45,32 +18,39 @@ function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[])
 }
 
 /**
- * Existing trips stored only supplier/payment data, while the new editor has
- * three stable accounting points. Match legacy rows to those points when the
- * supplier catalog identifies them; preserve any unrecognised legacy row so a
- * later save can never discard fuel already recorded.
+ * Fuel allocation rows are derived from the active fuel-supplier catalog so
+ * every available supplier is immediately usable. Keep selected legacy rows
+ * that no longer appear in the catalog so saving an old trip never discards
+ * recorded fuel.
  */
 export function normalizeFuelAllocationRows(
   rows: FuelAllocationFormRow[],
   suppliers: Supplier[],
 ): FuelAllocationFormRow[] {
-  const standardRows = createDefaultFuelAllocations().map((row) => {
-    const supplier = findSupplierForPoint(row.point, suppliers);
-    return supplier ? { ...row, supplierId: supplier.id } : row;
-  });
-  const standardByPoint = new Map(standardRows.map(row => [row.point, row]));
+  const standardRows = [
+    ...suppliers.map((supplier): FuelAllocationFormRow => ({
+      _key: `fuel-supplier-${supplier.id}`,
+      point: 'CUSTOM',
+      enabled: false,
+      supplierId: supplier.id,
+      paymentMethod: 'CREDIT',
+      liters: '',
+    })),
+    ...createDefaultFuelAllocations(),
+  ];
+  const standardByCounterparty = new Map(standardRows.map(row => [
+    row.paymentMethod === 'CASH' ? 'CASH' : `CREDIT:${row.supplierId}`,
+    row,
+  ]));
   const remaining: FuelAllocationFormRow[] = [];
 
   for (const row of rows) {
-    const matchedPoint = row.point === 'CUSTOM'
-      ? row.paymentMethod === 'CASH'
-        ? 'OUTSIDE'
-        : standardRows.find(standard => standard.supplierId === row.supplierId)?.point
-      : row.point;
-    const target = matchedPoint ? standardByPoint.get(matchedPoint) : undefined;
+    const target = standardByCounterparty.get(
+      row.paymentMethod === 'CASH' ? 'CASH' : `CREDIT:${row.supplierId}`,
+    );
 
     if (!target) {
-      remaining.push(row);
+      if (row.enabled) remaining.push(row);
       continue;
     }
 
@@ -92,10 +72,8 @@ export function FuelAllocationEditor() {
     catalogData?.suppliers?.filter(supplier => (supplier as Supplier).isFuelSupplier) ?? []
   ) as Supplier[], [catalogData?.suppliers]);
 
-  // Standard credit points identify their configured supplier automatically.
-  // This keeps the three accounting rows deterministic without storing a
-  // deployment-specific supplier ID in frontend code, including for old trips
-  // whose saved allocations predate the point-based UI.
+  // The catalog may refresh after the initial form state; normalize again so
+  // its active fuel suppliers become available without altering saved rows.
   useEffect(() => {
     form.setFuelAllocations((previous) => {
       const next = normalizeFuelAllocationRows(previous, fuelSuppliers);
@@ -127,9 +105,14 @@ export function FuelAllocationEditor() {
 
       <div className="fuel-allocation-list">
         {form.fuelAllocations.map((allocation) => {
-          const point = allocation.point === 'CUSTOM' ? null : POINT_COPY[allocation.point];
-          const isCreditPointWithoutSupplier = point?.paymentMethod === 'CREDIT' && allocation.supplierId === null;
-          const inputDisabled = !allocation.enabled || Boolean(isCreditPointWithoutSupplier);
+          const supplier = allocation.supplierId == null
+            ? undefined
+            : fuelSuppliers.find(item => item.id === allocation.supplierId);
+          const isCreditPointWithoutSupplier = allocation.paymentMethod === 'CREDIT' && allocation.supplierId === null;
+          const inputDisabled = !allocation.enabled || isCreditPointWithoutSupplier;
+          const pointLabel = allocation.paymentMethod === 'CASH'
+            ? 'Cây dầu ngoài'
+            : supplier?.name ?? 'Nhà cung cấp đã lưu';
 
           return (
             <div className="fuel-allocation-row" key={allocation._key}>
@@ -142,27 +125,10 @@ export function FuelAllocationEditor() {
                     disabled={Boolean(isCreditPointWithoutSupplier)}
                     onChange={(event) => setRow(allocation._key, { enabled: event.target.checked })}
                   />
-                  <span>{point?.label ?? 'Nơi đổ đã lưu'}</span>
+                  <span>{pointLabel}</span>
                 </label>
-                {allocation.point === 'CUSTOM' ? (
-                  <select
-                    className="input"
-                    aria-label="Nhà cung cấp nơi đổ đã lưu"
-                    value={allocation.paymentMethod === 'CASH' ? 'CASH' : (allocation.supplierId ?? '')}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setRow(allocation._key, {
-                        paymentMethod: value === 'CASH' ? 'CASH' : 'CREDIT',
-                        supplierId: value && value !== 'CASH' ? Number(value) : null,
-                      });
-                    }}
-                  >
-                    <option value="">-- Chọn nhà cung cấp --</option>
-                    {fuelSuppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
-                    <option value="CASH">Cây dầu ngoài (tiền mặt)</option>
-                  </select>
-                ) : isCreditPointWithoutSupplier ? (
-                  <p className="fuel-allocation-warning">Chưa tìm thấy nhà cung cấp {point?.label} trong Danh mục.</p>
+                {isCreditPointWithoutSupplier ? (
+                  <p className="fuel-allocation-warning">Nhà cung cấp nơi đổ đã không còn hoạt động trong Danh mục.</p>
                 ) : null}
               </div>
 

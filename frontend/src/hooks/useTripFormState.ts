@@ -69,8 +69,6 @@ export interface FuelAllocationFormRow {
 
 export function createDefaultFuelAllocations(): FuelAllocationFormRow[] {
   return [
-    { _key: 'fuel-petro', point: 'PETRO', enabled: false, supplierId: null, paymentMethod: 'CREDIT', liters: '' },
-    { _key: 'fuel-long-hung', point: 'LONG_HUNG', enabled: false, supplierId: null, paymentMethod: 'CREDIT', liters: '' },
     { _key: 'fuel-outside', point: 'OUTSIDE', enabled: false, supplierId: null, paymentMethod: 'CASH', liters: '' },
   ];
 }

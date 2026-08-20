@@ -72,6 +72,20 @@ CREATED → IN_TRANSIT → COMPLETED → LOCKED
 6. **Số ngày tính lương** (`trip_wage_days`): hệ thống tự tính từ `daysBetween(departure, arrival) + 1`. Kế toán có thể ghi đè khi chuyến kéo dài xuyên ngày nghỉ.
 7. Nhấn **"Lưu"** → chuyến tạo ở trạng thái CREATED
 
+#### 2.1.1 Phân bổ nơi đổ dầu (Xe nhà)
+
+Trong thẻ **Phân bổ nơi đổ dầu**, hệ thống hiển thị một dòng cho **từng nhà
+cung cấp nhiên liệu đang ACTIVE và được đánh dấu `isFuelSupplier`** trong danh
+mục, cùng một dòng tiền mặt cố định **Cây dầu ngoài**. Không cần bấm thêm điểm
+đổ: các dòng đã được tạo sẵn; người nhập tích đúng nơi đã đổ rồi nhập **Số lít**
+cho từng dòng đã tích. Dòng Cây dầu ngoài không gắn với công nợ nhà cung cấp.
+
+API chỉ lưu các dòng đã tích và giữ tối đa hai chữ số thập phân cho số lít.
+Tổng số lít của các dòng phân bổ phải **bằng tổng số lít nhiên liệu của
+chuyến**; nếu lệch, backend từ chối lưu. Dòng tín dụng mới chỉ chấp nhận nhà
+cung cấp còn ACTIVE, có cờ `isFuelSupplier`; dòng công nợ lịch sử đã lưu được
+giữ lại khi sửa chuyến cũ.
+
 ### 2.2 Chỉnh sửa chuyến (PUT /api/trips/:id)
 
 **Trước khi xuất phát (CREATED):** Manager/Admin sửa được mọi trường. Kế toán không sửa (chỉ manager/admin tạo + chỉnh cấu trúc).
