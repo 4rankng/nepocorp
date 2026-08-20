@@ -184,12 +184,15 @@ export const qk = {
     /** Broad prefix — matches all forwarder-trip-detail queries. */
     tripDetailAll: ['forwarder-trip-detail'] as const,
     suppliers: ['forwarder-suppliers'],
-    advanceRequests: (status?: string) =>
-      ['forwarder-advance-requests', status] as const,
+    advanceRequests: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
+      ['forwarder-advance-requests', filters] as const,
     eligibleAdvanceRequests: ['forwarder-advance-requests', 'eligible-for-settlement'] as const,
     /** Broad prefix — matches all forwarder-advance-requests queries. */
     forwarderAdvanceRequestsAll: ['forwarder-advance-requests'] as const,
-    settlements: ['forwarder-settlements'] as const,
+    settlements: (filters?: { dateFrom?: string; dateTo?: string }) =>
+      ['forwarder-settlements', filters] as const,
+    /** Broad prefix — matches every forwarder settlement list period. */
+    settlementsAll: ['forwarder-settlements'] as const,
     settlementDetail: (id: number) =>
       ['forwarder-settlement-detail', id] as const,
     unlinkedExpenses: ['forwarder-unlinked-expenses'],
@@ -199,11 +202,11 @@ export const qk = {
   /* ── Admin forwarder views ─────────────────────────────────────────── */
 
   adminForwarder: {
-    advanceRequests: (filters?: { status?: string }) =>
+    advanceRequests: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
       ['admin-advance-requests', filters] as const,
     /** Broad prefix — matches all admin-advance-requests queries. */
     advanceRequestsAll: ['admin-advance-requests'] as const,
-    settlements: (filters?: { status?: string }) =>
+    settlements: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
       ['admin-settlements', filters] as const,
     /** Broad prefix — matches all admin-settlements queries. */
     settlementsAll: ['admin-settlements'] as const,

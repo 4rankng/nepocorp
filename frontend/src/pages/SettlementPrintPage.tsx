@@ -167,9 +167,9 @@ export default function SettlementPrintPage() {
   const reimbursement = Number(s.reimbursementAmount || 0);
   const balance = totalAdvance + reimbursement - totalExpense - refund;
   const directionLabel = balance !== 0
-    ? balance > 0 ? 'Còn dư (phải hoàn)' : 'Thiếu (phải bổ sung)'
+    ? balance > 0 ? 'Ops tạm ứng chuyển kỳ sau' : 'Thiếu (phải bổ sung)'
     : reimbursement > 0 ? 'Công ty hoàn thêm'
-      : refund > 0 ? 'Giao nhận hoàn lại'
+      : refund > 0 ? 'Ops tạm ứng chuyển kỳ sau'
         : 'Đã cân đối';
   const directionAmount = balance !== 0
     ? Math.abs(balance)
@@ -464,7 +464,7 @@ export default function SettlementPrintPage() {
             <div className="settlement-finalize__fields">
               <label>
                 {selectedDifference > 0
-                  ? 'Giao nhận hoàn lại'
+                  ? 'Ops tạm ứng chuyển kỳ sau'
                   : selectedDifference < 0
                     ? 'Công ty hoàn thêm'
                     : 'Đã cân đối'}

@@ -51,7 +51,7 @@ router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
   const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
   const [items, counts] = await Promise.all([
     getForwarderTrips(status, { search, dateFrom, dateTo }),
-    getForwarderTripCounts(),
+    getForwarderTripCounts({ dateFrom, dateTo }),
   ]);
   res.json({ items, counts });
 }));
@@ -174,10 +174,12 @@ router.get('/unlinked-expenses', asyncHandler(async (req: Request, res: Response
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
   const status = req.query.status as string | undefined;
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
   const excludeLinkedToActiveSettlement = req.query.eligibleForSettlement === 'true';
   const [items, counts] = await Promise.all([
-    listAdvanceRequests({ requesterId: forwarder.id, status, excludeLinkedToActiveSettlement }),
-    getAdvanceRequestCounts(forwarder.id),
+    listAdvanceRequests({ requesterId: forwarder.id, status, dateFrom, dateTo, excludeLinkedToActiveSettlement }),
+    getAdvanceRequestCounts({ requesterId: forwarder.id, dateFrom, dateTo }),
   ]);
   res.json({ items, counts });
 }));
@@ -202,7 +204,9 @@ router.get('/advance-balance', asyncHandler(async (req: Request, res: Response) 
 
 router.get('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
-  const items = await listAdvanceSettlements({ forwarderId: forwarder.id });
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const items = await listAdvanceSettlements({ forwarderId: forwarder.id, dateFrom, dateTo });
   res.json({ items });
 }));
 

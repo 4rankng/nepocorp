@@ -40,7 +40,7 @@ export function assertSettlementBalanced(input: {
     input.tripExpenses.reduce((sum, item) => sum + Number(item.buyAmount), 0),
   );
   if (input.refundAmount > 0 && input.reimbursementAmount > 0) {
-    throw new AdvanceError(400, 'Phiếu không thể vừa hoàn lại vừa được công ty hoàn thêm');
+    throw new AdvanceError(400, 'Phiếu không thể vừa còn dư Ops tạm ứng vừa được công ty hoàn thêm');
   }
   const difference = round2dp(
     advanceTotal + input.reimbursementAmount - expenseTotal - input.refundAmount,
@@ -48,7 +48,7 @@ export function assertSettlementBalanced(input: {
   if (Math.abs(difference) > 1) {
     throw new AdvanceError(
       400,
-      `Phiếu chưa cân đối: tạm ứng ${advanceTotal}, chi phí ${expenseTotal}, hoàn lại ${input.refundAmount}, công ty hoàn thêm ${input.reimbursementAmount}`,
+      `Phiếu chưa cân đối: tạm ứng ${advanceTotal}, chi phí ${expenseTotal}, Ops tạm ứng ${input.refundAmount}, công ty hoàn thêm ${input.reimbursementAmount}`,
     );
   }
   return { advanceTotal, expenseTotal };

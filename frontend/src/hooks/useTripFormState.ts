@@ -60,9 +60,19 @@ export interface ContainerFormRow {
 
 export interface FuelAllocationFormRow {
   _key: string;
+  point: 'PETRO' | 'LONG_HUNG' | 'OUTSIDE' | 'CUSTOM';
+  enabled: boolean;
   supplierId: number | null;
   paymentMethod: 'CREDIT' | 'CASH';
   liters: string;
+}
+
+export function createDefaultFuelAllocations(): FuelAllocationFormRow[] {
+  return [
+    { _key: 'fuel-petro', point: 'PETRO', enabled: false, supplierId: null, paymentMethod: 'CREDIT', liters: '' },
+    { _key: 'fuel-long-hung', point: 'LONG_HUNG', enabled: false, supplierId: null, paymentMethod: 'CREDIT', liters: '' },
+    { _key: 'fuel-outside', point: 'OUTSIDE', enabled: false, supplierId: null, paymentMethod: 'CASH', liters: '' },
+  ];
 }
 
 export interface TripFormStateParams {
@@ -239,10 +249,12 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     isEditMode && existingTrip ? existingTrip.fuelSupplierId : null
   );
   const [fuelAllocations, setFuelAllocations] = useState<FuelAllocationFormRow[]>(() => {
-    if (!isEditMode || !existingTrip) return [];
+    if (!isEditMode || !existingTrip) return createDefaultFuelAllocations();
     if (existingTrip.fuelAllocations?.length) {
       return existingTrip.fuelAllocations.map(allocation => ({
         _key: String(allocation.id),
+        point: allocation.paymentMethod === 'CASH' ? 'OUTSIDE' : 'CUSTOM',
+        enabled: true,
         supplierId: allocation.supplierId,
         paymentMethod: allocation.paymentMethod,
         liters: String(allocation.liters),
@@ -251,11 +263,13 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     return existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
       ? [{
           _key: `legacy-${existingTrip.id}`,
+          point: 'CUSTOM',
+          enabled: true,
           supplierId: existingTrip.fuelSupplierId,
           paymentMethod: 'CREDIT',
           liters: String(existingTrip.fuelLiters),
         }]
-      : [];
+      : createDefaultFuelAllocations();
   });
   const [fuelMode, setFuelMode] = useState<FuelMode>(isEditMode && existingTrip ? existingTrip.fuelMode : FuelMode.AUTO);
   const [fuelLitersOverride, setFuelLitersOverride] = useState(isEditMode && existingTrip?.fuelLitersOverride ? String(existingTrip.fuelLitersOverride) : "");

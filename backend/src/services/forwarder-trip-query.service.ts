@@ -118,12 +118,15 @@ export async function listTripPhotoKeys(
   return rows.map(r => r.storageKey);
 }
 
-export async function getForwarderTripCounts() {
+export async function getForwarderTripCounts(filters?: { dateFrom?: string; dateTo?: string }) {
+  const conditions = [isNull(s.trips.deletedAt)];
+  if (filters?.dateFrom) conditions.push(gte(s.trips.departureDate, filters.dateFrom));
+  if (filters?.dateTo) conditions.push(lte(s.trips.departureDate, filters.dateTo));
   const rows = await db.select({
     status: s.trips.status,
     count: count(),
   }).from(s.trips)
-    .where(isNull(s.trips.deletedAt))
+    .where(and(...conditions))
     .groupBy(s.trips.status);
 
   const counts: Record<string, number> = {};

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { Role, TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
@@ -26,12 +26,15 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import type { TripOptions } from '../hooks/useTripOptions';
 import { SearchableSelect } from '../design-system';
+import { isTripEditReturnState } from '../features/trips';
 import './TripForm.css';
 import './TripEditPage.css';
 
 export default function TripEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const cameFromTripDetail = isTripEditReturnState(location.state);
   const { user } = useAuth();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: trip, isLoading: loading, refetch: refetchTrip } = useTripDetail(id);
@@ -98,7 +101,14 @@ export default function TripEditPage() {
   const [formHydrated, setFormHydrated] = useState(false);
   useEffect(() => { setFormHydrated(!!trip && !!catalogData); }, [trip, catalogData]);
   const guard = useDirtyGuard([form], formHydrated);
-  const handleBack = () => { if (trip) navigate(`/trips/${trip.id}`); };
+  const handleBack = () => {
+    if (!trip) return;
+    if (cameFromTripDetail) {
+      navigate(-1);
+      return;
+    }
+    navigate(`/trips/${trip.id}`, { state: location.state });
+  };
   useBackShortcut(handleBack, {
     isDirty: guard.isDirty,
     confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
@@ -108,7 +118,11 @@ export default function TripEditPage() {
     try {
       const result = await handleSubmit(e);
       if (result !== undefined) {
-        navigate(`/trips/${result}`);
+        if (cameFromTripDetail) {
+          navigate(-1);
+        } else {
+          navigate(`/trips/${result}`, { state: location.state });
+        }
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -129,9 +143,13 @@ export default function TripEditPage() {
   // hủy, không thể sửa" — confusing because the page looked editable.
   useEffect(() => {
     if (trip && (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED)) {
-      navigate(`/trips/${trip.id}`, { replace: true });
+      if (cameFromTripDetail) {
+        navigate(-1);
+      } else {
+        navigate(`/trips/${trip.id}`, { replace: true, state: location.state });
+      }
     }
-  }, [trip, navigate]);
+  }, [cameFromTripDetail, trip, navigate]);
 
   if (loading) {
     return (

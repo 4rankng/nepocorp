@@ -23,9 +23,10 @@ export interface TripMobileCardProps {
   style?: React.CSSProperties;
   copyingPlan?: boolean;
   onCopyPlan?: (tripId: number) => void;
+  detailState?: unknown;
 }
 
-export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopyPlan }: TripMobileCardProps) {
+export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopyPlan, detailState }: TripMobileCardProps) {
   const cons = calcConsumption(trip);
   const route = splitRoute(trip.route?.name);
   const isCanceled = trip.status === TripStatus.CANCELED;
@@ -160,6 +161,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
     return (
       <Link
         to={`/trips/${trip.id}`}
+        state={detailState}
         className="trip-mcard"
         style={{
           textDecoration: 'none',
@@ -177,6 +179,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
     <div className="trip-mcard" style={style}>
       <Link
         to={`/trips/${trip.id}`}
+        state={detailState}
         className="trip-mcard__main-link"
       >
         {content}

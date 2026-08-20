@@ -21,6 +21,8 @@ import {
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
+import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import {
   groupSettlementExpensesByTrip,
   summarizeSettlementExpenses,
@@ -133,7 +135,7 @@ export function SettlementGridRow({
           </div>
         ) : (
           <div>
-            <span>Hoàn lại</span>
+            <span>Ops tạm ứng</span>
             <strong><Money value={Number(s.refundAmount)} /></strong>
           </div>
         )}
@@ -276,7 +278,7 @@ export function SettlementMobileCard({
         </div>
         {Number(s.refundAmount) > 0 && (
           <div className="as-mcard__refund">
-            <span>Hoàn lại</span>
+            <span>Ops tạm ứng</span>
             <strong><Money value={Number(s.refundAmount)} /></strong>
           </div>
         )}
@@ -370,9 +372,12 @@ export function SettlementMobileCard({
 
 export default function AdminAdvanceSettlementsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const { month, year } = useMonth();
+  const monthRange = getCalendarMonthRange(year, month);
+  const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
 
   // Fetch ALL settlements once — client-side filtering for accurate counts/totals
-  const { data, isLoading } = useAdminSettlements();
+  const { data, isLoading } = useAdminSettlements(periodFilters);
   const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const rejectMutation = useRejectSettlement();

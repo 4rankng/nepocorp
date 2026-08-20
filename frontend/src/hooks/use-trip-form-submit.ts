@@ -148,11 +148,7 @@ const handleSubmit = useCallback(
       }
     }
 
-    const allocationRows = s.fuelAllocations.filter(allocation =>
-      allocation.liters.trim() !== '' ||
-      allocation.supplierId !== null ||
-      allocation.paymentMethod === 'CASH',
-    );
+    const allocationRows = s.fuelAllocations.filter(allocation => allocation.enabled);
     for (const allocation of allocationRows) {
       const liters = Number(allocation.liters);
       if (!Number.isFinite(liters) || liters <= 0) {

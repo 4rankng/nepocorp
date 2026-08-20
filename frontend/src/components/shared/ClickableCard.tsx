@@ -10,6 +10,8 @@ interface ClickableCardProps {
    *  the card only triggers in-page state changes (e.g. opening an edit
    *  modal). */
   to?: string;
+  /** Optional React Router state carried to the destination. */
+  state?: unknown;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -41,6 +43,7 @@ interface ClickableCardProps {
 export function ClickableCard({
   as: Tag = 'div',
   to,
+  state,
   children,
   className,
   style,
@@ -56,9 +59,9 @@ export function ClickableCard({
     (e: React.MouseEvent<HTMLElement>) => {
       if (stopPropagation) e.stopPropagation();
       onClick?.(e);
-      if (to && !e.defaultPrevented) navigate(to);
+      if (to && !e.defaultPrevented) navigate(to, { state });
     },
-    [navigate, to, onClick, stopPropagation],
+    [navigate, to, state, onClick, stopPropagation],
   );
 
   const handleKeyDown = useCallback(
@@ -67,10 +70,10 @@ export function ClickableCard({
         e.preventDefault();
         if (stopPropagation) e.stopPropagation();
         onClick?.(e as unknown as React.MouseEvent<HTMLElement>);
-        if (to && !e.defaultPrevented) navigate(to);
+        if (to && !e.defaultPrevented) navigate(to, { state });
       }
     },
-    [navigate, to, onClick, stopPropagation],
+    [navigate, to, state, onClick, stopPropagation],
   );
 
   return (

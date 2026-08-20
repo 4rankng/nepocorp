@@ -83,8 +83,8 @@ export const forwarderClient = {
     return api.delete(FORWARDER.EXPENSE(id));
   },
 
-  getAdvanceRequests: async (status?: string) => {
-    return api.get<{ items: AdvanceRequestWithRefs[]; counts: Record<string, number> }>(`${FORWARDER.ADVANCE_REQUESTS}${toQuery({ status })}`);
+  getAdvanceRequests: async (filters?: { status?: string; dateFrom?: string; dateTo?: string }) => {
+    return api.get<{ items: AdvanceRequestWithRefs[]; counts: Record<string, number> }>(`${FORWARDER.ADVANCE_REQUESTS}${toQuery(filters)}`);
   },
   getEligibleAdvanceRequests: async () => {
     return api.get<{ items: AdvanceRequestWithRefs[]; counts: Record<string, number> }>(
@@ -99,8 +99,8 @@ export const forwarderClient = {
     return api.get<{ outstanding: string }>(FORWARDER.ADVANCE_BALANCE);
   },
 
-  getAdvanceSettlements: async () => {
-    return api.get<{ items: AdvanceSettlementWithRefs[] }>(FORWARDER.ADVANCE_SETTLEMENTS);
+  getAdvanceSettlements: async (filters?: { dateFrom?: string; dateTo?: string }) => {
+    return api.get<{ items: AdvanceSettlementWithRefs[] }>(`${FORWARDER.ADVANCE_SETTLEMENTS}${toQuery(filters)}`);
   },
   getAdvanceSettlementDetail: async (id: number) => {
     return api.get<AdvanceSettlementWithRefs>(FORWARDER.ADVANCE_SETTLEMENT_DETAIL(id));
@@ -121,7 +121,7 @@ export const forwarderClient = {
     return api.get<{ items: TripExpenseWithSupplier[] }>(FORWARDER.UNLINKED_EXPENSES);
   },
 
-  listAllAdvanceRequests: async (filters?: { status?: string }) => {
+  listAllAdvanceRequests: async (filters?: { status?: string; dateFrom?: string; dateTo?: string }) => {
     return api.get<{ items: AdvanceRequestWithRefs[] }>(`${FINANCIAL.ADVANCE_REQUESTS}${toQuery(filters)}`);
   },
   approveAdvanceRequest: async (id: number) => {
@@ -131,7 +131,7 @@ export const forwarderClient = {
     return api.post(FINANCIAL.ADVANCE_REQUEST_REJECT(id), {});
   },
 
-  listAllAdvanceSettlements: async (filters?: { status?: string }) => {
+  listAllAdvanceSettlements: async (filters?: { status?: string; dateFrom?: string; dateTo?: string }) => {
     return api.get<{ items: AdvanceSettlementWithRefs[] }>(`${FINANCIAL.ADVANCE_SETTLEMENTS}${toQuery(filters)}`);
   },
   getSettlementOpsCompletion: async (settlementIds: number[]) => {

@@ -16,7 +16,9 @@ const router = Router();
 
 router.get('/advance-requests', asyncHandler(async (req: Request, res: Response) => {
   const status = req.query.status as string | undefined;
-  const items = await listAdvanceRequests({ status });
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const items = await listAdvanceRequests({ status, dateFrom, dateTo });
   res.json({ items });
 }));
 
@@ -46,7 +48,9 @@ router.get('/advance-balances', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCO
 
 router.get('/advance-settlements', asyncHandler(async (req: Request, res: Response) => {
   const status = req.query.status as string | undefined;
-  const items = await listAdvanceSettlements({ status });
+  const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
+  const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
+  const items = await listAdvanceSettlements({ status, dateFrom, dateTo });
   res.json({ items });
 }));
 

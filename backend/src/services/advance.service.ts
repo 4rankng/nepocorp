@@ -174,11 +174,15 @@ export async function createAdvanceRequest(
 export async function listAdvanceRequests(filters?: {
   requesterId?: number;
   status?: string;
+  dateFrom?: string;
+  dateTo?: string;
   excludeLinkedToActiveSettlement?: boolean;
 }) {
   const conditions = [];
   if (filters?.requesterId) conditions.push(eq(s.advanceRequests.requesterId, filters.requesterId));
   if (filters?.status) conditions.push(eq(s.advanceRequests.status, filters.status as ('PENDING' | 'APPROVED' | 'REJECTED')));
+  if (filters?.dateFrom) conditions.push(sql`${s.advanceRequests.createdAt} >= ${filters.dateFrom}::date`);
+  if (filters?.dateTo) conditions.push(sql`${s.advanceRequests.createdAt} < (${filters.dateTo}::date + interval '1 day')`);
   if (filters?.excludeLinkedToActiveSettlement) {
     const claimedRequestIds = db.select({ id: s.advanceSettlementRequests.advanceRequestId })
       .from(s.advanceSettlementRequests)
@@ -195,9 +199,15 @@ export async function listAdvanceRequests(filters?: {
   return enrichWithNames(rows);
 }
 
-export async function getAdvanceRequestCounts(requesterId?: number) {
+export async function getAdvanceRequestCounts(filters?: {
+  requesterId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
   const conditions = [];
-  if (requesterId) conditions.push(eq(s.advanceRequests.requesterId, requesterId));
+  if (filters?.requesterId) conditions.push(eq(s.advanceRequests.requesterId, filters.requesterId));
+  if (filters?.dateFrom) conditions.push(sql`${s.advanceRequests.createdAt} >= ${filters.dateFrom}::date`);
+  if (filters?.dateTo) conditions.push(sql`${s.advanceRequests.createdAt} < (${filters.dateTo}::date + interval '1 day')`);
 
   const rows = await db.select({
     status: s.advanceRequests.status,
@@ -383,10 +393,17 @@ export async function createAdvanceSettlement(
   });
 }
 
-export async function listAdvanceSettlements(filters?: { forwarderId?: number; status?: string }) {
+export async function listAdvanceSettlements(filters?: {
+  forwarderId?: number;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
   const conditions = [];
   if (filters?.forwarderId) conditions.push(eq(s.advanceSettlements.forwarderId, filters.forwarderId));
   if (filters?.status) conditions.push(eq(s.advanceSettlements.status, filters.status as ('PENDING' | 'CHECKED_BY_ACCOUNTANT' | 'APPROVED' | 'REJECTED')));
+  if (filters?.dateFrom) conditions.push(sql`${s.advanceSettlements.createdAt} >= ${filters.dateFrom}::date`);
+  if (filters?.dateTo) conditions.push(sql`${s.advanceSettlements.createdAt} < (${filters.dateTo}::date + interval '1 day')`);
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const rows = await db.select()
@@ -633,7 +650,7 @@ export async function updateAdvanceSettlement(
   emitNotification({
     type: NotificationType.SYSTEM_ANNOUNCEMENT,
     title: 'Kế toán đã cập nhật phiếu hoàn ứng',
-    message: `Phiếu ${detail.code} đã được cập nhật danh sách tạm ứng, chi phí hoặc số tiền hoàn lại.`,
+    message: `Phiếu ${detail.code} đã được cập nhật danh sách tạm ứng, chi phí hoặc số dư Ops tạm ứng.`,
     relatedEntityType: 'advance_settlements',
     relatedEntityId: settlementId,
     targetUserId: detail.forwarderId,
@@ -786,9 +803,37 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       note: `Thanh toán tạm ứng #${settlement.id}`,
     });
 
+    // A surplus is retained by Ops for the next settlement, not returned to
+    // the company. Materialize it as a normal approved advance so it remains
+    // visible in the balance and selectable together with a later top-up.
+    let carryForwardRequestId: number | null = null;
+    const carryForwardAmount = Number(updated.refundAmount);
+    if (carryForwardAmount > 0) {
+      const [carryForward] = await tx.insert(s.advanceRequests).values({
+        requesterId: updated.forwarderId,
+        amount: String(carryForwardAmount),
+        reason: `Ops tạm ứng chuyển từ phiếu ${updated.code}`,
+        status: 'APPROVED',
+        approvedBy,
+        approvedAt: now,
+        updatedAt: now,
+      }).returning();
+      carryForwardRequestId = carryForward.id;
+      await LedgerService.postEntry(tx, {
+        txnType: TxnType.FORWARDER_ADVANCE,
+        txnId: carryForward.id,
+        entityType: 'FORWARDER',
+        entityId: updated.forwarderId,
+        debit: 0,
+        credit: carryForwardAmount,
+        note: carryForward.reason,
+      });
+    }
+
     return {
       updated,
       adjustmentCount: links.filter(link => Boolean(link.adjustmentReason)).length,
+      carryForwardRequestId,
     };
   });
 
@@ -806,7 +851,11 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
   });
 
   const [enriched] = await enrichWithNames([approved.updated]);
-  return enrichSettlementWithRequests(enriched);
+  const detail = await enrichSettlementWithRequests(enriched);
+  return {
+    ...detail,
+    carryForwardRequestId: approved.carryForwardRequestId,
+  };
 }
 
 export function settlementApprovalNotificationMessage(
@@ -821,7 +870,7 @@ export function settlementApprovalNotificationMessage(
   const direction = reimbursement > 0
     ? `Công ty hoàn thêm ${reimbursement.toLocaleString('vi-VN')} ₫`
     : refund > 0
-      ? `Giao nhận hoàn lại ${refund.toLocaleString('vi-VN')} ₫`
+      ? `Ops tạm ứng chuyển kỳ sau ${refund.toLocaleString('vi-VN')} ₫`
       : 'Đã cân đối';
   const adjustment = adjustmentCount > 0
     ? `, có ${adjustmentCount} khoản kế toán điều chỉnh`

@@ -37,6 +37,7 @@ export interface TripQuickEditOptions {
 export interface TripRowActions {
   copyingPlanId?: number | null;
   onCopyPlan?: (tripId: number) => void;
+  detailState?: unknown;
 }
 
 function isQuickEditable(trip: TripDetail): boolean {
@@ -135,6 +136,7 @@ export function buildTripColumns(
           <div className="trip-col">
             <Link
               to={`/trips/${trip.id}`}
+              state={actions?.detailState}
               className="trip-col__link"
               style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               onClick={(e) => e.stopPropagation()}

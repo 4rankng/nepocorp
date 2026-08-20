@@ -419,8 +419,8 @@ export default function ForwarderSettlementCreatePage() {
             </div>
             {totalRefund > 0 && (
               <div className="fset-summary__row">
-                <span className="fset-summary__label">Giao nhận hoàn lại</span>
-                <span className="fset-summary__value fset-summary__value--refund"><Money value={totalRefund} sign="−" /></span>
+                <span className="fset-summary__label">Ops tạm ứng chuyển kỳ sau</span>
+                <span className="fset-summary__value fset-summary__value--refund"><Money value={totalRefund} /></span>
               </div>
             )}
             {totalReimbursement > 0 && (
@@ -455,7 +455,7 @@ export default function ForwarderSettlementCreatePage() {
               </div>
               <span>
                 {difference > 0
-                  ? `Giao nhận hoàn lại ${formatCurrency(totalRefund)}`
+                  ? `Ops giữ lại ${formatCurrency(totalRefund)} làm tạm ứng cho kỳ sau`
                   : `Công ty hoàn thêm ${formatCurrency(totalReimbursement)}`}
                 {' '}để phiếu cân đối.
               </span>

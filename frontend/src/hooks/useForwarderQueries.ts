@@ -98,10 +98,10 @@ export function useDeleteForwarderExpense() {
 
 // ── Advance Requests (forwarder) ──────────────────────────────────────────────
 
-export function useForwarderAdvanceRequests(status?: string) {
+export function useForwarderAdvanceRequests(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: qk.forwarder.advanceRequests(status),
-    queryFn: () => forwarderClient.getAdvanceRequests(status),
+    queryKey: qk.forwarder.advanceRequests(filters),
+    queryFn: () => forwarderClient.getAdvanceRequests(filters),
   });
 }
 
@@ -132,10 +132,10 @@ export function useCreateAdvanceRequest() {
 
 // ── Advance Settlements (forwarder) ──────────────────────────────────────────
 
-export function useForwarderSettlements() {
+export function useForwarderSettlements(filters?: { dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: qk.forwarder.settlements,
-    queryFn: () => forwarderClient.getAdvanceSettlements(),
+    queryKey: qk.forwarder.settlements(filters),
+    queryFn: () => forwarderClient.getAdvanceSettlements(filters),
   });
 }
 
@@ -153,7 +153,7 @@ export function useCreateAdvanceSettlement() {
     mutationFn: (data: { totalExpenseAmount?: number; refundAmount?: number; reimbursementAmount?: number; note?: string; advanceRequestIds: number[]; tripExpenseIds?: number[] }) =>
       forwarderClient.createAdvanceSettlement(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.forwarder.settlements });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementsAll });
       qc.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
       qc.invalidateQueries({ queryKey: qk.forwarder.unlinkedExpenses });
     },
@@ -169,7 +169,7 @@ export function useUnlinkedExpenses() {
 
 // ── Admin: Advance Requests ──────────────────────────────────────────────────
 
-export function useAdminAdvanceRequests(filters?: { status?: string }) {
+export function useAdminAdvanceRequests(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: qk.adminForwarder.advanceRequests(filters),
     queryFn: () => forwarderClient.listAllAdvanceRequests(filters),
@@ -205,7 +205,7 @@ export function useRejectAdvanceRequest() {
 
 // ── Admin: Advance Settlements ──────────────────────────────────────────────
 
-export function useAdminSettlements(filters?: { status?: string }) {
+export function useAdminSettlements(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: qk.adminForwarder.settlements(filters),
     queryFn: () => forwarderClient.listAllAdvanceSettlements(filters),
@@ -236,6 +236,12 @@ export function useApproveSettlement() {
     mutationFn: (id: number) => forwarderClient.approveAdvanceSettlement(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceRequestsAll });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceBalances });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.eligibleAdvanceRequests });
+      qc.invalidateQueries({ queryKey: qk.forwarder.advanceBalance });
     },
   });
 }

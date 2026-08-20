@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Shuffle, FilePen, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useLiveFleet } from '../hooks/useTripQueries';
@@ -12,6 +12,7 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { TripStatus } from '@tingting/shared';
 
 // Feature: logic (.ts) + UI (.tsx)
+import { createTripEditReturnState, readTripListReturnState } from '../features/trips';
 import { useTripDetailPage } from '../features/trip-detail';
 import {
   TripHeader, KpiStrip, BasicInfoCard, ContainersCard, FinancialCard,
@@ -24,13 +25,22 @@ import './TripDetailPage.css';
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const page = useTripDetailPage(id);
   const { rootRef } = usePageAnimations({ ready: !page.loading });
   // Only poll live GPS when this trip is actually in transit — a completed /
   // cancelled trip never has a live vehicle, so avoid polling the cache forever.
   const { data: liveFleet } = useLiveFleet({ enabled: page.trip?.status === TripStatus.IN_TRANSIT });
 
-  const handleBack = () => navigate('/trips');
+  const returnState = readTripListReturnState(location.state);
+  const editReturnState = createTripEditReturnState(returnState);
+  const handleBack = () => {
+    if (returnState) {
+      navigate(-1);
+      return;
+    }
+    navigate('/trips');
+  };
   useBackShortcut(handleBack);
 
   /* ── Loading / Error / Empty guards ────────────────────────────────── */
@@ -73,7 +83,7 @@ export default function TripDetailPage() {
           { label: trip.tripCode || 'Chuyến chưa có mã' },
         ]}
         renderLink={(to, children) => (
-          <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
+          <a onClick={() => to === '/trips' ? handleBack() : navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>
         )}
       />
       <TripHeader
@@ -81,7 +91,7 @@ export default function TripDetailPage() {
         permissions={permissions}
         actionLoading={ui.actionLoading}
         onBack={handleBack}
-        onEdit={() => navigate(`/trips/${trip.id}/edit`)}
+        onEdit={() => navigate(`/trips/${trip.id}/edit`, { state: editReturnState })}
         onDispatch={() => page.handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
         onComplete={() => page.handleAction('complete', () => api.post(`/trips/${trip.id}/complete`, {}))}
         onLock={page.handleLockClick}

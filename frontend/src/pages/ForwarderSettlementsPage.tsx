@@ -12,6 +12,8 @@ import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderSettlementsPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -73,8 +75,11 @@ interface Settlement {
 export default function ForwarderSettlementsPage() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<AdvanceSettlementStatus | ''>('');
+  const { month, year } = useMonth();
+  const monthRange = getCalendarMonthRange(year, month);
+  const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
 
-  const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements();
+  const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements(periodFilters);
   const { rootRef } = usePageAnimations({
     ready: !loadingSettlements,
     selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.fset-card'],
@@ -256,7 +261,7 @@ export default function ForwarderSettlementsPage() {
                       </span>
                       {Number(s.refundAmount) > 0 && (
                         <span className="fset-card__meta-item">
-                          Hoàn lại: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
+                          Ops tạm ứng: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
                         </span>
                       )}
                       {Number(s.reimbursementAmount || 0) > 0 && (

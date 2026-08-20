@@ -115,7 +115,7 @@ describe('admin advance settlement ledger density', () => {
     } else {
       expect(screen.getByText('Tạm ứng quyết toán')).toBeTruthy();
       expect(screen.getByText('Tổng chi phí')).toBeTruthy();
-      expect(screen.getByText('Hoàn lại')).toBeTruthy();
+      expect(screen.getByText('Ops tạm ứng')).toBeTruthy();
     }
     expect(screen.getByText(/TRP-202607-0042/)).toBeTruthy();
     expect(screen.getByText(/Công ty Biển Bạc/)).toBeTruthy();
@@ -144,6 +144,6 @@ describe('admin advance settlement ledger density', () => {
     );
 
     expect(screen.getByText('Công ty hoàn thêm')).toBeTruthy();
-    expect(screen.queryByText('Hoàn lại')).toBeNull();
+    expect(screen.queryByText('Ops tạm ứng')).toBeNull();
   });
 });

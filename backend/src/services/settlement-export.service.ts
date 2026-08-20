@@ -149,7 +149,7 @@ export function renderSettlementHtml(data: SettlementExportData): string {
   const reimbursement = Number(data.reimbursementAmount || 0);
   const balance = totalAdvance + reimbursement - totalExpense - refund;
   const balanceLabel = balance > 0
-    ? 'Còn dư (phải hoàn):'
+    ? 'Ops tạm ứng chuyển kỳ sau:'
     : balance < 0
       ? 'Thiếu (phải bổ sung):'
       : 'Đã cân đối:';
@@ -211,7 +211,7 @@ ${requests.length > 0 ? `
 <div class="summary">
   <div class="summary-row"><span>Tổng tạm ứng:</span><strong>${formatVND(totalAdvance, true)}</strong></div>
   <div class="summary-row"><span>Tổng chi phí:</span><strong>${formatVND(totalExpense, true)}</strong></div>
-  ${refund > 0 ? `<div class="summary-row"><span>Giao nhận hoàn lại:</span><strong>${formatVND(refund, true)}</strong></div>` : ''}
+  ${refund > 0 ? `<div class="summary-row"><span>Ops tạm ứng chuyển kỳ sau:</span><strong>${formatVND(refund, true)}</strong></div>` : ''}
   ${reimbursement > 0 ? `<div class="summary-row"><span>Công ty hoàn thêm:</span><strong>${formatVND(reimbursement, true)}</strong></div>` : ''}
   <div class="summary-row summary-row--balance">
     <span>${balanceLabel}</span>
@@ -470,7 +470,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
       ['Tổng tạm ứng đã nhận', totalAdvance],
       ['Tổng chi phí phát sinh', totalExpense],
     ];
-    if (refund > 0) summaryItems.push(['Giao nhận hoàn lại', refund]);
+    if (refund > 0) summaryItems.push(['Ops tạm ứng chuyển kỳ sau', refund]);
     if (reimbursement > 0) summaryItems.push(['Công ty hoàn thêm', reimbursement]);
 
     for (const [label, value] of summaryItems) {
@@ -493,7 +493,7 @@ export function renderSettlementXlsx(data: SettlementExportData, writable: impor
 
     // Balance row
     const balLabel = balance > 0
-      ? 'Còn dư (phải hoàn lại)'
+      ? 'Ops tạm ứng chuyển kỳ sau'
       : balance < 0
         ? 'Thiếu (phải bổ sung)'
         : 'Đã cân đối';

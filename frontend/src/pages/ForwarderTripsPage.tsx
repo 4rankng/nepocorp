@@ -8,7 +8,9 @@ import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useMonth } from '../hooks/useMonth';
 import { useDebouncedValue } from '../design-system';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderTripsPage.css';
 import '../components/shared/HeroKpiRow.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
@@ -44,11 +46,19 @@ function rowColorClass(statusColor: TripSummary['statusColor']): string {
 
 export default function ForwarderTripsPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
+  const { month, year } = useMonth();
+  const monthRange = getCalendarMonthRange(year, month);
+  const monthKey = `${year}-${month}`;
   // N4: search + date-range filters. Passed into the trips query so the
   // backend filters (ilike on container/customer + departure_date range).
   const [search, setSearch] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateRange, setDateRange] = useState(() => ({
+    monthKey,
+    dateFrom: monthRange.start,
+    dateTo: monthRange.end,
+  }));
+  const dateFrom = dateRange.monthKey === monthKey ? dateRange.dateFrom : monthRange.start;
+  const dateTo = dateRange.monthKey === monthKey ? dateRange.dateTo : monthRange.end;
 
   // Debounce the free-text search so we don't fire a backend query per keystroke
   // (matches the TripListPage pattern). Date pickers are discrete — no debounce.
@@ -58,8 +68,8 @@ export default function ForwarderTripsPage() {
     activeFilter || undefined,
     {
       search: debouncedSearch || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
+      dateFrom,
+      dateTo,
     },
   );
   const trips = (data?.items ?? []) as TripSummary[];
@@ -165,7 +175,9 @@ export default function ForwarderTripsPage() {
             <input
               type="date"
               value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
+              min={monthRange.start}
+              max={monthRange.end}
+              onChange={e => setDateRange(current => ({ ...current, monthKey, dateFrom: e.target.value }))}
             />
           </label>
           <label className="fwd-trip-filters__date">
@@ -173,7 +185,9 @@ export default function ForwarderTripsPage() {
             <input
               type="date"
               value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
+              min={monthRange.start}
+              max={monthRange.end}
+              onChange={e => setDateRange(current => ({ ...current, monthKey, dateTo: e.target.value }))}
             />
           </label>
         </div>

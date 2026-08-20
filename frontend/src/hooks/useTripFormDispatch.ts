@@ -20,7 +20,7 @@ import { useTripFormLegs } from './useTripFormLegs';
 import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
-import type { UseTripFormStateReturn, CompletionStatus } from './useTripFormState';
+import { createDefaultFuelAllocations, type UseTripFormStateReturn, type CompletionStatus } from './useTripFormState';
 import {
   countRequiredTripFields,
   createFallbackLegsFromRouteName,
@@ -192,6 +192,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
       existingTrip.fuelAllocations?.length
         ? existingTrip.fuelAllocations.map(allocation => ({
             _key: String(allocation.id),
+            point: allocation.paymentMethod === 'CASH' ? 'OUTSIDE' as const : 'CUSTOM' as const,
+            enabled: true,
             supplierId: allocation.supplierId,
             paymentMethod: allocation.paymentMethod,
             liters: String(allocation.liters),
@@ -199,11 +201,13 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
         : existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
           ? [{
               _key: `legacy-${existingTrip.id}`,
+              point: 'CUSTOM' as const,
+              enabled: true,
               supplierId: existingTrip.fuelSupplierId,
               paymentMethod: 'CREDIT' as const,
               liters: String(existingTrip.fuelLiters),
             }]
-          : [],
+          : createDefaultFuelAllocations(),
     );
     s.setPhotoUrls(existingTrip.photoUrls || []);
 

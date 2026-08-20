@@ -17,6 +17,8 @@ import {
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
+import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import './AdminAdvancesPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
@@ -247,9 +249,12 @@ function AdvanceMobileCard({
 
 export default function AdminAdvancesPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const { month, year } = useMonth();
+  const monthRange = getCalendarMonthRange(year, month);
+  const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
-  const { data, isLoading } = useAdminAdvanceRequests();
+  const { data, isLoading } = useAdminAdvanceRequests(periodFilters);
   const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const approveMutation = useApproveAdvanceRequest();

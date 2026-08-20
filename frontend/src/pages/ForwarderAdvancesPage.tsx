@@ -7,6 +7,8 @@ import { PageHeader, FormGroup } from '../components/UI';
 import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance, useForwarderSettlements } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderAdvancesPage.css';
 import '../components/shared/HeroKpiRow.css';
 
@@ -21,12 +23,18 @@ type StatusFilter = '' | AdvanceRequestStatus;
 
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
-  const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests(activeFilter || undefined);
+  const { month, year } = useMonth();
+  const monthRange = getCalendarMonthRange(year, month);
+  const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
+  const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests({
+    ...periodFilters,
+    status: activeFilter || undefined,
+  });
   const { data: balanceData } = useForwarderAdvanceBalance();
   // C2b/C2c — settlement (hoàn ứng) figures shown alongside advances. Buckets
   // are disjoint: "Chờ duyệt hoàn ứng" = requested but not yet approved/rejected;
   // "Đã thanh toán" = approved. Rejected settlements count in neither.
-  const { data: settlementsData } = useForwarderSettlements();
+  const { data: settlementsData } = useForwarderSettlements(periodFilters);
   const settlements = (settlementsData?.items ?? []) as AdvanceSettlementWithRefs[];
   const pendingSettlements = settlements.filter(
     s => s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT,

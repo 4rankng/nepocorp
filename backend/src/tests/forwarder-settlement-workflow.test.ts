@@ -9,6 +9,7 @@ import {
   approveAdvanceSettlement,
   createAdvanceSettlement,
   getAdvanceSettlement,
+  getOutstandingAdvanceBalance,
   listAdvanceRequests,
   updateAdvanceSettlement,
 } from '../services/advance.service';
@@ -188,6 +189,10 @@ describe('forwarder settlement streamlined workflow', () => {
       await db.delete(s.advanceSettlementRequests).where(inArray(s.advanceSettlementRequests.settlementId, ids.settlements));
       await db.delete(s.advanceSettlements).where(inArray(s.advanceSettlements.id, ids.settlements));
     }
+    if (ids.requests.length) await db.delete(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      inArray(s.ledger.txnId, ids.requests),
+    ));
     if (ids.expenses.length) {
       await db.delete(s.ledger).where(inArray(s.ledger.txnId, ids.expenses));
       await db.delete(s.tripExpenses).where(inArray(s.tripExpenses.id, ids.expenses));
@@ -321,7 +326,10 @@ describe('forwarder settlement streamlined workflow', () => {
     });
     ids.settlements.push(settlement.id);
 
-    await approveAdvanceSettlement(settlement.id, accountantId);
+    const outstandingBeforeApproval = await getOutstandingAdvanceBalance(forwarderId);
+    const approval = await approveAdvanceSettlement(settlement.id, accountantId);
+    assert.ok(approval.carryForwardRequestId);
+    ids.requests.push(approval.carryForwardRequestId);
     const [savedSettlement] = await db.select().from(s.advanceSettlements).where(eq(s.advanceSettlements.id, settlement.id));
     const [savedExpense] = await db.select().from(s.tripExpenses).where(eq(s.tripExpenses.id, expense.id));
     const ledgerRows = await db.select().from(s.ledger).where(and(
@@ -333,6 +341,23 @@ describe('forwarder settlement streamlined workflow', () => {
     assert.equal(savedExpense.approvalStatus, 'APPROVED');
     assert.equal(ledgerRows.length, 1);
     assert.equal(ledgerRows[0].debit, '250000');
+
+    const [carryForward] = await db.select().from(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, approval.carryForwardRequestId));
+    assert.equal(carryForward.status, 'APPROVED');
+    assert.equal(carryForward.amount, '20000');
+    assert.equal(carryForward.reason, `Ops tạm ứng chuyển từ phiếu ${settlement.code}`);
+    assert.equal(await getOutstandingAdvanceBalance(forwarderId), outstandingBeforeApproval - 230_000);
+    await validateSettlementInputs({
+      dbOrTx: db,
+      forwarderId,
+      advanceRequestIds: [carryForward.id],
+    });
+    const carryLedgerRows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE), eq(s.ledger.txnId, carryForward.id),
+    ));
+    assert.equal(carryLedgerRows.length, 1);
+    assert.equal(carryLedgerRows[0].credit, '20000');
 
     await assert.rejects(() => approveAdvanceSettlement(settlement.id, accountantId), /Cannot approve settlement with status APPROVED/);
     const ledgerRowsAfterRetry = await db.select().from(s.ledger).where(and(

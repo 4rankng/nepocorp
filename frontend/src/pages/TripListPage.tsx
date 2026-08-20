@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { MousePointerClick, Save, X } from 'lucide-react';
@@ -7,13 +7,14 @@ import { tripClient } from '../api/tripClient';
 import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
 import { parseThreshold, Role, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
-import { useFuelConfig, useSalaryPeriod } from '../hooks/useQueries';
+import { useFuelConfig } from '../hooks/useQueries';
 import { useAuth } from '../hooks/useAuth';
 import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
-import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
 import { columnClass, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
@@ -24,11 +25,11 @@ import { onboardingEvents } from '../lib/onboardingEvents';
 export default function TripListPage() {
   const rootRef = useTripListAnimations();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { month, year } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
-  const { data: salaryPeriod } = useSalaryPeriod(month, year);
   const canCopyPlan = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
 
   // The onboarding checklist's "Mở danh sách chuyến xe" task completes when
@@ -44,10 +45,11 @@ export default function TripListPage() {
     [fuelConfig],
   );
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
-  const [truckFilter, setTruckFilter] = useState<number | ''>('');
-  const [customerFilter, setCustomerFilter] = useState<number | ''>('');
-  const [searchInput, setSearchInput] = useState('');
+  const restoredFilters = readTripListReturnState(location.state)?.tripList;
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => restoredFilters?.statusFilter ?? '');
+  const [truckFilter, setTruckFilter] = useState<number | ''>(() => restoredFilters?.truckFilter ?? '');
+  const [customerFilter, setCustomerFilter] = useState<number | ''>(() => restoredFilters?.customerFilter ?? '');
+  const [searchInput, setSearchInput] = useState(() => restoredFilters?.searchInput ?? '');
   const [quickEdit, setQuickEdit] = useState(false);
   const [quickDrafts, setQuickDrafts] = useState<Record<number, TripQuickEditDraft>>({});
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
@@ -57,10 +59,28 @@ export default function TripListPage() {
   const [copyingPlanId, setCopyingPlanId] = useState<number | null>(null);
   const [copyPlanMessage, setCopyPlanMessage] = useState('');
   const [copyPlanError, setCopyPlanError] = useState(false);
+  const detailState = useMemo(() => createTripListReturnState({
+    statusFilter,
+    truckFilter,
+    customerFilter,
+    searchInput,
+  }), [customerFilter, searchInput, statusFilter, truckFilter]);
 
-  // Date range from salary period
-  const dateFrom = salaryPeriod?.start;
-  const dateTo = salaryPeriod?.end;
+  // Store the active filters on the list's existing history entry. Browser
+  // Back from a detail page can then restore the same list instead of a fresh,
+  // unfiltered page.
+  useEffect(() => {
+    if (shouldSyncTripListReturnState(location.state, detailState)) {
+      navigate(`${location.pathname}${location.search}`, { replace: true, state: detailState });
+    }
+  }, [detailState, location.pathname, location.search, location.state, navigate]);
+
+  // Trips are operational records, so a topbar month means the calendar month
+  // (not the configured payroll cycle, which can start in the previous month).
+  const { start: dateFrom, end: dateTo } = useMemo(
+    () => getCalendarMonthRange(year, month),
+    [month, year],
+  );
 
   // Search intent: bypass the month chip when typing a specific trip code.
   const debouncedSearch = useDebouncedValue(searchInput, 300);
@@ -352,7 +372,8 @@ export default function TripListPage() {
   }, {
     copyingPlanId,
     onCopyPlan: canCopyPlan ? handleCopyPlan : undefined,
-  }), [canCopyPlan, copyingPlanId, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
+    detailState,
+  }), [canCopyPlan, copyingPlanId, detailState, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
   const tableInstance = useReactTable({
     data: table.rows,
     columns,
@@ -490,6 +511,7 @@ export default function TripListPage() {
                 <ClickableCard
                   key={row.id}
                   to={quickEdit ? undefined : `/trips/${row.original.id}`}
+                  state={detailState}
                   onClick={quickEdit ? () => handleToggleSelect(row.original.id) : undefined}
                   className={`table-row${quickEdit ? ' quick-edit-row' : ''}${selectedIds.has(row.original.id) ? ' selected' : ''}${!isEditableInQuickMode(row.original) ? ' locked' : ''}`}
                   style={tripRowStyle(row.original) as CSSProperties}
@@ -526,6 +548,7 @@ export default function TripListPage() {
                     style={tripRowStyle(trip) as CSSProperties}
                     copyingPlan={copyingPlanId === trip.id}
                     onCopyPlan={canCopyPlan ? handleCopyPlan : undefined}
+                    detailState={detailState}
                   />
                 );
               }

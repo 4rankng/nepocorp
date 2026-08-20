@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2 } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
@@ -13,6 +13,8 @@ import { EmptyState } from '../design-system';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
+import { useMonth } from '../hooks/useMonth';
+import { getCalendarMonthRange } from '../lib/calendar-month';
 import { useQuery } from '@tanstack/react-query';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { FINANCIAL } from '@tingting/shared';
@@ -20,6 +22,8 @@ import type { ExpenseWithRefs, PaginatedResponse } from '@tingting/shared';
 import { qk } from '../api/keys';
 import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
+import { buildExpenseListSearchParams } from '../features/expenses/expense-list-query';
+import { downloadCSV } from '../lib/csv';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
@@ -38,15 +42,7 @@ export function useExpenses(params: {
   dateFrom?: string;
   dateTo?: string;
 }) {
-  const qs = new URLSearchParams({
-    page: String(params.page),
-    pageSize: String(PAGE_SIZE),
-  });
-  if (params.supplierId) qs.set('supplierId', String(params.supplierId));
-  if (params.categoryId) qs.set('categoryId', String(params.categoryId));
-  if (params.truckId) qs.set('truckId', String(params.truckId));
-  if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
-  if (params.dateTo) qs.set('dateTo', params.dateTo);
+  const qs = buildExpenseListSearchParams({ ...params, pageSize: PAGE_SIZE });
 
   return useQuery<PaginatedResponse<ExpenseWithRefs>>({
     queryKey: qk.financial.expenses(params),
@@ -56,13 +52,29 @@ export function useExpenses(params: {
 
 export default function ExpenseListPage() {
   const navigate = useNavigate();
+  const { month, year } = useMonth();
+  const monthRange = useMemo(() => getCalendarMonthRange(year, month), [month, year]);
+  const monthKey = `${year}-${month}`;
 
   const [page, setPage] = useState(1);
   const [supplierId, setSupplierId] = useState<number | ''>('');
   const [categoryId, setCategoryId] = useState<number | ''>('');
   const [truckId, setTruckId] = useState<number | ''>('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [dateRange, setDateRange] = useState(() => ({
+    monthKey,
+    dateFrom: monthRange.start,
+    dateTo: monthRange.end,
+  }));
+  // A stale local date selection must never survive a topbar month change.
+  const dateFrom = dateRange.monthKey === monthKey ? dateRange.dateFrom : monthRange.start;
+  const dateTo = dateRange.monthKey === monthKey ? dateRange.dateTo : monthRange.end;
+
+  // A page that exists in one month may not exist in the next. Reset before
+  // querying so a smaller month cannot look falsely empty.
+  useEffect(() => {
+    setPage(1);
+  }, [monthKey]);
 
   const { data: expenseData, isLoading, error: queryError, refetch } = useExpenses({
     page,
@@ -111,9 +123,53 @@ export default function ExpenseListPage() {
     setSupplierId('');
     setCategoryId('');
     setTruckId('');
-    setDateFrom('');
-    setDateTo('');
+    setDateRange({ monthKey, dateFrom: monthRange.start, dateTo: monthRange.end });
     setPage(1);
+  };
+
+  const downloadMonthlySummary = async () => {
+    setIsExporting(true);
+    try {
+      const query = {
+        supplierId: supplierId || undefined,
+        categoryId: categoryId || undefined,
+        truckId: truckId || undefined,
+        dateFrom,
+        dateTo,
+      };
+      const first = await api.get<PaginatedResponse<ExpenseWithRefs>>(
+        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
+      );
+      const pageCount = Math.ceil(first.total / first.pageSize);
+      const remaining = await Promise.all(
+        Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
+          `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
+        )),
+      );
+      const rows = [first, ...remaining].flatMap(response => response.items);
+      await downloadCSV(
+        `tong-ket-chi-phi-${dateFrom}-${dateTo}.xlsx`,
+        ['Ngày phát sinh', 'Nhà cung cấp', 'Hạng mục', 'Xe', 'Thành phần', 'Số tiền', 'Trạng thái', 'Ghi chú'],
+        rows.map(expense => [
+          expense.expenseDate,
+          expense.supplier?.name ?? '—',
+          expense.category?.name ?? '—',
+          expense.vehicleComponent === 'TRAILER' ? expense.trailer?.licensePlate ?? '—' : expense.truck?.licensePlate ?? '—',
+          expense.vehicleComponent === 'TRAILER' ? 'Rơ-moóc' : expense.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : '—',
+          Number(expense.amount),
+          expense.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Ghi nợ',
+          expense.note ?? '',
+        ]),
+        {
+          title: 'Tổng kết chi phí phát sinh',
+          subtitle: `Kỳ ${formatDate(dateFrom)} – ${formatDate(dateTo)} · ${first.total} khoản chi phí`,
+          columnTypes: ['date', 'text', 'text', 'text', 'text', 'currency', 'text', 'text'],
+          totalsColumns: [5],
+        },
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const stats = useMemo(() => {
@@ -126,7 +182,7 @@ export default function ExpenseListPage() {
     return { totalAmount, unpaidCount: unpaidItems.length, unpaidAmount, paidCount: paidItems.length, paidAmount };
   }, [expenseData]);
 
-  const hasFilters = supplierId || categoryId || truckId || dateFrom || dateTo;
+  const hasFilters = supplierId || categoryId || truckId || dateFrom !== monthRange.start || dateTo !== monthRange.end;
   const kpiTotal = splitKpi(stats.totalAmount);
 
   const renderStatusBadge = (status: string) => status === 'PAID' ? (
@@ -170,9 +226,15 @@ export default function ExpenseListPage() {
         iconName="expense"
         description={`${total} khoản chi phí`}
         action={
-          <button className="btn btn--primary" onClick={() => navigate('/expenses/new')}>
-            <Plus size={15} /> Thêm phiếu chi
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn--secondary" onClick={() => void downloadMonthlySummary()} disabled={isExporting}>
+              {isExporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
+              {isExporting ? 'Đang chuẩn bị…' : 'Tải tổng kết'}
+            </button>
+            <button className="btn btn--primary" onClick={() => navigate('/expenses/new')}>
+              <Plus size={15} /> Thêm phiếu chi
+            </button>
+          </div>
         }
       />
 
@@ -266,7 +328,9 @@ export default function ExpenseListPage() {
           aria-label="Từ ngày"
           className="expense-filter-bar__date"
           value={dateFrom}
-          onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+          min={monthRange.start}
+          max={monthRange.end}
+          onChange={e => { setDateRange(current => ({ ...current, monthKey, dateFrom: e.target.value })); setPage(1); }}
           placeholder="Từ ngày"
         />
         <input
@@ -275,7 +339,9 @@ export default function ExpenseListPage() {
           aria-label="Đến ngày"
           className="expense-filter-bar__date"
           value={dateTo}
-          onChange={e => { setDateTo(e.target.value); setPage(1); }}
+          min={monthRange.start}
+          max={monthRange.end}
+          onChange={e => { setDateRange(current => ({ ...current, monthKey, dateTo: e.target.value })); setPage(1); }}
           placeholder="Đến ngày"
         />
 
