@@ -134,7 +134,6 @@ export function FuelAllocationEditor() {
       <div className="fuel-allocation-list" role="table" aria-label="Phân bổ nơi đổ dầu">
         <div className="fuel-allocation-row fuel-allocation-row--head" role="row">
           <span role="columnheader">Nơi đổ dầu</span>
-          <span role="columnheader">Hình thức</span>
           <span role="columnheader" className="fuel-allocation-column-liters">Số lít</span>
         </div>
         {form.fuelAllocations.map((allocation) => {
@@ -145,7 +144,6 @@ export function FuelAllocationEditor() {
           const pointLabel = allocation.paymentMethod === 'CASH'
             ? 'Cây dầu ngoài'
             : fuelSupplierLabel(supplier);
-          const paymentLabel = allocation.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Công nợ';
 
           return (
             <div className="fuel-allocation-row" key={allocation._key} role="row">
@@ -154,10 +152,6 @@ export function FuelAllocationEditor() {
                 {isCreditPointWithoutSupplier ? (
                   <p className="fuel-allocation-warning">Nhà cung cấp nơi đổ đã không còn hoạt động trong Danh mục.</p>
                 ) : null}
-              </div>
-
-              <div className="fuel-allocation-payment" role="cell">
-                {paymentLabel}
               </div>
 
               <div className="fuel-allocation-liters" role="cell">

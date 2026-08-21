@@ -292,7 +292,9 @@
 .dash-wf .wf-head .wf-sum .neg { color: var(--wf-red); font-weight: 700; }
 .dash-wf .wf-head .wf-acts { display: flex; gap: 9px; flex: 0 0 auto; }
 .dash-wf .wf-btn {
-  min-height: 45px; padding: 0 15px; border-radius: 10px;
+  /* Match the compact desktop control scale. The global token becomes 44px
+     on touch-oriented canvases, so these actions remain easy to tap there. */
+  min-height: var(--control-h); padding: 0 10px; border-radius: 8px;
   font-family: var(--font-body); font-weight: 600; font-size: var(--fs-sm);
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
   border: 1px solid var(--wf-border-2); background: var(--surface); color: var(--wf-ink);
@@ -332,9 +334,8 @@
   display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
   background: none; border: 0; padding: 0;
   border-radius: 8px;
-  /* fix visual-audit 2026-06-25 BUG-1: tap target ≥ 36px on desktop */
-  min-height: 45px;
-  padding-inline: 8px;
+  min-height: var(--control-h);
+  padding-inline: 6px;
   transition: background 120ms ease, color 120ms ease;
 }
 .dash-wf .wf-link svg { width: 13px; height: 13px; }
@@ -349,8 +350,8 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  min-height: 45px;
-  padding: 8px 14px;
+  min-height: var(--control-h);
+  padding: 5px 11px;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -360,8 +361,6 @@
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
-  /* fix visual-audit 2026-06-25 BUG-2: tap target ≥ 32px (pill toggle) */
-  min-height: 45px;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);
@@ -1547,12 +1546,12 @@
 
 @media (max-width: 640px) {
   .dash-wf .wf-link {
-    min-height: 45px;
+    min-height: var(--control-h);
     padding: 8px;
   }
 
   .dash-wf .wf-chart-toggle__btn {
-    min-height: 45px;
+    min-height: var(--control-h);
     padding: 8px 12px;
   }
 

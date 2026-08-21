@@ -183,10 +183,10 @@
 
 .trip-list-page .trip-col {
   min-width: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
 }
 .trip-list-page .trip-col__link {
   min-width: 0;
@@ -201,7 +201,6 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 44px;
   max-width: 100%;
   padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--tbl-green-600) 22%, var(--line));
@@ -214,20 +213,30 @@
   letter-spacing: 0;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease, transform 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
-.trip-list-page .table-row .trip-copy-btn {
+.trip-list-page .trip-copy-btn:not(.trip-copy-btn--mobile) {
+  position: absolute;
+  z-index: 1;
+  top: 6px;
+  left: 0;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+.trip-list-page .trip-copy-btn:not(.trip-copy-btn--mobile) > span {
+  display: none;
+}
+.trip-list-page .table-row .trip-copy-btn:not(.trip-copy-btn--mobile) {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-2px);
 }
-.trip-list-page .table-row:hover .trip-copy-btn,
-.trip-list-page .table-row:focus-within .trip-copy-btn,
-.trip-list-page .table-row .trip-copy-btn:focus-visible,
-.trip-list-page .table-row .trip-copy-btn.is-copying {
+.trip-list-page .table-row:hover .trip-copy-btn:not(.trip-copy-btn--mobile),
+.trip-list-page .table-row:focus-within .trip-copy-btn:not(.trip-copy-btn--mobile),
+.trip-list-page .table-row .trip-copy-btn:not(.trip-copy-btn--mobile):focus-visible,
+.trip-list-page .table-row .trip-copy-btn:not(.trip-copy-btn--mobile).is-copying {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
 }
 .trip-list-page .trip-copy-btn svg {
   flex: none;

@@ -27,7 +27,7 @@
 
 .fuel-allocation-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 112px 144px;
+  grid-template-columns: minmax(0, 1fr) 144px;
   align-items: center;
   gap: var(--space-md);
   min-height: 52px;
@@ -65,30 +65,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.fuel-allocation-payment {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: 5px;
-  padding: 3px 7px;
-  border: 1px solid var(--border-1);
-  border-radius: var(--radius-full);
-  background: var(--surface);
-  color: var(--fg-2);
-  font-size: var(--fs-xs);
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.fuel-allocation-payment::before {
-  display: block;
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-full);
-  background: var(--brand-2);
-  content: '';
 }
 
 .fuel-allocation-input {
@@ -157,15 +133,9 @@
     display: none;
   }
 
-  .fuel-allocation-payment {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: start;
-  }
-
   .fuel-allocation-liters {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
   }
 
   .fuel-allocation-input .input {
