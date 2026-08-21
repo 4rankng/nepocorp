@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import type { Supplier } from '@tingting/shared';
 import { useCatalogs } from '../../hooks/useCatalogs';
+import type { CatalogData } from '../../api/tripClient';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { createDefaultFuelAllocations, type FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import './FuelAllocationEditor.css';
@@ -20,6 +21,19 @@ function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[])
 /** Fuel allocation is an operational workflow, so prefer a configured short label. */
 export function fuelSupplierLabel(supplier: Pick<Supplier, 'name' | 'shortName'> | undefined): string {
   return supplier?.shortName ?? supplier?.name ?? 'Nhà cung cấp đã lưu';
+}
+
+/**
+ * The database catalog is the authority for the fuel-allocation rows. An
+ * inactive supplier is retained only when it was already saved on an old trip
+ * (handled by normalizeFuelAllocationRows), never offered for new allocation.
+ */
+export function activeFuelSuppliers(
+  suppliers: CatalogData['suppliers'] | undefined,
+): CatalogData['suppliers'] {
+  return suppliers?.filter(supplier => (
+    supplier.status === 'ACTIVE' && supplier.isFuelSupplier
+  )) ?? [];
 }
 
 /**
@@ -55,12 +69,12 @@ export function normalizeFuelAllocationRows(
     );
 
     if (!target) {
-      if (row.enabled) remaining.push(row);
+      if (row.enabled || (Number(row.liters) || 0) > 0) remaining.push(row);
       continue;
     }
 
-    const liters = (Number(target.liters) || 0) + (row.enabled ? Number(row.liters) || 0 : 0);
-    target.enabled ||= row.enabled;
+    const liters = (Number(target.liters) || 0) + (Number(row.liters) || 0);
+    target.enabled ||= (Number(row.liters) || 0) > 0;
     target.liters = liters > 0 ? String(liters) : '';
     if (target.paymentMethod === 'CREDIT' && row.supplierId !== null) {
       target.supplierId = row.supplierId;
@@ -73,9 +87,10 @@ export function normalizeFuelAllocationRows(
 export function FuelAllocationEditor() {
   const form = useTripFormContext();
   const { data: catalogData } = useCatalogs();
-  const fuelSuppliers = useMemo(() => (
-    catalogData?.suppliers?.filter(supplier => (supplier as Supplier).isFuelSupplier) ?? []
-  ) as Supplier[], [catalogData?.suppliers]);
+  const fuelSuppliers = useMemo(
+    () => activeFuelSuppliers(catalogData?.suppliers) as Supplier[],
+    [catalogData?.suppliers],
+  );
 
   // The catalog may refresh after the initial form state; normalize again so
   // its active fuel suppliers become available without altering saved rows.
@@ -87,7 +102,7 @@ export function FuelAllocationEditor() {
   }, [form.setFuelAllocations, fuelSuppliers]);
 
   const allocatedLiters = form.fuelAllocations.reduce(
-    (total, allocation) => allocation.enabled ? total + (Number(allocation.liters) || 0) : total,
+    (total, allocation) => total + (Number(allocation.liters) || 0),
     0,
   );
 
@@ -97,48 +112,56 @@ export function FuelAllocationEditor() {
     )));
   };
 
+  const setLiters = (key: string, liters: string) => {
+    setRow(key, { liters, enabled: (Number(liters) || 0) > 0 });
+  };
+
   return (
     <div className="fuel-allocation-editor">
       <div className="fuel-allocation-heading">
         <div>
           <label>Phân bổ nơi đổ dầu</label>
           <p className="tc-field-hint">
-            Tích nơi đã đổ rồi nhập số lít. Cây ngoài là tiền mặt, không phát sinh công nợ.
+            Nhập số lít tại nơi đã đổ. Để trống nơi không đổ; Cây dầu ngoài là tiền mặt, không phát sinh công nợ.
           </p>
+        </div>
+        <div className="fuel-allocation-total" aria-live="polite">
+          <span>Đã phân bổ</span>
+          <strong>{allocatedLiters.toLocaleString('vi-VN')} lít</strong>
         </div>
       </div>
 
-      <div className="fuel-allocation-list">
+      <div className="fuel-allocation-list" role="table" aria-label="Phân bổ nơi đổ dầu">
+        <div className="fuel-allocation-row fuel-allocation-row--head" role="row">
+          <span role="columnheader">Nơi đổ dầu</span>
+          <span role="columnheader">Hình thức</span>
+          <span role="columnheader" className="fuel-allocation-column-liters">Số lít</span>
+        </div>
         {form.fuelAllocations.map((allocation) => {
           const supplier = allocation.supplierId == null
             ? undefined
             : fuelSuppliers.find(item => item.id === allocation.supplierId);
           const isCreditPointWithoutSupplier = allocation.paymentMethod === 'CREDIT' && allocation.supplierId === null;
-          const inputDisabled = !allocation.enabled || isCreditPointWithoutSupplier;
           const pointLabel = allocation.paymentMethod === 'CASH'
             ? 'Cây dầu ngoài'
             : fuelSupplierLabel(supplier);
+          const paymentLabel = allocation.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Công nợ';
 
           return (
-            <div className="fuel-allocation-row" key={allocation._key}>
-              <div className="fuel-allocation-point">
-                <label className="fuel-allocation-check" htmlFor={`fuel-allocation-enabled-${allocation._key}`}>
-                  <input
-                    id={`fuel-allocation-enabled-${allocation._key}`}
-                    type="checkbox"
-                    checked={allocation.enabled}
-                    disabled={Boolean(isCreditPointWithoutSupplier)}
-                    onChange={(event) => setRow(allocation._key, { enabled: event.target.checked })}
-                  />
-                  <span>{pointLabel}</span>
-                </label>
+            <div className="fuel-allocation-row" key={allocation._key} role="row">
+              <div className="fuel-allocation-point" role="cell">
+                <span className="fuel-allocation-label">{pointLabel}</span>
                 {isCreditPointWithoutSupplier ? (
                   <p className="fuel-allocation-warning">Nhà cung cấp nơi đổ đã không còn hoạt động trong Danh mục.</p>
                 ) : null}
               </div>
 
-              <div className="field">
-                <label htmlFor={`fuel-allocation-liters-${allocation._key}`}>Số lít</label>
+              <div className="fuel-allocation-payment" role="cell">
+                {paymentLabel}
+              </div>
+
+              <div className="fuel-allocation-liters" role="cell">
+                <div className="fuel-allocation-input">
                 <input
                   id={`fuel-allocation-liters-${allocation._key}`}
                   className="input"
@@ -146,19 +169,18 @@ export function FuelAllocationEditor() {
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  placeholder="VD: 200"
-                  disabled={inputDisabled}
+                  placeholder="0"
+                  aria-label={`Số lít tại ${pointLabel}`}
+                  disabled={isCreditPointWithoutSupplier}
                   value={allocation.liters}
-                  onChange={event => setRow(allocation._key, { liters: event.target.value })}
+                  onChange={event => setLiters(allocation._key, event.target.value)}
                 />
+                  <span aria-hidden="true">lít</span>
+                </div>
               </div>
             </div>
           );
         })}
-      </div>
-
-      <div className="fuel-allocation-total" aria-live="polite">
-        Đã phân bổ: <strong>{allocatedLiters.toLocaleString('vi-VN')} lít</strong>
       </div>
     </div>
   );

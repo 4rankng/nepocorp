@@ -189,16 +189,25 @@
   --space-3xl: 48px;
 
   /* --- Sizing --- */
-  --icon-sm: 14px;
-  --icon-md: 18px;
-  --icon-lg: 22px;
-  --avatar-sm: 28px;
-  --avatar-md: 36px;
-  --avatar-lg: 44px;
+  --icon-sm: 12px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+  --avatar-sm: 24px;
+  --avatar-md: 32px;
+  --avatar-lg: 40px;
 
   --sidebar-w: 248px;
-  --topbar-h: 48px;
-  --control-h: 44px;
+  /* Desktop is a comparison workspace: use compact controls and reserve
+     touch-sized targets for the tablet/phone overrides below. */
+  --topbar-h: 40px;
+  --control-h: 34px;
+  /* Controls sit on a distinct, quiet field layer so filters and inputs do
+     not disappear into white workspace panels. */
+  --control-bg: #F0F4F1;
+  --control-bg-hover: #F8FBF9;
+  --control-border: #89978F;
+  --control-border-hover: #65746B;
+  --control-focus-ring: color-mix(in srgb, var(--accent-2) 38%, transparent);
 
   /* --- Canonical status strip (Vantai invariant) ---
    * Per docs/design-guidelines.md: every status marker is a centered 3x20px
@@ -228,17 +237,17 @@
   --ff-mono: var(--font-mono);
 
   /* --- Type scale --- */
-  --fs-2xs: 12px;
-  --fs-xs:  12px;
-  --fs-status-pill: 11px;
-  --fs-sm:  14px;
-  --fs-md:  16px;
-  --fs-lg:  18px;
-  --fs-xl:  20px;
-  --fs-2xl: 24px;
-  --fs-3xl: 30px;
-  --fs-4xl: 36px;
-  --fs-5xl: 48px;
+  --fs-2xs: 10px;
+  --fs-xs:  11px;
+  --fs-status-pill: 10px;
+  --fs-sm:  12px;
+  --fs-md:  12px;
+  --fs-lg:  14px;
+  --fs-xl:  16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 22px;
+  --fs-4xl: 26px;
+  --fs-5xl: 32px;
 
   --fw-light:    300;
   --fw-regular:  400;
@@ -259,8 +268,8 @@
   --tracking-eyebrow: 0.08em;
 
   /* Hero display numbers (24-28px, used for revenue / profit metrics) */
-  --fs-display: 24px;
-  --fs-display-lg: 28px;
+  --fs-display: 20px;
+  --fs-display-lg: 24px;
 
   /* --- Z-index scale --- */
   --z-base: 0;
@@ -306,4 +315,9 @@
   --slate-4: #0F172A;  /* slate-900 */
   --slate-5: #F1F5F9;  /* slate-100 */
   --slate-6: #E2E8F0;  /* slate-200 */
+}
+
+/* Preserve 44px targets wherever a touch-first canvas is plausible. */
+@media (max-width: 900px) {
+  :root { --control-h: 44px; }
 }

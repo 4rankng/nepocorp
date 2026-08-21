@@ -247,7 +247,7 @@
     margin: 10px 0;
   }
   .trip-list-page .filters-row-bottom {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .trip-list-page .filters-row-bottom .filters-search,
   .trip-list-page .filters-search-hint {
@@ -259,9 +259,9 @@
 @media (max-width: 640px) {
   /* ── TripListPage: larger filter pill tap targets, breakdown bar fix ── */
   .trip-list-page .filter-pill {
-    height: auto;
-    min-height: 48px;
-    padding: 8px 12px;
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 10px;
     font-size: var(--fs-xs);
     align-items: center;
   }
@@ -273,7 +273,8 @@
     line-height: 1.35;
   }
   .trip-list-page .filter-pill select {
-    min-height: 44px;
+    height: 100%;
+    min-height: 0;
     line-height: 1.35;
   }
   .trip-list-page .breakdown-bar {

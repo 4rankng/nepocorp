@@ -135,6 +135,7 @@ export function DispatchTripCard({
             type="button"
             className="swap-btn"
             title="Đổi xe / lái xe"
+            aria-label="Đổi xe / lái xe"
             onClick={onOpenReassign}
             disabled={dispatching || actionLoadingId === trip.id}
           >

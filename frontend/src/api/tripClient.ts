@@ -12,6 +12,7 @@ import type {
   BulkUpdateTripFiguresResponse,
   PaginatedResponse,
   LiveFleetResponse,
+  Supplier,
 } from '@tingting/shared';
 
 /**
@@ -31,7 +32,12 @@ export interface CatalogData {
   containerTypes: Array<{ id: number; code: string; name: string }>;
   ports: Array<{ id: number; name: string; code: string | null; city: string | null }>;
   forwarderExpenseTypes: Array<{ id: number; code: string; name: string; defaultMarkup?: boolean; billingLabel?: string | null; vatRate?: string | null }>;
-  suppliers: Array<{ id: number; name: string; status: string }>;
+  /**
+   * The bootstrap endpoint returns the supplier fields used by trip fuel
+   * allocation. Keep this explicit: the form derives its rows from the
+   * database catalog, never from a hard-coded supplier list.
+   */
+  suppliers: Array<Pick<Supplier, 'id' | 'name' | 'shortName' | 'status' | 'isFuelSupplier'>>;
 }
 
 type ListTripsParams = {

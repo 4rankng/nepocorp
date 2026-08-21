@@ -6,16 +6,15 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 44px;
-  height: auto;
-  padding: 0 12px;
+  min-height: var(--control-h);
+  height: var(--control-h);
+  padding: 0 10px;
   font-size: var(--fs-md);
   line-height: 1.35;
   font-family: inherit;
   color: var(--ink, var(--fg-1));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 249, 0.94));
-  border: 1px solid var(--line-2);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   cursor: pointer;
   outline: none;
@@ -26,7 +25,8 @@
 .ds-select-trigger:focus-visible,
 .ds-select-trigger--open {
   border-color: var(--brand, var(--accent));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, var(--accent)) 20%, transparent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--control-focus-ring);
 }
 
 .ds-select-trigger:disabled {
@@ -90,8 +90,8 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
+  min-height: var(--control-h);
+  padding: 6px 9px;
   font-size: var(--fs-sm);
   line-height: 1.35;
   color: var(--ink, var(--fg-1));

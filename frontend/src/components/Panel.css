@@ -27,7 +27,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 22px 14px;
+  padding: 10px 12px 8px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   gap: 12px;
@@ -47,7 +47,7 @@
   line-height: 1.45;
 }
 .panel__body {
-  padding: 18px 22px 22px;
+  padding: 12px;
 }
 .panel__body--flush { padding: 0 !important; }
 
@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
 .card-header h3 {
@@ -82,7 +82,7 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface-2);
-  padding: 14px 16px;
+  padding: 8px 10px;
   margin-top: 8px;
 }
 /* Callout accents use the canonical 3×20px status strip (::before), never a

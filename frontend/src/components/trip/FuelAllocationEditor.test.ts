@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import type { Supplier } from '@tingting/shared';
-import { fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
+import { activeFuelSuppliers, fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
 
 const suppliers = [
-  { id: 1, name: 'Petrolimex Mộc Châu', shortName: 'Petrolimex', isFuelSupplier: true },
-  { id: 2, name: 'Long Hưng', shortName: null, isFuelSupplier: true },
-  { id: 3, name: 'PV Oil', shortName: 'PVOIL', isFuelSupplier: true },
+  { id: 1, name: 'Petrolimex Mộc Châu', shortName: 'Petrolimex', status: 'ACTIVE', isFuelSupplier: true },
+  { id: 2, name: 'Long Hưng', shortName: null, status: 'ACTIVE', isFuelSupplier: true },
+  { id: 3, name: 'PV Oil', shortName: 'PVOIL', status: 'ACTIVE', isFuelSupplier: true },
 ] as Supplier[];
 
 describe('normalizeFuelAllocationRows', () => {
+  it('uses every active fuel supplier returned by the database catalog', () => {
+    const fromBootstrap = [
+      ...suppliers,
+      { id: 4, name: 'NCC đã ngừng', shortName: null, status: 'INACTIVE', isFuelSupplier: true },
+      { id: 5, name: 'Gara', shortName: null, status: 'ACTIVE', isFuelSupplier: false },
+    ];
+
+    expect(activeFuelSuppliers(fromBootstrap)).toEqual(suppliers);
+  });
+
   it('uses the configured short name for operational fuel labels and falls back to the legal name', () => {
     expect(fuelSupplierLabel(suppliers[0])).toBe('Petrolimex');
     expect(fuelSupplierLabel(suppliers[1])).toBe('Long Hưng');
@@ -35,6 +45,14 @@ describe('normalizeFuelAllocationRows', () => {
     expect(rows).toContainEqual(expect.objectContaining({ enabled: true, supplierId: 1, liters: '120' }));
     expect(rows).toContainEqual(expect.objectContaining({ enabled: true, supplierId: 2, liters: '80' }));
     expect(rows).toContainEqual(expect.objectContaining({ point: 'OUTSIDE', enabled: true, supplierId: null, liters: '20' }));
+  });
+
+  it('treats entered litres as the allocation even when a legacy row has no enabled flag', () => {
+    const rows = normalizeFuelAllocationRows([
+      { _key: 'legacy-value', point: 'CUSTOM', enabled: false, supplierId: 2, paymentMethod: 'CREDIT', liters: '80' },
+    ], suppliers);
+
+    expect(rows).toContainEqual(expect.objectContaining({ enabled: true, supplierId: 2, liters: '80' }));
   });
 
   it('preserves a legacy supplier that is not one of the fixed points', () => {

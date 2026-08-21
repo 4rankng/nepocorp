@@ -663,8 +663,9 @@
 }
 
 .dd-filter-chip {
-  min-height: 44px;
-  padding: 8px 14px;
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 11px;
   border-radius: 9px;
   border: 1px solid var(--line);
   background: var(--surface);

@@ -11,15 +11,15 @@
   font-family: var(--font-body);
   font-size: var(--fs-md);
   line-height: 1.35;
-  background: var(--surface);
-  border: 1px solid var(--line-2);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   color: var(--ink);
-  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease), box-shadow 0.16s var(--ease);
 }
 .input:hover {
-  border-color: var(--line-strong);
-  background: var(--surface);
+  border-color: var(--control-border-hover);
+  background: var(--control-bg-hover);
 }
 .input::placeholder { color: var(--ink-3); }
 .input:disabled,
@@ -31,9 +31,10 @@
   box-shadow: none;
 }
 .input:focus-visible {
-  outline: 2px solid var(--accent-2);
-  outline-offset: 2px;
+  outline: 2px solid var(--control-focus-ring);
+  outline-offset: 1px;
   border-color: var(--accent);
+  background: var(--surface);
 }
 
 .input-icon { position: relative; }

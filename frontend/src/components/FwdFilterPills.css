@@ -16,7 +16,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  height: var(--control-h);
+  padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 9999px;
   background: var(--surface);
@@ -27,7 +28,7 @@
   cursor: pointer;
   transition: all 150ms ease;
   white-space: nowrap;
-  min-height: 44px;
+  min-height: var(--control-h);
 }
 .fwd-filter-pill[data-status="CREATED"] {
   border-color: rgba(2, 132, 199, 0.22);
@@ -116,8 +117,9 @@
   }
 
   .fwd-filter-pill {
-    min-height: 44px;
-    padding: 8px 14px;
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 11px;
     border-radius: 12px;
   }
 }

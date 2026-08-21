@@ -33,7 +33,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--ink-2);
-  padding: 11px 12px;
+  padding: 8px 10px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line-2);
   white-space: nowrap;
@@ -45,7 +45,7 @@
 }
 
 .ds-table tbody td {
-  padding: 11px 12px;
+  padding: 9px 10px;
   border-bottom: 1px solid var(--line);
   color: var(--ink, var(--fg));
   vertical-align: middle;
@@ -71,7 +71,7 @@
 }
 
 .ds-table__skeleton-row td {
-  padding: 14px 12px;
+  padding: 10px;
 }
 
 .ds-table__skeleton-bar {
@@ -109,7 +109,7 @@
   background: var(--surface, #fff);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  padding: 12px 14px;
+  padding: 10px 12px;
   color: var(--ink, var(--fg));
 }
 

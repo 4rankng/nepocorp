@@ -158,7 +158,8 @@
 
 .expense-filter-bar__select,
 .expense-filter-bar__date {
-  min-height: 44px;
+  height: var(--control-h);
+  min-height: var(--control-h);
   padding: 0 32px 0 12px;
   background: var(--surface-2);
   border: 1px solid transparent;

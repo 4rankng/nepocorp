@@ -148,7 +148,9 @@ const handleSubmit = useCallback(
       }
     }
 
-    const allocationRows = s.fuelAllocations.filter(allocation => allocation.enabled);
+    // An allocation exists only when its litres field has a value. The form
+    // deliberately has no separate checkbox or "enabled" control.
+    const allocationRows = s.fuelAllocations.filter(allocation => allocation.liters.trim() !== '');
     for (const allocation of allocationRows) {
       const liters = Number(allocation.liters);
       if (!Number.isFinite(liters) || liters <= 0) {

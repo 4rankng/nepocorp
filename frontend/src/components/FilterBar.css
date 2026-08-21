@@ -6,8 +6,8 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 12px 14px;
-  margin-bottom: 20px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -25,14 +25,15 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 44px;
-  padding: 8px 14px;
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 11px;
   border-radius: 10px;
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-2);
-  background: var(--surface-2);
-  border: 1px solid transparent;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -40,8 +41,8 @@
 }
 .filter-tab:hover,
 .filter-bar .filter-tab:hover {
-  background: var(--surface);
-  border-color: var(--line-2);
+  background: var(--control-bg-hover);
+  border-color: var(--control-border-hover);
   color: var(--ink);
 }
 .filter-tab.is-active,
@@ -59,9 +60,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 44px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
+  height: var(--control-h);
+  min-height: var(--control-h);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   min-width: 180px;
   max-width: 260px;
@@ -70,7 +72,7 @@
 .filter-bar__search:focus-within {
   background: var(--surface);
   border-color: var(--accent);
-  outline: 2px solid var(--accent-soft);
+  outline: 2px solid var(--control-focus-ring);
   outline-offset: 2px;
 }
 .filter-bar__search svg {
@@ -99,10 +101,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 9px 13px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 11px;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   font-size: var(--fs-xs);
   color: var(--ink-2);
@@ -112,8 +115,8 @@
   transition: background 200ms var(--ease), border-color 200ms var(--ease), color 200ms var(--ease);
 }
 .filter-pill:hover {
-  border-color: var(--line-2);
-  background: var(--surface-2);
+  border-color: var(--control-border-hover);
+  background: var(--control-bg-hover);
   color: var(--ink);
 }
 .filter-pill.is-active {

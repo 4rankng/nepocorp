@@ -21,9 +21,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 44px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  min-height: var(--control-h);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   min-width: 180px;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -31,7 +31,7 @@
 .toolbar__search:focus-within {
   background: var(--surface);
   border-color: var(--accent);
-  outline: 2px solid var(--accent-soft);
+  outline: 2px solid var(--control-focus-ring);
   outline-offset: 2px;
 }
 .toolbar__search svg {
@@ -51,7 +51,7 @@
   outline: none;
   font-size: var(--fs-sm);
   line-height: 1.35;
-  min-height: 44px;
+  min-height: var(--control-h);
   color: var(--ink);
   height: 100%;
 }

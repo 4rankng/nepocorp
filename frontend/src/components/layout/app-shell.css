@@ -161,7 +161,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 30px 34px 40px;
+  padding: 18px 22px 24px;
   scrollbar-gutter: stable;
   scroll-behavior: smooth;
 }
