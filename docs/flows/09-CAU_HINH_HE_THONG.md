@@ -105,7 +105,7 @@ Các thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ. MANAGER ẩn Cổ
 
 ### 2.2.1 Nhà cung cấp dầu `/config/fuel-suppliers`
 
-Quản lý riêng các cây dầu được dùng tại phần **Phân bổ nơi đổ dầu**: tên, người liên hệ, số điện thoại và trạng thái. Chỉ nhà cung cấp dầu **Hoạt động** xuất hiện ở chuyến mới. Đặt **Ngừng** để dừng dùng cho chuyến mới; không xóa hoặc thay đổi các phân bổ và công nợ đã ghi nhận trước đó.
+Quản lý riêng các cây dầu được dùng tại phần **Phân bổ nơi đổ dầu**: **tên pháp lý** (dùng cho chứng từ và công nợ), **tên viết tắt** (dùng tại dòng phân bổ dầu), người liên hệ, số điện thoại và trạng thái. Nếu chưa có tên viết tắt, dòng phân bổ dùng tên pháp lý. Chỉ nhà cung cấp dầu **Hoạt động** xuất hiện ở chuyến mới. Đặt **Ngừng** để dừng dùng cho chuyến mới; không xóa hoặc thay đổi các phân bổ và công nợ đã ghi nhận trước đó.
 
 ### 2.3 Tiền đi đường `/config/road-allowances`
 

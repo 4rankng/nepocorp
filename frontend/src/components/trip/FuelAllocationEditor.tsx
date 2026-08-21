@@ -17,6 +17,11 @@ function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[])
   });
 }
 
+/** Fuel allocation is an operational workflow, so prefer a configured short label. */
+export function fuelSupplierLabel(supplier: Pick<Supplier, 'name' | 'shortName'> | undefined): string {
+  return supplier?.shortName ?? supplier?.name ?? 'Nhà cung cấp đã lưu';
+}
+
 /**
  * Fuel allocation rows are derived from the active fuel-supplier catalog so
  * every available supplier is immediately usable. Keep selected legacy rows
@@ -112,7 +117,7 @@ export function FuelAllocationEditor() {
           const inputDisabled = !allocation.enabled || isCreditPointWithoutSupplier;
           const pointLabel = allocation.paymentMethod === 'CASH'
             ? 'Cây dầu ngoài'
-            : supplier?.name ?? 'Nhà cung cấp đã lưu';
+            : fuelSupplierLabel(supplier);
 
           return (
             <div className="fuel-allocation-row" key={allocation._key}>

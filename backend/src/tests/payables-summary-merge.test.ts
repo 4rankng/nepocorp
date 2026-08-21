@@ -7,6 +7,7 @@ function supplier(id: number, name: string): Supplier {
   return {
     id,
     name,
+    shortName: null,
     contactPerson: null,
     phone: null,
     taxCode: null,

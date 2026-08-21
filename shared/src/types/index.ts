@@ -531,7 +531,10 @@ export interface PushSubscriptionPayload {
 
 export interface Supplier {
   id: number;
+  /** Legal/accounting name. */
   name: string;
+  /** Optional operational label, used where a concise name is needed. */
+  shortName: string | null;
   contactPerson: string | null;
   phone: string | null;
   taxCode: string | null;

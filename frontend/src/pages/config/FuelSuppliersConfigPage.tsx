@@ -16,15 +16,21 @@ function FuelSupplierForm({ saving, item, onsave, oncancel }: {
   oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name ?? '');
+  const [shortName, setShortName] = useState(item?.shortName ?? '');
   const [contactPerson, setContactPerson] = useState(item?.contactPerson ?? '');
   const [phone, setPhone] = useState(item?.phone ?? '');
   const [status, setStatus] = useState(item?.status ?? 'ACTIVE');
 
   return (
-    <InlineForm colSpan={4}>
+    <InlineForm colSpan={5}>
       <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên cây dầu / nhà cung cấp" htmlFor="fuel-supplier-name">
-          <input id="fuel-supplier-name" className="input" value={name} onChange={event => setName(event.target.value)} placeholder="VD: Petro, Long Hưng" autoFocus />
+        <Field label="Tên pháp lý" htmlFor="fuel-supplier-name">
+          <input id="fuel-supplier-name" className="input" value={name} onChange={event => setName(event.target.value)} placeholder="VD: CÔNG TY TNHH MTV PETROLIMEX HẢI PHÒNG" autoFocus />
+        </Field>
+      </div>
+      <div style={{ flex: 1, minWidth: 140 }}>
+        <Field label="Tên viết tắt" htmlFor="fuel-supplier-short-name">
+          <input id="fuel-supplier-short-name" className="input" value={shortName} onChange={event => setShortName(event.target.value)} placeholder="VD: Petrolimex" />
         </Field>
       </div>
       <div style={{ flex: 1, minWidth: 150 }}>
@@ -53,6 +59,7 @@ function FuelSupplierForm({ saving, item, onsave, oncancel }: {
           if (!name.trim()) return;
           onsave({
             name: name.trim(),
+            shortName: shortName.trim() || null,
             contactPerson: contactPerson.trim() || null,
             phone: phone.trim() || null,
             status,
@@ -90,8 +97,8 @@ export default function FuelSuppliersConfigPage() {
             <div className="expense-category-row__details">
               <strong className="expense-category-row__name">{supplier.name}</strong>
               <span className="expense-category-row__meta">
-                {supplier.contactPerson || supplier.phone
-                  ? [supplier.contactPerson, supplier.phone].filter(Boolean).join(' · ')
+                {supplier.shortName || supplier.contactPerson || supplier.phone
+                  ? [supplier.shortName && `Tên viết tắt: ${supplier.shortName}`, supplier.contactPerson, supplier.phone].filter(Boolean).join(' · ')
                   : 'Chưa có thông tin liên hệ'}
               </span>
             </div>

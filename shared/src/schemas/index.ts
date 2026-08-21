@@ -790,6 +790,7 @@ export const salaryPeriodDefaultSchema = z.object({
 
 export const supplierSchema = z.object({
   name: z.string().min(1),
+  shortName: z.string().trim().min(1).max(120).nullable().optional(),
   contactPerson: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   taxCode: z.string().nullable().optional(),

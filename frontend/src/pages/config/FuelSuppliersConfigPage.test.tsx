@@ -28,8 +28,8 @@ vi.mock('../../hooks/animations', () => ({
 vi.mock('../../components/config/CrudTable', () => ({
   CrudTable: ({ title, description, showDelete, createActionPlacement, filterItems, renderCompactItem, renderForm }: MockCrudTableProps) => {
     const suppliers: Supplier[] = [
-      { id: 27, name: 'Petro', contactPerson: null, phone: null, taxCode: null, note: null, status: 'ACTIVE', linkedCustomerId: null, isFuelSupplier: true, createdAt: '2026-08-21T00:00:00.000Z', updatedAt: '2026-08-21T00:00:00.000Z', deletedAt: null },
-      { id: 29, name: 'Gara Thành Đông', contactPerson: null, phone: null, taxCode: null, note: null, status: 'ACTIVE', linkedCustomerId: null, isFuelSupplier: false, createdAt: '2026-08-21T00:00:00.000Z', updatedAt: '2026-08-21T00:00:00.000Z', deletedAt: null },
+      { id: 27, name: 'CÔNG TY TNHH MTV PETROLIMEX HẢI PHÒNG', shortName: 'Petrolimex', contactPerson: null, phone: null, taxCode: null, note: null, status: 'ACTIVE', linkedCustomerId: null, isFuelSupplier: true, createdAt: '2026-08-21T00:00:00.000Z', updatedAt: '2026-08-21T00:00:00.000Z', deletedAt: null },
+      { id: 29, name: 'Gara Thành Đông', shortName: null, contactPerson: null, phone: null, taxCode: null, note: null, status: 'ACTIVE', linkedCustomerId: null, isFuelSupplier: false, createdAt: '2026-08-21T00:00:00.000Z', updatedAt: '2026-08-21T00:00:00.000Z', deletedAt: null },
     ];
     return (
       <section data-action-placement={createActionPlacement} data-show-delete={String(showDelete)}>
@@ -52,20 +52,22 @@ describe('FuelSuppliersConfigPage', () => {
 
     expect(container.querySelector('section')?.getAttribute('data-action-placement')).toBe('header');
     expect(container.querySelector('section')?.getAttribute('data-show-delete')).toBe('false');
-    expect(screen.getByText('Petro')).not.toBeNull();
+    expect(screen.getByText('CÔNG TY TNHH MTV PETROLIMEX HẢI PHÒNG')).not.toBeNull();
+    expect(screen.getByText('Tên viết tắt: Petrolimex')).not.toBeNull();
     expect(screen.queryByText('Gara Thành Đông')).toBeNull();
-    expect(screen.getByText('Chưa có thông tin liên hệ')).not.toBeNull();
   });
 
   it('creates a fuel supplier and permits optional contact values to be cleared', () => {
     render(<FuelSuppliersConfigPage />);
 
-    fireEvent.change(screen.getByLabelText('Tên cây dầu / nhà cung cấp'), { target: { value: 'Cây dầu mới' } });
+    fireEvent.change(screen.getByLabelText('Tên pháp lý'), { target: { value: 'Cây dầu mới' } });
+    fireEvent.change(screen.getByLabelText('Tên viết tắt'), { target: { value: 'Cây mới' } });
     fireEvent.change(screen.getByLabelText('Trạng thái'), { target: { value: 'INACTIVE' } });
     fireEvent.click(screen.getByRole('button', { name: 'Thêm' }));
 
     expect(onSave).toHaveBeenCalledWith({
       name: 'Cây dầu mới',
+      shortName: 'Cây mới',
       contactPerson: null,
       phone: null,
       status: 'INACTIVE',

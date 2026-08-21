@@ -123,7 +123,10 @@ export const drivers = pgTable('drivers', {
 // forward-reference that causes TS7022. The FK constraint is enforced at the DB level via migration.
 export const suppliers = pgTable('suppliers', {
   id: serial('id').primaryKey(),
+  // `name` remains the legal/accounting name used on documents and statements.
+  // `shortName` is an operational label (for example, Petrolimex) for dense UI.
   name: varchar('name', { length: 255 }).notNull(),
+  shortName: varchar('short_name', { length: 120 }),
   contactPerson: varchar('contact_person', { length: 255 }),
   phone: varchar('phone', { length: 20 }),
   taxCode: varchar('tax_code', { length: 20 }),

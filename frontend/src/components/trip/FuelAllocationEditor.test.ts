@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { Supplier } from '@tingting/shared';
-import { normalizeFuelAllocationRows } from './FuelAllocationEditor';
+import { fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
 
 const suppliers = [
-  { id: 1, name: 'Petrolimex Mộc Châu', isFuelSupplier: true },
-  { id: 2, name: 'Long Hưng', isFuelSupplier: true },
-  { id: 3, name: 'PV Oil', isFuelSupplier: true },
+  { id: 1, name: 'Petrolimex Mộc Châu', shortName: 'Petrolimex', isFuelSupplier: true },
+  { id: 2, name: 'Long Hưng', shortName: null, isFuelSupplier: true },
+  { id: 3, name: 'PV Oil', shortName: 'PVOIL', isFuelSupplier: true },
 ] as Supplier[];
 
 describe('normalizeFuelAllocationRows', () => {
+  it('uses the configured short name for operational fuel labels and falls back to the legal name', () => {
+    expect(fuelSupplierLabel(suppliers[0])).toBe('Petrolimex');
+    expect(fuelSupplierLabel(suppliers[1])).toBe('Long Hưng');
+  });
+
   it('renders every active fuel supplier and the cash row by default', () => {
     const rows = normalizeFuelAllocationRows([], suppliers);
 

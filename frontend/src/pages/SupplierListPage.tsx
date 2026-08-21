@@ -33,6 +33,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
   item?: Supplier; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; customers: Customer[];
 }) {
   const [name, setName] = useState(item?.name || '');
+  const [shortName, setShortName] = useState(item?.shortName || '');
   const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
   const [phone, setPhone] = useState(item?.phone || '');
   const [taxCode, setTaxCode] = useState(item?.taxCode || '');
@@ -44,6 +45,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
   useEffect(() => {
     if (isOpen) {
       setName(item?.name || '');
+      setShortName(item?.shortName || '');
       setContactPerson(item?.contactPerson || '');
       setPhone(item?.phone || '');
       setTaxCode(item?.taxCode || '');
@@ -61,6 +63,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
     if (!name.trim()) return;
     onsave({
       name: name.trim(),
+      shortName: shortName.trim() || null,
       contactPerson: contactPerson.trim() || undefined,
       phone: phone.trim() || undefined,
       taxCode: taxCode.trim() || undefined,
@@ -91,9 +94,13 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="field">
           <label htmlFor="supp-name" style={labelStyle}>
-            Tên nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span>
+            Tên pháp lý <span style={{ color: 'var(--danger)' }}>*</span>
           </label>
-          <input id="supp-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: Garage Auto 123" autoFocus />
+          <input id="supp-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="VD: CÔNG TY TNHH MTV PETROLIMEX HẢI PHÒNG" autoFocus />
+        </div>
+        <div className="field">
+          <label htmlFor="supp-short-name" style={labelStyle}>Tên viết tắt</label>
+          <input id="supp-short-name" className="input" value={shortName} onChange={e => setShortName(e.target.value)} placeholder="VD: Petrolimex" />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="field">
@@ -260,9 +267,10 @@ export default function SupplierListPage() {
         action={
           <>
             <button className="btn btn--secondary" onClick={async () => {
-              const headers = ['Tên NCC', 'Người liên hệ', 'Điện thoại', 'MST', 'Là nhà CC nhiên liệu', 'Trạng thái'];
+              const headers = ['Tên pháp lý', 'Tên viết tắt', 'Người liên hệ', 'Điện thoại', 'MST', 'Là nhà CC nhiên liệu', 'Trạng thái'];
               const rows = filtered.map(s => [
                 s.name,
+                s.shortName || '',
                 s.contactPerson || '',
                 s.phone || '',
                 s.taxCode || '',
@@ -272,7 +280,7 @@ export default function SupplierListPage() {
               await downloadCSV(`nha-cung-cap-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
                 title: 'DANH SÁCH NHÀ CUNG CẤP',
                 subtitle: `${filtered.length} nhà cung cấp đang quản lý`,
-                columnTypes: ['text', 'text', 'text', 'text', 'text', 'text'],
+                columnTypes: ['text', 'text', 'text', 'text', 'text', 'text', 'text'],
                 hideTotals: true,
               });
             }}>
