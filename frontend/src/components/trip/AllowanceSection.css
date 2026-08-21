@@ -1,5 +1,17 @@
-/* AllowanceSection.css — scoped 2-col grid that holds at tablet width
-   and aligns fields to the bottom so that multi-line labels don't misalign inputs. */
+/* AllowanceSection.css — scoped cost and revenue form controls. */
+
+.as-section { margin-bottom: 0; }
+
+.as-section-heading { margin-bottom: 14px; }
+
+.as-row > .field > .as-field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--fg-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+}
 
 .as-row {
   display: grid;
@@ -19,6 +31,151 @@
 .as-row > .field > .tc-input-prefix,
 .as-row > .field > .as-input-wrapper {
   margin-top: auto;
+}
+
+.as-input-wrapper { min-width: 0; }
+
+.as-take-home {
+  display: flex;
+  gap: 6px;
+  margin: -6px 0 14px;
+  color: var(--fg-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+}
+
+.as-take-home__amount {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.as-section .input.mono,
+.as-section .as-day-shortcut {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.as-section .tc-prefix-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.field .as-return-cargo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 12px;
+  margin-bottom: 0;
+  color: var(--fg-1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+}
+
+.as-return-cargo:hover {
+  background: var(--control-bg-hover);
+  border-color: var(--control-border-hover);
+}
+
+.as-return-cargo.is-checked {
+  background: var(--accent-soft);
+  border-color: var(--brand);
+}
+
+.as-return-cargo:focus-within {
+  outline: 2px solid var(--control-focus-ring);
+  outline-offset: 1px;
+}
+
+.as-return-cargo__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.as-return-cargo__indicator {
+  display: grid;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  color: var(--fg-on-brand);
+  background: var(--surface);
+  border: 1.5px solid var(--control-border);
+  border-radius: 4px;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.as-return-cargo__input:checked + .as-return-cargo__indicator {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.as-return-cargo__input:checked + .as-return-cargo__indicator::after {
+  width: 7px;
+  height: 4px;
+  border-bottom: 1.5px solid currentColor;
+  border-left: 1.5px solid currentColor;
+  content: '';
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.as-return-cargo__label {
+  flex: 0 0 auto;
+  min-width: 0;
+  color: var(--fg-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.as-day-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, var(--control-h));
+  gap: 6px;
+}
+
+.as-day-shortcut {
+  display: grid;
+  width: var(--control-h);
+  min-width: var(--control-h);
+  min-height: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  place-items: center;
+  color: var(--fg-2);
+  background: var(--bg-3);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.as-day-shortcut:hover { background: var(--control-bg-hover); border-color: var(--control-border-hover); }
+
+.as-day-shortcut.is-active,
+.as-day-shortcut.is-active:hover {
+  color: var(--fg-on-brand);
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.as-inline-warning {
+  margin-left: 8px;
+  color: var(--warning);
 }
 
 .as-helper {

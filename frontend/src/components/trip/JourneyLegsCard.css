@@ -7,10 +7,14 @@
   border-radius: var(--radius-md);
   font-size: var(--fs-sm);
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 16px;
   color: var(--fg-2);
   border: 1px solid var(--border-2);
+}
+.form-summary span + span {
+  padding-left: 16px;
+  border-left: 1px solid var(--border-2);
 }
 .form-summary strong {
   font-family: var(--font-mono);

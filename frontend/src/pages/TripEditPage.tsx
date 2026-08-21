@@ -253,40 +253,42 @@ export default function TripEditPage() {
                       <div className="tc-field-hint">Để trống nếu chưa hoàn thành</div>
                     </div>
                   )}
-                  <div className="tc-field">
-                    <label className="tc-field-label">Loại xe</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => form.setCarrierType('OWN')}
-                        className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
-                      >
-                        Xe nhà
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => form.setCarrierType('EXTERNAL')}
-                        className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
-                      >
-                        Xe ngoài
-                      </button>
+                  <div className="tc-trip-types-row">
+                    <div className="tc-field">
+                      <label className="tc-field-label">Loại xe</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => form.setCarrierType('OWN')}
+                          className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
+                        >
+                          Xe nhà
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => form.setCarrierType('EXTERNAL')}
+                          className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
+                        >
+                          Xe ngoài
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="tc-field">
-                    <label className="tc-field-label">Loại container <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
-                    <select
-                      id="plannedContainerTypeId"
-                      className="input"
-                      value={plannedContainerTypeId}
-                      onChange={(e) => setPlannedContainerTypeId(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Chọn loại container --</option>
-                      {editOptions.containerTypes.map((type) => (
-                        <option key={type.id} value={type.id}>{type.label}</option>
-                      ))}
-                    </select>
-                    <div className="tc-field-hint">Số container/seal cập nhật ở Chi tiết container.</div>
+                    <div className="tc-field">
+                      <label className="tc-field-label">Loại container <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                      <select
+                        id="plannedContainerTypeId"
+                        className="input"
+                        value={plannedContainerTypeId}
+                        onChange={(e) => setPlannedContainerTypeId(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Chọn loại container --</option>
+                        {editOptions.containerTypes.map((type) => (
+                          <option key={type.id} value={type.id}>{type.label}</option>
+                        ))}
+                      </select>
+                      <div className="tc-field-hint">Số container/seal cập nhật ở Chi tiết container.</div>
+                    </div>
                   </div>
                 </div>
 
