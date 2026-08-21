@@ -5,8 +5,8 @@
  *  - Key identity: the same accessor called with the same args returns a
  *    deeply-equal key (so TanStack's structural cache lookup works).
  *  - Parameterized accessors embed their arguments in order.
- *  - `invalidateAllCatalogs` calls `invalidateQueries` exactly once for each
- *    catalog key, with a single-element `queryKey` matching the catalog root.
+ *  - `invalidateAllCatalogs` refreshes each catalog root and the Settings
+ *    count prefix that summarizes catalog data.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { qk, invalidateAllCatalogs } from './keys';
@@ -48,7 +48,7 @@ describe('qk.* factory — key identity', () => {
 });
 
 describe('invalidateAllCatalogs', () => {
-  it('calls invalidateQueries once per catalog key', async () => {
+  it('calls invalidateQueries for every catalog key and the Settings count prefix', async () => {
     const invalidateQueries = vi.fn().mockResolvedValue(undefined);
     const qc = { invalidateQueries } as unknown as Parameters<
       typeof invalidateAllCatalogs
@@ -56,7 +56,7 @@ describe('invalidateAllCatalogs', () => {
 
     await invalidateAllCatalogs(qc);
 
-    expect(invalidateQueries).toHaveBeenCalledTimes(qk.allCatalogKeys.length);
+    expect(invalidateQueries).toHaveBeenCalledTimes(qk.allCatalogKeys.length + 1);
   });
 
   it('each call uses a single-element query key matching the catalog root', async () => {
@@ -71,6 +71,7 @@ describe('invalidateAllCatalogs', () => {
       // eslint-disable-next-line @tingting/no-bare-query-key -- test assertion verifying invalidateAllCatalogs wraps each catalog prefix in [key]
       expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: [key] });
     }
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: [qk.configCounts.base] });
   });
 
   it('returns a promise that resolves after all invalidations', async () => {
@@ -84,7 +85,7 @@ describe('invalidateAllCatalogs', () => {
 
     const resolved = await result;
     expect(Array.isArray(resolved)).toBe(true);
-    expect(resolved).toHaveLength(qk.allCatalogKeys.length);
+    expect(resolved).toHaveLength(qk.allCatalogKeys.length + 1);
   });
 });
 

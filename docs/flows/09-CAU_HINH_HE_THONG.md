@@ -1,7 +1,7 @@
 # Cấu hình hệ thống
 
 > Tài liệu QA testing & Hướng dẫn sử dụng — Quản lý cấu hình toàn hệ thống
-> **Route:** `/config` (hub) + 13 sub-pages
+> **Route:** `/config` (hub) + các sub-page cấu hình
 > **Roles:** ADMIN (CRUD), MANAGER (view + limited edit), ACCOUNTANT (view only), DRIVER (no access)
 
 ---
@@ -10,9 +10,9 @@
 
 ### 1.1 Mô tả
 
-Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị 13 thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
+Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ liệu nền tảng. Hub page hiển thị các thẻ, mỗi thẻ liên kết đến một sub-page cấu hình.
 
-### 1.2 13 Sub-pages
+### 1.2 Các sub-page
 
 | # | Tên | Route | Mô tả |
 |---|-----|-------|-------|
@@ -29,6 +29,7 @@ Trang **Cấu hình hệ thống** là trung tâm quản trị toàn bộ dữ l
 | 11 | Phí quản lý | `/config/management-fees` | Tỷ lệ phí QL trừ P&L |
 | 12 | Loại container | `/config/container-types` | Danh mục loại container (20'DC, 20'OT, 20'RF, 40'DC, 40'HC...) |
 | 13 | Cảng / Bãi | `/config/ports` | Danh mục cảng, bãi (chủ yếu tại Hải Phòng) |
+| 14 | Nhà cung cấp dầu | `/config/fuel-suppliers` | Danh mục cây dầu dùng khi phân bổ nhiên liệu cho chuyến xe |
 
 > **Module bổ sung (xem tài liệu riêng):**
 > - **Quản lý lốp xe** → [`15-QUAN_LY_LOP_XE.md`](./15-QUAN_LY_LOP_XE.md) — CRUD lốp, grid theo xe, cảnh báo bảo hành.
@@ -75,7 +76,7 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 
 ### 2.1 Hub `/config`
 
-13 thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ 13. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
+Các thẻ grid. Click thẻ → sub-page. ADMIN thấy đủ. MANAGER ẩn Cổ phần. ACCOUNTANT chỉ xem. DRIVER không thấy menu.
 
 ### 2.2 Định mức & Đơn giá nhiên liệu `/config/fuel`
 
@@ -101,6 +102,10 @@ Tất cả qua `/api/v1/catalog/*` (catalogs route) + `/api/v1/fleet/*` + `/api/
 | Ghi chú | Lý do thay đổi (tùy chọn) |
 
 **Sử dụng trong chuyến:** Khi kế toán nhập liệu chuyến (Pha 2), trường "Đơn giá thực tế" có nút **Đề xuất** — hệ thống tra bảng lịch sử để tìm giá hiệu lực tại ngày xuất phát của chuyến và tự điền. Kế toán có thể chấp nhận hoặc nhập giá khác.
+
+### 2.2.1 Nhà cung cấp dầu `/config/fuel-suppliers`
+
+Quản lý riêng các cây dầu được dùng tại phần **Phân bổ nơi đổ dầu**: tên, người liên hệ, số điện thoại và trạng thái. Chỉ nhà cung cấp dầu **Hoạt động** xuất hiện ở chuyến mới. Đặt **Ngừng** để dừng dùng cho chuyến mới; không xóa hoặc thay đổi các phân bổ và công nợ đã ghi nhận trước đó.
 
 ### 2.3 Tiền đi đường `/config/road-allowances`
 

@@ -22,6 +22,8 @@ interface CrudTableCommonProps<T extends { id: number }> {
   title: string;
   description: string;
   endpoint: string;
+  /** Optional unpaginated loader for configuration screens that must inspect a subset of a large catalogue. */
+  fetchItems?: () => Promise<T[]>;
   renderForm: (props: {
     item?: T;
     items: T[];
@@ -35,6 +37,8 @@ interface CrudTableCommonProps<T extends { id: number }> {
   showDelete?: boolean;
   onDelete?: (id: number) => void;
   sortFn?: (a: T, b: T) => number;
+  /** Limits a configuration view to the records relevant to that setting. */
+  filterItems?: (items: T[]) => T[];
   computeActiveIds?: (items: T[]) => Set<number>;
   rowStyle?: (item: T, isActive: boolean) => React.CSSProperties | undefined;
   toolbarLeft?: (ctx: { totalItems: number; activeCount: number }) => React.ReactNode;
@@ -61,8 +65,8 @@ type CrudTableProps<T extends { id: number }> = CrudTableCommonProps<T> & (
 );
 
 export function CrudTable<T extends { id: number }>({
-  title, description, endpoint, columns, renderCompactItem, compactItemAriaLabel, renderForm, colSpan,
-  showDelete = true, onDelete, sortFn, computeActiveIds, rowStyle,
+  title, description, endpoint, fetchItems, columns, renderCompactItem, compactItemAriaLabel, renderForm, colSpan,
+  showDelete = true, onDelete, sortFn, filterItems, computeActiveIds, rowStyle,
   toolbarLeft, backTo = '/config',
   emptyIllustration = 'empty-config.svg',
   emptyTitle = 'Chưa có dữ liệu',
@@ -80,6 +84,7 @@ export function CrudTable<T extends { id: number }>({
   const { data, refetch, isPending, isError } = useQuery({
     queryKey: qk.crud.entity(endpoint),
     queryFn: async () => {
+      if (fetchItems) return fetchItems();
       const r = await api.get<PaginatedResponse<T>>(endpoint);
       return r.items;
     },
@@ -89,12 +94,13 @@ export function CrudTable<T extends { id: number }>({
   const crud = useCRUD(endpoint, refresh);
 
   const rawItems = data ?? [];
+  const visibleItems = filterItems ? filterItems(rawItems) : rawItems;
   const tableColumns = columns ?? [];
-  const activeIds = computeActiveIds ? computeActiveIds(rawItems) : new Set<number>();
+  const activeIds = computeActiveIds ? computeActiveIds(visibleItems) : new Set<number>();
 
   const items = (() => {
-    if (!rawItems.length) return rawItems;
-    const arr = [...rawItems];
+    if (!visibleItems.length) return visibleItems;
+    const arr = [...visibleItems];
     if (computeActiveIds) {
       arr.sort((a, b) => {
         const aA = activeIds.has(a.id) ? 1 : 0;

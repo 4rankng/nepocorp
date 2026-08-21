@@ -387,6 +387,7 @@ export const qk = {
     salaryDefault: ['cfg-count', 'salary-default'],
     expenseCategories: ['cfg-count', 'expense-categories'],
     fuelConfig: ['cfg-count', 'fuel-config'],
+    fuelSuppliers: ['cfg-count', 'fuel-suppliers'],
     companyInfo: ['cfg-count', 'company-info'],
     containerTypes: ['cfg-count', 'container-types'],
     sealTypes: ['cfg-count', 'seal-types'],
@@ -432,10 +433,11 @@ void _catalogTypeGuard;
 export function invalidateAllCatalogs(qc: {
   invalidateQueries: (opts: { queryKey: readonly unknown[] }) => Promise<void>;
 }): Promise<void[]> {
-  return Promise.all(
-    qk.allCatalogKeys.map((key) =>
+  return Promise.all([
+    ...qk.allCatalogKeys.map((key) =>
       // eslint-disable-next-line @tingting/no-bare-query-key -- key is a canonical catalog prefix from allCatalogKeys, not an arbitrary string
       qc.invalidateQueries({ queryKey: [key] }),
     ),
-  );
+    qc.invalidateQueries({ queryKey: [qk.configCounts.base] }),
+  ]);
 }

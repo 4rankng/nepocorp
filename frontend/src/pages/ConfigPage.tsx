@@ -9,6 +9,7 @@ import { useSearch } from '../context/SearchContext';
 import { CONFIG_ITEMS } from '../data/searchRegistry';
 import { usePageAnimations } from '../hooks/animations';
 import { qk } from '../api/keys';
+import { configClient } from '../api/configClient';
 import { Role } from '@tingting/shared';
 import type { CompanyInfo } from '@tingting/shared';
 import './ConfigPage.css';
@@ -52,6 +53,7 @@ export default function ConfigPage() {
     salaryDefault,
     expenseCategories,
     fuelConfig,
+    fuelSuppliers,
     companyInfo,
     forwarderExpenseTypes,
     debitNoteTemplates,
@@ -71,6 +73,7 @@ export default function ConfigPage() {
       { queryKey: qk.configCounts.salaryDefault,         queryFn: () => api.get<{ defaultStartDay?: number; defaultEndDay?: number } | null>('/salary-periods/default'), staleTime: 60_000 },
       { queryKey: qk.configCounts.expenseCategories,     queryFn: () => api.get<ListResponse>('/expense-categories?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.fuelConfig,            queryFn: () => api.get<{ id: number } | null>('/fuel-config'),       staleTime: 60_000 },
+      { queryKey: qk.configCounts.fuelSuppliers,          queryFn: configClient.getAllSuppliers,                             staleTime: 60_000 },
       { queryKey: qk.configCounts.companyInfo,           queryFn: () => api.get<CompanyInfo>('/company-info'),                staleTime: 60_000 },
       { queryKey: qk.configCounts.forwarderExpenseTypes, queryFn: () => api.get<ListResponse>('/forwarder-expense-types?limit=1'), staleTime: 60_000 },
       { queryKey: qk.configCounts.debitNoteTemplates,   queryFn: () => api.get<ListResponse>('/debit-note-templates?limit=1'),   staleTime: 60_000 },
@@ -106,6 +109,7 @@ export default function ConfigPage() {
 
   const statusInfo: Record<string, { status: string; statusColor?: string }> = {
     'fuel':                     { status: fuelStatus() },
+    'fuel-suppliers':           { status: countLabel(fuelSuppliers.data?.filter(item => item.isFuelSupplier && item.status === 'ACTIVE').length, 'nhà CC') },
     'company-info':             { status: companyInfoStatus() },
     'road-allowances':          { status: countLabel(roadAllowances.data?.total, 'tuyến') },
     'trip-expense':             { status: '5 mục', statusColor: '#10B981' },

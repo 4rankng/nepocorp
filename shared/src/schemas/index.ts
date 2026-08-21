@@ -790,10 +790,10 @@ export const salaryPeriodDefaultSchema = z.object({
 
 export const supplierSchema = z.object({
   name: z.string().min(1),
-  contactPerson: z.string().optional(),
-  phone: z.string().optional(),
-  taxCode: z.string().optional(),
-  note: z.string().optional(),
+  contactPerson: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  taxCode: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
   linkedCustomerId: z.number().int().positive().optional().nullable(),
   isFuelSupplier: z.boolean().optional().default(false),
