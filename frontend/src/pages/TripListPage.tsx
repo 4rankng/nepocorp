@@ -14,13 +14,39 @@ import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
-import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
 import { columnClass, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 import { onboardingEvents } from '../lib/onboardingEvents';
+
+export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
+  const totalCost = Number(trip.totalCost ?? 0);
+  const grossProfit = getTripDisplayGrossProfit(trip);
+  const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
+
+  return (
+    <div className="quick-card-summary">
+      <div>
+        <span>Tổng chi phí</span>
+        <b>{totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}</b>
+        {ancillaryCosts.length > 0 && (
+          <div className="quick-card-cost-details">
+            {ancillaryCosts.map((cost) => (
+              <span key={cost.label}>{cost.label}: {formatMoney(cost.amount)} ₫</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div>
+        <span>LN gộp</span>
+        <b className={grossProfit < 0 ? 'money-loss' : ''}>{grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}</b>
+      </div>
+    </div>
+  );
+}
 
 export default function TripListPage() {
   const rootRef = useTripListAnimations();
@@ -320,7 +346,7 @@ export default function TripListPage() {
       );
       for (const res of remaining) allTrips.push(...res.items);
     }
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Tổng chi phí', 'LN gộp', 'Trạng thái'];
+    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'Trạng thái'];
     const rows = allTrips.map((t) => {
       const containers = (t as unknown as { containers?: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }> }).containers ?? [];
       const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
@@ -339,6 +365,8 @@ export default function TripListPage() {
         (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
         t.revenue ?? '',
         t.totalCost ?? '',
+        t.twoPointDeliveryBonus ?? '',
+        t.vehicleShiftAllowance ?? '',
         getTripDisplayGrossProfit(t),
         t.status,
       ];
@@ -355,8 +383,8 @@ export default function TripListPage() {
     await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
       title: 'SỔ CHUYẾN ĐI',
       subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
-      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
-      totalsColumns: [5, 8, 10, 11, 12, 13, 14],
+      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
+      totalsColumns: [5, 8, 10, 11, 12, 13, 14, 15, 16],
       totalsLabel: 'TỔNG CỘNG',
     });
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);
@@ -557,8 +585,6 @@ export default function TripListPage() {
               const draft = quickDrafts[trip.id] ?? quickDraftFromTrip(trip);
               const selected = selectedIds.has(trip.id);
               const routeLabel = trip.route?.name ?? '—';
-              const totalCost = Number(trip.totalCost ?? 0);
-              const grossProfit = getTripDisplayGrossProfit(trip);
               const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
               const quickFields: Array<{ key: keyof TripQuickEditDraft; label: string; unit?: string }> = [
                 { key: 'fuelLiters', label: 'Dầu', unit: 'L' },
@@ -611,16 +637,7 @@ export default function TripListPage() {
                     ))}
                   </div>
 
-                  <div className="quick-card-summary">
-                    <div>
-                      <span>Tổng chi phí</span>
-                      <b>{totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}</b>
-                    </div>
-                    <div>
-                      <span>LN gộp</span>
-                      <b className={grossProfit < 0 ? 'money-loss' : ''}>{grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}</b>
-                    </div>
-                  </div>
+                  <QuickEditTripSummary trip={trip} />
                   {quickErrors[trip.id] && <div className="quick-card-error">{quickErrors[trip.id]}</div>}
                 </div>
               );

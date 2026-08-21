@@ -11,7 +11,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
-  getTripDistance, getTripDisplayGrossProfit,
+  getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
@@ -408,7 +408,22 @@ export function buildTripColumns(
       id: 'totalCost',
       header: 'Tổng chi phí',
       accessorFn: (row) => Number(row.totalCost ?? 0),
-      cell: ({ row }) => moneyCell(Number(row.original.totalCost ?? 0)),
+      cell: ({ row }) => {
+        const trip = row.original;
+        const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
+        return (
+          <div className="trip-cost-cell">
+            {moneyCell(Number(trip.totalCost ?? 0))}
+            {ancillaryCosts.length > 0 && (
+              <div className="trip-cost-cell__ancillary" aria-label="Chi phí lưu ca và trả hàng 2 điểm">
+                {ancillaryCosts.map((cost) => (
+                  <span key={cost.label}>{cost.label}: {formatMoney(cost.amount)} ₫</span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: 'grossProfit',

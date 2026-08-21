@@ -118,6 +118,14 @@
 }
 .trip-list-page .trip-mcard__meta .val.warn { color: var(--d-amber); }
 .trip-list-page .trip-mcard__meta .val.empty { color: var(--ink-3); opacity: 0.7; font-style: italic; font-family: var(--font-body); font-weight: 500; }
+.trip-list-page .trip-mcard__cost-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  line-height: 1.3;
+}
 
 .trip-list-page .trip-mcard--quick {
   cursor: default;
@@ -192,6 +200,19 @@
   font-size: var(--fs-sm);
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+.trip-list-page .quick-card-cost-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+.trip-list-page .quick-card-summary .quick-card-cost-details span {
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  line-height: 1.3;
+  text-transform: none;
 }
 .trip-list-page .quick-card-error {
   color: var(--danger);

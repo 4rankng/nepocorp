@@ -482,6 +482,23 @@
   white-space: nowrap;
 }
 
+.trip-list-page .trip-cost-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.trip-list-page .trip-cost-cell__ancillary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
 .trip-list-page .status-cell {
   display: flex;
   flex-direction: column;

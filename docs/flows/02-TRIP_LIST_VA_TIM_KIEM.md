@@ -72,11 +72,15 @@ Click header **Ngày tạo** hoặc **Tổng tiền** để sort. Click lại đ
 
 Bấm "Xuất CSV" → tải `chuyen-di-YYYY-MM-DD.csv`. File chứa dữ liệu đang hiển thị (sau lọc). Có BOM UTF-8 cho Excel.
 
-### 2.6 Cảnh báo nhiên liệu ⚠️
+### 2.6 Phân rã chi phí lưu ca và trả hàng 2 điểm
+
+Ở cột **Tổng chi phí**, chuyến xe nhà có khoản **Trả hàng 2 điểm** hoặc **Lưu ca xe** lớn hơn 0 sẽ hiện từng khoản ngay dưới số tổng. Các khoản này đã nằm trong Tổng chi phí; dòng phân rã chỉ giúp đối chiếu sau khi tải lại danh sách, không cộng thêm lần nữa. Chuyến xe ngoài không hiển thị các khoản này.
+
+### 2.7 Cảnh báo nhiên liệu ⚠️
 
 Icon ⚠️ hiện khi `(fuelAmount / distance) * 100 > 8.5` L/100km. Hover xem chi tiết mức tiêu thụ.
 
-### 2.7 Actions
+### 2.8 Actions
 
 | Action | Điều kiện |
 |--------|-----------|
@@ -125,7 +129,15 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | Không items, có customerRate + distance | customerRate × distance |
 | Null | "-" |
 
-### 4.3 Phân trang
+### 4.3 Cột Tổng chi phí
+
+| Điều kiện | Hiển thị |
+|-----------|----------|
+| Có Trả hàng 2 điểm hoặc Lưu ca xe (chuyến xe nhà) | Số **Tổng chi phí** và từng khoản phát sinh ở dòng bên dưới |
+| Không có hai khoản trên hoặc là xe ngoài | Chỉ hiện số **Tổng chi phí** |
+| DRIVER | Ẩn cột hoàn toàn |
+
+### 4.4 Phân trang
 
 - PAGE_SIZE = 10 (cố định)
 - Tự reset về trang 1 khi đổi filter/search
@@ -185,7 +197,7 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 
 | TC-ID | Tiêu đề | Tiền điều kiện | Các bước | Kết quả mong đợi | Ưu tiên |
 |-------|---------|----------------|----------|-------------------|---------|
-| TC-TS-027 | Xuất CSV thành công | MANAGER, có dữ liệu | Click "Xuất CSV" | File CSV tải về, có BOM UTF-8, 8 cột | High |
+| TC-TS-027 | Xuất CSV thành công | MANAGER, có dữ liệu | Click "Xuất CSV" | File CSV tải về, có BOM UTF-8, 18 cột, gồm Trả hàng 2 điểm và Lưu ca xe | High |
 | TC-TS-028 | CSV chỉ xuất dữ liệu đã lọc | Lọc "Hoàn thành", 5 kết quả | Xuất CSV | Chỉ chứa 5 chuyến hoàn thành | High |
 | TC-TS-029 | CSV disabled khi trống | Danh sách trống | Kiểm tra nút | Nút disabled | Medium |
 

@@ -10,7 +10,7 @@ import { formatCurrency } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
-  getTripDistance, getTripDisplayGrossProfit,
+  getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
@@ -37,6 +37,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
   const revenue = Number(trip.revenue ?? 0);
   const totalCost = Number(trip.totalCost ?? 0);
   const grossProfit = getTripDisplayGrossProfit(trip);
+  const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
   const missingIndicators = getMissingIndicators(trip);
   const tripContainers: TripListContainer[] = (trip as TripListRow).containers ?? [];
   const typeCodes = Array.from(new Set(tripContainers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
@@ -140,6 +141,13 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
           <span className={totalCost > 0 ? 'val' : 'val empty'}>
             {totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}
           </span>
+          {ancillaryCosts.length > 0 && (
+            <span className="trip-mcard__cost-details">
+              {ancillaryCosts.map((cost) => (
+                <span key={cost.label}>{cost.label}: {formatMoney(cost.amount)} ₫</span>
+              ))}
+            </span>
+          )}
         </div>
         <div className="mm">
           <span className="lab">LN gộp</span>

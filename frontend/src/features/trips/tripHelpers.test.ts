@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TripDetail } from '@tingting/shared';
 import {
+  getAncillaryTripCostBreakdown,
   getExternalTripFinancials,
   getExternalTripPreviewGrossProfit,
   getTripDisplayGrossProfit,
@@ -88,5 +89,28 @@ describe('getTripDisplayGrossProfit', () => {
     } as TripDetail;
 
     expect(getTripDisplayGrossProfit(trip)).toBe(-876500);
+  });
+});
+
+describe('getAncillaryTripCostBreakdown', () => {
+  it('keeps two-point delivery and vehicle-shift costs visible after a trip is reloaded', () => {
+    const trip = {
+      carrierType: 'OWN',
+      twoPointDeliveryBonus: '100000',
+      vehicleShiftAllowance: '200000',
+    } as TripDetail;
+
+    expect(getAncillaryTripCostBreakdown(trip)).toEqual([
+      { label: 'Trả hàng 2 điểm', amount: 100000 },
+      { label: 'Lưu ca xe', amount: 200000 },
+    ]);
+  });
+
+  it('does not show own-truck ancillary costs for an external carrier trip', () => {
+    expect(getAncillaryTripCostBreakdown({
+      carrierType: 'EXTERNAL',
+      twoPointDeliveryBonus: '100000',
+      vehicleShiftAllowance: '200000',
+    } as TripDetail)).toEqual([]);
   });
 });
