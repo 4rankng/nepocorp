@@ -61,7 +61,7 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
                 <span className="v neg"><NegMoney value={fuelCost} /></span>
               </div>
               <div className="pl-row">
-                <span className="k"><span className="swatch swatch--road" />Tiền đi đường</span>
+                <span className="k"><span className="swatch swatch--road" />Tiền đi đường{showTwoPointBonus ? ' (đã gồm trả hàng 2 điểm)' : ''}</span>
                 <span className={`v ${roadAllowance === 0 ? 'zero' : 'neg'}`}><NegMoney value={roadAllowance} /></span>
               </div>
               {tollsDiscount > 0 && (
@@ -78,12 +78,6 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
                 <span className="k"><span className="swatch swatch--road" />Tiền lương lái xe</span>
                 <span className={`v ${driverSalary === 0 ? 'zero' : ''}`}><NegMoney value={driverSalary} /></span>
               </div>
-              {showTwoPointBonus && (
-                <div className="pl-row">
-                  <span className="k"><span className="swatch swatch--road" />Thưởng giao 2 điểm</span>
-                  <span className="v neg"><NegMoney value={twoPointDeliveryBonus} /></span>
-                </div>
-              )}
               {showShiftAllowance && (
                 <div className="pl-row">
                   <span className="k"><span className="swatch swatch--road" />Lưu ca xe</span>

@@ -74,11 +74,11 @@ Bấm "Xuất CSV" → tải `chuyen-di-YYYY-MM-DD.csv`. File chứa dữ liệu
 
 ### 2.6 Tổng tiền đi đường lái xe nhận
 
-Ở bảng, thẻ chuyến trên điện thoại và CSV, **Tổng tiền đi đường lái xe nhận** là giá trị `totalRoadAllowance` mà lái xe thực nhận. Không cộng **phí trạm/vé** (`tollCost`) vào con số này; phí trạm vẫn được tính riêng trong **Tổng chi phí** và lợi nhuận của chuyến.
+Ở bảng, thẻ chuyến trên điện thoại và CSV, **Tổng tiền đi đường lái xe nhận** là giá trị `totalRoadAllowance`: tiền đường ròng sau điều chỉnh cộng **Trả hàng 2 điểm**. Không cộng **phí trạm/vé** (`tollCost`) hay **Lưu ca xe** vào con số này; phí trạm vẫn được tính riêng trong **Tổng chi phí** và lợi nhuận của chuyến.
 
 ### 2.7 Phân rã chi phí lưu ca và trả hàng 2 điểm
 
-Ở cột **Tổng chi phí**, chuyến xe nhà có khoản **Trả hàng 2 điểm** hoặc **Lưu ca xe** lớn hơn 0 sẽ hiện từng khoản ngay dưới số tổng. Các khoản này đã nằm trong Tổng chi phí; dòng phân rã chỉ giúp đối chiếu sau khi tải lại danh sách, không cộng thêm lần nữa. Chuyến xe ngoài không hiển thị các khoản này.
+Ở cột **Tổng chi phí**, chuyến xe nhà có **Lưu ca xe** lớn hơn 0 sẽ hiện khoản này ngay dưới số tổng. **Trả hàng 2 điểm** đã nằm trong `totalRoadAllowance` nên không lặp lại ở đây. Các khoản đều đã nằm trong Tổng chi phí; dòng phân rã chỉ giúp đối chiếu sau khi tải lại danh sách, không cộng thêm lần nữa. Chuyến xe ngoài không hiển thị khoản này.
 
 ### 2.8 Cảnh báo nhiên liệu ⚠️
 

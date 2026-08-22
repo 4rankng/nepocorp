@@ -261,7 +261,7 @@ test('fuel liters always integer even when raw result is x.xx5', () => {
   assert.strictEqual(result.totalFuelCost, 100000);
 });
 
-test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', () => {
+test('two-point delivery is included in driver road money and total cost exactly once', () => {
   const input = {
     ...defaultBaseInput,
     twoPointDeliveryBonus: 200000,
@@ -270,7 +270,9 @@ test('twoPointDeliveryBonus and vehicleShiftAllowance included in totalCost', ()
 
   const result = computeTripTotals(input);
 
-  // totalCost = 1700000 (fuel) + 1940000 (road) + 110000 (tolls) + 100000 (tollsDiscount) + 800000 (salary) + 200000 + 350000 = 5200000
+  // totalRoadAllowance = 1940000 (road) + 200000 (two-point delivery) = 2140000
+  assert.strictEqual(result.totalRoadAllowance, 2140000);
+  // totalCost = 1700000 (fuel) + 2140000 (driver road money) + 110000 (tolls) + 100000 (tollsDiscount) + 800000 (salary) + 350000 (vehicle shift) = 5200000
   assert.strictEqual(result.totalCost, 5200000);
   assert.strictEqual(result.grossProfit, 4000000 - 5200000);
 });
@@ -412,6 +414,20 @@ test('tollCost NOT included in totalCost for EXTERNAL trips', () => {
   assert.strictEqual(r.tollCost, 210000);
   // EXTERNAL: totalCost = externalFreightCost only, tollCost not added
   assert.strictEqual(r.totalCost, 5400000);
+});
+
+test('twoPointDeliveryBonus included in road allowance for OWN, excluded for EXTERNAL', () => {
+  // Base road 500,000 + two-point 100,000: the driver's road money only
+  // folds the payment in for own trucks.
+  const own = computeTripTotals({ ...BASE_A4, twoPointDeliveryBonus: 100000 });
+  const external = computeTripTotals({
+    ...BASE_A4,
+    twoPointDeliveryBonus: 100000,
+    carrierType: 'EXTERNAL',
+    externalFreightCost: 5400000,
+  });
+  assert.strictEqual(own.totalRoadAllowance, 600000);
+  assert.strictEqual(external.totalRoadAllowance, 500000);
 });
 
 // --- Commission (recordedRevenue) tests ------------------------------------

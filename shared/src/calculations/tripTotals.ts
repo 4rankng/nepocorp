@@ -44,6 +44,7 @@ export interface ComputeTripTotalsOutput {
   totalFuelCost: number;
   fuelPriceVariance: number;
   effectiveFuelPrice: number;
+  /** Cash road allowance received by the driver, including two-point delivery. */
   totalRoadAllowance: number;
   tollCost: number;            // tollsStations × tollPerStation; separate from road allowance
   totalCost: number;
@@ -75,6 +76,22 @@ export function computeRoadAllowance(params: {
     : (params.base - (params.tollsStations * params.tollPerStation) + (params.hasReturnCargo ? params.returnCargoBonus : 0));
   const raw = tongTienDiDuong - params.tollsDiscount;
   return Math.max(0, raw);
+}
+
+/**
+ * Cash road allowance the driver receives for the trip. A two-point delivery
+ * is paid together with the road money, while vehicle-shift allowance remains
+ * a separate operating cost.
+ */
+export function computeDriverRoadAllowance(params: Parameters<typeof computeRoadAllowance>[0] & {
+  roadAllowanceOverride?: number | null;
+  twoPointDeliveryBonus: number;
+}): number {
+  const baseRoadAllowance = params.roadAllowanceOverride != null && params.roadAllowanceOverride > 0
+    ? params.roadAllowanceOverride
+    : computeRoadAllowance(params);
+
+  return baseRoadAllowance + params.twoPointDeliveryBonus;
 }
 
 export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTotalsOutput {
@@ -126,7 +143,8 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     ? Math.round(totalFuelLiters * input.fuelActualUnitPrice) - Math.round(totalFuelLiters * input.fuelUnitPrice)
     : 0;
 
-  const computedRoadAllowance = computeRoadAllowance({
+  const carrierType = input.carrierType ?? 'OWN';
+  const totalRoadAllowance = computeDriverRoadAllowance({
     base: input.roadAllowanceBase,
     tollsDiscount: input.tollsDiscount,
     tollsAddition: input.tollsAddition,
@@ -134,15 +152,11 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     tollPerStation: input.tollPerStation,
     returnCargoBonus: input.returnCargoBonus,
     hasReturnCargo: input.hasReturnCargo,
+    roadAllowanceOverride: input.roadAllowanceOverride,
+    twoPointDeliveryBonus: carrierType === 'OWN' ? input.twoPointDeliveryBonus : 0,
   });
 
-  const totalRoadAllowance =
-    input.roadAllowanceOverride != null && input.roadAllowanceOverride > 0
-      ? input.roadAllowanceOverride
-      : computedRoadAllowance;
-
   const vatRate = input.vatRate ?? 0;
-  const carrierType = input.carrierType ?? 'OWN';
 
   // Freight ex-VAT (for P&L; AR uses incl-VAT)
   const freightExVat = computeExVatAmount(input.revenue, vatRate);
@@ -184,9 +198,10 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
     totalCost = extCost;
     grossProfit = externalMargin;
   } else {
-    // OWN trip: total cost = fuel + road allowance (net) + tolls + ticket paid by company + salary + bonuses
+    // OWN trip: total cost = fuel + road allowance (which includes two-point
+    // delivery) + tolls + ticket paid by company + salary + vehicle shift.
     totalCost = totalFuelCost + totalRoadAllowance + tollCost + input.tollsDiscount + input.driverSalary
-      + input.twoPointDeliveryBonus + input.vehicleShiftAllowance;
+      + input.vehicleShiftAllowance;
     grossProfit = recordedRevenue - totalCost;
   }
 

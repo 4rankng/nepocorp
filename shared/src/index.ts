@@ -143,7 +143,7 @@ export {
   validateContainerNumber,
   suggestCorrections,
 } from './calculations/iso6346';
-export { computeExVatAmount, computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
+export { computeDriverRoadAllowance, computeExVatAmount, computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
 export { computeFifoAging } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';

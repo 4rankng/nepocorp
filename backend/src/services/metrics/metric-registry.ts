@@ -99,8 +99,8 @@ const REGISTRY: Record<string, MetricDef> = {
     labelVi: 'Tiền đi đường',
     unit: 'vnd',
     category: 'calculated',
-    formula: 'tollsAddition > 0 ? tollsAddition + returnCargoBonus : base - (stations × 55000) + returnCargoBonus; then - tollsDiscount',
-    source: { service: 'shared/calculations/tripTotals', method: 'computeRoadAllowance' },
+    formula: 'road allowance after override/calculation and toll discount + twoPointDeliveryBonus',
+    source: { service: 'shared/calculations/tripTotals', method: 'computeDriverRoadAllowance' },
     entityField: { entity: 'trips', field: 'totalRoadAllowance' },
   },
 

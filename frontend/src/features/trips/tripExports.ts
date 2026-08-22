@@ -27,7 +27,7 @@ const EXPORT_COLUMN_TYPES = [
 ] as const;
 
 /* Column indices (0-based) that should be summed in the totals row. */
-const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 13, 14]; // KM, Dầu (L), Giá trị dầu, Tiền đi đường lái xe nhận, Doanh thu, Trả hàng 2 điểm, Lưu ca xe
+const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 14]; // KM, Dầu (L), Giá trị dầu, Tiền đi đường lái xe nhận (đã gồm trả hàng 2 điểm), Doanh thu, Lưu ca xe
 
 export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   const commonParams: TripExportFilters = {

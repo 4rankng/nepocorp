@@ -68,7 +68,7 @@ Cổng thông tin lái xe (Driver Portal) là giao diện mobile-first dành ri�
 |---|-----|-------|
 | 1 | **Lương cơ bản tháng** | `base_salary` của lái xe |
 | 2 | **Lương phân bổ chuyến** (B1.2 — relabel, ghi rõ "không cộng vào thu nhập thực nhận") | Σ `driver_salary` chuyến LOCKED trong tháng |
-| 3 | **Tiền đi đường đã lĩnh** | Σ `totalRoadAllowance` chuyến LOCKED trong tháng |
+| 3 | **Tiền đi đường đã lĩnh** | Σ `totalRoadAllowance` chuyến LOCKED trong tháng (đã gồm Trả hàng 2 điểm) |
 | 4 | **Đã tạm ứng + đã thanh toán** | Từ sổ cái `entity_type='DRIVER'`, áp dụng quy ước `credit − debit` |
 | 5 | **Còn lại** | `(Lương CB + Lương SX + Tiền đi đường) − (Tạm ứng + Kỷ luật + Đã thanh toán)` |
 

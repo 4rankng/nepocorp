@@ -13,7 +13,7 @@ const trip = (overrides: Partial<TripDetail> = {}): TripDetail => ({
   revenue: '10800000',
   customerCommission: '1000000',
   totalFuelCost: '3000000',
-  totalRoadAllowance: '1200000',
+  totalRoadAllowance: '1300000',
   tollCost: '220000',
   tollsDiscount: '80000',
   driverSalary: '500000',
@@ -31,7 +31,7 @@ describe('finance trip detail', () => {
     expect(detail.revenue).toBe(9_000_000);
     expect(detail.customerCommission).toBe(1_000_000);
     expect(detail.tollAndCompanyTickets).toBe(300_000);
-    expect(detail.driverAndAllowances).toBe(800_000);
+    expect(detail.driverAndAllowances).toBe(700_000);
     expect(detail.totalCost).toBe(5_300_000);
     expect(detail.profit).toBe(3_700_000);
     expect(detail.costMatches).toBe(true);

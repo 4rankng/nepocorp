@@ -135,27 +135,23 @@ export function getTripDisplayGrossProfit(trip: TripDetail): number {
 }
 
 export interface AncillaryTripCost {
-  label: 'Trả hàng 2 điểm' | 'Lưu ca xe';
+  label: 'Lưu ca xe';
   amount: number;
 }
 
 /**
- * Keep own-truck ancillary costs visible outside the trip form. They are
- * persisted independently, but used to be indistinguishable inside the list's
- * single "Tổng chi phí" value after the page refetched.
+ * Keep the own-truck vehicle-shift cost visible outside the trip form.
+ * Two-point delivery is included in totalRoadAllowance, so repeating it below
+ * the total cost would make the list look as if it were charged twice.
  */
 export function getAncillaryTripCostBreakdown(trip: Pick<TripDetail,
-  'carrierType' | 'twoPointDeliveryBonus' | 'vehicleShiftAllowance'
+  'carrierType' | 'vehicleShiftAllowance'
 >): AncillaryTripCost[] {
   if (trip.carrierType === 'EXTERNAL') return [];
 
-  const twoPointDeliveryBonus = Number(trip.twoPointDeliveryBonus ?? 0);
   const vehicleShiftAllowance = Number(trip.vehicleShiftAllowance ?? 0);
 
   return [
-    ...(twoPointDeliveryBonus > 0
-      ? [{ label: 'Trả hàng 2 điểm' as const, amount: twoPointDeliveryBonus }]
-      : []),
     ...(vehicleShiftAllowance > 0
       ? [{ label: 'Lưu ca xe' as const, amount: vehicleShiftAllowance }]
       : []),

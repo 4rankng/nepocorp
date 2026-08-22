@@ -93,7 +93,7 @@ describe('getTripDisplayGrossProfit', () => {
 });
 
 describe('getAncillaryTripCostBreakdown', () => {
-  it('keeps two-point delivery and vehicle-shift costs visible after a trip is reloaded', () => {
+  it('keeps vehicle-shift cost visible without repeating two-point delivery', () => {
     const trip = {
       carrierType: 'OWN',
       twoPointDeliveryBonus: '100000',
@@ -101,7 +101,6 @@ describe('getAncillaryTripCostBreakdown', () => {
     } as TripDetail;
 
     expect(getAncillaryTripCostBreakdown(trip)).toEqual([
-      { label: 'Trả hàng 2 điểm', amount: 100000 },
       { label: 'Lưu ca xe', amount: 200000 },
     ]);
   });

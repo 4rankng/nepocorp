@@ -4,7 +4,7 @@ import { TripStatus, type TripDetail } from '@tingting/shared';
 import { buildTripListExportRows, QuickEditTripSummary, TRIP_LIST_EXPORT_HEADERS } from './TripListPage';
 
 describe('QuickEditTripSummary', () => {
-  it('keeps persisted two-point delivery and vehicle-shift costs visible in mobile quick edit', () => {
+  it('keeps vehicle-shift cost visible without repeating two-point delivery', () => {
     const trip = {
       id: 14,
       status: TripStatus.COMPLETED,
@@ -16,7 +16,7 @@ describe('QuickEditTripSummary', () => {
     render(<QuickEditTripSummary trip={trip} />);
 
     expect(screen.getByText('8.626.606 ₫')).toBeTruthy();
-    expect(screen.getByText('Trả hàng 2 điểm: 100.000 ₫')).toBeTruthy();
+    expect(screen.queryByText('Trả hàng 2 điểm: 100.000 ₫')).toBeNull();
     expect(screen.getByText('Lưu ca xe: 200.000 ₫')).toBeTruthy();
   });
 });

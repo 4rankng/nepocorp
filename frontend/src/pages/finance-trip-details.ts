@@ -68,7 +68,7 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
   const tollAndCompanyTickets = isExternal ? 0 : amount(trip.tollCost) + amount(trip.tollsDiscount);
   const driverAndAllowances = isExternal
     ? 0
-    : amount(trip.driverSalary) + amount(trip.twoPointDeliveryBonus) + amount(trip.vehicleShiftAllowance);
+    : amount(trip.driverSalary) + amount(trip.vehicleShiftAllowance);
   const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
   const totalCost = amount(trip.totalCost);
   const costDifference = totalCost - reconstructedCost;

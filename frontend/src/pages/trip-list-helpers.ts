@@ -33,10 +33,22 @@ export function parseDraftNumber(value: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/**
+ * Quick edit adjusts the road component the same way the form's override
+ * field does: before the two-point delivery payment is folded in.
+ * totalRoadAllowance already includes that payment, so seeding the draft from
+ * it directly would re-add the bonus as an override on every save.
+ */
+function quickEditRoadComponent(trip: TripDetail): number {
+  const total = Number(trip.totalRoadAllowance ?? 0);
+  if (trip.carrierType === 'EXTERNAL') return total;
+  return Math.max(0, total - Number(trip.twoPointDeliveryBonus ?? 0));
+}
+
 export function quickDraftFromTrip(trip: TripDetail): TripQuickEditDraft {
   return {
     fuelLiters: draftNumber(trip.fuelLitersOverride ?? trip.fuelLiters),
-    roadAllowance: draftNumber(trip.roadAllowanceOverride ?? trip.totalRoadAllowance),
+    roadAllowance: draftNumber(trip.roadAllowanceOverride ?? quickEditRoadComponent(trip)),
     driverSalary: draftNumber(trip.driverSalary),
     revenue: draftNumber(trip.revenue),
   };
@@ -62,6 +74,7 @@ export function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDr
   const driverSalary = parseDraftNumber(draft.driverSalary);
   const revenue = parseDraftNumber(draft.revenue);
   const fuelLitersChanged = draft.fuelLiters !== original.fuelLiters;
+  const roadAllowanceChanged = draft.roadAllowance !== original.roadAllowance;
 
   return {
     legs: (trip.legs ?? []).map((leg) => ({
@@ -84,7 +97,7 @@ export function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDr
     tollsAddition: Number(trip.tollsAddition ?? 0),
     tollsStations: trip.tollsStations ?? 0,
     hasReturnCargo: trip.hasReturnCargo ?? false,
-    roadAllowanceOverride: roadAllowance ?? null,
+    roadAllowanceOverride: roadAllowanceChanged ? (roadAllowance ?? null) : (trip.roadAllowanceOverride != null ? Number(trip.roadAllowanceOverride) : null),
     driverSalary: driverSalary ?? 0,
     revenue: revenue ?? 0,
     customerCommission: Number(trip.customerCommission ?? 0),

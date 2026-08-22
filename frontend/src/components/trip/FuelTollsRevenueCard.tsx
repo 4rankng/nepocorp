@@ -6,6 +6,7 @@ import { CheckboxCard } from './CheckboxCard';
 import { SectionDivider } from './SectionDivider';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { FuelAllocationEditor } from './FuelAllocationEditor';
+import { computeDriverRoadAllowance } from '@tingting/shared';
 
 interface FuelTollsRevenueCardProps {
   collapsible?: boolean;
@@ -94,17 +95,20 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         <span>Lái xe thực lĩnh:</span>
         <span className="mono" style={{ color: 'var(--brand, #10B981)' }}>
           {(() => {
-            const base = Number(form.roadAllowanceBaseApplied) || 0;
-            const discount = Number(form.tollsDiscount) || 0;
-            const addition = Number(form.tollsAddition) || 0;
-            const stations = Number(form.tollsStations) || 0;
-            const perStation = form.tollPerStationApplied ?? 55000;
-            const returnBonus = form.hasReturnCargo ? (form.returnCargoBonusApplied ?? 300000) : 0;
-            const tongTien = addition > 0 ? (addition + returnBonus) : (base - (stations * perStation) + returnBonus);
+            const roadAllowance = computeDriverRoadAllowance({
+              base: Number(form.roadAllowanceBaseApplied) || 0,
+              tollsDiscount: Number(form.tollsDiscount) || 0,
+              tollsAddition: Number(form.tollsAddition) || 0,
+              tollsStations: Number(form.tollsStations) || 0,
+              tollPerStation: form.tollPerStationApplied ?? 55000,
+              returnCargoBonus: form.returnCargoBonusApplied ?? 300000,
+              hasReturnCargo: form.hasReturnCargo,
+              roadAllowanceOverride: form.roadAllowanceOverride === '' ? null : Number(form.roadAllowanceOverride),
+              twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus) || 0,
+            });
             const salary = Number(form.driverSalary) || 0;
-            const twoPoint = Number(form.twoPointDeliveryBonus) || 0;
             const shift = Number(form.vehicleShiftAllowance) || 0;
-            return Math.max(0, tongTien + salary + twoPoint + shift - discount).toLocaleString("vi-VN");
+            return Math.max(0, roadAllowance + salary + shift).toLocaleString("vi-VN");
           })()} đ
         </span>
       </div>

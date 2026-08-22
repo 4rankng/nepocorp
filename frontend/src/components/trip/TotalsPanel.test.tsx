@@ -53,7 +53,7 @@ describe('TotalsPanel', () => {
     expect(screen.getByText('Cước thuê ngoài')).toBeTruthy();
     expect(screen.queryByText('Phân bổ chi phí')).toBeNull();
     expect(screen.queryByText('Chi phí nhiên liệu')).toBeNull();
-    expect(screen.queryByText('Chi phí đường bộ')).toBeNull();
+    expect(screen.queryByText('Tiền đi đường & phí trạm')).toBeNull();
     expect(screen.queryByText('Tiền lương lái xe')).toBeNull();
     expect(screen.getByText('Lợi nhuận dự kiến')).toBeTruthy();
     expect(screen.getByText('Doanh thu ghi nhận (chưa VAT)')).toBeTruthy();
@@ -78,7 +78,7 @@ describe('TotalsPanel', () => {
 
     expect(screen.getByText('Phân bổ chi phí')).toBeTruthy();
     expect(screen.getByText('Chi phí nhiên liệu')).toBeTruthy();
-    expect(screen.getByText('Chi phí đường bộ')).toBeTruthy();
+    expect(screen.getByText('Tiền đi đường & phí trạm')).toBeTruthy();
     expect(screen.getByText('Tiền lương lái xe')).toBeTruthy();
     expect(screen.queryByText('Cước thuê ngoài')).toBeNull();
   });

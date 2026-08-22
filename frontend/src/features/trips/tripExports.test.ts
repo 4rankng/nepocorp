@@ -9,7 +9,7 @@ vi.mock('../../lib/csv', () => ({ downloadCSV }));
 describe('exportTripsToCSV', () => {
   beforeEach(() => downloadCSV.mockReset());
 
-  it('exports two-point delivery and vehicle-shift costs as separate, summed columns', async () => {
+  it('keeps two-point delivery as an audit column without summing it twice', async () => {
     const trip = {
       id: 14,
       tripCode: 'TRP-202607-0014',
@@ -34,6 +34,7 @@ describe('exportTripsToCSV', () => {
     expect(rows[0][11]).toBe(2480000);
     expect(rows[0][13]).toBe('100000');
     expect(rows[0][14]).toBe('200000');
-    expect(options.totalsColumns).toEqual(expect.arrayContaining([13, 14]));
+    expect(options.totalsColumns).toEqual(expect.arrayContaining([11, 14]));
+    expect(options.totalsColumns).not.toContain(13);
   });
 });

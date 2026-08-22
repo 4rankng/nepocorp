@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
@@ -83,7 +83,7 @@ export default function TripListPage() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { month, year } = useMonth();
+  const { month, year, setMonthYear } = useMonth();
   const { data: fuelConfig } = useFuelConfig();
   const canCopyPlan = user?.role === Role.ADMIN || user?.role === Role.MANAGER;
 
@@ -100,7 +100,26 @@ export default function TripListPage() {
     [fuelConfig],
   );
 
-  const restoredFilters = readTripListReturnState(location.state)?.tripList;
+  const restoredList = readTripListReturnState(location.state)?.tripList;
+  const restoredFilters = restoredList;
+  const hasAppliedReturnPeriod = useRef(false);
+
+  // A list can remount after the user has opened a detail page (for example
+  // after a refresh). Restore the period alongside the saved filters so the
+  // list never silently falls back to the latest month.
+  useLayoutEffect(() => {
+    if (hasAppliedReturnPeriod.current) return;
+    hasAppliedReturnPeriod.current = true;
+
+    if (
+      restoredList?.month !== undefined
+      && restoredList.year !== undefined
+      && (month !== restoredList.month || year !== restoredList.year)
+    ) {
+      setMonthYear(restoredList.month, restoredList.year);
+    }
+  }, [month, restoredList?.month, restoredList?.year, setMonthYear, year]);
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => restoredFilters?.statusFilter ?? '');
   const [truckFilter, setTruckFilter] = useState<number | ''>(() => restoredFilters?.truckFilter ?? '');
   const [customerFilter, setCustomerFilter] = useState<number | ''>(() => restoredFilters?.customerFilter ?? '');
@@ -115,11 +134,13 @@ export default function TripListPage() {
   const [copyPlanMessage, setCopyPlanMessage] = useState('');
   const [copyPlanError, setCopyPlanError] = useState(false);
   const detailState = useMemo(() => createTripListReturnState({
+    month,
+    year,
     statusFilter,
     truckFilter,
     customerFilter,
     searchInput,
-  }), [customerFilter, searchInput, statusFilter, truckFilter]);
+  }), [customerFilter, month, searchInput, statusFilter, truckFilter, year]);
 
   // Store the active filters on the list's existing history entry. Browser
   // Back from a detail page can then restore the same list instead of a fresh,
@@ -389,7 +410,9 @@ export default function TripListPage() {
       title: 'SỔ CHUYẾN ĐI',
       subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
       columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
-      totalsColumns: [5, 8, 10, 11, 12, 13, 14, 15, 16],
+      // "Trả hàng 2 điểm" remains an audit column, but is already included in
+      // "Tổng tiền đi đường lái xe nhận" and must not be summed twice.
+      totalsColumns: [5, 8, 10, 11, 12, 13, 15, 16],
       totalsLabel: 'TỔNG CỘNG',
     });
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);

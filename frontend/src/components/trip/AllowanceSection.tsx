@@ -1,5 +1,5 @@
 import React from "react";
-import { computeRoadAllowance, computeTripDriverSalary } from "@tingting/shared";
+import { computeDriverRoadAllowance, computeRoadAllowance, computeTripDriverSalary } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { InputWithPrefix } from "./InputWithPrefix";
 import "./AllowanceSection.css";
@@ -76,17 +76,20 @@ export function AllowanceSection() {
         <span>Lái xe thực lĩnh:</span>
         <span className="as-take-home__amount">
           {(() => {
-            const base = Number(roadAllowanceBaseApplied) || 0;
-            const discount = Number(tollsDiscount) || 0;
-            const addition = Number(tollsAddition) || 0;
-            const stations = Number(tollsStations) || 0;
-            const perStation = tollPerStationApplied ?? 55000;
-            const returnBonus = hasReturnCargo ? (returnCargoBonusApplied ?? 300000) : 0;
-            const tongTien = addition > 0 ? (addition + returnBonus) : (base - (stations * perStation) + returnBonus);
+            const roadAllowance = computeDriverRoadAllowance({
+              base: Number(roadAllowanceBaseApplied) || 0,
+              tollsDiscount: Number(tollsDiscount) || 0,
+              tollsAddition: Number(tollsAddition) || 0,
+              tollsStations: Number(tollsStations) || 0,
+              tollPerStation: tollPerStationApplied ?? 55000,
+              returnCargoBonus: returnCargoBonusApplied ?? 300000,
+              hasReturnCargo,
+              roadAllowanceOverride: roadAllowanceOverride === '' ? null : Number(roadAllowanceOverride),
+              twoPointDeliveryBonus: Number(twoPointDeliveryBonus) || 0,
+            });
             const salary = Number(driverSalary) || 0;
-            const twoPoint = Number(twoPointDeliveryBonus) || 0;
             const shift = Number(vehicleShiftAllowance) || 0;
-            return Math.max(0, tongTien + salary + twoPoint + shift - discount).toLocaleString("vi-VN");
+            return Math.max(0, roadAllowance + salary + shift).toLocaleString("vi-VN");
           })()} đ
         </span>
       </div>

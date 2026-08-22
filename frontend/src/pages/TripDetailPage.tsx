@@ -9,6 +9,7 @@ import { Spinner } from '../components/shared/Spinner';
 import { Money } from '../components/shared/Money';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
+import { useMonth } from '../hooks/useMonth';
 import { TripStatus } from '@tingting/shared';
 
 // Feature: logic (.ts) + UI (.tsx)
@@ -26,6 +27,7 @@ export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { setMonthYear } = useMonth();
   const page = useTripDetailPage(id);
   const { rootRef } = usePageAnimations({ ready: !page.loading });
   // Only poll live GPS when this trip is actually in transit — a completed /
@@ -36,6 +38,10 @@ export default function TripDetailPage() {
   const editReturnState = createTripEditReturnState(returnState);
   const handleBack = () => {
     if (returnState) {
+      const { month, year } = returnState.tripList;
+      if (month !== undefined && year !== undefined) {
+        setMonthYear(month, year);
+      }
       navigate(-1);
       return;
     }

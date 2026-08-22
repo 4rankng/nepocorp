@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import './TripSummaryCard.css';
-import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, MapPin, Truck } from "lucide-react";
+import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import { computeTripTotals } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
 import { useFuelConfig } from '../../hooks/useQueries';
@@ -110,7 +110,7 @@ export function TotalsPanel() {
   const fullRoadCost = totals.totalRoadAllowance + totals.tollCost + (Number(tollsDiscount) || 0);
   const roadPct = totalCost > 0 ? (fullRoadCost / totalCost) * 100 : 0;
   const salaryPct = totalCost > 0 ? ((Number(driverSalary) || 0) / totalCost) * 100 : 0;
-  const otherPct = totalCost > 0 ? ((twoPointAmount + vehicleShiftAmount) / totalCost) * 100 : 0;
+  const otherPct = totalCost > 0 ? (vehicleShiftAmount / totalCost) * 100 : 0;
 
   return (
     <article className="tc-totals">
@@ -234,7 +234,7 @@ export function TotalsPanel() {
                     <path d="M13 21V12l4-2 4 2v9" />
                   </svg>
                 </span>
-                Chi phí đường bộ
+                Tiền đi đường & phí trạm
                 {showRoadBreakdown ? <ChevronUp size={12} className="tc-totals-row__chev" /> : <ChevronDown size={12} className="tc-totals-row__chev" />}
                 {roadBreakdown.overridden && (
                   <span className="tc-totals-row__adjusted-pill">Đã điều chỉnh</span>
@@ -265,6 +265,12 @@ export function TotalsPanel() {
                     <Money value={Math.abs(roadBreakdown.stationCost)} sign="−" />
                   </div>
                 )}
+                {twoPointAmount > 0 && (
+                  <div className="tc-totals-breakdown__row">
+                    <span>Trả hàng 2 điểm</span>
+                    <Money value={Math.abs(twoPointAmount)} sign="−" />
+                  </div>
+                )}
                 {roadBreakdown.overridden && (
                   <div className="tc-totals-breakdown__row tc-totals-breakdown__row--override">
                     <span>Đã điều chỉnh tay tổng chi phí</span>
@@ -282,17 +288,6 @@ export function TotalsPanel() {
                 <Money value={Math.abs(Number(driverSalary) || 0)} sign="−" />
               </span>
             </div>
-
-            {twoPointAmount > 0 && (
-              <div className="tc-totals-row">
-                <span className="tc-totals-row__lbl">
-                  <MapPin size={13} /> Trả hàng 2 điểm
-                </span>
-                <span className="tc-totals-row__val">
-                  <Money value={Math.abs(twoPointAmount)} sign="−" />
-                </span>
-              </div>
-            )}
 
             {vehicleShiftAmount > 0 && (
               <div className="tc-totals-row">

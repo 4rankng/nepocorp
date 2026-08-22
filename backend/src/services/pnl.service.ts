@@ -107,9 +107,11 @@ export async function getPnlReport(month: number, year: number) {
       const fuelOrHireCost = isExternal ? externalTripCost(trip) : Number(trip.totalFuelCost ?? 0);
       const roadAllowance = isExternal ? 0 : Number(trip.totalRoadAllowance ?? 0);
       const tollAndCompanyTickets = isExternal ? 0 : Number(trip.tollCost ?? 0) + Number(trip.tollsDiscount ?? 0);
+      // Two-point delivery is paid inside totalRoadAllowance, so adding it
+      // here as well would double-count it against reconstructedCost.
       const driverAndAllowances = isExternal
         ? 0
-        : Number(trip.driverSalary ?? 0) + Number(trip.twoPointDeliveryBonus ?? 0) + Number(trip.vehicleShiftAllowance ?? 0);
+        : Number(trip.driverSalary ?? 0) + Number(trip.vehicleShiftAllowance ?? 0);
       const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
       const totalCost = isExternal ? externalTripCost(trip) : Number(trip.totalCost ?? 0);
       const costDifference = totalCost - reconstructedCost;

@@ -24,7 +24,7 @@ describe('trip total-cost column', () => {
     expect(screen.queryByText('3.460.000')).toBeNull();
   });
 
-  it('renders persisted two-point delivery and vehicle-shift costs below the total', () => {
+  it('renders vehicle-shift cost below the total without repeating two-point delivery', () => {
     const trip = {
       id: 14,
       status: TripStatus.COMPLETED,
@@ -41,7 +41,7 @@ describe('trip total-cost column', () => {
     render(column.cell({ row: { original: trip } } as never));
 
     expect(screen.getByText('8.626.606')).toBeTruthy();
-    expect(screen.getByText('Trả hàng 2 điểm: 100.000 ₫')).toBeTruthy();
+    expect(screen.queryByText('Trả hàng 2 điểm: 100.000 ₫')).toBeNull();
     expect(screen.getByText('Lưu ca xe: 200.000 ₫')).toBeTruthy();
   });
 });
