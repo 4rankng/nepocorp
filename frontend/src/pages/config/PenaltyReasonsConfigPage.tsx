@@ -167,6 +167,14 @@ const SEV_OPTIONS: { value: Severity; label: string; color: string }[] = [
 const sevLabel: Record<string, string> = { high: 'Nghiêm trọng', mid: 'Trung bình', low: 'Nhẹ' };
 const sevPill: Record<string, string> = { high: 'danger', mid: 'warn', low: 'neutral' };
 
+function getPenaltyReasonText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function getPenaltyReasonLabel(value: unknown): string {
+  return getPenaltyReasonText(value) || 'Chưa đặt tên';
+}
+
 function PenaltyReasonForm({
   saving, item, onSave, onCancel, existingReasons,
 }: {
@@ -176,14 +184,14 @@ function PenaltyReasonForm({
   onCancel: () => void;
   existingReasons: PenaltyReason[];
 }) {
-  const [reason, setReason] = useState(item?.reasonText || '');
+  const [reason, setReason] = useState(getPenaltyReasonText(item?.reasonText));
   const [amount, setAmount] = useState(item?.defaultAmount?.toString() || '');
   const [severity, setSeverity] = useState<Severity>(item?.severity || 'mid');
 
   const isDuplicate =
     reason.trim().length > 0 &&
     existingReasons.some(
-      (r) => r.id !== item?.id && r.reasonText.trim().toLowerCase() === reason.trim().toLowerCase()
+      (r) => r.id !== item?.id && getPenaltyReasonText(r.reasonText).trim().toLowerCase() === reason.trim().toLowerCase()
     );
 
   return (
@@ -298,7 +306,7 @@ export default function PenaltyReasonsConfigPage() {
   const filteredItems = useMemo(() => {
     const list = items.filter((d) => {
       const okSev = activeSev === 'all' || d.severity === activeSev;
-      const okQ = d.reasonText.toLowerCase().includes(searchTerm.trim().toLowerCase());
+      const okQ = getPenaltyReasonText(d.reasonText).toLowerCase().includes(searchTerm.trim().toLowerCase());
       return okSev && okQ;
     });
     list.sort((a, b) => {
@@ -334,7 +342,7 @@ export default function PenaltyReasonsConfigPage() {
     ? Object.entries(statsData.countsByReason).sort((a, b) => b[1] - a[1])[0]
     : null;
   const topReasonText = topEntry
-    ? items.find((x) => x.id === Number(topEntry[0]))?.reasonText || '---'
+    ? getPenaltyReasonLabel(items.find((x) => x.id === Number(topEntry[0]))?.reasonText)
     : '---';
   const topReasonCount = topEntry ? topEntry[1] : 0;
 
@@ -464,7 +472,7 @@ export default function PenaltyReasonsConfigPage() {
             return (
               <div className="pr-card" key={d.id} style={{ animationDelay: `${i * 0.04}s` }}>
                 <div className="pr-card-top">
-                  <div className="pr-card-title" title={d.reasonText}>{d.reasonText}</div>
+                  <div className="pr-card-title" title={getPenaltyReasonLabel(d.reasonText)}>{getPenaltyReasonLabel(d.reasonText)}</div>
                   <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                     <span className={`pill pill--${sevPill[sev]}`} style={{ flexShrink: 0 }}>
                       <span className="dot" />{sevLabel[sev]}
