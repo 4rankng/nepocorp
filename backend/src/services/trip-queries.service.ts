@@ -3,7 +3,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, or, isNull, sql, desc, lte, gte, inArray, type SQL } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, desc, lte, gte, lt, isNotNull, inArray, type SQL } from 'drizzle-orm';
 import { TripStatus, normalizeContainerNumber } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getTripInstructions } from './trip-instructions.service';
@@ -309,6 +309,56 @@ export interface TripSummary {
   avgPer100: number;
   truckOptions: Array<{ id: number; licensePlate: string }>;
   customerOptions: Array<{ id: number; name: string }>;
+}
+
+// ─── Monthly usage aggregates (customers/routes config pages) ────────────────
+
+export interface TripUsageStats {
+  month: string;
+  customers: Array<{ customerId: number; trips: number; revenue: string }>;
+  routes: Array<{ routeId: number; trips: number }>;
+}
+
+/**
+ * Per-customer {trips, revenue} and per-route {trips} for one departure month
+ * (YYYY-MM). Replaces the config pages' former load-all-trips client-side
+ * reduce. Matches the old client math exactly: soft-deleted trips excluded,
+ * no status filter, revenue summed as a numeric string (frontend parseFloats,
+ * same as it did per-trip).
+ */
+export async function getUsageStats(monthParam?: string): Promise<TripUsageStats> {
+  const now = new Date();
+  const fallback = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : fallback;
+  const [y, m] = month.split('-').map(Number);
+  const nextMonthStart = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+  const window = and(
+    isNull(s.trips.deletedAt),
+    gte(s.trips.departureDate, `${month}-01`),
+    lt(s.trips.departureDate, nextMonthStart),
+  );
+
+  const [customerRows, routeRows] = await Promise.all([
+    db.select({
+      customerId: s.trips.customerId,
+      trips: sql<number>`count(*)::int`,
+      revenue: sql<string>`coalesce(sum(${s.trips.revenue}), 0)::text`,
+    }).from(s.trips)
+      .where(and(window, isNotNull(s.trips.customerId)))
+      .groupBy(s.trips.customerId),
+    db.select({
+      routeId: s.trips.routeId,
+      trips: sql<number>`count(*)::int`,
+    }).from(s.trips)
+      .where(and(window, isNotNull(s.trips.routeId)))
+      .groupBy(s.trips.routeId),
+  ]);
+
+  return {
+    month,
+    customers: customerRows.map(r => ({ customerId: r.customerId as number, trips: r.trips, revenue: r.revenue })),
+    routes: routeRows.map(r => ({ routeId: r.routeId as number, trips: r.trips })),
+  };
 }
 
 export async function getTripsSummary(dateFrom?: string, dateTo?: string): Promise<TripSummary> {

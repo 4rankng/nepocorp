@@ -25,10 +25,10 @@ export function useCustomerStatement(
   });
 }
 
-export function useCustomerLedgerEntries() {
-  return useQuery<LedgerEntry[]>({
-    queryKey: qk.financial.customerLedgerEntries,
-    queryFn: () => financialClient.getAllLedgerEntries({ entityType: 'CUSTOMER' }),
+export function useCustomerBalances() {
+  return useQuery({
+    queryKey: qk.financial.customerBalances,
+    queryFn: () => financialClient.getEntityBalances('CUSTOMER'),
     staleTime: 2 * 60 * 1000,
   });
 }

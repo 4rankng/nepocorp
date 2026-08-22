@@ -40,16 +40,26 @@ export interface CustomerAgingResponse {
   totalPages: number;
 }
 
+/** Per-entity balance aggregates from /ledger/balances. */
+export interface EntityBalance {
+  entityId: number;
+  balance: number;
+  /** Lifetime TRIP_REVENUE debits (CustomersPage revenue column). */
+  tripRevenue: number;
+  /** Σ debit − Σ credit with carrier-payable activity excluded (customer AR). */
+  arDebt: number;
+  timestamp: string;
+}
+
 export const financialClient = {
   getLedgerEntries: (params?: { entityType?: string; limit?: number }) =>
     api.get<PaginatedResponse<LedgerEntry>>(
       `${FINANCIAL.LEDGER}${toQuery(params)}`,
     ),
 
-  getAllLedgerEntries: (params?: { entityType?: string }) =>
-    fetchAllPaginated<LedgerEntry>(
-      FINANCIAL.LEDGER,
-      params?.entityType ? { entityType: params.entityType } : undefined,
+  getEntityBalances: (entityType: string) =>
+    api.get<EntityBalance[]>(
+      `${FINANCIAL.LEDGER}/balances${toQuery({ entityType })}`,
     ),
 
   getCustomerStatement: (id: number, range?: { dateFrom?: string; dateTo?: string }) =>

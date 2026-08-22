@@ -10,7 +10,7 @@
 import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, drivers } from '../db/schema';
-import { eq, isNull, sql, or, and, ne } from 'drizzle-orm';
+import { eq, isNull, sql, or, and, ne, ilike, asc, desc, type SQL } from 'drizzle-orm';
 import { Role } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { getEnforcer } from '../casbin/enforcer';
@@ -36,7 +36,7 @@ export const USER_WITH_DRIVER_FIELDS = {
 const driverJoin = () => and(eq(drivers.userId, users.id), isNull(drivers.deletedAt));
 
 /** Select a user row with its optional driver profile, scoped by an optional extra where clause. */
-function selectUserWithDriver(q: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0], extraWhere?: ReturnType<typeof eq> | ReturnType<typeof and>) {
+function selectUserWithDriver(q: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0], extraWhere?: SQL | undefined) {
   return q.select(USER_WITH_DRIVER_FIELDS)
     .from(users)
     .leftJoin(drivers, driverJoin())
@@ -75,13 +75,85 @@ export async function authenticate(identifier: string, password: string) {
   return userPublic;
 }
 
-/** List all active users, each joined with its optional driver profile. Non-ADMIN requesters cannot see ADMIN accounts. */
-export async function listUsers(requesterRole?: string) {
-  const where = requesterRole !== Role.ADMIN
+/** Query params for the paginated /users list (the admin users page). */
+export interface ListUsersQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  /** Role tab: a Role value, or 'all' (FilterKey on the frontend). */
+  role?: string;
+  sortBy?: 'name' | 'role' | 'status' | 'date';
+  sortOrder?: 'asc' | 'desc';
+}
+
+/** KPI counts over the visibility-scoped user set (no role/search filter applied). */
+export interface ListUsersCounts {
+  total: number;
+  staff: number;
+  driver: number;
+  inactive: number;
+}
+
+/** Sort columns whitelisted for /users — mirrors the old client-side sort keys. */
+const USER_SORT_COLUMNS = {
+  name: sql`lower(coalesce(${users.fullName}, ${users.username}))`,
+  role: users.role,
+  status: users.status,
+  date: users.createdAt,
+} as const;
+
+/** List users, each joined with its optional driver profile. Non-ADMIN requesters cannot see ADMIN accounts.
+ *  Server-side pagination + search + tab/sort so the users page never loads the full list. */
+export async function listUsers(requesterRole?: string, query: ListUsersQuery = {}) {
+  const baseWhere = requesterRole !== Role.ADMIN
     ? and(isNull(users.deletedAt), ne(users.role, Role.ADMIN))
     : isNull(users.deletedAt);
-  const items = await selectUserWithDriver(db, where);
-  return { items, total: items.length };
+
+  const conditions: Array<SQL | undefined> = [baseWhere];
+  if (query.role && query.role !== 'all') {
+    conditions.push(eq(users.role, query.role as 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'DRIVER'));
+  }
+  if (query.search) {
+    const escaped = `%${query.search.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+    conditions.push(or(
+      ilike(users.username, escaped),
+      ilike(users.fullName, escaped),
+      ilike(users.email, escaped),
+      ilike(users.phone, escaped),
+    ));
+  }
+  const where = and(...conditions);
+
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.min(200, Math.max(1, query.limit ?? 50));
+
+  const sortColumn = query.sortBy ? USER_SORT_COLUMNS[query.sortBy] : users.id;
+  const direction = query.sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
+
+  // `total` is the FILTERED count (drives the pagination footer); the KPI
+  // `counts` aggregate over the unfiltered visibility set (old client math).
+  const [items, [kpiRow], [filteredRow]] = await Promise.all([
+    selectUserWithDriver(db, where)
+      .orderBy(direction, asc(users.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({
+      total: sql<number>`count(*)::int`,
+      staff: sql<number>`count(*) filter (where ${users.role} in ('ADMIN', 'MANAGER', 'ACCOUNTANT'))::int`,
+      driver: sql<number>`count(*) filter (where ${users.role} = 'DRIVER')::int`,
+      inactive: sql<number>`count(*) filter (where ${users.status} <> 'ACTIVE')::int`,
+    }).from(users).where(baseWhere),
+    db.select({ count: sql<number>`count(*)::int` }).from(users).where(where),
+  ]);
+
+  const counts: ListUsersCounts = {
+    total: kpiRow?.total ?? 0,
+    staff: kpiRow?.staff ?? 0,
+    driver: kpiRow?.driver ?? 0,
+    inactive: kpiRow?.inactive ?? 0,
+  };
+
+  return { items, total: filteredRow?.count ?? 0, page, pageSize: limit, counts };
 }
 
 /** Create a new user with hashed password. DRIVER-role users also get a linked drivers row. */

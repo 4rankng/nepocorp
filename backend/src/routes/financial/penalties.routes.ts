@@ -6,6 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { emitNotification } from '../../services/notification.service';
 import { cacheInvalidatePattern } from '../../lib/redis';
 import * as financialService from '../../services/financial.service';
+import { parsePagination } from '../utils/pagination';
 
 const router = Router();
 
@@ -13,7 +14,16 @@ const router = Router();
 
 router.get('/penalties', asyncHandler(async (req: Request, res: Response) => {
   const driverId = req.query.driverId ? parseInt(req.query.driverId as string) : undefined;
-  res.json(await financialService.getPenalties(driverId));
+  // The discipline page fetches one bounded multi-year window for its KPIs —
+  // allow a larger single page than the default so the window arrives whole.
+  const { page, limit } = parsePagination(req, { limit: 200, maxLimit: 1000 });
+  res.json(await financialService.getPenalties({
+    driverId,
+    dateFrom: (req.query.dateFrom as string) || undefined,
+    dateTo: (req.query.dateTo as string) || undefined,
+    page,
+    limit,
+  }));
 }));
 
 router.post('/penalties', asyncHandler(async (req: Request, res: Response) => {

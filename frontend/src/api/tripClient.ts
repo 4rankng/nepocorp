@@ -51,12 +51,23 @@ type ListTripsParams = {
   customerId?: number;
 };
 
+/** Monthly usage aggregates from GET /trips/usage-stats (config pages). */
+export interface TripUsageStats {
+  month: string;
+  customers: Array<{ customerId: number; trips: number; revenue: string }>;
+  routes: Array<{ routeId: number; trips: number }>;
+}
+
 export const tripClient = {
   listTrips: (params?: ListTripsParams) =>
     api.get<PaginatedResponse<TripDetail>>(`${TRIPS.LIST}${toQuery(params)}`),
 
   /** Live fleet — current GPS positions of trucks on active IN_TRANSIT trips. */
   getLiveFleet: () => api.get<LiveFleetResponse>(TRACKING.LIVE_FLEET),
+
+  /** Monthly per-customer {trips, revenue} + per-route {trips} — default current month. */
+  getUsageStats: (month?: string) =>
+    api.get<TripUsageStats>(`${TRIPS.LIST}/usage-stats${toQuery({ month })}`),
 
   /** Fetch all pages of trips for a given filter set. */
   fetchAllTrips: async (

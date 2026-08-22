@@ -105,6 +105,12 @@ router.get('/live-fleet', asyncHandler(async (_req: Request, res: Response) => {
   res.json(await gpsService.getLiveFleet());
 }));
 
+// Monthly per-customer/per-route usage aggregates for the customers/routes
+// config pages. Declared BEFORE /:id so 'usage-stats' is not parsed as an id.
+router.get('/usage-stats', asyncHandler(async (req: Request, res: Response) => {
+  res.json(await tripService.getUsageStats(req.query.month as string | undefined));
+}));
+
 // Get trip detail with legs
 // Trip KPI/stats summary — must be declared BEFORE /:id so 'stats' is not parsed as id
 router.get('/stats', asyncHandler(async (req: Request, res: Response) => {

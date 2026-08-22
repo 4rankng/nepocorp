@@ -12,7 +12,8 @@ import { formatCurrency } from '../../lib/format';
 import { downloadCSV } from '../../lib/csv';
 import { useCRUD } from '../../hooks/useCRUD';
 import { qk } from '../../api/keys';
-import type { Customer, TripDetail, DebitNoteTemplate } from '@tingting/shared';
+import type { Customer, DebitNoteTemplate } from '@tingting/shared';
+import type { TripUsageStats } from '../../api/tripClient';
 import { CustomerStatus } from '@tingting/shared';
 import './config-page.css';
 
@@ -120,25 +121,14 @@ export default function CustomersConfigPage() {
   const { data, refetch } = useQuery({
     queryKey: qk.tripForm.customersConfig(search),
     queryFn: async () => {
-      const [custList, tripRes] = await Promise.all([
+      const [custList, usage] = await Promise.all([
         configClient.getAllCustomers(search || undefined),
-        tripClient.fetchAllTrips({}).catch(() => ({ items: [] as TripDetail[], total: 0 })),
+        tripClient.getUsageStats().catch((): TripUsageStats => ({ month: '', customers: [], routes: [] })),
       ]);
-      const now = new Date();
-      const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const statsMap = new Map<number, { trips: number; revenue: number }>();
-      tripRes.items.forEach((t: TripDetail) => {
-        const dep = t.departureDate || '';
-        if (dep.startsWith(thisMonth)) {
-          const cid = t.customerId;
-          if (cid) {
-            const s = statsMap.get(cid) || { trips: 0, revenue: 0 };
-            s.trips++;
-            s.revenue += parseFloat(t.revenue || '0');
-            statsMap.set(cid, s);
-          }
-        }
-      });
+      for (const c of usage.customers) {
+        statsMap.set(c.customerId, { trips: c.trips, revenue: parseFloat(c.revenue) || 0 });
+      }
       return { customers: custList, customerTripStats: statsMap };
     },
     staleTime: 2 * 60 * 1000,

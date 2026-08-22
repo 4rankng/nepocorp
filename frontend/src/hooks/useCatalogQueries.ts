@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { configClient } from '../api/configClient';
-import { userClient } from '../api/userClient';
+import { userClient, type UsersPageParams } from '../api/userClient';
 import { qk } from '../api/keys';
 import type {
   Truck as TruckType,
@@ -91,11 +91,11 @@ export function useCustomers(page: number, search: string) {
   });
 }
 
-export function useUsers() {
+export function useUsers(params: UsersPageParams) {
   return useQuery({
-    queryKey: qk.catalogs.users,
-    queryFn: () => userClient.getUsers(),
-    staleTime: 5 * 60 * 1000,
+    queryKey: [...qk.catalogs.users, params],
+    queryFn: () => userClient.getUsers({ ...params, sortBy: params.sortBy ?? undefined }),
+    placeholderData: keepPreviousData,
   });
 }
 

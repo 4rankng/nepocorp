@@ -11,7 +11,7 @@ import type {
 export const forwarderClient = {
   getTrips: async (
     status?: string,
-    filters?: { search?: string; dateFrom?: string; dateTo?: string },
+    filters?: { search?: string; dateFrom?: string; dateTo?: string; page?: number; limit?: number },
   ) => {
     return api.get<{
       items: Array<{
@@ -30,7 +30,10 @@ export const forwarderClient = {
         statusColor: 'paid' | 'pending' | 'none';
       }>;
       counts: Record<string, number>;
-    }>(`${FORWARDER.TRIPS}${toQuery({ status, search: filters?.search, dateFrom: filters?.dateFrom, dateTo: filters?.dateTo })}`);
+      total: number;
+      page: number;
+      pageSize: number;
+    }>(`${FORWARDER.TRIPS}${toQuery({ status, search: filters?.search, dateFrom: filters?.dateFrom, dateTo: filters?.dateTo, page: filters?.page, limit: filters?.limit })}`);
   },
 
   getTripDetail: async (id: number) => {

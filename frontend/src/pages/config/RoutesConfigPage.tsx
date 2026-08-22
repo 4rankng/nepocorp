@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin, Route, Plus, Pencil, Trash2, Loader2, X, Mountain, ArrowLeft } from 'lucide-react';
 import { configClient } from '../../api/configClient';
-import { tripClient } from '../../api/tripClient';
+import { tripClient, type TripUsageStats } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useConfirm } from '../../components/UI';
 import { AssetIcon } from '../../components/AssetIcon';
@@ -29,14 +29,14 @@ export default function RoutesConfigPage() {
   const [selectedRouteLegs, setSelectedRouteLegs] = useState<Array<{ origin: string; destination: string; km: number; loadingType: string; polylinePath: string | null }>>([]);
 
   const fetchData = useCallback(async () => {
-    const [routeList, tripRes, allowances] = await Promise.all([
+    const [routeList, usage, allowances] = await Promise.all([
       configClient.getRoutesList(search || undefined),
-      tripClient.fetchAllTrips({}).then(r => r.items).catch(() => [] as Array<{ routeId?: number | null; departureDate?: string }>),
+      tripClient.getUsageStats().catch((): TripUsageStats => ({ month: '', customers: [], routes: [] })),
       configClient.getRoadAllowances().catch(() => [] as RoadAllowance[]),
     ]);
     return {
       routes: routeList,
-      trips: tripRes,
+      usage,
       allowances,
     };
   }, [search]);
@@ -78,18 +78,9 @@ export default function RoutesConfigPage() {
 
   const routeTripStats = useMemo(() => {
     const stats = new Map<number, number>();
-    if (!data?.trips) return stats;
-    const now = new Date();
-    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    data.trips.forEach((t) => {
-      const dep = t.departureDate || '';
-      if (dep.startsWith(thisMonth)) {
-        const rid = t.routeId;
-        if (rid) stats.set(rid, (stats.get(rid) || 0) + 1);
-      }
-    });
+    for (const r of data?.usage.routes ?? []) stats.set(r.routeId, r.trips);
     return stats;
-  }, [data?.trips]);
+  }, [data?.usage]);
 
   const routePriceMap = useMemo(() => {
     const priceMap = new Map<number, { ft20?: number; ft40?: number }>();

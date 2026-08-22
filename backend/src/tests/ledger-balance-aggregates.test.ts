@@ -1,0 +1,59 @@
+/**
+ * Integration test against the dev DB for the /ledger/balances aggregates.
+ *
+ * getEntityBalances grew two per-entity aggregates that replace the
+ * CustomersPage's load-all-ledger-entries client-side reduces: `tripRevenue`
+ * (lifetime TRIP_REVENUE debits) and `arDebt` (Σ debit − Σ credit with
+ * carrier-payable activity excluded). The assertions rebuild both figures
+ * from independent unfiltered queries so a mis-wired CASE branch shows up as
+ * a mismatch.
+ */
+import { test, describe, after } from 'node:test';
+import assert from 'node:assert';
+import { db, client } from '../db';
+import * as s from '../db/schema';
+import { and, eq, sql } from 'drizzle-orm';
+import { getEntityBalances } from '../services/financial.service';
+import { disconnectRedis } from '../lib/redis';
+
+describe('getEntityBalances aggregates', () => {
+  after(async () => {
+    await disconnectRedis();
+    await client.end();
+  });
+
+  test('arDebt and tripRevenue match independently recomputed sums', async () => {
+    const balances = await getEntityBalances('CUSTOMER');
+    assert.ok(Array.isArray(balances));
+    assert.ok(balances.length >= 1, 'dev DB must have at least one customer ledger entity');
+
+    for (const row of balances) {
+      const scope = and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, row.entityId));
+
+      // Gross flows, then each excluded bucket, recomputed independently.
+      const [gross] = await db.select({
+        d: sql<string>`coalesce(sum(coalesce(${s.ledger.debit}, 0) - coalesce(${s.ledger.credit}, 0)), 0)::text`,
+      }).from(s.ledger).where(scope);
+      const [excluded] = await db.select({
+        d: sql<string>`coalesce(sum(case
+          when ${s.ledger.txnType} in ('EXTERNAL_CARRIER_COST', 'VENDOR_PAYMENT') then coalesce(${s.ledger.debit}, 0) - coalesce(${s.ledger.credit}, 0)
+          when ${s.ledger.txnType} = 'UNLOCK_REVERSAL' and ${s.ledger.note} like 'Cước thuê ngoài%' then coalesce(${s.ledger.debit}, 0) - coalesce(${s.ledger.credit}, 0)
+          else 0
+        end), 0)::text`,
+      }).from(s.ledger).where(scope);
+      const [rev] = await db.select({
+        d: sql<string>`coalesce(sum(coalesce(${s.ledger.debit}, 0)), 0)::text`,
+      }).from(s.ledger).where(and(scope, eq(s.ledger.txnType, 'TRIP_REVENUE')));
+
+      const expectedArDebt = parseFloat(gross?.d ?? '0') - parseFloat(excluded?.d ?? '0');
+      assert.ok(
+        Math.abs(row.arDebt - expectedArDebt) < 0.5,
+        `arDebt for customer ${row.entityId}: got ${row.arDebt}, expected ${expectedArDebt}`,
+      );
+      assert.ok(
+        Math.abs(row.tripRevenue - parseFloat(rev?.d ?? '0')) < 0.5,
+        `tripRevenue for customer ${row.entityId}: got ${row.tripRevenue}, expected ${rev?.d}`,
+      );
+    }
+  });
+});

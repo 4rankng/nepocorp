@@ -3,18 +3,30 @@ import { toQuery } from '../lib/http/query';
 import { DRIVER } from '@tingting/shared';
 import type { VehicleAlert } from '@tingting/shared';
 
+/** Driver trips list row (server-paginated). */
+export interface DriverTripRow {
+  id: number;
+  departureDate: string;
+  status: string;
+  driverSalary: string | null;
+  routeName: string | null;
+  truckPlate: string | null;
+  customerName: string | null;
+  containerNumbers: string[] | null;
+}
+
+/** Driver trips envelope — statusCounts powers the status tabs. */
+export interface DriverTripsPageData {
+  items: DriverTripRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  statusCounts: Record<string, number>;
+}
+
 export const driverClient = {
-  getTrips: async () => {
-    return api.get<{
-      items: Array<{
-        id: number;
-        departureDate: string;
-        status: string;
-        driverSalary: string | null;
-        routeName: string | null;
-        truckPlate: string | null;
-      }>;
-    }>(DRIVER.TRIPS);
+  getTrips: async (params?: { page?: number; limit?: number; status?: string }) => {
+    return api.get<DriverTripsPageData>(`${DRIVER.TRIPS}${toQuery(params)}`);
   },
 
   getEarnings: async (month: number, year: number) => {

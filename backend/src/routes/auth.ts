@@ -14,6 +14,7 @@ import { getAppSettings } from '../services/app-settings.service';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { parsePagination } from './utils/pagination';
 import { ApiError } from '../errors';
 import type { Request, Response } from 'express';
 
@@ -85,7 +86,19 @@ router.post('/change-password', authMiddleware, asyncHandler(async (req: Request
 // ─── User management (admin) ─────────────────────────────────────────────────
 
 router.get('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (req: Request, res: Response) => {
-  res.json(await userService.listUsers(req.user?.role));
+  const { page, limit } = parsePagination(req);
+  const sortByRaw = req.query.sortBy as string | undefined;
+  const sortBy = (['name', 'role', 'status', 'date'] as const).includes(sortByRaw as 'name')
+    ? (sortByRaw as 'name' | 'role' | 'status' | 'date')
+    : undefined;
+  res.json(await userService.listUsers(req.user?.role, {
+    page,
+    limit,
+    search: (req.query.search as string) || undefined,
+    role: (req.query.filter as string) || undefined,
+    sortBy,
+    sortOrder: req.query.sortOrder === 'desc' ? 'desc' : 'asc',
+  }));
 }));
 
 router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (req: Request, res: Response) => {

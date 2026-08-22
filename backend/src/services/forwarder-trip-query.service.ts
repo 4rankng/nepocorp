@@ -32,7 +32,7 @@ const hasPendingExpenseOrSettlement = sql<boolean>`EXISTS (
 
 export async function getForwarderTrips(
   status?: string,
-  filters?: { search?: string; dateFrom?: string; dateTo?: string },
+  filters?: { search?: string; dateFrom?: string; dateTo?: string; page?: number; limit?: number },
 ) {
   const conditions = [isNull(s.trips.deletedAt)];
   if (status) {
@@ -55,7 +55,10 @@ export async function getForwarderTrips(
     conditions.push(lte(s.trips.departureDate, filters.dateTo));
   }
 
-  return db.select({
+  const page = Math.max(1, filters?.page ?? 1);
+  const limit = Math.min(200, Math.max(1, filters?.limit ?? 20));
+
+  const items = await db.select({
     id: s.trips.id,
     tripCode: s.trips.tripCode,
     departureDate: s.trips.departureDate,
@@ -92,7 +95,17 @@ export async function getForwarderTrips(
     .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
     .where(and(...conditions))
-    .orderBy(desc(s.trips.departureDate));
+    .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  // Count mirrors the customers join — the search condition references it.
+  const [countRow] = await db.select({ count: sql<number>`count(*)::int` })
+    .from(s.trips)
+    .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+    .where(and(...conditions));
+
+  return { items, total: countRow?.count ?? 0, page, pageSize: limit };
 }
 
 export async function latestTripPhotoKey(

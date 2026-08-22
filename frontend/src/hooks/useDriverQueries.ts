@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { driverClient } from '../api/driverClient';
 import { qk } from '../api/keys';
 
-export function useDriverTrips() {
+export function useDriverTrips(params: { page: number; limit: number; status?: string }) {
   return useQuery({
-    queryKey: qk.driver.trips,
-    queryFn: () => driverClient.getTrips(),
+    queryKey: [...qk.driver.trips, params],
+    queryFn: () => driverClient.getTrips(params),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -31,6 +31,7 @@ import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@ting
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
 import { sniffImageType } from '../lib/format';
+import { parsePagination } from './utils/pagination';
 
 const expensePhotoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 // Unify with upload.ts / expense.ts (2048). Was 1600 — inconsistent downscale ceiling.
@@ -49,11 +50,14 @@ router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
   const search = (req.query.search as string | undefined) || undefined;
   const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
   const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
-  const [items, counts] = await Promise.all([
-    getForwarderTrips(status, { search, dateFrom, dateTo }),
+  // The forwarder portal lists a month-bounded window; allow a larger single
+  // page than the default so the window arrives whole (portal has no pager).
+  const { page, limit } = parsePagination(req, { limit: 200, maxLimit: 1000 });
+  const [tripsResult, counts] = await Promise.all([
+    getForwarderTrips(status, { search, dateFrom, dateTo, page, limit }),
     getForwarderTripCounts({ dateFrom, dateTo }),
   ]);
-  res.json({ items, counts });
+  res.json({ ...tripsResult, counts });
 }));
 
 router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {

@@ -15,14 +15,19 @@ import { deleteTripPhotosByType, type TripPhotoType } from './upload';
 import { tripContainerSchema, tripContainerPatchSchema, tripContainerSealBatchSchema } from '@tingting/shared';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../errors';
+import { parsePagination } from './utils/pagination';
 
 const router = Router();
 
-// List assigned trips (Driver allowlisted DTO)
+// List assigned trips (Driver allowlisted DTO) — paginated, optional status tab
 router.get('/trips', asyncHandler(async (req: Request, res: Response) => {
   const driver = await getDriverByUserId(getUser(req).userId);
-  const items = await getDriverTrips(driver.id);
-  res.json({ items });
+  const { page, limit } = parsePagination(req);
+  res.json(await getDriverTrips(driver.id, {
+    page,
+    limit,
+    status: (req.query.status as string) || undefined,
+  }));
 }));
 
 // N5 / B4 — vehicle compliance/service reminders for the driver's truck.

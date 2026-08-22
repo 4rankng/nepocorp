@@ -13,9 +13,11 @@ import { PageHeader } from '../../../components/UI';
 import { AssetIcon } from '../../../components/AssetIcon';
 
 interface UserTableProps {
-  users: UserRow[];
-  filtered: UserRow[];
+  /** Current server page rows. */
   paginated: UserRow[];
+  /** Server count of rows matching the active tab + search (drives the footer). */
+  filteredTotal: number;
+  /** KPI counts over the unfiltered visibility set. */
   total: number;
   staffCount: number;
   driverCount: number;
@@ -89,7 +91,7 @@ function getPlate(u: UserRow, truckMap?: Map<number, string>) {
 }
 
 export function UserTable({
-  users, filtered, paginated, total, staffCount, driverCount, inactiveCount,
+  paginated, filteredTotal, total, staffCount, driverCount, inactiveCount,
   filter, search, canManage, canDelete = canManage, canEditDriversOnly = false,
   truckMap, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
@@ -188,7 +190,9 @@ export function UserTable({
           aria-label="Lọc tài khoản theo vai trò"
         >
           {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
-            const count = f === 'all' ? total : users.filter(u => u.role === f).length;
+            // Counts are only rendered on the active pill; the active tab's
+            // server response total is exactly that tab's row count.
+            const count = f === 'all' ? total : f === Role.DRIVER ? driverCount : filteredTotal;
             const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
             return (
               <button
@@ -275,13 +279,13 @@ export function UserTable({
 
         {/* Footer */}
         {(() => {
-          const totalPages = Math.ceil(filtered.length / pageSize);
-          const startIdx = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-          const endIdx = Math.min(filtered.length, currentPage * pageSize);
+          const totalPages = Math.max(1, Math.ceil(filteredTotal / pageSize));
+          const startIdx = filteredTotal === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+          const endIdx = Math.min(filteredTotal, currentPage * pageSize);
           return (
             <div className="table-foot users-table-foot">
               <span className="users-table-foot__summary">
-                Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{startIdx}-{endIdx}</strong> trong số <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> tài khoản
+                Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{startIdx}-{endIdx}</strong> trong số <strong style={{ fontFamily: 'var(--font-mono)' }}>{filteredTotal}</strong> tài khoản
               </span>
               {totalPages > 1 && (
                 <div className="users-pagination" aria-label="Phân trang tài khoản">

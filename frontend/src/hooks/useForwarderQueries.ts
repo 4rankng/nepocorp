@@ -7,9 +7,11 @@ export function useForwarderTrips(
   status?: string,
   filters?: { search?: string; dateFrom?: string; dateTo?: string },
 ) {
+  // Month-bounded portal list — fetch the whole window in one large page so
+  // the hero KPIs (Σ containers, payment highlights) see every trip.
   return useQuery({
     queryKey: qk.forwarder.trips(status, filters),
-    queryFn: () => forwarderClient.getTrips(status, filters),
+    queryFn: () => forwarderClient.getTrips(status, { ...filters, page: 1, limit: 1000 }),
   });
 }
 

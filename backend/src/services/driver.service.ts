@@ -69,28 +69,66 @@ async function existingStorageKeys(keys: string[]): Promise<string[]> {
  * per-trip, so a driver with many trips stays O(1) queries, not O(N+1)
  * (feedback202606 B1 — driver list card must show customer + container).
  */
-export async function getDriverTrips(driverId: number) {
-  const trips = await db.select({
-    id: s.trips.id,
-    tripCode: s.trips.tripCode,
-    departureDate: s.trips.departureDate,
-    status: s.trips.status,
-    fuelLiters: s.trips.fuelLiters,
-    totalRoadAllowance: s.trips.totalRoadAllowance,
-    driverSalary: s.trips.driverSalary,
-    routeName: s.routes.name,
-    truckPlate: s.trucks.licensePlate,
-    customerName: s.customers.name,
-  }).from(s.trips)
-    .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-    .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
-    .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
-    .where(and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)))
-    .orderBy(desc(s.trips.departureDate));
+export async function getDriverTrips(
+  driverId: number,
+  opts: { page?: number; limit?: number; status?: string } = {},
+) {
+  const conditions = [eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt)];
+  if (opts.status) {
+    conditions.push(eq(s.trips.status, opts.status as 'CREATED' | 'IN_TRANSIT' | 'COMPLETED' | 'LOCKED' | 'CANCELED'));
+  }
+  const where = and(...conditions);
 
-  if (trips.length === 0) return trips;
+  const page = Math.max(1, opts.page ?? 1);
+  const limit = Math.min(200, Math.max(1, opts.limit ?? 20));
 
-  // Batched container fetch — single query for all trips on this list.
+  // Tab counts span ALL statuses for this driver (ignore the status filter),
+  // so the pills keep their counts while a status-filtered page is open.
+  const countScope = and(eq(s.trips.driverId, driverId), isNull(s.trips.deletedAt));
+
+  const [trips, [countRow], [statusRow]] = await Promise.all([
+    db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      status: s.trips.status,
+      fuelLiters: s.trips.fuelLiters,
+      totalRoadAllowance: s.trips.totalRoadAllowance,
+      driverSalary: s.trips.driverSalary,
+      routeName: s.routes.name,
+      truckPlate: s.trucks.licensePlate,
+      customerName: s.customers.name,
+    }).from(s.trips)
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
+      .where(where)
+      .orderBy(desc(s.trips.departureDate), desc(s.trips.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ count: sql<number>`count(*)::int` }).from(s.trips).where(where),
+    db.select({
+      created: sql<number>`count(*) filter (where ${s.trips.status} = 'CREATED')::int`,
+      inTransit: sql<number>`count(*) filter (where ${s.trips.status} = 'IN_TRANSIT')::int`,
+      completed: sql<number>`count(*) filter (where ${s.trips.status} = 'COMPLETED')::int`,
+      locked: sql<number>`count(*) filter (where ${s.trips.status} = 'LOCKED')::int`,
+      canceled: sql<number>`count(*) filter (where ${s.trips.status} = 'CANCELED')::int`,
+    }).from(s.trips).where(countScope),
+  ]);
+
+  const statusCounts = {
+    CREATED: statusRow?.created ?? 0,
+    IN_TRANSIT: statusRow?.inTransit ?? 0,
+    COMPLETED: statusRow?.completed ?? 0,
+    LOCKED: statusRow?.locked ?? 0,
+    CANCELED: statusRow?.canceled ?? 0,
+  };
+
+  if (trips.length === 0) {
+    return { items: trips, total: countRow?.count ?? 0, page, pageSize: limit, statusCounts };
+  }
+
+  // Batched container fetch — single query for all trips on this page.
   const tripIds = trips.map(t => t.id);
   const containerRows = await db.select({
     tripId: s.tripContainers.tripId,
@@ -105,7 +143,13 @@ export async function getDriverTrips(driverId: number) {
     else containersByTrip.set(c.tripId, [c.containerNumber]);
   }
 
-  return trips.map(t => ({ ...t, containerNumbers: containersByTrip.get(t.id) ?? [] }));
+  return {
+    items: trips.map(t => ({ ...t, containerNumbers: containersByTrip.get(t.id) ?? [] })),
+    total: countRow?.count ?? 0,
+    page,
+    pageSize: limit,
+    statusCounts,
+  };
 }
 
 /**

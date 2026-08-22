@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useMonth } from '../hooks/useMonth';
 import { usePenalties, usePenaltyCatalogs } from '../hooks/usePenalties';
 import { useAuth } from '../hooks/useAuth';
 import { useCreatePenalty, useCancelPenalty } from '../features/penalties/hooks/usePenaltyMutations';
@@ -11,7 +12,16 @@ import { usePageAnimations } from '../hooks/animations';
 import './PenaltyPage.css';
 
 export default function PenaltyPage() {
-  const { data: penaltiesData, isLoading: listLoading } = usePenalties();
+  // Bound the penalty fetch to a window that covers everything the table
+  // computes: the selected month, its predecessor (January compare), YTD of
+  // the current year, and the longest cutoff filter (ytd). Penalties older
+  // than this window never appear in any visible figure.
+  const { month: selMonth, year: selYear } = useMonth();
+  const currentYear = new Date().getFullYear();
+  const windowStartYear = Math.min(selYear - 2, currentYear);
+  const windowStart = `${windowStartYear}-01-01`;
+
+  const { data: penaltiesData, isLoading: listLoading } = usePenalties(windowStart);
   const { data: catalogsData } = usePenaltyCatalogs();
   const penalties: PenaltyRow[] = penaltiesData ?? [];
   const drivers = catalogsData?.drivers ?? [];

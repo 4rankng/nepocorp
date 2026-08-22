@@ -254,7 +254,7 @@ export const qk = {
       ['customer-statement', id, range.dateFrom || null, range.dateTo || null] as const,
     /** Broad prefix — matches every customer-statement query regardless of range. */
     customerStatementAll: ['customer-statement'] as const,
-    customerLedgerEntries: ['customer-ledger-entries'],
+    customerBalances: ['customer-balances'],
     payablesSummary: (category: string | undefined) => ['payables-summary', category ?? 'all'] as const,
     /** Broad prefix — matches all payablesSummary queries regardless of category. */
     payablesSummaryAll: ['payables-summary'] as const,

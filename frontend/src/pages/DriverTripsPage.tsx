@@ -1,13 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, AlertTriangle, Building2, Package } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
+import { Pagination } from '../design-system';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './DriverTripsPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
+
+const PAGE_SIZE = 20;
 
 interface TripSummary {
   id: number;
@@ -28,20 +31,26 @@ function formatContainerList(nums: string[] | null | undefined): string {
 }
 
 export default function DriverTripsPage() {
-  const { data, isLoading: loading, error: queryError } = useDriverTrips();
+  // Status tabs and pagination are resolved server-side; statusCounts powers
+  // the tab pills across ALL statuses.
+  const [activeFilter, setActiveFilter] = useState<TripStatus | ''>('');
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [activeFilter]);
+
+  const { data, isLoading: loading, error: queryError } = useDriverTrips({
+    page,
+    limit: PAGE_SIZE,
+    status: activeFilter || undefined,
+  });
   const trips = useMemo(() => (data?.items ?? []) as TripSummary[], [data?.items]);
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const statusCounts = (data?.statusCounts ?? {}) as Partial<Record<TripStatus, number>>;
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
 
-  const [activeFilter, setActiveFilter] = useState<TripStatus | ''>('');
-  const statusCounts = useMemo(() => {
-    const counts: Partial<Record<TripStatus, number>> = {};
-    trips.forEach(t => { counts[t.status] = (counts[t.status] ?? 0) + 1; });
-    return counts;
-  }, [trips]);
-  const filteredTrips = activeFilter ? trips.filter(t => t.status === activeFilter) : trips;
-
-  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [filteredTrips] });
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
 
   if (loading) return (
     <Panel>
@@ -65,7 +74,7 @@ export default function DriverTripsPage() {
     </div>
   );
 
-  if (trips.length === 0) return (
+  if (total === 0) return (
     <div>
       <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
@@ -80,7 +89,7 @@ export default function DriverTripsPage() {
 
   return (
     <div ref={rootRef} className="driver-trips-page">
-      <PageHeader title="Hành trình" description={`Danh sách lệnh vận chuyển đã nhận (${trips.length} lệnh)`} />
+      <PageHeader title="Hành trình" description={`Danh sách lệnh vận chuyển đã nhận (${total} lệnh)`} />
 
       <div className="driver-trips-filter-bar">
         <div className="fwd-filter-pills fade-up">
@@ -89,7 +98,7 @@ export default function DriverTripsPage() {
             onClick={() => setActiveFilter('')}
           >
             Tất cả
-            <span className="fwd-filter-pill__count">{trips.length}</span>
+            <span className="fwd-filter-pill__count">{total}</span>
           </button>
           {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
             const count = statusCounts[status] ?? 0;
@@ -110,7 +119,7 @@ export default function DriverTripsPage() {
       </div>
 
       <div ref={listRef} className="driver-trips-list">
-        {filteredTrips.map((trip, idx) => (
+        {trips.map((trip, idx) => (
           <Link
             key={trip.id}
             to={`/my-trips/${trip.id}`}
@@ -151,6 +160,14 @@ export default function DriverTripsPage() {
           </Link>
         ))}
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={total}
+        pageSize={PAGE_SIZE}
+        onChange={setPage}
+      />
     </div>
   );
 }

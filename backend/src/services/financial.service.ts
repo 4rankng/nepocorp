@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, inArray, sql, desc, isNull } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, isNull, gte, lte } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -222,27 +222,49 @@ export async function createPenalty(input: PenaltyInput) {
 }
 
 /**
- * List penalties with optional driver filter.
+ * List penalties with optional driver filter, date window, and pagination.
  */
-export async function getPenalties(driverId?: number) {
+export async function getPenalties(opts: {
+  driverId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+} = {}) {
   const conditions = [isNull(s.penalties.deletedAt)];
-  if (driverId) conditions.push(eq(s.penalties.driverId, driverId));
+  if (opts.driverId) conditions.push(eq(s.penalties.driverId, opts.driverId));
+  if (opts.dateFrom) conditions.push(gte(s.penalties.date, opts.dateFrom));
+  if (opts.dateTo) conditions.push(lte(s.penalties.date, opts.dateTo));
+  const where = and(...conditions);
 
-  const items = await db.select({
-    id: s.penalties.id, driverId: s.penalties.driverId, tripId: s.penalties.tripId,
-    reasonId: s.penalties.reasonId, customReason: s.penalties.customReason,
-    amount: s.penalties.amount, date: s.penalties.date, status: s.penalties.status,
-    driverName: s.drivers.name,
-    reasonText: s.penaltyReasons.reasonText,
-    tripCode: s.trips.tripCode,
-  }).from(s.penalties)
-    .leftJoin(s.drivers, eq(s.penalties.driverId, s.drivers.id))
-    .leftJoin(s.penaltyReasons, eq(s.penalties.reasonId, s.penaltyReasons.id))
-    .leftJoin(s.trips, eq(s.penalties.tripId, s.trips.id))
-    .where(and(...conditions))
-    .orderBy(desc(s.penalties.date));
+  const page = Math.max(1, opts.page ?? 1);
+  // 1000 (not 200): the discipline page fetches one bounded multi-year
+  // window in a single request — see the route's maxLimit note.
+  const limit = Math.min(1000, Math.max(1, opts.limit ?? 50));
 
-  return { items, total: items.length };
+  const [items, [countRow]] = await Promise.all([
+    db.select({
+      id: s.penalties.id, driverId: s.penalties.driverId, tripId: s.penalties.tripId,
+      reasonId: s.penalties.reasonId, customReason: s.penalties.customReason,
+      amount: s.penalties.amount, date: s.penalties.date, status: s.penalties.status,
+      driverName: s.drivers.name,
+      reasonText: s.penaltyReasons.reasonText,
+      tripCode: s.trips.tripCode,
+    }).from(s.penalties)
+      .leftJoin(s.drivers, eq(s.penalties.driverId, s.drivers.id))
+      .leftJoin(s.penaltyReasons, eq(s.penalties.reasonId, s.penaltyReasons.id))
+      .leftJoin(s.trips, eq(s.penalties.tripId, s.trips.id))
+      .where(where)
+      .orderBy(desc(s.penalties.date), desc(s.penalties.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    // Count needs no joins — every filter column lives on penalties.
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(s.penalties)
+      .where(where),
+  ]);
+
+  return { items, total: countRow?.count ?? 0, page, pageSize: limit };
 }
 
 /**
@@ -281,21 +303,46 @@ export async function cancelPenalty(penaltyId: number, reason?: string) {
 
 /**
  * Get current balances for all entities of a given type.
- * Uses the latest ledger row per entity (running balance).
+ * Uses the latest ledger row per entity (running balance), plus the entity's
+ * lifetime TRIP_REVENUE sum — the CustomersPage revenue column, formerly a
+ * client-side reduce over every ledger entry.
  */
 export async function getEntityBalances(entityType: string) {
-  const rows = await db.selectDistinctOn([s.ledger.entityId], {
-    entityId: s.ledger.entityId,
-    balance: s.ledger.balance,
-    timestamp: s.ledger.timestamp,
-  })
-  .from(s.ledger)
-  .where(eq(s.ledger.entityType, entityType))
-  .orderBy(s.ledger.entityId, desc(s.ledger.id));
+  const [balanceRows, revenueRows] = await Promise.all([
+    db.selectDistinctOn([s.ledger.entityId], {
+      entityId: s.ledger.entityId,
+      balance: s.ledger.balance,
+      timestamp: s.ledger.timestamp,
+    })
+    .from(s.ledger)
+    .where(eq(s.ledger.entityType, entityType))
+    .orderBy(s.ledger.entityId, desc(s.ledger.id)),
+    db.select({
+      entityId: s.ledger.entityId,
+      tripRevenue: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then coalesce(${s.ledger.debit}, 0) else 0 end), 0)::text`,
+      // Customer AR outstanding: Σ debit − Σ credit, excluding carrier-payable
+      // activity (external-carrier cost, vendor payments, and carrier-note
+      // unlock reversals). Same rule the CustomersPage applied client-side
+      // over the full entry list (buildCustomerDebtMap).
+      arDebt: sql<string>`coalesce(sum(case
+        when ${s.ledger.txnType} in ('EXTERNAL_CARRIER_COST', 'VENDOR_PAYMENT') then 0
+        when ${s.ledger.txnType} = 'UNLOCK_REVERSAL' and ${s.ledger.note} like 'Cước thuê ngoài%' then 0
+        else coalesce(${s.ledger.debit}, 0) - coalesce(${s.ledger.credit}, 0)
+      end), 0)::text`,
+    })
+    .from(s.ledger)
+    .where(eq(s.ledger.entityType, entityType))
+    .groupBy(s.ledger.entityId),
+  ]);
 
-  return rows.map(r => ({
+  const aggregatesByEntity = new Map(
+    revenueRows.map(r => [r.entityId, { tripRevenue: parseFloat(r.tripRevenue), arDebt: parseFloat(r.arDebt) }]),
+  );
+  return balanceRows.map(r => ({
     entityId: r.entityId,
     balance: parseFloat(r.balance),
+    tripRevenue: aggregatesByEntity.get(r.entityId)?.tripRevenue ?? 0,
+    arDebt: aggregatesByEntity.get(r.entityId)?.arDebt ?? 0,
     timestamp: r.timestamp,
   }));
 }

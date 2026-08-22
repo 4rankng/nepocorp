@@ -21,11 +21,18 @@ interface PenaltyRow {
   tripCode?: string | null;
 }
 
-export function usePenalties() {
+/**
+ * Penalties for the discipline page. `dateFrom` bounds the fetch — the page
+ * computes all its KPIs (month totals, prev-month compare, YTD, cutoff
+ * grades, streaks) inside a rolling multi-year window, so the formerly
+ * unbounded load-all is gone without changing any table math.
+ */
+export function usePenalties(dateFrom?: string) {
   return useQuery<PenaltyRow[]>({
-    queryKey: qk.penalties.list,
+    queryKey: [...qk.penalties.list, dateFrom ?? null],
     queryFn: async () => {
-      const data = await api.get<{ items: PenaltyRow[] } | PenaltyRow[]>('/penalties');
+      const qs = dateFrom ? `?dateFrom=${encodeURIComponent(dateFrom)}&limit=1000` : '?limit=1000';
+      const data = await api.get<{ items: PenaltyRow[]; total?: number } | PenaltyRow[]>(`/penalties${qs}`);
       const raw: PenaltyRow[] = Array.isArray(data) ? data : data.items ?? [];
       return raw;
     },

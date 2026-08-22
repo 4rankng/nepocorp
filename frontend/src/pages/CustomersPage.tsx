@@ -11,9 +11,9 @@ import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { EmptyState } from '../design-system';
 import { formatCurrency, formatNumber } from '../lib/format';
-import type { Customer, LedgerEntry, Supplier } from '@tingting/shared';
+import type { Customer, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
-import { useCustomers, useCustomerLedgerEntries, useSuppliers } from '../hooks/useQueries';
+import { useCustomers, useCustomerBalances, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
@@ -36,7 +36,17 @@ function riskDot(debt: number | null, limit: number | null) {
   return 'low';
 }
 
-export function buildCustomerDebtMap(entries: LedgerEntry[]): Map<number, number> {
+export function buildCustomerDebtMap(entries: Array<{
+  entityType: string;
+  entityId: number;
+  txnType: string;
+  debit?: string | null;
+  credit?: string | null;
+  note?: string | null;
+}>): Map<number, number> {
+  // Mirror of the SQL rule in financial.service.getEntityBalances' arDebt
+  // aggregate (kept here as the reference implementation for the unit test):
+  // Σ debit − Σ credit per customer, excluding carrier-payable activity.
   const map = new Map<number, number>();
   for (const entry of entries) {
     if (entry.entityType !== 'CUSTOMER') continue;
@@ -215,7 +225,7 @@ export default function CustomersPage() {
 
   const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const { data: ledgerEntries } = useCustomerLedgerEntries();
+  const { data: customerBalances } = useCustomerBalances();
   const { data: suppliersData } = useSuppliers(1, '');
   const allSuppliers = suppliersData?.items ?? [];
   const customers = useMemo(() => customersData?.items ?? [], [customersData]);
@@ -223,22 +233,19 @@ export default function CustomersPage() {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
 
+  // Server-side aggregates from /ledger/balances — replaced the former
+  // load-all-ledger-entries client-side reduces (arDebt excludes carrier AP).
   const debtMap = useMemo(() => {
-    return buildCustomerDebtMap(ledgerEntries ?? []);
-  }, [ledgerEntries]);
+    const map = new Map<number, number>();
+    for (const b of customerBalances ?? []) map.set(b.entityId, b.arDebt);
+    return map;
+  }, [customerBalances]);
 
   const revenueMap = useMemo(() => {
     const map = new Map<number, number>();
-    if (!ledgerEntries) return map;
-    for (const entry of ledgerEntries) {
-      if (entry.entityType === 'CUSTOMER' && entry.txnType === 'TRIP_REVENUE') {
-        const current = map.get(entry.entityId) || 0;
-        const amount = parseFloat(entry.debit || '0') || 0;
-        map.set(entry.entityId, current + amount);
-      }
-    }
+    for (const b of customerBalances ?? []) map.set(b.entityId, b.tripRevenue);
     return map;
-  }, [ledgerEntries]);
+  }, [customerBalances]);
 
   const top4Revenue = useMemo(() => {
     const customerRevenues = customers
