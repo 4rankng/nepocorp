@@ -14,6 +14,8 @@ describe('exportTripsToCSV', () => {
       id: 14,
       tripCode: 'TRP-202607-0014',
       status: TripStatus.COMPLETED,
+      totalRoadAllowance: '2480000',
+      tollCost: '980000',
       twoPointDeliveryBonus: '100000',
       vehicleShiftAllowance: '200000',
     } as TripDetail;
@@ -24,7 +26,12 @@ describe('exportTripsToCSV', () => {
 
     const [, headers, rows, options] = downloadCSV.mock.calls[0];
 
-    expect(headers).toEqual(expect.arrayContaining(['Trả hàng 2 điểm', 'Lưu ca xe']));
+    expect(headers).toEqual(expect.arrayContaining([
+      'Tổng tiền đi đường lái xe nhận',
+      'Trả hàng 2 điểm',
+      'Lưu ca xe',
+    ]));
+    expect(rows[0][11]).toBe(2480000);
     expect(rows[0][13]).toBe('100000');
     expect(rows[0][14]).toBe('200000');
     expect(options.totalsColumns).toEqual(expect.arrayContaining([13, 14]));

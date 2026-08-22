@@ -72,15 +72,19 @@ Click header **Ngày tạo** hoặc **Tổng tiền** để sort. Click lại đ
 
 Bấm "Xuất CSV" → tải `chuyen-di-YYYY-MM-DD.csv`. File chứa dữ liệu đang hiển thị (sau lọc). Có BOM UTF-8 cho Excel.
 
-### 2.6 Phân rã chi phí lưu ca và trả hàng 2 điểm
+### 2.6 Tổng tiền đi đường lái xe nhận
+
+Ở bảng, thẻ chuyến trên điện thoại và CSV, **Tổng tiền đi đường lái xe nhận** là giá trị `totalRoadAllowance` mà lái xe thực nhận. Không cộng **phí trạm/vé** (`tollCost`) vào con số này; phí trạm vẫn được tính riêng trong **Tổng chi phí** và lợi nhuận của chuyến.
+
+### 2.7 Phân rã chi phí lưu ca và trả hàng 2 điểm
 
 Ở cột **Tổng chi phí**, chuyến xe nhà có khoản **Trả hàng 2 điểm** hoặc **Lưu ca xe** lớn hơn 0 sẽ hiện từng khoản ngay dưới số tổng. Các khoản này đã nằm trong Tổng chi phí; dòng phân rã chỉ giúp đối chiếu sau khi tải lại danh sách, không cộng thêm lần nữa. Chuyến xe ngoài không hiển thị các khoản này.
 
-### 2.7 Cảnh báo nhiên liệu ⚠️
+### 2.8 Cảnh báo nhiên liệu ⚠️
 
 Icon ⚠️ hiện khi `(fuelAmount / distance) * 100 > 8.5` L/100km. Hover xem chi tiết mức tiêu thụ.
 
-### 2.8 Actions
+### 2.9 Actions
 
 | Action | Điều kiện |
 |--------|-----------|
@@ -129,7 +133,15 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | Không items, có customerRate + distance | customerRate × distance |
 | Null | "-" |
 
-### 4.3 Cột Tổng chi phí
+### 4.3 Cột Tổng tiền đi đường lái xe nhận
+
+| Điều kiện | Hiển thị |
+|-----------|----------|
+| Có `totalRoadAllowance` | Giá trị lái xe thực nhận, format VND |
+| Có `tollCost` | Không cộng vào cột này; vẫn tính trong **Tổng chi phí** |
+| Không có dữ liệu | `-` |
+
+### 4.4 Cột Tổng chi phí
 
 | Điều kiện | Hiển thị |
 |-----------|----------|
@@ -137,7 +149,7 @@ Tạo chuyến mới → Xuất hiện trạng thái CREATED
 | Không có hai khoản trên hoặc là xe ngoài | Chỉ hiện số **Tổng chi phí** |
 | DRIVER | Ẩn cột hoàn toàn |
 
-### 4.4 Phân trang
+### 4.5 Phân trang
 
 - PAGE_SIZE = 10 (cố định)
 - Tự reset về trang 1 khi đổi filter/search

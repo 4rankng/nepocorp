@@ -17,7 +17,7 @@ export interface TripExportOptions extends TripExportFilters {
 const EXPORT_HEADERS = [
   'Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM',
   'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu',
-  'Tổng đi đường', 'Doanh thu', 'Trả hàng 2 điểm', 'Lưu ca xe', 'Trạng thái',
+  'Tổng tiền đi đường lái xe nhận', 'Doanh thu', 'Trả hàng 2 điểm', 'Lưu ca xe', 'Trạng thái',
 ];
 
 const EXPORT_COLUMN_TYPES = [
@@ -27,7 +27,7 @@ const EXPORT_COLUMN_TYPES = [
 ] as const;
 
 /* Column indices (0-based) that should be summed in the totals row. */
-const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 13, 14]; // KM, Dầu (L), Giá trị dầu, Tổng đi đường, Doanh thu, Trả hàng 2 điểm, Lưu ca xe
+const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 13, 14]; // KM, Dầu (L), Giá trị dầu, Tiền đi đường lái xe nhận, Doanh thu, Trả hàng 2 điểm, Lưu ca xe
 
 export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   const commonParams: TripExportFilters = {
@@ -66,7 +66,7 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
       t.fuelLiters ?? '',
       t.fuelSupplier?.name ?? '',
       t.totalFuelCost ?? '',
-      (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
+      Number(t.totalRoadAllowance ?? 0) || '',
       t.revenue ?? '',
       t.twoPointDeliveryBonus ?? '',
       t.vehicleShiftAllowance ?? '',

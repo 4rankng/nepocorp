@@ -341,11 +341,11 @@ export function buildTripColumns(
     },
     {
       id: 'road',
-      header: 'Tổng đi đường',
-      accessorFn: (row) => Number(row.totalRoadAllowance ?? 0) + Number(row.tollCost ?? 0),
+      header: 'Tổng tiền đi đường lái xe nhận',
+      accessorFn: (row) => Number(row.totalRoadAllowance ?? 0),
       cell: ({ row }) => {
         const trip = row.original;
-        const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
+        const road = Number(trip.totalRoadAllowance ?? 0);
         if (quickEdit?.enabled) {
           const editable = isQuickEditable(trip);
           const draft = quickEdit.drafts[trip.id];

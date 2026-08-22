@@ -33,7 +33,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
   const isCreated = trip.status === TripStatus.CREATED;
   const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
   const km = getTripDistance(trip);
-  const road = Number(trip.totalRoadAllowance ?? 0) + Number(trip.tollCost ?? 0);
+  const road = Number(trip.totalRoadAllowance ?? 0);
   const revenue = Number(trip.revenue ?? 0);
   const totalCost = Number(trip.totalCost ?? 0);
   const grossProfit = getTripDisplayGrossProfit(trip);
@@ -125,7 +125,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
           )}
         </div>
         <div className="mm">
-          <span className="lab">Tổng đi đường</span>
+          <span className="lab">Tổng tiền đi đường lái xe nhận</span>
           <span className={road > 0 ? 'val' : 'val empty'}>
             {road > 0 ? `${formatMoney(road)} ₫` : '—'}
           </span>

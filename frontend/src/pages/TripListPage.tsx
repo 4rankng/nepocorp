@@ -22,6 +22,35 @@ import './TripListPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 import { onboardingEvents } from '../lib/onboardingEvents';
 
+export const TRIP_LIST_EXPORT_HEADERS = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng tiền đi đường lái xe nhận', 'Doanh thu', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'Trạng thái'];
+
+export function buildTripListExportRows(allTrips: TripDetail[]) {
+  return allTrips.map((t) => {
+    const containers = (t as unknown as { containers?: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }> }).containers ?? [];
+    const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
+    const numbers = containers.map((c) => c.containerNumber).join(', ');
+    return [
+      t.tripCode ?? '—',
+      t.customer?.name ?? '',
+      t.route?.name ?? '',
+      t.carrierType === 'EXTERNAL' ? (t.externalPlateNumber ?? 'Xe ngoài') : (t.truck?.licensePlate ?? ''),
+      t.departureDate ?? '',
+      getTripDistance(t) || '',
+      typeCodes, numbers,
+      t.fuelLiters ?? '',
+      t.fuelSupplier?.name ?? '',
+      t.totalFuelCost ?? '',
+      Number(t.totalRoadAllowance ?? 0) || '',
+      t.revenue ?? '',
+      t.totalCost ?? '',
+      t.twoPointDeliveryBonus ?? '',
+      t.vehicleShiftAllowance ?? '',
+      getTripDisplayGrossProfit(t),
+      t.status,
+    ];
+  });
+}
+
 export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
   const totalCost = Number(trip.totalCost ?? 0);
   const grossProfit = getTripDisplayGrossProfit(trip);
@@ -346,31 +375,7 @@ export default function TripListPage() {
       );
       for (const res of remaining) allTrips.push(...res.items);
     }
-    const headers = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng đi đường', 'Doanh thu', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'Trạng thái'];
-    const rows = allTrips.map((t) => {
-      const containers = (t as unknown as { containers?: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }> }).containers ?? [];
-      const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
-      const numbers = containers.map((c) => c.containerNumber).join(', ');
-      return [
-        t.tripCode ?? '—',
-        t.customer?.name ?? '',
-        t.route?.name ?? '',
-        t.carrierType === 'EXTERNAL' ? (t.externalPlateNumber ?? 'Xe ngoài') : (t.truck?.licensePlate ?? ''),
-        t.departureDate ?? '',
-        getTripDistance(t) || '',
-        typeCodes, numbers,
-        t.fuelLiters ?? '',
-        t.fuelSupplier?.name ?? '',
-        t.totalFuelCost ?? '',
-        (Number(t.totalRoadAllowance ?? 0) + Number(t.tollCost ?? 0)) || '',
-        t.revenue ?? '',
-        t.totalCost ?? '',
-        t.twoPointDeliveryBonus ?? '',
-        t.vehicleShiftAllowance ?? '',
-        getTripDisplayGrossProfit(t),
-        t.status,
-      ];
-    });
+    const rows = buildTripListExportRows(allTrips);
     const { downloadCSV } = await import('../lib/csv');
     const filterParts: string[] = [];
     if (listDateFrom && listDateTo) filterParts.push(`Từ ${listDateFrom} đến ${listDateTo}`);
@@ -380,7 +385,7 @@ export default function TripListPage() {
     if (truckFilter) filterParts.push(`Xe: #${truckFilter}`);
     if (customerFilter) filterParts.push(`Khách hàng: #${customerFilter}`);
     if (debouncedSearch) filterParts.push(`Tìm kiếm: "${debouncedSearch}"`);
-    await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows, {
+    await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, TRIP_LIST_EXPORT_HEADERS, rows, {
       title: 'SỔ CHUYẾN ĐI',
       subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
       columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],

@@ -4,6 +4,26 @@ import { TripStatus, type TripDetail } from '@tingting/shared';
 import { buildTripColumns } from './tripColumns';
 
 describe('trip total-cost column', () => {
+  it('shows only the road money received by the driver, excluding toll cost', () => {
+    const trip = {
+      id: 14,
+      status: TripStatus.COMPLETED,
+      totalRoadAllowance: '2480000',
+      tollCost: '980000',
+    } as TripDetail;
+    const column = buildTripColumns(37).find((item) => item.id === 'road');
+
+    if (!column || typeof column.cell !== 'function') {
+      throw new Error('Missing road-money cell renderer');
+    }
+
+    expect(column.header).toBe('Tổng tiền đi đường lái xe nhận');
+    render(column.cell({ row: { original: trip } } as never));
+
+    expect(screen.getByText('2.480.000')).toBeTruthy();
+    expect(screen.queryByText('3.460.000')).toBeNull();
+  });
+
   it('renders persisted two-point delivery and vehicle-shift costs below the total', () => {
     const trip = {
       id: 14,
