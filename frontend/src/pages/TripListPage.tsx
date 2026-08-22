@@ -477,7 +477,6 @@ export default function TripListPage() {
         onStatusFilter={setStatusFilter}
         searchQuery={searchInput}
         onSearch={setSearchInput}
-        searching={searching}
         truckOptions={truckOptions}
         truckFilter={truckFilter}
         onTruckFilter={setTruckFilter}

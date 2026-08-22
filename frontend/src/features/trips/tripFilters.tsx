@@ -19,7 +19,6 @@ export interface TripFiltersBarProps {
   onStatusFilter: (s: '' | TripStatus) => void;
   searchQuery: string;
   onSearch: (s: string) => void;
-  searching: boolean;
   truckOptions: Array<{ id: number; licensePlate: string }>;
   truckFilter: number | '';
   onTruckFilter: (id: number | '') => void;
@@ -46,7 +45,7 @@ const STATUS_TABS: Array<{ key: '' | TripStatus; label: string }> = [
 export function TripFiltersBar(props: TripFiltersBarProps) {
   const {
     statusCounts, statusFilter, onStatusFilter,
-    searchQuery, onSearch, searching,
+    searchQuery, onSearch,
     truckOptions, truckFilter, onTruckFilter,
     customerOptions, customerFilter, onCustomerFilter,
   } = props;
@@ -90,11 +89,6 @@ export function TripFiltersBar(props: TripFiltersBarProps) {
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        {searching && (
-          <span className="filters-search-hint" title="Khi tìm kiếm, hệ thống bỏ qua bộ lọc tháng để tìm trên tất cả các tháng.">
-            Đang tìm trên tất cả tháng
-          </span>
-        )}
         <label className={`filter-pill${truckFilter ? ' has-value' : ''}`}>
           <div className="filter-lbl-wrap">
             <span className="filter-lbl-cap">Phương tiện</span>

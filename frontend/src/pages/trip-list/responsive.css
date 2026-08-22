@@ -249,8 +249,7 @@
   .trip-list-page .filters-row-bottom {
     grid-template-columns: 1fr;
   }
-  .trip-list-page .filters-row-bottom .filters-search,
-  .trip-list-page .filters-search-hint {
+  .trip-list-page .filters-row-bottom .filters-search {
     grid-column: 1 / -1;
   }
 } /* end 640px */
