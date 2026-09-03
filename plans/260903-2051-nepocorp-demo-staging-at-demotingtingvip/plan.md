@@ -1,7 +1,7 @@
 ---
 title: "Nepocorp demo staging at demo.tingting.vip"
 description: "Second stack on the vantai droplet serving anonymized prod data under a generic TingTing company identity; make demo deploys to it; CI matrix repointed vantai→demo."
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 tags: [deploy, staging, demo, anonymization]
@@ -45,21 +45,21 @@ Provision a second TingTing stack (`/opt/demo`) on the vantai droplet (167.172.7
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Repo scaffolding: demo stack files](./phase-01-start.md) | Pending |
-| 2 | [Server stack provisioning](./phase-02-server-stack-provisioning.md) | Pending |
-| 3 | [One-time data anonymization](./phase-03-anonymized-snapshot-pipeline.md) | Pending |
-| 4 | [Data load and first boot](./phase-04-data-load-and-first-boot.md) | Pending |
-| 5 | [Deploy wiring: make demo + CI](./phase-05-deploy-wiring-make-demo-ci.md) | Pending |
-| 6 | [Verification and ship](./phase-06-verification-and-ship.md) | Pending |
+| 1 | [Repo scaffolding: demo stack files](./phase-01-start.md) | Completed |
+| 2 | [Server stack provisioning](./phase-02-server-stack-provisioning.md) | Completed |
+| 3 | [One-time data anonymization](./phase-03-anonymized-snapshot-pipeline.md) | Completed |
+| 4 | [Data load and first boot](./phase-04-data-load-and-first-boot.md) | Completed |
+| 5 | [Deploy wiring: make demo + CI](./phase-05-deploy-wiring-make-demo-ci.md) | Completed |
+| 6 | [Verification and ship](./phase-06-verification-and-ship.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `https://demo.tingting.vip` serves the app; `/api/health` green; login works (admin / admin123)
-- [ ] Company identity shows "Công ty vận tải TingTing" (sidebar/export/debit notes)
-- [ ] Leak scan: 0 occurrences of any real customer/supplier/driver/user name, plate, phone, or tax code across entity + swept text columns of the demo DB
-- [ ] `make demo` completes and restarts demo services; CI on main deploys nepo + demo green
-- [ ] Existing stacks unaffected: `https://nepo.tingting.vip` and `https://vantai.tingting.vip` still healthy; no changes under `/opt/vantai`
-- [ ] Vantai box memory stable (2G swap present; demo redis capped 64MB)
+- [x] `https://demo.tingting.vip` serves the app; `/api/health` green; login works (admin / admin123)
+- [x] Company identity shows "Công ty vận tải TingTing" (sidebar/export/debit notes)
+- [x] Leak scan: 0 occurrences of any real customer/supplier/driver/user name, plate, phone, or tax code across entity + swept text columns of the demo DB
+- [x] `make demo` completes and restarts demo services; CI on main deploys nepo + demo green
+- [x] Existing stacks unaffected: `https://nepo.tingting.vip` and `https://vantai.tingting.vip` still healthy; no changes under `/opt/vantai`
+- [x] Vantai box memory stable (2G swap present; demo redis capped 64MB)
 
 ## Risk Assessment
 
