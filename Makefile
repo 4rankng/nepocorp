@@ -1,6 +1,7 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
         deploy deploy-backend deploy-frontend \
+        demo demo-backend demo-frontend \
         prod-migrate prod-migrate-file \
         backup restore adminer
 
@@ -124,6 +125,42 @@ deploy-backend: push-backend
 deploy-frontend: push-frontend
 	$(MAKE) -C frontend deploy
 
+# ─── Demo staging deploy (Docker Hub → demo.tingting.vip on the vantai droplet) ─
+# Second stack on the vantai box, next to the (silversea-bound) /opt/vantai
+# stack. Data is a one-time anonymized prod snapshot — deploys only ship code;
+# never re-seed or wipe the demo DB.
+
+DEMO_SERVER := demo.tingting.vip
+DEMO_PATH := /opt/demo
+DEMO_COMPOSE := deploy/docker-compose.demo.yml
+
+## demo: Build, push images & deploy all services to demo staging
+demo: demo-backend demo-frontend
+
+## demo-backend: Push & deploy backend to demo staging + run migrations
+demo-backend: push-backend
+	@echo "Deploying backend on demo staging..."
+	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) pull backend"
+	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps backend"
+	@echo "Waiting for backend container to be ready..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if ssh root@$(DEMO_SERVER) "docker exec demo-backend-1 echo ok" >/dev/null 2>&1; then \
+			break; \
+		fi; \
+		echo "  waiting... ($$i)"; \
+		sleep 2; \
+	done
+	@echo "Running database migrations..."
+	@ssh root@$(DEMO_SERVER) "docker exec demo-backend-1 npx drizzle-kit migrate"
+	@echo "Demo backend deployed! API: https://$(DEMO_SERVER)/api/health"
+
+## demo-frontend: Push & deploy frontend to demo staging
+demo-frontend: push-frontend
+	@echo "Deploying frontend on demo staging..."
+	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) pull frontend"
+	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps frontend"
+	@echo "Demo frontend deployed! App: https://$(DEMO_SERVER)"
+
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB
 prod-migrate:
 	@echo "==> Applying migrations on production..."
@@ -236,10 +273,10 @@ help: ## Show this help
 	@echo "  \033[36mdeploy-frontend\033[0m Pull & restart frontend on droplet"
 	@echo "  \033[36mdeploy-infra  \033[0m Restart infra services (postgres, redis)"
 	@echo ""
-	@echo "Demo deploy (Docker Hub → vantai.tingting.vip):"
-	@echo "  \033[36mdemo          \033[0m Build, push images & deploy all to vantai"
-	@echo "  \033[36mdemo-backend  \033[0m Push & deploy backend to vantai (+ migrations)"
-	@echo "  \033[36mdemo-frontend \033[0m Push & deploy frontend to vantai"
+	@echo "Demo staging deploy (Docker Hub → demo.tingting.vip, /opt/demo on the vantai droplet):"
+	@echo "  \033[36mdemo          \033[0m Build, push images & deploy all to demo staging"
+	@echo "  \033[36mdemo-backend  \033[0m Push & deploy backend to demo staging (+ migrations)"
+	@echo "  \033[36mdemo-frontend \033[0m Push & deploy frontend to demo staging"
 	@echo "  \033[36mprod-migrate  \033[0m Apply all SQL migrations to production DB"
 	@echo "  \033[36mprod-migrate-file \033[0m Apply single migration (FILE=xxx.sql)"
 	@echo "  \033[36mbackup        \033[0m Dump production DB → OneDrive"

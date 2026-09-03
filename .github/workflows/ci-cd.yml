@@ -136,8 +136,10 @@ jobs:
         include:
           - server: nepo.tingting.vip
             deploy_path: /opt/nepocorp
-          - server: vantai.tingting.vip
-            deploy_path: /opt/vantai
+            compose_file: deploy/docker-compose.prod.yml
+          - server: demo.tingting.vip
+            deploy_path: /opt/demo
+            compose_file: deploy/docker-compose.demo.yml
 
     steps:
       - name: Deploy via SSH
@@ -153,31 +155,31 @@ jobs:
             cd ${{ matrix.deploy_path }}
 
             echo "Pulling latest images..."
-            docker compose -f deploy/docker-compose.prod.yml pull backend frontend
+            docker compose -f ${{ matrix.compose_file }} pull backend frontend
 
             echo "Restarting backend..."
-            docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps backend
+            docker compose -f ${{ matrix.compose_file }} up -d --force-recreate --no-deps backend
 
             echo "Waiting for backend to start..."
             for i in $(seq 1 20); do
-              if docker compose -f deploy/docker-compose.prod.yml exec -T backend \
+              if docker compose -f ${{ matrix.compose_file }} exec -T backend \
                  wget -q --spider http://localhost:3090/api/health 2>/dev/null; then
                 echo "Backend is healthy after ${i}s"
                 break
               fi
               if [ "$i" -eq 20 ]; then
                 echo "ERROR: Backend failed to start within 20s"
-                docker compose -f deploy/docker-compose.prod.yml logs --tail=30 backend
+                docker compose -f ${{ matrix.compose_file }} logs --tail=30 backend
                 exit 1
               fi
               sleep 1
             done
 
             echo "Running database migrations..."
-            docker compose -f deploy/docker-compose.prod.yml exec -T backend npx drizzle-kit migrate
+            docker compose -f ${{ matrix.compose_file }} exec -T backend npx drizzle-kit migrate
 
             echo "Restarting frontend..."
-            docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps frontend
+            docker compose -f ${{ matrix.compose_file }} up -d --force-recreate --no-deps frontend
 
             echo "Cleaning up unused images..."
             docker image prune -f
