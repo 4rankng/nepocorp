@@ -11,13 +11,13 @@ End-to-end proof against the acceptance criteria, reviewer pass, then ship (sing
 
 ## Requirements
 
-- [ ] Leak scan re-run against the LIVE demo DB (not just local): 0 original-identifier occurrences
-- [ ] Visual check: login, customers/trips/finance pages show fake names + "Công ty vận tải TingTing"; no broken image floods (photo tables emptied)
-- [ ] Regression check: `https://nepo.tingting.vip/api/health` + `https://vantai.tingting.vip/api/health` green; `/opt/vantai` unmodified
-- [ ] Box health: `docker stats` + `free -h` — no memory pressure; swap usage noted
-- [ ] `code-reviewer` subagent pass on the diff (acceptance criteria, regressions, contracts, patterns)
-- [ ] Commit (conventional, no AI refs), push, watch CI deploy nepo+demo green
-- [ ] Journal + memory update (servers table: demo.tingting.vip; vantai = silversea-reserved, transting images)
+- [x] Leak scan re-run against the LIVE demo DB (not just local): 0 original-identifier occurrences
+- [x] Visual check: login, customers/trips/finance pages show fake names + "Công ty vận tải TingTing"; no broken image floods (photo tables emptied)
+- [x] Regression check: `https://nepo.tingting.vip/api/health` + `https://vantai.tingting.vip/api/health` green; `/opt/vantai` unmodified
+- [x] Box health: `docker stats` + `free -h` — no memory pressure; swap usage noted
+- [x] `code-reviewer` subagent pass on the diff (acceptance criteria, regressions, contracts, patterns)
+- [x] Commit (conventional, no AI refs), push, watch CI deploy nepo+demo green
+- [x] Journal + memory update (servers table: demo.tingting.vip; vantai = silversea-reserved, transting images)
 
 ## Implementation Steps
 
@@ -28,11 +28,11 @@ End-to-end proof against the acceptance criteria, reviewer pass, then ship (sing
 
 ## Todo
 
-- [ ] Live leak scan clean
-- [ ] Visual + regression checks pass
-- [ ] Review pass fixed
-- [ ] Shipped + CI green
-- [ ] Journal + memory
+- [x] Live leak scan clean
+- [x] Visual + regression checks pass
+- [x] Review pass fixed
+- [x] Shipped + CI green
+- [x] Journal + memory
 
 ## Success Criteria
 
