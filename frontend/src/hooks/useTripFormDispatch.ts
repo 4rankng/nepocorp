@@ -21,6 +21,8 @@ import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
 import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import { createDefaultFuelAllocations, type UseTripFormStateReturn, type CompletionStatus } from './useTripFormState';
+import { activeFuelSuppliers, normalizeFuelAllocationRows } from '../components/trip/fuelAllocationRows';
+import { useCatalogs } from './useCatalogs';
 import {
   countRequiredTripFields,
   createFallbackLegsFromRouteName,
@@ -89,6 +91,10 @@ export interface UseTripFormDispatchReturn {
 export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripFormDispatchReturn {
   const { state: s, options, isEditMode, existingTrip } = params;
   const lastPopulatedTripId = useRef<number | undefined>(undefined);
+
+  // Fuel-allocation reseeds need the live supplier catalog so the reseeded
+  // rows already carry the standard catalog points.
+  const { data: catalogData } = useCatalogs();
 
   usePersistedContainerType({
     tripId: existingTrip?.id,
@@ -188,26 +194,32 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.setInstructionsNotes(inst?.notes ?? '');
     s.setFuelActualUnitPrice(existingTrip.fuelActualUnitPrice != null ? String(existingTrip.fuelActualUnitPrice) : '');
     s.setFuelSupplierId(existingTrip.fuelSupplierId ?? null);
+    // Normalize at the write site: the reseeded rows must already carry the
+    // catalog standard rows, otherwise a repair-after-reseed races with this
+    // effect inside React's batch and the catalog points can be lost.
     s.setFuelAllocations(
-      existingTrip.fuelAllocations?.length
-        ? existingTrip.fuelAllocations.map(allocation => ({
-            _key: String(allocation.id),
-            point: allocation.paymentMethod === 'CASH' ? 'OUTSIDE' as const : 'CUSTOM' as const,
-            enabled: true,
-            supplierId: allocation.supplierId,
-            paymentMethod: allocation.paymentMethod,
-            liters: String(allocation.liters),
-          }))
-        : existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
-          ? [{
-              _key: `legacy-${existingTrip.id}`,
-              point: 'CUSTOM' as const,
+      normalizeFuelAllocationRows(
+        existingTrip.fuelAllocations?.length
+          ? existingTrip.fuelAllocations.map(allocation => ({
+              _key: String(allocation.id),
+              point: allocation.paymentMethod === 'CASH' ? 'OUTSIDE' as const : 'CUSTOM' as const,
               enabled: true,
-              supplierId: existingTrip.fuelSupplierId,
-              paymentMethod: 'CREDIT' as const,
-              liters: String(existingTrip.fuelLiters),
-            }]
-          : createDefaultFuelAllocations(),
+              supplierId: allocation.supplierId,
+              paymentMethod: allocation.paymentMethod,
+              liters: String(allocation.liters),
+            }))
+          : existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
+            ? [{
+                _key: `legacy-${existingTrip.id}`,
+                point: 'CUSTOM' as const,
+                enabled: true,
+                supplierId: existingTrip.fuelSupplierId,
+                paymentMethod: 'CREDIT' as const,
+                liters: String(existingTrip.fuelLiters),
+              }]
+            : createDefaultFuelAllocations(),
+        activeFuelSuppliers(catalogData?.suppliers),
+      ),
     );
     s.setPhotoUrls(existingTrip.photoUrls || []);
 
