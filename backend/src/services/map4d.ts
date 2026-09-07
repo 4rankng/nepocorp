@@ -1,36 +1,28 @@
 /**
- * Place search via Map4D (api.map4d.vn) — the map/search provider the Bách Khoa
- * (dvbk.vn) portal embeds — with a Google Maps Geocoding fallback. This is our
- * location-search source for (a) trip-creation place autocomplete and (b)
- * resolving leg place-names to coordinates for GPS-trail slicing. It replaced
- * OpenStreetMap/Nominatim.
+ * Place search for trip-creation autocomplete and leg place-name→coordinate
+ * resolution. Google Places Autocomplete (New) is the primary source — unlike
+ * Geocoding it matches partial input and business names ("SINOVNL", "Trà Xanh
+ * Ngọc") — with a Google Maps Geocoding fallback for pasted full addresses.
+ * (Historically Map4D — api.map4d.vn, keyed to the dvbk.vn referrer — then
+ * bare Geocoding; both are bypassed in the resolve paths today.)
  *
- * ── Map4D key (Bách Khoa's) ────────────────────────────────────────────────
- * The key (config.map4dApiKey) is Bách Khoa's own, baked into the dvbk.vn
- * portal. It does NOT require a Bách Khoa login, but Map4D restricts it to the
- * dvbk.vn referrer — so a bare server-side call returns nothing. We therefore
- * send the request "via bach khoa web": browser-like User-Agent + Referer/
- * Origin https://dvbk.vn. That makes Map4D accept the call as if from the
- * portal. (Reliability note: Bách Khoa can rotate this key; see fallback.)
- *
- * ── Google Maps fallback ───────────────────────────────────────────────────
- * If Map4D yields nothing (referral block, key rotated, or genuine no-match),
- * we fall back to the Google Maps Geocoding API (config.googleMapsApiKey) so
- * autocomplete/geocoding always returns a result when one exists. Gemini is an
- * LLM, not a geocoder, so Google Maps Geocoding is the correct fallback.
+ * ── Google key ─────────────────────────────────────────────────────────────
+ * config.googleMapsApiKey powers both Places and Geocoding calls.
  *
  * ── Caching ────────────────────────────────────────────────────────────────
- * Every lookup is fronted by the shared Redis `cacheGet` with a ~3-month TTL —
- * place geography barely changes, and the final result (Map4D OR Google) is
- * cached under one key per query, so repeats never re-hit either network. The
- * in-flight dedup itself is provided by lib/redis (covered by its own tests).
+ * Every lookup is fronted by the shared Redis `cacheGet` — ~3-month TTL for
+ * good results, 5 minutes for empty results and for Places-outage fallbacks
+ * (a degraded answer must not stick for months). The in-flight dedup itself
+ * is provided by lib/redis (covered by its own tests).
  *
  * ── Reliability ────────────────────────────────────────────────────────────
- * No 1 req/s throttle (keyed commercial endpoints, not Nominatim's policy). Any
- * failure (missing keys, non-2xx, network) degrades to []/null — never throws.
+ * Any failure (missing key, non-2xx, network) degrades to []/null — never
+ * throws. Places request failures are logged so outages are diagnosable, and
+ * only shorten the fallback's cache TTL instead of poisoning it.
  *
- * Pure helpers (mapToSuggestions, geocodeFromLookup, googleResultToPlace) are
- * exported so the mapping + fallback logic is unit-testable without network.
+ * Pure helpers (mapToSuggestions, geocodeFromLookup, googleResultToPlace,
+ * placePredictionsToSuggestions) are exported so the mapping + fallback logic
+ * is unit-testable without network.
  */
 import { config } from '../config';
 import { cacheGet } from '../lib/redis';
@@ -72,8 +64,13 @@ interface Map4dResponse {
 export interface Map4dSuggestion {
   placeId: string;
   description: string;
-  lat: number;
-  lng: number;
+  /**
+   * Coordinates, present only on Geocoding-fallback rows. Places Autocomplete
+   * (New) predictions carry no coordinates — and no consumer needs them here
+   * (map markers resolve server-side by place name via resolveLegCoords).
+   */
+  lat?: number;
+  lng?: number;
 }
 
 /** A single Google Maps Geocoding result (only the fields we use). */
@@ -108,6 +105,31 @@ export function mapToSuggestions(rows: Map4dPlace[], limit: number): Map4dSugges
       lat: r.location!.lat,
       lng: r.location!.lng,
     }));
+}
+
+/** A single Google Places Autocomplete (New) suggestion (only the fields we use). */
+export interface PlacesAutocompletePrediction {
+  placePrediction?: {
+    placeId?: string;
+    text?: { text?: string };
+  };
+}
+
+/**
+ * Map raw Places Autocomplete (New) suggestions → our suggestion shape:
+ * drop malformed entries (no placeId / no text), cap to `limit`. Predictions
+ * carry no coordinates, so the mapped rows have none. Pure — no network, no
+ * cache. Exposed for unit testing.
+ */
+export function placePredictionsToSuggestions(
+  suggestions: PlacesAutocompletePrediction[],
+  limit: number,
+): Map4dSuggestion[] {
+  return suggestions
+    .map((s) => s.placePrediction)
+    .filter((p): p is { placeId: string; text: { text: string } } => !!p?.placeId && !!p.text?.text)
+    .slice(0, limit)
+    .map((p) => ({ placeId: p.placeId, description: p.text.text }));
 }
 
 /**
@@ -171,30 +193,112 @@ async function googleGeocodeOnce(text: string): Promise<GoogleGeocodeResult[]> {
   }
 }
 
+/** locationBias circle: softly ranks Hải Phòng-area yards first (bias, not restriction). */
+const LOCATION_BIAS = {
+  circle: {
+    center: { latitude: 20.86, longitude: 106.68 },
+    radius: 50_000, // API max — anything larger is rejected as INVALID_ARGUMENT
+  },
+};
+
 /**
- * Resolve a query to Map4D rows, falling back to Google Maps Geocoding when
- * Map4D yields nothing. Google results are normalized to Map4dPlace so callers
- * (searchPlaces) treat both sources identically. Uncached — the Redis layer is
- * the only cache.
+ * One uncached Google Places Autocomplete (New) call. Unlike Geocoding, it
+ * matches partial input and business names ("SINOVNL", "Trà Xanh Ngọc") and
+ * returns up to 5 candidate suggestions. Predictions carry no coordinates.
+ *
+ * Returns null when the REQUEST fails (missing key, non-2xx, network) —
+ * distinct from [] (genuine no-match) so callers don't cache the degraded
+ * fallback for months. Failures are logged: silent provider outages in this
+ * module were painful to diagnose before.
  */
-async function resolvePlacesOnce(text: string): Promise<Map4dPlace[]> {
-  // Map4D is bypassed entirely in favor of the more reliable Google Maps Geocoding API
-  return (await googleGeocodeOnce(text)).map(googleResultToPlace);
+async function googlePlacesAutocompleteOnce(
+  input: string,
+  sessionToken?: string,
+): Promise<PlacesAutocompletePrediction[] | null> {
+  if (!config.googleMapsApiKey) return null;
+  try {
+    const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': config.googleMapsApiKey,
+      },
+      body: JSON.stringify({
+        input,
+        // Omitted when absent — older clients don't send a token.
+        ...(sessionToken ? { sessionToken } : {}),
+        includedRegionCodes: ['vn'],
+        // Vietnamese output — omitted languageCode defaults to en on a
+        // server-side call (no Accept-Language header).
+        languageCode: 'vi',
+        // Soft bias (not a restriction): local yards rank first, the rest of
+        // Vietnam still ranks normally.
+        locationBias: LOCATION_BIAS,
+      }),
+    });
+    if (!res.ok) {
+      console.warn(`[map4d] Places autocomplete non-ok: ${res.status}`);
+      return null;
+    }
+    const body = (await res.json()) as { suggestions?: PlacesAutocompletePrediction[] };
+    return Array.isArray(body?.suggestions) ? body.suggestions : [];
+  } catch (e) {
+    console.warn(`[map4d] Places autocomplete failed: ${e instanceof Error ? e.message : e}`);
+    return null;
+  }
 }
 
-/** Cached place autocomplete. Google Maps Geocoding. */
-export async function searchPlaces(query: string, limit = 8): Promise<Map4dSuggestion[]> {
+/** Resolved suggestion set plus whether it came from the outage fallback. */
+interface ResolvedSuggestions {
+  suggestions: Map4dSuggestion[];
+  /** Places FAILED (not a genuine no-match) — cache briefly, not for months. */
+  degraded: boolean;
+}
+
+/**
+ * Uncached autocomplete resolution: Google Places Autocomplete (New) first —
+ * unlike Geocoding it matches partial input and business names. Falls back to
+ * Geocoding when autocomplete yields nothing, which keeps pasted full
+ * addresses resolving (Geocoding's strength). When Places itself FAILED
+ * (vs a genuine no-match) the fallback is marked degraded so the cache only
+ * holds it for minutes. Uncached — the Redis layer is the only cache.
+ */
+async function resolveSuggestionsOnce(
+  q: string,
+  limit: number,
+  sessionToken?: string,
+): Promise<ResolvedSuggestions> {
+  const predictions = await googlePlacesAutocompleteOnce(q, sessionToken);
+  const viaAutocomplete =
+    predictions === null ? [] : placePredictionsToSuggestions(predictions, limit);
+  if (viaAutocomplete.length > 0) {
+    return { suggestions: viaAutocomplete, degraded: false };
+  }
+  return {
+    suggestions: mapToSuggestions((await googleGeocodeOnce(q)).map(googleResultToPlace), limit),
+    degraded: predictions === null,
+  };
+}
+
+/** Cached place autocomplete. Places (New) first, Geocoding fallback. */
+export async function searchPlaces(query: string, limit = 8, sessionToken?: string): Promise<Map4dSuggestion[]> {
   const q = query.trim();
   if (!q) return [];
-  const key = `map4d:place:search:${q.toLowerCase()}`;
-  // Cache the full row set per query (limit applied after), so different limit
-  // values share one entry.
-  const rows = await cacheGet<Map4dPlace[]>(
+  // v3 key: cached value became a {suggestions, degraded} wrapper (v2 held
+  // raw Map4dSuggestion[], v1 Map4dPlace rows). Old entries expire untouched.
+  const key = `map4d:place:search:v3:${q.toLowerCase()}`;
+  // Suggestions cached per query (sliced at resolve time); every caller uses
+  // the default limit of 8, so first-writer-wins on the slice is moot.
+  const resolved = await cacheGet<ResolvedSuggestions>(
     key,
-    (res) => (res.length > 0 ? THREE_MONTHS_TTL_SECONDS : EMPTY_CACHE_TTL_SECONDS),
-    () => resolvePlacesOnce(q)
+    (res) => {
+      if (res.degraded) return EMPTY_CACHE_TTL_SECONDS;
+      return res.suggestions.length > 0 ? THREE_MONTHS_TTL_SECONDS : EMPTY_CACHE_TTL_SECONDS;
+    },
+    () => resolveSuggestionsOnce(q, limit, sessionToken)
   );
-  return mapToSuggestions(rows, limit);
+  // Defensive: a malformed cached payload must not crash the route.
+  return (Array.isArray(resolved?.suggestions) ? resolved.suggestions : []).slice(0, limit);
 }
 
 /**
@@ -208,11 +312,14 @@ export async function geocodePlace(place: string): Promise<[number, number] | nu
   return cacheGet<[number, number] | null>(
     key,
     (res) => (res !== null ? THREE_MONTHS_TTL_SECONDS : EMPTY_CACHE_TTL_SECONDS),
-    async () => {
-      // Map4D is bypassed entirely in favor of the more reliable Google Maps Geocoding API
-      const g = (await googleGeocodeOnce(p))[0];
-      return g ? [g.geometry.location.lat, g.geometry.location.lng] : null;
-    }
+    async () =>
+      // Comma-tail fallback (via geocodeFromLookup): suggestions picked from
+      // Places are business-name-prefixed strings that whole-string Geocoding
+      // often misses — retry over trailing comma-substrings before giving up
+      // (first hit costs exactly one lookup, same as before).
+      geocodeFromLookup(p, (text) =>
+        googleGeocodeOnce(text).then((rows) => rows.map(googleResultToPlace))
+      )
   );
 }
 
@@ -269,17 +376,21 @@ export async function debugResolve(query: string): Promise<PlaceSearchDiag> {
   }
 
   if (config.googleMapsApiKey) {
-    const url =
-      `https://maps.googleapis.com/maps/api/geocode/json` +
-      `?address=${encodeURIComponent(q)}&components=country:vn&language=vi` +
-      `&key=${encodeURIComponent(config.googleMapsApiKey)}`;
+    // Probe the same Places Autocomplete (New) call searchPlaces makes.
     try {
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': config.googleMapsApiKey,
+        },
+        body: JSON.stringify({ input: q, includedRegionCodes: ['vn'], languageCode: 'vi', locationBias: LOCATION_BIAS }),
+      });
       diag.google.httpStatus = res.status;
       const text = await res.text();
       diag.google.bodyHead = text.slice(0, 400);
-      const parsed = JSON.parse(text) as { results?: unknown[] };
-      diag.google.count = Array.isArray(parsed?.results) ? parsed.results.length : 0;
+      const parsed = JSON.parse(text) as { suggestions?: unknown[] };
+      diag.google.count = Array.isArray(parsed?.suggestions) ? parsed.suggestions.length : 0;
     } catch (e) {
       diag.google.error = errStr(e);
     }

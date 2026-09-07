@@ -2,8 +2,9 @@
  * Maps service — route/distance lookup (from our GPS-captured route_polylines)
  * + place autocomplete via Map4D (the provider the Bách Khoa portal embeds).
  * Extracted from routes/maps.ts. Google Directions was retired — routes now
- * come from real Bách Khoa GPS tracks; place search + geocoding come from
- * Map4D (was OpenStreetMap/Nominatim).
+ * come from real Bách Khoa GPS tracks; place autocomplete comes from Google
+ * Places Autocomplete (New) with a Geocoding fallback, and geocoding from
+ * Google Maps Geocoding.
  */
 import { resolveRoute, decodePolyline } from './gps/route-capture';
 import { fetchRouteMap } from './gps/route-lookup';
@@ -16,8 +17,12 @@ export { debugResolve } from './map4d';
 export interface PlaceSuggestion {
   placeId: string;
   description: string;
-  lat: number;
-  lng: number;
+  /**
+   * Only on Geocoding-fallback rows — Places (New) predictions carry no
+   * coordinates, and no consumer needs them (markers resolve server-side).
+   */
+  lat?: number;
+  lng?: number;
 }
 
 export interface RouteSuggestion {
@@ -32,13 +37,20 @@ export interface DistanceResponse {
   selected: RouteSuggestion | null;
 }
 
-// (Google Maps fully removed — route + distance come from Bách Khoa GPS tracks,
-//  and place autocomplete + geocoding come from Map4D / Bách Khoa.)
+// (Route + distance come from Bách Khoa GPS tracks; place autocomplete from
+//  Google Places (New); geocoding from Google Maps Geocoding.)
 
-// ── Places Autocomplete (Map4D / Bách Khoa) ────────────────────────────────
+// ── Places Autocomplete (Google Places (New), Geocoding fallback) ─────────
 
-export async function getPlaceAutocomplete(query: string, _sessionToken?: string): Promise<PlaceSuggestion[]> {
-  return searchPlaces(query, 8);
+/**
+ * Place autocomplete for the /maps/autocomplete route. `sessionToken` (the
+ * frontend's per-composition random string) groups one autocomplete editing
+ * session for Google Places billing; without a closing Place Details call the
+ * session simply bills per request — the token is still what Google's session
+ * guidance expects.
+ */
+export async function getPlaceAutocomplete(query: string, sessionToken?: string): Promise<PlaceSuggestion[]> {
+  return searchPlaces(query, 8, sessionToken);
 }
 
 // ── Distance with cache ────────────────────────────────────────────────────
@@ -75,8 +87,8 @@ export interface LegCoord {
  * (e.g. trip 76 legs 2-3). Free data first, geocode last:
  *   1. Legs WITH a route_polyline: decode it (already oriented origin→destination
  *      by resolveRoute) → origin = first point, destination = last point.
- *   2. Remaining unique place-names: geocode via Map4D (map4d.geocodePlace —
- *      cached ~3 months in Redis, with a Google Maps fallback), so even several
+ *   2. Remaining unique place-names: geocode via map4d.geocodePlace
+ *      (cached ~3 months in Redis; Google Geocoding + comma-tail fallback), so even several
  *      novel places resolve without hammering any one provider.
  * Returns one {originCoord, destinationCoord} per input leg; null when a place
  * genuinely can't be resolved (the frontend then just omits that marker).

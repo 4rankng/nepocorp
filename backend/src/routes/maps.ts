@@ -4,7 +4,7 @@ import * as mapsService from '../services/maps.service';
 
 const router = Router();
 
-// ── Place autocomplete (OpenStreetMap / Nominatim) ─────────────────────────
+// ── Place autocomplete (Google Places (New), Geocoding fallback) ──────────
 
 router.get('/autocomplete', asyncHandler(async (req: Request, res: Response) => {
   const q = (req.query.q as string || '').trim();
@@ -19,7 +19,12 @@ router.get('/autocomplete', asyncHandler(async (req: Request, res: Response) => 
     res.json({ suggestions: [] });
     return;
   }
-  const suggestions = await mapsService.getPlaceAutocomplete(q);
+  // Session token (frontend param: `sessiontoken`) groups one autocomplete
+  // editing session for Google Places billing. Capped — forwarded into the
+  // Google request body.
+  const rawToken = req.query.sessiontoken;
+  const sessionToken = typeof rawToken === 'string' ? rawToken.slice(0, 64) : undefined;
+  const suggestions = await mapsService.getPlaceAutocomplete(q, sessionToken);
   res.json({ suggestions });
 }));
 

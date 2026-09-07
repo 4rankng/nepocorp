@@ -7,7 +7,14 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { mapToSuggestions, geocodeFromLookup, googleResultToPlace, type Map4dPlace } from '../services/map4d';
+import {
+  mapToSuggestions,
+  geocodeFromLookup,
+  googleResultToPlace,
+  placePredictionsToSuggestions,
+  type Map4dPlace,
+  type PlacesAutocompletePrediction,
+} from '../services/map4d';
 
 const row = (over: Partial<Map4dPlace>): Map4dPlace => ({
   id: 'x',
@@ -145,5 +152,53 @@ describe('map4d: geocodeFromLookup', () => {
     );
     const c = await geocodeFromLookup('Foo, Bar', lookup);
     assert.deepEqual(c, [9, 9]); // fell through to the comma-part
+  });
+});
+
+describe('map4d: placePredictionsToSuggestions (Places Autocomplete (New))', () => {
+  const pred = (over: Partial<NonNullable<PlacesAutocompletePrediction['placePrediction']>> = {}): PlacesAutocompletePrediction => ({
+    placePrediction: {
+      placeId: 'ChIJ_1',
+      text: { text: 'chi nhánh công ty TNHH SINOVNL tại Hải Phòng, khu công nghiệp Nam Đình, Đông Hải, Hải Phòng, Việt Nam' },
+      ...over,
+    },
+  });
+
+  test('maps predictions to {placeId, description} with no coordinates', () => {
+    const out = placePredictionsToSuggestions([
+      pred({ placeId: 'ChIJ_A', text: { text: 'Công ty TNHH Trà Xanh Ngọc Thanh, Quốc lộ 2, Trạm Thản, Phú Thọ, Việt Nam' } }),
+      pred({ placeId: 'ChIJ_B', text: { text: 'Vụ Yên, Yên Bái, Việt Nam' } }),
+    ], 8);
+    assert.deepEqual(out, [
+      { placeId: 'ChIJ_A', description: 'Công ty TNHH Trà Xanh Ngọc Thanh, Quốc lộ 2, Trạm Thản, Phú Thọ, Việt Nam' },
+      { placeId: 'ChIJ_B', description: 'Vụ Yên, Yên Bái, Việt Nam' },
+    ]);
+  });
+
+  test('drops entries missing placeId or text', () => {
+    const out = placePredictionsToSuggestions(
+      [{}, { placePrediction: { placeId: 'ChIJ_notext' } }, pred({ placeId: 'ChIJ_ok' })],
+      8,
+    );
+    assert.deepEqual(out.map((s) => s.placeId), ['ChIJ_ok']);
+  });
+
+  test('respects the limit', () => {
+    const out = placePredictionsToSuggestions([pred({ placeId: 'a' }), pred({ placeId: 'b' }), pred({ placeId: 'c' })], 2);
+    assert.equal(out.length, 2);
+  });
+
+  test('empty input → empty output', () => {
+    assert.deepEqual(placePredictionsToSuggestions([], 8), []);
+  });
+
+  test('places rows carry no coords while geocode-fallback rows do', () => {
+    const places = placePredictionsToSuggestions([pred({ placeId: 'ChIJ_p' })], 8);
+    assert.equal(places[0].lat, undefined);
+    const geo = mapToSuggestions(
+      [googleResultToPlace({ place_id: 'X', formatted_address: 'Hà Nội, Vietnam', geometry: { location: { lat: 21.0, lng: 105.8 } } })],
+      8,
+    );
+    assert.equal(typeof geo[0].lat, 'number');
   });
 });

@@ -28,7 +28,7 @@ const CACHE_TTL = 5 * 60 * 1000;
 // ── Public API ────────────────────────────────────────────────────────────
 
 export async function fetchPlaceSuggestions(input: string, sessionToken?: string): Promise<PlaceSuggestion[]> {
-  if (!input.trim() || input.trim().length < 3) return [];
+  if (!input.trim() || input.trim().length < 2) return [];
 
   const key = input.trim().toLowerCase();
 

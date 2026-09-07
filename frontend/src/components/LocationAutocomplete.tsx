@@ -85,12 +85,17 @@ export function LocationAutocomplete({
     return allAsSuggestions(matched.slice(0, 6));
   }, [ports, value]);
 
-  // Fetch place suggestions with debounce (only for queries ≥3 chars)
+  // Fetch place suggestions with debounce (only for queries ≥2 chars)
   useEffect(() => {
+    // Stale-response guard: a slow fetch for an earlier keystroke can resolve
+    // after a newer one (layered caches make out-of-order resolution realistic)
+    // and would show old results under the newer input.
+    let cancelled = false;
     const timer = setTimeout(async () => {
-      if (value.trim().length >= 3) {
+      if (value.trim().length >= 2) {
         setLoading(true);
         const results = await fetchPlaceSuggestions(value, sessionToken);
+        if (cancelled) return;
         if (results.length > 0 && !(results.length === 1 && results[0].description === value)) {
           setPlaceSuggestions(results);
         } else {
@@ -100,9 +105,12 @@ export function LocationAutocomplete({
       } else {
         setPlaceSuggestions([]);
       }
-    }, 500);
+    }, 250);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [value, sessionToken]);
 
   // Merge port matches + Google Places (deduping by description)
