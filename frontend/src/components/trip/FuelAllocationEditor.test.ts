@@ -77,6 +77,18 @@ describe('normalizeFuelAllocationRows', () => {
     expect(rows).toContainEqual(expect.objectContaining({ point: 'OUTSIDE', enabled: true, liters: '40' }));
   });
 
+  it('is idempotent: normalizing already-normalized rows changes nothing', () => {
+    const once = normalizeFuelAllocationRows([
+      { _key: 'old-petro', point: 'CUSTOM', enabled: true, supplierId: 1, paymentMethod: 'CREDIT', liters: '120' },
+      { _key: 'old-cash', point: 'OUTSIDE', enabled: true, supplierId: null, paymentMethod: 'CASH', liters: '20' },
+    ], suppliers);
+
+    const twice = normalizeFuelAllocationRows(once, suppliers);
+
+    expect(twice.map(row => row._key)).toEqual(once.map(row => row._key));
+    expect(twice.map(row => row.liters)).toEqual(once.map(row => row.liters));
+  });
+
   it('drops an unchecked row for a supplier that is no longer active', () => {
     const rows = normalizeFuelAllocationRows([
       { _key: 'stale', point: 'CUSTOM', enabled: false, supplierId: 99, paymentMethod: 'CREDIT', liters: '' },
