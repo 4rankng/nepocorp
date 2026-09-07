@@ -34,6 +34,14 @@ normalized (bootstrap cached → catalogs instant; trip query resolves later).
 The normalize effect's deps `[setFuelAllocations, fuelSuppliers]` don't change
 on reseed → supplier rows silently dropped. Reproduced live on demo trip 275.
 
+**The dep-array fix alone was NOT enough**: the production build kept failing
+while vite dev passed. Instrumented prod-build runs proved the repair effect
+and the reseed write raced inside React's update batching — the updater
+computed the restored rows (`changed=true`) but the reseed's cash-only write
+landed last in every batch. The durable fix normalizes **at the reseed write
+site** (`useTripFormDispatch`), via the new shared `fuelAllocationRows` module;
+the editor's effect is now just a safety net.
+
 ## Fix
 
 `FuelAllocationEditor.tsx`: normalize effect also depends on `rowKeys`
@@ -43,10 +51,11 @@ shapes. Full frontend suite 302/302 green; verified visually in local dev
 
 ## Notes for Next Time
 
-- **When a form section derives rows from a catalog AND the form is reseeded
-  from saved data, the derive effect must key off the row identity too** —
-  dep-array race was invisible in code review until traced state-writer-by-
-  state-writer. Guard: `FuelAllocationEditor.test.ts` reseed test.
+- **When a form section derives state from a catalog AND the form is reseeded
+  from saved data, normalize at the reseed write site — a repair-after-reseed
+  effect can lose the race inside React's update batching, and the failure
+  only reproduces on the production build.** Guard: `FuelAllocationEditor.test.ts`
+  reseed test + prod-build (vite preview) check of the edit page.
 - Regression register created: `docs/qa/regression-test-plan.md` (BUG-REG-001
   … 010) — run before deploys; append every fixed bug as a new case.
 - Demo + prod DBs were verified healthy (2 ACTIVE fuel suppliers each);

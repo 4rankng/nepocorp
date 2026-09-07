@@ -9,16 +9,29 @@
 Edit-mode trip load reseeds `form.fuelAllocations` with saved-only rows
 (`useTripFormDispatch.ts:191`), which **replaces** the catalog-derived standard
 rows the editor had added on mount. `FuelAllocationEditor`'s normalize effect
-only re-ran on `[form.setFuelAllocations, fuelSuppliers]` — neither changes on a
+only re-ran on `[setFuelAllocations, fuelSuppliers]` — neither changes on a
 reseed, so supplier rows silently vanished whenever the trip query resolved
 after the cached catalogs (the normal demo/list→edit flow).
+
+**Deeper (final) root cause:** adding `rowKeys` to the effect deps fixed the
+*dev-server* flow but NOT the production bundle. Instrumented runs proved the
+repair effect and the reseed write raced inside React's update batching — the
+updater computed 3 rows with `changed=true`, yet every commit re-rendered with
+the reseed's cash-only rows. The robust fix normalizes **at the reseed write
+site** (`useTripFormDispatch`), so reseeded rows are born with the catalog
+standard rows and the editor's effect becomes a no-op safety net.
 
 Evidence chain:
 1. Demo/prod DBs each have 2 ACTIVE fuel suppliers (`is_fuel_supplier = t`).
 2. Demo API `/api/catalogs/bootstrap` returns both (200, 26 suppliers total).
 3. Deployed demo frontend bundle contains the fuel-supplier logic.
 4. Browser repro on demo trip 275 (OWN): labels = ["Cây dầu ngoài"] only.
-5. Local dev with the fix: ["Petrolimex", "Long Hưng", "Cây dầu ngoài"].
+5. Fix v1 (rowKeys dep) verified on vite dev — but demo prod bundle still
+   cash-only; reproduced locally against the production build (vite preview).
+6. Instrumented prod build: effect fired with suppliers=2 → updater 3 rows
+   `changed=true` → state never committed (batching race with the reseed).
+7. Fix v2 (normalize at reseed) → prod-build local shows all rows on create +
+   edit, liters entry correct.
 
 ## Changes
 
