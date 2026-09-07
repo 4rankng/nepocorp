@@ -85,8 +85,7 @@ describe('normalizeFuelAllocationRows', () => {
 
     const twice = normalizeFuelAllocationRows(once, suppliers);
 
-    expect(twice.map(row => row._key)).toEqual(once.map(row => row._key));
-    expect(twice.map(row => row.liters)).toEqual(once.map(row => row.liters));
+    expect(twice).toEqual(once);
   });
 
   it('drops an unchecked row for a supplier that is no longer active', () => {

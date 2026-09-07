@@ -197,6 +197,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     // Normalize at the write site: the reseeded rows must already carry the
     // catalog standard rows, otherwise a repair-after-reseed races with this
     // effect inside React's batch and the catalog points can be lost.
+    // catalogData is intentionally read without being a dep: when the catalog
+    // is still cold, saved CREDIT rows land in `remaining` and the editor's
+    // normalize effect (keyed on its own fuelSuppliers dep) completes the
+    // merge once the catalog arrives. If this effect ever outlives the editor
+    // on an OWN trip, that coupling must be revisited.
     s.setFuelAllocations(
       normalizeFuelAllocationRows(
         existingTrip.fuelAllocations?.length
