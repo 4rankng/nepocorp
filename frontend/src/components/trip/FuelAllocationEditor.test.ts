@@ -63,6 +63,20 @@ describe('normalizeFuelAllocationRows', () => {
     expect(rows).toContainEqual(expect.objectContaining({ _key: 'legacy', supplierId: 99, liters: '50' }));
   });
 
+  it('restores catalog rows after a trip reseed replaces them with saved-only rows', () => {
+    // Rows reseeded from a saved trip use the allocation id (or `legacy-`) as
+    // the key — useTripFormDispatch's trip-load effect. The catalog points
+    // must come back alongside the saved values.
+    const rows = normalizeFuelAllocationRows([
+      { _key: '77', point: 'OUTSIDE', enabled: true, supplierId: null, paymentMethod: 'CASH', liters: '40' },
+    ], suppliers);
+
+    expect(rows).toContainEqual(expect.objectContaining({ supplierId: 1, liters: '' }));
+    expect(rows).toContainEqual(expect.objectContaining({ supplierId: 2, liters: '' }));
+    expect(rows).toContainEqual(expect.objectContaining({ supplierId: 3, liters: '' }));
+    expect(rows).toContainEqual(expect.objectContaining({ point: 'OUTSIDE', enabled: true, liters: '40' }));
+  });
+
   it('drops an unchecked row for a supplier that is no longer active', () => {
     const rows = normalizeFuelAllocationRows([
       { _key: 'stale', point: 'CUSTOM', enabled: false, supplierId: 99, paymentMethod: 'CREDIT', liters: '' },

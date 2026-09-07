@@ -94,12 +94,16 @@ export function FuelAllocationEditor() {
 
   // The catalog may refresh after the initial form state; normalize again so
   // its active fuel suppliers become available without altering saved rows.
+  // The row keys are part of the trigger: reseeding the form (trip load,
+  // navigation between two trips) replaces the rows with saved-only entries,
+  // and without re-normalizing the catalog points would silently disappear.
+  const rowKeys = form.fuelAllocations.map(row => row._key).join(',');
   useEffect(() => {
     form.setFuelAllocations((previous) => {
       const next = normalizeFuelAllocationRows(previous, fuelSuppliers);
       return sameRows(previous, next) ? previous : next;
     });
-  }, [form.setFuelAllocations, fuelSuppliers]);
+  }, [form.setFuelAllocations, fuelSuppliers, rowKeys]);
 
   const allocatedLiters = form.fuelAllocations.reduce(
     (total, allocation) => total + (Number(allocation.liters) || 0),
