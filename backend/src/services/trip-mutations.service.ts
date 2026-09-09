@@ -42,6 +42,35 @@ export interface CommittedLegacyFuelInput {
 type FuelTotals = Pick<ComputeTripTotalsOutput, 'totalFuelCost' | 'totalCost' | 'grossProfit' | 'totalFuelLiters'>;
 
 /**
+ * Resolve the trip's effective `fuelFixedAllowanceApplied` value when the
+ * route is unchanged. Re-read the live route when the snapshot is 0 —
+ * trips created before a route's `fixedFuelAllowance` was set have nothing
+ * to preserve (0 means "not snapshotted", not "0 by intent"). When the
+ * snapshot is non-zero it represents the value the trip was costed at
+ * and is preserved across all statuses (B3 / D4).
+ *
+ *   - snapshot > 0   → keep snapshot (preserved across CREATED, IN_TRANSIT,
+ *                      COMPLETED, LOCKED, CANCELED)
+ *   - snapshot = 0   → use live route value (route is the source of truth)
+ *
+ * Live-DB confirmation: trip 229 (synced prod, COMPLETED, route 40 / 378L,
+ * snapshot=0, fuel_liters=338) could not save with a 382L allocation
+ * before this fix. The route's 378L allowance was added after the trip
+ * was created; the trip's per-km norm (338L) is the wrong source of truth
+ * once the route has an explicit allowance.
+ *
+ * Pure: no DB, no I/O. The route read happens at the call site so the
+ * helper stays trivially testable.
+ */
+export function resolveFuelFixedAllowanceApplied(
+  snapshot: number,
+  liveRouteValue: number,
+): number {
+  if (snapshot > 0) return snapshot;
+  return liveRouteValue;
+}
+
+/**
  * Pin the fuel component of a committed legacy trip's totals to its stored
  * values (B3 / D4).
  *
@@ -659,6 +688,19 @@ export async function updateTripFigures(
     } else {
       const [existingRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
       route = existingRoute;
+
+      // Route unchanged. Re-read the live `fixed_fuel_allowance` whenever
+      // the trip's snapshot is 0 (i.e. the route's allowance was added
+      // after the trip was created). A non-zero snapshot is preserved
+      // exactly — it is the value the trip was costed at and is the
+      // B3 / D4 anchor for committed trips. See
+      // resolveFuelFixedAllowanceApplied + docs/journals/260909-route-fixed-fuel-allowance-live-fallback.md.
+      if (existingRoute) {
+        fuelFixedAllowanceApplied = resolveFuelFixedAllowanceApplied(
+          fuelFixedAllowanceApplied,
+          Number(existingRoute.fixedFuelAllowance || 0),
+        );
+      }
 
       if (data.trailerType !== undefined && data.trailerType !== trip.trailerType) {
         if (finalTrailerType) {
