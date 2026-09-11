@@ -638,7 +638,10 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       departureDate: s.trips.departureDate,
       truckPlate: s.trucks.licensePlate,
       routeName: s.routes.name,
-      fuelLiters: sql<string | null>`coalesce(${s.tripFuelAllocations.liters}, ${s.trips.fuelLiters})`,
+      // Σ the supplier's allocation rows via scalar subquery — a supplier may
+      // now have multiple rows per trip (per-purchase pricing), which a plain
+      // join would fan out into duplicate statement rows.
+      fuelLiters: sql<string | null>`coalesce((select sum(a.liters) from trip_fuel_allocations a where a.trip_id = ${s.trips.id} and a.supplier_id = ${supplierId}), ${s.trips.fuelLiters})`,
       fuelActualUnitPrice: s.trips.fuelActualUnitPrice,
       fuelPriceApplied: s.trips.fuelPriceApplied,
       totalFuelCost: s.trips.totalFuelCost,
@@ -646,13 +649,6 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
       .from(s.trips)
       .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-      .leftJoin(
-        s.tripFuelAllocations,
-        and(
-          eq(s.tripFuelAllocations.tripId, s.trips.id),
-          eq(s.tripFuelAllocations.supplierId, supplierId),
-        ),
-      )
       .where(inArray(s.trips.id, fuelTripIds));
     ledgerRows = attachFuelDetailsToLedgerRows(ledgerRows, tripRows);
   }

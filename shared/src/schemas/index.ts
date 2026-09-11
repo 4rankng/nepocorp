@@ -68,6 +68,9 @@ const fullNameField = z.string().max(255).or(z.literal('')).optional();
 export const tripFuelAllocationSchema = z.object({
   supplierId: z.coerce.number().int().positive().nullable(),
   liters: positiveNumeric,
+  // Per-purchase pump price (VND/lít). Null/omitted = priced with the trip's
+  // effective price. Positive, with a generous sanity cap against garbage.
+  unitPrice: z.coerce.number().positive().max(1_000_000_000).nullable().optional(),
   paymentMethod: z.enum(['CREDIT', 'CASH']),
 }).superRefine((allocation, ctx) => {
   if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
@@ -93,22 +96,11 @@ export const tripFuelAllocationSchema = z.object({
   }
 });
 
-const tripFuelAllocationsSchema = z.array(tripFuelAllocationSchema).max(10).superRefine((allocations, ctx) => {
-  const seen = new Set<string>();
-  allocations.forEach((allocation, index) => {
-    const key = allocation.paymentMethod === 'CASH'
-      ? 'CASH'
-      : `CREDIT:${allocation.supplierId}`;
-    if (seen.has(key)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: [index, 'supplierId'],
-        message: 'Mỗi nhà cung cấp chỉ nên có một dòng phân bổ dầu',
-      });
-    }
-    seen.add(key);
-  });
-});
+// Multiple rows per counterparty are the feature (a trip may refuel the same
+// supplier twice at different pump prices), so there is deliberately NO
+// counterparty-uniqueness refine here — the old uniqueness lived in the DB's
+// one-row-per-counterparty unique indexes, which no longer exist.
+const tripFuelAllocationsSchema = z.array(tripFuelAllocationSchema).max(10);
 
 export const tripLegSchema = z.object({
   sequence: z.number().int().positive(),

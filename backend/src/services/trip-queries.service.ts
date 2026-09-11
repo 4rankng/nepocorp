@@ -504,6 +504,7 @@ export async function getTripById(id: number) {
       supplierId: s.tripFuelAllocations.supplierId,
       supplierName: sql<string>`coalesce(${s.suppliers.name}, 'Cây dầu ngoài (tiền mặt)')`,
       liters: s.tripFuelAllocations.liters,
+      unitPrice: s.tripFuelAllocations.unitPrice,
       paymentMethod: s.tripFuelAllocations.paymentMethod,
       createdAt: s.tripFuelAllocations.createdAt,
       updatedAt: s.tripFuelAllocations.updatedAt,

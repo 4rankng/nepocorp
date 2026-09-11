@@ -22,6 +22,7 @@ interface TripLedgerParams {
   fuelAllocations?: Array<{
     supplierId: number | null;
     liters: string;
+    unitPrice?: string | null;
     paymentMethod: string;
   }>;
   ancillaryFees?: Array<{
@@ -198,6 +199,29 @@ export class LedgerService {
     if (creditAllocations.length === 0) return [];
 
     const effectiveFuelPrice = this.resolveFuelUnitPrice(trip);
+
+    // Per-purchase pricing: rows with an explicit unitPrice price at that price;
+    // the rest price at the trip's effective price (actual ?? snapshot), matching
+    // computeTripTotals. In this mode each row's cost is independent — no
+    // last-row absorb; Σ credit row costs reconcile with the credit share of
+    // totalFuelCost by construction (same formula, same rounding sites).
+    const pricedRowExists = creditAllocations.some(
+      allocation => allocation.unitPrice != null && Number(allocation.unitPrice) > 0,
+    );
+    if (pricedRowExists) {
+      const tripBasePrice = Number(trip.fuelActualUnitPrice || 0) > 0
+        ? Number(trip.fuelActualUnitPrice)
+        : Number(trip.fuelPriceApplied || 0);
+      return creditAllocations.map(allocation => {
+        const rowPrice = allocation.unitPrice != null && Number(allocation.unitPrice) > 0
+          ? Number(allocation.unitPrice)
+          : tripBasePrice;
+        return { allocation, fuelCost: Math.round(Number(allocation.liters) * rowPrice) };
+      });
+    }
+
+    // Legacy single-price algorithm (unchanged): last row absorbs the rounding
+    // remainder so Σ credit payables equal totalFuelCost exactly.
     const allAllocationsAreCredit = creditAllocations.length === trip.fuelAllocations?.length;
     const targetCost = allAllocationsAreCredit
       ? Math.round(Number(trip.totalFuelCost || 0))

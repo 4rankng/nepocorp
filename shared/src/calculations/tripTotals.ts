@@ -36,6 +36,13 @@ export interface ComputeTripTotalsInput {
     vatRate?: number;                  // per-fee VAT rate, default 0.080
   }>;
   customerCommission?: number;         // per-trip commission deducted from freightExVat
+  /**
+   * Fuel allocation rows (per purchase). When at least one row carries a
+   * non-null unitPrice, totalFuelCost = Σ round(liters × (row.unitPrice ??
+   * effective price)) — each purchase is rounded at the pump. Rows without an
+   * explicit price (and trips without rows) keep the legacy single-multiply.
+   */
+  fuelAllocations?: Array<{ liters: number; unitPrice: number | null }>;
 }
 
 export interface ComputeTripTotalsOutput {
@@ -138,10 +145,30 @@ export function computeTripTotals(input: ComputeTripTotalsInput): ComputeTripTot
 
   // Use nullish coalescing -- `0` is a valid numeric price, not "missing".
   const effectiveFuelPrice = input.fuelActualUnitPrice ?? input.fuelUnitPrice;
-  const totalFuelCost = Math.round(totalFuelLiters * effectiveFuelPrice);
-  const fuelPriceVariance = input.fuelActualUnitPrice != null
-    ? Math.round(totalFuelLiters * input.fuelActualUnitPrice) - Math.round(totalFuelLiters * input.fuelUnitPrice)
-    : 0;
+
+  // Per-purchase pricing: when any allocation row carries its own pump price,
+  // every purchase is rounded at the pump and the trip fuel cost is the sum of
+  // the row amounts. Unpriced rows price at the trip's effective price. When
+  // no row is priced (legacy trips), the single-multiply path applies unchanged.
+  const allocationRows = (input.fuelAllocations ?? []).filter(row => (Number(row.liters) || 0) > 0);
+  const anyRowPriced = allocationRows.some(row => row.unitPrice != null);
+  let totalFuelCost: number;
+  let fuelPriceVariance: number;
+  if (anyRowPriced) {
+    totalFuelCost = 0;
+    fuelPriceVariance = 0;
+    for (const row of allocationRows) {
+      const rowPrice = row.unitPrice ?? effectiveFuelPrice;
+      const rowLiters = Number(row.liters) || 0;
+      totalFuelCost += Math.round(rowLiters * rowPrice);
+      fuelPriceVariance += Math.round(rowLiters * (rowPrice - input.fuelUnitPrice));
+    }
+  } else {
+    totalFuelCost = Math.round(totalFuelLiters * effectiveFuelPrice);
+    fuelPriceVariance = input.fuelActualUnitPrice != null
+      ? Math.round(totalFuelLiters * input.fuelActualUnitPrice) - Math.round(totalFuelLiters * input.fuelUnitPrice)
+      : 0;
+  }
 
   const carrierType = input.carrierType ?? 'OWN';
   const totalRoadAllowance = computeDriverRoadAllowance({

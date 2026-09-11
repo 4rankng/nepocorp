@@ -22,49 +22,69 @@ export function activeFuelSuppliers(
 }
 
 /**
+ * Standard slot key for a counterparty (a credit supplier or the cash row).
+ */
+function counterpartyKey(paymentMethod: 'CREDIT' | 'CASH', supplierId: number | null): string {
+  return paymentMethod === 'CASH' ? 'CASH' : `CREDIT:${supplierId}`;
+}
+
+/**
+ * True for the fixed catalog slots (one row per active supplier + cash row);
+ * false for per-purchase extra rows and saved extras.
+ */
+export function isStandardFuelRowKey(key: string): boolean {
+  return key === 'fuel-outside' || /^fuel-supplier-\d+$/.test(key);
+}
+/**
  * Fuel allocation rows are derived from the active fuel-supplier catalog so
- * every available supplier is immediately usable. Keep selected legacy rows
- * that no longer appear in the catalog so saving an old trip never discards
- * recorded fuel.
+ * every available supplier is immediately usable. One standard slot exists per
+ * counterparty; a trip may hold several PURCHASES per counterparty (each with
+ * its own pump price), so:
+ * - the first saved row per counterparty merges into the standard slot;
+ * - the 2nd+ saved rows per counterparty are kept as per-purchase extra rows;
+ * - unmatched rows survive only when they carry fuel (the legacy branch).
+ * Idempotent: normalizing twice yields the same rows as once.
  */
 export function normalizeFuelAllocationRows(
   rows: FuelAllocationFormRow[],
   suppliers: CatalogSuppliers,
 ): FuelAllocationFormRow[] {
-  const standardRows = [
-    ...suppliers.map((supplier): FuelAllocationFormRow => ({
+  const standardRows: FuelAllocationFormRow[] = [
+    ...suppliers.map((supplier) => ({
       _key: `fuel-supplier-${supplier.id}`,
-      point: 'CUSTOM',
+      point: 'CUSTOM' as const,
       enabled: false,
       supplierId: supplier.id,
-      paymentMethod: 'CREDIT',
+      paymentMethod: 'CREDIT' as const,
       liters: '',
+      unitPrice: '',
     })),
     ...createDefaultFuelAllocations(),
   ];
-  const standardByCounterparty = new Map(standardRows.map(row => [
-    row.paymentMethod === 'CASH' ? 'CASH' : `CREDIT:${row.supplierId}`,
-    row,
-  ]));
-  const remaining: FuelAllocationFormRow[] = [];
+  const slotByCounterparty = new Map(standardRows.map(row => [counterpartyKey(row.paymentMethod, row.supplierId), row]));
+  const consumed = new Set<string>();
+  const extras: FuelAllocationFormRow[] = [];
 
   for (const row of rows) {
-    const target = standardByCounterparty.get(
-      row.paymentMethod === 'CASH' ? 'CASH' : `CREDIT:${row.supplierId}`,
-    );
-
-    if (!target) {
-      if (row.enabled || (Number(row.liters) || 0) > 0) remaining.push(row);
+    const key = counterpartyKey(row.paymentMethod, row.supplierId);
+    const slot = slotByCounterparty.get(key);
+    if (!slot) {
+      // Unmatched rows (e.g. a supplier no longer active) survive only when
+      // they still carry fuel.
+      if (row.enabled || (Number(row.liters) || 0) > 0) extras.push(row);
       continue;
     }
-
-    const liters = (Number(target.liters) || 0) + (Number(row.liters) || 0);
-    target.enabled ||= (Number(row.liters) || 0) > 0;
-    target.liters = liters > 0 ? String(liters) : '';
-    if (target.paymentMethod === 'CREDIT' && row.supplierId !== null) {
-      target.supplierId = row.supplierId;
+    if (consumed.has(key)) {
+      // 2nd+ purchase rows per counterparty are always kept — including empty
+      // drafts the + button just added (the submit payload filters them).
+      extras.push(row);
+      continue;
     }
+    consumed.add(key);
+    slot.liters = row.liters;
+    slot.unitPrice = row.unitPrice ?? '';
+    slot.enabled = row.enabled || (Number(row.liters) || 0) > 0;
   }
 
-  return [...standardRows, ...remaining];
+  return [...standardRows, ...extras];
 }

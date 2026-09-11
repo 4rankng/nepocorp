@@ -175,6 +175,7 @@ const handleSubmit = useCallback(
     const fuelAllocations = allocationRows.map(allocation => ({
       supplierId: allocation.paymentMethod === 'CASH' ? null : allocation.supplierId,
       liters: Number(allocation.liters),
+      unitPrice: allocation.unitPrice && Number(allocation.unitPrice) > 0 ? Number(allocation.unitPrice) : null,
       paymentMethod: allocation.paymentMethod,
     }));
     const primaryFuelSupplierId = fuelAllocations.find(

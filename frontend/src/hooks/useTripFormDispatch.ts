@@ -212,6 +212,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
               supplierId: allocation.supplierId,
               paymentMethod: allocation.paymentMethod,
               liters: String(allocation.liters),
+              unitPrice: allocation.unitPrice != null ? String(Number(allocation.unitPrice)) : '',
             }))
           : existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0
             ? [{

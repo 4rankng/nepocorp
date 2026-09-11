@@ -193,7 +193,7 @@ test('rejects a credit fuel row without a supplier', () => {
   assert.strictEqual(result.success, false);
 });
 
-test('rejects duplicate fuel allocation counterparties', () => {
+test('accepts duplicate fuel allocation counterparties (multi-purchase pricing)', () => {
   const result = updateTripFiguresSchema.safeParse({
     ...validBase,
     fuelAllocations: [
@@ -201,7 +201,7 @@ test('rejects duplicate fuel allocation counterparties', () => {
       { supplierId: 10, liters: 150, paymentMethod: 'CREDIT' },
     ],
   });
-  assert.strictEqual(result.success, false);
+  assert.strictEqual(result.success, true);
 });
 
 test('rejects fuel allocation liters beyond hundredth precision', () => {
@@ -242,4 +242,40 @@ test('bulkUpdateTripFiguresSchema accepts per-row malformed figures for row-leve
 test('bulkUpdateTripFiguresSchema rejects empty batches', () => {
   const result = bulkUpdateTripFiguresSchema.safeParse({ updates: [] });
   assert.strictEqual(result.success, false);
+});
+
+test('multi-row allocations: same supplier twice with distinct prices is valid', () => {
+  const parsed = updateTripFiguresSchema.safeParse({
+    ...validBase,
+    fuelAllocations: [
+      { supplierId: 10, liters: 60, unitPrice: 23500, paymentMethod: 'CREDIT' },
+      { supplierId: 10, liters: 40, unitPrice: 24000, paymentMethod: 'CREDIT' },
+    ],
+  });
+  assert.equal(parsed.success, true);
+  if (parsed.success) assert.equal(parsed.data.fuelAllocations?.length, 2);
+});
+
+test('multi-row allocations: unitPrice must be positive and bounded', () => {
+  const negative = updateTripFiguresSchema.safeParse({
+    ...validBase,
+    fuelAllocations: [
+      { supplierId: 10, liters: 60, unitPrice: -1, paymentMethod: 'CREDIT' },
+    ],
+  });
+  assert.equal(negative.success, false);
+  const huge = updateTripFiguresSchema.safeParse({
+    ...validBase,
+    fuelAllocations: [
+      { supplierId: 10, liters: 60, unitPrice: 2_000_000_000, paymentMethod: 'CREDIT' },
+    ],
+  });
+  assert.equal(huge.success, false);
+  const nullPrice = updateTripFiguresSchema.safeParse({
+    ...validBase,
+    fuelAllocations: [
+      { supplierId: 10, liters: 60, unitPrice: null, paymentMethod: 'CREDIT' },
+    ],
+  });
+  assert.equal(nullPrice.success, true);
 });

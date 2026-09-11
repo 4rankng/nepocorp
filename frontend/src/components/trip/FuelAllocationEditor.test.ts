@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Supplier } from '@tingting/shared';
+import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import { activeFuelSuppliers, fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
 
 const suppliers = [
@@ -94,5 +95,53 @@ describe('normalizeFuelAllocationRows', () => {
     ], suppliers);
 
     expect(rows).not.toContainEqual(expect.objectContaining({ _key: 'stale' }));
+  });
+});
+
+describe('multi-row (per-purchase) allocation merge', () => {
+  const row = (over: Partial<FuelAllocationFormRow>): FuelAllocationFormRow => ({
+    _key: 'x', point: 'CUSTOM', enabled: true, supplierId: 1, paymentMethod: 'CREDIT', liters: '', unitPrice: '', ...over,
+  });
+
+  it('keeps the second purchase row for the same supplier through reseed', () => {
+    const saved = [
+      row({ _key: '11', supplierId: 1, liters: '60', unitPrice: '23500' }),
+      row({ _key: '12', supplierId: 1, liters: '40', unitPrice: '24000' }),
+    ];
+    const out = normalizeFuelAllocationRows(saved, suppliers);
+    const petro = out.filter(r => r.supplierId === 1);
+    expect(petro).toHaveLength(2);
+    expect(petro.map(r => r.liters)).toEqual(['60', '40']);
+    expect(petro.map((r) => (r as { unitPrice?: string }).unitPrice)).toEqual(['23500', '24000']);
+  });
+
+  it('keeps catalog rows after reseed with multi-row saved data (no regression of the Sep-7 fix)', () => {
+    const saved = [
+      row({ _key: '11', supplierId: 1, liters: '60', unitPrice: '23500' }),
+      row({ _key: '12', supplierId: 1, liters: '40', unitPrice: '24000' }),
+    ];
+    const out = normalizeFuelAllocationRows(saved, suppliers);
+    const keys = out.map(r => r._key);
+    expect(keys).toContain('fuel-supplier-2');
+    expect(keys).toContain('fuel-outside');
+    expect(out.filter(r => r._key === 'fuel-supplier-1')).toHaveLength(1);
+    expect(out.filter(r => r.supplierId === 1).map(r => r.unitPrice ?? '')).toEqual(['23500', '24000']);
+  });
+
+  it('is idempotent with multi-row input', () => {
+    const saved = [
+      row({ _key: '11', supplierId: 1, liters: '60', unitPrice: '23500' }),
+      row({ _key: '12', supplierId: 1, liters: '40', unitPrice: '24000' }),
+    ];
+    const once = normalizeFuelAllocationRows(saved, suppliers);
+    const twice = normalizeFuelAllocationRows(once, suppliers);
+    expect(twice).toEqual(once);
+  });
+
+  it('keeps empty draft extra rows (the + button adds them; submit filters them)', () => {
+    const saved = [row({ _key: '11', supplierId: 1, liters: '60' })];
+    const draft = [saved[0], row({ _key: 'extra-1', supplierId: 1, liters: '' })];
+    const out = normalizeFuelAllocationRows(draft, suppliers);
+    expect(out.filter(r => r._key === 'extra-1')).toHaveLength(1);
   });
 });

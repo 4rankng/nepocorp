@@ -362,6 +362,8 @@ export interface TripFuelAllocation {
   supplierId: number | null;
   supplierName: string;
   liters: string;
+  /** Per-purchase pump price (VND/lít); null = priced with the trip's effective price. */
+  unitPrice: string | null;
   paymentMethod: FuelPaymentMethod;
   createdAt: string;
   updatedAt: string;
@@ -370,6 +372,8 @@ export interface TripFuelAllocation {
 export interface TripFuelAllocationInput {
   supplierId: number | null;
   liters: number;
+  /** Optional per-purchase price; omit/null = use the trip's effective price. */
+  unitPrice?: number | null;
   paymentMethod: FuelPaymentMethod;
 }
 

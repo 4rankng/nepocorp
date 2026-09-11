@@ -854,6 +854,22 @@ export async function updateTripFigures(
       ? await tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, tripId))
       : [];
 
+    // Fuel rows feeding the totals: the payload's rows when the caller sent
+    // them, else the trip's existing rows (so a patch that omits the section
+    // keeps pricing by the saved per-purchase prices). EXTERNAL trips carry no
+    // company fuel rows at all. Rows without an explicit unitPrice price with
+    // the trip's effective price (computeTripTotals gate).
+    const fuelAllocationsForTotals = resolvedCarrierType === 'EXTERNAL'
+      ? []
+      : data.fuelAllocations !== undefined
+        ? data.fuelAllocations
+        : existingFuelAllocations.map(allocation => ({
+            supplierId: allocation.supplierId,
+            liters: Number(allocation.liters),
+            unitPrice: allocation.unitPrice != null ? Number(allocation.unitPrice) : null,
+            paymentMethod: allocation.paymentMethod as 'CREDIT' | 'CASH',
+          }));
+
     const totalsInput = {
       legs: normalizedLegs.map(l => ({ sequence: l.sequence, km: l.km, loadingType: l.loadingType })),
       fuelMode: data.fuelMode,
@@ -887,6 +903,10 @@ export async function updateTripFigures(
         vatRate: Number(f.vatRate || 0.080),
       })),
       customerCommission,
+      fuelAllocations: fuelAllocationsForTotals.map(allocation => ({
+        liters: allocation.liters,
+        unitPrice: allocation.unitPrice ?? null,
+      })),
     };
 
     const totals = computeTripTotals(totalsInput);
@@ -921,6 +941,15 @@ export async function updateTripFigures(
       fuelAllocations = [];
     } else if (data.fuelAllocations !== undefined) {
       fuelAllocations = data.fuelAllocations;
+    } else if (existingFuelAllocations.length > 0) {
+      // Prefer saved rows (which carry per-purchase prices) over synthesizing
+      // an unpriced row — a fuelSupplierId-only save must not destroy them.
+      fuelAllocations = existingFuelAllocations.map(allocation => ({
+        supplierId: allocation.supplierId,
+        liters: Number(allocation.liters),
+        unitPrice: allocation.unitPrice != null ? Number(allocation.unitPrice) : null,
+        paymentMethod: allocation.paymentMethod as 'CREDIT' | 'CASH',
+      }));
     } else if (data.fuelSupplierId !== undefined) {
       fuelAllocations = data.fuelSupplierId && totals.totalFuelLiters > 0
         ? [{
@@ -929,12 +958,6 @@ export async function updateTripFigures(
             paymentMethod: 'CREDIT',
           }]
         : [];
-    } else if (existingFuelAllocations.length > 0) {
-      fuelAllocations = existingFuelAllocations.map(allocation => ({
-        supplierId: allocation.supplierId,
-        liters: Number(allocation.liters),
-        paymentMethod: allocation.paymentMethod as 'CREDIT' | 'CASH',
-      }));
     } else {
       fuelAllocations = trip.fuelSupplierId && totals.totalFuelLiters > 0
         ? [{
@@ -961,6 +984,16 @@ export async function updateTripFigures(
     );
     await validateFuelAllocationSuppliers(tx, newlySelectedAllocations);
     assertFuelAllocationTotal(fuelAllocations, totals.totalFuelLiters);
+    // Legacy committed trips keep their fuel component frozen to the stored
+    // total (B3/D4 — the price they were costed at is unreconstructable).
+    // Pricing rows individually there would post ledger payables that can
+    // never reconcile with the frozen total, so explicit row prices are
+    // rejected rather than silently diverging.
+    if (isCommittedTrip
+        && fuelPriceApplied === 0 && fuelLoadedNormApplied === 0 && fuelEmptyNormApplied === 0
+        && fuelAllocations.some(allocation => allocation.unitPrice != null)) {
+      throw new ApiError(422, 'Chuyến legacy này giữ nguyên giá dầu theo tổng đã lưu — không thể nhập đơn giá từng lần đổ. Vui lòng để trống cột đơn giá.');
+    }
     const primaryFuelSupplierId = fuelAllocations.find(
       allocation => allocation.paymentMethod === 'CREDIT',
     )?.supplierId ?? null;
@@ -1033,6 +1066,7 @@ export async function updateTripFigures(
         tripId,
         supplierId: allocation.supplierId,
         liters: String(allocation.liters),
+        unitPrice: allocation.unitPrice != null ? String(allocation.unitPrice) : null,
         paymentMethod: allocation.paymentMethod,
       })));
     }
@@ -1083,6 +1117,7 @@ export async function updateTripFigures(
         fuelAllocations: fuelAllocations.map(allocation => ({
           supplierId: allocation.supplierId,
           liters: String(allocation.liters),
+          unitPrice: allocation.unitPrice != null ? String(allocation.unitPrice) : null,
           paymentMethod: allocation.paymentMethod,
         })),
         ancillaryFees: mappedLedgerFees,

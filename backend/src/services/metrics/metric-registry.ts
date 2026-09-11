@@ -89,7 +89,7 @@ const REGISTRY: Record<string, MetricDef> = {
     labelVi: 'Tiền nhiên liệu',
     unit: 'vnd',
     category: 'calculated',
-    formula: 'fuelLiters × (fuelActualUnitPrice ?? fuelUnitPrice)',
+    formula: 'Σ row amounts (liters × row price) when any allocation row is priced; else fuelLiters × (fuelActualUnitPrice ?? fuelUnitPrice)',
     source: { service: 'shared/calculations/tripTotals', method: 'computeTripTotals' },
   },
 

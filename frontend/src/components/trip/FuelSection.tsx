@@ -90,7 +90,14 @@ export function FuelSection() {
         </div>
       )}
 
-      {carrierType === 'OWN' && <FuelAllocationEditor />}
+      {carrierType === 'OWN' && (
+        <div>
+          <FuelAllocationEditor />
+          <p className="tc-field-hint" style={{ marginTop: 6 }}>
+            Đổ cùng nơi nhiều lần, mỗi lần một giá? Bấm (+) để thêm lần đổ — đơn giá để trống = dùng giá chuyến.
+          </p>
+        </div>
+      )}
 
       {/* Row last: Bổ sung dầu */}
       <div className="fs-row" style={{ marginBottom: 0 }}>

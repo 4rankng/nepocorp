@@ -469,3 +469,69 @@ test('commission reduces EXTERNAL trip grossProfit and management margin', () =>
   assert.strictEqual(r.externalMargin, 4500000);     // recorded revenue 9.5M − hire cost 5M ex-VAT
   assert.strictEqual(r.grossProfit, 4500000);
 });
+
+// ── Per-purchase pricing (row-level unitPrice) ──────────────────────────────
+const ppBase = {
+  legs: [{ sequence: 1, km: 500, loadingType: 'HANG' as const }],
+  fuelMode: 'AUTO' as const,
+  fuelLitersOverride: null,
+  fuelSupplementLiters: 0,
+  fuelLoadedNorm: 20,
+  fuelEmptyNorm: 10,
+  fuelPerTripSupplement: 0,
+  fuelUnitPrice: 24000,
+  isMountainRoute: false,
+  mountainFixedAllowance: null,
+  roadAllowanceBase: 1000000,
+  tollsDiscount: 0,
+  tollsAddition: 0,
+  tollsStations: 0,
+  tollPerStation: 0,
+  hasReturnCargo: false,
+  returnCargoBonus: 0,
+  revenue: 5000000,
+  driverSalary: 1000000,
+  twoPointDeliveryBonus: 0,
+  vehicleShiftAllowance: 0,
+};
+
+test('per-purchase: total = Σ row amounts when any row priced', () => {
+  const t = computeTripTotals({ ...ppBase, fuelAllocations: [
+    { liters: 60, unitPrice: 23500 },
+    { liters: 40, unitPrice: 24000 },
+  ] });
+  assert.equal(t.totalFuelCost, 2370000);
+  assert.equal(t.totalFuelLiters, 100);
+});
+
+test('per-purchase: unpriced row prices at trip effective price', () => {
+  const t = computeTripTotals({ ...ppBase, fuelActualUnitPrice: 25000, fuelAllocations: [
+    { liters: 60, unitPrice: 23500 },
+    { liters: 40, unitPrice: null },
+  ] });
+  assert.equal(t.totalFuelCost, 2410000);
+});
+
+test('per-purchase: legacy single-multiply when no row priced', () => {
+  const t = computeTripTotals({ ...ppBase, fuelAllocations: [
+    { liters: 60, unitPrice: null },
+    { liters: 37, unitPrice: null },
+  ] });
+  assert.equal(t.totalFuelCost, 2400000);
+});
+
+test('per-purchase: variance = Σ liters × (rowPrice − snapshot)', () => {
+  const t = computeTripTotals({ ...ppBase, fuelAllocations: [
+    { liters: 60, unitPrice: 23500 },
+    { liters: 40, unitPrice: 24000 },
+  ] });
+  assert.equal(t.fuelPriceVariance, -30000);
+});
+
+test('per-purchase: mixed cash+credit — Σ covers ALL rows (I1); credit-only payables are I2', () => {
+  const t = computeTripTotals({ ...ppBase, fuelAllocations: [
+    { liters: 20, unitPrice: 24500 },
+    { liters: 80, unitPrice: 23500 },
+  ] });
+  assert.equal(t.totalFuelCost, 2370000);
+});

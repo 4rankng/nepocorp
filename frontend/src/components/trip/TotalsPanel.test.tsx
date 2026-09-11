@@ -29,6 +29,7 @@ const externalTripForm = {
   externalFreightCost: '7128000',
   vatRate: 0.08,
   twoPointDeliveryBonus: '0',
+  fuelAllocations: [],
   vehicleShiftAllowance: '0',
 } as const;
 

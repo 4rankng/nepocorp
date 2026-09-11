@@ -423,6 +423,7 @@ Sau khi xe hoàn thành chuyến đi, Kế toán nhập số liệu thực tế.
 | 3 | Cập nhật **chặng thực tế** | Km thực tế, có thể thêm/xóa chặng | Tổng km cập nhật |
 | 4 | Kiểm tra **nhiên liệu** | Xem tổng tự tính hoặc nhập tay nếu KHOÁN | |
 | 4a | Nhập **Đơn giá thực tế** (tùy chọn) | Giá thực mua tại trạm (VNĐ/lít). Nút **Đề xuất** tra giá hiệu lực từ lịch sử theo ngày xuất phát. Để trống → dùng giá cấu hình snapshot. Chỉ nhập được trước khi khóa chuyến. | Hệ thống tính lại `totalFuelCost` và `fuelPriceVariance` |
+| 4b | **Phân bổ nơi đổ dầu — nhiều lần đổ, mỗi lần một giá** | Nhập lít + **Đơn giá** cho từng lần đổ. Cùng cây dầu nhiều lần? Bấm **(+)** thêm lần đổ; × xóa lần thừa. Đơn giá để trống = dùng giá chuyến. `totalFuelCost` = Σ(lít × đơn giá dòng) khi ≥1 dòng có giá; phiếu cấp dầu in từng lần đổ đúng giá. | Tổng "Đã phân bổ" = tổng lít chuyến; chi phí công nợ đúng từng lần đổ |
 | 5 | Nhập **chi phí đi đường** | Số trạm × phí/trạm, giảm trừ (tiền vé công ty đã thanh toán), cộng thêm | |
 | 6 | Cập nhật **doanh thu** (nếu cần) | Nếu giá thực tế khác bảng giá → ghi đè | Hệ thống lưu giá gốc + giá ghi đè |
 | 7 | **Cập nhật/bổ sung container** | Loại container (dropdown), Số container (text), Số seal (text) | Nhập được bởi Kế toán, Giám đốc hoặc Giao nhận |

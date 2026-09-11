@@ -1,0 +1,23 @@
+# TingTing test accounts — local dev + demo
+# Updated: 2026-09-11 (local admin confirmed = seed default `admin123`, NOT Abc123)
+#
+# Login endpoint: POST /api/auth/login  (no /v1 prefix)  body: {"identifier": "<username>", "password": "..."}
+# JWT payload claims (for minting dev tokens): { userId, username, role } — role is REQUIRED,
+# otherwise Casbin answers 403 "Không có quyền truy cập".
+# Minting example: cd backend && JWT_SECRET=$(grep '^JWT_SECRET=' .env | cut -d= -f2-) node -e \
+#   "const jwt=require('jsonwebtoken');console.log(jwt.sign({userId:1,username:'admin',role:'ADMIN'},process.env.JWT_SECRET,{expiresIn:'1h'}))"
+
+== LOCAL DEV (http://localhost:7173, backend :3090, postgres :5440 db `tingting`) ==
+admin / admin123        (ADMIN — seed default from backend/src/seed.ts; Abc123 does NOT work here)
+
+== DEMO (https://demo.tingting.vip) ==
+admin / Abc123          (all demo accounts share Abc123)
+
+== VANTAI (https://vantai.tingting.vip — former demo, reserved for silversea) ==
+admin / 123456          (9 users: admin/giamdoc/ketoan/laixe/giaonhan/thu/nam/tuan/duc)
+
+NOTES
+- Catalogs/bootstrap sanity check: GET /api/catalogs/bootstrap (no /v1). Fuel-supplier rows in the
+  trip form come from suppliers where status=ACTIVE AND is_fuel_supplier=true (ids 10 Petrolimex,
+  11 Long Hưng in local dev as of 2026-09-11).
+- If a password stops working after a DB refresh, check backend/src/seed.ts for the current seed default.

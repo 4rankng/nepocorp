@@ -23,11 +23,13 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
   const creditAllocations = fuelAllocations.filter(
     allocation => allocation.paymentMethod === 'CREDIT' && allocation.supplierId,
   );
+  // One voucher target per supplier — a supplier may hold several purchase
+  // rows, and duplicating the print buttons per row would collide on key.
   const voucherTargets = creditAllocations.length > 0
-    ? creditAllocations.map(allocation => ({
-        supplierId: allocation.supplierId,
-        supplierName: allocation.supplierName,
-      }))
+    ? [...new Map(creditAllocations.map(allocation => [
+        allocation.supplierId,
+        { supplierId: allocation.supplierId, supplierName: allocation.supplierName },
+      ])).values()]
     : trip.fuelSupplier
       ? [{ supplierId: undefined, supplierName: trip.fuelSupplier.name }]
       : [];
@@ -97,15 +99,24 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
             <span className="v">{ttbq > 0 ? `${ttbq.toFixed(1)} L/100km` : '—'}</span>
           </div>
           {fuelAllocations.length > 0
-            ? fuelAllocations.map(allocation => (
-                <div className="pl-row" key={allocation.id}>
-                  <span className="k">{allocation.supplierName}</span>
-                  <span className="v fuel-supplier-name">
-                    {Number(allocation.liters).toLocaleString('vi-VN')} L
-                    {allocation.paymentMethod === 'CASH' ? ' · Tiền mặt' : ' · Công nợ'}
-                  </span>
-                </div>
-              ))
+            ? fuelAllocations.map(allocation => {
+                const liters = Number(allocation.liters);
+                const price = allocation.unitPrice != null && Number(allocation.unitPrice) > 0
+                  ? Number(allocation.unitPrice)
+                  : (effectiveFuelPrice ?? 0);
+                const amount = Math.round(liters * price);
+                return (
+                  <div className="pl-row" key={allocation.id}>
+                    <span className="k">{allocation.supplierName}</span>
+                    <span className="v fuel-supplier-name">
+                      {price > 0
+                        ? `${liters.toLocaleString('vi-VN')} L × ${price.toLocaleString('vi-VN')} = ${amount.toLocaleString('vi-VN')} ₫`
+                        : `${liters.toLocaleString('vi-VN')} L`}
+                      {allocation.paymentMethod === 'CASH' ? ' · Tiền mặt' : ' · Công nợ'}
+                    </span>
+                  </div>
+                );
+              })
             : trip.fuelSupplier && (
                 <div className="pl-row">
                   <span className="k">Nhà cung cấp</span>

@@ -24,6 +24,8 @@ export interface FuelVoucherData {
   effectiveFuelPrice: number;
   supplierName: string | null;
   supplierNote: string | null;
+  /** Per-purchase lines (liters, price, amount). Legacy trips render one line. */
+  lineItems: Array<{ liters: number; unitPrice: number; amount: number }>;
 }
 
 // ── Data loading ──
@@ -59,12 +61,14 @@ export async function buildFuelVoucherData(
   const fuelAllocations = await db.select({
     supplierId: s.tripFuelAllocations.supplierId,
     liters: s.tripFuelAllocations.liters,
+    unitPrice: s.tripFuelAllocations.unitPrice,
     paymentMethod: s.tripFuelAllocations.paymentMethod,
     supplierName: s.suppliers.name,
     supplierNote: s.suppliers.note,
   }).from(s.tripFuelAllocations)
     .leftJoin(s.suppliers, eq(s.tripFuelAllocations.supplierId, s.suppliers.id))
-    .where(eq(s.tripFuelAllocations.tripId, tripId));
+    .where(eq(s.tripFuelAllocations.tripId, tripId))
+    .orderBy(s.tripFuelAllocations.id);
   const payableAllocations = fuelAllocations.filter(
     item => item.paymentMethod === 'CREDIT' && item.supplierId,
   );
@@ -91,7 +95,36 @@ export async function buildFuelVoucherData(
   const effectiveFuelPrice = snapshottedFuelPrice > 0
     ? snapshottedFuelPrice
     : (allocatedLiters > 0 ? Number(row.totalFuelCost || 0) / allocatedLiters : 0);
-  const fuelLiters = allocation ? Number(allocation.liters) : Number(row.fuelLiters ?? 0);
+
+  // Supplier-scoped rows: every purchase row of the requested supplier. A
+  // supplier may have several rows (per-purchase pricing); legacy trips have
+  // unpriced rows and keep the single-line voucher.
+  const targetSupplierId = allocation?.supplierId;
+  const supplierRows = targetSupplierId != null
+    ? payableAllocations.filter(item => item.supplierId === targetSupplierId)
+    : [];
+  const anyRowPriced = supplierRows.some(item => item.unitPrice != null && Number(item.unitPrice) > 0);
+  // Several rows for one supplier (possible per-purchase) always aggregate:
+  // priced rows become their own line items; unpriced rows share one line at
+  // the trip's effective price over the supplier's total liters.
+  const supplierLiters = supplierRows.reduce((total, item) => total + Number(item.liters || 0), 0);
+  const fuelLiters = anyRowPriced || supplierRows.length > 1
+    ? supplierLiters
+    : (allocation ? Number(allocation.liters) : Number(row.fuelLiters ?? 0));
+
+  const legacySupplierTotal = allocation
+    ? (fuelAllocations.length === 1
+        ? Number(row.totalFuelCost ?? 0)
+        : Math.round(fuelLiters * effectiveFuelPrice))
+    : Number(row.totalFuelCost ?? 0);
+
+  const lineItems: FuelVoucherData['lineItems'] = anyRowPriced
+    ? supplierRows.map((item) => {
+        const liters = Number(item.liters);
+        const unitPrice = Number(item.unitPrice) > 0 ? Number(item.unitPrice) : snapshottedFuelPrice;
+        return { liters, unitPrice, amount: Math.round(liters * unitPrice) };
+      })
+    : [{ liters: fuelLiters, unitPrice: effectiveFuelPrice, amount: Math.round(legacySupplierTotal) }];
 
   return {
     tripCode: row.tripCode,
@@ -101,17 +134,15 @@ export async function buildFuelVoucherData(
     driverName: row.driverName,
     fuelLiters,
     fuelActualUnitPrice: Number(row.fuelActualUnitPrice ?? 0),
-    totalFuelCost: allocation
-      ? (fuelAllocations.length === 1
-          ? Number(row.totalFuelCost ?? 0)
-          : Math.round(fuelLiters * effectiveFuelPrice))
-      : Number(row.totalFuelCost ?? 0),
+    totalFuelCost: lineItems.reduce((sum, item) => sum + item.amount, 0),
     fuelPriceApplied: Number(row.fuelPriceApplied ?? 0),
     effectiveFuelPrice,
     supplierName: allocation?.supplierName ?? row.supplierName,
     supplierNote: allocation?.supplierNote ?? row.supplierNote,
+    lineItems,
   };
 }
+
 
 // ── HTML rendering ──
 
@@ -343,13 +374,14 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
         </tr>
       </thead>
       <tbody>
+        ${data.lineItems.map((item, i) => `
         <tr>
-          <td class="center">1</td>
-          <td>Nhiên liệu (Diesel)</td>
-          <td class="right">${formatVND(data.fuelLiters)}</td>
-          <td class="right">${formatVND(data.effectiveFuelPrice)}</td>
-          <td class="right">${formatVND(data.totalFuelCost)}</td>
-        </tr>
+          <td class="center">${i + 1}</td>
+          <td>Nhiên liệu (Diesel)${data.lineItems.length > 1 ? ` — lần ${i + 1}` : ''}</td>
+          <td class="right">${formatVND(item.liters)}</td>
+          <td class="right">${formatVND(item.unitPrice)}</td>
+          <td class="right">${formatVND(item.amount)}</td>
+        </tr>`).join('')}
         <tr class="total">
           <td colspan="4" class="right">Tổng cộng</td>
           <td class="right">${formatVND(data.totalFuelCost)}</td>
@@ -360,7 +392,9 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
     <div class="vendor">
       <div class="vrow"><span class="k">Nhà cung cấp:</span><span><strong>${escapeHtml(data.supplierName ?? '—')}</strong></span></div>
       ${data.supplierNote ? `<div class="vrow"><span class="k">Ghi chú:</span><span>${escapeHtml(data.supplierNote)}</span></div>` : ''}
-      <div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.effectiveFuelPrice)} đ/Lít</span></div>
+      ${data.lineItems.every(item => item.unitPrice === data.lineItems[0].unitPrice)
+        ? `<div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.lineItems[0].unitPrice)} đ/Lít</span></div>`
+        : ''}
     </div>
 
     <div class="signatures">
@@ -490,23 +524,31 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   }
   row++;
 
-  // Data row
-  const dataRow = ws.getRow(row);
-  dataRow.height = 20;
-  const values: (string | number)[] = [1, 'Nhiên liệu (Diesel)', data.fuelLiters, data.effectiveFuelPrice, data.totalFuelCost];
-  for (let i = 0; i < values.length; i++) {
-    const c = dataRow.getCell(i + 1);
-    c.value = values[i];
-    c.font = { name: F, size: 10, color: { argb: CLR.dark } };
-    c.border = borderAll;
-    if (i >= 2) {
-      c.alignment = { horizontal: 'right' };
-      if (typeof values[i] === 'number') {
-        c.numFmt = '#,##0';
+  // Data rows (one per purchase line)
+  data.lineItems.forEach((item, i) => {
+    const dataRow = ws.getRow(row);
+    dataRow.height = 20;
+    const values: (string | number)[] = [
+      i + 1,
+      `Nhiên liệu (Diesel)${data.lineItems.length > 1 ? ` — lần ${i + 1}` : ''}`,
+      item.liters,
+      item.unitPrice,
+      item.amount,
+    ];
+    for (let j = 0; j < values.length; j++) {
+      const c = dataRow.getCell(j + 1);
+      c.value = values[j];
+      c.font = { name: F, size: 10, color: { argb: CLR.dark } };
+      c.border = borderAll;
+      if (j >= 2) {
+        c.alignment = { horizontal: 'right' };
+        if (typeof values[j] === 'number') {
+          c.numFmt = '#,##0';
+        }
       }
     }
-  }
-  row++;
+    row++;
+  });
 
   // Total row
   const totalRow = ws.getRow(row);
@@ -551,7 +593,10 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const priceRow = ws.getRow(row);
   priceRow.height = 16;
   ws.mergeCells(`A${row}:E${row}`);
-  priceRow.getCell(1).value = `Giá áp dụng: ${formatVND(data.effectiveFuelPrice)} đ/Lít`;
+  const uniformPrice = data.lineItems.every(item => item.unitPrice === data.lineItems[0].unitPrice);
+  priceRow.getCell(1).value = uniformPrice
+    ? `Giá áp dụng: ${formatVND(data.lineItems[0].unitPrice)} đ/Lít`
+    : 'Giá áp dụng: theo từng lần đổ (xem bảng)';
   priceRow.getCell(1).font = { name: F, size: 10, color: { argb: 'FF374151' } };
   row++;
 

@@ -62,6 +62,14 @@ export function TotalsPanel() {
       returnCargoBonus: returnCargoBonusApplied ?? 0,
       revenue: revenue ? Number(revenue) : 0,
       vatRate: Number(vatRate) || 0,
+      // Per-purchase pricing: mirror the server's Σ-row-amounts totals so the
+      // live preview matches what saving will produce.
+      fuelAllocations: form.fuelAllocations
+        .filter(row => row.liters.trim() !== '')
+        .map(row => ({
+          liters: Number(row.liters) || 0,
+          unitPrice: row.unitPrice && Number(row.unitPrice) > 0 ? Number(row.unitPrice) : null,
+        })),
       carrierType,
       externalFreightCost: externalFreightCost ? Number(externalFreightCost) : 0,
       driverSalary: driverSalary ? Number(driverSalary) : 0,
@@ -74,7 +82,7 @@ export function TotalsPanel() {
     isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
     tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
     hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
-    form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission,
+    form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission, form.fuelAllocations,
     carrierType, externalFreightCost, vatRate,
   ]);
 

@@ -65,11 +65,13 @@ export interface FuelAllocationFormRow {
   supplierId: number | null;
   paymentMethod: 'CREDIT' | 'CASH';
   liters: string;
+  /** Per-purchase pump price (VND/lít); '' = use the trip's effective price. */
+  unitPrice?: string;
 }
 
 export function createDefaultFuelAllocations(): FuelAllocationFormRow[] {
   return [
-    { _key: 'fuel-outside', point: 'OUTSIDE', enabled: false, supplierId: null, paymentMethod: 'CASH', liters: '' },
+    { _key: 'fuel-outside', point: 'OUTSIDE', enabled: false, supplierId: null, paymentMethod: 'CASH', liters: '', unitPrice: '' },
   ];
 }
 
@@ -256,6 +258,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
         supplierId: allocation.supplierId,
         paymentMethod: allocation.paymentMethod,
         liters: String(allocation.liters),
+        unitPrice: allocation.unitPrice != null ? String(Number(allocation.unitPrice)) : '',
       }));
     }
     return existingTrip.fuelSupplierId && Number(existingTrip.fuelLiters) > 0

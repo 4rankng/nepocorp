@@ -142,3 +142,28 @@
     min-height: 44px;
   }
 }
+
+/* ── Per-purchase price column + add/remove actions ── */
+.fuel-allocation-row {
+  grid-template-columns: minmax(0, 1fr) 132px 176px 88px;
+}
+.fuel-allocation-column-price {
+  text-align: right;
+}
+.fuel-allocation-price .fuel-allocation-input {
+  justify-content: flex-end;
+}
+.fuel-allocation-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+.fuel-allocation-add,
+.fuel-allocation-remove {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1;
+}

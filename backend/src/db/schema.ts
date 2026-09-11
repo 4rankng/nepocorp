@@ -374,18 +374,15 @@ export const tripFuelAllocations = pgTable('trip_fuel_allocations', {
   tripId: integer('trip_id').references(() => trips.id, { onDelete: 'cascade' }).notNull(),
   supplierId: integer('supplier_id').references(() => suppliers.id),
   liters: numeric('liters', { precision: 10, scale: 2 }).notNull(),
+  // Per-purchase pump price (VND/lít). Null = legacy/derive-at-read: the row
+  // is priced with the trip's effective price (actual ?? snapshot).
+  unitPrice: numeric('unit_price', { precision: 12, scale: 2 }),
   paymentMethod: varchar('payment_method', { length: 10 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_fuel_allocations_trip_idx').on(table.tripId),
   index('trip_fuel_allocations_supplier_idx').on(table.supplierId),
-  uniqueIndex('trip_fuel_allocations_supplier_once_idx')
-    .on(table.tripId, table.supplierId)
-    .where(sql`${table.supplierId} IS NOT NULL`),
-  uniqueIndex('trip_fuel_allocations_cash_once_idx')
-    .on(table.tripId)
-    .where(sql`${table.paymentMethod} = 'CASH'`),
   check('trip_fuel_allocations_liters_positive', sql`${table.liters} > 0`),
   check(
     'trip_fuel_allocations_payment_method_check',

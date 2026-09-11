@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import type { Supplier } from '@tingting/shared';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
-import { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers } from './fuelAllocationRows';
+import { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers, isStandardFuelRowKey } from './fuelAllocationRows';
 import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import './FuelAllocationEditor.css';
 
@@ -18,7 +18,8 @@ function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[])
       && row.enabled === candidate.enabled
       && row.supplierId === candidate.supplierId
       && row.paymentMethod === candidate.paymentMethod
-      && row.liters === candidate.liters;
+      && row.liters === candidate.liters
+      && row.unitPrice === candidate.unitPrice;
   });
 }
 
@@ -58,6 +59,39 @@ export function FuelAllocationEditor() {
     setRow(key, { liters, enabled: (Number(liters) || 0) > 0 });
   };
 
+  const setUnitPrice = (key: string, unitPrice: string) => {
+    setRow(key, { unitPrice });
+  };
+
+  // "Thêm lần đổ" — a trip may refuel the same counterparty several times at
+  // different pump prices, so a purchase row can be duplicated. New rows key
+  // as extra-<n> (session-local uniqueness).
+  const addExtraRow = (source: FuelAllocationFormRow) => {
+    let maxExtra = 0;
+    for (const r of form.fuelAllocations) {
+      const m = /^extra-(\d+)$/.exec(r._key);
+      if (m) maxExtra = Math.max(maxExtra, Number(m[1]));
+    }
+    const key = `extra-${maxExtra + 1}`;
+    const extra: FuelAllocationFormRow = {
+      _key: key,
+      point: source.point,
+      enabled: false,
+      supplierId: source.supplierId,
+      paymentMethod: source.paymentMethod,
+      liters: '',
+      unitPrice: '',
+    };
+    const idx = form.fuelAllocations.findIndex(r => r._key === source._key);
+    const next = [...form.fuelAllocations];
+    next.splice(idx + 1, 0, extra);
+    form.setFuelAllocations(next);
+  };
+
+  const removeExtraRow = (key: string) => {
+    form.setFuelAllocations(form.fuelAllocations.filter(r => r._key !== key));
+  };
+
   return (
     <div className="fuel-allocation-editor">
       <div className="fuel-allocation-heading">
@@ -77,6 +111,8 @@ export function FuelAllocationEditor() {
         <div className="fuel-allocation-row fuel-allocation-row--head" role="row">
           <span role="columnheader">Nơi đổ dầu</span>
           <span role="columnheader" className="fuel-allocation-column-liters">Số lít</span>
+          <span role="columnheader" className="fuel-allocation-column-price">Đơn giá (đ/lít)</span>
+          <span role="columnheader" aria-hidden="true" />
         </div>
         {form.fuelAllocations.map((allocation) => {
           const supplier = allocation.supplierId == null
@@ -98,21 +134,69 @@ export function FuelAllocationEditor() {
 
               <div className="fuel-allocation-liters" role="cell">
                 <div className="fuel-allocation-input">
-                <input
-                  id={`fuel-allocation-liters-${allocation._key}`}
-                  className="input"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="0"
-                  aria-label={`Số lít tại ${pointLabel}`}
-                  disabled={isCreditPointWithoutSupplier}
-                  value={allocation.liters}
-                  onChange={event => setLiters(allocation._key, event.target.value)}
-                />
+                  <input
+                    id={`fuel-allocation-liters-${allocation._key}`}
+                    className="input"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="0"
+                    aria-label={`Số lít tại ${pointLabel}`}
+                    disabled={isCreditPointWithoutSupplier}
+                    value={allocation.liters}
+                    onChange={event => setLiters(allocation._key, event.target.value)}
+                  />
                   <span aria-hidden="true">lít</span>
                 </div>
+              </div>
+
+              <div className="fuel-allocation-price" role="cell">
+                {allocation.enabled ? (
+                  <div className="fuel-allocation-input">
+                    <input
+                      id={`fuel-allocation-price-${allocation._key}`}
+                      className="input"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      max="1000000000"
+                      step="1"
+                      placeholder="Giá chuyến"
+                      aria-label={`Đơn giá tại ${pointLabel}`}
+                      disabled={isCreditPointWithoutSupplier}
+                      value={allocation.unitPrice ?? ''}
+                      onChange={event => setUnitPrice(allocation._key, event.target.value)}
+                    />
+                    <span aria-hidden="true">đ</span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="fuel-allocation-actions" role="cell">
+                {allocation.enabled ? (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm fuel-allocation-add"
+                    aria-label={`Thêm lần đổ tại ${pointLabel}`}
+                    title={form.fuelAllocations.length >= 10 ? 'Tối đa 10 lần đổ mỗi chuyến' : `Thêm lần đổ tại ${pointLabel}`}
+                    disabled={form.fuelAllocations.length >= 10}
+                    onClick={() => addExtraRow(allocation)}
+                  >
+                    +
+                  </button>
+                ) : null}
+                {!isStandardFuelRowKey(allocation._key) ? (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm fuel-allocation-remove"
+                    aria-label={`Xóa lần đổ tại ${pointLabel}`}
+                    title={`Xóa lần đổ tại ${pointLabel}`}
+                    onClick={() => removeExtraRow(allocation._key)}
+                  >
+                    ×
+                  </button>
+                ) : null}
               </div>
             </div>
           );
