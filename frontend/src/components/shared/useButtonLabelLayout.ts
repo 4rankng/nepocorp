@@ -18,6 +18,9 @@ function restoreDecoration(icon: HTMLElement) {
 function decorativeIcons(button: HTMLElement) {
   return Array.from(button.querySelectorAll<HTMLElement>('svg[aria-hidden="true"], img[alt=""]')).filter(icon => (
     !icon.matches('[aria-label], [aria-labelledby], [aria-describedby], [role="img"]')
+    // A disclosure chevron communicates expanded/collapsed state. Other
+    // decoration in the same wrapping button can still be removed.
+    && !(button.hasAttribute('aria-expanded') && icon.matches('.lucide-chevron-down, .lucide-chevron-up, .lucide-chevron-left, .lucide-chevron-right'))
     && !icon.querySelector('title')
     && !icon.closest('.spin, .animate-spin, [role="status"], [data-button-icon="status"]')
   ));

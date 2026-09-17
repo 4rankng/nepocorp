@@ -1,0 +1,29 @@
+/* Keep the section title readable and its expansion indicator visible on
+ * narrow phones. The optional/required badge gets its own row. */
+@media (max-width: 420px) {
+  .tc-card.is-collapsible .tc-card-head-btn {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18px;
+    align-items: start;
+    gap: 6px 8px;
+  }
+
+  .tc-card-head-btn > .tc-card-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tc-card-head-btn > .tc-card-chev {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    margin-top: 2px;
+  }
+
+  .tc-card-head-btn > .tc-badge-required,
+  .tc-card-head-btn > .tc-badge-optional {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+}

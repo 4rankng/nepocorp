@@ -73,6 +73,16 @@ describe('shared button label layout', () => {
     expect(button.hasAttribute('data-button-label-wrap')).toBe(false);
   });
 
+  it.each(['false', 'true'])('preserves disclosure state indicators while hiding decoration (expanded=%s)', expanded => {
+    mockLabelLines(() => true);
+    const button = buttonFixture('<svg aria-hidden="true" class="decoration"></svg><svg aria-hidden="true" class="lucide-chevron-down"></svg>');
+    button.setAttribute('aria-expanded', expanded);
+    syncButtonLabelLayout(button);
+    expect(button.getAttribute('data-button-label-wrap')).toBe('true');
+    expect(button.querySelector('.decoration')?.hasAttribute('data-button-decoration')).toBe(true);
+    expect(button.querySelector('.lucide-chevron-down')?.hasAttribute('data-button-decoration')).toBe(false);
+  });
+
   it('distinguishes a grid title and subtitle from wrapping inside the title', () => {
     let narrow = false;
     vi.spyOn(document, 'createRange').mockImplementation(() => {

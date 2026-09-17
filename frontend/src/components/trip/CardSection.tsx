@@ -1,5 +1,6 @@
 import React, { useState, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
+import './CardSection.css';
 
 interface CardSectionProps {
   /**
@@ -52,6 +53,7 @@ export function CardSection({
         <ChevronDown
           size={18}
           className={`tc-card-chev${collapsed ? '' : ' is-open'}`}
+          data-button-icon="status"
           aria-hidden
         />
       )}

@@ -696,7 +696,9 @@
     .drawer input:not([type="checkbox"]):not([type="radio"]),
     #root textarea,
     .modal textarea,
-    .drawer textarea {
+    .modal .modal__body textarea.input,
+    .drawer textarea,
+    .drawer .drawer__body textarea.input {
       font-size: 16px;
     }
   }
