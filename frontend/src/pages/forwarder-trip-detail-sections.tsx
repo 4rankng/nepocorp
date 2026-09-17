@@ -24,13 +24,13 @@ export function ForwarderContainersSection({ containers, show: showContainerForm
  return <>
         <div className="panel panel--solid" style={{ marginBottom: 16 }}>
           <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Số Container / Seal ({containers.length})
             </span>
             <button
               className="btn btn--secondary btn--sm"
               onClick={() => setShowContainerForm(!showContainerForm)}
-              style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
             >
               <Plus size={12} /> Thêm
             </button>
@@ -77,7 +77,7 @@ export function ForwarderContainersSection({ containers, show: showContainerForm
           )}
 
           {containers.length === 0 ? (
-            <div style={{ padding: '16px 20px', color: 'var(--fg-3)', fontSize: 13, textAlign: 'center' }}>
+            <div style={{ padding: '16px 20px', color: 'var(--fg-3)', fontSize: 'var(--fs-body)', textAlign: 'center' }}>
               Chưa có số container/seal nào
             </div>
           ) : (
@@ -100,15 +100,15 @@ export function ForwarderContainersSection({ containers, show: showContainerForm
                 >
                   <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 600, fontSize: 13, fontFamily: 'var(--font-mono)' }}>{c.containerNumber}</span>
+                    <span style={{ fontWeight: 600, fontSize: 'var(--fs-body)', fontFamily: 'var(--font-mono)' }}>{c.containerNumber}</span>
                     {c.sealNumber && (
-                      <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 12 }}>
+                      <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-caption)', marginLeft: 12 }}>
                         Seal: <span style={{ fontFamily: 'var(--font-mono)' }}>{c.sealNumber}</span>
                       </span>
                     )}
                   </div>
                   {c.notes && (
-                    <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>{c.notes}</span>
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)' }}>{c.notes}</span>
                   )}
                 </div>
                 );
@@ -135,21 +135,21 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
                       </span>
                       {exp.activeSettlementId && (
                         <span style={{
-                          fontSize: 12, lineHeight: 1.35, fontWeight: 600,
+                          fontSize: 'var(--fs-caption)', lineHeight: 1.35, fontWeight: 600,
                           color: '#92400e', background: '#fef3c7',
                           borderRadius: 4, padding: '3px 7px', marginLeft: 6,
                         }}>Đã gửi kế toán</span>
                       )}
                       {exp.note && (
-                        <span style={{ color: 'var(--fg-3)', fontSize: 12, marginLeft: 8 }}>{exp.note}</span>
+                        <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-caption)', marginLeft: 8 }}>{exp.note}</span>
                       )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontWeight: 600, fontSize: 'var(--fs-body)', fontVariantNumeric: 'tabular-nums' }}>
                         {formatCurrency(exp.buyAmount)}
                       </div>
                       {exp.settlementMethod === 'COMPANY_DIRECT' && (
-                        <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>Công ty trả</div>
+                        <div style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3)' }}>Công ty trả</div>
                       )}
                     </div>
                     {/* Photo upload button */}
@@ -208,7 +208,7 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
                   )}
                   {/* Load photos on first render */}
                   {!expensePhotos[exp.id] && (
-                    <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', paddingLeft: 26, marginTop: 4, display: 'inline-block', cursor: 'pointer' }} onClick={() => loadExpensePhotos(exp.id)}>
+                    <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3)', paddingLeft: 26, marginTop: 4, display: 'inline-block', cursor: 'pointer' }} onClick={() => loadExpensePhotos(exp.id)}>
                       Xem ảnh hóa đơn
                     </span>
                   )}

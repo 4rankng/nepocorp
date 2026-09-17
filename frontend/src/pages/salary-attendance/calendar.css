@@ -94,7 +94,7 @@
 }
 
 .driver-select-card__salary {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -109,7 +109,7 @@
   gap: 12px;
   padding: 14px 16px;
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .salary-empty-inline img {
@@ -179,7 +179,7 @@
 
 .calendar-dow-cell {
   text-align: center;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 5px 0;
@@ -239,7 +239,7 @@
 }
 
 .cal-cell-day-num {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--fg-3);
   line-height: 1.35;
@@ -272,7 +272,7 @@
 }
 
 .cal-cell-trip-code {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--accent-ink);
   background: rgba(0, 177, 79, 0.1);
@@ -370,7 +370,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--fg-2);
   padding: 3px 9px;

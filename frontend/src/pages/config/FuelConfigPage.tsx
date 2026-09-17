@@ -7,8 +7,7 @@ import { useFuelConfig, useSaveFuelConfig } from '../../hooks/useCatalogQueries'
 import { PageHeader, Panel } from '../../components/UI';
 import type { FuelPriceHistory } from '@tingting/shared';
 import './config-page.css';
-import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
-import { onboardingEvents } from '../../lib/onboardingEvents';
+import { EmptyState } from '../../design-system/EmptyState';
 
 export default function FuelConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
@@ -55,9 +54,6 @@ export default function FuelConfigPage() {
         warningThreshold: form.warningThreshold ? Number(form.warningThreshold) : 37,
         criticalThreshold: form.criticalThreshold ? Number(form.criticalThreshold) : 40,
       });
-      // Onboarding product event: fuel config was saved. The fuel-config tour
-      // and any future checklist item keyed on this wait on it.
-      onboardingEvents.emit('config.fuel_saved');
       navigate('/config');
     } catch (e) { setError(e instanceof Error ? e.message : 'Lỗi lưu'); } finally { setSaving(false); }
   };
@@ -119,11 +115,11 @@ export default function FuelConfigPage() {
         {historyLoading ? (
           <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink-3)' }}>Đang tải…</div>
         ) : history.length === 0 ? (
-          <div className="cfg-empty" style={{ padding: '24px 16px' }}>
-            <img src={resolveEmptyIllustration('empty-config')} alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <div className="cfg-empty__title">Chưa có lịch sử</div>
-            <div className="cfg-empty__hint">Lịch sử thay đổi giá sẽ hiển thị sau lần lưu đầu tiên.</div>
-          </div>
+          <EmptyState
+            illustration="empty-config"
+            title="Chưa có lịch sử"
+            description="Lịch sử thay đổi giá sẽ hiển thị sau lần lưu đầu tiên."
+          />
         ) : (
           <div className="table-scroll">
             <table className="tt-table">

@@ -18,7 +18,6 @@ const scopedRuntimeFiles = [
   '../src/components/AssetIcon.tsx',
   '../src/components/agent/AgentAssistant.tsx',
   '../src/components/layout/Sidebar.tsx',
-  '../src/components/onboarding/OnboardingChecklist.tsx',
   '../src/pages/LoginPage.tsx',
   '../src/lib/csv.ts',
   '../src/lib/routes.ts',
@@ -40,12 +39,7 @@ const brandSource = await readFile(new URL('../src/brand.ts', import.meta.url), 
 const tokenSource = await readFile(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
 const buttonSource = await readFile(new URL('../src/components/Button.css', import.meta.url), 'utf8');
 const dashboardSource = await readFile(new URL('../src/pages/DashboardPage.css', import.meta.url), 'utf8');
-const agentSource = await readFile(new URL('../src/components/agent/agent.css', import.meta.url), 'utf8');
 const tableSource = await readFile(new URL('../src/components/Table.css', import.meta.url), 'utf8');
-const onboardingStyleSource = await readFile(
-  new URL('../src/components/onboarding/onboarding-checklist.css', import.meta.url),
-  'utf8',
-);
 for (const requiredCopy of [
   "name: 'TransTing'",
   "tagline: 'Vận tải thông minh. Doanh nghiệp vững mạnh.'",
@@ -91,19 +85,9 @@ for (const [sourceName, source, requiredRule] of [
     /\.dash-wf \.wf-minibtn\.green:hover\s*\{[^}]*background:\s*var\(--brand-hover\)/,
   ],
   [
-    'src/components/agent/agent.css',
-    agentSource,
-    /\.agent-tour__btn--primary:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--brand-hover/,
-  ],
-  [
     'src/components/Table.css',
     tableSource,
     /\.ancillary-fee-card__btn--approve:hover\s*\{[^}]*background:\s*var\(--brand\)/,
-  ],
-  [
-    'src/components/onboarding/onboarding-checklist.css',
-    onboardingStyleSource,
-    /\.ob-checklist__tour-btn\s*\{[^}]*color:\s*var\(--brand\)[^}]*background:\s*var\(--brand-soft\)/,
   ],
 ]) {
   if (!requiredRule.test(source)) {

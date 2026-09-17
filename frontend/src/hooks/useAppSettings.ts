@@ -20,7 +20,7 @@ export function useSaveAppSettings() {
     mutationFn: (settings: AppSettings) => appSettingsClient.saveSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: appSettingsQueryKey });
-      // The assistant and onboarding UI read their enabled state from /auth/me.
+      // The assistant reads its enabled state from /auth/me.
       queryClient.invalidateQueries({ queryKey: qk.auth.me });
     },
   });

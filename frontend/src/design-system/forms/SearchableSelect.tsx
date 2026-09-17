@@ -56,7 +56,9 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const listboxId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const activeOptionRef = useRef<HTMLLIElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -97,6 +99,14 @@ export function SearchableSelect({
     }
   }, [activeIndex, filteredOptions.length]);
 
+  useEffect(() => {
+    if (isOpen) activeOptionRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [isOpen, activeIndex, filteredOptions]);
+
+  useEffect(() => {
+    if (disabled) close();
+  }, [disabled, close]);
+
   const open = () => {
     if (disabled) return;
     setQuery('');
@@ -107,12 +117,14 @@ export function SearchableSelect({
   const selectOption = (option: SearchableSelectOption) => {
     onChange(option.value);
     close();
+    triggerRef.current?.focus();
   };
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setActiveIndex((current) => Math.min(current + 1, filteredOptions.length - 1));
+      setActiveIndex((current) => Math.max(0, Math.min(current + 1, filteredOptions.length - 1)));
       return;
     }
     if (event.key === 'ArrowUp') {
@@ -122,25 +134,41 @@ export function SearchableSelect({
     }
     if (event.key === 'Enter') {
       event.preventDefault();
+      event.stopPropagation();
       const option = filteredOptions[activeIndex];
       if (option) selectOption(option);
       return;
     }
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       close();
+      triggerRef.current?.focus();
     }
   };
 
   const rootClassName = ['searchable-select', className].filter(Boolean).join(' ');
 
   return (
-    <div ref={containerRef} className={rootClassName}>
+    <div
+      ref={containerRef}
+      className={rootClassName}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) close();
+      }}
+    >
       <button
+        ref={triggerRef}
         id={id}
         type="button"
         className={`input searchable-select__trigger${isOpen ? ' searchable-select__trigger--open' : ''}`}
         onClick={() => (isOpen ? close() : open())}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            open();
+          }
+        }}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -189,13 +217,14 @@ export function SearchableSelect({
             />
           </div>
 
-          <ul id={listboxId} className="searchable-select__list" role="listbox">
+          <ul id={listboxId} className="searchable-select__list" role="listbox" aria-labelledby={id}>
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => {
                 const isSelected = option.value === value;
                 const isActive = index === activeIndex;
                 return (
                   <li
+                    ref={isActive ? activeOptionRef : undefined}
                     id={`${listboxId}-option-${option.value}`}
                     key={option.value}
                     role="option"

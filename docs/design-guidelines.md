@@ -13,6 +13,36 @@ Two self-hosted fonts, zero Google CDN:
 
 Do not add new fonts. Do not reference Google Fonts CDN.
 
+Use the shared tokens in `frontend/src/styles/tokens.css` for UI typography:
+
+| Role | Token | Size |
+| --- | --- | --- |
+| Body, fields, dropdown triggers/options, standard buttons | `--fs-body` / `--fs-control` | 14px |
+| Field labels, compact rows/buttons | `--fs-label` / `--fs-sm` | 13px |
+| Supporting text | `--fs-caption` | 12px |
+| Section heading | `--fs-section` | 16px |
+| Dialog heading | `--fs-xl` | 18px |
+| Page heading | `--fs-page-title` | 20px |
+
+Touch targets grow to at least 44px independently of their font size. Do not
+add page-specific input/dropdown font-size overrides. Native editable fields
+use 16px on iOS Safari only to prevent focus zoom; button-based dropdowns keep
+the shared control size. Tables, field labels and navigation use Be Vietnam Pro;
+reserve JetBrains Mono for numeric data and code, not ordinary Vietnamese labels.
+
+Legacy `.input`, design-system text fields and Radix select triggers share
+`components/Input.css`. `SelectField` delegates its interaction to the common
+Radix select. Searchable selects retain their search behavior with the same
+control/option scale. Tailwind text utilities resolve to the canonical tokens.
+Do not introduce a new dropdown or field skin for a page.
+
+Keep short action labels on one line by giving action groups room to wrap.
+When a label must wrap, omit its decorative icon. Loading indicators and icons
+with their own accessible meaning remain visible. Use the shared button rules
+rather than per-page font reductions or ellipsis. Document previews/print styles
+and deliberately prominent numeric metrics may use their own scale.
+
+
 ## Color System
 
 The TransTing brand palette centers on an emerald shell and primary actions, with a unified emerald-and-white route-T mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
@@ -149,17 +179,8 @@ Two roles require mobile-first responsive design:
 
 - Slides in from the right side of the screen.
 - Real-time communication via Socket.io.
-- Supports agent directives: navigate to page, highlight element, start guided tour.
+- Supports agent directives for navigation and highlighting; onboarding tours were removed.
 - Messages rendered with markdown support.
-
-## Tour Engine
-
-- Curated walkthroughs scoped to user role (`toursForRole`).
-- Triggered by chatbot response, the starter checklist, or the persistent **Hướng dẫn sử dụng** library in the topbar.
-- Uses Driver.js for element spotlight and step-by-step guidance.
-- Progress is written through to the onboarding API and cached locally by tour id + catalog version; outdated local steps never resume a changed tour.
-- Opening or viewing a guide never completes a checklist item. A work item completes only after its matching product-success event; an orientation/reference item completes only after its own guide is finished.
-- For enabled office-role onboarding, the library remains available from the topbar after the checklist is dismissed or completed.
 
 ## Accessibility
 

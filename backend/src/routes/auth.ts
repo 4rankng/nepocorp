@@ -51,7 +51,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
 
   const capabilities = await userService.getCapabilities(user.role);
   const settings = await getAppSettings();
-  res.json({ token, user: { ...user, fullName: displayName, capabilities, botEnabled: settings.botEnabled, onboardingEnabled: settings.tutorialEnabled } });
+  res.json({ token, user: { ...user, fullName: displayName, capabilities, botEnabled: settings.botEnabled } });
 }));
 
 // ─── Current user ────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ router.get('/me', authMiddleware, asyncHandler(async (req: Request, res: Respons
   }
   const capabilities = await userService.getCapabilities(profile.role);
   const settings = await getAppSettings();
-  res.json({ ...profile, capabilities, botEnabled: settings.botEnabled, onboardingEnabled: settings.tutorialEnabled });
+  res.json({ ...profile, capabilities, botEnabled: settings.botEnabled });
 }));
 
 router.post('/logout', authMiddleware, asyncHandler(async (req: Request, res: Response) => {

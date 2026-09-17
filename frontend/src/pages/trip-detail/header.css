@@ -21,7 +21,7 @@
   margin: 0 auto;
   padding: 12px 28px 0;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 .trip-detail__crumbs ul { gap: 4px; }
 @media (max-width: 640px) {
@@ -87,7 +87,7 @@
 
 .tc-page-title {
   margin: 0;
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
   color: var(--fg-1);
@@ -99,7 +99,7 @@
 
 .tc-page-sub {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
   white-space: normal;
   overflow: visible;
@@ -258,7 +258,7 @@
   border: 0;
   border-radius: 8px;
   font: inherit;
-  font-size: var(--fs-sm);
+
   cursor: pointer;
 }
 

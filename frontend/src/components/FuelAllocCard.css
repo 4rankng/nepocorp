@@ -30,7 +30,7 @@
   letter-spacing: 0.06em;
 }
 .fuel-alloc-card__value {
-  font-size: 26px;
+  font-size: var(--fs-4xl);
   font-weight: 800;
   color: var(--brand);
   font-family: var(--font-mono);

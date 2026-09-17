@@ -28,6 +28,7 @@
  * gracefully — no 500, no broken state.
  */
 import { Router } from 'express';
+import { parsePagination } from './utils/pagination';
 import type { Request, Response } from 'express';
 import { db } from '../db';
 import * as s from '../db/schema';
@@ -133,9 +134,7 @@ async function fetchEntryForResponse(id: number): Promise<FaqEntryRow | null> {
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const search = (req.query.search as string | undefined)?.trim();
   const includeInactive = req.query.includeInactive === 'true';
-  const page = Math.max(1, parseInt((req.query.page as string) || '1', 10) || 1);
-  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) || '100', 10) || 100));
-  const offset = (page - 1) * limit;
+  const { page, limit, offset } = parsePagination(req, { limit: 100, maxLimit: 200 });
 
   const conditions = [];
   if (!includeInactive) conditions.push(eq(s.faqEntries.isActive, true));

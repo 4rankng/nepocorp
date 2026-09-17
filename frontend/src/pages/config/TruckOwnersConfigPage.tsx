@@ -11,7 +11,7 @@
  * cap tables are small, so this is fine; if a truck's owner history grows
  * large, add server-side truckId filtering to the CRUD factory.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -27,39 +27,41 @@ import type { TruckCapEntry, PaginatedResponse, Truck } from '@tingting/shared';
 import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import { qk } from '../../api/keys';
 import './config-page.css';
+import './TruckOwnersConfigPage.css';
 
 const ENDPOINT = '/truck-cap';
 
 function TruckOwnerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: TruckCapEntry; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
+  const formId = useId();
   const [partnerName, setPartnerName] = useState(item?.partnerName || '');
   const [percentage, setPercentage] = useState(item ? String(item.percentage) : '');
   const [role, setRole] = useState<TruckCapRole>(item?.role ?? TruckCapRole.INVESTOR);
   const [effectiveDate, setEffectiveDate] = useState(item ? item.effectiveDate.split('T')[0] : '');
   return (
     <InlineForm colSpan={5}>
-      <div style={{ flex: 2, minWidth: 180 }}>
-        <Field label="Tên đối tác sở hữu">
-          <input className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên đối tác…" />
+      <div className="truck-owner-form__field truck-owner-form__field--name">
+        <Field label="Tên đối tác sở hữu" htmlFor={`${formId}-name`}>
+          <input id={`${formId}-name`} className="input" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="Nhập tên đối tác…" />
         </Field>
       </div>
-      <div style={{ flex: 1, minWidth: 120 }}>
-        <Field label="Tỷ lệ sở hữu (%)">
-          <input className="input" type="number" step="0.01" min="0" max="100" value={percentage} onChange={e => setPercentage(e.target.value)} placeholder="0" />
+      <div className="truck-owner-form__field">
+        <Field label="Tỷ lệ sở hữu (%)" htmlFor={`${formId}-percentage`}>
+          <input id={`${formId}-percentage`} className="input" type="number" step="0.01" min="0" max="100" value={percentage} onChange={e => setPercentage(e.target.value)} placeholder="0" />
         </Field>
       </div>
-      <div style={{ flex: 1.2, minWidth: 140 }}>
-        <Field label="Vai trò">
-          <select className="input" value={role} onChange={e => setRole(e.target.value as TruckCapRole)}>
+      <div className="truck-owner-form__field">
+        <Field label="Vai trò" htmlFor={`${formId}-role`}>
+          <select id={`${formId}-role`} className="input" value={role} onChange={e => setRole(e.target.value as TruckCapRole)}>
             <option value={TruckCapRole.INVESTOR}>{TRUCK_CAP_ROLE_LABELS[TruckCapRole.INVESTOR]} (góp vốn)</option>
             <option value={TruckCapRole.DRIVER}>{TRUCK_CAP_ROLE_LABELS[TruckCapRole.DRIVER]}</option>
           </select>
         </Field>
       </div>
-      <div style={{ flex: 1.4, minWidth: 150 }}>
-        <Field label="Ngày hiệu lực">
-          <input className="input" type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
+      <div className="truck-owner-form__field">
+        <Field label="Ngày hiệu lực" htmlFor={`${formId}-date`}>
+          <input id={`${formId}-date`} className="input" type="date" value={effectiveDate} onChange={e => setEffectiveDate(e.target.value)} />
         </Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => {
@@ -173,7 +175,7 @@ export default function TruckOwnersConfigPage() {
   const pctBalanced = Math.abs(totalPct - 100) < 0.01;
 
   return (
-    <div ref={pageRef}>
+    <div ref={pageRef} className="truck-owners-page">
       <PageHeader
         title={truck?.licensePlate ? `Sở hữu xe — ${truck.licensePlate}` : 'Sở hữu xe'}
         iconName="equity-ownership"
@@ -192,31 +194,36 @@ export default function TruckOwnersConfigPage() {
         </div>
       )}
 
-      <Panel>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 13, color: 'var(--fg-3)' }}>
+      <Panel flush>
+        <div className="truck-owners-header">
+          <div className="truck-owners-header__count">
             Hiện tại: <strong style={{ color: 'var(--fg-1)' }}>{activeOwners.length}</strong> đối tác · {items.length - activeOwners.length} bản ghi lịch sử
           </div>
           {!showAddForm && (
-            <button className="btn btn--primary" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowAddForm(true)}>
+            <button className="btn btn--primary truck-owners-header__add" onClick={() => setShowAddForm(true)}>
               <Plus size={14} /> Thêm đối tác
             </button>
           )}
         </div>
 
-        <table className="cfg-table" style={{ width: '100%', fontSize: 13 }}>
+        {sorted.length === 0 && !showAddForm ? (
+          <div className="truck-owners-empty" role="status">
+            Chưa có đối tác sở hữu cho xe này. Thêm đối tác để bắt đầu phân chia lợi nhuận theo xe.
+          </div>
+        ) : (
+        <table className="cfg-table truck-owners-table" aria-label="Đối tác sở hữu xe">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
               <th style={{ textAlign: 'left', padding: '8px 16px' }}>Đối tác</th>
               <th style={{ textAlign: 'right', padding: '8px 16px' }}>Tỷ lệ (%)</th>
               <th style={{ textAlign: 'left', padding: '8px 16px' }}>Vai trò</th>
               <th style={{ textAlign: 'left', padding: '8px 16px' }}>Ngày hiệu lực</th>
-              <th style={{ textAlign: 'right', padding: '8px 16px' }}></th>
+              <th style={{ textAlign: 'right', padding: '8px 16px' }}><span className="sr-only">Thao tác</span></th>
             </tr>
           </thead>
           <tbody>
             {showAddForm && (
-              <tr><td colSpan={5} style={{ padding: 0 }}>
+              <tr className="truck-owners-form-row"><td colSpan={5}>
                 <TruckOwnerForm saving={saving} onsave={doCreate} oncancel={() => setShowAddForm(false)} />
               </td></tr>
             )}
@@ -224,7 +231,7 @@ export default function TruckOwnersConfigPage() {
               const isActive = activeIds.has(r.id);
               if (editingId === r.id) {
                 return (
-                  <tr key={r.id} className="cfg-row"><td colSpan={5} style={{ padding: 0 }}>
+                  <tr key={r.id} className="cfg-row truck-owners-form-row"><td colSpan={5}>
                     <TruckOwnerForm saving={saving} item={r} onsave={(d) => doUpdate(r.id, d)} oncancel={() => setEditingId(null)} />
                   </td></tr>
                 );
@@ -232,33 +239,33 @@ export default function TruckOwnersConfigPage() {
               const isDriver = (r.role ?? TruckCapRole.INVESTOR) === TruckCapRole.DRIVER;
               return (
                 <tr key={r.id} className="cfg-row" style={{ borderBottom: '1px solid var(--border-3)', opacity: isActive ? 1 : 0.55 }}>
-                  <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--fg-1)' }}>
-                    <span style={{ marginRight: 8 }}>{r.partnerName}</span>
-                    {isActive && <StatusPill variant="success">HIỆN TẠI</StatusPill>}
+                  <td className="truck-owners-table__partner">
+                    <div className="truck-owners-table__partner-content">
+                      <span>{r.partnerName}</span>
+                      {isActive && <StatusPill variant="success">HIỆN TẠI</StatusPill>}
+                    </div>
                   </td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: isActive ? 'var(--brand)' : 'var(--fg-2)' }}>
+                  <td data-label="Tỷ lệ sở hữu" className="truck-owners-table__percentage" style={{ color: isActive ? 'var(--brand)' : 'var(--fg-2)' }}>
                     {parseFloat(r.percentage).toFixed(2)}%
                   </td>
-                  <td style={{ padding: '10px 16px' }}>
+                  <td data-label="Vai trò">
                     <StatusPill variant={isDriver ? 'warn' : 'neutral'}>
                       {TRUCK_CAP_ROLE_LABELS[r.role ?? TruckCapRole.INVESTOR]}
                     </StatusPill>
                   </td>
-                  <td style={{ padding: '10px 16px' }}>{new Date(r.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                    <button className="btn btn--secondary" style={{ padding: '0 12px', marginRight: 6 }} onClick={() => setEditingId(r.id)}>Sửa</button>
-                    <button className="btn btn--danger" style={{ padding: '0 12px' }} onClick={() => doDelete(r.id)}>Xóa</button>
+                  <td data-label="Ngày hiệu lực">{new Date(r.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
+                  <td>
+                    <div className="truck-owners-table__actions">
+                      <button className="btn btn--secondary" aria-label={`Sửa đối tác ${r.partnerName}`} onClick={() => setEditingId(r.id)}>Sửa</button>
+                      <button className="btn btn--danger" aria-label={`Xóa đối tác ${r.partnerName}`} onClick={() => doDelete(r.id)}>Xóa</button>
+                    </div>
                   </td>
                 </tr>
               );
             })}
-            {sorted.length === 0 && !showAddForm && (
-              <tr><td colSpan={5} style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-                Chưa có đối tác sở hữu cho xe này. Thêm đối tác để bắt đầu phân chia lợi nhuận theo xe.
-              </td></tr>
-            )}
           </tbody>
         </table>
+        )}
       </Panel>
       {dialog}
     </div>

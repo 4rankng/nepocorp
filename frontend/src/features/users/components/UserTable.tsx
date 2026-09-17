@@ -3,7 +3,7 @@ import {
   Loader2, KeyRound, Mail, Phone, Search, UserX, MoreVertical, X,
   ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatDate } from '../../../lib/format';
 import { Role, ROLE_LABELS, ROLE_PILL, FilterKey } from '../utils';
 import type { UserRow } from '../utils';
@@ -505,13 +505,25 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
   onDelete: (id: number) => void;
 }) {
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Close dropdown on click outside
+  // Escape closes the menu without opening the editor or leaving the page.
   useEffect(() => {
     if (activeMenuId === null) return;
     const handleClose = () => setActiveMenuId(null);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setActiveMenuId(null);
+      menuTriggerRef.current?.focus();
+    };
     document.addEventListener('click', handleClose);
-    return () => document.removeEventListener('click', handleClose);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('click', handleClose);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [activeMenuId]);
 
   return (
@@ -567,6 +579,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                       aria-expanded={activeMenuId === u.id}
                       onClick={(e) => {
                         e.stopPropagation();
+                        menuTriggerRef.current = e.currentTarget;
                         setActiveMenuId(activeMenuId === u.id ? null : u.id);
                       }}
                       style={{ padding: 0 }}

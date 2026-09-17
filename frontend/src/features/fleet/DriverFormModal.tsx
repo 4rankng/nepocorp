@@ -69,7 +69,6 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="VD: Nguyễn Văn A"
-                autoFocus
               />
             </div>
             <div className="field fleet-form__field">

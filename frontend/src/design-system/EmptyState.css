@@ -26,14 +26,14 @@
 
 .ds-empty-state__title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-section);
   font-weight: 600;
   color: var(--ink-2, var(--fg-2));
 }
 
 .ds-empty-state__description {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--fg-3, var(--ink-3));
   width: 100%;
   min-width: 0;
@@ -82,7 +82,7 @@
 }
 
 .ds-empty-state--with-preview .ds-empty-state__title {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-section);
   font-weight: var(--fw-bold);
   color: var(--ink);
 }

@@ -84,20 +84,20 @@
 .user-name {
   font-weight: 700;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.35;
 }
 
 .user-name__you {
   margin-left: 6px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--accent);
   font-weight: 500;
 }
 
 .user-handle {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 2px;
 }
@@ -114,7 +114,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-2);
 }
 
@@ -199,7 +199,7 @@
   flex-wrap: wrap;
   padding: 10px 18px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   border-bottom: 1px solid var(--line-2);
 }
 
@@ -262,7 +262,7 @@
 
 .users-table-panel .tt-table tbody td {
   padding: 13px 16px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.35;
 }
 
@@ -325,7 +325,7 @@
 /* ── Form sections inside drawer ──────────────────────────────────────────── */
 
 .users-form-section__title {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -385,7 +385,7 @@
   background: transparent;
   padding: 0 12px;
   height: 100%;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink);
   outline: none;
   font-family: inherit;
@@ -442,7 +442,7 @@
 }
 
 .drawer:has(.users-form-cards) .drawer__title {
-  font-size: 20px;
+  font-size: var(--fs-2xl);
 }
 
 /* Desktop: cards side by side */
@@ -513,13 +513,13 @@
   }
 
   .users-admin-page .page-title {
-    font-size: 24px;
+    font-size: var(--fs-2xl);
     line-height: 1.35;
     letter-spacing: 0;
   }
 
   .users-admin-page .page-subtitle {
-    font-size: 13px;
+    font-size: var(--fs-sm);
   }
 
   .users-admin-page .page-header-main {
@@ -587,11 +587,11 @@
   }
 
   .drawer:has(.users-form-cards) .drawer__title {
-    font-size: 18px;
+    font-size: var(--fs-xl);
   }
 
   .drawer:has(.users-form-cards) .drawer__subtitle {
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
 
   .users-form-section__title {
@@ -618,7 +618,7 @@
   .users-form-card .form-group > label,
   .drawer:has(.users-form-cards) .form-group > label {
     margin-bottom: 5px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
 
   .drawer:has(.users-form-cards) .field {
@@ -637,7 +637,7 @@
     height: 44px;
     padding-top: 8px;
     padding-bottom: 8px;
-    font-size: 16px;
+
   }
 
   .icon-input {
@@ -655,7 +655,7 @@
 
   .drawer:has(.users-form-cards) .input,
   .drawer:has(.users-form-cards) .icon-input__field {
-    font-size: 16px;
+    font-size: var(--fs-md);
   }
 
   .drawer:has(.users-form-cards) select.input {
@@ -669,6 +669,31 @@
     border-width: 2.5px;
   }
 
+  .users-table-foot {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .users-table-foot__summary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .users-pagination {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .users-pagination__page:not(.is-active) {
+    display: none;
+  }
+}
+
+/* Match the shared .mobile-only breakpoint so tablet cards receive the same
+   layout as phone cards. */
+@media (max-width: 820px) {
   .users-mobile-card {
     width: 100%;
     max-width: 100%;
@@ -696,7 +721,7 @@
 
   .users-mobile-card__name {
     font-weight: 700;
-    font-size: 15px;
+    font-size: var(--fs-md);
     color: var(--ink);
     overflow: visible;
     overflow-wrap: anywhere;
@@ -705,7 +730,7 @@
 
   .users-mobile-card__handle {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--ink-3);
     margin-top: 1px;
     min-width: 0;
@@ -753,7 +778,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     color: var(--ink-3);
     min-width: 0;
     max-width: 100%;
@@ -782,7 +807,7 @@
     padding: 6px 12px;
     min-height: 44px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     background: var(--surface-2);
     color: var(--ink-2);
@@ -808,26 +833,6 @@
     border-color: var(--danger-soft);
   }
 
-  .users-table-foot {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .users-table-foot__summary {
-    width: 100%;
-    text-align: center;
-  }
-
-  .users-pagination {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .users-pagination__page:not(.is-active) {
-    display: none;
-  }
 }
 
 /* ─── Premium Enhancements & Dynamic Interactions ─── */
@@ -874,7 +879,7 @@
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  font-size: var(--fs-sm);
+
   line-height: 1.35;
   border: none;
   background: none;
@@ -1096,7 +1101,7 @@
 
 @media (max-width: 360px) {
   .users-admin-page .page-title {
-    font-size: 22px;
+    font-size: var(--fs-2xl);
   }
 
   .users-admin-page .kpi-grid .kpi {
@@ -1105,7 +1110,7 @@
   }
 
   .users-admin-page .kpi-grid .kpi .kpi__label {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.04em;
   }
 

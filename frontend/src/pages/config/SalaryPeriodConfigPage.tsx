@@ -18,7 +18,7 @@ function describeDefault(startDay: number, endDay: number): string {
 
 export default function SalaryPeriodConfigPage() {
   const { rootRef: pageRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row'] });
-  const { data: defaultConfig, error: queryError } = useSalaryPeriodDefault();
+  const { data: defaultConfig, error: queryError, isLoading, refetch } = useSalaryPeriodDefault();
   const updateDefault = useUpdateSalaryPeriodDefault();
   const navigate = useNavigate();
 
@@ -94,6 +94,12 @@ export default function SalaryPeriodConfigPage() {
         </div>
 
         <div className="sp-default-card__body">
+          {isLoading ? <p role="status">Đang tải cấu hình kỳ lương…</p> : queryError ? (
+            <div role="alert">
+              <p className="sp-hint sp-hint--warn">Không thể tải cấu hình kỳ lương. Vui lòng thử lại trước khi thay đổi.</p>
+              <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
+            </div>
+          ) : <>
           {/* Mode Selector */}
           <div className="sp-mode-selector">
             <label className={`sp-mode-card ${mode === 'calendar' ? 'active' : ''}`}>
@@ -147,8 +153,9 @@ export default function SalaryPeriodConfigPage() {
           {/* Configuration Inputs */}
           {mode === 'custom' ? (
             <div className="sp-default-card__fields">
-              <Field label="Ngày bắt đầu (tháng trước)">
+              <Field label="Ngày bắt đầu (tháng trước)" htmlFor="salary-period-start">
                 <select
+                  id="salary-period-start"
                   className="input"
                   value={startDay}
                   onChange={e => {
@@ -166,8 +173,9 @@ export default function SalaryPeriodConfigPage() {
                 </select>
               </Field>
 
-              <Field label="Ngày kết thúc (tháng này)">
+              <Field label="Ngày kết thúc (tháng này)" htmlFor="salary-period-end">
                 <select
+                  id="salary-period-end"
                   className="input"
                   value={endDay}
                   onChange={e => setEndDay(Number(e.target.value))}
@@ -190,9 +198,7 @@ export default function SalaryPeriodConfigPage() {
             </div>
           )}
 
-          {queryError && (
-            <p className="sp-hint sp-hint--warn">Không thể tải cấu hình hiện tại — backend có thể đang khởi động.</p>
-          )}
+          {updateDefault.error && <p className="sp-hint sp-hint--warn" role="alert">{updateDefault.error instanceof Error ? updateDefault.error.message : 'Không thể lưu cấu hình kỳ lương. Vui lòng thử lại.'}</p>}
 
           <div className="sp-default-card__actions">
             <button
@@ -204,7 +210,7 @@ export default function SalaryPeriodConfigPage() {
               {updateDefault.isPending ? 'Đang lưu…' : 'Lưu mặc định'}
             </button>
             {saveSuccess && (
-              <span className="sp-save-success">✓ Đã lưu thành công</span>
+              <span className="sp-save-success" role="status">✓ Đã lưu thành công</span>
             )}
           </div>
 
@@ -214,6 +220,7 @@ export default function SalaryPeriodConfigPage() {
               Cấu hình hiện tại: <strong>{currentDesc}</strong> {!defaultConfig && ' (Mặc định hệ thống)'}
             </span>
           </div>
+          </>}
         </div>
       </div>
     </div>

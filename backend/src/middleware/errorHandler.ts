@@ -1,8 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { ApiError } from '../errors';
 import { config } from '../config';
 
 export function globalErrorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
+  // Multipart limits fail before the route handler can validate the upload.
+  if (err instanceof multer.MulterError) {
+    const tooLarge = err.code === 'LIMIT_FILE_SIZE';
+    res.status(tooLarge ? 413 : 400).json({
+      error: tooLarge
+        ? 'Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn.'
+        : 'Tệp tải lên không hợp lệ. Vui lòng kiểm tra và thử lại.',
+    });
+    return;
+  }
+
   // Zod validation errors → 400
   if (err.name === 'ZodError') {
     const issues = (err as unknown as { errors?: Array<{ message: string; path?: Array<string | number> }> }).errors;
@@ -34,8 +46,12 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, _nex
     return;
   }
 
-  // PostgreSQL unique constraint violation
-  if ('code' in err && (err as { code?: unknown }).code === '23505') {
+  // Drizzle wraps postgres.js errors in `cause`; handle both forms so all
+  // write endpoints return the same actionable conflict response.
+  const cause = err.cause;
+  const pgCode = ('code' in err ? err.code : undefined)
+    ?? (cause && typeof cause === 'object' && 'code' in cause ? cause.code : undefined);
+  if (pgCode === '23505') {
     res.status(409).json({ error: 'Dữ liệu đã tồn tại' });
     return;
   }

@@ -6,7 +6,8 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font-body);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -14,8 +15,10 @@ body {
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */
   overscroll-behavior-y: contain;
 }
-button { font: inherit; cursor: pointer; }
-input, select, textarea { font: inherit; }
+@layer base {
+  button { font: inherit; cursor: pointer; }
+  input, select, textarea { font: inherit; }
+}
 img { display: block; }
 ::selection { background: var(--accent-soft); color: var(--accent-ink); }
 

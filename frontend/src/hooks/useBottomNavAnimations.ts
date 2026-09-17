@@ -11,18 +11,16 @@ import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {}) {
   const rootRef = useRef<HTMLElement>(null);
   const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
-  const hasAnimated = useRef(false);
   const prefersReduced = usePrefersReducedMotion();
 
   useEffect(() => {
     const root = rootRef.current;
-    if (!root || !ready || hasAnimated.current) return;
+    if (!root || !ready) return;
 
     const items = root.querySelectorAll<HTMLButtonElement>('.bottom-nav-item');
     if (items.length === 0) return;
 
-    hasAnimated.current = true;
-
+    const cleanups: Array<() => void> = [];
     const scope = createScope({ root }).add((self) => {
       if (!self) return;
 
@@ -65,7 +63,7 @@ export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {
         item.addEventListener('pointercancel', onPressEnd);
 
         // Clean up listeners on scope revert
-        self.add('cleanup', () => {
+        cleanups.push(() => {
           item.removeEventListener('pointerdown', onPressStart);
           item.removeEventListener('pointerup', onPressEnd);
           item.removeEventListener('pointerleave', onPressEnd);
@@ -91,13 +89,14 @@ export function useBottomNavAnimations({ ready = true }: { ready?: boolean } = {
         items.forEach(item => { item.style.opacity = '1'; });
       }, 2000);
 
-      self.add('cleanup', () => {
+      cleanups.push(() => {
         clearTimeout(fallbackTimer);
       });
     });
 
     scopeRef.current = scope;
     return () => {
+      cleanups.forEach(cleanup => cleanup());
       scope.revert();
       scopeRef.current = null;
     };

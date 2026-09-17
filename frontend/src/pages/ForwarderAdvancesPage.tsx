@@ -26,7 +26,7 @@ export default function ForwarderAdvancesPage() {
   const { month, year } = useMonth();
   const monthRange = getCalendarMonthRange(year, month);
   const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
-  const { data, isLoading: loading, error: queryError } = useForwarderAdvanceRequests({
+  const { data, isLoading: loading, error: queryError, refetch } = useForwarderAdvanceRequests({
     ...periodFilters,
     status: activeFilter || undefined,
   });
@@ -82,7 +82,7 @@ export default function ForwarderAdvancesPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createAdvanceRequest.mutateAsync(
+    createAdvanceRequest.mutate(
       { amount: Number(form.amount), reason: form.reason },
       {
         onSuccess: () => {
@@ -112,6 +112,7 @@ export default function ForwarderAdvancesPage() {
         </div>
         <h3 className="fadv-empty__title">Không thể tải dữ liệu</h3>
         <p className="fadv-empty__desc">{error}</p>
+        <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
       </div>
     </div>
   );
@@ -187,6 +188,7 @@ export default function ForwarderAdvancesPage() {
             </span>
             <button
               className="btn btn--ghost btn--sm"
+              aria-label="Đóng yêu cầu tạm ứng"
               onClick={() => { setShowForm(false); setForm({ amount: '', reason: '' }); }}
             >
               <X size={16} />
@@ -194,7 +196,7 @@ export default function ForwarderAdvancesPage() {
           </div>
 
           {mutationError && (
-            <div className="fadv-form-panel__error">{mutationError}</div>
+            <div className="fadv-form-panel__error" role="alert">{mutationError}</div>
           )}
 
           <form onSubmit={handleSubmit}>
@@ -241,6 +243,7 @@ export default function ForwarderAdvancesPage() {
         <div className="fwd-filter-pills">
           <button
             className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            aria-pressed={activeFilter === ''}
             onClick={() => setActiveFilter('')}
           >
             Tất cả
@@ -253,6 +256,7 @@ export default function ForwarderAdvancesPage() {
               <button
                 key={status}
                 className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+                aria-pressed={activeFilter === status}
                 onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
               >
                 <span className="fwd-filter-pill__dot" style={{ background: STATUS_COLORS[status] }} />
@@ -296,6 +300,7 @@ export default function ForwarderAdvancesPage() {
                     <span className="fadv-card-trip__date">{formatDate(req.createdAt)}</span>
                   </div>
                   <div className="fadv-card-trip__reason">{req.reason}</div>
+                  <div className="fadv-card-trip__date">{ADVANCE_REQUEST_STATUS_LABELS[req.status]}</div>
                 </div>
                 {req.approverName && req.approvedAt && (
                   <div className="fadv-card-trip__approver">

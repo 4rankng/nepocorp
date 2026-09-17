@@ -14,7 +14,7 @@
 import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { eq, inArray } from 'drizzle-orm';
-import { FuelMode, TripStatus, Role, LoadingType } from '@tingting/shared';
+import { FuelMode, TripStatus, LoadingType } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { updateTripFigures } from '../services/trip-mutations.service';

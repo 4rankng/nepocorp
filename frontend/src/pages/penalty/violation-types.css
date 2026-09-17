@@ -75,7 +75,7 @@
 }
 
 .penalty-empty-stat .lbl {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -211,13 +211,13 @@
   align-items: center;
   gap: 8px;
   margin-top: 3px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 
 .penalty-sev-pill {
   padding: 1px 7px;
   border-radius: 4px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -246,7 +246,7 @@
 .penalty-vio-type-meta .code {
   font-family: var(--font-mono);
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 
 .penalty-vio-type-fine {
@@ -262,7 +262,7 @@
 }
 
 .penalty-vio-type-fine .lbl {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 1px;
 }

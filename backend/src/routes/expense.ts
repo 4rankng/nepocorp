@@ -22,6 +22,7 @@ import { storageService } from '../services/storage.service';
 import { sniffImageType } from '../lib/format';
 import { getUser } from '../middleware/auth';
 import { invalidateReportCaches } from '../lib/redis';
+import { parsePagination } from './utils/pagination';
 
 registerAuditEvent('POST', '/api/expenses', AuditEvent.ENTITY_CREATED);
 registerAuditEvent('PUT', '/api/expenses/', AuditEvent.ENTITY_UPDATED);
@@ -45,14 +46,15 @@ router.get('/reports/renewals', asyncHandler(async (_req: Request, res: Response
 }));
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { page, limit: pageSize } = parsePagination(req, { limit: 20, limitParam: 'pageSize' });
   const filters = {
     truckId: req.query.truckId ? Number(req.query.truckId) : undefined,
     supplierId: req.query.supplierId ? Number(req.query.supplierId) : undefined,
     categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
     fromDate: req.query.fromDate as string | undefined,
     toDate: req.query.toDate as string | undefined,
-    page: req.query.page ? Number(req.query.page) : undefined,
-    pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+    page,
+    pageSize,
   };
   res.json(await listExpenses(db, filters));
 }));

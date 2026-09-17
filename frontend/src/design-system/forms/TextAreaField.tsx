@@ -18,6 +18,8 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaFieldProps>
     ...textarea
   }, ref) {
     const id = useId();
+    const messageId = `${id}-message`;
+    const describedBy = [textarea['aria-describedby'], error || helpText ? messageId : undefined].filter(Boolean).join(' ') || undefined;
     const fieldClassName = [
       'ds-field',
       error ? 'ds-field--error' : '',
@@ -37,11 +39,12 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaFieldProps>
           required={required}
           {...textarea}
           aria-invalid={error ? true : textarea['aria-invalid']}
+          aria-describedby={describedBy}
         />
         {error ? (
-          <span className="ds-field__msg ds-field__msg--error">{error}</span>
+          <span id={messageId} className="ds-field__msg ds-field__msg--error">{error}</span>
         ) : helpText ? (
-          <span className="ds-field__msg">{helpText}</span>
+          <span id={messageId} className="ds-field__msg">{helpText}</span>
         ) : null}
       </div>
     );

@@ -38,7 +38,7 @@ export default function DriverTripsPage() {
 
   useEffect(() => { setPage(1); }, [activeFilter]);
 
-  const { data, isLoading: loading, error: queryError } = useDriverTrips({
+  const { data, isLoading: loading, error: queryError, refetch } = useDriverTrips({
     page,
     limit: PAGE_SIZE,
     status: activeFilter || undefined,
@@ -47,6 +47,7 @@ export default function DriverTripsPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const statusCounts = (data?.statusCounts ?? {}) as Partial<Record<TripStatus, number>>;
+  const allTripsCount = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
 
@@ -68,13 +69,14 @@ export default function DriverTripsPage() {
         <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
         <h3 className="empty-state-title">{error}</h3>
         <p className="empty-state-desc">
-          Hệ thống tạm thời không phản hồi. Vui lòng kéo xuống để làm mới, hoặc thử lại sau ít phút.
+          Hệ thống tạm thời không phản hồi. Vui lòng thử tải lại danh sách.
         </p>
+        <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
       </div>
     </div>
   );
 
-  if (total === 0) return (
+  if (total === 0 && !activeFilter) return (
     <div>
       <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
@@ -95,18 +97,20 @@ export default function DriverTripsPage() {
         <div className="fwd-filter-pills fade-up">
           <button
             className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            aria-pressed={activeFilter === ''}
             onClick={() => setActiveFilter('')}
           >
             Tất cả
-            <span className="fwd-filter-pill__count">{total}</span>
+            <span className="fwd-filter-pill__count">{allTripsCount}</span>
           </button>
           {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
             const count = statusCounts[status] ?? 0;
-            if (count === 0) return null;
+            if (count === 0 && activeFilter !== status) return null;
             return (
               <button
                 key={status}
                 className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
+                aria-pressed={activeFilter === status}
                 onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
               >
                 <span className="fwd-filter-pill__dot" style={{ background: TRIP_STATUS_COLORS[status] }} />
@@ -117,6 +121,13 @@ export default function DriverTripsPage() {
           })}
         </div>
       </div>
+
+      {trips.length === 0 && (
+        <div className="empty-state" role="status">
+          <h3 className="empty-state-title">Không có lệnh ở trạng thái này</h3>
+          <p className="empty-state-desc">Chọn trạng thái khác hoặc Tất cả để xem các lệnh đã nhận.</p>
+        </div>
+      )}
 
       <div ref={listRef} className="driver-trips-list">
         {trips.map((trip, idx) => (
@@ -144,6 +155,7 @@ export default function DriverTripsPage() {
                 </span>
               </div>
               <div className="dt-card__meta dt-card__meta--secondary">
+                <span className="dt-card__meta-item">{TRIP_STATUS_LABELS[trip.status]}</span>
                 <span className="dt-card__meta-item">
                   <Building2 size={12} />
                   <span className="dt-card__meta-text">{trip.customerName || '—'}</span>

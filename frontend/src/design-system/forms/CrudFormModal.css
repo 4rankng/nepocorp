@@ -31,7 +31,7 @@
 
 .ds-crud-modal__title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-xl);
   line-height: 1.35;
   font-weight: 600;
   color: var(--ink, var(--fg));
@@ -95,7 +95,7 @@
   }
 
   .ds-crud-modal__title {
-    font-size: 18px;
+    font-size: var(--fs-xl);
     line-height: 1.35;
   }
 

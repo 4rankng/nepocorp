@@ -13,7 +13,7 @@
   padding: 80px 20px;
   gap: 10px;
   color: var(--fg-3);
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 
 /* ── Error banner (page-level, above KPI strip) ── */
@@ -22,7 +22,7 @@
   background: var(--danger-soft);
   color: var(--danger-text);
   border-radius: var(--radius-md, 10px);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   margin-bottom: 16px;
   border: 1px solid rgba(220, 38, 38, 0.12);
   display: flex;
@@ -38,14 +38,14 @@
   padding: 20px;
 }
 .tdp-notes-title {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   margin: 0 0 8px;
   color: var(--ink);
 }
 .tdp-notes-body {
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: var(--fs-md);
   color: var(--fg-2);
   margin: 0;
   line-height: 1.55;
@@ -60,7 +60,7 @@
 .tdp-instructions-row {
   display: flex;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.5;
   align-items: baseline;
 }
@@ -92,11 +92,11 @@ a.tdp-instructions-value:hover {
   background: var(--danger-soft);
   color: var(--danger-text);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .tdp-drawer-hint {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--fg-3);
   margin: 0 0 16px;
   line-height: 1.5;
@@ -113,7 +113,7 @@ a.tdp-instructions-value:hover {
 
 /* ── Adjustment list (Drawer history) ── */
 .tdp-adjustments-title {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--fg-2);
   margin: 20px 0 8px;
@@ -126,7 +126,7 @@ a.tdp-instructions-value:hover {
   justify-content: space-between;
   padding: 6px 0;
   border-bottom: 1px solid var(--border-2, var(--line));
-  font-size: 13px;
+  font-size: var(--fs-sm);
   align-items: baseline;
   gap: 12px;
 }

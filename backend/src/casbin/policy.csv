@@ -63,7 +63,3 @@ p, MANAGER, agent, read
 p, MANAGER, agent, write
 p, ACCOUNTANT, agent, read
 p, ACCOUNTANT, agent, write
-p, MANAGER, onboarding, read
-p, MANAGER, onboarding, write
-p, ACCOUNTANT, onboarding, read
-p, ACCOUNTANT, onboarding, write

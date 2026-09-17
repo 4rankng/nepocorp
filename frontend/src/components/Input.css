@@ -2,14 +2,16 @@
  * Input — TingTing
  * Extracted from UI.css during architecture refactoring (Phase 4)
  * ========================================================================== */
-.input {
+.input,
+.ds-field__input,
+.ui-select-trigger {
   display: flex;
   width: 100%;
   min-height: var(--control-h);
   height: var(--control-h);
-  padding: 0 14px;
+  padding: 7px 12px;
   font-family: var(--font-body);
-  font-size: var(--fs-md);
+  font-size: var(--fs-control);
   line-height: 1.35;
   background: var(--control-bg);
   border: 1px solid var(--control-border);
@@ -17,21 +19,28 @@
   color: var(--ink);
   transition: border-color 0.16s var(--ease), background 0.16s var(--ease), box-shadow 0.16s var(--ease);
 }
-.input:hover {
+.input:hover,
+.ds-field__input:hover,
+.ui-select-trigger:hover {
   border-color: var(--control-border-hover);
   background: var(--control-bg-hover);
 }
-.input::placeholder { color: var(--ink-3); }
+.input::placeholder,
+.ds-field__input::placeholder { color: var(--ink-3); }
 .input:disabled,
-.input[aria-disabled="true"] {
+.input[aria-disabled="true"],
+.ds-field__input:disabled,
+.ui-select-trigger:disabled {
   cursor: not-allowed;
   color: var(--ink-3);
   background: var(--surface-3);
   border-color: var(--line);
   box-shadow: none;
 }
-.input:focus-visible {
-  outline: 2px solid var(--control-focus-ring);
+.input:focus-visible,
+.ds-field__input:focus-visible,
+.ui-select-trigger:focus-visible {
+  outline: 2px solid var(--accent-2);
   outline-offset: 1px;
   border-color: var(--accent);
   background: var(--surface);
@@ -46,7 +55,8 @@
 }
 .input-icon .input { padding-left: 38px; }
 
-textarea.input {
+textarea.input,
+textarea.ds-field__input {
   height: auto;
   min-height: 96px;
   padding: 11px 12px;
@@ -65,21 +75,29 @@ select.input {
   line-height: 1.35;
 }
 
-@media (min-width: 641px) {
-  .input {
-    font-size: var(--fs-sm);
-  }
-}
-
 @media (max-width: 640px) {
   .input {
     min-height: var(--control-h);
     height: var(--control-h);
     border-radius: 11px;
-    font-size: 16px;
   }
 
-  textarea.input {
+  textarea.input,
+textarea.ds-field__input {
     min-height: 104px;
   }
+}
+
+.ui-select-trigger { height: auto; text-align: left; }
+.ui-select-trigger > span { min-width: 0; overflow-wrap: anywhere; }
+
+.input[aria-invalid="true"],
+.ds-field__input[aria-invalid="true"],
+.ui-select-trigger[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.input[aria-invalid="true"]:focus-visible,
+.ds-field__input[aria-invalid="true"]:focus-visible,
+.ui-select-trigger[aria-invalid="true"]:focus-visible {
+  outline-color: var(--danger);
 }

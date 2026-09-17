@@ -80,7 +80,7 @@
 }
 
 .salary-summary-dark__mini {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-bottom: 0;
   position: relative;
@@ -192,7 +192,7 @@
   background: var(--success-soft);
   color: var(--success);
   border: 1px solid rgba(0, 177, 79, 0.16);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 
@@ -216,7 +216,7 @@
 }
 
 .payslip-callout-text {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.5;
   color: var(--warning-text, #92400E);
 }

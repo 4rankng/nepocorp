@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 import { animate, spring, utils } from 'animejs';
 import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAnimatedOverlay';
+import { isTopmostDialog, useDialogFocus } from './shared/useDialogFocus';
 
 const entrance: EntranceFn = (overlay, content, prefersReduced) => {
   if (prefersReduced) {
@@ -35,30 +36,43 @@ export function ConfirmDialog({ isOpen, message, confirmLabel = 'Xác nhận', c
   const portalTarget = typeof document === 'undefined' ? null : document.body;
   const overlayRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  const messageId = useId();
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel();
-      if (event.key === 'Enter' && !event.repeat) onConfirm();
+      if (event.defaultPrevented || event.repeat || event.isComposing) return;
+      if (boxRef.current && !isTopmostDialog(boxRef.current, event.target)) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+      }
+      // Buttons own Enter activation. Intercepting it globally confirms even
+      // when the user has deliberately focused the cancel action.
+      const target = event.target instanceof Element ? event.target : null;
+      if (event.key === 'Enter' && !target?.closest('button, a, input, select, textarea, [contenteditable="true"]')) {
+        event.preventDefault();
+        onConfirm();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onCancel, onConfirm]);
   const { visible, handleClose } = useAnimatedOverlay({ overlayRef, contentRef: boxRef, isOpen, onClose: onCancel, entrance, exit });
+  useDialogFocus(boxRef, visible && isOpen);
   if (!portalTarget) return null;
   const Icon = variant === 'danger' || variant === 'warning' ? AlertTriangle : HelpCircle;
   const iconColor = variant === 'danger' ? 'var(--danger)' : variant === 'warning' ? 'var(--warning)' : 'var(--accent)';
   const iconBg = variant === 'danger' ? 'confirm-icon--danger' : variant === 'warning' ? 'confirm-icon--warning' : 'confirm-icon--primary';
   return createPortal(visible ? (
     <div ref={overlayRef} className="confirm-overlay" onClick={handleClose}>
-      <div ref={boxRef} role="alertdialog" aria-modal="true" className="confirm-box" onClick={(event) => event.stopPropagation()}>
+      <div ref={boxRef} role="alertdialog" aria-modal="true" aria-hidden={!isOpen} aria-labelledby={messageId} tabIndex={-1} className="confirm-box" onClick={(event) => event.stopPropagation()}>
         <div className="confirm-body">
           <div className={`confirm-icon ${iconBg}`}><Icon size={22} color={iconColor} /></div>
-          <p className="confirm-message">{message}</p>
+          <p id={messageId} className="confirm-message">{message}</p>
         </div>
         <div className="confirm-actions">
-          <button className="btn btn--secondary btn--sm" onClick={onCancel}>{cancelLabel}</button>
-          <button className={`btn btn--${variant === 'danger' ? 'danger' : 'primary'} btn--sm`} onClick={onConfirm} autoFocus>{confirmLabel}</button>
+          <button type="button" className="btn btn--secondary btn--sm" onClick={onCancel}>{cancelLabel}</button>
+          <button type="button" className={`btn btn--${variant === 'danger' ? 'danger' : 'primary'} btn--sm`} onClick={onConfirm}>{confirmLabel}</button>
         </div>
       </div>
     </div>

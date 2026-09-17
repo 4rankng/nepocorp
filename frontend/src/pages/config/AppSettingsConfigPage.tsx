@@ -4,7 +4,6 @@ import {
   Cpu,
   Eye,
   EyeOff,
-  GraduationCap,
   Loader2,
   MapPin,
   Save,
@@ -134,7 +133,7 @@ export default function AppSettingsConfigPage() {
   const gpsSettings = useGpsSettings();
   const saveGpsSettings = useSaveGpsSettings();
 
-  const [features, setFeatures] = useState<AppSettings>({ botEnabled: false, tutorialEnabled: true });
+  const [features, setFeatures] = useState<AppSettings>({ botEnabled: false });
   const [provider, setProvider] = useState<LlmProvider>('minimax');
   const [minimaxKey, setMinimaxKey] = useState('');
   const [openrouterKey, setOpenrouterKey] = useState('');
@@ -218,14 +217,6 @@ export default function AppSettingsConfigPage() {
             description="Cho phép người dùng văn phòng mở và sử dụng trợ lý ảo trong ứng dụng."
             enabled={features.botEnabled}
             onChange={() => updateFeature('botEnabled')}
-            disabled={appSettings.isLoading || appSettings.isError || saveAppSettings.isPending}
-          />
-          <FeatureSwitch
-            icon={<GraduationCap size={19} />}
-            label="Hướng dẫn sử dụng"
-            description="Hiển thị bảng checklist và các tour hướng dẫn cho người dùng mới."
-            enabled={features.tutorialEnabled}
-            onChange={() => updateFeature('tutorialEnabled')}
             disabled={appSettings.isLoading || appSettings.isError || saveAppSettings.isPending}
           />
           <div className="cfg-form-actions">

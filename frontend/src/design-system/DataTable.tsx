@@ -86,7 +86,7 @@ export function DataTable<T extends { id?: number | string }>({
 
   return (
     <>
-      <div className="ds-table-wrap ds-table-wrap--desktop">
+      <div className={`ds-table-wrap${mobileRender ? ' ds-table-wrap--desktop' : ''}`}>
         <div className="ds-table-scroll">
           <table className="ds-table">
             <thead>

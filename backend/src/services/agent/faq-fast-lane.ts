@@ -5,7 +5,7 @@
 // 4 stages, run in order; the first to produce a confident match wins:
 //   1. EXACT  — normalized query equals the canonical question or a variant.
 //   2. RULE   — narrow the candidate set: all required_terms present, no
-//               forbidden_terms present. (Applied inside the semantic SQL.)
+//               forbidden_terms present, before requesting an embedding.
 //   3. SEMANTIC — embed the query (cached in Redis) and cosine-match via the
 //               pgvector <=> operator over the HNSW index.
 //   4. GATE   — accept only if top-1 similarity >= SCORE_FLOOR AND the gap to
@@ -52,6 +52,29 @@ export const SCORE_FLOOR = 0.40;
 export const MARGIN = 0.12;
 const EMBED_CACHE_TTL = 60 * 30; // 30 min — paraphrases repeat within a session
 const TOP_K = 5;
+export const FAQ_LOOKUP_BUDGET_MS = 3_000;
+
+/** FAQ is optional: a slow cache/provider must not hold up a data question. */
+export async function withFaqLookupBudget<T>(
+  lookup: (signal: AbortSignal) => Promise<T | null>,
+  signal?: AbortSignal,
+  budgetMs = FAQ_LOOKUP_BUDGET_MS,
+): Promise<T | null> {
+  const controller = new AbortController();
+  let stop!: () => void;
+  const stopped = new Promise<null>((resolve) => {
+    stop = () => { controller.abort(); resolve(null); };
+  });
+  signal?.addEventListener('abort', stop, { once: true });
+  const timer = setTimeout(stop, budgetMs);
+  try {
+    if (signal?.aborted) return null;
+    return await Promise.race([lookup(controller.signal), stopped]);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', stop);
+  }
+}
 
 /** Quick SHA-ish key for the normalized query, for Redis caching of embeddings. */
 function embedCacheKey(normalized: string): string {
@@ -64,32 +87,32 @@ function embedCacheKey(normalized: string): string {
 
 /** Embed the query, caching the vector in Redis keyed by normalized text.
  *  Caching collapses repeated paraphrases within the TTL to one API call. */
-async function embedQuery(normalized: string): Promise<number[]> {
+async function embedQuery(normalized: string, signal: AbortSignal): Promise<number[]> {
   return cacheGet<number[]>(
     embedCacheKey(normalized),
     EMBED_CACHE_TTL,
-    async () => embedText(normalized),
+    async () => {
+      signal.throwIfAborted();
+      return embedText(normalized, { signal });
+    },
   );
 }
 
-/** Stage 1 — exact normalized match against question + variants. */
-async function tryExactMatch(normalized: string): Promise<FaqMatch | null> {
-  const rows = await db
+/** Load the small active FAQ catalog once for exact matching and rule gating. */
+async function loadActiveEntries() {
+  return db
     .select({
       id: s.faqEntries.id,
       question: s.faqEntries.question,
       answer: s.faqEntries.answer,
       variants: s.faqEntries.questionVariants,
+      requiredTerms: s.faqEntries.requiredTerms,
+      forbiddenTerms: s.faqEntries.forbiddenTerms,
+      hasEmbedding: sql<boolean>`${s.faqEntries.embedding} IS NOT NULL`,
     })
     .from(s.faqEntries)
     .where(sql`${s.faqEntries.isActive} = TRUE`);
 
-  for (const r of rows) {
-    if (isExactMatch(normalized, r.question, r.variants)) {
-      return { entryId: r.id, question: r.question, answer: r.answer, score: 1.0, stage: 'exact' };
-    }
-  }
-  return null;
 }
 
 interface SemanticRow {
@@ -100,13 +123,14 @@ interface SemanticRow {
 }
 
 /** Stage 2+3+4 — rule-gated semantic cosine match with score/margin gate. */
-async function trySemanticMatch(normalized: string): Promise<FaqMatch | null> {
+async function trySemanticMatch(normalized: string, signal: AbortSignal): Promise<FaqMatch | null> {
   let vec: number[];
   try {
-    vec = await embedQuery(normalized);
+    vec = await embedQuery(normalized, signal);
+    signal.throwIfAborted();
   } catch (e) {
     // No embedding key configured, OpenRouter down, etc. — abstain, fall to LLM.
-    console.warn('[faq-fast-lane] embed failed, abstaining:', e instanceof Error ? e.message : e);
+    if (!signal.aborted) console.warn('[faq-fast-lane] embed failed, abstaining:', e instanceof Error ? e.message : e);
     return null;
   }
   const lit = vecLiteral(vec);
@@ -180,17 +204,29 @@ export function isExactMatch(
 
 /** Run the full fast-lane cascade. Returns null to abstain (→ LLM agent).
  *  Fail-open: any error returns null. */
-export async function tryFaqFastLane(message: string): Promise<FaqMatch | null> {
+export async function tryFaqFastLane(message: string, signal?: AbortSignal): Promise<FaqMatch | null> {
   const normalized = normalizeForFaq(message);
   if (!normalized) return null;
 
   try {
-    // Stage 1 — exact (no embedding/API call needed, cheapest win).
-    const exact = await tryExactMatch(normalized);
-    if (exact) return exact;
+    return await withFaqLookupBudget(async (lookupSignal) => {
+      const entries = await loadActiveEntries();
+      lookupSignal.throwIfAborted();
+      for (const entry of entries) {
+        if (isExactMatch(normalized, entry.question, entry.variants)) {
+          return { entryId: entry.id, question: entry.question, answer: entry.answer, score: 1, stage: 'exact' as const };
+        }
+      }
 
-    // Stages 2-4 — rule-gated semantic match with gate.
-    return await trySemanticMatch(normalized);
+      // This is the same token gate enforced again in the semantic SQL below.
+      // Do not spend a network call when no embedded FAQ can possibly match.
+      const tokens = new Set(normalized.split(/\s+/));
+      const eligible = entries.some((entry) => entry.hasEmbedding
+        && entry.requiredTerms.every((term) => tokens.has(term))
+        && !entry.forbiddenTerms.some((term) => tokens.has(term)));
+      if (!eligible) return null;
+      return trySemanticMatch(normalized, lookupSignal);
+    }, signal);
   } catch (e) {
     console.warn('[faq-fast-lane] cascade error, abstaining:', e instanceof Error ? e.message : e);
     return null;

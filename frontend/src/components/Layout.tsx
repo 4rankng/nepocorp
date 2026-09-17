@@ -27,6 +27,7 @@ import {
   ClipboardCheck,
   Activity,
   SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
@@ -40,9 +41,9 @@ import { PasswordModal } from './layout/PasswordModal';
 import type { NavItem } from './layout/types';
 import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 import { routes, titleForPath } from '../lib/routes';
-import { OnboardingChecklist } from './onboarding/OnboardingChecklist';
-import { TutorialLibrary } from './onboarding/TutorialLibrary';
 import { BRAND } from '../brand';
+import { useDialogFocus } from './shared/useDialogFocus';
+import { useButtonLabelLayout } from './shared/useButtonLabelLayout';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ function getPageTitle(pathname: string): string {
 // ─── Layout component ─────────────────────────────────────────────────────
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  useButtonLabelLayout();
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -122,8 +124,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 1023px)').matches);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const accountSheetRef = useRef<HTMLDivElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [tutorialLibraryOpen, setTutorialLibraryOpen] = useState(false);
 
   // Profile modal state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -138,6 +140,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+  const accountSheetOpen = user?.role === 'DRIVER' && isMobileViewport && userMenuOpen;
+  useDialogFocus(accountSheetRef, accountSheetOpen);
   const closeSidebar = useCallback(() => {
     setSidebarOpen(false);
     if (window.matchMedia('(max-width: 1023px)').matches) {
@@ -359,9 +363,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     menuButtonRef,
     pageTitle,
     onToggleSidebar: () => setSidebarOpen(v => !v),
-    onOpenTutorialLibrary: user && ['ADMIN', 'MANAGER', 'ACCOUNTANT'].includes(user.role) && user.onboardingEnabled !== false
-      ? () => setTutorialLibraryOpen(true)
-      : undefined,
   };
 
   return (
@@ -395,24 +396,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className={`app-main ${isDriver ? 'driver-mode' : ''}`}>
         <Topbar {...topbarProps} />
 
-        <main className="app-body" id="main-content">
+        <main className="app-body" id="main-content" tabIndex={-1}>
           {children}
         </main>
 
-        {/* Phase 6: office-role activation checklist. Renders nothing for
-            DRIVER/FORWARDER (gated internally by role) and hides at 100%. */}
-        <OnboardingChecklist onOpenTutorialLibrary={() => setTutorialLibraryOpen(true)} />
-        <TutorialLibrary open={tutorialLibraryOpen} onClose={() => setTutorialLibraryOpen(false)} />
-
         {/* Bottom Navigation for Drivers on Mobile */}
         {isDriver && (
-          <nav className="bottom-nav" ref={bottomNavRef as React.RefObject<HTMLElement>}>
+          <nav className="bottom-nav" aria-label="Điều hướng chính" ref={bottomNavRef as React.RefObject<HTMLElement>}>
             {navItems.map(item => {
               const IconC = item.icon;
               const isActive = item.key === activeKey;
               return (
                 <button
                   key={item.key}
+                  type="button"
+                  aria-current={isActive ? 'page' : undefined}
                   className={`bottom-nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => handleNavigate(item.path)}
                 >
@@ -427,8 +425,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Account button for mobile bottom nav */}
             <button
+              type="button"
               className={`bottom-nav-item ${userMenuOpen ? 'active' : ''}`}
               onClick={toggleUserMenu}
+              aria-expanded={accountSheetOpen}
+              aria-controls={accountSheetOpen ? 'driver-account-sheet' : undefined}
+              aria-haspopup="dialog"
             >
               <div className="bottom-nav-indicator" />
               <div className="bottom-nav-icon-wrap">
@@ -441,11 +443,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile User Menu Sheet for Drivers — Vantai Design System */}
-      {isDriver && userMenuOpen && (
+      {accountSheetOpen && (
         <div className="mobile-user-sheet-overlay" onClick={closeUserMenu}>
-          <div className="mobile-user-sheet" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
-            {/* Drag handle */}
-            <div className="mobile-user-sheet-handle" />
+          <div
+            ref={accountSheetRef}
+            id="driver-account-sheet"
+            className="mobile-user-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tài khoản"
+            tabIndex={-1}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                closeUserMenu();
+              }
+            }}
+          >
+            <div className="mobile-user-sheet-head">
+              <div className="mobile-user-sheet-handle" aria-hidden="true" />
+              <button type="button" className="mobile-user-sheet-close" aria-label="Đóng tài khoản" onClick={closeUserMenu}>
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
 
             {/* Profile Bento Grid Layout */}
             <div className="profile-bento-grid">

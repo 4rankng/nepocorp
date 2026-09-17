@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { PenaltyStatus } from '@tingting/shared';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader } from '../components/UI';
@@ -19,10 +20,10 @@ interface PenaltyEntry {
 
 export default function DriverEarningsPage() {
   const { month, year } = useMonth();
-  const { data: period } = useSalaryPeriod(month, year);
-  const { data: earnings, isLoading: earningsLoading, error: earningsError } = useDriverEarnings(month, year);
+  const { data: period, isLoading: periodLoading, error: periodError, refetch: refetchPeriod } = useSalaryPeriod(month, year);
+  const { data: earnings, isLoading: earningsLoading, error: earningsError, refetch: refetchEarnings } = useDriverEarnings(month, year);
   const penaltyParams = period ? { dateFrom: period.start, dateTo: period.end } : undefined;
-  const { data: penaltiesData, isLoading: penaltiesLoading } = useDriverPenalties(penaltyParams);
+  const { data: penaltiesData, isLoading: penaltiesLoading, error: penaltiesError, refetch: refetchPenalties } = useDriverPenalties(penaltyParams);
   // N5 / B4: truck compliance/service reminders (overdue/due). Fetched
   // unconditionally; the section is only rendered when there's at least one
   // non-'ok' alert, so drivers with everything in order see nothing.
@@ -31,15 +32,17 @@ export default function DriverEarningsPage() {
   const rawPenalties = Array.isArray(penaltiesData)
     ? penaltiesData
     : (penaltiesData && !Array.isArray(penaltiesData) && 'items' in penaltiesData ? penaltiesData.items : []);
-  const penalties: PenaltyEntry[] = rawPenalties.map((p) => ({
+  const penalties: PenaltyEntry[] = rawPenalties.filter(p => p.status !== PenaltyStatus.CANCELED).map((p) => ({
     id: p.id,
     amount: p.amount,
     date: p.date,
     customReason: p.customReason ?? null,
     reasonText: p.reasonText ?? null,
   }));
-  const loading = earningsLoading || penaltiesLoading;
+  const loading = earningsLoading;
   const error = earningsError ? 'Không thể tải dữ liệu thu nhập' : null;
+  const penaltyHistoryLoading = periodLoading || penaltiesLoading;
+  const penaltyHistoryError = periodError || penaltiesError;
   const { rootRef } = usePageAnimations({ ready: !loading });
   const heroValueRef = useRef<HTMLSpanElement>(null);
   const kpiRefs = useRef<{
@@ -63,7 +66,7 @@ export default function DriverEarningsPage() {
       const payable = parseFloat(earnings.payableBalance);
       targets.push({ el: heroValueRef.current, value: Math.abs(payable), prefix: payable < 0 ? '-' : '' });
     }
-    if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum });
+    if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum, suffix: ' đ' });
     // F2 / B2 — trip-income cards always animate (headline breakdown).
     const productionNum = parseFloat(earnings.productionSalary);
     const roadNum = parseFloat(earnings.roadAllowance);
@@ -71,9 +74,9 @@ export default function DriverEarningsPage() {
     const payableNum = parseFloat(earnings.payableBalance);
     if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum });
     if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum });
-    if (kpiRefs.current.paidOrAdvanced) targets.push({ el: kpiRefs.current.paidOrAdvanced, value: paidOrAdvancedNum });
-    if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '' });
-    if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum });
+    if (kpiRefs.current.paidOrAdvanced) targets.push({ el: kpiRefs.current.paidOrAdvanced, value: paidOrAdvancedNum, suffix: ' đ' });
+    if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '', suffix: ' đ' });
+    if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum, prefix: '-', suffix: ' đ' });
     if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
       targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-' });
     }
@@ -97,8 +100,9 @@ export default function DriverEarningsPage() {
         <AlertTriangle size={36} style={{ color: 'var(--danger)', opacity: 0.7 }} />
         <h3 className="empty-state-title">{error}</h3>
         <p className="empty-state-desc">
-          Hệ thống tạm thời không phản hồi. Vui lòng kéo xuống để làm mới, hoặc thử lại sau ít phút.
+          Hệ thống tạm thời không phản hồi. Vui lòng thử tải lại dữ liệu.
         </p>
+        <button type="button" className="btn btn--secondary" onClick={() => void refetchEarnings()}>Thử lại</button>
       </div>
     </div>
   );
@@ -268,9 +272,16 @@ export default function DriverEarningsPage() {
       <div className="earnings-penalties-panel fade-up-3">
         <div className="earnings-penalties-panel__header">
           <span className="earnings-penalties-panel__title">Lịch sử khấu trừ</span>
-          <span className="earnings-penalties-panel__count">{penalties.length} khoản khấu trừ</span>
+          {!penaltyHistoryLoading && !penaltyHistoryError && <span className="earnings-penalties-panel__count">{penalties.length} khoản khấu trừ</span>}
         </div>
-        {penalties.length === 0 ? (
+        {penaltyHistoryError ? (
+          <div className="earnings-penalties-empty" role="alert">
+            <p>Không thể tải lịch sử khấu trừ.</p>
+            <button type="button" className="btn btn--secondary" onClick={() => { void refetchPeriod(); void refetchPenalties(); }}>Tải lại lịch sử</button>
+          </div>
+        ) : penaltyHistoryLoading ? (
+          <div className="earnings-penalties-empty" role="status"><Loader2 size={20} className="spin" /><p>Đang tải lịch sử khấu trừ…</p></div>
+        ) : penalties.length === 0 ? (
           <div className="earnings-penalties-empty">
             <img
               src={resolveEmptyIllustration('empty-earnings')}

@@ -58,7 +58,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   letter-spacing: 1.8px;
   font-weight: 700;
   color: var(--accent-ink);
@@ -83,7 +83,7 @@
   color: var(--ink);
 }
 .tc-create-hero .tc-hero-sub {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--ink-2);
   line-height: 1.5;
 }
@@ -159,9 +159,6 @@
 .tc-hero-widgets .tc-summary-row--total {
   border-top-color: var(--line);
 }
-.tc-hero-widgets .tc-summary-row--total .tc-summary-row__val {
-  color: var(--accent);
-}
 .tc-hero-widgets .tc-summary-row--total .tc-summary-row__lbl {
   color: var(--ink);
 }
@@ -231,7 +228,7 @@
   .tc-create-wrap { padding: 8px 12px 0; }
   .tc-create-hero { padding: 16px; margin-bottom: 14px; }
   .tc-hero-top { gap: 12px; flex-wrap: wrap; }
-  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-xl); line-height: 1.35; }
+  .tc-create-hero .tc-hero-h1 { font-size: var(--fs-2xl); line-height: 1.35; }
   .tc-hero-widgets {
     display: none;
   }

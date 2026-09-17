@@ -64,10 +64,6 @@ function renderResponseText(response: AgentResponse): string {
       return response.content;
     case 'insight_card':
       return response.summary ?? response.title ?? '';
-    case 'tutorial':
-      return `${response.title}: ${response.summary}`;
-    case 'start_tour':
-      return `(đã mở hướng dẫn ${response.tourId})`;
     case 'directive':
       return response.directive.kind === 'navigate' || response.directive.kind === 'focus'
         ? `(đã mở trang ${response.directive.routeKey})`
@@ -274,7 +270,7 @@ function registerHandlers(agentNs: Namespace): void {
         // emit done directly and skip runAgent entirely. On abstain (null) or
         // any error, fall through to the LLM agent — fail-open, never blocks.
         const faqStart = performance.now();
-        const faq = await tryFaqFastLane(message);
+        const faq = await tryFaqFastLane(message, ac.signal);
         const faqLookupMs = performance.now() - faqStart;
         if (faq && !ac.signal.aborted) {
           // P0 instrumentation: persist the FAQ turn so FAQ hit-rate is finally

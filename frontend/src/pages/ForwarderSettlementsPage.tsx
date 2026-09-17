@@ -79,7 +79,7 @@ export default function ForwarderSettlementsPage() {
   const monthRange = getCalendarMonthRange(year, month);
   const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
 
-  const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError } = useForwarderSettlements(periodFilters);
+  const { data: settlementsData, isLoading: loadingSettlements, error: settlementsError, refetch } = useForwarderSettlements(periodFilters);
   const { rootRef } = usePageAnimations({
     ready: !loadingSettlements,
     selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.fset-card'],
@@ -106,8 +106,8 @@ export default function ForwarderSettlementsPage() {
     if (loadingSettlements || settlements.length === 0 || prefersReduced) return;
     animateCounters([
       { el: heroExpenseRef.current, value: totalExpenseAll, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
-      { el: heroTotalRef.current, value: settlements.length, suffix: ' phiếu' },
-      { el: heroPendingRef.current, value: pending, suffix: ' chờ xử lý' },
+      { el: heroTotalRef.current, value: settlements.length },
+      { el: heroPendingRef.current, value: pending },
     ]);
   }, [loadingSettlements, settlements.length, totalExpenseAll, pending, animateCounters, prefersReduced]);
 
@@ -139,6 +139,7 @@ export default function ForwarderSettlementsPage() {
       <PageHeader title="Phiếu thanh toán" description="Thanh toán tạm ứng" iconName="settlement" />
       <div className="empty-state">
         <p style={{ color: 'var(--danger)' }}>{error}</p>
+        <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
       </div>
     </div>
   );
@@ -161,21 +162,21 @@ export default function ForwarderSettlementsPage() {
         <div className="hero-kpi-row">
           <div className="hero-kpi-card">
             <span className="hero-kpi-card__eyebrow">Tổng chi phí thanh toán</span>
-            <span className="hero-kpi-card__amount"><span ref={heroExpenseRef}>0</span><span className="hero-kpi-card__currency">₫</span></span>
+            <span className="hero-kpi-card__amount"><span ref={heroExpenseRef}>{Math.round(totalExpenseAll).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
             <span className="hero-kpi-card__subtitle">{settlements.length} phiếu thanh toán</span>
             <FileText size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
-                <span className="hero-kpi-mini__value" ref={heroTotalRef}>0</span>
+                <span className="hero-kpi-mini__value" ref={heroTotalRef}>{settlements.length}</span>
                 <span className="hero-kpi-mini__label">phiếu</span>
               </div>
               <FileText size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
-                <span className="hero-kpi-mini__value" ref={heroPendingRef}>0</span>
+                <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pending}</span>
                 <span className="hero-kpi-mini__label">chờ xử lý</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
@@ -189,6 +190,7 @@ export default function ForwarderSettlementsPage() {
         <div className="fwd-filter-pills">
           <button
             className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+            aria-pressed={activeFilter === ''}
             onClick={() => setActiveFilter('')}
           >
             Tất cả
@@ -202,6 +204,7 @@ export default function ForwarderSettlementsPage() {
                 key={status}
                 className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
                 data-status={status}
+                aria-pressed={activeFilter === status}
                 onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
               >
                 <span className="fwd-filter-pill__dot" style={{ background: STATUS_STRIP[status] }} />
@@ -255,13 +258,14 @@ export default function ForwarderSettlementsPage() {
                     </div>
 
                     <div className="fset-card__meta">
+                      <span className="fset-card__meta-item">{ADVANCE_SETTLEMENT_STATUS_LABELS[s.status]}</span>
                       <span className="fset-card__meta-item">{formatDate(s.createdAt)}</span>
                       <span className="fset-card__meta-item">
                         Chi phí: <strong>{formatCurrency(Number(s.totalExpenseAmount))}</strong>
                       </span>
                       {Number(s.refundAmount) > 0 && (
                         <span className="fset-card__meta-item">
-                          Ops tạm ứng: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
+                          Giao nhận hoàn lại: <strong>{formatCurrency(Number(s.refundAmount))}</strong>
                         </span>
                       )}
                       {Number(s.reimbursementAmount || 0) > 0 && (

@@ -2,6 +2,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import "./Select.css"
 
 const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group
@@ -14,14 +15,8 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border px-3",
-      "text-sm tracking-normal leading-snug",
-      "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]",
-      "ring-offset-[var(--bg)]",
-      "hover:border-[var(--line-2)]",
-      "focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:border-[var(--accent)]",
-      "disabled:cursor-not-allowed disabled:opacity-50",
-      "transition-[border-color,box-shadow] duration-150",
+      "ui-select-trigger flex w-full items-center justify-between gap-2",
+      "disabled:cursor-not-allowed",
       "[&>span]:whitespace-normal [&>span]:break-words",
       className
     )}
@@ -45,10 +40,8 @@ const SelectContent = React.forwardRef<
       collisionPadding={collisionPadding}
       className={cn(
         // z-[400] = var(--z-popover): above sticky/bottom-nav (100) and below modals (300+)
-        "relative z-[400] max-h-72 min-w-[8rem] overflow-hidden",
+        "ui-select-content relative z-[400] min-w-[8rem] overflow-hidden",
         "rounded-xl border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]",
-        // Refined shadow — deeper than --sh-sm but softer than --sh-lg
-        "shadow-[0_8px_24px_-4px_rgba(10,10,10,0.12),0_2px_6px_-1px_rgba(10,10,10,0.06)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -59,7 +52,7 @@ const SelectContent = React.forwardRef<
       {...props}
     >
       <SelectPrimitive.Viewport
-        className={cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]")}
+        className={cn("p-1", position === "popper" && "ui-select-viewport w-full")}
       >
         {children}
       </SelectPrimitive.Viewport>
@@ -77,7 +70,7 @@ const SelectItem = React.forwardRef<
     className={cn(
       "relative flex w-full cursor-default select-none items-center rounded-md",
       "min-h-9 py-2 pl-8 pr-3",
-      "text-sm leading-snug tracking-normal text-[var(--ink-2)]",
+      "ui-select-item leading-snug tracking-normal text-[var(--ink-2)]",
       "outline-none transition-colors duration-100",
       "focus:bg-[var(--surface-2)] focus:text-[var(--ink)]",
       "data-[state=checked]:text-[var(--ink)] data-[state=checked]:font-medium",

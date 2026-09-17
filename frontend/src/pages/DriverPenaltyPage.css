@@ -1,10 +1,10 @@
 .driver-penalty-page {
-  --driver-penalty-title: var(--fs-xl);
-  --driver-penalty-subtitle: var(--fs-xs);
-  --driver-penalty-section: var(--fs-xs);
-  --driver-penalty-body: var(--fs-sm);
+  --driver-penalty-title: var(--fs-2xl);
+  --driver-penalty-subtitle: var(--fs-sm);
+  --driver-penalty-section: var(--fs-lg);
+  --driver-penalty-body: var(--fs-md);
   --driver-penalty-muted: var(--fs-xs);
-  --driver-penalty-kpi: 22px;
+  --driver-penalty-kpi: var(--fs-3xl);
   padding-bottom: 40px;
 }
 
@@ -79,6 +79,7 @@
 /* Loading banner */
 .penalty-loading-banner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -184,7 +185,7 @@
   min-height: 36px;
   padding: 0 34px 0 12px;
   border-radius: 9px;
-  font-size: var(--driver-penalty-muted);
+
   font-weight: 600;
   line-height: 1.25;
   color: var(--ink);
@@ -305,12 +306,12 @@
 /* ═══ Responsive ═══ */
 @media (max-width: 640px) {
   .driver-penalty-page {
-    --driver-penalty-title: var(--fs-xl);
-    --driver-penalty-subtitle: 13px;
-    --driver-penalty-section: 11px;
-    --driver-penalty-body: 13px;
-    --driver-penalty-muted: 11.5px;
-    --driver-penalty-kpi: 22px;
+    --driver-penalty-title: var(--fs-2xl);
+    --driver-penalty-subtitle: var(--fs-sm);
+    --driver-penalty-section: var(--fs-lg);
+    --driver-penalty-body: var(--fs-md);
+    --driver-penalty-muted: var(--fs-xs);
+    --driver-penalty-kpi: var(--fs-3xl);
   }
   .driver-penalty-page .page-header {
     margin-bottom: 14px;
@@ -364,7 +365,7 @@
     height: 44px;
     min-height: 44px;
     padding-inline: 11px 32px;
-    font-size: var(--driver-penalty-muted);
+
   }
 }
 

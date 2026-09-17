@@ -3,8 +3,9 @@ import type { CSSProperties } from "react";
 import { Check, ChevronDown, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
 import type { TirePosition } from "@tingting/shared";
 import type { Supplier } from "@tingting/shared";
-import { ConfirmDialog } from "../../components/UI";
+import { ConfirmDialog, useConfirmShortcuts } from "../../components/UI";
 import { useToast } from "../../components/shared/Toast";
+import { useDialogFocus } from "../../components/shared/useDialogFocus";
 import { formatErrorMessage } from "../../lib/api";
 import { cleanText, normalizedCatalogLabel, positionPayloadFromLabel, supplierIdFromText, textMatches } from "../../features/tires/tireUtils";
 import "../../pages/TruckTiresPage.css";
@@ -147,15 +148,19 @@ function useFloatingPickerMenu(open: boolean, itemCount: number, onClose: () => 
       onClose();
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Dismiss this picker before the page's Escape navigation can run.
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
     };
 
     window.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
 
     return () => {
       window.removeEventListener("pointerdown", onPointerDown, true);
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [onClose, open]);
 
@@ -312,6 +317,9 @@ export function TirePositionsManagerDialog({
   ondelete: (id: number) => Promise<unknown>;
   oncancel: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, true);
+  useConfirmShortcuts({ isOpen: true, onCancel: oncancel, dialogRef });
   const { toast } = useToast();
   const sortedPositions = sortTirePositions(positions);
   const nextSortOrder = computeNextSortOrder(sortedPositions);
@@ -400,7 +408,7 @@ export function TirePositionsManagerDialog({
 
   return (
     <div className="ttp-dialog-overlay" role="presentation" onClick={oncancel}>
-      <div className="ttp-dialog ttp-dialog--positions" role="dialog" aria-modal="true" aria-labelledby="ttp-position-manager-title" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="ttp-dialog ttp-dialog--positions" role="dialog" aria-modal="true" aria-labelledby="ttp-position-manager-title" onClick={(e) => e.stopPropagation()}>
         <div className="ttp-dialog-head ttp-position-head">
           <div className="ttp-position-title-block">
             <span className="ttp-position-kicker">Danh mục lốp</span>

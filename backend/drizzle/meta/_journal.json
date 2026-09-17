@@ -792,6 +792,13 @@
       "when": 1789107033474,
       "tag": "0117_fuel_allocation_unit_price_multi_row",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1789650496075,
+      "tag": "0118_remove_onboarding",
+      "breakpoints": true
     }
   ]
 }

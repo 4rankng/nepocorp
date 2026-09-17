@@ -51,9 +51,30 @@ class ApiClient {
     }
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    await this.checkResponse(res, token);
+    const data = (await res.json()) as T;
+    this.assertCurrentSession(token);
+    return data;
+  }
+
+  private async checkResponse(res: Response, token: string | null, textError = false): Promise<void> {
+    this.assertCurrentSession(token);
+    if (res.ok) return;
+    const error = textError
+      ? new ApiError(res.status, null, (await res.text().catch(() => '')) || `Request failed: ${res.status}`)
+      : await ApiError.fromResponse(res);
+    this.assertCurrentSession(token);
     this.handleSessionExpiry(res, token);
-    if (!res.ok) throw await ApiError.fromResponse(res);
-    return (await res.json()) as T;
+    throw error;
+  }
+
+  private assertCurrentSession(requestToken: string | null): void {
+    if (requestToken && getToken() !== requestToken) {
+      // A pending write may already have completed on the server. Do not pass
+      // its result to a stale success callback that can populate another
+      // account's query cache; never retry the write automatically.
+      throw new Error('Phiên đăng nhập đã thay đổi. Vui lòng tải lại dữ liệu.');
+    }
   }
 
   /**
@@ -102,12 +123,10 @@ class ApiClient {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
-    this.handleSessionExpiry(res, token);
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
-    }
-    return res.text();
+    await this.checkResponse(res, token, true);
+    const text = await res.text();
+    this.assertCurrentSession(token);
+    return text;
   }
 
   /** Fetch a binary blob (PDF, XLSX, etc.) with auth headers. */
@@ -117,12 +136,10 @@ class ApiClient {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(`${API_BASE}${url}`, { headers });
-    this.handleSessionExpiry(res, token);
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
-    }
-    return res.blob();
+    await this.checkResponse(res, token, true);
+    const blob = await res.blob();
+    this.assertCurrentSession(token);
+    return blob;
   }
 
   /** POST JSON body and receive a binary blob response. */
@@ -137,12 +154,10 @@ class ApiClient {
       headers,
       body: JSON.stringify(body),
     });
-    this.handleSessionExpiry(res, token);
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
-    }
-    return res.blob();
+    await this.checkResponse(res, token, true);
+    const blob = await res.blob();
+    this.assertCurrentSession(token);
+    return blob;
   }
 
   /** POST JSON body and receive a text response (e.g. HTML). */
@@ -157,12 +172,10 @@ class ApiClient {
       headers,
       body: JSON.stringify(body),
     });
-    this.handleSessionExpiry(res, token);
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new ApiError(res.status, null, text || `Request failed: ${res.status}`);
-    }
-    return res.text();
+    await this.checkResponse(res, token, true);
+    const text = await res.text();
+    this.assertCurrentSession(token);
+    return text;
   }
 
   /** Upload files with auth headers (multipart/form-data). */

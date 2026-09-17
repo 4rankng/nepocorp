@@ -207,7 +207,7 @@ export default function ProfitPage() {
             <div className="profit-hero" style={{ height: '100%', marginBottom: 0 }}>
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
               <div className="profit-hero__value">
-                <span ref={heroValueRef}>0</span>
+                <span ref={heroValueRef}>{Math.round(netProfit).toLocaleString('vi-VN')}</span>
                 <span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">

@@ -36,7 +36,7 @@
 }
 .driver-trip-card__salary { text-align: right; flex-shrink: 0; }
 .driver-trip-card__salary-value {
-  font-size: 15px; font-weight: 700; color: var(--fg-1);
+  font-size: var(--fs-md); font-weight: 700; color: var(--fg-1);
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
 }
 .driver-trip-card__arrow { color: var(--fg-3); flex-shrink: 0; }

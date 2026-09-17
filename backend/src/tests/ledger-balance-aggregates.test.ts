@@ -22,10 +22,31 @@ describe('getEntityBalances aggregates', () => {
     await client.end();
   });
 
-  test('arDebt and tripRevenue match independently recomputed sums', async () => {
+  test('arDebt and tripRevenue match independently recomputed sums', async (t) => {
+    const [customer] = await db.insert(s.customers).values({
+      name: `Ledger aggregate regression ${Date.now()}`,
+    }).returning({ id: s.customers.id });
+    t.after(async () => {
+      await db.delete(s.ledger).where(and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, customer.id)));
+      await db.delete(s.customers).where(eq(s.customers.id, customer.id));
+    });
+    const entries: Array<Omit<typeof s.ledger.$inferInsert, 'entityType' | 'entityId'>> = [
+      { txnType: 'TRIP_REVENUE', debit: '1000', credit: '0', balance: '1000' },
+      { txnType: 'SERVICE_FEE', debit: '200', credit: '0', balance: '1200' },
+      { txnType: 'PAYMENT_RECEIVED', debit: '0', credit: '300', balance: '900' },
+      { txnType: 'UNLOCK_REVERSAL', debit: '0', credit: '100', balance: '800', note: 'Doanh thu chuyến (Hoàn tác)' },
+      { txnType: 'EXTERNAL_CARRIER_COST', debit: '0', credit: '100', balance: '700' },
+      { txnType: 'VENDOR_PAYMENT', debit: '60', credit: '0', balance: '760' },
+      { txnType: 'UNLOCK_REVERSAL', debit: '25', credit: '0', balance: '785', note: 'Cước thuê ngoài (Hoàn tác)' },
+    ];
+    await db.insert(s.ledger).values(entries.map(row => ({ ...row, entityType: 'CUSTOMER', entityId: customer.id })));
+
     const balances = await getEntityBalances('CUSTOMER');
     assert.ok(Array.isArray(balances));
-    assert.ok(balances.length >= 1, 'dev DB must have at least one customer ledger entity');
+    const fixture = balances.find(row => row.entityId === customer.id);
+    assert.ok(fixture, 'fixture customer appears in the ledger aggregates');
+    assert.equal(fixture.arDebt, 800, 'carrier entries do not change customer receivables');
+    assert.equal(fixture.tripRevenue, 1000, 'only trip revenue contributes to lifetime freight revenue');
 
     for (const row of balances) {
       const scope = and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, row.entityId));

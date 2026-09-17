@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { TripStatus, TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '@tingting/shared';
-import { PageHeader, Panel } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
@@ -64,7 +64,7 @@ export default function ForwarderTripsPage() {
   // (matches the TripListPage pattern). Date pickers are discrete — no debounce.
   const debouncedSearch = useDebouncedValue(search, 300);
 
-  const { data, isLoading: loading, error: queryError } = useForwarderTrips(
+  const { data, isLoading: loading, error: queryError, refetch } = useForwarderTrips(
     activeFilter || undefined,
     {
       search: debouncedSearch || undefined,
@@ -75,6 +75,12 @@ export default function ForwarderTripsPage() {
   const trips = (data?.items ?? []) as TripSummary[];
   const counts = data?.counts ?? {};
   const error = queryError ? 'Không thể tải danh sách chuyến đi' : null;
+  const hasFilters = Boolean(search || activeFilter || dateFrom !== monthRange.start || dateTo !== monthRange.end);
+  function clearFilters() {
+    setSearch('');
+    setActiveFilter('');
+    setDateRange({ monthKey, dateFrom: monthRange.start, dateTo: monthRange.end });
+  }
 
   const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
   const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
@@ -104,59 +110,33 @@ export default function ForwarderTripsPage() {
     animateCounters(
       [
         { el: heroTotalRef.current, value: totalTrips, suffix: ' chuyến' },
-        { el: heroContainersRef.current, value: totalContainers, suffix: ' cont' },
+        { el: heroContainersRef.current, value: totalContainers },
       ],
     );
   }, [loading, totalTrips, totalContainers, animateCounters, prefersReduced]);
-
-  if (loading) return (
-    <Panel>
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
-        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải danh sách chuyến đi…</p>
-      </div>
-    </Panel>
-  );
-
-  if (error) return (
-    <Panel><div style={{ padding: 20, textAlign: 'center', color: 'var(--danger)' }}>{error}</div></Panel>
-  );
-
-  if (totalTrips === 0) return (
-    <div>
-      <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
-      <div className="empty-state">
-        <img src={resolveEmptyIllustration('empty-forwarder')} alt="No trips" />
-        <h3 className="empty-state-title">Chưa có chuyến đi nào</h3>
-        <p className="empty-state-desc">
-          Hiện chưa có chuyến đi nào trong hệ thống. Khi có chuyến đi mới, thông tin sẽ xuất hiện tại đây.
-        </p>
-      </div>
-    </div>
-  );
 
   return (
     <div ref={rootRef}>
       <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
 
       {/* ── Hero KPI Row ── */}
-      <div className="hero-kpi-row">
+      {!loading && !error && <div className="hero-kpi-row">
         <div className="hero-kpi-card">
           <span className="hero-kpi-card__eyebrow">Tổng chuyến đi</span>
-          <span className="hero-kpi-card__amount" ref={heroTotalRef}>0 chuyến</span>
+          <span className="hero-kpi-card__amount" ref={heroTotalRef}>{totalTrips} chuyến</span>
           <span className="hero-kpi-card__subtitle">Danh sách chuyến đi vận chuyển</span>
           <Truck size={72} className="hero-kpi-card__watermark" aria-hidden="true" />
         </div>
         <div className="hero-kpi-stack">
           <div className="hero-kpi-mini hero-kpi-mini--accent">
             <div className="hero-kpi-mini__body">
-              <span className="hero-kpi-mini__value" ref={heroContainersRef}>0</span>
+              <span className="hero-kpi-mini__value" ref={heroContainersRef}>{totalContainers}</span>
               <span className="hero-kpi-mini__label">container</span>
             </div>
             <Package size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ── Search + date-range filter (N4) ── */}
       <div className="fwd-trip-filters">
@@ -164,6 +144,7 @@ export default function ForwarderTripsPage() {
           <Search size={14} />
           <input
             type="text"
+            aria-label="Tìm chuyến đi theo container hoặc khách hàng"
             placeholder="Tìm theo container, khách hàng..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -177,7 +158,7 @@ export default function ForwarderTripsPage() {
               value={dateFrom}
               min={monthRange.start}
               max={monthRange.end}
-              onChange={e => setDateRange(current => ({ ...current, monthKey, dateFrom: e.target.value }))}
+              onChange={e => setDateRange({ monthKey, dateFrom: e.target.value, dateTo })}
             />
           </label>
           <label className="fwd-trip-filters__date">
@@ -187,7 +168,7 @@ export default function ForwarderTripsPage() {
               value={dateTo}
               min={monthRange.start}
               max={monthRange.end}
-              onChange={e => setDateRange(current => ({ ...current, monthKey, dateTo: e.target.value }))}
+              onChange={e => setDateRange({ monthKey, dateFrom, dateTo: e.target.value })}
             />
           </label>
         </div>
@@ -197,19 +178,21 @@ export default function ForwarderTripsPage() {
       <div className="fwd-filter-pills">
         <button
           className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
+          aria-pressed={activeFilter === ''}
           onClick={() => setActiveFilter('')}
         >
           Tất cả
-          <span className="fwd-filter-pill__count">{totalTrips}</span>
+          {!loading && <span className="fwd-filter-pill__count">{totalTrips}</span>}
         </button>
         {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
           const count = counts[status] ?? 0;
-          if (count === 0) return null;
+          if (count === 0 && activeFilter !== status) return null;
           return (
             <button
               key={status}
               className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
               data-status={status}
+              aria-pressed={activeFilter === status}
               onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
             >
               <span className="fwd-filter-pill__dot" style={{ background: FORWARDER_STATUS_COLORS[status] }} />
@@ -219,6 +202,25 @@ export default function ForwarderTripsPage() {
           );
         })}
       </div>
+
+      {loading ? (
+        <div className="empty-state" role="status">
+          <Loader2 size={20} className="spin" />
+          <p>Đang tải danh sách chuyến đi…</p>
+        </div>
+      ) : error ? (
+        <div className="empty-state" role="alert">
+          <h3 className="empty-state-title">{error}</h3>
+          <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
+        </div>
+      ) : trips.length === 0 ? (
+        <div className="empty-state" role="status">
+          <img src={resolveEmptyIllustration('empty-forwarder')} alt="" />
+          <h3 className="empty-state-title">{hasFilters ? 'Không tìm thấy chuyến đi' : 'Chưa có chuyến đi trong tháng này'}</h3>
+          <p className="empty-state-desc">{hasFilters ? 'Thử thay đổi tìm kiếm, ngày hoặc trạng thái để xem các chuyến đi khác.' : 'Chọn tháng khác để xem lịch sử chuyến đi.'}</p>
+          {hasFilters && <button type="button" className="btn btn--secondary" onClick={clearFilters}>Xóa bộ lọc</button>}
+        </div>
+      ) : null}
 
       {hasPaymentHighlights && (
         <div className="fwd-row-legend" aria-label="Giải thích màu thẻ chuyến đi">
@@ -257,6 +259,7 @@ export default function ForwarderTripsPage() {
                   </span>
                 </div>
                 <div className="driver-trip-card__meta">
+                  <span className="driver-trip-card__meta-item">{TRIP_STATUS_LABELS[trip.status]}</span>
                   <span className="driver-trip-card__plate-badge">
                     <Truck size={12} />
                     <span className="driver-trip-card__badge-text">{trip.truckPlate || '—'}</span>

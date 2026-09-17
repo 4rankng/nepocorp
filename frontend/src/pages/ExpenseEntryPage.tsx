@@ -53,7 +53,7 @@ export default function ExpenseEntryPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
-  const { data: expenseCatalogs, isLoading: loadingExpenseCatalogs } = useQuery({
+  const { data: expenseCatalogs, isLoading: loadingExpenseCatalogs, error: expenseCatalogError, refetch: refetchExpenseCatalogs } = useQuery({
     queryKey: qk.tripForm.expenseFormCatalogs,
     queryFn: async (): Promise<ExpenseCatalogs> => {
       const [suppliers, categories] = await Promise.all([
@@ -66,7 +66,7 @@ export default function ExpenseEntryPage() {
   });
   const { suppliers, categories } = resolveExpenseCatalogs(expenseCatalogs);
 
-  const { data: existingExpense, isLoading: loadingExpense } = useQuery<ExpenseWithRefs>({
+  const { data: existingExpense, isLoading: loadingExpense, error: expenseError, refetch: refetchExpense } = useQuery<ExpenseWithRefs>({
     queryKey: qk.tripForm.expense(id!),
     queryFn: () => api.get(`${FINANCIAL.EXPENSE(Number(id))}`),
     enabled: isEdit,
@@ -365,6 +365,19 @@ export default function ExpenseEntryPage() {
 
   if (isEdit && loadingExpense) {
     return <ExpenseLoading />;
+  }
+
+  if (expenseError || expenseCatalogError) {
+    return (
+      <div className="expense-page-wrap">
+        <PageHeader title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'} onBack={handleBack} iconName="expense" />
+        <div className="empty-state" role="alert">
+          <h3 className="empty-state-title">{expenseError ? 'Không thể tải chi phí' : 'Không thể tải danh mục chi phí'}</h3>
+          <p className="empty-state-desc">Vui lòng tải lại dữ liệu trước khi tiếp tục nhập chi phí.</p>
+          <button type="button" className="btn btn--secondary" onClick={() => { if (isEdit) void refetchExpense(); void refetchExpenseCatalogs(); }}>Thử lại</button>
+        </div>
+      </div>
+    );
   }
 
   return (

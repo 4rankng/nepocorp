@@ -25,9 +25,6 @@ import {
   agentResponseSchema,
   agentDirectiveSchema,
   ACKED_DIRECTIVE_KINDS,
-  Role,
-  toursForRole,
-  getTour,
   type AgentEvent,
   type AgentResponse,
   type AgentDirective,
@@ -129,15 +126,12 @@ export function computeLatencies(
 const STRUCTURED_RESPONSE_HINT = `Kết quả cuối phải là một JSON hợp lệ:
 - text: {"type":"text","content":"...","actions":[{"label":"...","directive":{...}}]} (actions is optional)
 - insight_card: {"type":"insight_card","title":"...","summary":"...","widgets":[...]}
-- tutorial: {"type":"tutorial","title":"...","summary":"...","steps":[...]}
-- start_tour: {"type":"start_tour","tourId":"..."}
 - directive: {"type":"directive","directive":{...}}
 Widget: kpi_grid, bar_chart, line_chart, table, callout hoặc anomaly_list. KPI value phải là số VND đầy đủ; format chỉ vnd|percent|number|days. Không có directive hợp lệ thì bỏ actions.`;
 
 function buildSystemPrompt(ctx: AgentContext, tools: AgentToolDef[], message: string): string {
   const names = new Set(tools.map((tool) => tool.name));
   const hasData = [...names].some((name) => name.startsWith('data.') || name === 'report.run');
-  const hasTours = names.has('tours.search');
   const needsUiDetail = /(mo|vao|them|sua|xoa|nut|form|trang|huong dan|cach lam)/i.test(normalizeForIntent(message));
 
   return [
@@ -145,7 +139,7 @@ function buildSystemPrompt(ctx: AgentContext, tools: AgentToolDef[], message: st
     `Hôm nay: ${todayIsoVn()}. "Tháng này/nay" luôn là kỳ hiện tại. Trả lời tiếng Việt, ngắn và trực tiếp.`,
     hasData ? '- Mọi số liệu phải lấy từ công cụ. Tổng tiền tài chính dùng report.run; không tự cộng bằng data.aggregate.' : '',
     hasData ? '- Định danh mơ hồ: data.search trước, data.detail chỉ khi cần thêm trường.' : '',
-    hasTours ? '- Luồng hướng dẫn có sẵn: gọi tours.search rồi dùng start_tour. Câu hỏi thao tác hẹp dùng tutorial ngắn.' : '',
+    '- Câu hỏi hướng dẫn thao tác: trả lời bằng văn bản ngắn, chia từng bước khi cần.',
     needsUiDetail ? '- Cần mở/thao tác: dùng directive thật; không viết đường dẫn. Bot không sửa dữ liệu, chỉ dẫn tới đúng trang/nút.' : '',
     needsUiDetail ? '- open/prefill chỉ hỗ trợ componentId debt.record-payment; trường hợp khác dùng navigate/focus/highlight.' : '',
     ctx.currentRouteKey ? `Trang hiện tại: ${ctx.currentRouteKey}.` : '',
@@ -190,47 +184,30 @@ function normalizeForIntent(text: string): string {
     .toLowerCase();
 }
 
-/** Tour net — deterministic safety net beneath the model's tour selection,
- *  mirroring synthesizeNavigateFromProse's role for navigation. Two jobs:
- *   (1) VALIDATE: an emitted {type:'start_tour'} whose tourId is unknown or not
- *       visible to the user's role → downgrade to an honest text line (also
- *       breaks a potential MiniMax retry loop on a bogus id).
- *   (2) CATCH: a freeform {type:'tutorial'} whose title STRONGLY matches a
- *       catalog tour the user can see → launch the curated tour instead (the
- *       model rebuilt a tour we already authored). Title-match is intentionally
- *       strict (≥6 chars, equality or containment) so a narrow how-to such as
- *       "đơn giá dầu ở đâu" stays a freeform answer and isn't hijacked into a
- *       6-step tour. Deterministic + unit-tested. */
-export function synthesizeStartTourFromResponse(response: AgentResponse, role: Role): AgentResponse {
-  if (response.type === 'start_tour' || response.type === 'continue_tour' || response.type === 'cancel_tour') {
-    // Phase 7: validate ANY tour-control response against the catalog + the
-    // caller's role before emitting (safe registry). An unknown or role-denied
-    // id degrades to a Vietnamese text denial — the chatbot can SELECT a tour
-    // but never invent one, and never reaches a tour the role can't run.
-    const tour = getTour(response.tourId);
-    const visible = tour ? toursForRole(role).some((t) => t.id === tour.id) : false;
-    if (!tour || !visible) {
-      return {
-        type: 'text',
-        content: `Hướng dẫn "${response.tourId}" không khả dụng cho vai trò của bạn.`,
-      };
-    }
-    // Stamp the authoritative catalog version so the frontend can detect a
-    // stale catalog vs server-progress mismatch on continue_tour.
-    if (response.type === 'continue_tour' || response.type === 'cancel_tour') {
-      return { ...response, tourVersion: tour.version };
-    }
-    return response;
-  }
-  if (response.type === 'tutorial') {
-    const normTitle = normalizeForIntent(response.title);
-    const match = toursForRole(role).find((t) => {
-      const tt = normalizeForIntent(t.title);
-      return tt.length >= 6 && (normTitle === tt || normTitle.includes(tt));
-    });
-    if (match) return { type: 'start_tour', tourId: match.id };
-  }
-  return response;
+/** Reuse complete data-backed prose when the user did not request a visual.
+ * This only removes the formatting call; it never changes the tool data or
+ * computes new numbers. Citations, action links and persistence run afterward. */
+export function selectTerminalProseAnswer(opts: {
+  terminal: { content: string | null; finishReason: string | null } | undefined;
+  userMessages: string[];
+  hasSuccessfulDataTool: boolean;
+  hasToolError: boolean;
+}): AgentResponse | null {
+  if (!opts.terminal || opts.terminal.finishReason !== 'stop'
+    || !opts.hasSuccessfulDataTool || opts.hasToolError) return null;
+
+  // Keep explicit visual/table requests, including instructions from earlier
+  // turns that a short follow-up such as "còn tháng trước?" still relies on.
+  const wantsStructured = opts.userMessages.some((message) =>
+    /\b(bieu do|do thi|bang|charts?|graphs?|tables?|plots?|visuali[sz](?:e|ation)|dashboards?|cards?|insight_card|widgets?)\b/.test(normalizeForIntent(message)),
+  );
+  if (wantsStructured) return null;
+
+  const content = stripThink(opts.terminal.content)?.trim();
+  if (!content || content.length < 5
+    || content.startsWith('{') || content.startsWith('[') || content.startsWith('```')
+    || isInternalContractLeak(content)) return null;
+  return { type: 'text', content };
 }
 
 /** A3 guardrail helper: scan a prose answer for a path-like token that resolves
@@ -309,7 +286,14 @@ export async function runAgent(opts: {
   // Exact duplicate read calls in one turn share the same promise. Service-level
   // report caches continue to provide cross-turn caching + mutation invalidation.
   const readonlyToolCache = new Map<string, Promise<ToolResult>>();
-  const toolTrace: unknown[] = [];
+  const toolTrace: Array<{
+    toolName: string;
+    ok: boolean;
+    args?: unknown;
+    label?: string;
+    error?: string;
+    cacheHit?: boolean;
+  }> = [];
   // P2 — citations collected from knowledge.search tool results, attached to
   // the final AgentResponse for doc-RAG provenance.
   const collectedCitations: AgentCitation[] = [];
@@ -414,6 +398,9 @@ export async function runAgent(opts: {
         return { response, conversationId, toolTrace };
       };
 
+      // Capture a terminal result from THIS turn only. Searching all messages
+      // can accidentally reuse an older answer after exhausting the loop.
+      let terminalAssistant: { content: string | null; finishReason: string | null } | undefined;
       for (let i = 0; i < iterationBudget; i++) {
         metrics.reactIterations = i + 1;
         // Stop spending tokens the moment the client disconnects. PRE-PERSIST
@@ -430,7 +417,7 @@ export async function runAgent(opts: {
         // The loop call streams tokens. We EAGERLY emit TEXT_MESSAGE_* for prose
         // deltas, but BUFFER a small prefix first to detect structured output:
         // the terminal turn may be JSON (Case 1: in-loop structured answer that
-        // becomes an insight_card/tutorial) — streaming raw JSON tokens is poor
+        // becomes an insight_card) — streaming raw JSON tokens is poor
         // UX, so if the first non-whitespace char is `{` or `[` we suppress
         // streaming entirely (the card arrives whole in RUN_FINISHED). Once a
         // stream is committed (prose confirmed), all subsequent deltas stream.
@@ -516,7 +503,8 @@ export async function runAgent(opts: {
         }
 
         if (result.toolCalls.length === 0) {
-          // Model is ready to answer — break to the structured final call.
+          terminalAssistant = result;
+          // Model is ready to answer — validate/reuse it before finalization.
           if (result.content) {
             messages.push({ role: 'assistant', content: result.content });
           }
@@ -728,45 +716,50 @@ export async function runAgent(opts: {
       //   2. Non-analytical turn (no tools, or only ui.* navigation/focus/search)
       //      answered in prose → return the prose as text (no call). Dominant win:
       //      ~−9s for every simple/navigation/help turn (the avg final-call cost).
-      //   3. Analytical turn (ran a data/structured tool) → one structured call
-      //      shapes the tool numbers into insight_card widgets.
+      //   3. Complete data-backed prose with no visual request → reuse it.
+      //   4. Otherwise one structured call shapes data into insight widgets.
       let finalUsage: { promptTokens: number; completionTokens: number } = { promptTokens: 0, completionTokens: 0 };
       let fallbackUsed = false;
       let fallbackReason: string | undefined;
       let response: AgentResponse;
 
-      // The terminal assistant turn = last assistant message with no pending
-      // tool_calls (the loop pushes it right before breaking on a no-tools turn).
-      const terminalAssistant = [...messages]
-        .reverse()
-        .find((m) => m.role === 'assistant' && !(m.tool_calls && m.tool_calls.length > 0));
       const terminalStructured = terminalAssistant
         ? parseAgentResponseContent(terminalAssistant.content)
         : null;
       // "Analytical" = a tool that returns data needing widget shaping ran.
-      // Everything except ui.* counts — tours.* + data/* stay on the structured
-      // path so start_tour / insight_card still compose correctly.
+      // Everything except ui.* counts — data tools stay on the structured
+      // path so insight cards still compose correctly.
       const usedDataTool = messages.some(
         (m) => m.role === 'tool' && typeof m.name === 'string' && !m.name.startsWith('ui.'),
       );
+      const terminalProse = selectTerminalProseAnswer({
+        terminal: terminalAssistant,
+        userMessages: [...(opts.priorMessages ?? []), { role: 'user', content: opts.message }]
+          .filter((message) => message.role === 'user')
+          .map((message) => message.content ?? ''),
+        hasSuccessfulDataTool: toolTrace.some((tool) => tool.ok && !tool.toolName.startsWith('ui.')),
+        hasToolError: toolTrace.some((tool) => !tool.ok),
+      });
 
       if (!terminalStructured && !usedDataTool && terminalAssistant && !opts.signal?.aborted) {
         // Case 2 — non-analytical prose answer: return as text, no structured call.
         response = { type: 'text' as const, content: stripThink(terminalAssistant.content) ?? '' };
       } else if (terminalStructured && !opts.signal?.aborted) {
         // Case 1 — the ReAct loop's terminal assistant message already contains
-        // valid structured JSON (insight_card / tutorial / text / directive /
-        // start_tour). Trust it directly and SKIP produceFinalAnswer entirely.
+        // valid structured JSON (insight_card / text / directive).
+        // Trust it directly and SKIP produceFinalAnswer entirely.
         // This is the double-call collapse: analytical turns whose model emits
         // valid in-loop JSON no longer pay for a separate json_object call.
         // produceFinalAnswer (Case 3 below) is now only the genuine fallback for
         // analytical turns where the loop output is NOT valid structured JSON.
         response = terminalStructured;
         metrics.finalAvoided = true;
+      } else if (terminalProse && !opts.signal?.aborted) {
+        response = terminalProse;
+        metrics.finalAvoided = true;
       } else {
-        // Case 3 — analytical turn (a data tool ran) but the loop's terminal
-        // output was NOT valid structured JSON. produceFinalAnswer re-tries with
-        // a dedicated json_object call, then a prose fallback if that fails.
+        // Incomplete/invalid output, tool errors or a requested visual still
+        // require finalization with the existing structured/prose fallbacks.
         const finalSpan = await withSpan('agent.final_answer', undefined, async () =>
           produceFinalAnswer(trimToolHistory(messages), signal, emit),
         );
@@ -828,13 +821,6 @@ export async function runAgent(opts: {
         }
       }
 
-      // Tour net: validate an emitted {type:'start_tour'} (role + existence) and
-      // conservatively launch a curated tour when the model rambled a freeform
-      // tutorial matching one. Mirrors the A3 navigate net; kill-switch gated.
-      if (config.agentTourGuardrail && !opts.signal?.aborted) {
-        response = synthesizeStartTourFromResponse(response, ctx.role);
-      }
-
       // Telemetry: a navigate/focus directive in the terminal answer counts as
       // "navigate emitted" whether or not the ack path ran — the frontend still
       // applies the directive from the done event.
@@ -875,7 +861,7 @@ export async function runAgent(opts: {
       // ReAct loop called knowledge.search, the tool returned chunks with source
       // metadata. Extract the top sources and attach them as citations[] on the
       // final response so the user sees provenance (doc-RAG grounding).
-      if (collectedCitations.length > 0 && (response.type === 'text' || response.type === 'insight_card' || response.type === 'tutorial')) {
+      if (collectedCitations.length > 0 && (response.type === 'text' || response.type === 'insight_card')) {
         response = { ...response, citations: collectedCitations };
       }
 
@@ -1208,7 +1194,6 @@ function isInternalContractLeak(text: string): boolean {
     'widget',
     'tool',
     'insight_card',
-    'start_tour',
   ].some((needle) => normalized.includes(needle));
 }
 
@@ -1304,8 +1289,6 @@ const RESPONSE_TYPE_ALIASES: Record<string, string> = {
   answer: 'text',
   reply: 'text',
   prose: 'text',
-  tour: 'start_tour',
-  starttour: 'start_tour',
   navigate: 'directive',
   action: 'directive',
 };
@@ -1352,10 +1335,9 @@ export function sanitizeAgentJson(raw: unknown): unknown {
   if (obj.type === 'directive' && obj.directive && typeof obj.directive === 'object') {
     obj.directive = sanitizeDirective(obj.directive);
   }
-  // text, insight_card, and tutorial may carry top-level `actions`; normalize
-  // action chips for all three. text/tutorial have no `widgets`, so the widget
-  // block below is a no-op for them.
-  if (obj.type === 'text' || obj.type === 'insight_card' || obj.type === 'tutorial') {
+  // Text and insight cards may carry top-level actions. Text has no widgets,
+  // so the widget normalization below is a no-op for it.
+  if (obj.type === 'text' || obj.type === 'insight_card') {
     if (obj.type === 'insight_card' && typeof obj.title !== 'string') {
       obj.title = typeof obj.summary === 'string' ? obj.summary.slice(0, 80) : 'Tóm tắt';
     }

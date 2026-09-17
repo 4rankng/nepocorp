@@ -39,10 +39,12 @@ function PasswordModal({
         </Alert>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <FormGroup label="Mật khẩu hiện tại">
+        <FormGroup label="Mật khẩu hiện tại" htmlFor="password-current">
           <div className="input-icon">
             <Lock size={16} />
             <input
+              id="password-current"
+              autoComplete="current-password"
               className="input"
               type="password"
               value={form.currentPassword}
@@ -51,10 +53,12 @@ function PasswordModal({
             />
           </div>
         </FormGroup>
-        <FormGroup label="Mật khẩu mới">
+        <FormGroup label="Mật khẩu mới" htmlFor="password-new">
           <div className="input-icon">
             <Lock size={16} />
             <input
+              id="password-new"
+              autoComplete="new-password"
               className="input"
               type="password"
               value={form.newPassword}
@@ -63,10 +67,12 @@ function PasswordModal({
             />
           </div>
         </FormGroup>
-        <FormGroup label="Xác nhận mật khẩu mới">
+        <FormGroup label="Xác nhận mật khẩu mới" htmlFor="password-confirm">
           <div className="input-icon">
             <Lock size={16} />
             <input
+              id="password-confirm"
+              autoComplete="new-password"
               className="input"
               type="password"
               value={form.confirmPassword}

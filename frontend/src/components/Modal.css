@@ -43,7 +43,7 @@
 .modal__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: var(--fs-lg);
+  font-size: var(--fs-xl);
   font-weight: 700;
   letter-spacing: 0;
   color: var(--ink);
@@ -92,7 +92,7 @@
   }
 
   .modal__title {
-    font-size: 22px;
+    font-size: var(--fs-xl);
     letter-spacing: 0;
   }
 

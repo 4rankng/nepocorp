@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Image as ImageIcon, Zap, CameraOff } from 'lucide-react';
+import { useDialogFocus } from './useDialogFocus';
 
 /**
  * ContainerScanner — fullscreen camera + gallery overlay for container/seal photos.
@@ -67,8 +68,13 @@ export function dataUrlToFile(dataUrl: string, filename = 'capture.jpg'): File {
 }
 
 export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const trackRef = useRef<MediaStreamTrack | null>(null);
+  const mountedRef = useRef(false);
+  const busyRef = useRef(false);
+  useDialogFocus(dialogRef, true);
 
   const [status, setStatus] = useState<CameraStatus>('loading');
   const [flashSupported, setFlashSupported] = useState(false);
@@ -78,6 +84,8 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
   // Acquire the rear camera on mount; release it on unmount.
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let cancelled = false;
+    mountedRef.current = true;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -91,6 +99,10 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
           video: { facingMode: { ideal: 'environment' } },
           audio: false,
         });
+        if (cancelled) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
         const track = stream.getVideoTracks()[0] ?? null;
         trackRef.current = track;
         // Torch is a non-standard capability (mostly Android Chrome); hide the
@@ -101,14 +113,16 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => { /* autoplay may be deferred */ });
         }
-        setStatus('ready');
+        if (!cancelled) setStatus('ready');
       } catch {
-        setStatus('error');
+        if (!cancelled) setStatus('error');
       }
     };
     void start();
 
     return () => {
+      cancelled = true;
+      mountedRef.current = false;
       document.body.style.overflow = prevOverflow;
       stream?.getTracks().forEach(t => t.stop());
       trackRef.current = null;
@@ -128,16 +142,17 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
 
   /** Common "I have an image, downsize it, fire onCapture" path. */
   const finishWith = useCallback(async (rawDataUrl: string) => {
-    if (busy) return;
+    if (busyRef.current || !mountedRef.current) return;
+    busyRef.current = true;
     setBusy(true);
+    let finalUrl = rawDataUrl;
     try {
-      const finalUrl = await downsizeImageToDataUrl(rawDataUrl);
-      onCapture(finalUrl);
+      finalUrl = await downsizeImageToDataUrl(rawDataUrl);
     } catch {
       // Downsize can fail on a tainted canvas (CORS); fall back to the raw source.
-      onCapture(rawDataUrl);
     }
-  }, [busy, onCapture]);
+    if (mountedRef.current) onCapture(finalUrl);
+  }, [onCapture]);
 
   const handleCapture = useCallback(() => {
     const video = videoRef.current;
@@ -161,7 +176,13 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
   }, [finishWith]);
 
   return createPortal(
-    <div style={{
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Chụp ảnh container" tabIndex={-1} onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }
+    }} style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: '#000', display: 'flex', flexDirection: 'column',
     }}>
@@ -204,6 +225,7 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
         padding: '4px 16px', paddingTop: 'max(16px, env(safe-area-inset-top))',
       }}>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Đóng"
           style={roundBtn(40, 'rgba(0,0,0,0.5)')}
@@ -212,6 +234,7 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
         </button>
         {flashSupported && (
           <button
+            type="button"
             onClick={handleFlashToggle}
             aria-label={flashOn ? 'Tắt đèn flash' : 'Bật đèn flash'}
             style={roundBtn(40, flashOn ? 'var(--brand)' : 'rgba(0,0,0,0.5)')}
@@ -228,9 +251,10 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
         background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
       }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Gallery picker — the hidden input lives inside the label so tapping
-              anywhere on it opens the OS photo picker. */}
-          <label
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}
             style={{
               ...roundBtn(44, 'rgba(0,0,0,0.5)'),
               position: 'absolute', left: 0, bottom: 4, cursor: 'pointer',
@@ -239,12 +263,13 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
             title="Chọn ảnh từ thư viện"
           >
             <ImageIcon size={20} color="#fff" />
-            <input type="file" accept="image/*" hidden onChange={handleFileChange} />
-          </label>
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" hidden disabled={busy} onChange={handleFileChange} />
 
           {/* Shutter — dead-center, iOS-style ring. Disabled while busy so a
               double-tap can't fire two captures. */}
           <button
+            type="button"
             onClick={handleCapture}
             disabled={busy || status !== 'ready'}
             aria-label="Chụp ảnh"

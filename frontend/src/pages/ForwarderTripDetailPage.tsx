@@ -264,7 +264,7 @@ export default function ForwarderTripDetailPage() {
   ];
 
   return (
-    <div ref={rootRef} style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
+    <div ref={rootRef} className="forwarder-trip-detail-page" style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 40 }}>
       {dialog}
       {/* Back button + Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 8px' }}>
@@ -278,7 +278,7 @@ export default function ForwarderTripDetailPage() {
         </button>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--fg-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h1 style={{ fontSize: 'var(--fs-page-title)', fontWeight: 700, color: 'var(--fg-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img src="/assets/icons/03-trip-log-so-chuyen-chuyen-xe.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
               {trip.routeName || 'Chuyến đi'}
             </h1>
@@ -286,11 +286,11 @@ export default function ForwarderTripDetailPage() {
               {TRIP_STATUS_LABELS[trip.status as TripStatus] || trip.status}
             </StatusPill>
             {trip.tripCode && (
-              <span style={{ fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>{trip.tripCode}</span>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>{trip.tripCode}</span>
             )}
           </div>
           {trip.customerName && (
-            <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: '4px 0 0' }}>{trip.customerName}</p>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: '4px 0 0' }}>{trip.customerName}</p>
           )}
         </div>
       </div>
@@ -298,7 +298,7 @@ export default function ForwarderTripDetailPage() {
       {/* Trip Info Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
         <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
-          <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Thông tin chuyến
           </span>
         </div>
@@ -344,13 +344,13 @@ export default function ForwarderTripDetailPage() {
       {/* Expenses Section */}
       <div className="panel panel--solid" style={{ marginBottom: 16 }}>
         <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Chi phí phát sinh ({expenses.length}) · {completedScopeCount}/{totalScopeCount} nhóm đã kê xong
           </span>
           <button
             className="btn btn--secondary btn--sm"
             onClick={openExpenseForm}
-            style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <Plus size={12} /> Thêm
           </button>
@@ -384,7 +384,7 @@ export default function ForwarderTripDetailPage() {
                   min="1"
                 />
                 {expenseErrors.buyAmount && (
-                  <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                  <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                     {expenseErrors.buyAmount}
                   </span>
                 )}
@@ -443,7 +443,7 @@ export default function ForwarderTripDetailPage() {
                     ))}
                   </select>
                   {expenseErrors.supplierId && (
-                    <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                    <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                       {expenseErrors.supplierId}
                     </span>
                   )}
@@ -491,7 +491,7 @@ export default function ForwarderTripDetailPage() {
                       </option>
                     ))}
                   </select>
-                  <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
+                  <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
                     Chọn container từ danh sách đã nhập, không cần gõ lại số container.
                   </span>
                 </FormGroup>
@@ -535,7 +535,7 @@ export default function ForwarderTripDetailPage() {
                     style={{ fontFamily: 'var(--font-mono)' }}
                   />
                   {expenseErrors.declarationNumber && (
-                    <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
+                    <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
                       {expenseErrors.declarationNumber}
                     </span>
                   )}
@@ -582,7 +582,7 @@ export default function ForwarderTripDetailPage() {
         )}
 
         {expenses.length === 0 ? (
-          <div style={{ padding: '16px 20px', color: 'var(--fg-3)', fontSize: 13, textAlign: 'center' }}>
+          <div style={{ padding: '16px 20px', color: 'var(--fg-3)', fontSize: 'var(--fs-body)', textAlign: 'center' }}>
             Chưa có chi phí phát sinh nào
           </div>
         ) : (
@@ -620,13 +620,13 @@ export default function ForwarderTripDetailPage() {
       {/* Ghi chú */}
       <div className="panel" style={{ marginBottom: 16 }}>
         <div style={{ padding: '12px 20px' }}>
-          <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+          <div style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
             Ghi chú
           </div>
           {trip.notes ? (
-            <p style={{ fontSize: 13, color: 'var(--fg-2)', margin: 0, lineHeight: 1.6 }}>{trip.notes}</p>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-2)', margin: 0, lineHeight: 1.6 }}>{trip.notes}</p>
           ) : (
-            <p style={{ fontSize: 13, color: 'var(--fg-3)', margin: 0, fontStyle: 'italic' }}>Không có ghi chú</p>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: 0, fontStyle: 'italic' }}>Không có ghi chú</p>
           )}
         </div>
       </div>
@@ -635,23 +635,23 @@ export default function ForwarderTripDetailPage() {
       {trip.instructions && (trip.instructions.contactName || trip.instructions.contactPhone || trip.instructions.notes) && (
         <div className="panel" style={{ marginBottom: 16 }}>
           <div style={{ padding: '12px 20px' }}>
-            <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            <div style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
               Liên hệ & hướng dẫn
             </div>
             {trip.instructions.contactName && (
-              <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
-                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>Liên hệ</span>
+              <div style={{ display: 'flex', gap: 10, fontSize: 'var(--fs-body)', lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>Liên hệ</span>
                 <span style={{ color: 'var(--fg-1)', fontWeight: 500 }}>{trip.instructions.contactName}</span>
               </div>
             )}
             {trip.instructions.contactPhone && (
-              <div style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
-                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>SĐT</span>
+              <div style={{ display: 'flex', gap: 10, fontSize: 'var(--fs-body)', lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 60 }}>SĐT</span>
                 <a href={`tel:${trip.instructions.contactPhone}`} style={{ color: 'var(--brand, #00B14F)', textDecoration: 'none', fontWeight: 500 }}>{trip.instructions.contactPhone}</a>
               </div>
             )}
             {trip.instructions.notes && (
-              <p style={{ fontSize: 13, color: 'var(--fg-2)', margin: '8px 0 0', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{trip.instructions.notes}</p>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-2)', margin: '8px 0 0', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{trip.instructions.notes}</p>
             )}
           </div>
         </div>

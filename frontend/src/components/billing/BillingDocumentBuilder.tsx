@@ -329,17 +329,16 @@ export default function BillingDocumentBuilder({
               ))}
             </select>
           </label>
-          <div className="billing-builder__action-cell">
-            <span className="billing-builder__action-spacer" aria-hidden="true">Lọc</span>
+          <div className="billing-builder__actions">
             <button className="btn btn--secondary" type="button" onClick={() => generateDraft(rangeFrom, rangeTo)} disabled={busy}>
               {loading ? <Loader2 size={15} className="spin" /> : <Filter size={15} />}
               Lọc lại
             </button>
+            <button className="btn btn--ghost" type="button" onClick={addAdhoc} disabled={busy}>
+              <Plus size={15} />
+              Thêm dòng
+            </button>
           </div>
-          <button className="btn btn--ghost" type="button" onClick={addAdhoc} disabled={busy}>
-            <Plus size={15} />
-            Thêm dòng
-          </button>
         </section>
 
         <section className="billing-builder__content">

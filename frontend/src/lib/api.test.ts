@@ -66,10 +66,43 @@ describe('API session expiry', () => {
       headers: { 'Content-Type': 'application/json' },
     }));
 
-    await expect(oldRequest).rejects.toBeInstanceOf(ApiError);
+    await expect(oldRequest).rejects.toThrow('Phiên đăng nhập đã thay đổi');
     expect(getToken()).toBe('new-token');
     expect(listener).not.toHaveBeenCalled();
     unsubscribe();
+  });
+
+  it.each(['query', 'mutation', 'text', 'blob', 'conflict'] as const)('rejects stale successful %s responses before they can update a new account', async (kind) => {
+    api.setToken('old-token');
+    let finish!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise<Response>(resolve => { finish = resolve; })));
+    const oldRequest = kind === 'query' ? api.get('/trips')
+      : (kind === 'mutation' || kind === 'conflict') ? api.put('/trips/1', {})
+      : kind === 'text' ? api.getForText('/statement') : api.getBlob('/export');
+    api.setToken('new-token');
+    finish(new Response(JSON.stringify({ privateData: 'previous account' }), { status: kind === 'conflict' ? 409 : 200 }));
+    // Keep this outside HTTP conflict handling: trip saves retry actual 409s.
+    await expect(oldRequest).rejects.toThrow('Phiên đăng nhập đã thay đổi');
+    await expect(oldRequest).rejects.not.toBeInstanceOf(ApiError);
+    expect(getToken()).toBe('new-token');
+  });
+
+  it.each([200, 401, 409])('guards session changes while reading a %s response body', async (status) => {
+    api.setToken('old-token');
+    let finishBody!: (body: object) => void;
+    let started!: () => void;
+    const bodyStarted = new Promise<void>(resolve => { started = resolve; });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      status, ok: status === 200,
+      json: () => { started(); return new Promise<object>(resolve => { finishBody = resolve; }); },
+    }));
+    const request = api.put('/trips/1', {});
+    await bodyStarted;
+    api.setToken('new-token');
+    finishBody({ error: 'old response' });
+    await expect(request).rejects.toThrow('Phiên đăng nhập đã thay đổi');
+    await expect(request).rejects.not.toBeInstanceOf(ApiError);
+    expect(getToken()).toBe('new-token');
   });
 });
 

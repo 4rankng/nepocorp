@@ -11,7 +11,7 @@
   padding: 8px 12px;
   border-radius: 11px;
   font-family: var(--font-body);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control, var(--fs-md));
   font-weight: 600;
   line-height: 1.35;
   border: 1px solid transparent;
@@ -27,6 +27,9 @@
   outline: 2px solid color-mix(in srgb, var(--accent) 72%, white);
   outline-offset: 2px;
 }
+
+.btn > svg, .btn > img { flex-shrink: 0; }
+[data-button-label-wrap="true"] [data-button-decoration]:not(.spin):not(.animate-spin) { display: none; }
 
 /* wireframe variants */
 .btn--primary {
@@ -66,8 +69,8 @@
   background: var(--danger-text);
   border-color: var(--danger-text);
 }
-.btn--sm { min-height: var(--control-h); padding: 7px 10px; font-size: var(--fs-xs); line-height: 1.35; }
-.btn--lg { padding: 7px 14px; font-size: var(--fs-sm); border-radius: 9px; min-height: var(--control-h); }
+.btn--sm { min-height: var(--control-h); padding: 7px 10px; font-size: var(--fs-sm); line-height: 1.35; }
+.btn--lg { padding: 7px 14px; font-size: var(--fs-control, var(--fs-md)); border-radius: 9px; min-height: var(--control-h); }
 .btn--icon { width: var(--control-h); min-width: var(--control-h); height: var(--control-h); min-height: var(--control-h); padding: 0; }
 .btn--icon.btn--sm { width: var(--control-h); min-width: var(--control-h); height: var(--control-h); min-height: var(--control-h); padding: 0; }
 
@@ -80,13 +83,14 @@
   .btn {
     min-height: 45px;
     padding: 11px 14px;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-control, var(--fs-md));
     white-space: normal;
   }
 
   .btn--sm {
     min-height: 45px;
     padding: 9px 11px;
+    font-size: var(--fs-sm);
   }
 
   .btn--icon {

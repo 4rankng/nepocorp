@@ -14,14 +14,14 @@
 }
 
 .ttp-header h1 {
-  font-size: 22px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   color: var(--fg-1);
   margin: 0 0 4px;
 }
 
 .ttp-header .ttp-sub {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
 }
 
@@ -29,7 +29,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
   text-decoration: none;
   min-height: 44px;
@@ -90,7 +90,7 @@
   align-items: center;
   gap: 6px;
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -98,7 +98,7 @@
 .ttp-section-head h2 {
   margin: 0;
   color: var(--fg-1);
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
   line-height: 1.35;
 }
@@ -106,7 +106,7 @@
 .ttp-section-head p {
   margin: 3px 0 0;
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.35;
 }
 
@@ -120,7 +120,7 @@
   border-radius: 8px;
   background: var(--surface, #fff);
   color: var(--fg-2);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 650;
   cursor: pointer;
   white-space: nowrap;
@@ -150,7 +150,7 @@
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
 .ttp-col-serial { width: 170px; }
@@ -223,7 +223,7 @@
   padding: 24px 16px;
   text-align: center;
   color: var(--fg-3);
-  font-size: 14px;
+  font-size: var(--fs-md);
 }
 
 /* Inline add form (mirrors config InlineForm layout). */
@@ -243,7 +243,7 @@
 
 .ttp-add .ttp-field label,
 .ttp-add .ttp-field__label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: var(--ink-2, var(--fg-2));
   font-weight: 650;
 }
@@ -255,7 +255,7 @@
   padding: 0 12px;
   border: 1px solid var(--line-2, var(--border-2));
   border-radius: 10px;
-  font-size: 13px;
+
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 252, 251, 0.96));
   color: var(--ink, var(--fg-1));
@@ -370,7 +370,7 @@
   border: 0;
   background: transparent;
   color: var(--ink, var(--fg-1));
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 650;
   text-align: left;
   cursor: pointer;
@@ -392,7 +392,7 @@
   align-items: center;
   padding: 0 14px;
   color: var(--ink-3, var(--fg-3));
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
 }
 
 .ttp-position-picker-manage {
@@ -558,7 +558,7 @@
   border-radius: 7px;
   background: transparent;
   color: var(--ink, var(--fg-1));
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.3;
   font-weight: 600;
   text-align: left;
@@ -628,7 +628,7 @@
 .ttp-dialog-head h2 {
   margin: 0;
   color: var(--ink, var(--fg-1));
-  font-size: 18px;
+  font-size: var(--fs-xl);
   line-height: 1.25;
 }
 
@@ -636,7 +636,7 @@
   margin: 4px 0 0;
   color: var(--fg-3);
   font-family: var(--font-mono, monospace);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 
@@ -673,7 +673,7 @@
 
 .ttp-edit-form .ttp-field label {
   color: var(--ink-2, var(--fg-2));
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 650;
 }
 
@@ -715,7 +715,7 @@
 }
 
 .ttp-position-head h2 {
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -723,7 +723,7 @@
 .ttp-position-head p {
   max-width: 420px;
   font-family: var(--font-sans, inherit);
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   line-height: 1.45;
 }
@@ -756,14 +756,14 @@
 
 .ttp-position-create-copy strong {
   color: var(--ink, var(--fg-1));
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 750;
   line-height: 1.25;
 }
 
 .ttp-position-create-copy span {
   color: var(--ink-3, var(--fg-3));
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.45;
 }
 
@@ -791,7 +791,7 @@
   border-color: var(--line-2, var(--border-2));
   border-radius: 9px;
   background: var(--surface, #fff);
-  font-size: 12.5px;
+
 }
 
 .ttp-position-add-btn {
@@ -801,7 +801,7 @@
   gap: 6px;
   padding: 0 14px;
   border-radius: 9px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   white-space: nowrap;
 }
 
@@ -812,7 +812,7 @@
   border-radius: 9px;
   background: var(--danger-soft, #FEF2F2);
   color: var(--danger-text, #991B1B);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 650;
   line-height: 1.35;
 }
@@ -892,7 +892,7 @@
 
 .ttp-position-name span {
   color: var(--ink, var(--fg-1));
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 750;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -937,7 +937,7 @@
 .ttp-position-empty strong {
   display: block;
   color: var(--ink, var(--fg-1));
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 750;
   line-height: 1.35;
 }
@@ -945,7 +945,7 @@
 .ttp-position-empty span {
   display: block;
   color: var(--ink-3, var(--fg-3));
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.45;
 }
 
@@ -973,7 +973,7 @@
   }
 
   .ttp-header h1 {
-    font-size: 20px;
+    font-size: var(--fs-2xl);
   }
 
   .ttp-section-head {
@@ -1205,13 +1205,13 @@
 
 .ttp-unmount-choice__main strong {
   color: var(--ink, var(--fg-1));
-  font-size: 14px;
+  font-size: var(--fs-md);
   font-weight: 650;
 }
 
 .ttp-unmount-choice__main small {
   color: var(--fg-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
 .ttp-unmount-reason {

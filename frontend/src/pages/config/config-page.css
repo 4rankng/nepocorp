@@ -80,7 +80,7 @@
   padding: 4px 9px;
   margin-left: 8px;
   border-radius: 999px;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -145,7 +145,7 @@
   letter-spacing: 0;
 }
 .cfg-page .cfg-field-hint {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 5px;
   line-height: 1.45;
@@ -170,8 +170,8 @@
   gap: 8px;
 }
 .cfg-page .cfg-section__heading-pill {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--fs-2xs);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -228,7 +228,7 @@
 }
 
 .cfg-page--company-info .company-info-preview-row__label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-3);
   letter-spacing: 0.04em;
@@ -334,7 +334,7 @@
 .debit-template-card__title strong {
   min-width: 0;
   color: var(--ink);
-  font-size: 15px;
+  font-size: var(--fs-md);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -346,7 +346,7 @@
   flex-wrap: wrap;
   gap: 8px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 650;
 }
 
@@ -401,13 +401,13 @@
 
 .debit-template-list-empty__copy strong,
 .debit-template-list-empty > strong {
-  font-size: 17px;
+  font-size: var(--fs-lg);
   line-height: 1.35;
   color: var(--ink);
 }
 
 .debit-template-list-empty__copy span {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   color: var(--ink-3);
 }
@@ -658,7 +658,7 @@
   }
   .routes-table tbody td[data-label]::before {
     content: attr(data-label) ":";
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--fg-3, var(--ink-3));
     text-transform: uppercase;
@@ -687,7 +687,7 @@
     content: none;
   }
   .routes-table tbody td:first-child[data-label] .row-strong {
-    font-size: 15px;
+    font-size: var(--fs-md);
     font-weight: 600;
     line-height: 1.35;
     color: var(--fg-1, var(--ink));
@@ -823,14 +823,14 @@
 
 .cfg-feature__description {
   color: var(--ink-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-body);
   line-height: 1.45;
 }
 
 .cfg-feature__state {
   color: var(--ink-3);
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 
@@ -858,7 +858,7 @@
   align-items: flex-start;
   gap: 8px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.5;
 }
 
@@ -927,7 +927,7 @@
 
 .cfg-provider-option small {
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   overflow-wrap: anywhere;
 }
 
@@ -979,7 +979,7 @@
 
 .cfg-form-success,
 .cfg-form-error {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 
 .cfg-form-success { color: var(--success); }
@@ -990,4 +990,33 @@
   .cfg-credentials-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Settings headers keep their copy and decorative icon on one row while the
+   copy can wrap within the available width. */
+.cfg-page--app-settings .panel__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.cfg-page--app-settings .panel__head > div {
+  min-width: 0;
+}
+
+.cfg-page--app-settings .panel__subtitle {
+  overflow-wrap: anywhere;
+}
+
+.cfg-page--app-settings .cfg-panel-action-icon {
+  margin-top: 2px;
+}
+
+.cfg-page .cfg-feature {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.cfg-page .cfg-feature:first-child {
+  border-top: 0;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -73,5 +73,47 @@ describe('SearchableSelect', () => {
     fireEvent.keyDown(search, { key: 'Enter' });
 
     expect(onChange).toHaveBeenCalledWith('2');
+  });
+
+  it.each(['Enter', 'Escape'])('returns focus to the trigger after %s', async (key) => {
+    render(<SearchableSelect id="routeId" value="" onChange={() => {}} options={ROUTES} />);
+    const trigger = screen.getByRole('button');
+    trigger.focus();
+    fireEvent.click(trigger);
+    const search = screen.getByRole('combobox');
+    await waitFor(() => expect(document.activeElement).toBe(search));
+
+    fireEvent.keyDown(search, { key });
+
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('closes when focus leaves the control without stealing the next field focus', () => {
+    render(<>
+      <SearchableSelect id="routeId" value="" onChange={() => {}} options={ROUTES} />
+      <input aria-label="Ghi chú" />
+    </>);
+    fireEvent.click(screen.getByRole('button'));
+    const search = screen.getByRole('combobox');
+    const next = screen.getByRole('textbox', { name: 'Ghi chú' });
+    fireEvent.blur(search, { relatedTarget: next });
+    next.focus();
+
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(document.activeElement).toBe(next);
+  });
+
+  it('does not propagate option selection or dismissal to a parent form shortcut', () => {
+    const onKeyDown = vi.fn();
+    render(<div onKeyDown={onKeyDown}>
+      <SearchableSelect id="routeId" value="" onChange={() => {}} options={ROUTES} />
+    </div>);
+    for (const key of ['Enter', 'Escape']) {
+      fireEvent.click(screen.getByRole('button'));
+      fireEvent.keyDown(screen.getByRole('combobox'), { key });
+    }
+
+    expect(onKeyDown).not.toHaveBeenCalled();
   });
 });

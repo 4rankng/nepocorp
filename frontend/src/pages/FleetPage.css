@@ -207,7 +207,7 @@
   background: var(--surface-3);
   border: 1px solid var(--line);
   color: var(--ink-2);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -335,7 +335,7 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   font-family: inherit;
-  font-size: var(--fs-xs);
+
   line-height: 1.35;
   color: var(--ink);
 }
@@ -661,7 +661,7 @@
   border-radius: 6px;
   background: var(--surface-3);
   color: var(--ink-2);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -909,12 +909,12 @@
   }
 
   .fleet-page .kpi__value {
-    font-size: 24px;
+    font-size: var(--fs-3xl);
     margin-bottom: 6px;
   }
 
   .fleet-page .kpi__value-unit {
-    font-size: 13px;
+    font-size: var(--fs-sm);
   }
 
   .fleet-page .kpi__meta {
@@ -926,12 +926,18 @@
 
   .fleet-page .fleet-kpi-meta {
     display: flex !important;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    gap: 4px 8px !important;
     width: 100%;
   }
 
   .fleet-page .fleet-kpi-meta > span {
+    flex: 0 0 auto;
     min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .fleet-page .fleet-kpi-meta__good,
@@ -941,14 +947,11 @@
     font-weight: 650 !important;
   }
 
-  .fleet-page .fleet-kpi-dot {
-    width: 5px !important;
-    height: 5px !important;
-    align-self: center;
-  }
-
+  /* Keep each status phrase together; separate dots must not consume the
+     narrow card width or become stranded on their own line. */
+  .fleet-page .fleet-kpi-dot,
   .fleet-page .fleet-kpi-meta__sep {
-    flex: 0 0 auto;
+    display: none;
   }
 
   .fleet-page .page-actions .btn {

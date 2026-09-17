@@ -1,102 +1,102 @@
-// Live-DB regression test: trip 229 on the synced prod DB is the trip the
-// customer was trying to save when the "Tổng phân bổ dầu (382 lít) phải bằng
-// tổng dầu chuyến (338 lít)" 400 fired. It is COMPLETED, route 40 has a
-// 378L fixed allowance, the trip's snapshot is 0 (route gained the
-// allowance after the trip was created), the per-km norm gives 338L, and
-// the user wanted to save 382L (378 + 4L supplement) into the allocation
-// panel. The fix lets the trip compute 382L from the route's allowance
-// regardless of status, so the allocation check passes.
-//
-// This test touches real rows on the synced prod DB and restores them.
+// Regression from customer trip 229: the route gained a 378L allowance after
+// creation, leaving the trip snapshot at 0. A completed trip must accept the
+// 382L allocation (378L + 4L supplement). Recreate those facts with owned
+// fixtures so the regression runs without reading or changing customer rows.
 
-import { after, describe, test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eq, inArray, and } from 'drizzle-orm';
-import { FuelMode, LoadingType } from '@tingting/shared';
+import { eq, and, or } from 'drizzle-orm';
+import { FuelMode, LoadingType, TripStatus } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { updateTripFigures } from '../services/trip-mutations.service';
-
-const TRIP_ID = 229;
-const SUPPLIER_ID = 10; // Petrolimex — used by other trips on the same route
-const FUEL_LITERS_BEFORE: string[] = [];
-const FIXED_ALLOWANCE_BEFORE: string[] = [];
-const VERSIONS_BEFORE: number[] = [];
-const ALLOCATION_IDS_TO_DELETE: number[] = [];
+import { disconnectRedis } from '../lib/redis';
 
 after(async () => {
-  if (ALLOCATION_IDS_TO_DELETE.length > 0) {
-    await db.delete(s.tripFuelAllocations)
-      .where(inArray(s.tripFuelAllocations.id, ALLOCATION_IDS_TO_DELETE));
-  }
-  if (FUEL_LITERS_BEFORE.length > 0 && FIXED_ALLOWANCE_BEFORE.length > 0) {
-    await db.update(s.trips).set({
-      fuelLiters: FUEL_LITERS_BEFORE[0],
-      fuelFixedAllowanceApplied: FIXED_ALLOWANCE_BEFORE[0],
-      fuelSupplierId: null,
-      version: VERSIONS_BEFORE[0],
-    }).where(eq(s.trips.id, TRIP_ID));
-  }
+  await disconnectRedis();
   await client.end();
 });
 
-describe('customer repro: trip 229 (synced prod DB)', () => {
-  test('COMPLETED trip with snapshot=0 and route allowance=378L saves 382L allocation', async () => {
-    const [trip] = await db.select().from(s.trips).where(eq(s.trips.id, TRIP_ID)).limit(1);
-    if (!trip) throw new Error(`Trip ${TRIP_ID} missing — was the prod DB re-synced?`);
-    if (trip.status !== 'COMPLETED') {
-      throw new Error(`Trip ${TRIP_ID} expected COMPLETED, got ${trip.status}`);
-    }
+test('COMPLETED trip with snapshot=0 and route allowance=378L saves 382L allocation', async (t) => {
+  const fixtureIds: {
+    customerId?: number;
+    supplierId?: number;
+    routeId?: number;
+    cargoTypeId?: number;
+    tripId?: number;
+  } = {};
 
-    // Snapshot original values so the test cleans up after itself.
-    FUEL_LITERS_BEFORE.push(String(trip.fuelLiters));
-    FIXED_ALLOWANCE_BEFORE.push(String(trip.fuelFixedAllowanceApplied));
-    VERSIONS_BEFORE.push(trip.version);
-
-    const [route] = await db.select().from(s.routes)
-      .where(eq(s.routes.id, trip.routeId)).limit(1);
-    if (!route || Number(route.fixedFuelAllowance) !== 378) {
-      throw new Error(`Route ${trip.routeId} expected fixedFuelAllowance=378, got ${route?.fixedFuelAllowance}`);
-    }
-
-    const legs = await db.select().from(s.tripLegs)
-      .where(eq(s.tripLegs.tripId, TRIP_ID))
-      .orderBy(s.tripLegs.sequence);
-    assert.equal(legs.length, 2, 'Trip 229 should have 2 legs (round trip)');
-    assert.equal(Number(legs[0].km), 487);
-    assert.equal(legs[0].loadingType, 'HANG');
-    assert.equal(legs[1].loadingType, 'VO');
-
-    const updated = await updateTripFigures(TRIP_ID, {
-      legs: legs.map(l => ({
-        sequence: l.sequence,
-        origin: l.origin,
-        destination: l.destination,
-        km: Number(l.km),
-        loadingType: l.loadingType === 'HANG' ? LoadingType.HANG : LoadingType.VO,
-      })),
-      fuelMode: trip.fuelMode === 'FLAT_RATE' ? FuelMode.FLAT_RATE : FuelMode.AUTO,
-      fuelLitersOverride: trip.fuelLitersOverride ? Number(trip.fuelLitersOverride) : null,
-      fuelSupplementLiters: Number(trip.fuelSupplementLiters || 0),
-      fuelAllocations: [{ supplierId: SUPPLIER_ID, liters: 382, paymentMethod: 'CREDIT' }],
-      expectedVersion: trip.version,
-      userId: 1,
-    });
-
-    assert.equal(updated.fuelLiters, '382.00',
-      'Trip total should be route allowance (378) + supplement (4) = 382L');
-    assert.equal(updated.fuelFixedAllowanceApplied, '378.00',
-      'Snapshot was 0; should re-read live route value');
-    assert.equal(updated.fuelSupplierId, SUPPLIER_ID,
-      'Primary fuel supplier should be set from the allocation');
-
-    const [allocation] = await db.select().from(s.tripFuelAllocations)
-      .where(and(
-        eq(s.tripFuelAllocations.tripId, TRIP_ID),
-        eq(s.tripFuelAllocations.liters, '382.00'),
-        eq(s.tripFuelAllocations.supplierId, SUPPLIER_ID),
+  t.after(async () => {
+    const { customerId, supplierId, routeId, cargoTypeId, tripId } = fixtureIds;
+    if (tripId !== undefined) {
+      await db.delete(s.tripFuelAllocations).where(eq(s.tripFuelAllocations.tripId, tripId));
+      await db.delete(s.tripLegs).where(eq(s.tripLegs.tripId, tripId));
+      await db.delete(s.tripContainers).where(eq(s.tripContainers.tripId, tripId));
+      await db.delete(s.ledger).where(and(
+        eq(s.ledger.txnId, tripId),
+        or(
+          and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, customerId!)),
+          and(eq(s.ledger.entityType, 'VENDOR'), eq(s.ledger.entityId, supplierId!)),
+        ),
       ));
-    assert.ok(allocation, 'The 382L allocation row should be persisted');
-    ALLOCATION_IDS_TO_DELETE.push(allocation.id);
+      await db.delete(s.trips).where(eq(s.trips.id, tripId));
+    }
+    if (cargoTypeId !== undefined) await db.delete(s.cargoTypes).where(eq(s.cargoTypes.id, cargoTypeId));
+    if (routeId !== undefined) await db.delete(s.routes).where(eq(s.routes.id, routeId));
+    if (supplierId !== undefined) await db.delete(s.suppliers).where(eq(s.suppliers.id, supplierId));
+    if (customerId !== undefined) await db.delete(s.customers).where(eq(s.customers.id, customerId));
   });
+
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const [customer] = await db.insert(s.customers).values({ name: `Fuel regression customer ${suffix}` }).returning();
+  fixtureIds.customerId = customer.id;
+  const [supplier] = await db.insert(s.suppliers).values({ name: `Fuel regression vendor ${suffix}`, isFuelSupplier: true }).returning();
+  fixtureIds.supplierId = supplier.id;
+  const [route] = await db.insert(s.routes).values({ name: `Fuel regression route ${suffix}`, fixedFuelAllowance: '378' }).returning();
+  fixtureIds.routeId = route.id;
+  const [cargo] = await db.insert(s.cargoTypes).values({ name: `Fuel regression cargo ${suffix}` }).returning();
+  fixtureIds.cargoTypeId = cargo.id;
+  const [trip] = await db.insert(s.trips).values({
+    tripCode: `FUEL-229-${suffix}`.slice(0, 50),
+    customerId: customer.id,
+    routeId: route.id,
+    cargoTypeId: cargo.id,
+    status: TripStatus.COMPLETED,
+    carrierType: 'OWN',
+    departureDate: '2026-09-09',
+    fuelMode: FuelMode.AUTO,
+    fuelFixedAllowanceApplied: '0',
+    fuelPriceApplied: '25000',
+    fuelLoadedNormApplied: '43',
+    fuelEmptyNormApplied: '25',
+    fuelSupplementNormApplied: '3',
+    fuelSupplementLiters: '4',
+    fuelLiters: '338',
+  }).returning();
+  fixtureIds.tripId = trip.id;
+  const legs = [
+    { sequence: 1, origin: 'Nam Định Vũ', destination: 'Lai Châu', km: 487, loadingType: LoadingType.HANG },
+    { sequence: 2, origin: 'Lai Châu', destination: 'Nam Định Vũ', km: 487, loadingType: LoadingType.VO },
+  ];
+  await db.insert(s.tripLegs).values(legs.map(leg => ({ tripId: trip.id, ...leg })));
+
+  const updated = await updateTripFigures(trip.id, {
+    legs,
+    fuelMode: FuelMode.AUTO,
+    fuelLitersOverride: null,
+    fuelSupplementLiters: 4,
+    fuelAllocations: [{ supplierId: supplier.id, liters: 382, paymentMethod: 'CREDIT' }],
+    expectedVersion: trip.version,
+  });
+
+  assert.equal(updated.fuelLiters, '382.00', '378L route allowance plus 4L supplement');
+  assert.equal(updated.fuelFixedAllowanceApplied, '378.00', 'zero snapshot picks up the route allowance');
+  assert.equal(updated.fuelSupplierId, supplier.id, 'allocation determines the primary fuel supplier');
+
+  const [allocation] = await db.select().from(s.tripFuelAllocations).where(and(
+    eq(s.tripFuelAllocations.tripId, trip.id),
+    eq(s.tripFuelAllocations.liters, '382.00'),
+    eq(s.tripFuelAllocations.supplierId, supplier.id),
+  ));
+  assert.ok(allocation, 'the 382L allocation is persisted');
 });

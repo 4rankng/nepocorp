@@ -372,6 +372,7 @@ export const qk = {
 
   configCounts: {
     base: 'cfg-count',
+    all: ['cfg-count'],
     penaltyReasons: ['cfg-count', 'penalty-reasons'],
     roadAllowances: ['cfg-count', 'road-allowances'],
     drivers: ['cfg-count', 'drivers'],
@@ -400,13 +401,6 @@ export const qk = {
 
   crud: {
     entity: (endpoint: string) => [endpoint] as const,
-  },
-
-  /* ── Onboarding (Phase 4): tour progress + checklist tasks ─────────── */
-
-  onboarding: {
-    progressAll: ['onboarding', 'progress'] as const,
-    tasksAll: ['onboarding', 'tasks'] as const,
   },
 
 } as const;
@@ -438,6 +432,6 @@ export function invalidateAllCatalogs(qc: {
       // eslint-disable-next-line @tingting/no-bare-query-key -- key is a canonical catalog prefix from allCatalogKeys, not an arbitrary string
       qc.invalidateQueries({ queryKey: [key] }),
     ),
-    qc.invalidateQueries({ queryKey: [qk.configCounts.base] }),
+    qc.invalidateQueries({ queryKey: qk.configCounts.all }),
   ]);
 }

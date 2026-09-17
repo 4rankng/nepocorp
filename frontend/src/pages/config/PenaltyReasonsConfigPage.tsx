@@ -26,15 +26,31 @@ const pageStyles = `
   }
   .penalty-reasons-page .kpi-grid .kpi__icon svg { width: 15px; height: 15px; }
   .penalty-reasons-page .kpi-grid .kpi__value {
-    font-size: 22px;
+    font-size: var(--fs-3xl);
     margin-bottom: 4px;
   }
   .penalty-reasons-page .kpi-grid .kpi__value-unit {
-    font-size: 13px;
+    font-size: var(--fs-sm);
   }
   .penalty-reasons-page .kpi-grid .kpi__meta {
     font-size: var(--fs-xs);
     line-height: 1.35;
+  }
+
+  .penalty-reasons-page .filter-bar__search {
+    flex: 1 1 220px;
+    min-width: min(100%, 220px);
+    max-width: none;
+  }
+  .penalty-reasons-page .filter-bar__search input {
+    min-width: 0;
+    font-size: var(--fs-control);
+  }
+  @media (max-width: 640px) {
+    .penalty-reasons-page .filter-bar__search {
+      flex-basis: 100%;
+      width: 100%;
+    }
   }
 
   /* ── Violation card grid ── */
@@ -65,7 +81,7 @@ const pageStyles = `
   .pr-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .pr-card-title {
     font-family: var(--font-display);
-    font-size: 13.5px;
+    font-size: var(--fs-md);
     font-weight: 700;
     letter-spacing: 0;
     white-space: normal;
@@ -108,15 +124,15 @@ const pageStyles = `
   .pr-fine .k { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
   .pr-fine .v {
     font-family: var(--font-mono);
-    font-size: 16px; font-weight: 700;
+    font-size: var(--fs-lg); font-weight: 700;
     letter-spacing: 0;
     color: var(--ink);
   }
-  .pr-fine .v .cur { font-size: 12px; color: var(--ink-3); margin-left: 2px; }
+  .pr-fine .v .cur { font-size: var(--fs-xs); color: var(--ink-3); margin-left: 2px; }
   .pr-usage { text-align: right; }
   .pr-usage .k { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .pr-usage .v { font-size: 12px; font-weight: 600; color: var(--ink-2); }
-  .pr-usage .v b { font-family: var(--font-mono); color: var(--accent); font-size: 14px; }
+  .pr-usage .v { font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); }
+  .pr-usage .v b { font-family: var(--font-mono); color: var(--accent); font-size: var(--fs-md); }
   .pr-usage.zero .v b { color: var(--ink-3); }
 
   /* ── Animations ── */
@@ -131,7 +147,7 @@ const pageStyles = `
     border: 1px solid var(--line);
     border-radius: var(--r);
     padding: 10px 12px;
-    font-size: 13.5px;
+    font-size: var(--fs-md);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
     background: #fff;
@@ -143,7 +159,7 @@ const pageStyles = `
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; padding: 80px 20px;
     color: var(--ink-3); gap: 14px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
   }
   .pr-spinner {
     width: 28px; height: 28px;
@@ -231,7 +247,7 @@ function PenaltyReasonForm({
                 background: severity === opt.value ? `${opt.color}12` : 'var(--surface)',
                 color: severity === opt.value ? opt.color : 'var(--ink-2)',
                 fontWeight: 600,
-                fontSize: '13px',
+                fontSize: 'var(--fs-control)',
                 cursor: 'pointer',
                 transition: '0.15s ease',
               }}

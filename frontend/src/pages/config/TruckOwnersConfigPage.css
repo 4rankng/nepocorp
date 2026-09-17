@@ -1,0 +1,86 @@
+.truck-owners-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.truck-owners-header__count {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.truck-owners-header__add { flex: 0 0 auto; white-space: nowrap; }
+
+.truck-owners-empty {
+  padding: 32px 24px;
+  color: var(--ink-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.truck-owners-table {
+  min-width: 0;
+  table-layout: fixed;
+  font-size: var(--fs-body);
+}
+
+.truck-owners-table th,
+.truck-owners-table td {
+  padding: 12px 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.truck-owners-table th:first-child { width: 28%; }
+.truck-owners-table th:nth-child(2) { width: 13%; }
+.truck-owners-table th:nth-child(3) { width: 17%; }
+.truck-owners-table th:nth-child(4) { width: 20%; }
+.truck-owners-table th:last-child { width: 22%; }
+.truck-owners-table__partner { font-weight: 600; }
+.truck-owners-table__partner-content { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.truck-owners-table__partner-content > span { min-width: 0; }
+.truck-owners-table__percentage { text-align: right; font-weight: 600; }
+.truck-owners-table__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.truck-owners-table__actions .btn { padding-inline: 12px; }
+.truck-owner-form__field { flex: 1 1 150px; min-width: 0; }
+.truck-owner-form__field--name { flex: 2 1 200px; }
+.truck-owner-form__field label { white-space: normal; }
+
+@media (max-width: 900px) {
+  .truck-owners-table,
+  .truck-owners-table tbody,
+  .truck-owners-table tr,
+  .truck-owners-table td { display: block; width: 100%; }
+  .truck-owners-table thead { display: none; }
+  .truck-owners-table tr { padding: 12px 16px; }
+  .truck-owners-table td { padding: 6px 0; border: 0; text-align: left; }
+  .truck-owners-table td[data-label] {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+  .truck-owners-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ink-3);
+    font-size: var(--fs-label);
+    font-weight: 500;
+  }
+  .truck-owners-table td[data-label] > * { justify-self: start; }
+  .truck-owners-table__actions { justify-content: flex-start; padding-top: 6px; }
+  .truck-owners-table .truck-owners-form-row { padding-block: 8px; }
+}
+
+@media (max-width: 640px) {
+  .truck-owner-form__field,
+  .truck-owner-form__field--name { flex-basis: 100%; }
+}

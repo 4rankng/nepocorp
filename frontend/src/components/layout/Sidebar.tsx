@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronRight,
@@ -15,6 +15,8 @@ import type { Role } from '@tingting/shared';
 import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 import { BRAND } from '../../brand';
+import { useDialogFocus } from '../shared/useDialogFocus';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 function getRoleLabel(role: Role): string {
   return ROLE_LABELS[role] || role;
@@ -46,44 +48,13 @@ function Sidebar({
 }: SidebarProps) {
   const animRef = useSidebarAnimations();
   const asideRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (!isMobileViewport || !sidebarOpen) return;
-    const sidebar = asideRef.current;
-    if (!sidebar) return;
-
-    const focusableSelector = [
-      'button:not(:disabled)',
-      'a[href]',
-      'input:not(:disabled)',
-      'select:not(:disabled)',
-      'textarea:not(:disabled)',
-      '[tabindex]:not([tabindex="-1"])',
-    ].join(',');
-    const focusable = Array.from(sidebar.querySelectorAll<HTMLElement>(focusableSelector));
-    focusable[0]?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onToggleSidebar();
-        return;
-      }
-      if (event.key !== 'Tab' || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileViewport, onToggleSidebar, sidebarOpen]);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const isMobileDialog = isMobileViewport && sidebarOpen && user.role !== 'DRIVER';
+  useDialogFocus(asideRef, isMobileDialog);
+  useClickOutside(footerRef, onCloseUserMenu, {
+    escapeKey: true,
+    enabled: userMenuOpen && (!isMobileViewport || user.role !== 'DRIVER'),
+  });
 
   // Icon-only (collapsed) rail: show an instant styled tooltip on hover/focus.
   // The native `title` attribute is slow (~1s) and unstyled, and the item labels
@@ -201,8 +172,19 @@ function Sidebar({
         ref={asideRef}
         id="sidebar-navigation"
         className={`sidebar ${sidebarOpen ? 'open' : ''}`}
+        role={isMobileDialog ? 'dialog' : undefined}
+        aria-modal={isMobileDialog ? true : undefined}
+        aria-label="Điều hướng chính"
+        tabIndex={-1}
         aria-hidden={isMobileViewport && !sidebarOpen ? true : undefined}
         inert={isMobileViewport && !sidebarOpen}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && isMobileDialog && !userMenuOpen) {
+            event.preventDefault();
+            event.stopPropagation();
+            onToggleSidebar();
+          }
+        }}
       >
         <div className="sidebar-brand">
           <div className="sidebar-brand-logo">
@@ -222,7 +204,7 @@ function Sidebar({
           </button>
         </div>
 
-        <nav className="sidebar-nav" ref={(node) => {
+        <nav className="sidebar-nav" aria-label="Các trang" ref={(node) => {
           (animRef as React.MutableRefObject<HTMLElement | null>).current = node;
           (navRef as React.MutableRefObject<HTMLElement | null>).current = node;
         }}>
@@ -234,7 +216,7 @@ function Sidebar({
           {renderNavSection('Hệ thống', 'system')}
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" ref={footerRef}>
           <button className="sidebar-user" onClick={onToggleUserMenu} aria-expanded={userMenuOpen} aria-label="Menu người dùng">
             <div className="avatar">
               <User size={18} />

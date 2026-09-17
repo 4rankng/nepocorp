@@ -28,9 +28,11 @@ async function resolveApiKey(): Promise<string> {
 }
 
 /** Embed one or more texts. Returns vectors aligned to the input order. */
-export async function embedTexts(texts: string[]): Promise<number[][]> {
+export async function embedTexts(texts: string[], options?: { signal?: AbortSignal }): Promise<number[][]> {
   if (texts.length === 0) return [];
+  options?.signal?.throwIfAborted();
   const key = await resolveApiKey();
+  options?.signal?.throwIfAborted();
   if (!key) {
     throw new Error('Embedding yêu cầu OpenRouter API key (chưa cấu hình).');
   }
@@ -38,7 +40,10 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += EMBED_BATCH_SIZE) {
     const batch = texts.slice(i, i + EMBED_BATCH_SIZE);
+    options?.signal?.throwIfAborted();
     const controller = new AbortController();
+    const abort = () => controller.abort();
+    options?.signal?.addEventListener('abort', abort, { once: true });
     const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
     try {
       const res = await fetch(`${OPENROUTER_BASE_URL}/embeddings`, {
@@ -60,14 +65,15 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
       for (const d of data.data) out.push(d.embedding);
     } finally {
       clearTimeout(timer);
+      options?.signal?.removeEventListener('abort', abort);
     }
   }
   return out;
 }
 
 /** Embed a single text (convenience for the fast-lane query path). */
-export async function embedText(text: string): Promise<number[]> {
-  const [vec] = await embedTexts([text]);
+export async function embedText(text: string, options?: { signal?: AbortSignal }): Promise<number[]> {
+  const [vec] = await embedTexts([text], options);
   if (!vec) throw new Error('OpenRouter trả về embedding rỗng.');
   return vec;
 }

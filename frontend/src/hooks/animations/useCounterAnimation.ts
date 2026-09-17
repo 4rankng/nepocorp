@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { animate } from 'animejs';
+import { usePrefersReducedMotion } from '../usePrefersReducedMotion';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -49,16 +50,23 @@ export function useCounterAnimation({
   stagger: staggerMs = 80,
 }: CounterOptions = {}) {
   const animationsRef = useRef<ReturnType<typeof animate>[]>([]);
+  const targetsRef = useRef<CounterTarget[]>([]);
+  const reducedMotion = usePrefersReducedMotion();
 
   const animateCounters = useCallback(
     (targets: CounterTarget[]) => {
       // Cancel any running counter animations
       animationsRef.current.forEach((a) => a.pause());
       animationsRef.current = [];
+      targetsRef.current = targets;
 
       targets.forEach(
         ({ el, value, prefix = '', suffix = '', locale = 'vi-VN', format }, i) => {
           if (!el) return;
+          if (reducedMotion) {
+            el.textContent = format ? format(value) : `${prefix}${Math.round(value).toLocaleString(locale)}${suffix}`;
+            return;
+          }
           const obj = { val: 0 };
           const anim = animate(obj, {
             val: value,
@@ -75,8 +83,14 @@ export function useCounterAnimation({
         },
       );
     },
-    [duration, delay, staggerMs],
+    [duration, delay, staggerMs, reducedMotion],
   );
+
+  // A preference change during an animation must leave the authoritative
+  // value visible, rather than freezing the counter halfway through.
+  useEffect(() => {
+    if (reducedMotion) animateCounters(targetsRef.current);
+  }, [reducedMotion, animateCounters]);
 
   // Cleanup on unmount
   useEffect(() => {

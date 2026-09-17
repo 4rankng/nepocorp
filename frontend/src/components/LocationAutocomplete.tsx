@@ -44,7 +44,7 @@ export function LocationAutocomplete({
     setSessionToken(Math.random().toString(36).substring(2, 15));
   }, []);
 
-  useClickOutside(wrapperRef, closeDropdown, { escapeKey: true });
+  useClickOutside(wrapperRef, closeDropdown, { escapeKey: true, enabled: isOpen });
 
   // Cached location suggestions; fires once per session for all autocomplete inputs.
   const { data: ports = [] } = useQuery<Port[]>({

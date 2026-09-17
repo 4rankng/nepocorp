@@ -197,7 +197,7 @@
   .pv-counter {
     min-width: 42px;
     padding-left: 2px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: rgba(255,255,255,0.86);
   }
 

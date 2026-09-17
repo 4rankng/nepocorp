@@ -14,16 +14,23 @@ export interface PaginationParams {
   offset: number;
 }
 
+function parseQueryInteger(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'string' ? parseInt(value, 10) : NaN;
+  return Number.isSafeInteger(parsed) && parsed !== 0 ? parsed : fallback;
+}
+
 export function parsePagination(
   req: Request,
-  defaults?: { page?: number; limit?: number; maxLimit?: number },
+  defaults?: { page?: number; limit?: number; maxLimit?: number; limitParam?: 'limit' | 'pageSize' },
 ): PaginationParams {
   const defaultPage = defaults?.page ?? 1;
   const defaultLimit = defaults?.limit ?? 50;
   const maxLimit = defaults?.maxLimit ?? 100;
 
-  const page = Math.max(1, parseInt(req.query.page as string, 10) || defaultPage);
-  const limit = Math.min(maxLimit, parseInt(req.query.limit as string, 10) || defaultLimit);
+  const limit = Math.max(1, Math.min(maxLimit, parseQueryInteger(req.query[defaults?.limitParam ?? 'limit'], defaultLimit)));
+  // Keep the derived offset representable as an integer as well as the page.
+  const maxPage = Math.floor(Number.MAX_SAFE_INTEGER / limit);
+  const page = Math.min(maxPage, Math.max(1, parseQueryInteger(req.query.page, defaultPage)));
 
   return { page, limit, offset: (page - 1) * limit };
 }

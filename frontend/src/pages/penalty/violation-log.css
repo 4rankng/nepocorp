@@ -79,12 +79,12 @@
 }
 
 .plog-sep {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-4);
 }
 
 .plog-trip {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: var(--font-mono);
   color: var(--accent);
@@ -118,7 +118,7 @@
   border: 1px solid rgba(0, 177, 79, 0.15);
   border-radius: 999px;
   color: var(--accent-ink);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   background: transparent;
   min-height: 36px;
   padding: 7px 12px;
-  font-size: var(--fs-xs);
+
   font-weight: 600;
   color: var(--ink-3);
   border-radius: 6px;
@@ -225,7 +225,7 @@
 
 .penalty-page .count-pill {
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -254,7 +254,7 @@
   height: 26px;
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   background: var(--surface-3);
   color: var(--ink-3);
@@ -303,7 +303,7 @@
 }
 
 .penalty-driver-info .role {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -324,7 +324,7 @@
 }
 
 .penalty-streak-num .unit {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -406,7 +406,7 @@
 }
 
 .penalty-money .unit {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   margin-left: 3px;
@@ -421,10 +421,10 @@
   min-width: 44px;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: 0.6px;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
 }
 
 .penalty-grade.a-plus {
@@ -512,7 +512,7 @@
   color: var(--ink-3);
   padding: 0 5px;
   border-radius: 4px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
 }
 

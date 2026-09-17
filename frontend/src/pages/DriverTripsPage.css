@@ -1,10 +1,4 @@
 /* ============================================================================
- * DriverTripsPage — TingTing
- * Card-based trip list with bento grid cards, status strips, filter pills
- * ========================================================================== */
-
-.driver-trips-page {
-}
 
 /* Filter pill bar — reuse .fwd-filter-pill classes from FwdFilterPills.css */
 .driver-trips-filter-bar {
@@ -65,7 +59,7 @@
   grid-row: 1;
   min-width: 0;
   font-weight: 600;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--fg-1);
   line-height: 1.35;
   align-self: center;
@@ -76,7 +70,7 @@
 .dt-card__salary {
   grid-column: 2;
   grid-row: 1;
-  font-size: 15px;
+  font-size: var(--fs-md);
   font-weight: 700;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

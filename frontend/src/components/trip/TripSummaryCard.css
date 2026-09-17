@@ -99,7 +99,6 @@
   font-weight: var(--fw-bold);
 }
 .tc-summary-row--total .tc-summary-row__val {
-  color: var(--accent);
   font-size: var(--fs-md);
 }
 
@@ -295,7 +294,7 @@
   gap: 12px;
   padding: 9px 0;
   min-height: 45px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   border-radius: 6px;
   transition: background var(--t-fast, 120ms);
 }
@@ -396,7 +395,7 @@
   border-top: 1px dashed var(--line);
 }
 .tc-totals__profit-label {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   color: var(--ink);
   letter-spacing: 0.01em;
@@ -406,7 +405,7 @@
   align-items: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-extrabold);
   letter-spacing: var(--tracking-tight);
 }
@@ -443,5 +442,5 @@
 @media (max-width: 640px) {
   .tc-totals { padding: 18px 18px 14px; }
   .tc-totals__revenue-value { font-size: var(--fs-xl); }
-  .tc-totals__profit-val { font-size: 18px; }
+  .tc-totals__profit-val { font-size: var(--fs-xl); }
 }

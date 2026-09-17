@@ -18,7 +18,6 @@ import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget'
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
-import { onboardingEvents } from '../lib/onboardingEvents';
 import './DashboardPage.css';
 import { CostBreakdown, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
 import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
@@ -105,12 +104,6 @@ export default function DashboardPage() {
 
   // KPI refs for counter animation — point to <span> wrapping just the number
   const kpiRefs = useRef<Record<string, HTMLSpanElement | null>>({});
-
-  // Completing the orientation task is tied to actually opening this page,
-  // not to a tutorial button or an unrelated dashboard event.
-  useEffect(() => {
-    onboardingEvents.emit('fleet.dashboard_viewed');
-  }, []);
 
   const {
     stats, loading, prevPnlReport,

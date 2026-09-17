@@ -62,7 +62,7 @@
   background: var(--surface);
   cursor: pointer;
   color: var(--ink-2);
-  font-size: var(--fs-md);
+
   display: grid;
   place-items: center;
 }
@@ -182,7 +182,7 @@
 }
 
 .badge {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: 0.04em;
   padding: 4px 9px;

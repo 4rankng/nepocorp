@@ -163,7 +163,7 @@
   background: var(--surface-3);
   color: var(--ink-3);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--fs-2xs);
   font-weight: var(--fw-semibold);
   line-height: 1;
   border: 1px solid var(--line);
@@ -193,7 +193,7 @@
 .cmd-palette__foot .cmd-palette__kbd {
   min-width: 16px;
   height: 16px;
-  font-size: 9px;
+  font-size: var(--fs-2xs);
 }
 
 /* ─── Mobile — full-bleed, larger touch targets ─────────────────────────── */

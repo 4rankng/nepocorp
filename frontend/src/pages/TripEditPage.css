@@ -63,7 +63,7 @@
 
 .tc-page-title {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
   color: var(--fg-1, #0A0A0A);
@@ -76,7 +76,7 @@
 
 .tc-page-sub {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
   white-space: normal;
   overflow: visible;
@@ -146,10 +146,6 @@
   border-bottom: 0;
 }
 
-/* Span classes no longer needed for flex layout, but kept to avoid breaking TSX */
-.tc-card--span-1 { }
-.tc-card--span-2 { }
-
 /* ── Flat Section (Formerly Bento card) ── */
 .tc-card {
   display: flex;
@@ -178,14 +174,14 @@
 }
 
 .tc-card-title {
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--fg-1, #0A0A0A);
   letter-spacing: 0;
 }
 
 .tc-card-sub {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
   line-height: 1.45;
   letter-spacing: 0.005em;
@@ -207,7 +203,7 @@
   min-width: 0;
 }
 .tc-field-label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--fg-2);
   letter-spacing: 0.01em;
@@ -311,7 +307,7 @@
 }
 
 .tc-rail-notice {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--fg-3);
   line-height: 1.5;
   letter-spacing: 0.005em;
@@ -320,7 +316,7 @@
   font-weight: 600;
   color: var(--fg-2);
   margin-bottom: 3px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .tc-rail-error {
@@ -329,14 +325,14 @@
   border: 1px solid rgba(199, 123, 92, 0.25);
   border-radius: 10px;
   color: var(--copper);
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.45;
 }
 .tc-rail-error-title {
   font-weight: 700;
   margin-bottom: 2px;
   color: var(--copper);
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .tc-rail-btn {
@@ -399,13 +395,13 @@
     left: 14px;
     right: 14px;
   }
-  .tc-page-title { font-size: 19px; }
+  .tc-page-title { font-size: var(--fs-2xl); }
   
   .tc-card-head {
     margin-bottom: 12px;
   }
-  .tc-card-title { font-size: 15px; }
-  .tc-card-sub { font-size: 12px; }
+  .tc-card-title { font-size: var(--fs-lg); }
+  .tc-card-sub { font-size: var(--fs-xs); }
   .tc-card-body {
     gap: 12px;
   }

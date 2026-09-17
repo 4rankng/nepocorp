@@ -17,8 +17,6 @@ export interface AuthUser {
   capabilities?: string[];
   /** Assistant (bot) enabled for this deployment (BOT_ENABLE). Launcher hides when false. */
   botEnabled?: boolean;
-  /** Onboarding tutorial enabled app-wide (admin toggle). Checklist panel + tours hide when false. */
-  onboardingEnabled?: boolean;
 }
 
 interface AuthContextType {
@@ -52,9 +50,9 @@ async function fetchAuthUser(): Promise<AuthUser | null> {
   try {
     return await api.get<AuthUser>('/auth/me');
   } catch (err) {
-    // Any failure to validate the token (network, 401, malformed) means
-    // the user is effectively logged out — drop the bad token.
-    if (err instanceof ApiError) api.clearToken();
+    // An older auth request can finish after another account has signed in.
+    // Only discard the rejected token that this request actually used.
+    if (err instanceof ApiError && err.status === 401 && getToken() === token) api.clearToken();
     return null;
   }
 }
@@ -62,6 +60,17 @@ async function fetchAuthUser(): Promise<AuthUser | null> {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [sessionExpired, setSessionExpired] = useState(false);
+
+  const clearSessionData = useCallback(() => {
+    // Keep the auth observer, but cancel its old read before publishing a new
+    // session. Otherwise a background /auth/me response can replace that user.
+    void queryClient.cancelQueries({ queryKey: qk.auth.me, exact: true });
+    // Most domain keys are shared across accounts. Removing them also cancels
+    // pending queries so an old response cannot populate the next user's cache.
+    // Keep the auth observer subscribed while publishing the new session.
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+    queryClient.getMutationCache().clear();
+  }, [queryClient]);
 
   // Cached at the TanStack level: login/logout invalidates the key, not the
   // entire app. The previous useEffect+fetch approach bypassed the cache
@@ -80,24 +89,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         identifier,
         password,
       });
+      clearSessionData();
       api.setToken(res.token);
       setSessionExpired(false);
       queryClient.setQueryData(qk.auth.me, res.user);
     },
-    [queryClient],
+    [queryClient, clearSessionData],
   );
 
   const logout = useCallback(() => {
-    // Idempotent: useAuthedQuery invokes logout() on any 401/403, so during a
-    // logout teardown several in-flight queries may race to log out again.
+    // Idempotent: during logout, in-flight requests may also expire the session.
     // Short-circuit once the cached user is already null to avoid redundant
     // token clears / cache writes.
     if (queryClient.getQueryData(qk.auth.me) === null) return;
     disposeAgentSocket(); // drop the assistant socket so a stale token isn't reused
     clearAgentConversation(); // forget the resumed thread so the next user starts fresh
+    clearSessionData();
     api.clearToken();
     queryClient.setQueryData(qk.auth.me, null);
-  }, [queryClient]);
+  }, [queryClient, clearSessionData]);
 
   useEffect(
     () => onSessionExpired(() => {

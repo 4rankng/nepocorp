@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
  *
  * Extracted from local consts duplicated across FuelSection, TripInfoCard,
  * TrailerFormModal, CustomersPage, SupplierListPage, and RoutesConfigPage.
- * Keep these visually byte-identical to the originals.
+ * Font sizing follows the shared UI scale.
  *
  * - selectStyle          — base: custom caret, no explicit width. Use when the
  *                          parent .field / .input rule already sets width:100%.
@@ -29,7 +29,7 @@ export const selectStyleFullWidth: CSSProperties = {
 
 export const labelStyle: CSSProperties = {
   display: 'block',
-  fontSize: 12,
+  fontSize: 'var(--fs-label)',
   fontWeight: 600,
   color: 'var(--ink-2)',
   marginBottom: 6,

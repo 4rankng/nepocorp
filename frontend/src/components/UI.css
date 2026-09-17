@@ -27,8 +27,8 @@
 
 /* Shared field styles (used across 16+ pages) */
 .field { margin-bottom: 16px; }
-.field label { display: block; font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); margin-bottom: 7px; }
-.field .input { font-size: var(--fs-sm); }
+.field label { display: block; font-size: var(--fs-label); font-weight: 600; color: var(--ink-2); margin-bottom: 7px; }
+.field .input { font-size: var(--fs-control); }
 .field-help { font-size: var(--fs-xs); line-height: 1.35; color: var(--ink-3); margin-top: 6px; }
 
 /* Empty states */
@@ -55,14 +55,14 @@
 }
 .empty-state-title {
   font-family: var(--font-display);
-  font-size: var(--fs-md);
+  font-size: var(--fs-section);
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 6px;
   letter-spacing: 0;
 }
 .empty-state-desc {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   color: var(--ink-3);
   max-width: 340px;
   margin: 0 0 20px;

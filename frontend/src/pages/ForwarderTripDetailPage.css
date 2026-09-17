@@ -1,3 +1,17 @@
+.forwarder-trip-detail-page .info-row__label {
+  font-size: var(--fs-label);
+}
+
+.forwarder-trip-detail-page .info-row__value,
+.forwarder-trip-detail-page .trip-legs__empty,
+.forwarder-trip-detail-page .trip-legs__stop-name {
+  font-size: var(--fs-body);
+}
+
+.forwarder-trip-detail-page .trip-legs__title {
+  font-size: var(--fs-section);
+}
+
 .fwd-expense-form {
   padding: 12px 20px;
   border-bottom: 1px solid var(--border-1);
@@ -46,7 +60,7 @@
 .fwd-expense-empty-container {
   grid-column: 1 / -1;
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   line-height: 1.45;
   padding: 0 0 2px;
 }
@@ -101,8 +115,8 @@
 }
 
 .fwd-expense-group__header > div { display: grid; gap: 2px; }
-.fwd-expense-group__header strong { font-size: 13px; color: var(--fg-1); }
-.fwd-expense-group__header span, .fwd-expense-group__empty { font-size: 12px; color: var(--fg-3); }
+.fwd-expense-group__header strong { font-size: var(--fs-sm); color: var(--fg-1); }
+.fwd-expense-group__header span, .fwd-expense-group__empty { font-size: var(--fs-xs); color: var(--fg-3); }
 .fwd-expense-group__empty { padding: 12px 20px; }
 .fwd-expense-action { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
 

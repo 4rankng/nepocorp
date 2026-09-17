@@ -1,7 +1,7 @@
 import { api } from '../lib/api';
 import { toQuery } from '../lib/http/query';
 import { DRIVER } from '@tingting/shared';
-import type { VehicleAlert } from '@tingting/shared';
+import type { PenaltyStatus, VehicleAlert } from '@tingting/shared';
 
 /** Driver trips list row (server-paginated). */
 export interface DriverTripRow {
@@ -62,6 +62,7 @@ export const driverClient = {
           customReason: string | null;
           amount: string;
           date: string;
+          status?: PenaltyStatus;
           reasonText?: string;
         }>
       | {
@@ -74,6 +75,7 @@ export const driverClient = {
             customReason: string | null;
             amount: string;
             date: string;
+            status?: PenaltyStatus;
             reasonText?: string;
           }>;
         }

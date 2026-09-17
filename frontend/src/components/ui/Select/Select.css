@@ -1,0 +1,26 @@
+/* Native fields, search selects and Radix triggers share Input.css. */
+.ui-select-item {
+  font-family: var(--font-body);
+  font-size: var(--fs-control);
+  min-height: var(--control-h);
+  line-height: var(--lh-normal);
+}
+
+@media (max-width: 640px) {
+  .ui-select-item { min-height: 44px; }
+}
+
+.ui-select-content {
+  max-width: min(calc(100vw - 24px), var(--radix-select-content-available-width, 100vw));
+  max-height: min(288px, var(--radix-select-content-available-height, 288px));
+}
+.ui-select-viewport {
+  width: var(--radix-select-trigger-width);
+  max-width: 100%;
+}
+.ui-select-item { min-width: 0; }
+.ui-select-item > [id] {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

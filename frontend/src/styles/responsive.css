@@ -176,9 +176,8 @@
 
   /* ── Universal touch-target floor (Vantai invariant) ──
    * Every interactive control on phones must clear the 44px Apple/Material
-   * tap-target minimum. Applies to all native and link-styled controls under
-   * the app root. Form controls additionally get 16px text to stop iOS
-   * zoom-on-focus. */
+   * tap-target minimum. Text keeps the shared control scale independently
+   * of target size; the iOS editable-field exception lives below. */
   #root button,
   #root [role="button"],
   #root a[href],
@@ -240,8 +239,8 @@
   thead.sticky-header { position: relative; }
 
   /* ── Page header ── */
-  .page-title { font-size: var(--fs-lg); line-height: 1.35; margin-bottom: 2px; }
-  .page-subtitle { font-size: var(--fs-xs); line-height: 1.4; }
+  .page-title { font-size: var(--fs-page-title); line-height: 1.35; margin-bottom: 2px; }
+  .page-subtitle { font-size: var(--fs-sm); line-height: 1.4; }
   .page-header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .page-header .page-actions,
   .page-actions,
@@ -409,7 +408,7 @@
     background: var(--line-2);
   }
   .modal__title {
-    font-size: 18px;
+    font-size: var(--fs-xl);
     font-weight: 700;
     letter-spacing: 0;
     padding-top: 8px;
@@ -422,7 +421,7 @@
   .modal__body .field .input {
     height: 48px;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: var(--fs-control);
     border-color: var(--line-2);
   }
   .modal__body .input-icon > svg {
@@ -435,9 +434,9 @@
     padding-left: 44px;
   }
   .modal__body .field label {
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    color: var(--ink) !important;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    color: var(--ink-2);
     margin-bottom: 2px;
   }
   .modal__foot {
@@ -473,7 +472,7 @@
     gap: 16px;
     /* anime.js handles mobile entrance animation */
   }
-  .confirm-message { font-size: 15px; line-height: 1.5; }
+  .confirm-message { font-size: var(--fs-body); line-height: 1.5; }
   .confirm-actions {
     gap: 8px;
   }
@@ -498,7 +497,7 @@
   select.input,
   input.input,
   textarea.input {
-    font-size: 16px; /* prevents iOS zoom-on-focus */
+    font-size: var(--fs-control);
     min-height: 44px;
   }
   textarea.input { min-height: 80px; }
@@ -676,14 +675,29 @@
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .kpi { padding: 10px 12px; }
   .kpi__label { font-size: var(--fs-xs); line-height: 1.35; letter-spacing: 0.02em; }
-  .kpi__value { font-size: 17px; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+  .kpi__value { font-size: var(--fs-xl); white-space: normal; overflow: visible; overflow-wrap: anywhere; }
   .kpi__value-unit { font-size: var(--fs-xs); line-height: 1.35; }
   .kpi__meta { font-size: var(--fs-xs); line-height: 1.35; }
-  .page-title { font-size: var(--fs-xl); line-height: 1.35; }
+  .page-title { font-size: var(--fs-page-title); line-height: 1.35; }
   .aging-buckets { grid-template-columns: 1fr 1fr; gap: 8px; }
   .aging-buckets > .bucket:first-child { grid-column: 1 / -1; }
   .bucket { padding: 10px 12px; border-radius: 12px; }
   .bucket__label { font-size: var(--fs-2xs); margin-bottom: 4px; }
   .bucket__value { font-size: var(--fs-lg); margin-bottom: 2px; }
   .bucket__count { font-size: var(--fs-2xs); }
+}
+
+/* Safari zooms focused editable fields below 16px. Limit this exception to
+   iOS text entry, not button-based selects, options, labels or every phone. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 640px) {
+    #root input:not([type="checkbox"]):not([type="radio"]),
+    .modal input:not([type="checkbox"]):not([type="radio"]),
+    .drawer input:not([type="checkbox"]):not([type="radio"]),
+    #root textarea,
+    .modal textarea,
+    .drawer textarea {
+      font-size: 16px;
+    }
+  }
 }

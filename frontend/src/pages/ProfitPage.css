@@ -64,8 +64,8 @@
   content: none;
 }
 .profit-hero__label {
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
   color: var(--accent-ink);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -76,7 +76,7 @@
 }
 .profit-hero__value {
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.25;
@@ -128,7 +128,7 @@
 .partner-card__role { font-size: var(--fs-xs); color: var(--ink-3); }
 .partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); color: var(--accent); letter-spacing: 0; }
 .partner-card__amount { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; line-height: 1.25; margin-bottom: 6px; color: var(--ink); }
-.partner-card__amount-label { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
+.partner-card__amount-label { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
 
 .calc-breakdown { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 .calc-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
@@ -174,7 +174,7 @@
 .profit-history-item__period {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--sb-bg);
   background: var(--surface-accent);
   padding: 2px 8px;
@@ -203,7 +203,7 @@
   color: var(--sb-bg);
 }
 .profit-history-item__date {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   flex-shrink: 0;
 }
@@ -212,8 +212,8 @@
 @media (max-width: 640px) {
   /* ── Profit page ── */
   .profit-hero { padding: 18px 16px; border-radius: 14px; margin-bottom: 16px; }
-  .profit-hero__label { font-size: var(--fs-2xs); margin-bottom: 6px; letter-spacing: 0.06em; }
-  .profit-hero__value { font-size: var(--fs-2xl); letter-spacing: 0; word-break: break-word; }
+  .profit-hero__label { font-size: var(--fs-xs); margin-bottom: 6px; letter-spacing: 0.06em; }
+  .profit-hero__value { font-size: var(--fs-3xl); letter-spacing: 0; word-break: break-word; }
   .profit-hero__currency { font-size: var(--fs-xs); margin-left: 4px; }
   .profit-hero__sub { font-size: var(--fs-xs); margin-top: 8px; line-height: 1.4; }
   .partner-grid { gap: 10px; }
@@ -221,9 +221,9 @@
   .partner-card__head { gap: 10px; margin-bottom: 8px; }
   .partner-card__avatar { width: 36px; height: 36px; font-size: var(--fs-sm); }
   .partner-card__name { font-size: var(--fs-sm); }
-  .partner-card__role { font-size: var(--fs-2xs); }
+  .partner-card__role { font-size: var(--fs-xs); }
   .partner-card__pct { font-size: var(--fs-sm); }
-  .partner-card__amount-label { font-size: var(--fs-2xs); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .partner-card__amount-label { font-size: var(--fs-xs); margin-bottom: 4px; letter-spacing: 0.04em; }
   .partner-card__amount { font-size: var(--fs-xl); letter-spacing: 0; word-break: break-word; }
   .calc-row { padding: 10px 12px; gap: 8px; }
   .calc-row__label { font-size: var(--fs-sm); }

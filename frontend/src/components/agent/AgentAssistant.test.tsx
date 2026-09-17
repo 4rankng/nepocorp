@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentMessage } from '@tingting/shared';
+import type { AgentMessage, AgentResponse } from '@tingting/shared';
 import { AgentAssistant } from './AgentAssistant';
 
 const chatState = vi.hoisted(() => ({
@@ -34,10 +34,6 @@ vi.mock('../../context/AgentDirectiveContext', () => ({
   useAgentDirectives: () => ({ send: vi.fn() }),
 }));
 
-vi.mock('../../context/TourControllerContext', () => ({
-  useTourController: () => ({ start: vi.fn(), cancel: vi.fn() }),
-}));
-
 vi.mock('../UI', () => ({
   Drawer: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) => (
     isOpen ? <div>{children}</div> : null
@@ -56,10 +52,6 @@ vi.mock('./InsightCard', () => ({
     card: { title: string };
     rootRef?: React.Ref<HTMLDivElement>;
   }) => <div ref={rootRef}>{card.title}</div>,
-}));
-
-vi.mock('./TutorialCard', () => ({
-  TutorialCard: () => null,
 }));
 
 describe('AgentAssistant scrolling', () => {
@@ -140,6 +132,25 @@ describe('AgentAssistant scrolling', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end', behavior: 'auto' });
     expect(scrollIntoView).not.toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
   });
+
+  it.each(['tutorial', 'start_tour', 'continue_tour', 'cancel_tour'])(
+    'renders a safe fallback for a saved %s response after feature removal',
+    (type) => {
+      // Persisted conversations can outlive a response type supported by the app.
+      chatState.messages = [{
+        id: 'legacy-response',
+        role: 'assistant',
+        createdAt: '2026-07-24T00:00:00.000Z',
+        response: { type, tourId: 'manager-dashboard-overview' } as unknown as AgentResponse,
+      }];
+
+      render(<MemoryRouter><AgentAssistant /></MemoryRouter>);
+      fireEvent.click(screen.getByRole('button', { name: 'Mở trợ lý' }));
+
+      expect(screen.getByText('Nội dung phản hồi này không còn khả dụng.')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Bắt đầu|Tiếp tục hướng dẫn/ })).toBeNull();
+    },
+  );
 
   it('uses an icon-only send control with an accessible name', () => {
     render(

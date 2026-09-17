@@ -86,7 +86,7 @@
 }
 
 .fadv-card-trip__reason {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--ink-2);
   line-height: 1.35;
   overflow: visible;
@@ -137,7 +137,7 @@
 
 .fadv-form-panel__title {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   letter-spacing: 0;
   color: var(--ink);
@@ -175,7 +175,7 @@
   border-radius: 8px;
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   font-weight: 500;
   line-height: 1.4;
 }
@@ -207,14 +207,14 @@
 
 .fadv-empty__title {
   font-family: var(--font-display);
-  font-size: var(--fs-md);
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 6px;
 }
 
 .fadv-empty__desc {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--ink-3);
   margin: 0;
   max-width: 300px;
@@ -255,11 +255,11 @@
   }
 
   .fadv-card-trip__approver {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
   }
 
   .fadv-card-trip__amount {
-    font-size: 15px;
+    font-size: var(--fs-md);
     line-height: 1.35;
   }
 
@@ -345,7 +345,7 @@
 
 .fadv-settlement-summary__value {
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.35;

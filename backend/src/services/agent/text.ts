@@ -2,8 +2,8 @@
 //
 // Folds a query to a diacritic-insensitive comparable form: NFD-decompose,
 // strip Latin combining marks, đ/Đ -> d, then lowercase. Used by page-search
-// (tools/ui.ts), tour-search (tools/tours.ts), and the tour-intent net
-// (orchestrator.ts) so identical queries match identically everywhere.
+// (tools/ui.ts), knowledge search, and intent routing so identical queries
+// match identically everywhere.
 //
 // Behavior is byte-identical to the three local copies it replaced: the
 // orchestrator's Đ -> 'D' vs 'd' elsewhere both collapse to 'd' under the final

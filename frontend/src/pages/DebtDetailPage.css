@@ -8,7 +8,7 @@
   margin: 0 auto 4px;
   padding: 12px 24px 0;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   max-width: 1600px;
 }
 .debt-detail__crumbs ul { gap: 4px; }
@@ -64,7 +64,7 @@
 .dd-meta { flex: 1; min-width: 0; }
 
 .dd-meta h1 {
-  font-size: 24px;
+  font-size: var(--fs-2xl);
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.25;
@@ -155,7 +155,7 @@
 .dd-panel-eyebrow {
   display: block;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -167,7 +167,7 @@
   margin-top: 8px;
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: var(--fs-2xl);
   line-height: 1.2;
   font-weight: 850;
   overflow-wrap: anywhere;
@@ -225,7 +225,7 @@
 }
 
 .dd-sum-label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: .16em;
   color: var(--ink-3);
@@ -333,7 +333,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: .1em;
   color: var(--ink-3);
@@ -405,7 +405,7 @@
 .dd-workspace-head h2 {
   margin: 4px 0 0;
   color: var(--ink);
-  font-size: 18px;
+  font-size: var(--fs-xl);
   font-weight: 850;
   line-height: 1.2;
 }
@@ -457,7 +457,7 @@
   overflow: hidden;
   margin-top: 4px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 650;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -509,7 +509,7 @@
 .dd-payment-panel__main h2 {
   margin: 6px 0 0;
   color: var(--ink);
-  font-size: 18px;
+  font-size: var(--fs-xl);
   font-weight: 850;
 }
 
@@ -577,7 +577,7 @@
   border-bottom: 1px solid var(--line);
 }
 .dd-ledger-head h2 {
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 800;
   flex-shrink: 0;
   line-height: 1.35;
@@ -627,7 +627,7 @@
 .dd-documents-section__head h2 {
   margin: 4px 0 0;
   color: var(--ink);
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 800;
 }
 
@@ -722,7 +722,7 @@
 }
 
 .dd-route-card-head h3 {
-  font-size: 18px;
+  font-size: var(--fs-xl);
   line-height: 1.4;
   font-weight: 850;
   margin: 0;
@@ -797,7 +797,7 @@
 
 .dd-route-card-total b {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: var(--fs-3xl);
   line-height: 1.25;
   color: var(--ink);
 }
@@ -1242,7 +1242,7 @@
   border-collapse: collapse;
 }
 .dd-table thead th {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.35;
   letter-spacing: .13em;
   color: var(--ink-3);
@@ -1272,7 +1272,7 @@
 }
 
 @media (max-width: 640px) {
-  .debt-detail-page .dd-table thead th { padding: 10px 10px; font-size: var(--fs-2xs); letter-spacing: 0.06em; }
+  .debt-detail-page .dd-table thead th { padding: 10px 10px; font-size: var(--fs-xs); letter-spacing: 0.06em; }
   .debt-detail-page .dd-table tbody td { padding: 10px 10px; font-size: var(--fs-xs); }
   .debt-detail-page .dd-table { min-width: 520px; }
   .debt-detail-page .dd-td-date { font-size: var(--fs-xs); }
@@ -1301,7 +1301,7 @@
   display: block;
   margin-top: 3px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-regular);
   line-height: 1.4;
 }
@@ -1397,7 +1397,7 @@
     margin-top: 3px;
     color: var(--ink-3);
     font-family: var(--font-mono);
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     line-height: 1.4;
   }
 
@@ -1423,7 +1423,7 @@
 
   .dd-ledger-mobile-card__amounts dt {
     color: var(--ink-3);
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 750;
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -1433,7 +1433,7 @@
     margin: 4px 0 0;
     color: var(--ink);
     font-family: var(--font-mono);
-    font-size: clamp(10px, 2.8vw, 13px);
+    font-size: var(--fs-xs);
     font-weight: 750;
     line-height: 1.35;
     overflow-wrap: anywhere;
@@ -1479,7 +1479,7 @@
   margin-top: 3px;
   color: var(--ink-3);
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1722,7 +1722,7 @@
     min-width: 0;
   }
   .debt-detail-page .dd-meta h1 {
-    font-size: 17px;
+    font-size: var(--fs-2xl);
     line-height: 1.35;
     overflow-wrap: anywhere;
   }
@@ -1752,7 +1752,7 @@
     padding: 12px;
   }
   .debt-detail-page .dd-account-card strong {
-    font-size: 18px;
+    font-size: var(--fs-xl);
     line-height: 1.35;
   }
   .debt-detail-page .dd-workspace-head {
@@ -1790,11 +1790,11 @@
     min-width: 0;
   }
   .debt-detail-page .dd-sum-label {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     letter-spacing: 0.12em;
   }
   .debt-detail-page .dd-sum-total {
-    font-size: 26px;
+    font-size: var(--fs-4xl);
     margin-top: 6px;
   }
   .debt-detail-page .dd-sum-total .dd-cur {
@@ -1810,14 +1810,14 @@
     flex: 1 1 100%;
     text-align: left;
     white-space: normal;
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     line-height: 1.5;
     border-top: 1px solid var(--line);
     padding-top: 8px;
   }
   .debt-detail-page .dd-sum-update b {
     display: inline;
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     margin-right: 6px;
   }
   .debt-detail-page .dd-aging-bar {
@@ -1837,7 +1837,7 @@
     margin-top: 6px;
   }
   .debt-detail-page .dd-ac-share {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     margin-top: 4px;
   }
 
@@ -1872,11 +1872,11 @@
   .dd-header { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; }
   .dd-avatar { display: none; }
   .dd-meta { min-width: 0; }
-  .dd-meta h1 { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+  .dd-meta h1 { font-size: var(--fs-2xl); line-height: 1.25; overflow-wrap: anywhere; }
   .dd-actions { grid-column: 1 / -1; }
   .dd-actions .btn { width: 100%; justify-content: center; }
   .dd-ledger-head { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; }
-  .dd-ledger-head h2 { font-size: 15px; }
+  .dd-ledger-head h2 { font-size: var(--fs-md); }
   .dd-filters { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
   .dd-filters > * { flex-shrink: 0; }
   .dd-filters::-webkit-scrollbar { display: none; }

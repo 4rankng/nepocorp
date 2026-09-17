@@ -1,6 +1,6 @@
 import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { TripStatus, Role, TxnType } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
@@ -27,12 +27,20 @@ const createdRouteIds: number[] = [];
 const createdCargoTypeIds: number[] = [];
 const createdExpenseIds: number[] = [];
 
+function fixtureLedgerScope() {
+  return or(
+    and(eq(s.ledger.entityType, 'CUSTOMER'), inArray(s.ledger.entityId, createdCustomerIds)),
+    and(eq(s.ledger.entityType, 'VENDOR'), inArray(s.ledger.entityId, createdSupplierIds)),
+    and(eq(s.ledger.entityType, 'FORWARDER'), inArray(s.ledger.entityId, createdForwarderIds)),
+  );
+}
+
 after(async () => {
   // Ledger rows reference both trip ids (TRIP_REVENUE) and expense ids
   // (SERVICE_FEE / VENDOR_EXPENSE / FORWARDER_ADVANCE) via txnId.
   const allTxnIds = [...createdTripIds, ...createdExpenseIds];
   if (allTxnIds.length > 0) {
-    await db.delete(s.ledger).where(inArray(s.ledger.txnId, allTxnIds));
+    await db.delete(s.ledger).where(and(inArray(s.ledger.txnId, allTxnIds), fixtureLedgerScope()));
   }
   if (createdExpenseIds.length > 0) {
     await db.delete(s.tripExpenses).where(inArray(s.tripExpenses.id, createdExpenseIds));
@@ -234,7 +242,7 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
   });
 
   test('a PENDING fee produces no buy-side AND no sell-side posting', async () => {
-    const { trip, customer } = await createInTransitTripWithFees(
+    const { trip, customer, expenseRows } = await createInTransitTripWithFees(
       { revenue: 1_500_000 },
       [
         {
@@ -248,13 +256,13 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
 
     await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
 
-    const allRowsForTrip = await db.select().from(s.ledger)
-      .where(eq(s.ledger.txnId, trip.id))
+    const allRowsForFee = await db.select().from(s.ledger)
+      .where(and(eq(s.ledger.txnId, expenseRows[0].id), fixtureLedgerScope()))
       .orderBy(s.ledger.id);
 
     // No VENDOR_EXPENSE and no SERVICE_FEE for this fee (only TRIP_REVENUE for the trip).
-    assert.equal(allRowsForTrip.filter(r => r.txnType === TxnType.VENDOR_EXPENSE).length, 0);
-    assert.equal(allRowsForTrip.filter(r => r.txnType === TxnType.SERVICE_FEE).length, 0);
+    assert.equal(allRowsForFee.filter(r => r.txnType === TxnType.VENDOR_EXPENSE).length, 0);
+    assert.equal(allRowsForFee.filter(r => r.txnType === TxnType.SERVICE_FEE).length, 0);
 
     const customerRows = await ledgerRowsForTripCustomer(trip.id, customer.id);
     assert.equal(customerRows.filter(r => r.txnType === TxnType.SERVICE_FEE).length, 0);
@@ -327,7 +335,12 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
     await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
 
     const feeLedgerRows = await db.select().from(s.ledger)
-      .where(eq(s.ledger.txnId, fee.id));
+      .where(and(
+        eq(s.ledger.txnId, fee.id),
+        eq(s.ledger.txnType, TxnType.SERVICE_FEE),
+        eq(s.ledger.entityType, 'CUSTOMER'),
+        eq(s.ledger.entityId, customer.id),
+      ));
     assert.equal(feeLedgerRows.length, 1, 'SERVICE_FEE row posted for receivables-only fee');
     assert.equal(feeLedgerRows[0].entityType, 'CUSTOMER');
     assert.equal(feeLedgerRows[0].entityId, customer.id);
@@ -404,7 +417,12 @@ describe('chi hộ (service-fee) sell-side AR ledger posting', () => {
 
     // The fee still posts to CUSTOMER AR; no payable-side row is needed.
     const feeRows = await db.select().from(s.ledger)
-      .where(eq(s.ledger.txnId, fee.id));
+      .where(and(
+        eq(s.ledger.txnId, fee.id),
+        eq(s.ledger.txnType, TxnType.SERVICE_FEE),
+        eq(s.ledger.entityType, 'CUSTOMER'),
+        eq(s.ledger.entityId, customer.id),
+      ));
     assert.equal(feeRows.length, 1, 'fee produced one SERVICE_FEE AR row');
     assert.equal(feeRows[0].txnType, TxnType.SERVICE_FEE);
     assert.equal(feeRows[0].entityType, 'CUSTOMER');

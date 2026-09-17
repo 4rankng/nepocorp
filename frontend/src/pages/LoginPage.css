@@ -66,7 +66,7 @@
 .login-brand h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--fs-4xl);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.035em;
@@ -76,7 +76,7 @@
   max-width: 320px;
   margin: 6px 0 0;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   color: var(--ink-2);
   line-height: 1.55;
@@ -87,7 +87,7 @@
 .login-form h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 23px;
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.25;
@@ -96,7 +96,7 @@
 .login-form .sub {
   max-width: 340px;
   margin: 7px 0 0;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 400;
   line-height: 1.55;
   color: var(--ink-3);
@@ -109,7 +109,7 @@
 .login-form label {
   display: block;
   margin-bottom: 7px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   line-height: 1.45;
   color: var(--ink-2);
@@ -125,7 +125,7 @@
   padding-left: 42px;
   border-color: var(--line-2);
   border-radius: 12px;
-  font-size: 14.5px;
+
   font-weight: 400;
   line-height: 1.35;
   transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
@@ -159,7 +159,7 @@
   color: var(--danger-text);
   border: 1px solid color-mix(in srgb, var(--danger) 16%, transparent);
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   margin-bottom: 16px;
   font-weight: 500;
@@ -170,7 +170,7 @@
   color: var(--warning-text);
   border: 1px solid color-mix(in srgb, var(--warning) 20%, transparent);
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   margin-bottom: 16px;
   font-weight: 500;
@@ -180,7 +180,7 @@
   height: 50px;
   margin-top: 6px;
   border-radius: 12px;
-  font-size: 14.5px;
+  font-size: var(--fs-md);
   font-weight: 700;
 }
 .login-submit:disabled {
@@ -196,7 +196,7 @@
   right: 0;
   text-align: center;
   font-family: var(--font-body);
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   font-weight: 500;
   z-index: 1;
@@ -232,7 +232,7 @@
   text-align: center;
 }
 .login-hints__title {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -254,7 +254,7 @@
   border: 1px solid var(--line);
   background: var(--surface);
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
@@ -264,7 +264,7 @@
   font-family: var(--font-body);
   font-weight: 400;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 .login-hints__chip:hover {
   background: var(--accent-soft);
@@ -272,7 +272,7 @@
 }
 .login-hints__pw {
   margin: 10px 0 0;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 .login-hints__pw code {
@@ -281,7 +281,7 @@
   padding: 1px 5px;
   border-radius: 4px;
   border: 1px solid var(--line);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 
 /* ── Mobile (≤640px): tighten chrome, fix dvh, bump touch target ──
@@ -297,14 +297,14 @@
   .login-form { padding: 30px 24px 32px; }
   .login-brand { margin-bottom: 30px; }
   .login-brand .brand-logo { width: 52px; height: 52px; border-radius: 15px; margin-bottom: 11px; }
-  .login-brand h1 { font-size: 27px; }
-  .login-brand p { max-width: 300px; font-size: 12.5px; }
+  .login-brand h1 { font-size: var(--fs-4xl); }
+  .login-brand p { max-width: 300px; font-size: var(--fs-sm); }
   .login-intro { margin-bottom: 24px; }
-  .login-form h2 { font-size: 22px; }
-  .login-form .sub { font-size: 13px; }
-  .login-form .input { min-height: 50px; height: 50px; font-size: 16px; }
-  .login-submit { height: 50px; font-size: 15px; }
-  .login-footer { font-size: var(--fs-2xs); bottom: 12px; padding: 0 16px; }
+  .login-form h2 { font-size: var(--fs-3xl); }
+  .login-form .sub { font-size: var(--fs-sm); }
+  .login-form .input { min-height: 50px; height: 50px;}
+  .login-submit { height: 50px; font-size: var(--fs-md); }
+  .login-footer { font-size: var(--fs-xs); bottom: 12px; padding: 0 16px; }
   /* Password toggle: keep the tap area comfortable on phones. */
   .password-toggle { padding: 10px; min-width: 45px; min-height: 45px; }
   /* Username placeholder was getting clipped — give the input the full row width */

@@ -7,7 +7,7 @@
 .debt-list-page__crumbs {
   margin: 2px 0 10px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 .debt-list-page__crumbs ul { gap: 4px; }
 
@@ -201,7 +201,7 @@
 .debt-aging__dot--danger { background: var(--danger); }
 
 .debt-aging-card__label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
@@ -214,7 +214,7 @@
   align-items: baseline;
   gap: 4px;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: var(--fs-3xl);
   line-height: 1.35;
   font-weight: 600;
   letter-spacing: 0;
@@ -223,7 +223,7 @@
 }
 
 .debt-aging-card__unit {
-  font-size: 14px;
+  font-size: var(--fs-md);
   line-height: 1.35;
   font-weight: 500;
   color: var(--ink-3);
@@ -359,7 +359,7 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: var(--fs-xs);
+
   color: var(--ink);
   font-weight: 500;
   height: 100%;
@@ -460,7 +460,7 @@
     gap: 10px;
   }
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
-    font-size: 24px;
+    font-size: var(--fs-3xl);
   }
   .debt-hero__art {
     right: 10px;
@@ -491,7 +491,7 @@
     border-radius: 14px;
   }
   .debt-aging-card__amount {
-    font-size: 17px;
+    font-size: var(--fs-lg);
   }
 
   /* Data card compact */
@@ -519,7 +519,7 @@
   /* Mobile card amount styling */
   .debt-list-page .m-card .debt-list-page__amount {
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: var(--fs-md);
     font-weight: 700;
     letter-spacing: 0;
   }
@@ -531,7 +531,7 @@
 
 @media (max-width: 420px) {
   .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
-    font-size: 22px;
+    font-size: var(--fs-3xl);
   }
   .debt-hero__art {
     width: 132px;
@@ -546,14 +546,14 @@
     gap: 10px;
   }
   .debt-list-page .hero-kpi-mini__value {
-    font-size: 16px;
+    font-size: var(--fs-lg);
   }
   .debt-kpi-mini__asset img {
     width: 30px;
     height: 30px;
   }
   .debt-aging-card__amount {
-    font-size: 15px;
+    font-size: var(--fs-md);
   }
 }
 

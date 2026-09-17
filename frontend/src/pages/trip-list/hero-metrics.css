@@ -45,7 +45,7 @@
 .trip-list-page .trip-list-page__crumbs {
   margin: 2px 0 10px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 .trip-list-page .trip-list-page__crumbs ul {
   /* daisyUI ships breadcrumbs with default list styles; tighten the gap so

@@ -70,7 +70,7 @@ if (!/:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i.test(
 }
 
 const inputCss = await readFile(new URL('../src/components/Input.css', import.meta.url), 'utf8');
-if (!/\.input:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i
+if (!/\.input:focus-visible(?:\s*,\s*\.[\w-]+:focus-visible)*\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i
   .test(inputCss)) {
   failures.push('components/Input.css: inputs must retain the high-contrast focus outline');
 }

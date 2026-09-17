@@ -107,7 +107,7 @@
     justify-content: center;
     min-height: 44px;
     padding: 8px 14px;
-    font-size: var(--fs-xs);
+
     line-height: 1.35;
   }
 
@@ -139,7 +139,7 @@
 
   /* Tighter title on phones */
   .tc-page-title {
-    font-size: var(--fs-xl);
+    font-size: var(--fs-2xl);
   }
 
   /* 2-col body becomes a single column on phones. The two .trip-col
@@ -231,7 +231,7 @@
   }
 
   .cf-value {
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     line-height: 1.35;
   }
 

@@ -106,7 +106,7 @@
 
 /* legacy sidebar section labels */
 .sidebar-section-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   line-height: 1.35;
   font-weight: 700;
@@ -144,7 +144,7 @@
 }
 /* wireframe-canonical section label */
 .nav-section-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   line-height: 1.35;
   text-transform: uppercase;
@@ -351,10 +351,10 @@
 }
 
 .sidebar-user-dropdown-header .role {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   line-height: 1.35;
   color: var(--ink-3, #888);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-body);
   overflow-wrap: anywhere;
 }
 
@@ -414,7 +414,7 @@
   padding: 5px 9px;
   border-radius: 6px;
   font-family: var(--font-body, inherit);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;

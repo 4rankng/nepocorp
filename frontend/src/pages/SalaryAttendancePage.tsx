@@ -187,9 +187,11 @@ export default function SalaryAttendancePage() {
                 Ghi thanh toán
               </button>
             )}
-            <button className="btn btn--secondary btn--icon" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
-            <span className="hero-month-label">Tháng {month}</span>
-            <button className="btn btn--secondary btn--icon" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
+            <div className="hero-month-nav" role="group" aria-label="Chọn tháng lương">
+              <button className="btn btn--secondary btn--icon" onClick={goPrev} aria-label="Tháng trước"><ChevronLeft size={15} /></button>
+              <span className="hero-month-label">Tháng {month}</span>
+              <button className="btn btn--secondary btn--icon" onClick={goNext} aria-label="Tháng sau"><ChevronRight size={15} /></button>
+            </div>
           </div>
         </div>
         <div className="metrics fade-up-3">

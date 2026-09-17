@@ -23,11 +23,11 @@
 .pnl-row:last-child { border-bottom: none; }
 .pnl-row--section {
   background: var(--surface-2);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-weight: 700;
   color: var(--ink);
   text-transform: uppercase;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   letter-spacing: 0.08em;
 }
 .pnl-row--subtotal { background: var(--surface-2); border-top: 1px solid var(--line); font-weight: 600; }
@@ -37,7 +37,7 @@
   border-bottom: 2px solid var(--accent);
 }
 .pnl-row__label { font-size: var(--fs-sm); color: var(--ink); }
-.pnl-row__label-sub { font-size: var(--fs-2xs); color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
+.pnl-row__label-sub { font-size: var(--fs-xs); color: var(--ink-3); font-family: var(--font-body); margin-top: 2px; }
 .pnl-row__amount { font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-sm); text-align: right; color: var(--ink); }
 .pnl-row--subtotal .pnl-row__amount { font-weight: 600; font-size: var(--fs-sm); letter-spacing: 0; }
 .pnl-row--final .pnl-row__amount {
@@ -60,8 +60,8 @@
   background: var(--ink);
   color: var(--fg-on-brand);
   gap: 16px;
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 600;
@@ -71,6 +71,43 @@
   .pnl-head .pnl-head__yoy, .pnl-head .pnl-head__pct { display: none; }
 }
 .pnl-head__amount, .pnl-head__yoy, .pnl-head__pct { text-align: right; }
+
+/* Category totals remain visible beside their labels without inheriting the
+   global comparison-table minimum width. */
+.finance-category-scroll { min-height: 0; }
+.finance-category-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+.finance-category-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .finance-category-table,
+  .finance-category-table tbody,
+  .finance-category-table tr,
+  .finance-category-table td { display: block; width: 100%; }
+  .finance-category-table thead { display: none; }
+  .finance-category-table tr { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .finance-category-table tr:last-child { border-bottom: 0; }
+  .finance-category-table td { padding: 5px 0; border: 0; }
+  .finance-category-table td[data-label] {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+  .finance-category-table td[data-label]::before {
+    content: attr(data-label);
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: 400;
+    color: var(--ink-3);
+    text-align: left;
+  }
+}
 
 /* ============================================================================
  * KPI Hero Strip
@@ -97,7 +134,7 @@
   padding: 14px 16px;
 }
 .pnl-kpi__label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--fg-3);
   text-transform: uppercase;
@@ -105,17 +142,18 @@
   margin-bottom: 6px;
 }
 .pnl-kpi__value {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 0;
   color: var(--fg-1);
   line-height: 1.25;
   margin-bottom: 4px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 1100px) {
-  .pnl-kpi__value { font-size: var(--fs-md); line-height: 1.25; }
+  .pnl-kpi__value { font-size: var(--fs-2xl); line-height: 1.25; }
 }
 .pnl-kpi__unit {
   font-size: var(--fs-xs);
@@ -125,7 +163,7 @@
   color: var(--fg-2);
 }
 .pnl-kpi__delta {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: var(--font-mono);
   padding-right: 42px;
@@ -164,7 +202,7 @@
 }
 @media (max-width: 420px) {
   .finance-page .finance-revenue-svg text {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
   }
   .finance-page .finance-charts-row > .panel {
     padding: 12px 14px;
@@ -244,7 +282,7 @@
 }
 .truck-card__stat-label {
   display: block;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   margin-bottom: 1px;
 }
@@ -269,7 +307,7 @@
 .truck-card__bar-fill--up { background: var(--brand); }
 .truck-card__bar-fill--down { background: var(--danger); }
 .truck-card__margin {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-family: var(--font-mono);
   color: var(--ink-3);
   font-weight: 500;
@@ -296,7 +334,7 @@
 .truck-row-toggle__hint {
   color: var(--fg-3);
   font-family: var(--font-sans);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-style: normal;
   font-weight: 500;
   opacity: 0;
@@ -320,7 +358,7 @@
   gap: 16px;
   margin-bottom: 10px;
   color: var(--fg-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 .truck-details-panel__intro strong { color: var(--fg-1); }
 .truck-trip-table-wrap {
@@ -334,7 +372,7 @@
   padding: 9px 10px;
   background: var(--surface-2);
   color: var(--fg-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.04em;
 }
 .truck-trip-table tbody td {
@@ -357,7 +395,7 @@
   max-width: 240px;
   margin-top: 3px;
   color: var(--fg-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   white-space: normal;
 }
 .cost-check {
@@ -367,7 +405,7 @@
   width: max-content;
   padding: 3px 7px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -421,7 +459,7 @@
   overflow: hidden;
   margin-top: 2px;
   color: var(--fg-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -448,7 +486,7 @@
   gap: 8px;
   margin-bottom: 10px;
   color: var(--fg-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
 }
 .truck-trip-card__grid {
   display: grid;
@@ -459,7 +497,7 @@
   display: block;
   margin-bottom: 2px;
   color: var(--fg-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
 }
 .truck-trip-amount strong {
   color: var(--fg-1);
@@ -548,7 +586,7 @@
 .finance-top-trucks__value {
   color: var(--ink-2);
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -566,7 +604,7 @@
 
 /* Chart panel header */
 .finance-chart-title {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 12px;
@@ -634,7 +672,7 @@
 
 .dash-wf .wf-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; }
 .dash-wf .wf-card-h .ttl { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0; color: var(--wf-ink); }
-.dash-wf .wf-card-h .sub { font-size: var(--fs-2xs); color: var(--wf-ink-3); margin-top: 2px; }
+.dash-wf .wf-card-h .sub { font-size: var(--fs-xs); color: var(--wf-ink-3); margin-top: 2px; }
 
 .dash-wf .wf-legend {
   display: flex;

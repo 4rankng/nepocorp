@@ -7,6 +7,7 @@ import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAn
 import { usePressAnimation } from '../hooks/animations/usePressAnimation';
 import { Tooltip } from './shared/Tooltip';
 import { Sparkline } from '../design-system/Sparkline';
+import { isTopmostDialog, useDialogFocus } from './shared/useDialogFocus';
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
 
@@ -72,11 +73,14 @@ export function useConfirmShortcuts(opts: {
   isOpen: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
+  dialogRef?: React.RefObject<HTMLElement | null>;
 }) {
-  const { isOpen, onConfirm, onCancel } = opts;
+  const { isOpen, onConfirm, onCancel, dialogRef } = opts;
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat || e.isComposing) return;
+      if (dialogRef?.current && !isTopmostDialog(dialogRef.current, e.target)) return;
       if (e.key === 'Escape' && onCancel) {
         e.preventDefault();
         onCancel();
@@ -90,6 +94,7 @@ export function useConfirmShortcuts(opts: {
           if (tag === 'TEXTAREA') return;
           if (target.isContentEditable) return;
           if (tag === 'BUTTON') return;
+          if (tag === 'SELECT' || target.closest('a[href], [role="combobox"], [role="listbox"], [role="menu"]')) return;
         }
         e.preventDefault();
         onConfirm();
@@ -97,7 +102,7 @@ export function useConfirmShortcuts(opts: {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isOpen, onConfirm, onCancel]);
+  }, [isOpen, onConfirm, onCancel, dialogRef]);
 }
 
 /* ─── KPI Metric Card ───────────────────────────────────────────────────── */
@@ -418,25 +423,27 @@ export function Badge({ variant = 'neutral', children, className = '' }: BadgePr
 
 interface FormGroupProps {
   label: string;
+  htmlFor?: string;
   helpText?: string;
   error?: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
 }
 
-export function FormGroup({ label, helpText, error, children, style }: FormGroupProps) {
-  const fieldId = useId();
+export function FormGroup({ label, htmlFor, helpText, error, children, style }: FormGroupProps) {
+  const generatedId = useId();
+  const fieldId = htmlFor ?? generatedId;
   return (
     <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
-      <label htmlFor={fieldId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>{label}</label>
-      {React.Children.map(children, (child) => {
+      <label htmlFor={fieldId} style={{ fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-2)' }}>{label}</label>
+      {htmlFor ? children : React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, { id: fieldId });
         }
         return child;
       })}
       {error && (
-        <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--danger)', marginTop: 4 }}>{error}</span>
+        <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.4, color: 'var(--danger)', marginTop: 4 }}>{error}</span>
       )}
       {helpText && !error && (
         <span className="field-help" style={{ color: 'var(--ink-3)', marginTop: 2 }}>
@@ -460,10 +467,11 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, title, onClose, children, footer, onConfirm, maxWidth = 540 }: ModalProps) {
-  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose, dialogRef: contentRef });
 
   const { visible, handleClose } = useAnimatedOverlay({
     overlayRef,
@@ -473,6 +481,7 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
     entrance: overlayEntrance,
     exit: overlayExit,
   });
+  useDialogFocus(contentRef, visible && isOpen);
 
   if (!portalTarget) return null;
 
@@ -484,22 +493,26 @@ export function Modal({ isOpen, title, onClose, children, footer, onConfirm, max
         ref={overlayRef}
         className="modal"
         onClick={handleClose}
-        role="dialog"
-        aria-modal="true"
       >
         <div
           ref={contentRef}
           className="modal__content"
           style={cssVars}
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-hidden={!isOpen}
+          aria-labelledby={titleId}
+          tabIndex={-1}
         >
           <div className="modal__head">
-            <h3 className="modal__title">{title}</h3>
-            <Tooltip label="Đóng (Esc)">
+            <h3 id={titleId} className="modal__title">{title}</h3>
+            <Tooltip label="Đóng (Esc)" side="bottom">
               <button
                 className="btn btn--ghost btn--icon btn--sm modal__close"
                 onClick={handleClose}
                 aria-label="Đóng"
+                type="button"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -535,10 +548,11 @@ interface DrawerProps {
 }
 
 export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onConfirm, className = '', headerGraphic }: DrawerProps) {
-  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose });
   const portalTarget = usePortalTarget();
   const overlayRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement>(null);
+  const titleId = useId();
+  useConfirmShortcuts({ isOpen, onConfirm, onCancel: onClose, dialogRef: asideRef });
 
   const { visible, handleClose } = useAnimatedOverlay({
     overlayRef,
@@ -570,6 +584,7 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
       });
     },
   });
+  useDialogFocus(asideRef, visible && isOpen);
 
   if (!portalTarget) return null;
 
@@ -588,12 +603,14 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
           role="dialog"
           aria-modal="true"
           aria-hidden={!isOpen}
+          aria-labelledby={titleId}
+          tabIndex={-1}
         >
           <header className="drawer__head">
             <div className="drawer__heading">
               {headerGraphic}
               <div style={{ minWidth: 0 }}>
-                <h2 className="drawer__title">{title}</h2>
+                <h2 id={titleId} className="drawer__title">{title}</h2>
                 {subtitle && <p className="drawer__subtitle">{subtitle}</p>}
               </div>
             </div>

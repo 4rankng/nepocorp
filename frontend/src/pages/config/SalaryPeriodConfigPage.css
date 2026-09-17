@@ -41,13 +41,18 @@
   border-radius: 10px;
   background: var(--surface);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   position: relative;
 }
 
 .sp-mode-card:hover {
   border-color: var(--accent);
   background: var(--surface-2);
+}
+
+.sp-mode-card:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .sp-mode-card.active {
@@ -133,7 +138,7 @@
   gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -214,7 +219,7 @@
 }
 
 .sp-preview__label {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -317,7 +322,7 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .sp-wrap { gap: 16px; }
-  .sp-page-header h1 { font-size: 24px; }
+  .sp-page-header h1 { font-size: var(--fs-2xl); }
   .sp-page-header p { font-size: var(--fs-xs); }
   .sp-default-card__header { flex-wrap: wrap; }
   .sp-badge { margin-left: 0; }

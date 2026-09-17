@@ -39,10 +39,13 @@ function ProfileModal({
         </Alert>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <FormGroup label="Tên đăng nhập">
+        <FormGroup label="Tên đăng nhập" htmlFor="profile-username">
           <div className="input-icon">
             <User size={16} />
             <input
+              id="profile-username"
+              autoComplete="username"
+              spellCheck={false}
               className="input"
               value={form.username}
               onChange={e => onFormChange({ ...form, username: e.target.value })}
@@ -50,10 +53,12 @@ function ProfileModal({
             />
           </div>
         </FormGroup>
-        <FormGroup label="Họ và tên">
+        <FormGroup label="Họ và tên" htmlFor="profile-full-name">
           <div className="input-icon">
             <UserCheck size={16} />
             <input
+              id="profile-full-name"
+              autoComplete="name"
               className="input"
               value={form.fullName}
               onChange={e => onFormChange({ ...form, fullName: e.target.value })}
@@ -61,10 +66,13 @@ function ProfileModal({
             />
           </div>
         </FormGroup>
-        <FormGroup label="Email">
+        <FormGroup label="Email" htmlFor="profile-email">
           <div className="input-icon">
             <Mail size={16} />
             <input
+              id="profile-email"
+              autoComplete="email"
+              spellCheck={false}
               className="input"
               type="email"
               value={form.email}
@@ -73,10 +81,13 @@ function ProfileModal({
             />
           </div>
         </FormGroup>
-        <FormGroup label="Số điện thoại">
+        <FormGroup label="Số điện thoại" htmlFor="profile-phone">
           <div className="input-icon">
             <Phone size={16} />
             <input
+              id="profile-phone"
+              type="tel"
+              autoComplete="tel"
               className="input"
               value={form.phone}
               onChange={e => onFormChange({ ...form, phone: e.target.value })}

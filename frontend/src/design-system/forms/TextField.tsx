@@ -26,6 +26,8 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
   ...input
 }, ref) {
   const id = useId();
+  const messageId = `${id}-message`;
+  const describedBy = [input['aria-describedby'], error || helpText ? messageId : undefined].filter(Boolean).join(' ') || undefined;
   const cls = ['ds-field', error ? 'ds-field--error' : '', className].filter(Boolean).join(' ');
 
   return (
@@ -37,16 +39,16 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
       {prefix || suffix ? (
         <div className="ds-field__input-group">
           {prefix && <span className="ds-field__affix">{prefix}</span>}
-          <input ref={ref} id={id} className="ds-field__input" required={required} {...input} />
+          <input ref={ref} id={id} className="ds-field__input" required={required} {...input} aria-invalid={error ? true : input['aria-invalid']} aria-describedby={describedBy} />
           {suffix && <span className="ds-field__affix">{suffix}</span>}
         </div>
       ) : (
-        <input ref={ref} id={id} className="ds-field__input" required={required} {...input} />
+        <input ref={ref} id={id} className="ds-field__input" required={required} {...input} aria-invalid={error ? true : input['aria-invalid']} aria-describedby={describedBy} />
       )}
       {error ? (
-        <span className="ds-field__msg ds-field__msg--error">{error}</span>
+        <span id={messageId} className="ds-field__msg ds-field__msg--error">{error}</span>
       ) : helpText ? (
-        <span className="ds-field__msg">{helpText}</span>
+        <span id={messageId} className="ds-field__msg">{helpText}</span>
       ) : null}
     </div>
   );

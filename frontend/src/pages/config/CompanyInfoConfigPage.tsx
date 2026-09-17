@@ -52,7 +52,7 @@ const FIELD_LABELS: Array<{ key: TextCompanyInfoField; label: string }> = [
 export default function CompanyInfoConfigPage() {
   const navigate = useNavigate();
   const { rootRef } = usePageAnimations({ ready: true, selectors: ['.cfg-row', '.company-info-preview-row'] });
-  const { data, isLoading } = useCompanyInfo();
+  const { data, isLoading, error: queryError, refetch } = useCompanyInfo();
   const saveCompanyInfo = useSaveCompanyInfo();
   const [form, setForm] = useState<CompanyInfoForm>(EMPTY_FORM);
   // Hydrate the form synchronously when `data` changes (render-time state sync)
@@ -160,6 +160,12 @@ export default function CompanyInfoConfigPage() {
       >
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: 24, color: 'var(--ink-3)' }}>Đang tải…</div>
+        ) : queryError ? (
+          <div className="empty-state" role="alert">
+            <h3 className="empty-state-title">Không thể tải thông tin công ty</h3>
+            <p className="empty-state-desc">Vui lòng tải lại hồ sơ trước khi chỉnh sửa.</p>
+            <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
+          </div>
         ) : (
           <>
             <div className="company-info-layout">
@@ -212,17 +218,21 @@ export default function CompanyInfoConfigPage() {
 
                 <div className="cfg-form-grid cfg-row">
                   <div className="field">
-                    <label>Tên công ty</label>
+                    <label htmlFor="company-name">Tên công ty</label>
                     <input
                       className="input"
+                      id="company-name"
+                      name="name"
                       value={form.name}
                       onChange={e => updateField('name', e.target.value)}
                     />
                   </div>
                   <div className="field">
-                    <label>Mã số thuế</label>
+                    <label htmlFor="company-taxCode">Mã số thuế</label>
                     <input
                       className="input"
+                      id="company-taxCode"
+                      name="taxCode"
                       value={form.taxCode}
                       onChange={e => updateField('taxCode', e.target.value)}
                     />
@@ -230,28 +240,34 @@ export default function CompanyInfoConfigPage() {
                 </div>
 
                 <div className="field cfg-row">
-                  <label>Địa chỉ</label>
+                  <label htmlFor="company-address">Địa chỉ</label>
                   <textarea
                     className="input"
                     rows={3}
-                    value={form.address}
+                    id="company-address"
+                      name="address"
+                      value={form.address}
                     onChange={e => updateField('address', e.target.value)}
                   />
                 </div>
 
                 <div className="cfg-form-grid cfg-row" style={{ marginTop: 16 }}>
                   <div className="field">
-                    <label>Đại diện bởi</label>
+                    <label htmlFor="company-representative">Đại diện bởi</label>
                     <input
                       className="input"
+                      id="company-representative"
+                      name="representative"
                       value={form.representative}
                       onChange={e => updateField('representative', e.target.value)}
                     />
                   </div>
                   <div className="field">
-                    <label>Chức vụ</label>
+                    <label htmlFor="company-representativeTitle">Chức vụ</label>
                     <input
                       className="input"
+                      id="company-representativeTitle"
+                      name="representativeTitle"
                       value={form.representativeTitle}
                       onChange={e => updateField('representativeTitle', e.target.value)}
                     />
@@ -260,18 +276,22 @@ export default function CompanyInfoConfigPage() {
 
                 <div className="cfg-form-grid cfg-row">
                   <div className="field">
-                    <label>Số tài khoản</label>
+                    <label htmlFor="company-bankAccount">Số tài khoản</label>
                     <input
                       className="input"
+                      id="company-bankAccount"
+                      name="bankAccount"
                       value={form.bankAccount}
                       onChange={e => updateField('bankAccount', e.target.value)}
                     />
                   </div>
                   <div className="field">
-                    <label>Ngân hàng</label>
+                    <label htmlFor="company-bankName">Ngân hàng</label>
                     <textarea
                       className="input"
                       rows={2}
+                      id="company-bankName"
+                      name="bankName"
                       value={form.bankName}
                       onChange={e => updateField('bankName', e.target.value)}
                     />
@@ -280,17 +300,25 @@ export default function CompanyInfoConfigPage() {
 
                 <div className="cfg-form-grid cfg-row">
                   <div className="field">
-                    <label>Điện thoại</label>
+                    <label htmlFor="company-phone">Điện thoại</label>
                     <input
                       className="input"
+                      type="tel"
+                      autoComplete="tel"
+                      id="company-phone"
+                      name="phone"
                       value={form.phone}
                       onChange={e => updateField('phone', e.target.value)}
                     />
                   </div>
                   <div className="field">
-                    <label>Email</label>
+                    <label htmlFor="company-email">Email</label>
                     <input
                       className="input"
+                      type="email"
+                      autoComplete="email"
+                      id="company-email"
+                      name="email"
                       value={form.email}
                       onChange={e => updateField('email', e.target.value)}
                     />
@@ -311,13 +339,13 @@ export default function CompanyInfoConfigPage() {
             <div className="cfg-form-actions">
               <button
                 className="btn btn--primary"
-                disabled={saving || !canSave}
+                disabled={saving || uploadingLogo || !canSave}
                 onClick={handleSave}
               >
                 {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
                 Lưu thông tin
               </button>
-              {error && <span style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
+              {error && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
             </div>
           </>
         )}

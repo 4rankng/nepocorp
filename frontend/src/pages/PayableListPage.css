@@ -58,7 +58,7 @@
 .aging-card__dot--danger { background: var(--danger, #E32434); }
 
 .aging-card__label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   line-height: 1.35;
   font-weight: 600;
@@ -83,7 +83,7 @@
 /* Currency unit / compact suffix rendered at subtitle size */
 .aging-card__unit {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--ink-3, #8B919B);
   white-space: nowrap;
@@ -164,7 +164,7 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: var(--fs-sm, 14px);
+
   line-height: 1.35;
   min-height: 32px;
   color: var(--ink, #0A0A0A);
@@ -243,7 +243,7 @@
   }
 
   .payables-page .hero-kpi-mini__value {
-    font-size: 22px;
+    font-size: var(--fs-3xl);
   }
 
   .payables-page .hero-kpi-mini__label {
@@ -273,7 +273,7 @@
   }
 
   .aging-card__value {
-    font-size: 19px;
+    font-size: var(--fs-xl);
   }
 
   .aging-card__count {
@@ -314,7 +314,7 @@
   /* Mobile amount text in card list */
   .payables-page .m-card .m-card__row-value {
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: var(--fs-md);
     font-weight: 700;
     letter-spacing: 0;
   }
@@ -329,7 +329,7 @@
   }
 
   .payables-page .hero-kpi-card__amount {
-    font-size: 26px;
+    font-size: var(--fs-4xl);
   }
 
   .payables-page .hero-kpi-mini {
@@ -355,7 +355,7 @@
   border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
   background: var(--surface-2, #fff);
   color: var(--fg-2, #475569);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   line-height: 1.35;
   min-height: 44px;
@@ -401,14 +401,14 @@
 
 .commission-form .field label {
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   line-height: 1.25;
 }
 
 .commission-form .input {
   height: 44px;
-  font-size: 15px;
+
 }
 
 .commission-form__error {
@@ -417,7 +417,7 @@
   border: 1px solid rgba(220, 38, 38, 0.2);
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: var(--fs-sm);
 }
 
 .commission-form .req {
@@ -432,7 +432,7 @@
 
   .commission-form .input {
     height: 46px;
-    font-size: 16px;
+
   }
 }
 

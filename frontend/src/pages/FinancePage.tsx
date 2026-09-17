@@ -711,8 +711,8 @@ export default function FinancePage() {
               style={{ marginTop: 20 }}
               flush
             >
-              <div className="table-scroll">
-                <table>
+              <div className="table-scroll finance-category-scroll">
+                <table className="finance-category-table" aria-label="Cơ cấu chi phí theo hạng mục">
                   <thead>
                     <tr>
                       <th>Hạng mục</th>
@@ -728,8 +728,8 @@ export default function FinancePage() {
                         return (
                           <tr key={i}>
                             <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{cat.categoryName}</td>
-                            <td className="num">{formatNumber(cat.total)} ₫</td>
-                            <td>
+                            <td className="num" data-label="Tổng chi phí">{formatNumber(cat.total)} ₫</td>
+                            <td data-label="Tỷ trọng">
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--border)', overflow: 'hidden' }}>
                                   <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: 'var(--brand)' }} />

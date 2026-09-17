@@ -413,7 +413,8 @@
 
 .vehicle-schedule-form__error {
   padding: 9px 11px;
-  border-left: 4px solid var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
   background: var(--danger-soft);
   color: var(--danger-text);
   font-size: var(--fs-sm);
@@ -742,7 +743,7 @@
   .vehicle-schedule-manager__tabs button {
     gap: 5px;
     padding-inline: 6px;
-    font-size: var(--fs-xs);
+
     white-space: nowrap;
   }
 
@@ -788,7 +789,7 @@
   .vehicle-schedule-row__actions .btn {
     min-height: 44px;
     padding-inline: 8px;
-    font-size: var(--fs-xs);
+
   }
 
   .vehicle-schedule-row__cancel {
@@ -804,7 +805,7 @@
   }
 
   .vehicle-schedule-manager .drawer__title {
-    font-size: 21px;
+    font-size: var(--fs-2xl);
   }
 }
 

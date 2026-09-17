@@ -96,8 +96,8 @@
   background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
 }
 .as-page .as-kpi__label {
-  font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-3);
   text-transform: uppercase;
@@ -181,12 +181,12 @@
   align-items: center;
 }
 .as-page .as-grid-head > div {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-bold);
   color: var(--ink-3);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   white-space: normal;
   overflow: visible;
   overflow-wrap: anywhere;
@@ -286,7 +286,7 @@
 .as-page .as-date-customer .as-date {
   color: var(--ink-3);
   font-family: var(--font-mono);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   text-align: left;
 }
 .as-page .as-date-customer strong,
@@ -320,7 +320,7 @@
   border-radius: 6px;
   background: var(--surface-2);
   color: var(--ink-2);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.35;
 }
 .as-page .as-expense-chip span {
@@ -352,7 +352,7 @@
 }
 .as-page .as-scope__secondary {
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.4;
   white-space: normal;
 }
@@ -452,7 +452,7 @@
   opacity: 0.5;
 }
 .as-page .as-approver {
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--ink-3);
   text-align: right;
   line-height: 1.35;
@@ -534,7 +534,7 @@
   gap: 6px;
   margin-bottom: 5px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -613,7 +613,7 @@
   gap: 12px;
   margin-bottom: 11px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.045em;
   text-transform: uppercase;
@@ -652,7 +652,7 @@
 .as-page .as-mcard__scope-grid span {
   margin-top: 3px;
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
 }
 .as-page .as-mcard__plans {
@@ -662,7 +662,7 @@
 }
 .as-page .as-mcard__plans-title {
   color: var(--ink-3);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   letter-spacing: 0.045em;
   text-transform: uppercase;
@@ -695,7 +695,7 @@
 .as-page .as-mcard__plan-meta {
   margin-top: 4px;
   color: var(--ink-2);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.45;
 }
 .as-page .as-mcard__plan-costs {
@@ -704,7 +704,7 @@
   gap: 4px 8px;
   margin-top: 7px;
   color: var(--ink-2);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
 }
 /* Mobile action buttons */
 .as-page .as-mcard__actions {
@@ -781,11 +781,11 @@
     padding: 10px 12px;
   }
   .as-page .as-kpi__value {
-    font-size: var(--fs-xl);
+    font-size: var(--fs-2xl);
     margin-top: 6px;
   }
   .as-page .as-kpi__meta {
-    font-size: var(--fs-2xs);
+    font-size: var(--fs-xs);
     margin-top: 4px;
   }
   .as-page .as-cards {
