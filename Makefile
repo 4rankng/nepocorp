@@ -162,9 +162,10 @@ demo-frontend: push-frontend
 	@echo "Demo frontend deployed! App: https://$(DEMO_SERVER)"
 
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB
+## (skips *.revert.sql — dev-rollback pairs must never run against prod)
 prod-migrate:
 	@echo "==> Applying migrations on production..."
-	@for f in backend/drizzle/*.sql; do \
+	@for f in $(shell ls backend/drizzle/*.sql | grep -v '\.revert\.sql'); do \
 		basename=$$(basename "$$f"); \
 		echo "  Copying $$basename..."; \
 		scp "$$f" root@$(PROD_SERVER):/tmp/$$basename; \
