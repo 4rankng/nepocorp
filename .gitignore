@@ -71,3 +71,5 @@ kilo.json
 .agents
 .claude-tmp/
 .agentkit/
+# Added by code-review-graph
+.code-review-graph/
