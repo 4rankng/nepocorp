@@ -10,9 +10,10 @@ describe('settlementExportEndpoint', () => {
   });
 
   it('uses the finance GET export route for office users', () => {
+    // Mounted at the /api root — a '/finance' prefix returns 404 (kanban 20260921_19).
     expect(settlementExportEndpoint(false, 7, 'html'))
-      .toBe('/finance/advance-settlements/7/export?format=html');
+      .toBe('/advance-settlements/7/export?format=html');
     expect(settlementExportEndpoint(false, 7, 'xlsx'))
-      .toBe('/finance/advance-settlements/7/export');
+      .toBe('/advance-settlements/7/export');
   });
 });
