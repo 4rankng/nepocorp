@@ -19,9 +19,11 @@
   .app.is-driver .app-main {
     background: none;
   }
-  /* Zero padding only when the driver detail page is rendered (full-bleed card layout) */
+  /* Zero SIDE padding only when the driver detail page is rendered (full-bleed card
+     layout) — the bottom clearance for the fixed bottom nav must survive, otherwise
+     the last card sits behind the nav (kanban 20260921_11). */
   .app.is-driver .app-body:has(.driver-trip-detail-page) {
-    padding: 0;
+    padding: 0 0 calc(56px + env(safe-area-inset-bottom, 12px)) 0;
   }
   
   .bottom-nav {
@@ -58,16 +60,18 @@
     opacity: 1; /* Navigation remains usable if motion is disabled or interrupted. */
   }
 
+  /* The active indicator sits INSIDE the nav: at top: 0 a 6px bar overhung the
+     1px top border and read as a broken edge (kanban 20260921_11). */
   .bottom-nav-indicator {
     position: absolute;
-    top: 0;
+    top: 1px;
     left: 50%;
     transform: translateX(-50%);
     width: 40px;
-    height: 6px;
+    height: 4px;
     background: var(--accent);
-    border-radius: 0 0 999px 999px;
-    box-shadow: 0 4px 12px rgba(0, 177, 79, 0.4);
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 6px rgba(0, 177, 79, 0.25);
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
