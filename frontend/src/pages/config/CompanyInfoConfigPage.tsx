@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CompanyInfo } from '@tingting/shared';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Save, Trash2, Upload } from 'lucide-react';
+import { Building2, Loader2, Save, Trash2, Upload } from 'lucide-react';
 import { PageHeader, Panel } from '../../components/UI';
 import { useCompanyInfo, useSaveCompanyInfo } from '../../hooks/useCatalogQueries';
 import { configClient } from '../../api/configClient';
@@ -81,6 +81,15 @@ export default function CompanyInfoConfigPage() {
   }
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  // A stored logo whose file is gone (404) used to render the browser's broken-image
+  // icon + alt text (kanban 20260921_12); fall back to a placeholder instead.
+  const [logoError, setLogoError] = useState(false);
+  const logoSrc = photoSrc(form.logoStorageKey);
+
+  // A new logo (upload/remove/reload) must get a fresh chance to load.
+  useEffect(() => {
+    setLogoError(false);
+  }, [logoSrc]);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -143,8 +152,7 @@ export default function CompanyInfoConfigPage() {
     }
   };
 
-  const logoSrc = photoSrc(form.logoStorageKey);
-
+  
   return (
     <div ref={rootRef} className="cfg-page cfg-page--company-info">
       <PageHeader
@@ -180,15 +188,43 @@ export default function CompanyInfoConfigPage() {
                       hidden
                       onChange={e => handleLogoSelect(e.target.files)}
                     />
-                    {logoSrc ? (
+                    {logoSrc && !logoError ? (
                       <img
                         src={logoSrc}
                         alt="Logo công ty"
+                        onError={() => setLogoError(true)}
                         style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', borderRadius: 6, border: '1px solid #dde3ea' }}
                       />
                     ) : (
-                      <div style={{ height: 80, width: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px dashed #dde3ea', color: 'var(--ink-3)', fontSize: 13 }}>
-                        Chưa có logo
+                      <div
+                        style={{
+                          height: 80,
+                          width: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          justifyContent: 'center',
+                          borderRadius: 6,
+                          border: '1px dashed #dde3ea',
+                          color: 'var(--ink-3)',
+                          fontSize: 13,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
+                            background: 'var(--surface-2)',
+                            flex: 'none',
+                          }}
+                        >
+                          <Building2 size={20} aria-hidden="true" />
+                        </span>
+                        <span>{logoSrc ? 'Không tải được logo' : 'Chưa có logo'}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 8 }}>
