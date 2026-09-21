@@ -111,13 +111,19 @@ export function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDr
   const roadAllowanceChanged = draft.roadAllowance !== original.roadAllowance;
 
   return {
-    legs: (trip.legs ?? []).map((leg) => ({
-      sequence: leg.sequence,
-      origin: leg.origin,
-      destination: leg.destination,
-      km: Number(leg.km),
-      loadingType: leg.loadingType,
-    })),
+    // A trip created without route legs has nothing to send; omitting the field
+    // keeps the stored legs and lets the figures save succeed (kanban 20260921_3).
+    ...((trip.legs ?? []).length > 0
+      ? {
+        legs: (trip.legs ?? []).map((leg) => ({
+          sequence: leg.sequence,
+          origin: leg.origin,
+          destination: leg.destination,
+          km: Number(leg.km),
+          loadingType: leg.loadingType,
+        })),
+      }
+      : {}),
     version: trip.version,
     departureDate: trip.departureDate,
     routeId: trip.routeId,

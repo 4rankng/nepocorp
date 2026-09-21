@@ -105,3 +105,21 @@ describe('quick edit money parsing (kanban 20260921_3)', () => {
     expect(figuresPayloadFromDraft(trip(), draft).revenue).toBe(0);
   });
 });
+
+describe('quick edit figures payload without route legs (kanban 20260921_3)', () => {
+  it('omits legs for a trip that has none, so the save is not rejected', () => {
+    const legless = trip({ legs: [] });
+    const payload = figuresPayloadFromDraft(legless, quickDraftFromTrip(legless));
+
+    expect('legs' in payload).toBe(false);
+  });
+
+  it('sends the legs it has', () => {
+    const withLegs = trip({
+      legs: [{ sequence: 1, origin: 'Hải Phòng', destination: 'Bắc Ninh', km: 120, loadingType: 'HANG' }] as TripDetail['legs'],
+    });
+    const payload = figuresPayloadFromDraft(withLegs, quickDraftFromTrip(withLegs));
+
+    expect(payload.legs).toEqual([{ sequence: 1, origin: 'Hải Phòng', destination: 'Bắc Ninh', km: 120, loadingType: 'HANG' }]);
+  });
+});
