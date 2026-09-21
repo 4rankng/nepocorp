@@ -84,10 +84,8 @@ export function useReassignMutations() {
         return;
       }
     } else {
-      if (!reassignState.externalPlateNumber.trim()) {
-        setReassignState((s) => ({ ...s, error: 'Biển số xe là bắt buộc cho chuyến xe ngoài' }));
-        return;
-      }
+      // The partner's plate is not known at reassignment time — it is required
+      // when the trip is completed (kanban 20260921_4).
     }
     setReassignState((s) => ({ ...s, loading: true, error: '' }));
     try {

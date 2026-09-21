@@ -144,13 +144,11 @@ export const createTripSchema = z.object({
       ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho chuyến xe nội bộ' });
     }
   } else {
-    // The carrier and vehicle identity must be known when an EXTERNAL trip is
-    // created. Driver contact details may be filled in later.
+    // The carrier must be known when an EXTERNAL trip is created. The truck's
+    // plate and the driver contact details arrive later — the plate is required
+    // only when the trip is completed (kanban 20260921_4).
     if (!data.externalCarrierId) {
       ctx.addIssue({ code: 'custom', path: ['externalCarrierId'], message: 'Nhà xe ngoài là bắt buộc cho chuyến xe ngoài' });
-    }
-    if (!data.externalPlateNumber?.trim()) {
-      ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe là bắt buộc cho chuyến xe ngoài' });
     }
   }
 });
@@ -171,13 +169,17 @@ export const reassignTripSchema = z.object({
     if (!data.driverId) {
       ctx.addIssue({ code: 'custom', path: ['driverId'], message: 'Lái xe là bắt buộc cho xe nhà' });
     }
-  } else if (!data.externalPlateNumber?.trim()) {
-    ctx.addIssue({ code: 'custom', path: ['externalPlateNumber'], message: 'Biển số xe là bắt buộc cho chuyến xe ngoài' });
   }
+  // An EXTERNAL reassignment no longer needs the plate up front: the partner
+  // assigns the truck later and the plate is only required at completion
+  // (kanban 20260921_4).
 });
 
 export const updateTripFiguresSchema = z.object({
-  legs: z.array(tripLegSchema).min(1),
+  // Optional: a figures-only update (quick edit of revenue/fuel/road/salary) may
+  // omit legs entirely — trips created without route legs can then still be
+  // edited. When present the list must be non-empty (kanban 20260921_3).
+  legs: z.array(tripLegSchema).min(1).optional(),
   customerId: z.coerce.number().int().positive().optional(),
   departureDate: z.string().optional(),
   completedAt: z.string().optional(),
@@ -235,13 +237,6 @@ export const updateTripFiguresSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
       path: ['revenue'],
-    });
-  }
-  if (data.carrierType === 'EXTERNAL' && !data.externalPlateNumber?.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Biển số xe là bắt buộc cho chuyến xe ngoài',
-      path: ['externalPlateNumber'],
     });
   }
   if (data.carrierType === 'EXTERNAL' && data.fuelSupplierId != null) {

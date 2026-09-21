@@ -206,7 +206,6 @@ export function TripInfoCard(props: TripInfoCardProps) {
                   value={form.externalPlateNumber}
                   onChange={(e) => form.setExternalPlateNumber(e.target.value)}
                   maxLength={20}
-                  required
                 />
               </Field>
               <Field label="Tên lái xe" controlId="externalDriverName">

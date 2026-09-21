@@ -97,15 +97,18 @@ describe('trip copy field contract', () => {
     });
   });
 
-  it('rejects copying a legacy external trip without a plate number', () => {
+  it('copies a legacy external trip that has no plate number yet', () => {
     const source = {
       carrierType: 'EXTERNAL',
       externalPlateNumber: null,
     } as TripRow;
 
-    assert.throws(
-      () => buildCopiedTripValues(source, 'TRP-202607-0099', 99),
-      /Biển số xe là bắt buộc/,
-    );
+    // The partner assigns the truck after planning, so a copy without a plate is
+    // valid; the plate is only required at completion (kanban 20260921_4).
+    const copied = buildCopiedTripValues(source, 'TRP-202607-0099', 99);
+
+    assert.equal(copied.carrierType, 'EXTERNAL');
+    assert.equal(copied.externalPlateNumber, null);
+    assert.equal(copied.tripCode, 'TRP-202607-0099');
   });
 });

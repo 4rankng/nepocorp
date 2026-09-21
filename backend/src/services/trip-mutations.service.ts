@@ -210,8 +210,6 @@ export function buildCopiedTripValues(
   tripCode: string,
   createdBy: number,
 ): TripInsert {
-  requireExternalPlate(source.carrierType, source.externalPlateNumber);
-
   const copiedFields = Object.fromEntries(
     Object.entries(source).filter(([key]) => !COPY_EXCLUDED_TRIP_FIELDS.has(key as keyof TripRow)),
   ) as Omit<TripInsert, 'tripCode'>;
@@ -260,15 +258,6 @@ async function generateTripCode(tx: Tx, departureDateValue: string): Promise<str
     .returning();
 
   return `TRP-${yearMonth}-${String(counterRow.counter).padStart(4, '0')}`;
-}
-
-function requireExternalPlate(
-  carrierType: string | undefined,
-  externalPlateNumber: string | null | undefined,
-) {
-  if (carrierType === 'EXTERNAL' && !externalPlateNumber?.trim()) {
-    throw new ApiError(400, 'Biển số xe là bắt buộc cho chuyến xe ngoài');
-  }
 }
 
 async function validateFuelAllocationSuppliers(
@@ -343,8 +332,6 @@ export async function createTrip(data: {
   fuelSupplierId?: number | null;
   fuelActualUnitPrice?: number | null;
 }) {
-  requireExternalPlate(data.carrierType, data.externalPlateNumber);
-
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
 
@@ -586,8 +573,10 @@ export async function updateTripFigures(
     trailerType?: string | null;
   },
 ) {
-  // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors
-  const normalizedLegs = data.legs.map(leg => ({
+  // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors.
+  // An omitted `legs` means "leave the stored legs alone" — the replace below is
+  // skipped when the list is empty (kanban 20260921_3).
+  const normalizedLegs = (data.legs ?? []).map(leg => ({
     ...leg,
     km: Math.round(leg.km),
   }));
@@ -606,10 +595,6 @@ export async function updateTripFigures(
       .orderBy(s.tripFuelAllocations.id);
 
     const resolvedCarrierType = data.carrierType ?? trip.carrierType;
-    const resolvedExternalPlateNumber = data.externalPlateNumber !== undefined
-      ? data.externalPlateNumber
-      : trip.externalPlateNumber;
-    requireExternalPlate(resolvedCarrierType, resolvedExternalPlateNumber);
     if (
       resolvedCarrierType === 'EXTERNAL'
       && (data.fuelSupplierId != null || (data.fuelAllocations?.length ?? 0) > 0)
@@ -1194,7 +1179,6 @@ export async function reassignTrip(tripId: number, data: { carrierType?: 'OWN' |
     if (trip.status !== TripStatus.CREATED) throw new ApiError(409, 'Chỉ có thể đổi lái xe/xe cho chuyến chưa xuất phát');
 
     const carrierType = data.carrierType || 'OWN';
-    requireExternalPlate(carrierType, data.externalPlateNumber);
     let trailerId = trip.trailerId;
     let trailerType = trip.trailerType;
 

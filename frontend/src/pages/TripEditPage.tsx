@@ -384,7 +384,7 @@ export default function TripEditPage() {
                     </div>
                     <div className="tc-field-row tc-field-row--3">
                       <div className="tc-field">
-                        <label className="tc-field-label">Biển số xe <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>
+                        <label className="tc-field-label">Biển số xe</label>
                         <input
                           id="externalPlateNumber"
                           className="input mono"
@@ -393,7 +393,6 @@ export default function TripEditPage() {
                           value={form.externalPlateNumber}
                           onChange={(e) => form.setExternalPlateNumber(e.target.value)}
                           maxLength={20}
-                          required
                         />
                       </div>
                       <div className="tc-field">
