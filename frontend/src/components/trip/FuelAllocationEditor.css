@@ -153,6 +153,34 @@
 .fuel-allocation-price .fuel-allocation-input {
   justify-content: flex-end;
 }
+/* Rows still waiting for litres keep the column readable by naming the price
+   that will be applied, right-aligned under the "Đơn giá (đ/lít)" header. The
+   cell owns the alignment so it holds whichever display the shared hint class
+   resolves to; the nested selector out-ranks `.tc-field-hint`. */
+.fuel-allocation-price {
+  text-align: right;
+}
+.fuel-allocation-price .fuel-allocation-price-default {
+  display: block;
+  margin: 0;
+}
+.fuel-allocation-price-default .money__num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* Two short lines fit the ~176px price column; the full sentence stays in the
+   element's title attribute (kanban 20260921_23). */
+.fuel-allocation-price-default__value {
+  display: block;
+  color: var(--ink-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.fuel-allocation-price-default__source {
+  display: block;
+  font-size: var(--fs-2xs, 11px);
+  color: var(--ink-3);
+}
 .fuel-allocation-actions {
   display: flex;
   gap: 6px;

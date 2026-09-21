@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
 import type { Supplier } from '@tingting/shared';
 import { useCatalogs } from '../../hooks/useCatalogs';
+import { useFuelConfig } from '../../hooks/useQueries';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
+import { Money } from '../shared/Money';
+import { formatCurrency } from '../../lib/format';
 import { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers, isStandardFuelRowKey } from './fuelAllocationRows';
 import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import './FuelAllocationEditor.css';
@@ -26,6 +29,7 @@ function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[])
 export function FuelAllocationEditor() {
   const form = useTripFormContext();
   const { data: catalogData } = useCatalogs();
+  const { data: fuelConfig } = useFuelConfig();
   const fuelSuppliers = useMemo(
     () => activeFuelSuppliers(catalogData?.suppliers) as Supplier[],
     [catalogData?.suppliers],
@@ -48,6 +52,16 @@ export function FuelAllocationEditor() {
     (total, allocation) => total + (Number(allocation.liters) || 0),
     0,
   );
+
+  // A row without its own pump price is priced at the trip's effective price —
+  // the entered actual price when present, otherwise the configured one (same
+  // `actual ?? config` precedence the ledger and computeTripTotals apply). The
+  // price cell must never render blank, so rows still waiting for their litres
+  // show which price will be applied instead of an empty column.
+  const configuredUnitPrice = Number(fuelConfig?.unitPrice) || 0;
+  const actualUnitPrice = Number(form.fuelActualUnitPrice) || 0;
+  const defaultUnitPrice = actualUnitPrice > 0 ? actualUnitPrice : configuredUnitPrice;
+  const defaultUnitPriceSource = actualUnitPrice > 0 ? 'Theo đơn giá thực tế' : 'Theo giá cấu hình';
 
   const setRow = (key: string, update: Partial<FuelAllocationFormRow>) => {
     form.setFuelAllocations(previous => previous.map(row => (
@@ -170,7 +184,25 @@ export function FuelAllocationEditor() {
                     />
                     <span aria-hidden="true">đ</span>
                   </div>
-                ) : null}
+                ) : (
+                  <p
+                    className="tc-field-hint fuel-allocation-price-default"
+                    title={defaultUnitPrice > 0
+                      ? `${defaultUnitPriceSource} ${formatCurrency(defaultUnitPrice)}/lít`
+                      : 'Theo cấu hình hệ thống'}
+                  >
+                    {defaultUnitPrice > 0 ? (
+                      <>
+                        {/* Price on its own line: the column is ~176px wide and the
+                            full sentence used to wrap mid-phrase (kanban 20260921_23). */}
+                        <span className="fuel-allocation-price-default__value">
+                          <Money value={defaultUnitPrice} noUnit /> đ/lít
+                        </span>
+                        <span className="fuel-allocation-price-default__source">{defaultUnitPriceSource}</span>
+                      </>
+                    ) : 'Theo cấu hình hệ thống'}
+                  </p>
+                )}
               </div>
 
               <div className="fuel-allocation-actions" role="cell">
