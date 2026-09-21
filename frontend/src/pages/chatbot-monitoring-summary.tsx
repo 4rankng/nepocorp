@@ -103,6 +103,15 @@ export function healthCopy(summary: ChatbotMetricSummary | undefined):
   return { tone: 'green', label: 'Ổn định', detail: 'Độ trễ, lỗi và fallback đang trong vùng an toàn.' };
 }
 
+/**
+ * True when a KPI value is prose rather than a number/identifier. The mono font
+ * stretches Vietnamese text ("Chưa rõ") into something that reads as broken
+ * spacing, so prose values render in the body font (kanban 20260921_10).
+ */
+export function isProseValue(value: string): boolean {
+  return /[^\d\s.,%–—-]/.test(value);
+}
+
 export function mainBottleneck(breakdown: ChatbotLatencyBreakdown | undefined): { label: string; value: number | null } {
   if (!breakdown) return { label: 'Chưa rõ', value: null };
   const rows = [
@@ -189,7 +198,7 @@ export function BotHealthHero({
           </div>
           <div>
             <span>Nút thắt</span>
-            <strong>{bottleneck.label}</strong>
+            <strong className={isProseValue(bottleneck.label) ? 'cbm-value--text' : undefined}>{bottleneck.label}</strong>
           </div>
           <div>
             <span>Token/lượt</span>
@@ -342,7 +351,7 @@ export function SummaryKpis({
           <span className="cbm-kpi__label" title={c.hint ?? c.label}>
             {c.label}
           </span>
-          <span className="cbm-kpi__value">{c.value}</span>
+          <span className={`cbm-kpi__value${isProseValue(c.value) ? ' cbm-value--text' : ''}`}>{c.value}</span>
           <span className="cbm-kpi__meta">{c.meta}</span>
           {typeof c.progress === 'number' && (
             <span className="cbm-kpi__meter" aria-hidden="true">

@@ -20,7 +20,7 @@ import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useChatbotMetricsSummary, useChatbotLatencyBreakdown, useChatbotTools, useChatbotTimeseries, useChatbotRecent } from '../hooks/useChatbotMetrics';
-import { BOT_OPS_ILLUSTRATION, BotHealthHero, IntentDistribution, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
+import { BotHealthHero, IntentDistribution, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
 import { LatencyBreakdownBars, LatencyTrendChart, ReactEfficiency, RecentTurnsTable, ToolsTable } from './chatbot-monitoring-details';
 import './ChatbotMonitoringPage.css';
 
@@ -54,7 +54,6 @@ export default function ChatbotMonitoringPage() {
 
       {isWholeEmpty ? (
         <div className="cbm-empty-card">
-          <img src={BOT_OPS_ILLUSTRATION} alt="" />
           <EmptyState
             illustration="ops"
             title="Chưa có dữ liệu bot"
