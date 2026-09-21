@@ -33,7 +33,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: nowrap;
+  /* Wrap BETWEEN tokens, never INSIDE one: the money span ("YTD 900.000 ₫")
+     must stay whole so the currency sign can never end up alone on its own
+     line. The row may break instead — `.kpi` is `overflow: hidden`, so a
+     non-wrapping row would be clipped (kanban 20260921_24). */
+  flex-wrap: wrap;
+  white-space: nowrap;
 }
 
 .penalty-kpi-meta .dot {

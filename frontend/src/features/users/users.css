@@ -192,6 +192,16 @@
   background: var(--surface-2);
 }
 
+/* The full placeholder ("Tìm theo username, email, SĐT...", ~285px at the
+   control font size) was clipped by the shared 180px `min-width`
+   (kanban 20260921_24). 300px matches the payables toolbar search. Declared
+   here — before the <=640px block further down — so the mobile
+   `width: 100%; min-width: 0` override still wins on source order. */
+.users-table-panel .toolbar__search {
+  width: 300px;
+  min-width: 300px;
+}
+
 .users-list-legend {
   display: flex;
   align-items: center;
@@ -250,6 +260,14 @@
   color: inherit;
   background: transparent;
   font: inherit;
+  /* Header cells are uppercase by convention (`.tt-table thead th`,
+     components/Table.css) and every sibling header inherits it. The UA
+     `text-transform: none` on <button> blocked that inheritance, so sortable
+     columns rendered Title Case beside the uppercase static ones
+     (kanban 20260921_24). letter-spacing is not part of the `font` shorthand,
+     so it is re-declared to keep the header tracking identical. */
+  text-transform: uppercase;
+  letter-spacing: inherit;
   text-align: left;
   cursor: pointer;
 }

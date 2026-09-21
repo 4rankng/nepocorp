@@ -366,7 +366,10 @@ export function PenaltyTable({
                         </td>
                         <td>
                           <span className={`penalty-money ${moneyClass}`}>
-                            {d.fineYTD > 0 ? formatCurrency(d.fineYTD) : `0`}<span className="unit">đ</span>
+                            {/* formatCurrency already appends the ₫ unit; a second
+                                <span class="unit">đ</span> here rendered "900.000 ₫đ"
+                                (kanban 20260921_24). */}
+                            {formatCurrency(d.fineYTD)}
                           </span>
                         </td>
                         <td style={{ textAlign: 'center' }}>
