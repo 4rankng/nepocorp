@@ -495,6 +495,28 @@ export default function ForwarderSettlementCreatePage() {
             Gửi phiếu thanh toán
           </button>
         </div>
+
+        {/* Mobile only: the form is ~14 screens tall, so the running totals and the
+            submit button stay pinned at the bottom (kanban 20260921_16). */}
+        <div className="fset-sticky-bar">
+          <div className="fset-sticky-bar__summary">
+            <span className="fset-sticky-bar__count">
+              Đã chọn: <strong>{selectedRequestIds.size + selectedExpenseIds.size}</strong> mục
+            </span>
+            <span className="fset-sticky-bar__balance">
+              Cân đối: <Money value={Math.abs(difference)} />
+              {difference === 0 ? ' · vừa đủ' : difference > 0 ? ' · giữ lại kỳ sau' : ' · công ty hoàn thêm'}
+            </span>
+          </div>
+          <button
+            type="submit"
+            className={`btn btn--primary ${!isFormReady || createSettlement.isPending ? 'btn--disabled' : ''}`}
+            disabled={!isFormReady || createSettlement.isPending}
+          >
+            {createSettlement.isPending ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
+            Gửi phiếu
+          </button>
+        </div>
       </form>
 
       {dialog}

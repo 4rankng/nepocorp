@@ -964,3 +964,47 @@
   opacity: .58;
   cursor: not-allowed;
 }
+
+/* ── Mobile sticky action bar (kanban 20260921_16) ─────────────────────────
+   The create-settlement form runs ~14 screens tall on a phone; this keeps the
+   running selection/balance and the submit button reachable at all times. */
+.fset-sticky-bar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .fset-sticky-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  }
+  .fset-sticky-bar__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: var(--fs-xs);
+    color: var(--ink-2);
+    line-height: 1.35;
+  }
+  .fset-sticky-bar__count strong {
+    color: var(--ink);
+    font-size: var(--fs-sm);
+  }
+  .fset-sticky-bar__balance {
+    overflow-wrap: anywhere;
+  }
+  .fset-sticky-bar .btn {
+    flex: none;
+  }
+}
