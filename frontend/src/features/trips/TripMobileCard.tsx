@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Copy } from 'lucide-react';
+import { ArrowRight, Copy, TriangleAlert } from 'lucide-react';
 import {
   TripStatus, TRIP_STATUS_LABELS,
   type TripDetail,
@@ -8,7 +8,7 @@ import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
 import { formatCurrency } from '../../lib/format';
 import {
-  buildTripCode, calcConsumption, getMissingIndicators,
+  buildTripCode, calcConsumption, getMissingIndicators, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
@@ -39,6 +39,8 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
   const grossProfit = getTripDisplayGrossProfit(trip);
   const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
   const missingIndicators = getMissingIndicators(trip);
+  const missingPlanFields = getMissingPlanFields(trip);
+  const tripIsToday = isTripToday(trip.departureDate);
   const tripContainers: TripListContainer[] = (trip as TripListRow).containers ?? [];
   const typeCodes = Array.from(new Set(tripContainers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
 
@@ -54,6 +56,9 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
             {buildTripCode(trip)}
             <span className="trip-meta-sep">·</span>
             <span>{formatDayMonth(trip.departureDate)}</span>
+            {isTripToday(trip.departureDate) && (
+              <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
+            )}
             <span className="trip-meta-sep">·</span>
             <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`}>
               {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—')}
@@ -92,6 +97,13 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
               <span style={{ color: 'var(--ink-3)' }}>+{tripContainers.length - 4}</span>
             )}
           </div>
+        </div>
+      )}
+
+      {missingPlanFields.length > 0 && (
+        <div className="trip-missing-flag" title={`Còn thiếu: ${missingPlanFields.join(', ')}`}>
+          <TriangleAlert size={11} aria-hidden="true" />
+          <span>Thiếu: {missingPlanFields.join(', ')}</span>
         </div>
       )}
 
@@ -165,12 +177,14 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
     </>
   );
 
+  const rootClass = `trip-mcard${tripIsToday ? ' trip-mcard--today' : ''}${missingPlanFields.length > 0 ? ' trip-mcard--missing' : ''}`;
+
   if (!onCopyPlan) {
     return (
       <Link
         to={`/trips/${trip.id}`}
         state={detailState}
-        className="trip-mcard"
+        className={rootClass}
         style={{
           textDecoration: 'none',
           color: 'inherit',
@@ -184,7 +198,7 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
   }
 
   return (
-    <div className="trip-mcard" style={style}>
+    <div className={rootClass} style={style}>
       <Link
         to={`/trips/${trip.id}`}
         state={detailState}

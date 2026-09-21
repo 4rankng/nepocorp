@@ -214,3 +214,8 @@
     grid-row: auto;
   }
 }
+
+/* Legend for the row cues added by kanban 20260921_1 / _5. */
+.trip-list-page .legend-dot--today { background: #10B956; }
+.trip-list-page .legend-dot--missing { background: #DC2626; }
+.trip-list-page .legend-item--hint { cursor: help; }

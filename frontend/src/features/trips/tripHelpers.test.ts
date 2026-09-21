@@ -1,11 +1,69 @@
 import { describe, expect, it } from 'vitest';
-import type { TripDetail } from '@tingting/shared';
+import { TripStatus, type TripDetail } from '@tingting/shared';
 import {
   getAncillaryTripCostBreakdown,
   getExternalTripFinancials,
   getExternalTripPreviewGrossProfit,
+  getMissingPlanFields,
   getTripDisplayGrossProfit,
+  isTripToday,
 } from './tripHelpers';
+
+describe('isTripToday — Vietnam business day (kanban 20260921_1)', () => {
+  it('uses the Vietnam midnight boundary, not the UTC day', () => {
+    const justAfterVnMidnight = new Date('2026-09-20T17:00:00Z'); // 2026-09-21 00:00 VN
+    expect(isTripToday('2026-09-21', justAfterVnMidnight)).toBe(true);
+    expect(isTripToday('2026-09-20', justAfterVnMidnight)).toBe(false);
+
+    const justBeforeVnMidnight = new Date('2026-09-20T16:59:00Z'); // 2026-09-20 23:59 VN
+    expect(isTripToday('2026-09-20', justBeforeVnMidnight)).toBe(true);
+    expect(isTripToday('2026-09-21', justBeforeVnMidnight)).toBe(false);
+  });
+
+  it('is false without a departure date', () => {
+    expect(isTripToday(null)).toBe(false);
+    expect(isTripToday('')).toBe(false);
+  });
+});
+
+describe('getMissingPlanFields (kanban 20260921_5)', () => {
+  const plan = {
+    status: TripStatus.CREATED,
+    carrierType: 'EXTERNAL',
+    customerId: 4,
+    routeId: null,
+    departureDate: '2026-09-21',
+    externalCarrierId: null,
+    externalFreightCost: null,
+    externalPlateNumber: null,
+    containers: [],
+  } as unknown as TripDetail;
+
+  it('lists planning fields for an open plan but not the numbers that arrive later', () => {
+    const missing = getMissingPlanFields(plan);
+
+    expect(missing).toContain('Tuyến');
+    expect(missing).toContain('Đối tác điều xe');
+    expect(missing).toContain('Loại container');
+    // The partner assigns the plate and the driver enters container numbers
+    // after planning, so neither is "missing" while the plan is open.
+    expect(missing).not.toContain('Biển số xe ngoài');
+    expect(missing).not.toContain('Số container');
+    expect(missing).not.toContain('Doanh thu');
+  });
+
+  it('adds the running-trip fields once the trip is on the road', () => {
+    const running = { ...plan, status: TripStatus.IN_TRANSIT } as unknown as TripDetail;
+
+    expect(getMissingPlanFields(running)).toEqual(expect.arrayContaining([
+      'Biển số xe ngoài', 'Số container', 'Doanh thu', 'Dầu', 'Tiền đi đường', 'Lương chuyến',
+    ]));
+  });
+
+  it('marks nothing on a canceled trip', () => {
+    expect(getMissingPlanFields({ status: TripStatus.CANCELED } as TripDetail)).toEqual([]);
+  });
+});
 
 describe('getTripDisplayGrossProfit', () => {
   it('recomputes stale external profit from both prices ex-VAT for the reported commission case', () => {

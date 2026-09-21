@@ -696,3 +696,39 @@
   color: var(--tbl-green-700);
   background: var(--tbl-green-050);
 }
+
+/* ── Row cues: "hôm nay" + "thiếu thông tin" (kanban 20260921_1 / _5) ─────
+   Row state keeps using the statusStrip (see tripRowStyle); these rules add
+   the textual markers that make a row findable while scrolling. */
+.trip-list-page .trip-today-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #10B956;
+  color: #FFFFFF;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  flex: none;
+}
+.trip-list-page .trip-missing-flag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: #B91C1C;
+  cursor: help;
+  overflow-wrap: anywhere;
+}
+.trip-list-page .trip-missing-flag svg { flex: none; }
+
+/* The "Hôm nay" chip must never be clipped by the narrow code column: let the
+   name line wrap so the chip drops to its own line instead (kanban 20260921_1). */
+.trip-list-page .trip-name {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}

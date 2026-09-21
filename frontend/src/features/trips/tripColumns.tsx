@@ -1,15 +1,16 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
-import { ArrowRight, AlertCircle, Copy, X as XIcon } from 'lucide-react';
+import { ArrowRight, AlertCircle, Copy, TriangleAlert, X as XIcon } from 'lucide-react';
 import {
   TripStatus, TRIP_STATUS_LABELS, DATA_COMPLETENESS_COLORS, TRIP_STATUS_COLORS,
+  TRIP_MISSING_FIELD_ROW_COLORS,
   type TripDetail,
 } from '@tingting/shared';
 import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
 import { formatCurrency } from '../../lib/format';
 import {
-  buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness,
+  buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
@@ -131,6 +132,7 @@ export function buildTripColumns(
         const customerName = trip.customer?.name ?? '—';
         const tripCode = buildTripCode(trip);
         const missingIndicators = getMissingIndicators(trip);
+        const missingFields = getMissingPlanFields(trip);
         const copyingThisPlan = actions?.copyingPlanId === trip.id;
         return (
           <div className="trip-col">
@@ -145,11 +147,20 @@ export function buildTripColumns(
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
                 <span className="trip-meta-sep">·</span>
                 <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
+                {isTripToday(trip.departureDate) && (
+                  <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
+                )}
               </div>
               <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <span>{customerName}</span>
                 {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
               </div>
+              {missingFields.length > 0 && (
+                <div className="trip-missing-flag" title={`Còn thiếu: ${missingFields.join(', ')}`}>
+                  <TriangleAlert size={11} aria-hidden="true" />
+                  <span>Thiếu: {missingFields.join(', ')}</span>
+                </div>
+              )}
               {missingIndicators.length > 0 && (
                 <div className="trip-missing-row">
                   {missingIndicators.map((m, i) => (
@@ -460,10 +471,16 @@ export function buildTripColumns(
 /** Computes the per-row CSS variable bag used by the page for stripe colors. */
 export function tripRowStyle(trip: TripDetail): Record<string, string> {
   const completeness = getDataCompleteness(trip);
+  const missingFields = getMissingPlanFields(trip);
   return {
     '--strip-top': TRIP_STATUS_COLORS[trip.status],
-    '--strip-bottom': completeness === 'na'
-      ? TRIP_STATUS_COLORS[trip.status]
-      : DATA_COMPLETENESS_COLORS[completeness],
+    // A row that still needs information gets the red strip half — the app
+    // signals row state through the statusStrip, never a row background
+    // (docs/design-guidelines.md), and the "Thiếu: …" label names the fields.
+    '--strip-bottom': missingFields.length > 0
+      ? TRIP_MISSING_FIELD_ROW_COLORS.accent
+      : completeness === 'na'
+        ? TRIP_STATUS_COLORS[trip.status]
+        : DATA_COMPLETENESS_COLORS[completeness],
   };
 }

@@ -56,6 +56,12 @@ export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, tog
                 <span className="legend-item"><span className="legend-dot bb-dang" />Đang chạy {statusCounts[TripStatus.IN_TRANSIT]}</span>
                 <span className="legend-item"><span className="legend-dot bb-moi"  />Mới tạo {statusCounts[TripStatus.CREATED]}</span>
                 <span className="legend-item"><span className="legend-dot bb-huy"  />Đã hủy {statusCounts[TripStatus.CANCELED]}</span>
+                <span className="legend-item legend-item--hint" title="Dòng có viền xanh + nhãn “Hôm nay” là kế hoạch của ngày hiện hành">
+                  <span className="legend-dot legend-dot--today" />Hôm nay
+                </span>
+                <span className="legend-item legend-item--hint" title="Dòng có viền đỏ còn thiếu thông tin — xem nhãn “Thiếu: …” trên dòng để biết cần bổ sung gì">
+                  <span className="legend-dot legend-dot--missing" />Thiếu thông tin
+                </span>
               </div>
             </div>
             <div className="metric">

@@ -14,7 +14,7 @@ import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
-import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit, getMissingPlanFields, isTripToday } from '../features/trips';
 import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
@@ -576,7 +576,7 @@ export default function TripListPage() {
                   to={quickEdit ? undefined : `/trips/${row.original.id}`}
                   state={detailState}
                   onClick={quickEdit ? () => handleToggleSelect(row.original.id) : undefined}
-                  className={`table-row${quickEdit ? ' quick-edit-row' : ''}${selectedIds.has(row.original.id) ? ' selected' : ''}${!isEditableInQuickMode(row.original) ? ' locked' : ''}`}
+                  className={`table-row${quickEdit ? ' quick-edit-row' : ''}${selectedIds.has(row.original.id) ? ' selected' : ''}${!isEditableInQuickMode(row.original) ? ' locked' : ''}${isTripToday(row.original.departureDate) ? ' table-row--today' : ''}${getMissingPlanFields(row.original).length > 0 ? ' table-row--missing' : ''}`}
                   style={tripRowStyle(row.original) as CSSProperties}
                 >
                   {row.getVisibleCells().map((cell) => {

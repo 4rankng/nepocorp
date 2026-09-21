@@ -165,6 +165,18 @@ export const DATA_COMPLETENESS_COLORS = {
   na: 'transparent',     // CREATED / CANCELED — not applicable
 } as const;
 
+/**
+ * Trip-list row cues (kanban 20260921_1 / _5). These are temporal and
+ * data-quality cues — NOT statuses; status stays on the statusStrip.
+ */
+export const TRIP_TODAY_ROW_COLORS = {
+  accent: '#10B956', // signal green — "hôm nay"
+} as const;
+
+export const TRIP_MISSING_FIELD_ROW_COLORS = {
+  accent: '#DC2626', // danger — còn thiếu thông tin
+} as const;
+
 export const ROLE_LABELS: Record<Role, string> = {
   [Role.ADMIN]: 'Quản trị viên',
   [Role.MANAGER]: 'Quản lý',

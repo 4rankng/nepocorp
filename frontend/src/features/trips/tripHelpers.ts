@@ -175,6 +175,64 @@ export function getMissingIndicators(trip: TripDetail): MissingIndicator[] {
 
 export type DataCompleteness = 'complete' | 'incomplete' | 'na';
 
+const VIETNAM_DAY_FORMAT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** Today's date in Vietnam as YYYY-MM-DD — the app's business day (servers run UTC). */
+export function todayInVietnam(now: Date = new Date()): string {
+  return VIETNAM_DAY_FORMAT.format(now);
+}
+
+/** True when the trip departs on the current Vietnamese day (kanban 20260921_1). */
+export function isTripToday(departureDate: string | null | undefined, now: Date = new Date()): boolean {
+  if (!departureDate) return false;
+  return departureDate.slice(0, 10) === todayInVietnam(now);
+}
+
+/**
+ * Fields the trip still needs, in Vietnamese labels (kanban 20260921_5).
+ *
+ * A CREATED plan is judged on its PLANNING fields only — the container/seal
+ * numbers and a subcontracted plate arrive later by design (the driver enters
+ * the container numbers, the partner assigns the truck), so they are not
+ * "missing" while the plan is still open. From IN_TRANSIT onwards those same
+ * fields plus the financial figures count as missing.
+ */
+export function getMissingPlanFields(trip: TripDetail): string[] {
+  if (trip.status === TripStatus.CANCELED) return [];
+
+  const containers = (trip as TripListRow).containers ?? [];
+  const missing: string[] = [];
+  if (!trip.customerId) missing.push('Khách hàng');
+  if (!trip.routeId) missing.push('Tuyến');
+  if (!trip.departureDate) missing.push('Ngày khởi hành');
+  if (trip.carrierType === 'EXTERNAL') {
+    if (!trip.externalCarrierId) missing.push('Đối tác điều xe');
+    if (!Number(trip.externalFreightCost ?? 0)) missing.push('Giá cước thuê ngoài');
+  } else {
+    if (!trip.truckId) missing.push('Xe đầu kéo');
+    if (!trip.driverId) missing.push('Lái xe');
+  }
+  if (!containers.some((c) => c.containerTypeId ?? c.containerTypeCode ?? c.containerTypeName)) {
+    missing.push('Loại container');
+  }
+  if (trip.status === TripStatus.CREATED) return missing;
+
+  if (trip.carrierType === 'EXTERNAL' && !(trip.externalPlateNumber ?? '').trim()) {
+    missing.push('Biển số xe ngoài');
+  }
+  if (!containers.some((c) => (c.containerNumber ?? '').trim())) missing.push('Số container');
+  if (!Number(trip.revenue ?? 0)) missing.push('Doanh thu');
+  if (!Number(trip.fuelLiters ?? 0)) missing.push('Dầu');
+  if (!Number(trip.totalRoadAllowance ?? 0)) missing.push('Tiền đi đường');
+  if (!Number(trip.driverSalary ?? 0)) missing.push('Lương chuyến');
+  return missing;
+}
+
 export function getDataCompleteness(trip: TripDetail): DataCompleteness {
   if (trip.status === TripStatus.CREATED || trip.status === TripStatus.CANCELED) return 'na';
   const revenue = Number(trip.revenue ?? 0);
