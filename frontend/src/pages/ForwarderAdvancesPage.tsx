@@ -144,6 +144,7 @@ export default function ForwarderAdvancesPage() {
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__title">Tồn tạm ứng</span>
                 <span className="hero-kpi-mini__value" ref={heroOutstandingRef}>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
                 <span className="hero-kpi-mini__label">tồn tạm ứng (₫)</span>
               </div>
@@ -151,8 +152,9 @@ export default function ForwarderAdvancesPage() {
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__title">Chờ duyệt</span>
                 <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pendingCount}</span>
-                <span className="hero-kpi-mini__label">chờ duyệt</span>
+                <span className="hero-kpi-mini__label">yêu cầu · Đang chờ kế toán duyệt</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>

@@ -105,6 +105,54 @@
   gap: 12px;
 }
 
+/* Mini-card title: the secondary cards used to show only a value + a lowercase
+   label, so the KPI cluster lost its typographic hierarchy (kanban 20260921_13). */
+.hero-kpi-mini__title {
+  display: block;
+  font-size: var(--fs-2xs, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+
+/* ── Mobile compaction ──────────────────────────────────────────────────────
+   On a phone the cluster stacked four full-width cards and pushed the actual
+   list off screen; secondary cards become a compact 2-column grid
+   (kanban 20260921_13). Shared by every page hosting .hero-kpi-row. */
+@media (max-width: 640px) {
+  .hero-kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hero-kpi-card {
+    padding: 14px 16px 12px;
+    min-height: 0;
+  }
+  .hero-kpi-card__amount {
+    font-size: var(--fs-xl);
+  }
+  .hero-kpi-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .hero-kpi-mini {
+    min-height: 0;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .hero-kpi-mini__value {
+    font-size: var(--fs-lg);
+    overflow-wrap: anywhere;
+  }
+  .hero-kpi-mini__watermark {
+    display: none;
+  }
+}
+
 .hero-kpi-mini {
   --stat-rail: var(--accent);
   flex: 1;

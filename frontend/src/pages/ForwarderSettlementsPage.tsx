@@ -169,6 +169,7 @@ export default function ForwarderSettlementsPage() {
           <div className="hero-kpi-stack">
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__title">Tổng phiếu</span>
                 <span className="hero-kpi-mini__value" ref={heroTotalRef}>{settlements.length}</span>
                 <span className="hero-kpi-mini__label">phiếu</span>
               </div>
@@ -176,8 +177,9 @@ export default function ForwarderSettlementsPage() {
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
+                <span className="hero-kpi-mini__title">Chờ xử lý</span>
                 <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pending}</span>
-                <span className="hero-kpi-mini__label">chờ xử lý</span>
+                <span className="hero-kpi-mini__label">phiếu chờ xử lý</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
