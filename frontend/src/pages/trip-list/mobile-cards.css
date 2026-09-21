@@ -278,7 +278,8 @@
 }
 /* Mobile cards completeness uses edge strip now, removing old borders */
 
-/* Row cues on the card list (kanban 20260921_1 / _5): the left edge carries the
-   cue, keeping the surface background untouched. */
-.trip-list-page .trip-mcard--today { border-left: 3px solid #10B956; }
-.trip-list-page .trip-mcard--missing { border-left: 3px solid #DC2626; }
+/* Row cues on the card list (kanban 20260921_1 / _5): the card's statusStrip
+   (::before) already carries --strip-top/--strip-bottom, so the "thiếu thông tin"
+   red half shows here too. A full-height colored left border is forbidden by
+   frontend/scripts/check-ui-contract.mjs. */
+.trip-list-page .trip-mcard--missing::before { background: var(--strip-bottom, #DC2626); }

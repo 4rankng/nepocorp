@@ -532,6 +532,9 @@ async function createBillableTrip(ctx: BillableSeedCtx, spec: BillableTripSpec) 
     carrierType: spec.carrierType ?? 'OWN',
     ...(spec.externalCarrierId != null ? { externalCarrierId: spec.externalCarrierId } : {}),
     ...(spec.externalFreightCost != null ? { externalFreightCost: String(spec.externalFreightCost) } : {}),
+    // A subcontracted trip must carry its plate to reach COMPLETED
+    // (kanban 20260921_4) — these fixtures only care about billing.
+    ...(spec.carrierType === 'EXTERNAL' ? { externalPlateNumber: '15C-99999' } : {}),
   }).returning();
   createdTripIds.push(trip.id);
   for (const fee of spec.fees) {
