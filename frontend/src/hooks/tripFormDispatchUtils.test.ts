@@ -8,7 +8,7 @@ import {
 } from './tripFormDispatchUtils';
 
 describe('tripFormDispatchUtils', () => {
-  it('counts plate and carrier, but not external driver contact, as required fields', () => {
+  it('counts carrier and freight, but never the external plate, as required fields', () => {
     const fields = {
       customerId: '1',
       routeId: '2',
@@ -25,8 +25,11 @@ describe('tripFormDispatchUtils', () => {
       departureDate: '2026-07-28',
     };
 
-    expect(countRequiredTripFields(fields)).toBe(8);
+    // The plate is only required at completion, so it never moves this counter
+    // (kanban 20260921_4).
+    expect(countRequiredTripFields(fields)).toBe(7);
     expect(countRequiredTripFields({ ...fields, externalPlateNumber: '   ' })).toBe(7);
+    expect(countRequiredTripFields({ ...fields, externalPlateNumber: '' })).toBe(7);
   });
 
   it('clamps container count to the supported trip-form range', () => {
