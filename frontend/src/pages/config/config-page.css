@@ -1020,3 +1020,46 @@
 .cfg-page .cfg-feature:first-child {
   border-top: 0;
 }
+
+/* ── Row actions column (kanban 20260921_14) ──────────────────────────────
+   The desktop table was edit-by-row-click only; admins could not see how to
+   edit or delete a record. Explicit icon actions now sit in their own column. */
+.cfg-actions-col {
+  text-align: right;
+  white-space: nowrap;
+}
+.cfg-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.cfg-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.cfg-row-action:hover {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.cfg-row-action--danger:hover {
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  color: var(--danger);
+}
+.cfg-compact-list__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}

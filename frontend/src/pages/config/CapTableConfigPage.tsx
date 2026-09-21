@@ -66,7 +66,6 @@ export default function CapTableConfigPage() {
     <CrudTable<CapTableHistory>
       title="Cổ đông & Vốn góp" description="Danh sách cổ đông và lịch sử góp vốn"
       endpoint="/cap-table" colSpan={5}
-      showDelete={false}
       pageSlug="cap-table"
       iconName="equity-ownership"
       emptyIllustration="empty-pie.svg"

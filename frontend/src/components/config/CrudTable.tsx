@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { EmptyState } from '../../design-system';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -35,6 +35,9 @@ interface CrudTableCommonProps<T extends { id: number }> {
   }) => React.ReactNode;
   colSpan?: number;
   showDelete?: boolean;
+  /** Explicit per-row Sửa/Xóa column. Rows are still clickable to edit; the
+   *  column makes the affordance discoverable (kanban 20260921_14). */
+  showRowActions?: boolean;
   onDelete?: (id: number) => void;
   sortFn?: (a: T, b: T) => number;
   /** Limits a configuration view to the records relevant to that setting. */
@@ -66,7 +69,7 @@ type CrudTableProps<T extends { id: number }> = CrudTableCommonProps<T> & (
 
 export function CrudTable<T extends { id: number }>({
   title, description, endpoint, fetchItems, columns, renderCompactItem, compactItemAriaLabel, renderForm, colSpan,
-  showDelete = true, onDelete, sortFn, filterItems, computeActiveIds, rowStyle,
+  showDelete = true, showRowActions = true, onDelete, sortFn, filterItems, computeActiveIds, rowStyle,
   toolbarLeft, backTo = '/config',
   emptyIllustration = 'empty-config.svg',
   emptyTitle = 'Chưa có dữ liệu',
@@ -192,6 +195,36 @@ export function CrudTable<T extends { id: number }>({
                     >
                       {renderCompactItem(item, i, isActive, items)}
                     </button>
+                    {showRowActions && (
+                      <div className="cfg-compact-list__actions">
+                        <button
+                          type="button"
+                          className="cfg-row-action"
+                          title="Sửa"
+                          aria-label={`Sửa ${title.toLowerCase()} thứ ${i + 1}`}
+                          onClick={() => crud.setEditingId(item.id)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        {showDelete && (
+                          <button
+                            type="button"
+                            className="cfg-row-action cfg-row-action--danger"
+                            title="Xóa"
+                            aria-label={`Xóa ${title.toLowerCase()} thứ ${i + 1}`}
+                            onClick={async () => {
+                              const ok = await confirm(`Bạn có chắc chắn muốn xóa ${title.toLowerCase()} này?`, {
+                                variant: 'danger',
+                                confirmLabel: 'Xóa',
+                              });
+                              if (ok) await handleDelete(item.id);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -209,12 +242,13 @@ export function CrudTable<T extends { id: number }>({
                       {col.header}
                     </th>
                   ))}
+                  {showRowActions && <th style={{ width: 96 }} className="cfg-actions-col">Thao tác</th>}
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 && !crud.showAddForm && (
                   <tr className="cfg-empty-row">
-                    <td colSpan={(colSpan ?? tableColumns.length) + 1} style={{ textAlign: 'center' }}>
+                    <td colSpan={(colSpan ?? tableColumns.length) + 1 + (showRowActions ? 1 : 0)} style={{ textAlign: 'center' }}>
                       <EmptyState
                         illustration={`/assets/illustrations/${emptyIllustration}`}
                         title={emptyTitle}
@@ -252,6 +286,42 @@ export function CrudTable<T extends { id: number }>({
                           {col.render(item, i, isActive, items)}
                         </td>
                       ))}
+                      {showRowActions && (
+                        <td className="cfg-actions-col" data-label="Thao tác">
+                          <div className="cfg-row-actions">
+                            <button
+                              type="button"
+                              className="cfg-row-action"
+                              title="Sửa"
+                              aria-label={`Sửa ${title.toLowerCase()} thứ ${i + 1}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                crud.setEditingId(item.id);
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            {showDelete && (
+                              <button
+                                type="button"
+                                className="cfg-row-action cfg-row-action--danger"
+                                title="Xóa"
+                                aria-label={`Xóa ${title.toLowerCase()} thứ ${i + 1}`}
+                                onClick={async (event) => {
+                                  event.stopPropagation();
+                                  const ok = await confirm(`Bạn có chắc chắn muốn xóa ${title.toLowerCase()} này?`, {
+                                    variant: 'danger',
+                                    confirmLabel: 'Xóa',
+                                  });
+                                  if (ok) await handleDelete(item.id);
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
