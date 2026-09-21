@@ -53,15 +53,21 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
             {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
           </div>
           <div className="trip-mcard__id">
-            {buildTripCode(trip)}
-            <span className="trip-meta-sep">·</span>
-            <span>{formatDayMonth(trip.departureDate)}</span>
-            {isTripToday(trip.departureDate) && (
-              <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
-            )}
-            <span className="trip-meta-sep">·</span>
-            <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`}>
-              {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—')}
+            <span className="trip-mcard__id-group">
+              {buildTripCode(trip)}
+              <span className="trip-meta-sep">·</span>
+              <span>{formatDayMonth(trip.departureDate)}</span>
+              {isTripToday(trip.departureDate) && (
+                <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
+              )}
+            </span>
+            {/* Separator travels with the plate: on its own it was left dangling
+                at the end of the line when the plate wrapped (kanban 20260921_8). */}
+            <span className="trip-mcard__id-group">
+              <span className="trip-meta-sep">·</span>
+              <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${trip.carrierType === 'EXTERNAL' ? ' external' : ''}`}>
+                {trip.carrierType === 'EXTERNAL' ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—')}
+              </span>
             </span>
           </div>
         </div>

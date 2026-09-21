@@ -94,6 +94,9 @@
 }
 
 /* ── Sticky status column ─────────────────────────────────────────── */
+/* The cell must fill its whole grid track: with `justify-self: center`
+   (inherited from `.center`) it shrank to its text, so scrolled columns showed
+   through above/below and overlapped the header (kanban 20260921_6). */
 .trip-list-page .col-status {
   position: sticky;
   right: 0;
@@ -101,6 +104,14 @@
   z-index: 2;
   border-left: 1px solid var(--line);
   transition: background 150ms ease;
+  justify-self: stretch;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -10px 0 12px -12px rgba(15, 26, 20, 0.28);
 }
 .trip-list-page .table-row:hover .col-status {
   background: var(--tbl-green-050);
@@ -111,6 +122,13 @@
   background: var(--surface-2);
   z-index: 11;
   border-left: 1px solid var(--line);
+  justify-self: stretch;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Infinite scroll sentinel ─────────────────────────────────────────── */

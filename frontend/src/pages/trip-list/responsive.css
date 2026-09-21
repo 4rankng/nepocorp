@@ -4,7 +4,10 @@
   .trip-list-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
 }
 
-@media (max-width: 1680px) {
+/* Quick edit keeps the grid on office laptops (1366/1440/1920 with Windows
+   scaling) — collapsing at 1680px forced them into the 2-column card layout and
+   killed batch entry (kanban 20260921_7). */
+@media (max-width: 1180px) {
   .trip-list-page.quick-edit-mode .table-card {
     background: transparent;
     border: none;

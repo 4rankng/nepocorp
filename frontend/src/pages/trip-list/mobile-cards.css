@@ -76,6 +76,14 @@
   font-size: var(--fs-xs);
   padding: 4px 9px;
 }
+/* Code/date/chip and "· plate" wrap as whole units so a separator is never left
+   dangling at the end of a line (kanban 20260921_8). */
+.trip-list-page .trip-mcard__id-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .trip-list-page .trip-mcard__route {
   display: flex; align-items: center; gap: 8px;
   font-size: var(--fs-sm); font-weight: 600; color: var(--ink);

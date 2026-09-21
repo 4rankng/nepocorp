@@ -712,6 +712,10 @@
   line-height: 1.5;
   white-space: nowrap;
   flex: none;
+  /* The mobile id row is monospace; the chip must not inherit that tracking
+     (kanban 20260921_8). */
+  font-family: var(--font-sans);
+  letter-spacing: 0;
 }
 .trip-list-page .trip-missing-flag {
   display: flex;
