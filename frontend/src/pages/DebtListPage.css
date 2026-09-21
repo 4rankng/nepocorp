@@ -230,7 +230,9 @@
 }
 
 .debt-aging-card__count {
-  font-family: var(--font-mono);
+  /* "9 khách hàng" is a sentence, not a figure — mono only widens it
+     (kanban 20260921_18). */
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   color: var(--ink-3);
 }

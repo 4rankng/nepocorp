@@ -83,6 +83,14 @@ Every status display across the application (desktop and mobile) uses the **3x20
 
 **Rule:** If you display a status, use the `statusStrip` component. Never render a full-height colored background or a plain text badge for status.
 
+## Typography rule — mono is for data only
+
+`var(--font-mono)` is reserved for numbers, codes and identifiers (amounts, plate
+numbers, trip codes, IDs). Vietnamese words — labels, roles, counts written as
+sentences ("9 khách hàng", "96 giao dịch", "Quản trị viên") — always use
+`var(--font-body)`; mono widens the letter spacing and reads as broken text
+(kanban 20260921_18).
+
 ## Money Display
 
 Use the `<Money>` component for all currency values:

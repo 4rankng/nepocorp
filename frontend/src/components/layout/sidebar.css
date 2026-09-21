@@ -305,7 +305,9 @@
   font-size: var(--fs-xs);
   line-height: 1.35;
   color: var(--sb-text-muted);
-  font-family: var(--font-mono);
+  /* Role names are Vietnamese words, not data — mono stretched the spacing
+     ("Quản  trị  viên"). Mono is for numbers/identifiers only (kanban 20260921_18). */
+  font-family: var(--font-body);
   word-break: break-word;
 }
 
