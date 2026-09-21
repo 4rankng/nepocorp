@@ -6,6 +6,8 @@ import { useToast } from '../shared/Toast';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
+import { moneyInputToNumber } from '../../lib/moneyInput';
+import { InputWithPrefix } from '../trip/InputWithPrefix';
 import { financialClient } from '../../api/financialClient';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
@@ -453,12 +455,12 @@ export default function BillingDocumentBuilder({
                                       />
                                     </td>
                                     <td>
-                                      <input
-                                        type="number"
-                                        className="input mono billing-builder__amount"
-                                        value={amount}
-                                        disabled={busy}
-                                        onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
+                                      <InputWithPrefix
+                                        value={String(amount)}
+                                        onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
+                                        prefix=""
+                                        type="money"
+                                        mono
                                       />
                                     </td>
                                     <td className="billing-builder__row-actions">
@@ -542,12 +544,12 @@ export default function BillingDocumentBuilder({
                                     <div className="billing-builder__mobile-money">
                                       <label>
                                         <span>Số tiền</span>
-                                        <input
-                                          type="number"
-                                          className="input mono billing-builder__amount"
-                                          value={amount}
-                                          disabled={busy}
-                                          onChange={(e) => updateLine(index, { amountOverride: e.target.value === '' ? null : Number(e.target.value) })}
+                                        <InputWithPrefix
+                                          value={String(amount)}
+                                          onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
+                                          prefix=""
+                                          type="money"
+                                          mono
                                         />
                                       </label>
                                       <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
