@@ -28,7 +28,9 @@ export function countRequiredTripFields(fields: RequiredTripFields): number {
   if (fields.carrierType === 'EXTERNAL') {
     if (fields.externalCarrierId) count++;
     if (fields.externalFreightCost.trim()) count++;
-    if (fields.externalPlateNumber.trim()) count++;
+    // externalPlateNumber is intentionally NOT counted: the partner assigns the
+    // truck after planning, so the plate is only required at completion
+    // (kanban 20260921_4).
   } else {
     if (fields.truckId) count++;
     if (fields.trailerType) count++;

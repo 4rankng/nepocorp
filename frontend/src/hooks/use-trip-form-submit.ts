@@ -108,13 +108,9 @@ const handleSubmit = useCallback(
         return;
       }
     }
-    if (s.carrierType === 'EXTERNAL' && !s.externalPlateNumber.trim()) {
-      const msg = "Biển số xe là bắt buộc cho chuyến xe ngoài.";
-      s.setError(msg);
-      showToast({ kind: 'error', message: msg });
-      focusAndScroll("externalPlateNumber");
-      return;
-    }
+    // External plate is NOT required here: at planning time the partner has not
+    // assigned a truck yet. It is required when the trip is completed (server
+    // guard in transitionTripStatus) — kanban 20260921_4.
 
     if (isEditMode) {
       if (legs.length === 0) {

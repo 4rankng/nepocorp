@@ -196,7 +196,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
                   mono
                 />
               </Field>
-              <Field label="Biển số xe" required controlId="externalPlateNumber">
+              <Field label="Biển số xe" controlId="externalPlateNumber">
                 <input
                   id="externalPlateNumber"
                   name="externalPlateNumber"

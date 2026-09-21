@@ -97,6 +97,16 @@ export async function transitionTripStatus(
       if (currentStatus !== TripStatus.IN_TRANSIT) {
         throw new ApiError(409, 'Chỉ có thể hoàn thành chuyến đi đang chạy');
       }
+      // An external carrier's plate is unknown while planning (the partner
+      // assigns the truck later), so it is only required at completion — the
+      // plan form no longer forces it (kanban 20260921_4). Enforced here so no
+      // client can complete a subcontracted trip without its plate.
+      if (trip.carrierType === 'EXTERNAL' && !(trip.externalPlateNumber ?? '').trim()) {
+        throw new ApiError(
+          422,
+          'Chuyến xe ngoài cần biển số xe trước khi hoàn thành. Vui lòng bổ sung biển số.',
+        );
+      }
       // B2: completion is permissive — a trip may be marked "Hoàn thành"
       // without photos, and photo evidence (CONTAINER/SEAL) can be added or
       // edited afterwards ("allow to complete, user can edit later"). The
