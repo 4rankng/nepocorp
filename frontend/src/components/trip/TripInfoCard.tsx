@@ -67,9 +67,13 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
   const setPlannedContainerTypeId = (value: string) => {
     form.setPlannedContainerTypeId(value);
+    // '' only resets the selector (it happens when a trip is (re)loaded, see
+    // usePersistedContainerType). Writing '' into every row would silently blank a
+    // saved container type, and the next save would drop it (kanban 20260921_2).
+    if (!value) return;
     form.setContainerRows(prev => prev.map(row => ({
       ...row,
-      containerTypeId: value ? Number(value) : '',
+      containerTypeId: Number(value),
     })));
   };
 

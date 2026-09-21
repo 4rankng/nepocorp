@@ -88,9 +88,12 @@ export default function TripEditPage() {
   const plannedContainerTypeId = form.plannedContainerTypeId || commonContainerTypeId;
   const setPlannedContainerTypeId = (value: string) => {
     form.setPlannedContainerTypeId(value);
+    // '' only resets the selector — never blank the rows' saved type
+    // (kanban 20260921_2).
+    if (!value) return;
     form.setContainerRows(prev => prev.map(row => ({
       ...row,
-      containerTypeId: value ? Number(value) : '',
+      containerTypeId: Number(value),
     })));
   };
 

@@ -310,14 +310,25 @@ export async function batchUpsertTripContainers(
 
     const upsertedContainerIds: number[] = [];
     for (const c of containers) {
-      const payload = {
-        containerTypeId: c.containerTypeId ?? null,
+      // `containerTypeId` is optional in the batch schema: absent = keep the stored
+      // type (editing a container's number/seal must not drop it), explicit null =
+      // clear. Writing `?? null` unconditionally destroyed the type on every save
+      // from a client that omits the field (kanban 20260921_2).
+      const payload: {
+        containerTypeId?: number | null;
+        containerNumber: string | null;
+        sealNumber: null;
+        cargoWeightKg: string | null;
+        notes: string | null;
+        updatedAt: Date;
+      } = {
         containerNumber: c.containerNumber?.trim() || null,
         sealNumber: null,
         cargoWeightKg: c.cargoWeightKg != null ? String(c.cargoWeightKg) : null,
         notes: c.notes ?? null,
         updatedAt: new Date(),
       };
+      if (c.containerTypeId !== undefined) payload.containerTypeId = c.containerTypeId ?? null;
       let containerId: number;
       if (c.id && existingIds.has(c.id)) {
         await tx.update(s.tripContainers)

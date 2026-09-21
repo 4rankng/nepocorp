@@ -237,11 +237,19 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
     setSaving(true);
     try {
       // Both branches persist the same payload — only the verb + outcome differ.
-      const payload = {
+      // The driver card has no container-type control (the office sets the type on
+      // the plan), so the type is echoed back only when the draft carries one.
+      // Sending `null` here wiped the planner's type on every number/seal edit
+      // (kanban 20260921_2).
+      const payload: {
+        containerNumber: string;
+        sealNumber: string | null;
+        containerTypeId?: number;
+      } = {
         containerNumber: draft.containerNumber.trim().toUpperCase(),
         sealNumber: draft.sealNumber.trim() || null,
-        containerTypeId: draft.containerTypeId ? Number(draft.containerTypeId) : null,
       };
+      if (draft.containerTypeId) payload.containerTypeId = Number(draft.containerTypeId);
       if (editingExisting) {
         // PATCH the existing row — preserves id, audit history, and updates
         // updatedAt. Photos are re-persisted by the OCR pipeline (saveTripPhoto)

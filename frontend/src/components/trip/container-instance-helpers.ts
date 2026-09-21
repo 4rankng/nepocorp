@@ -10,3 +10,50 @@ export function sealKey() { return Math.random().toString(36).slice(2, 9); }
 export function emptySeal(): SealFormRow { return { _key: sealKey(), sealNumber: '', sealType: '', notes: '' }; }
 export function photoStorageKey(value: string): string { const [path] = value.split('?'); const marker = '/api/photos/'; return path.startsWith(marker) ? decodeURIComponent(path.slice(marker.length)) : path; }
 export function checkContainerNumber(cn: string): { warning: string | null; suggestion: string | null } { const trimmed = cn.trim(); if (!trimmed) return { warning: null, suggestion: null }; const norm = normalizeContainerNumber(trimmed); if (!validateContainerFormat(norm)) return { warning: 'Số cont sai định dạng (4 chữ cái + 7 số).', suggestion: null }; if (validateCheckDigit(norm)) return { warning: null, suggestion: null }; return { warning: 'Số cont sai chữ số kiểm tra — kiểm tra lại.', suggestion: suggestCorrections(norm, 1)[0] ?? null }; }
+
+export interface ContainerBatchPayloadItem {
+  id?: number;
+  /**
+   * Present = set that type; explicit `null` = clear; absent = keep the stored type.
+   * The API schema marks it optional, so omission is a real "do not touch"
+   * signal (kanban 20260921_2).
+   */
+  containerTypeId?: number | null;
+  containerNumber: string | null;
+  cargoWeightKg: number | null;
+  notes: string | null;
+  seals: Array<{ id?: number; sealNumber: string; sealType: string | null; notes: string | null }>;
+}
+
+/**
+ * Payload for `PUT /trips/:id/containers` (full reconcile).
+ *
+ * A persisted row (has `id`) with no container type omits `containerTypeId`
+ * instead of sending `null`: the rows are seeded from the server, and a save that
+ * only edits the container/seal numbers must not drop the type the planner chose.
+ * Brand-new rows send `null` — there is nothing to preserve.
+ */
+export function buildContainerBatchPayload(rows: ContainerRow[]): ContainerBatchPayloadItem[] {
+  // `seals[]` is the source of truth; the backend mirrors seals[0] into the
+  // legacy scalar sealNumber.
+  return rows.map((row) => {
+    const item: ContainerBatchPayloadItem = {
+      containerNumber: row.containerNumber.trim() || null,
+      cargoWeightKg: row.cargoWeightKg === '' ? null : Number(row.cargoWeightKg),
+      notes: row.notes.trim() || null,
+      seals: row.seals
+        .filter((seal) => seal.sealNumber.trim())
+        .map((seal) => ({
+          id: seal.id,
+          sealNumber: seal.sealNumber.trim(),
+          sealType: seal.sealType.trim() || null,
+          notes: seal.notes.trim() || null,
+        })),
+    };
+    if (row.id !== undefined) item.id = row.id;
+    if (row.containerTypeId !== '') item.containerTypeId = Number(row.containerTypeId);
+    else if (row.id === undefined) item.containerTypeId = null;
+    return item;
+  });
+}
+

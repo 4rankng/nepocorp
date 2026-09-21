@@ -9,6 +9,7 @@ import { useToast } from '../components/shared/Toast';
 import type { FormLeg } from './useTripFormLegs';
 import type { UseTripFormStateReturn, ContainerFormRow, SealFormRow } from './useTripFormState';
 import { resolveContainerCount } from './tripFormDispatchUtils';
+import { buildContainerBatchPayload } from '../components/trip/container-instance-helpers';
 import { moneyInputToNumber } from '../lib/moneyInput';
 
 function moneyOrZero(value: string): number { return moneyInputToNumber(value) ?? 0; }
@@ -212,24 +213,7 @@ const handleSubmit = useCallback(
       // standalone "Lưu danh sách container" button was removed). Full
       // reconcile: insert/update by id, delete rows not in the list.
       const saveContainers = async (id: number) => {
-        const containers = s.containerRows
-          .filter(rowShouldPersist)
-          .map(r => ({
-            id: r.id,
-            containerTypeId: r.containerTypeId === '' ? null : Number(r.containerTypeId),
-            containerNumber: r.containerNumber.trim() || null,
-            // seals[] is the source of truth; backend mirrors seals[0] into legacy sealNumber.
-            seals: r.seals
-              .filter(sl => sl.sealNumber.trim())
-              .map(sl => ({
-                id: sl.id,
-                sealNumber: sl.sealNumber.trim(),
-                sealType: sl.sealType.trim() || null,
-                notes: sl.notes.trim() || null,
-              })),
-            cargoWeightKg: r.cargoWeightKg === '' ? null : Number(r.cargoWeightKg),
-            notes: r.notes.trim() || null,
-          }));
+        const containers = buildContainerBatchPayload(s.containerRows.filter(rowShouldPersist));
         const result = await api.put<{ items: ServerContainerAfterSave[] }>(`/trips/${id}/containers`, { containers });
         await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripContainers(id) });
 
