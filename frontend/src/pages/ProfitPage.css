@@ -134,6 +134,11 @@
 .calc-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .calc-row:last-child { border-bottom: none; }
 .calc-row--total { background: var(--surface-2); font-weight: 700; }
+/* Sub-note row: explains what a figure already contains, so it carries no
+   operator sign and must not read as another deduction (kanban 20260921_22). */
+.calc-row--sub { padding-top: 6px; padding-bottom: 6px; }
+.calc-row__label--sub { font-size: var(--fs-xs); color: var(--ink-3); font-style: italic; padding-left: 24px; }
+.calc-row__value--sub { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 500; }
 .calc-row--final {
   background: linear-gradient(180deg, var(--surface-accent), var(--surface));
   border-top: 2px solid var(--sb-bg);

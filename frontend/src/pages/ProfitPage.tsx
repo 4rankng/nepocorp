@@ -241,19 +241,21 @@ export default function ProfitPage() {
                   </div>
                   <div className="calc-row__value calc-row__value--neg"><Money value={report?.totalCosts || 0} sign="-" /></div>
                 </div>
+                {/* Maintenance is already inside "Chi phí vận hành đội xe" and inside
+                    the gross profit below, so it is shown as a sub-note of the cost
+                    line instead of a second deduction (kanban 20260921_22). */}
+                {((report?.maintenanceExpensesTotal ?? 0) > 0) && (
+                  <div className="calc-row calc-row--sub">
+                    <div className="calc-row__label calc-row__label--sub">
+                      trong đó: bảo dưỡng, đăng kiểm xe
+                    </div>
+                    <div className="calc-row__value calc-row__value--sub"><Money value={report?.maintenanceExpensesTotal || 0} /></div>
+                  </div>
+                )}
                 <div className="calc-row calc-row--total">
                   <div className="calc-row__label calc-row__label--bold">Lợi nhuận gộp hoạt động</div>
                   <div className="calc-row__value"><Money value={report?.grossProfit || 0} /></div>
                 </div>
-                {((report?.maintenanceExpensesTotal ?? 0) > 0) && (
-                  <div className="calc-row">
-                    <div className="calc-row__label">
-                      <span className="calc-row__op">-</span>
-                      Chi phí bảo dưỡng, đăng kiểm xe
-                    </div>
-                    <div className="calc-row__value calc-row__value--neg"><Money value={report?.maintenanceExpensesTotal || 0} sign="-" /></div>
-                  </div>
-                )}
                 <div className="calc-row">
                   <div className="calc-row__label">
                     <span className="calc-row__op">-</span>
