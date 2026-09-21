@@ -57,8 +57,12 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
         zoomControl: true,
         attributionControl: false,
       }).setView([16.047079, 108.206230], 6); // Centered on Vietnam
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // OpenStreetMap standard tiles: Carto's basemaps now require an API key and
+      // stamp "API KEY REQUIRED" across every tile when it is missing
+      // (kanban 20260921_21).
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
       mapRef.current = map;
       layerGroupRef.current = L.layerGroup().addTo(map);

@@ -42,9 +42,11 @@ export function LeafletMap({
         attributionControl: false,
       }).setView([16.047079, 108.206230], 6); // Centered on Vietnam
 
-      // CartoDB Voyager — clean, readable light theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // OpenStreetMap standard tiles — Carto's basemaps need an API key and stamp a
+      // watermark over the map without one (kanban 20260921_21).
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
       mapRef.current = map;
