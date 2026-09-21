@@ -15,7 +15,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
 import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit } from '../features/trips';
-import { columnClass, draftChanged, figuresPayloadFromDraft, isEditableInQuickMode, quickDraftFromTrip } from './trip-list-helpers';
+import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
@@ -300,24 +300,39 @@ export default function TripListPage() {
       setQuickMessage('Chưa có dòng đã chọn nào thay đổi.');
       return;
     }
+    // A typed amount that is not a number must never be saved as 0 — flag the row
+    // and leave it for the user (kanban 20260921_3).
+    const errors: Record<number, string> = {};
+    for (const trip of selectedDirtyTrips) {
+      const field = invalidQuickField(quickDrafts[trip.id]);
+      if (field) errors[trip.id] = `${QUICK_DRAFT_FIELD_LABELS[field]} không phải là số hợp lệ.`;
+    }
+    const savableTrips = selectedDirtyTrips.filter((trip) => !errors[trip.id]);
+    if (savableTrips.length === 0) {
+      setQuickErrors(errors);
+      setQuickMessage('Số liệu không hợp lệ — sửa các dòng được đánh dấu rồi lưu lại.');
+      return;
+    }
     setSavingQuickEdit(true);
     setQuickMessage('');
-    setQuickErrors({});
+    setQuickErrors(errors);
     try {
       const response = await tripClient.bulkUpdateTripFigures({
-        updates: selectedDirtyTrips.map((trip) => ({
+        updates: savableTrips.map((trip) => ({
           tripId: trip.id,
           mode: trip.status === TripStatus.CREATED ? 'pre-departure' : 'actuals',
           figures: figuresPayloadFromDraft(trip, quickDrafts[trip.id] ?? quickDraftFromTrip(trip)),
         })),
       });
-      const errors: Record<number, string> = {};
+      const responseErrors: Record<number, string> = {};
       for (const result of response.results) {
-        if (!result.ok) errors[result.tripId] = result.error ?? 'Không thể lưu dòng này';
+        if (!result.ok) responseErrors[result.tripId] = result.error ?? 'Không thể lưu dòng này';
       }
-      setQuickErrors(errors);
-      setQuickMessage(response.failed > 0
-        ? `Đã lưu ${response.updated} dòng, ${response.failed} dòng cần kiểm tra lại.`
+      const allErrors = { ...errors, ...responseErrors };
+      const rejected = Object.keys(allErrors).length;
+      setQuickErrors(allErrors);
+      setQuickMessage(rejected > 0
+        ? `Đã lưu ${response.updated} dòng, ${rejected} dòng cần kiểm tra lại.`
         : `Đã lưu ${response.updated} dòng.`);
       if (response.updated > 0) {
         await table.query.refetch();

@@ -18,6 +18,7 @@
  */
 import { FuelMode, TripStatus, type TripDetail, type UpdateTripFiguresRequest } from '@tingting/shared';
 import type { TripQuickEditDraft } from '../features/trips';
+import { moneyInputToNumber } from '../lib/moneyInput';
 
 export function draftNumber(value: unknown): string {
   if (value === null || value === undefined || value === '') return '';
@@ -26,11 +27,44 @@ export function draftNumber(value: unknown): string {
   return String(n).replace(/\.00$/, '');
 }
 
-export function parseDraftNumber(value: string): number | undefined {
-  const normalized = value.replace(/[^\d.,]/g, '').replace(',', '.');
-  if (!normalized) return undefined;
+/**
+ * Litres are the one quick-edit field that may carry decimals ("120.5"), so a
+ * single separator is read as the decimal point. Anything else is invalid input
+ * rather than a silently-zeroed amount (kanban 20260921_3). Money uses
+ * `moneyInputToNumber` instead: VND has no decimals, so every separator there is
+ * grouping ("1.000.000" → 1000000).
+ */
+function parseLitersDraft(value: string): number | undefined {
+  const cleaned = value.replace(/\s/g, '');
+  if (!cleaned) return undefined;
+  const normalized = cleaned.replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return undefined;
   const n = Number(normalized);
   return Number.isFinite(n) ? n : undefined;
+}
+
+export type QuickDraftField = keyof TripQuickEditDraft;
+
+export const QUICK_DRAFT_FIELD_LABELS: Record<QuickDraftField, string> = {
+  fuelLiters: 'Dầu (L)',
+  roadAllowance: 'Tiền đi đường',
+  driverSalary: 'Lương chuyến',
+  revenue: 'Doanh thu',
+};
+
+/**
+ * First quick-edit field whose typed value cannot be read as a number, or null.
+ * A field that was emptied on purpose is NOT invalid — clearing means zero.
+ */
+export function invalidQuickField(draft: TripQuickEditDraft | undefined): QuickDraftField | null {
+  if (!draft) return null;
+  for (const field of ['fuelLiters', 'roadAllowance', 'driverSalary', 'revenue'] as QuickDraftField[]) {
+    const raw = draft[field];
+    if (!raw.trim()) continue;
+    const parsed = field === 'fuelLiters' ? parseLitersDraft(raw) : moneyInputToNumber(raw);
+    if (parsed === undefined) return field;
+  }
+  return null;
 }
 
 /**
@@ -69,10 +103,10 @@ export function draftChanged(trip: TripDetail, draft?: TripQuickEditDraft): bool
 
 export function figuresPayloadFromDraft(trip: TripDetail, draft: TripQuickEditDraft): UpdateTripFiguresRequest {
   const original = quickDraftFromTrip(trip);
-  const fuelLiters = parseDraftNumber(draft.fuelLiters);
-  const roadAllowance = parseDraftNumber(draft.roadAllowance);
-  const driverSalary = parseDraftNumber(draft.driverSalary);
-  const revenue = parseDraftNumber(draft.revenue);
+  const fuelLiters = parseLitersDraft(draft.fuelLiters);
+  const roadAllowance = moneyInputToNumber(draft.roadAllowance);
+  const driverSalary = moneyInputToNumber(draft.driverSalary);
+  const revenue = moneyInputToNumber(draft.revenue);
   const fuelLitersChanged = draft.fuelLiters !== original.fuelLiters;
   const roadAllowanceChanged = draft.roadAllowance !== original.roadAllowance;
 

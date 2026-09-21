@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TripStatus, type TripDetail } from '@tingting/shared';
-import { draftChanged, figuresPayloadFromDraft, quickDraftFromTrip } from './trip-list-helpers';
+import { draftChanged, figuresPayloadFromDraft, invalidQuickField, quickDraftFromTrip } from './trip-list-helpers';
 
 const trip = (overrides: Partial<TripDetail> = {}): TripDetail => ({
   id: 12,
@@ -68,5 +68,40 @@ describe('quick edit road allowance round-trip', () => {
     const draft = { ...quickDraftFromTrip(trip()), roadAllowance: '' };
 
     expect(figuresPayloadFromDraft(trip(), draft).roadAllowanceOverride).toBeNull();
+  });
+});
+
+describe('quick edit money parsing (kanban 20260921_3)', () => {
+  it('saves revenue typed with Vietnamese thousand separators', () => {
+    const draft = { ...quickDraftFromTrip(trip({ revenue: '0' })), revenue: '1.000.000' };
+
+    // Before the fix a grouped amount parsed to NaN and the save wrote revenue 0.
+    expect(figuresPayloadFromDraft(trip({ revenue: '0' }), draft).revenue).toBe(1_000_000);
+  });
+
+  it('accepts a comma-grouped amount too', () => {
+    const draft = { ...quickDraftFromTrip(trip({ revenue: '0' })), revenue: '1,000,000' };
+
+    expect(figuresPayloadFromDraft(trip({ revenue: '0' }), draft).revenue).toBe(1_000_000);
+  });
+
+  it('keeps a decimal litre value', () => {
+    const draft = { ...quickDraftFromTrip(trip()), fuelLiters: '120.5' };
+
+    expect(figuresPayloadFromDraft(trip(), draft).fuelLitersOverride).toBe(120.5);
+  });
+
+  it('flags a non-numeric amount instead of silently saving 0', () => {
+    const draft = { ...quickDraftFromTrip(trip()), revenue: 'một triệu' };
+
+    expect(invalidQuickField(draft)).toBe('revenue');
+    expect(invalidQuickField({ ...draft, revenue: '1000000' })).toBeNull();
+  });
+
+  it('treats an emptied field as a deliberate zero/clear', () => {
+    const draft = { ...quickDraftFromTrip(trip()), revenue: '' };
+
+    expect(invalidQuickField(draft)).toBeNull();
+    expect(figuresPayloadFromDraft(trip(), draft).revenue).toBe(0);
   });
 });
