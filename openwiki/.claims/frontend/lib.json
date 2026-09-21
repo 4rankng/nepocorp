@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ac7790cc3375244565b7e8d6c90e124ac907875a8491878c57f14e0f70822911",
+  "claims": [
+    {
+      "id": "claim_0a10e18609db45338058475bfd38fbac",
+      "statement": "The frontend/src/lib/api/ subfolder holds the API client — index.ts is the barrel re-exporting api (the fetch wrapper from client.ts), ApiError + formatErrorMessage (Vietnamese Zod field translation) from errors.ts, and getAuthenticatedPhotoUrl from photo.ts; tests live in frontend/src/lib/api.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/api.test.ts",
+          "version": "repo-file-v1:sha256:d28a1775fc43b83a35113f4daf97ca6b4f04d56d9d0b4b92d8cdf99e900117f3"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts",
+          "version": "repo-file-v1:sha256:e6b05663f2213e386f35f843f50766203a165660460c4d162304dbced771a9c3"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/index.ts",
+          "version": "repo-file-v1:sha256:1081348fe44826081a6104713bdd6a79568e3ab12f5387fc7f90bcbde835c658"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6789f6930f34ae7b2f1faab2c8d020a",
+      "statement": "frontend/src/lib/format.ts provides Vietnamese-locale formatters: formatNumber (vi-VN with . thousands separator), formatCompact (abbreviates >=1M to tr / >=1B to ty / >=1K to k), formatCurrency (12.500.000 ₫, integer, ₫ suffix, no decimals), a VND splitter returning { num, unit } for the <Money> component, and money-input parsing in frontend/src/lib/moneyInput.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/format.ts",
+          "version": "repo-file-v1:sha256:a2cbc547a19fe978c2960f9090f472ed6dc2d582c18d1d21970aa751683fb531"
+        },
+        {
+          "resource": "repo://frontend/src/lib/moneyInput.ts",
+          "version": "repo-file-v1:sha256:77b6a46cb5adb0b6d053e3185c3ecde2247efd986c455fb6bb907b41d3dc60f8"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3408821d0794e05b6e752e694321b18",
+      "statement": "frontend/src/lib/date.ts provides Vietnamese-relative time helpers — formatDayMonth (DD/MM), formatRelativeTime (Vừa xong, X phút trước, X giờ trước, Hôm qua, X ngày trước) — plus month-name and week-start utilities.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/date.ts",
+          "version": "repo-file-v1:sha256:083da9463a55ba5e9951516fe5a8d7f6e9d5ff3fb9d0e9ba36a8297ad8464618"
+        }
+      ]
+    },
+    {
+      "id": "claim_28d19fe940b44e2a983eb8fcfa258c84",
+      "statement": "frontend/src/lib/round.ts is a re-export shim of round2dp from @tingting/shared so pages can `import { round2dp } from '@/lib/round'` without importing from the shared package directly; the math lives in shared/src/calculations/round.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/round.ts",
+          "version": "repo-file-v1:sha256:dae2104fb57ec0de828c593ceaefd7e6adb98c88d0a508dd0e9efcb8f31a77ef"
+        },
+        {
+          "resource": "repo://shared/src/calculations/round.ts",
+          "version": "repo-file-v1:sha256:40a80e09a6d2b081266139c0f111300600ecc06712c44180ab697799014778c2"
+        }
+      ]
+    },
+    {
+      "id": "claim_01418a02adeb405488fbfa1320003496",
+      "statement": "frontend/src/lib/route.ts exports splitRoute(name) which splits \"Hà Nội → Hải Phòng\" into { from, to } using one of `→ ⇒ -> - – >` as the separator (used by the dispatch map, trip cards, and search dropdowns); tests live in routes.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/route.ts",
+          "version": "repo-file-v1:sha256:42203ade384c42cd50512a2abb97bed09ff1e383ced6fe59761a7a79de70f84c"
+        },
+        {
+          "resource": "repo://frontend/src/lib/routes.test.ts",
+          "version": "repo-file-v1:sha256:8b2187ee0060106a18b956aa4be61c4a61474ff532eaffcd470a3d373ffdfe75"
+        }
+      ]
+    },
+    {
+      "id": "claim_958475e6ebe543a0962267d79540eab9",
+      "statement": "frontend/src/lib/maps.ts wraps the /api/maps endpoints with typed PlaceSuggestion / RouteSuggestion / RouteResult shapes and an in-memory autocomplete cache (50 entries, 5-min TTL); the Map4D integration lives on the backend in backend/src/services/map4d.ts and maps.service.ts.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/map4d.ts",
+          "version": "repo-file-v1:sha256:7d9c54a6a4109cd1f534bc3743ec5486bcba4c24480effb9ad47cfc8b2367790"
+        },
+        {
+          "resource": "repo://backend/src/services/maps.service.ts",
+          "version": "repo-file-v1:sha256:fb80331d7f9c2275721e3d6b26912f9f4ed48e2ff78df3c210273e492335a603"
+        },
+        {
+          "resource": "repo://frontend/src/lib/maps.ts",
+          "version": "repo-file-v1:sha256:98936bde43d09b98097f4338eefbc874ca99e70edfe960fec0b23befdd97e791"
+        }
+      ]
+    },
+    {
+      "id": "claim_3613a071a065462e915025e01c3b61ca",
+      "statement": "cap-table.ts implements activePartners(history) which picks the latest snapshot date reached today and dedupes to the most-recent entry per partner (percentages auto-calculated from contributionAmount, never stored); csv.ts uses exceljs to produce brand-aware XLSX reports with title/subtitle/columnTypes/totalsColumns/totalsLabel (TỔNG CỘNG).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/cap-table.ts",
+          "version": "repo-file-v1:sha256:519bdfa19b806d3373bac65a5aeeebbe5e5983828758b4b719468bcac2989500"
+        },
+        {
+          "resource": "repo://frontend/src/lib/csv.ts",
+          "version": "repo-file-v1:sha256:9c34a4c0f65987bb57e20292662867c79e04eee5d5d237cbc00fa845c6cfc5e7"
+        }
+      ]
+    },
+    {
+      "id": "claim_e57113a109604edb91ee8aa163e78f9a",
+      "statement": "Other lib utilities include liveFleet.ts / liveRoute.ts (typed wrappers for live-fleet and live-route endpoints), notificationClient.ts (web-push subscription + payload decoder), audit-helpers.ts (audit-log color/severity formatting), calendar-month.ts (calendar grid builder with tests), profit-preview.ts (cap-table preview), expense-breakdown.ts (per-trip expense aggregation), status-variants.ts (TripStatus/PenaltyStatus to Tailwind variant tokens), overlayState.ts (animated overlay lifecycle), agentHighlight.ts (agent-directive UI helpers), tourTarget.ts (retained onboarding selectors), and utils.ts (generic sleep/groupBy/uniqBy helpers).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/calendar-month.ts",
+          "version": "repo-file-v1:sha256:bb0cc7e7f5bdf8cb4de5c3be16276380a6d9e7160bdb6818c372829287c00e4a"
+        },
+        {
+          "resource": "repo://frontend/src/lib/liveFleet.ts",
+          "version": "repo-file-v1:sha256:7b18e73774987e515cf5b9a3b11b0ef933ef12ed0e71084858733e1e5c6b2d78"
+        },
+        {
+          "resource": "repo://frontend/src/lib/notificationClient.ts",
+          "version": "repo-file-v1:sha256:a67b5802b9b420f703bcb3fd9ddd3a5396f1b4dcbdc75949318769938a9637bc"
+        },
+        {
+          "resource": "repo://frontend/src/lib/profit-preview.ts",
+          "version": "repo-file-v1:sha256:e533af48e777f106d9492d128c0e8ede9582080b7e3724d515bb1fdb236d0e7f"
+        },
+        {
+          "resource": "repo://frontend/src/lib/status-variants.ts",
+          "version": "repo-file-v1:sha256:b666bab6b235ba64ed19243273dd1b60aa8446f6f7113f30872c1cf5526013e7"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

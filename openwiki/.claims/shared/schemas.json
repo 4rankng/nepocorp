@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e63279d82f7f799042939c60bd04ca3177d47d491cefe4db17d64bc50dc6d2cf",
+  "claims": [
+    {
+      "id": "claim_b6b86dcc2af143808dabf4113a8e776d",
+      "statement": "The @tingting/shared package exposes constants/index.ts (TS enums + Vietnamese *_LABELS Record maps) and schemas/index.ts (Zod schemas + re-exported z.infer input types); every enum has a paired *_LABELS Record so the UI never hardcodes display strings.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts",
+          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+        }
+      ]
+    },
+    {
+      "id": "claim_989899a71846441693021326d3451019",
+      "statement": "Major enums include TripStatus (CREATED, IN_TRANSIT, COMPLETED, LOCKED, CANCELED), FuelMode (AUTO, FLAT_RATE), LoadingType (HANG, VO), Role (ADMIN, MANAGER, ACCOUNTANT, DRIVER, FORWARDER), TxnType (16 members including TRIP_REVENUE, PENALTY, UNLOCK_REVERSAL, SERVICE_FEE), TrailerType (20FT, 40FT), truck/trailer/driver/customer status, PenaltyStatus, VehicleComponent, VehicleScheduleKind/Status, TireStatus, AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus, NotificationType, CarrierType (OWN, EXTERNAL), SettlementMethod, ApprovalStatus, DebitNoteMode, TruckCapRole, WorkDayStatus (TRIP_DAY/STANDBY/PERSONAL_LEAVE/WEEKLY_OFF), SalaryConfirmationStatus.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        }
+      ]
+    },
+    {
+      "id": "claim_a05ed297a484449d9c9cb04c04a244eb",
+      "statement": "Helper constants include BILLABLE_TRIP_STATUSES = [COMPLETED, LOCKED], FINANCIAL_ROLES / isFinancialRole = [ADMIN, MANAGER, ACCOUNTANT], Casbin resource names (CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY, TRACKING, TIRES, VEHICLE_SCHEDULES), FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, PUSH_RULES, AGENT_ROUTE_KEYS, ACKED_DIRECTIVE_KINDS, and admin API path constants CHATBOT_METRICS_PATHS / LLM_PROVIDERS / LLM_PROVIDER_MODELS / LLM_PROVIDER_LABELS / LLM_SETTINGS_PATHS / GPS_SETTINGS_PATHS / FAQ_ADMIN_PATHS.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c0d1a5dc9114c0ca3da6f49ff29ae43",
+      "statement": "Two custom Zod primitives are exported: numericMoney (union of number and string that transforms to a decimal-string with 2dp) and numericDecimal (same shape, higher precision for non-money numerics); major schemas cover Trip, payment/penalty/adjustment, auth, catalogs, suppliers/expenses, vehicle schedules, containers/seals/expenses/instructions, forwarder flow, tires, billing, commission/payout/offset, containers/ports/seals, Bách Khoa GPS, agent/chatbot, and FAQ.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/schemas/index.ts",
+          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ad8b23a0ebb48618c12fd34fd5e3762",
+      "statement": "The z.infer pattern is preferred over hand-written interfaces — every schema has a paired `export type XxxInput = z.infer<typeof xxxSchema>` so backend handlers read req.body through xxxSchema.parse() (ZodError → 400 in globalErrorHandler) and use XxxInput for the service signature while the frontend re-imports the same XxxInput for form types.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/middleware/errorHandler.ts",
+          "version": "repo-file-v1:sha256:acfd36a49265e030f918af9fefc526e9b7be37ae9ea64d70a023fe36cc172ebe"
+        },
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts",
+          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+        }
+      ]
+    },
+    {
+      "id": "claim_38bd9d94cb7c4de086cd062197613de9",
+      "statement": "Module-specific sub-barrels include schemas/agent.ts (agent schemas), schemas/chatbot-metrics.ts (types + paths), schemas/llm-settings.ts (provider list + update schema), schemas/gps-settings.ts (GPS credentials), schemas/app-settings.ts (single-row app settings), and schemas/faq.ts (FAQ admin schemas).",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/schemas/agent.ts",
+          "version": "repo-file-v1:sha256:965ed0d32819451394d2158028f4b954ceaa2712672f554298fd19be6df11bc6"
+        },
+        {
+          "resource": "repo://shared/src/schemas/app-settings.ts",
+          "version": "repo-file-v1:sha256:04c01b5b4695e1186698d703d5306c225a7ad08b8d3f4dc063bde86039d67f48"
+        },
+        {
+          "resource": "repo://shared/src/schemas/faq.ts",
+          "version": "repo-file-v1:sha256:43e791d575bd51052c8452903fc3ae00bb33c5539a7700fdd9ed32470b5fab5b"
+        },
+        {
+          "resource": "repo://shared/src/schemas/gps-settings.ts",
+          "version": "repo-file-v1:sha256:960b3f6a71c0c80a5b648a53483ba8d7a6c0448891e58fb02eedfba6c6daac57"
+        },
+        {
+          "resource": "repo://shared/src/schemas/llm-settings.ts",
+          "version": "repo-file-v1:sha256:32f2545aae6c3a893b2b1e7fb6f9a2be865a6e85ff4bb661f91e244df29954fd"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

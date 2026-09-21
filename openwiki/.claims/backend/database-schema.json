@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:41e5aab87bd5979c9e7f84530cf8c9dda99c44658b63e112108993872eb1c49c",
+  "claims": [
+    {
+      "id": "claim_677ada1ad8954e7ab10c0fb91630d38d",
+      "statement": "NEPO uses Drizzle ORM (postgres.js driver) against PostgreSQL with the schema in a single ~1300-line file backend/src/db/schema.ts and migrations under backend/src/db/migrations; all status/type fields use pgEnum declarations at the top of schema.ts (lines 23-48) covering trip_status, fuel_mode, loading_type, role, txn_type, trailer_type, truck/trailer/driver/customer status, penalty_status, vehicle_component, vehicle_schedule kind/status, advance_request/settlement status, notification_type, work_day_status, and salary_confirmation_status.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle.config.ts",
+          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L2-L48",
+          "version": "repo-lines-v1:sha256:c6f5de5bdd3e725d6ff130edc7f0f043d89bf3bf36b18c95bfc82593341fb3b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZTVlMzNiNDMxMDMwMjJjYjExMGNlODg0ZmQ0NjcwMzYwMWQyMmQ2ZDdkMzZjNWMzYzNhODQ2ZmY1NDU4MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODBlMDQ3ODhmNWZjMjE3MjhjOTYzMGQ2Y2FhZjNiYjFlNzYwNTMwYjE3NWM3MjBmM2FhZDU5YTljMzE1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoxLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwODg1MGZjMDQ3MGEzNTJhN2ZiNjU1NjBhNjE5ZWU2ZjhiM2M5ZGUwNDBhYzI2YWQ1MWRkZjk1MDcyNzM3Y2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc58fdd1581e41e89e534057dededc15",
+      "statement": "The ledger table (schema.ts:405) implements the project's loosely-coupled entity reference convention: entityType is a varchar(50) string (one of DRIVER/CLIENT/VENDOR/FORWARDER/...) and entityId is an integer — both deliberately without foreign keys so the ledger outlives the entity; balance is numeric(15, 0) for exact VND precision.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L405-L426",
+          "version": "repo-lines-v1:sha256:567fb32dd756d8ea3eea39af7bf7e980df24c0c0b8624145950c41137c38490a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWE4ZjgyYmQ3Y2ZjNjEzZWQ3MTRmMzBkMGI0ZTU2ZTRhYjhjN2FjMDFiMWU1YmI5NGRmNTkxNzUzNTIzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDI2MTQzM2QyOTM3MjIxZjIzNDM5ZjExNWE1ZTBhYTI0Nzk0YWIwMjUwMzIzYTRjYTEyZDA1M2E2MjliNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGQ0ZmE0YzM3MTYxMmQwM2RmOWJmMjhkMTc4ODUxNmE5YTk1MDM5N2RkMzlmZDExMjQ2YWJkM2I3YTY4YTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6304892109fe403ca67e1c49b6d23193",
+      "statement": "The ledger table has hot-path indexes (entity, entity+id, entity+txn_type+timestamp) and a partial unique index that enforces FORWARDER_SETTLEMENT idempotence only for that txn type using WHERE sql predicates.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L418-L425",
+          "version": "repo-lines-v1:sha256:7743c5f486b56fa5d4e4dea102eeb1d3ae156a52fefbfa17c937badc42dda6ff:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVjNDhiZDFkZmI2OTljYjYxYTllMmRjNDk2YjFhZjE0N2M1ODEyMTBjMjlkMTg2Yzg0NWY5ZTVmOTE4YTM4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIzYTI3YTQzZGVkMDIwYjZiNGEyMWM0ZTYzNzUxNzIzMTFiODk2MzRlY2NhNmIyNzRiNjFhYTBlZDdkMzIzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI0Y2Y0MTdmMmQ5ZThiZGJjNzE0NTc3MDY4YmQwMzVkOGYzNDhmM2JmZmJhMWM1NzZjYTgzZTBiOGRlOGQ4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg5MmNiNTIwYWUwOThiMzNjYTY5NjJiMWY3YjgxYWU0ZDIzYmEwOGFiOWQwZTFlYjFjZTdiYWJiNWY5YmJjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ed98109de184de0944cc9710df96ef8",
+      "statement": "Tables group into users/roles, fleet (trucks/trailers/tires/tire_positions/vehicle_schedules), catalogs (customers/routes/cargo_types/pricing_tables/road_allowances/fuel_config/fuel_price_history/penalty_reasons/company_info/management_fees/road_config/app_settings), suppliers/expenses, trips and legs/containers/expenses/photos, forwarder flow, ledger+receivables+billing+debit_note_templates, distribution+salary, audit+infra, GPS, agent/chatbot, and notifications.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L51-L1299",
+          "version": "repo-lines-v1:sha256:e69c5094925b6b2719d6a2ff70c15a498f8398430b294dec087c268c34326926:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFiZWQ4MWQyOGExMDE1OTdjMDRjZTg2ZDU4ZjA5YzA2YmFiMmE3Zjc1YTk3ZWEwM2E4NzUzZjA0ZWQ5ZmNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlMjZjZDkyMzY2ZjYwZDhlZDkyZDAyMzlmMDdmZWY3NGNhYzE0YWE2OWFkZGY5YzJjYzBkMTFlYjAwYTQ2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmExYjk4ZTA1ODZhODE5N2NhYjQ3ZTE3NjBhZWM5ZTc1YWFlOTgwNDY3MWU3M2Y1Mjg2Zjg1NTQ1YTg1ZTI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_be5d685933fe42f7bcc9c231d9a296a6",
+      "statement": "Notable schema conventions: TEXT + CHECK is used for user-editable enum-like fields (e.g. truck_cap_table.participant) instead of pgEnum to avoid enum-migration cost; salary_periods.isDefault defaults are enforced transactionally in the route handler rather than via partial unique index; the project uses pgvector (vector(1536)) for FAQ embeddings via the vectorColumn1536 helper.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L2-L2",
+          "version": "repo-lines-v1:sha256:60e5e33b43103022cb110ce884fd46703601d22d6d7d36c5c3c3a846ff545835:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBlNWUzM2I0MzEwMzAyMmNiMTEwY2U4ODRmZDQ2NzAzNjAxZDIyZDZkN2QzNmM1YzNjM2E4NDZmZjU0NTgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBlNWUzM2I0MzEwMzAyMmNiMTEwY2U4ODRmZDQ2NzAzNjAxZDIyZDZkN2QzNmM1YzNjM2E4NDZmZjU0NTgzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDFlMmYwMzk0YjY0N2QxMzliOTg0OTM3NjJhOGNiY2M3OTQyYjQyYTAyZWI2NjY3ODZmZGVlZmQzMTRiNGFlNyJ9"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L570-L570",
+          "version": "repo-lines-v1:sha256:664fb6f9c525d69a0cb9cca069dc90624486b4618477acd2a64b2dbb4ef5d1de:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNlZjU4MDc5MWE4M2I4NTFhNTE3NTA2ZDM4NTE5ZDI4YjYxMmZkNWJjMDM4NWVhYmU1YmY3YTVmNzgwNTU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRjMzAwZDUxZTQzMTA3M2I0Y2QwMzc2NjhlNGMzMjZhMmU2MWE1YjcxYTE1ZTUzMTdhNjdmMzlkMWZhMjFlMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8617b351cd144af68b21e35124ba7331",
+      "statement": "Migrations are generated with pnpm db:generate (drizzle-kit generate, schema diff → new file under backend/drizzle/), applied with pnpm db:migrate, and inspected with pnpm db:studio; production migrations live under deploy/ and use a wrapper that excludes *.revert.sql files (commit 45fbad3).",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        },
+        {
+          "resource": "repo://backend/drizzle.config.ts",
+          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+        },
+        {
+          "resource": "repo://backend/package.json",
+          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

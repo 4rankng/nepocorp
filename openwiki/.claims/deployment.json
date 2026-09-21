@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:80825cb0e6d61aeef0f2abbae282c110443e1ab3a2beb931c596fddcb9509a07",
+  "claims": [
+    {
+      "id": "claim_4d35ef18e37546058eddef8f641d9e57",
+      "statement": "Local dev uses docker-compose.dev.yml which runs pgvector/pgvector:pg16 (Postgres + vector extension for FAQ embeddings) on port 5440, redis:7-alpine on port 6390, and adminer on port 8081, with healthchecks gating dependent services and a named tingting-pgdata volume for state across make down/up cycles.",
+      "evidence": [
+        {
+          "resource": "repo://docker-compose.dev.yml",
+          "version": "repo-file-v1:sha256:bf89290aeec69f4eaec8b7655e72fdc36dc0d2244bf5c241a2403767e21a93d0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b09c25cdd84d464aa5bcf25fd059f694",
+      "statement": "The deploy/ directory holds production compose files (docker-compose.prod.yml, docker-compose.demo.yml), nginx reverse-proxy configs (nginx-host.conf, nginx-host-demo.conf, nginx-host-vantai.conf, nginx-frontend.conf), first-boot provisioning scripts (setup-server.sh, setup-demo-server.sh), production seed data (seed-vantai.sql, seed-vantai-6months.sql), and a per-customer Makefile under deploy/vantai/.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/docker-compose.prod.yml",
+          "version": "repo-file-v1:sha256:6bb69e0857f8e1c72e0e6f81821789a89d29964b10badb26e95c01e4aaf672c4"
+        },
+        {
+          "resource": "repo://deploy/seed-vantai.sql",
+          "version": "repo-file-v1:sha256:390474cbada07f8dd4755ead98e54028a63b7a1ced7e34ba1dda83aea9a2d20c"
+        },
+        {
+          "resource": "repo://deploy/setup-server.sh",
+          "version": "repo-file-v1:sha256:95a174c832fd636c84c2c868ce5fad98dcabea2b7253b2da19ffb6795c65ff24"
+        },
+        {
+          "resource": "repo://deploy/vantai/Makefile",
+          "version": "repo-file-v1:sha256:d277ce3751956f3c3ba59a2d3872c4fd8d6aaf455d685ccb5bb27b5988ecb8d3"
+        }
+      ]
+    },
+    {
+      "id": "claim_50c5b3b508214756b98fd203dc7102c4",
+      "statement": "The prod-migrate Makefile target (Makefile:166) iterates over backend/drizzle/*.sql filtered by grep -v '.revert.sql' so dev-rollback pairs never run against prod (commit 45fbad3); it SCPs each file to the prod server, docker cps into the Postgres container, runs psql --single-transaction -v ON_ERROR_STOP=1, and treats already-applied files as warnings so reruns are safe.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L164-L179",
+          "version": "repo-lines-v1:sha256:eafd253bc35af1783a86cde73789fe171c32bf0934c734fc5af0f1a449cb4077:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NmMxYmEyY2YyMTUzNmJkZWUxODJhNDE0YzMzMjc1NzM3NTM1OTIwNjYxYzBhYWQ5ZWM3MDk5MDBkYTBmMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZDYyMzBmNzc3Nzc0ZjA2OGEzMGY5ZmMzYzNlNWZlNTJiOGIyYjg1Yjc5M2VmNzViMmQ5NDY3YjRiNDBjMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f0885a6e82a4b209805bff4503be414",
+      "statement": "Backend and frontend rollout use the Makefile prod-* and demo-* targets with separate server, compose, and path variables (PROD_SERVER, DEMO_SERVER, PROD_COMPOSE, DEMO_COMPOSE, PROD_PATH, DEMO_PATH); demo uses seed-vantai-6months.sql so training screens are populated.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        },
+        {
+          "resource": "repo://deploy/seed-vantai-6months.sql",
+          "version": "repo-file-v1:sha256:c900645a653df1cfc678efed2b3498a28d0d8b538b7d8395ad5ac135e8e8c586"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

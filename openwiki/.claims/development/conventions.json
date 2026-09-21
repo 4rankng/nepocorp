@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:de663a6d534678da9239b60a1e29ba79126959f389753d2770b115c76dbf265c",
+  "claims": [
+    {
+      "id": "claim_2053e0a54dd0461189d1f67ba7a741f8",
+      "statement": "TypeScript strict mode is mandatory with no `any` types; shared types live in shared/src/types/ and Zod schemas in shared/src/schemas/ mirror them with z.infer used over hand-rolled interfaces.",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://shared/src/index.ts",
+          "version": "repo-file-v1:sha256:c455d4b2f193d1eb801395c9bc318e915a4e7e64d844c777110e3de858426f6f"
+        }
+      ]
+    },
+    {
+      "id": "claim_338600e25cca4a05a0e3b1353e0a9b73",
+      "statement": "All database access goes through Drizzle ORM with a single schema file at backend/src/db/schema.ts (pgEnums declared at top); migrations use pnpm db:generate / pnpm db:migrate, and production applies via make prod-migrate which excludes *.revert.sql (commit 45fbad3).",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        },
+        {
+          "resource": "repo://backend/drizzle.config.ts",
+          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e6d08b189f3459689afc3c750e993a2",
+      "statement": "Financial conventions: the ledger is append-only with ADJUSTMENT used for corrections and UNLOCK_REVERSAL for trip unlocks; all monetary math goes through round2dp() and computeTripTotals() from shared/src/calculations/; revenue is recorded ex-VAT (net) and costs incl-VAT (gross); VND displays with no decimal places while internal math preserves 2dp via round2dp.",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://shared/src/calculations/round.ts",
+          "version": "repo-file-v1:sha256:40a80e09a6d2b081266139c0f111300600ecc06712c44180ab697799014778c2"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b7c8d4486344526a8892b94f203bea7",
+      "statement": "Fuel pricing: fuelPriceApplied is the config snapshot at trip creation (immutable), fuelActualUnitPrice is the per-trip override, and the effective price is `actual ?? snapshot`; one driver per trip is the invariant even though a truck can have many drivers over time.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        },
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f10fd201ba647458299dab33a60f502",
+      "statement": "RBAC follows a dual-layer pattern combining casbinAuthz('resource') with requireRoles(...) — resources without a Casbin policy row deny everyone except the ADMIN wildcard p, ADMIN, *, *.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/casbin/policy.csv",
+          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts",
+          "version": "repo-file-v1:sha256:a097f419b45543e651b7848857252cda951040082fdaed96f356e6f03a52993c"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fbd9561f3d340a88b407ac64dad5f84",
+      "statement": "Audit middleware emits one Vietnamese-language audit row per mutating API call (templates in backend/src/services/audit-templates.ts), regardless of how many tables the handler touches; user-facing copy is in Vietnamese and query endpoint is /api/audit-logs (ADMIN/MANAGER only).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/middleware/audit.ts",
+          "version": "repo-file-v1:sha256:28a7490da34ad6d7a140c69b10761d9424b0bdfb05af1c6c9731c1661d0796d4"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-templates.ts",
+          "version": "repo-file-v1:sha256:72f589c3ff345369002c155ee966078facb632c62e577790478e611ec3bbad1b"
+        },
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        }
+      ]
+    },
+    {
+      "id": "claim_6bdb0beb70fe438786f417dcfb9b6838",
+      "statement": "Frontend conventions: Tailwind CSS v4 via @tailwindcss/vite (no tailwind.config); page-scoped CSS in frontend/src/styles/; no !important and no truncation of column values; the <Money> component renders VND with dong sign as subtitle-sized unit; statusStrip (3x20px color bar) appears on every status display; no raw DB IDs in UI text — only business labels.",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://frontend/vite.config.ts",
+          "version": "repo-file-v1:sha256:85ca43cb268ed117333951c4c3bd03aa6ccd53ff3e2c1cb4964093b0f970395a"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4e6acbe2da7491fb888eec4e072af87",
+      "statement": "DRIVER and FORWARDER pages are mobile-first responsive with Tailwind responsive utilities; server state uses TanStack Query; there is no global state library — only React context (auth) and custom hooks like useAuth, useCatalogs, useAuditLogs, useClickOutside, useTripForm.",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.tsx",
+          "version": "repo-file-v1:sha256:9e2cf82ec5ea72e0d4ec51d0d5fab621239fd9dfde1f2ee25c6227721d0add59"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useCatalogs.ts",
+          "version": "repo-file-v1:sha256:32e250407b65ea3d6cc8b210dc135d144eb406cc5ca455f0cdbb3079159285cf"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

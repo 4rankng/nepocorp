@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9706d7cd64cacb5bdfafa5bb6d87dcccfa72cd1a575bd5e0a6fa72a0f7311055",
+  "claims": [
+    {
+      "id": "claim_cba0677dddbd472187062001d6315e8d",
+      "statement": "NEPO uses a two-layer authorization model: authMiddleware (JWT verify + Redis jti blacklist check) is the first layer and attaches req.user with {userId, username, email, fullName, role, jti}; assetAuthMiddleware is a sibling that also accepts ?token= query for routes serving <img> tags (e.g. /api/photos).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/lib/redis.ts",
+          "version": "repo-file-v1:sha256:ad9cfe5221ad5f5f9384d41bad7447fa550e9ed823d50d7457ecb1ea62268607"
+        },
+        {
+          "resource": "repo://backend/src/middleware/auth.ts#L25-L62",
+          "version": "repo-lines-v1:sha256:f4874cee286fb5796eea06aed1c2f893830e16af204a579c3c4ee351fd4e1edd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2YTVmOWE5NjY1N2JjZTFkNTM0YTZjZjFiMDE5ZWNmNGJlNjEwYzhlZDEzY2FlOWFjYTA5ZDlhZGE5MjkzODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNDE2NDc0YjQzNjM0NzJlZGNhNjkwNDZjN2Y0ZTQxNTEzN2Y5YmY0NmJiOGJkYzAzN2MxNThkODcwMDIyM2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3224bbad7a34855917971fe2c71136d",
+      "statement": "Five roles exist with Vietnamese labels — ADMIN (Quản trị), MANAGER (Giám đốc), ACCOUNTANT (Kế toán), DRIVER (Lái xe), FORWARDER — defined in @tingting/shared/constants ROLE_LABELS and used both in Casbin policies and React route guards.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/casbin/policy.csv",
+          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        }
+      ]
+    },
+    {
+      "id": "claim_68042c2ef2eb469e8b7b3ba6df081f7a",
+      "statement": "Casbin policy at backend/src/casbin/policy.csv grants ADMIN the wildcard p, ADMIN, *, *; HTTP method is translated to action via ACTION_MAP (GET=read, POST/PUT/PATCH=write, DELETE=delete) and a denial returns 403 with Vietnamese message Không có quyền truy cập.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/casbin/policy.csv",
+          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts#L37-L58",
+          "version": "repo-lines-v1:sha256:66f2ccccdb811158179abf3606da998dda89ff9628a4fed89eab87d07c22150e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNjc2NGFiMjc4N2JlYjFmNzcwZjAwMDk4OTUyNDMxZjkzZjI4NTBlMDMzNmU2NmUxZjBiYjJlOWQyZTFkOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MDdlZDcxMmZkZGM4NDQ4ZGQ4Zjc2M2FjNzliZjlkNzNlMGFiNjY0Y2M4OWVlNzcxNTNmODdmZWUwZjM1ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts#L5-L11",
+          "version": "repo-lines-v1:sha256:79618b59f1d2d836cb32107bfd9eb9eb52e4d9814ad99fe8e2c24fd2f34240d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ5MTEwMWY0MWY2MDY4MmFmMDJlOWE3MTVhOThiOGMzNjNmODRlYzQzMDRmNTA1ZjNiNzdmMzAzMTdhMmVjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzVmMTIyMDI3ZDVkY2ZiOWM0Y2MxNTg5NjkyNTRhOTRlZmQxY2MxYzUxMDkwNTEzZjJiOTc2ZjI0MjhlOWM4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc0Njc1YTk3YzM0MmI1YzY1MzJlNTk5YThmYzdhOWJmM2ZmYjdjNTNkMGU0ZWY2MmQyY2E5NTE4MGRkMzFhZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3db8437a864841dda5268bed86ce27bb",
+      "statement": "The dual-layer pattern combines casbinAuthz('resource') at the route mount point with requireRoles(...) inside the router or as a second mount middleware; for admin-only resources (llm-settings, chatbot-metrics, faq-admin, gps-settings) both gates are stacked so a missing Casbin policy row denies everyone except the ADMIN wildcard.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L106-L121",
+          "version": "repo-lines-v1:sha256:4674168d271014f922364fb9919575ab85cfde7402989302afa50b56e0b86176:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMWQ0YmY1MTRlMGExZjY3MjYzOWIwYTYwMTVmZjQ4MTY2MDkyMjhiY2U2YTQ4MzgzZDEwYjA3NTg2YzA3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTcyYmMwOGE1MmVjYTUzNzk4ZGYwMDg1ODA0YzFkNTJmZTY5NWVlNzNmNDFkZDM3ZWZhYzdjYTllZDU0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0YTRkZjNlZGM5NjVjOTc0MDUxZjhiODgwN2Q4NzBlNDBlMDA4YWFkNGYwMmVkNGRjNThiNjRkMjViMzgzOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NGQzMTE1NjhlOTQ5MTM2MTQwZTMzNGZlYzMyNGJmYTNiNzE2MDk5NzA5MjI5NDhmYzllYWE0NTIwZjNmZGEifQ"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts#L19-L29",
+          "version": "repo-lines-v1:sha256:c64e08d581ea901a6c2da4d28f82d3bd7b09cc298c5e1de87adc0de709356e13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MmMwMzZiN2RjZjQwNDliMDIyZTYxOTk4NzE5Y2QxM2I2Mzk0NjUyNzAwMTVlYTUyNGRjNjU1NmM3YmEyY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2Mzk0YzQ2ZjFmMTE4Njg5Njc0MjQyMDU2ZDQ3YTg4MDBiZGQxZGQ4M2YyNjE3YzRjMTBmMTQxOGM1NmI2NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMWVjNDE1MmVlMTU4NGQ0MDU1NGE1MGUyMmVmOGUwMzAwZGUxMjU3NjM3ZjE3ZDNkNWZmNGY4MTcxNzAxY2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48c7e2dfc2784480bbce247ca0ac2a19",
+      "statement": "auditLogMiddleware (mounted globally in backend/src/index.ts:85) intercepts every mutating request before the route handler and writes one Vietnamese-language audit_logs row per API call via templates in backend/src/services/audit-templates.ts — regardless of how many tables the handler touches.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L85-L85",
+          "version": "repo-lines-v1:sha256:a14de317bacb54bbf9b1d826f840d66c830a32dbfc85d105d01160bd189e4baf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0ZGUzMTdiYWNiNTRiYmY5YjFkODI2Zjg0MGQ2NmM4MzBhMzJkYmZjODVkMTA1ZDAxMTYwYmQxODllNGJhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0ZGUzMTdiYWNiNTRiYmY5YjFkODI2Zjg0MGQ2NmM4MzBhMzJkYmZjODVkMTA1ZDAxMTYwYmQxODllNGJhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA5N2MyOTMwODIwYzE4ZGQ3YTA4YmYxN2Q1MDA4MjNjMDJlNzI0NzAyZWI0MzVlODM2NGU5YWE1N2E1OTYzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMyNmQ1ZDFiYjE3NzVlYzY0MTZhYzFjYTk3MDNlZTg5Zjk3ZTMzMTUxOThhODRiYmE3NDhmMjgzNmMyYzNkZiJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/audit.ts",
+          "version": "repo-file-v1:sha256:28a7490da34ad6d7a140c69b10761d9424b0bdfb05af1c6c9731c1661d0796d4"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-templates.ts",
+          "version": "repo-file-v1:sha256:72f589c3ff345369002c155ee966078facb632c62e577790478e611ec3bbad1b"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc416ae1e4974dc098d52045d4ff9b85",
+      "statement": "Frontend RBAC mirrors backend via in-component route guards in frontend/src/App.tsx (adminOnly, driverOnly, forwarderOnly, managerOrAdminOnly, officeStaffOnly, strictAdminOnly) — these are navigation helpers, not a security boundary, since the API enforces RBAC server-side.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/App.tsx#L126-L213",
+          "version": "repo-lines-v1:sha256:5f076a0321c0990d773e137226bcf56b2d82505e81ae20a1cc3f559ebedefb2a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNzg4YjUyMzI0YTlmMTVmNzNmMGU2M2U5Y2E2NDQ1MGZlNzUwYmNhNjkyZTg0NmZkN2M5OGFiOTZiN2YyMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNTkyZTA3YjRjZjUzYTgzODZjNTY4MGNmYjdmM2U0ZTc1NDI5NjljODcyNmFjNWVkMzI3NTNmOGNhOTU5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNjE4NTJhYjkxMGI2MDJkYTExMGE2YTUwYjZiNGI3MTU2MWE5MWRiN2Y0YmVkODA3ZDllZjRiNWFiYTQ1MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZWE1OGU2YTk1NDEyMzQzNWVhMDBhNjFkOTAwNjlkNGY3ZGQ4YTI2YWZkYTY1OTY0ZTZiMGViMGZlZTAwNGUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/App.tsx#L95-L122",
+          "version": "repo-lines-v1:sha256:d76126a43f733aace38e49bcead719b2237f1a799c7e5c484d1edac1a1449abc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4YzA1MmVlMmE4YmU2MjE5MDJlODY4ZmQ0NTk1MjVlYjViYWJlNDFkODg4ZThhYzdkMDljYmExNzE2YWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZGNkZmU0Y2I4Mzk3MmNjMjFjOTk1ZDU5MGEwZTZmN2I5MjIzYmQ0ZmU0ZDBhOWNjYTBjM2NiYzk1YWI0MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNjE4NTJhYjkxMGI2MDJkYTExMGE2YTUwYjZiNGI3MTU2MWE5MWRiN2Y0YmVkODA3ZDllZjRiNWFiYTQ1MDYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

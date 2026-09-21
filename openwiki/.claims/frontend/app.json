@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:31550e945462541584445b4983d7a5bac7a3bd21eb7c58b7e57087c618727e40",
+  "claims": [
+    {
+      "id": "claim_ddafb2b90d824d6091693142b74e71af",
+      "statement": "Routing in frontend/src/App.tsx uses in-component role-based guards (adminOnly, managerOrAdminOnly, officeStaffOnly, strictAdminOnly, driverOnly, forwarderOnly) defined in App.tsx, each route is lazy-loaded with React.lazy + Suspense and wrapped in its own ErrorBoundary so a single crash never blocks navigation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/App.tsx#L84-L213",
+          "version": "repo-lines-v1:sha256:0d0a74b7dff5a453681778b3406a85ed90c12f789ea0ea45fa97bb39b987c744:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NzJhMjIzZWMxNDBiZDg5Njg2MmJjNjIwMDU4MmJkZGMyOTcxY2E0NWYwNTkyOTZmZTk3MjU2NDZjN2U0NzUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwYjU5MmUwN2I0Y2Y1M2E4Mzg2YzU2ODBjZmI3ZjNlNGU3NTQyOTY5Yzg3MjZhYzVlZDMyNzUzZjhjYTk1OTc0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOTRmYzBjMTczZDFlYzNmYzUwMWQ3ZGZhOTI4NTUwMWM1MjdjZmI0NzEyNTgzZGEzY2MzNjE4MDU2NmI0YmUzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZmVhNThlNmE5NTQxMjM0MzVlYTAwYTYxZDkwMDY5ZDRmN2RkOGEyNmFmZGE2NTk2NGU2YjBlYjBmZWUwMDRlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b992e1f0f2504c57b783730086824bc5",
+      "statement": "The TripForm is composed of composable cards under frontend/src/components/trip/ (TripInfoCard, JourneyLegsCard, FuelTollsRevenueCard with FuelSection + FuelAllocationEditor, AncillaryFeesCard, ContainerInstancesCard, ImagesNotesCard, TripInstructionsCard, TripChecklistPanel, TotalsPanel, ActionBar, TripSummaryCard, AllowanceSection, FuelModeToggle); useTripForm + useTripFormContext orchestrate them, useDirtyGuard + useBackShortcut warn on back-navigation, and TotalsPanel previews computeTripTotals from @tingting/shared so UI matches server math.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/trip/FuelAllocationEditor.tsx",
+          "version": "repo-file-v1:sha256:63a42d1a4af9790a6ced41d04bf7870f8c53d6b2a8cfb73b2b4d758f006cee31"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/FuelTollsRevenueCard.tsx",
+          "version": "repo-file-v1:sha256:0a79d29f9d07838be2ac8b0b34f5b9b24958039c0d31b014ade5a590a03da56c"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/JourneyLegsCard.tsx",
+          "version": "repo-file-v1:sha256:e79ba046cd6ddcead67621f5e5594ab91a64f283340a96345ad5e3cab79fc747"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripCreatePage.tsx",
+          "version": "repo-file-v1:sha256:8ca0cb40f47c56de81cb66c56dee5885c55ef77a3c413233542d0b36168eece2"
+        }
+      ]
+    },
+    {
+      "id": "claim_789cb86e2faf45258f892bafef77d6c2",
+      "statement": "LocationAutocomplete is backed by Map4D via /api/maps (casbinAuthz('maps'), readable by all roles) and is used by TripForm legs and any origin/destination picker; it returns Vietnamese-formatted addresses with lat/lng.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L122-L122",
+          "version": "repo-lines-v1:sha256:ecf3aadbf463540b7329c55fd975189de8955edad96dee449d74094e0eff644a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNmM2FhZGJmNDYzNTQwYjczMjljNTVmZDk3NTE4OWRlODk1NWVkYWQ5NmRlZTQ0OWQ3NDA5NGUwZWZmNjQ0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNmM2FhZGJmNDYzNTQwYjczMjljNTVmZDk3NTE4OWRlODk1NWVkYWQ5NmRlZTQ0OWQ3NDA5NGUwZWZmNjQ0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ2YTRhM2YzMDU3OTg5ZjdiN2UwYWQ5NzdjY2IxY2U3NDFmOTI2YWZkMmNjNWJiNWU1Y2M4NWI3ZmZjMmFhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc4ZjE4ODliOWZiNjM0MmM3MDY1OGE3ZmFlMjYwMmVmMzlkZmIzMGVmZDU3OTg0OWUxYzI0ODBjMjc3MzhjOCJ9"
+        },
+        {
+          "resource": "repo://backend/src/routes/maps.ts",
+          "version": "repo-file-v1:sha256:a36a7fdd4a0ae6f12a8f45b7c38703e002db61286e62e9cf956e51fad6c3fd4c"
+        },
+        {
+          "resource": "repo://frontend/src/components/LocationAutocomplete.tsx",
+          "version": "repo-file-v1:sha256:f2139196cfb8ba5cb659e09863815e89e16d249d7e316a2ec8e735000d9d872d"
+        }
+      ]
+    },
+    {
+      "id": "claim_897f9df0cc8e4253867042c7315c409e",
+      "statement": "Vietnamese-locale formatters in frontend/src/lib/format.ts: formatNumber uses vi-VN with . thousands separator, formatCompact abbreviates >=1M to tr / >=1B to ty / >=1K to k, formatCurrency returns 12.500.000 ₫, and a VND splitter returns { num, unit } so the dong sign / tr / ty renders at subtitle size next to the digits — used by the <Money> component.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/format.ts",
+          "version": "repo-file-v1:sha256:a2cbc547a19fe978c2960f9090f472ed6dc2d582c18d1d21970aa751683fb531"
+        }
+      ]
+    },
+    {
+      "id": "claim_2995fcf6c8c6452abffa5f60921b3117",
+      "statement": "UI primitives include <Money> (VND with subtitle-sized unit), statusStrip (3x20px color bar on every status display), empty-state illustrations via frontend/src/lib/emptyIllustrations.ts, confirm-dialog.tsx, Modal/Drawer, Toast in components/shared/, charts under components/charts/, and AssetIcon.tsx.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/emptyIllustrations.ts",
+          "version": "repo-file-v1:sha256:a415039c1d50d46071e18c240634eac5e552bfe5e833fc98b8e75f240a4e78d0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9cd6c15b031847c9a05f101f9bf5b7ee",
+      "statement": "User-visible strings are Vietnamese (Lưu, Hủy, Đang tải…, Không có quyền truy cập, Không tìm thấy API), money uses ₫ suffix with no decimals, dates use vi-VN locale, and DRIVER/FORWARDER pages are mobile-first responsive.",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

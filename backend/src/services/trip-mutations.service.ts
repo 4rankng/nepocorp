@@ -533,7 +533,8 @@ export async function copyTrip(sourceTripId: number, createdBy: number) {
 export async function updateTripFigures(
   tripId: number,
   data: {
-    legs: TripLegInput[];
+    /** Optional: an omitted list keeps the stored legs (kanban 20260921_3). */
+    legs?: TripLegInput[];
     customerId?: number;
     departureDate?: string;
     completedAt?: string;

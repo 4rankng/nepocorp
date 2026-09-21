@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2988995cc8f105f6653c951bda3255c51fa37a83a061e4c0a7192dc62fdeccc0",
+  "claims": [
+    {
+      "id": "claim_13eb99d5ca034190969ec84ad871b0cd",
+      "statement": "NEPO is the production codename for the Vietnamese trucking/logistics platform; TingTing is the historical/marketing brand and the two refer to the same system (marketed as TingTing in some seed scripts and design docs).",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md",
+          "version": "repo-file-v1:sha256:1f5789ebacc8772ac791c7ca51a5de77e15ff99c15d3cf920a73a3a817f2d03c"
+        },
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_fcab07b87361420096fbb2a3afe50cde",
+      "statement": "The wiki task-routing map points to backend/api-routes.md for adding a REST endpoint (with casbinAuthz + Zod schema), backend/database-schema.md for Drizzle migrations (pnpm db:generate, make prod-migrate excludes *.revert.sql), frontend/app.md for editing pages, frontend/hooks.md for custom hooks, backend/ledger.md for ledger work (ADJUSTMENT/UNLOCK_REVERSAL only), shared/calculations.md for fuel/allowance math, backend/auth-rbac.md for Casbin policy edits, shared/schemas.md for Zod schemas with z.infer, development/testing.md for diagnosis, and deployment.md for prod rollout.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        },
+        {
+          "resource": "repo://backend/src/index.ts",
+          "version": "repo-file-v1:sha256:0e60da80f06ec1a165babadf56f7a6a93de3ac510d30f6529b937121930389d2"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9e6be3aef56433e95def9ea7494a664",
+      "statement": "Authoritative Vietnamese documents in docs/ are: CONTEXT.md (domain glossary), docs/flows/DELIVERY_TRIP_LIFECYCLE.md (trip QA guide), docs/flows/00-…15-*.md (role-by-role test scripts), docs/code-standards.md (conventions), docs/codebase-summary.md (codebase map), docs/system-architecture.md (architecture), docs/deployment-guide.md (deployment), PRODUCT-SPECS.md, and ROADMAP.md — the wiki pages are a navigation index, not a re-authoring.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        },
+        {
+          "resource": "repo://docs/deployment-guide.md",
+          "version": "repo-file-v1:sha256:a1d2d85eb7c647a428f36f40b7b5657208afba8b3409d5d1f4308c189a1cd13f"
+        },
+        {
+          "resource": "repo://docs/system-architecture.md",
+          "version": "repo-file-v1:sha256:d47b37e471cfb1092dd8baab252825bca08e78cc5df1a301faf80ede11cb1c70"
+        }
+      ]
+    },
+    {
+      "id": "claim_13d83ca21d1148bdb4f6d7acb0f8b8d1",
+      "statement": "Conventions at a glance: TypeScript strict no any, Zod schemas with z.infer over hand-rolled interfaces, Vietnamese user copy with VND integer display and exact numeric(15, 0) ledger / numeric(15, 2) cost columns, one driver per trip, append-only ledger, Vietnamese audit messages, casbinAuthz + requireRoles dual-layer RBAC, Tailwind v4 (no tailwind.config), no !important, no raw DB IDs in UI text, mobile-first for DRIVER/FORWARDER.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://docs/code-standards.md",
+          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

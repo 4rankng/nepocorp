@@ -6,7 +6,7 @@
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { eq } from 'drizzle-orm';
-import { FuelMode, TripStatus } from '@tingting/shared';
+import { FuelMode, Role, TripStatus } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { updateTripFigures } from '../services/trip-mutations.service';
@@ -76,8 +76,7 @@ test('a figures-only update saves revenue on a trip that has no legs', async (t)
   const updated = await updateTripFigures(trip.id, {
     ...payload,
     expectedVersion: trip.version,
-    userId: null,
-    userRole: 'ADMIN',
+    userRole: Role.ADMIN,
   });
 
   assert.equal(Number(updated.revenue), 1_000_000, 'the revenue typed in quick edit is saved');

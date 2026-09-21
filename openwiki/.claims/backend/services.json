@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a808930e1c7d1858f8e0754061ab54d23e52f279e5ba1bb631b0b2010219a043",
+  "claims": [
+    {
+      "id": "claim_7e13e3735416494580c2109d26d85d56",
+      "statement": "The trip state machine in backend/src/services/trip-status-machine.service.ts is the single entry point transitionTripStatus(tripId, targetStatus, userId, userRole, ...) and enforces the full transition matrix (CREATED/IN_TRANSIT/COMPLETED/LOCKED/CANCELED) inside db.transaction with lockTripMutation advisory locks plus truck-id advisory locks to prevent double-dispatch; dispatch requires ADMIN or MANAGER (ACCOUNTANT cannot move the lifecycle).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/trip-command.service.ts",
+          "version": "repo-file-v1:sha256:3610ff99df342adbc5d063f235ea649888f2564e8ace327473b9e256d753095f"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L12-L80",
+          "version": "repo-lines-v1:sha256:e43727475701da83d3cdbf065a11be1e1ca72aa2c19a0cc7b7a68a5ac4cdae24:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MWZmNmI1YWM1ZTk4NTNlZmQwZTkwOTIzNDFhYjA5ZWJkZGI2NGFkMDY4MWVkZGQ1M2E4NjA4MTgxZGY5M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNzY4YzhiOGU3MTU4NDI5OTU2OTE4ZTBhNGE4NTBjZjlhNjM1Y2UwZmZlZWM1YmU0OTA3ZWY3M2ZjMjcxMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MTIyZjI2YjQ1ODk2ZWI3MjI1NDQ2YjRmNTBiZWU1MDg0MWEwYzdlYWFlYTJlMDQxNDg3OWFmNGYxNDI3ZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24645859bb08486b97353f0550daa81a",
+      "statement": "Trip-command services split by intent: trip-command.service.ts owns create/copy/dispatch/complete/lock/unlock/cancel and invalidates report caches on success; trip-mutations.service.ts owns figure updates (pre-departure, actuals, bulk-figures, reassign, departure-date, adjustments); trip-queries.service.ts owns read models and the fuel-voucher HTML/XLSX generators.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/trip-command.service.ts",
+          "version": "repo-file-v1:sha256:3610ff99df342adbc5d063f235ea649888f2564e8ace327473b9e256d753095f"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-mutations.service.ts",
+          "version": "repo-file-v1:sha256:68b205eec270778043b3249996fd384f25987e651d1f62e9a8bfe8709bc68355"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-queries.service.ts",
+          "version": "repo-file-v1:sha256:f66f3b19835b8ea586f0bee82987da02b33c510c59d22add1e929265cef05333"
+        }
+      ]
+    },
+    {
+      "id": "claim_591e3f6cec88471d84046926b2610d25",
+      "statement": "The three fuel modes (AUTO, FLAT_RATE, MOUNTAIN) and the supplement add-on are enforced in trip.service.ts at write-time, with per-purchase pricing (commit 1384245) letting each trip_fuel_allocations row carry an explicit unitPrice; the math itself lives in shared/calculations/tripTotals (computeTripTotals, computeRoadAllowance, computeDriverRoadAllowance) and is reused on the frontend for live previews.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/trip.service.ts",
+          "version": "repo-file-v1:sha256:3ce15000115b7b33e92ce69a90f769834b892b32775b21f32e3ad9cfda19f85e"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        },
+        {
+          "resource": "repo://shared/src/index.ts#L136-L150",
+          "version": "repo-lines-v1:sha256:65f075fa3c798f8148a41da6e847b2ce3f1a0b777b2ff8e5c9816cd3d56a2c64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NjY5ZDlkMDZmNWRhMGU2MGFiNzk1NDliZTc5ZmFlNDQ3OGYyOGVlZTBjYTAyMjI3NGNjMTNkMmEzMmQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNmExMjUwM2RjMDk2YTYyMmJjYWM3ODcwOWFlMDk0ODNlZDE2MDQ4MDYxOWE4ZDczZWRiZTU3N2IxMWNlZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkNjgzNmM0ZWNiMThmMDZmZGNhNmQzNTQ1OTg4YzQzNzdjOTQxYjYwMTUwNDIyYmYwODBlOTBlYzRiODg1M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNDllNWNhNzQwNjFiZjk2ZWRhMmI5M2RmOTFiNWVkZjBhZDk3MmQ3YjY0YzM1ODU5NWM4ZjJhNDMwODQ5MmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6419fa28903b4254b7014e45a4cb9206",
+      "statement": "Trip locks do not write to the ledger directly: lockTripCommand → transitionTripStatus → LedgerService.postTripLock(tx, trip) writes revenue, salary, fuel, external carrier, and ancillary rows; unlockTripCommand calls postTripLock with UNLOCK_REVERSAL to invert those rows so the trip can be re-edited and re-locked.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L242-L280",
+          "version": "repo-lines-v1:sha256:e17e8880c1073ee4a9d343314bde18608e5af4b34b5230efb83530c8d88a98b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOGNjZDlmOTEzZGY4ZmEyODExNTA1NjUwZGQ1NDJiMjM0YjIxZGM0OGU2Y2YyOTI0NzQwZmRmYjc0OWI2MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhODI1NTQ3ZDhhMzk0MmM2Zjk2NWQyZjZjODI3YTg0N2I3N2YwNzljMjY0ZTlkYjkwYmZjZTliZjRkMzY5ODcifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-command.service.ts",
+          "version": "repo-file-v1:sha256:3610ff99df342adbc5d063f235ea649888f2564e8ace327473b9e256d753095f"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ba602f6edd94b9c8f25589163068396",
+      "statement": "createCrudRouter() in backend/src/services/config.service.ts is the factory that generates standard GET / GET :id / POST / PUT / DELETE for every catalog table (customers, trucks, trailers, routes, cargo types, pricing tables, road allowances, fuel config, fuel price history, penalty reasons, company info, suppliers, expense categories, container types, seal types, ports, forwarder expense types, debit-note templates); new catalogs need only a Zod schema and a table reference.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/routes/config.ts",
+          "version": "repo-file-v1:sha256:3b42efc327e49d76050a67d3970cfbc0941554ed4c9baa32129a126cca840d2d"
+        },
+        {
+          "resource": "repo://backend/src/services/config.service.ts",
+          "version": "repo-file-v1:sha256:d8bb8c0a6c9f8d5055d1c2ce6630b5fa5058597bda27b897fb2b0cda7ac5c148"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3e10fd4bf32401786679db14d3724ce",
+      "statement": "auditLogMiddleware plus backend/src/services/audit-templates.ts produce Vietnamese-language audit messages for every mutating API call; initAuditService() is awaited at boot (backend/src/index.ts:40) before the server starts accepting requests, and the invariant is one audit row per mutating API call regardless of how many tables the handler touches.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L40-L43",
+          "version": "repo-lines-v1:sha256:c4356d634978edd2149654e044bf211ea17f2d65308962b2dcd15e3100419874:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ4YjQzOTU2OWY2NWY5MTgzMTBlOTFiNmE5YjljOGUyODhkMDlhNmRhMjcxZmY4YzAxMWU1MGYzODM0MWEzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhZjBlNzE1OGIwMThkZjgxMDdlNzZlZjE4OTAzZmYxMTgyZTZhZjkyNzhhODFmNDJjZjdkYTk3ZmM4NWY0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThiOWJjNWZjNjJlZjc4OWFlYzc4ODlhOWY1NTllYjZjMzgzZTZiODA5MmEwNDYzODY5MjRhYWFmZjU3MjIxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMxZGE1MGNkZWNlOGI0OTg3MmEyMGE0YWE4MDgxNzRkOTVkNGU5MmJmZjFjZDVkMjExYmYyMDgyNzlhODkzNCJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/audit.ts",
+          "version": "repo-file-v1:sha256:28a7490da34ad6d7a140c69b10761d9424b0bdfb05af1c6c9731c1661d0796d4"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-templates.ts",
+          "version": "repo-file-v1:sha256:72f589c3ff345369002c155ee966078facb632c62e577790478e611ec3bbad1b"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

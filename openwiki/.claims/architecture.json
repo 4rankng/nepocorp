@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f8923039b1c0144a6f33447e1ad236578314be27cd7ca93f856b70ffe595712b",
+  "claims": [
+    {
+      "id": "claim_cc6d7fd6371440a787231431cb82dd18",
+      "statement": "NEPO is a pnpm monorepo with three packages — backend (Express 5 + Drizzle ORM), frontend (React 19 + Vite + Tailwind 4), and @tingting/shared — plus a deploy/ directory for production scripts and a docs/ tree for authoritative Vietnamese documentation.",
+      "evidence": [
+        {
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:0a9ba933481976709d7b5c7a16586507a2945d84897c83889390462e52ff4069"
+        },
+        {
+          "resource": "repo://shared/src/index.ts#L1-L183",
+          "version": "repo-lines-v1:sha256:c455d4b2f193d1eb801395c9bc318e915a4e7e64d844c777110e3de858426f6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxMTc0NDI5MDk4NzAzZTYzNGNjNjY0ZTQ5NzVkMTRhYzQ5MTI3NDllNTE2MjRhYjFhMzUzYmUyNDczZjljMTBiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZWQ5YTc1ODZlZDA4ZGU2MmRmODAwYTQ5ZDdmMThiZjQxN2EyMWIzNGRjOTRiODM5NjRjZDkyZmFmZjE3YjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f32cd302095f4c45847a4f7029179486",
+      "statement": "The shared package is the contract boundary: it exports enums, types, Zod schemas (via z.infer), calculation helpers (round2dp, computeTripTotals, computeDriverRoadAllowance, ISO 6346 helpers, FIFO aging, vehicle alerts), and a navigation page catalog consumed by both the React app and the agent/chatbot routes.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/index.ts#L1-L183",
+          "version": "repo-lines-v1:sha256:c455d4b2f193d1eb801395c9bc318e915a4e7e64d844c777110e3de858426f6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxMTc0NDI5MDk4NzAzZTYzNGNjNjY0ZTQ5NzVkMTRhYzQ5MTI3NDllNTE2MjRhYjFhMzUzYmUyNDczZjljMTBiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZWQ5YTc1ODZlZDA4ZGU2MmRmODAwYTQ5ZDdmMThiZjQxN2EyMWIzNGRjOTRiODM5NjRjZDkyZmFmZjE3YjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d88abae700f43628c9b36861baa0fd9",
+      "statement": "Dev runtime uses PostgreSQL on :5440, Redis on :6390, Backend Express on :3090, and the Vite dev server on :7173 with a /api proxy to :3090; the unaccent PostgreSQL extension is enabled at boot for case/diacritic-insensitive search.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L154-L156",
+          "version": "repo-lines-v1:sha256:8e0e8c587e6d8eb680f76b70e8f1a9837933befa32cc45b8efddc502136a6821:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgxZjE1ZmFkZWQ0ODhmYjQyMTAxMmQwMTkzOWZjM2U2MzkxNmIxYzdmYzkzMmU3ODk0NWY3NTRkZDQ1NjRlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAwYjUyMDY1NTNhMDMzNjYwNGEwZDcxZGJhMDAzZDJkYmRjZjhjODhhZGJlNzk5ZTM4NDc2OTUzMWI4MTkwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY4MWJhOGFiNTZiZTQ5MmU3ZDYyMDYyNjY1OGVjOTIyZjU1MjMwYTdkZDI2NGU4NDVlZWY5OWU3ZTc1MGE0YiJ9"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L46-L51",
+          "version": "repo-lines-v1:sha256:971ca82d79c7cc039748342630f75223811a16dc0ffb7366f7f37f80d95753c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1M2JhMzUwOTY2NzZjNTI0MGNjMDg0NDgzZmUwMzU2MTdmOTRmMDkwYzJhMDlhMjg2N2MwNDBhYTM2MTllOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2QwMzc2OTZhMTM4YWNlZTk4MjhjMzY1NTFmYmM1OTk2MzgzNTNkNDJmMmFiNGM0ZWZkZjBlODZhYTJlZWUwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTg1ODhjNzEwYWEzZWU5ZDlmNjVmOTAyZWRmNmQ3N2VmOGU3MzY2NWU1OTZlZmZhN2M5YjlkMTI5OTRjZDY2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_868aa169e7b14cf3996f83195f0c460d",
+      "statement": "The Express middleware stack applied in order is: cors (configurable allow-list, dev defaults to http://localhost:7173) → express.json() → /uploads static → inline request logger (skips /api/health, /uploads, /favicon.ico) → auditLogMiddleware (records every mutation as a Vietnamese audit row) → router-specific authMiddleware + casbinAuthz('resource') [+ requireRoles(...)] → handler → globalErrorHandler → snake_case serializer.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L148-L152",
+          "version": "repo-lines-v1:sha256:f8881185e0132aa1589a55f990e1314d0402ef61693f6ee37c09e5f252216f1d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ5YzIyYThjOGE5NTExOGNiNDIyY2IzMjQyZjliMmU2NTM5NDk2NzI1MjRmOWE3YmViOTkxNGNlMTFiOTk2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUyYWY0NTFjMWZkODUxZjBjNzVkYjVjMTY1NTMzYTgxNDVkNmY3YjFlODczYzYzZDUzYTgzMzM3ODdlNmFiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIwZDhlY2E2ZDcwNGQyNjliOTJjNzYwMDVhYTkzYjQ3YjhkM2FmODkxZGM4ZDc0MzJlMWEyOTdiM2NiOWFjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwMWQzOTUxZWM3ZTcwZDkxMmQwODA1MWE2MGEyZmVkNzBjNzBhMWRlZmQ1ZjNiZDg0ODM0NjEwMzlkYTgyYyJ9"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L64-L146",
+          "version": "repo-lines-v1:sha256:c6100a38a6ad113e8eb1f32aa0cf628954e7d76bade850e5c65997ed17e0a27b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZGJlZWFmMzBmOGQzZWNhOTEyNTYxYzQ4MWEyODhmZTliODQwMzQ4YjI3NDhhNDg5YjM1MWQ4ZDFmMzE2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTYwZjZhMjg4YjMyODBhM2U1YzU2MjViNWY4NTNiMzFlYWQzZjliNTJmNDE4N2M0ZTA4NTk0ZTZjOTQwZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ZWI2MjY0MmM4MDg3YmNhMzNjNDdlMTYxM2M0ZTQwNDYwOGE5NWZhZjE0ODBhMTg0NmUzNWNmMmM2ZjQ2NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNGEyNTRmOWU3ODIwZWE5MTg2OGY4ZmQ1NjZlNDFlMTExZmI2NGM2MDhhNTNmNzM3NTc1N2NkODJlMTVkNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f25b29d20f914a378b84077352a86eed",
+      "statement": "Each protected router is mounted with authMiddleware + casbinAuthz('resource'), and admin-only routers add requireRoles(Role.ADMIN) as a belt-and-suspenders gate so resources without a Casbin policy row deny everyone except the ADMIN wildcard (p, ADMIN, *, *).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L97-L146",
+          "version": "repo-lines-v1:sha256:5581f67447161f8fa52ac7e7129fc43bb5250652fc750463c5f4ab10b196e85e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMDM2YjM0YzZlZGIwYWJhYzkwOTQxNTY5NzM5NzcyZjViZTljOTUwMzY1NTA0MGQzNTFkYmRkMDg5MWVmMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTYwZjZhMjg4YjMyODBhM2U1YzU2MjViNWY4NTNiMzFlYWQzZjliNTJmNDE4N2M0ZTA4NTk0ZTZjOTQwZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNjU0MGUyYWFkOTlhMjVkNmVlYjM5MTA0ZjkzYjFlZDM4N2M3ZTExNjA2ZjU0NmI4OWY0ZmUyNTM4ODU1NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNGEyNTRmOWU3ODIwZWE5MTg2OGY4ZmQ1NjZlNDFlMTExZmI2NGM2MDhhNTNmNzM3NTc1N2NkODJlMTVkNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_61b288ddb39d49c0b4ca0dc16fb1959a",
+      "statement": "RBAC has five roles: ADMIN (Quản trị, full access), MANAGER (Giám đốc, office), ACCOUNTANT (Kế toán, scoped reads), DRIVER (Lái xe, own trips/earnings only), and FORWARDER (own trip expenses and advances only); both casbinAuthz and requireRoles live in backend/src/middleware/casbin.ts.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L103-L121",
+          "version": "repo-lines-v1:sha256:62cae2e3e6e7ddd31a2eb7316a63bf810e626074704f5b7dec86f4ec4c09be62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxOTFmNDcxZDU2ZWYwNGQwYjRjNTIwZTc4NjhmMTJlMzc3YTg5MGVmOTIyZDQzNjhkMmNhNzhkNzYwOTRkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTcyYmMwOGE1MmVjYTUzNzk4ZGYwMDg1ODA0YzFkNTJmZTY5NWVlNzNmNDFkZDM3ZWZhYzdjYTllZDU0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlM2ExNDg0Zjc0ZGFlOGVmNDFlN2JhN2I2YmYwM2M0MmZhYWI4NzIwODA1NWQ1ZWI5MTAxYjU4OTFkMDZmMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NGQzMTE1NjhlOTQ5MTM2MTQwZTMzNGZlYzMyNGJmYTNiNzE2MDk5NzA5MjI5NDhmYzllYWE0NTIwZjNmZGEifQ"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts",
+          "version": "repo-file-v1:sha256:a097f419b45543e651b7848857252cda951040082fdaed96f356e6f03a52993c"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e6bd7b639f04cddb364fa52037d660e",
+      "statement": "The React app mirrors RBAC with in-component route guards defined in App.tsx (adminOnly, driverOnly, forwarderOnly, managerOrAdminOnly, officeStaffOnly, strictAdminOnly); each route is wrapped in its own ErrorBoundary so a single page crash cannot block navigation, and pages are lazy-loaded with React.lazy + Suspense.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/App.tsx#L126-L213",
+          "version": "repo-lines-v1:sha256:5f076a0321c0990d773e137226bcf56b2d82505e81ae20a1cc3f559ebedefb2a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNzg4YjUyMzI0YTlmMTVmNzNmMGU2M2U5Y2E2NDQ1MGZlNzUwYmNhNjkyZTg0NmZkN2M5OGFiOTZiN2YyMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNTkyZTA3YjRjZjUzYTgzODZjNTY4MGNmYjdmM2U0ZTc1NDI5NjljODcyNmFjNWVkMzI3NTNmOGNhOTU5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNjE4NTJhYjkxMGI2MDJkYTExMGE2YTUwYjZiNGI3MTU2MWE5MWRiN2Y0YmVkODA3ZDllZjRiNWFiYTQ1MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZWE1OGU2YTk1NDEyMzQzNWVhMDBhNjFkOTAwNjlkNGY3ZGQ4YTI2YWZkYTY1OTY0ZTZiMGViMGZlZTAwNGUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/App.tsx#L95-L122",
+          "version": "repo-lines-v1:sha256:d76126a43f733aace38e49bcead719b2237f1a799c7e5c484d1edac1a1449abc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4YzA1MmVlMmE4YmU2MjE5MDJlODY4ZmQ0NTk1MjVlYjViYWJlNDFkODg4ZThhYzdkMDljYmExNzE2YWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZGNkZmU0Y2I4Mzk3MmNjMjFjOTk1ZDU5MGEwZTZmN2I5MjIzYmQ0ZmU0ZDBhOWNjYTBjM2NiYzk1YWI0MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNjE4NTJhYjkxMGI2MDJkYTExMGE2YTUwYjZiNGI3MTU2MWE5MWRiN2Y0YmVkODA3ZDllZjRiNWFiYTQ1MDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a9119ea03b645b894a84959a988682d",
+      "statement": "Cross-cutting concerns: audit-log middleware emits one Vietnamese-language audit row per mutating API call regardless of how many tables the handler touches; the snake_case serializer rewrites response keys before they leave the API; trust-proxy is set so req.ip reflects the real client IP behind nginx; SIGTERM/SIGINT close the agent socket.io, drain HTTP, end the Postgres pool, and close Redis before exit.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L162-L177",
+          "version": "repo-lines-v1:sha256:1efc7df323ea1c8b479a34875e83559329a702f6e4b26d25d4283a7e6781a8b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ODBkN2E4ZDI0ZjZjNzliODAzYmIyMzYwNjVmMTkwMGQzNzJhNjM1YWRiYzlmMjJmNzAwYzVkOWRjNWNjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OGZjYmQ4YzIxYWQ4NTc3M2JkYWIzY2UxMzYzOTZkNTU0NzYzOTNlYTk3MzI1Mjk1Njk1YjJmZDA2Y2RmMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwZTM5M2M4ODUzZjJjOTc1M2FhZjY0YmJjNTBlNjdlYjU2NmU4ZDk1MmM3ZWQ2ZDI4OGU0NzgyMWRkMTc4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YzBlNDg0NDMyMGRmMTRmY2ViMTY4NjZhODY5MWM1ODkyZmUxNjhkNTVlNWMzMTFmMTZhOTQ0NDI4YWFlNzcifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L55-L83",
+          "version": "repo-lines-v1:sha256:2bd099a3b7fd47c95b1576ae332a83303c4409c228f22c606049c51b7d4dab00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYmE5YzIxM2U1N2JmMjU4MWU2NTZhMDYyOGNmZmUyMTE3ODkwYzMxYjkyMDhmMDdmZTRhODFjOTk4ODQ4YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NTg4YzcxMGFhM2VlOWQ5ZjY1ZjkwMmVkZjZkNzdlZjhlNzM2NjVlNTk2ZWZmYTdjOWI5ZDEyOTk0Y2Q2NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1M2U1OTU2MWYzYTVhOGQwY2I1ZmEwMGE1NzFhYjI2ZDU3N2RkMGE1MzdlZmQwM2QxZTYxNTZhMGYwYTMxODgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

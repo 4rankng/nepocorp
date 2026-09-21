@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:037b9039a5a6d0bb2933d438ff6d375097d01c67c283cb5bf0cdeff146d04b7e",
+  "claims": [
+    {
+      "id": "claim_2e8a846a097f4063af5c525f79482ae9",
+      "statement": "The NEPO ledger is immutable — there is no UPDATE or DELETE on the ledger table; corrections are inserted as new ADJUSTMENT rows via the trip adjustments endpoint and reference the original txn_type + txn_id; postEntry uses pg_advisory_xact_lock to serialize concurrent postings on the same entity and computes newBalance = prevBalance + credit - debit stored as numeric(15, 0).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L405-L426",
+          "version": "repo-lines-v1:sha256:567fb32dd756d8ea3eea39af7bf7e980df24c0c0b8624145950c41137c38490a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWE4ZjgyYmQ3Y2ZjNjEzZWQ3MTRmMzBkMGI0ZTU2ZTRhYjhjN2FjMDFiMWU1YmI5NGRmNTkxNzUzNTIzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDI2MTQzM2QyOTM3MjIxZjIzNDM5ZjExNWE1ZTBhYTI0Nzk0YWIwMjUwMzIzYTRjYTEyZDA1M2E2MjliNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGQ0ZmE0YzM3MTYxMmQwM2RmOWJmMjhkMTc4ODUxNmE5YTk1MDM5N2RkMzlmZDExMjQ2YWJkM2I3YTY4YTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/trips.ts#L367-L390",
+          "version": "repo-lines-v1:sha256:045bb7649fc2d19de1339d699583087fab8bdbbb3faca68b6a4a7704d0943628:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OTUxYzcwZmRiZmYyYjRkMjZhNzRmMmJhNTZmMjZkYWFjMWZmMmQ1NTMwYWU4YjE4N2JjNDkzNTFlNTkyZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3ZTJhYThmMDRhYjZlZThhOTdhMzliMmI4ZmU1MDEwMDZlNTcyOGM4Y2NhZjFmODJhODgwODIzYTI2MTQxZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyODcwZmFkYTE4OTgzZGUzZGM4YTAwYWUxYzZiZGIyMzI5ZDRjNDQwYWYzZDBkYzAzZjlkZjdkM2NkZGU0ZWEifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L39-L163",
+          "version": "repo-lines-v1:sha256:4769f34abaf1b0b11dca0d694514614aa17ff41c0045fc497a30c91b4864f54c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZTFmOWNlN2E1ZmVhZTg0M2M2ZDY2NmEwNzVmNTNkNDNjNGYxMzFmNjFlOGI1OTI3OGQwNjVlN2QyM2QyMTU3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NjYyZTc0NTZkNTliNmEwNjU2MDhhZjY3ZGYxMjU4OThhMGEwZmRkNmQ3MTE4NzljOTE2Y2I5MTEzYzMxOTczIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmODYxZjJiMjk5NTU5ZWU3ZjZjNDZmMDQ3ZmRhNDBkMGViZTg4MzJkNTZiYjdjZWZiYTY0NzMyZGI3YzBiMWNkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_d4d62a1b1a3e4f2aa2c69b5ce1388116",
+      "statement": "The ledger.entityType column is varchar(50) and entityId is integer with no foreign key by design — the ledger must outlive the entity (a deleted driver still has ledger history), and LedgerService.getEntityTypeKey maps entityType strings to integer keys (CUSTOMER=1, DRIVER=2, VENDOR=3, FORWARDER=4, CARRIER=5) used for advisory-lock deadlock prevention via lockEntities which sorts targets before acquiring pg_advisory_xact_lock.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L405-L426",
+          "version": "repo-lines-v1:sha256:567fb32dd756d8ea3eea39af7bf7e980df24c0c0b8624145950c41137c38490a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWE4ZjgyYmQ3Y2ZjNjEzZWQ3MTRmMzBkMGI0ZTU2ZTRhYjhjN2FjMDFiMWU1YmI5NGRmNTkxNzUzNTIzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDI2MTQzM2QyOTM3MjIxZjIzNDM5ZjExNWE1ZTBhYTI0Nzk0YWIwMjUwMzIzYTRjYTEyZDA1M2E2MjliNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGQ0ZmE0YzM3MTYxMmQwM2RmOWJmMjhkMTc4ODUxNmE5YTk1MDM5N2RkMzlmZDExMjQ2YWJkM2I3YTY4YTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L51-L100",
+          "version": "repo-lines-v1:sha256:6bb4603a716823717e6bc10302dfb93a1b92fae1053c8869ae1263e868fd6321:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNzQ2NzMwODYwNDgyYTEyMTI5NjMzNzZiNDIyMWVhZTExZmI4MjEzNmIxZWE2YTdiOGUyNjMzMjc4OTgwNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTk2OWYxMzAzNTBhOTlmMGEzOTlhNTZlNDcyN2RkMmE5YjdlNzc0YmY4OTYxZTgyYjc4MWRkY2VjN2M4MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYzgyNWI3N2RkYThiNTEwN2QxMzQ3NzBlOWU3MWM5NDY5NmJjM2U1NGM3MzE1YjM5YjgyNzZmMGRhZDMwNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e7c6e36411924664b8b12c7076c9f64e",
+      "statement": "postTripLock is the canonical trip-locked-to-ledger seam (backend/src/services/ledger.service.ts:249): it validates ancillary fees in strict mode, sorts and locks all touched entities, then posts TRIP_REVENUE on the customer, DRIVER_SALARY on the driver, FUEL_EXPENSE on the supplier (split per allocation when multi-supplier/multi-price with explicit unitPrice), and EXTERNAL_CARRIER_COST when the carrier is external.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L180-L240",
+          "version": "repo-lines-v1:sha256:981868ae6baa6a3049e1d8575aeee7424f1a129e21d616e65f6019da370c477f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxOGY0NTc4ZTEyZDk2NjI0NjY1ZGQxMTY2OTgwZWI2OWE2N2JhMzUxZGE2NzI0YjE5MjdiYjQxMWY4YjExYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYzkzM2Q1Nzc0YTdjYjBlYTJhZTdlOTY4MGNhOThiMTU1ZWU1ZDQ0YTc2MGUyZjI0OWEyZDgyMjkyNjgwOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhYmE3MGZiYmJmMzIwYTZmNzcxZTU5NWQ4ZmM0MzM0ODk3ZTgxMzM4ZDlhNTQ3MmNjY2JiMDU4NmMxMDA3NmIifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L242-L280",
+          "version": "repo-lines-v1:sha256:e17e8880c1073ee4a9d343314bde18608e5af4b34b5230efb83530c8d88a98b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOGNjZDlmOTEzZGY4ZmEyODExNTA1NjUwZGQ1NDJiMjM0YjIxZGM0OGU2Y2YyOTI0NzQwZmRmYjc0OWI2MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhODI1NTQ3ZDhhMzk0MmM2Zjk2NWQyZjZjODI3YTg0N2I3N2YwNzljMjY0ZTlkYjkwYmZjZTliZjRkMzY5ODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb6f96622a7845379334b94308b3e3f8",
+      "statement": "Penalties are not company expenses — they are salary deductions from the driver surfaced as Other Income in P&L; the flow creates a penalties row referencing penalty_reasons, transitions ACTIVE to CANCELED via a reversal, and on salary period close deducts from driver salary while posting a PENALTY ledger row on the driver entity.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/routes/financial/penalties.routes.ts",
+          "version": "repo-file-v1:sha256:e9f3e2aec16c923952e854b2e97ac4535aa70c847e5ea6fa4358530d5f7817c5"
+        },
+        {
+          "resource": "repo://backend/src/services/salary-period.service.ts",
+          "version": "repo-file-v1:sha256:6bc87ff49bc500f0f4b7f5e08bb31ee5ccb4049e943ae509c0248aa21a2a0931"
+        }
+      ]
+    },
+    {
+      "id": "claim_b65040815a6440fa94b386436b854d14",
+      "statement": "Receivables (backend/src/services/receivables.service.ts), payables (payables.service.ts), and receivables reports (receivables-report.service.ts) are read models over the immutable ledger, not separate ledgers; debtOffset.service.ts handles inter-entity offsets (e.g. customer credit notes vs outstanding payables); FIFO aging is delegated to computeFifoAging in @tingting/shared/calculations.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/debtOffset.service.ts",
+          "version": "repo-file-v1:sha256:5df26b8dfd80bce2e40b6e345aa657f9eb1bbdacc80c7d7dc6fac73c625c5779"
+        },
+        {
+          "resource": "repo://backend/src/services/payables.service.ts",
+          "version": "repo-file-v1:sha256:a56d5e9baff6ecd8b241d8bbde1ded2b47c0f8be0a47725abb918e7dc263d376"
+        },
+        {
+          "resource": "repo://backend/src/services/receivables.service.ts",
+          "version": "repo-file-v1:sha256:18b62944712af051a1bda2bbc1166b25535ddf6e74bd1a94618f441f3eeedd83"
+        },
+        {
+          "resource": "repo://shared/src/calculations/fifoAging.ts",
+          "version": "repo-file-v1:sha256:52848316985e043ee6a241480c4eb3de8e40d2ee98d1660aa410b37547ed5e3f"
+        }
+      ]
+    },
+    {
+      "id": "claim_f97200c8cf8644b9a7dd515ebc1e7b5d",
+      "statement": "Billing documents (billing_documents + billing_document_lines + debit_note_templates) implement the debit-note (Giấy báo nợ) workflow — PAYMENT_STATEMENT is a pure presentation snapshot and DEBIT_NOTE edits reconcile amount overrides, ad-hoc rows, and exclusions through append-only customer-ledger adjustments rather than direct updates.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L440-L527",
+          "version": "repo-lines-v1:sha256:baa59fc656ad249dd78091e79ce95f1a92d44e6cbdfa395e8e4a733f85b44f26:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MDNiMTgyMzlkNDQ2ZTk0YzEwNWJiODcyY2I5ODA1MDAzZThhMjFiMjY1YTA4MzE1YjlkMWEwZGVmZTczNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZTA3ZGJmMjgwMzNhYTI3NjQ3OGE1OThlNDdmOTU0MDMyNTZlMTE0YmNmMGVlYTdlZGZiZGFjZmJhNDYwZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1ODJkMzQ0NjQ5NmIxNmVmNGYzMzc1OTc3OGJhMjE0MTBiNzQ4Njc1ZTdjNDI1YTM0N2JlMjNmNTJlYjQ4ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YzY2Y2VkNjEyZTU3NTA1NGY4ZTQ0ZmI1MDNlMzdiZjg3MjU1MDEyNzkwOGZiYzliODE2MGZjZDUwM2M1YTEifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/billingDocument.service.ts",
+          "version": "repo-file-v1:sha256:7602678c01812ff9bb018b4ccde40fdf02de8c696769ca547dc212a32b45fef8"
+        }
+      ]
+    },
+    {
+      "id": "claim_822b09cec39549e6b94dd75174b411c0",
+      "statement": "P&L (pnl.service.ts) and reporting (reporting.service.ts) roll up ledger rows by period and truck exposing per-truck profitability, maintenance cost breakdowns, per-trip detail, dashboard stats, aging summaries, and statements; profit distribution uses cap_table_history for ownership percentages and truck_cap_table for per-truck equity splits while truck_cap_table.participant is TEXT+CHECK rather than pgEnum to avoid migration cost when participants are edited.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L570-L570",
+          "version": "repo-lines-v1:sha256:664fb6f9c525d69a0cb9cca069dc90624486b4618477acd2a64b2dbb4ef5d1de:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNlZjU4MDc5MWE4M2I4NTFhNTE3NTA2ZDM4NTE5ZDI4YjYxMmZkNWJjMDM4NWVhYmU1YmY3YTVmNzgwNTU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRjMzAwZDUxZTQzMTA3M2I0Y2QwMzc2NjhlNGMzMjZhMmU2MWE1YjcxYTE1ZTUzMTdhNjdmMzlkMWZhMjFlMSJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/pnl.service.ts",
+          "version": "repo-file-v1:sha256:8c7b214fdf3f95667fe829bac7fe095df351314e2272c514a61e11abd5f82ef2"
+        },
+        {
+          "resource": "repo://backend/src/services/profit-distribution.service.ts",
+          "version": "repo-file-v1:sha256:d74932542e825e264d089e46e3a3e5b4787c0bf46a76c4d815abd359c962676e"
+        },
+        {
+          "resource": "repo://backend/src/services/reporting.service.ts",
+          "version": "repo-file-v1:sha256:06f7ee06700ad3dc31181eb3a9feae4c58a416fb177d29c61903a69756b4a9a8"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

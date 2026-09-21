@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:894c748264612d944f7094fa1156c05e50ff9ddc51ae97c3b4313997d006d41e",
+  "claims": [
+    {
+      "id": "claim_83da49b68b3f42eaa40404979a0d2392",
+      "statement": "shared/src/calculations/ holds the single source of truth for financial math — round2dp/roundInt (round.ts), computeTripTotals + computeRoadAllowance + computeDriverRoadAllowance + computeExVatAmount (tripTotals.ts), tripDriverSalary.ts (computeTripDriverSalary, resolveTripDriverSalary, TRIP_SALARY_WORK_DAYS), fifoAging.ts (computeFifoAging), iso6346.ts (container check-digit), vehicleAlerts.ts (computeVehicleAlerts), billingDocument.ts (canonicalFreightDescription), and tripFormDefaults.ts (FUEL_*_FALLBACK, ROAD_ALLOWANCE_PER_KM_FALLBACK); every file has a colocated *.test.ts (Vitest).",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/calculations/fifoAging.ts",
+          "version": "repo-file-v1:sha256:52848316985e043ee6a241480c4eb3de8e40d2ee98d1660aa410b37547ed5e3f"
+        },
+        {
+          "resource": "repo://shared/src/calculations/iso6346.ts",
+          "version": "repo-file-v1:sha256:65da9b54c58686de978e88bab737772ab321ece9f7665b02bc0413a92740bb15"
+        },
+        {
+          "resource": "repo://shared/src/calculations/round.ts",
+          "version": "repo-file-v1:sha256:40a80e09a6d2b081266139c0f111300600ecc06712c44180ab697799014778c2"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e2f49d259a94de4b2de32231dfd35b8",
+      "statement": "Storage vs display rule: monetary columns are stored as numeric(precision, 0) for ledger amounts and numeric(15, 2) for cost/price fields; the display layer (frontend formatCurrency) drops decimals — VND never has fractional đồng in the UI; round2dp preserves 2 decimal places for intermediate math while roundInt is used at the display boundary.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        },
+        {
+          "resource": "repo://frontend/src/lib/format.ts",
+          "version": "repo-file-v1:sha256:a2cbc547a19fe978c2960f9090f472ed6dc2d582c18d1d21970aa751683fb531"
+        },
+        {
+          "resource": "repo://shared/src/calculations/round.ts",
+          "version": "repo-file-v1:sha256:40a80e09a6d2b081266139c0f111300600ecc06712c44180ab697799014778c2"
+        }
+      ]
+    },
+    {
+      "id": "claim_c101039731b446fc9011da1df08c2815",
+      "statement": "Fuel modes in computeTripTotals: AUTO = sum of (leg.km × norm/100) + fuelPerTripSupplement; FLAT_RATE (Khoán) = fuelLitersOverride; MOUNTAIN allowance is encoded as mountainFixedAllowance per-route total that overrides per-km math (route classification does not gate it); supplement (fuelSupplementLiters) is additive on top of either mode; per-purchase pricing (commit 1384245) makes totalFuelCost = Σ round(liters × row.unitPrice ?? effective).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts",
+          "version": "repo-file-v1:sha256:b2dd1b53ad470cfeafb2bbf0126125155305b36cb58209b2e379e052ce5a51fb"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_de208ae640df4d96985bb5e680724ed0",
+      "statement": "Road allowance formula: Tiền đường ròng = Tiền chuẩn (RoadAllowanceBase, lookup Route × TrailerType) − (Số trạm × 55.000) + returnCargoBonus − tollsDiscount + tollsAddition; totalRoadAllowance = roadAllowanceOverride ?? Tiền đường ròng + twoPointDeliveryBonus; tollCost is tracked separately as tollsStations × tollPerStation.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee30a85fad124684ad34507048415465",
+      "statement": "VAT asymmetry: revenue is recorded ex-VAT (freightExVat = revenue / (1 + vatRate); equals revenue when vatRate=0) and costs are recorded incl-VAT — do not normalize between the two; ancillary fees carry buyAmount (incl-VAT cost to company) and sellAmount (incl-VAT billed to customer) plus optional vatRate (default 0.080) and post SERVICE_FEE to the customer ledger for debit notes without creating payable/cost ledger entries.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts",
+          "version": "repo-file-v1:sha256:b2dd1b53ad470cfeafb2bbf0126125155305b36cb58209b2e379e052ce5a51fb"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_c41bfc54f1ad49e1baf7c0070ac2ee9c",
+      "statement": "FIFO aging (computeFifoAging) is used by receivables.service.ts (FIFO ordering of oldest unpaid trips) and payables.service.ts with inverted direction (age open credits, apply debits FIFO — no per-expense matching, payments reduce the running balance); trip driver salary (computeTripDriverSalary, resolveTripDriverSalary, TRIP_SALARY_WORK_DAYS) combines base salary + productivity bonus + per-trip income − penalties; tripFormDefaults.ts exports fallback constants (FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK, ROAD_ALLOWANCE_PER_KM_FALLBACK).",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/calculations/fifoAging.ts",
+          "version": "repo-file-v1:sha256:52848316985e043ee6a241480c4eb3de8e40d2ee98d1660aa410b37547ed5e3f"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripDriverSalary.ts",
+          "version": "repo-file-v1:sha256:c928b44757028310446e8811304e44e01d58e6f01e991f85c4612219b28e295c"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripFormDefaults.ts",
+          "version": "repo-file-v1:sha256:da4e84b54fd3a8f96c157101d3faba062db86c7ff65054d59efe697bcdd4568d"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:85e6d5a527925cd4a80b79c1f51b27e14f97a8dac7051611a83ecd3a504e6cd0",
+  "claims": [
+    {
+      "id": "claim_fd56c6328fd74448ad4213b241535dd5",
+      "statement": "The Vietnamese domain glossary is authoritative in /CONTEXT.md and covers Trips (Chuyến xe), Financials (Tài chính — Sổ cái ledger, Công nợ phải thu/trả, Doanh thu, Hóa đơn điều chỉnh, Phí quản lý, Lợi nhuận gộp/ròng, Thu nhập khác, Giấy báo nợ, Phân bổ lợi nhuận), Fleet & Personnel (Lái xe, Khách hàng, Nhà cung cấp, Forwarder, Lương sản lượng, Kỷ luật), Fuel & allowance, Penalties & salary, and System Audit & Tracking.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_27fea337dfc743d0a090f297251347e8",
+      "statement": "The trip lifecycle has 5 states: Mới tạo (CREATED) → Đang chạy (IN_TRANSIT) → Hoàn thành (COMPLETED) → Đã chốt (LOCKED) with ledger immutability, plus Đã hủy (CANCELED); transition enforcement lives in backend/src/services/trip-status-machine.service.ts.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts",
+          "version": "repo-file-v1:sha256:f1f701b202f42cbd1598f9a8a3ba620dfcd156097662ab16150b52ca42bdcbba"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b383f8d47424b8f9b6e1910376aa6ba",
+      "statement": "Penalties (Kỷ luật) are salary deductions from the driver, recorded as Other Income (Thu nhập khác) in P&L — they are NOT company expenses; P&L Net Profit = Total Gross Profit − Management Fee − trailer/unassigned Expenses + Other Income.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        }
+      ]
+    },
+    {
+      "id": "claim_1de3a8dfb344462da0990ea6bddc42f8",
+      "statement": "Fuel modes are AUTO (Σ leg × norm × unitPrice), FLAT_RATE / Khoán (manual liters override), and an additive Supplement (Bổ sung); norms come from route records (fuel_empty_norm, fuel_loaded_norm) plus a 3L/trip supplement for standard routes; price = fuelActualUnitPrice ?? fuelPriceApplied snapshot.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts",
+          "version": "repo-file-v1:sha256:b2dd1b53ad470cfeafb2bbf0126125155305b36cb58209b2e379e052ce5a51fb"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_dff4f92f1a224b69b5eacc008f39fb18",
+      "statement": "Road allowance (Tiền đi đường) is computed as Tiền chuẩn (lookup keyed by Route × TrailerType) − (Số trạm × 55,000) ± Tiền vé ± Trả hàng, while Phí đường bộ is a separate annual renewable Expense Item, NOT part of per-trip road allowance.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts",
+          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts",
+          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee68694c759b44059f3a8be813ab7858",
+      "statement": "Five roles exist with Vietnamese labels: Quản trị viên (ADMIN — full access, not a business user), Giám đốc (MANAGER), Kế toán (ACCOUNTANT — financial-fields-only trip writes), Lái xe (DRIVER — mobile portal), and Forwarder (FORWARDER); each role maps to a Casbin policy row in backend/src/casbin/policy.csv.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+        },
+        {
+          "resource": "repo://backend/src/casbin/policy.csv",
+          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts",
+          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

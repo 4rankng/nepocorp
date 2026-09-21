@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7babceff0353ef02c391b9d96d0a06d2afb0173dd40acce1f1c991810f0274fa",
+  "claims": [
+    {
+      "id": "claim_9cd3052a05cf4b12be854ba9cfbd5ce0",
+      "statement": "NEPO dev uses port 5440 for PostgreSQL (pgvector/pgvector:pg16 image), 6390 for Redis (redis:7-alpine), 8081 for Adminer, 3090 for the Express backend, and 7173 for the Vite dev server which proxies /api to backend:3090; there is no linter or CI configured — only typecheck and tests serve as quality gates.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:a576f2dc00c193643a7a4bf6f50ef04115b6a6d7bfd09c93918d9a2842a8c0e9"
+        },
+        {
+          "resource": "repo://backend/.env.example",
+          "version": "repo-file-v1:sha256:88e5a2a647871cb94ca339f53fab284f4995c284b8787d0905e609d57910267d"
+        },
+        {
+          "resource": "repo://docker-compose.dev.yml",
+          "version": "repo-file-v1:sha256:bf89290aeec69f4eaec8b7655e72fdc36dc0d2244bf5c241a2403767e21a93d0"
+        }
+      ]
+    },
+    {
+      "id": "claim_13fe6b331f314c9e8c4f4f81e6138831",
+      "statement": "Required backend env vars include PORT (3090), DATABASE_URL (postgres://postgres:postgres@localhost:5440/tingting), REDIS_URL (redis://localhost:6390), JWT_SECRET (must change in prod), JWT_EXPIRES_IN (7d), UPLOAD_DIR (./uploads), NODE_ENV, TRUST_PROXY, CORS_ORIGIN (dev default http://localhost:7173), plus optional OCR/GPS/LLM keys (GEMINI_API_KEY, OPENROUTER_API_KEY, BACH_KHOA_*, BOT_ENABLE, LLM_PROVIDER/LLM_MODEL).",
+      "evidence": [
+        {
+          "resource": "repo://backend/.env.example",
+          "version": "repo-file-v1:sha256:88e5a2a647871cb94ca339f53fab284f4995c284b8787d0905e609d57910267d"
+        }
+      ]
+    },
+    {
+      "id": "claim_c149d46b5d2146a7b6bce43f06acc546",
+      "statement": "First-time setup runs make setup which is `infra + generate + migrate + seed` — bringing up db/redis/adminer via docker-compose.dev.yml, building @tingting/shared, generating and applying Drizzle migrations, and seeding sample data; daily dev runs make dev (db+redis+backend+frontend) with make stop / make down / make clean for teardown.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4bab2a8012c4de5b736ec4e177246e0",
+      "statement": "pnpm-workspace.yaml wires the three packages (shared, backend, frontend) and the build order is shared → backend → frontend (backend reads shared from dist/, frontend reads shared from src/ directly).",
+      "evidence": [
+        {
+          "resource": "repo://docs/codebase-summary.md",
+          "version": "repo-file-v1:sha256:611ef41ee5fd552dfd11045857db97c494056e9d38c976bd95ab98282cfb495b"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:0a9ba933481976709d7b5c7a16586507a2945d84897c83889390462e52ff4069"
+        }
+      ]
+    },
+    {
+      "id": "claim_0caa789c7c3f402ebc8829da6a92477e",
+      "statement": "Database workflow uses pnpm db:generate (drizzle-kit diff schema to SQL file under backend/drizzle/), pnpm db:migrate (apply pending migrations), and pnpm db:studio (Drizzle Studio GUI); production migrations use make prod-migrate which excludes *.revert.sql files (commit 45fbad3).",
+      "evidence": [
+        {
+          "resource": "repo://Makefile",
+          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+        },
+        {
+          "resource": "repo://backend/drizzle.config.ts",
+          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+        },
+        {
+          "resource": "repo://backend/package.json",
+          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+        }
+      ]
+    },
+    {
+      "id": "claim_945a165081c64861bf5eae4bb90ab43b",
+      "statement": "Backend tests live as many `*.test.ts` files under backend/src/tests/ (e.g. trip-status-machine.test.ts, ledger.service.chiho.test.ts, photo-authz.test.ts) and are run via tsx/vitest through `pnpm test`; frontend tests use vitest with colocated *.test.tsx files; an e2e suite lives under e2e/ as a separate workflow not run by default.",
+      "evidence": [
+        {
+          "resource": "repo://backend/package.json",
+          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+        },
+        {
+          "resource": "repo://backend/src/tests/photo-authz.test.ts",
+          "version": "repo-file-v1:sha256:fe40187ca12a004853c0448fec24f20ea4298a6f7dfdb582ed69cb5e835264c8"
+        },
+        {
+          "resource": "repo://backend/src/tests/trip-status-machine.test.ts",
+          "version": "repo-file-v1:sha256:7602a8e9524459351179498d8d5688b078ddb868145edb7a9b21d6baea022fb4"
+        },
+        {
+          "resource": "repo://frontend/package.json",
+          "version": "repo-file-v1:sha256:1c86647d68e5b27d24cad2ad329bce070d43247a0b2a850948d3dccde7b7dfa6"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2956d5b8b61b4667d2130e13abf1fb065ebead2788599c919f6df15b33a8e27e",
+  "claims": [
+    {
+      "id": "claim_5844a7047054427cb76dd715322998d4",
+      "statement": "The admin chatbot metrics API at backend/src/routes/admin-chatbot-metrics.ts surfaces agent_turn_metrics as summary, latency breakdown, daily timeseries, per-tool stats, and recent-turns views, gated by casbinAuthz('chatbot-metrics') so only the ADMIN wildcard policy matches; it preserves NULL semantics from percentile_cont and AVG and never COALESCEs to 0.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L106-L110",
+          "version": "repo-lines-v1:sha256:effebe89d3c9472f4a5cf0bc6c76fb0cc6d100883bca4969cbf32647be07ebd6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWExZDRiZjUxNGUwYTFmNjcyNjM5YjBhNjAxNWZmNDgxNjYwOTIyOGJjZTZhNDgzODNkMTBiMDc1ODZjMDdhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ5MmExYTcxNzM5NjE5NjQ3OTg3Njc3YTJmOWM1YTkwZmMzMDZmMzkxZmRkZGU4NDE3NWNlNTMxYjQxMTZlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRhNGRmM2VkYzk2NWM5NzQwNTFmOGI4ODA3ZDg3MGU0MGUwMDhhYWQ0ZjAyZWQ0ZGM1OGI2NGQyNWIzODM4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTdlYmNjNTA2NWQzODVkZWY1YjMyNjFiOTAyYTcwZDk2ZDVkZmExOWI0ZmEzY2Q5OTU2YmQ4NDA3ZTI0NmJiMSJ9"
+        },
+        {
+          "resource": "repo://backend/src/routes/admin-chatbot-metrics.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:968a1497ef8fec75e6975af6c74a67eb3eb723e7d3d9cd90b982f95280afe539:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMWJmMmM5ZDFkMmY3YTZhNjIyZTVmNmNmNjFiMWQwYTVmMmVkYjAwMjM5ZWE3NDBmMGNlZjRiNDhlOGQ0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0MDBlM2IzNjcyNzFlMWFiZjIxZWRiNGQ3NjI2MTJiMDI5YjE1OGFhNGQ0NjQyMzNkNGJhMjVlOTgzNmM3NTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f8582c877b546af81f359bc2f23ba8e",
+      "statement": "The /api/agent command-and-insight assistant is gated by casbinAuthz('agent'), returns 503 when BOT_ENABLE is off, and uses an LlmProvider abstraction (provider.ts) backed by MiniMax and OpenRouter clients that both speak the OpenAI Chat Completions surface so the MiniMax* types are the canonical option/result shapes; a socket.io server attached to the same Express http.Server delivers streaming and is gracefully closed on SIGTERM/SIGINT.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L129-L160",
+          "version": "repo-lines-v1:sha256:5ff764a84ffcdcc2ba45a7a55c6bbfd435ba75f78019f734e9343e8c4a9b8549:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MTQ3MDcyZWY5MzQ4ZTdkYWM2ZDYzOTQ0NTRmZmYxMDI1NmFmMWM2MGY0NTgwZWQ3YjRiZGNjMWNhYzM5OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YWYzY2YxOWQ4M2Q1MjBjMTAwNmQ4ZmI1MjJmYzI2NmMyOTk1MjVjNjY0NDcwNzU5ZTJkNGM3YWU5MGIyNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1NGM0ZGZiOTNiYzlmMTY4NjNhMDVlZmIyM2Q5NmU0ODdhMjEyZDkzY2RmZWQ1YTE0MmFhMThkNDA0Mzk4MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNTVmNTE0MjdmMjZjMWE0NWE0ZjQ3YjBlODJiOWI0ZmQxMmRlMGJmNDE4ODdiOGMyNTQ0YTdhZTc2ODI0Y2EifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L162-L177",
+          "version": "repo-lines-v1:sha256:1efc7df323ea1c8b479a34875e83559329a702f6e4b26d25d4283a7e6781a8b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ODBkN2E4ZDI0ZjZjNzliODAzYmIyMzYwNjVmMTkwMGQzNzJhNjM1YWRiYzlmMjJmNzAwYzVkOWRjNWNjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OGZjYmQ4YzIxYWQ4NTc3M2JkYWIzY2UxMzYzOTZkNTU0NzYzOTNlYTk3MzI1Mjk1Njk1YjJmZDA2Y2RmMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwZTM5M2M4ODUzZjJjOTc1M2FhZjY0YmJjNTBlNjdlYjU2NmU4ZDk1MmM3ZWQ2ZDI4OGU0NzgyMWRkMTc4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YzBlNDg0NDMyMGRmMTRmY2ViMTY4NjZhODY5MWM1ODkyZmUxNjhkNTVlNWMzMTFmMTZhOTQ0NDI4YWFlNzcifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/llm/provider.ts#L14-L61",
+          "version": "repo-lines-v1:sha256:0ca5d44f6e59645debfab61e66e81da4c0ff669b007fc23910a94280b4e59e4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjdmOTA3OGU5ZTRlMWE0OWRiZDk4MmZiZmIxYWU5ZmVlMzU5NDlhNjhhNTdiN2FiNWE4NGE5ZDcyZTA1MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwNWUwYjkzOGQ3OWVkZjQxNjI0YTFjMjBlNjllOGRiNDJlYzlmODIxOWYyZGVjNzI5ZWI4YzE1NjcxOTI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_42061a1e6cd44badb0dd5b48b5dce35b",
+      "statement": "GPS tracking has two surfaces: /api/admin/gps (casbinAuthz('gps-admin') for route-DB backfill/recapture) and /api/admin/gps-settings (ADMIN-only via requireRoles(Role.ADMIN), for Bách Khoa credentials); runtime capture, parsing, and reports live in backend/src/services/gps/ with vendor-specific modules under providers/.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L103-L105",
+          "version": "repo-lines-v1:sha256:d4a4df3edc965c974051f8b8807d870e40e008aad4f02ed4dc58b64d25b3838d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE5MWY0NzFkNTZlZjA0ZDBiNGM1MjBlNzg2OGYxMmUzNzdhODkwZWY5MjJkNDM2OGQyY2E3OGQ3NjA5NGQ2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmJiZWVmNTVjNGM1NTM1YjczNWEwY2Q5YjM0NzFmNGRlNzY2ZWE5Yjk5ZDg0ZTUyMzNlNzg5MDg1NzgxZGIwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUzYTE0ODRmNzRkYWU4ZWY0MWU3YmE3YjZiZjAzYzQyZmFhYjg3MjA4MDU1ZDVlYjkxMDFiNTg5MWQwNmYzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEyYWIyYWJhZWM0NDdlMTUxODlhMGEwM2U2ODY3NzVlNmZlOTlkYzVkYWFiMDY2YWQ2NDRiZWFkYWNiY2ViOCJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/gps/capture.service.ts",
+          "version": "repo-file-v1:sha256:ea950775285320b1eed6292ca0149b3c1d234056ddba45a57c91a7f24257e1eb"
+        },
+        {
+          "resource": "repo://backend/src/services/gps/parse.ts",
+          "version": "repo-file-v1:sha256:f5173c69b7b8de22b88a4b7809ec6b89affdb5305162f6d3e574f956d531ac2b"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd53825514914f0f89ff9e3f57b490b1",
+      "statement": "OCR receipt processing mounts at /api/ocr with casbinAuthz('ocr') and is backed by backend/src/services/ocr.service.ts which supports container/seal recognition for the trip container workflow.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L125-L126",
+          "version": "repo-lines-v1:sha256:c27cfc614dbd32d0474583f25706e40dd88bebecba0ab1803d5d70ac1014f782:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFhMGY0MmRmODE3NTkyYjdhN2ZmYzU5NTY4ZWU3NWYyOThmM2UxYzQ2ZGFhYzQzYmI3MWYwNzEzNDMzZWYxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0OGM4NTg2YzQ1NWU3NDYzMDk5ZjY0OWU0ZWY4NTQ1ZGIzNGIyNDIxMTlkOTY1YTM4YjJmNjMzMmQ3ZDUxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjU0ZDMxMTU2OGU5NDkxMzYxNDBlMzM0ZmVjMzI0YmZhM2I3MTYwOTk3MDkyMjk0OGZjOWVhYTQ1MjBmM2ZkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIwOGUyODhhNTUzNDJmZjU5NDE5MDJiOGI5MGZjNzRjZGQyZjJkZGNiOGQ3MDcxNjcyZjQyZjVkMTBlZjQ4YyJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/ocr.service.ts",
+          "version": "repo-file-v1:sha256:58cd960fa67a9120b6e7ad8e20f22850a19fbe97a096bbfd9dbab226cc073fc7"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc65835916de4432896d50ece159d96c",
+      "statement": "Notifications use an in-process EventEmitter (notification:generate event, max 50 listeners) plus a push.service.ts web-push fan-out; PUSH_RULES in @tingting/shared maps each NotificationType to a delivery rule, and FINANCIAL_ROLES / isFinancialRole gate office-wide targeting; initNotificationService and initPushService are awaited at boot alongside initAuditService.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L40-L43",
+          "version": "repo-lines-v1:sha256:c4356d634978edd2149654e044bf211ea17f2d65308962b2dcd15e3100419874:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ4YjQzOTU2OWY2NWY5MTgzMTBlOTFiNmE5YjljOGUyODhkMDlhNmRhMjcxZmY4YzAxMWU1MGYzODM0MWEzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhZjBlNzE1OGIwMThkZjgxMDdlNzZlZjE4OTAzZmYxMTgyZTZhZjkyNzhhODFmNDJjZjdkYTk3ZmM4NWY0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThiOWJjNWZjNjJlZjc4OWFlYzc4ODlhOWY1NTllYjZjMzgzZTZiODA5MmEwNDYzODY5MjRhYWFmZjU3MjIxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMxZGE1MGNkZWNlOGI0OTg3MmEyMGE0YWE4MDgxNzRkOTVkNGU5MmJmZjFjZDVkMjExYmYyMDgyNzlhODkzNCJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/notification.service.ts#L1-L50",
+          "version": "repo-lines-v1:sha256:47725ebff7f83fc39d63ff1f7f8b2448ba29e02991593891804603e5480aada4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZTdhNjgwOTU2ZjVmNjdjMjFiMGUwMTZmMjk4YjcyNzg2OGU0NDNjOWRmOGM1NWIyN2U5ZWYzYWVjNTM5YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyMDFjNDM1N2NkOTFjZmRiNzE1ZTZlZWNjZGQ3OGZhYTNlNjU2NDY2MWIxOTRlM2IzZWY4NmUzNDEzODdlMmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c363f974b3f94e60999ce7f3f3995755",
+      "statement": "Photo authorization for the ambiguous expense-photos/ storage prefix uses exact-storage-key lookups against both expense_photos and trip_expense_photos, applies per-table rules (finance always; FORWARDER must own the row AND the owner must be ACTIVE; expense side finance-only), and uses strictest-match — a both-tables match that denies is logged as a write-path integrity signal (ADR 0042).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/photo-authz.service.ts#L1-L85",
+          "version": "repo-lines-v1:sha256:3b02296a270c5e4b721992ac331ed78a1f8ca8cae5ef46c598920e1704b41e7e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NGRlYmU2NmU3NDE3NWJlNDQ1NmI3YzBiZmVmMGRkYTNhNTZjNWRiMWFkNDczOTY2ODAyYzFhNjE0NmYyMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/adr/0042-photo-authz-exact-storagekey.md",
+          "version": "repo-file-v1:sha256:7821557ba9c29cb209cec3c3b3ca5400af7833cfc6071518793ebd175b65fe61"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

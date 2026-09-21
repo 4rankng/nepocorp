@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:803b7fe0fda5c1a7cc193413d7967abfa68d5a2dbf8871adc481ee291ccf4af4",
+  "claims": [
+    {
+      "id": "claim_d031b522f28940b99c6a9d1e77f92123",
+      "statement": "Backend tests run as many `*.test.ts` files under backend/src/tests/ via `pnpm test` which executes `npx tsx --test --test-concurrency=1 src/tests/*.test.ts` with concurrency=1 to keep the shared dev DB deterministic across tests.",
+      "evidence": [
+        {
+          "resource": "repo://backend/package.json",
+          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+        },
+        {
+          "resource": "repo://backend/src/tests/photo-authz.test.ts",
+          "version": "repo-file-v1:sha256:fe40187ca12a004853c0448fec24f20ea4298a6f7dfdb582ed69cb5e835264c8"
+        },
+        {
+          "resource": "repo://backend/src/tests/trip-status-machine.test.ts",
+          "version": "repo-file-v1:sha256:7602a8e9524459351179498d8d5688b078ddb868145edb7a9b21d6baea022fb4"
+        }
+      ]
+    },
+    {
+      "id": "claim_526cfadd1dec4ddba747d9abb0e69104",
+      "statement": "Frontend tests live colocated as *.test.ts/*.test.tsx files (admin-advance-settlement-summary.test.ts, admin-advance-settlement-ledger-density.test.tsx, admin-advances-actions.test.tsx, customer-debt-projection.test.ts, useAuth.test.tsx, useAgentChat.test.ts, useBottomNavAnimations.test.tsx) and run via `pnpm test` which executes `vitest run`.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/package.json",
+          "version": "repo-file-v1:sha256:1c86647d68e5b27d24cad2ad329bce070d43247a0b2a850948d3dccde7b7dfa6"
+        },
+        {
+          "resource": "repo://frontend/src/pages/admin-advance-settlement-ledger-density.test.tsx",
+          "version": "repo-file-v1:sha256:926d4200442b8b0bff2620c317fec74cf5812021ecf34f9181c98fd8f97e5bc2"
+        },
+        {
+          "resource": "repo://frontend/src/pages/admin-advance-settlement-summary.test.ts",
+          "version": "repo-file-v1:sha256:8bd23cc950335039969076c2e35d5ab312ad2b82851e8b9c33243a0b484a968c"
+        },
+        {
+          "resource": "repo://frontend/src/pages/admin-advances-actions.test.tsx",
+          "version": "repo-file-v1:sha256:f77b3428e34e0931308827e93810f3eb88dc88c479a1bdd63a46b34af6c1abb9"
+        },
+        {
+          "resource": "repo://frontend/src/pages/customer-debt-projection.test.ts",
+          "version": "repo-file-v1:sha256:1ab659033f29db24c74772bcaacd13f3566981aaeabb0b93efb31363361481c4"
+        }
+      ]
+    },
+    {
+      "id": "claim_27cb45936ba0428090bb21debb1468db",
+      "statement": "ESLint is configured for both root and frontend packages via the `lint` script but is not wired to any CI pipeline and is not run by default in the dev loop; there is no CI configured at all.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/package.json",
+          "version": "repo-file-v1:sha256:1c86647d68e5b27d24cad2ad329bce070d43247a0b2a850948d3dccde7b7dfa6"
+        },
+        {
+          "resource": "repo://package.json",
+          "version": "repo-file-v1:sha256:1c2984cc65964147af09c6d50c1222864eaff9c24c106dbc95df3760ad364722"
+        }
+      ]
+    },
+    {
+      "id": "claim_1070b5b0fc154f0dabc60e059ef97589",
+      "statement": "The e2e/ directory is a Python Playwright suite with run_all.sh + helpers.py + seed_ui_audit.py and per-flow tests (test_00_auth.py through test_05_profit.py) mapped to docs/flows/*.md indexes; it is NOT run by `pnpm test` and is typically executed against deployed environments (demo or prod-mirror).",
+      "evidence": [
+        {
+          "resource": "repo://e2e/helpers.py",
+          "version": "repo-file-v1:sha256:7ffe8fa97289e9db512f72be1a2b06d46e103c7aa941badc6f3fda7b73acb7d9"
+        },
+        {
+          "resource": "repo://e2e/run_all.sh",
+          "version": "repo-file-v1:sha256:49b98c89ba6ef41b67e9b0d1aa0af27cc511a4d9af2404b2ae0d91d4d73418c4"
+        },
+        {
+          "resource": "repo://e2e/test_00_auth.py",
+          "version": "repo-file-v1:sha256:557d4a1c6454ee166ca8113cce799f1d0625e88c372454cf154ce1cf77274e6b"
+        },
+        {
+          "resource": "repo://e2e/test_01_trip_lifecycle.py",
+          "version": "repo-file-v1:sha256:8a902b6f08cd135d942c1cde0c342100109decc1553c0e593aaf00d33b72ed22"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5b4987ff90a4514bbbfc492213e9b6a",
+      "statement": "Manual QA artifacts live in docs/qa/ (regression-test-plan.md, test-checklist.md, quan-ly-checklist.md, service-cost-checklist.md, iterations/, pete-feedback-2026-06-02.md, approval-queue-inventory.md, config-polish-audit.md) and testplan/ (testaccounts.txt fixtures); role-by-role test scripts in docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md through 15-QUAN_LY_LOP_XE.md walk through trip lifecycle, debt/payments, profit distribution, penalties, fleet, customers, configuration, admin, driver mobile, supplier/AP, advances, salary/attendance, and tires.",
+      "evidence": [
+        {
+          "resource": "repo://docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md",
+          "version": "repo-file-v1:sha256:a47e38cf75e9fdd6661d36274baea0b707820269824b11a3fb0cdfcab81d65db"
+        },
+        {
+          "resource": "repo://docs/flows/01-TRIP_LIFECYCLE.md",
+          "version": "repo-file-v1:sha256:7b14a5ff0967e2b253e48c143c1724baa923ea00b69c6c93851a627d9e441234"
+        },
+        {
+          "resource": "repo://docs/flows/14-LUONG_VA_CHAM_CONG.md",
+          "version": "repo-file-v1:sha256:4e99cb60168f7e3416b8a6b383073b0d829403a6138ea69e44b7a1a46ddb430a"
+        },
+        {
+          "resource": "repo://docs/qa/regression-test-plan.md",
+          "version": "repo-file-v1:sha256:3f29578172bf9430aee158e91a2586b21492f18509d730e524ff0624e84b8963"
+        },
+        {
+          "resource": "repo://docs/qa/test-checklist.md",
+          "version": "repo-file-v1:sha256:2ffc8e34b8cef42458915ee75b64bd9708bb459e2fb367bcf85d13903b911dfd"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}

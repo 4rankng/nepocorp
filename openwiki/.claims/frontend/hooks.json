@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:25ed70aba7ea35a743e72b193a47a33c9b1e254bee0f14fa29ba0fb7947aaf61",
+  "claims": [
+    {
+      "id": "claim_5bc9d16b695240b5a32fc53cd20ab88f",
+      "statement": "Auth context is provided by useAuth.tsx (not .ts) in frontend/src/hooks/useAuth.tsx exposing { user, isAuthenticated, login, logout, loading }; consumed by App.tsx, Layout.tsx, and every page that needs role/identity.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.tsx",
+          "version": "repo-file-v1:sha256:9e2cf82ec5ea72e0d4ec51d0d5fab621239fd9dfde1f2ee25c6227721d0add59"
+        }
+      ]
+    },
+    {
+      "id": "claim_533b40a5da834275b664d02bd46d59d5",
+      "statement": "Data-fetch hooks wrap TanStack Query by domain — useCatalogs reads the bootstrap catalogs; useAuditLogs reads audit logs; driver/forwarder/financial/salary/tire/notification/dashboard queries are split into per-domain files (useDriverQueries, useForwarderQueries, useFinancialQueries, useSalaryQueries, useTireQueries, useNotificationQueries, useDashboardQueries); useChatbotMetrics, useAppSettings, useGpsSettings, useLlmSettings cover admin-only surfaces; useQueries is a generic data-fetch helper and useCRUD is a generic CRUD factory against the API client.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useCRUD.ts",
+          "version": "repo-file-v1:sha256:4ded73e1eb85b3dc99a35bfcf2a6593348f42b7cabe04082f7ea00f1d2c981bf"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useCatalogs.ts",
+          "version": "repo-file-v1:sha256:32e250407b65ea3d6cc8b210dc135d144eb406cc5ca455f0cdbb3079159285cf"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useDriverQueries.ts",
+          "version": "repo-file-v1:sha256:a1cea46b4055ceda2476ebdf00a3750041d5d4a09b5dfc15650a91f3c777a0cb"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useFinancialQueries.ts",
+          "version": "repo-file-v1:sha256:ebab31461c0bc40b488c428f67d86a71b17947f09d003228f3d1fc99331dbbab"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useForwarderQueries.ts",
+          "version": "repo-file-v1:sha256:fe497f2ba5d7648fa6c12e0593c93f2f99a0f4ddb1e23273a24131b614fea1d3"
+        }
+      ]
+    },
+    {
+      "id": "claim_05a4694f90fc4423960fd87c5d0eece3",
+      "statement": "Form hooks orchestrate the trip-form state machine: useTripForm owns legs/fuel mode/allocations/allowance/revenue/expenses/instructions and validates against backend Zod schemas; useTripFormContext.tsx provides the React context so deeply-nested trip cards under components/trip/ can read+dispatch; use-trip-form-submit runs the submit pipeline and invalidates caches; tripFormDispatchUtils provides reducer-style dispatch helpers; useDirtyGuard warns on back-navigation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/tripFormDispatchUtils.ts",
+          "version": "repo-file-v1:sha256:b524b02dc877256a25a0e7e551558ef51aede8426129a5c49e83c9f7204bd16b"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts",
+          "version": "repo-file-v1:sha256:57a243dfb468bce4abc28e0246ced9c11ea97201ab68e4f7f2f5df8fe52374da"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useDirtyGuard.ts",
+          "version": "repo-file-v1:sha256:b793cea1136657339525e6505c0ba9ddd98f8ae4408ed263872ff435e7c8caf5"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripForm.ts",
+          "version": "repo-file-v1:sha256:80b50e1e5e0e44c4a0aae07a9c8f15a58736b71071b819bb5301bfe498814dd5"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormContext.tsx",
+          "version": "repo-file-v1:sha256:bec0584db6fd1cbfef068717e8e2fcd4d223d16e4de9bfe86df292ea649624ed"
+        }
+      ]
+    },
+    {
+      "id": "claim_c07cde10bc5d40d18da0703f294f0057",
+      "statement": "UI helper hooks include useClickOutside (dropdown/modal dismissal), useBackShortcut (Escape + hardware back with dirty-guard), useMonth.tsx (selected-month context for dashboard/P&L), usePrefersReducedMotion (ReducedMotionProvider), useMediaQuery (SSR-safe media query), useFocusDeepLink, useFocusTrap, usePersistedContainerType (localStorage), useSyncedState, usePushNotifications (service-worker push), useAgentOpenable / useAgentChat (agent drawer + streaming chat), and animation hooks under animations/ (useBottomNavAnimations, useSidebarAnimations, useTopbarEntrance, useAnimatedOverlay).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useBackShortcut.ts",
+          "version": "repo-file-v1:sha256:185a1830e9be1dedcd8e348f45bbed85e0411b3ca0054790f039df2990f17833"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useClickOutside.ts",
+          "version": "repo-file-v1:sha256:ae2c99bee26ac0c4ebc4a3e7dbd1d2d3fc1f1a7e8d516dc98dc815068dbb1094"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useMediaQuery.ts",
+          "version": "repo-file-v1:sha256:4c384cb82df1ac417c93d91c4fbdc9b6785d960d5ac2a472cfb2fa77a01936d5"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useMonth.tsx",
+          "version": "repo-file-v1:sha256:ab8e29c988ada35cc3753664c78e425e3701d332d6c4197951160bbd262eb5c4"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/usePrefersReducedMotion.ts",
+          "version": "repo-file-v1:sha256:0116b57af5cf1a20bccf3e51ddb8e96a9952ddce782ce1df5504697ab739d559"
+        }
+      ]
+    },
+    {
+      "id": "claim_3986078e7bc74eca9b557448eba41312",
+      "statement": "Tests colocate with hooks — useAuth.test.tsx, useAgentChat.test.ts, useBottomNavAnimations.test.tsx, use-trip-form-submit.test.ts; new hooks should add tests in the same folder.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAgentChat.test.ts",
+          "version": "repo-file-v1:sha256:94897042690aa24de4e6d3910bd570e7a47e4c47af3306d47d119ecc86e9cf98"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.test.tsx",
+          "version": "repo-file-v1:sha256:9b79ba0eb72895c74ac148b21a28a96fc7d461742437cce4941af38148c56e7d"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-21T11:26:37.739Z"
+  }
+}
