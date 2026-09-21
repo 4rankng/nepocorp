@@ -73,3 +73,6 @@ kilo.json
 .agentkit/
 # Added by code-review-graph
 .code-review-graph/
+
+# Kanban board (local agent state; cards + evidence live in the working tree only)
+kanban/
