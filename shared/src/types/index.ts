@@ -958,7 +958,9 @@ export interface TripLegInput {
 }
 
 export interface UpdateTripFiguresRequest {
-  legs: TripLegInput[];
+  /** Optional: a figures-only update may omit the legs and keep the stored ones
+   *  (quick edit of a trip created without route legs — kanban 20260921_3). */
+  legs?: TripLegInput[];
   customerId?: number;
   departureDate?: string;
   completedAt?: string;
