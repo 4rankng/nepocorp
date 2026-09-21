@@ -285,6 +285,53 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Long text columns wrap; status + action stay pinned (kanban 20260921_9) ──
+   Supplier/category names used to stretch the table past its container and push
+   the status label and the chevron off the right edge. */
+.expense-table thead th:nth-child(2),
+.expense-table tbody td:nth-child(2),
+.expense-table thead th:nth-child(3),
+.expense-table tbody td:nth-child(3) {
+  max-width: 260px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* Sticky right: chevron at the very edge, status one column to its left.
+   Widths are pinned so the sticky offsets line up. */
+.expense-table thead th:nth-last-child(1),
+.expense-table tbody td:nth-last-child(1) {
+  position: sticky;
+  right: 0;
+  width: 40px;
+  min-width: 40px;
+  z-index: 2;
+}
+.expense-table thead th:nth-last-child(2),
+.expense-table tbody td:nth-last-child(2) {
+  position: sticky;
+  right: 40px;
+  width: 150px;
+  min-width: 150px;
+  z-index: 2;
+  box-shadow: -8px 0 10px -10px rgba(15, 26, 20, 0.35);
+}
+/* The sticky cells need an opaque background that matches the row state,
+   otherwise the scrolled columns show through the zebra/hover tints. */
+.expense-table thead th:nth-last-child(-n+2) {
+  background: var(--surface-2);
+  z-index: 3;
+}
+.expense-table tbody td:nth-last-child(-n+2) {
+  background: var(--surface);
+}
+.expense-table tbody tr:nth-child(even) td:nth-last-child(-n+2) {
+  background: #FCFCFD;
+}
+.expense-table tbody tr:hover td:nth-last-child(-n+2) {
+  background: #F7FCF9;
+}
+
 .expense-table tbody tr {
   cursor: pointer;
   transition: background 0.15s ease;
