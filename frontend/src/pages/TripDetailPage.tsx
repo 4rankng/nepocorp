@@ -99,7 +99,15 @@ export default function TripDetailPage() {
         onBack={handleBack}
         onEdit={() => navigate(`/trips/${trip.id}/edit`, { state: editReturnState })}
         onDispatch={() => page.handleAction('dispatch', () => api.post(`/trips/${trip.id}/dispatch`, {}))}
-        onComplete={() => page.handleAction('complete', () => api.post(`/trips/${trip.id}/complete`, {}))}
+        onComplete={() => {
+          // The plate of a subcontracted truck is only known after the partner
+          // assigns it — required at completion, not at planning (kanban 20260921_4).
+          if (trip.carrierType === 'EXTERNAL' && !(trip.externalPlateNumber ?? '').trim()) {
+            ui.setActionError('Chuyến xe ngoài cần biển số xe trước khi hoàn thành. Vào Chỉnh sửa để bổ sung biển số.');
+            return;
+          }
+          return page.handleAction('complete', () => api.post(`/trips/${trip.id}/complete`, {}));
+        }}
         onLock={page.handleLockClick}
         onCancel={async () => {
           if (await page.confirm('Bạn có chắc muốn hủy chuyến này?', { variant: 'danger', confirmLabel: 'Hủy chuyến' })) {
